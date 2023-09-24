@@ -351,4 +351,171 @@
 | Без грамм. нагрузки    | We write a letter         | Noi scrivere una lettera    |
 | Передача грамм. нагрузки| We **write** a letter     | Noi **scriviamo** una lettera|
 
+### Глагольные Формы и Их Значения
 
+1. **Первая форма (Base Form / Infinitive):**
+   - В английском языке, первая форма глагола совпадает с инфинитивом.
+   - Эта форма используется для выражения действий в настоящем времени и обозначения общих действий или состояний.
+   - Пример: to paint (dipingere на итальянском)
+
+2. **Вторая форма (Past Simple):**
+   - В английском языке, вторая форма глагола используется для выражения действий, совершённых в прошлом.
+   - В итальянском аналогом может служить форма passato remoto.
+   - Пример: painted (dipinse на итальянском)
+
+3. **Третья форма (Past Participle):**
+   - Используется для обозначения состояния предмета, над которым было совершено действие.
+   - Эта форма выражает результат действия и используется в составе времён группы Perfect и Passive Voice.
+   - Пример: painted (dipinto на итальянском)
+
+**Past Participle (причастие прошедшего времени)** не только обозначает состояние предмета, над которым было совершено действие, но и может использоваться как прилагательное, отвечая на вопросы «какой?», «какая?», «какое?». Таким образом, оно описывает характеристику или состояние существительного.
+
+Также существует форма Present Participle, которая используется для описания действующего лица или предмета, производящего действие, и выражает состояние этого действующего предмета. Например, "a painting artist" ("un artista dipingente") – художник, который рисует.
+
+#### Пример:
+В английском языке предложение «The bench is painted» («Скамейка покрашена») содержит prichastie прошедшего времени в роли прилагательного, описывающего состояние скамейки. В этом контексте, слово «painted» отвечает на вопрос «какая скамейка?» — покрашенная.
+
+Таким же образом, в итальянском языке можно использовать форму «dipinto» как прилагательное: «La panchina è dipinta» («Скамейка покрашена»). Здесь «dipinta» описывает, в каком состоянии находится скамейка — покрашенная.
+### Таблица 10 наиболее распространённых глаголов и их третьи формы
+
+| Русский   | Italiano (Инфинитив) | Italiano (3 форма) | English (3 form) |
+|-----------|----------------------|--------------------|------------------|
+| Писать    | Scrivere             | scritto            | written          |
+| Читать    | Leggere              | letto              | read             |
+| Видеть    | Vedere               | visto              | seen             |
+| Говорить  | Parlare              | parlato            | spoken           |
+| Идти      | Andare               | andato             | gone             |
+| Делать    | Fare                 | fatto              | done             |
+| Мочь      | Potere               | potuto             | been able (could)|
+| Начинать  | Iniziare             | iniziato           | begun            |
+| Иметь     | Avere                | avuto              | had              |
+| Знать     | Sapere               | saputo             | known            |
+
+### Резюме
+В английском языке, третья форма глагола, как правило, образуется добавлением суффикса "-ed" к инфинитиву для регулярных глаголов, и изменением формы для нерегулярных глаголов. В итальянском, она часто образуется добавлением "-ato", "-uto", "-ito" к корню глагола.
+
+### Примечание
+Третья форма глагола, или причастие прошедшего времени, отвечает на вопрос «какой? какая? какое?», описывая состояние предмета, над которым было совершено действие. Например, «покрашенная скамейка» описывает скамейку, на которую было наложено действие покраски.
+
+### Таблица 100 наиболее распространённых глаголов и их третьи формы
+
+| № | Итальянский глагол (Infinitive) | Третья форма | Английский аналог |
+|---|---------------------------------|--------------|-------------------|
+| 1 | essere (быть)                  | stato        | be                |
+| 2 | avere (иметь)                  | avuto        | have              |
+| 3 | fare (делать)                  | fatto        | do                |
+| 4 | dire (говорить)                | detto        | say               |
+| 5 | andare (идти)                  | andato       | go                |
+| 6 | потерять (потерять)           | perso         | lose              |
+| 7 | cercare (искать)               | cercato      | search/look for   |
+| 8 | comprare (купить)              | comprato     | buy               |
+| 9 | rispondere (отвечать)          | risposto     | answer            |
+| 10 | telefonare (звонить)           | telefonato   | call (on the phone) |
+| 11 | scrivere (писать)              | scritto      | write             |
+| 12 | mettere (надевать)             | messo        | put on            |
+| 13 | giocare (играть)               | giocato      | play              |
+| 14 | aprire (открывать)             | aperto       | open              |
+| 15 | finire (заканчивать)           | finito       | finish            |
+| 16 | parlare (разговаривать)        | parlato      | talk              |
+| 17 | restare (оставаться)           | restato      | stay              |
+| 18 | amare (любить)                 | amato        | love              |
+| 19 | studiare (учиться)             | studiato     | study             |
+| 20 | venire (приходить)            | venuto       | come              |
+| 21 | iniziare (начинать)           | iniziato     | begin             |
+| 22 | dovere (должен)                | dovuto       | owe               |
+| 23 | lavorare (работать)           | lavorato     | work              |
+| 24 | vivere (жить)                 | vissuto      | live              |
+| 25 | chiamare (звать)              | chiamato     | call              |
+| 26 | mangiare (есть)               | mangiato     | eat               |
+| 27 | conoscere (знакомиться)       | conosciuto   | know/meet         |
+| 28 | sentire (чувствовать)          | sentito      | feel              |
+| 29 | parlare (говорить)            | parlato      | speak             |
+| 30 | rimanere (оставаться)          | rimasto      | remain            |
+| 31 | trovare (находить)            | trovato      | find              |
+| 32 | capire (понимать)             | capito       | understand        |
+| 33 | dare (давать)                 | dato         | give              |
+| 34 | uscire (выходить)             | uscito       | go out            |
+| 35 | dire (сказать)                | detto        | tell              |
+| 36 | mettere (класть)               | messo        | put               |
+| 37 | venire (прийти)                | venuto       | arrive            |
+| 38 | vedere (смотреть)              | visto        | watch/see         |
+| 39 | andare (ходить)                | andato       | walk              |
+| 40 | potere (мочь)                  | potuto       | be able to        |
+| 41 | volere (хотеть)                | voluto       | want              |
+| 42 | prendere (брать)               | preso        | take              |
+| 43 | stare (находиться)             | stato        | be (in a state)   |
+| 44 | dovere (должен)                | dovuto       | must              |
+| 45 | sapere (знать)                 | saputo       | know              |
+| 46 | piacere (нравиться)            | piaciuto     | like              |
+| 47 | vedere (посмотреть)            | visto        | see               |
+| 48 | pensare (думать)               | pensato      | think             |
+| 49 | portare (приносить)            | portato      | bring             |
+| 50 | ballare (танцевать)            | ballato      | dance             |
+| 51 | sentire (слышать)              | sentito      | hear              |
+| 52 | dormire (спать)                | dormito      | sleep             |
+| 53 | vivere (проживать)             | vissuto      | live              |
+| 54 | partire (уходить)              | partito      | leave             |
+| 55 | entrare (входить)              | entrato      | enter             |
+| 56 | camminare (гулять)            | camminato    | walk              |
+| 57 | correre (бежать)               | corso        | run               |
+| 58 | tornare (возвращаться)         | tornato      | return            |
+| 59 | lavorare (работать)           | lavorato     | work              |
+| 60 | cucinare (готовить)            | cucinato     | cook              |
+| 61 | leggere (читать)              | letto        | read              |
+| 62 | salire (подниматься)           | salito       | climb             |
+| 63 | ascoltare (слушать)            | ascoltato    | listen            |
+| 64 | vedere (увидеть)               | visto        | see               |
+| 65 | finire (завершить)             | finito       | finish            |
+| 66 | scrivere (написать)            | scritto      | write             |
+| 67 | rispondere (ответить)          | risposto     | answer            |
+| 68 | aiutare (помочь)               | aiutato      | help              |
+| 69 | mangiare (съесть)              | mangiato     | eat               |
+| 70 | bere (пить)                    | bevuto       | drink             |
+| 71 | studiare (изучать)             | studiato     | study             |
+| 72 | prendere (принять)             | preso        | take              |
+| 73 | cercare (пытаться)             | cercato      | try               |
+| 74 | volare (лететь)                | volato       | fly               |
+| 75 | venire (прийти)                | venuto       | come              |
+| 76 | vivere (проживать)             | vissuto      | live              |
+| 77 | restare (оставаться)           | restato      | stay              |
+| 78 | giocare (играть)               | giocato      | play              |
+| 79 | aprire (открыть)               | aperto       | open              |
+| 80 | cucinare (готовить)            | cucinato     | cook              |
+| 81 | nuotare (плавать)              | nuotato      | swim              |
+| 82 | cantare (петь)                 | cantato      | sing              |
+| 83 | ballare (танцевать)            | ballato      | dance             |
+| 84 | parlare (говорить)            | parlato      | speak             |
+| 85 | leggere (читать)              | letto        | read              |
+| 86 | scrivere (писать)              | scritto      | write             |
+| 87 | ascoltare (слушать)            | ascoltato    | listen            |
+| 88 | salire (подниматься)           | salito       | climb             |
+| 89 | uscire (выйти)                 | uscito       | go out            |
+| 90 | dire (сказать)                | detto        | tell              |
+| 91 | mettere (положить)             | messo        | put               |
+| 92 | partire (уехать)               | partito      | leave             |
+| 93 | arrivare (приехать)            | arrivato     | arrive            |
+| 94 | rimanere (остаться)            | rimasto      | remain            |
+| 95 | domandare (спросить)           | domandato    | ask               |
+| 96 | comprare (купить)              | comprato     | buy               |
+| 97 | guidare (вести)                | guidato      | drive             |
+| 98 | contare (считать)              | contato      | count             |
+| 99 | spegnere (выключить)           | spento       | turn off          |
+| 100 | camminare (гулять)            | camminato    | walk              |
+
+### Три главных значения глагола "GET"
+
+Глагол "get" обладает множеством значений и употреблений в английском языке, но три основных значения следующие:
+
+| **Get + Форма прилагательного** | **Становится / Принимает состояние** | **Пример** |
+|------------------------|----------------------------------|---------|
+| get + tired | становится уставшим | He gets tired after work. (Он становится уставшим после работы.) |
+
+| **Get + Объект** | **Получать что-то** | **Пример** |
+|--------------|------------------|---------|
+| get + a gift | получает подарок | She got a gift from her friend. (Она получила подарок от своего друга.) |
+
+| **Get + Место** | **Добираться** | **Пример** |
+|-------------|--------------|---------|
+| get + home | добираться до дома | We need to get home before it rains. (Нам нужно добраться домой, прежде чем пойдет дождь.) |
+
+Эти три значения являются самыми распространенными, но стоит помнить, что "get" может иметь и другие значения и употребления в зависимости от контекста.
