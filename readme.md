@@ -1420,3 +1420,60 @@ Who bought a new car? / Chi ha comprato una nuova auto? — Кто купил н
 What inspires you? / Cosa ti ispira? — Что вдохновляет тебя?
 
 </details>
+
+### Практика 5
+
+#### Задание.
+1. Им понравилась Masha? (like)
+2. Почему их здесь не было вчера?
+3. Я оставил машину тут (leave)
+4. Становилось тепло (get)
+5. Дом обошёлся им слишком дорого (cost)
+6. Чего ей стоило это решение?
+7. Почему ты не дал им денег взаймы? (lend)
+8. Принеси нож! (bring)
+9. Vasya не позволил им писать (let)
+10. Почему Vasya не делает домашнюю работу?
+11. Сколько ей понадобится, чтобы закончить книгу? (take)
+12. Обычно нужен сильный человек, чтобы поднять этот вес (через take)
+
+<details>
+<summary> 📖 Ответы </summary>
+
+1. Did they like Masha? - Loro hanno gradito Masha?
+   Они полюбили Машу?
+
+2. Why weren’t they here yesterday? - Perché non erano qui ieri?
+   Почему их не было здесь вчера?
+
+3. I left the car here. - Ho lasciato la macchina qui.
+   Я оставил машину здесь.
+
+4. It was getting warm. - Stava diventando caldo.
+   Становилось тепло.
+
+5. The house cost them too much. - La casa è costata troppo a loro.
+   Дом обошёлся им слишком дорого.
+
+6. What did this decision cost her? - Quanto le è costata questa decisione?
+   Чего стоило ей это решение?
+
+7. Why didn’t you lend them money? - Perché non hai prestato loro dei soldi?
+   Почему ты не одолжил им денег?
+
+8. Bring the knife! - Porta il coltello!
+   Принеси нож!
+
+9. Vasya didn’t let them write. - Vasya non li ha lasciati scrivere.
+   Вася не позволил им писать.
+
+10. Why doesn’t Vasya do the homework? - Perché Vasya non fa i compiti?
+    Почему Вася не делает домашнее задание?
+
+11. How long will it take her to finish the book? - Quanto tempo le ci vorrà per finire il libro?
+    Сколько времени ей понадобится, чтобы закончить книгу?
+
+12. It usually takes a strong person to lift this weight. - Di solito ci vuole una persona forte per sollevare questo peso.
+    Обычно требуется сильный человек, чтобы поднять этот вес.
+
+</details>
