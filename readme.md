@@ -1477,3 +1477,69 @@ What inspires you? / Cosa ti ispira? — Что вдохновляет тебя?
     Обычно требуется сильный человек, чтобы поднять этот вес.
 
 </details>
+
+### Введение новой информации через конструкцию “Есть” (There is/are)
+
+#### Английский
+- Для введения новой информации о наличии чего-либо используется конструкция "there is/are".
+- "There is" используется для обозначения наличия одного объекта (единственное число), а "there are" для множественного числа.
+
+#### Итальянский
+- В итальянском языке аналогичная конструкция – "c’è/ci sono" (ед. и мн. число соответственно).
+
+<details>
+<summary> 📖 Ответы </summary>
+
+1. There are 10 boys in the class, 6 of them are troublemakers. / In classe ci sono 10 ragazzi, 6 di loro sono teppisti. / В классе есть 10 мальчиков, 6 из них драчуны.
+2. There is a fish shop in Brindisi. They sell fresh seafood there. / A Brindisi c’è un negozio di pesce. Lì vendono prodotti ittici freschi. / В Бриндизи есть рыбный магазин. Там продают свежие морепродукты.
+3. Is there a swimming pool in the hotel? / C’è una piscina in albergo? / В отеле есть бассейн?
+4. Do you have a swimming pool at your seaside house? / Hai una piscina nella tua casa al mare? / У тебя дома у моря есть бассейн?
+5. Is there a bank nearby? / C’è una banca qui vicino? / Есть банк поблизости?
+6. There isn’t a shop nearby. / Non c’è un negozio qui vicino. / Нет тут рядом магазина.
+7. There was a fight at the party yesterday. / Ieri alla festa c’è stata una rissa. / Вчера на вечеринке была драка.
+8. There wasn’t any mint in the store yesterday. / Ieri al negozio non c’era menta. / Вчера в магазине не было мяты.
+9. There were a lot of people at the bus stop. / Alla fermata dell’autobus c’erano molte persone. / На автобусной остановке было много людей.
+10. There were a lot of people in the store buying gifts. / Nel negozio c’erano molte persone che compravano regali. / В магазине было много людей, которые покупали подарки.
+
+</details>
+
+### Практика к Грамматика-6
+
+#### Задание:
+1. Переведите следующие предложения на английский и итальянский языки.
+2. Укажите буквальный дословный перевод, не приводя его к нормам русского языка.
+3. Будьте внимательны, особенно во второй части задания.
+
+#### Вопросы:
+1. Где ты это взял?
+2. Кто оставил здесь эту машину?
+3. Становится холоднее.
+4. Сколько нужно краски, чтобы закончить работу?
+5. С кем он сражался?
+6. Сколько ты заплатил за эти книги?
+7. Почему нам не прислали те книги?
+8. Странно, что это не заняло больше времени.
+9. У тебя головная боль?
+10. В холодильнике есть сэндвич, можешь взять.
+11. В доме был холодильник?
+12. Что действует тебе на нервы?
+
+#### Ответы:
+
+1. Where did you get this? | Dove hai preso questo?
+2. Who left this car here? | Chi ha lasciato questa macchina qui?
+3. It's getting colder. | Sta diventando più freddo.
+4. How much paint does it take to finish the job? | Quanto colore ci vuole per finire il lavoro?
+5. Who did he fight with? | Con chi ha lottato?
+6. How much did you pay for these books? | Quanto hai pagato per questi libri?
+7. Why didn't they send us those books? | Perché non ci hanno inviato quei libri?
+8. It’s strange that it didn’t take more time. | È strano che non abbia richiesto più tempo.
+9. Do you have a headache? | Hai mal di testa?
+10. There is a sandwich in the fridge, you can take it. | C'è un panino nel frigo, puoi prenderlo.
+11. Was there a refrigerator in the house? | C'era un frigorifero in casa?
+12. What gets on your nerves? | Cosa ti dà sui nervi?
+
+#### Примечание:
+- Апостроф и 's' обозначают принадлежность, например:
+  - mother's bag – сумка мамы, мамина сумка
+  - my colleague's phone – телефон моего коллеги
