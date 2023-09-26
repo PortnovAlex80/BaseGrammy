@@ -1524,8 +1524,9 @@ What inspires you? / Cosa ti ispira? — Что вдохновляет тебя?
 11. В доме был холодильник?
 12. Что действует тебе на нервы?
 
-#### Ответы:
-
+<details>
+<summary> 📖 Ответы </summary>
+   
 1. Where did you get this? | Dove hai preso questo?
 2. Who left this car here? | Chi ha lasciato questa macchina qui?
 3. It's getting colder. | Sta diventando più freddo.
@@ -1538,6 +1539,8 @@ What inspires you? / Cosa ti ispira? — Что вдохновляет тебя?
 10. There is a sandwich in the fridge, you can take it. | C'è un panino nel frigo, puoi prenderlo.
 11. Was there a refrigerator in the house? | C'era un frigorifero in casa?
 12. What gets on your nerves? | Cosa ti dà sui nervi?
+
+</details>
 
 #### Примечание:
 - Апостроф и 's' обозначают принадлежность, например:
