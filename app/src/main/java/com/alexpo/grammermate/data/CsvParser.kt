@@ -5,15 +5,20 @@ import java.io.InputStream
 import java.io.InputStreamReader
 
 object CsvParser {
-    fun parseSentenceCards(inputStream: InputStream): List<SentenceCard> {
+    fun parseLesson(inputStream: InputStream): Pair<String?, List<SentenceCard>> {
         val reader = BufferedReader(InputStreamReader(inputStream))
         val cards = mutableListOf<SentenceCard>()
         var lineNumber = 0
+        var title: String? = null
         reader.useLines { lines ->
             lines.forEach { rawLine ->
                 lineNumber += 1
                 val line = rawLine.trim()
                 if (line.isBlank()) return@forEach
+                if (title == null) {
+                    title = extractTitle(line)
+                    return@forEach
+                }
                 val columns = parseLine(line)
                 if (columns.size != 2) {
                     throw IllegalArgumentException("Invalid CSV at line $lineNumber")
@@ -38,7 +43,7 @@ object CsvParser {
                 )
             }
         }
-        return cards
+        return title to cards
     }
 
     private fun parseLine(line: String): List<String> {
@@ -67,5 +72,20 @@ object CsvParser {
         }
         result.add(current.toString())
         return result
+    }
+
+    private fun extractTitle(raw: String): String? {
+        val trimmed = raw.trim().trim('"')
+        if (trimmed.isBlank()) return null
+        val builder = StringBuilder()
+        for (ch in trimmed) {
+            if (ch.isLetterOrDigit() || ch == ' ') {
+                builder.append(ch)
+            } else {
+                break
+            }
+            if (builder.length >= 160) break
+        }
+        return builder.toString().trim().ifBlank { null }
     }
 }

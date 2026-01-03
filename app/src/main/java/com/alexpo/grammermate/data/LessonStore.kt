@@ -39,8 +39,8 @@ class LessonStore(private val context: Context) {
             val fileName = entry["file"] as? String ?: return@mapNotNull null
             val csvFile = File(languageDir(languageId), fileName)
             if (!csvFile.exists()) return@mapNotNull null
-            val cards = CsvParser.parseSentenceCards(csvFile.inputStream())
-            Lesson(id = id, languageId = languageId, title = title, cards = cards)
+            val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
+            Lesson(id = id, languageId = languageId, title = parsedTitle ?: title, cards = cards)
         }
     }
 
@@ -58,9 +58,10 @@ class LessonStore(private val context: Context) {
                 stream.copyTo(out)
             }
         }
-        val cards = CsvParser.parseSentenceCards(csvFile.inputStream())
-        saveIndex(languageId, LessonIndexEntry(id, title, fileName))
-        return Lesson(id = id, languageId = languageId, title = title, cards = cards)
+        val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
+        val lessonTitle = parsedTitle ?: title
+        saveIndex(languageId, LessonIndexEntry(id, lessonTitle, fileName))
+        return Lesson(id = id, languageId = languageId, title = lessonTitle, cards = cards)
     }
 
     fun deleteAllLessons(languageId: String) {
