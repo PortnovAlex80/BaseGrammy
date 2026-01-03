@@ -1,0 +1,303 @@
+﻿package com.alexpo.grammermate.ui
+
+import android.app.Application
+import android.net.Uri
+import android.os.SystemClock
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonStore
+import com.alexpo.grammermate.data.Normalizer
+import com.alexpo.grammermate.data.ProgressStore
+import com.alexpo.grammermate.data.SessionState
+import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.TrainingMode
+import com.alexpo.grammermate.data.TrainingProgress
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+class TrainingViewModel(application: Application) : AndroidViewModel(application) {
+    private val lessonStore = LessonStore(application)
+    private val progressStore = ProgressStore(application)
+    private var sessionCards: List<SentenceCard> = emptyList()
+    private var timerJob: Job? = null
+    private var activeStartMs: Long? = null
+
+    private val _uiState = MutableStateFlow(TrainingUiState())
+    val uiState: StateFlow<TrainingUiState> = _uiState
+
+    init {
+        lessonStore.ensureSeedData()
+        val progress = progressStore.load()
+        val languages = lessonStore.getLanguages()
+        val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: "en"
+        val lessons = lessonStore.getLessons(selectedLanguageId)
+        val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+        _uiState.update {
+            it.copy(
+                languages = languages,
+                selectedLanguageId = selectedLanguageId,
+                lessons = lessons,
+                selectedLessonId = selectedLessonId,
+                mode = progress.mode,
+                sessionState = progress.state,
+                currentIndex = progress.currentIndex,
+                correctCount = progress.correctCount,
+                incorrectCount = progress.incorrectCount,
+                incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
+                activeTimeMs = progress.activeTimeMs
+            )
+        }
+        buildSessionCards()
+        if (_uiState.value.sessionState == SessionState.ACTIVE) {
+            resumeTimer()
+        }
+    }
+
+    fun onInputChanged(text: String) {
+        _uiState.update { it.copy(inputText = text) }
+    }
+
+    fun selectLanguage(languageId: String) {
+        val lessons = lessonStore.getLessons(languageId)
+        val selectedLessonId = lessons.firstOrNull()?.id
+        _uiState.update {
+            it.copy(
+                selectedLanguageId = languageId,
+                lessons = lessons,
+                selectedLessonId = selectedLessonId,
+                currentIndex = 0,
+                correctCount = 0,
+                incorrectCount = 0,
+                incorrectAttemptsForCard = 0,
+                inputText = "",
+                lastResult = null,
+                hintText = null
+            )
+        }
+        buildSessionCards()
+        saveProgress()
+    }
+
+    fun selectLesson(lessonId: String) {
+        _uiState.update {
+            it.copy(
+                selectedLessonId = lessonId,
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                hintText = null,
+                incorrectAttemptsForCard = 0
+            )
+        }
+        buildSessionCards()
+        saveProgress()
+    }
+
+    fun selectMode(mode: TrainingMode) {
+        _uiState.update {
+            it.copy(
+                mode = mode,
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                hintText = null,
+                incorrectAttemptsForCard = 0
+            )
+        }
+        buildSessionCards()
+        saveProgress()
+    }
+
+    fun submitAnswer() {
+        val state = _uiState.value
+        if (state.sessionState != SessionState.ACTIVE) return
+        if (state.inputText.isBlank()) return
+        val card = currentCard() ?: return
+        val normalizedInput = Normalizer.normalize(state.inputText)
+        val accepted = card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
+        if (accepted) {
+            _uiState.update {
+                it.copy(
+                    correctCount = it.correctCount + 1,
+                    lastResult = true,
+                    incorrectAttemptsForCard = 0,
+                    hintText = null
+                )
+            }
+            nextCard()
+        } else {
+            val nextIncorrect = state.incorrectAttemptsForCard + 1
+            val hint = if (nextIncorrect >= 3) card.acceptedAnswers.joinToString(" / ") else null
+            _uiState.update {
+                it.copy(
+                    incorrectCount = it.incorrectCount + 1,
+                    incorrectAttemptsForCard = nextIncorrect,
+                    lastResult = false,
+                    hintText = hint,
+                    sessionState = if (hint != null) SessionState.HINT_SHOWN else it.sessionState
+                )
+            }
+        }
+        saveProgress()
+    }
+
+    fun nextCard() {
+        val nextIndex = (_uiState.value.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
+        val nextCard = sessionCards.getOrNull(nextIndex)
+        _uiState.update {
+            it.copy(
+                currentIndex = nextIndex,
+                currentCard = nextCard,
+                inputText = "",
+                lastResult = null,
+                hintText = null,
+                incorrectAttemptsForCard = 0,
+                sessionState = SessionState.ACTIVE
+            )
+        }
+        saveProgress()
+    }
+
+    fun prevCard() {
+        val prevIndex = (_uiState.value.currentIndex - 1).coerceAtLeast(0)
+        val prevCard = sessionCards.getOrNull(prevIndex)
+        _uiState.update {
+            it.copy(
+                currentIndex = prevIndex,
+                currentCard = prevCard,
+                inputText = "",
+                lastResult = null,
+                hintText = null,
+                incorrectAttemptsForCard = 0
+            )
+        }
+        saveProgress()
+    }
+
+    fun togglePause() {
+        val newState = if (_uiState.value.sessionState == SessionState.ACTIVE) {
+            pauseTimer()
+            SessionState.PAUSED
+        } else {
+            resumeTimer()
+            SessionState.ACTIVE
+        }
+        _uiState.update { it.copy(sessionState = newState) }
+        saveProgress()
+    }
+
+    fun importLesson(uri: Uri) {
+        val languageId = _uiState.value.selectedLanguageId
+        val lesson = lessonStore.importFromUri(languageId, uri, getApplication<Application>().contentResolver)
+        refreshLessons(lesson.id)
+    }
+
+    fun deleteAllLessons() {
+        val languageId = _uiState.value.selectedLanguageId
+        lessonStore.deleteAllLessons(languageId)
+        refreshLessons(null)
+    }
+
+    private fun refreshLessons(selectedLessonId: String?) {
+        val languageId = _uiState.value.selectedLanguageId
+        val lessons = lessonStore.getLessons(languageId)
+        val selected = selectedLessonId ?: lessons.firstOrNull()?.id
+        _uiState.update {
+            it.copy(
+                lessons = lessons,
+                selectedLessonId = selected,
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                hintText = null,
+                incorrectAttemptsForCard = 0
+            )
+        }
+        buildSessionCards()
+        saveProgress()
+    }
+
+    private fun buildSessionCards() {
+        val state = _uiState.value
+        val lessons = state.lessons
+        val lessonCards = when (state.mode) {
+            TrainingMode.LESSON -> {
+                val lesson = lessons.firstOrNull { it.id == state.selectedLessonId }
+                lesson?.cards ?: emptyList()
+            }
+            TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
+            TrainingMode.ALL_MIXED -> lessons.flatMap { it.cards }.shuffled()
+        }
+        sessionCards = lessonCards
+        val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
+        val card = sessionCards.getOrNull(safeIndex)
+        _uiState.update { it.copy(currentIndex = safeIndex, currentCard = card) }
+    }
+
+    private fun currentCard(): SentenceCard? {
+        if (sessionCards.isEmpty()) return null
+        val index = _uiState.value.currentIndex.coerceIn(0, sessionCards.lastIndex)
+        return sessionCards.getOrNull(index)
+    }
+
+    private fun resumeTimer() {
+        if (timerJob?.isActive == true) return
+        activeStartMs = SystemClock.elapsedRealtime()
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(500)
+                val start = activeStartMs ?: continue
+                val elapsed = SystemClock.elapsedRealtime() - start
+                _uiState.update { it.copy(activeTimeMs = it.activeTimeMs + elapsed) }
+                activeStartMs = SystemClock.elapsedRealtime()
+                saveProgress()
+            }
+        }
+    }
+
+    private fun pauseTimer() {
+        timerJob?.cancel()
+        timerJob = null
+        activeStartMs = null
+    }
+
+    private fun saveProgress() {
+        val state = _uiState.value
+        progressStore.save(
+            TrainingProgress(
+                languageId = state.selectedLanguageId,
+                mode = state.mode,
+                lessonId = state.selectedLessonId,
+                currentIndex = state.currentIndex,
+                correctCount = state.correctCount,
+                incorrectCount = state.incorrectCount,
+                incorrectAttemptsForCard = state.incorrectAttemptsForCard,
+                activeTimeMs = state.activeTimeMs,
+                state = state.sessionState
+            )
+        )
+    }
+}
+
+data class TrainingUiState(
+    val languages: List<com.alexpo.grammermate.data.Language> = emptyList(),
+    val selectedLanguageId: String = "en",
+    val lessons: List<Lesson> = emptyList(),
+    val selectedLessonId: String? = null,
+    val mode: TrainingMode = TrainingMode.LESSON,
+    val sessionState: SessionState = SessionState.ACTIVE,
+    val currentIndex: Int = 0,
+    val currentCard: SentenceCard? = null,
+    val inputText: String = "",
+    val correctCount: Int = 0,
+    val incorrectCount: Int = 0,
+    val incorrectAttemptsForCard: Int = 0,
+    val activeTimeMs: Long = 0L,
+    val hintText: String? = null,
+    val lastResult: Boolean? = null
+)

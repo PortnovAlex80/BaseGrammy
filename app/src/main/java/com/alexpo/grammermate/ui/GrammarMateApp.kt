@@ -1,0 +1,403 @@
+﻿package com.alexpo.grammermate.ui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alexpo.grammermate.data.SessionState
+import com.alexpo.grammermate.data.TrainingMode
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
+@Composable
+fun GrammarMateApp() {
+    GrammarMateTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            val vm: TrainingViewModel = viewModel()
+            val state by vm.uiState.collectAsState()
+            TrainingScreen(
+                state = state,
+                onInputChange = vm::onInputChanged,
+                onSubmit = vm::submitAnswer,
+                onPrev = vm::prevCard,
+                onNext = vm::nextCard,
+                onTogglePause = vm::togglePause,
+                onSelectLanguage = vm::selectLanguage,
+                onSelectLesson = vm::selectLesson,
+                onSelectMode = vm::selectMode,
+                onImportLesson = vm::importLesson,
+                onDeleteAllLessons = vm::deleteAllLessons
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TrainingScreen(
+    state: TrainingUiState,
+    onInputChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onTogglePause: () -> Unit,
+    onSelectLanguage: (String) -> Unit,
+    onSelectLesson: (String) -> Unit,
+    onSelectMode: (TrainingMode) -> Unit,
+    onImportLesson: (android.net.Uri) -> Unit,
+    onDeleteAllLessons: () -> Unit
+) {
+    var showSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) onImportLesson(uri)
+    }
+
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "GrammarMate",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = { showSheet = true }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                }
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            HeaderStats(state)
+            ModeSelector(state.mode, onSelectMode)
+            LanguageLessonRow(state, onSelectLanguage, onSelectLesson)
+            CardPrompt(state)
+            AnswerBox(state, onInputChange, onSubmit)
+            ResultBlock(state, onNext)
+            NavigationRow(onPrev, onNext, onTogglePause, state.sessionState)
+        }
+    }
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Служебный режим",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                OutlinedButton(
+                    onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Upload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Импорт урока (CSV)")
+                }
+                OutlinedButton(
+                    onClick = { onDeleteAllLessons() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Удалить все уроки")
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
+                LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                    items(state.lessons) { lesson ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = lesson.title,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (lesson.id == state.selectedLessonId) {
+                                Text(text = "Выбран", color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeaderStats(state: TrainingUiState) {
+    val total = state.lessons.flatMap { it.cards }.size.coerceAtLeast(1)
+    val current = (state.currentIndex + 1).coerceAtMost(total)
+    val speed = speedPerMinute(state.activeTimeMs, state.correctCount)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(text = "Прогресс")
+            Text(text = "$current из $total", fontWeight = FontWeight.SemiBold)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(text = "Время")
+            Text(text = formatTime(state.activeTimeMs), fontWeight = FontWeight.SemiBold)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(text = "?/мин")
+            Text(text = speed, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun ModeSelector(mode: TrainingMode, onSelectMode: (TrainingMode) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ModeButton("Урок", mode == TrainingMode.LESSON, Modifier.weight(1f)) {
+            onSelectMode(TrainingMode.LESSON)
+        }
+        ModeButton("Все подряд", mode == TrainingMode.ALL_SEQUENTIAL, Modifier.weight(1f)) {
+            onSelectMode(TrainingMode.ALL_SEQUENTIAL)
+        }
+        ModeButton("Mixed", mode == TrainingMode.ALL_MIXED, Modifier.weight(1f)) {
+            onSelectMode(TrainingMode.ALL_MIXED)
+        }
+    }
+}
+
+@Composable
+private fun ModeButton(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    if (selected) {
+        Button(onClick = onClick, modifier = modifier) {
+            Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = modifier) {
+            Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun LanguageLessonRow(
+    state: TrainingUiState,
+    onSelectLanguage: (String) -> Unit,
+    onSelectLesson: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        DropdownSelector(
+            title = "Язык",
+            selected = state.languages.firstOrNull { it.id == state.selectedLanguageId }?.displayName
+                ?: "—",
+            items = state.languages.map { it.displayName to it.id },
+            onSelect = onSelectLanguage,
+            modifier = Modifier.weight(1f)
+        )
+        DropdownSelector(
+            title = "Урок",
+            selected = state.lessons.firstOrNull { it.id == state.selectedLessonId }?.title ?: "—",
+            items = state.lessons.map { it.title to it.id },
+            onSelect = onSelectLesson,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun DropdownSelector(
+    title: String,
+    selected: String,
+    items: List<Pair<String, String>>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(modifier = modifier) {
+        Text(text = title, style = MaterialTheme.typography.labelMedium)
+        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(text = selected, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            items.forEach { (label, id) ->
+                DropdownMenuItem(
+                    text = { Text(text = label) },
+                    onClick = {
+                        expanded = false
+                        onSelect(id)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CardPrompt(state: TrainingUiState) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "RU", style = MaterialTheme.typography.labelMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = state.currentCard?.promptRu ?: "Нет карточек",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun AnswerBox(state: TrainingUiState, onInputChange: (String) -> Unit, onSubmit: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = state.inputText,
+            onValueChange = onInputChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(text = "Ваш перевод") }
+        )
+        Button(
+            onClick = onSubmit,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = state.inputText.isNotBlank() && state.sessionState == SessionState.ACTIVE
+        ) {
+            Text(text = "Проверить")
+        }
+    }
+}
+
+@Composable
+private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        when (state.lastResult) {
+            true -> Text(text = "Верно", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+            false -> Text(text = "Ошибка", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+            null -> Text(text = "")
+        }
+        if (!state.hintText.isNullOrBlank()) {
+            Text(text = "Подсказка: ${state.hintText}")
+            TextButton(onClick = onNext) { Text(text = "Следующая") }
+        }
+        Text(text = "Правильных: ${state.correctCount}  Неправильных: ${state.incorrectCount}")
+    }
+}
+
+@Composable
+private fun NavigationRow(onPrev: () -> Unit, onNext: () -> Unit, onTogglePause: () -> Unit, state: SessionState) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onPrev) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Prev")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IconButton(onClick = onTogglePause) {
+                if (state == SessionState.ACTIVE) {
+                    Icon(Icons.Default.Pause, contentDescription = "Pause")
+                } else {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                }
+            }
+            IconButton(onClick = onNext) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+            }
+        }
+    }
+}
+
+private fun formatTime(activeMs: Long): String {
+    val totalSeconds = activeMs / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%02d:%02d", minutes, seconds)
+}
+
+private fun speedPerMinute(activeMs: Long, correct: Int): String {
+    val minutes = activeMs / 60000.0
+    if (minutes <= 0.0) return "-"
+    return String.format("%.1f", correct / minutes)
+}
