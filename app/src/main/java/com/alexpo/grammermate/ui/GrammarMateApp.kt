@@ -17,9 +17,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.StopCircle
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,6 +32,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -56,6 +62,9 @@ import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
 
 @Composable
 fun GrammarMateApp() {
@@ -70,6 +79,7 @@ fun GrammarMateApp() {
                 onPrev = vm::prevCard,
                 onNext = vm::nextCard,
                 onTogglePause = vm::togglePause,
+                onFinish = vm::finishSession,
                 onSelectLanguage = vm::selectLanguage,
                 onSelectLesson = vm::selectLesson,
                 onSelectMode = vm::selectMode,
@@ -89,6 +99,7 @@ private fun TrainingScreen(
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onTogglePause: () -> Unit,
+    onFinish: () -> Unit,
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit,
     onSelectMode: (TrainingMode) -> Unit,
@@ -109,14 +120,14 @@ private fun TrainingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = "GrammarMate",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { showSheet = true }) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
                 }
@@ -132,11 +143,10 @@ private fun TrainingScreen(
         ) {
             HeaderStats(state)
             ModeSelector(state.mode, onSelectMode)
-            LanguageLessonRow(state, onSelectLanguage, onSelectLesson)
             CardPrompt(state)
             AnswerBox(state, onInputChange, onSubmit)
             ResultBlock(state, onNext)
-            NavigationRow(onPrev, onNext, onTogglePause, state.sessionState)
+            NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState)
         }
     }
 
@@ -156,6 +166,7 @@ private fun TrainingScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                LanguageLessonColumn(state, onSelectLanguage, onSelectLesson)
                 OutlinedButton(
                     onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
                     modifier = Modifier.fillMaxWidth()
@@ -177,20 +188,22 @@ private fun TrainingScreen(
                 Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
                 LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                     items(state.lessons) { lesson ->
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(vertical = 4.dp)
                         ) {
                             Text(
                                 text = lesson.title,
-                                modifier = Modifier.weight(1f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             if (lesson.id == state.selectedLessonId) {
-                                Text(text = "Выбран", color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    text = "Выбран",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
                         }
                     }
@@ -230,57 +243,64 @@ private fun HeaderStats(state: TrainingUiState) {
 private fun ModeSelector(mode: TrainingMode, onSelectMode: (TrainingMode) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        ModeButton("Урок", mode == TrainingMode.LESSON, Modifier.weight(1f)) {
-            onSelectMode(TrainingMode.LESSON)
-        }
-        ModeButton("Все подряд", mode == TrainingMode.ALL_SEQUENTIAL, Modifier.weight(1f)) {
-            onSelectMode(TrainingMode.ALL_SEQUENTIAL)
-        }
-        ModeButton("Mixed", mode == TrainingMode.ALL_MIXED, Modifier.weight(1f)) {
-            onSelectMode(TrainingMode.ALL_MIXED)
-        }
+        ModeIconButton(
+            selected = mode == TrainingMode.LESSON,
+            icon = Icons.Default.MenuBook,
+            contentDescription = "Урок"
+        ) { onSelectMode(TrainingMode.LESSON) }
+        ModeIconButton(
+            selected = mode == TrainingMode.ALL_SEQUENTIAL,
+            icon = Icons.Default.LibraryBooks,
+            contentDescription = "Все уроки"
+        ) { onSelectMode(TrainingMode.ALL_SEQUENTIAL) }
+        ModeIconButton(
+            selected = mode == TrainingMode.ALL_MIXED,
+            icon = Icons.Default.SwapHoriz,
+            contentDescription = "Mixed"
+        ) { onSelectMode(TrainingMode.ALL_MIXED) }
     }
 }
 
 @Composable
-private fun ModeButton(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun ModeIconButton(
+    selected: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
     if (selected) {
-        Button(onClick = onClick, modifier = modifier) {
-            Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        FilledTonalIconButton(onClick = onClick) {
+            Icon(icon, contentDescription = contentDescription)
         }
     } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) {
-            Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        IconButton(onClick = onClick) {
+            Icon(icon, contentDescription = contentDescription)
         }
     }
 }
 
 @Composable
-private fun LanguageLessonRow(
+private fun LanguageLessonColumn(
     state: TrainingUiState,
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DropdownSelector(
             title = "Язык",
             selected = state.languages.firstOrNull { it.id == state.selectedLanguageId }?.displayName
-                ?: "—",
+                ?: "-",
             items = state.languages.map { it.displayName to it.id },
-            onSelect = onSelectLanguage,
-            modifier = Modifier.weight(1f)
+            onSelect = onSelectLanguage
         )
         DropdownSelector(
             title = "Урок",
-            selected = state.lessons.firstOrNull { it.id == state.selectedLessonId }?.title ?: "—",
+            selected = state.lessons.firstOrNull { it.id == state.selectedLessonId }?.title ?: "-",
             items = state.lessons.map { it.title to it.id },
-            onSelect = onSelectLesson,
-            modifier = Modifier.weight(1f)
+            onSelect = onSelectLesson
         )
     }
 }
@@ -290,11 +310,10 @@ private fun DropdownSelector(
     title: String,
     selected: String,
     items: List<Pair<String, String>>,
-    onSelect: (String) -> Unit,
-    modifier: Modifier
+    onSelect: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Column(modifier = modifier) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = title, style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
@@ -331,12 +350,45 @@ private fun CardPrompt(state: TrainingUiState) {
 
 @Composable
 private fun AnswerBox(state: TrainingUiState, onInputChange: (String) -> Unit, onSubmit: () -> Unit) {
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spoken = matches?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                onInputChange(spoken)
+                onSubmit()
+            }
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = state.inputText,
             onValueChange = onInputChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = "Ваш перевод") }
+            label = { Text(text = "Ваш перевод") },
+            trailingIcon = {
+                IconButton(
+                    onClick = {
+                        val languageTag = when (state.selectedLanguageId) {
+                            "it" -> "it-IT"
+                            else -> "en-US"
+                        }
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(
+                                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                            )
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите перевод")
+                        }
+                        speechLauncher.launch(intent)
+                    }
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                }
+            }
         )
         Button(
             onClick = onSubmit,
@@ -360,12 +412,21 @@ private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit) {
             Text(text = "Подсказка: ${state.hintText}")
             TextButton(onClick = onNext) { Text(text = "Следующая") }
         }
+        state.lastRating?.let { rating ->
+            Text(text = "Рейтинг: ${String.format("%.1f", rating)} ?/мин")
+        }
         Text(text = "Правильных: ${state.correctCount}  Неправильных: ${state.incorrectCount}")
     }
 }
 
 @Composable
-private fun NavigationRow(onPrev: () -> Unit, onNext: () -> Unit, onTogglePause: () -> Unit, state: SessionState) {
+private fun NavigationRow(
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onTogglePause: () -> Unit,
+    onFinish: () -> Unit,
+    state: SessionState
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -381,6 +442,9 @@ private fun NavigationRow(onPrev: () -> Unit, onNext: () -> Unit, onTogglePause:
                 } else {
                     Icon(Icons.Default.PlayArrow, contentDescription = "Play")
                 }
+            }
+            IconButton(onClick = onFinish) {
+                Icon(Icons.Default.StopCircle, contentDescription = "Finish lesson")
             }
             IconButton(onClick = onNext) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next")

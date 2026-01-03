@@ -87,6 +87,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 selectedLessonId = lessonId,
+                mode = TrainingMode.LESSON,
                 currentIndex = 0,
                 inputText = "",
                 lastResult = null,
@@ -188,6 +189,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             SessionState.ACTIVE
         }
         _uiState.update { it.copy(sessionState = newState) }
+        saveProgress()
+    }
+
+    fun finishSession() {
+        pauseTimer()
+        val state = _uiState.value
+        val minutes = state.activeTimeMs / 60000.0
+        val rating = if (minutes <= 0.0) 0.0 else state.correctCount / minutes
+        _uiState.update {
+            it.copy(
+                sessionState = SessionState.PAUSED,
+                lastRating = rating
+            )
+        }
         saveProgress()
     }
 
@@ -299,5 +314,6 @@ data class TrainingUiState(
     val incorrectAttemptsForCard: Int = 0,
     val activeTimeMs: Long = 0L,
     val hintText: String? = null,
-    val lastResult: Boolean? = null
+    val lastResult: Boolean? = null,
+    val lastRating: Double? = null
 )
