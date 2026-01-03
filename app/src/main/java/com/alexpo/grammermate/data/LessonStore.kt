@@ -16,7 +16,7 @@ class LessonStore(private val context: Context) {
     fun ensureSeedData() {
         if (lessonsDir.exists()) return
         lessonsDir.mkdirs()
-        seedFromAsset("en", "English", "sample_en.csv")
+        seedFromAsset("en", "Порядок простых предложений", "sample_en.csv")
         seedFromAsset("it", "Italian", "sample_it.csv")
     }
 

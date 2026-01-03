@@ -9,6 +9,7 @@ import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
+import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.TrainingMode
@@ -60,6 +61,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun onInputChanged(text: String) {
         _uiState.update { it.copy(inputText = text) }
+    }
+
+    fun setInputMode(mode: InputMode) {
+        _uiState.update { it.copy(inputMode = mode) }
     }
 
     fun selectLanguage(languageId: String) {
@@ -114,11 +119,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
 
-    fun submitAnswer() {
+    fun submitAnswer(): Boolean {
         val state = _uiState.value
-        if (state.sessionState != SessionState.ACTIVE) return
-        if (state.inputText.isBlank()) return
-        val card = currentCard() ?: return
+        if (state.sessionState != SessionState.ACTIVE) return false
+        if (state.inputText.isBlank()) return false
+        val card = currentCard() ?: return false
         val normalizedInput = Normalizer.normalize(state.inputText)
         val accepted = card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
         if (accepted) {
@@ -145,6 +150,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
         saveProgress()
+        return accepted
     }
 
     fun nextCard() {
@@ -315,5 +321,6 @@ data class TrainingUiState(
     val activeTimeMs: Long = 0L,
     val hintText: String? = null,
     val lastResult: Boolean? = null,
-    val lastRating: Double? = null
+    val lastRating: Double? = null,
+    val inputMode: InputMode = InputMode.VOICE
 )

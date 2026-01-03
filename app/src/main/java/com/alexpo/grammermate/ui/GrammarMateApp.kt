@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
+import com.alexpo.grammermate.data.InputMode
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
@@ -83,6 +85,7 @@ fun GrammarMateApp() {
                 onSelectLanguage = vm::selectLanguage,
                 onSelectLesson = vm::selectLesson,
                 onSelectMode = vm::selectMode,
+                onSetInputMode = vm::setInputMode,
                 onImportLesson = vm::importLesson,
                 onDeleteAllLessons = vm::deleteAllLessons
             )
@@ -95,7 +98,7 @@ fun GrammarMateApp() {
 private fun TrainingScreen(
     state: TrainingUiState,
     onInputChange: (String) -> Unit,
-    onSubmit: () -> Unit,
+    onSubmit: () -> Boolean,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onTogglePause: () -> Unit,
@@ -103,6 +106,7 @@ private fun TrainingScreen(
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit,
     onSelectMode: (TrainingMode) -> Unit,
+    onSetInputMode: (InputMode) -> Unit,
     onImportLesson: (android.net.Uri) -> Unit,
     onDeleteAllLessons: () -> Unit
 ) {
@@ -144,7 +148,7 @@ private fun TrainingScreen(
             HeaderStats(state)
             ModeSelector(state.mode, onSelectMode)
             CardPrompt(state)
-            AnswerBox(state, onInputChange, onSubmit)
+            AnswerBox(state, onInputChange, onSubmit, onSetInputMode)
             ResultBlock(state, onNext)
             NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState)
         }
@@ -184,6 +188,15 @@ private fun TrainingScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Удалить все уроки")
                 }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "CSV формат", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    text = "UTF-8, разделитель ';'.\n" +
+                        "Колонка 1: RU предложение.\n" +
+                        "Колонка 2: перевод(ы), варианты через '+'.\n" +
+                        "Пример: Он не работает из дома;He doesn't work from home+He does not work from home",
+                    style = MaterialTheme.typography.bodySmall
+                )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
                 LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
@@ -349,7 +362,13 @@ private fun CardPrompt(state: TrainingUiState) {
 }
 
 @Composable
-private fun AnswerBox(state: TrainingUiState, onInputChange: (String) -> Unit, onSubmit: () -> Unit) {
+private fun AnswerBox(
+    state: TrainingUiState,
+    onInputChange: (String) -> Unit,
+    onSubmit: () -> Boolean,
+    onSetInputMode: (InputMode) -> Unit
+) {
+    var repeatVoice by remember { mutableStateOf(false) }
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -358,8 +377,17 @@ private fun AnswerBox(state: TrainingUiState, onInputChange: (String) -> Unit, o
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
                 onInputChange(spoken)
-                onSubmit()
+                val accepted = onSubmit()
+                if (!accepted && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
+                    repeatVoice = true
+                }
             }
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(repeatVoice, state.inputMode, state.sessionState) {
+        if (repeatVoice && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
+            repeatVoice = false
+            launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -371,27 +399,39 @@ private fun AnswerBox(state: TrainingUiState, onInputChange: (String) -> Unit, o
             trailingIcon = {
                 IconButton(
                     onClick = {
-                        val languageTag = when (state.selectedLanguageId) {
-                            "it" -> "it-IT"
-                            else -> "en-US"
-                        }
-                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                            putExtra(
-                                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                            )
-                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите перевод")
-                        }
-                        speechLauncher.launch(intent)
+                        onSetInputMode(InputMode.VOICE)
+                        launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
                     }
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Voice input")
                 }
             }
         )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalIconButton(
+                    onClick = {
+                        onSetInputMode(InputMode.VOICE)
+                        launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
+                    }
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+                }
+                FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
+                    Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+                }
+            }
+            Text(
+                text = if (state.inputMode == InputMode.VOICE) "Голос" else "Клавиатура",
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
         Button(
-            onClick = onSubmit,
+            onClick = { onSubmit() },
             modifier = Modifier.fillMaxWidth(),
             enabled = state.inputText.isNotBlank() && state.sessionState == SessionState.ACTIVE
         ) {
@@ -464,4 +504,20 @@ private fun speedPerMinute(activeMs: Long, correct: Int): String {
     val minutes = activeMs / 60000.0
     if (minutes <= 0.0) return "-"
     return String.format("%.1f", correct / minutes)
+}
+
+private fun launchVoiceRecognition(
+    languageId: String,
+    launcher: androidx.activity.result.ActivityResultLauncher<Intent>
+) {
+    val languageTag = when (languageId) {
+        "it" -> "it-IT"
+        else -> "en-US"
+    }
+    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+        putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите перевод")
+    }
+    launcher.launch(intent)
 }

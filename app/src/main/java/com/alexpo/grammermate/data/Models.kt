@@ -31,6 +31,11 @@ enum class SessionState {
     HINT_SHOWN
 }
 
+enum class InputMode {
+    VOICE,
+    KEYBOARD
+}
+
 data class TrainingProgress(
     val languageId: String = "en",
     val mode: TrainingMode = TrainingMode.LESSON,
