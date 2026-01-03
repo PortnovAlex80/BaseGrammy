@@ -35,8 +35,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 .build()
         )
         .build()
-    private val successSoundId = soundPool.load(application, R.raw.sfx_success, 1)
-    private val errorSoundId = soundPool.load(application, R.raw.sfx_error, 1)
+    private val successSoundId = soundPool.load(application, R.raw.voicy_correct_answer, 1)
+    private val errorSoundId = soundPool.load(application, R.raw.voicy_bad_answer, 1)
     private val loadedSounds = mutableSetOf<Int>()
     private val logTag = "GrammarMate"
     private val lessonStore = LessonStore(application)
@@ -54,7 +54,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 loadedSounds.add(sampleId)
             }
         }
-        Log.d(logTag, "Update: duolingo-style sfx, voice loop, auto voice on next, stop resets stats")
+        Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets stats")
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
         val languages = lessonStore.getLanguages()

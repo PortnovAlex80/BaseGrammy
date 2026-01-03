@@ -149,7 +149,7 @@ private fun TrainingScreen(
             ModeSelector(state.mode, onSelectMode)
             CardPrompt(state)
             AnswerBox(state, onInputChange, onSubmit, onSetInputMode)
-            ResultBlock(state, onNext)
+            ResultBlock(state, onNext, state.inputMode)
             NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState)
         }
     }
@@ -387,7 +387,7 @@ private fun AnswerBox(
     androidx.compose.runtime.LaunchedEffect(repeatVoice, state.inputMode, state.sessionState) {
         if (repeatVoice && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
             repeatVoice = false
-            launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
+            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }
     androidx.compose.runtime.LaunchedEffect(state.currentCard?.id, state.inputMode, state.sessionState, state.inputText) {
@@ -395,7 +395,7 @@ private fun AnswerBox(
             state.sessionState == SessionState.ACTIVE &&
             state.inputText.isBlank()
         ) {
-            launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
+            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -408,7 +408,7 @@ private fun AnswerBox(
                 IconButton(
                     onClick = {
                         onSetInputMode(InputMode.VOICE)
-                        launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
+                        launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
                     }
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Voice input")
@@ -431,11 +431,11 @@ private fun AnswerBox(
                 FilledTonalIconButton(
                     onClick = {
                         onSetInputMode(InputMode.VOICE)
-                        launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
-                    }
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+                    launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
                 }
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+            }
                 FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
@@ -456,7 +456,7 @@ private fun AnswerBox(
 }
 
 @Composable
-private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit) {
+private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit, inputMode: InputMode) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (state.lastResult) {
             true -> Text(text = "Верно", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
@@ -471,6 +471,12 @@ private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit) {
             Text(text = "Рейтинг: ${String.format("%.1f", rating)} ?/мин")
         }
         Text(text = "Правильных: ${state.correctCount}  Неправильных: ${state.incorrectCount}")
+    }
+    androidx.compose.runtime.LaunchedEffect(state.hintText, inputMode) {
+        if (!state.hintText.isNullOrBlank() && inputMode == InputMode.VOICE) {
+            kotlinx.coroutines.delay(1200)
+            onNext()
+        }
     }
 }
 
@@ -523,6 +529,7 @@ private fun speedPerMinute(activeMs: Long, correct: Int): String {
 
 private fun launchVoiceRecognition(
     languageId: String,
+    prompt: String?,
     launcher: androidx.activity.result.ActivityResultLauncher<Intent>
 ) {
     val languageTag = when (languageId) {
@@ -532,7 +539,7 @@ private fun launchVoiceRecognition(
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-        putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите перевод")
+        putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: "Говорите перевод")
     }
     launcher.launch(intent)
 }
