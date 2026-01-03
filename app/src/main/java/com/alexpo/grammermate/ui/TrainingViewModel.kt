@@ -3,6 +3,10 @@
 import android.app.Application
 import android.net.Uri
 import android.os.SystemClock
+import android.media.AudioAttributes
+import android.media.SoundPool
+import android.util.Log
+import com.alexpo.grammermate.R
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.Lesson
@@ -22,6 +26,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
+    private val soundPool = SoundPool.Builder()
+        .setMaxStreams(2)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+        )
+        .build()
+    private val successSoundId = soundPool.load(application, R.raw.sfx_success, 1)
+    private val errorSoundId = soundPool.load(application, R.raw.sfx_error, 1)
+    private val loadedSounds = mutableSetOf<Int>()
+    private val logTag = "GrammarMate"
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
@@ -32,6 +49,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     val uiState: StateFlow<TrainingUiState> = _uiState
 
     init {
+        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0) {
+                loadedSounds.add(sampleId)
+            }
+        }
+        Log.d(logTag, "Update: duolingo-style sfx, voice loop, auto voice on next, stop resets stats")
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
         val languages = lessonStore.getLanguages()
@@ -65,6 +88,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun setInputMode(mode: InputMode) {
         _uiState.update { it.copy(inputMode = mode) }
+        Log.d(logTag, "Input mode changed: $mode")
     }
 
     fun selectLanguage(languageId: String) {
@@ -119,14 +143,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
 
-    fun submitAnswer(): Boolean {
+    fun submitAnswer(): SubmitResult {
         val state = _uiState.value
-        if (state.sessionState != SessionState.ACTIVE) return false
-        if (state.inputText.isBlank()) return false
-        val card = currentCard() ?: return false
+        if (state.sessionState != SessionState.ACTIVE) return SubmitResult(false, false)
+        if (state.inputText.isBlank()) return SubmitResult(false, false)
+        val card = currentCard() ?: return SubmitResult(false, false)
         val normalizedInput = Normalizer.normalize(state.inputText)
         val accepted = card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
+        var hintShown = false
         if (accepted) {
+            playSuccessTone()
             _uiState.update {
                 it.copy(
                     correctCount = it.correctCount + 1,
@@ -137,8 +163,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
             nextCard()
         } else {
+            playErrorTone()
             val nextIncorrect = state.incorrectAttemptsForCard + 1
             val hint = if (nextIncorrect >= 3) card.acceptedAnswers.joinToString(" / ") else null
+            hintShown = hint != null
             _uiState.update {
                 it.copy(
                     incorrectCount = it.incorrectCount + 1,
@@ -150,7 +178,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
         saveProgress()
-        return accepted
+        Log.d(logTag, "Answer submitted: accepted=$accepted")
+        return SubmitResult(accepted, hintShown)
     }
 
     fun nextCard() {
@@ -206,10 +235,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 sessionState = SessionState.PAUSED,
-                lastRating = rating
+                lastRating = rating,
+                activeTimeMs = 0L,
+                correctCount = 0,
+                incorrectCount = 0,
+                incorrectAttemptsForCard = 0,
+                lastResult = null,
+                hintText = null,
+                currentIndex = 0
             )
         }
         saveProgress()
+        Log.d(logTag, "Session finished. Rating=$rating")
     }
 
     fun importLesson(uri: Uri) {
@@ -303,7 +340,29 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         )
     }
+
+    override fun onCleared() {
+        soundPool.release()
+        super.onCleared()
+    }
+
+    private fun playSuccessTone() {
+        if (loadedSounds.contains(successSoundId)) {
+            soundPool.play(successSoundId, 1f, 1f, 1, 0, 1f)
+        }
+    }
+
+    private fun playErrorTone() {
+        if (loadedSounds.contains(errorSoundId)) {
+            soundPool.play(errorSoundId, 1f, 1f, 1, 0, 1f)
+        }
+    }
 }
+
+data class SubmitResult(
+    val accepted: Boolean,
+    val hintShown: Boolean
+)
 
 data class TrainingUiState(
     val languages: List<com.alexpo.grammermate.data.Language> = emptyList(),

@@ -98,7 +98,7 @@ fun GrammarMateApp() {
 private fun TrainingScreen(
     state: TrainingUiState,
     onInputChange: (String) -> Unit,
-    onSubmit: () -> Boolean,
+    onSubmit: () -> SubmitResult,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onTogglePause: () -> Unit,
@@ -365,7 +365,7 @@ private fun CardPrompt(state: TrainingUiState) {
 private fun AnswerBox(
     state: TrainingUiState,
     onInputChange: (String) -> Unit,
-    onSubmit: () -> Boolean,
+    onSubmit: () -> SubmitResult,
     onSetInputMode: (InputMode) -> Unit
 ) {
     var repeatVoice by remember { mutableStateOf(false) }
@@ -377,8 +377,8 @@ private fun AnswerBox(
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
                 onInputChange(spoken)
-                val accepted = onSubmit()
-                if (!accepted && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
+                val result = onSubmit()
+                if (!result.accepted && !result.hintShown && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
                     repeatVoice = true
                 }
             }
@@ -387,6 +387,14 @@ private fun AnswerBox(
     androidx.compose.runtime.LaunchedEffect(repeatVoice, state.inputMode, state.sessionState) {
         if (repeatVoice && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
             repeatVoice = false
+            launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(state.currentCard?.id, state.inputMode, state.sessionState, state.inputText) {
+        if (state.inputMode == InputMode.VOICE &&
+            state.sessionState == SessionState.ACTIVE &&
+            state.inputText.isBlank()
+        ) {
             launchVoiceRecognition(state.selectedLanguageId, speechLauncher)
         }
     }
@@ -407,6 +415,13 @@ private fun AnswerBox(
                 }
             }
         )
+        if (state.inputMode == InputMode.VOICE) {
+            Text(
+                text = state.currentCard?.promptRu?.let { "Скажите перевод: $it" } ?: "",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
