@@ -198,6 +198,12 @@ private fun TrainingScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "Инструкция", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    text = "Play — старт/продолжение, Pause — пауза, Stop — завершение урока и сброс таймера/статистики.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
                 LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                     items(state.lessons) { lesson ->
@@ -471,12 +477,6 @@ private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit, inputMode: I
             Text(text = "Рейтинг: ${String.format("%.1f", rating)} ?/мин")
         }
         Text(text = "Правильных: ${state.correctCount}  Неправильных: ${state.incorrectCount}")
-    }
-    androidx.compose.runtime.LaunchedEffect(state.hintText, inputMode) {
-        if (!state.hintText.isNullOrBlank() && inputMode == InputMode.VOICE) {
-            kotlinx.coroutines.delay(1200)
-            onNext()
-        }
     }
 }
 

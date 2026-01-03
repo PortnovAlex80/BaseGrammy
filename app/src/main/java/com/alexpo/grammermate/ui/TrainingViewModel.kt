@@ -30,8 +30,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         .setMaxStreams(2)
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
         )
         .build()
@@ -83,11 +83,27 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onInputChanged(text: String) {
-        _uiState.update { it.copy(inputText = text) }
+        _uiState.update {
+            val resetAttempts = it.hintText != null || it.incorrectAttemptsForCard >= 3
+            it.copy(
+                inputText = text,
+                incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
+                hintText = if (resetAttempts) null else it.hintText,
+                sessionState = if (resetAttempts) SessionState.ACTIVE else it.sessionState
+            )
+        }
     }
 
     fun setInputMode(mode: InputMode) {
-        _uiState.update { it.copy(inputMode = mode) }
+        _uiState.update {
+            val resetAttempts = it.hintText != null || it.incorrectAttemptsForCard >= 3
+            it.copy(
+                inputMode = mode,
+                incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
+                hintText = if (resetAttempts) null else it.hintText,
+                sessionState = if (resetAttempts) SessionState.ACTIVE else it.sessionState
+            )
+        }
         Log.d(logTag, "Input mode changed: $mode")
     }
 
