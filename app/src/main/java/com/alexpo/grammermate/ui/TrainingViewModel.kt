@@ -174,19 +174,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     hintText = null
                 )
             }
-            nextCard()
+            nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
         } else {
             playErrorTone()
             val nextIncorrect = state.incorrectAttemptsForCard + 1
             val hint = if (nextIncorrect >= 3) card.acceptedAnswers.joinToString(" / ") else null
             hintShown = hint != null
+            val shouldTriggerVoice = !hintShown && state.inputMode == InputMode.VOICE
             _uiState.update {
                 it.copy(
                     incorrectCount = it.incorrectCount + 1,
                     incorrectAttemptsForCard = nextIncorrect,
                     lastResult = false,
                     hintText = hint,
-                    sessionState = if (hint != null) SessionState.HINT_SHOWN else it.sessionState
+                    inputText = if (state.inputMode == InputMode.VOICE) "" else it.inputText,
+                    sessionState = if (hint != null) SessionState.HINT_SHOWN else it.sessionState,
+                    voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken
                 )
             }
         }
@@ -195,10 +198,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return SubmitResult(accepted, hintShown)
     }
 
-    fun nextCard() {
+    fun nextCard(triggerVoice: Boolean = false) {
         val nextIndex = (_uiState.value.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
         val nextCard = sessionCards.getOrNull(nextIndex)
         _uiState.update {
+            val shouldTrigger = triggerVoice && it.inputMode == InputMode.VOICE
             it.copy(
                 currentIndex = nextIndex,
                 currentCard = nextCard,
@@ -206,7 +210,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastResult = null,
                 hintText = null,
                 incorrectAttemptsForCard = 0,
-                sessionState = SessionState.ACTIVE
+                sessionState = SessionState.ACTIVE,
+                voiceTriggerToken = if (shouldTrigger) it.voiceTriggerToken + 1 else it.voiceTriggerToken
             )
         }
         saveProgress()

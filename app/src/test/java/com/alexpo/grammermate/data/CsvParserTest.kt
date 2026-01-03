@@ -30,6 +30,13 @@ Simple tenses: basics
     }
 
     @Test
+    fun parseLesson_titleStripsUtf8Bom() {
+        val csv = "\uFEFFSimple tenses\nОн работает из дома;He works from home"
+        val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertEquals("Simple tenses", title)
+    }
+
+    @Test
     fun parseLesson_emptyTitleBecomesNull() {
         val csv = "\"\"\nОн работает из дома;He works from home"
         val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))

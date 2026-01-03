@@ -377,7 +377,6 @@ private fun AnswerBox(
     onSubmit: () -> SubmitResult,
     onSetInputMode: (InputMode) -> Unit
 ) {
-    var repeatVoice by remember { mutableStateOf(false) }
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -386,30 +385,20 @@ private fun AnswerBox(
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
                 onInputChange(spoken)
-                val result = onSubmit()
-                if (!result.accepted && !result.hintShown && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
-                    repeatVoice = true
-                }
+                onSubmit()
             }
-        }
-    }
-    androidx.compose.runtime.LaunchedEffect(repeatVoice, state.inputMode, state.sessionState) {
-        if (repeatVoice && state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
-            repeatVoice = false
-            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }
     androidx.compose.runtime.LaunchedEffect(
         state.currentCard?.id,
         state.inputMode,
         state.sessionState,
-        state.inputText,
         state.voiceTriggerToken
     ) {
         if (state.inputMode == InputMode.VOICE &&
-            state.sessionState == SessionState.ACTIVE &&
-            state.inputText.isBlank()
+            state.sessionState == SessionState.ACTIVE
         ) {
+            kotlinx.coroutines.delay(200)
             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }

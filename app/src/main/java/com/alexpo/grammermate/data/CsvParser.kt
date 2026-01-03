@@ -77,7 +77,7 @@ object CsvParser {
     }
 
     private fun extractTitle(raw: String): String? {
-        val trimmed = raw.trim().trim('"')
+        val trimmed = raw.trim().trim('"').trimStart('\uFEFF')
         if (trimmed.isBlank()) return null
         val builder = StringBuilder()
         for (ch in trimmed) {
