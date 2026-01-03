@@ -236,7 +236,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             resumeTimer()
             SessionState.ACTIVE
         }
-        _uiState.update { it.copy(sessionState = newState) }
+        _uiState.update {
+            val trigger = if (newState == SessionState.ACTIVE) it.voiceTriggerToken + 1 else it.voiceTriggerToken
+            it.copy(sessionState = newState, inputText = "", voiceTriggerToken = trigger)
+        }
         saveProgress()
     }
 
@@ -400,5 +403,6 @@ data class TrainingUiState(
     val hintText: String? = null,
     val lastResult: Boolean? = null,
     val lastRating: Double? = null,
-    val inputMode: InputMode = InputMode.VOICE
+    val inputMode: InputMode = InputMode.VOICE,
+    val voiceTriggerToken: Int = 0
 )

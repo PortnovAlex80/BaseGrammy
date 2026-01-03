@@ -10,13 +10,15 @@ object CsvParser {
         val cards = mutableListOf<SentenceCard>()
         var lineNumber = 0
         var title: String? = null
+        var titleConsumed = false
         reader.useLines { lines ->
             lines.forEach { rawLine ->
                 lineNumber += 1
                 val line = rawLine.trim()
                 if (line.isBlank()) return@forEach
-                if (title == null) {
+                if (!titleConsumed) {
                     title = extractTitle(line)
+                    titleConsumed = true
                     return@forEach
                 }
                 val columns = parseLine(line)

@@ -6,7 +6,6 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import org.yaml.snakeyaml.Yaml
 import java.io.File
-import java.io.InputStream
 import java.util.UUID
 
 class LessonStore(private val context: Context) {
@@ -16,11 +15,7 @@ class LessonStore(private val context: Context) {
     fun ensureSeedData() {
         if (!lessonsDir.exists()) {
             lessonsDir.mkdirs()
-            seedFromAsset("en", "Порядок простых предложений", "sample_en.csv")
-            seedFromAsset("it", "Italian", "sample_it.csv")
-            return
         }
-        refreshSeedTitleIfLegacy("en", "sample_en.csv")
     }
 
     fun getLanguages(): List<Language> {
@@ -74,39 +69,7 @@ class LessonStore(private val context: Context) {
         if (index.exists()) index.delete()
     }
 
-    private fun seedFromAsset(languageId: String, title: String, assetName: String) {
-        val id = UUID.randomUUID().toString()
-        val fileName = "lesson_$id.csv"
-        val dir = languageDir(languageId)
-        dir.mkdirs()
-        val csvFile = File(dir, fileName)
-        context.assets.open(assetName).use { input ->
-            csvFile.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        saveIndex(languageId, LessonIndexEntry(id, title, fileName))
-    }
 
-    private fun refreshSeedTitleIfLegacy(languageId: String, assetName: String) {
-        val indexFile = indexFileFor(languageId)
-        if (!indexFile.exists()) return
-        val entries = yaml.load<List<Map<String, Any>>>(indexFile.readText()) ?: return
-        val updated = entries.map { entry ->
-            val id = entry["id"] as? String ?: return@map entry
-            val title = entry["title"] as? String ?: return@map entry
-            val fileName = entry["file"] as? String ?: return@map entry
-            val csvFile = File(languageDir(languageId), fileName)
-            if (!csvFile.exists()) return@map entry
-            val firstLine = csvFile.useLines { it.firstOrNull() ?: "" }
-            if (!firstLine.contains(';')) return@map entry
-            val (parsedTitle, _) = CsvParser.parseLesson(context.assets.open(assetName))
-            if (parsedTitle.isNullOrBlank() || parsedTitle == title) return@map entry
-            if (!title.equals("Порядок простых предложений", ignoreCase = true)) return@map entry
-            mapOf("id" to id, "title" to parsedTitle, "file" to fileName)
-        }
-        indexFile.writeText(yaml.dump(updated))
-    }
 
     private fun saveIndex(languageId: String, entry: LessonIndexEntry) {
         val indexFile = indexFileFor(languageId)

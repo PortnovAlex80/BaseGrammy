@@ -399,7 +399,13 @@ private fun AnswerBox(
             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }
-    androidx.compose.runtime.LaunchedEffect(state.currentCard?.id, state.inputMode, state.sessionState, state.inputText) {
+    androidx.compose.runtime.LaunchedEffect(
+        state.currentCard?.id,
+        state.inputMode,
+        state.sessionState,
+        state.inputText,
+        state.voiceTriggerToken
+    ) {
         if (state.inputMode == InputMode.VOICE &&
             state.sessionState == SessionState.ACTIVE &&
             state.inputText.isBlank()
@@ -440,11 +446,11 @@ private fun AnswerBox(
                 FilledTonalIconButton(
                     onClick = {
                         onSetInputMode(InputMode.VOICE)
-                    launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                        launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                    }
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                 }
-            ) {
-                Icon(Icons.Default.Mic, contentDescription = "Voice mode")
-            }
                 FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
