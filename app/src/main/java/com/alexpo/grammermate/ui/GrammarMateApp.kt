@@ -50,6 +50,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,7 +102,7 @@ private fun TrainingScreen(
     onInputChange: (String) -> Unit,
     onSubmit: () -> SubmitResult,
     onPrev: () -> Unit,
-    onNext: () -> Unit,
+    onNext: (Boolean) -> Unit,
     onTogglePause: () -> Unit,
     onFinish: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -114,6 +115,7 @@ private fun TrainingScreen(
 ) {
     var showSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val hasCards = state.lessons.any { it.cards.isNotEmpty() }
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -153,7 +155,7 @@ private fun TrainingScreen(
             CardPrompt(state)
             AnswerBox(state, onInputChange, onSubmit, onSetInputMode)
             ResultBlock(state, onNext, state.inputMode)
-            NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState)
+            NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState, hasCards)
         }
     }
 
@@ -377,6 +379,8 @@ private fun AnswerBox(
     onSubmit: () -> SubmitResult,
     onSetInputMode: (InputMode) -> Unit
 ) {
+    val latestState by rememberUpdatedState(state)
+    val canLaunchVoice = state.currentCard != null && state.sessionState != SessionState.PAUSED
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -384,6 +388,7 @@ private fun AnswerBox(
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
+                if (latestState.sessionState != SessionState.ACTIVE) return@rememberLauncherForActivityResult
                 onInputChange(spoken)
                 onSubmit()
             }
@@ -396,7 +401,8 @@ private fun AnswerBox(
         state.voiceTriggerToken
     ) {
         if (state.inputMode == InputMode.VOICE &&
-            state.sessionState == SessionState.ACTIVE
+            state.sessionState == SessionState.ACTIVE &&
+            state.currentCard != null
         ) {
             kotlinx.coroutines.delay(200)
             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
@@ -411,9 +417,12 @@ private fun AnswerBox(
             trailingIcon = {
                 IconButton(
                     onClick = {
-                        onSetInputMode(InputMode.VOICE)
-                        launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
-                    }
+                        if (canLaunchVoice) {
+                            onSetInputMode(InputMode.VOICE)
+                            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                        }
+                    },
+                    enabled = canLaunchVoice
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Voice input")
                 }
@@ -434,9 +443,12 @@ private fun AnswerBox(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilledTonalIconButton(
                     onClick = {
-                        onSetInputMode(InputMode.VOICE)
-                        launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
-                    }
+                        if (canLaunchVoice) {
+                            onSetInputMode(InputMode.VOICE)
+                            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                        }
+                    },
+                    enabled = canLaunchVoice
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                 }
@@ -452,7 +464,9 @@ private fun AnswerBox(
         Button(
             onClick = { onSubmit() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = state.inputText.isNotBlank() && state.sessionState == SessionState.ACTIVE
+            enabled = state.inputText.isNotBlank() &&
+                state.sessionState == SessionState.ACTIVE &&
+                state.currentCard != null
         ) {
             Text(text = "Проверить")
         }
@@ -460,7 +474,7 @@ private fun AnswerBox(
 }
 
 @Composable
-private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit, inputMode: InputMode) {
+private fun ResultBlock(state: TrainingUiState, onNext: (Boolean) -> Unit, inputMode: InputMode) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (state.lastResult) {
             true -> Text(text = "Верно", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
@@ -469,7 +483,7 @@ private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit, inputMode: I
         }
         if (!state.hintText.isNullOrBlank()) {
             Text(text = "Подсказка: ${state.hintText}")
-            TextButton(onClick = onNext) { Text(text = "Следующая") }
+            TextButton(onClick = { onNext(inputMode == InputMode.VOICE) }) { Text(text = "Следующая") }
         }
         state.lastRating?.let { rating ->
             Text(text = "Рейтинг: ${String.format("%.1f", rating)} ?/мин")
@@ -481,31 +495,32 @@ private fun ResultBlock(state: TrainingUiState, onNext: () -> Unit, inputMode: I
 @Composable
 private fun NavigationRow(
     onPrev: () -> Unit,
-    onNext: () -> Unit,
+    onNext: (Boolean) -> Unit,
     onTogglePause: () -> Unit,
     onFinish: () -> Unit,
-    state: SessionState
+    state: SessionState,
+    hasCards: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrev) {
+        IconButton(onClick = onPrev, enabled = hasCards) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Prev")
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconButton(onClick = onTogglePause) {
+            IconButton(onClick = onTogglePause, enabled = hasCards) {
                 if (state == SessionState.ACTIVE) {
                     Icon(Icons.Default.Pause, contentDescription = "Pause")
                 } else {
                     Icon(Icons.Default.PlayArrow, contentDescription = "Play")
                 }
             }
-            IconButton(onClick = onFinish) {
+            IconButton(onClick = onFinish, enabled = hasCards) {
                 Icon(Icons.Default.StopCircle, contentDescription = "Finish lesson")
             }
-            IconButton(onClick = onNext) {
+            IconButton(onClick = { onNext(false) }, enabled = hasCards) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next")
             }
         }

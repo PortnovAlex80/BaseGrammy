@@ -94,11 +94,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun setInputMode(mode: InputMode) {
         _uiState.update {
             val resetAttempts = it.hintText != null || it.incorrectAttemptsForCard >= 3
+            val shouldTriggerVoice = mode == InputMode.VOICE && resetAttempts
             it.copy(
                 inputMode = mode,
                 incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
                 hintText = if (resetAttempts) null else it.hintText,
-                sessionState = if (resetAttempts) SessionState.ACTIVE else it.sessionState
+                sessionState = if (resetAttempts) SessionState.ACTIVE else it.sessionState,
+                voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken
             )
         }
         Log.d(logTag, "Input mode changed: $mode")
@@ -234,6 +236,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun togglePause() {
+        if (sessionCards.isEmpty()) {
+            if (_uiState.value.lessons.any { it.cards.isNotEmpty() }) {
+                buildSessionCards()
+            }
+            if (sessionCards.isEmpty()) {
+                _uiState.update { it.copy(sessionState = SessionState.PAUSED) }
+                return
+            }
+        }
         val newState = if (_uiState.value.sessionState == SessionState.ACTIVE) {
             pauseTimer()
             SessionState.PAUSED
@@ -255,6 +266,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun finishSession() {
+        if (sessionCards.isEmpty()) return
         pauseTimer()
         val state = _uiState.value
         val minutes = state.activeTimeMs / 60000.0
@@ -321,7 +333,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         sessionCards = lessonCards
         val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
         val card = sessionCards.getOrNull(safeIndex)
-        _uiState.update { it.copy(currentIndex = safeIndex, currentCard = card) }
+        val newState = if (sessionCards.isNotEmpty() && state.sessionState == SessionState.PAUSED) {
+            SessionState.ACTIVE
+        } else {
+            state.sessionState
+        }
+        _uiState.update {
+            it.copy(
+                currentIndex = safeIndex,
+                currentCard = card,
+                sessionState = newState,
+                voiceTriggerToken = if (newState == SessionState.ACTIVE && state.sessionState != SessionState.ACTIVE && state.inputMode == InputMode.VOICE) {
+                    it.voiceTriggerToken + 1
+                } else {
+                    it.voiceTriggerToken
+                }
+            )
+        }
     }
 
     private fun currentCard(): SentenceCard? {
