@@ -68,7 +68,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
                 mode = progress.mode,
-                sessionState = progress.state,
+                sessionState = SessionState.PAUSED,
                 currentIndex = progress.currentIndex,
                 correctCount = progress.correctCount,
                 incorrectCount = progress.incorrectCount,
@@ -77,9 +77,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         buildSessionCards()
-        if (_uiState.value.sessionState == SessionState.ACTIVE) {
-            resumeTimer()
-        }
     }
 
     fun onInputChanged(text: String) {
@@ -240,6 +237,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             SessionState.ACTIVE
         }
         _uiState.update { it.copy(sessionState = newState) }
+        saveProgress()
+    }
+
+    fun pauseSession() {
+        pauseTimer()
+        _uiState.update { it.copy(sessionState = SessionState.PAUSED) }
         saveProgress()
     }
 

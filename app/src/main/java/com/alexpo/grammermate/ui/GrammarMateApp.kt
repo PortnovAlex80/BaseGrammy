@@ -82,6 +82,7 @@ fun GrammarMateApp() {
                 onNext = vm::nextCard,
                 onTogglePause = vm::togglePause,
                 onFinish = vm::finishSession,
+                onOpenSettings = vm::pauseSession,
                 onSelectLanguage = vm::selectLanguage,
                 onSelectLesson = vm::selectLesson,
                 onSelectMode = vm::selectMode,
@@ -103,6 +104,7 @@ private fun TrainingScreen(
     onNext: () -> Unit,
     onTogglePause: () -> Unit,
     onFinish: () -> Unit,
+    onOpenSettings: () -> Unit,
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit,
     onSelectMode: (TrainingMode) -> Unit,
@@ -133,6 +135,7 @@ private fun TrainingScreen(
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = { showSheet = true }) {
+                    onOpenSettings()
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
                 }
             }

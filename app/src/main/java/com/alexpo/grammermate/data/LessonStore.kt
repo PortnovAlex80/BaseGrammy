@@ -14,10 +14,13 @@ class LessonStore(private val context: Context) {
     private val lessonsDir = File(context.filesDir, "lessons")
 
     fun ensureSeedData() {
-        if (lessonsDir.exists()) return
-        lessonsDir.mkdirs()
-        seedFromAsset("en", "Порядок простых предложений", "sample_en.csv")
-        seedFromAsset("it", "Italian", "sample_it.csv")
+        if (!lessonsDir.exists()) {
+            lessonsDir.mkdirs()
+            seedFromAsset("en", "Порядок простых предложений", "sample_en.csv")
+            seedFromAsset("it", "Italian", "sample_it.csv")
+            return
+        }
+        refreshSeedTitleIfLegacy("en", "sample_en.csv")
     }
 
     fun getLanguages(): List<Language> {
@@ -83,6 +86,26 @@ class LessonStore(private val context: Context) {
             }
         }
         saveIndex(languageId, LessonIndexEntry(id, title, fileName))
+    }
+
+    private fun refreshSeedTitleIfLegacy(languageId: String, assetName: String) {
+        val indexFile = indexFileFor(languageId)
+        if (!indexFile.exists()) return
+        val entries = yaml.load<List<Map<String, Any>>>(indexFile.readText()) ?: return
+        val updated = entries.map { entry ->
+            val id = entry["id"] as? String ?: return@map entry
+            val title = entry["title"] as? String ?: return@map entry
+            val fileName = entry["file"] as? String ?: return@map entry
+            val csvFile = File(languageDir(languageId), fileName)
+            if (!csvFile.exists()) return@map entry
+            val firstLine = csvFile.useLines { it.firstOrNull() ?: "" }
+            if (!firstLine.contains(';')) return@map entry
+            val (parsedTitle, _) = CsvParser.parseLesson(context.assets.open(assetName))
+            if (parsedTitle.isNullOrBlank() || parsedTitle == title) return@map entry
+            if (!title.equals("Порядок простых предложений", ignoreCase = true)) return@map entry
+            mapOf("id" to id, "title" to parsedTitle, "file" to fileName)
+        }
+        indexFile.writeText(yaml.dump(updated))
     }
 
     private fun saveIndex(languageId: String, entry: LessonIndexEntry) {
