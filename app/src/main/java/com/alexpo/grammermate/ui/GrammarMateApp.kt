@@ -170,7 +170,7 @@ private fun TrainingScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             HeaderStats(state)
-            ModeSelector(state.mode, onSelectMode)
+            ModeSelector(state, onSelectMode, onSelectLesson)
             CardPrompt(state)
             AnswerBox(state, onInputChange, onSubmit, onSetInputMode, hasCards)
             ResultBlock(state, onNext, state.inputMode)
@@ -271,7 +271,7 @@ private fun TrainingScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = "Инструкция", style = MaterialTheme.typography.labelLarge)
                 Text(
-                    text = "Play — старт/продолжение, Pause — пауза, Stop — завершение урока и сброс таймера/статистики.",
+                    text = "Play - старт/продолжение, Pause - пауза, Stop - сброс прогресса без обнуления рейтинга.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -306,8 +306,14 @@ private fun TrainingScreen(
 
 @Composable
 private fun HeaderStats(state: TrainingUiState) {
-    val total = state.lessons.flatMap { it.cards }.size.coerceAtLeast(1)
-    val current = (state.currentIndex + 1).coerceAtMost(total)
+    val total = when (state.mode) {
+        TrainingMode.LESSON -> {
+            state.lessons.firstOrNull { it.id == state.selectedLessonId }?.cards?.size ?: 0
+        }
+        TrainingMode.ALL_SEQUENTIAL,
+        TrainingMode.ALL_MIXED -> state.lessons.sumOf { it.cards.size }
+    }
+    val current = if (total > 0) (state.currentIndex + 1).coerceAtMost(total) else 0
     val speed = speedPerMinute(state.activeTimeMs, state.correctCount)
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -330,24 +336,55 @@ private fun HeaderStats(state: TrainingUiState) {
 }
 
 @Composable
-private fun ModeSelector(mode: TrainingMode, onSelectMode: (TrainingMode) -> Unit) {
+private fun ModeSelector(
+    state: TrainingUiState,
+    onSelectMode: (TrainingMode) -> Unit,
+    onSelectLesson: (String) -> Unit
+) {
+    var lessonExpanded by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            ModeIconButton(
+                selected = state.mode == TrainingMode.LESSON,
+                icon = Icons.Default.MenuBook,
+                contentDescription = "Урок"
+            ) {
+                onSelectMode(TrainingMode.LESSON)
+                lessonExpanded = true
+            }
+            DropdownMenu(
+                expanded = lessonExpanded,
+                onDismissRequest = { lessonExpanded = false }
+            ) {
+                if (state.lessons.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text(text = "Нет уроков") },
+                        onClick = { lessonExpanded = false }
+                    )
+                } else {
+                    state.lessons.forEach { lesson ->
+                        DropdownMenuItem(
+                            text = { Text(text = lesson.title) },
+                            onClick = {
+                                lessonExpanded = false
+                                onSelectLesson(lesson.id)
+                            }
+                        )
+                    }
+                }
+            }
+        }
         ModeIconButton(
-            selected = mode == TrainingMode.LESSON,
-            icon = Icons.Default.MenuBook,
-            contentDescription = "Урок"
-        ) { onSelectMode(TrainingMode.LESSON) }
-        ModeIconButton(
-            selected = mode == TrainingMode.ALL_SEQUENTIAL,
+            selected = state.mode == TrainingMode.ALL_SEQUENTIAL,
             icon = Icons.Default.LibraryBooks,
             contentDescription = "Все уроки"
         ) { onSelectMode(TrainingMode.ALL_SEQUENTIAL) }
         ModeIconButton(
-            selected = mode == TrainingMode.ALL_MIXED,
+            selected = state.mode == TrainingMode.ALL_MIXED,
             icon = Icons.Default.SwapHoriz,
             contentDescription = "Mixed"
         ) { onSelectMode(TrainingMode.ALL_MIXED) }

@@ -54,7 +54,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 loadedSounds.add(sampleId)
             }
         }
-        Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets stats")
+        Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
         val languages = lessonStore.getLanguages()
@@ -269,17 +269,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _uiState.value
         val minutes = state.activeTimeMs / 60000.0
         val rating = if (minutes <= 0.0) 0.0 else state.correctCount / minutes
+        val firstCard = sessionCards.firstOrNull()
         _uiState.update {
             it.copy(
                 sessionState = SessionState.PAUSED,
                 lastRating = rating,
-                activeTimeMs = 0L,
-                correctCount = 0,
-                incorrectCount = 0,
                 incorrectAttemptsForCard = 0,
                 lastResult = null,
                 hintText = null,
                 currentIndex = 0,
+                currentCard = firstCard,
                 inputText = ""
             )
         }
