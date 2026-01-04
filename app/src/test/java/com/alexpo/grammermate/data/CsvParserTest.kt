@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream
 class CsvParserTest {
     @Test
     fun parseLesson_readsTitleAndCards() {
+        // Агенту запрещено изменять тесты без согласования с пользователем.
         val csv = """
 Simple tenses and word order
 Он не работает из дома;He doesn't work from home
@@ -21,6 +22,7 @@ Simple tenses and word order
 
     @Test
     fun parseLesson_titleStopsOnPunctuation() {
+        // Агенту запрещено изменять тесты без согласования с пользователем.
         val csv = """
 Simple tenses: basics
 Он работает из дома;He works from home
@@ -31,6 +33,7 @@ Simple tenses: basics
 
     @Test
     fun parseLesson_titleStripsUtf8Bom() {
+        // Агенту запрещено изменять тесты без согласования с пользователем.
         val csv = "\uFEFFSimple tenses\nОн работает из дома;He works from home"
         val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
         assertEquals("Simple tenses", title)
@@ -38,6 +41,7 @@ Simple tenses: basics
 
     @Test
     fun parseLesson_emptyTitleBecomesNull() {
+        // Агенту запрещено изменять тесты без согласования с пользователем.
         val csv = "\"\"\nОн работает из дома;He works from home"
         val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
         assertNull(title)
