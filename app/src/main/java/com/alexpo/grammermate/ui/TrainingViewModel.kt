@@ -68,7 +68,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
                 mode = progress.mode,
-                sessionState = SessionState.PAUSED,
+                sessionState = progress.state,
                 currentIndex = progress.currentIndex,
                 correctCount = progress.correctCount,
                 incorrectCount = progress.incorrectCount,
@@ -77,6 +77,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         buildSessionCards()
+        if (_uiState.value.sessionState == SessionState.ACTIVE && _uiState.value.currentCard != null) {
+            resumeTimer()
+            if (_uiState.value.inputMode == InputMode.VOICE) {
+                _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
+            }
+        }
     }
 
     fun onInputChanged(text: String) {
@@ -86,7 +92,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = text,
                 incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
                 hintText = if (resetAttempts) null else it.hintText,
-                sessionState = if (resetAttempts) SessionState.ACTIVE else it.sessionState
+                sessionState = if (resetAttempts && it.sessionState != SessionState.PAUSED) SessionState.ACTIVE else it.sessionState
             )
         }
     }
@@ -94,12 +100,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun setInputMode(mode: InputMode) {
         _uiState.update {
             val resetAttempts = it.hintText != null || it.incorrectAttemptsForCard >= 3
-            val shouldTriggerVoice = mode == InputMode.VOICE && resetAttempts
+            val shouldTriggerVoice = mode == InputMode.VOICE && resetAttempts && it.sessionState != SessionState.PAUSED
             it.copy(
                 inputMode = mode,
                 incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
                 hintText = if (resetAttempts) null else it.hintText,
-                sessionState = if (resetAttempts) SessionState.ACTIVE else it.sessionState,
+                sessionState = if (resetAttempts && it.sessionState != SessionState.PAUSED) SessionState.ACTIVE else it.sessionState,
                 voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken
             )
         }
@@ -107,6 +113,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun selectLanguage(languageId: String) {
+        pauseTimer()
         val lessons = lessonStore.getLessons(languageId)
         val selectedLessonId = lessons.firstOrNull()?.id
         _uiState.update {
@@ -120,7 +127,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 inputText = "",
                 lastResult = null,
-                hintText = null
+                hintText = null,
+                sessionState = SessionState.PAUSED
             )
         }
         buildSessionCards()
@@ -128,6 +136,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun selectLesson(lessonId: String) {
+        pauseTimer()
         _uiState.update {
             it.copy(
                 selectedLessonId = lessonId,
@@ -136,7 +145,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = "",
                 lastResult = null,
                 hintText = null,
-                incorrectAttemptsForCard = 0
+                incorrectAttemptsForCard = 0,
+                sessionState = SessionState.PAUSED
             )
         }
         buildSessionCards()
@@ -144,6 +154,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun selectMode(mode: TrainingMode) {
+        pauseTimer()
         _uiState.update {
             it.copy(
                 mode = mode,
@@ -151,7 +162,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = "",
                 lastResult = null,
                 hintText = null,
-                incorrectAttemptsForCard = 0
+                incorrectAttemptsForCard = 0,
+                sessionState = SessionState.PAUSED
             )
         }
         buildSessionCards()
@@ -160,7 +172,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun submitAnswer(): SubmitResult {
         val state = _uiState.value
-        if (state.sessionState != SessionState.ACTIVE) return SubmitResult(false, false)
+        if (state.sessionState == SessionState.PAUSED) return SubmitResult(false, false)
         if (state.inputText.isBlank()) return SubmitResult(false, false)
         val card = currentCard() ?: return SubmitResult(false, false)
         val normalizedInput = Normalizer.normalize(state.inputText)
@@ -186,7 +198,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.copy(
                     incorrectCount = it.incorrectCount + 1,
-                    incorrectAttemptsForCard = nextIncorrect,
+                    incorrectAttemptsForCard = if (hintShown) 0 else nextIncorrect,
                     lastResult = false,
                     hintText = hint,
                     inputText = if (state.inputMode == InputMode.VOICE) "" else it.inputText,
@@ -236,27 +248,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun togglePause() {
-        if (sessionCards.isEmpty()) {
-            if (_uiState.value.lessons.any { it.cards.isNotEmpty() }) {
-                buildSessionCards()
-            }
-            if (sessionCards.isEmpty()) {
-                _uiState.update { it.copy(sessionState = SessionState.PAUSED) }
-                return
-            }
-        }
-        val newState = if (_uiState.value.sessionState == SessionState.ACTIVE) {
+        if (_uiState.value.sessionState == SessionState.ACTIVE) {
             pauseTimer()
-            SessionState.PAUSED
-        } else {
-            resumeTimer()
-            SessionState.ACTIVE
+            _uiState.update { it.copy(sessionState = SessionState.PAUSED) }
+            saveProgress()
+            return
         }
-        _uiState.update {
-            val trigger = if (newState == SessionState.ACTIVE) it.voiceTriggerToken + 1 else it.voiceTriggerToken
-            it.copy(sessionState = newState, inputText = "", voiceTriggerToken = trigger)
-        }
-        saveProgress()
+        startSession()
     }
 
     fun pauseSession() {
@@ -281,7 +279,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 lastResult = null,
                 hintText = null,
-                currentIndex = 0
+                currentIndex = 0,
+                inputText = ""
             )
         }
         saveProgress()
@@ -294,6 +293,52 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshLessons(lesson.id)
     }
 
+    fun resetAndImportLesson(uri: Uri) {
+        val languageId = _uiState.value.selectedLanguageId
+        lessonStore.deleteAllLessons(languageId)
+        val lesson = lessonStore.importFromUri(languageId, uri, getApplication<Application>().contentResolver)
+        refreshLessons(lesson.id)
+    }
+
+    fun deleteLesson(lessonId: String) {
+        val languageId = _uiState.value.selectedLanguageId
+        lessonStore.deleteLesson(languageId, lessonId)
+        val selected = if (_uiState.value.selectedLessonId == lessonId) null else _uiState.value.selectedLessonId
+        refreshLessons(selected)
+    }
+
+    fun createEmptyLesson(title: String) {
+        val languageId = _uiState.value.selectedLanguageId
+        val lesson = lessonStore.createEmptyLesson(languageId, title)
+        refreshLessons(lesson.id)
+    }
+
+    fun addLanguage(name: String) {
+        val language = lessonStore.addLanguage(name)
+        val lessons = lessonStore.getLessons(language.id)
+        val selectedLessonId = lessons.firstOrNull()?.id
+        _uiState.update {
+            it.copy(
+                languages = lessonStore.getLanguages(),
+                selectedLanguageId = language.id,
+                lessons = lessons,
+                selectedLessonId = selectedLessonId,
+                mode = TrainingMode.LESSON,
+                sessionState = SessionState.PAUSED,
+                currentIndex = 0,
+                correctCount = 0,
+                incorrectCount = 0,
+                incorrectAttemptsForCard = 0,
+                activeTimeMs = 0L,
+                inputText = "",
+                lastResult = null,
+                hintText = null
+            )
+        }
+        buildSessionCards()
+        saveProgress()
+    }
+
     fun deleteAllLessons() {
         val languageId = _uiState.value.selectedLanguageId
         lessonStore.deleteAllLessons(languageId)
@@ -301,6 +346,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun refreshLessons(selectedLessonId: String?) {
+        pauseTimer()
         val languageId = _uiState.value.selectedLanguageId
         val lessons = lessonStore.getLessons(languageId)
         val selected = selectedLessonId ?: lessons.firstOrNull()?.id
@@ -312,11 +358,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = "",
                 lastResult = null,
                 hintText = null,
-                incorrectAttemptsForCard = 0
+                incorrectAttemptsForCard = 0,
+                sessionState = SessionState.PAUSED
             )
         }
         buildSessionCards()
         saveProgress()
+    }
+
+    fun resumeFromSettings() {
+        if (_uiState.value.sessionState == SessionState.ACTIVE) return
+        startSession()
     }
 
     private fun buildSessionCards() {
@@ -333,23 +385,33 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         sessionCards = lessonCards
         val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
         val card = sessionCards.getOrNull(safeIndex)
-        val newState = if (sessionCards.isNotEmpty() && state.sessionState == SessionState.PAUSED) {
-            SessionState.ACTIVE
-        } else {
-            state.sessionState
+        if (card == null && state.sessionState == SessionState.ACTIVE) {
+            pauseTimer()
         }
         _uiState.update {
             it.copy(
                 currentIndex = safeIndex,
                 currentCard = card,
-                sessionState = newState,
-                voiceTriggerToken = if (newState == SessionState.ACTIVE && state.sessionState != SessionState.ACTIVE && state.inputMode == InputMode.VOICE) {
-                    it.voiceTriggerToken + 1
-                } else {
-                    it.voiceTriggerToken
-                }
+                sessionState = if (card == null) SessionState.PAUSED else state.sessionState
             )
         }
+    }
+
+    private fun startSession() {
+        buildSessionCards()
+        if (sessionCards.isEmpty() || _uiState.value.currentCard == null) {
+            pauseTimer()
+            _uiState.update { it.copy(sessionState = SessionState.PAUSED) }
+            saveProgress()
+            return
+        }
+        pauseTimer()
+        resumeTimer()
+        _uiState.update {
+            val trigger = if (it.inputMode == InputMode.VOICE) it.voiceTriggerToken + 1 else it.voiceTriggerToken
+            it.copy(sessionState = SessionState.ACTIVE, inputText = "", voiceTriggerToken = trigger)
+        }
+        saveProgress()
     }
 
     private fun currentCard(): SentenceCard? {

@@ -45,5 +45,5 @@ data class TrainingProgress(
     val incorrectCount: Int = 0,
     val incorrectAttemptsForCard: Int = 0,
     val activeTimeMs: Long = 0L,
-    val state: SessionState = SessionState.ACTIVE
+    val state: SessionState = SessionState.PAUSED
 )

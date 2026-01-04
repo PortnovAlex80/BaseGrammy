@@ -20,7 +20,7 @@ class ProgressStore(private val context: Context) {
             incorrectCount = (map["incorrectCount"] as? Number)?.toInt() ?: 0,
             incorrectAttemptsForCard = (map["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0,
             activeTimeMs = (map["activeTimeMs"] as? Number)?.toLong() ?: 0L,
-            state = SessionState.valueOf(map["state"] as? String ?: SessionState.ACTIVE.name)
+            state = SessionState.valueOf(map["state"] as? String ?: SessionState.PAUSED.name)
         )
     }
 

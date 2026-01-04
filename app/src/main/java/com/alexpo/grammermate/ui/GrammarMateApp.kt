@@ -84,12 +84,17 @@ fun GrammarMateApp() {
                 onTogglePause = vm::togglePause,
                 onFinish = vm::finishSession,
                 onOpenSettings = vm::pauseSession,
+                onCloseSettings = vm::resumeFromSettings,
                 onSelectLanguage = vm::selectLanguage,
                 onSelectLesson = vm::selectLesson,
                 onSelectMode = vm::selectMode,
                 onSetInputMode = vm::setInputMode,
                 onImportLesson = vm::importLesson,
-                onDeleteAllLessons = vm::deleteAllLessons
+                onResetReload = vm::resetAndImportLesson,
+                onDeleteLesson = vm::deleteLesson,
+                onDeleteAllLessons = vm::deleteAllLessons,
+                onCreateEmptyLesson = vm::createEmptyLesson,
+                onAddLanguage = vm::addLanguage
             )
         }
     }
@@ -106,20 +111,32 @@ private fun TrainingScreen(
     onTogglePause: () -> Unit,
     onFinish: () -> Unit,
     onOpenSettings: () -> Unit,
+    onCloseSettings: () -> Unit,
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit,
     onSelectMode: (TrainingMode) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
     onImportLesson: (android.net.Uri) -> Unit,
-    onDeleteAllLessons: () -> Unit
+    onResetReload: (android.net.Uri) -> Unit,
+    onDeleteLesson: (String) -> Unit,
+    onDeleteAllLessons: () -> Unit,
+    onCreateEmptyLesson: (String) -> Unit,
+    onAddLanguage: (String) -> Unit
 ) {
     var showSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    val hasCards = state.lessons.any { it.cards.isNotEmpty() }
+    val hasCards = state.currentCard != null
+    var newLessonTitle by remember { mutableStateOf("") }
+    var newLanguageName by remember { mutableStateOf("") }
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) onImportLesson(uri)
+    }
+    val resetLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) onResetReload(uri)
     }
 
     Scaffold(
@@ -136,8 +153,10 @@ private fun TrainingScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = { showSheet = true }) {
+                IconButton(onClick = {
                     onOpenSettings()
+                    showSheet = true
+                }) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
                 }
             }
@@ -153,7 +172,7 @@ private fun TrainingScreen(
             HeaderStats(state)
             ModeSelector(state.mode, onSelectMode)
             CardPrompt(state)
-            AnswerBox(state, onInputChange, onSubmit, onSetInputMode)
+            AnswerBox(state, onInputChange, onSubmit, onSetInputMode, hasCards)
             ResultBlock(state, onNext, state.inputMode)
             NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState, hasCards)
         }
@@ -161,7 +180,10 @@ private fun TrainingScreen(
 
     if (showSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showSheet = false },
+            onDismissRequest = {
+                showSheet = false
+                if (hasCards) onCloseSettings()
+            },
             sheetState = sheetState
         ) {
             Column(
@@ -175,7 +197,25 @@ private fun TrainingScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                LanguageLessonColumn(state, onSelectLanguage, onSelectLesson)
+                LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
+                OutlinedTextField(
+                    value = newLanguageName,
+                    onValueChange = { newLanguageName = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(text = "Новый язык (название)") }
+                )
+                OutlinedButton(
+                    onClick = {
+                        val name = newLanguageName.trim()
+                        if (name.isNotEmpty()) {
+                            onAddLanguage(name)
+                            newLanguageName = ""
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Добавить язык")
+                }
                 OutlinedButton(
                     onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
                     modifier = Modifier.fillMaxWidth()
@@ -183,6 +223,32 @@ private fun TrainingScreen(
                     Icon(Icons.Default.Upload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Импорт урока (CSV)")
+                }
+                OutlinedButton(
+                    onClick = { resetLauncher.launch(arrayOf("text/*", "text/csv")) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Upload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Reset/Reload (очистить + импорт)")
+                }
+                OutlinedTextField(
+                    value = newLessonTitle,
+                    onValueChange = { newLessonTitle = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(text = "Пустой урок (название)") }
+                )
+                OutlinedButton(
+                    onClick = {
+                        val title = newLessonTitle.trim()
+                        if (title.isNotEmpty()) {
+                            onCreateEmptyLesson(title)
+                            newLessonTitle = ""
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Создать пустой урок")
                 }
                 OutlinedButton(
                     onClick = { onDeleteAllLessons() },
@@ -310,7 +376,8 @@ private fun ModeIconButton(
 private fun LanguageLessonColumn(
     state: TrainingUiState,
     onSelectLanguage: (String) -> Unit,
-    onSelectLesson: (String) -> Unit
+    onSelectLesson: (String) -> Unit,
+    onDeleteLesson: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DropdownSelector(
@@ -326,6 +393,26 @@ private fun LanguageLessonColumn(
             items = state.lessons.map { it.title to it.id },
             onSelect = onSelectLesson
         )
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(text = "Удалить урок", style = MaterialTheme.typography.labelMedium)
+            state.lessons.forEach { lesson ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = lesson.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { onDeleteLesson(lesson.id) }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete lesson")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -377,10 +464,11 @@ private fun AnswerBox(
     state: TrainingUiState,
     onInputChange: (String) -> Unit,
     onSubmit: () -> SubmitResult,
-    onSetInputMode: (InputMode) -> Unit
+    onSetInputMode: (InputMode) -> Unit,
+    hasCards: Boolean
 ) {
     val latestState by rememberUpdatedState(state)
-    val canLaunchVoice = state.currentCard != null && state.sessionState != SessionState.PAUSED
+    val canLaunchVoice = hasCards && state.sessionState != SessionState.PAUSED
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -388,7 +476,7 @@ private fun AnswerBox(
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
-                if (latestState.sessionState != SessionState.ACTIVE) return@rememberLauncherForActivityResult
+                if (latestState.sessionState == SessionState.PAUSED) return@rememberLauncherForActivityResult
                 onInputChange(spoken)
                 onSubmit()
             }
@@ -414,6 +502,7 @@ private fun AnswerBox(
             onValueChange = onInputChange,
             modifier = Modifier.fillMaxWidth(),
             label = { Text(text = "Ваш перевод") },
+            enabled = hasCards,
             trailingIcon = {
                 IconButton(
                     onClick = {
@@ -428,6 +517,13 @@ private fun AnswerBox(
                 }
             }
         )
+        if (!hasCards) {
+            Text(
+                text = "Карточек нет",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
         if (state.inputMode == InputMode.VOICE) {
             Text(
                 text = state.currentCard?.promptRu?.let { "Скажите перевод: $it" } ?: "",
@@ -464,8 +560,9 @@ private fun AnswerBox(
         Button(
             onClick = { onSubmit() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = state.inputText.isNotBlank() &&
-                state.sessionState == SessionState.ACTIVE &&
+            enabled = hasCards &&
+                state.inputText.isNotBlank() &&
+                state.sessionState != SessionState.PAUSED &&
                 state.currentCard != null
         ) {
             Text(text = "Проверить")
