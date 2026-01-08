@@ -1,4 +1,4 @@
-﻿package com.alexpo.grammermate.ui
+package com.alexpo.grammermate.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
@@ -437,7 +438,7 @@ private fun LessonRoadmapScreen(
                         val index = entry.index
                         val isCompleted = index < completed
                         val isActive = index == currentIndex
-                        val canEnter = isCompleted || (isActive && (index > 0 || state.storyCheckInDone))
+                        val canEnter = isCompleted || isActive
                         val emoji = if (isCompleted) "🌸" else "🔒"
                         Card(
                             modifier = Modifier
@@ -458,18 +459,16 @@ private fun LessonRoadmapScreen(
                         }
                     }
                     is RoadmapEntry.StoryCheckIn -> {
-                        val enabled = !state.storyCheckInDone
                         StoryTile(
                             label = "IN",
-                            enabled = enabled,
+                            completed = state.storyCheckInDone,
                             onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_IN) }
                         )
                     }
                     is RoadmapEntry.StoryCheckOut -> {
-                        val enabled = completed >= total && !state.storyCheckOutDone
                         StoryTile(
                             label = "OUT",
-                            enabled = enabled,
+                            completed = state.storyCheckOutDone,
                             onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_OUT) }
                         )
                     }
@@ -503,12 +502,12 @@ private fun buildRoadmapEntries(total: Int): List<RoadmapEntry> {
 }
 
 @Composable
-private fun StoryTile(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun StoryTile(label: String, completed: Boolean, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier
@@ -518,11 +517,27 @@ private fun StoryTile(label: String, enabled: Boolean, onClick: () -> Unit) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(text = label, fontWeight = FontWeight.SemiBold)
-            Text(text = "📘", fontSize = 18.sp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MenuBook,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                if (completed) {
+                    Icon(
+                        imageVector = Icons.Default.LocalFlorist,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }
-
 @Composable
 private fun StoryQuizScreen(
     story: com.alexpo.grammermate.data.StoryQuiz?,
