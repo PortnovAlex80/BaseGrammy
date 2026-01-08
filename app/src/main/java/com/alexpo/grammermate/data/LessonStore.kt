@@ -10,8 +10,10 @@ import java.util.UUID
 
 class LessonStore(private val context: Context) {
     private val yaml = Yaml()
-    private val lessonsDir = File(context.filesDir, "lessons")
+    private val baseDir = File(context.filesDir, "grammarmate")
+    private val lessonsDir = File(baseDir, "lessons")
     private val languagesFile = File(lessonsDir, "languages.yaml")
+    private val languagesStore = YamlListStore(yaml, languagesFile)
 
     fun ensureSeedData() {
         if (!lessonsDir.exists()) {
@@ -22,13 +24,13 @@ class LessonStore(private val context: Context) {
                 mapOf("id" to "en", "name" to "English"),
                 mapOf("id" to "it", "name" to "Italian")
             )
-            languagesFile.writeText(yaml.dump(defaults))
+            languagesStore.write(defaults)
         }
     }
 
     fun getLanguages(): List<Language> {
         ensureSeedData()
-        val entries = yaml.load<List<Map<String, Any>>>(languagesFile.readText()) ?: emptyList()
+        val entries = languagesStore.read()
         return entries.mapNotNull { entry ->
             val id = entry["id"] as? String ?: return@mapNotNull null
             val name = entry["name"] as? String ?: return@mapNotNull null
@@ -54,7 +56,7 @@ class LessonStore(private val context: Context) {
         }
         val newEntry = mapOf("id" to candidate, "name" to normalized)
         val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
-        languagesFile.writeText(yaml.dump(updated))
+        languagesStore.write(updated)
         return Language(candidate, normalized)
     }
 
@@ -129,7 +131,7 @@ class LessonStore(private val context: Context) {
         val dir = languageDir(languageId)
         dir.mkdirs()
         val csvFile = File(dir, fileName)
-        csvFile.writeText(normalizedTitle)
+        AtomicFileWriter.writeText(csvFile, normalizedTitle)
         saveIndex(languageId, LessonIndexEntry(id, normalizedTitle, fileName))
         return Lesson(id = id, languageId = languageId, title = normalizedTitle, cards = emptyList())
     }
@@ -145,13 +147,14 @@ class LessonStore(private val context: Context) {
     private fun loadIndex(languageId: String): List<Map<String, Any>> {
         val indexFile = indexFileFor(languageId)
         if (!indexFile.exists()) return emptyList()
-        return yaml.load<List<Map<String, Any>>>(indexFile.readText()) ?: emptyList()
+        val store = YamlListStore(yaml, indexFile)
+        return store.read()
     }
 
     private fun writeIndex(languageId: String, entries: List<Map<String, Any>>) {
         val indexFile = indexFileFor(languageId)
-        indexFile.parentFile?.mkdirs()
-        indexFile.writeText(yaml.dump(entries))
+        val store = YamlListStore(yaml, indexFile)
+        store.write(entries)
     }
 
     private fun replaceByTitle(languageId: String, title: String) {

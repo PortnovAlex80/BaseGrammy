@@ -6,26 +6,33 @@ import java.io.File
 
 class ProgressStore(private val context: Context) {
     private val yaml = Yaml()
-    private val file = File(context.filesDir, "progress.yaml")
+    private val baseDir = File(context.filesDir, "grammarmate")
+    private val file = File(baseDir, "progress.yaml")
+    private val schemaVersion = 1
 
     fun load(): TrainingProgress {
         if (!file.exists()) return TrainingProgress()
-        val map = yaml.load<Map<String, Any>>(file.readText()) ?: return TrainingProgress()
+        val raw = yaml.load<Any>(file.readText()) ?: return TrainingProgress()
+        val data = when (raw) {
+            is Map<*, *> -> raw
+            else -> return TrainingProgress()
+        }
+        val payload = (data["data"] as? Map<*, *>) ?: data
         return TrainingProgress(
-            languageId = map["languageId"] as? String ?: "en",
-            mode = TrainingMode.valueOf(map["mode"] as? String ?: TrainingMode.LESSON.name),
-            lessonId = map["lessonId"] as? String,
-            currentIndex = (map["currentIndex"] as? Number)?.toInt() ?: 0,
-            correctCount = (map["correctCount"] as? Number)?.toInt() ?: 0,
-            incorrectCount = (map["incorrectCount"] as? Number)?.toInt() ?: 0,
-            incorrectAttemptsForCard = (map["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0,
-            activeTimeMs = (map["activeTimeMs"] as? Number)?.toLong() ?: 0L,
-            state = SessionState.valueOf(map["state"] as? String ?: SessionState.PAUSED.name)
+            languageId = payload["languageId"] as? String ?: "en",
+            mode = TrainingMode.valueOf(payload["mode"] as? String ?: TrainingMode.LESSON.name),
+            lessonId = payload["lessonId"] as? String,
+            currentIndex = (payload["currentIndex"] as? Number)?.toInt() ?: 0,
+            correctCount = (payload["correctCount"] as? Number)?.toInt() ?: 0,
+            incorrectCount = (payload["incorrectCount"] as? Number)?.toInt() ?: 0,
+            incorrectAttemptsForCard = (payload["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0,
+            activeTimeMs = (payload["activeTimeMs"] as? Number)?.toLong() ?: 0L,
+            state = SessionState.valueOf(payload["state"] as? String ?: SessionState.PAUSED.name)
         )
     }
 
     fun save(progress: TrainingProgress) {
-        val data = linkedMapOf(
+        val payload = linkedMapOf(
             "languageId" to progress.languageId,
             "mode" to progress.mode.name,
             "lessonId" to progress.lessonId,
@@ -36,7 +43,11 @@ class ProgressStore(private val context: Context) {
             "activeTimeMs" to progress.activeTimeMs,
             "state" to progress.state.name
         )
-        file.writeText(yaml.dump(data))
+        val data = linkedMapOf(
+            "schemaVersion" to schemaVersion,
+            "data" to payload
+        )
+        AtomicFileWriter.writeText(file, yaml.dump(data))
     }
 
     fun clear() {
