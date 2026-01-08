@@ -18,6 +18,13 @@ data class SentenceCard(
     val acceptedAnswers: List<String>
 )
 
+data class LessonPack(
+    val packId: String,
+    val packVersion: String,
+    val languageId: String,
+    val importedAt: Long
+)
+
 enum class TrainingMode {
     LESSON,
     ALL_SEQUENTIAL,

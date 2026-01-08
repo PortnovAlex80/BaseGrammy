@@ -6,7 +6,9 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
+import java.util.zip.ZipInputStream
 
 class LessonStore(private val context: Context) {
     private val yaml = Yaml()
@@ -14,6 +16,9 @@ class LessonStore(private val context: Context) {
     private val lessonsDir = File(baseDir, "lessons")
     private val languagesFile = File(lessonsDir, "languages.yaml")
     private val languagesStore = YamlListStore(yaml, languagesFile)
+    private val packsDir = File(baseDir, "packs")
+    private val packsFile = File(baseDir, "packs.yaml")
+    private val packsStore = YamlListStore(yaml, packsFile)
 
     fun ensureSeedData() {
         if (!lessonsDir.exists()) {
@@ -58,6 +63,90 @@ class LessonStore(private val context: Context) {
         val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
         languagesStore.write(updated)
         return Language(candidate, normalized)
+    }
+
+    fun getInstalledPacks(): List<LessonPack> {
+        val entries = packsStore.read()
+        return entries.mapNotNull { entry ->
+            val packId = entry["packId"] as? String ?: return@mapNotNull null
+            val packVersion = entry["packVersion"] as? String ?: return@mapNotNull null
+            val languageId = entry["languageId"] as? String ?: return@mapNotNull null
+            val importedAt = (entry["importedAt"] as? Number)?.toLong() ?: 0L
+            LessonPack(packId, packVersion, languageId, importedAt)
+        }
+    }
+
+    fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
+        ensureSeedData()
+        packsDir.mkdirs()
+        val tempDir = File(packsDir, "tmp_${UUID.randomUUID()}")
+        tempDir.mkdirs()
+        resolver.openInputStream(uri)?.use { input ->
+            ZipInputStream(input).use { zip ->
+                var entry = zip.nextEntry
+                while (entry != null) {
+                    val outFile = File(tempDir, entry.name)
+                    val canonicalParent = tempDir.canonicalPath + File.separator
+                    val canonicalTarget = outFile.canonicalPath
+                    if (!canonicalTarget.startsWith(canonicalParent)) {
+                        error("Invalid zip entry: ${entry.name}")
+                    }
+                    if (entry.isDirectory) {
+                        outFile.mkdirs()
+                    } else {
+                        outFile.parentFile?.mkdirs()
+                        FileOutputStream(outFile).use { out -> zip.copyTo(out) }
+                    }
+                    zip.closeEntry()
+                    entry = zip.nextEntry
+                }
+            }
+        } ?: error("Cannot open zip")
+
+        val manifestFile = File(tempDir, "manifest.json")
+        if (!manifestFile.exists()) {
+            tempDir.deleteRecursively()
+            error("Manifest not found")
+        }
+        val manifest = LessonPackManifest.fromJson(manifestFile.readText())
+        val languageId = manifest.language.lowercase().trim()
+        ensureLanguage(languageId)
+
+        val packDir = File(packsDir, manifest.packId)
+        if (packDir.exists()) {
+            packDir.deleteRecursively()
+        }
+        tempDir.copyRecursively(packDir, overwrite = true)
+        tempDir.deleteRecursively()
+
+        val lessonEntries = manifest.lessons.sortedBy { it.order }
+        lessonEntries.forEach { entry ->
+            val sourceFile = File(packDir, entry.file)
+            if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
+            importLessonFromFile(languageId, sourceFile, entry.title)
+        }
+
+        val updated = getInstalledPacks()
+            .filterNot { it.packId == manifest.packId }
+            .map {
+                mapOf(
+                    "packId" to it.packId,
+                    "packVersion" to it.packVersion,
+                    "languageId" to it.languageId,
+                    "importedAt" to it.importedAt
+                )
+            }
+            .toMutableList()
+        updated.add(
+            mapOf(
+                "packId" to manifest.packId,
+                "packVersion" to manifest.packVersion,
+                "languageId" to languageId,
+                "importedAt" to System.currentTimeMillis()
+            )
+        )
+        packsStore.write(updated)
+        return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis())
     }
 
     fun getLessons(languageId: String): List<Lesson> {
@@ -178,6 +267,37 @@ class LessonStore(private val context: Context) {
     private fun languageDir(languageId: String): File = File(lessonsDir, languageId)
 
     private fun indexFileFor(languageId: String): File = File(lessonsDir, "${languageId}_index.yaml")
+
+    private fun ensureLanguage(languageId: String) {
+        val normalized = languageId.lowercase().trim()
+        if (normalized.isBlank()) return
+        val existing = getLanguages()
+        if (existing.any { it.id == normalized }) return
+        val displayName = when (normalized) {
+            "en" -> "English"
+            "it" -> "Italian"
+            else -> normalized.uppercase()
+        }
+        val newEntry = mapOf("id" to normalized, "name" to displayName)
+        val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
+        languagesStore.write(updated)
+    }
+
+    private fun importLessonFromFile(languageId: String, sourceFile: File, fallbackTitle: String?): Lesson {
+        val id = UUID.randomUUID().toString()
+        val fileName = "lesson_$id.csv"
+        val dir = languageDir(languageId)
+        dir.mkdirs()
+        val targetFile = File(dir, fileName)
+        sourceFile.inputStream().use { input ->
+            FileOutputStream(targetFile).use { output -> input.copyTo(output) }
+        }
+        val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
+        val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
+        replaceByTitle(languageId, title)
+        saveIndex(languageId, LessonIndexEntry(id, title, fileName))
+        return Lesson(id = id, languageId = languageId, title = title, cards = cards)
+    }
 
     private fun guessFileName(resolver: ContentResolver, uri: Uri): String? {
         val cursor = resolver.query(uri, null, null, null, null) ?: return null

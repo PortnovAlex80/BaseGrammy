@@ -95,6 +95,7 @@ fun GrammarMateApp() {
                 onSelectMode = vm::selectMode,
                 onSetInputMode = vm::setInputMode,
                 onShowAnswer = vm::showAnswer,
+                onImportLessonPack = vm::importLessonPack,
                 onImportLesson = vm::importLesson,
                 onResetReload = vm::resetAndImportLesson,
                 onDeleteLesson = vm::deleteLesson,
@@ -123,6 +124,7 @@ private fun TrainingScreen(
     onSelectMode: (TrainingMode) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
     onShowAnswer: () -> Unit,
+    onImportLessonPack: (android.net.Uri) -> Unit,
     onImportLesson: (android.net.Uri) -> Unit,
     onResetReload: (android.net.Uri) -> Unit,
     onDeleteLesson: (String) -> Unit,
@@ -139,6 +141,11 @@ private fun TrainingScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) onImportLesson(uri)
+    }
+    val packImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) onImportLessonPack(uri)
     }
     val resetLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -224,6 +231,22 @@ private fun TrainingScreen(
                     Text(text = "Добавить язык")
                 }
                 OutlinedButton(
+                    onClick = {
+                        packImportLauncher.launch(
+                            arrayOf(
+                                "application/zip",
+                                "application/x-zip-compressed",
+                                "application/octet-stream"
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Upload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Импорт пакета уроков (ZIP)")
+                }
+                OutlinedButton(
                     onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -303,6 +326,21 @@ private fun TrainingScreen(
                                 )
                             }
                         }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = "Пакеты", style = MaterialTheme.typography.labelLarge)
+                if (state.installedPacks.isEmpty()) {
+                    Text(
+                        text = "Нет установленных пакетов",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    state.installedPacks.forEach { pack ->
+                        Text(
+                            text = "${pack.packId} (${pack.packVersion})",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))

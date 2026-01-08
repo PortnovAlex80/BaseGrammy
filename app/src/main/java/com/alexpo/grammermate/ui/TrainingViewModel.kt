@@ -58,12 +58,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
         val languages = lessonStore.getLanguages()
+        val packs = lessonStore.getInstalledPacks()
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: "en"
         val lessons = lessonStore.getLessons(selectedLanguageId)
         val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
         _uiState.update {
             it.copy(
                 languages = languages,
+                installedPacks = packs,
                 selectedLanguageId = selectedLanguageId,
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
@@ -312,6 +314,36 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshLessons(lesson.id)
     }
 
+    fun importLessonPack(uri: Uri) {
+        try {
+            val pack = lessonStore.importPackFromUri(uri, getApplication<Application>().contentResolver)
+            val lessons = lessonStore.getLessons(pack.languageId)
+            val selectedLessonId = lessons.firstOrNull()?.id
+            _uiState.update {
+                it.copy(
+                    languages = lessonStore.getLanguages(),
+                    installedPacks = lessonStore.getInstalledPacks(),
+                    selectedLanguageId = pack.languageId,
+                    lessons = lessons,
+                    selectedLessonId = selectedLessonId,
+                    mode = TrainingMode.LESSON,
+                    sessionState = SessionState.PAUSED,
+                    currentIndex = 0,
+                    correctCount = 0,
+                    incorrectCount = 0,
+                    incorrectAttemptsForCard = 0,
+                    activeTimeMs = 0L,
+                    inputText = "",
+                    lastResult = null,
+                    answerText = null
+                )
+            }
+            buildSessionCards()
+            saveProgress()
+        } catch (e: Exception) {
+            Log.e(logTag, "Lesson pack import failed", e)
+        }
+    }
     fun resetAndImportLesson(uri: Uri) {
         val languageId = _uiState.value.selectedLanguageId
         lessonStore.deleteAllLessons(languageId)
@@ -339,6 +371,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 languages = lessonStore.getLanguages(),
+                installedPacks = lessonStore.getInstalledPacks(),
                 selectedLanguageId = language.id,
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
@@ -502,6 +535,7 @@ data class SubmitResult(
 
 data class TrainingUiState(
     val languages: List<com.alexpo.grammermate.data.Language> = emptyList(),
+    val installedPacks: List<com.alexpo.grammermate.data.LessonPack> = emptyList(),
     val selectedLanguageId: String = "en",
     val lessons: List<Lesson> = emptyList(),
     val selectedLessonId: String? = null,
