@@ -87,25 +87,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun onInputChanged(text: String) {
         _uiState.update {
-            val resetAttempts = it.hintText != null || it.incorrectAttemptsForCard >= 3
+            val resetAttempts = it.answerText != null || it.incorrectAttemptsForCard >= 3
             it.copy(
                 inputText = text,
                 incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
-                hintText = if (resetAttempts) null else it.hintText,
-                sessionState = if (resetAttempts && it.sessionState != SessionState.PAUSED) SessionState.ACTIVE else it.sessionState
+                answerText = if (resetAttempts) null else it.answerText
             )
         }
     }
 
     fun setInputMode(mode: InputMode) {
         _uiState.update {
-            val resetAttempts = it.hintText != null || it.incorrectAttemptsForCard >= 3
-            val shouldTriggerVoice = mode == InputMode.VOICE && resetAttempts && it.sessionState != SessionState.PAUSED
+            val resetAttempts = it.answerText != null || it.incorrectAttemptsForCard >= 3
+            val shouldTriggerVoice = mode == InputMode.VOICE &&
+                resetAttempts &&
+                it.sessionState == SessionState.ACTIVE
             it.copy(
                 inputMode = mode,
                 incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
-                hintText = if (resetAttempts) null else it.hintText,
-                sessionState = if (resetAttempts && it.sessionState != SessionState.PAUSED) SessionState.ACTIVE else it.sessionState,
+                answerText = if (resetAttempts) null else it.answerText,
                 voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken
             )
         }
@@ -127,7 +127,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 inputText = "",
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 sessionState = SessionState.PAUSED
             )
         }
@@ -144,7 +144,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentIndex = 0,
                 inputText = "",
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED
             )
@@ -161,7 +161,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentIndex = 0,
                 inputText = "",
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED
             )
@@ -172,7 +172,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun submitAnswer(): SubmitResult {
         val state = _uiState.value
-        if (state.sessionState == SessionState.PAUSED) return SubmitResult(false, false)
+        if (state.sessionState != SessionState.ACTIVE) return SubmitResult(false, false)
         if (state.inputText.isBlank()) return SubmitResult(false, false)
         val card = currentCard() ?: return SubmitResult(false, false)
         val normalizedInput = Normalizer.normalize(state.inputText)
@@ -185,7 +185,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     correctCount = it.correctCount + 1,
                     lastResult = true,
                     incorrectAttemptsForCard = 0,
-                    hintText = null
+                    answerText = null
                 )
             }
             nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
@@ -200,11 +200,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     incorrectCount = it.incorrectCount + 1,
                     incorrectAttemptsForCard = if (hintShown) 0 else nextIncorrect,
                     lastResult = false,
-                    hintText = hint,
+                    answerText = hint,
                     inputText = if (state.inputMode == InputMode.VOICE) "" else it.inputText,
                     sessionState = if (hint != null) SessionState.HINT_SHOWN else it.sessionState,
                     voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken
                 )
+            }
+            if (hintShown) {
+                pauseTimer()
             }
         }
         saveProgress()
@@ -213,6 +216,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun nextCard(triggerVoice: Boolean = false) {
+        val wasHintShown = _uiState.value.sessionState == SessionState.HINT_SHOWN
         val nextIndex = (_uiState.value.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
         val nextCard = sessionCards.getOrNull(nextIndex)
         _uiState.update {
@@ -222,11 +226,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentCard = nextCard,
                 inputText = "",
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.ACTIVE,
                 voiceTriggerToken = if (shouldTrigger) it.voiceTriggerToken + 1 else it.voiceTriggerToken
             )
+        }
+        if (wasHintShown) {
+            resumeTimer()
         }
         saveProgress()
     }
@@ -240,7 +247,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentCard = prevCard,
                 inputText = "",
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 incorrectAttemptsForCard = 0
             )
         }
@@ -276,7 +283,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastRating = rating,
                 incorrectAttemptsForCard = 0,
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 currentIndex = 0,
                 currentCard = firstCard,
                 inputText = ""
@@ -284,6 +291,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         saveProgress()
         Log.d(logTag, "Session finished. Rating=$rating")
+    }
+
+    fun showAnswer() {
+        val card = currentCard() ?: return
+        pauseTimer()
+        _uiState.update {
+            it.copy(
+                answerText = card.acceptedAnswers.joinToString(" / "),
+                sessionState = SessionState.HINT_SHOWN,
+                inputText = if (it.inputMode == InputMode.VOICE) "" else it.inputText
+            )
+        }
+        saveProgress()
     }
 
     fun importLesson(uri: Uri) {
@@ -331,7 +351,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 activeTimeMs = 0L,
                 inputText = "",
                 lastResult = null,
-                hintText = null
+                answerText = null
             )
         }
         buildSessionCards()
@@ -356,7 +376,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentIndex = 0,
                 inputText = "",
                 lastResult = null,
-                hintText = null,
+                answerText = null,
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED
             )
@@ -494,7 +514,7 @@ data class TrainingUiState(
     val incorrectCount: Int = 0,
     val incorrectAttemptsForCard: Int = 0,
     val activeTimeMs: Long = 0L,
-    val hintText: String? = null,
+    val answerText: String? = null,
     val lastResult: Boolean? = null,
     val lastRating: Double? = null,
     val inputMode: InputMode = InputMode.VOICE,

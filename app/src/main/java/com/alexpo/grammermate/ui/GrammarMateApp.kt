@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,11 +40,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -89,6 +94,7 @@ fun GrammarMateApp() {
                 onSelectLesson = vm::selectLesson,
                 onSelectMode = vm::selectMode,
                 onSetInputMode = vm::setInputMode,
+                onShowAnswer = vm::showAnswer,
                 onImportLesson = vm::importLesson,
                 onResetReload = vm::resetAndImportLesson,
                 onDeleteLesson = vm::deleteLesson,
@@ -116,6 +122,7 @@ private fun TrainingScreen(
     onSelectLesson: (String) -> Unit,
     onSelectMode: (TrainingMode) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
+    onShowAnswer: () -> Unit,
     onImportLesson: (android.net.Uri) -> Unit,
     onResetReload: (android.net.Uri) -> Unit,
     onDeleteLesson: (String) -> Unit,
@@ -172,7 +179,7 @@ private fun TrainingScreen(
             HeaderStats(state)
             ModeSelector(state, onSelectMode, onSelectLesson)
             CardPrompt(state)
-            AnswerBox(state, onInputChange, onSubmit, onSetInputMode, hasCards)
+            AnswerBox(state, onInputChange, onSubmit, onSetInputMode, onShowAnswer, hasCards)
             ResultBlock(state, onNext, state.inputMode)
             NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState, hasCards)
         }
@@ -497,15 +504,17 @@ private fun CardPrompt(state: TrainingUiState) {
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun AnswerBox(
     state: TrainingUiState,
     onInputChange: (String) -> Unit,
     onSubmit: () -> SubmitResult,
     onSetInputMode: (InputMode) -> Unit,
+    onShowAnswer: () -> Unit,
     hasCards: Boolean
 ) {
     val latestState by rememberUpdatedState(state)
-    val canLaunchVoice = hasCards && state.sessionState != SessionState.PAUSED
+    val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -561,7 +570,7 @@ private fun AnswerBox(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        if (state.inputMode == InputMode.VOICE) {
+        if (state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
             Text(
                 text = state.currentCard?.promptRu?.let { "Скажите перевод: $it" } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
@@ -589,17 +598,34 @@ private fun AnswerBox(
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
             }
-            Text(
-                text = if (state.inputMode == InputMode.VOICE) "Голос" else "Клавиатура",
-                style = MaterialTheme.typography.labelMedium
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(text = "Показать ответ") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(
+                        onClick = { if (hasCards) onShowAnswer() },
+                        enabled = hasCards
+                    ) {
+                        Icon(Icons.Default.Visibility, contentDescription = "Показать ответ")
+                    }
+                }
+                Text(
+                    text = if (state.inputMode == InputMode.VOICE) "Голос" else "Клавиатура",
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
         }
         Button(
             onClick = { onSubmit() },
             modifier = Modifier.fillMaxWidth(),
             enabled = hasCards &&
                 state.inputText.isNotBlank() &&
-                state.sessionState != SessionState.PAUSED &&
+                state.sessionState == SessionState.ACTIVE &&
                 state.currentCard != null
         ) {
             Text(text = "Проверить")
@@ -615,14 +641,12 @@ private fun ResultBlock(state: TrainingUiState, onNext: (Boolean) -> Unit, input
             false -> Text(text = "Ошибка", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
             null -> Text(text = "")
         }
-        if (!state.hintText.isNullOrBlank()) {
-            Text(text = "Подсказка: ${state.hintText}")
-            TextButton(onClick = { onNext(inputMode == InputMode.VOICE) }) { Text(text = "Следующая") }
+        if (!state.answerText.isNullOrBlank()) {
+            Text(text = "Ответ: ${state.answerText}")
         }
         state.lastRating?.let { rating ->
             Text(text = "Рейтинг: ${String.format("%.1f", rating)} ?/мин")
         }
-        Text(text = "Правильных: ${state.correctCount}  Неправильных: ${state.incorrectCount}")
     }
 }
 
