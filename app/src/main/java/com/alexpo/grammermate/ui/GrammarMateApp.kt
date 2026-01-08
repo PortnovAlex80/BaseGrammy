@@ -1,6 +1,10 @@
 ﻿package com.alexpo.grammermate.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -28,6 +36,7 @@ import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -58,13 +67,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.InputMode
@@ -80,61 +92,313 @@ fun GrammarMateApp() {
         Surface(modifier = Modifier.fillMaxSize()) {
             val vm: TrainingViewModel = viewModel()
             val state by vm.uiState.collectAsState()
-            TrainingScreen(
+            var screen by remember { mutableStateOf(AppScreen.HOME) }
+            var showSettings by remember { mutableStateOf(false) }
+
+            BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
+                screen = AppScreen.HOME
+            }
+
+            SettingsSheet(
+                show = showSettings,
                 state = state,
-                onInputChange = vm::onInputChanged,
-                onSubmit = vm::submitAnswer,
-                onPrev = vm::prevCard,
-                onNext = vm::nextCard,
-                onTogglePause = vm::togglePause,
-                onFinish = vm::finishSession,
-                onOpenSettings = vm::pauseSession,
-                onCloseSettings = vm::resumeFromSettings,
+                onDismiss = {
+                    showSettings = false
+                    if (screen == AppScreen.TRAINING && state.currentCard != null) {
+                        vm.resumeFromSettings()
+                    }
+                },
                 onSelectLanguage = vm::selectLanguage,
                 onSelectLesson = vm::selectLesson,
-                onSelectMode = vm::selectMode,
-                onSetInputMode = vm::setInputMode,
-                onShowAnswer = vm::showAnswer,
+                onDeleteLesson = vm::deleteLesson,
+                onAddLanguage = vm::addLanguage,
                 onImportLessonPack = vm::importLessonPack,
                 onImportLesson = vm::importLesson,
                 onResetReload = vm::resetAndImportLesson,
-                onDeleteLesson = vm::deleteLesson,
-                onDeleteAllLessons = vm::deleteAllLessons,
                 onCreateEmptyLesson = vm::createEmptyLesson,
-                onAddLanguage = vm::addLanguage
+                onDeleteAllLessons = vm::deleteAllLessons
+            )
+
+            when (screen) {
+                AppScreen.HOME -> HomeScreen(
+                    state = state,
+                    onSelectLanguage = vm::selectLanguage,
+                    onOpenSettings = {
+                        vm.pauseSession()
+                        showSettings = true
+                    },
+                    onPrimaryAction = { screen = AppScreen.TRAINING },
+                    onSelectLesson = { lessonId ->
+                        vm.selectLesson(lessonId)
+                        screen = AppScreen.TRAINING
+                    }
+                )
+                AppScreen.TRAINING -> TrainingScreen(
+                    state = state,
+                    onInputChange = vm::onInputChanged,
+                    onSubmit = vm::submitAnswer,
+                    onPrev = vm::prevCard,
+                    onNext = vm::nextCard,
+                    onTogglePause = vm::togglePause,
+                    onFinish = vm::finishSession,
+                    onOpenSettings = vm::pauseSession,
+                    onShowSettings = { showSettings = true },
+                    onSelectLesson = vm::selectLesson,
+                    onSelectMode = vm::selectMode,
+                    onSetInputMode = vm::setInputMode,
+                    onShowAnswer = vm::showAnswer
+                )
+            }
+        }
+    }
+}
+
+private enum class AppScreen {
+    HOME,
+    TRAINING
+}
+
+private enum class LessonTileState {
+    SEED,
+    SPROUT,
+    FLOWER,
+    LOCKED
+}
+
+private data class LessonTileUi(
+    val index: Int,
+    val lessonId: String?,
+    val state: LessonTileState
+)
+
+@Composable
+private fun HomeScreen(
+    state: TrainingUiState,
+    onSelectLanguage: (String) -> Unit,
+    onOpenSettings: () -> Unit,
+    onPrimaryAction: () -> Unit,
+    onSelectLesson: (String) -> Unit
+) {
+    val tiles = remember(state.lessons) { buildLessonTiles(state.lessons) }
+    var showMethod by remember { mutableStateOf(false) }
+    val languageCode = state.languages
+        .firstOrNull { it.id == state.selectedLanguageId }
+        ?.id
+        ?.uppercase()
+        ?: "--"
+    val isFirstLaunch = state.correctCount == 0 &&
+        state.incorrectCount == 0 &&
+        state.activeTimeMs == 0L
+    val primaryLabel = when {
+        isFirstLaunch -> "Start Grammar Engine"
+        state.sessionState == SessionState.ACTIVE -> "Continue Learning"
+        else -> "Resume Program"
+    }
+    val nextLessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+        .takeIf { it >= 0 }
+        ?: 0
+    val nextHint = if (state.lessons.isNotEmpty()) {
+        "Next: Lesson ${nextLessonIndex + 1} • Block 1/10"
+    } else {
+        null
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(
+                        text = "AP",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = "Alex Po", fontWeight = FontWeight.SemiBold)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LanguageSelector(
+                    label = languageCode,
+                    languages = state.languages,
+                    selectedLanguageId = state.selectedLanguageId,
+                    onSelect = onSelectLanguage
+                )
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onPrimaryAction)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = primaryLabel,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+                if (nextHint != null) {
+                    Text(
+                        text = nextHint,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(text = "Grammar Engine", fontWeight = FontWeight.SemiBold)
+        Spacer(modifier = Modifier.height(8.dp))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            userScrollEnabled = false
+        ) {
+            itemsIndexed(tiles) { _, tile ->
+                LessonTile(
+                    tile = tile,
+                    onSelect = {
+                        val lessonId = tile.lessonId ?: return@LessonTile
+                        onSelectLesson(lessonId)
+                    }
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
+        Text(text = "🌱 forming pattern • 🌸 automated skill")
+        Text(text = "🕸️ needs refresh")
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = { showMethod = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "How This Training Works")
+        }
+    }
+
+    if (showMethod) {
+        AlertDialog(
+            onDismissRequest = { showMethod = false },
+            confirmButton = {
+                TextButton(onClick = { showMethod = false }) {
+                    Text(text = "OK")
+                }
+            },
+            title = { Text(text = "How This Training Works") },
+            text = {
+                Text(
+                    text = "GrammarMate builds automatic grammar patterns with repeated retrieval. " +
+                        "States show how stable each pattern is and when it needs refresh."
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun LessonTile(tile: LessonTileUi, onSelect: () -> Unit) {
+    val emoji = when (tile.state) {
+        LessonTileState.SEED -> "🌱"
+        LessonTileState.SPROUT -> "🌿"
+        LessonTileState.FLOWER -> "🌸"
+        LessonTileState.LOCKED -> "🔒"
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clickable(enabled = tile.state != LessonTileState.LOCKED, onClick = onSelect)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = "${tile.index + 1}", fontWeight = FontWeight.SemiBold)
+            Text(text = emoji, fontSize = 18.sp)
+        }
+    }
+}
+
+@Composable
+private fun LanguageSelector(
+    label: String,
+    languages: List<com.alexpo.grammermate.data.Language>,
+    selectedLanguageId: String,
+    onSelect: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    TextButton(onClick = { expanded = true }) {
+        Text(text = label)
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        languages.forEach { language ->
+            DropdownMenuItem(
+                text = { Text(text = language.displayName) },
+                onClick = {
+                    expanded = false
+                    if (language.id != selectedLanguageId) onSelect(language.id)
+                }
             )
         }
     }
 }
 
+private fun buildLessonTiles(lessons: List<Lesson>): List<LessonTileUi> {
+    val total = 12
+    val tiles = mutableListOf<LessonTileUi>()
+    for (i in 0 until total) {
+        val lesson = lessons.getOrNull(i)
+        val state = when {
+            lesson == null -> LessonTileState.LOCKED
+            i == 0 -> LessonTileState.SPROUT
+            else -> LessonTileState.SEED
+        }
+        tiles.add(LessonTileUi(i, lesson?.id, state))
+    }
+    return tiles
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TrainingScreen(
+private fun SettingsSheet(
+    show: Boolean,
     state: TrainingUiState,
-    onInputChange: (String) -> Unit,
-    onSubmit: () -> SubmitResult,
-    onPrev: () -> Unit,
-    onNext: (Boolean) -> Unit,
-    onTogglePause: () -> Unit,
-    onFinish: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onCloseSettings: () -> Unit,
+    onDismiss: () -> Unit,
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit,
-    onSelectMode: (TrainingMode) -> Unit,
-    onSetInputMode: (InputMode) -> Unit,
-    onShowAnswer: () -> Unit,
+    onDeleteLesson: (String) -> Unit,
+    onAddLanguage: (String) -> Unit,
     onImportLessonPack: (android.net.Uri) -> Unit,
     onImportLesson: (android.net.Uri) -> Unit,
     onResetReload: (android.net.Uri) -> Unit,
-    onDeleteLesson: (String) -> Unit,
-    onDeleteAllLessons: () -> Unit,
     onCreateEmptyLesson: (String) -> Unit,
-    onAddLanguage: (String) -> Unit
+    onDeleteAllLessons: () -> Unit
 ) {
-    var showSheet by remember { mutableStateOf(false) }
+    if (!show) return
     val sheetState = rememberModalBottomSheetState()
-    val hasCards = state.currentCard != null
     var newLessonTitle by remember { mutableStateOf("") }
     var newLanguageName by remember { mutableStateOf("") }
     val importLauncher = rememberLauncherForActivityResult(
@@ -153,6 +417,177 @@ private fun TrainingScreen(
         if (uri != null) onResetReload(uri)
     }
 
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Служебный режим",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
+            OutlinedTextField(
+                value = newLanguageName,
+                onValueChange = { newLanguageName = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(text = "Новый язык (название)") }
+            )
+            OutlinedButton(
+                onClick = {
+                    val name = newLanguageName.trim()
+                    if (name.isNotEmpty()) {
+                        onAddLanguage(name)
+                        newLanguageName = ""
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Добавить язык")
+            }
+            OutlinedButton(
+                onClick = {
+                    packImportLauncher.launch(
+                        arrayOf(
+                            "application/zip",
+                            "application/x-zip-compressed",
+                            "application/octet-stream"
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Upload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Импорт пакета уроков (ZIP)")
+            }
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Upload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Импорт урока (CSV)")
+            }
+            OutlinedButton(
+                onClick = { resetLauncher.launch(arrayOf("text/*", "text/csv")) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Upload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Reset/Reload (очистить + импорт)")
+            }
+            OutlinedTextField(
+                value = newLessonTitle,
+                onValueChange = { newLessonTitle = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(text = "Пустой урок (название)") }
+            )
+            OutlinedButton(
+                onClick = {
+                    val title = newLessonTitle.trim()
+                    if (title.isNotEmpty()) {
+                        onCreateEmptyLesson(title)
+                        newLessonTitle = ""
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Создать пустой урок")
+            }
+            OutlinedButton(
+                onClick = { onDeleteAllLessons() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Удалить все уроки")
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "CSV формат", style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = "UTF-8, разделитель ';'.\n" +
+                    "Колонка 1: RU предложение.\n" +
+                    "Колонка 2: перевод(ы), варианты через '+'.\n" +
+                    "Пример: Он не работает из дома;He doesn't work from home+He does not work from home",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "Инструкция", style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = "Play - старт/продолжение, Pause - пауза, Stop - сброс прогресса без обнуления рейтинга.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
+            LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                items(state.lessons) { lesson ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = lesson.title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (lesson.id == state.selectedLessonId) {
+                            Text(
+                                text = "Выбран",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "Пакеты", style = MaterialTheme.typography.labelLarge)
+            if (state.installedPacks.isEmpty()) {
+                Text(
+                    text = "Нет установленных пакетов",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                state.installedPacks.forEach { pack ->
+                    Text(
+                        text = "${pack.packId} (${pack.packVersion})",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TrainingScreen(
+    state: TrainingUiState,
+    onInputChange: (String) -> Unit,
+    onSubmit: () -> SubmitResult,
+    onPrev: () -> Unit,
+    onNext: (Boolean) -> Unit,
+    onTogglePause: () -> Unit,
+    onFinish: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onShowSettings: () -> Unit,
+    onSelectLesson: (String) -> Unit,
+    onSelectMode: (TrainingMode) -> Unit,
+    onSetInputMode: (InputMode) -> Unit,
+    onShowAnswer: () -> Unit
+) {
+    val hasCards = state.currentCard != null
+
     Scaffold(
         topBar = {
             Row(
@@ -169,7 +604,7 @@ private fun TrainingScreen(
                 )
                 IconButton(onClick = {
                     onOpenSettings()
-                    showSheet = true
+                    onShowSettings()
                 }) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
                 }
@@ -189,162 +624,6 @@ private fun TrainingScreen(
             AnswerBox(state, onInputChange, onSubmit, onSetInputMode, onShowAnswer, hasCards)
             ResultBlock(state, onNext, state.inputMode)
             NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState, hasCards)
-        }
-    }
-
-    if (showSheet) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                showSheet = false
-                if (hasCards) onCloseSettings()
-            },
-            sheetState = sheetState
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Служебный режим",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
-                OutlinedTextField(
-                    value = newLanguageName,
-                    onValueChange = { newLanguageName = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(text = "Новый язык (название)") }
-                )
-                OutlinedButton(
-                    onClick = {
-                        val name = newLanguageName.trim()
-                        if (name.isNotEmpty()) {
-                            onAddLanguage(name)
-                            newLanguageName = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Добавить язык")
-                }
-                OutlinedButton(
-                    onClick = {
-                        packImportLauncher.launch(
-                            arrayOf(
-                                "application/zip",
-                                "application/x-zip-compressed",
-                                "application/octet-stream"
-                            )
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Upload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Импорт пакета уроков (ZIP)")
-                }
-                OutlinedButton(
-                    onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Upload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Импорт урока (CSV)")
-                }
-                OutlinedButton(
-                    onClick = { resetLauncher.launch(arrayOf("text/*", "text/csv")) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Upload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Reset/Reload (очистить + импорт)")
-                }
-                OutlinedTextField(
-                    value = newLessonTitle,
-                    onValueChange = { newLessonTitle = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(text = "Пустой урок (название)") }
-                )
-                OutlinedButton(
-                    onClick = {
-                        val title = newLessonTitle.trim()
-                        if (title.isNotEmpty()) {
-                            onCreateEmptyLesson(title)
-                            newLessonTitle = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Создать пустой урок")
-                }
-                OutlinedButton(
-                    onClick = { onDeleteAllLessons() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Удалить все уроки")
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "CSV формат", style = MaterialTheme.typography.labelLarge)
-                Text(
-                    text = "UTF-8, разделитель ';'.\n" +
-                        "Колонка 1: RU предложение.\n" +
-                        "Колонка 2: перевод(ы), варианты через '+'.\n" +
-                        "Пример: Он не работает из дома;He doesn't work from home+He does not work from home",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "Инструкция", style = MaterialTheme.typography.labelLarge)
-                Text(
-                    text = "Play - старт/продолжение, Pause - пауза, Stop - сброс прогресса без обнуления рейтинга.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
-                LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                    items(state.lessons) { lesson ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = lesson.title,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (lesson.id == state.selectedLessonId) {
-                                Text(
-                                    text = "Выбран",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "Пакеты", style = MaterialTheme.typography.labelLarge)
-                if (state.installedPacks.isEmpty()) {
-                    Text(
-                        text = "Нет установленных пакетов",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                } else {
-                    state.installedPacks.forEach { pack ->
-                        Text(
-                            text = "${pack.packId} (${pack.packVersion})",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
         }
     }
 }
