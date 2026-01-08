@@ -1,0 +1,17 @@
+﻿{
+    "phase":  "CHECK_IN",
+    "storyId":  "S_L03_IN",
+    "questions":  [
+                      {
+                          "qId":  "Q1",
+                          "correctIndex":  0,
+                          "prompt":  "Where does he work?",
+                          "options":  [
+                                          "From home",
+                                          "At the office"
+                                      ]
+                      }
+                  ],
+    "lessonId":  "L03_PRESENT_SIMPLE_REPEAT",
+    "text":  "We work in the office."
+}

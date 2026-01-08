@@ -19,6 +19,9 @@ class LessonStore(private val context: Context) {
     private val packsDir = File(baseDir, "packs")
     private val packsFile = File(baseDir, "packs.yaml")
     private val packsStore = YamlListStore(yaml, packsFile)
+    private val storiesDir = File(baseDir, "stories")
+    private val storiesIndexFile = File(storiesDir, "stories.yaml")
+    private val storiesStore = YamlListStore(yaml, storiesIndexFile)
 
     fun ensureSeedData() {
         if (!lessonsDir.exists()) {
@@ -123,8 +126,9 @@ class LessonStore(private val context: Context) {
         lessonEntries.forEach { entry ->
             val sourceFile = File(packDir, entry.file)
             if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
-            importLessonFromFile(languageId, sourceFile, entry.title)
+            importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId)
         }
+        importStoriesFromPack(packDir, languageId)
 
         val updated = getInstalledPacks()
             .filterNot { it.packId == manifest.packId }
@@ -147,6 +151,22 @@ class LessonStore(private val context: Context) {
         )
         packsStore.write(updated)
         return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis())
+    }
+
+    fun getStoryQuizzes(lessonId: String, phase: StoryPhase, languageId: String): List<StoryQuiz> {
+        val entries = storiesStore.read()
+        return entries.mapNotNull { entry ->
+            val entryLesson = entry["lessonId"] as? String ?: return@mapNotNull null
+            val entryPhase = entry["phase"] as? String ?: return@mapNotNull null
+            val entryLang = entry["languageId"] as? String ?: return@mapNotNull null
+            if (!entryLesson.equals(lessonId, ignoreCase = true)) return@mapNotNull null
+            if (!entryPhase.equals(phase.name, ignoreCase = true)) return@mapNotNull null
+            if (!entryLang.equals(languageId, ignoreCase = true)) return@mapNotNull null
+            val fileName = entry["file"] as? String ?: return@mapNotNull null
+            val file = File(storiesDir, fileName)
+            if (!file.exists()) return@mapNotNull null
+            runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull()
+        }
     }
 
     fun getLessons(languageId: String): List<Lesson> {
@@ -283,8 +303,14 @@ class LessonStore(private val context: Context) {
         languagesStore.write(updated)
     }
 
-    private fun importLessonFromFile(languageId: String, sourceFile: File, fallbackTitle: String?): Lesson {
-        val id = UUID.randomUUID().toString()
+    private fun importLessonFromFile(
+        languageId: String,
+        sourceFile: File,
+        fallbackTitle: String?,
+        lessonIdOverride: String? = null
+    ): Lesson {
+        val normalizedId = lessonIdOverride?.trim().orEmpty()
+        val id = if (normalizedId.isNotBlank()) normalizedId else UUID.randomUUID().toString()
         val fileName = "lesson_$id.csv"
         val dir = languageDir(languageId)
         dir.mkdirs()
@@ -294,9 +320,57 @@ class LessonStore(private val context: Context) {
         }
         val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
         val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
+        if (normalizedId.isNotBlank()) {
+            replaceById(languageId, normalizedId)
+        }
         replaceByTitle(languageId, title)
         saveIndex(languageId, LessonIndexEntry(id, title, fileName))
         return Lesson(id = id, languageId = languageId, title = title, cards = cards)
+    }
+
+    private fun replaceById(languageId: String, lessonId: String) {
+        val entries = loadIndex(languageId).toMutableList()
+        val iterator = entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val existingId = entry["id"] as? String ?: continue
+            if (existingId.equals(lessonId, ignoreCase = true)) {
+                val fileName = entry["file"] as? String
+                if (fileName != null) {
+                    val csvFile = File(languageDir(languageId), fileName)
+                    if (csvFile.exists()) csvFile.delete()
+                }
+                iterator.remove()
+            }
+        }
+        writeIndex(languageId, entries)
+    }
+
+    private fun importStoriesFromPack(packDir: File, languageId: String) {
+        storiesDir.mkdirs()
+        val existing = storiesStore.read().filterNot {
+            val entryLang = it["languageId"] as? String
+            entryLang?.equals(languageId, ignoreCase = true) == true
+        }.toMutableList()
+        packDir.walkTopDown()
+            .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
+            .filterNot { it.name.equals("manifest.json", ignoreCase = true) }
+            .forEach { file ->
+                val story = runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull() ?: return@forEach
+                val storedName = "${story.storyId}.json"
+                val target = File(storiesDir, storedName)
+                AtomicFileWriter.writeText(target, file.readText())
+                existing.add(
+                    mapOf(
+                        "storyId" to story.storyId,
+                        "lessonId" to story.lessonId,
+                        "phase" to story.phase.name,
+                        "languageId" to languageId,
+                        "file" to storedName
+                    )
+                )
+            }
+        storiesStore.write(existing)
     }
 
     private fun guessFileName(resolver: ContentResolver, uri: Uri): String? {

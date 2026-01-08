@@ -1,0 +1,17 @@
+﻿{
+    "phase":  "CHECK_OUT",
+    "storyId":  "S_L02_OUT",
+    "questions":  [
+                      {
+                          "qId":  "Q1",
+                          "correctIndex":  0,
+                          "prompt":  "Where does he work?",
+                          "options":  [
+                                          "From home",
+                                          "At the office"
+                                      ]
+                      }
+                  ],
+    "lessonId":  "L02_PRESENT_SIMPLE_REPEAT",
+    "text":  "He does not work today."
+}

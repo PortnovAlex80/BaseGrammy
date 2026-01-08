@@ -16,6 +16,8 @@ import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.StoryPhase
+import com.alexpo.grammermate.data.StoryQuiz
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
 import kotlinx.coroutines.Job
@@ -88,7 +90,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 subLessonCount = 0,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
-                subLessonFinishedToken = 0
+                subLessonFinishedToken = 0,
+                storyCheckInDone = false,
+                storyCheckOutDone = false,
+                activeStory = null
             )
         }
         buildSessionCards()
@@ -146,7 +151,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 sessionState = SessionState.PAUSED,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
-                subLessonFinishedToken = 0
+                subLessonFinishedToken = 0,
+                storyCheckInDone = false,
+                storyCheckOutDone = false,
+                activeStory = null,
+                storyErrorMessage = null
             )
         }
         buildSessionCards()
@@ -167,7 +176,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 sessionState = SessionState.PAUSED,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
-                subLessonFinishedToken = 0
+                subLessonFinishedToken = 0,
+                storyCheckInDone = false,
+                storyCheckOutDone = false,
+                activeStory = null,
+                storyErrorMessage = null
             )
         }
         buildSessionCards()
@@ -187,7 +200,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 sessionState = SessionState.PAUSED,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
-                subLessonFinishedToken = 0
+                subLessonFinishedToken = 0,
+                storyCheckInDone = false,
+                storyCheckOutDone = false,
+                activeStory = null,
+                storyErrorMessage = null
             )
         }
         buildSessionCards()
@@ -380,7 +397,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     answerText = null,
                     activeSubLessonIndex = 0,
                     completedSubLessonCount = 0,
-                    subLessonFinishedToken = 0
+                    subLessonFinishedToken = 0,
+                    storyCheckInDone = false,
+                    storyCheckOutDone = false,
+                    activeStory = null,
+                    storyErrorMessage = null
                 )
             }
             buildSessionCards()
@@ -432,7 +453,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 answerText = null,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
-                subLessonFinishedToken = 0
+                subLessonFinishedToken = 0,
+                storyCheckInDone = false,
+                storyCheckOutDone = false,
+                activeStory = null,
+                storyErrorMessage = null
             )
         }
         buildSessionCards()
@@ -462,7 +487,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 sessionState = SessionState.PAUSED,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
-                subLessonFinishedToken = 0
+                subLessonFinishedToken = 0,
+                storyCheckInDone = false,
+                storyCheckOutDone = false,
+                activeStory = null,
+                storyErrorMessage = null
             )
         }
         buildSessionCards()
@@ -528,6 +557,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         buildSessionCards()
         saveProgress()
+    }
+
+    fun openStory(phase: StoryPhase) {
+        val lessonId = _uiState.value.selectedLessonId ?: return
+        val languageId = _uiState.value.selectedLanguageId
+        val story = lessonStore.getStoryQuizzes(lessonId, phase, languageId).firstOrNull()
+        if (story == null) {
+            _uiState.update { it.copy(storyErrorMessage = "История не найдена. Импортируйте пакет заново.") }
+            return
+        }
+        _uiState.update { it.copy(activeStory = story, storyErrorMessage = null) }
+    }
+
+    fun completeStory(phase: StoryPhase) {
+        _uiState.update {
+            when (phase) {
+                StoryPhase.CHECK_IN -> it.copy(storyCheckInDone = true, activeStory = null)
+                StoryPhase.CHECK_OUT -> it.copy(storyCheckOutDone = true, activeStory = null)
+            }
+        }
+    }
+
+    fun clearStoryError() {
+        _uiState.update { it.copy(storyErrorMessage = null) }
     }
 
     private fun startSession() {
@@ -639,5 +692,9 @@ data class TrainingUiState(
     val subLessonCount: Int = 0,
     val activeSubLessonIndex: Int = 0,
     val completedSubLessonCount: Int = 0,
-    val subLessonFinishedToken: Int = 0
+    val subLessonFinishedToken: Int = 0,
+    val storyCheckInDone: Boolean = false,
+    val storyCheckOutDone: Boolean = false,
+    val activeStory: StoryQuiz? = null,
+    val storyErrorMessage: String? = null
 )

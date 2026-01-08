@@ -25,6 +25,27 @@ data class LessonPack(
     val importedAt: Long
 )
 
+enum class StoryPhase {
+    CHECK_IN,
+    CHECK_OUT
+}
+
+data class StoryQuestion(
+    val qId: String,
+    val prompt: String,
+    val options: List<String>,
+    val correctIndex: Int,
+    val explain: String? = null
+)
+
+data class StoryQuiz(
+    val storyId: String,
+    val lessonId: String,
+    val phase: StoryPhase,
+    val text: String,
+    val questions: List<StoryQuestion>
+)
+
 enum class TrainingMode {
     LESSON,
     ALL_SEQUENTIAL,

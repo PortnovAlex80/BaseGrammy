@@ -104,6 +104,9 @@ fun GrammarMateApp() {
             BackHandler(enabled = screen == AppScreen.LESSON && !showSettings) {
                 screen = AppScreen.HOME
             }
+            BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
+                screen = AppScreen.LESSON
+            }
 
             SettingsSheet(
                 show = showSettings,
@@ -145,6 +148,17 @@ fun GrammarMateApp() {
                     onStartSubLesson = { index ->
                         vm.selectSubLesson(index)
                         screen = AppScreen.TRAINING
+                    },
+                    onOpenStory = { phase ->
+                        vm.openStory(phase)
+                        screen = AppScreen.STORY
+                    }
+                )
+                AppScreen.STORY -> StoryQuizScreen(
+                    story = state.activeStory,
+                    onClose = {
+                        state.activeStory?.phase?.let { vm.completeStory(it) }
+                        screen = AppScreen.LESSON
                     }
                 )
                 AppScreen.TRAINING -> TrainingScreen(
@@ -190,6 +204,19 @@ fun GrammarMateApp() {
                     text = { Text(text = "Текущая сессия будет завершена.") }
                 )
             }
+
+            if (state.storyErrorMessage != null) {
+                AlertDialog(
+                    onDismissRequest = { vm.clearStoryError() },
+                    confirmButton = {
+                        TextButton(onClick = { vm.clearStoryError() }) {
+                            Text(text = "OK")
+                        }
+                    },
+                    title = { Text(text = "История") },
+                    text = { Text(text = state.storyErrorMessage ?: "") }
+                )
+            }
         }
     }
 }
@@ -197,6 +224,7 @@ fun GrammarMateApp() {
 private enum class AppScreen {
     HOME,
     LESSON,
+    STORY,
     TRAINING
 }
 
@@ -361,7 +389,8 @@ private fun HomeScreen(
 private fun LessonRoadmapScreen(
     state: TrainingUiState,
     onBack: () -> Unit,
-    onStartSubLesson: (Int) -> Unit
+    onStartSubLesson: (Int) -> Unit,
+    onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit
 ) {
     val lessonTitle = state.lessons
         .firstOrNull { it.id == state.selectedLessonId }
@@ -370,6 +399,7 @@ private fun LessonRoadmapScreen(
     val total = state.subLessonCount.coerceAtLeast(1)
     val completed = state.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = state.activeSubLessonIndex.coerceIn(0, total - 1)
+    val entries = buildRoadmapEntries(total)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -401,25 +431,47 @@ private fun LessonRoadmapScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             userScrollEnabled = false
         ) {
-            itemsIndexed(List(total) { it }) { index, _ ->
-                val isCompleted = index < completed
-                val isActive = index == currentIndex
-                val emoji = if (isCompleted) "🌸" else "🔒"
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .clickable(enabled = isCompleted || isActive) { onStartSubLesson(index) }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
-                        Text(text = emoji, fontSize = 18.sp)
+            itemsIndexed(entries) { _, entry ->
+                when (entry) {
+                    is RoadmapEntry.SubLesson -> {
+                        val index = entry.index
+                        val isCompleted = index < completed
+                        val isActive = index == currentIndex
+                        val canEnter = isCompleted || (isActive && (index > 0 || state.storyCheckInDone))
+                        val emoji = if (isCompleted) "🌸" else "🔒"
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(72.dp)
+                                .clickable(enabled = canEnter) { onStartSubLesson(index) }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
+                                Text(text = emoji, fontSize = 18.sp)
+                            }
+                        }
+                    }
+                    is RoadmapEntry.StoryCheckIn -> {
+                        val enabled = !state.storyCheckInDone
+                        StoryTile(
+                            label = "IN",
+                            enabled = enabled,
+                            onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_IN) }
+                        )
+                    }
+                    is RoadmapEntry.StoryCheckOut -> {
+                        val enabled = completed >= total && !state.storyCheckOutDone
+                        StoryTile(
+                            label = "OUT",
+                            enabled = enabled,
+                            onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_OUT) }
+                        )
                     }
                 }
             }
@@ -430,6 +482,90 @@ private fun LessonRoadmapScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = if (completed == 0) "Start Lesson" else "Continue Lesson")
+        }
+    }
+}
+
+private sealed class RoadmapEntry {
+    data class SubLesson(val index: Int) : RoadmapEntry()
+    object StoryCheckIn : RoadmapEntry()
+    object StoryCheckOut : RoadmapEntry()
+}
+
+private fun buildRoadmapEntries(total: Int): List<RoadmapEntry> {
+    val entries = mutableListOf<RoadmapEntry>()
+    entries.add(RoadmapEntry.StoryCheckIn)
+    for (i in 0 until total) {
+        entries.add(RoadmapEntry.SubLesson(i))
+    }
+    entries.add(RoadmapEntry.StoryCheckOut)
+    return entries
+}
+
+@Composable
+private fun StoryTile(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = label, fontWeight = FontWeight.SemiBold)
+            Text(text = "📘", fontSize = 18.sp)
+        }
+    }
+}
+
+@Composable
+private fun StoryQuizScreen(
+    story: com.alexpo.grammermate.data.StoryQuiz?,
+    onClose: () -> Unit
+) {
+    if (story == null) {
+        onClose()
+        return
+    }
+    val selections = remember(story.storyId) { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(text = if (story.phase == com.alexpo.grammermate.data.StoryPhase.CHECK_IN) "Story Check-in" else "Story Check-out",
+            fontWeight = FontWeight.SemiBold)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = story.text, style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+        story.questions.forEach { question ->
+            Text(text = question.prompt, fontWeight = FontWeight.SemiBold)
+            question.options.forEachIndexed { index, option ->
+                val selected = selections.value[question.qId] == index
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            selections.value = selections.value + (question.qId to index)
+                        }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = if (selected) "●" else "○")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = option)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+            Text(text = "Finish Story")
         }
     }
 }
