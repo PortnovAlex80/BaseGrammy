@@ -1,0 +1,14 @@
+﻿{
+    "lessons":  [
+                    {
+                        "title":  "Present Simple",
+                        "lessonId":  "L01_PRESENT_SIMPLE",
+                        "file":  "lesson_01.csv",
+                        "order":  1
+                    }
+                ],
+    "language":  "en",
+    "schemaVersion":  1,
+    "packVersion":  "v1",
+    "packId":  "TEST_LITE"
+}

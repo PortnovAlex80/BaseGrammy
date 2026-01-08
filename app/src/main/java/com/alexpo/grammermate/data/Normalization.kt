@@ -3,7 +3,8 @@
 object Normalizer {
     fun normalize(input: String): String {
         val trimmed = input.trim().replace(Regex("\\s+"), " ")
-        val lower = trimmed.lowercase()
+        val timeFixed = trimmed.replace(Regex("\\b(\\d{1,2}):00\\b"), "$1 o'clock")
+        val lower = timeFixed.lowercase()
         val builder = StringBuilder()
         for (ch in lower) {
             when (ch) {

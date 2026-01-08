@@ -55,6 +55,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -95,9 +96,13 @@ fun GrammarMateApp() {
             var screen by remember { mutableStateOf(AppScreen.HOME) }
             var showSettings by remember { mutableStateOf(false) }
             var showExitDialog by remember { mutableStateOf(false) }
+            val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
+            }
+            BackHandler(enabled = screen == AppScreen.LESSON && !showSettings) {
+                screen = AppScreen.HOME
             }
 
             SettingsSheet(
@@ -128,9 +133,17 @@ fun GrammarMateApp() {
                         vm.pauseSession()
                         showSettings = true
                     },
-                    onPrimaryAction = { screen = AppScreen.TRAINING },
+                    onPrimaryAction = { screen = AppScreen.LESSON },
                     onSelectLesson = { lessonId ->
                         vm.selectLesson(lessonId)
+                        screen = AppScreen.LESSON
+                    }
+                )
+                AppScreen.LESSON -> LessonRoadmapScreen(
+                    state = state,
+                    onBack = { screen = AppScreen.HOME },
+                    onStartSubLesson = { index ->
+                        vm.selectSubLesson(index)
                         screen = AppScreen.TRAINING
                     }
                 )
@@ -151,6 +164,11 @@ fun GrammarMateApp() {
                 )
             }
 
+            if (screen == AppScreen.TRAINING && state.subLessonFinishedToken != lastFinishedToken.value) {
+                lastFinishedToken.value = state.subLessonFinishedToken
+                screen = AppScreen.LESSON
+            }
+
             if (showExitDialog) {
                 AlertDialog(
                     onDismissRequest = { showExitDialog = false },
@@ -158,7 +176,7 @@ fun GrammarMateApp() {
                         TextButton(onClick = {
                             showExitDialog = false
                             vm.finishSession()
-                            screen = AppScreen.HOME
+                            screen = AppScreen.LESSON
                         }) {
                             Text(text = "Выйти")
                         }
@@ -178,6 +196,7 @@ fun GrammarMateApp() {
 
 private enum class AppScreen {
     HOME,
+    LESSON,
     TRAINING
 }
 
@@ -335,6 +354,83 @@ private fun HomeScreen(
                 )
             }
         )
+    }
+}
+
+@Composable
+private fun LessonRoadmapScreen(
+    state: TrainingUiState,
+    onBack: () -> Unit,
+    onStartSubLesson: (Int) -> Unit
+) {
+    val lessonTitle = state.lessons
+        .firstOrNull { it.id == state.selectedLessonId }
+        ?.title
+        ?: "Lesson"
+    val total = state.subLessonCount.coerceAtLeast(1)
+    val completed = state.completedSubLessonCount.coerceIn(0, total)
+    val currentIndex = state.activeSubLessonIndex.coerceIn(0, total - 1)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Text(text = lessonTitle, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.width(40.dp))
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        LinearProgressIndicator(
+            progress = completed.toFloat() / total.toFloat(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Подурок ${currentIndex + 1} из $total", textAlign = TextAlign.Center)
+        Spacer(modifier = Modifier.height(16.dp))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            userScrollEnabled = false
+        ) {
+            itemsIndexed(List(total) { it }) { index, _ ->
+                val isCompleted = index < completed
+                val isActive = index == currentIndex
+                val emoji = if (isCompleted) "🌸" else "🔒"
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .clickable(enabled = isCompleted || isActive) { onStartSubLesson(index) }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
+                        Text(text = emoji, fontSize = 18.sp)
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = { onStartSubLesson(currentIndex) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = if (completed == 0) "Start Lesson" else "Continue Lesson")
+        }
     }
 }
 

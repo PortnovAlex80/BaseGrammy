@@ -44,6 +44,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var sessionCards: List<SentenceCard> = emptyList()
     private var warmupCount: Int = 0
     private var subLessonTotal: Int = 0
+    private var subLessonCount: Int = 0
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
     private val warmupSize = 3
@@ -83,7 +84,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
                 activeTimeMs = progress.activeTimeMs,
                 warmupCount = 0,
-                subLessonTotal = 0
+                subLessonTotal = 0,
+                subLessonCount = 0,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0,
+                subLessonFinishedToken = 0
             )
         }
         buildSessionCards()
@@ -138,7 +143,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = "",
                 lastResult = null,
                 answerText = null,
-                sessionState = SessionState.PAUSED
+                sessionState = SessionState.PAUSED,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0,
+                subLessonFinishedToken = 0
             )
         }
         buildSessionCards()
@@ -156,7 +164,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastResult = null,
                 answerText = null,
                 incorrectAttemptsForCard = 0,
-                sessionState = SessionState.PAUSED
+                sessionState = SessionState.PAUSED,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0,
+                subLessonFinishedToken = 0
             )
         }
         buildSessionCards()
@@ -173,7 +184,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastResult = null,
                 answerText = null,
                 incorrectAttemptsForCard = 0,
-                sessionState = SessionState.PAUSED
+                sessionState = SessionState.PAUSED,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0,
+                subLessonFinishedToken = 0
             )
         }
         buildSessionCards()
@@ -190,15 +204,35 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         var hintShown = false
         if (accepted) {
             playSuccessTone()
-            _uiState.update {
-                it.copy(
-                    correctCount = it.correctCount + 1,
-                    lastResult = true,
-                    incorrectAttemptsForCard = 0,
-                    answerText = null
-                )
+            val isLastCard = state.currentIndex >= sessionCards.lastIndex
+            if (isLastCard) {
+                pauseTimer()
+                _uiState.update {
+                    val nextCompleted = (it.completedSubLessonCount + 1).coerceAtMost(it.subLessonCount)
+                    it.copy(
+                        correctCount = it.correctCount + 1,
+                        lastResult = null,
+                        incorrectAttemptsForCard = 0,
+                        answerText = null,
+                        sessionState = SessionState.PAUSED,
+                        currentIndex = 0,
+                        activeSubLessonIndex = nextCompleted.coerceAtMost((it.subLessonCount - 1).coerceAtLeast(0)),
+                        completedSubLessonCount = nextCompleted,
+                        subLessonFinishedToken = it.subLessonFinishedToken + 1
+                    )
+                }
+                buildSessionCards()
+            } else {
+                _uiState.update {
+                    it.copy(
+                        correctCount = it.correctCount + 1,
+                        lastResult = true,
+                        incorrectAttemptsForCard = 0,
+                        answerText = null
+                    )
+                }
+                nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
             }
-            nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
         } else {
             playErrorTone()
             val nextIncorrect = state.incorrectAttemptsForCard + 1
@@ -343,7 +377,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     activeTimeMs = 0L,
                     inputText = "",
                     lastResult = null,
-                    answerText = null
+                    answerText = null,
+                    activeSubLessonIndex = 0,
+                    completedSubLessonCount = 0,
+                    subLessonFinishedToken = 0
                 )
             }
             buildSessionCards()
@@ -392,7 +429,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 activeTimeMs = 0L,
                 inputText = "",
                 lastResult = null,
-                answerText = null
+                answerText = null,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0,
+                subLessonFinishedToken = 0
             )
         }
         buildSessionCards()
@@ -419,7 +459,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastResult = null,
                 answerText = null,
                 incorrectAttemptsForCard = 0,
-                sessionState = SessionState.PAUSED
+                sessionState = SessionState.PAUSED,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0,
+                subLessonFinishedToken = 0
             )
         }
         buildSessionCards()
@@ -445,7 +488,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val warmup = lessonCards.take(warmupSize)
         val mainCards = lessonCards.drop(warmup.size)
         val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        val block = mainCards.take(blockSize)
+        subLessonCount = if (mainCards.isEmpty()) 0 else (mainCards.size + blockSize - 1) / blockSize
+        val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
+        val blockStart = activeIndex * blockSize
+        val block = mainCards.drop(blockStart).take(blockSize)
         sessionCards = warmup + block
         warmupCount = warmup.size
         subLessonTotal = block.size
@@ -460,9 +506,28 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentCard = card,
                 sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
                 warmupCount = warmupCount,
-                subLessonTotal = subLessonTotal
+                subLessonTotal = subLessonTotal,
+                subLessonCount = subLessonCount,
+                activeSubLessonIndex = activeIndex
             )
         }
+    }
+
+    fun selectSubLesson(index: Int) {
+        pauseTimer()
+        _uiState.update {
+            it.copy(
+                activeSubLessonIndex = index.coerceAtLeast(0),
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0,
+                sessionState = SessionState.PAUSED
+            )
+        }
+        buildSessionCards()
+        saveProgress()
     }
 
     private fun startSession() {
@@ -570,5 +635,9 @@ data class TrainingUiState(
     val inputMode: InputMode = InputMode.VOICE,
     val voiceTriggerToken: Int = 0,
     val warmupCount: Int = 0,
-    val subLessonTotal: Int = 0
+    val subLessonTotal: Int = 0,
+    val subLessonCount: Int = 0,
+    val activeSubLessonIndex: Int = 0,
+    val completedSubLessonCount: Int = 0,
+    val subLessonFinishedToken: Int = 0
 )
