@@ -94,9 +94,10 @@ fun GrammarMateApp() {
             val state by vm.uiState.collectAsState()
             var screen by remember { mutableStateOf(AppScreen.HOME) }
             var showSettings by remember { mutableStateOf(false) }
+            var showExitDialog by remember { mutableStateOf(false) }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
-                screen = AppScreen.HOME
+                showExitDialog = true
             }
 
             SettingsSheet(
@@ -140,13 +141,35 @@ fun GrammarMateApp() {
                     onPrev = vm::prevCard,
                     onNext = vm::nextCard,
                     onTogglePause = vm::togglePause,
-                    onFinish = vm::finishSession,
+                    onRequestExit = { showExitDialog = true },
                     onOpenSettings = vm::pauseSession,
                     onShowSettings = { showSettings = true },
                     onSelectLesson = vm::selectLesson,
                     onSelectMode = vm::selectMode,
                     onSetInputMode = vm::setInputMode,
                     onShowAnswer = vm::showAnswer
+                )
+            }
+
+            if (showExitDialog) {
+                AlertDialog(
+                    onDismissRequest = { showExitDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showExitDialog = false
+                            vm.finishSession()
+                            screen = AppScreen.HOME
+                        }) {
+                            Text(text = "Выйти")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showExitDialog = false }) {
+                            Text(text = "Отмена")
+                        }
+                    },
+                    title = { Text(text = "Завершить сессию?") },
+                    text = { Text(text = "Текущая сессия будет завершена.") }
                 )
             }
         }
@@ -578,7 +601,7 @@ private fun TrainingScreen(
     onPrev: () -> Unit,
     onNext: (Boolean) -> Unit,
     onTogglePause: () -> Unit,
-    onFinish: () -> Unit,
+    onRequestExit: () -> Unit,
     onOpenSettings: () -> Unit,
     onShowSettings: () -> Unit,
     onSelectLesson: (String) -> Unit,
@@ -622,22 +645,25 @@ private fun TrainingScreen(
             ModeSelector(state, onSelectMode, onSelectLesson)
             CardPrompt(state)
             AnswerBox(state, onInputChange, onSubmit, onSetInputMode, onShowAnswer, hasCards)
-            ResultBlock(state, onNext, state.inputMode)
-            NavigationRow(onPrev, onNext, onTogglePause, onFinish, state.sessionState, hasCards)
+            ResultBlock(state)
+            NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
         }
     }
 }
 
 @Composable
 private fun HeaderStats(state: TrainingUiState) {
-    val total = when (state.mode) {
-        TrainingMode.LESSON -> {
-            state.lessons.firstOrNull { it.id == state.selectedLessonId }?.cards?.size ?: 0
-        }
-        TrainingMode.ALL_SEQUENTIAL,
-        TrainingMode.ALL_MIXED -> state.lessons.sumOf { it.cards.size }
+    val total = state.subLessonTotal
+    val progressIndex = if (total > 0) {
+        (state.currentIndex - state.warmupCount + 1).coerceIn(0, total)
+    } else {
+        0
     }
-    val current = if (total > 0) (state.currentIndex + 1).coerceAtMost(total) else 0
+    val progressPercent = if (total > 0) {
+        ((progressIndex.toDouble() / total.toDouble()) * 100).toInt()
+    } else {
+        0
+    }
     val speed = speedPerMinute(state.activeTimeMs, state.correctCount)
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -646,7 +672,10 @@ private fun HeaderStats(state: TrainingUiState) {
     ) {
         Column {
             Text(text = "Прогресс")
-            Text(text = "$current из $total", fontWeight = FontWeight.SemiBold)
+            Text(
+                text = if (state.currentIndex < state.warmupCount) "Warm-up" else "${progressPercent}%",
+                fontWeight = FontWeight.SemiBold
+            )
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(text = "Время")
@@ -951,7 +980,7 @@ private fun AnswerBox(
 }
 
 @Composable
-private fun ResultBlock(state: TrainingUiState, onNext: (Boolean) -> Unit, inputMode: InputMode) {
+private fun ResultBlock(state: TrainingUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (state.lastResult) {
             true -> Text(text = "Верно", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
@@ -961,9 +990,6 @@ private fun ResultBlock(state: TrainingUiState, onNext: (Boolean) -> Unit, input
         if (!state.answerText.isNullOrBlank()) {
             Text(text = "Ответ: ${state.answerText}")
         }
-        state.lastRating?.let { rating ->
-            Text(text = "Рейтинг: ${String.format("%.1f", rating)} ?/мин")
-        }
     }
 }
 
@@ -972,7 +998,7 @@ private fun NavigationRow(
     onPrev: () -> Unit,
     onNext: (Boolean) -> Unit,
     onTogglePause: () -> Unit,
-    onFinish: () -> Unit,
+    onRequestExit: () -> Unit,
     state: SessionState,
     hasCards: Boolean
 ) {
@@ -992,8 +1018,8 @@ private fun NavigationRow(
                     Icon(Icons.Default.PlayArrow, contentDescription = "Play")
                 }
             }
-            IconButton(onClick = onFinish, enabled = hasCards) {
-                Icon(Icons.Default.StopCircle, contentDescription = "Finish lesson")
+            IconButton(onClick = onRequestExit, enabled = hasCards) {
+                Icon(Icons.Default.StopCircle, contentDescription = "Exit session")
             }
             IconButton(onClick = { onNext(false) }, enabled = hasCards) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next")

@@ -42,8 +42,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
+    private var warmupCount: Int = 0
+    private var subLessonTotal: Int = 0
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
+    private val warmupSize = 3
+    private val subLessonSizeMin = 6
+    private val subLessonSizeMax = 12
+    private val subLessonSize = 10
 
     private val _uiState = MutableStateFlow(TrainingUiState())
     val uiState: StateFlow<TrainingUiState> = _uiState
@@ -75,7 +81,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 correctCount = progress.correctCount,
                 incorrectCount = progress.incorrectCount,
                 incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
-                activeTimeMs = progress.activeTimeMs
+                activeTimeMs = progress.activeTimeMs,
+                warmupCount = 0,
+                subLessonTotal = 0
             )
         }
         buildSessionCards()
@@ -434,7 +442,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
             TrainingMode.ALL_MIXED -> lessons.flatMap { it.cards }.shuffled()
         }
-        sessionCards = lessonCards
+        val warmup = lessonCards.take(warmupSize)
+        val mainCards = lessonCards.drop(warmup.size)
+        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
+        val block = mainCards.take(blockSize)
+        sessionCards = warmup + block
+        warmupCount = warmup.size
+        subLessonTotal = block.size
         val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
         val card = sessionCards.getOrNull(safeIndex)
         if (card == null && state.sessionState == SessionState.ACTIVE) {
@@ -444,7 +458,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             it.copy(
                 currentIndex = safeIndex,
                 currentCard = card,
-                sessionState = if (card == null) SessionState.PAUSED else state.sessionState
+                sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
+                warmupCount = warmupCount,
+                subLessonTotal = subLessonTotal
             )
         }
     }
@@ -552,5 +568,7 @@ data class TrainingUiState(
     val lastResult: Boolean? = null,
     val lastRating: Double? = null,
     val inputMode: InputMode = InputMode.VOICE,
-    val voiceTriggerToken: Int = 0
+    val voiceTriggerToken: Int = 0,
+    val warmupCount: Int = 0,
+    val subLessonTotal: Int = 0
 )
