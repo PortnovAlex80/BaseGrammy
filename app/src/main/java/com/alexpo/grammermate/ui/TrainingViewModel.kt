@@ -1014,7 +1014,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun openVocabSprint() {
         val lessonId = _uiState.value.selectedLessonId ?: return
         val languageId = _uiState.value.selectedLanguageId
-        val entries = lessonStore.getVocabEntries(lessonId, languageId).take(3)
+        val entries = lessonStore.getVocabEntries(lessonId, languageId)
         if (entries.isEmpty()) {
             vocabSession = emptyList()
             _uiState.update { it.copy(vocabErrorMessage = "Словарь не найден. Импортируйте пакет заново.") }

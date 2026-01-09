@@ -1024,7 +1024,19 @@ private fun StoryQuizScreen(
         return
     }
     val selections = remember(story.storyId) { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    val results = remember(story.storyId) { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
+    var questionIndex by remember(story.storyId) { mutableStateOf(0) }
+    var showResult by remember(story.storyId) { mutableStateOf(false) }
     var errorMessage by remember(story.storyId) { mutableStateOf<String?>(null) }
+    if (story.questions.isEmpty()) {
+        onComplete(true)
+        return
+    }
+    val question = story.questions.getOrNull(questionIndex) ?: run {
+        val allCorrect = results.value.values.all { it }
+        onComplete(allCorrect)
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1035,26 +1047,36 @@ private fun StoryQuizScreen(
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = story.text, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(16.dp))
-        story.questions.forEach { question ->
-            Text(text = question.prompt, fontWeight = FontWeight.SemiBold)
-            question.options.forEachIndexed { index, option ->
-                val selected = selections.value[question.qId] == index
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selections.value = selections.value + (question.qId to index)
-                            errorMessage = null
-                        }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = if (selected) "●" else "○")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = option)
-                }
+        Text(text = "Question ${questionIndex + 1} / ${story.questions.size}")
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(text = question.prompt, fontWeight = FontWeight.SemiBold)
+        question.options.forEachIndexed { index, option ->
+            val selected = selections.value[question.qId] == index
+            val isCorrectOption = index == question.correctIndex
+            val optionSuffix = when {
+                showResult && isCorrectOption -> " (correct)"
+                showResult && selected && !isCorrectOption -> " (your choice)"
+                else -> ""
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !showResult) {
+                        selections.value = selections.value + (question.qId to index)
+                        errorMessage = null
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = if (selected) ">" else " ")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = option + optionSuffix)
+            }
+        }
+        if (showResult) {
+            Spacer(modifier = Modifier.height(8.dp))
+            val correctText = question.options.getOrNull(question.correctIndex).orEmpty()
+            Text(text = "Correct: $correctText", color = MaterialTheme.colorScheme.primary)
         }
         Spacer(modifier = Modifier.height(8.dp))
         errorMessage?.let {
@@ -1067,27 +1089,41 @@ private fun StoryQuizScreen(
                     onComplete(true)
                     return@Button
                 }
-                val selectedCount = selections.value.size
-                if (selectedCount < story.questions.size) {
-                    errorMessage = "Ответьте на все вопросы"
+                if (!showResult) {
+                    val selected = selections.value[question.qId]
+                    if (selected == null) {
+                        errorMessage = "Select an answer"
+                        return@Button
+                    }
+                    val correct = selected == question.correctIndex
+                    results.value = results.value + (question.qId to correct)
+                    showResult = true
+                    errorMessage = if (correct) null else "Incorrect"
                     return@Button
                 }
-                val allCorrect = story.questions.all { question ->
-                    selections.value[question.qId] == question.correctIndex
-                }
-                if (!allCorrect) {
-                    errorMessage = "Есть ошибки. Попробуйте еще раз"
+                val isLast = questionIndex >= story.questions.lastIndex
+                if (isLast) {
+                    val allCorrect = results.value.size == story.questions.size &&
+                        results.value.values.all { it }
+                    onComplete(allCorrect)
                     return@Button
                 }
-                onComplete(true)
+                questionIndex += 1
+                showResult = false
+                errorMessage = null
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Finish Story")
+            val isLast = questionIndex >= story.questions.lastIndex
+            val label = when {
+                showResult && isLast -> "Finish Story"
+                showResult -> "Next"
+                else -> "Check"
+            }
+            Text(text = label)
         }
     }
 }
-
 @Composable
 private fun LessonTile(tile: LessonTileUi, onSelect: () -> Unit) {
     val emoji = when (tile.state) {

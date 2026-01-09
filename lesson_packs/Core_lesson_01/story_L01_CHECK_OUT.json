@@ -1,0 +1,14 @@
+{
+  "storyId": "S_L01_OUT_01",
+  "lessonId": "L01_PRESENT_SIMPLE",
+  "phase": "CHECK_OUT",
+  "text": "Jane has a good job in a small company. She works in the office and sometimes works from home. Last week she worked a lot and spent much time on work. She got many messages from her boss. One day the boss called Jane in the evening. They talked for thirty minutes about a new project. Jane liked the idea, but she wanted more time. Yesterday Jane stayed at home. She had breakfast late and rested in the morning. In the afternoon she called her friend. Her friend works in another company and has a different job. They talked about work, money, and free time. In the evening Jane went to the movies. She liked the movie, but it was long. Today Jane works from home. She does not go to the office. She wants to spend time with her family. Tomorrow she will leave home early. She will take a taxi and get to work on time. In the evening she will call her boss again. They will talk about work and the next weekend.",
+  "questions": [
+    {
+      "qId": "Q1",
+      "prompt": "Where does Jane sometimes work?",
+      "options": ["From home", "At school", "In a restaurant", "In a hospital"],
+      "correctIndex": 0
+    }
+  ]
+}

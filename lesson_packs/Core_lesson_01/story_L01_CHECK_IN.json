@@ -1,0 +1,14 @@
+{
+  "storyId": "S_L01_IN_01",
+  "lessonId": "L01_PRESENT_SIMPLE",
+  "phase": "CHECK_IN",
+  "text": "Mike works in a company. He has a good job and works from home. Last week he worked a lot and got a new message from his boss. The boss called Mike and talked for 30 minutes. Yesterday Mike went to the movies with a friend. They liked the movie and talked about work after it. Today Mike stays at home and has breakfast at 10. He does not work today. He wants to rest and spend time at home. Tomorrow he will leave for work at 9. He will take a taxi and get to work on time. In the evening he will call his friend. They will talk about the next weekend.",
+  "questions": [
+    {
+      "qId": "Q1",
+      "prompt": "Where does Mike usually work?",
+      "options": ["From home", "At school", "In a hospital", "In a restaurant"],
+      "correctIndex": 0
+    }
+  ]
+}
