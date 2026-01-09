@@ -63,7 +63,8 @@ enum class TrainingMode {
 
 enum class BossType {
     LESSON,
-    MEGA
+    MEGA,
+    ELITE
 }
 
 enum class BossReward {
@@ -98,5 +99,7 @@ data class TrainingProgress(
     val bossMegaReward: String? = null,
     val voiceActiveMs: Long = 0L,
     val voiceWordCount: Int = 0,
-    val hintCount: Int = 0
+    val hintCount: Int = 0,
+    val eliteStepIndex: Int = 0,
+    val eliteBestSpeeds: List<Double> = emptyList()
 )

@@ -54,6 +54,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val configStore = AppConfigStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
+    private var eliteCards: List<SentenceCard> = emptyList()
     private var vocabSession: List<VocabEntry> = emptyList()
     private var warmupCount: Int = 0
     private var subLessonTotal: Int = 0
@@ -66,6 +67,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
+    private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
+    private var eliteSizeMultiplier: Double = 1.25
 
     private val _uiState = MutableStateFlow(TrainingUiState())
     val uiState: StateFlow<TrainingUiState> = _uiState
@@ -80,6 +83,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
         val config = configStore.load()
+        eliteSizeMultiplier = config.eliteSizeMultiplier
         val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
             val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
             lessonId to parsed
@@ -92,6 +96,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: "en"
         val lessons = lessonStore.getLessons(selectedLanguageId)
         val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+        val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
         _uiState.update {
             it.copy(
                 languages = languages,
@@ -139,7 +144,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossErrorMessage = null,
                 bossLessonRewards = bossLessonRewards,
                 bossMegaReward = bossMegaReward,
-                testMode = config.testMode
+                testMode = config.testMode,
+                eliteActive = false,
+                eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
+                eliteBestSpeeds = normalizedEliteSpeeds,
+                eliteFinishedToken = 0,
+                eliteUnlocked = resolveEliteUnlocked(lessons, config.testMode),
+                eliteSizeMultiplier = config.eliteSizeMultiplier
             )
         }
         rebuildSchedules(lessons)
@@ -196,6 +207,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 selectedLanguageId = languageId,
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
+                eliteActive = false,
+                eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode),
                 currentIndex = 0,
                 correctCount = 0,
                 incorrectCount = 0,
@@ -388,6 +401,44 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     }
                     nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
                 }
+            } else if (state.eliteActive && isLastCard) {
+                pauseTimer()
+                val speed = calculateSpeedPerMinute(state.voiceActiveMs, state.voiceWordCount)
+                val bestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds)
+                val stepIndex = state.eliteStepIndex.coerceIn(0, eliteStepCount - 1)
+                val currentBest = bestSpeeds.getOrNull(stepIndex) ?: 0.0
+                val nextSpeeds = bestSpeeds.toMutableList().apply {
+                    if (speed > currentBest) {
+                        this[stepIndex] = speed
+                    }
+                }
+                val nextStep = (stepIndex + 1) % eliteStepCount
+                _uiState.update {
+                    it.copy(
+                        correctCount = it.correctCount + 1,
+                        lastResult = null,
+                        incorrectAttemptsForCard = 0,
+                        answerText = null,
+                        voiceActiveMs = if (shouldAddVoiceMetrics) {
+                            it.voiceActiveMs + (voiceDurationMs ?: 0L)
+                        } else {
+                            it.voiceActiveMs
+                        },
+                        voiceWordCount = if (shouldAddVoiceMetrics) {
+                            it.voiceWordCount + voiceWords
+                        } else {
+                            it.voiceWordCount
+                        },
+                        voicePromptStartMs = null,
+                        sessionState = SessionState.PAUSED,
+                        currentIndex = 0,
+                        eliteActive = false,
+                        eliteStepIndex = nextStep,
+                        eliteBestSpeeds = nextSpeeds,
+                        eliteFinishedToken = it.eliteFinishedToken + 1
+                    )
+                }
+                saveProgress()
             } else if (isLastCard) {
                 pauseTimer()
                 _uiState.update {
@@ -548,6 +599,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun finishSession() {
         if (sessionCards.isEmpty()) return
+        if (_uiState.value.eliteActive) {
+            cancelEliteSession()
+            return
+        }
         if (_uiState.value.bossActive) {
             finishBoss()
             return
@@ -608,6 +663,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     selectedLanguageId = pack.languageId,
                     lessons = lessons,
                     selectedLessonId = selectedLessonId,
+                    eliteActive = false,
+                    eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode),
                     mode = TrainingMode.LESSON,
                     sessionState = SessionState.PAUSED,
                     currentIndex = 0,
@@ -688,6 +745,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 selectedLanguageId = language.id,
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
+                eliteActive = false,
+                eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode),
                 mode = TrainingMode.LESSON,
                 sessionState = SessionState.PAUSED,
                 currentIndex = 0,
@@ -750,6 +809,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             it.copy(
                 lessons = lessons,
                 selectedLessonId = selected,
+                eliteActive = false,
+                eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode),
                 currentIndex = 0,
                 inputText = "",
                 lastResult = null,
@@ -804,7 +865,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun buildSessionCards() {
-        if (_uiState.value.bossActive) return
+        if (_uiState.value.bossActive || _uiState.value.eliteActive) return
         val state = _uiState.value
         val lessons = state.lessons
         if (state.mode == TrainingMode.LESSON) {
@@ -883,6 +944,59 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         buildSessionCards()
+        saveProgress()
+    }
+
+    fun openEliteStep(index: Int) {
+        pauseTimer()
+        val stepIndex = index.coerceIn(0, eliteStepCount - 1)
+        val cards = buildEliteCards()
+        eliteCards = cards
+        sessionCards = cards
+        val firstCard = cards.firstOrNull()
+        _uiState.update {
+            it.copy(
+                eliteActive = true,
+                eliteStepIndex = stepIndex,
+                currentIndex = 0,
+                currentCard = firstCard,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0,
+                correctCount = 0,
+                incorrectCount = 0,
+                activeTimeMs = 0L,
+                voiceActiveMs = 0L,
+                voiceWordCount = 0,
+                hintCount = 0,
+                voicePromptStartMs = null,
+                sessionState = SessionState.PAUSED,
+                warmupCount = 0,
+                subLessonTotal = cards.size,
+                subLessonCount = eliteStepCount,
+                activeSubLessonIndex = stepIndex,
+                completedSubLessonCount = 0
+            )
+        }
+        saveProgress()
+    }
+
+    fun cancelEliteSession() {
+        if (!_uiState.value.eliteActive) return
+        pauseTimer()
+        _uiState.update {
+            it.copy(
+                eliteActive = false,
+                sessionState = SessionState.PAUSED,
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0,
+                voicePromptStartMs = null
+            )
+        }
         saveProgress()
     }
 
@@ -1052,11 +1166,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         startBoss(BossType.MEGA)
     }
 
+    fun startBossElite() {
+        startBoss(BossType.ELITE)
+    }
+
     private fun startBoss(type: BossType) {
         pauseTimer()
         val lessons = _uiState.value.lessons
         val selectedId = _uiState.value.selectedLessonId
-        if (selectedId == null) {
+        if (type != BossType.ELITE && selectedId == null) {
             _uiState.update { it.copy(bossErrorMessage = "Lesson not selected") }
             return
         }
@@ -1066,10 +1184,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             BossType.MEGA -> {
                 if (selectedIndex <= 0) emptyList() else lessons.take(selectedIndex).flatMap { it.cards }
             }
+            BossType.ELITE -> {
+                val eliteSize = eliteSubLessonSize() * eliteStepCount
+                lessons.flatMap { it.cards }.shuffled().take(eliteSize)
+            }
         }
         if (cards.isEmpty()) {
             val message = if (type == BossType.MEGA) {
                 "Mega boss is available after the first lesson"
+            } else if (type == BossType.ELITE) {
+                "Elite boss has no cards"
             } else {
                 "Boss has no cards"
             }
@@ -1145,6 +1269,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = reward ?: it.bossReward,
                 bossRewardMessage = it.bossRewardMessage,
                 bossFinishedToken = it.bossFinishedToken + 1,
+                bossLastType = state.bossType,
                 bossErrorMessage = null,
                 bossLessonRewards = updatedLessonRewards,
                 bossMegaReward = updatedMegaReward,
@@ -1239,7 +1364,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun startSession() {
-        if (!_uiState.value.bossActive) {
+        if (!_uiState.value.bossActive && !_uiState.value.eliteActive) {
             buildSessionCards()
         }
         if (sessionCards.isEmpty() || _uiState.value.currentCard == null) {
@@ -1291,7 +1416,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun saveProgress() {
         val state = _uiState.value
-        if (state.bossActive) return
+        if (state.bossActive && state.bossType != BossType.ELITE) return
         progressStore.save(
             TrainingProgress(
                 languageId = state.selectedLanguageId,
@@ -1307,9 +1432,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossMegaReward = state.bossMegaReward?.name,
                 voiceActiveMs = state.voiceActiveMs,
                 voiceWordCount = state.voiceWordCount,
-                hintCount = state.hintCount
+                hintCount = state.hintCount,
+                eliteStepIndex = state.eliteStepIndex,
+                eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds)
             )
         )
+    }
+
+    private fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean {
+        return testMode || lessons.size >= 12
+    }
+
+    private fun normalizeEliteSpeeds(speeds: List<Double>): List<Double> {
+        return if (speeds.size >= eliteStepCount) {
+            speeds.take(eliteStepCount)
+        } else {
+            speeds + List(eliteStepCount - speeds.size) { 0.0 }
+        }
+    }
+
+    private fun eliteSubLessonSize(): Int {
+        return kotlin.math.ceil(subLessonSize * eliteSizeMultiplier).toInt()
+    }
+
+    private fun calculateSpeedPerMinute(activeMs: Long, words: Int): Double {
+        val minutes = activeMs / 60000.0
+        if (minutes <= 0.0) return 0.0
+        return words / minutes
+    }
+
+    private fun buildEliteCards(): List<SentenceCard> {
+        val cards = _uiState.value.lessons.flatMap { it.cards }
+        if (cards.isEmpty()) return emptyList()
+        return cards.shuffled().take(eliteSubLessonSize())
     }
 
     private fun countMetricWords(text: String): Int {
@@ -1393,8 +1548,15 @@ data class TrainingUiState(
     val bossReward: BossReward? = null,
     val bossRewardMessage: String? = null,
     val bossFinishedToken: Int = 0,
+    val bossLastType: BossType? = null,
     val bossErrorMessage: String? = null,
     val bossLessonRewards: Map<String, BossReward> = emptyMap(),
     val bossMegaReward: BossReward? = null,
-    val testMode: Boolean = false
+    val testMode: Boolean = false,
+    val eliteActive: Boolean = false,
+    val eliteStepIndex: Int = 0,
+    val eliteBestSpeeds: List<Double> = emptyList(),
+    val eliteFinishedToken: Int = 0,
+    val eliteUnlocked: Boolean = false,
+    val eliteSizeMultiplier: Double = 1.25
 )

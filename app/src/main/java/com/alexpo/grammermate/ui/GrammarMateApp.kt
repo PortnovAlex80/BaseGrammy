@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.MenuBook
@@ -103,11 +104,15 @@ fun GrammarMateApp() {
             val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
             val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
             val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
+            val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
             }
             BackHandler(enabled = screen == AppScreen.LESSON && !showSettings) {
+                screen = AppScreen.HOME
+            }
+            BackHandler(enabled = screen == AppScreen.ELITE && !showSettings) {
                 screen = AppScreen.HOME
             }
             BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
@@ -149,7 +154,8 @@ fun GrammarMateApp() {
                     onSelectLesson = { lessonId ->
                         vm.selectLesson(lessonId)
                         screen = AppScreen.LESSON
-                    }
+                    },
+                    onOpenElite = { if (state.eliteUnlocked) screen = AppScreen.ELITE }
                 )
                 AppScreen.LESSON -> LessonRoadmapScreen(
                     state = state,
@@ -173,6 +179,18 @@ fun GrammarMateApp() {
                     onOpenStory = { phase ->
                         vm.openStory(phase)
                         screen = AppScreen.STORY
+                    }
+                )
+                AppScreen.ELITE -> EliteRoadmapScreen(
+                    state = state,
+                    onBack = { screen = AppScreen.HOME },
+                    onStartStep = { index ->
+                        vm.openEliteStep(index)
+                        screen = AppScreen.TRAINING
+                    },
+                    onStartBoss = {
+                        vm.startBossElite()
+                        screen = AppScreen.TRAINING
                     }
                 )
                 AppScreen.STORY -> StoryQuizScreen(
@@ -227,7 +245,15 @@ fun GrammarMateApp() {
             }
             if (screen == AppScreen.TRAINING && state.bossFinishedToken != lastBossFinishedToken.value) {
                 lastBossFinishedToken.value = state.bossFinishedToken
-                screen = AppScreen.LESSON
+                screen = if (state.bossLastType == com.alexpo.grammermate.data.BossType.ELITE) {
+                    AppScreen.ELITE
+                } else {
+                    AppScreen.LESSON
+                }
+            }
+            if (screen == AppScreen.TRAINING && state.eliteFinishedToken != lastEliteFinishedToken.value) {
+                lastEliteFinishedToken.value = state.eliteFinishedToken
+                screen = AppScreen.ELITE
             }
 
             if (showExitDialog) {
@@ -238,9 +264,19 @@ fun GrammarMateApp() {
                             showExitDialog = false
                             if (state.bossActive) {
                                 vm.finishBoss()
-                            } else {
-                                vm.finishSession()
+                                screen = if (state.bossType == com.alexpo.grammermate.data.BossType.ELITE) {
+                                    AppScreen.ELITE
+                                } else {
+                                    AppScreen.LESSON
+                                }
+                                return@TextButton
                             }
+                            if (state.eliteActive) {
+                                vm.cancelEliteSession()
+                                screen = AppScreen.ELITE
+                                return@TextButton
+                            }
+                            vm.finishSession()
                             screen = AppScreen.LESSON
                         }) {
                             Text(text = "Выйти")
@@ -324,6 +360,7 @@ fun GrammarMateApp() {
 private enum class AppScreen {
     HOME,
     LESSON,
+    ELITE,
     VOCAB,
     STORY,
     TRAINING
@@ -348,7 +385,8 @@ private fun HomeScreen(
     onSelectLanguage: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onPrimaryAction: () -> Unit,
-    onSelectLesson: (String) -> Unit
+    onSelectLesson: (String) -> Unit,
+    onOpenElite: () -> Unit
 ) {
     val tiles = remember(state.lessons, state.testMode) { buildLessonTiles(state.lessons, state.testMode) }
     var showMethod by remember { mutableStateOf(false) }
@@ -455,6 +493,8 @@ private fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+        EliteEntryTile(enabled = state.eliteUnlocked, onClick = onOpenElite)
+        Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
         Text(text = "🌱 forming pattern • 🌸 automated skill")
         Text(text = "🕸️ needs refresh")
@@ -483,6 +523,27 @@ private fun HomeScreen(
                 )
             }
         )
+    }
+}
+
+@Composable
+private fun EliteEntryTile(enabled: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = "ELITE", fontWeight = FontWeight.SemiBold)
+            Icon(Icons.Default.Lock, contentDescription = "Elite locked")
+        }
     }
 }
 
@@ -626,6 +687,78 @@ private fun LessonRoadmapScreen(
     }
 }
 
+@Composable
+private fun EliteRoadmapScreen(
+    state: TrainingUiState,
+    onBack: () -> Unit,
+    onStartStep: (Int) -> Unit,
+    onStartBoss: () -> Unit
+) {
+    val stepCount = com.alexpo.grammermate.data.TrainingConfig.ELITE_STEP_COUNT
+    val currentIndex = state.eliteStepIndex.coerceIn(0, stepCount - 1)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Text(text = "ELITE", fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.width(40.dp))
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            userScrollEnabled = false
+        ) {
+            itemsIndexed(List(stepCount) { it }) { _, index ->
+                EliteStepTile(
+                    index = index,
+                    isActive = index == currentIndex,
+                    onClick = { onStartStep(index) }
+                )
+            }
+            item {
+                BossTile(label = "Boss", enabled = true, reward = null, onClick = onStartBoss)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EliteStepTile(
+    index: Int,
+    isActive: Boolean,
+    onClick: () -> Unit
+) {
+    val icon = if (isActive) Icons.Default.PlayArrow else Icons.Default.Lock
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clickable(enabled = isActive, onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Step ${index + 1}", fontWeight = FontWeight.SemiBold)
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
+        }
+    }
+}
 private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Vocab : RoadmapEntry()
@@ -1263,6 +1396,8 @@ private fun TrainingScreen(
             HeaderStats(state)
             if (state.bossActive) {
                 Text(text = "Boss Session", fontWeight = FontWeight.SemiBold)
+            } else if (state.eliteActive) {
+                Text(text = "Elite Session", fontWeight = FontWeight.SemiBold)
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
             }

@@ -36,7 +36,11 @@ class ProgressStore(private val context: Context) {
             bossMegaReward = payload["bossMegaReward"] as? String,
             voiceActiveMs = (payload["voiceActiveMs"] as? Number)?.toLong() ?: 0L,
             voiceWordCount = (payload["voiceWordCount"] as? Number)?.toInt() ?: 0,
-            hintCount = (payload["hintCount"] as? Number)?.toInt() ?: 0
+            hintCount = (payload["hintCount"] as? Number)?.toInt() ?: 0,
+            eliteStepIndex = (payload["eliteStepIndex"] as? Number)?.toInt() ?: 0,
+            eliteBestSpeeds = (payload["eliteBestSpeeds"] as? List<*>)?.mapNotNull { it as? Number }
+                ?.map { it.toDouble() }
+                ?: emptyList()
         )
     }
 
@@ -55,7 +59,9 @@ class ProgressStore(private val context: Context) {
             "bossMegaReward" to progress.bossMegaReward,
             "voiceActiveMs" to progress.voiceActiveMs,
             "voiceWordCount" to progress.voiceWordCount,
-            "hintCount" to progress.hintCount
+            "hintCount" to progress.hintCount,
+            "eliteStepIndex" to progress.eliteStepIndex,
+            "eliteBestSpeeds" to progress.eliteBestSpeeds
         )
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,

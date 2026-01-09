@@ -5,7 +5,8 @@ import org.yaml.snakeyaml.Yaml
 import java.io.File
 
 data class AppConfig(
-    val testMode: Boolean = false
+    val testMode: Boolean = false,
+    val eliteSizeMultiplier: Double = 1.25
 )
 
 class AppConfigStore(private val context: Context) {
@@ -30,6 +31,7 @@ class AppConfigStore(private val context: Context) {
         val raw = yaml.load<Any>(file.readText()) ?: return AppConfig()
         val data = raw as? Map<*, *> ?: return AppConfig()
         val testMode = data["testMode"] as? Boolean ?: false
-        return AppConfig(testMode = testMode)
+        val eliteSizeMultiplier = (data["eliteSizeMultiplier"] as? Number)?.toDouble() ?: 1.25
+        return AppConfig(testMode = testMode, eliteSizeMultiplier = eliteSizeMultiplier)
     }
 }
