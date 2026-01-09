@@ -27,7 +27,13 @@ class ProgressStore(private val context: Context) {
             incorrectCount = (payload["incorrectCount"] as? Number)?.toInt() ?: 0,
             incorrectAttemptsForCard = (payload["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0,
             activeTimeMs = (payload["activeTimeMs"] as? Number)?.toLong() ?: 0L,
-            state = SessionState.valueOf(payload["state"] as? String ?: SessionState.PAUSED.name)
+            state = SessionState.valueOf(payload["state"] as? String ?: SessionState.PAUSED.name),
+            bossLessonRewards = (payload["bossLessonRewards"] as? Map<*, *>)?.mapNotNull { (key, value) ->
+                val lessonId = key as? String ?: return@mapNotNull null
+                val reward = value as? String ?: return@mapNotNull null
+                lessonId to reward
+            }?.toMap() ?: emptyMap(),
+            bossMegaReward = payload["bossMegaReward"] as? String
         )
     }
 
@@ -41,7 +47,9 @@ class ProgressStore(private val context: Context) {
             "incorrectCount" to progress.incorrectCount,
             "incorrectAttemptsForCard" to progress.incorrectAttemptsForCard,
             "activeTimeMs" to progress.activeTimeMs,
-            "state" to progress.state.name
+            "state" to progress.state.name,
+            "bossLessonRewards" to progress.bossLessonRewards,
+            "bossMegaReward" to progress.bossMegaReward
         )
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,

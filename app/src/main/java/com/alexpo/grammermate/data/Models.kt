@@ -93,5 +93,7 @@ data class TrainingProgress(
     val incorrectCount: Int = 0,
     val incorrectAttemptsForCard: Int = 0,
     val activeTimeMs: Long = 0L,
-    val state: SessionState = SessionState.PAUSED
+    val state: SessionState = SessionState.PAUSED,
+    val bossLessonRewards: Map<String, String> = emptyMap(),
+    val bossMegaReward: String? = null
 )

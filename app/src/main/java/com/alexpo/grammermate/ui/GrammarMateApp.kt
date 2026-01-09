@@ -83,6 +83,7 @@ import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.BossReward
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
@@ -502,6 +503,8 @@ private fun LessonRoadmapScreen(
     val newOnlyCount = total.coerceAtMost(3)
     val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
     val hasMegaBoss = lessonIndex > 0
+    val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
+    val bossMegaReward = state.bossMegaReward
     val entries = buildRoadmapEntries(total, newOnlyCount, hasMegaBoss)
     Column(
         modifier = Modifier
@@ -580,10 +583,20 @@ private fun LessonRoadmapScreen(
                         )
                     }
                     is RoadmapEntry.BossLesson -> {
-                        BossTile(label = "Boss", enabled = true, onClick = onStartBossLesson)
+                        BossTile(
+                            label = "Boss",
+                            enabled = true,
+                            reward = bossLessonReward,
+                            onClick = onStartBossLesson
+                        )
                     }
                     is RoadmapEntry.BossMega -> {
-                        BossTile(label = "Mega", enabled = true, onClick = onStartBossMega)
+                        BossTile(
+                            label = "Mega",
+                            enabled = true,
+                            reward = bossMegaReward,
+                            onClick = onStartBossMega
+                        )
                     }
                 }
             }
@@ -655,13 +668,19 @@ private fun VocabTile(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BossTile(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
             .clickable(enabled = enabled, onClick = onClick)
     ) {
+        val tint = when (reward) {
+            BossReward.BRONZE -> Color(0xFFCD7F32)
+            BossReward.SILVER -> Color(0xFFC0C0C0)
+            BossReward.GOLD -> Color(0xFFFFD700)
+            null -> MaterialTheme.colorScheme.onSurface
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -673,7 +692,8 @@ private fun BossTile(label: String, enabled: Boolean, onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.EmojiEvents,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
+                tint = tint
             )
         }
     }
@@ -1245,7 +1265,7 @@ private fun HeaderStats(state: TrainingUiState) {
         if (state.bossActive) {
             state.bossProgress.coerceIn(0, total)
         } else {
-            (state.currentIndex - state.warmupCount + 1).coerceIn(0, total)
+            (state.currentIndex - state.warmupCount).coerceIn(0, total)
         }
     } else {
         0

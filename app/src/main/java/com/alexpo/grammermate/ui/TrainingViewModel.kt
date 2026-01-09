@@ -20,6 +20,7 @@ import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.VocabEntry
@@ -54,10 +55,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var subLessonCount: Int = 0
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
-    private val warmupSize = 3
-    private val subLessonSizeMin = 6
-    private val subLessonSizeMax = 12
-    private val subLessonSize = 10
+    private val warmupSize = TrainingConfig.WARMUP_SIZE
+    private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
+    private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
+    private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
 
     private val _uiState = MutableStateFlow(TrainingUiState())
     val uiState: StateFlow<TrainingUiState> = _uiState
@@ -71,6 +72,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
+        val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
+            val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+            lessonId to parsed
+        }.toMap()
+        val bossMegaReward = progress.bossMegaReward?.let { reward ->
+            runCatching { BossReward.valueOf(reward) }.getOrNull()
+        }
         val languages = lessonStore.getLanguages()
         val packs = lessonStore.getInstalledPacks()
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: "en"
@@ -116,7 +124,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                bossLessonRewards = bossLessonRewards,
+                bossMegaReward = bossMegaReward
             )
         }
         buildSessionCards()
@@ -197,7 +207,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                bossLessonRewards = emptyMap(),
+                bossMegaReward = null
             )
         }
         buildSessionCards()
@@ -380,26 +392,32 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun nextCard(triggerVoice: Boolean = false) {
-        val wasHintShown = _uiState.value.sessionState == SessionState.HINT_SHOWN
-        val nextIndex = (_uiState.value.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
+        val state = _uiState.value
+        val wasHintShown = state.sessionState == SessionState.HINT_SHOWN
+        val nextIndex = (state.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
         val nextCard = sessionCards.getOrNull(nextIndex)
+        val nextProgress = if (state.bossActive) {
+            (state.bossProgress.coerceAtLeast(nextIndex)).coerceAtMost(state.bossTotal)
+        } else {
+            state.bossProgress
+        }
+        val nextReward = if (state.bossActive) {
+            resolveBossReward(nextProgress, state.bossTotal)
+        } else {
+            state.bossReward
+        }
+        val isNewReward = state.bossActive && nextReward != null && nextReward != state.bossReward
+        val rewardMessage = if (isNewReward) {
+            bossRewardMessage(nextReward!!)
+        } else {
+            state.bossRewardMessage
+        }
+        val pauseForReward = isNewReward
+        if (pauseForReward) {
+            pauseTimer()
+        }
         _uiState.update {
-            val shouldTrigger = triggerVoice && it.inputMode == InputMode.VOICE
-            val nextProgress = if (it.bossActive) {
-                (it.bossProgress.coerceAtLeast(nextIndex + 1)).coerceAtMost(it.bossTotal)
-            } else {
-                it.bossProgress
-            }
-            val nextReward = if (it.bossActive) {
-                resolveBossReward(nextProgress, it.bossTotal)
-            } else {
-                it.bossReward
-            }
-            val rewardMessage = if (it.bossActive && nextReward != null && nextReward != it.bossReward) {
-                bossRewardMessage(nextReward)
-            } else {
-                it.bossRewardMessage
-            }
+            val shouldTrigger = triggerVoice && it.inputMode == InputMode.VOICE && !pauseForReward
             it.copy(
                 currentIndex = nextIndex,
                 currentCard = nextCard,
@@ -407,14 +425,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastResult = null,
                 answerText = null,
                 incorrectAttemptsForCard = 0,
-                sessionState = SessionState.ACTIVE,
+                sessionState = if (pauseForReward) SessionState.PAUSED else SessionState.ACTIVE,
                 voiceTriggerToken = if (shouldTrigger) it.voiceTriggerToken + 1 else it.voiceTriggerToken,
                 bossProgress = nextProgress,
                 bossReward = nextReward ?: it.bossReward,
                 bossRewardMessage = rewardMessage
             )
         }
-        if (wasHintShown) {
+        if (wasHintShown && !pauseForReward) {
             resumeTimer()
         }
         saveProgress()
@@ -971,6 +989,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val reward = resolveBossReward(state.bossProgress, state.bossTotal)
         val progress = progressStore.load()
         val restoredLessonId = progress.lessonId ?: state.selectedLessonId
+        val updatedLessonRewards = if (state.bossType == BossType.LESSON) {
+            val lessonId = state.selectedLessonId
+            if (lessonId != null && reward != null) {
+                state.bossLessonRewards + (lessonId to reward)
+            } else {
+                state.bossLessonRewards
+            }
+        } else {
+            state.bossLessonRewards
+        }
+        val updatedMegaReward = if (state.bossType == BossType.MEGA && reward != null) {
+            reward
+        } else {
+            state.bossMegaReward
+        }
         bossCards = emptyList()
         _uiState.update {
             it.copy(
@@ -982,6 +1015,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossRewardMessage = it.bossRewardMessage,
                 bossFinishedToken = it.bossFinishedToken + 1,
                 bossErrorMessage = null,
+                bossLessonRewards = updatedLessonRewards,
+                bossMegaReward = updatedMegaReward,
                 selectedLessonId = restoredLessonId,
                 mode = progress.mode,
                 currentIndex = progress.currentIndex,
@@ -996,10 +1031,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         buildSessionCards()
+        saveProgress()
     }
 
     fun clearBossRewardMessage() {
-        _uiState.update { it.copy(bossRewardMessage = null) }
+        val state = _uiState.value
+        val shouldResume = state.bossActive &&
+            state.sessionState == SessionState.PAUSED &&
+            state.currentCard != null
+        if (shouldResume) {
+            resumeTimer()
+        }
+        _uiState.update {
+            val trigger = if (shouldResume && it.inputMode == InputMode.VOICE) {
+                it.voiceTriggerToken + 1
+            } else {
+                it.voiceTriggerToken
+            }
+            it.copy(
+                bossRewardMessage = null,
+                sessionState = if (shouldResume) SessionState.ACTIVE else it.sessionState,
+                voiceTriggerToken = trigger,
+                inputText = if (shouldResume) "" else it.inputText
+            )
+        }
     }
 
     fun clearBossError() {
@@ -1007,18 +1062,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun updateBossProgress(progress: Int) {
+        val state = _uiState.value
+        val nextProgress = progress.coerceAtMost(state.bossTotal)
+        val nextReward = resolveBossReward(nextProgress, state.bossTotal)
+        val isNewReward = nextReward != null && nextReward != state.bossReward
+        val message = if (isNewReward) {
+            bossRewardMessage(nextReward!!)
+        } else {
+            state.bossRewardMessage
+        }
+        if (isNewReward) {
+            pauseTimer()
+        }
         _uiState.update {
-            val nextProgress = progress.coerceAtMost(it.bossTotal)
-            val nextReward = resolveBossReward(nextProgress, it.bossTotal)
-            val message = if (nextReward != null && nextReward != it.bossReward) {
-                bossRewardMessage(nextReward)
-            } else {
-                it.bossRewardMessage
-            }
             it.copy(
                 bossProgress = nextProgress,
                 bossReward = nextReward ?: it.bossReward,
-                bossRewardMessage = message
+                bossRewardMessage = message,
+                sessionState = if (isNewReward) SessionState.PAUSED else it.sessionState
             )
         }
     }
@@ -1101,7 +1162,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectCount = state.incorrectCount,
                 incorrectAttemptsForCard = state.incorrectAttemptsForCard,
                 activeTimeMs = state.activeTimeMs,
-                state = state.sessionState
+                state = state.sessionState,
+                bossLessonRewards = state.bossLessonRewards.mapValues { it.value.name },
+                bossMegaReward = state.bossMegaReward?.name
             )
         )
     }
@@ -1176,5 +1239,7 @@ data class TrainingUiState(
     val bossReward: BossReward? = null,
     val bossRewardMessage: String? = null,
     val bossFinishedToken: Int = 0,
-    val bossErrorMessage: String? = null
+    val bossErrorMessage: String? = null,
+    val bossLessonRewards: Map<String, BossReward> = emptyMap(),
+    val bossMegaReward: BossReward? = null
 )
