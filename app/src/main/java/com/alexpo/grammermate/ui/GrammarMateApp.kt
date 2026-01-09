@@ -210,7 +210,8 @@ fun GrammarMateApp() {
                     onSelectLesson = vm::selectLesson,
                     onSelectMode = vm::selectMode,
                     onSetInputMode = vm::setInputMode,
-                    onShowAnswer = vm::showAnswer
+                    onShowAnswer = vm::showAnswer,
+                    onVoicePromptStarted = vm::onVoicePromptStarted
                 )
             }
 
@@ -1210,7 +1211,8 @@ private fun TrainingScreen(
     onSelectLesson: (String) -> Unit,
     onSelectMode: (TrainingMode) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
-    onShowAnswer: () -> Unit
+    onShowAnswer: () -> Unit,
+    onVoicePromptStarted: () -> Unit
 ) {
     val hasCards = state.currentCard != null
 
@@ -1251,7 +1253,15 @@ private fun TrainingScreen(
                 ModeSelector(state, onSelectMode, onSelectLesson)
             }
             CardPrompt(state)
-            AnswerBox(state, onInputChange, onSubmit, onSetInputMode, onShowAnswer, hasCards)
+            AnswerBox(
+                state,
+                onInputChange,
+                onSubmit,
+                onSetInputMode,
+                onShowAnswer,
+                onVoicePromptStarted,
+                hasCards
+            )
             ResultBlock(state)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
         }
@@ -1275,7 +1285,7 @@ private fun HeaderStats(state: TrainingUiState) {
     } else {
         0
     }
-    val speed = speedPerMinute(state.activeTimeMs, state.correctCount)
+    val speed = speedPerMinute(state.voiceActiveMs, state.voiceWordCount)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1468,6 +1478,7 @@ private fun AnswerBox(
     onSubmit: () -> SubmitResult,
     onSetInputMode: (InputMode) -> Unit,
     onShowAnswer: () -> Unit,
+    onVoicePromptStarted: () -> Unit,
     hasCards: Boolean
 ) {
     val latestState by rememberUpdatedState(state)
@@ -1496,6 +1507,7 @@ private fun AnswerBox(
             state.currentCard != null
         ) {
             kotlinx.coroutines.delay(200)
+            onVoicePromptStarted()
             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }
@@ -1511,6 +1523,7 @@ private fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
+                            onVoicePromptStarted()
                             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
                         }
                     },
@@ -1544,6 +1557,7 @@ private fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
+                            onVoicePromptStarted()
                             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
                         }
                     },

@@ -427,6 +427,7 @@ empty
 ---
 
 ## 14. Актуализация требований (по итогам доработок)
+- Metrics (current implementation): only voice speed (words/min, words >= 3 chars, only correct voice answers) and manual hint count; keyboard input and auto-hints excluded.
 
 ### 14.1 Режимы ввода и голосовой цикл
 - Приложение поддерживает два режима ввода: клавиатура и голос.

@@ -95,5 +95,8 @@ data class TrainingProgress(
     val activeTimeMs: Long = 0L,
     val state: SessionState = SessionState.PAUSED,
     val bossLessonRewards: Map<String, String> = emptyMap(),
-    val bossMegaReward: String? = null
+    val bossMegaReward: String? = null,
+    val voiceActiveMs: Long = 0L,
+    val voiceWordCount: Int = 0,
+    val hintCount: Int = 0
 )
