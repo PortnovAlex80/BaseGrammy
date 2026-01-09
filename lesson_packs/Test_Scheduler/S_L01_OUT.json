@@ -1,0 +1,17 @@
+﻿{
+    "phase":  "CHECK_OUT",
+    "storyId":  "S_L01_OUT",
+    "questions":  [
+                      {
+                          "qId":  "Q1",
+                          "correctIndex":  0,
+                          "prompt":  "Where does he work?",
+                          "options":  [
+                                          "From home",
+                                          "At the office"
+                                      ]
+                      }
+                  ],
+    "lessonId":  "L01_PRESENT_SIMPLE",
+    "text":  "Anna doesn\u0027t work from home."
+}

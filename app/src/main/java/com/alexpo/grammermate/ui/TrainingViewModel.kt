@@ -11,6 +11,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonStore
+import com.alexpo.grammermate.data.LessonSchedule
+import com.alexpo.grammermate.data.MixedReviewScheduler
+import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.InputMode
@@ -20,6 +23,7 @@ import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
+import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
@@ -47,12 +51,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val logTag = "GrammarMate"
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
+    private val configStore = AppConfigStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var vocabSession: List<VocabEntry> = emptyList()
     private var warmupCount: Int = 0
     private var subLessonTotal: Int = 0
     private var subLessonCount: Int = 0
+    private var lessonSchedules: Map<String, LessonSchedule> = emptyMap()
+    private var scheduleKey: String = ""
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
     private val warmupSize = TrainingConfig.WARMUP_SIZE
@@ -72,6 +79,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
+        val config = configStore.load()
         val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
             val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
             lessonId to parsed
@@ -130,9 +138,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 bossLessonRewards = bossLessonRewards,
-                bossMegaReward = bossMegaReward
+                bossMegaReward = bossMegaReward,
+                testMode = config.testMode
             )
         }
+        rebuildSchedules(lessons)
         buildSessionCards()
         if (_uiState.value.sessionState == SessionState.ACTIVE && _uiState.value.currentCard != null) {
             resumeTimer()
@@ -224,6 +234,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossMegaReward = null
             )
         }
+        rebuildSchedules(lessons)
         buildSessionCards()
         saveProgress()
     }
@@ -320,10 +331,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun submitAnswer(): SubmitResult {
         val state = _uiState.value
         if (state.sessionState != SessionState.ACTIVE) return SubmitResult(false, false)
-        if (state.inputText.isBlank()) return SubmitResult(false, false)
+        if (state.inputText.isBlank() && !state.testMode) return SubmitResult(false, false)
         val card = currentCard() ?: return SubmitResult(false, false)
         val normalizedInput = Normalizer.normalize(state.inputText)
-        val accepted = card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
+        val accepted = state.testMode || card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
         val voiceStartMs = if (state.inputMode == InputMode.VOICE) state.voicePromptStartMs else null
         val voiceDurationMs = voiceStartMs?.let { SystemClock.elapsedRealtime() - it }
         val voiceWords = if (voiceStartMs != null) countMetricWords(state.inputText) else 0
@@ -638,6 +649,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossErrorMessage = null
                 )
             }
+            rebuildSchedules(lessons)
             buildSessionCards()
             saveProgress()
         } catch (e: Exception) {
@@ -717,6 +729,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossErrorMessage = null
             )
         }
+        rebuildSchedules(lessons)
         buildSessionCards()
         saveProgress()
     }
@@ -771,6 +784,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossErrorMessage = null
             )
         }
+        rebuildSchedules(lessons)
         buildSessionCards()
         saveProgress()
     }
@@ -780,17 +794,52 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         startSession()
     }
 
+    private fun rebuildSchedules(lessons: List<Lesson>) {
+        val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
+        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
+        val key = "${lessonKey}|${warmupSize}|${blockSize}"
+        if (key == scheduleKey) return
+        scheduleKey = key
+        lessonSchedules = MixedReviewScheduler(warmupSize, blockSize).build(lessons)
+    }
+
     private fun buildSessionCards() {
         if (_uiState.value.bossActive) return
         val state = _uiState.value
         val lessons = state.lessons
-        val lessonCards = when (state.mode) {
-            TrainingMode.LESSON -> {
-                val lesson = lessons.firstOrNull { it.id == state.selectedLessonId }
-                lesson?.cards ?: emptyList()
+        if (state.mode == TrainingMode.LESSON) {
+            val schedule = lessonSchedules[state.selectedLessonId]
+            val subLessons = schedule?.subLessons.orEmpty()
+            subLessonCount = subLessons.size
+            val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
+            val subLesson = subLessons.getOrNull(activeIndex)
+            sessionCards = subLesson?.cards ?: emptyList()
+            warmupCount = if (subLesson?.type == SubLessonType.WARMUP) sessionCards.size else 0
+            subLessonTotal = sessionCards.size
+            val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
+            val card = sessionCards.getOrNull(safeIndex)
+            if (card == null && state.sessionState == SessionState.ACTIVE) {
+                pauseTimer()
             }
+            _uiState.update {
+                it.copy(
+                    currentIndex = safeIndex,
+                    currentCard = card,
+                    sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
+                    warmupCount = warmupCount,
+                    subLessonTotal = subLessonTotal,
+                    subLessonCount = subLessonCount,
+                    activeSubLessonIndex = activeIndex,
+                    subLessonTypes = subLessons.map { item -> item.type }
+                )
+            }
+            return
+        }
+
+        val lessonCards = when (state.mode) {
             TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
             TrainingMode.ALL_MIXED -> lessons.flatMap { it.cards }.shuffled()
+            else -> emptyList()
         }
         val warmup = lessonCards.take(warmupSize)
         val mainCards = lessonCards.drop(warmup.size)
@@ -815,7 +864,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 warmupCount = warmupCount,
                 subLessonTotal = subLessonTotal,
                 subLessonCount = subLessonCount,
-                activeSubLessonIndex = activeIndex
+                activeSubLessonIndex = activeIndex,
+                subLessonTypes = emptyList()
             )
         }
     }
@@ -882,7 +932,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
         _uiState.update {
-            if (!allCorrect) {
+            if (!allCorrect && !it.testMode) {
                 return@update it.copy(activeStory = null)
             }
             when (phase) {
@@ -928,9 +978,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _uiState.value
         val entry = state.currentVocab ?: return
         val input = inputOverride ?: state.vocabInputText
-        if (input.isBlank()) return
+        if (input.isBlank() && !state.testMode) return
         val normalizedInput = Normalizer.normalize(input)
-        val accepted = entry.targetText.split("+")
+        val accepted = state.testMode || entry.targetText.split("+")
             .map { Normalizer.normalize(it) }
             .any { it == normalizedInput }
         if (accepted) {
@@ -1318,6 +1368,7 @@ data class TrainingUiState(
     val warmupCount: Int = 0,
     val subLessonTotal: Int = 0,
     val subLessonCount: Int = 0,
+    val subLessonTypes: List<SubLessonType> = emptyList(),
     val activeSubLessonIndex: Int = 0,
     val completedSubLessonCount: Int = 0,
     val subLessonFinishedToken: Int = 0,
@@ -1344,5 +1395,6 @@ data class TrainingUiState(
     val bossFinishedToken: Int = 0,
     val bossErrorMessage: String? = null,
     val bossLessonRewards: Map<String, BossReward> = emptyMap(),
-    val bossMegaReward: BossReward? = null
+    val bossMegaReward: BossReward? = null,
+    val testMode: Boolean = false
 )

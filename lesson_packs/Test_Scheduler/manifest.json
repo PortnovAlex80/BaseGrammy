@@ -1,0 +1,80 @@
+﻿{
+    "lessons":  [
+                    {
+                        "title":  "Lesson 1",
+                        "lessonId":  "L01_PRESENT_SIMPLE",
+                        "file":  "lesson_01.csv",
+                        "order":  1
+                    },
+                    {
+                        "title":  "Lesson 2",
+                        "lessonId":  "L02_PRESENT_SIMPLE_REPEAT",
+                        "file":  "lesson_02.csv",
+                        "order":  2
+                    },
+                    {
+                        "title":  "Lesson 3",
+                        "lessonId":  "L03_PRESENT_SIMPLE_REPEAT",
+                        "file":  "lesson_03.csv",
+                        "order":  3
+                    },
+                    {
+                        "title":  "Lesson 4",
+                        "lessonId":  "L04_TEST",
+                        "file":  "lesson_04.csv",
+                        "order":  4
+                    },
+                    {
+                        "title":  "Lesson 5",
+                        "lessonId":  "L05_TEST",
+                        "file":  "lesson_05.csv",
+                        "order":  5
+                    },
+                    {
+                        "title":  "Lesson 6",
+                        "lessonId":  "L06_TEST",
+                        "file":  "lesson_06.csv",
+                        "order":  6
+                    },
+                    {
+                        "title":  "Lesson 7",
+                        "lessonId":  "L07_TEST",
+                        "file":  "lesson_07.csv",
+                        "order":  7
+                    },
+                    {
+                        "title":  "Lesson 8",
+                        "lessonId":  "L08_TEST",
+                        "file":  "lesson_08.csv",
+                        "order":  8
+                    },
+                    {
+                        "title":  "Lesson 9",
+                        "lessonId":  "L09_TEST",
+                        "file":  "lesson_09.csv",
+                        "order":  9
+                    },
+                    {
+                        "title":  "Lesson 10",
+                        "lessonId":  "L10_TEST",
+                        "file":  "lesson_10.csv",
+                        "order":  10
+                    },
+                    {
+                        "title":  "Lesson 11",
+                        "lessonId":  "L11_TEST",
+                        "file":  "lesson_11.csv",
+                        "order":  11
+                    },
+                    {
+                        "title":  "Lesson 12",
+                        "lessonId":  "L12_TEST",
+                        "file":  "lesson_12.csv",
+                        "order":  12
+                    }
+                ],
+    "language":  "en",
+    "schemaVersion":  1,
+    "packVersion":  "v1",
+    "packId":  "TEST_SCHEDULER"
+}

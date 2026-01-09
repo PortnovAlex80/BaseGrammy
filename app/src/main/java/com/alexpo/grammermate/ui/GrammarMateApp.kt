@@ -84,6 +84,7 @@ import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.BossReward
+import com.alexpo.grammermate.data.SubLessonType
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
@@ -176,6 +177,7 @@ fun GrammarMateApp() {
                 )
                 AppScreen.STORY -> StoryQuizScreen(
                     story = state.activeStory,
+                    testMode = state.testMode,
                     onClose = {
                         state.activeStory?.phase?.let { phase ->
                             vm.completeStory(phase, false)
@@ -348,7 +350,7 @@ private fun HomeScreen(
     onPrimaryAction: () -> Unit,
     onSelectLesson: (String) -> Unit
 ) {
-    val tiles = remember(state.lessons) { buildLessonTiles(state.lessons) }
+    val tiles = remember(state.lessons, state.testMode) { buildLessonTiles(state.lessons, state.testMode) }
     var showMethod by remember { mutableStateOf(false) }
     val languageCode = state.languages
         .firstOrNull { it.id == state.selectedLanguageId }
@@ -498,15 +500,23 @@ private fun LessonRoadmapScreen(
         .firstOrNull { it.id == state.selectedLessonId }
         ?.title
         ?: "Lesson"
-    val total = state.subLessonCount.coerceAtLeast(1)
+    val fallbackTotal = state.subLessonCount.coerceAtLeast(1)
+    val fallbackNewOnlyCount = fallbackTotal.coerceAtMost(3)
+    val trainingTypes = if (state.subLessonTypes.isNotEmpty()) {
+        state.subLessonTypes
+    } else {
+        List(fallbackTotal) { index ->
+            if (index < fallbackNewOnlyCount) SubLessonType.NEW_ONLY else SubLessonType.MIXED
+        }
+    }
+    val total = trainingTypes.size.coerceAtLeast(1)
     val completed = state.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = state.activeSubLessonIndex.coerceIn(0, total - 1)
-    val newOnlyCount = total.coerceAtMost(3)
     val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
     val hasMegaBoss = lessonIndex > 0
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.bossMegaReward
-    val entries = buildRoadmapEntries(total, newOnlyCount, hasMegaBoss)
+    val entries = buildRoadmapEntries(trainingTypes, hasMegaBoss)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -544,8 +554,12 @@ private fun LessonRoadmapScreen(
                         val index = entry.index
                         val isCompleted = index < completed
                         val isActive = index == currentIndex
-                        val canEnter = isCompleted || isActive
-                        val kindLabel = if (entry.kind == TrainingBlockKind.NEW_ONLY) "NEW" else "MIX"
+                        val canEnter = state.testMode || isCompleted || isActive
+                        val kindLabel = when (entry.type) {
+                            SubLessonType.WARMUP -> "WARM"
+                            SubLessonType.NEW_ONLY -> "NEW"
+                            SubLessonType.MIXED -> "MIX"
+                        }
                         val emoji = if (isCompleted) "🌸" else "🔒"
                         Card(
                             modifier = Modifier
@@ -613,7 +627,7 @@ private fun LessonRoadmapScreen(
 }
 
 private sealed class RoadmapEntry {
-    data class Training(val index: Int, val kind: TrainingBlockKind) : RoadmapEntry()
+    data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Vocab : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
@@ -621,18 +635,12 @@ private sealed class RoadmapEntry {
     object BossMega : RoadmapEntry()
 }
 
-private enum class TrainingBlockKind {
-    NEW_ONLY,
-    MIXED
-}
-
-private fun buildRoadmapEntries(total: Int, newOnlyCount: Int, hasMegaBoss: Boolean): List<RoadmapEntry> {
+private fun buildRoadmapEntries(trainingTypes: List<SubLessonType>, hasMegaBoss: Boolean): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
     entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckIn)
-    for (i in 0 until total) {
-        val kind = if (i < newOnlyCount) TrainingBlockKind.NEW_ONLY else TrainingBlockKind.MIXED
-        entries.add(RoadmapEntry.Training(i, kind))
+    trainingTypes.forEachIndexed { index, type ->
+        entries.add(RoadmapEntry.Training(index, type))
     }
     entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckOut)
@@ -874,6 +882,7 @@ private fun StoryTile(label: String, completed: Boolean, onClick: () -> Unit) {
 @Composable
 private fun StoryQuizScreen(
     story: com.alexpo.grammermate.data.StoryQuiz?,
+    testMode: Boolean,
     onClose: () -> Unit,
     onComplete: (Boolean) -> Unit
 ) {
@@ -921,6 +930,10 @@ private fun StoryQuizScreen(
         }
         Button(
             onClick = {
+                if (testMode) {
+                    onComplete(true)
+                    return@Button
+                }
                 val selectedCount = selections.value.size
                 if (selectedCount < story.questions.size) {
                     errorMessage = "Ответьте на все вопросы"
@@ -993,13 +1006,14 @@ private fun LanguageSelector(
     }
 }
 
-private fun buildLessonTiles(lessons: List<Lesson>): List<LessonTileUi> {
+private fun buildLessonTiles(lessons: List<Lesson>, testMode: Boolean): List<LessonTileUi> {
     val total = 12
     val tiles = mutableListOf<LessonTileUi>()
     for (i in 0 until total) {
         val lesson = lessons.getOrNull(i)
         val state = when {
             lesson == null -> LessonTileState.LOCKED
+            testMode -> LessonTileState.SEED
             i == 0 -> LessonTileState.SPROUT
             else -> LessonTileState.SEED
         }
