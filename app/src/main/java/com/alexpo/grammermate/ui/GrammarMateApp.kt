@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LocalFlorist
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
@@ -99,6 +100,7 @@ fun GrammarMateApp() {
             var showExitDialog by remember { mutableStateOf(false) }
             val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
             val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
+            val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
@@ -158,6 +160,14 @@ fun GrammarMateApp() {
                         vm.openVocabSprint()
                         screen = AppScreen.VOCAB
                     },
+                    onStartBossLesson = {
+                        vm.startBossLesson()
+                        screen = AppScreen.TRAINING
+                    },
+                    onStartBossMega = {
+                        vm.startBossMega()
+                        screen = AppScreen.TRAINING
+                    },
                     onOpenStory = { phase ->
                         vm.openStory(phase)
                         screen = AppScreen.STORY
@@ -211,6 +221,10 @@ fun GrammarMateApp() {
                 lastVocabFinishedToken.value = state.vocabFinishedToken
                 screen = AppScreen.LESSON
             }
+            if (screen == AppScreen.TRAINING && state.bossFinishedToken != lastBossFinishedToken.value) {
+                lastBossFinishedToken.value = state.bossFinishedToken
+                screen = AppScreen.LESSON
+            }
 
             if (showExitDialog) {
                 AlertDialog(
@@ -218,7 +232,11 @@ fun GrammarMateApp() {
                     confirmButton = {
                         TextButton(onClick = {
                             showExitDialog = false
-                            vm.finishSession()
+                            if (state.bossActive) {
+                                vm.finishBoss()
+                            } else {
+                                vm.finishSession()
+                            }
                             screen = AppScreen.LESSON
                         }) {
                             Text(text = "Выйти")
@@ -256,6 +274,43 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "Vocabulary") },
                     text = { Text(text = state.vocabErrorMessage ?: "") }
+                )
+            }
+            if (state.bossErrorMessage != null) {
+                AlertDialog(
+                    onDismissRequest = { vm.clearBossError() },
+                    confirmButton = {
+                        TextButton(onClick = { vm.clearBossError() }) {
+                            Text(text = "OK")
+                        }
+                    },
+                    title = { Text(text = "Boss") },
+                    text = { Text(text = state.bossErrorMessage ?: "") }
+                )
+            }
+            if (state.bossRewardMessage != null && state.bossReward != null) {
+                AlertDialog(
+                    onDismissRequest = { vm.clearBossRewardMessage() },
+                    confirmButton = {
+                        TextButton(onClick = { vm.clearBossRewardMessage() }) {
+                            Text(text = "OK")
+                        }
+                    },
+                    icon = {
+                        val tint = when (state.bossReward) {
+                            com.alexpo.grammermate.data.BossReward.BRONZE -> Color(0xFFCD7F32)
+                            com.alexpo.grammermate.data.BossReward.SILVER -> Color(0xFFC0C0C0)
+                            com.alexpo.grammermate.data.BossReward.GOLD -> Color(0xFFFFD700)
+                            else -> MaterialTheme.colorScheme.primary
+                        }
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = tint
+                        )
+                    },
+                    title = { Text(text = "Boss Reward") },
+                    text = { Text(text = state.bossRewardMessage ?: "") }
                 )
             }
         }
@@ -433,6 +488,8 @@ private fun LessonRoadmapScreen(
     onBack: () -> Unit,
     onStartSubLesson: (Int) -> Unit,
     onOpenVocab: () -> Unit,
+    onStartBossLesson: () -> Unit,
+    onStartBossMega: () -> Unit,
     onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit
 ) {
     val lessonTitle = state.lessons
@@ -443,7 +500,9 @@ private fun LessonRoadmapScreen(
     val completed = state.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = state.activeSubLessonIndex.coerceIn(0, total - 1)
     val newOnlyCount = total.coerceAtMost(3)
-    val entries = buildRoadmapEntries(total, newOnlyCount)
+    val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+    val hasMegaBoss = lessonIndex > 0
+    val entries = buildRoadmapEntries(total, newOnlyCount, hasMegaBoss)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -520,6 +579,12 @@ private fun LessonRoadmapScreen(
                             onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_OUT) }
                         )
                     }
+                    is RoadmapEntry.BossLesson -> {
+                        BossTile(label = "Boss", enabled = true, onClick = onStartBossLesson)
+                    }
+                    is RoadmapEntry.BossMega -> {
+                        BossTile(label = "Mega", enabled = true, onClick = onStartBossMega)
+                    }
                 }
             }
         }
@@ -538,6 +603,8 @@ private sealed class RoadmapEntry {
     object Vocab : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
+    object BossLesson : RoadmapEntry()
+    object BossMega : RoadmapEntry()
 }
 
 private enum class TrainingBlockKind {
@@ -545,7 +612,7 @@ private enum class TrainingBlockKind {
     MIXED
 }
 
-private fun buildRoadmapEntries(total: Int, newOnlyCount: Int): List<RoadmapEntry> {
+private fun buildRoadmapEntries(total: Int, newOnlyCount: Int, hasMegaBoss: Boolean): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
     entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckIn)
@@ -555,6 +622,10 @@ private fun buildRoadmapEntries(total: Int, newOnlyCount: Int): List<RoadmapEntr
     }
     entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckOut)
+    entries.add(RoadmapEntry.BossLesson)
+    if (hasMegaBoss) {
+        entries.add(RoadmapEntry.BossMega)
+    }
     return entries
 }
 
@@ -576,6 +647,31 @@ private fun VocabTile(label: String, onClick: () -> Unit) {
             Text(text = label, fontWeight = FontWeight.SemiBold)
             Icon(
                 imageVector = Icons.Default.LibraryBooks,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BossTile(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = label, fontWeight = FontWeight.SemiBold)
+            Icon(
+                imageVector = Icons.Default.EmojiEvents,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
@@ -1129,7 +1225,11 @@ private fun TrainingScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             HeaderStats(state)
-            ModeSelector(state, onSelectMode, onSelectLesson)
+            if (state.bossActive) {
+                Text(text = "Boss Session", fontWeight = FontWeight.SemiBold)
+            } else {
+                ModeSelector(state, onSelectMode, onSelectLesson)
+            }
             CardPrompt(state)
             AnswerBox(state, onInputChange, onSubmit, onSetInputMode, onShowAnswer, hasCards)
             ResultBlock(state)
@@ -1140,9 +1240,13 @@ private fun TrainingScreen(
 
 @Composable
 private fun HeaderStats(state: TrainingUiState) {
-    val total = state.subLessonTotal
+    val total = if (state.bossActive) state.bossTotal else state.subLessonTotal
     val progressIndex = if (total > 0) {
-        (state.currentIndex - state.warmupCount + 1).coerceIn(0, total)
+        if (state.bossActive) {
+            state.bossProgress.coerceIn(0, total)
+        } else {
+            (state.currentIndex - state.warmupCount + 1).coerceIn(0, total)
+        }
     } else {
         0
     }
@@ -1158,18 +1262,18 @@ private fun HeaderStats(state: TrainingUiState) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(text = "Прогресс")
+            Text(text = if (state.bossActive) "Boss" else "Progress")
             Text(
-                text = if (state.currentIndex < state.warmupCount) "Warm-up" else "${progressPercent}%",
+                text = if (!state.bossActive && state.currentIndex < state.warmupCount) "Warm-up" else "${progressPercent}%",
                 fontWeight = FontWeight.SemiBold
             )
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(text = "Время")
+            Text(text = "Time")
             Text(text = formatTime(state.activeTimeMs), fontWeight = FontWeight.SemiBold)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(text = "?/мин")
+            Text(text = "Speed")
             Text(text = speed, fontWeight = FontWeight.SemiBold)
         }
     }

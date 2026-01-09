@@ -16,6 +16,8 @@ import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.BossReward
+import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
 import com.alexpo.grammermate.data.TrainingMode
@@ -45,6 +47,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
+    private var bossCards: List<SentenceCard> = emptyList()
     private var vocabSession: List<VocabEntry> = emptyList()
     private var warmupCount: Int = 0
     private var subLessonTotal: Int = 0
@@ -105,7 +108,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -178,7 +189,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -214,7 +233,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -249,7 +276,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -267,7 +302,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (accepted) {
             playSuccessTone()
             val isLastCard = state.currentIndex >= sessionCards.lastIndex
-            if (isLastCard) {
+            if (state.bossActive) {
+                if (isLastCard) {
+                    _uiState.update {
+                        it.copy(
+                            correctCount = it.correctCount + 1,
+                            lastResult = null,
+                            incorrectAttemptsForCard = 0,
+                            answerText = null
+                        )
+                    }
+                    updateBossProgress(state.bossTotal)
+                    finishBoss()
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            correctCount = it.correctCount + 1,
+                            lastResult = true,
+                            incorrectAttemptsForCard = 0,
+                            answerText = null
+                        )
+                    }
+                    nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
+                }
+            } else if (isLastCard) {
                 pauseTimer()
                 _uiState.update {
                     val nextCompleted = (it.completedSubLessonCount + 1).coerceAtMost(it.subLessonCount)
@@ -327,6 +385,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val nextCard = sessionCards.getOrNull(nextIndex)
         _uiState.update {
             val shouldTrigger = triggerVoice && it.inputMode == InputMode.VOICE
+            val nextProgress = if (it.bossActive) {
+                (it.bossProgress.coerceAtLeast(nextIndex + 1)).coerceAtMost(it.bossTotal)
+            } else {
+                it.bossProgress
+            }
+            val nextReward = if (it.bossActive) {
+                resolveBossReward(nextProgress, it.bossTotal)
+            } else {
+                it.bossReward
+            }
+            val rewardMessage = if (it.bossActive && nextReward != null && nextReward != it.bossReward) {
+                bossRewardMessage(nextReward)
+            } else {
+                it.bossRewardMessage
+            }
             it.copy(
                 currentIndex = nextIndex,
                 currentCard = nextCard,
@@ -335,7 +408,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 answerText = null,
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.ACTIVE,
-                voiceTriggerToken = if (shouldTrigger) it.voiceTriggerToken + 1 else it.voiceTriggerToken
+                voiceTriggerToken = if (shouldTrigger) it.voiceTriggerToken + 1 else it.voiceTriggerToken,
+                bossProgress = nextProgress,
+                bossReward = nextReward ?: it.bossReward,
+                bossRewardMessage = rewardMessage
             )
         }
         if (wasHintShown) {
@@ -378,6 +454,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun finishSession() {
         if (sessionCards.isEmpty()) return
+        if (_uiState.value.bossActive) {
+            finishBoss()
+            return
+        }
         pauseTimer()
         val state = _uiState.value
         val minutes = state.activeTimeMs / 60000.0
@@ -457,7 +537,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     vocabFinishedToken = 0,
                     vocabErrorMessage = null,
                     vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
                 )
             }
             buildSessionCards()
@@ -524,7 +612,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -569,7 +665,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -582,6 +686,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun buildSessionCards() {
+        if (_uiState.value.bossActive) return
         val state = _uiState.value
         val lessons = state.lessons
         val lessonCards = when (state.mode) {
@@ -629,7 +734,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = "",
                 lastResult = null,
                 answerText = null,
-                incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED
             )
         }
@@ -668,7 +772,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabTotal = entries.size,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0
+                vocabVoiceTriggerToken = 0,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null
             )
         }
     }
@@ -787,8 +899,153 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun startSession() {
+    fun startBossLesson() {
+        startBoss(BossType.LESSON)
+    }
+
+    fun startBossMega() {
+        startBoss(BossType.MEGA)
+    }
+
+    private fun startBoss(type: BossType) {
+        pauseTimer()
+        val lessons = _uiState.value.lessons
+        val selectedId = _uiState.value.selectedLessonId
+        if (selectedId == null) {
+            _uiState.update { it.copy(bossErrorMessage = "Lesson not selected") }
+            return
+        }
+        val selectedIndex = lessons.indexOfFirst { it.id == selectedId }
+        val cards = when (type) {
+            BossType.LESSON -> lessons.firstOrNull { it.id == selectedId }?.cards ?: emptyList()
+            BossType.MEGA -> {
+                if (selectedIndex <= 0) emptyList() else lessons.take(selectedIndex).flatMap { it.cards }
+            }
+        }
+        if (cards.isEmpty()) {
+            val message = if (type == BossType.MEGA) {
+                "Mega boss is available after the first lesson"
+            } else {
+                "Boss has no cards"
+            }
+            _uiState.update { it.copy(bossErrorMessage = message) }
+            return
+        }
+        bossCards = cards
+        sessionCards = bossCards
+        warmupCount = 0
+        subLessonTotal = bossCards.size
+        subLessonCount = 1
+        val firstCard = bossCards.firstOrNull()
+        _uiState.update {
+            it.copy(
+                bossActive = true,
+                bossType = type,
+                bossTotal = bossCards.size,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossErrorMessage = null,
+                currentIndex = 0,
+                currentCard = firstCard,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0,
+                correctCount = 0,
+                incorrectCount = 0,
+                activeTimeMs = 0L,
+                sessionState = SessionState.PAUSED,
+                warmupCount = 0,
+                subLessonTotal = bossCards.size,
+                subLessonCount = 1,
+                activeSubLessonIndex = 0,
+                completedSubLessonCount = 0
+            )
+        }
+    }
+
+    fun finishBoss() {
+        pauseTimer()
+        val state = _uiState.value
+        val reward = resolveBossReward(state.bossProgress, state.bossTotal)
+        val progress = progressStore.load()
+        val restoredLessonId = progress.lessonId ?: state.selectedLessonId
+        bossCards = emptyList()
+        _uiState.update {
+            it.copy(
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = reward ?: it.bossReward,
+                bossRewardMessage = it.bossRewardMessage,
+                bossFinishedToken = it.bossFinishedToken + 1,
+                bossErrorMessage = null,
+                selectedLessonId = restoredLessonId,
+                mode = progress.mode,
+                currentIndex = progress.currentIndex,
+                correctCount = progress.correctCount,
+                incorrectCount = progress.incorrectCount,
+                incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
+                activeTimeMs = progress.activeTimeMs,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                sessionState = SessionState.PAUSED
+            )
+        }
         buildSessionCards()
+    }
+
+    fun clearBossRewardMessage() {
+        _uiState.update { it.copy(bossRewardMessage = null) }
+    }
+
+    fun clearBossError() {
+        _uiState.update { it.copy(bossErrorMessage = null) }
+    }
+
+    private fun updateBossProgress(progress: Int) {
+        _uiState.update {
+            val nextProgress = progress.coerceAtMost(it.bossTotal)
+            val nextReward = resolveBossReward(nextProgress, it.bossTotal)
+            val message = if (nextReward != null && nextReward != it.bossReward) {
+                bossRewardMessage(nextReward)
+            } else {
+                it.bossRewardMessage
+            }
+            it.copy(
+                bossProgress = nextProgress,
+                bossReward = nextReward ?: it.bossReward,
+                bossRewardMessage = message
+            )
+        }
+    }
+
+    private fun resolveBossReward(progress: Int, total: Int): BossReward? {
+        if (total <= 0) return null
+        val percent = (progress.toDouble() / total.toDouble()) * 100.0
+        return when {
+            percent >= 100.0 -> BossReward.GOLD
+            percent > 75.0 -> BossReward.SILVER
+            percent > 50.0 -> BossReward.BRONZE
+            else -> null
+        }
+    }
+
+    private fun bossRewardMessage(reward: BossReward): String {
+        return when (reward) {
+            BossReward.BRONZE -> "Bronze reached"
+            BossReward.SILVER -> "Silver reached"
+            BossReward.GOLD -> "Gold reached"
+        }
+    }
+
+    private fun startSession() {
+        if (!_uiState.value.bossActive) {
+            buildSessionCards()
+        }
         if (sessionCards.isEmpty() || _uiState.value.currentCard == null) {
             pauseTimer()
             _uiState.update { it.copy(sessionState = SessionState.PAUSED) }
@@ -833,6 +1090,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun saveProgress() {
         val state = _uiState.value
+        if (state.bossActive) return
         progressStore.save(
             TrainingProgress(
                 languageId = state.selectedLanguageId,
@@ -910,5 +1168,13 @@ data class TrainingUiState(
     val vocabFinishedToken: Int = 0,
     val vocabErrorMessage: String? = null,
     val vocabInputMode: InputMode = InputMode.VOICE,
-    val vocabVoiceTriggerToken: Int = 0
+    val vocabVoiceTriggerToken: Int = 0,
+    val bossActive: Boolean = false,
+    val bossType: BossType? = null,
+    val bossTotal: Int = 0,
+    val bossProgress: Int = 0,
+    val bossReward: BossReward? = null,
+    val bossRewardMessage: String? = null,
+    val bossFinishedToken: Int = 0,
+    val bossErrorMessage: String? = null
 )

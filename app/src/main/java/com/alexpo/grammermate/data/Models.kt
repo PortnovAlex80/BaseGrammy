@@ -61,6 +61,17 @@ enum class TrainingMode {
     ALL_MIXED
 }
 
+enum class BossType {
+    LESSON,
+    MEGA
+}
+
+enum class BossReward {
+    BRONZE,
+    SILVER,
+    GOLD
+}
+
 enum class SessionState {
     ACTIVE,
     PAUSED,
