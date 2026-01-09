@@ -18,6 +18,15 @@ data class SentenceCard(
     val acceptedAnswers: List<String>
 )
 
+data class VocabEntry(
+    val id: String,
+    val lessonId: String,
+    val languageId: String,
+    val nativeText: String,
+    val targetText: String,
+    val isHard: Boolean = false
+)
+
 data class LessonPack(
     val packId: String,
     val packVersion: String,

@@ -98,6 +98,7 @@ fun GrammarMateApp() {
             var showSettings by remember { mutableStateOf(false) }
             var showExitDialog by remember { mutableStateOf(false) }
             val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
+            val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
@@ -106,6 +107,9 @@ fun GrammarMateApp() {
                 screen = AppScreen.HOME
             }
             BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
+                screen = AppScreen.LESSON
+            }
+            BackHandler(enabled = screen == AppScreen.VOCAB && !showSettings) {
                 screen = AppScreen.LESSON
             }
 
@@ -150,6 +154,10 @@ fun GrammarMateApp() {
                         vm.selectSubLesson(index)
                         screen = AppScreen.TRAINING
                     },
+                    onOpenVocab = {
+                        vm.openVocabSprint()
+                        screen = AppScreen.VOCAB
+                    },
                     onOpenStory = { phase ->
                         vm.openStory(phase)
                         screen = AppScreen.STORY
@@ -170,6 +178,14 @@ fun GrammarMateApp() {
                         screen = AppScreen.LESSON
                     }
                 )
+                AppScreen.VOCAB -> VocabSprintScreen(
+                    state = state,
+                    onInputChange = vm::onVocabInputChanged,
+                    onSubmit = { input -> vm.submitVocabAnswer(input) },
+                    onSetInputMode = vm::setVocabInputMode,
+                    onRequestVoice = vm::requestVocabVoice,
+                    onClose = { screen = AppScreen.LESSON }
+                )
                 AppScreen.TRAINING -> TrainingScreen(
                     state = state,
                     onInputChange = vm::onInputChanged,
@@ -189,6 +205,10 @@ fun GrammarMateApp() {
 
             if (screen == AppScreen.TRAINING && state.subLessonFinishedToken != lastFinishedToken.value) {
                 lastFinishedToken.value = state.subLessonFinishedToken
+                screen = AppScreen.LESSON
+            }
+            if (screen == AppScreen.VOCAB && state.vocabFinishedToken != lastVocabFinishedToken.value) {
+                lastVocabFinishedToken.value = state.vocabFinishedToken
                 screen = AppScreen.LESSON
             }
 
@@ -226,6 +246,18 @@ fun GrammarMateApp() {
                     text = { Text(text = state.storyErrorMessage ?: "") }
                 )
             }
+            if (state.vocabErrorMessage != null) {
+                AlertDialog(
+                    onDismissRequest = { vm.clearVocabError() },
+                    confirmButton = {
+                        TextButton(onClick = { vm.clearVocabError() }) {
+                            Text(text = "OK")
+                        }
+                    },
+                    title = { Text(text = "Vocabulary") },
+                    text = { Text(text = state.vocabErrorMessage ?: "") }
+                )
+            }
         }
     }
 }
@@ -233,6 +265,7 @@ fun GrammarMateApp() {
 private enum class AppScreen {
     HOME,
     LESSON,
+    VOCAB,
     STORY,
     TRAINING
 }
@@ -399,6 +432,7 @@ private fun LessonRoadmapScreen(
     state: TrainingUiState,
     onBack: () -> Unit,
     onStartSubLesson: (Int) -> Unit,
+    onOpenVocab: () -> Unit,
     onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit
 ) {
     val lessonTitle = state.lessons
@@ -470,7 +504,7 @@ private fun LessonRoadmapScreen(
                         }
                     }
                     is RoadmapEntry.Vocab -> {
-                        VocabTile(label = "Vocab")
+                        VocabTile(label = "Vocab", onClick = onOpenVocab)
                     }
                     is RoadmapEntry.StoryCheckIn -> {
                         StoryTile(
@@ -525,12 +559,12 @@ private fun buildRoadmapEntries(total: Int, newOnlyCount: Int): List<RoadmapEntr
 }
 
 @Composable
-private fun VocabTile(label: String) {
+private fun VocabTile(label: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clickable(enabled = false, onClick = {})
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier
@@ -545,6 +579,140 @@ private fun VocabTile(label: String) {
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun VocabSprintScreen(
+    state: TrainingUiState,
+    onInputChange: (String) -> Unit,
+    onSubmit: (String?) -> Unit,
+    onSetInputMode: (InputMode) -> Unit,
+    onRequestVoice: () -> Unit,
+    onClose: () -> Unit
+) {
+    val vocab = state.currentVocab
+    val latestState by rememberUpdatedState(state)
+    val canLaunchVoice = vocab != null
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spoken = matches?.firstOrNull()
+            if (!spoken.isNullOrBlank() && latestState.currentVocab != null) {
+                onInputChange(spoken)
+                onSubmit(spoken)
+            }
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(
+        state.vocabVoiceTriggerToken,
+        state.vocabInputMode,
+        vocab?.id
+    ) {
+        if (state.vocabInputMode == InputMode.VOICE && vocab != null) {
+            kotlinx.coroutines.delay(200)
+            launchVoiceRecognition(state.selectedLanguageId, vocab.nativeText, speechLauncher)
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Vocabulary Sprint", fontWeight = FontWeight.SemiBold)
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        val progressText = if (state.vocabTotal > 0) {
+            "${state.vocabIndex + 1} / ${state.vocabTotal}"
+        } else {
+            "0 / 0"
+        }
+        Text(text = progressText)
+        Spacer(modifier = Modifier.height(16.dp))
+        if (vocab != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(72.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(text = vocab.nativeText, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                    }
+                }
+                Card(
+                    modifier = Modifier
+                        .width(96.dp)
+                        .height(72.dp)
+                ) {
+                    val isVoice = state.vocabInputMode == InputMode.VOICE
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        val micClick = { onRequestVoice() }
+                        if (isVoice) {
+                            FilledTonalIconButton(onClick = micClick, enabled = canLaunchVoice) {
+                                Icon(Icons.Default.Mic, contentDescription = "Voice")
+                            }
+                        } else {
+                            IconButton(onClick = micClick, enabled = canLaunchVoice) {
+                                Icon(Icons.Default.Mic, contentDescription = "Voice")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        if (isVoice) {
+                            IconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
+                                Icon(Icons.Default.Keyboard, contentDescription = "Keyboard")
+                            }
+                        } else {
+                            FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
+                                Icon(Icons.Default.Keyboard, contentDescription = "Keyboard")
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = state.vocabInputText,
+                onValueChange = onInputChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(text = "Answer") }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            state.vocabAnswerText?.let { answer ->
+                Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Button(onClick = { onSubmit(state.vocabInputText) }, modifier = Modifier.fillMaxWidth()) {
+                Text(text = "Check")
+            }
+        } else {
+            Text(text = "No words")
         }
     }
 }

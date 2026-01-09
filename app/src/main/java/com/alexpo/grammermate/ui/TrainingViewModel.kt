@@ -1,4 +1,4 @@
-﻿package com.alexpo.grammermate.ui
+package com.alexpo.grammermate.ui
 
 import android.app.Application
 import android.net.Uri
@@ -20,6 +20,7 @@ import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
+import com.alexpo.grammermate.data.VocabEntry
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
+    private var vocabSession: List<VocabEntry> = emptyList()
     private var warmupCount: Int = 0
     private var subLessonTotal: Int = 0
     private var subLessonCount: Int = 0
@@ -93,7 +95,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 subLessonFinishedToken = 0,
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
-                activeStory = null
+                activeStory = null,
+                currentVocab = null,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = 0,
+                vocabFinishedToken = 0,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
         buildSessionCards()
@@ -134,6 +146,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun selectLanguage(languageId: String) {
         pauseTimer()
+        vocabSession = emptyList()
         val lessons = lessonStore.getLessons(languageId)
         val selectedLessonId = lessons.firstOrNull()?.id
         _uiState.update {
@@ -155,7 +168,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
                 activeStory = null,
-                storyErrorMessage = null
+                storyErrorMessage = null,
+                currentVocab = null,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = 0,
+                vocabFinishedToken = 0,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
         buildSessionCards()
@@ -164,6 +187,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun selectLesson(lessonId: String) {
         pauseTimer()
+        vocabSession = emptyList()
         _uiState.update {
             it.copy(
                 selectedLessonId = lessonId,
@@ -180,7 +204,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
                 activeStory = null,
-                storyErrorMessage = null
+                storyErrorMessage = null,
+                currentVocab = null,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = 0,
+                vocabFinishedToken = 0,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
         buildSessionCards()
@@ -189,6 +223,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun selectMode(mode: TrainingMode) {
         pauseTimer()
+        vocabSession = emptyList()
         _uiState.update {
             it.copy(
                 mode = mode,
@@ -204,7 +239,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
                 activeStory = null,
-                storyErrorMessage = null
+                storyErrorMessage = null,
+                currentVocab = null,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = 0,
+                vocabFinishedToken = 0,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
         buildSessionCards()
@@ -374,6 +419,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun importLessonPack(uri: Uri) {
+        vocabSession = emptyList()
         try {
             val pack = lessonStore.importPackFromUri(uri, getApplication<Application>().contentResolver)
             val lessons = lessonStore.getLessons(pack.languageId)
@@ -401,7 +447,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     storyCheckInDone = false,
                     storyCheckOutDone = false,
                     activeStory = null,
-                    storyErrorMessage = null
+                    storyErrorMessage = null,
+                    currentVocab = null,
+                    vocabInputText = "",
+                    vocabAttempts = 0,
+                    vocabAnswerText = null,
+                    vocabIndex = 0,
+                    vocabTotal = 0,
+                    vocabFinishedToken = 0,
+                    vocabErrorMessage = null,
+                    vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
                 )
             }
             buildSessionCards()
@@ -432,6 +488,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun addLanguage(name: String) {
         val language = lessonStore.addLanguage(name)
+        vocabSession = emptyList()
         val lessons = lessonStore.getLessons(language.id)
         val selectedLessonId = lessons.firstOrNull()?.id
         _uiState.update {
@@ -457,7 +514,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
                 activeStory = null,
-                storyErrorMessage = null
+                storyErrorMessage = null,
+                currentVocab = null,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = 0,
+                vocabFinishedToken = 0,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
         buildSessionCards()
@@ -472,6 +539,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun refreshLessons(selectedLessonId: String?) {
         pauseTimer()
+        vocabSession = emptyList()
         val languageId = _uiState.value.selectedLanguageId
         val lessons = lessonStore.getLessons(languageId)
         val selected = selectedLessonId ?: lessons.firstOrNull()?.id
@@ -491,7 +559,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
                 activeStory = null,
-                storyErrorMessage = null
+                storyErrorMessage = null,
+                currentVocab = null,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = 0,
+                vocabFinishedToken = 0,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
         buildSessionCards()
@@ -570,6 +648,31 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(activeStory = story, storyErrorMessage = null) }
     }
 
+    fun openVocabSprint() {
+        val lessonId = _uiState.value.selectedLessonId ?: return
+        val languageId = _uiState.value.selectedLanguageId
+        val entries = lessonStore.getVocabEntries(lessonId, languageId).take(3)
+        if (entries.isEmpty()) {
+            vocabSession = emptyList()
+            _uiState.update { it.copy(vocabErrorMessage = "Словарь не найден. Импортируйте пакет заново.") }
+            return
+        }
+        vocabSession = entries
+        _uiState.update {
+            it.copy(
+                currentVocab = entries.firstOrNull(),
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = 0,
+                vocabTotal = entries.size,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
+            )
+        }
+    }
+
     fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
         _uiState.update {
             if (!allCorrect) {
@@ -584,6 +687,104 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun clearStoryError() {
         _uiState.update { it.copy(storyErrorMessage = null) }
+    }
+
+    fun clearVocabError() {
+        _uiState.update { it.copy(vocabErrorMessage = null) }
+    }
+
+    fun onVocabInputChanged(text: String) {
+        _uiState.update {
+            val resetAttempts = it.vocabAnswerText != null || it.vocabAttempts >= 3
+            it.copy(
+                vocabInputText = text,
+                vocabAttempts = if (resetAttempts) 0 else it.vocabAttempts,
+                vocabAnswerText = if (resetAttempts) null else it.vocabAnswerText
+            )
+        }
+    }
+
+    fun setVocabInputMode(mode: InputMode) {
+        _uiState.update { it.copy(vocabInputMode = mode) }
+    }
+
+    fun requestVocabVoice() {
+        _uiState.update {
+            it.copy(
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = it.vocabVoiceTriggerToken + 1
+            )
+        }
+    }
+
+    fun submitVocabAnswer(inputOverride: String? = null) {
+        val state = _uiState.value
+        val entry = state.currentVocab ?: return
+        val input = inputOverride ?: state.vocabInputText
+        if (input.isBlank()) return
+        val normalizedInput = Normalizer.normalize(input)
+        val accepted = entry.targetText.split("+")
+            .map { Normalizer.normalize(it) }
+            .any { it == normalizedInput }
+        if (accepted) {
+            playSuccessTone()
+            moveToNextVocab()
+            return
+        }
+        playErrorTone()
+        val nextAttempts = state.vocabAttempts + 1
+        if (nextAttempts >= 3) {
+            _uiState.update {
+                it.copy(
+                    vocabAttempts = nextAttempts,
+                    vocabAnswerText = entry.targetText,
+                    vocabInputText = ""
+                )
+            }
+        } else {
+            _uiState.update {
+                val nextToken = if (state.vocabInputMode == InputMode.VOICE) {
+                    it.vocabVoiceTriggerToken + 1
+                } else {
+                    it.vocabVoiceTriggerToken
+                }
+                it.copy(
+                    vocabAttempts = nextAttempts,
+                    vocabInputText = "",
+                    vocabVoiceTriggerToken = nextToken
+                )
+            }
+        }
+    }
+
+    private fun moveToNextVocab() {
+        val state = _uiState.value
+        val nextIndex = state.vocabIndex + 1
+        if (nextIndex >= vocabSession.size) {
+            _uiState.update {
+                it.copy(
+                    currentVocab = null,
+                    vocabInputText = "",
+                    vocabAttempts = 0,
+                    vocabAnswerText = null,
+                    vocabIndex = nextIndex,
+                    vocabTotal = vocabSession.size,
+                    vocabFinishedToken = it.vocabFinishedToken + 1
+                )
+            }
+            return
+        }
+        val next = vocabSession[nextIndex]
+        _uiState.update {
+            it.copy(
+                currentVocab = next,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = nextIndex,
+                vocabTotal = vocabSession.size
+            )
+        }
     }
 
     private fun startSession() {
@@ -699,5 +900,15 @@ data class TrainingUiState(
     val storyCheckInDone: Boolean = false,
     val storyCheckOutDone: Boolean = false,
     val activeStory: StoryQuiz? = null,
-    val storyErrorMessage: String? = null
+    val storyErrorMessage: String? = null,
+    val currentVocab: VocabEntry? = null,
+    val vocabInputText: String = "",
+    val vocabAttempts: Int = 0,
+    val vocabAnswerText: String? = null,
+    val vocabIndex: Int = 0,
+    val vocabTotal: Int = 0,
+    val vocabFinishedToken: Int = 0,
+    val vocabErrorMessage: String? = null,
+    val vocabInputMode: InputMode = InputMode.VOICE,
+    val vocabVoiceTriggerToken: Int = 0
 )

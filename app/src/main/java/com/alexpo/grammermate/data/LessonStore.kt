@@ -22,6 +22,9 @@ class LessonStore(private val context: Context) {
     private val storiesDir = File(baseDir, "stories")
     private val storiesIndexFile = File(storiesDir, "stories.yaml")
     private val storiesStore = YamlListStore(yaml, storiesIndexFile)
+    private val vocabDir = File(baseDir, "vocab")
+    private val vocabIndexFile = File(vocabDir, "vocab.yaml")
+    private val vocabStore = YamlListStore(yaml, vocabIndexFile)
 
     fun ensureSeedData() {
         if (!lessonsDir.exists()) {
@@ -129,6 +132,7 @@ class LessonStore(private val context: Context) {
             importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId)
         }
         importStoriesFromPack(packDir, languageId)
+        importVocabFromPack(packDir, languageId)
 
         val updated = getInstalledPacks()
             .filterNot { it.packId == manifest.packId }
@@ -166,6 +170,30 @@ class LessonStore(private val context: Context) {
             val file = File(storiesDir, fileName)
             if (!file.exists()) return@mapNotNull null
             runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull()
+        }
+    }
+
+    fun getVocabEntries(lessonId: String, languageId: String): List<VocabEntry> {
+        val entries = vocabStore.read()
+        return entries.flatMap { entry ->
+            val entryLesson = entry["lessonId"] as? String ?: return@flatMap emptyList()
+            val entryLang = entry["languageId"] as? String ?: return@flatMap emptyList()
+            if (!entryLesson.equals(lessonId, ignoreCase = true)) return@flatMap emptyList()
+            if (!entryLang.equals(languageId, ignoreCase = true)) return@flatMap emptyList()
+            val fileName = entry["file"] as? String ?: return@flatMap emptyList()
+            val file = File(vocabDir, fileName)
+            if (!file.exists()) return@flatMap emptyList()
+            val rows = runCatching { VocabCsvParser.parse(file.inputStream()) }.getOrNull() ?: return@flatMap emptyList()
+            rows.mapIndexed { index, row ->
+                VocabEntry(
+                    id = "${entryLesson}_${index + 1}",
+                    lessonId = entryLesson,
+                    languageId = entryLang,
+                    nativeText = row.nativeText,
+                    targetText = row.targetText,
+                    isHard = row.isHard
+                )
+            }
         }
     }
 
@@ -209,6 +237,7 @@ class LessonStore(private val context: Context) {
         if (dir.exists()) dir.deleteRecursively()
         val index = indexFileFor(languageId)
         if (index.exists()) index.delete()
+        removeVocabEntries(languageId, null)
     }
 
     fun deleteLesson(languageId: String, lessonId: String) {
@@ -229,6 +258,7 @@ class LessonStore(private val context: Context) {
             }
         }
         writeIndex(languageId, entries)
+        removeVocabEntries(languageId, lessonId)
     }
 
     fun createEmptyLesson(languageId: String, title: String): Lesson {
@@ -371,6 +401,53 @@ class LessonStore(private val context: Context) {
                 )
             }
         storiesStore.write(existing)
+    }
+
+    private fun importVocabFromPack(packDir: File, languageId: String) {
+        vocabDir.mkdirs()
+        val existing = vocabStore.read().filterNot {
+            val entryLang = it["languageId"] as? String
+            entryLang?.equals(languageId, ignoreCase = true) == true
+        }.toMutableList()
+        packDir.walkTopDown()
+            .filter { it.isFile && it.extension.equals("csv", ignoreCase = true) }
+            .filter { it.nameWithoutExtension.startsWith("vocab_", ignoreCase = true) }
+            .forEach { file ->
+                val lessonId = file.nameWithoutExtension.removePrefix("vocab_")
+                if (lessonId.isBlank()) return@forEach
+                val storedName = "${file.nameWithoutExtension}.csv"
+                val target = File(vocabDir, storedName)
+                AtomicFileWriter.writeText(target, file.readText())
+                existing.add(
+                    mapOf(
+                        "lessonId" to lessonId,
+                        "languageId" to languageId,
+                        "file" to storedName
+                    )
+                )
+            }
+        vocabStore.write(existing)
+    }
+
+    private fun removeVocabEntries(languageId: String, lessonId: String?) {
+        val entries = vocabStore.read()
+        val remaining = mutableListOf<Map<String, Any>>()
+        entries.forEach { entry ->
+            val entryLang = entry["languageId"] as? String ?: return@forEach
+            val entryLesson = entry["lessonId"] as? String
+            val shouldRemove = entryLang.equals(languageId, ignoreCase = true) &&
+                (lessonId == null || entryLesson?.equals(lessonId, ignoreCase = true) == true)
+            if (shouldRemove) {
+                val fileName = entry["file"] as? String
+                if (fileName != null) {
+                    val file = File(vocabDir, fileName)
+                    if (file.exists()) file.delete()
+                }
+            } else {
+                remaining.add(entry)
+            }
+        }
+        vocabStore.write(remaining)
     }
 
     private fun guessFileName(resolver: ContentResolver, uri: Uri): String? {
