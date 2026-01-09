@@ -6,9 +6,80 @@
   "questions": [
     {
       "qId": "Q1",
-      "prompt": "Where does Jane sometimes work?",
-      "options": ["From home", "At school", "In a restaurant", "In a hospital"],
+      "prompt": "Where does Jane work?",
+      "options": [
+        "At school",
+        "In a restaurant",
+        "At home only",
+        "In a company"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "qId": "Q2",
+      "prompt": "Who sent Jane many messages?",
+      "options": [
+        "Her family",
+        "Her friend",
+        "Her client",
+        "Her boss"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "qId": "Q3",
+      "prompt": "What did Jane do yesterday evening?",
+      "options": [
+        "She went to the movies",
+        "She met her boss",
+        "She stayed at home",
+        "She worked late"
+      ],
       "correctIndex": 0
+    },
+    {
+      "qId": "Q4",
+      "prompt": "Where does Jane work today?",
+      "options": [
+        "In the office",
+        "At a cafe",
+        "From home",
+        "At a friend's place"
+      ],
+      "correctIndex": 2
+    },
+    {
+      "qId": "Q5",
+      "prompt": "What does Jane want to do today?",
+      "options": [
+        "Spend time with her family",
+        "Call her friend",
+        "Work late",
+        "Go to the movies"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q6",
+      "prompt": "How will Jane go to work tomorrow?",
+      "options": [
+        "By taxi",
+        "On foot",
+        "By bus",
+        "By car"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q7",
+      "prompt": "What will Jane talk about with her boss?",
+      "options": [
+        "The movie",
+        "Her friend",
+        "Only money",
+        "Work and the next weekend"
+      ],
+      "correctIndex": 3
     }
   ]
 }

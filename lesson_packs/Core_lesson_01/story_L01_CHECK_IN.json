@@ -6,9 +6,80 @@
   "questions": [
     {
       "qId": "Q1",
-      "prompt": "Where does Mike usually work?",
-      "options": ["From home", "At school", "In a hospital", "In a restaurant"],
+      "prompt": "Where does Mike work?",
+      "options": [
+        "In a company",
+        "At a hospital",
+        "In a restaurant",
+        "At school"
+      ],
       "correctIndex": 0
+    },
+    {
+      "qId": "Q2",
+      "prompt": "Where does Mike usually work from?",
+      "options": [
+        "From the office",
+        "From home",
+        "From a cafe",
+        "From a hotel"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "qId": "Q3",
+      "prompt": "Who called Mike last week?",
+      "options": [
+        "His brother",
+        "His friend",
+        "His client",
+        "His boss"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "qId": "Q4",
+      "prompt": "What did Mike do yesterday?",
+      "options": [
+        "He traveled",
+        "He went to the movies",
+        "He worked all day",
+        "He stayed at home"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "qId": "Q5",
+      "prompt": "Does Mike work today?",
+      "options": [
+        "No, he does not",
+        "Only in the evening",
+        "Yes, from home",
+        "Yes, in the office"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q6",
+      "prompt": "How will Mike go to work tomorrow?",
+      "options": [
+        "By car",
+        "On foot",
+        "By bus",
+        "By taxi"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "qId": "Q7",
+      "prompt": "What will Mike talk about with his friend?",
+      "options": [
+        "Work problems",
+        "Money",
+        "A new movie",
+        "The next weekend"
+      ],
+      "correctIndex": 3
     }
   ]
 }

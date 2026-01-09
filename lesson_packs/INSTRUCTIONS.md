@@ -79,6 +79,10 @@ Lesson 1
 - `phase`: `CHECK_IN` или `CHECK_OUT`
 - `questions[]`: каждый вопрос должен иметь `qId`, `prompt`, `options[]`, `correctIndex`
 - `explain` — опционально
+ 
+Как задается правильный ответ:
+- `correctIndex` — это индекс правильного варианта в массиве `options[]` (нумерация с нуля).
+- Пример: если правильный вариант второй, то `correctIndex = 1`.
 
 Пример:
 ```json

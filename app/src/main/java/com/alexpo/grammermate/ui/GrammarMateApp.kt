@@ -1033,7 +1033,8 @@ private fun StoryQuizScreen(
         return
     }
     val question = story.questions.getOrNull(questionIndex) ?: run {
-        val allCorrect = results.value.values.all { it }
+        val allCorrect = results.value.size == story.questions.size &&
+            results.value.values.all { it }
         onComplete(allCorrect)
         return
     }
@@ -1042,8 +1043,14 @@ private fun StoryQuizScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(text = if (story.phase == com.alexpo.grammermate.data.StoryPhase.CHECK_IN) "Story Check-in" else "Story Check-out",
-            fontWeight = FontWeight.SemiBold)
+        Text(
+            text = if (story.phase == com.alexpo.grammermate.data.StoryPhase.CHECK_IN) {
+                "Story Check-in"
+            } else {
+                "Story Check-out"
+            },
+            fontWeight = FontWeight.SemiBold
+        )
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = story.text, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(16.dp))
@@ -1061,9 +1068,13 @@ private fun StoryQuizScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(enabled = !showResult) {
+                    .clickable {
                         selections.value = selections.value + (question.qId to index)
                         errorMessage = null
+                        if (showResult) {
+                            results.value = results.value - question.qId
+                            showResult = false
+                        }
                     }
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -1083,13 +1094,27 @@ private fun StoryQuizScreen(
             Text(text = it, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))
         }
-        Button(
-            onClick = {
-                if (testMode) {
-                    onComplete(true)
-                    return@Button
-                }
-                if (!showResult) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = {
+                    val prevIndex = (questionIndex - 1).coerceAtLeast(0)
+                    if (prevIndex != questionIndex) {
+                        questionIndex = prevIndex
+                        val prevId = story.questions[questionIndex].qId
+                        showResult = results.value.containsKey(prevId)
+                        errorMessage = null
+                    }
+                },
+                enabled = questionIndex > 0,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(text = "Prev")
+            }
+            Button(
+                onClick = {
                     val selected = selections.value[question.qId]
                     if (selected == null) {
                         errorMessage = "Select an answer"
@@ -1099,28 +1124,37 @@ private fun StoryQuizScreen(
                     results.value = results.value + (question.qId to correct)
                     showResult = true
                     errorMessage = if (correct) null else "Incorrect"
-                    return@Button
-                }
-                val isLast = questionIndex >= story.questions.lastIndex
-                if (isLast) {
-                    val allCorrect = results.value.size == story.questions.size &&
-                        results.value.values.all { it }
-                    onComplete(allCorrect)
-                    return@Button
-                }
-                questionIndex += 1
-                showResult = false
-                errorMessage = null
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            val isLast = questionIndex >= story.questions.lastIndex
-            val label = when {
-                showResult && isLast -> "Finish Story"
-                showResult -> "Next"
-                else -> "Check"
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(text = "Check")
             }
-            Text(text = label)
+            Button(
+                onClick = {
+                    val selected = selections.value[question.qId]
+                    if (selected == null) {
+                        errorMessage = "Select an answer"
+                        return@Button
+                    }
+                    val correct = selected == question.correctIndex
+                    results.value = results.value + (question.qId to correct)
+                    val isLast = questionIndex >= story.questions.lastIndex
+                    if (isLast) {
+                        val allCorrect = results.value.size == story.questions.size &&
+                            results.value.values.all { it }
+                        onComplete(testMode || allCorrect)
+                        return@Button
+                    }
+                    questionIndex += 1
+                    val nextId = story.questions[questionIndex].qId
+                    showResult = results.value.containsKey(nextId)
+                    errorMessage = null
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                val isLast = questionIndex >= story.questions.lastIndex
+                Text(text = if (isLast) "Finish" else "Next")
+            }
         }
     }
 }
