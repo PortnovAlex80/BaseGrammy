@@ -158,7 +158,15 @@ fun GrammarMateApp() {
                 AppScreen.STORY -> StoryQuizScreen(
                     story = state.activeStory,
                     onClose = {
-                        state.activeStory?.phase?.let { vm.completeStory(it) }
+                        state.activeStory?.phase?.let { phase ->
+                            vm.completeStory(phase, false)
+                        }
+                        screen = AppScreen.LESSON
+                    },
+                    onComplete = { allCorrect ->
+                        state.activeStory?.phase?.let { phase ->
+                            vm.completeStory(phase, allCorrect)
+                        }
                         screen = AppScreen.LESSON
                     }
                 )
@@ -400,7 +408,8 @@ private fun LessonRoadmapScreen(
     val total = state.subLessonCount.coerceAtLeast(1)
     val completed = state.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = state.activeSubLessonIndex.coerceIn(0, total - 1)
-    val entries = buildRoadmapEntries(total)
+    val newOnlyCount = total.coerceAtMost(3)
+    val entries = buildRoadmapEntries(total, newOnlyCount)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -434,11 +443,12 @@ private fun LessonRoadmapScreen(
         ) {
             itemsIndexed(entries) { _, entry ->
                 when (entry) {
-                    is RoadmapEntry.SubLesson -> {
+                    is RoadmapEntry.Training -> {
                         val index = entry.index
                         val isCompleted = index < completed
                         val isActive = index == currentIndex
                         val canEnter = isCompleted || isActive
+                        val kindLabel = if (entry.kind == TrainingBlockKind.NEW_ONLY) "NEW" else "MIX"
                         val emoji = if (isCompleted) "🌸" else "🔒"
                         Card(
                             modifier = Modifier
@@ -455,8 +465,12 @@ private fun LessonRoadmapScreen(
                             ) {
                                 Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
                                 Text(text = emoji, fontSize = 18.sp)
+                                Text(text = kindLabel, fontSize = 10.sp)
                             }
                         }
+                    }
+                    is RoadmapEntry.Vocab -> {
+                        VocabTile(label = "Vocab")
                     }
                     is RoadmapEntry.StoryCheckIn -> {
                         StoryTile(
@@ -486,19 +500,53 @@ private fun LessonRoadmapScreen(
 }
 
 private sealed class RoadmapEntry {
-    data class SubLesson(val index: Int) : RoadmapEntry()
+    data class Training(val index: Int, val kind: TrainingBlockKind) : RoadmapEntry()
+    object Vocab : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
 }
 
-private fun buildRoadmapEntries(total: Int): List<RoadmapEntry> {
+private enum class TrainingBlockKind {
+    NEW_ONLY,
+    MIXED
+}
+
+private fun buildRoadmapEntries(total: Int, newOnlyCount: Int): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
+    entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckIn)
     for (i in 0 until total) {
-        entries.add(RoadmapEntry.SubLesson(i))
+        val kind = if (i < newOnlyCount) TrainingBlockKind.NEW_ONLY else TrainingBlockKind.MIXED
+        entries.add(RoadmapEntry.Training(i, kind))
     }
+    entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckOut)
     return entries
+}
+
+@Composable
+private fun VocabTile(label: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clickable(enabled = false, onClick = {})
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = label, fontWeight = FontWeight.SemiBold)
+            Icon(
+                imageVector = Icons.Default.LibraryBooks,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
 }
 
 @Composable
@@ -541,13 +589,15 @@ private fun StoryTile(label: String, completed: Boolean, onClick: () -> Unit) {
 @Composable
 private fun StoryQuizScreen(
     story: com.alexpo.grammermate.data.StoryQuiz?,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onComplete: (Boolean) -> Unit
 ) {
     if (story == null) {
         onClose()
         return
     }
     val selections = remember(story.storyId) { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var errorMessage by remember(story.storyId) { mutableStateOf<String?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -567,6 +617,7 @@ private fun StoryQuizScreen(
                         .fillMaxWidth()
                         .clickable {
                             selections.value = selections.value + (question.qId to index)
+                            errorMessage = null
                         }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -579,7 +630,28 @@ private fun StoryQuizScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+        errorMessage?.let {
+            Text(text = it, color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        Button(
+            onClick = {
+                val selectedCount = selections.value.size
+                if (selectedCount < story.questions.size) {
+                    errorMessage = "Ответьте на все вопросы"
+                    return@Button
+                }
+                val allCorrect = story.questions.all { question ->
+                    selections.value[question.qId] == question.correctIndex
+                }
+                if (!allCorrect) {
+                    errorMessage = "Есть ошибки. Попробуйте еще раз"
+                    return@Button
+                }
+                onComplete(true)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text(text = "Finish Story")
         }
     }

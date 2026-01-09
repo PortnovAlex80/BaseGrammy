@@ -570,8 +570,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(activeStory = story, storyErrorMessage = null) }
     }
 
-    fun completeStory(phase: StoryPhase) {
+    fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
         _uiState.update {
+            if (!allCorrect) {
+                return@update it.copy(activeStory = null)
+            }
             when (phase) {
                 StoryPhase.CHECK_IN -> it.copy(storyCheckInDone = true, activeStory = null)
                 StoryPhase.CHECK_OUT -> it.copy(storyCheckOutDone = true, activeStory = null)
