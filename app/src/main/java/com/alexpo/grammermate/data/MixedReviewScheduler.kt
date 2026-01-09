@@ -40,50 +40,67 @@ class MixedReviewScheduler(
             reviewQueues[lesson.id] = ArrayDeque(lesson.cards)
 
             val warmupCards = lesson.cards.take(warmupSize)
-            val currentQueue = ArrayDeque(lesson.cards.drop(warmupSize))
+            val currentCards = lesson.cards.drop(warmupSize)
+            val allowMixed = lessonIndex > 0
             val reviewSlots = subLessonSize / 2
             val currentSlotsInMixed = subLessonSize - reviewSlots
             val pairSize = subLessonSize + currentSlotsInMixed
-            val pairCount = if (currentQueue.isEmpty()) 0 else ceilDiv(currentQueue.size, pairSize)
+            val pairCount = if (currentCards.isEmpty()) {
+                0
+            } else if (allowMixed) {
+                ceilDiv(currentCards.size, pairSize)
+            } else {
+                ceilDiv(currentCards.size, subLessonSize)
+            }
+            val mixedCurrentTarget = if (!allowMixed || currentCards.isEmpty()) {
+                0
+            } else {
+                ceilDiv(currentCards.size * currentSlotsInMixed, pairSize)
+            }.coerceAtMost(currentCards.size)
+            val newOnlyTarget = currentCards.size - mixedCurrentTarget
+            val newOnlyQueue = ArrayDeque(currentCards.take(newOnlyTarget))
+            val mixedCurrentQueue = ArrayDeque(currentCards.drop(newOnlyTarget))
 
             val subLessons = mutableListOf<ScheduledSubLesson>()
             if (warmupCards.isNotEmpty()) {
                 subLessons.add(ScheduledSubLesson(SubLessonType.WARMUP, warmupCards))
             }
 
-            repeat(pairCount) {
-                val cards = takeUpTo(currentQueue, subLessonSize)
-                if (cards.isNotEmpty()) {
-                    subLessons.add(ScheduledSubLesson(SubLessonType.NEW_ONLY, cards))
+            val mixedSubLessons = mutableListOf<ScheduledSubLesson>()
+            if (allowMixed) {
+                repeat(pairCount) {
+                    globalMixedIndex += 1
+                    val currentHalf = takeUpTo(mixedCurrentQueue, currentSlotsInMixed)
+                    val reviewHalfSize = currentHalf.size
+                    val reviewCards = if (reviewHalfSize == 0) {
+                        emptyList()
+                    } else {
+                        val dueLessons = dueLessonIds(
+                            reviewStartMixedIndex,
+                            lessonIndexById,
+                            globalMixedIndex
+                        )
+                        fillReviewSlots(
+                            dueLessons,
+                            reviewQueues,
+                            reviewHalfSize,
+                            newOnlyQueue
+                        )
+                    }
+                    val mixedCards = currentHalf + reviewCards
+                    if (mixedCards.isNotEmpty()) {
+                        mixedSubLessons.add(ScheduledSubLesson(SubLessonType.MIXED, mixedCards))
+                    }
                 }
             }
 
             repeat(pairCount) {
-                if (lessonIndex > 0) {
-                    globalMixedIndex += 1
-                }
-                val currentHalf = takeUpTo(currentQueue, currentSlotsInMixed)
-                val reviewHalfSize = currentHalf.size
-                val reviewCards = if (reviewHalfSize == 0) {
-                    emptyList()
-                } else {
-                    val dueLessons = dueLessonIds(
-                        reviewStartMixedIndex,
-                        lessonIndexById,
-                        globalMixedIndex
-                    )
-                    fillReviewSlots(
-                        dueLessons,
-                        reviewQueues,
-                        reviewHalfSize,
-                        currentQueue
-                    )
-                }
-                val mixedCards = currentHalf + reviewCards
-                if (mixedCards.isNotEmpty()) {
-                    subLessons.add(ScheduledSubLesson(SubLessonType.MIXED, mixedCards))
+                val cards = takeUpTo(newOnlyQueue, subLessonSize)
+                if (cards.isNotEmpty()) {
+                    subLessons.add(ScheduledSubLesson(SubLessonType.NEW_ONLY, cards))
                 }
             }
+            subLessons.addAll(mixedSubLessons)
 
             schedules[lesson.id] = LessonSchedule(lesson.id, subLessons)
         }

@@ -117,6 +117,9 @@ class LessonStore(private val context: Context) {
         val manifest = LessonPackManifest.fromJson(manifestFile.readText())
         val languageId = manifest.language.lowercase().trim()
         ensureLanguage(languageId)
+        deleteAllLessons(languageId)
+        removeStoriesForLanguage(languageId)
+        removePacksForLanguage(languageId)
 
         val packDir = File(packsDir, manifest.packId)
         if (packDir.exists()) {
@@ -448,6 +451,42 @@ class LessonStore(private val context: Context) {
             }
         }
         vocabStore.write(remaining)
+    }
+
+    private fun removeStoriesForLanguage(languageId: String) {
+        val entries = storiesStore.read()
+        val remaining = mutableListOf<Map<String, Any>>()
+        entries.forEach { entry ->
+            val entryLang = entry["languageId"] as? String ?: return@forEach
+            if (entryLang.equals(languageId, ignoreCase = true)) {
+                val fileName = entry["file"] as? String
+                if (fileName != null) {
+                    val file = File(storiesDir, fileName)
+                    if (file.exists()) file.delete()
+                }
+            } else {
+                remaining.add(entry)
+            }
+        }
+        storiesStore.write(remaining)
+    }
+
+    private fun removePacksForLanguage(languageId: String) {
+        val entries = packsStore.read()
+        val remaining = mutableListOf<Map<String, Any>>()
+        entries.forEach { entry ->
+            val entryLang = entry["languageId"] as? String ?: return@forEach
+            val packId = entry["packId"] as? String
+            if (entryLang.equals(languageId, ignoreCase = true)) {
+                if (packId != null) {
+                    val dir = File(packsDir, packId)
+                    if (dir.exists()) dir.deleteRecursively()
+                }
+            } else {
+                remaining.add(entry)
+            }
+        }
+        packsStore.write(remaining)
     }
 
     private fun guessFileName(resolver: ContentResolver, uri: Uri): String? {

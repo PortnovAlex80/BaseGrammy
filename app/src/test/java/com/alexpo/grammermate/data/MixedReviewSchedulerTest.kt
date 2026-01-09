@@ -6,12 +6,14 @@ import org.junit.Test
 
 class MixedReviewSchedulerTest {
     @Test
-    fun build_addsWarmupAndMixedBlocks() {
+    fun build_firstLessonHasNoMixedBlocks() {
         val scheduler = MixedReviewScheduler(warmupSize = 1, subLessonSize = 4)
         val lesson = lesson("L1", 7)
         val schedule = scheduler.build(listOf(lesson)).getValue("L1")
         val types = schedule.subLessons.map { it.type }
-        assertEquals(listOf(SubLessonType.WARMUP, SubLessonType.NEW_ONLY, SubLessonType.MIXED), types)
+        assertTrue(types.contains(SubLessonType.WARMUP))
+        assertTrue(types.contains(SubLessonType.NEW_ONLY))
+        assertTrue(types.none { it == SubLessonType.MIXED })
     }
 
     @Test
@@ -36,6 +38,23 @@ class MixedReviewSchedulerTest {
         assertEquals(1, secondMixedL3.count { it.id.startsWith("L1-") })
         assertEquals(1, secondMixedL3.count { it.id.startsWith("L2-") })
         assertTrue(secondMixedL3.any { it.id.startsWith("L3-") })
+    }
+
+    @Test
+    fun build_mixedAppearsWithDefaultSizes() {
+        val scheduler = MixedReviewScheduler(warmupSize = 3, subLessonSize = 10)
+        val lessons = listOf(
+            lesson("L1", 20),
+            lesson("L2", 20)
+        )
+        val mixed = scheduler.build(lessons)
+            .getValue("L2")
+            .subLessons
+            .filter { it.type == SubLessonType.MIXED }
+        assertTrue(mixed.isNotEmpty())
+        val first = mixed.first().cards
+        assertTrue(first.any { it.id.startsWith("L1-") })
+        assertTrue(first.any { it.id.startsWith("L2-") })
     }
 
     private fun lesson(id: String, count: Int): Lesson {
