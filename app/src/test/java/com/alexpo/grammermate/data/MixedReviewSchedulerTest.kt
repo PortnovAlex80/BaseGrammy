@@ -11,9 +11,7 @@ class MixedReviewSchedulerTest {
         val lesson = lesson("L1", 7)
         val schedule = scheduler.build(listOf(lesson)).getValue("L1")
         val types = schedule.subLessons.map { it.type }
-        assertTrue(types.contains(SubLessonType.WARMUP))
-        assertTrue(types.contains(SubLessonType.NEW_ONLY))
-        assertTrue(types.none { it == SubLessonType.MIXED })
+        assertEquals(listOf(SubLessonType.WARMUP, SubLessonType.NEW_ONLY, SubLessonType.NEW_ONLY), types)
     }
 
     @Test
@@ -26,18 +24,21 @@ class MixedReviewSchedulerTest {
         )
         val schedules = scheduler.build(lessons)
         val mixedL2 = schedules.getValue("L2").subLessons.filter { it.type == SubLessonType.MIXED }
-        assertEquals(2, mixedL2.size)
-        assertEquals(2, mixedL2[0].cards.count { it.id.startsWith("L1-") })
-        assertEquals(2, mixedL2[0].cards.count { it.id.startsWith("L2-") })
-        assertEquals(2, mixedL2[1].cards.count { it.id.startsWith("L1-") })
+        assertEquals(3, mixedL2.size)
+        assertTrue(mixedL2[0].cards.any { it.id.startsWith("L1-") })
+        assertTrue(mixedL2[0].cards.any { it.id.startsWith("L2-") })
+        assertTrue(mixedL2[1].cards.any { it.id.startsWith("L1-") })
+        assertTrue(mixedL2[1].cards.any { it.id.startsWith("L2-") })
+        assertTrue(mixedL2[2].cards.all { it.id.startsWith("L2-") })
 
         val mixedL3 = schedules.getValue("L3").subLessons.filter { it.type == SubLessonType.MIXED }
-        assertEquals(2, mixedL3.size)
-        assertEquals(0, mixedL3[0].cards.count { it.id.startsWith("L1-") })
-        val secondMixedL3 = mixedL3[1].cards
-        assertEquals(1, secondMixedL3.count { it.id.startsWith("L1-") })
-        assertEquals(1, secondMixedL3.count { it.id.startsWith("L2-") })
-        assertTrue(secondMixedL3.any { it.id.startsWith("L3-") })
+        assertEquals(3, mixedL3.size)
+        assertTrue(mixedL3[0].cards.any { it.id.startsWith("L1-") })
+        assertTrue(mixedL3[0].cards.any { it.id.startsWith("L2-") })
+        assertTrue(mixedL3[0].cards.any { it.id.startsWith("L3-") })
+        assertTrue(mixedL3[1].cards.any { it.id.startsWith("L2-") })
+        assertTrue(mixedL3[1].cards.any { it.id.startsWith("L3-") })
+        assertTrue(mixedL3[2].cards.all { it.id.startsWith("L3-") })
     }
 
     @Test
@@ -55,6 +56,24 @@ class MixedReviewSchedulerTest {
         val first = mixed.first().cards
         assertTrue(first.any { it.id.startsWith("L1-") })
         assertTrue(first.any { it.id.startsWith("L2-") })
+    }
+
+    @Test
+    fun build_mixedHasAtMostThreeThemes() {
+        val scheduler = MixedReviewScheduler(warmupSize = 1, subLessonSize = 6)
+        val lessons = listOf(
+            lesson("L1", 12),
+            lesson("L2", 12),
+            lesson("L3", 12),
+            lesson("L4", 12)
+        )
+        val schedules = scheduler.build(lessons)
+        schedules.values.flatMap { it.subLessons }
+            .filter { it.type == SubLessonType.MIXED }
+            .forEach { subLesson ->
+                val themes = subLesson.cards.map { it.id.substringBefore("-") }.toSet()
+                assertTrue(themes.size <= 3)
+            }
     }
 
     private fun lesson(id: String, count: Int): Lesson {
