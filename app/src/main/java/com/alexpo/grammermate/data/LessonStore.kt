@@ -7,6 +7,7 @@ import android.provider.OpenableColumns
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
@@ -16,6 +17,7 @@ class LessonStore(private val context: Context) {
     private val lessonsDir = File(baseDir, "lessons")
     private val languagesFile = File(lessonsDir, "languages.yaml")
     private val languagesStore = YamlListStore(yaml, languagesFile)
+    private val seedMarker = File(baseDir, "seed_v1.done")
     private val packsDir = File(baseDir, "packs")
     private val packsFile = File(baseDir, "packs.yaml")
     private val packsStore = YamlListStore(yaml, packsFile)
@@ -37,6 +39,31 @@ class LessonStore(private val context: Context) {
             )
             languagesStore.write(defaults)
         }
+    }
+
+    private fun hasLessonContent(): Boolean {
+        if (!lessonsDir.exists()) return false
+        return lessonsDir.walkTopDown().any { it.isFile && it.extension.equals("csv", ignoreCase = true) }
+    }
+
+    fun seedDefaultPacksIfNeeded(): Boolean {
+        ensureSeedData()
+        if (seedMarker.exists()) return false
+        if (hasLessonContent()) {
+            AtomicFileWriter.writeText(seedMarker, "skip")
+            return false
+        }
+        val seeds = listOf(
+            "grammarmate/packs/EN_WORD_ORDER_A1.zip",
+            "grammarmate/packs/IT_WORD_ORDER_A1.zip"
+        )
+        var seededAny = false
+        seeds.forEach { assetPath ->
+            val seeded = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
+            if (seeded) seededAny = true
+        }
+        AtomicFileWriter.writeText(seedMarker, if (seededAny) "ok" else "none")
+        return seededAny
     }
 
     fun getLanguages(): List<Language> {
@@ -84,31 +111,52 @@ class LessonStore(private val context: Context) {
 
     fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
         ensureSeedData()
+        val input = resolver.openInputStream(uri) ?: error("Cannot open zip")
+        input.use { stream -> return importPackFromStream(stream) }
+    }
+
+    fun importPackFromAssets(assetPath: String): LessonPack {
+        ensureSeedData()
+        return importPackFromAssetsInternal(assetPath)
+    }
+
+    private fun importPackFromAssetsInternal(assetPath: String): LessonPack {
+        val input = context.assets.open(assetPath)
+        input.use { stream -> return importPackFromStream(stream) }
+    }
+
+    private fun importPackFromStream(input: InputStream): LessonPack {
         packsDir.mkdirs()
+        val tempDir = extractZipToTemp(input)
+        return importPackFromTempDir(tempDir)
+    }
+
+    private fun extractZipToTemp(input: InputStream): File {
         val tempDir = File(packsDir, "tmp_${UUID.randomUUID()}")
         tempDir.mkdirs()
-        resolver.openInputStream(uri)?.use { input ->
-            ZipInputStream(input).use { zip ->
-                var entry = zip.nextEntry
-                while (entry != null) {
-                    val outFile = File(tempDir, entry.name)
-                    val canonicalParent = tempDir.canonicalPath + File.separator
-                    val canonicalTarget = outFile.canonicalPath
-                    if (!canonicalTarget.startsWith(canonicalParent)) {
-                        error("Invalid zip entry: ${entry.name}")
-                    }
-                    if (entry.isDirectory) {
-                        outFile.mkdirs()
-                    } else {
-                        outFile.parentFile?.mkdirs()
-                        FileOutputStream(outFile).use { out -> zip.copyTo(out) }
-                    }
-                    zip.closeEntry()
-                    entry = zip.nextEntry
+        ZipInputStream(input).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                val outFile = File(tempDir, entry.name)
+                val canonicalParent = tempDir.canonicalPath + File.separator
+                val canonicalTarget = outFile.canonicalPath
+                if (!canonicalTarget.startsWith(canonicalParent)) {
+                    error("Invalid zip entry: ${entry.name}")
                 }
+                if (entry.isDirectory) {
+                    outFile.mkdirs()
+                } else {
+                    outFile.parentFile?.mkdirs()
+                    FileOutputStream(outFile).use { out -> zip.copyTo(out) }
+                }
+                zip.closeEntry()
+                entry = zip.nextEntry
             }
-        } ?: error("Cannot open zip")
+        }
+        return tempDir
+    }
 
+    private fun importPackFromTempDir(tempDir: File): LessonPack {
         val manifestFile = File(tempDir, "manifest.json")
         if (!manifestFile.exists()) {
             tempDir.deleteRecursively()
@@ -241,6 +289,8 @@ class LessonStore(private val context: Context) {
         val index = indexFileFor(languageId)
         if (index.exists()) index.delete()
         removeVocabEntries(languageId, null)
+        removeStoriesForLanguage(languageId)
+        removePacksForLanguage(languageId)
     }
 
     fun deleteLesson(languageId: String, lessonId: String) {

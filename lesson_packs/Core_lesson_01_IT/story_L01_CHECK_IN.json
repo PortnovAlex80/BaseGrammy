@@ -1,0 +1,19 @@
+{
+  "storyId": "S_IT_L01_IN_01",
+  "lessonId": "L01_PRESENT_SIMPLE",
+  "phase": "CHECK_IN",
+  "text": "Mike lavora in un'azienda. Ha un buon lavoro e lavora da casa. La settimana scorsa ha lavorato molto e ha ricevuto un nuovo messaggio dal suo capo. Il capo ha chiamato Mike e ha parlato per 30 minuti. Ieri Mike ? andato al cinema con un amico. Gli ? piaciuto il film e hanno parlato di lavoro dopo. Oggi Mike resta a casa e fa colazione alle 10. Oggi non lavora. Vuole riposarsi e passare tempo a casa. Domani partir? per il lavoro alle 9. Prender? un taxi e arriver? al lavoro in orario. La sera chiamer? il suo amico. Parleranno del prossimo fine settimana.",
+  "questions": [
+    {
+      "qId": "Q1",
+      "prompt": "Dove lavora di solito Mike?",
+      "options": [
+        "Da casa",
+        "A scuola",
+        "In un ospedale",
+        "In un ristorante"
+      ],
+      "correctIndex": 0
+    }
+  ]
+}

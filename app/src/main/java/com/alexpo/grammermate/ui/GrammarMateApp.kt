@@ -139,7 +139,8 @@ fun GrammarMateApp() {
                 onImportLesson = vm::importLesson,
                 onResetReload = vm::resetAndImportLesson,
                 onCreateEmptyLesson = vm::createEmptyLesson,
-                onDeleteAllLessons = vm::deleteAllLessons
+                onDeleteAllLessons = vm::deleteAllLessons,
+                onDeletePack = vm::deletePack
             )
 
             when (screen) {
@@ -1239,7 +1240,8 @@ private fun SettingsSheet(
     onImportLesson: (android.net.Uri) -> Unit,
     onResetReload: (android.net.Uri) -> Unit,
     onCreateEmptyLesson: (String) -> Unit,
-    onDeleteAllLessons: () -> Unit
+    onDeleteAllLessons: () -> Unit,
+    onDeletePack: (String) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -1402,10 +1404,19 @@ private fun SettingsSheet(
                 )
             } else {
                 state.installedPacks.forEach { pack ->
-                    Text(
-                        text = "${pack.packId} (${pack.packVersion})",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${pack.packId} (${pack.packVersion})",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { onDeletePack(pack.packId) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete pack")
+                        }
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

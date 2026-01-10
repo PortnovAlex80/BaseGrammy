@@ -29,11 +29,13 @@ import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.VocabEntry
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val soundPool = SoundPool.Builder()
@@ -159,6 +161,32 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             resumeTimer()
             if (_uiState.value.inputMode == InputMode.VOICE) {
                 _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val seeded = lessonStore.seedDefaultPacksIfNeeded()
+            if (!seeded) return@launch
+            val currentLang = _uiState.value.selectedLanguageId
+            val languages = lessonStore.getLanguages()
+            val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
+                ?: languages.firstOrNull()?.id
+                ?: "en"
+            val lessons = lessonStore.getLessons(selectedLang)
+            val selectedLessonId = lessons.firstOrNull()?.id
+            val packs = lessonStore.getInstalledPacks()
+            withContext(Dispatchers.Main) {
+                _uiState.update {
+                    it.copy(
+                        languages = languages,
+                        installedPacks = packs,
+                        selectedLanguageId = selectedLang,
+                        lessons = lessons,
+                        selectedLessonId = selectedLessonId,
+                        eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
+                    )
+                }
+                rebuildSchedules(lessons)
+                buildSessionCards()
             }
         }
     }
@@ -797,6 +825,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val languageId = _uiState.value.selectedLanguageId
         lessonStore.deleteAllLessons(languageId)
         refreshLessons(null)
+        _uiState.update { it.copy(installedPacks = lessonStore.getInstalledPacks()) }
+    }
+
+    fun deletePack(packId: String) {
+        val pack = lessonStore.getInstalledPacks().firstOrNull { it.packId == packId } ?: return
+        lessonStore.deleteAllLessons(pack.languageId)
+        if (_uiState.value.selectedLanguageId == pack.languageId) {
+            refreshLessons(null)
+        }
+        _uiState.update { it.copy(installedPacks = lessonStore.getInstalledPacks()) }
     }
 
     private fun refreshLessons(selectedLessonId: String?) {
