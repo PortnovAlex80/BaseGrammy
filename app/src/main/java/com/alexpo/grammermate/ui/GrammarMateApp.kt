@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui
+﻿package com.alexpo.grammermate.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -280,16 +281,16 @@ fun GrammarMateApp() {
                             vm.finishSession()
                             screen = AppScreen.LESSON
                         }) {
-                            Text(text = "Выйти")
+                            Text(text = "Exit")
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showExitDialog = false }) {
-                            Text(text = "Отмена")
+                            Text(text = "Cancel")
                         }
                     },
-                    title = { Text(text = "Завершить сессию?") },
-                    text = { Text(text = "Текущая сессия будет завершена.") }
+                    title = { Text(text = "End session?") },
+                    text = { Text(text = "Current session will be completed.") }
                 )
             }
 
@@ -301,7 +302,7 @@ fun GrammarMateApp() {
                             Text(text = "OK")
                         }
                     },
-                    title = { Text(text = "История") },
+                    title = { Text(text = "Story") },
                     text = { Text(text = state.storyErrorMessage ?: "") }
                 )
             }
@@ -391,6 +392,7 @@ private fun HomeScreen(
 ) {
     val tiles = remember(state.lessons, state.testMode) { buildLessonTiles(state.lessons, state.testMode) }
     var showMethod by remember { mutableStateOf(false) }
+    var showRefreshHint by remember { mutableStateOf(false) }
     val languageCode = state.languages
         .firstOrNull { it.id == state.selectedLanguageId }
         ?.id
@@ -400,15 +402,15 @@ private fun HomeScreen(
         state.incorrectCount == 0 &&
         state.activeTimeMs == 0L
     val primaryLabel = when {
-        isFirstLaunch -> "Start Grammar Engine"
+        isFirstLaunch -> "Start learning"
         state.sessionState == SessionState.ACTIVE -> "Continue Learning"
-        else -> "Resume Program"
+        else -> "Start learning and build new neural connections"
     }
     val nextLessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
         .takeIf { it >= 0 }
         ?: 0
     val nextHint = if (state.lessons.isNotEmpty()) {
-        "Next: Lesson ${nextLessonIndex + 1} • Block 1/10"
+        "Lesson ${nextLessonIndex + 1}. Exercise 1/10"
     } else {
         null
     }
@@ -474,7 +476,7 @@ private fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Grammar Engine", fontWeight = FontWeight.SemiBold)
+        Text(text = "Grammar Roadmap", fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(8.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -494,11 +496,15 @@ private fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
-        EliteEntryTile(enabled = state.eliteUnlocked, onClick = onOpenElite)
+        EliteEntryTile(
+            enabled = state.eliteUnlocked,
+            onClick = onOpenElite,
+            onLockedClick = { showRefreshHint = true }
+        )
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
         Text(text = "🌱 forming pattern • 🌸 automated skill")
-        Text(text = "🕸️ needs refresh")
+        Text(text = "🍂 needs refresh")
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
             onClick = { showMethod = true },
@@ -525,15 +531,41 @@ private fun HomeScreen(
             }
         )
     }
+    if (showRefreshHint) {
+        AlertDialog(
+            onDismissRequest = { showRefreshHint = false },
+            confirmButton = {
+                TextButton(onClick = { showRefreshHint = false }) {
+                    Text(text = "OK")
+                }
+            },
+            title = { Text(text = "Refresh") },
+            text = {
+                Text(
+                    text = "This mode is designed to keep all learned material active in the background. " +
+                        "Refresh becomes available after completing the full course."
+                )
+            }
+        )
+    }
 }
 
 @Composable
-private fun EliteEntryTile(enabled: Boolean, onClick: () -> Unit) {
+private fun EliteEntryTile(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    onLockedClick: () -> Unit
+) {
+    val labelColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable { if (enabled) onClick() else onLockedClick() }
     ) {
         Row(
             modifier = Modifier
@@ -542,8 +574,10 @@ private fun EliteEntryTile(enabled: Boolean, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "ELITE", fontWeight = FontWeight.SemiBold)
-            Icon(Icons.Default.Lock, contentDescription = "Elite locked")
+            Text(text = "Refresh", fontWeight = FontWeight.SemiBold, color = labelColor)
+            if (!enabled) {
+                Icon(Icons.Default.Lock, contentDescription = "Refresh locked")
+            }
         }
     }
 }
@@ -601,7 +635,7 @@ private fun LessonRoadmapScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Подурок ${currentIndex + 1} из $total", textAlign = TextAlign.Center)
+        Text(text = "Exercise ${currentIndex + 1} of $total", textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(16.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -647,21 +681,21 @@ private fun LessonRoadmapScreen(
                     }
                     is RoadmapEntry.StoryCheckIn -> {
                         StoryTile(
-                            label = "IN",
+                            label = "Story",
                             completed = state.storyCheckInDone,
                             onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_IN) }
                         )
                     }
                     is RoadmapEntry.StoryCheckOut -> {
                         StoryTile(
-                            label = "OUT",
+                            label = "Story",
                             completed = state.storyCheckOutDone,
                             onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_OUT) }
                         )
                     }
                     is RoadmapEntry.BossLesson -> {
                         BossTile(
-                            label = "Boss",
+                            label = "Review",
                             enabled = true,
                             reward = bossLessonReward,
                             onClick = onStartBossLesson
@@ -710,7 +744,7 @@ private fun EliteRoadmapScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")
             }
-            Text(text = "ELITE", fontWeight = FontWeight.SemiBold)
+            Text(text = "Refresh", fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.width(40.dp))
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -729,7 +763,7 @@ private fun EliteRoadmapScreen(
                 )
             }
             item {
-                BossTile(label = "Boss", enabled = true, reward = null, onClick = onStartBoss)
+                BossTile(label = "Review", enabled = true, reward = null, onClick = onStartBoss)
             }
         }
     }
@@ -1162,8 +1196,8 @@ private fun StoryQuizScreen(
 @Composable
 private fun LessonTile(tile: LessonTileUi, onSelect: () -> Unit) {
     val emoji = when (tile.state) {
-        LessonTileState.SEED -> "🌱"
-        LessonTileState.SPROUT -> "🌿"
+        LessonTileState.SEED -> "🍂"
+        LessonTileState.SPROUT -> "🌱"
         LessonTileState.FLOWER -> "🌸"
         LessonTileState.LOCKED -> "🔒"
     }
@@ -1274,7 +1308,7 @@ private fun SettingsSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Служебный режим",
+                text = "Service Mode",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -1283,7 +1317,7 @@ private fun SettingsSheet(
                 value = newLanguageName,
                 onValueChange = { newLanguageName = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Новый язык (название)") }
+                label = { Text(text = "New language") }
             )
             OutlinedButton(
                 onClick = {
@@ -1295,7 +1329,7 @@ private fun SettingsSheet(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Добавить язык")
+                Text(text = "Add language")
             }
             OutlinedButton(
                 onClick = {
@@ -1311,7 +1345,7 @@ private fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Импорт пакета уроков (ZIP)")
+                Text(text = "Import lesson pack (ZIP)")
             }
             OutlinedButton(
                 onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
@@ -1319,7 +1353,7 @@ private fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Импорт урока (CSV)")
+                Text(text = "Import lesson (CSV)")
             }
             OutlinedButton(
                 onClick = { resetLauncher.launch(arrayOf("text/*", "text/csv")) },
@@ -1327,13 +1361,13 @@ private fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Reset/Reload (очистить + импорт)")
+                Text(text = "Reset/Reload (clear + import)")
             }
             OutlinedTextField(
                 value = newLessonTitle,
                 onValueChange = { newLessonTitle = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Пустой урок (название)") }
+                label = { Text(text = "Empty lesson (title)") }
             )
             OutlinedButton(
                 onClick = {
@@ -1345,7 +1379,7 @@ private fun SettingsSheet(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Создать пустой урок")
+                Text(text = "Create empty lesson")
             }
             OutlinedButton(
                 onClick = { onDeleteAllLessons() },
@@ -1354,25 +1388,25 @@ private fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Delete, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Удалить все уроки")
+                Text(text = "Delete all lessons")
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "CSV формат", style = MaterialTheme.typography.labelLarge)
+            Text(text = "CSV format", style = MaterialTheme.typography.labelLarge)
             Text(
-                text = "UTF-8, разделитель ';'.\n" +
-                    "Колонка 1: RU предложение.\n" +
-                    "Колонка 2: перевод(ы), варианты через '+'.\n" +
-                    "Пример: Он не работает из дома;He doesn't work from home+He does not work from home",
+                text = "UTF-8, delimiter ';'.\n" +
+                    "Column 1: Native sentence.\n" +
+                    "Column 2: Translation(s), variants via '+'.\n" +
+                    "Example: He doesn't work from home;Он не работает из дома",
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Инструкция", style = MaterialTheme.typography.labelLarge)
+            Text(text = "Instructions", style = MaterialTheme.typography.labelLarge)
             Text(
-                text = "Play - старт/продолжение, Pause - пауза, Stop - сброс прогресса без обнуления рейтинга.",
+                text = "Play - start/continue, Pause - pause, Stop - reset progress without updating rating.",
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Уроки", style = MaterialTheme.typography.labelLarge)
+            Text(text = "Lessons", style = MaterialTheme.typography.labelLarge)
             LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 items(state.lessons) { lesson ->
                     Column(
@@ -1387,7 +1421,7 @@ private fun SettingsSheet(
                         )
                         if (lesson.id == state.selectedLessonId) {
                             Text(
-                                text = "Выбран",
+                                text = "Selected",
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelMedium
                             )
@@ -1396,10 +1430,10 @@ private fun SettingsSheet(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Пакеты", style = MaterialTheme.typography.labelLarge)
+            Text(text = "Packs", style = MaterialTheme.typography.labelLarge)
             if (state.installedPacks.isEmpty()) {
                 Text(
-                    text = "Нет установленных пакетов",
+                    text = "No installed packs",
                     style = MaterialTheme.typography.bodySmall
                 )
             } else {
@@ -1476,9 +1510,9 @@ private fun TrainingScreen(
         ) {
             HeaderStats(state)
             if (state.bossActive) {
-                Text(text = "Boss Session", fontWeight = FontWeight.SemiBold)
+                Text(text = "Review Session", fontWeight = FontWeight.SemiBold)
             } else if (state.eliteActive) {
-                Text(text = "Elite Session", fontWeight = FontWeight.SemiBold)
+                Text(text = "Refresh Session", fontWeight = FontWeight.SemiBold)
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
             }
@@ -1522,7 +1556,7 @@ private fun HeaderStats(state: TrainingUiState) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(text = if (state.bossActive) "Boss" else "Progress")
+            Text(text = if (state.bossActive) "Review" else "Progress")
             Text(
                 text = if (!state.bossActive && state.currentIndex < state.warmupCount) "Warm-up" else "${progressPercent}%",
                 fontWeight = FontWeight.SemiBold
@@ -1555,7 +1589,7 @@ private fun ModeSelector(
             ModeIconButton(
                 selected = state.mode == TrainingMode.LESSON,
                 icon = Icons.Default.MenuBook,
-                contentDescription = "Урок"
+                contentDescription = "Lesson"
             ) {
                 onSelectMode(TrainingMode.LESSON)
                 lessonExpanded = true
@@ -1566,7 +1600,7 @@ private fun ModeSelector(
             ) {
                 if (state.lessons.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text(text = "Нет уроков") },
+                        text = { Text(text = "No lessons") },
                         onClick = { lessonExpanded = false }
                     )
                 } else {
@@ -1585,7 +1619,7 @@ private fun ModeSelector(
         ModeIconButton(
             selected = state.mode == TrainingMode.ALL_SEQUENTIAL,
             icon = Icons.Default.LibraryBooks,
-            contentDescription = "Все уроки"
+            contentDescription = "All lessons"
         ) { onSelectMode(TrainingMode.ALL_SEQUENTIAL) }
         ModeIconButton(
             selected = state.mode == TrainingMode.ALL_MIXED,
@@ -1622,20 +1656,20 @@ private fun LanguageLessonColumn(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DropdownSelector(
-            title = "Язык",
+            title = "Language",
             selected = state.languages.firstOrNull { it.id == state.selectedLanguageId }?.displayName
                 ?: "-",
             items = state.languages.map { it.displayName to it.id },
             onSelect = onSelectLanguage
         )
         DropdownSelector(
-            title = "Урок",
+            title = "Lesson",
             selected = state.lessons.firstOrNull { it.id == state.selectedLessonId }?.title ?: "-",
             items = state.lessons.map { it.title to it.id },
             onSelect = onSelectLesson
         )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(text = "Удалить урок", style = MaterialTheme.typography.labelMedium)
+            Text(text = "Delete lesson", style = MaterialTheme.typography.labelMedium)
             state.lessons.forEach { lesson ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1692,7 +1726,7 @@ private fun CardPrompt(state: TrainingUiState) {
             Text(text = "RU", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = state.currentCard?.promptRu ?: "Нет карточек",
+                text = state.currentCard?.promptRu ?: "No cards",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -1746,7 +1780,7 @@ private fun AnswerBox(
             value = state.inputText,
             onValueChange = onInputChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = "Ваш перевод") },
+            label = { Text(text = "Your translation") },
             enabled = hasCards,
             trailingIcon = {
                 IconButton(
@@ -1765,14 +1799,14 @@ private fun AnswerBox(
         )
         if (!hasCards) {
             Text(
-                text = "Карточек нет",
+                text = "No cards",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
         }
         if (state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
             Text(
-                text = state.currentCard?.promptRu?.let { "Скажите перевод: $it" } ?: "",
+                text = state.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 style = MaterialTheme.typography.bodySmall
             )
@@ -1805,18 +1839,18 @@ private fun AnswerBox(
             ) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Показать ответ") } },
+                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
                         onClick = { if (hasCards) onShowAnswer() },
                         enabled = hasCards
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Показать ответ")
+                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                     }
                 }
                 Text(
-                    text = if (state.inputMode == InputMode.VOICE) "Голос" else "Клавиатура",
+                    text = if (state.inputMode == InputMode.VOICE) "Voice" else "Keyboard",
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -1829,7 +1863,7 @@ private fun AnswerBox(
                 state.sessionState == SessionState.ACTIVE &&
                 state.currentCard != null
         ) {
-            Text(text = "Проверить")
+            Text(text = "Check")
         }
     }
 }
@@ -1838,12 +1872,12 @@ private fun AnswerBox(
 private fun ResultBlock(state: TrainingUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (state.lastResult) {
-            true -> Text(text = "Верно", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-            false -> Text(text = "Ошибка", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+            true -> Text(text = "Correct", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+            false -> Text(text = "Incorrect", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
             null -> Text(text = "")
         }
         if (!state.answerText.isNullOrBlank()) {
-            Text(text = "Ответ: ${state.answerText}")
+            Text(text = "Answer: ${state.answerText}")
         }
     }
 }
@@ -1862,23 +1896,54 @@ private fun NavigationRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrev, enabled = hasCards) {
+        NavIconButton(onClick = onPrev, enabled = hasCards) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Prev")
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconButton(onClick = onTogglePause, enabled = hasCards) {
+            NavIconButton(onClick = onTogglePause, enabled = hasCards) {
                 if (state == SessionState.ACTIVE) {
                     Icon(Icons.Default.Pause, contentDescription = "Pause")
                 } else {
                     Icon(Icons.Default.PlayArrow, contentDescription = "Play")
                 }
             }
-            IconButton(onClick = onRequestExit, enabled = hasCards) {
+            NavIconButton(onClick = onRequestExit, enabled = hasCards) {
                 Icon(Icons.Default.StopCircle, contentDescription = "Exit session")
             }
-            IconButton(onClick = { onNext(false) }, enabled = hasCards) {
+            NavIconButton(onClick = { onNext(false) }, enabled = hasCards) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next")
             }
+        }
+    }
+}
+
+@Composable
+private fun NavIconButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    content: @Composable () -> Unit
+) {
+    val surface = MaterialTheme.colorScheme.surfaceVariant
+    val accent = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (enabled) surface else surface.copy(alpha = 0.5f))
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(3.dp)
+                .background(if (enabled) accent else accent.copy(alpha = 0.3f))
+        )
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            content()
         }
     }
 }
@@ -1908,7 +1973,7 @@ private fun launchVoiceRecognition(
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-        putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: "Говорите перевод")
+        putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: "Say the translation")
     }
     launcher.launch(intent)
 }
