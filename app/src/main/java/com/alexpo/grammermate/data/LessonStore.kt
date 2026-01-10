@@ -165,9 +165,9 @@ class LessonStore(private val context: Context) {
         val manifest = LessonPackManifest.fromJson(manifestFile.readText())
         val languageId = manifest.language.lowercase().trim()
         ensureLanguage(languageId)
-        deleteAllLessons(languageId)
-        removeStoriesForLanguage(languageId)
-        removePacksForLanguage(languageId)
+        // Don't delete all lessons - we'll do incremental update instead
+        // Only remove the old pack directory for this specific packId
+        removePacksForLanguage(manifest.packId, languageId)
 
         val packDir = File(packsDir, manifest.packId)
         if (packDir.exists()) {
@@ -435,10 +435,8 @@ class LessonStore(private val context: Context) {
 
     private fun importStoriesFromPack(packDir: File, languageId: String) {
         storiesDir.mkdirs()
-        val existing = storiesStore.read().filterNot {
-            val entryLang = it["languageId"] as? String
-            entryLang?.equals(languageId, ignoreCase = true) == true
-        }.toMutableList()
+        val existing = storiesStore.read().toMutableList()
+
         packDir.walkTopDown()
             .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
             .filterNot { it.name.equals("manifest.json", ignoreCase = true) }
@@ -447,6 +445,18 @@ class LessonStore(private val context: Context) {
                 val storedName = "${story.storyId}.json"
                 val target = File(storiesDir, storedName)
                 AtomicFileWriter.writeText(target, file.readText())
+
+                // Remove old version of this story if exists
+                existing.removeIf { entry ->
+                    val entryStoryId = entry["storyId"] as? String
+                    val entryLessonId = entry["lessonId"] as? String
+                    val entryPhase = entry["phase"] as? String
+                    entryStoryId == story.storyId &&
+                    entryLessonId == story.lessonId &&
+                    entryPhase == story.phase.name
+                }
+
+                // Add new/updated story
                 existing.add(
                     mapOf(
                         "storyId" to story.storyId,
@@ -463,23 +473,10 @@ class LessonStore(private val context: Context) {
     private fun importVocabFromPack(packDir: File, languageId: String) {
         vocabDir.mkdirs()
         val languageDir = vocabDirForLanguage(languageId)
-        val previousEntries = vocabStore.read()
-        previousEntries.forEach { entry ->
-            val entryLang = entry["languageId"] as? String ?: return@forEach
-            if (entryLang.equals(languageId, ignoreCase = true)) {
-                val fileName = entry["file"] as? String ?: return@forEach
-                File(vocabDir, fileName).delete()
-                File(languageDir, fileName).delete()
-            }
-        }
-        if (languageDir.exists()) {
-            languageDir.deleteRecursively()
-        }
         languageDir.mkdirs()
-        val existing = previousEntries.filterNot {
-            val entryLang = it["languageId"] as? String
-            entryLang?.equals(languageId, ignoreCase = true) == true
-        }.toMutableList()
+
+        val existing = vocabStore.read().toMutableList()
+
         packDir.walkTopDown()
             .filter { it.isFile && it.extension.equals("csv", ignoreCase = true) }
             .filter { it.nameWithoutExtension.startsWith("vocab_", ignoreCase = true) }
@@ -489,6 +486,15 @@ class LessonStore(private val context: Context) {
                 val storedName = "${file.nameWithoutExtension}.csv"
                 val target = File(languageDir, storedName)
                 AtomicFileWriter.writeText(target, file.readText())
+
+                // Remove old version of this vocab if exists
+                existing.removeIf { entry ->
+                    val entryLessonId = entry["lessonId"] as? String
+                    val entryLang = entry["languageId"] as? String
+                    entryLessonId == lessonId && entryLang?.equals(languageId, ignoreCase = true) == true
+                }
+
+                // Add new/updated vocab
                 existing.add(
                     mapOf(
                         "lessonId" to lessonId,
@@ -539,17 +545,16 @@ class LessonStore(private val context: Context) {
         storiesStore.write(remaining)
     }
 
-    private fun removePacksForLanguage(languageId: String) {
+    private fun removePacksForLanguage(packIdToRemove: String, languageId: String) {
         val entries = packsStore.read()
         val remaining = mutableListOf<Map<String, Any>>()
         entries.forEach { entry ->
-            val entryLang = entry["languageId"] as? String ?: return@forEach
-            val packId = entry["packId"] as? String
-            if (entryLang.equals(languageId, ignoreCase = true)) {
-                if (packId != null) {
-                    val dir = File(packsDir, packId)
-                    if (dir.exists()) dir.deleteRecursively()
-                }
+            val entryPackId = entry["packId"] as? String
+            val entryLang = entry["languageId"] as? String
+            if (entryPackId == packIdToRemove && entryLang?.equals(languageId, ignoreCase = true) == true) {
+                // Remove old version of this pack
+                val dir = File(packsDir, packIdToRemove)
+                if (dir.exists()) dir.deleteRecursively()
             } else {
                 remaining.add(entry)
             }
