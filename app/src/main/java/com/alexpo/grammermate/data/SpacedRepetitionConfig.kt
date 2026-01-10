@@ -146,8 +146,8 @@ object SpacedRepetitionConfig {
             // Продвигаемся вперёд по лестнице
             (currentStepIndex + 1).coerceAtMost(INTERVAL_LADDER_DAYS.size - 1)
         } else {
-            // Откатываемся назад (но не в самое начало)
-            (currentStepIndex - 1).coerceAtLeast(0)
+            // Оставляем шаг без изменений
+            currentStepIndex.coerceAtLeast(0)
         }
     }
 
@@ -165,10 +165,7 @@ object SpacedRepetitionConfig {
             INTERVAL_LADDER_DAYS.last()
         }
 
-        // Допускаем погрешность: от 0.5x до 2x от ожидаемого интервала
-        val minAcceptable = (expectedInterval * 0.5).toInt().coerceAtLeast(1)
-        val maxAcceptable = expectedInterval * 2
-
-        return daysSinceLastShow in minAcceptable..maxAcceptable
+        // Повторение считается вовремя, если не просрочен ожидаемый интервал
+        return daysSinceLastShow <= expectedInterval
     }
 }

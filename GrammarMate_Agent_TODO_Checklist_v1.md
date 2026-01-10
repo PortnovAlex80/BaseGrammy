@@ -1,4 +1,10 @@
 # GrammarMate / Deep Grammar Trainer — TODO / чек‑лист для агента разработки (поэтапно, с гейтами)
+## Hotfix 2026-01-10
+- [x] Fix mastery persistence on card display and refresh flowers on exit.
+- [x] Align flower decay with ladder interval rules.
+- [x] Run `./gradlew test`.
+- [x] Commit fixes.
+
 Версия: 1.0  
 Дата: 2026-01-08
 

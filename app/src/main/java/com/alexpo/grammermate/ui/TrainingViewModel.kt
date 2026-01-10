@@ -165,6 +165,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshFlowerStates()
         if (_uiState.value.sessionState == SessionState.ACTIVE && _uiState.value.currentCard != null) {
             resumeTimer()
+            _uiState.value.currentCard?.let { recordCardShowForMastery(it) }
             if (_uiState.value.inputMode == InputMode.VOICE) {
                 _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
             }
@@ -392,8 +393,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         var hintShown = false
         if (accepted) {
             playSuccessTone()
-            // Record card show for mastery tracking
-            recordCardShowForMastery(card)
             val isLastCard = state.currentIndex >= sessionCards.lastIndex
             if (state.bossActive) {
                 if (isLastCard) {
@@ -600,6 +599,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossRewardMessage = rewardMessage
             )
         }
+        nextCard?.let { recordCardShowForMastery(it) }
         if (wasHintShown && !pauseForReward) {
             resumeTimer()
         }
@@ -620,6 +620,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voicePromptStartMs = null
             )
         }
+        prevCard?.let { recordCardShowForMastery(it) }
         saveProgress()
     }
 
@@ -668,6 +669,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         saveProgress()
+        refreshFlowerStates()
         Log.d(logTag, "Session finished. Rating=$rating")
     }
 
@@ -1050,6 +1052,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         saveProgress()
+        refreshFlowerStates()
     }
 
     fun openStory(phase: StoryPhase) {
@@ -1344,6 +1347,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         buildSessionCards()
         saveProgress()
+        refreshFlowerStates()
     }
 
     fun clearBossRewardMessage() {
@@ -1436,6 +1440,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voicePromptStartMs = null
             )
         }
+        currentCard()?.let { recordCardShowForMastery(it) }
         saveProgress()
     }
 
