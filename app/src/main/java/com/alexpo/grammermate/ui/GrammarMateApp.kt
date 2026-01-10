@@ -666,7 +666,7 @@ private fun LessonRoadmapScreen(
                         // Use lesson flower for exercise tiles (they copy lesson state)
                         val flower = state.currentLessonFlower
                         val (emoji, scale) = when {
-                            !isCompleted -> "\uD83D\uDD12" to 1.0f  // 🔒
+                            !isCompleted && !state.testMode -> "\uD83D\uDD12" to 1.0f  // 🔒 only if not completed and not test mode
                             flower == null -> "\uD83C\uDF38" to 1.0f  // 🌸
                             else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
                         }

@@ -293,6 +293,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun selectLesson(lessonId: String) {
         pauseTimer()
         vocabSession = emptyList()
+
+        // Load flower state for selected lesson
+        val mastery = masteryStore.get(lessonId, _uiState.value.selectedLanguageId)
+        val lesson = _uiState.value.lessons.find { it.id == lessonId }
+        val currentFlower = FlowerCalculator.calculate(mastery, lesson?.cards?.size ?: 0)
+
         _uiState.update {
             it.copy(
                 selectedLessonId = lessonId,
@@ -328,7 +334,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                currentLessonFlower = currentFlower
             )
         }
         buildSessionCards()
