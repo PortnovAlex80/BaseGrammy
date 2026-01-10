@@ -232,8 +232,10 @@ class LessonStore(private val context: Context) {
             if (!entryLesson.equals(lessonId, ignoreCase = true)) return@flatMap emptyList()
             if (!entryLang.equals(languageId, ignoreCase = true)) return@flatMap emptyList()
             val fileName = entry["file"] as? String ?: return@flatMap emptyList()
-            val file = File(vocabDir, fileName)
-            if (!file.exists()) return@flatMap emptyList()
+            val languageDir = vocabDirForLanguage(entryLang)
+            val file = File(languageDir, fileName).takeIf { it.exists() }
+                ?: File(vocabDir, fileName).takeIf { it.exists() }
+            if (file == null) return@flatMap emptyList()
             val rows = runCatching { VocabCsvParser.parse(file.inputStream()) }.getOrNull() ?: return@flatMap emptyList()
             rows.mapIndexed { index, row ->
                 VocabEntry(
@@ -371,6 +373,8 @@ class LessonStore(private val context: Context) {
 
     private fun indexFileFor(languageId: String): File = File(lessonsDir, "${languageId}_index.yaml")
 
+    private fun vocabDirForLanguage(languageId: String): File = File(vocabDir, languageId)
+
     private fun ensureLanguage(languageId: String) {
         val normalized = languageId.lowercase().trim()
         if (normalized.isBlank()) return
@@ -458,7 +462,21 @@ class LessonStore(private val context: Context) {
 
     private fun importVocabFromPack(packDir: File, languageId: String) {
         vocabDir.mkdirs()
-        val existing = vocabStore.read().filterNot {
+        val languageDir = vocabDirForLanguage(languageId)
+        val previousEntries = vocabStore.read()
+        previousEntries.forEach { entry ->
+            val entryLang = entry["languageId"] as? String ?: return@forEach
+            if (entryLang.equals(languageId, ignoreCase = true)) {
+                val fileName = entry["file"] as? String ?: return@forEach
+                File(vocabDir, fileName).delete()
+                File(languageDir, fileName).delete()
+            }
+        }
+        if (languageDir.exists()) {
+            languageDir.deleteRecursively()
+        }
+        languageDir.mkdirs()
+        val existing = previousEntries.filterNot {
             val entryLang = it["languageId"] as? String
             entryLang?.equals(languageId, ignoreCase = true) == true
         }.toMutableList()
@@ -469,7 +487,7 @@ class LessonStore(private val context: Context) {
                 val lessonId = file.nameWithoutExtension.removePrefix("vocab_")
                 if (lessonId.isBlank()) return@forEach
                 val storedName = "${file.nameWithoutExtension}.csv"
-                val target = File(vocabDir, storedName)
+                val target = File(languageDir, storedName)
                 AtomicFileWriter.writeText(target, file.readText())
                 existing.add(
                     mapOf(
@@ -493,8 +511,8 @@ class LessonStore(private val context: Context) {
             if (shouldRemove) {
                 val fileName = entry["file"] as? String
                 if (fileName != null) {
-                    val file = File(vocabDir, fileName)
-                    if (file.exists()) file.delete()
+                    File(vocabDir, fileName).delete()
+                    File(vocabDirForLanguage(entryLang), fileName).delete()
                 }
             } else {
                 remaining.add(entry)

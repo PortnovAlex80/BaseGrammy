@@ -18,10 +18,11 @@ object FlowerCalculator {
      * @return визуальное представление цветка
      */
     fun calculate(mastery: LessonMasteryState?, totalCardsInLesson: Int = 0): FlowerVisual {
-        // Урок не начат
+        // Урок не начат - показываем SEED (готов к началу), а не LOCKED
+        // LOCKED используется только в UI для заблокированных уроков
         if (mastery == null || mastery.uniqueCardShows == 0) {
             return FlowerVisual(
-                state = FlowerState.LOCKED,
+                state = FlowerState.SEED,
                 masteryPercent = 0f,
                 healthPercent = 1f,
                 scaleMultiplier = 0.5f

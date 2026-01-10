@@ -393,6 +393,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         var hintShown = false
         if (accepted) {
             playSuccessTone()
+            // Record card show for mastery tracking
+            recordCardShowForMastery(card)
             val isLastCard = state.currentIndex >= sessionCards.lastIndex
             if (state.bossActive) {
                 if (isLastCard) {
@@ -553,6 +555,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
         saveProgress()
+        // Refresh flower states after card show is recorded
+        if (accepted) {
+            refreshFlowerStates()
+        }
         Log.d(logTag, "Answer submitted: accepted=$accepted")
         return SubmitResult(accepted, hintShown)
     }
