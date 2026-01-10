@@ -239,6 +239,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun selectLanguage(languageId: String) {
         pauseTimer()
         vocabSession = emptyList()
+        sessionCards = emptyList()
+        bossCards = emptyList()
+        eliteCards = emptyList()
+        scheduleKey = "" // Force rebuild schedules
         val lessons = lessonStore.getLessons(languageId)
         val selectedLessonId = lessons.firstOrNull()?.id
         _uiState.update {
@@ -283,7 +287,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 bossLessonRewards = emptyMap(),
-                bossMegaReward = null
+                bossMegaReward = null,
+                lessonFlowers = emptyMap(),
+                currentLessonFlower = null
             )
         }
         rebuildSchedules(lessons)
