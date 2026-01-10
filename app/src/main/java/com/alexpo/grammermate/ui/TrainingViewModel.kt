@@ -233,6 +233,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voicePromptStartMs = if (mode == InputMode.VOICE) it.voicePromptStartMs else null
             )
         }
+
+        // Update word bank when switching to WORD_BANK mode
+        if (mode == InputMode.WORD_BANK) {
+            updateWordBank()
+        }
+
         Log.d(logTag, "Input mode changed: $mode")
     }
 
@@ -1650,6 +1656,75 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Генерирует word bank из правильного ответа
+     */
+    private fun generateWordBank(correctAnswer: String): List<String> {
+        val words = correctAnswer.split(" ").filter { it.isNotBlank() }
+        return words.shuffled()
+    }
+
+    /**
+     * Обновляет word bank для текущей карточки
+     */
+    private fun updateWordBank() {
+        val card = _uiState.value.currentCard
+        if (card == null) {
+            _uiState.update {
+                it.copy(
+                    wordBankWords = emptyList(),
+                    selectedWords = emptyList()
+                )
+            }
+            return
+        }
+
+        val correctAnswer = card.variants.firstOrNull() ?: ""
+        val wordBank = generateWordBank(correctAnswer)
+
+        _uiState.update {
+            it.copy(
+                wordBankWords = wordBank,
+                selectedWords = emptyList(),
+                inputText = ""
+            )
+        }
+    }
+
+    /**
+     * Добавляет слово в выбранные для word bank режима
+     */
+    fun selectWordFromBank(word: String) {
+        val currentSelected = _uiState.value.selectedWords
+        val newSelected = currentSelected + word
+        val inputText = newSelected.joinToString(" ")
+
+        _uiState.update {
+            it.copy(
+                selectedWords = newSelected,
+                inputText = inputText
+            )
+        }
+    }
+
+    /**
+     * Удаляет последнее выбранное слово
+     */
+    fun removeLastSelectedWord() {
+        val currentSelected = _uiState.value.selectedWords
+        if (currentSelected.isEmpty()) return
+
+        val newSelected = currentSelected.dropLast(1)
+        val inputText = newSelected.joinToString(" ")
+
+        _uiState.update {
+            it.copy(
+                selectedWords = newSelected,
+                inputText = inputText
+            )
+        }
+    }
+
+    /**
      * Обновить состояния цветков для всех уроков.
      */
     private fun refreshFlowerStates() {
@@ -1744,5 +1819,8 @@ data class TrainingUiState(
     val eliteSizeMultiplier: Double = 1.25,
     // Flower mastery states
     val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
-    val currentLessonFlower: FlowerVisual? = null
+    val currentLessonFlower: FlowerVisual? = null,
+    // Word bank mode
+    val wordBankWords: List<String> = emptyList(),
+    val selectedWords: List<String> = emptyList()
 )

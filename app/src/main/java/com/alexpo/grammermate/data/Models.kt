@@ -82,7 +82,8 @@ enum class SessionState {
 
 enum class InputMode {
     VOICE,
-    KEYBOARD
+    KEYBOARD,
+    WORD_BANK
 }
 
 data class TrainingProgress(

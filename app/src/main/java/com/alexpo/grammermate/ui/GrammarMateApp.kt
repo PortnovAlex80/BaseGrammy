@@ -238,7 +238,9 @@ fun GrammarMateApp() {
                     onSelectMode = vm::selectMode,
                     onSetInputMode = vm::setInputMode,
                     onShowAnswer = vm::showAnswer,
-                    onVoicePromptStarted = vm::onVoicePromptStarted
+                    onVoicePromptStarted = vm::onVoicePromptStarted,
+                    onSelectWordFromBank = vm::selectWordFromBank,
+                    onRemoveLastWord = vm::removeLastSelectedWord
                 )
             }
 
@@ -1524,7 +1526,9 @@ private fun TrainingScreen(
     onSelectMode: (TrainingMode) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
     onShowAnswer: () -> Unit,
-    onVoicePromptStarted: () -> Unit
+    onVoicePromptStarted: () -> Unit,
+    onSelectWordFromBank: (String) -> Unit,
+    onRemoveLastWord: () -> Unit
 ) {
     val hasCards = state.currentCard != null
 
@@ -1574,6 +1578,8 @@ private fun TrainingScreen(
                 onSetInputMode,
                 onShowAnswer,
                 onVoicePromptStarted,
+                onSelectWordFromBank,
+                onRemoveLastWord,
                 hasCards
             )
             ResultBlock(state)
@@ -1793,6 +1799,8 @@ private fun AnswerBox(
     onSetInputMode: (InputMode) -> Unit,
     onShowAnswer: () -> Unit,
     onVoicePromptStarted: () -> Unit,
+    onSelectWordFromBank: (String) -> Unit,
+    onRemoveLastWord: () -> Unit,
     hasCards: Boolean
 ) {
     val latestState by rememberUpdatedState(state)
@@ -1861,6 +1869,53 @@ private fun AnswerBox(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+
+        // Word Bank UI
+        if (state.inputMode == InputMode.WORD_BANK && state.wordBankWords.isNotEmpty()) {
+            Text(
+                text = "Tap words in correct order:",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                state.wordBankWords.forEach { word ->
+                    val isUsed = state.selectedWords.contains(word)
+                    androidx.compose.material3.FilterChip(
+                        selected = isUsed,
+                        onClick = {
+                            if (!isUsed) {
+                                onSelectWordFromBank(word)
+                            }
+                        },
+                        label = { Text(text = word) },
+                        enabled = !isUsed
+                    )
+                }
+            }
+            if (state.selectedWords.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Selected: ${state.selectedWords.size} / ${state.wordBankWords.size}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    TextButton(onClick = onRemoveLastWord) {
+                        Text(text = "Undo")
+                    }
+                }
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1882,6 +1937,9 @@ private fun AnswerBox(
                 FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
+                FilledTonalIconButton(onClick = { onSetInputMode(InputMode.WORD_BANK) }) {
+                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1900,7 +1958,11 @@ private fun AnswerBox(
                     }
                 }
                 Text(
-                    text = if (state.inputMode == InputMode.VOICE) "Voice" else "Keyboard",
+                    text = when (state.inputMode) {
+                        InputMode.VOICE -> "Voice"
+                        InputMode.KEYBOARD -> "Keyboard"
+                        InputMode.WORD_BANK -> "Word Bank"
+                    },
                     style = MaterialTheme.typography.labelMedium
                 )
             }
