@@ -30,6 +30,8 @@ import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.data.LessonMasteryState
+import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.FlowerState
@@ -294,10 +296,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         pauseTimer()
         vocabSession = emptyList()
 
-        // Load flower state for selected lesson
+        // Calculate active sub-lesson index based on completed count
+        val schedule = lessonSchedules[lessonId]
+        val subLessons = schedule?.subLessons.orEmpty()
         val mastery = masteryStore.get(lessonId, _uiState.value.selectedLanguageId)
-        val lesson = _uiState.value.lessons.find { it.id == lessonId }
-        val currentFlower = FlowerCalculator.calculate(mastery, lesson?.cards?.size ?: 0)
+        val completedCount = calculateCompletedSubLessons(subLessons, mastery)
+        val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _uiState.update {
             it.copy(
@@ -310,8 +314,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED,
                 voicePromptStartMs = null,
-                activeSubLessonIndex = 0,
-                completedSubLessonCount = 0,
+                activeSubLessonIndex = nextActiveIndex,
+                completedSubLessonCount = completedCount,
                 subLessonFinishedToken = 0,
                 storyCheckInDone = false,
                 storyCheckOutDone = false,
@@ -334,8 +338,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null,
-                currentLessonFlower = currentFlower
+                bossErrorMessage = null
             )
         }
         buildSessionCards()
@@ -952,6 +955,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val schedule = lessonSchedules[state.selectedLessonId]
             val subLessons = schedule?.subLessons.orEmpty()
             subLessonCount = subLessons.size
+
+            // Calculate completed sub-lessons based on shown cards
+            val mastery = state.selectedLessonId?.let {
+                masteryStore.get(it, state.selectedLanguageId)
+            }
+            val completedCount = calculateCompletedSubLessons(subLessons, mastery)
+
             val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
             val subLesson = subLessons.getOrNull(activeIndex)
             sessionCards = subLesson?.cards ?: emptyList()
@@ -971,6 +981,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     subLessonTotal = subLessonTotal,
                     subLessonCount = subLessonCount,
                     activeSubLessonIndex = activeIndex,
+                    completedSubLessonCount = completedCount,
                     subLessonTypes = subLessons.map { item -> item.type }
                 )
             }
@@ -1606,6 +1617,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (allCompleted && state.selectedLessonId != null) {
             masteryStore.markLessonCompleted(state.selectedLessonId, state.selectedLanguageId)
         }
+    }
+
+    /**
+     * Вычислить количество завершённых под-уроков на основе показанных карточек.
+     */
+    private fun calculateCompletedSubLessons(
+        subLessons: List<ScheduledSubLesson>,
+        mastery: LessonMasteryState?
+    ): Int {
+        if (mastery == null || mastery.shownCardIds.isEmpty()) return 0
+
+        var completed = 0
+        for (subLesson in subLessons) {
+            val allCardsShown = subLesson.cards.all { card ->
+                mastery.shownCardIds.contains(card.id)
+            }
+            if (allCardsShown) {
+                completed++
+            } else {
+                // Если нашли незавершённый под-урок, дальше не смотрим
+                break
+            }
+        }
+        return completed
     }
 
     /**
