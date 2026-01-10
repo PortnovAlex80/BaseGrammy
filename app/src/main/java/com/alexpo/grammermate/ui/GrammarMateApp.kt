@@ -393,7 +393,7 @@ private fun HomeScreen(
     onSelectLesson: (String) -> Unit,
     onOpenElite: () -> Unit
 ) {
-    val tiles = remember(state.lessons, state.testMode) { buildLessonTiles(state.lessons, state.testMode) }
+    val tiles = remember(state.lessons, state.testMode, state.lessonFlowers) { buildLessonTiles(state.lessons, state.testMode) }
     var showMethod by remember { mutableStateOf(false) }
     var showRefreshHint by remember { mutableStateOf(false) }
     val languageCode = state.languages

@@ -1571,7 +1571,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun recordCardShowForMastery(card: SentenceCard) {
         val lessonId = resolveCardLessonId(card)
         val languageId = _uiState.value.selectedLanguageId
+        Log.d(logTag, "Recording card show: lessonId=$lessonId, cardId=${card.id}")
         masteryStore.recordCardShow(lessonId, languageId, card.id)
+        val mastery = masteryStore.get(lessonId, languageId)
+        Log.d(logTag, "After record: uniqueCardShows=${mastery?.uniqueCardShows}, totalShows=${mastery?.totalCardShows}")
     }
 
     /**
@@ -1594,7 +1597,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         val flowerStates = lessons.associate { lesson ->
             val mastery = masteryStore.get(lesson.id, languageId)
-            lesson.id to FlowerCalculator.calculate(mastery, lesson.cards.size)
+            val flower = FlowerCalculator.calculate(mastery, lesson.cards.size)
+            Log.d(logTag, "Flower for lesson ${lesson.id}: mastery=${mastery?.uniqueCardShows ?: 0}, state=${flower.state}, scale=${flower.scaleMultiplier}")
+            lesson.id to flower
         }
 
         val currentFlower = _uiState.value.selectedLessonId?.let { flowerStates[it] }
