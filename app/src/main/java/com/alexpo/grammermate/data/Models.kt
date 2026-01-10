@@ -103,3 +103,40 @@ data class TrainingProgress(
     val eliteStepIndex: Int = 0,
     val eliteBestSpeeds: List<Double> = emptyList()
 )
+
+/**
+ * Состояние освоения урока (данные для расчёта "цветка")
+ */
+data class LessonMasteryState(
+    val lessonId: String,
+    val languageId: String,
+    val uniqueCardShows: Int = 0,
+    val totalCardShows: Int = 0,
+    val lastShowDateMs: Long = 0L,
+    val intervalStepIndex: Int = 0,
+    val completedAtMs: Long? = null,
+    val shownCardIds: Set<String> = emptySet()
+)
+
+/**
+ * Состояние цветка для отображения в UI
+ */
+enum class FlowerState {
+    LOCKED,
+    SEED,
+    SPROUT,
+    BLOOM,
+    WILTING,
+    WILTED,
+    GONE
+}
+
+/**
+ * Визуальное представление цветка
+ */
+data class FlowerVisual(
+    val state: FlowerState,
+    val masteryPercent: Float,
+    val healthPercent: Float,
+    val scaleMultiplier: Float
+)

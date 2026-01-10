@@ -87,6 +87,9 @@ import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.SubLessonType
+import com.alexpo.grammermate.data.FlowerVisual
+import com.alexpo.grammermate.data.FlowerState
+import com.alexpo.grammermate.data.FlowerCalculator
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
@@ -486,8 +489,10 @@ private fun HomeScreen(
             userScrollEnabled = false
         ) {
             itemsIndexed(tiles) { _, tile ->
+                val flower = tile.lessonId?.let { state.lessonFlowers[it] }
                 LessonTile(
                     tile = tile,
+                    flower = flower,
                     onSelect = {
                         val lessonId = tile.lessonId ?: return@LessonTile
                         onSelectLesson(lessonId)
@@ -503,8 +508,8 @@ private fun HomeScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
-        Text(text = "🌱 forming pattern • 🌸 automated skill")
-        Text(text = "🍂 needs refresh")
+        Text(text = "🌱 seed • 🌿 growing • 🌸 bloom")
+        Text(text = "🥀 wilting • 🍂 wilted • ⚫ forgotten")
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
             onClick = { showMethod = true },
@@ -656,7 +661,13 @@ private fun LessonRoadmapScreen(
                             SubLessonType.NEW_ONLY -> "NEW"
                             SubLessonType.MIXED -> "MIX"
                         }
-                        val emoji = if (isCompleted) "🌸" else "🔒"
+                        // Use lesson flower for exercise tiles (they copy lesson state)
+                        val flower = state.currentLessonFlower
+                        val (emoji, scale) = when {
+                            !isCompleted -> "\uD83D\uDD12" to 1.0f  // 🔒
+                            flower == null -> "\uD83C\uDF38" to 1.0f  // 🌸
+                            else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
+                        }
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -671,7 +682,7 @@ private fun LessonRoadmapScreen(
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
-                                Text(text = emoji, fontSize = 18.sp)
+                                Text(text = emoji, fontSize = (18 * scale).sp)
                                 Text(text = kindLabel, fontSize = 10.sp)
                             }
                         }
@@ -1194,13 +1205,20 @@ private fun StoryQuizScreen(
     }
 }
 @Composable
-private fun LessonTile(tile: LessonTileUi, onSelect: () -> Unit) {
-    val emoji = when (tile.state) {
-        LessonTileState.SEED -> "🍂"
-        LessonTileState.SPROUT -> "🌱"
-        LessonTileState.FLOWER -> "🌸"
-        LessonTileState.LOCKED -> "🔒"
+private fun LessonTile(
+    tile: LessonTileUi,
+    flower: FlowerVisual?,
+    onSelect: () -> Unit
+) {
+    // Determine emoji and scale based on flower state
+    val (emoji, scale) = when {
+        tile.state == LessonTileState.LOCKED -> "\uD83D\uDD12" to 1.0f  // 🔒
+        flower == null -> "\uD83C\uDF31" to 1.0f  // 🌱 default
+        else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
     }
+
+    val masteryPercent = flower?.masteryPercent ?: 0f
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1215,7 +1233,18 @@ private fun LessonTile(tile: LessonTileUi, onSelect: () -> Unit) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(text = "${tile.index + 1}", fontWeight = FontWeight.SemiBold)
-            Text(text = emoji, fontSize = 18.sp)
+            Text(
+                text = emoji,
+                fontSize = (18 * scale).sp
+            )
+            // Show mastery percentage if > 0
+            if (masteryPercent > 0f && tile.state != LessonTileState.LOCKED) {
+                Text(
+                    text = "${(masteryPercent * 100).toInt()}%",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
         }
     }
 }

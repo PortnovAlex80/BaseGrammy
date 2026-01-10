@@ -28,6 +28,10 @@ import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.VocabEntry
+import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.data.FlowerCalculator
+import com.alexpo.grammermate.data.FlowerVisual
+import com.alexpo.grammermate.data.FlowerState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -54,6 +58,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private val configStore = AppConfigStore(application)
+    private val masteryStore = MasteryStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -157,6 +162,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         rebuildSchedules(lessons)
         buildSessionCards()
+        refreshFlowerStates()
         if (_uiState.value.sessionState == SessionState.ACTIVE && _uiState.value.currentCard != null) {
             resumeTimer()
             if (_uiState.value.inputMode == InputMode.VOICE) {
@@ -187,6 +193,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 }
                 rebuildSchedules(lessons)
                 buildSessionCards()
+                refreshFlowerStates()
             }
         }
     }
@@ -277,6 +284,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         rebuildSchedules(lessons)
         buildSessionCards()
+        refreshFlowerStates()
         saveProgress()
     }
 
@@ -322,6 +330,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         buildSessionCards()
+        refreshFlowerStates()
         saveProgress()
     }
 
@@ -383,6 +392,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         var hintShown = false
         if (accepted) {
             playSuccessTone()
+            // Record card show for mastery tracking
+            recordCardShowForMastery(card)
             val isLastCard = state.currentIndex >= sessionCards.lastIndex
             if (state.bossActive) {
                 if (isLastCard) {
@@ -495,6 +506,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
                 buildSessionCards()
+                // Check if lesson is completed and update flower states
+                checkAndMarkLessonCompleted()
+                refreshFlowerStates()
             } else {
                 _uiState.update {
                     it.copy(
@@ -1527,6 +1541,60 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             soundPool.play(errorSoundId, 1f, 1f, 1, 0, 1f)
         }
     }
+
+    /**
+     * Определить к какому уроку принадлежит карточка.
+     * Важно для Mixed-режима где карточки могут быть из разных уроков.
+     */
+    private fun resolveCardLessonId(card: SentenceCard): String {
+        return _uiState.value.lessons
+            .find { lesson -> lesson.cards.any { it.id == card.id } }
+            ?.id
+            ?: _uiState.value.selectedLessonId
+            ?: "unknown"
+    }
+
+    /**
+     * Записать показ карточки для отслеживания прогресса освоения.
+     */
+    private fun recordCardShowForMastery(card: SentenceCard) {
+        val lessonId = resolveCardLessonId(card)
+        val languageId = _uiState.value.selectedLanguageId
+        masteryStore.recordCardShow(lessonId, languageId, card.id)
+    }
+
+    /**
+     * Проверить и отметить урок как завершённый если все под-уроки пройдены.
+     */
+    private fun checkAndMarkLessonCompleted() {
+        val state = _uiState.value
+        val allCompleted = state.completedSubLessonCount >= state.subLessonCount
+        if (allCompleted && state.selectedLessonId != null) {
+            masteryStore.markLessonCompleted(state.selectedLessonId, state.selectedLanguageId)
+        }
+    }
+
+    /**
+     * Обновить состояния цветков для всех уроков.
+     */
+    private fun refreshFlowerStates() {
+        val languageId = _uiState.value.selectedLanguageId
+        val lessons = _uiState.value.lessons
+
+        val flowerStates = lessons.associate { lesson ->
+            val mastery = masteryStore.get(lesson.id, languageId)
+            lesson.id to FlowerCalculator.calculate(mastery, lesson.cards.size)
+        }
+
+        val currentFlower = _uiState.value.selectedLessonId?.let { flowerStates[it] }
+
+        _uiState.update {
+            it.copy(
+                lessonFlowers = flowerStates,
+                currentLessonFlower = currentFlower
+            )
+        }
+    }
 }
 
 data class SubmitResult(
@@ -1596,5 +1664,8 @@ data class TrainingUiState(
     val eliteBestSpeeds: List<Double> = emptyList(),
     val eliteFinishedToken: Int = 0,
     val eliteUnlocked: Boolean = false,
-    val eliteSizeMultiplier: Double = 1.25
+    val eliteSizeMultiplier: Double = 1.25,
+    // Flower mastery states
+    val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
+    val currentLessonFlower: FlowerVisual? = null
 )
