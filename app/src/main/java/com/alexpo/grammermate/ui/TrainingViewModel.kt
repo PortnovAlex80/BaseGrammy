@@ -14,6 +14,7 @@ import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.MixedReviewScheduler
 import com.alexpo.grammermate.data.AppConfigStore
+import com.alexpo.grammermate.data.AppConfig
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.InputMode

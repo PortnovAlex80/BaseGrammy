@@ -14,6 +14,15 @@ class AppConfigStore(private val context: Context) {
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "config.yaml")
 
+    fun save(config: AppConfig) {
+        baseDir.mkdirs()
+        val payload = mapOf(
+            "testMode" to config.testMode,
+            "eliteSizeMultiplier" to config.eliteSizeMultiplier
+        )
+        AtomicFileWriter.writeText(file, yaml.dump(payload))
+    }
+
     fun load(): AppConfig {
         if (!file.exists()) {
             baseDir.mkdirs()

@@ -545,6 +545,24 @@ class LessonStore(private val context: Context) {
         storiesStore.write(remaining)
     }
 
+    private fun removePacksForLanguage(languageId: String) {
+        val entries = packsStore.read()
+        val remaining = mutableListOf<Map<String, Any>>()
+        entries.forEach { entry ->
+            val entryLang = entry["languageId"] as? String ?: return@forEach
+            val packId = entry["packId"] as? String
+            if (entryLang.equals(languageId, ignoreCase = true)) {
+                if (packId != null) {
+                    val dir = File(packsDir, packId)
+                    if (dir.exists()) dir.deleteRecursively()
+                }
+            } else {
+                remaining.add(entry)
+            }
+        }
+        packsStore.write(remaining)
+    }
+
     private fun removePacksForLanguage(packIdToRemove: String, languageId: String) {
         val entries = packsStore.read()
         val remaining = mutableListOf<Map<String, Any>>()
