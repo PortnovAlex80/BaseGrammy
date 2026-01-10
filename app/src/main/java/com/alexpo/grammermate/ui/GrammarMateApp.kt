@@ -55,6 +55,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -144,7 +145,8 @@ fun GrammarMateApp() {
                 onResetReload = vm::resetAndImportLesson,
                 onCreateEmptyLesson = vm::createEmptyLesson,
                 onDeleteAllLessons = vm::deleteAllLessons,
-                onDeletePack = vm::deletePack
+                onDeletePack = vm::deletePack,
+                onToggleTestMode = vm::toggleTestMode
             )
 
             when (screen) {
@@ -1304,7 +1306,8 @@ private fun SettingsSheet(
     onResetReload: (android.net.Uri) -> Unit,
     onCreateEmptyLesson: (String) -> Unit,
     onDeleteAllLessons: () -> Unit,
-    onDeletePack: (String) -> Unit
+    onDeletePack: (String) -> Unit,
+    onToggleTestMode: () -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -1341,6 +1344,24 @@ private fun SettingsSheet(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
+                Switch(
+                    checked = state.testMode,
+                    onCheckedChange = { onToggleTestMode() }
+                )
+            }
+            Text(
+                text = "Enables all lessons, accepts all answers, unlocks Elite mode",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
             LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
             OutlinedTextField(
                 value = newLanguageName,

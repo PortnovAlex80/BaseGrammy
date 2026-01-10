@@ -859,6 +859,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(installedPacks = lessonStore.getInstalledPacks()) }
     }
 
+    fun toggleTestMode() {
+        val newTestMode = !_uiState.value.testMode
+        _uiState.update {
+            it.copy(
+                testMode = newTestMode,
+                eliteUnlocked = resolveEliteUnlocked(_uiState.value.lessons, newTestMode)
+            )
+        }
+        configStore.save(AppConfig(testMode = newTestMode, eliteSizeMultiplier = _uiState.value.eliteSizeMultiplier))
+        Log.d(logTag, "Test mode toggled: $newTestMode")
+    }
+
     private fun refreshLessons(selectedLessonId: String?) {
         pauseTimer()
         vocabSession = emptyList()
