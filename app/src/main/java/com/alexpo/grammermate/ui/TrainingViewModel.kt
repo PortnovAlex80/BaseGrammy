@@ -629,6 +629,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         nextCard?.let { recordCardShowForMastery(it) }
+
+        // Update word bank if in WORD_BANK mode
+        if (_uiState.value.inputMode == InputMode.WORD_BANK) {
+            updateWordBank()
+        }
+
         if (wasHintShown && !pauseForReward) {
             resumeTimer()
         }
@@ -1614,7 +1620,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun recordCardShowForMastery(card: SentenceCard) {
         val lessonId = resolveCardLessonId(card)
         val languageId = _uiState.value.selectedLanguageId
-        Log.d(logTag, "Recording card show: lessonId=$lessonId, cardId=${card.id}")
+
+        // Word Bank mode: only count 10% of shows (reduced retrieval practice)
+        val isWordBankMode = _uiState.value.inputMode == InputMode.WORD_BANK
+        if (isWordBankMode && Math.random() > 0.1) {
+            Log.d(logTag, "Skipping card show record for Word Bank mode (90% skip rate)")
+            return
+        }
+
+        Log.d(logTag, "Recording card show: lessonId=$lessonId, cardId=${card.id}, mode=${_uiState.value.inputMode}")
         masteryStore.recordCardShow(lessonId, languageId, card.id)
         val mastery = masteryStore.get(lessonId, languageId)
         Log.d(logTag, "After record: uniqueCardShows=${mastery?.uniqueCardShows}, totalShows=${mastery?.totalCardShows}")

@@ -400,7 +400,9 @@ private fun HomeScreen(
     onSelectLesson: (String) -> Unit,
     onOpenElite: () -> Unit
 ) {
-    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers) { buildLessonTiles(state.lessons, state.testMode) }
+    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers) {
+        buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers)
+    }
     var showMethod by remember { mutableStateOf(false) }
     var showRefreshHint by remember { mutableStateOf(false) }
     val languageCode = state.languages
@@ -1280,7 +1282,11 @@ private fun LanguageSelector(
     }
 }
 
-private fun buildLessonTiles(lessons: List<Lesson>, testMode: Boolean): List<LessonTileUi> {
+private fun buildLessonTiles(
+    lessons: List<Lesson>,
+    testMode: Boolean,
+    lessonFlowers: Map<String, FlowerVisual>
+): List<LessonTileUi> {
     val total = 12
     val tiles = mutableListOf<LessonTileUi>()
     for (i in 0 until total) {
@@ -1289,7 +1295,16 @@ private fun buildLessonTiles(lessons: List<Lesson>, testMode: Boolean): List<Les
             lesson == null -> LessonTileState.LOCKED
             testMode -> LessonTileState.SEED
             i == 0 -> LessonTileState.SPROUT
-            else -> LessonTileState.SEED
+            else -> {
+                // Check if previous lesson has any progress
+                val prevLesson = lessons.getOrNull(i - 1)
+                val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
+                if (prevFlower != null && prevFlower.masteryPercent > 0f) {
+                    LessonTileState.SEED  // Unlocked
+                } else {
+                    LessonTileState.LOCKED  // Locked until previous lesson starts
+                }
+            }
         }
         tiles.add(LessonTileUi(i, lesson?.id, state))
     }
