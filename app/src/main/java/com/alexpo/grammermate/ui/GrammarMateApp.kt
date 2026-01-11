@@ -1328,12 +1328,16 @@ private fun buildLessonTiles(
                     currentFlower != null && currentFlower.masteryPercent > 0f -> {
                         LessonTileState.SEED
                     }
+                    // This is the current working lesson (selected by user) but no mastery yet - show SPROUT
+                    i == currentWorkingIndex && lesson.id == selectedLessonId -> {
+                        LessonTileState.SPROUT
+                    }
                     // This is the lesson right after the current working lesson - UNLOCKED (open lock)
                     i == currentWorkingIndex + 1 -> {
                         LessonTileState.UNLOCKED
                     }
-                    // This lesson is before or at the current working index but has no progress - check previous lesson
-                    i <= currentWorkingIndex -> {
+                    // This lesson is before the current working index but has no progress - check previous lesson
+                    i < currentWorkingIndex -> {
                         val prevLesson = lessons.getOrNull(i - 1)
                         val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
                         if (prevFlower != null && prevFlower.masteryPercent > 0f) {
