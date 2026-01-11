@@ -542,6 +542,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                         subLessonFinishedToken = it.subLessonFinishedToken + 1
                     )
                 }
+                markSubLessonCardsShown(sessionCards)
                 buildSessionCards()
                 // Check if lesson is completed and update flower states
                 checkAndMarkLessonCompleted()
@@ -1672,13 +1673,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /**
      * Записать показ карточки для отслеживания прогресса освоения.
      */
-    private fun recordCardShowForMastery(card: SentenceCard) {
+    private fun recordCardShowForMastery(card: SentenceCard, force: Boolean = false) {
         val lessonId = resolveCardLessonId(card)
         val languageId = _uiState.value.selectedLanguageId
 
         // Word Bank mode: only count 10% of shows (reduced retrieval practice)
         val isWordBankMode = _uiState.value.inputMode == InputMode.WORD_BANK
-        if (isWordBankMode && Math.random() > 0.1) {
+        if (!force && isWordBankMode && Math.random() > 0.1) {
             Log.d(logTag, "Skipping card show record for Word Bank mode (90% skip rate)")
             return
         }
@@ -1687,6 +1688,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         masteryStore.recordCardShow(lessonId, languageId, card.id)
         val mastery = masteryStore.get(lessonId, languageId)
         Log.d(logTag, "After record: uniqueCardShows=${mastery?.uniqueCardShows}, totalShows=${mastery?.totalCardShows}")
+    }
+
+    private fun markSubLessonCardsShown(cards: List<SentenceCard>) {
+        if (_uiState.value.inputMode != InputMode.WORD_BANK || cards.isEmpty()) return
+        cards.forEach { card ->
+            recordCardShowForMastery(card, force = true)
+        }
     }
 
     /**

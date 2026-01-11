@@ -935,6 +935,7 @@ private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onCli
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VocabSprintScreen(
     state: TrainingUiState,
@@ -1701,6 +1702,7 @@ private fun TrainingScreen(
     onRemoveLastWord: () -> Unit
 ) {
     val hasCards = state.currentCard != null
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -1729,7 +1731,8 @@ private fun TrainingScreen(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             HeaderStats(state)
@@ -2056,8 +2059,8 @@ private fun AnswerBox(
             Spacer(modifier = Modifier.height(4.dp))
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 state.wordBankWords.forEach { word ->
                     val isUsed = state.selectedWords.contains(word)
