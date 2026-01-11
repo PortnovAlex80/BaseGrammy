@@ -1314,10 +1314,12 @@ private fun buildLessonTiles(
     var lastLessonWithProgress = -1
     for (i in lessons.indices) {
         val flower = lessonFlowers[lessons[i].id]
+        android.util.Log.d("GrammarMate", "buildLessonTiles: lesson $i (${lessons[i].id}) -> masteryPercent=${flower?.masteryPercent}")
         if (flower != null && flower.masteryPercent > 0f) {
             lastLessonWithProgress = i
         }
     }
+    android.util.Log.d("GrammarMate", "buildLessonTiles: lastLessonWithProgress=$lastLessonWithProgress, next UNLOCKED will be at index ${lastLessonWithProgress + 1}")
 
     for (i in 0 until total) {
         val lesson = lessons.getOrNull(i)
