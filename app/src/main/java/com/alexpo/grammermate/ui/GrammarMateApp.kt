@@ -688,7 +688,9 @@ private fun LessonRoadmapScreen(
                         // Use lesson flower for exercise tiles (they copy lesson state)
                         val flower = state.currentLessonFlower
                         val (emoji, scale) = when {
-                            !isCompleted && !state.testMode -> "\uD83D\uDD12" to 1.0f  // 🔒 only if not completed and not test mode
+                            !isCompleted && !state.testMode -> {
+                                (if (isActive) "\uD83D\uDD13" else "\uD83D\uDD12") to 1.0f
+                            }
                             flower == null -> "\uD83C\uDF38" to 1.0f  // 🌸
                             else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
                         }
@@ -1682,6 +1684,7 @@ private fun HeaderStats(state: TrainingUiState) {
         Column {
             Text(text = if (state.bossActive) "Review" else "Progress")
             val progressText = when {
+                state.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
                 !state.bossActive && state.currentIndex < state.warmupCount -> "Warm-up"
                 state.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
                 else -> "${progressPercent}%"
