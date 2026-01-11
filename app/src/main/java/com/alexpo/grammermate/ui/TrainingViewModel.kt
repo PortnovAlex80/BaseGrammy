@@ -1008,7 +1008,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         val lessonCards = when (state.mode) {
             TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
-            TrainingMode.ALL_MIXED -> lessons.flatMap { it.cards }.shuffled()
+            // ALL_MIXED (Review) uses all cards including reserve to prevent memorization
+            TrainingMode.ALL_MIXED -> lessons.flatMap { it.allCards }.shuffled()
             else -> emptyList()
         }
         val warmup = lessonCards.take(warmupSize)

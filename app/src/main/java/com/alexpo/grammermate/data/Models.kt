@@ -10,7 +10,30 @@ data class Lesson(
     val languageId: String,
     val title: String,
     val cards: List<SentenceCard>
-)
+) {
+    companion object {
+        const val MAIN_POOL_SIZE = SpacedRepetitionConfig.MASTERY_THRESHOLD // 150 cards
+    }
+
+    /**
+     * Основной пул карточек для достижения мастери (первые 150 карточек).
+     */
+    val mainPoolCards: List<SentenceCard>
+        get() = cards.take(MAIN_POOL_SIZE)
+
+    /**
+     * Резервный пул карточек (карточки после первых 150).
+     * Используется в Review и Mix-уроках для предотвращения заученности.
+     */
+    val reservePoolCards: List<SentenceCard>
+        get() = cards.drop(MAIN_POOL_SIZE)
+
+    /**
+     * Все карточки (основной пул + резерв).
+     */
+    val allCards: List<SentenceCard>
+        get() = cards
+}
 
 data class SentenceCard(
     val id: String,

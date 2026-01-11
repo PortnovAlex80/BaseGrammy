@@ -27,6 +27,7 @@ class MixedReviewScheduler(
         if (lessons.isEmpty()) return emptyMap()
         val schedules = linkedMapOf<String, LessonSchedule>()
         val reviewQueues = mutableMapOf<String, ArrayDeque<SentenceCard>>()
+        val reserveQueues = mutableMapOf<String, ArrayDeque<SentenceCard>>()
         val reviewStartMixedIndex = mutableMapOf<String, Int>()
         val lessonIndexById = lessons.mapIndexed { index, lesson -> lesson.id to index }.toMap()
         var globalMixedIndex = 0
@@ -37,10 +38,14 @@ class MixedReviewScheduler(
                 reviewStartMixedIndex.putIfAbsent(previousLessonId, globalMixedIndex)
             }
 
-            reviewQueues[lesson.id] = ArrayDeque(lesson.cards)
+            // Use main pool for review queue, reserve pool for additional mixing
+            reviewQueues[lesson.id] = ArrayDeque(lesson.mainPoolCards)
+            reserveQueues[lesson.id] = ArrayDeque(lesson.reservePoolCards)
 
-            val warmupCards = lesson.cards.take(warmupSize)
-            val currentCards = lesson.cards
+            // Use only main pool cards (first 150) for sub-lessons
+            val mainCards = lesson.mainPoolCards
+            val warmupCards = mainCards.take(warmupSize)
+            val currentCards = mainCards
             val allowMixed = lessonIndex > 0
             val reviewSlots = subLessonSize / 2
             val currentSlotsInMixed = subLessonSize - reviewSlots
@@ -76,6 +81,7 @@ class MixedReviewScheduler(
                         fillReviewSlots(
                             dueLessons,
                             reviewQueues,
+                            reserveQueues,
                             reviewSlotsNeeded,
                             mixedCurrentQueue
                         )
@@ -120,36 +126,69 @@ class MixedReviewScheduler(
     private fun fillReviewSlots(
         dueLessons: List<String>,
         reviewQueues: Map<String, ArrayDeque<SentenceCard>>,
+        reserveQueues: Map<String, ArrayDeque<SentenceCard>>,
         slots: Int,
         fallbackQueue: ArrayDeque<SentenceCard>
     ): List<SentenceCard> {
         if (slots <= 0) return emptyList()
-        val availableLessons = dueLessons.filter { reviewQueues[it]?.isNotEmpty() == true }
-        if (availableLessons.isEmpty()) {
-            return takeUpTo(fallbackQueue, slots)
-        }
+
+        // Priority 1: Try to get cards from reserve pools first
         val result = mutableListOf<SentenceCard>()
-        val lessonQueues = availableLessons
-            .mapNotNull { lessonId ->
-                val queue = reviewQueues[lessonId] ?: return@mapNotNull null
-                lessonId to queue
-            }
-            .toMutableList()
-        var index = 0
-        while (result.size < slots && lessonQueues.isNotEmpty()) {
-            val (_, queue) = lessonQueues[index]
-            if (queue.isNotEmpty()) {
-                result.add(queue.removeFirst())
-            }
-            if (queue.isEmpty()) {
-                lessonQueues.removeAt(index)
-            } else {
-                index++
-            }
-            if (index >= lessonQueues.size) {
-                index = 0
+        val availableReserveLessons = dueLessons.filter { reserveQueues[it]?.isNotEmpty() == true }
+
+        if (availableReserveLessons.isNotEmpty()) {
+            val reserveLessonQueues = availableReserveLessons
+                .mapNotNull { lessonId ->
+                    val queue = reserveQueues[lessonId] ?: return@mapNotNull null
+                    lessonId to queue
+                }
+                .toMutableList()
+            var index = 0
+            while (result.size < slots && reserveLessonQueues.isNotEmpty()) {
+                val (_, queue) = reserveLessonQueues[index]
+                if (queue.isNotEmpty()) {
+                    result.add(queue.removeFirst())
+                }
+                if (queue.isEmpty()) {
+                    reserveLessonQueues.removeAt(index)
+                } else {
+                    index++
+                }
+                if (index >= reserveLessonQueues.size) {
+                    index = 0
+                }
             }
         }
+
+        // Priority 2: If reserve not enough, use main pool cards
+        if (result.size < slots) {
+            val availableLessons = dueLessons.filter { reviewQueues[it]?.isNotEmpty() == true }
+            if (availableLessons.isNotEmpty()) {
+                val lessonQueues = availableLessons
+                    .mapNotNull { lessonId ->
+                        val queue = reviewQueues[lessonId] ?: return@mapNotNull null
+                        lessonId to queue
+                    }
+                    .toMutableList()
+                var index = 0
+                while (result.size < slots && lessonQueues.isNotEmpty()) {
+                    val (_, queue) = lessonQueues[index]
+                    if (queue.isNotEmpty()) {
+                        result.add(queue.removeFirst())
+                    }
+                    if (queue.isEmpty()) {
+                        lessonQueues.removeAt(index)
+                    } else {
+                        index++
+                    }
+                    if (index >= lessonQueues.size) {
+                        index = 0
+                    }
+                }
+            }
+        }
+
+        // Priority 3: Use fallback queue if still not enough
         if (result.size < slots) {
             result.addAll(takeUpTo(fallbackQueue, slots - result.size))
         }
