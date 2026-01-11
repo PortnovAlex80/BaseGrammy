@@ -1054,8 +1054,8 @@ private fun VocabSprintScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            // Word Bank режим
-            if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.isNotEmpty()) {
+            // Word Bank режим - показываем только если есть минимум 2 варианта
+            if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.size >= 2) {
                 Text(
                     text = "Choose the correct translation:",
                     style = MaterialTheme.typography.labelMedium,
@@ -1078,6 +1078,15 @@ private fun VocabSprintScreen(
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+            } else if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.size < 2) {
+                // Если вариантов мало, показываем текстовое поле
+                OutlinedTextField(
+                    value = state.vocabInputText,
+                    onValueChange = onInputChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(text = "Answer (not enough words for word bank)") }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
             state.vocabAnswerText?.let { answer ->

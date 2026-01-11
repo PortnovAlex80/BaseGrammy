@@ -1834,15 +1834,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             .firstOrNull { it.isNotBlank() }
             ?: entry.targetText
         val normalizedCorrect = Normalizer.normalize(correctOption)
-        val distractors = pool
-            .filter { it.id != entry.id }
+
+        // Собираем все возможные варианты из пула
+        val allOptions = pool
             .flatMap { it.targetText.split("+") }
             .map { it.trim() }
-            .filter { it.isNotBlank() && Normalizer.normalize(it) != normalizedCorrect }
+            .filter { it.isNotBlank() }
             .distinct()
+
+        // Убираем правильный ответ из списка вариантов
+        val distractors = allOptions
+            .filter { Normalizer.normalize(it) != normalizedCorrect }
             .shuffled()
-        val result = (listOf(correctOption) + distractors).distinct().take(5).shuffled()
-        Log.d(logTag, "buildVocabWordBank: entry=${entry.nativeText}, pool=${pool.size}, result=${result.size}, words=$result")
+
+        // Берём до 4 дистракторов + правильный ответ = до 5 вариантов
+        val selectedDistractors = distractors.take(4)
+        val result = (listOf(correctOption) + selectedDistractors).shuffled()
+
+        Log.d(logTag, "buildVocabWordBank: entry=${entry.nativeText}, correct=$correctOption, pool=${pool.size}, allOptions=${allOptions.size}, distractors=${distractors.size}, result=${result.size}, words=$result")
         return result
     }
 

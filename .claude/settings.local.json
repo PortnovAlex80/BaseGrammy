@@ -8,7 +8,12 @@
       "Bash(./gradlew assembleDebug:*)",
       "Bash(powershell.exe -Command \"./gradlew compileDebugKotlin --no-daemon\")",
       "Bash(\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command \".\\\\gradlew assembleDebug\")",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(./gradlew compileDebugKotlin:*)",
+      "Bash(Select-Object -First 100)",
+      "Bash(cmd.exe:*)",
+      "Bash(./gradlew.bat compileDebugKotlin:*)",
+      "Bash(git push)"
     ]
   }
 }
