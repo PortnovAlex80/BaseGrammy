@@ -1310,9 +1310,14 @@ private fun buildLessonTiles(
     val total = 12
     val tiles = mutableListOf<LessonTileUi>()
 
-    // Find the current working lesson index (selected lesson or first)
-    val currentWorkingIndex = lessons.indexOfFirst { it.id == selectedLessonId }
-        .takeIf { it >= 0 } ?: 0
+    // Find the highest lesson with any progress (masteryPercent > 0)
+    var lastLessonWithProgress = -1
+    for (i in lessons.indices) {
+        val flower = lessonFlowers[lessons[i].id]
+        if (flower != null && flower.masteryPercent > 0f) {
+            lastLessonWithProgress = i
+        }
+    }
 
     for (i in 0 until total) {
         val lesson = lessons.getOrNull(i)
@@ -1328,16 +1333,12 @@ private fun buildLessonTiles(
                     currentFlower != null && currentFlower.masteryPercent > 0f -> {
                         LessonTileState.SEED
                     }
-                    // This is the current working lesson (selected by user) but no mastery yet - show SPROUT
-                    i == currentWorkingIndex && lesson.id == selectedLessonId -> {
-                        LessonTileState.SPROUT
-                    }
-                    // This is the lesson right after the current working lesson - UNLOCKED (open lock)
-                    i == currentWorkingIndex + 1 -> {
+                    // This is the lesson right after the last one with progress - UNLOCKED (open lock)
+                    i == lastLessonWithProgress + 1 -> {
                         LessonTileState.UNLOCKED
                     }
-                    // This lesson is before the current working index but has no progress - check previous lesson
-                    i < currentWorkingIndex -> {
+                    // This lesson is before the last with progress - check if previous has progress
+                    i < lastLessonWithProgress + 1 -> {
                         val prevLesson = lessons.getOrNull(i - 1)
                         val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
                         if (prevFlower != null && prevFlower.masteryPercent > 0f) {
@@ -1678,8 +1679,13 @@ private fun HeaderStats(state: TrainingUiState) {
     ) {
         Column {
             Text(text = if (state.bossActive) "Review" else "Progress")
+            val progressText = when {
+                !state.bossActive && state.currentIndex < state.warmupCount -> "Warm-up"
+                state.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
+                else -> "${progressPercent}%"
+            }
             Text(
-                text = if (!state.bossActive && state.currentIndex < state.warmupCount) "Warm-up" else "${progressPercent}%",
+                text = progressText,
                 fontWeight = FontWeight.SemiBold
             )
         }
