@@ -312,7 +312,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val schedule = lessonSchedules[lessonId]
         val subLessons = schedule?.subLessons.orEmpty()
         val mastery = masteryStore.get(lessonId, _uiState.value.selectedLanguageId)
-        val completedCount = calculateCompletedSubLessons(subLessons, mastery)
+        val completedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId)
         val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _uiState.update {
@@ -978,7 +978,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val mastery = state.selectedLessonId?.let {
                 masteryStore.get(it, state.selectedLanguageId)
             }
-            val completedCount = calculateCompletedSubLessons(subLessons, mastery)
+            val completedCount = calculateCompletedSubLessons(subLessons, mastery, state.selectedLessonId)
 
             val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
             val subLesson = subLessons.getOrNull(activeIndex)
@@ -1651,25 +1651,32 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     private fun calculateCompletedSubLessons(
         subLessons: List<ScheduledSubLesson>,
-        mastery: LessonMasteryState?
+        mastery: LessonMasteryState?,
+        lessonId: String?
     ): Int {
-        if (mastery == null || mastery.shownCardIds.isEmpty()) return 0
+        if (lessonId == null || mastery == null || mastery.shownCardIds.isEmpty()) return 0
+
+        val lessonCardIds = _uiState.value.lessons
+            .firstOrNull { it.id == lessonId }
+            ?.cards
+            ?.map { it.id }
+            ?.toSet()
+            ?: return 0
 
         var completed = 0
         for (subLesson in subLessons) {
             val allCardsShown = subLesson.cards.all { card ->
-                mastery.shownCardIds.contains(card.id)
+                !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
             }
             if (allCardsShown) {
                 completed++
             } else {
-                // Если нашли незавершённый под-урок, дальше не смотрим
+                // Stop at first incomplete sub-lesson.
                 break
             }
         }
         return completed
     }
-
     /**
      * Генерирует word bank из правильного ответа
      */

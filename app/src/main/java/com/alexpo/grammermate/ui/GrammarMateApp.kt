@@ -636,7 +636,7 @@ private fun LessonRoadmapScreen(
     }
     val total = trainingTypes.size.coerceAtLeast(1)
     val completed = state.completedSubLessonCount.coerceIn(0, total)
-    val currentIndex = state.activeSubLessonIndex.coerceIn(0, total - 1)
+    val currentIndex = completed.coerceIn(0, total - 1)
     val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
     val hasMegaBoss = lessonIndex > 0
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
