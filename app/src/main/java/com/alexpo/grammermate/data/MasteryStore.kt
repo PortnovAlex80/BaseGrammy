@@ -145,6 +145,21 @@ class MasteryStore(private val context: Context) {
     }
 
     /**
+     * Mark cards as shown for progress tracking without affecting mastery metrics.
+     */
+    fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>) {
+        loadAll()
+        if (cardIds.isEmpty()) return
+
+        val existing = get(lessonId, languageId) ?: LessonMasteryState(
+            lessonId = lessonId,
+            languageId = languageId
+        )
+        val updated = existing.copy(shownCardIds = existing.shownCardIds + cardIds)
+        save(updated)
+    }
+
+    /**
      * Отметить урок как завершённый (все карточки урока пройдены хотя бы раз).
      */
     fun markLessonCompleted(lessonId: String, languageId: String) {

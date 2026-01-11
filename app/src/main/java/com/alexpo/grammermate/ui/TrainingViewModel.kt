@@ -1673,13 +1673,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /**
      * Записать показ карточки для отслеживания прогресса освоения.
      */
-    private fun recordCardShowForMastery(card: SentenceCard, force: Boolean = false) {
+    private fun recordCardShowForMastery(card: SentenceCard) {
         val lessonId = resolveCardLessonId(card)
         val languageId = _uiState.value.selectedLanguageId
 
         // Word Bank mode: only count 10% of shows (reduced retrieval practice)
         val isWordBankMode = _uiState.value.inputMode == InputMode.WORD_BANK
-        if (!force && isWordBankMode && Math.random() > 0.1) {
+        if (isWordBankMode && Math.random() > 0.1) {
             Log.d(logTag, "Skipping card show record for Word Bank mode (90% skip rate)")
             return
         }
@@ -1692,9 +1692,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun markSubLessonCardsShown(cards: List<SentenceCard>) {
         if (_uiState.value.inputMode != InputMode.WORD_BANK || cards.isEmpty()) return
-        cards.forEach { card ->
-            recordCardShowForMastery(card, force = true)
-        }
+        val lessonId = _uiState.value.selectedLessonId ?: return
+        val lessonCardIds = _uiState.value.lessons
+            .firstOrNull { it.id == lessonId }
+            ?.cards
+            ?.map { it.id }
+            ?.toSet()
+            ?: return
+        val cardIds = cards.map { it.id }.filter { lessonCardIds.contains(it) }
+        masteryStore.markCardsShownForProgress(lessonId, _uiState.value.selectedLanguageId, cardIds)
     }
 
     /**
