@@ -1678,7 +1678,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        val correctAnswer = card.variants.firstOrNull() ?: ""
+        val correctAnswer = card.acceptedAnswers.firstOrNull() ?: ""
         val wordBank = generateWordBank(correctAnswer)
 
         _uiState.update {
