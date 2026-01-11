@@ -401,8 +401,8 @@ private fun HomeScreen(
     onSelectLesson: (String) -> Unit,
     onOpenElite: () -> Unit
 ) {
-    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers) {
-        buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers)
+    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId) {
+        buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId)
     }
     var showMethod by remember { mutableStateOf(false) }
     var showRefreshHint by remember { mutableStateOf(false) }
@@ -419,11 +419,25 @@ private fun HomeScreen(
         state.sessionState == SessionState.ACTIVE -> "Continue Learning"
         else -> "Start learning and build new neural connections"
     }
-    val nextLessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+    // Calculate the actual current lesson (first incomplete or first with most recent activity)
+    val currentLessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
         .takeIf { it >= 0 }
         ?: 0
+
+    // Get actual sub-lesson progress for the current lesson
+    val currentLessonProgress = if (state.lessons.isNotEmpty() && state.selectedLessonId != null) {
+        val currentLesson = state.lessons.getOrNull(currentLessonIndex)
+        if (currentLesson != null && currentLesson.id == state.selectedLessonId) {
+            "${state.completedSubLessonCount}/${state.subLessonCount}"
+        } else {
+            "1/10"  // Default if lesson not loaded yet
+        }
+    } else {
+        "1/10"
+    }
+
     val nextHint = if (state.lessons.isNotEmpty()) {
-        "Lesson ${nextLessonIndex + 1}. Exercise 1/10"
+        "Lesson ${currentLessonIndex + 1}. Exercise $currentLessonProgress"
     } else {
         null
     }
@@ -1290,10 +1304,16 @@ private fun LanguageSelector(
 private fun buildLessonTiles(
     lessons: List<Lesson>,
     testMode: Boolean,
-    lessonFlowers: Map<String, FlowerVisual>
+    lessonFlowers: Map<String, FlowerVisual>,
+    selectedLessonId: String?
 ): List<LessonTileUi> {
     val total = 12
     val tiles = mutableListOf<LessonTileUi>()
+
+    // Find the current working lesson index (selected lesson or first)
+    val currentWorkingIndex = lessons.indexOfFirst { it.id == selectedLessonId }
+        .takeIf { it >= 0 } ?: 0
+
     for (i in 0 until total) {
         val lesson = lessons.getOrNull(i)
         val state = when {
@@ -1301,23 +1321,30 @@ private fun buildLessonTiles(
             testMode -> LessonTileState.SEED
             i == 0 -> LessonTileState.SPROUT
             else -> {
-                // Check current and previous lesson progress
                 val currentFlower = lessonFlowers[lesson.id]
-                val prevLesson = lessons.getOrNull(i - 1)
-                val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
 
                 when {
-                    // Current lesson has progress - show appropriate flower state
+                    // Current lesson has progress - show flower
                     currentFlower != null && currentFlower.masteryPercent > 0f -> {
-                        LessonTileState.SEED  // Has progress
+                        LessonTileState.SEED
                     }
-                    // Previous lesson has progress - this one is unlocked but not started
-                    prevFlower != null && prevFlower.masteryPercent > 0f -> {
-                        LessonTileState.UNLOCKED  // Available (open lock)
+                    // This is the lesson right after the current working lesson - UNLOCKED (open lock)
+                    i == currentWorkingIndex + 1 -> {
+                        LessonTileState.UNLOCKED
                     }
-                    // Previous lesson not started - locked
+                    // This lesson is before or at the current working index but has no progress - check previous lesson
+                    i <= currentWorkingIndex -> {
+                        val prevLesson = lessons.getOrNull(i - 1)
+                        val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
+                        if (prevFlower != null && prevFlower.masteryPercent > 0f) {
+                            LessonTileState.UNLOCKED
+                        } else {
+                            LessonTileState.LOCKED
+                        }
+                    }
+                    // All other lessons are locked
                     else -> {
-                        LessonTileState.LOCKED  // Locked (closed lock)
+                        LessonTileState.LOCKED
                     }
                 }
             }
