@@ -1,0 +1,230 @@
+Я работаю каждый день;I work every day
+Они жили в маленьком доме;They lived in a small house
+Она будет главой совета;She will head the council
+У меня есть три книги;I have three books
+Это кажется хорошей идеей;It seems a good idea
+Он придет завтра;He will come tomorrow
+Мы видим результат;We see the result
+Ребенок играл в парке;The child played in the park
+Правительство предоставит услуги;The government will provide services
+Я знаю этого человека;I know this man
+Я не работаю по выходным;I don't work+I do not work on weekends
+Он не жил в этой стране;He didn't live+He did not live in this country
+У нее нет машины;She doesn't have+She does not have a car
+Они не увидят разницу;They won't see+They will not see the difference
+Мы не знаем ответа;We don't know+We do not know the answer
+Ребенок не играл вчера;The child didn't play+The child did not play yesterday
+Компания не предоставит отчет;The company won't report+The company will not report
+Я не чувствую проблему;I don't feel+I do not feel the problem
+Они не берут деньги;They don't take+They do not take money
+Он не придет в мае;He won't come+He will not come in May
+Ты работаешь здесь?;Do you work here?
+Они жили в том доме?;Did they live in that house?
+У нее есть время?;Does she have time?
+Он придет завтра?;Will he come tomorrow?
+Вы видите разницу?;Do you see the difference?
+Ребенок играл в саду?;Did the child play in the garden?
+Правительство предоставит помощь?;Will the government provide help?
+Ты знаешь этого человека?;Do you know this man?
+Я могу сделать эту работу;I can do this job
+Она могла видеть дом отсюда;She could see the house from here
+Мы сможем помочь завтра;We will can help tomorrow
+Он может найти информацию;He can find the information
+Ребенок может играть здесь;The child can play here
+Я не могу сделать эту работу;I can't do+I cannot do this job
+Она не могла видеть дом;She couldn't see+She could not see the house
+Мы не сможем помочь;We won't can help+We will not can help
+Он не может найти ответ;He can't find+He cannot find the answer
+Ты можешь сделать это?;Can you do it?
+Она могла видеть его?;Could she see him?
+Мы сможем прийти?;Will we can come?
+Он может найти дорогу?;Can he find the way?
+Я беру книгу каждый день;I take a book every day
+Он брал машину в понедельник;He took the car on Monday
+Мы возьмем деньги завтра;We will take the money tomorrow
+Она любит учиться;She likes studying
+Он ненавидит работать по ночам;He hates working at night
+У них есть два дома;They have two houses
+Это будет большой проблемой;It will be a big problem
+Вода всегда холодная;The water is always cold
+Она сидела в комнате;She sat in the room
+Он не берет книги;He doesn't take+He does not take books
+Она не брала машину;She didn't take+She did not take the car
+Мы не возьмем их деньги;We won't take+We will not take their money
+Она не любит учиться;She doesn't like+She does not like studying
+Он не ненавидит работу;He doesn't hate+He does not hate work
+У нас нет времени;We don't have+We do not have time
+Это не будет проблемой;It won't be+It will not be a problem
+Вода не холодная;The water isn't+The water is not cold
+Она не сидела там;She didn't sit+She did not sit there
+Берешь ли ты книгу?;Do you take a book?
+Брала ли она машину?;Did she take the car?
+Возьмем ли мы деньги?;Will we take the money?
+Любит ли она учиться?;Does she like studying?
+Ненавидит ли он работать?;Does he hate working?
+Есть ли у них дом?;Do they have a house?
+Будет ли это проблемой?;Will it be a problem?
+Холодная ли вода?;Is the water cold?
+Сидела ли она здесь?;Did she sit here?
+Я нахожу ответы легко;I find answers easily
+Он нашел работу в марте;He found a job in March
+Они найдут решение;They will find a solution
+Мы смотрим на это каждый день;We look at it every day
+Она смотрела на него вчера;She looked at him yesterday
+Вы посмотрите на отчет завтра;You will look at the report tomorrow
+Я начинаю работу рано;I start work early
+Он начал бизнес в прошлом году;He started a business last year
+Она начнет курс в мае;She will start a course in May
+Я не нахожу ответы;I don't find+I do not find answers
+Он не нашел работу;He didn't find+He did not find a job
+Они не найдут решение;They won't find+They will not find a solution
+Мы не смотрим на это;We don't look+We do not look at it
+Она не смотрела на отчет;She didn't look+She did not look at the report
+Вы не посмотрите на него;You won't look+You will not look at him
+Я не начинаю поздно;I don't start+I do not start late
+Он не начал вчера;He didn't start+He did not start yesterday
+Она не начнет в мае;She won't start+She will not start in May
+Находишь ли ты ответы?;Do you find answers?
+Нашел ли он работу?;Did he find a job?
+Найдут ли они решение?;Will they find a solution?
+Смотрите ли вы на это?;Do you look at it?
+Смотрела ли она на отчет?;Did she look at the report?
+Посмотрите ли вы завтра?;Will you look tomorrow?
+Начинаешь ли ты рано?;Do you start early?
+Начал ли он вчера?;Did he start yesterday?
+Начнет ли она в мае?;Will she start in May?
+Я чувствую разницу сейчас;I feel the difference now
+Он чувствовал проблему тогда;He felt the problem then
+Они почувствуют эффект позже;They will feel the effect later
+Она говорит правду;She tells the truth
+Он сказал это в прошлый раз;He told it last time
+Мы скажем слово завтра;We will tell the word tomorrow
+Система работает хорошо;The system works well
+Услуга работала вчера;The service worked yesterday
+Это будет работать завтра;It will work tomorrow
+Я не чувствую разницу;I don't feel+I do not feel the difference
+Он не чувствовал проблему;He didn't feel+He did not feel the problem
+Они не почувствуют эффект;They won't feel+They will not feel the effect
+Она не говорит правду;She doesn't tell+She does not tell the truth
+Он не сказал это;He didn't tell+He did not tell it
+Мы не скажем слово;We won't tell+We will not tell the word
+Система не работает;The system doesn't work+The system does not work
+Услуга не работала;The service didn't work+The service did not work
+Это не будет работать;It won't work+It will not work
+Чувствуешь ли ты разницу?;Do you feel the difference?
+Чувствовал ли он проблему?;Did he feel the problem?
+Почувствуют ли они эффект?;Will they feel the effect?
+Говорит ли она правду?;Does she tell the truth?
+Сказал ли он это?;Did he tell it?
+Скажем ли мы слово?;Will we tell the word?
+Работает ли система?;Does the system work?
+Работала ли услуга?;Did the service work?
+Будет ли это работать?;Will it work?
+Я думаю об этом часто;I think about it often
+Он думал о своем доме;He thought about his house
+Мы подумаем о вашем предложении;We will think about your offer
+Они приходят сюда каждый год;They come here every year
+Она пришла вчера вечером;She came yesterday evening
+Ребенок придет завтра;The child will come tomorrow
+Это становится реальностью;It becomes reality
+Он стал главой отдела;He became head of the department
+Это станет проблемой;It will become a problem
+Я не думаю об этом;I don't think+I do not think about it
+Он не думал о работе;He didn't think+He did not think about work
+Мы не подумаем об этом;We won't think+We will not think about it
+Они не приходят сюда;They don't come+They do not come here
+Она не пришла вчера;She didn't come+She did not come yesterday
+Ребенок не придет;The child won't come+The child will not come
+Это не становится реальностью;It doesn't become+It does not become reality
+Он не стал лидером;He didn't become+He did not become a leader
+Это не станет проблемой;It won't become+It will not become a problem
+Думаешь ли ты об этом?;Do you think about it?
+Думал ли он о доме?;Did he think about the house?
+Подумаем ли мы об этом?;Will we think about it?
+Приходят ли они сюда?;Do they come here?
+Пришла ли она вчера?;Did she come yesterday?
+Придет ли ребенок?;Will the child come?
+Становится ли это реальным?;Does it become real?
+Стал ли он главой?;Did he become head?
+Станет ли это проблемой?;Will it become a problem?
+Я даю ему книгу каждый раз;I give him a book every time
+Он дал деньги в прошлый раз;He gave money last time
+Мы дадим ответ завтра;We will give an answer tomorrow
+Она показывает результат;She shows the result
+Он показал новый дом;He showed the new house
+Они покажут разницу;They will show the difference
+Я хочу новую машину;I want a new car
+Он хотел эту работу;He wanted this job
+Она захочет помощь;She will want help
+Я не даю ему деньги;I don't give+I do not give him money
+Он не дал отчет;He didn't give+He did not give the report
+Мы не дадим обещание;We won't give+We will not give a promise
+Она не показывает ошибки;She doesn't show+She does not show mistakes
+Он не показал дорогу;He didn't show+He did not show the way
+Они не покажут результаты;They won't show+They will not show the results
+Я не хочу проблем;I don't want+I do not want problems
+Он не хотел эту книгу;He didn't want+He did not want this book
+Она не захочет помощь;She won't want+She will not want help
+Даешь ли ты ему книги?;Do you give him books?
+Дал ли он деньги?;Did he give money?
+Дадим ли мы ответ?;Will we give an answer?
+Показывает ли она результат?;Does she show the result?
+Показал ли он дом?;Did he show the house?
+Покажут ли они разницу?;Will they show the difference?
+Хочешь ли ты новую машину?;Do you want a new car?
+Хотел ли он эту работу?;Did he want this job?
+Захочет ли она помощь?;Will she want help?
+Я слушаю музыку каждый день;I listen to music every day
+Он слушал отчет вчера;He listened to the report yesterday
+Они будут слушать совет;They will listen to the council
+Мы пишем письма часто;We write letters often
+Она написала книгу в прошлом году;She wrote a book last year
+Компания напишет отчет;The company will write a report
+Я держу это в секрете;I keep it secret
+Он держал деньги в банке;He kept the money in the bank
+Мы будем держать позицию;We will keep the position
+Я не слушаю радио;I don't listen+I do not listen to the radio
+Он не слушал совет;He didn't listen+He did not listen to the council
+Они не будут слушать;They won't listen+They will not listen
+Мы не пишем часто;We don't write+We do not write often
+Она не написала письмо;She didn't write+She did not write a letter
+Компания не напишет;The company won't write+The company will not write
+Я не держу это;I don't keep+I do not keep it
+Он не держал позицию;He didn't keep+He did not keep the position
+Мы не будем держать обещание;We won't keep+We will not keep the promise
+Слушаешь ли ты музыку?;Do you listen to music?
+Слушал ли он отчет?;Did he listen to the report?
+Будут ли они слушать?;Will they listen?
+Пишете ли вы письма?;Do you write letters?
+Написала ли она книгу?;Did she write a book?
+Напишет ли компания отчет?;Will the company write a report?
+Держишь ли ты секрет?;Do you keep a secret?
+Держал ли он деньги?;Did he keep the money?
+Будете ли вы держать позицию?;Will you keep the position?
+Я ставлю книгу на стол;I put the book on the table
+Он поставил машину в гараж;He put the car in the garage
+Она поставит цветы в вазу;She will put flowers in the vase
+Мы бежим по утрам;We run in the mornings
+Он бежал в парке вчера;He ran in the park yesterday
+Команда будет бежать завтра;The team will run tomorrow
+Я стою у окна;I stand by the window
+Он стоял там час;He stood there for an hour
+Они будут стоять на площади;They will stand on the square
+Я не ставлю его туда;I don't put+I do not put it there
+Он не поставил машину;He didn't put+He did not put the car
+Она не поставит вазу;She won't put+She will not put the vase
+Мы не бежим по вечерам;We don't run+We do not run in the evenings
+Он не бежал быстро;He didn't run+He did not run fast
+Команда не будет бежать;The team won't run+The team will not run
+Я не стою здесь;I don't stand+I do not stand here
+Он не стоял долго;He didn't stand+He did not stand long
+Они не будут стоять там;They won't stand+They will not stand there
+Ставишь ли ты книги на полку?;Do you put books on the shelf?
+Поставил ли он машину?;Did he put the car?
+Поставит ли она цветы?;Will she put flowers?
+Бежите ли вы по утрам?;Do you run in the mornings?
+Бежал ли он вчера?;Did he run yesterday?
+Будет ли команда бежать?;Will the team run?
+Стоишь ли ты у двери?;Do you stand by the door?
+Стоял ли он там?;Did he stand there?
+Будут ли они стоять здесь?;Will they stand here?

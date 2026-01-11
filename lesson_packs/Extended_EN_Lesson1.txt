@@ -1,0 +1,271 @@
+Я получил сообщение;I got a message.
+Ты печёшь торты?;Do you make cakes?
+Она получила подарок?;Did she get a present?
+Мы не ходим на работу;We don't go to work+We do not go to work.
+Ты не знаешь этого;You don't know this+You do not know this.
+Ты ездишь на такси?;Do you take taxis?
+У неё не было дорогой машины;She didn't have an expensive car+She did not have an expensive car.
+Она не торгует машинами;She doesn't sell cars+She does not sell cars.
+Ты всегда встаёшь в 7?;Do you always get up at 7?
+Она торговала машинами;She sold cars+She traded in cars.
+Он работает много?;Does he work a lot?
+У него нет машины;He doesn't have a car+He does not have a car.
+Он понял?;Does he get it?
+Я испеку торт;I will make a cake.
+У него есть дорогая машина;He has an expensive car.
+Ты поехал на такси?;Did you take a taxi?
+У него есть машина?;Does he have a car?
+Я хожу в кино;I go to the movies.
+У меня очень хорошая работа;I have a very good job.
+Я не получил сообщение от босса;I didn't get a message from my boss+I did not get a message from my boss.
+Он обычно уходит на работу в 9;He usually leaves for work at 9.
+Я понял;I get it.
+Он печёт торты;He makes cakes.
+У него есть дом?;Does he have a house?
+Мы получим подарок;We will get a present.
+У него нет машины, но есть дом;He doesn't have a car, but he has a house+He does not have a car, but he has a house.
+Я провёл 3 часа дома;I spent 3 hours at home.
+Он ходит на работу?;Does he go to work?
+Они работают из дома?;Do they work from home?
+Вы ходите на работу?;Do you go to work?
+Он помогает мне;He helps me.
+У тебя есть дорогая машина?;Do you have an expensive car?
+Ты уходишь с работы в 5?;Do you leave work at 5?
+Я пеку торты;I make cakes.
+Она ходила в кино вчера;She went to the movies yesterday.
+Он не работает из дома;He doesn't work from home+He does not work from home.
+Она получила подарок;She got a present.
+Мы не печём торты;We don't make cakes+We do not make cakes.
+Мы купим машину?;Will we buy a car?
+Она торгует машинами?;Does she sell cars?
+Он не работает в этой компании;He doesn't work for that company+He does not work for that company.
+Мне не понравилось их предложение;I didn't like their offer+I did not like their offer.
+Я обычно работаю на выходных;I usually work at weekends+I usually work on weekends.
+Мы обычно не работаем на выходных;We don't usually work at weekends+We do not usually work at weekends.
+Я не получил новую работу на прошлой неделе;I didn't get a new job last week+I did not get a new job last week.
+Они помогают мне;They help me.
+Он видит тебя на работе;He sees you at work.
+Я не звонил его брату на прошлой неделе;I didn't call his brother last week+I did not call his brother last week.
+Они торгуют машинами;They sell cars.
+Я не хочу беспокоить тебя;I don't want to bother you+I do not want to bother you.
+Она не знает её;She doesn't know her+She does not know her.
+У неё нет друзей;She doesn't have any friends+She does not have any friends.
+Мы продали старую машину?;Did we sell the old car?
+Я доехал до работы вовремя;I got to work on time.
+Она меня не видела;She didn't see me+She did not see me.
+Ей не нравится учиться;She doesn't like to study+She does not like to study.
+Я испёк торт вчера;I made a cake yesterday+I baked a cake yesterday.
+Ему нравится их предложение;He likes their offer.
+Мы купим новую машину;We will buy a new car.
+Мне это поможет?;Will this help me?
+Она потратила те деньги;She spent that money.
+Он обычно работает на выходных;He usually works at weekends+He usually works on weekends.
+Я не доехал до работы вовремя;I didn't get to work on time+I did not get to work on time.
+У неё не было друзей;She had no friends.
+Мы не купили новую машину;We didn't buy a new car+We did not buy a new car.
+Они обычно уходят на работу в 9;They usually leave for work at 9.
+Мне это не помогает;This doesn't help me+This does not help me.
+Он ходит в кино;He goes to the movies.
+Я не знаю этого;I don't know this+I do not know this.
+У неё была дорогая машина?;Did she have an expensive car?
+Мы купили новую машину;We bought a new car.
+Он работает в этой компании?;Does he work for that company?
+У неё не было друзей;She didn't have any friends.+She had no friends.
+У меня есть дорогая машина;I have an expensive car.
+Ты сводишь меня в кино на следующей неделе?;Will you take me to the movies next week?
+Я не испёк торт вчера;I didn't make a cake yesterday+I did not make a cake yesterday.
+Я не поехал на такси;I didn't take a taxi+I did not take a taxi.
+У меня есть друзья;I have friends.
+Мы продали старую машину;We sold the old car.
+Они работают из дома;They work from home.
+Она работает из дома?;Does she work from home?
+Он отправил тот емейл;He sent that email.
+Это не будет работать;It won't work+It will not work.
+Мы не торгуем машинами;We don't sell cars+We do not sell cars.
+Он обычно работает на выходных?;Does he usually work at weekends?+Does he usually work on weekends?
+Ты получил новую работу на прошлой неделе?;Did you get a new job last week?
+У тебя нет машины, но есть дом?;Don't you have a car, but do you have a house?
+Она меня видела;She saw me.
+Он ходит на работу;He goes to work.
+Я работал много на прошлой неделе;I worked a lot last week.
+У вас есть машина?;Do you have a car?
+Я не получил сообщение;I didn't get a message+I did not get a message.
+Ты ходишь в кино?;Do you go to the movies?
+Я не ухожу с работы в 5;I don't leave work at 5+I do not leave work at 5.
+Я не хотел беспокоить тебя;I didn't want to bother you+I did not want to bother you.
+Ты доехал до работы вовремя?;Did you get to work on time?
+Он не говорил 30 минут;He didn't talk for 30 minutes+He did not talk for 30 minutes.
+Он не печёт торты;He doesn't make cakes+He does not make cakes.
+Мы их пригласили;We invited them.
+Он уходит с работы рано?;Does he leave work early?
+Она обычно не работает на выходных;She doesn't usually work at weekends+She does not usually work at weekends.
+У него нет дорогой машины;He doesn't have an expensive car+He does not have an expensive car.
+Он водит меня в кино;He takes me to the movies.
+У меня нет дома, но есть машина;I don't have a house, but I have a car+I do not have a house, but I do have a car.
+Я вижу тебя;I see you.
+У неё будет дорогая машина;She will have an expensive car.
+Мне не нравится учиться;I don't like to study+I do not like to study.
+Она пришла домой вчера вечером?;Did she come home last night?
+Я завтракаю дома;I have breakfast at home.
+Тебе нравится учиться?;Do you like to study?
+Ей не нравилось учиться;She didn't like to study+She did not like to study.
+У неё будет дорогая машина?;Will she have an expensive car?
+Я учил английский несколько месяцев;I studied English for a few months.
+Ты знаешь это?;Do you know this?
+Я знаю её;I know her.
+Он всегда добирается до офиса вовремя;He always gets to the office on time.
+Мы не уходим с работы поздно;We don't leave work late+We do not leave work late.
+Крыша его дома выглядит красиво?;Does the roof of his house look nice?
+У тебя есть дом?;Do you have a house?
+Ты знал её?;Did you know her?
+Мне нравится учиться;I like to study.
+Я всегда добираюсь до офиса вовремя;I always get to the office on time.
+Мы не купим машину;We won't buy a car+We will not buy a car.
+Мне понравилось их предложение;I liked their offer.
+Мы не будем работать;We won't work+We will not work.
+У них нет друзей;They don't have any friends+They do not have any friends.
+Мы купили новую машину?;Did we buy a new car?
+Она позавтракала в 10;She had breakfast at 10.
+Она не звонит его сестре на выходных;She doesn't call his sister at weekends+She does not call his sister at weekends.
+Ты обычно работаешь на выходных?;Do you usually work at weekends?+Do you usually work on weekends?
+Он работает много;He works a lot.
+Чем ты занимаешься на работе?;What do you do at work?
+Он говорил 30 минут?;Did he talk for 30 minutes?
+Я тебя не вижу;I don't see you+I do not see you.
+Мы не завтракаем по утрам;We don't have breakfast in the morning+We do not have breakfast in the morning.
+Я ушёл с работы;I left work.
+Ты провёл 3 часа дома?;Did you spend 3 hours at home?
+Он знает её;He knows her.
+Мы обычно не уходим на работу в 9;We don't usually leave for work at 9+We do not usually leave for work at 9.
+Я обычно ухожу на работу в 9;I usually leave for work at 9.
+Она знает это?;Does she know this?
+Она не пришла домой вчера вечером;She didn't come home last night+She did not come home last night.
+Мы купили чёрную машину;We bought a black car.
+Ты потратил те деньги?;Did you spend that money?
+Ей нравилось учиться?;Did she like to study?
+Я езжу на такси по городу;I take taxis around the city.
+Она завтракала сегодня?;Did she have breakfast today?
+Я получил новую работу на прошлой неделе;I got a new job last week.
+Ты завтракаешь утром?;Do you have breakfast in the morning?
+Вы работаете много?;Do you work a lot?
+Она не торговала машинами;She didn't sell cars+She did not sell cars.
+Ты обычно звонишь его брату каждый день?;Do you usually call his brother every day?
+Ты не знаешь её;You don't know her+You do not know her.
+У него очень хорошая работа;He has a very good job.
+Ты построил этот дом?;Did you build this house?
+Он не потратил те деньги;He didn't spend that money+He did not spend that money.
+Она не ходит на работу;She doesn't go to work+She does not go to work.
+Он получает сообщения от босса;He gets messages from his boss.
+Я не поеду на такси;I won't take a taxi+I will not take a taxi.
+У неё были друзья;She had friends.
+Он говорил 30 минут;He talked for 30 minutes.
+Я пригласил её;I invited her.
+Тебе понравилось их предложение?;Did you like their offer?
+Мне это не поможет;This won't help me+This will not help me.
+Он обычно не уходит на работу в 9;He doesn't usually leave for work at 9+He does not usually leave for work at 9.
+Мы знаем это;We know this.
+Я работаю в этой компании;I work for that company.
+Мы будем работать;We will work.
+У тебя будут друзья;You will have friends.
+Ему не нравится их предложение;He doesn't like their offer+He does not like their offer.
+Он не завтракает по утрам;He doesn't have breakfast in the morning+He does not have breakfast in the morning.
+У неё были друзья?;Did she have any friends?
+Я работал много в офисе;I worked a lot in the office.
+Он обычно уходит на работу в 9?;Does he usually leave for work at 9?
+Она торгует машинами;She sells cars.
+Он уходит с работы;He leaves work.
+Крыша его дома выглядит красиво;The roof of his house looks nice.
+Мы поможем ей;We will help her.
+Она ходит в кино?;Does she go to the movies?
+У неё есть друзья?;Does she have any friends?
+Она не работает много;She doesn't work a lot+She does not work a lot.
+Он говорил 30 минут?;Did he talk for 30 minutes?
+Мы не продали старую машину;We didn't sell the old car+We did not sell the old car.
+Я построил этот дом;I built this house.
+Ты меня видишь?;Do you see me?
+Я поеду на такси;I will take a taxi.
+У неё есть друзья;She has friends.
+Они знают это;They know this.
+Он не знает этого;He doesn't know this+He does not know this.
+Я поехал на такси;I took a taxi.
+Мне не нравится их предложение;I don't like their offer+I do not like their offer.
+Он отправлял тот емейл?;Did he send that email?
+Он не отправлял тот емейл;He didn't send that email+He did not send that email.
+Ей нравится учиться?;Does she like to study?
+Она торговала машинами?;Did she sell cars?
+Она пришла домой вчера вечером;She came home last night.
+Они ходили в кино?;Did they go to the movies?
+Мы не работаем много;We don't work a lot+We do not work a lot.
+Она не получила подарок;She didn't get a present+She did not get a present.
+Мы продали зелёную машину;We sold the green car.
+Она не завтракала сегодня;She didn't have breakfast today+She did not have breakfast today.
+Мы не работаем в этой компании;We don't work for that company+We do not work for that company.
+Ты звонил его брату на прошлой неделе?;Did you call his brother last week?
+У меня нет дома;I don't have a house+I do not have a house.
+Она не уходит с работы рано;She doesn't leave work early+She does not leave work early.
+Ты можешь починить эту машину?;Can you fix this car?
+Я всегда встаю в 7;I always get up at 7.
+Он не говорил 30 минут;He didn't talk for 30 minutes+He did not talk for 30 minutes.
+Я не работал много на прошлой неделе;I didn't work a lot last week+I did not work a lot last week.
+Он ездит на такси?;Does he take taxis?
+Ты понял?;Do you get it?
+У меня нет дорогой машины;I don't have an expensive car+I do not have an expensive car.
+Она не ходит в кино;She doesn't go to the movies+She does not go to the movies.
+Ты обычно уходишь на работу в 9?;Do you usually leave for work at 9?
+У тебя есть друзья?;Do you have any friends?
+Ты не сводил меня в кино;You didn't take me to the movies+You did not take me to the movies.
+Ты торгуешь машинами?;Do you sell cars?
+Мне нравится их предложение;I like their offer.
+Я не могу починить эту машину;I can't fix this car+I cannot fix this car.
+Они не работают из дома;They don't work from home+They do not work from home.
+Ты знал её;You knew her.
+Она работает из дома;She works from home.
+Я звонил его брату на прошлой неделе;I called his brother last week.
+Я не ушёл с работы;I didn't leave work+I did not leave work.
+Ты пригласишь её?;Will you invite her?
+Ей это помогает?;Does this help her?
+Она тебя не видит;She doesn't see you+She does not see you.
+Он работает в этой компании;He works for that company.
+Мы работаем много;We work a lot.
+Он обычно звонит его брату каждый день?;Does he usually call his brother every day?
+Я не свожу тебя в кино на следующей неделе;I won't take you to the movies next week+I will not take you to the movies next week.
+Ты учил английский несколько месяцев?;Did you study English for a few months?
+Тебе нравится их предложение?;Do you like their offer?
+Он обычно звонит его брату каждый день;He usually calls his brother every day.
+Ты работал много на прошлой неделе?;Did you work a lot last week?
+Он говорил 30 минут;He talked for 30 minutes.
+Ему нравится их предложение?;Does he like their offer?
+Он не построил этот дом;He didn't build this house+He did not build this house.
+Ты её знаешь?;Do you know her?
+Она печёт торты?;Does she make cakes?
+Ты получил моё сообщение?;Did you get my message?
+Мы не ходим в кино;We don't go to the movies+We do not go to the movies.
+Мы будем работать?;Will we work?
+Я помог ему;I helped him.
+У неё была дорогая машина;She had an expensive car.
+Он меня видит?;Does he see me?
+Я могу починить эту машину;I can fix this car.
+Ты не знал её;You didn't know her+You did not know her.
+Мы их не приглашали;We didn't invite them+We did not invite them.
+Ты получаешь сообщения?;Do you get messages?
+Ты поедешь на такси?;Will you take a taxi?
+У него есть дорогая машина?;Does he have an expensive car?
+Они обычно работают на выходных;They usually work at weekends+They usually work on weekends.
+Ей нравится учиться;She likes to study.
+Я ухожу с работы в 5;I leave work at 5.
+Она меня видела?;Did she see me?
+Я не понимаю этого;I don't get it+I do not get it.
+Он не ходил в кино;He didn't go to the movies+He did not go to the movies.
+Ты ушёл с работы?;Did you leave work?
+Я обычно звоню его брату каждый день;I usually call his brother every day.
+Ты работаешь в этой компании?;Do you work for that company?
+Она завтракает утром?;Does she have breakfast in the morning?
+Мы их приглашали?;Did we invite them?
+Мы ходим на работу;We go to work.
+Ты испёк торт вчера?;Did you make a cake yesterday?
+Я получил сообщение от босса;I got a message from my boss.
+Она получает сообщения?;Does she get messages?
+Я свожу тебя в кино на следующей неделе;I will take you to the movies next week.
+Ты получаешь сообщения;You get messages.
+Он завтракает дома;He has breakfast at home.
+Я не звоню его сестре на выходных;I don't call his sister at weekends+I do not call his sister at weekends.

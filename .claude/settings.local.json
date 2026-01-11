@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gradlew.bat compileDebugKotlin:*)",
+      "Bash(git checkout:*)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(powershell.exe -Command \"./gradlew compileDebugKotlin --no-daemon\")",
+      "Bash(\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command \".\\\\gradlew assembleDebug\")",
+      "Bash(git reset:*)"
     ]
   }
 }
