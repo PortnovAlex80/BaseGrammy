@@ -266,6 +266,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = "",
                 lastResult = null,
                 answerText = null,
+                inputMode = InputMode.VOICE,
                 sessionState = SessionState.PAUSED,
                 voicePromptStartMs = null,
                 activeSubLessonIndex = 0,
@@ -281,6 +282,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabAnswerText = null,
                 vocabIndex = 0,
                 vocabTotal = 0,
+                vocabWordBankWords = emptyList(),
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
@@ -296,7 +298,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossLessonRewards = emptyMap(),
                 bossMegaReward = null,
                 lessonFlowers = emptyMap(),
-                currentLessonFlower = null
+                currentLessonFlower = null,
+                wordBankWords = emptyList(),
+                selectedWords = emptyList()
             )
         }
         rebuildSchedules(lessons)
@@ -327,6 +331,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED,
                 voicePromptStartMs = null,
+                inputMode = InputMode.VOICE,
                 activeSubLessonIndex = nextActiveIndex,
                 completedSubLessonCount = completedCount,
                 subLessonFinishedToken = 0,
@@ -340,6 +345,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabAnswerText = null,
                 vocabIndex = 0,
                 vocabTotal = 0,
+                vocabWordBankWords = emptyList(),
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
@@ -351,7 +357,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                wordBankWords = emptyList(),
+                selectedWords = emptyList()
             )
         }
         buildSessionCards()
@@ -372,6 +380,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED,
                 voicePromptStartMs = null,
+                inputMode = InputMode.VOICE,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
                 subLessonFinishedToken = 0,
@@ -385,6 +394,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabAnswerText = null,
                 vocabIndex = 0,
                 vocabTotal = 0,
+                vocabWordBankWords = emptyList(),
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
@@ -396,7 +406,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                wordBankWords = emptyList(),
+                selectedWords = emptyList()
             )
         }
         buildSessionCards()
@@ -751,6 +763,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     correctCount = 0,
                     incorrectCount = 0,
                     incorrectAttemptsForCard = 0,
+                    inputMode = InputMode.VOICE,
                     activeTimeMs = 0L,
                     voiceActiveMs = 0L,
                     voiceWordCount = 0,
@@ -772,18 +785,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     vocabAnswerText = null,
                     vocabIndex = 0,
                     vocabTotal = 0,
+                    vocabWordBankWords = emptyList(),
                     vocabFinishedToken = 0,
                     vocabErrorMessage = null,
                     vocabInputMode = InputMode.VOICE,
-                vocabVoiceTriggerToken = 0,
+                    vocabVoiceTriggerToken = 0,
                 bossActive = false,
                 bossType = null,
                 bossTotal = 0,
                 bossProgress = 0,
-                bossReward = null,
-                bossRewardMessage = null,
-                bossFinishedToken = 0,
-                bossErrorMessage = null
+                    bossReward = null,
+                    bossRewardMessage = null,
+                    bossFinishedToken = 0,
+                    bossErrorMessage = null,
+                    wordBankWords = emptyList(),
+                    selectedWords = emptyList()
                 )
             }
             rebuildSchedules(lessons)
@@ -833,6 +849,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 correctCount = 0,
                 incorrectCount = 0,
                 incorrectAttemptsForCard = 0,
+                inputMode = InputMode.VOICE,
                 activeTimeMs = 0L,
                 voiceActiveMs = 0L,
                 voiceWordCount = 0,
@@ -854,6 +871,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabAnswerText = null,
                 vocabIndex = 0,
                 vocabTotal = 0,
+                vocabWordBankWords = emptyList(),
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
@@ -865,7 +883,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                wordBankWords = emptyList(),
+                selectedWords = emptyList()
             )
         }
         rebuildSchedules(lessons)
@@ -938,6 +958,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 incorrectAttemptsForCard = 0,
                 sessionState = SessionState.PAUSED,
                 voicePromptStartMs = null,
+                inputMode = InputMode.VOICE,
                 activeSubLessonIndex = 0,
                 completedSubLessonCount = 0,
                 subLessonFinishedToken = 0,
@@ -951,6 +972,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabAnswerText = null,
                 vocabIndex = 0,
                 vocabTotal = 0,
+                vocabWordBankWords = emptyList(),
                 vocabFinishedToken = 0,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
@@ -962,7 +984,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossReward = null,
                 bossRewardMessage = null,
                 bossFinishedToken = 0,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                wordBankWords = emptyList(),
+                selectedWords = emptyList()
             )
         }
         rebuildSchedules(lessons)
