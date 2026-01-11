@@ -35,6 +35,8 @@ import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.FlowerState
+import com.alexpo.grammermate.data.StreakStore
+import com.alexpo.grammermate.data.StreakData
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -62,6 +64,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val progressStore = ProgressStore(application)
     private val configStore = AppConfigStore(application)
     private val masteryStore = MasteryStore(application)
+    private val streakStore = StreakStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -107,6 +110,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessons = lessonStore.getLessons(selectedLanguageId)
         val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
         val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
+        val streakData = streakStore.getCurrentStreak(selectedLanguageId)
         _uiState.update {
             it.copy(
                 languages = languages,
@@ -161,7 +165,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteFinishedToken = 0,
                 eliteUnlocked = resolveEliteUnlocked(lessons, config.testMode),
                 eliteSizeMultiplier = config.eliteSizeMultiplier,
-                vocabSprintLimit = config.vocabSprintLimit
+                vocabSprintLimit = config.vocabSprintLimit,
+                currentStreak = streakData.currentStreak,
+                longestStreak = streakData.longestStreak
             )
         }
         rebuildSchedules(lessons)
@@ -519,6 +525,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 pauseTimer()
                 _uiState.update {
                     val nextCompleted = (it.completedSubLessonCount + 1).coerceAtMost(it.subLessonCount)
+                    // Рассчитываем реальный прогресс на основе сохранённых карточек
+                    val lessonId = it.selectedLessonId
+                    val mastery = lessonId?.let { id -> masteryStore.get(id, it.selectedLanguageId) }
+                    val schedule = lessonId?.let { id -> lessonSchedules[id] }
+                    val subLessons = schedule?.subLessons.orEmpty()
+                    val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId)
+
+                    // Не двигаем индекс назад, если пользователь повторяет старый подурок
+                    // nextCompleted - это индекс только что завершённого подурока + 1
+                    // actualCompletedCount - это реальный прогресс из сохранённых данных
+                    val preservedActiveIndex = maxOf(it.activeSubLessonIndex, actualCompletedCount)
+                    val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.subLessonCount - 1).coerceAtLeast(0))
+
                     it.copy(
                         correctCount = it.correctCount + 1,
                         lastResult = null,
@@ -537,8 +556,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                         voicePromptStartMs = null,
                         sessionState = SessionState.PAUSED,
                         currentIndex = 0,
-                        activeSubLessonIndex = nextCompleted.coerceAtMost((it.subLessonCount - 1).coerceAtLeast(0)),
-                        completedSubLessonCount = nextCompleted,
+                        activeSubLessonIndex = finalActiveIndex,
+                        completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount),
                         subLessonFinishedToken = it.subLessonFinishedToken + 1
                     )
                 }
@@ -547,6 +566,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 // Check if lesson is completed and update flower states
                 checkAndMarkLessonCompleted()
                 refreshFlowerStates()
+                // Update streak after completing sub-lesson
+                updateStreak()
             } else {
                 _uiState.update {
                     it.copy(
@@ -1180,6 +1201,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         vocabSession = limited
         val vocabWordBank = limited.firstOrNull()?.let { buildVocabWordBank(it, limited) }.orEmpty()
+        Log.d(logTag, "openVocabSprint: entries=${entries.size}, limited=${limited.size}, wordBank=${vocabWordBank.size}")
         _uiState.update {
             it.copy(
                 currentVocab = limited.firstOrNull(),
@@ -1236,9 +1258,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setVocabInputMode(mode: InputMode) {
+        Log.d(logTag, "setVocabInputMode: $mode")
         _uiState.update { it.copy(vocabInputMode = mode) }
         if (mode == InputMode.WORD_BANK) {
             updateVocabWordBank()
+            Log.d(logTag, "Word bank updated. Words: ${_uiState.value.vocabWordBankWords.size}")
         }
     }
 
@@ -1288,6 +1312,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     vocabVoiceTriggerToken = nextToken
                 )
             }
+        }
+    }
+
+    fun showVocabAnswer() {
+        val entry = _uiState.value.currentVocab ?: return
+        _uiState.update {
+            it.copy(
+                vocabAnswerText = entry.targetText,
+                vocabInputText = "",
+                vocabAttempts = 3
+            )
         }
     }
 
@@ -1806,7 +1841,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             .filter { it.isNotBlank() && Normalizer.normalize(it) != normalizedCorrect }
             .distinct()
             .shuffled()
-        return (listOf(correctOption) + distractors).distinct().take(5).shuffled()
+        val result = (listOf(correctOption) + distractors).distinct().take(5).shuffled()
+        Log.d(logTag, "buildVocabWordBank: entry=${entry.nativeText}, pool=${pool.size}, result=${result.size}, words=$result")
+        return result
     }
 
     private fun updateVocabWordBank() {
@@ -1870,6 +1907,54 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lessonFlowers = flowerStates,
                 currentLessonFlower = currentFlower
             )
+        }
+    }
+
+    /**
+     * Обновляет streak после завершения подурока
+     */
+    private fun updateStreak() {
+        val languageId = _uiState.value.selectedLanguageId
+        val (updatedStreak, isNewStreak) = streakStore.recordSubLessonCompletion(languageId)
+
+        if (isNewStreak && updatedStreak.currentStreak > 0) {
+            // Генерируем сообщение о streak
+            val message = when {
+                updatedStreak.currentStreak == 1 -> "🔥 Great start! Day 1 streak!"
+                updatedStreak.currentStreak == 3 -> "🔥 3 days streak! You're on fire!"
+                updatedStreak.currentStreak == 7 -> "🔥 7 days streak! One week! Amazing!"
+                updatedStreak.currentStreak == 14 -> "🔥 14 days streak! Two weeks! Incredible!"
+                updatedStreak.currentStreak == 30 -> "🔥 30 days streak! One month! Outstanding!"
+                updatedStreak.currentStreak == 100 -> "🔥 100 days streak! You're a legend!"
+                updatedStreak.currentStreak % 10 == 0 -> "🔥 ${updatedStreak.currentStreak} days streak! Keep it up!"
+                else -> "🔥 ${updatedStreak.currentStreak} days streak!"
+            }
+
+            _uiState.update {
+                it.copy(
+                    currentStreak = updatedStreak.currentStreak,
+                    longestStreak = updatedStreak.longestStreak,
+                    streakMessage = message,
+                    streakCelebrationToken = it.streakCelebrationToken + 1
+                )
+            }
+        } else {
+            // Просто обновляем streak без сообщения
+            _uiState.update {
+                it.copy(
+                    currentStreak = updatedStreak.currentStreak,
+                    longestStreak = updatedStreak.longestStreak
+                )
+            }
+        }
+    }
+
+    /**
+     * Закрывает сообщение о streak
+     */
+    fun dismissStreakMessage() {
+        _uiState.update {
+            it.copy(streakMessage = null)
         }
     }
 }
@@ -1949,5 +2034,10 @@ data class TrainingUiState(
     val currentLessonFlower: FlowerVisual? = null,
     // Word bank mode
     val wordBankWords: List<String> = emptyList(),
-    val selectedWords: List<String> = emptyList()
+    val selectedWords: List<String> = emptyList(),
+    // Streak tracking
+    val currentStreak: Int = 0,
+    val longestStreak: Int = 0,
+    val streakMessage: String? = null,
+    val streakCelebrationToken: Int = 0
 )

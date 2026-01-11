@@ -164,3 +164,14 @@ data class FlowerVisual(
     val healthPercent: Float,
     val scaleMultiplier: Float
 )
+
+/**
+ * Данные о streak (ежедневных занятиях)
+ */
+data class StreakData(
+    val languageId: String,
+    val currentStreak: Int = 0,
+    val longestStreak: Int = 0,
+    val lastCompletionDateMs: Long? = null,
+    val totalSubLessonsCompleted: Int = 0
+)

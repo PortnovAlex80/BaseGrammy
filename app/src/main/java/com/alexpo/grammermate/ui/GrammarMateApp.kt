@@ -226,6 +226,7 @@ fun GrammarMateApp() {
                     onSubmit = { input -> vm.submitVocabAnswer(input) },
                     onSetInputMode = vm::setVocabInputMode,
                     onRequestVoice = vm::requestVocabVoice,
+                    onShowAnswer = vm::showVocabAnswer,
                     onClose = { screen = AppScreen.LESSON }
                 )
                 AppScreen.TRAINING -> TrainingScreen(
@@ -364,6 +365,39 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "Boss Reward") },
                     text = { Text(text = state.bossRewardMessage ?: "") }
+                )
+            }
+            if (state.streakMessage != null) {
+                AlertDialog(
+                    onDismissRequest = { vm.dismissStreakMessage() },
+                    confirmButton = {
+                        TextButton(onClick = { vm.dismissStreakMessage() }) {
+                            Text(text = "Continue")
+                        }
+                    },
+                    icon = {
+                        Text(text = "🔥", fontSize = 48.sp)
+                    },
+                    title = { Text(text = "Streak!") },
+                    text = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = state.streakMessage ?: "",
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            if (state.longestStreak > state.currentStreak) {
+                                Text(
+                                    text = "Longest streak: ${state.longestStreak} days",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -935,7 +969,7 @@ private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onCli
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun VocabSprintScreen(
     state: TrainingUiState,
@@ -943,6 +977,7 @@ private fun VocabSprintScreen(
     onSubmit: (String?) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
     onRequestVoice: () -> Unit,
+    onShowAnswer: () -> Unit,
     onClose: () -> Unit
 ) {
     val vocab = state.currentVocab
@@ -1009,13 +1044,17 @@ private fun VocabSprintScreen(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = state.vocabInputText,
-                onValueChange = onInputChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Answer") }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // Показываем текстовое поле только если не включён Word Bank
+            if (state.vocabInputMode != InputMode.WORD_BANK) {
+                OutlinedTextField(
+                    value = state.vocabInputText,
+                    onValueChange = onInputChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(text = "Answer") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            // Word Bank режим
             if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.isNotEmpty()) {
                 Text(
                     text = "Choose the correct translation:",
@@ -1045,8 +1084,31 @@ private fun VocabSprintScreen(
                 Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            Button(onClick = { onSubmit(state.vocabInputText) }, modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Check")
+            // Иконка глаза для показа подсказки и кнопка Check
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(
+                        onClick = onShowAnswer,
+                        enabled = state.vocabAnswerText == null
+                    ) {
+                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                    }
+                }
+                Button(
+                    onClick = { onSubmit(state.vocabInputText) },
+                    modifier = Modifier.weight(1f),
+                    enabled = state.vocabInputText.isNotBlank() || state.vocabInputMode == InputMode.WORD_BANK
+                ) {
+                    Text(text = "Check")
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(
