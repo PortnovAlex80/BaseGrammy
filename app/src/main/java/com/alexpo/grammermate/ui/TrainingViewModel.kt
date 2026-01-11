@@ -160,7 +160,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteBestSpeeds = normalizedEliteSpeeds,
                 eliteFinishedToken = 0,
                 eliteUnlocked = resolveEliteUnlocked(lessons, config.testMode),
-                eliteSizeMultiplier = config.eliteSizeMultiplier
+                eliteSizeMultiplier = config.eliteSizeMultiplier,
+                vocabSprintLimit = config.vocabSprintLimit
             )
         }
         rebuildSchedules(lessons)
@@ -896,8 +897,26 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteUnlocked = resolveEliteUnlocked(_uiState.value.lessons, newTestMode)
             )
         }
-        configStore.save(AppConfig(testMode = newTestMode, eliteSizeMultiplier = _uiState.value.eliteSizeMultiplier))
+        configStore.save(
+            AppConfig(
+                testMode = newTestMode,
+                eliteSizeMultiplier = _uiState.value.eliteSizeMultiplier,
+                vocabSprintLimit = _uiState.value.vocabSprintLimit
+            )
+        )
         Log.d(logTag, "Test mode toggled: $newTestMode")
+    }
+
+    fun updateVocabSprintLimit(limit: Int) {
+        val nextLimit = limit.coerceAtLeast(0)
+        _uiState.update { it.copy(vocabSprintLimit = nextLimit) }
+        configStore.save(
+            AppConfig(
+                testMode = _uiState.value.testMode,
+                eliteSizeMultiplier = _uiState.value.eliteSizeMultiplier,
+                vocabSprintLimit = nextLimit
+            )
+        )
     }
 
     private fun refreshLessons(selectedLessonId: String?) {
@@ -1116,7 +1135,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val languageId = _uiState.value.selectedLanguageId
         val story = lessonStore.getStoryQuizzes(lessonId, phase, languageId).firstOrNull()
         if (story == null) {
-            _uiState.update { it.copy(storyErrorMessage = "История не найдена. Импортируйте пакет заново.") }
+            _uiState.update { it.copy(storyErrorMessage = "Story not found. Please import the pack again.") }
             return
         }
         _uiState.update { it.copy(activeStory = story, storyErrorMessage = null) }
@@ -1126,20 +1145,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessonId = _uiState.value.selectedLessonId ?: return
         val languageId = _uiState.value.selectedLanguageId
         val entries = lessonStore.getVocabEntries(lessonId, languageId)
-        if (entries.isEmpty()) {
+        val shuffled = entries.shuffled()
+        val limit = _uiState.value.vocabSprintLimit
+        val limited = if (limit <= 0 || limit >= shuffled.size) shuffled else shuffled.take(limit)
+        if (limited.isEmpty()) {
             vocabSession = emptyList()
-            _uiState.update { it.copy(vocabErrorMessage = "Словарь не найден. Импортируйте пакет заново.") }
+            _uiState.update { it.copy(vocabErrorMessage = "Vocabulary not found. Please import the pack again.") }
             return
         }
-        vocabSession = entries
+        vocabSession = limited
+        val vocabWordBank = limited.firstOrNull()?.let { buildVocabWordBank(it, limited) }.orEmpty()
         _uiState.update {
             it.copy(
-                currentVocab = entries.firstOrNull(),
+                currentVocab = limited.firstOrNull(),
                 vocabInputText = "",
                 vocabAttempts = 0,
                 vocabAnswerText = null,
                 vocabIndex = 0,
-                vocabTotal = entries.size,
+                vocabTotal = limited.size,
+                vocabWordBankWords = vocabWordBank,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
                 vocabVoiceTriggerToken = 0,
@@ -1188,6 +1212,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun setVocabInputMode(mode: InputMode) {
         _uiState.update { it.copy(vocabInputMode = mode) }
+        if (mode == InputMode.WORD_BANK) {
+            updateVocabWordBank()
+        }
     }
 
     fun requestVocabVoice() {
@@ -1251,12 +1278,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     vocabAnswerText = null,
                     vocabIndex = nextIndex,
                     vocabTotal = vocabSession.size,
+                    vocabWordBankWords = emptyList(),
                     vocabFinishedToken = it.vocabFinishedToken + 1
                 )
             }
             return
         }
         val next = vocabSession[nextIndex]
+        val vocabWordBank = buildVocabWordBank(next, vocabSession)
         _uiState.update {
             it.copy(
                 currentVocab = next,
@@ -1264,7 +1293,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabAttempts = 0,
                 vocabAnswerText = null,
                 vocabIndex = nextIndex,
-                vocabTotal = vocabSession.size
+                vocabTotal = vocabSession.size,
+                vocabWordBankWords = vocabWordBank
             )
         }
     }
@@ -1680,9 +1710,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /**
      * Генерирует word bank из правильного ответа
      */
-    private fun generateWordBank(correctAnswer: String): List<String> {
+    private fun generateWordBank(correctAnswer: String, extraWords: List<String> = emptyList()): List<String> {
         val words = correctAnswer.split(" ").filter { it.isNotBlank() }
-        return words.shuffled()
+        val extras = extraWords.filter { it.isNotBlank() && !words.contains(it) }
+        return (words + extras).shuffled()
     }
 
     /**
@@ -1701,7 +1732,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val correctAnswer = card.acceptedAnswers.firstOrNull() ?: ""
-        val wordBank = generateWordBank(correctAnswer)
+        val correctWords = correctAnswer.split(" ").map { it.trim() }.filter { it.isNotBlank() }
+        val normalizedCorrect = correctWords.map { Normalizer.normalize(it) }.toSet()
+        val distractorPool = _uiState.value.lessons
+            .flatMap { it.cards }
+            .filter { it.id != card.id }
+            .flatMap { it.acceptedAnswers }
+            .flatMap { it.split(" ") }
+            .map { it.trim() }
+            .filter { it.length >= 3 }
+            .filter { Normalizer.normalize(it) !in normalizedCorrect }
+            .distinct()
+        val extraWords = distractorPool.shuffled().take(3)
+        val wordBank = generateWordBank(correctAnswer, extraWords)
 
         _uiState.update {
             it.copy(
@@ -1710,6 +1753,28 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 inputText = ""
             )
         }
+    }
+
+    private fun buildVocabWordBank(entry: VocabEntry, pool: List<VocabEntry>): List<String> {
+        val correctOption = entry.targetText.split("+")
+            .map { it.trim() }
+            .firstOrNull { it.isNotBlank() }
+            ?: entry.targetText
+        val normalizedCorrect = Normalizer.normalize(correctOption)
+        val distractors = pool
+            .filter { it.id != entry.id }
+            .flatMap { it.targetText.split("+") }
+            .map { it.trim() }
+            .filter { it.isNotBlank() && Normalizer.normalize(it) != normalizedCorrect }
+            .distinct()
+            .shuffled()
+        return (listOf(correctOption) + distractors).distinct().take(5).shuffled()
+    }
+
+    private fun updateVocabWordBank() {
+        val entry = _uiState.value.currentVocab ?: return
+        val options = buildVocabWordBank(entry, vocabSession)
+        _uiState.update { it.copy(vocabWordBankWords = options) }
     }
 
     /**
@@ -1817,6 +1882,7 @@ data class TrainingUiState(
     val vocabAnswerText: String? = null,
     val vocabIndex: Int = 0,
     val vocabTotal: Int = 0,
+    val vocabWordBankWords: List<String> = emptyList(),
     val vocabFinishedToken: Int = 0,
     val vocabErrorMessage: String? = null,
     val vocabInputMode: InputMode = InputMode.VOICE,
@@ -1839,6 +1905,7 @@ data class TrainingUiState(
     val eliteFinishedToken: Int = 0,
     val eliteUnlocked: Boolean = false,
     val eliteSizeMultiplier: Double = 1.25,
+    val vocabSprintLimit: Int = 20,
     // Flower mastery states
     val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
     val currentLessonFlower: FlowerVisual? = null,

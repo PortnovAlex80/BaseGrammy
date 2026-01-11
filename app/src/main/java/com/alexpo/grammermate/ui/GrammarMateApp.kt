@@ -17,13 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -149,7 +149,8 @@ fun GrammarMateApp() {
                 onCreateEmptyLesson = vm::createEmptyLesson,
                 onDeleteAllLessons = vm::deleteAllLessons,
                 onDeletePack = vm::deletePack,
-                onToggleTestMode = vm::toggleTestMode
+                onToggleTestMode = vm::toggleTestMode,
+                onUpdateVocabLimit = vm::updateVocabSprintLimit
             )
 
             when (screen) {
@@ -406,6 +407,7 @@ private fun HomeScreen(
     }
     var showMethod by remember { mutableStateOf(false) }
     var showRefreshHint by remember { mutableStateOf(false) }
+    var showLockedLessonHint by remember { mutableStateOf(false) }
     val languageCode = state.languages
         .firstOrNull { it.id == state.selectedLanguageId }
         ?.id
@@ -520,7 +522,8 @@ private fun HomeScreen(
                     onSelect = {
                         val lessonId = tile.lessonId ?: return@LessonTile
                         onSelectLesson(lessonId)
-                    }
+                    },
+                    onLockedClick = { showLockedLessonHint = true }
                 )
             }
         }
@@ -540,6 +543,13 @@ private fun HomeScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = "How This Training Works")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = onPrimaryAction,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Continue Learning")
         }
     }
 
@@ -575,6 +585,18 @@ private fun HomeScreen(
                         "Refresh becomes available after completing the full course."
                 )
             }
+        )
+    }
+    if (showLockedLessonHint) {
+        AlertDialog(
+            onDismissRequest = { showLockedLessonHint = false },
+            confirmButton = {
+                TextButton(onClick = { showLockedLessonHint = false }) {
+                    Text(text = "OK")
+                }
+            },
+            title = { Text(text = "Lesson locked") },
+            text = { Text(text = "Please complete the previous lesson first.") }
         )
     }
 }
@@ -971,6 +993,61 @@ private fun VocabSprintScreen(
         Text(text = progressText)
         Spacer(modifier = Modifier.height(16.dp))
         if (vocab != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(text = vocab.nativeText, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = state.vocabInputText,
+                onValueChange = onInputChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(text = "Answer") }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.isNotEmpty()) {
+                Text(
+                    text = "Choose the correct translation:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    state.vocabWordBankWords.forEach { option ->
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                onInputChange(option)
+                                onSubmit(option)
+                            },
+                            label = { Text(text = option) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            state.vocabAnswerText?.let { answer ->
+                Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Button(onClick = { onSubmit(state.vocabInputText) }, modifier = Modifier.fillMaxWidth()) {
+                Text(text = "Check")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1023,23 +1100,18 @@ private fun VocabSprintScreen(
                                 Icon(Icons.Default.Keyboard, contentDescription = "Keyboard")
                             }
                         }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        if (state.vocabInputMode == InputMode.WORD_BANK) {
+                            FilledTonalIconButton(onClick = { onSetInputMode(InputMode.WORD_BANK) }) {
+                                Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank")
+                            }
+                        } else {
+                            IconButton(onClick = { onSetInputMode(InputMode.WORD_BANK) }) {
+                                Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank")
+                            }
+                        }
                     }
                 }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = state.vocabInputText,
-                onValueChange = onInputChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Answer") }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            state.vocabAnswerText?.let { answer ->
-                Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            Button(onClick = { onSubmit(state.vocabInputText) }, modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Check")
             }
         } else {
             Text(text = "No words")
@@ -1234,7 +1306,8 @@ private fun StoryQuizScreen(
 private fun LessonTile(
     tile: LessonTileUi,
     flower: FlowerVisual?,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
+    onLockedClick: (() -> Unit)? = null
 ) {
     // Determine emoji and scale based on flower state
     val (emoji, scale) = when {
@@ -1250,10 +1323,13 @@ private fun LessonTile(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clickable(
-                enabled = tile.state != LessonTileState.LOCKED,
-                onClick = onSelect
-            )
+            .clickable {
+                if (tile.state == LessonTileState.LOCKED) {
+                    onLockedClick?.invoke()
+                } else {
+                    onSelect()
+                }
+            }
     ) {
         Column(
             modifier = Modifier
@@ -1379,12 +1455,15 @@ private fun SettingsSheet(
     onCreateEmptyLesson: (String) -> Unit,
     onDeleteAllLessons: () -> Unit,
     onDeletePack: (String) -> Unit,
-    onToggleTestMode: () -> Unit
+    onToggleTestMode: () -> Unit,
+    onUpdateVocabLimit: (Int) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
     var newLessonTitle by remember { mutableStateOf("") }
     var newLanguageName by remember { mutableStateOf("") }
+    var vocabLimitText by remember(state.vocabSprintLimit) { mutableStateOf(state.vocabSprintLimit.toString()) }
+    val scrollState = rememberScrollState()
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -1408,7 +1487,8 @@ private fun SettingsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
@@ -1430,6 +1510,26 @@ private fun SettingsSheet(
             }
             Text(
                 text = "Enables all lessons, accepts all answers, unlocks Elite mode",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            OutlinedTextField(
+                value = vocabLimitText,
+                onValueChange = { next ->
+                    val cleaned = next.filter { it.isDigit() }
+                    vocabLimitText = cleaned
+                    val parsed = cleaned.toIntOrNull()
+                    if (parsed != null) {
+                        onUpdateVocabLimit(parsed)
+                    } else if (cleaned.isEmpty()) {
+                        onUpdateVocabLimit(0)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(text = "Vocabulary Sprint limit") }
+            )
+            Text(
+                text = "Set how many words to show (0 = all words)",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -1529,8 +1629,8 @@ private fun SettingsSheet(
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "Lessons", style = MaterialTheme.typography.labelLarge)
-            LazyColumn(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                items(state.lessons) { lesson ->
+            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                state.lessons.forEach { lesson ->
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1998,6 +2098,7 @@ private fun AnswerBox(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val canSelectInputMode = hasCards && state.sessionState == SessionState.ACTIVE
                 FilledTonalIconButton(
                     onClick = {
                         if (canLaunchVoice) {
@@ -2010,10 +2111,16 @@ private fun AnswerBox(
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                 }
-                FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
+                FilledTonalIconButton(
+                    onClick = { onSetInputMode(InputMode.KEYBOARD) },
+                    enabled = canSelectInputMode
+                ) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
-                FilledTonalIconButton(onClick = { onSetInputMode(InputMode.WORD_BANK) }) {
+                FilledTonalIconButton(
+                    onClick = { onSetInputMode(InputMode.WORD_BANK) },
+                    enabled = canSelectInputMode
+                ) {
                     Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
                 }
             }

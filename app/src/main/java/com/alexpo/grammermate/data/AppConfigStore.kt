@@ -6,7 +6,8 @@ import java.io.File
 
 data class AppConfig(
     val testMode: Boolean = false,
-    val eliteSizeMultiplier: Double = 1.25
+    val eliteSizeMultiplier: Double = 1.25,
+    val vocabSprintLimit: Int = 20
 )
 
 class AppConfigStore(private val context: Context) {
@@ -18,7 +19,8 @@ class AppConfigStore(private val context: Context) {
         baseDir.mkdirs()
         val payload = mapOf(
             "testMode" to config.testMode,
-            "eliteSizeMultiplier" to config.eliteSizeMultiplier
+            "eliteSizeMultiplier" to config.eliteSizeMultiplier,
+            "vocabSprintLimit" to config.vocabSprintLimit
         )
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
@@ -34,13 +36,21 @@ class AppConfigStore(private val context: Context) {
                 }
             }.getOrNull()
             if (seeded == null) {
-                AtomicFileWriter.writeText(file, yaml.dump(mapOf("testMode" to false)))
+                AtomicFileWriter.writeText(
+                    file,
+                    yaml.dump(mapOf("testMode" to false, "vocabSprintLimit" to 20))
+                )
             }
         }
         val raw = yaml.load<Any>(file.readText()) ?: return AppConfig()
         val data = raw as? Map<*, *> ?: return AppConfig()
         val testMode = data["testMode"] as? Boolean ?: false
         val eliteSizeMultiplier = (data["eliteSizeMultiplier"] as? Number)?.toDouble() ?: 1.25
-        return AppConfig(testMode = testMode, eliteSizeMultiplier = eliteSizeMultiplier)
+        val vocabSprintLimit = (data["vocabSprintLimit"] as? Number)?.toInt() ?: 20
+        return AppConfig(
+            testMode = testMode,
+            eliteSizeMultiplier = eliteSizeMultiplier,
+            vocabSprintLimit = vocabSprintLimit
+        )
     }
 }

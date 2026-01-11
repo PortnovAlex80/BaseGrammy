@@ -44,7 +44,11 @@ class MixedReviewScheduler(
 
             // Use only main pool cards (first 150) for sub-lessons
             val mainCards = lesson.mainPoolCards
-            val warmupCards = mainCards.take(warmupSize)
+            val warmupCards = if (warmupSize > 0) {
+                lesson.allCards.shuffled().take(warmupSize)
+            } else {
+                emptyList()
+            }
             val currentCards = mainCards
             val allowMixed = lessonIndex > 0
             val reviewSlots = subLessonSize / 2
