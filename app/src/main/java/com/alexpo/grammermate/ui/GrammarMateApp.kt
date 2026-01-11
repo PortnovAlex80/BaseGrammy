@@ -1183,10 +1183,12 @@ private fun StoryQuizScreen(
         onComplete(allCorrect)
         return
     }
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(scrollState)
     ) {
         Text(
             text = if (story.phase == com.alexpo.grammermate.data.StoryPhase.CHECK_IN) {
@@ -1300,6 +1302,16 @@ private fun StoryQuizScreen(
                 val isLast = questionIndex >= story.questions.lastIndex
                 Text(text = if (isLast) "Finish" else "Next")
             }
+        }
+        if (scrollState.maxValue > 0) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Scroll to continue",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
