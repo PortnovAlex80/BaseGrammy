@@ -382,7 +382,8 @@ private enum class LessonTileState {
     SEED,
     SPROUT,
     FLOWER,
-    LOCKED
+    LOCKED,
+    UNLOCKED  // Available but not started yet (open lock 🔓)
 }
 
 private data class LessonTileUi(
@@ -1221,7 +1222,8 @@ private fun LessonTile(
 ) {
     // Determine emoji and scale based on flower state
     val (emoji, scale) = when {
-        tile.state == LessonTileState.LOCKED -> "\uD83D\uDD12" to 1.0f  // 🔒
+        tile.state == LessonTileState.LOCKED -> "\uD83D\uDD12" to 1.0f  // 🔒 closed lock
+        tile.state == LessonTileState.UNLOCKED -> "\uD83D\uDD13" to 1.0f  // 🔓 open lock
         flower == null -> "\uD83C\uDF31" to 1.0f  // 🌱 default
         else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
     }
@@ -1232,7 +1234,10 @@ private fun LessonTile(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clickable(enabled = tile.state != LessonTileState.LOCKED, onClick = onSelect)
+            .clickable(
+                enabled = tile.state != LessonTileState.LOCKED,
+                onClick = onSelect
+            )
     ) {
         Column(
             modifier = Modifier
@@ -1246,8 +1251,8 @@ private fun LessonTile(
                 text = emoji,
                 fontSize = (18 * scale).sp
             )
-            // Show mastery percentage if > 0
-            if (masteryPercent > 0f && tile.state != LessonTileState.LOCKED) {
+            // Show mastery percentage if > 0 (but not for locked/unlocked states)
+            if (masteryPercent > 0f && tile.state != LessonTileState.LOCKED && tile.state != LessonTileState.UNLOCKED) {
                 Text(
                     text = "${(masteryPercent * 100).toInt()}%",
                     fontSize = 10.sp,
@@ -1296,13 +1301,24 @@ private fun buildLessonTiles(
             testMode -> LessonTileState.SEED
             i == 0 -> LessonTileState.SPROUT
             else -> {
-                // Check if previous lesson has any progress
+                // Check current and previous lesson progress
+                val currentFlower = lessonFlowers[lesson.id]
                 val prevLesson = lessons.getOrNull(i - 1)
                 val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
-                if (prevFlower != null && prevFlower.masteryPercent > 0f) {
-                    LessonTileState.SEED  // Unlocked
-                } else {
-                    LessonTileState.LOCKED  // Locked until previous lesson starts
+
+                when {
+                    // Current lesson has progress - show appropriate flower state
+                    currentFlower != null && currentFlower.masteryPercent > 0f -> {
+                        LessonTileState.SEED  // Has progress
+                    }
+                    // Previous lesson has progress - this one is unlocked but not started
+                    prevFlower != null && prevFlower.masteryPercent > 0f -> {
+                        LessonTileState.UNLOCKED  // Available (open lock)
+                    }
+                    // Previous lesson not started - locked
+                    else -> {
+                        LessonTileState.LOCKED  // Locked (closed lock)
+                    }
                 }
             }
         }
