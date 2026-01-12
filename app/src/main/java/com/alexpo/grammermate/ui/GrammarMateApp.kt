@@ -737,7 +737,6 @@ private fun LessonRoadmapScreen(
                         val isActive = index == currentIndex
                         val canEnter = state.testMode || isCompleted || isActive
                         val kindLabel = when (entry.type) {
-                            SubLessonType.WARMUP -> "WARM"
                             SubLessonType.NEW_ONLY -> "NEW"
                             SubLessonType.MIXED -> "MIX"
                         }
@@ -1851,7 +1850,7 @@ private fun HeaderStats(state: TrainingUiState) {
         if (state.bossActive) {
             state.bossProgress.coerceIn(0, total)
         } else {
-            (state.currentIndex - state.warmupCount).coerceIn(0, total)
+            state.currentIndex.coerceIn(0, total)
         }
     } else {
         0
@@ -1871,7 +1870,6 @@ private fun HeaderStats(state: TrainingUiState) {
             Text(text = if (state.bossActive) "Review" else "Progress")
             val progressText = when {
                 state.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
-                !state.bossActive && state.currentIndex < state.warmupCount -> "Warm-up"
                 state.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
                 else -> "${progressPercent}%"
             }
@@ -2146,16 +2144,22 @@ private fun AnswerBox(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 state.wordBankWords.forEach { word ->
-                    val isUsed = state.selectedWords.contains(word)
+                    // Count how many times this word appears in the word bank
+                    val availableCount = state.wordBankWords.count { it == word }
+                    // Count how many times this word has been selected
+                    val usedCount = state.selectedWords.count { it == word }
+                    // Word is fully used only when all instances are selected
+                    val isFullyUsed = usedCount >= availableCount
+
                     FilterChip(
-                        selected = isUsed,
+                        selected = usedCount > 0,
                         onClick = {
-                            if (!isUsed) {
+                            if (!isFullyUsed) {
                                 onSelectWordFromBank(word)
                             }
                         },
                         label = { Text(text = word) },
-                        enabled = !isUsed
+                        enabled = !isFullyUsed
                     )
                 }
             }

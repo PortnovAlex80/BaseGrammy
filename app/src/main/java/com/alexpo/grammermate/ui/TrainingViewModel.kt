@@ -69,14 +69,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
     private var vocabSession: List<VocabEntry> = emptyList()
-    private var warmupCount: Int = 0
     private var subLessonTotal: Int = 0
     private var subLessonCount: Int = 0
     private var lessonSchedules: Map<String, LessonSchedule> = emptyMap()
     private var scheduleKey: String = ""
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
-    private val warmupSize = TrainingConfig.WARMUP_SIZE
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -129,7 +127,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voiceWordCount = progress.voiceWordCount,
                 hintCount = progress.hintCount,
                 voicePromptStartMs = null,
-                warmupCount = 0,
                 subLessonTotal = 0,
                 subLessonCount = 0,
                 activeSubLessonIndex = 0,
@@ -526,11 +523,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
                 // Check if current sub-lesson is WARMUP before updating state
                 val currentState = _uiState.value
-                val currentSchedule = currentState.selectedLessonId?.let { lessonSchedules[it] }
-                val currentSubLessons = currentSchedule?.subLessons.orEmpty()
-                val currentSubLesson = currentSubLessons.getOrNull(currentState.activeSubLessonIndex)
-                val isWarmup = currentSubLesson?.type == SubLessonType.WARMUP
-
                 _uiState.update {
                     val nextCompleted = (it.completedSubLessonCount + 1).coerceAtMost(it.subLessonCount)
                     // Рассчитываем реальный прогресс на основе сохранённых карточек
@@ -574,11 +566,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 // Check if lesson is completed and update flower states
                 checkAndMarkLessonCompleted()
                 refreshFlowerStates()
-                // Update streak only if this was NOT a warmup sub-lesson
-                // Warmup is just practice with old cards and shouldn't count as daily progress
-                if (!isWarmup) {
-                    updateStreak()
-                }
+                updateStreak()
             } else {
                 _uiState.update {
                     it.copy(
@@ -1035,10 +1023,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun rebuildSchedules(lessons: List<Lesson>) {
         val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
         val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        val key = "${lessonKey}|${warmupSize}|${blockSize}"
+        val key = "${lessonKey}|${blockSize}"
         if (key == scheduleKey) return
         scheduleKey = key
-        lessonSchedules = MixedReviewScheduler(warmupSize, blockSize).build(lessons)
+        lessonSchedules = MixedReviewScheduler(blockSize).build(lessons)
     }
 
     private fun buildSessionCards() {
@@ -1059,7 +1047,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
             val subLesson = subLessons.getOrNull(activeIndex)
             sessionCards = subLesson?.cards ?: emptyList()
-            warmupCount = if (subLesson?.type == SubLessonType.WARMUP) sessionCards.size else 0
             subLessonTotal = sessionCards.size
             val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
             val card = sessionCards.getOrNull(safeIndex)
@@ -1071,7 +1058,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     currentIndex = safeIndex,
                     currentCard = card,
                     sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
-                    warmupCount = warmupCount,
                     subLessonTotal = subLessonTotal,
                     subLessonCount = subLessonCount,
                     activeSubLessonIndex = activeIndex,
@@ -1088,15 +1074,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             TrainingMode.ALL_MIXED -> lessons.flatMap { it.allCards }.shuffled()
             else -> emptyList()
         }
-        val warmup = lessonCards.take(warmupSize)
-        val mainCards = lessonCards.drop(warmup.size)
         val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        subLessonCount = if (mainCards.isEmpty()) 0 else (mainCards.size + blockSize - 1) / blockSize
+        subLessonCount = if (lessonCards.isEmpty()) 0 else (lessonCards.size + blockSize - 1) / blockSize
         val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
         val blockStart = activeIndex * blockSize
-        val block = mainCards.drop(blockStart).take(blockSize)
-        sessionCards = warmup + block
-        warmupCount = warmup.size
+        val block = lessonCards.drop(blockStart).take(blockSize)
+        sessionCards = block
         subLessonTotal = block.size
         val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
         val card = sessionCards.getOrNull(safeIndex)
@@ -1108,7 +1091,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentIndex = safeIndex,
                 currentCard = card,
                 sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
-                warmupCount = warmupCount,
                 subLessonTotal = subLessonTotal,
                 subLessonCount = subLessonCount,
                 activeSubLessonIndex = activeIndex,
@@ -1158,7 +1140,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 hintCount = 0,
                 voicePromptStartMs = null,
                 sessionState = SessionState.PAUSED,
-                warmupCount = 0,
                 subLessonTotal = cards.size,
                 subLessonCount = eliteStepCount,
                 activeSubLessonIndex = stepIndex,
@@ -1414,7 +1395,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         bossCards = cards
         sessionCards = bossCards
-        warmupCount = 0
         subLessonTotal = bossCards.size
         subLessonCount = 1
         val firstCard = bossCards.firstOrNull()
@@ -1441,7 +1421,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 hintCount = 0,
                 voicePromptStartMs = null,
                 sessionState = SessionState.PAUSED,
-                warmupCount = 0,
                 subLessonTotal = bossCards.size,
                 subLessonCount = 1,
                 activeSubLessonIndex = 0,
@@ -1718,15 +1697,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Записать показ карточки для отслеживания прогресса освоения.
+     * Word Bank НЕ учитывается для формирования навыка (роста цветка).
+     * Учитывается только голосовой ввод и клавиатура.
      */
     private fun recordCardShowForMastery(card: SentenceCard) {
         val lessonId = resolveCardLessonId(card)
         val languageId = _uiState.value.selectedLanguageId
 
-        // Word Bank mode: only count 10% of shows (reduced retrieval practice)
+        // Word Bank mode: does NOT count for mastery (flower growth)
+        // Only voice and keyboard input count for skill formation
         val isWordBankMode = _uiState.value.inputMode == InputMode.WORD_BANK
-        if (isWordBankMode && Math.random() > 0.1) {
-            Log.d(logTag, "Skipping card show record for Word Bank mode (90% skip rate)")
+        if (isWordBankMode) {
+            Log.d(logTag, "Skipping card show record for Word Bank mode - does not count for mastery")
             return
         }
 
@@ -1779,12 +1761,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         var completed = 0
         for (subLesson in subLessons) {
-            // Skip WARMUP sub-lessons - they are not counted towards progress
-            // WARMUP is just a warm-up exercise with old cards
-            if (subLesson.type == SubLessonType.WARMUP) {
-                continue
-            }
-
             val allCardsShown = subLesson.cards.all { card ->
                 !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
             }
@@ -1852,23 +1828,45 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             ?: entry.targetText
         val normalizedCorrect = Normalizer.normalize(correctOption)
 
-        // Собираем все возможные варианты из пула
-        val allOptions = pool
+        // Собираем все возможные варианты из пула словаря
+        val poolOptions = pool
             .flatMap { it.targetText.split("+") }
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .distinct()
 
-        // Убираем правильный ответ из списка вариантов
-        val distractors = allOptions
+        // Убираем правильный ответ из списка вариантов словаря
+        val poolDistractors = poolOptions
             .filter { Normalizer.normalize(it) != normalizedCorrect }
             .shuffled()
+
+        // Начинаем с дистракторов из словаря
+        val distractors = poolDistractors.take(4).toMutableList()
+
+        // Если дистракторов недостаточно, добираем из всех уроков
+        if (distractors.size < 4) {
+            val languageId = _uiState.value.selectedLanguageId
+            val allVocabFromLessons = _uiState.value.lessons
+                .flatMap { lesson ->
+                    lessonStore.getVocabEntries(lesson.id, languageId)
+                }
+                .flatMap { it.targetText.split("+") }
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .filter { Normalizer.normalize(it) != normalizedCorrect }
+                .filter { !distractors.contains(it) }
+                .shuffled()
+
+            val additionalNeeded = 4 - distractors.size
+            distractors.addAll(allVocabFromLessons.take(additionalNeeded))
+        }
 
         // Берём до 4 дистракторов + правильный ответ = до 5 вариантов
         val selectedDistractors = distractors.take(4)
         val result = (listOf(correctOption) + selectedDistractors).shuffled()
 
-        Log.d(logTag, "buildVocabWordBank: entry=${entry.nativeText}, correct=$correctOption, pool=${pool.size}, allOptions=${allOptions.size}, distractors=${distractors.size}, result=${result.size}, words=$result")
+        Log.d(logTag, "buildVocabWordBank: entry=${entry.nativeText}, correct=$correctOption, pool=${pool.size}, poolDistractors=${poolDistractors.size}, finalDistractors=${selectedDistractors.size}, result=${result.size}, words=$result")
         return result
     }
 
@@ -2014,7 +2012,6 @@ data class TrainingUiState(
     val lastRating: Double? = null,
     val inputMode: InputMode = InputMode.VOICE,
     val voiceTriggerToken: Int = 0,
-    val warmupCount: Int = 0,
     val subLessonTotal: Int = 0,
     val subLessonCount: Int = 0,
     val subLessonTypes: List<SubLessonType> = emptyList(),

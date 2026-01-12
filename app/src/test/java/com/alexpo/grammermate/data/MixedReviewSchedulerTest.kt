@@ -7,16 +7,16 @@ import org.junit.Test
 class MixedReviewSchedulerTest {
     @Test
     fun build_firstLessonHasNoMixedBlocks() {
-        val scheduler = MixedReviewScheduler(warmupSize = 1, subLessonSize = 4)
+        val scheduler = MixedReviewScheduler(subLessonSize = 4)
         val lesson = lesson("L1", 7)
         val schedule = scheduler.build(listOf(lesson)).getValue("L1")
         val types = schedule.subLessons.map { it.type }
-        assertEquals(listOf(SubLessonType.WARMUP, SubLessonType.NEW_ONLY, SubLessonType.NEW_ONLY), types)
+        assertEquals(listOf(SubLessonType.NEW_ONLY, SubLessonType.NEW_ONLY), types)
     }
 
     @Test
     fun build_appliesIntervalsAcrossMixedBlocks() {
-        val scheduler = MixedReviewScheduler(warmupSize = 1, subLessonSize = 4)
+        val scheduler = MixedReviewScheduler(subLessonSize = 4)
         val lessons = listOf(
             lesson("L1", 7),
             lesson("L2", 13),
@@ -43,7 +43,7 @@ class MixedReviewSchedulerTest {
 
     @Test
     fun build_mixedAppearsWithDefaultSizes() {
-        val scheduler = MixedReviewScheduler(warmupSize = 3, subLessonSize = 10)
+        val scheduler = MixedReviewScheduler(subLessonSize = 10)
         val lessons = listOf(
             lesson("L1", 20),
             lesson("L2", 20)

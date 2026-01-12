@@ -3,7 +3,6 @@ package com.alexpo.grammermate.data
 import java.util.ArrayDeque
 
 enum class SubLessonType {
-    WARMUP,
     NEW_ONLY,
     MIXED
 }
@@ -19,7 +18,6 @@ data class LessonSchedule(
 )
 
 class MixedReviewScheduler(
-    private val warmupSize: Int,
     private val subLessonSize: Int,
     private val intervals: List<Int> = listOf(1, 2, 4, 7, 10, 14, 20, 28, 42, 56)
 ) {
@@ -44,11 +42,6 @@ class MixedReviewScheduler(
 
             // Use only main pool cards (first 150) for sub-lessons
             val mainCards = lesson.mainPoolCards
-            val warmupCards = if (warmupSize > 0) {
-                lesson.allCards.shuffled().take(warmupSize)
-            } else {
-                emptyList()
-            }
             val currentCards = mainCards
             val allowMixed = lessonIndex > 0
             val reviewSlots = subLessonSize / 2
@@ -64,9 +57,6 @@ class MixedReviewScheduler(
             val newOnlyCount = if (newOnlyQueue.isEmpty()) 0 else ceilDiv(newOnlyQueue.size, subLessonSize)
 
             val subLessons = mutableListOf<ScheduledSubLesson>()
-            if (warmupCards.isNotEmpty()) {
-                subLessons.add(ScheduledSubLesson(SubLessonType.WARMUP, warmupCards))
-            }
 
             val mixedSubLessons = mutableListOf<ScheduledSubLesson>()
             if (allowMixed) {
