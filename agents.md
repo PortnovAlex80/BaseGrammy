@@ -295,9 +295,59 @@ grep -r "InputMode\|setInputMode\|WORD_BANK" --include="*.kt"
 - Count Word Bank mode for mastery tracking
 - Modify spaced repetition intervals without testing
 - Change flower calculation without updating FlowerCalculator
+- Push directly to main branch
+- Commit to main without user testing approval
 
 ✅ **ALWAYS**:
 - Use `recordCardShowForMastery()` for mastery tracking
 - Check `inputMode` before recording mastery
 - Validate word bank has minimum options for vocab sprint
 - Test sub-lesson progression after scheduler changes
+
+---
+
+## Development Workflow
+
+### For New Features/Fixes:
+
+1. **Create feature branch** from current branch
+   ```bash
+   git checkout -b feature/short-description
+   # or
+   git checkout -b fix/short-description
+   ```
+
+2. **Implement changes**
+   - Make code changes
+   - Add/update tests if needed
+   - Follow existing patterns in codebase
+
+3. **Create commits**
+   - Use descriptive commit messages
+   - Include `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>` footer
+
+4. **DO NOT PUSH YET** ⚠️
+   - Wait for user review
+   - Get confirmation that changes work correctly
+   - User must test functionality before merge
+
+5. **After User Approval**
+   - Push feature branch: `git push origin feature/branch-name`
+   - Create Pull Request (if available)
+   - Merge to main only after user confirms testing
+
+### Current Branch Strategy:
+- Main branch: `main` (stable, production-ready)
+- Development: Feature/fix branches (temporary, for testing)
+- Naming: `feature/` or `fix/` prefix required
+
+### Push Protocol:
+```
+❌ WRONG: Create feature → Commit → Push immediately
+✅ RIGHT: Create feature → Commit → Wait for user → Test confirmation → Push
+```
+
+**User must explicitly approve before:**
+- `git push` to any remote
+- Merging to `main`
+- Releasing to production
