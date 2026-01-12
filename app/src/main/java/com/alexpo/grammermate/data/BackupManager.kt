@@ -60,6 +60,13 @@ class BackupManager(private val context: Context) {
                 streakFile.copyTo(backupStreakFile, overwrite = true)
             }
 
+            // Backup user profile data
+            val profileFile = File(internalDir, "profile.yaml")
+            if (profileFile.exists()) {
+                val backupProfileFile = File(backupSubDir, "profile.yaml")
+                profileFile.copyTo(backupProfileFile, overwrite = true)
+            }
+
             // Create backup metadata
             createBackupMetadata(backupSubDir, timestamp)
 
@@ -99,6 +106,13 @@ class BackupManager(private val context: Context) {
             if (backupStreakFile.exists()) {
                 val streakFile = File(internalDir, "streak.yaml")
                 backupStreakFile.copyTo(streakFile, overwrite = true)
+            }
+
+            // Restore user profile data
+            val backupProfileFile = File(backupSubDir, "profile.yaml")
+            if (backupProfileFile.exists()) {
+                val profileFile = File(internalDir, "profile.yaml")
+                backupProfileFile.copyTo(profileFile, overwrite = true)
             }
 
             true
@@ -162,6 +176,7 @@ class BackupManager(private val context: Context) {
                 - mastery.yaml (flower levels and progress)
                 - progress.yaml (training session progress)
                 - streak.yaml (daily streak data)
+                - profile.yaml (user name and settings)
             """.trimIndent()
             metadataFile.writeText(metadata)
         } catch (e: Exception) {

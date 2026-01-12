@@ -80,6 +80,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -109,6 +112,7 @@ fun GrammarMateApp() {
             var screen by remember { mutableStateOf(AppScreen.HOME) }
             var showSettings by remember { mutableStateOf(false) }
             var showExitDialog by remember { mutableStateOf(false) }
+            var showWelcomeDialog by remember { mutableStateOf(state.userName == "GrammarMateUser") }
             val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
             val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
             val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
@@ -150,8 +154,18 @@ fun GrammarMateApp() {
                 onDeleteAllLessons = vm::deleteAllLessons,
                 onDeletePack = vm::deletePack,
                 onToggleTestMode = vm::toggleTestMode,
-                onUpdateVocabLimit = vm::updateVocabSprintLimit
+                onUpdateVocabLimit = vm::updateVocabSprintLimit,
+                onUpdateUserName = vm::updateUserName
             )
+
+            if (showWelcomeDialog) {
+                WelcomeDialog(
+                    onNameSet = { name ->
+                        vm.updateUserName(name)
+                        showWelcomeDialog = false
+                    }
+                )
+            }
 
             when (screen) {
                 AppScreen.HOME -> HomeScreen(
@@ -427,6 +441,79 @@ private data class LessonTileUi(
     val state: LessonTileState
 )
 
+/**
+ * Generate initials from user name (first letter of first two words, max 2 chars)
+ */
+private fun getUserInitials(name: String): String {
+    return name.trim()
+        .split(" ")
+        .filter { it.isNotEmpty() }
+        .take(2)
+        .map { it.first().uppercase() }
+        .joinToString("")
+        .ifEmpty { "GM" } // Fallback: GrammarMate
+}
+
+@Composable
+private fun WelcomeDialog(
+    onNameSet: (String) -> Unit
+) {
+    var nameInput by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { },
+        title = {
+            Text(
+                text = "Welcome to GrammarMate!",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "What's your name?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { nameInput = it.take(50) },
+                    label = { Text("Enter your name") },
+                    placeholder = { Text("e.g., John Smith") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            onNameSet(if (nameInput.isBlank()) "GrammarMateUser" else nameInput.trim())
+                        }
+                    )
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onNameSet(if (nameInput.isBlank()) "GrammarMateUser" else nameInput.trim())
+                }
+            ) {
+                Text("Continue")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onNameSet("GrammarMateUser")
+                }
+            ) {
+                Text("Skip")
+            }
+        }
+    )
+}
+
 @Composable
 private fun HomeScreen(
     state: TrainingUiState,
@@ -496,14 +583,14 @@ private fun HomeScreen(
                         .background(MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
-                        text = "AP",
+                        text = getUserInitials(state.userName),
                         modifier = Modifier.align(Alignment.Center),
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = "Alex Po", fontWeight = FontWeight.SemiBold)
+                Text(text = state.userName, fontWeight = FontWeight.SemiBold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LanguageSelector(
@@ -1539,13 +1626,15 @@ private fun SettingsSheet(
     onDeleteAllLessons: () -> Unit,
     onDeletePack: (String) -> Unit,
     onToggleTestMode: () -> Unit,
-    onUpdateVocabLimit: (Int) -> Unit
+    onUpdateVocabLimit: (Int) -> Unit,
+    onUpdateUserName: (String) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
     var newLessonTitle by remember { mutableStateOf("") }
     var newLanguageName by remember { mutableStateOf("") }
     var vocabLimitText by remember(state.vocabSprintLimit) { mutableStateOf(state.vocabSprintLimit.toString()) }
+    var userNameInput by remember(state.userName) { mutableStateOf(state.userName) }
     val scrollState = rememberScrollState()
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -1758,6 +1847,37 @@ private fun SettingsSheet(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Profile",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            OutlinedTextField(
+                value = userNameInput,
+                onValueChange = { userNameInput = it.take(50) },
+                label = { Text("Your Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    val trimmed = userNameInput.trim()
+                    if (trimmed.isNotEmpty() && trimmed != state.userName) {
+                        onUpdateUserName(trimmed)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = userNameInput.trim().isNotEmpty() && userNameInput.trim() != state.userName
+            ) {
+                Text("Save Name")
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

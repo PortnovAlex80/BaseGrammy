@@ -38,6 +38,8 @@ import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BackupManager
+import com.alexpo.grammermate.data.ProfileStore
+import com.alexpo.grammermate.data.UserProfile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -67,6 +69,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val masteryStore = MasteryStore(application)
     private val streakStore = StreakStore(application)
     private val backupManager = BackupManager(application)
+    private val profileStore = ProfileStore(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -97,6 +100,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore.ensureSeedData()
         val progress = progressStore.load()
         val config = configStore.load()
+        val profile = profileStore.load()
         eliteSizeMultiplier = config.eliteSizeMultiplier
         val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
             val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
@@ -167,7 +171,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteSizeMultiplier = config.eliteSizeMultiplier,
                 vocabSprintLimit = config.vocabSprintLimit,
                 currentStreak = streakData.currentStreak,
-                longestStreak = streakData.longestStreak
+                longestStreak = streakData.longestStreak,
+                userName = profile.userName
             )
         }
         rebuildSchedules(lessons)
@@ -2006,6 +2011,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    /**
+     * Update user name in profile and save to storage.
+     */
+    fun updateUserName(newName: String) {
+        val trimmed = newName.trim().take(50)
+        if (trimmed.isEmpty()) return
+
+        val profile = UserProfile(userName = trimmed)
+        profileStore.save(profile)
+
+        _uiState.update {
+            it.copy(userName = trimmed)
+        }
+    }
 }
 
 data class SubmitResult(
@@ -2087,5 +2107,7 @@ data class TrainingUiState(
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val streakMessage: String? = null,
-    val streakCelebrationToken: Int = 0
+    val streakCelebrationToken: Int = 0,
+    // User profile
+    val userName: String = "GrammarMateUser"
 )
