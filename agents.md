@@ -140,14 +140,59 @@ app/src/main/java/com/alexpo/grammermate/
 #### Methods
 - `calculate(mastery, lesson)` - Compute flower state from mastery data
 - `determineFlowerState(masteryPercent, healthPercent, mastery)` - Determine flower type
+- `toEmoji(state)` - Convert state to emoji string
 
-#### Flower States
-- `SEED` (0-33% mastery)
-- `SPROUT` (33-66% mastery)
-- `BLOOM` (66-100% mastery)
-- `WILTING` (declining health)
-- `WILTED` (<50% health)
-- `GONE` (>90 days no review)
+#### Flower States & Icons (FlowerCalculator.kt:105-113)
+```kotlin
+LOCKED  -> 🔒 "\uD83D\uDD12"  // Lesson not yet available
+SEED    -> 🌱 "\uD83C\uDF31"  // 0-33% mastery (0-49 unique shows)
+SPROUT  -> 🌿 "\uD83C\uDF3F"  // 33-66% mastery (50-99 unique shows)
+BLOOM   -> 🌸 "\uD83C\uDF38"  // 66-100% mastery (100-150 unique shows)
+WILTING -> 🥀 "\uD83E\uDD40"  // Health declining (50-100%)
+WILTED  -> 🍂 "\uD83C\uDF42"  // Health critical (<50%)
+GONE    -> ⚫ "\u26AB"        // Forgotten (>90 days without practice)
+```
+
+#### Flower Growth Mechanics (FlowerCalculator.kt:33-59)
+
+**Mastery Calculation:**
+```kotlin
+masteryPercent = (uniqueCardShows / 150).coerceIn(0f, 1f)
+// uniqueCardShows = count of distinct cards practiced with VOICE or KEYBOARD
+// Word Bank mode does NOT count (see TrainingViewModel.kt:1710)
+```
+
+**Health Calculation:**
+```kotlin
+healthPercent = e^(-daysSinceLastShow / stabilityMemory)
+// Ebbinghaus forgetting curve
+// Health decays if not practicing at expected intervals
+```
+
+**Icon Scale:**
+```kotlin
+scaleMultiplier = (masteryPercent × healthPercent).coerceIn(0.5f, 1.0f)
+// Icon size = 50-100% based on mastery and health
+// Fresh practice at high mastery = 100% size
+// Old practice or low mastery = 50% size
+```
+
+**State Priorities (FlowerCalculator.kt:77-88):**
+1. Health < 50% → WILTED 🍂
+2. Health < 100% → WILTING 🥀
+3. Mastery < 33% → SEED 🌱
+4. Mastery < 66% → SPROUT 🌿
+5. Mastery ≥ 66% → BLOOM 🌸
+
+**Growth Example:**
+- 0 shows: 🌱 SEED (0%, scale 50%)
+- 25 shows: 🌱 SEED (17%, scale ~58%)
+- 50 shows: 🌿 SPROUT (33%, scale ~66%)
+- 100 shows: 🌸 BLOOM (67%, scale ~83%)
+- 150 shows: 🌸 BLOOM (100%, scale 100%)
+- 150 shows + 30 days no practice: 🥀 WILTING (100%, scale ~70%)
+- 150 shows + 60 days no practice: 🍂 WILTED (100%, scale ~50%)
+- Any shows + 91 days no practice: ⚫ GONE (0%, scale 50%)
 
 ---
 
