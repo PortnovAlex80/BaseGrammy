@@ -37,6 +37,7 @@ import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
+import com.alexpo.grammermate.data.BackupManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -65,6 +66,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val configStore = AppConfigStore(application)
     private val masteryStore = MasteryStore(application)
     private val streakStore = StreakStore(application)
+    private val backupManager = BackupManager(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -75,6 +77,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var scheduleKey: String = ""
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
+    private var lastBackupTimeMs: Long = 0
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -1630,6 +1633,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds)
             )
         )
+
+        // Create periodic backup (every 30 minutes)
+        val now = System.currentTimeMillis()
+        if (now - lastBackupTimeMs >= 30 * 60 * 1000) {
+            lastBackupTimeMs = now
+            createProgressBackup()
+        }
     }
 
     private fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean {
@@ -1979,6 +1989,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun dismissStreakMessage() {
         _uiState.update {
             it.copy(streakMessage = null)
+        }
+    }
+
+    /**
+     * Create a backup of current progress data.
+     * Should be called periodically to ensure data is not lost on uninstall.
+     */
+    fun createProgressBackup() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                backupManager.createBackup()
+                Log.d(logTag, "Progress backup created successfully")
+            } catch (e: Exception) {
+                Log.e(logTag, "Failed to create progress backup", e)
+            }
         }
     }
 }

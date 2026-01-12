@@ -13,7 +13,8 @@
       "Bash(Select-Object -First 100)",
       "Bash(cmd.exe:*)",
       "Bash(./gradlew.bat compileDebugKotlin:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git restore:*)"
     ]
   }
 }

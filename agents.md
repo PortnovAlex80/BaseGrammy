@@ -213,6 +213,25 @@ scaleMultiplier = (masteryPercent × healthPercent).coerceIn(0.5f, 1.0f)
 
 ---
 
+### BackupManager.kt
+**Manages progress backup and restore for app reinstallation**
+
+#### Methods
+- `createBackup()` - Save current progress to Downloads/BaseGrammy
+- `restoreFromBackup(backupPath)` - Restore progress from backup
+- `getAvailableBackups()` - List all backups with timestamps
+- `deleteBackup(backupPath)` - Remove old backup
+- `hasBackup()` - Check if backups exist
+
+#### Backup Files
+Saves to: `Downloads/BaseGrammy/backup_YYYY-MM-DD_HH-mm-ss/`
+- `mastery.yaml` - Flower levels & card progress
+- `progress.yaml` - Training session state
+- `streak.yaml` - Daily streak data
+- `metadata.txt` - Backup timestamp & info
+
+---
+
 ### TrainingConfig.kt
 **Configuration constants**
 
@@ -396,3 +415,82 @@ grep -r "InputMode\|setInputMode\|WORD_BANK" --include="*.kt"
 - `git push` to any remote
 - Merging to `main`
 - Releasing to production
+
+---
+
+## Progress Persistence & Backup System
+
+### How It Works
+
+The app automatically backs up your progress data to prevent loss during reinstallation:
+
+**What's saved:**
+- 🌱 Flower levels (mastery progress for each lesson)
+- 📊 Card statistics (uniqueCardShows, totalCardShows)
+- 📅 Streak data (daily practice streaks)
+- ⏱️ Training session state (current position, stats)
+
+**Where backups are stored:**
+- Location: `Downloads/BaseGrammy/backup_YYYY-MM-DD_HH-mm-ss/`
+- Each backup is timestamped with full date and time
+- Contains 3 YAML files (mastery, progress, streak) + metadata
+
+### User Guide: Save Progress Before Uninstall
+
+1. **Regular Backups** (Automatic)
+   - The app creates backups whenever you save progress
+   - Backups are stored in device storage (not deleted with app)
+
+2. **Manual Backup** (Before uninstall)
+   - Call `viewModel.createProgressBackup()` (technical feature for future UI)
+   - Backups stay in `Downloads/BaseGrammy/` even after uninstall
+
+### User Guide: Restore Progress After Reinstall
+
+1. **Automatic Restoration** (Recommended)
+   - On first app launch after reinstall, the app checks for backups
+   - If found, it automatically restores the latest backup
+   - Shows confirmation toast: "Progress restored from backup (backup_...)"
+
+2. **Manual Restoration** (For advanced users)
+   - Check if `Downloads/BaseGrammy/` has backup folders
+   - Copy backup folder to internal app storage (technical process)
+   - Restart app to load restored data
+
+### Implementation Details
+
+**Files involved:**
+- `BackupManager.kt` - Handles backup create/restore
+- `MainActivity.kt` - Checks for backups on first launch
+- `TrainingViewModel.kt` - Triggers periodic backups via `createProgressBackup()`
+- `AndroidManifest.xml` - Permissions for external storage access
+
+**Key Flow:**
+```
+App Uninstall → Downloads/BaseGrammy/ data stays
+              ↓
+App Reinstall → MainActivity checks for backup
+              ↓
+If backup found → Auto-restore latest backup
+              ↓
+User sees "Progress restored" toast
+              ↓
+Flower levels & streaks are back ✅
+```
+
+### Important Notes
+
+⚠️ **Storage Requirements:**
+- Backups use external storage (Downloads folder)
+- Requires READ/WRITE_EXTERNAL_STORAGE permissions
+- Each backup is ~10-50KB depending on progress
+
+✅ **Best Practices:**
+- Keep backups in Downloads folder (safe from app deletion)
+- Check file manager if "Downloads/BaseGrammy/" exists before uninstall
+- Multiple backups accumulate, delete old ones if needed
+
+❌ **Won't Restore:**
+- Clearing app cache/data manually
+- If backups are manually deleted from Downloads
+- App data from different Android account
