@@ -523,6 +523,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 saveProgress()
             } else if (isLastCard) {
                 pauseTimer()
+
+                // Check if current sub-lesson is WARMUP before updating state
+                val currentState = _uiState.value
+                val currentSchedule = currentState.selectedLessonId?.let { lessonSchedules[it] }
+                val currentSubLessons = currentSchedule?.subLessons.orEmpty()
+                val currentSubLesson = currentSubLessons.getOrNull(currentState.activeSubLessonIndex)
+                val isWarmup = currentSubLesson?.type == SubLessonType.WARMUP
+
                 _uiState.update {
                     val nextCompleted = (it.completedSubLessonCount + 1).coerceAtMost(it.subLessonCount)
                     // Рассчитываем реальный прогресс на основе сохранённых карточек
@@ -566,8 +574,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 // Check if lesson is completed and update flower states
                 checkAndMarkLessonCompleted()
                 refreshFlowerStates()
-                // Update streak after completing sub-lesson
-                updateStreak()
+                // Update streak only if this was NOT a warmup sub-lesson
+                // Warmup is just practice with old cards and shouldn't count as daily progress
+                if (!isWarmup) {
+                    updateStreak()
+                }
             } else {
                 _uiState.update {
                     it.copy(
@@ -1768,6 +1779,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         var completed = 0
         for (subLesson in subLessons) {
+            // Skip WARMUP sub-lessons - they are not counted towards progress
+            // WARMUP is just a warm-up exercise with old cards
+            if (subLesson.type == SubLessonType.WARMUP) {
+                continue
+            }
+
             val allCardsShown = subLesson.cards.all { card ->
                 !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
             }
