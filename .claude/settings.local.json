@@ -14,7 +14,18 @@
       "Bash(cmd.exe:*)",
       "Bash(./gradlew.bat compileDebugKotlin:*)",
       "Bash(git push)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(dir \"C:\\\\Users\\\\user\\\\Downloads\\\\BaseGrammy\" /s /b)",
+      "Bash(for dir in \"C:\\\\Users\\\\user\\\\Downloads\\\\BaseGrammy\"/backup_*)",
+      "Bash(.gradlew assembleDebug:*)",
+      "Bash(bash ./gradlew:*)",
+      "Bash(timeout 120 bash:*)",
+      "Bash(timeout 180 bash:*)",
+      "Bash(gradlew assembleDebug:*)",
+      "Bash(pwsh -Command:*)",
+      "Bash(unzip:*)"
     ]
   }
 }
