@@ -2,7 +2,30 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gradlew.bat compileDebugKotlin:*)",
+      "Bash(git checkout:*)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(powershell.exe -Command \"./gradlew compileDebugKotlin --no-daemon\")",
+      "Bash(\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command \".\\\\gradlew assembleDebug\")",
+      "Bash(git reset:*)",
+      "Bash(./gradlew compileDebugKotlin:*)",
+      "Bash(Select-Object -First 100)",
+      "Bash(cmd.exe:*)",
+      "Bash(./gradlew.bat compileDebugKotlin:*)",
+      "Bash(git push)",
+      "Bash(git restore:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(dir \"C:\\\\Users\\\\user\\\\Downloads\\\\BaseGrammy\" /s /b)",
+      "Bash(for dir in \"C:\\\\Users\\\\user\\\\Downloads\\\\BaseGrammy\"/backup_*)",
+      "Bash(.gradlew assembleDebug:*)",
+      "Bash(bash ./gradlew:*)",
+      "Bash(timeout 120 bash:*)",
+      "Bash(timeout 180 bash:*)",
+      "Bash(gradlew assembleDebug:*)",
+      "Bash(pwsh -Command:*)",
+      "Bash(unzip:*)"
     ]
   }
 }

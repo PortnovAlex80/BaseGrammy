@@ -1,0 +1,159 @@
+Я работаю;I work
+Она идет домой;She goes home
+Мы живем здесь;We live here
+Они играют;They play
+У него есть машина;He has a car
+Я вижу воду;I see water
+Она знает правду;She knows the truth
+Мы слышим музыку;We hear music
+Он читает книгу;He reads a book
+Я люблю свою работу;I like my work
+Она учится в школе;She studies at school
+Мы помогаем людям;We help people
+Он водит машину;He drives a car
+Я чувствую радость;I feel happy
+Она пишет письмо;She writes a letter
+Мы смотрим фильм;We watch a film
+Он дает деньги;He gives money
+Я помню это;I remember that
+Она встает рано;She gets up early
+Мы едим вместе;We eat together
+Он работал вчера;He worked yesterday
+Я видел друга;I saw a friend
+Она жила в доме;She lived in a house
+Мы играли вчера;We played yesterday
+Он получил письмо;He got a letter
+Я знал ответ;I knew the answer
+Она помогала матери;She helped her mother
+Мы ходили в школу;We went to school
+Он читал книгу;He read a book
+Я слышал шум;I heard noise
+Она любила музыку;She liked music
+Мы жили в городе;We lived in a city
+Он водил машину;He drove a car
+Я чувствовал усталость;I felt tired
+Она писала отчет;She wrote a report
+Мы видели проблему;We saw a problem
+Он давал совет;He gave advice
+Я помнил имя;I remembered the name
+Она вставала рано;She got up early
+Мы ели дома;We ate at home
+Я поеду в город;I will go to the city
+Она купит машину;She will buy a car
+Мы поможем другу;We will help a friend
+Он придет завтра;He will come tomorrow
+Я почувствую радость;I will feel happy
+Она напишет письмо;She will write a letter
+Мы посмотрим фильм;We will watch a film
+Он даст деньги;He will give money
+Я вспомню детали;I will remember details
+Она встанет рано;She will get up early
+Мы поедем вместе;We will go together
+Он не работает;He doesn't work+He does not work
+Она не идет домой;She doesn't go home+She does not go home
+Мы не живем здесь;We don't live here+We do not live here
+Они не играют;They don't play+They do not play
+У него нет машины;He doesn't have a car+He does not have a car
+Я не вижу воду;I don't see water+I do not see water
+Она не знает правду;She doesn't know the truth+She does not know the truth
+Мы не слышим музыку;We don't hear music+We do not hear music
+Он не читает книгу;He doesn't read a book+He does not read a book
+Я не люблю свою работу;I don't like my work+I do not like my work
+Она не учится в школе;She doesn't study at school+She does not study at school
+Мы не помогаем людям;We don't help people+We do not help people
+Он не водит машину;He doesn't drive a car+He does not drive a car
+Я не чувствую радости;I don't feel happy+I do not feel happy
+Она не пишет письмо;She doesn't write a letter+She does not write a letter
+Мы не смотрим фильм;We don't watch a film+We do not watch a film
+Он не дает деньги;He doesn't give money+He does not give money
+Я не помню это;I don't remember that+I do not remember that
+Она не встает рано;She doesn't get up early+She does not get up early
+Мы не едим вместе;We don't eat together+We do not eat together
+Он не работал вчера;He didn't work yesterday+He did not work yesterday
+Я не видел друга;I didn't see a friend+I did not see a friend
+Она не жила в доме;She didn't live in a house+She did not live in a house
+Мы не играли вчера;We didn't play yesterday+We did not play yesterday
+Он не получил письмо;He didn't get a letter+He did not get a letter
+Я не знал ответа;I didn't know the answer+I did not know the answer
+Она не помогала матери;She didn't help her mother+She did not help her mother
+Мы не ходили в школу;We didn't go to school+We did not go to school
+Он не читал книгу;He didn't read a book+He did not read a book
+Я не слышал шума;I didn't hear noise+I did not hear noise
+Она не любила музыку;She didn't like music+She did not like music
+Мы не жили в городе;We didn't live in a city+We did not live in a city
+Он не водил машину;He didn't drive a car+He did not drive a car
+Я не чувствовал усталости;I didn't feel tired+I did not feel tired
+Она не писала отчет;She didn't write a report+She did not write a report
+Мы не видели проблемы;We didn't see a problem+We did not see a problem
+Он не давал совета;He didn't give advice+He did not give advice
+Я не помнил имени;I didn't remember the name+I did not remember the name
+Она не вставала рано;She didn't get up early+She did not get up early
+Мы не ели дома;We didn't eat at home+We did not eat at home
+Я не поеду в город;I will not go to the city+I won't go to the city
+Она не купит машину;She will not buy a car+She won't buy a car
+Мы не поможем другу;We will not help a friend+We won't help a friend
+Он не придет завтра;He will not come tomorrow+He won't come tomorrow
+Я не почувствую радости;I will not feel happy+I won't feel happy
+Она не напишет письмо;She will not write a letter+She won't write a letter
+Мы не посмотрим фильм;We will not watch a film+We won't watch a film
+Он не даст деньги;He will not give money+He won't give money
+Ты работаешь?;Do you work
+Она идет домой?;Does she go home
+Мы живем здесь?;Do we live here
+Они играют?;Do they play
+У него есть машина?;Does he have a car
+Я вижу воду?;Do I see water
+Она знает правду?;Does she know the truth
+Мы слышим музыку?;Do we hear music
+Он читает книгу?;Does he read a book
+Я люблю свою работу?;Do I like my work
+Она учится в школе?;Does she study at school
+Мы помогаем людям?;Do we help people
+Он водит машину?;Does he drive a car
+Я чувствую радость?;Do I feel happy
+Она пишет письмо?;Does she write a letter
+Мы смотрим фильм?;Do we watch a film
+Он дает деньги?;Does he give money
+Я помню это?;Do I remember that
+Она встает рано?;Does she get up early
+Мы едим вместе?;Do we eat together
+Он работал вчера?;Did he work yesterday
+Я видел друга?;Did I see a friend
+Она жила в доме?;Did she live in a house
+Мы играли вчера?;Did we play yesterday
+Он получил письмо?;Did he get a letter
+Я знал ответ?;Did I know the answer
+Она помогала матери?;Did she help her mother
+Мы ходили в школу?;Did we go to school
+Он читал книгу?;Did he read a book
+Я слышал шум?;Did I hear noise
+Она любила музыку?;Did she like music
+Мы жили в городе?;Did we live in a city
+Он водил машину?;Did he drive a car
+Я чувствовал усталость?;Did I feel tired
+Она писала отчет?;Did she write a report
+Мы видели проблему?;Did we see a problem
+Он давал совет?;Did he give advice
+Я помнил имя?;Did I remember the name
+Она вставала рано?;Did she get up early
+Мы ели дома?;Did we eat at home
+Я поеду в город?;Will I go to the city
+Она купит машину?;Will she buy a car
+Мы поможем другу?;Will we help a friend
+Он придет завтра?;Will he come tomorrow
+Я почувствую радость?;Will I feel happy
+Она напишет письмо?;Will she write a letter
+Мы посмотрим фильм?;Will we watch a film
+Он даст деньги?;Will he give money
+Я вспомню детали?;Will I remember details
+Она встанет рано?;Will she get up early
+Мы поедем вместе?;Will we go together
+Ты можешь помочь?;Can you help
+Она может петь?;Can she sing
+Мы можем идти?;Can we go
+Они могут играть?;Can they play
+У него может быть машина?;Can he have a car
+Я могу видеть воду?;Can I see water
+Она может знать правду?;Can she know the truth
+Мы можем слышать музыку?;Can we hear music
+Он может читать книгу?;Can he read a book

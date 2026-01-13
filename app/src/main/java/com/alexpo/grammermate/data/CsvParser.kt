@@ -23,18 +23,18 @@ object CsvParser {
                 }
                 val columns = parseLine(line)
                 if (columns.size != 2) {
-                    throw IllegalArgumentException("Invalid CSV at line $lineNumber")
+                    return@forEach
                 }
                 val ru = columns[0].trim().trim('"')
                 val answersRaw = columns[1]
                 if (ru.isBlank() || answersRaw.isBlank()) {
-                    throw IllegalArgumentException("Empty fields at line $lineNumber")
+                    return@forEach
                 }
                 val answers = answersRaw.split("+")
                     .map { it.trim().trim('"') }
                     .filter { it.isNotBlank() }
                 if (answers.isEmpty()) {
-                    throw IllegalArgumentException("Empty answers at line $lineNumber")
+                    return@forEach
                 }
                 cards.add(
                     SentenceCard(
