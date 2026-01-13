@@ -76,7 +76,8 @@ object FlowerCalculator {
     ): FlowerState {
         return when {
             // Если здоровье упало ниже порога увядания
-            healthPercent < SpacedRepetitionConfig.WILTED_THRESHOLD -> FlowerState.WILTED
+            // Используем небольшой эпсилон т.к. формула гарантирует health >= WILTED_THRESHOLD
+            healthPercent <= SpacedRepetitionConfig.WILTED_THRESHOLD + 0.01f -> FlowerState.WILTED
 
             // Если здоровье между 50% и 100% - увядает
             healthPercent < 1.0f -> FlowerState.WILTING
