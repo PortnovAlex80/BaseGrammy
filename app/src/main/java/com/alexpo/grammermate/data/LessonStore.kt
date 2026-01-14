@@ -46,14 +46,14 @@ class LessonStore(private val context: Context) {
         return lessonsDir.walkTopDown().any { it.isFile && it.extension.equals("csv", ignoreCase = true) }
     }
 
-    fun seedDefaultPacksIfNeeded(): Boolean {
+    fun seedDefaultPacksIfNeeded(): SeedResult {
         ensureSeedData()
 
         // Check if we need to reload packs (version upgrade)
         val oldMarker = File(baseDir, "seed_v1.done")
         val needsReload = !seedMarker.exists() && oldMarker.exists()
 
-        if (seedMarker.exists()) return false
+        if (seedMarker.exists()) return SeedResult.AlreadySeeded
 
         // If upgrading from v1, remove old lessons from default packs to force reload
         if (needsReload) {
@@ -62,7 +62,7 @@ class LessonStore(private val context: Context) {
 
         if (hasLessonContent() && !needsReload) {
             AtomicFileWriter.writeText(seedMarker, "skip")
-            return false
+            return SeedResult.AlreadySeeded
         }
 
         val seeds = listOf(
@@ -70,9 +70,15 @@ class LessonStore(private val context: Context) {
             "grammarmate/packs/IT_WORD_ORDER_A1.zip"
         )
         var seededAny = false
+        val errors = mutableListOf<String>()
+
         seeds.forEach { assetPath ->
-            val seeded = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
-            if (seeded) seededAny = true
+            val result = runCatching { importPackFromAssetsInternal(assetPath) }
+            if (result.isSuccess) {
+                seededAny = true
+            } else {
+                errors.add("Failed to load $assetPath: ${result.exceptionOrNull()?.message}")
+            }
         }
 
         // Clean up old marker
@@ -81,7 +87,13 @@ class LessonStore(private val context: Context) {
         }
 
         AtomicFileWriter.writeText(seedMarker, if (seededAny) "ok" else "none")
-        return seededAny
+
+        return when {
+            errors.isNotEmpty() && !seededAny -> SeedResult.Error(errors)
+            errors.isNotEmpty() && seededAny -> SeedResult.PartialSuccess(errors)
+            seededAny -> SeedResult.Success
+            else -> SeedResult.NoContent
+        }
     }
 
     /**
@@ -635,4 +647,12 @@ class LessonStore(private val context: Context) {
         val title: String,
         val fileName: String
     )
+}
+
+sealed class SeedResult {
+    object AlreadySeeded : SeedResult()
+    object Success : SeedResult()
+    object NoContent : SeedResult()
+    data class PartialSuccess(val errors: List<String>) : SeedResult()
+    data class Error(val errors: List<String>) : SeedResult()
 }

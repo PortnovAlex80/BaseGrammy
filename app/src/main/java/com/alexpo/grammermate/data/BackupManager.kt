@@ -28,11 +28,17 @@ class BackupManager(private val context: Context) {
     /**
      * Create a backup of all progress data.
      * Saves mastery.yaml and progress.yaml to Downloads/BaseGrammy
+     * Keeps only the latest backup, deletes old ones.
      * Returns true if backup succeeded
      */
     fun createBackup(): Boolean {
         return try {
             if (backupDir == null) return false
+
+            // Get list of old backups before creating new one
+            val oldBackups = backupDir!!.listFiles { file ->
+                file.isDirectory && file.name.startsWith("backup_")
+            }?.toList() ?: emptyList()
 
             val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
             val backupSubDir = File(backupDir, "backup_$timestamp")
@@ -69,6 +75,11 @@ class BackupManager(private val context: Context) {
 
             // Create backup metadata
             createBackupMetadata(backupSubDir, timestamp)
+
+            // Delete old backups after successful creation
+            oldBackups.forEach { oldBackup ->
+                oldBackup.deleteRecursively()
+            }
 
             true
         } catch (e: Exception) {

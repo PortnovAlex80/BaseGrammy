@@ -71,6 +71,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -114,11 +115,16 @@ fun GrammarMateApp() {
             var screen by remember { mutableStateOf(AppScreen.HOME) }
             var showSettings by remember { mutableStateOf(false) }
             var showExitDialog by remember { mutableStateOf(false) }
-            var showWelcomeDialog by remember { mutableStateOf(state.userName == "GrammarMateUser") }
+            var showWelcomeDialog by remember { mutableStateOf(false) }
             val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
             val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
             val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
             val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
+
+            // Update welcome dialog visibility when userName changes
+            LaunchedEffect(state.userName) {
+                showWelcomeDialog = state.userName == "GrammarMateUser"
+            }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
