@@ -58,7 +58,8 @@ class MasteryStore(private val context: Context) {
                         lastShowDateMs = (lessonData["lastShowDateMs"] as? Number)?.toLong() ?: 0L,
                         intervalStepIndex = (lessonData["intervalStepIndex"] as? Number)?.toInt() ?: 0,
                         completedAtMs = (lessonData["completedAtMs"] as? Number)?.toLong(),
-                        shownCardIds = shownCardIds
+                        shownCardIds = shownCardIds,
+                        infiniteCompletionCount = (lessonData["infiniteCompletionCount"] as? Number)?.toInt() ?: 0
                     )
 
                     cache[languageId]!![lessonId] = mastery
@@ -201,6 +202,37 @@ class MasteryStore(private val context: Context) {
         persistToFile()
     }
 
+    /**
+     * Update infinite completion count for a lesson.
+     */
+    fun updateInfiniteCompletion(languageId: String, lessonId: String, completionCount: Int) {
+        val existing = get(lessonId, languageId) ?: LessonMasteryState(
+            lessonId = lessonId,
+            languageId = languageId
+        )
+        val updated = existing.copy(infiniteCompletionCount = completionCount)
+        save(updated)
+    }
+
+    /**
+     * Reset shown cards for infinite mode.
+     */
+    fun resetShownCards(languageId: String, lessonId: String) {
+        val existing = get(lessonId, languageId) ?: LessonMasteryState(
+            lessonId = lessonId,
+            languageId = languageId
+        )
+        val updated = existing.copy(shownCardIds = emptySet())
+        save(updated)
+    }
+
+    /**
+     * Get mastery state (alias for compatibility).
+     */
+    fun getMasteryState(languageId: String, lessonId: String): LessonMasteryState? {
+        return get(lessonId, languageId)
+    }
+
     private fun persistToFile() {
         val payload = linkedMapOf<String, Any>()
 
@@ -214,7 +246,8 @@ class MasteryStore(private val context: Context) {
                     "lastShowDateMs" to mastery.lastShowDateMs,
                     "intervalStepIndex" to mastery.intervalStepIndex,
                     "completedAtMs" to (mastery.completedAtMs ?: 0L),
-                    "shownCardIds" to mastery.shownCardIds.toList()
+                    "shownCardIds" to mastery.shownCardIds.toList(),
+                    "infiniteCompletionCount" to mastery.infiniteCompletionCount
                 )
             }
 

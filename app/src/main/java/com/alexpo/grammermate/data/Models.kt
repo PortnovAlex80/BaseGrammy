@@ -81,7 +81,8 @@ data class StoryQuiz(
 enum class TrainingMode {
     LESSON,
     ALL_SEQUENTIAL,
-    ALL_MIXED
+    ALL_MIXED,
+    INFINITE
 }
 
 enum class BossType {
@@ -139,7 +140,8 @@ data class LessonMasteryState(
     val lastShowDateMs: Long = 0L,
     val intervalStepIndex: Int = 0,
     val completedAtMs: Long? = null,
-    val shownCardIds: Set<String> = emptySet()
+    val shownCardIds: Set<String> = emptySet(),
+    val infiniteCompletionCount: Int = 0
 )
 
 /**
