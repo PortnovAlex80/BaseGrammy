@@ -40,8 +40,6 @@ import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
-import com.alexpo.grammermate.data.HiddenCardsStore
-import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -72,7 +70,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val streakStore = StreakStore(application)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
-    private val hiddenCardsStore = HiddenCardsStore(File(application.filesDir, "grammarmate"))
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -373,8 +370,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 wordBankWords = emptyList(),
-                selectedWords = emptyList(),
-                infiniteCompletionCount = mastery?.infiniteCompletionCount
+                selectedWords = emptyList()
             )
         }
         buildSessionCards()
@@ -769,25 +765,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
 
-    fun showHideCardDialog() {
-        _uiState.update { it.copy(showHideCardDialog = true) }
-    }
-
-    fun hideCardDialogDismiss() {
-        _uiState.update { it.copy(showHideCardDialog = false) }
-    }
-
-    fun hideCurrentCard() {
-        val card = _uiState.value.currentCard ?: return
-        val lessonId = _uiState.value.selectedLessonId ?: return
-
-        hiddenCardsStore.hideCard(lessonId, card.id)
-
-        // Переходим к следующей карточке
-        _uiState.update { it.copy(showHideCardDialog = false) }
-        nextCard(triggerVoice = false)
-    }
-
     fun importLesson(uri: Uri) {
         val languageId = _uiState.value.selectedLanguageId
         val lesson = lessonStore.importFromUri(languageId, uri, getApplication<Application>().contentResolver)
@@ -1102,18 +1079,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessonCards = when (state.mode) {
             TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
             // ALL_MIXED (Review) uses all cards including reserve to prevent memorization
-            TrainingMode.ALL_MIXED -> lessons.flatMap { it.allCards }.shuffled().take(300)
-            TrainingMode.INFINITE -> {
-                val lesson = lessons.firstOrNull { it.id == state.selectedLessonId } ?: return
-                val masteryState = masteryStore.get(lesson.id, state.selectedLanguageId)
-                val shownCards = masteryState?.shownCardIds ?: emptySet()
-                val hiddenCards = hiddenCardsStore.getHiddenCards(lesson.id)
-
-                lesson.allCards
-                    .filter { !shownCards.contains(it.id) && !hiddenCards.contains(it.id) }
-                    .shuffled()
-                    .take(subLessonSize)
-            }
+            TrainingMode.ALL_MIXED -> lessons.flatMap { it.allCards }.shuffled()
             else -> emptyList()
         }
         val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
@@ -1155,61 +1121,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         buildSessionCards()
         saveProgress()
-    }
-
-    fun startInfiniteLesson() {
-        val lessonId = _uiState.value.selectedLessonId ?: return
-        val lesson = _uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
-
-        val masteryState = masteryStore.getMasteryState(_uiState.value.selectedLanguageId, lessonId)
-        val shownCards = masteryState?.shownCardIds ?: emptySet()
-
-        val availableCards = lesson.allCards.filter {
-            !shownCards.contains(it.id)
-        }
-
-        // Если все карточки показаны - поздравляем и сбрасываем
-        if (availableCards.isEmpty()) {
-            // Increment infinite completion count
-            val newCompletionCount = (masteryState?.infiniteCompletionCount ?: 0) + 1
-            masteryStore.updateInfiniteCompletion(
-                _uiState.value.selectedLanguageId,
-                lessonId,
-                newCompletionCount
-            )
-
-            // Reset shown cards for next infinite cycle
-            masteryStore.resetShownCards(_uiState.value.selectedLanguageId, lessonId)
-
-            // Show congratulations message
-            _uiState.update { it.copy(
-                streakMessage = "🎉 Все карточки изучены! Начинаем заново.",
-                streakCelebrationToken = it.streakCelebrationToken + 1
-            )}
-        }
-
-        _uiState.update {
-            it.copy(
-                mode = TrainingMode.INFINITE,
-                currentIndex = 0,
-                correctCount = 0,
-                incorrectCount = 0,
-                sessionState = SessionState.PAUSED
-            )
-        }
-
-        val progress = TrainingProgress(
-            languageId = _uiState.value.selectedLanguageId,
-            mode = TrainingMode.INFINITE,
-            lessonId = lessonId,
-            currentIndex = 0,
-            correctCount = 0,
-            incorrectCount = 0
-        )
-        progressStore.save(progress)
-
-        buildSessionCards()
-        startSession()
     }
 
     fun openEliteStep(index: Int) {
@@ -2189,7 +2100,6 @@ data class TrainingUiState(
     // Flower mastery states
     val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
     val currentLessonFlower: FlowerVisual? = null,
-    val infiniteCompletionCount: Int? = null,
     // Word bank mode
     val wordBankWords: List<String> = emptyList(),
     val selectedWords: List<String> = emptyList(),
@@ -2199,7 +2109,5 @@ data class TrainingUiState(
     val streakMessage: String? = null,
     val streakCelebrationToken: Int = 0,
     // User profile
-    val userName: String = "GrammarMateUser",
-    // Hide card dialog
-    val showHideCardDialog: Boolean = false
+    val userName: String = "GrammarMateUser"
 )

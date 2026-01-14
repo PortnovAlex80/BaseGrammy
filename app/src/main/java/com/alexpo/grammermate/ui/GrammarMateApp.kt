@@ -42,12 +42,10 @@ import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -195,10 +193,6 @@ fun GrammarMateApp() {
                         vm.openVocabSprint()
                         screen = AppScreen.VOCAB
                     },
-                    onStartInfinite = {
-                        vm.startInfiniteLesson()
-                        screen = AppScreen.TRAINING
-                    },
                     onStartBossLesson = {
                         vm.startBossLesson()
                         screen = AppScreen.TRAINING
@@ -265,8 +259,7 @@ fun GrammarMateApp() {
                     onShowAnswer = vm::showAnswer,
                     onVoicePromptStarted = vm::onVoicePromptStarted,
                     onSelectWordFromBank = vm::selectWordFromBank,
-                    onRemoveLastWord = vm::removeLastSelectedWord,
-                    onHideCard = { vm.showHideCardDialog() }
+                    onRemoveLastWord = vm::removeLastSelectedWord
                 )
             }
 
@@ -324,24 +317,6 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "End session?") },
                     text = { Text(text = "Current session will be completed.") }
-                )
-            }
-
-            if (state.showHideCardDialog) {
-                AlertDialog(
-                    onDismissRequest = { vm.hideCardDialogDismiss() },
-                    title = { Text("⚠ Скрыть карточку?") },
-                    text = { Text("Карточка будет скрыта из показа без влияния на прогресс. Это действие будет записано в лог.") },
-                    confirmButton = {
-                        TextButton(onClick = { vm.hideCurrentCard() }) {
-                            Text("Скрыть")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { vm.hideCardDialogDismiss() }) {
-                            Text("Отмена")
-                        }
-                    }
                 )
             }
 
@@ -785,7 +760,6 @@ private fun LessonRoadmapScreen(
     onBack: () -> Unit,
     onStartSubLesson: (Int) -> Unit,
     onOpenVocab: () -> Unit,
-    onStartInfinite: () -> Unit,
     onStartBossLesson: () -> Unit,
     onStartBossMega: () -> Unit,
     onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit
@@ -811,15 +785,6 @@ private fun LessonRoadmapScreen(
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.bossMegaReward
     val entries = buildRoadmapEntries(trainingTypes, hasMegaBoss)
-
-    // Подсчет карточек (показано/осталось)
-    val currentLesson = state.lessons.firstOrNull { it.id == state.selectedLessonId }
-    val totalCards = currentLesson?.allCards?.size ?: 0
-    val shownCardsCount = state.currentLessonFlower?.let {
-        (it.masteryPercent * 150).toInt()
-    } ?: 0
-    val remainingCards = totalCards - shownCardsCount
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -842,18 +807,7 @@ private fun LessonRoadmapScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = "Exercise ${currentIndex + 1} of $total", textAlign = TextAlign.Center)
-            Text(
-                text = "Cards: $shownCardsCount shown / $remainingCards remaining",
-                textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-        }
+        Text(text = "Exercise ${currentIndex + 1} of $total", textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(16.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -903,15 +857,6 @@ private fun LessonRoadmapScreen(
                     }
                     is RoadmapEntry.Vocab -> {
                         VocabTile(label = "Vocab", onClick = onOpenVocab)
-                    }
-                    is RoadmapEntry.Infinite -> {
-                        val infiniteEnabled = completed >= total
-                        val infiniteNumber = total + 1 + (state.infiniteCompletionCount ?: 0)
-                        InfiniteTile(
-                            lessonNumber = infiniteNumber.toString(),
-                            enabled = infiniteEnabled,
-                            onClick = onStartInfinite
-                        )
                     }
                     is RoadmapEntry.StoryCheckIn -> {
                         StoryTile(
@@ -1031,7 +976,6 @@ private fun EliteStepTile(
 private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Vocab : RoadmapEntry()
-    object Infinite : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
     object BossLesson : RoadmapEntry()
@@ -1045,7 +989,7 @@ private fun buildRoadmapEntries(trainingTypes: List<SubLessonType>, hasMegaBoss:
     trainingTypes.forEachIndexed { index, type ->
         entries.add(RoadmapEntry.Training(index, type))
     }
-    entries.add(RoadmapEntry.Infinite)
+    entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckOut)
     entries.add(RoadmapEntry.BossLesson)
     if (hasMegaBoss) {
@@ -1107,38 +1051,6 @@ private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onCli
                 modifier = Modifier.size(18.dp),
                 tint = tint
             )
-        }
-    }
-}
-
-@Composable
-private fun InfiniteTile(
-    lessonNumber: String,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .clickable(enabled = enabled, onClick = onClick),
-        colors = if (enabled) {
-            CardDefaults.cardColors()
-        } else {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = lessonNumber, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            Text(text = "∞", fontSize = 24.sp)
         }
     }
 }
@@ -1989,8 +1901,7 @@ private fun TrainingScreen(
     onShowAnswer: () -> Unit,
     onVoicePromptStarted: () -> Unit,
     onSelectWordFromBank: (String) -> Unit,
-    onRemoveLastWord: () -> Unit,
-    onHideCard: () -> Unit
+    onRemoveLastWord: () -> Unit
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
@@ -2047,7 +1958,7 @@ private fun TrainingScreen(
                 hasCards
             )
             ResultBlock(state)
-            NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, onHideCard, state.sessionState, hasCards)
+            NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
         }
     }
 }
@@ -2482,7 +2393,6 @@ private fun NavigationRow(
     onNext: (Boolean) -> Unit,
     onTogglePause: () -> Unit,
     onRequestExit: () -> Unit,
-    onHideCard: () -> Unit,
     state: SessionState,
     hasCards: Boolean
 ) {
@@ -2504,9 +2414,6 @@ private fun NavigationRow(
             }
             NavIconButton(onClick = onRequestExit, enabled = hasCards) {
                 Icon(Icons.Default.StopCircle, contentDescription = "Exit session")
-            }
-            NavIconButton(onClick = onHideCard, enabled = hasCards) {
-                Icon(Icons.Default.Warning, contentDescription = "Hide card")
             }
             NavIconButton(onClick = { onNext(false) }, enabled = hasCards) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next")
