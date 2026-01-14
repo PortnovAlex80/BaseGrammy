@@ -17,7 +17,7 @@ class LessonStore(private val context: Context) {
     private val lessonsDir = File(baseDir, "lessons")
     private val languagesFile = File(lessonsDir, "languages.yaml")
     private val languagesStore = YamlListStore(yaml, languagesFile)
-    private val seedMarker = File(baseDir, "seed_v1.done")
+    private val seedMarker = File(baseDir, "seed_v2.done") // v2: Force reload for updated packs
     private val packsDir = File(baseDir, "packs")
     private val packsFile = File(baseDir, "packs.yaml")
     private val packsStore = YamlListStore(yaml, packsFile)
@@ -48,11 +48,23 @@ class LessonStore(private val context: Context) {
 
     fun seedDefaultPacksIfNeeded(): Boolean {
         ensureSeedData()
+
+        // Check if we need to reload packs (version upgrade)
+        val oldMarker = File(baseDir, "seed_v1.done")
+        val needsReload = !seedMarker.exists() && oldMarker.exists()
+
         if (seedMarker.exists()) return false
-        if (hasLessonContent()) {
+
+        // If upgrading from v1, remove old lessons from default packs to force reload
+        if (needsReload) {
+            removeDefaultPackLessons()
+        }
+
+        if (hasLessonContent() && !needsReload) {
             AtomicFileWriter.writeText(seedMarker, "skip")
             return false
         }
+
         val seeds = listOf(
             "grammarmate/packs/EN_WORD_ORDER_A1.zip",
             "grammarmate/packs/IT_WORD_ORDER_A1.zip"
@@ -62,8 +74,36 @@ class LessonStore(private val context: Context) {
             val seeded = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
             if (seeded) seededAny = true
         }
+
+        // Clean up old marker
+        if (oldMarker.exists()) {
+            oldMarker.delete()
+        }
+
         AtomicFileWriter.writeText(seedMarker, if (seededAny) "ok" else "none")
         return seededAny
+    }
+
+    /**
+     * Remove lessons from default packs to force reload with updated content
+     */
+    private fun removeDefaultPackLessons() {
+        val defaultPackIds = listOf("EN_WORD_ORDER_A1", "IT_WORD_ORDER_A1")
+        defaultPackIds.forEach { packId ->
+            // Remove lesson files for this pack
+            val enDir = File(lessonsDir, "en")
+            val itDir = File(lessonsDir, "it")
+
+            listOf(enDir, itDir).forEach { langDir ->
+                if (langDir.exists()) {
+                    langDir.listFiles()?.forEach { file ->
+                        if (file.name.contains(packId, ignoreCase = true)) {
+                            file.delete()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun getLanguages(): List<Language> {
