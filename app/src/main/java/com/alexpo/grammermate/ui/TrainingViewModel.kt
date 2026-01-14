@@ -12,7 +12,6 @@ import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.LessonSchedule
-import com.alexpo.grammermate.data.SeedResult
 import com.alexpo.grammermate.data.MixedReviewScheduler
 import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.AppConfig
@@ -190,35 +189,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val seedResult = lessonStore.seedDefaultPacksIfNeeded()
-
-            // Check for errors and show message if needed
-            when (seedResult) {
-                is SeedResult.Error -> {
-                    withContext(Dispatchers.Main) {
-                        _uiState.update {
-                            it.copy(
-                                streakMessage = "⚠️ Ошибка загрузки уроков из assets:\n${seedResult.errors.joinToString("\n")}",
-                                streakCelebrationToken = it.streakCelebrationToken + 1
-                            )
-                        }
-                    }
-                    return@launch
-                }
-                is SeedResult.PartialSuccess -> {
-                    withContext(Dispatchers.Main) {
-                        _uiState.update {
-                            it.copy(
-                                streakMessage = "⚠️ Частичная загрузка уроков. Некоторые паки не загрузились:\n${seedResult.errors.joinToString("\n")}",
-                                streakCelebrationToken = it.streakCelebrationToken + 1
-                            )
-                        }
-                    }
-                }
-                is SeedResult.AlreadySeeded, SeedResult.NoContent -> return@launch
-                SeedResult.Success -> {} // Continue normally
-            }
-
+            val seeded = lessonStore.seedDefaultPacksIfNeeded()
+            if (!seeded) return@launch
             val currentLang = _uiState.value.selectedLanguageId
             val languages = lessonStore.getLanguages()
             val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
