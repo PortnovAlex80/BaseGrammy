@@ -1,0 +1,118 @@
+{
+  "storyId": "S_L01_OUT_01",
+  "lessonId": "L01_PRESENT_SIMPLE",
+  "phase": "CHECK_OUT",
+  "text": "Jane works for a company and she has a good job in the office. She usually leaves for work at 9, but today she works from home. Last week Jane worked a lot and got many messages from her boss. One evening the boss called her and they talked for 30 minutes about a new project and a tight deadline. Jane likes the idea, but she wants more time and fewer meetings. Yesterday she did not go to the office. She had breakfast late and rested in the morning. After breakfast she tried to fix her old car, but she cannot fix it. She wants a new car, but she does not want to spend much money. In the afternoon she called her brother. He sells cars and he knows a good mechanic. They talked about a black car and a green car. Jane also called a friend from another company. Her friend works a lot and often leaves work late. They talked about work, money, and free time. In the evening Jane went to the movies. She liked the movie, but it was long. When she came home, she saw a message from her boss again. Today Jane wants a quiet day. She studies English for a few months and she likes to study. She has friends, but she does not invite them on weekdays. Tomorrow Jane will leave home early. She will take a taxi and get to the office on time. After work she will call her boss and talk about the plan for the next weekend.",
+  "questions": [
+    {
+      "qId": "Q1",
+      "prompt": "Where does Jane work today?",
+      "options": [
+        "In the office",
+        "At a hotel",
+        "From home",
+        "In a café"
+      ],
+      "correctIndex": 2
+    },
+    {
+      "qId": "Q2",
+      "prompt": "What did Jane get last week?",
+      "options": [
+        "Many messages from her boss",
+        "A cake from her friend",
+        "A new house",
+        "A black taxi"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q3",
+      "prompt": "What did Jane and her boss talk about for 30 minutes?",
+      "options": [
+        "The movie",
+        "A new project",
+        "Her brother’s car",
+        "Breakfast recipes"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "qId": "Q4",
+      "prompt": "What did Jane try to do after breakfast yesterday?",
+      "options": [
+        "Fix her old car",
+        "Send an email",
+        "Buy a taxi",
+        "Build a roof"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q5",
+      "prompt": "Why did Jane call her brother?",
+      "options": [
+        "He sells cars and knows a good mechanic",
+        "He invites her to the movies",
+        "He works for her boss",
+        "He studies English with her"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q6",
+      "prompt": "What colors of cars do Jane and her brother discuss?",
+      "options": [
+        "Silver and gold",
+        "Black and green",
+        "Blue and yellow",
+        "Red and white"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "qId": "Q7",
+      "prompt": "Where did Jane go in the evening yesterday?",
+      "options": [
+        "To the office",
+        "To the movies",
+        "To her boss’s house",
+        "To a taxi station"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "qId": "Q8",
+      "prompt": "What does Jane do to improve her English?",
+      "options": [
+        "She builds vocabulary apps",
+        "She never studies",
+        "She only watches movies",
+        "She studies English for a few months"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "qId": "Q9",
+      "prompt": "How will Jane go to the office tomorrow?",
+      "options": [
+        "By taxi",
+        "On foot",
+        "By bicycle",
+        "By bus"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "qId": "Q10",
+      "prompt": "What will Jane talk about with her boss after work tomorrow?",
+      "options": [
+        "Her breakfast time",
+        "Her brother’s hobby",
+        "A green roof",
+        "The plan for the next weekend"
+      ],
+      "correctIndex": 3
+    }
+  ]
+}
