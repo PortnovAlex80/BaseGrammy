@@ -48,22 +48,59 @@ class LessonStore(private val context: Context) {
 
     fun seedDefaultPacksIfNeeded(): Boolean {
         ensureSeedData()
-        if (seedMarker.exists()) return false
-        if (hasLessonContent()) {
-            AtomicFileWriter.writeText(seedMarker, "skip")
-            return false
-        }
-        val seeds = listOf(
+        val defaultPacks = listOf(
             "grammarmate/packs/EN_WORD_ORDER_A1.zip",
             "grammarmate/packs/IT_WORD_ORDER_A1.zip"
         )
+        val installedPacks = getInstalledPacks().associateBy { it.packId }
+        val packManifests = defaultPacks.mapNotNull { assetPath ->
+            val manifest = readManifestFromAsset(assetPath) ?: return@mapNotNull null
+            assetPath to manifest
+        }
+
+        val needsImport = packManifests.any { (_, manifest) ->
+            val installed = installedPacks[manifest.packId]
+            installed == null || installed.packVersion != manifest.packVersion
+        }
+
+        if (!needsImport) {
+            if (!seedMarker.exists()) {
+                AtomicFileWriter.writeText(seedMarker, "skip")
+            }
+            return false
+        }
+
+        if (hasLessonContent() && installedPacks.isEmpty()) {
+            AtomicFileWriter.writeText(seedMarker, "skip")
+            return false
+        }
+
         var seededAny = false
-        seeds.forEach { assetPath ->
+        packManifests.forEach { (assetPath, _) ->
             val seeded = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
             if (seeded) seededAny = true
         }
         AtomicFileWriter.writeText(seedMarker, if (seededAny) "ok" else "none")
         return seededAny
+    }
+
+    private fun readManifestFromAsset(assetPath: String): LessonPackManifest? {
+        return runCatching {
+            context.assets.open(assetPath).use { input ->
+                ZipInputStream(input).use { zip ->
+                    var entry = zip.nextEntry
+                    while (entry != null) {
+                        if (!entry.isDirectory && entry.name.equals("manifest.json", ignoreCase = true)) {
+                            val text = zip.readBytes().toString(Charsets.UTF_8)
+                            return LessonPackManifest.fromJson(text)
+                        }
+                        zip.closeEntry()
+                        entry = zip.nextEntry
+                    }
+                }
+            }
+            null
+        }.getOrNull()
     }
 
     fun getLanguages(): List<Language> {

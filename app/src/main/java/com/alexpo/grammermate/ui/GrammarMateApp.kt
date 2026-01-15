@@ -69,6 +69,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -112,11 +113,15 @@ fun GrammarMateApp() {
             var screen by remember { mutableStateOf(AppScreen.HOME) }
             var showSettings by remember { mutableStateOf(false) }
             var showExitDialog by remember { mutableStateOf(false) }
-            var showWelcomeDialog by remember { mutableStateOf(state.userName == "GrammarMateUser") }
+            var showWelcomeDialog by remember { mutableStateOf(false) }
             val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
             val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
             val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
             val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
+
+            LaunchedEffect(state.userName) {
+                showWelcomeDialog = state.userName == "GrammarMateUser"
+            }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
@@ -785,6 +790,9 @@ private fun LessonRoadmapScreen(
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.bossMegaReward
     val entries = buildRoadmapEntries(trainingTypes, hasMegaBoss)
+    val currentLesson = state.lessons.firstOrNull { it.id == state.selectedLessonId }
+    val totalCards = currentLesson?.allCards?.size ?: 0
+    val shownCards = state.currentLessonShownCount.coerceAtMost(totalCards)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -807,7 +815,18 @@ private fun LessonRoadmapScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Exercise ${currentIndex + 1} of $total", textAlign = TextAlign.Center)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = "Exercise ${currentIndex + 1} of $total", textAlign = TextAlign.Center)
+            Text(
+                text = "Cards: $shownCards of $totalCards",
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
