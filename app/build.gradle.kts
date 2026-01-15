@@ -51,6 +51,17 @@ android {
     }
 }
 
+tasks.matching { it.name == "assembleDebug" }.configureEach {
+    doLast {
+        val apkDir = layout.buildDirectory.dir("outputs/apk/debug").get().asFile
+        val source = File(apkDir, "app-debug.apk")
+        val target = File(apkDir, "grammermate.apk")
+        if (source.exists()) {
+            source.copyTo(target, overwrite = true)
+        }
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

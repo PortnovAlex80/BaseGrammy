@@ -66,6 +66,26 @@ class LessonStore(private val context: Context) {
         return seededAny
     }
 
+    fun updateDefaultPacksIfNeeded(): Boolean {
+        ensureSeedData()
+        val assetPaths = listOf(
+            "grammarmate/packs/EN_WORD_ORDER_A1.zip",
+            "grammarmate/packs/IT_WORD_ORDER_A1.zip"
+        )
+        val installed = getInstalledPacks()
+        var updatedAny = false
+        assetPaths.forEach { assetPath ->
+            val manifest = runCatching { readPackManifestFromAssets(assetPath) }.getOrNull() ?: return@forEach
+            val existing = installed.firstOrNull { it.packId == manifest.packId }
+            val shouldUpdate = existing == null || existing.packVersion != manifest.packVersion
+            if (shouldUpdate) {
+                val updated = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
+                if (updated) updatedAny = true
+            }
+        }
+        return updatedAny
+    }
+
     fun getLanguages(): List<Language> {
         ensureSeedData()
         val entries = languagesStore.read()
@@ -129,6 +149,21 @@ class LessonStore(private val context: Context) {
         packsDir.mkdirs()
         val tempDir = extractZipToTemp(input)
         return importPackFromTempDir(tempDir)
+    }
+
+    private fun readPackManifestFromAssets(assetPath: String): LessonPackManifest {
+        val input = context.assets.open(assetPath)
+        input.use { stream ->
+            val tempDir = extractZipToTemp(stream)
+            val manifestFile = File(tempDir, "manifest.json")
+            if (!manifestFile.exists()) {
+                tempDir.deleteRecursively()
+                error("Manifest not found")
+            }
+            val manifest = LessonPackManifest.fromJson(manifestFile.readText())
+            tempDir.deleteRecursively()
+            return manifest
+        }
     }
 
     private fun extractZipToTemp(input: InputStream): File {
@@ -595,4 +630,5 @@ class LessonStore(private val context: Context) {
         val title: String,
         val fileName: String
     )
+
 }

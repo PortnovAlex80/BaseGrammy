@@ -186,8 +186,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val seeded = lessonStore.seedDefaultPacksIfNeeded()
-            if (!seeded) return@launch
+            val updated = lessonStore.updateDefaultPacksIfNeeded()
+            if (!updated) return@launch
             val currentLang = _uiState.value.selectedLanguageId
             val languages = lessonStore.getLanguages()
             val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
@@ -1078,8 +1078,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         val lessonCards = when (state.mode) {
             TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
-            // ALL_MIXED (Review) uses all cards including reserve to prevent memorization
-            TrainingMode.ALL_MIXED -> lessons.flatMap { it.allCards }.shuffled()
+            // ALL_MIXED (Review) uses a random subset across all cards
+            TrainingMode.ALL_MIXED -> {
+                val reviewLimit = 300
+                lessons.flatMap { it.allCards }.shuffled().take(reviewLimit)
+            }
             else -> emptyList()
         }
         val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
