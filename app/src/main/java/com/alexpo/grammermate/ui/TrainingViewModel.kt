@@ -1939,12 +1939,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lesson.id to flower
         }
 
-        val currentFlower = _uiState.value.selectedLessonId?.let { flowerStates[it] }
+        val currentLessonId = _uiState.value.selectedLessonId
+        val currentFlower = currentLessonId?.let { flowerStates[it] }
+        val currentShownCount = currentLessonId?.let { lessonId ->
+            masteryStore.get(lessonId, languageId)?.shownCardIds?.size ?: 0
+        } ?: 0
 
         _uiState.update {
             it.copy(
                 lessonFlowers = flowerStates,
-                currentLessonFlower = currentFlower
+                currentLessonFlower = currentFlower,
+                currentLessonShownCount = currentShownCount
             )
         }
     }
@@ -2100,6 +2105,7 @@ data class TrainingUiState(
     // Flower mastery states
     val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
     val currentLessonFlower: FlowerVisual? = null,
+    val currentLessonShownCount: Int = 0,
     // Word bank mode
     val wordBankWords: List<String> = emptyList(),
     val selectedWords: List<String> = emptyList(),
