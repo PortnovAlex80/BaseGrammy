@@ -60,7 +60,7 @@ class MixedReviewSchedulerTest {
 
     @Test
     fun build_mixedHasAtMostThreeThemes() {
-        val scheduler = MixedReviewScheduler(warmupSize = 1, subLessonSize = 6)
+        val scheduler = MixedReviewScheduler(subLessonSize = 6)
         val lessons = listOf(
             lesson("L1", 12),
             lesson("L2", 12),
