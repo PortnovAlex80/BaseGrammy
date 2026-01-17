@@ -10,7 +10,18 @@ object AtomicFileWriter {
         if (parent != null && !parent.exists()) {
             parent.mkdirs()
         }
-        val tempFile = File(file.parentFile, "${file.name}.tmp")
+        val tempFile = File(parent, "${file.name}.tmp")
+        // Удаляем temp file если он существует от предыдущей операции
+        if (tempFile.exists()) {
+            tempFile.delete()
+            // Ждём, пока файл точно удалится (для Windows)
+            var attempts = 0
+            while (tempFile.exists() && attempts < 10) {
+                Thread.sleep(10)
+                tempFile.delete()
+                attempts++
+            }
+        }
         FileOutputStream(tempFile).use { output ->
             output.write(text.toByteArray(charset))
             output.fd.sync()

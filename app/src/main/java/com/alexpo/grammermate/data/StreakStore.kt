@@ -9,13 +9,17 @@ import java.util.concurrent.TimeUnit
 class StreakStore(private val context: Context) {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file = File(baseDir, "streak.yaml")
+
+    private fun getFile(languageId: String): File {
+        return File(baseDir, "streak_$languageId.yaml")
+    }
 
     /**
      * Сохраняет данные о streak
      */
     fun save(data: StreakData) {
         baseDir.mkdirs()
+        val file = getFile(data.languageId)
         val payload = mapOf(
             "languageId" to data.languageId,
             "currentStreak" to data.currentStreak,
@@ -30,17 +34,12 @@ class StreakStore(private val context: Context) {
      * Загружает данные о streak для языка
      */
     fun load(languageId: String): StreakData {
+        val file = getFile(languageId)
         if (!file.exists()) {
             return StreakData(languageId = languageId)
         }
         val raw = yaml.load<Any>(file.readText()) ?: return StreakData(languageId = languageId)
         val data = raw as? Map<*, *> ?: return StreakData(languageId = languageId)
-
-        val storedLanguageId = data["languageId"] as? String ?: languageId
-        if (storedLanguageId != languageId) {
-            // Другой язык - возвращаем новый streak
-            return StreakData(languageId = languageId)
-        }
 
         val currentStreak = (data["currentStreak"] as? Number)?.toInt() ?: 0
         val longestStreak = (data["longestStreak"] as? Number)?.toInt() ?: 0
@@ -63,31 +62,42 @@ class StreakStore(private val context: Context) {
     fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> {
         val current = load(languageId)
         val now = System.currentTimeMillis()
-        val isNewStreak = checkAndUpdateStreak(current, now)
+        val streakStatus = checkAndUpdateStreak(current, now)
+
+        val newCurrentStreak = when {
+            streakStatus.isFirstTime -> 1
+            streakStatus.isSameDay -> current.currentStreak
+            streakStatus.isConsecutive -> current.currentStreak + 1
+            else -> 1 // Пропущен день - сброс на 1
+        }
 
         val updated = current.copy(
-            currentStreak = if (isNewStreak) current.currentStreak + 1 else current.currentStreak,
-            longestStreak = maxOf(
-                current.longestStreak,
-                if (isNewStreak) current.currentStreak + 1 else current.currentStreak
-            ),
+            currentStreak = newCurrentStreak,
+            longestStreak = maxOf(current.longestStreak, newCurrentStreak),
             lastCompletionDateMs = now,
             totalSubLessonsCompleted = current.totalSubLessonsCompleted + 1
         )
 
         save(updated)
-        return Pair(updated, isNewStreak)
+        return Pair(updated, streakStatus.isNewStreak)
     }
+
+    private data class StreakStatus(
+        val isFirstTime: Boolean = false,
+        val isSameDay: Boolean = false,
+        val isConsecutive: Boolean = false,
+        val isNewStreak: Boolean = false
+    )
 
     /**
      * Проверяет, нужно ли обновить streak
-     * @return true если это новый день (streak увеличивается), false если сегодня уже был прогресс
+     * @return информация о статусе streak
      */
-    private fun checkAndUpdateStreak(current: StreakData, nowMs: Long): Boolean {
+    private fun checkAndUpdateStreak(current: StreakData, nowMs: Long): StreakStatus {
         val lastCompletionMs = current.lastCompletionDateMs
         if (lastCompletionMs == null) {
             // Первый раз - начинаем streak
-            return true
+            return StreakStatus(isFirstTime = true, isNewStreak = true)
         }
 
         val lastDate = Calendar.getInstance().apply { timeInMillis = lastCompletionMs }
@@ -99,7 +109,7 @@ class StreakStore(private val context: Context) {
 
         if (isSameDay) {
             // Уже занимались сегодня - не увеличиваем streak
-            return false
+            return StreakStatus(isSameDay = true, isNewStreak = false)
         }
 
         // Проверяем, был ли вчера
@@ -111,14 +121,13 @@ class StreakStore(private val context: Context) {
         val wasYesterday = lastDate.get(Calendar.YEAR) == yesterday.get(Calendar.YEAR) &&
                           lastDate.get(Calendar.DAY_OF_YEAR) == yesterday.get(Calendar.DAY_OF_YEAR)
 
-        if (!wasYesterday) {
-            // Пропустили день(дни) - сбрасываем streak
-            // Но это обрабатывается в recordSubLessonCompletion через сброс на 1
-            return true
+        if (wasYesterday) {
+            // Был вчера - продолжаем streak
+            return StreakStatus(isConsecutive = true, isNewStreak = true)
         }
 
-        // Был вчера - продолжаем streak
-        return true
+        // Пропустили день(дни) - сбрасываем streak на 1
+        return StreakStatus(isNewStreak = true)
     }
 
     /**
