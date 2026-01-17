@@ -27,6 +27,10 @@ class LessonStore(private val context: Context) {
     private val vocabDir = File(baseDir, "vocab")
     private val vocabIndexFile = File(vocabDir, "vocab.yaml")
     private val vocabStore = YamlListStore(yaml, vocabIndexFile)
+    private val defaultPacks = listOf(
+        DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
+        DefaultPack("IT_WORD_ORDER_A1", "grammarmate/packs/IT_WORD_ORDER_A1.zip")
+    )
 
     fun ensureSeedData() {
         if (!lessonsDir.exists()) {
@@ -53,13 +57,9 @@ class LessonStore(private val context: Context) {
             AtomicFileWriter.writeText(seedMarker, "skip")
             return false
         }
-        val seeds = listOf(
-            "grammarmate/packs/EN_WORD_ORDER_A1.zip",
-            "grammarmate/packs/IT_WORD_ORDER_A1.zip"
-        )
         var seededAny = false
-        seeds.forEach { assetPath ->
-            val seeded = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
+        defaultPacks.forEach { pack ->
+            val seeded = runCatching { importPackFromAssetsInternal(pack.assetPath) }.isSuccess
             if (seeded) seededAny = true
         }
         AtomicFileWriter.writeText(seedMarker, if (seededAny) "ok" else "none")
@@ -68,22 +68,33 @@ class LessonStore(private val context: Context) {
 
     fun updateDefaultPacksIfNeeded(): Boolean {
         ensureSeedData()
-        val assetPaths = listOf(
-            "grammarmate/packs/EN_WORD_ORDER_A1.zip",
-            "grammarmate/packs/IT_WORD_ORDER_A1.zip"
-        )
         val installed = getInstalledPacks()
         var updatedAny = false
-        assetPaths.forEach { assetPath ->
-            val manifest = runCatching { readPackManifestFromAssets(assetPath) }.getOrNull() ?: return@forEach
+        defaultPacks.forEach { pack ->
+            val manifest = runCatching { readPackManifestFromAssets(pack.assetPath) }.getOrNull() ?: return@forEach
             val existing = installed.firstOrNull { it.packId == manifest.packId }
             val shouldUpdate = existing == null || existing.packVersion != manifest.packVersion
             if (shouldUpdate) {
-                val updated = runCatching { importPackFromAssetsInternal(assetPath) }.isSuccess
+                val updated = runCatching { importPackFromAssetsInternal(pack.assetPath) }.isSuccess
                 if (updated) updatedAny = true
             }
         }
         return updatedAny
+    }
+
+    /**
+     * Force reload default packs from assets.
+     * Used on app reinstall to ensure latest lesson content is loaded.
+     */
+    fun forceReloadDefaultPacks(): Boolean {
+        ensureSeedData()
+        var reloadedAny = false
+        defaultPacks.forEach { pack ->
+            val removed = removeInstalledPackData(pack.packId)
+            val reloaded = runCatching { importPackFromAssetsInternal(pack.assetPath) }.isSuccess
+            if (removed || reloaded) reloadedAny = true
+        }
+        return reloadedAny
     }
 
     fun getLanguages(): List<Language> {
@@ -164,6 +175,49 @@ class LessonStore(private val context: Context) {
             tempDir.deleteRecursively()
             return manifest
         }
+    }
+
+    private fun removeInstalledPackData(packId: String): Boolean {
+        val manifest = readInstalledPackManifest(packId)
+        if (manifest != null) {
+            val languageId = manifest.language.lowercase().trim()
+            if (languageId.isNotBlank()) {
+                manifest.lessons.forEach { lesson ->
+                    deleteLesson(languageId, lesson.lessonId)
+                }
+                removePacksForLanguage(packId, languageId)
+                return true
+            }
+        }
+        val removedEntry = removePackEntry(packId)
+        val packDir = File(packsDir, packId)
+        val removedDir = if (packDir.exists()) packDir.deleteRecursively() else false
+        return removedEntry || removedDir
+    }
+
+    private fun readInstalledPackManifest(packId: String): LessonPackManifest? {
+        val manifestFile = File(File(packsDir, packId), "manifest.json")
+        if (!manifestFile.exists()) return null
+        return runCatching { LessonPackManifest.fromJson(manifestFile.readText()) }.getOrNull()
+    }
+
+    private fun removePackEntry(packId: String): Boolean {
+        val entries = packsStore.read()
+        if (entries.isEmpty()) return false
+        var removed = false
+        val remaining = entries.filterNot { entry ->
+            val entryPackId = entry["packId"] as? String
+            if (entryPackId == packId) {
+                removed = true
+                true
+            } else {
+                false
+            }
+        }
+        if (removed) {
+            packsStore.write(remaining)
+        }
+        return removed
     }
 
     private fun extractZipToTemp(input: InputStream): File {
@@ -629,6 +683,11 @@ class LessonStore(private val context: Context) {
         val id: String,
         val title: String,
         val fileName: String
+    )
+
+    private data class DefaultPack(
+        val packId: String,
+        val assetPath: String
     )
 
 }
