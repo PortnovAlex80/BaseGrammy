@@ -66,6 +66,12 @@ class BackupManager(private val context: Context) {
                 streakFile.copyTo(backupStreakFile, overwrite = true)
             }
 
+            // Remove old streak.yaml if exists (migration to new format)
+            val oldStreakBackup = File(backupSubDir, "streak.yaml")
+            if (oldStreakBackup.exists()) {
+                oldStreakBackup.delete()
+            }
+
             // Backup user profile data
             val profileFile = File(internalDir, "profile.yaml")
             if (profileFile.exists()) {
@@ -114,6 +120,20 @@ class BackupManager(private val context: Context) {
             }?.forEach { backupStreakFile ->
                 val streakFile = File(internalDir, backupStreakFile.name)
                 backupStreakFile.copyTo(streakFile, overwrite = true)
+            }
+
+            // Migrate old streak.yaml format to new streak_<languageId>.yaml format
+            val oldStreakFile = File(backupSubDir, "streak.yaml")
+            if (oldStreakFile.exists()) {
+                try {
+                    val content = oldStreakFile.readText()
+                    val data = yaml.load<Any>(content) as? Map<*, *>
+                    val languageId = data?.get("languageId") as? String ?: "en"
+                    val streakFile = File(internalDir, "streak_$languageId.yaml")
+                    oldStreakFile.copyTo(streakFile, overwrite = true)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
 
             // Restore user profile data
@@ -182,6 +202,23 @@ class BackupManager(private val context: Context) {
                         }
                         copied = true
                     }
+                }
+            }
+
+            // Migrate old streak.yaml format to new streak_<languageId>.yaml format
+            val oldStreakFile = backupDir.findFile("streak.yaml")
+            if (oldStreakFile != null) {
+                try {
+                    val content = context.contentResolver.openInputStream(oldStreakFile.uri)?.bufferedReader()?.use { it.readText() }
+                    if (content != null) {
+                        val data = yaml.load<Any>(content) as? Map<*, *>
+                        val languageId = data?.get("languageId") as? String ?: "en"
+                        val target = File(internalDir, "streak_$languageId.yaml")
+                        target.writeText(content)
+                        copied = true
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
 
