@@ -153,10 +153,19 @@ class BackupManager(private val context: Context) {
     fun getAvailableBackups(treeUri: Uri): List<BackupInfo> {
         val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
         return tree.listFiles()
-            .filter { it.isDirectory && (it.name?.startsWith("backup_") == true) }
+            .filter { file ->
+                file.isDirectory && (
+                    file.name?.startsWith("backup_") == true ||
+                        file.name == "backup_latest"
+                    )
+            }
             .sortedByDescending { it.lastModified() }
             .map { dir ->
-                val timestamp = dir.name?.removePrefix("backup_") ?: ""
+                val timestamp = if (dir.name == "backup_latest") {
+                    "latest"
+                } else {
+                    dir.name?.removePrefix("backup_") ?: ""
+                }
                 val metadataFile = dir.findFile("metadata.txt")
                 val dataSize = safeCalculateDirSize(dir)
 
@@ -377,9 +386,13 @@ class BackupManager(private val context: Context) {
         if (backupDir == null) return emptyList()
 
         return backupDir!!.listFiles { file ->
-            file.isDirectory && file.name.startsWith("backup_")
+            file.isDirectory && (file.name.startsWith("backup_") || file.name == "backup_latest")
         }?.sortedByDescending { it.lastModified() }?.map { dir ->
-            val timestamp = dir.name.removePrefix("backup_")
+            val timestamp = if (dir.name == "backup_latest") {
+                "latest"
+            } else {
+                dir.name.removePrefix("backup_")
+            }
             val metadataFile = File(dir, "metadata.txt")
             val dataSize = safeCalculateDirSize(dir)
 

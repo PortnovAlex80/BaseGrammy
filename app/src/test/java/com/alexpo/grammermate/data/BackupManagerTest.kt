@@ -73,4 +73,18 @@ class BackupManagerTest {
         assertEquals("streak: 3", File(latest, "streak_en.yaml").readText())
         assertEquals("profile: 4", File(latest, "profile.yaml").readText())
     }
+
+    @Test
+    fun getAvailableBackups_includesBackupLatest() {
+        val latest = File(backupRoot, "backup_latest").apply { mkdirs() }
+        File(latest, "metadata.txt").writeText("latest")
+
+        val backupDir = File(backupRoot, "backup_2026-01-16_10-00-00").apply { mkdirs() }
+        File(backupDir, "metadata.txt").writeText("older")
+
+        val backups = backupManager.getAvailableBackups().map { it.name }
+
+        assertTrue(backups.contains("backup_latest"))
+        assertTrue(backups.contains("backup_2026-01-16_10-00-00"))
+    }
 }

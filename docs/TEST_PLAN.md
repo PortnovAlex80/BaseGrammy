@@ -572,12 +572,9 @@
 #### Тесты для написания:
 
 ```kotlin
-@Test fun createBackup_createsTimestampedFolder()
-@Test fun createBackup_copiesAllFiles()
-@Test fun createBackup_createsMetadata()
-@Test fun restoreBackup_restoresAllFiles()
-@Test fun restoreBackup_afterReinstall_autoRestores()
-@Test fun autoBackup_every30Minutes_triggers()
+@Test fun createBackup_writesToBackupLatestWithProgressAndProfile()
+@Test fun getAvailableBackups_includesBackupLatest()
+@Test fun restoreFromBackup_createsInternalDirAndCopiesFiles()
 ```
 **Покрываемые требования:** FR-2.3.1, FR-2.3.2, FR-2.3.3, FR-2.3.4
 

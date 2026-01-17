@@ -1,7 +1,6 @@
 ﻿package com.alexpo.grammermate
 
 import android.os.Bundle
-import android.os.Environment
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
@@ -70,18 +69,11 @@ class MainActivity : ComponentActivity() {
                 RestoreNotifier.markComplete(false)
             }
         } else if (android.os.Build.VERSION.SDK_INT >= 29) {
-            // Android 10+: Check if backup folder exists before asking user
-            val backupRoot = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "BaseGrammy"
-            )
-            val backupLatest = File(backupRoot, "backup_latest")
-
-            if (shouldRestore && backupLatest.exists() && backupLatest.isDirectory) {
-                // Backup exists and app data is missing - ask user to select folder
+            // Android 10+: request SAF access for restore when needed
+            if (shouldRestore) {
                 Toast.makeText(
                     this,
-                    "Backup found! Select BaseGrammy folder to restore",
+                    "Select BaseGrammy or backup_latest folder to restore",
                     Toast.LENGTH_LONG
                 ).show()
                 RestoreNotifier.requireUser()

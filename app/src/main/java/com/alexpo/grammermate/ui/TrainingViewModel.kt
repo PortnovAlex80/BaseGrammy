@@ -81,7 +81,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var scheduleKey: String = ""
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
-    private var lastBackupTimeMs: Long = 0
+    private var forceBackupOnSave: Boolean = false
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -579,6 +579,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 checkAndMarkLessonCompleted()
                 refreshFlowerStates()
                 updateStreak()
+                forceBackupOnSave = true
             } else {
                 _uiState.update {
                     it.copy(
@@ -1651,10 +1652,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         )
 
-        // Create periodic backup (every 30 minutes)
-        val now = System.currentTimeMillis()
-        if (now - lastBackupTimeMs >= 30 * 60 * 1000) {
-            lastBackupTimeMs = now
+        if (forceBackupOnSave) {
+            forceBackupOnSave = false
             createProgressBackup()
         }
     }
