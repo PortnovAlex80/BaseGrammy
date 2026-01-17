@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -31,6 +33,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -47,6 +50,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -110,6 +114,7 @@ fun GrammarMateApp() {
         val vm: TrainingViewModel = viewModel()
         val state by vm.uiState.collectAsState()
         var screen by remember { mutableStateOf(AppScreen.HOME) }
+        var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
         var showSettings by remember { mutableStateOf(false) }
         var showExitDialog by remember { mutableStateOf(false) }
         var showWelcomeDialog by remember { mutableStateOf(false) }
@@ -133,6 +138,12 @@ fun GrammarMateApp() {
             BackHandler(enabled = screen == AppScreen.VOCAB && !showSettings) {
                 screen = AppScreen.LESSON
             }
+            BackHandler(enabled = screen == AppScreen.LADDER && !showSettings) {
+                screen = previousScreen
+                if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
+                    vm.resumeFromSettings()
+                }
+            }
 
             SettingsSheet(
                 show = showSettings,
@@ -142,6 +153,10 @@ fun GrammarMateApp() {
                     if (screen == AppScreen.TRAINING && state.currentCard != null) {
                         vm.resumeFromSettings()
                     }
+                },
+                onOpenLadder = {
+                    showSettings = false
+                    screen = AppScreen.LADDER
                 },
                 onSelectLanguage = vm::selectLanguage,
                 onSelectLesson = vm::selectLesson,
@@ -178,6 +193,7 @@ fun GrammarMateApp() {
                     state = state,
                     onSelectLanguage = vm::selectLanguage,
                     onOpenSettings = {
+                        previousScreen = screen
                         vm.pauseSession()
                         showSettings = true
                     },
@@ -249,6 +265,15 @@ fun GrammarMateApp() {
                     onShowAnswer = vm::showVocabAnswer,
                     onClose = { screen = AppScreen.LESSON }
                 )
+                AppScreen.LADDER -> LadderScreen(
+                    state = state,
+                    onBack = {
+                        screen = previousScreen
+                        if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
+                            vm.resumeFromSettings()
+                        }
+                    }
+                )
                 AppScreen.TRAINING -> TrainingScreen(
                     state = state,
                     onInputChange = vm::onInputChanged,
@@ -257,7 +282,10 @@ fun GrammarMateApp() {
                     onNext = vm::nextCard,
                     onTogglePause = vm::togglePause,
                     onRequestExit = { showExitDialog = true },
-                    onOpenSettings = vm::pauseSession,
+                    onOpenSettings = {
+                        previousScreen = screen
+                        vm.pauseSession()
+                    },
                     onShowSettings = { showSettings = true },
                     onSelectLesson = vm::selectLesson,
                     onSelectMode = vm::selectMode,
@@ -429,7 +457,8 @@ private enum class AppScreen {
     ELITE,
     VOCAB,
     STORY,
-    TRAINING
+    TRAINING,
+    LADDER
 }
 
 private enum class LessonTileState {
@@ -1634,6 +1663,7 @@ private fun SettingsSheet(
     show: Boolean,
     state: TrainingUiState,
     onDismiss: () -> Unit,
+    onOpenLadder: () -> Unit,
     onSelectLanguage: (String) -> Unit,
     onSelectLesson: (String) -> Unit,
     onDeleteLesson: (String) -> Unit,
@@ -1710,6 +1740,14 @@ private fun SettingsSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
+            OutlinedButton(
+                onClick = onOpenLadder,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Insights, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Показать лестницу")
+            }
             OutlinedTextField(
                 value = vocabLimitText,
                 onValueChange = { next ->
@@ -1927,6 +1965,171 @@ private fun SettingsSheet(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun LadderScreen(
+    state: TrainingUiState,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+            Column {
+                Text(
+                    text = "Лестница интервалов",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Все уроки текущего пакета",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (state.ladderRows.isEmpty()) {
+            Text(
+                text = "Нет данных по урокам.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            return
+        }
+
+        LadderHeaderRow()
+        Spacer(modifier = Modifier.height(8.dp))
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(state.ladderRows) { row ->
+                LadderRowCard(row)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LadderHeaderRow() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "#",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.width(28.dp),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Text(
+            text = "Урок",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Text(
+            text = "Карты",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.width(56.dp),
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Text(
+            text = "Дней",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.width(48.dp),
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Text(
+            text = "Интервал",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.width(92.dp),
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+    }
+}
+
+@Composable
+private fun LadderRowCard(row: LessonLadderRow) {
+    val isOverdue = row.intervalLabel?.startsWith("Просрочка") == true
+    val containerColor = if (isOverdue) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = if (isOverdue) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val cardsText = row.uniqueCardShows?.toString() ?: "-"
+    val daysText = row.daysSinceLastShow?.toString() ?: "-"
+    val intervalText = row.intervalLabel ?: "-"
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = row.index.toString(),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.width(28.dp)
+            )
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = row.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Text(
+                text = cardsText,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.width(56.dp),
+                textAlign = TextAlign.End
+            )
+            Text(
+                text = daysText,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.width(48.dp),
+                textAlign = TextAlign.End
+            )
+            Text(
+                text = intervalText,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.width(92.dp),
+                textAlign = TextAlign.End
+            )
         }
     }
 }

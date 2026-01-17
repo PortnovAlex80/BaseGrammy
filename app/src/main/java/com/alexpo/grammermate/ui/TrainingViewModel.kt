@@ -35,6 +35,7 @@ import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.FlowerState
+import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BackupManager
@@ -1942,6 +1943,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun refreshFlowerStates() {
         val languageId = _uiState.value.selectedLanguageId
         val lessons = _uiState.value.lessons
+        val nowMs = System.currentTimeMillis()
 
         val flowerStates = lessons.associate { lesson ->
             val mastery = masteryStore.get(lesson.id, languageId)
@@ -1955,12 +1957,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val currentShownCount = currentLessonId?.let { lessonId ->
             masteryStore.get(lessonId, languageId)?.shownCardIds?.size ?: 0
         } ?: 0
+        val ladderRows = lessons.mapIndexed { index, lesson ->
+            val mastery = masteryStore.get(lesson.id, languageId)
+            val metrics = LessonLadderCalculator.calculate(mastery, nowMs)
+            LessonLadderRow(
+                index = index + 1,
+                lessonId = lesson.id,
+                title = lesson.title,
+                uniqueCardShows = metrics.uniqueCardShows,
+                daysSinceLastShow = metrics.daysSinceLastShow,
+                intervalLabel = metrics.intervalLabel
+            )
+        }
 
         _uiState.update {
             it.copy(
                 lessonFlowers = flowerStates,
                 currentLessonFlower = currentFlower,
-                currentLessonShownCount = currentShownCount
+                currentLessonShownCount = currentShownCount,
+                ladderRows = ladderRows
             )
         }
     }
@@ -2273,5 +2288,15 @@ data class TrainingUiState(
     val streakMessage: String? = null,
     val streakCelebrationToken: Int = 0,
     // User profile
-    val userName: String = "GrammarMateUser"
+    val userName: String = "GrammarMateUser",
+    val ladderRows: List<LessonLadderRow> = emptyList()
+)
+
+data class LessonLadderRow(
+    val index: Int,
+    val lessonId: String,
+    val title: String,
+    val uniqueCardShows: Int?,
+    val daysSinceLastShow: Int?,
+    val intervalLabel: String?
 )
