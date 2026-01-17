@@ -814,6 +814,20 @@ private fun LessonRoadmapScreen(
     val total = trainingTypes.size.coerceAtLeast(1)
     val completed = state.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = completed.coerceIn(0, total - 1)
+
+    // Calculate current cycle (block of 15)
+    val currentCycle = completed / 15
+    val cycleStart = currentCycle * 15
+    val cycleEnd = minOf(cycleStart + 15, total)
+
+    // Show only current cycle's sublessons (max 15 at a time)
+    // If all sublessons are completed, show empty list
+    val visibleTrainingTypes = if (cycleStart < total) {
+        trainingTypes.subList(cycleStart, cycleEnd)
+    } else {
+        emptyList()
+    }
+
     val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
     val hasMegaBoss = lessonIndex > 0
     val currentLesson = state.lessons.firstOrNull { it.id == state.selectedLessonId }
@@ -821,7 +835,7 @@ private fun LessonRoadmapScreen(
     val shownCards = state.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.bossMegaReward
-    val entries = buildRoadmapEntries(trainingTypes, hasMegaBoss)
+    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -848,7 +862,10 @@ private fun LessonRoadmapScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Exercise ${currentIndex + 1} of $total", textAlign = TextAlign.Center)
+            // Show progress within current block of 15
+            val displayIndex = (completed % 15) + 1
+            val displayTotal = minOf(15, total - (completed / 15) * 15)
+            Text(text = "Exercise $displayIndex of $displayTotal", textAlign = TextAlign.Center)
             Text(
                 text = "Cards: $shownCards of $totalCards",
                 textAlign = TextAlign.Center,
@@ -1030,12 +1047,17 @@ private sealed class RoadmapEntry {
     object BossMega : RoadmapEntry()
 }
 
-private fun buildRoadmapEntries(trainingTypes: List<SubLessonType>, hasMegaBoss: Boolean): List<RoadmapEntry> {
+private fun buildRoadmapEntries(
+    trainingTypes: List<SubLessonType>,
+    hasMegaBoss: Boolean,
+    cycleStart: Int = 0
+): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
     entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckIn)
     trainingTypes.forEachIndexed { index, type ->
-        entries.add(RoadmapEntry.Training(index, type))
+        // Use absolute index for proper tracking
+        entries.add(RoadmapEntry.Training(cycleStart + index, type))
     }
     entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckOut)

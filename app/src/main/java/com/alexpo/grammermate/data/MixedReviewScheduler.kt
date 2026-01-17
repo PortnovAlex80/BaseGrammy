@@ -50,9 +50,8 @@ class MixedReviewScheduler(
             reviewQueues[lesson.id] = ArrayDeque(allReviewCards.take(mainCount))
             reserveQueues[lesson.id] = ArrayDeque(allReviewCards.drop(mainCount))
 
-            // Use only main pool cards (first 150) for sub-lessons
-            val mainCards = lesson.mainPoolCards
-            val currentCards = mainCards
+            // Use all available cards for sub-lessons (not just first 150)
+            val currentCards = lesson.allCards
             val allowMixed = lessonIndex > 0
             val reviewSlots = subLessonSize / 2
             val currentSlotsInMixed = subLessonSize - reviewSlots

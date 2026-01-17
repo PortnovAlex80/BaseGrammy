@@ -1763,8 +1763,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     private fun checkAndMarkLessonCompleted() {
         val state = _uiState.value
-        val allCompleted = state.completedSubLessonCount >= state.subLessonCount
-        if (allCompleted && state.selectedLessonId != null) {
+        // Mark lesson as completed after first 15 sublessons (but allow continuing)
+        val completedFirstCycle = state.completedSubLessonCount >= 15
+        if (completedFirstCycle && state.selectedLessonId != null) {
             masteryStore.markLessonCompleted(state.selectedLessonId, state.selectedLanguageId)
         }
     }
