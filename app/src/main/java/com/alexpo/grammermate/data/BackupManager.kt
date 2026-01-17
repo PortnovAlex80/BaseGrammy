@@ -180,7 +180,7 @@ class BackupManager(private val context: Context) {
         logBuilder.appendLine()
 
         return try {
-            val backupDir = DocumentFile.fromTreeUri(context, backupUri)
+            val rootDir = DocumentFile.fromTreeUri(context, backupUri)
                 ?: DocumentFile.fromSingleUri(context, backupUri)
                 ?: run {
                     logBuilder.appendLine("ERROR: Failed to open backup directory from URI")
@@ -188,6 +188,13 @@ class BackupManager(private val context: Context) {
                     return false
                 }
 
+            logBuilder.appendLine("Root directory: ${rootDir.uri}")
+
+            // Look for backup_latest subfolder first, then fall back to root
+            val backupDir = rootDir.findFile("backup_latest") ?: rootDir
+            val isSubfolder = backupDir != rootDir
+
+            logBuilder.appendLine("Using backup source: ${if (isSubfolder) "backup_latest subfolder" else "root folder"}")
             logBuilder.appendLine("Backup directory: ${backupDir.uri}")
             logBuilder.appendLine("Internal data directory: ${internalDir.absolutePath}")
             logBuilder.appendLine()
