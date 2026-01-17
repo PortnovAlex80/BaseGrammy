@@ -2052,6 +2052,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val progress = progressStore.load()
             val streak = streakStore.load(languageId)
 
+            // Parse boss rewards from strings to BossReward enum
+            val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
+                val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+                lessonId to parsed
+            }.toMap()
+            val bossMegaReward = progress.bossMegaReward?.let { reward ->
+                runCatching { BossReward.valueOf(reward) }.getOrNull()
+            }
+
             _uiState.update {
                 it.copy(
                     lessons = lessons,
@@ -2063,13 +2072,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     activeTimeMs = progress.activeTimeMs,
                     currentStreak = streak.currentStreak,
                     longestStreak = streak.longestStreak,
-                    bossLessonRewards = progress.bossLessonRewards,
-                    bossMegaReward = progress.bossMegaReward
+                    bossLessonRewards = bossLessonRewards,
+                    bossMegaReward = bossMegaReward
                 )
             }
 
             // Rebuild session and schedules
-            buildSchedulesIfNeeded()
+            rebuildSchedules(lessons)
             buildSessionCards()
 
             Log.d(logTag, "Backup restored successfully")
