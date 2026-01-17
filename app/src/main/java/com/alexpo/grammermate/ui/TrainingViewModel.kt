@@ -185,33 +185,34 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
             }
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            val updated = lessonStore.updateDefaultPacksIfNeeded()
-            if (!updated) return@launch
-            val currentLang = _uiState.value.selectedLanguageId
-            val languages = lessonStore.getLanguages()
-            val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
-                ?: languages.firstOrNull()?.id
-                ?: "en"
-            val lessons = lessonStore.getLessons(selectedLang)
-            val selectedLessonId = lessons.firstOrNull()?.id
-            val packs = lessonStore.getInstalledPacks()
-            withContext(Dispatchers.Main) {
-                _uiState.update {
-                    it.copy(
-                        languages = languages,
-                        installedPacks = packs,
-                        selectedLanguageId = selectedLang,
-                        lessons = lessons,
-                        selectedLessonId = selectedLessonId,
-                        eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
-                    )
-                }
-                rebuildSchedules(lessons)
-                buildSessionCards()
-                refreshFlowerStates()
-            }
-        }
+        // Auto-loading of default packs removed - users should manually import packs from Settings
+        // viewModelScope.launch(Dispatchers.IO) {
+        //     val updated = lessonStore.updateDefaultPacksIfNeeded()
+        //     if (!updated) return@launch
+        //     val currentLang = _uiState.value.selectedLanguageId
+        //     val languages = lessonStore.getLanguages()
+        //     val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
+        //         ?: languages.firstOrNull()?.id
+        //         ?: "en"
+        //     val lessons = lessonStore.getLessons(selectedLang)
+        //     val selectedLessonId = lessons.firstOrNull()?.id
+        //     val packs = lessonStore.getInstalledPacks()
+        //     withContext(Dispatchers.Main) {
+        //         _uiState.update {
+        //             it.copy(
+        //                 languages = languages,
+        //                 installedPacks = packs,
+        //                 selectedLanguageId = selectedLang,
+        //                 lessons = lessons,
+        //                 selectedLessonId = selectedLessonId,
+        //                 eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
+        //             )
+        //         }
+        //         rebuildSchedules(lessons)
+        //         buildSessionCards()
+        //         refreshFlowerStates()
+        //     }
+        // }
     }
 
     fun onInputChanged(text: String) {

@@ -80,28 +80,26 @@ class MainActivity : ComponentActivity() {
         val hasExistingData = masteryFile.exists()
 
         if (storedTreeUri != null) {
-            val backups = backupManager.getAvailableBackups(storedTreeUri)
-            if (!hasExistingData && backups.isNotEmpty()) {
-                val latestBackup = backups.first()
-                val restored = backupManager.restoreFromBackupUri(Uri.parse(latestBackup.path))
+            if (!hasExistingData) {
+                // First launch - try to restore from backup_latest folder
+                val restored = backupManager.restoreFromBackupUri(storedTreeUri)
                 if (restored) {
                     Toast.makeText(
                         this,
-                        "Backup restored from ${latestBackup.path}",
+                        "Backup restored successfully! Check restore_log.txt",
                         Toast.LENGTH_LONG
                     ).show()
                 } else {
                     Toast.makeText(
                         this,
-                        "Backup restore failed from ${latestBackup.path}",
+                        "Backup restore failed - check restore_log.txt",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             } else {
-                val latestPath = backups.firstOrNull()?.path ?: "none"
                 Toast.makeText(
                     this,
-                    "Backup check (SAF): existing=$hasExistingData, latest=$latestPath",
+                    "App data already exists - backup not restored",
                     Toast.LENGTH_SHORT
                 ).show()
             }

@@ -277,6 +277,41 @@ class BackupManager(private val context: Context) {
             }
             logBuilder.appendLine()
 
+            // Parse and log mastery data
+            logBuilder.appendLine("--- Mastery Data Analysis ---")
+            try {
+                val masteryFile = File(internalDir, "mastery.yaml")
+                if (masteryFile.exists()) {
+                    val masteryContent = yaml.load<Any>(masteryFile.readText()) as? Map<*, *>
+                    val data = masteryContent?.get("data") as? Map<*, *>
+                    if (data != null) {
+                        data.forEach { (lang, lessons) ->
+                            logBuilder.appendLine("Language: $lang")
+                            val lessonsMap = lessons as? Map<*, *>
+                            lessonsMap?.forEach { (lessonId, lessonData) ->
+                                val ld = lessonData as? Map<*, *>
+                                val uniqueShows = ld?.get("uniqueCardShows") as? Number
+                                val totalShows = ld?.get("totalCardShows") as? Number
+                                val lastShowMs = ld?.get("lastShowDateMs") as? Number
+                                val intervalStep = ld?.get("intervalStepIndex") as? Number
+                                logBuilder.appendLine("  $lessonId: unique=$uniqueShows, total=$totalShows, intervalStep=$intervalStep")
+                                if (lastShowMs != null) {
+                                    val daysSinceShow = (System.currentTimeMillis() - lastShowMs.toLong()) / (24 * 60 * 60 * 1000)
+                                    logBuilder.appendLine("    Last shown: $daysSinceShow days ago")
+                                }
+                            }
+                        }
+                    } else {
+                        logBuilder.appendLine("No mastery data found in file")
+                    }
+                } else {
+                    logBuilder.appendLine("Mastery file not found after restore")
+                }
+            } catch (e: Exception) {
+                logBuilder.appendLine("ERROR parsing mastery: ${e.message}")
+            }
+            logBuilder.appendLine()
+
             // Summary
             logBuilder.appendLine("=== Summary ===")
             logBuilder.appendLine("Restored files: ${restoredFiles.size}")
