@@ -172,40 +172,90 @@ class BackupManager(private val context: Context) {
     }
 
     fun restoreFromBackupUri(backupUri: Uri): Boolean {
+        val logBuilder = StringBuilder()
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+        logBuilder.appendLine("=== Backup Restore Log ===")
+        logBuilder.appendLine("Timestamp: $timestamp")
+        logBuilder.appendLine("Backup URI: $backupUri")
+        logBuilder.appendLine()
+
         return try {
             val backupDir = DocumentFile.fromTreeUri(context, backupUri)
                 ?: DocumentFile.fromSingleUri(context, backupUri)
-                ?: return false
-            if (!internalDir.exists() && !internalDir.mkdirs()) return false
-            var copied = false
-
-            // Restore main files
-            val mainFiles = listOf("mastery.yaml", "progress.yaml", "profile.yaml")
-            mainFiles.forEach { name ->
-                val source = backupDir.findFile(name) ?: return@forEach
-                val target = File(internalDir, name)
-                context.contentResolver.openInputStream(source.uri)?.use { input ->
-                    target.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                    copied = true
+                ?: run {
+                    logBuilder.appendLine("ERROR: Failed to open backup directory from URI")
+                    writeRestoreLog(backupUri, logBuilder.toString())
+                    return false
                 }
+
+            logBuilder.appendLine("Backup directory: ${backupDir.uri}")
+            logBuilder.appendLine("Internal data directory: ${internalDir.absolutePath}")
+            logBuilder.appendLine()
+
+            if (!internalDir.exists() && !internalDir.mkdirs()) {
+                logBuilder.appendLine("ERROR: Failed to create internal directory")
+                writeRestoreLog(backupUri, logBuilder.toString())
+                return false
             }
 
+            var copied = false
+            val restoredFiles = mutableListOf<String>()
+            val missingFiles = mutableListOf<String>()
+
+            // Restore main files
+            logBuilder.appendLine("--- Main Files ---")
+            val mainFiles = listOf("mastery.yaml", "progress.yaml", "profile.yaml")
+            mainFiles.forEach { name ->
+                val source = backupDir.findFile(name)
+                if (source == null) {
+                    logBuilder.appendLine("MISSING: $name")
+                    missingFiles.add(name)
+                } else {
+                    val target = File(internalDir, name)
+                    try {
+                        context.contentResolver.openInputStream(source.uri)?.use { input ->
+                            target.outputStream().use { output ->
+                                val bytes = input.copyTo(output)
+                                logBuilder.appendLine("OK: $name (${bytes} bytes)")
+                                restoredFiles.add(name)
+                                copied = true
+                            }
+                        }
+                    } catch (e: Exception) {
+                        logBuilder.appendLine("ERROR: $name - ${e.message}")
+                    }
+                }
+            }
+            logBuilder.appendLine()
+
             // Restore all streak files (streak_en.yaml, streak_ru.yaml, etc.)
+            logBuilder.appendLine("--- Streak Files ---")
+            var streakCount = 0
             backupDir.listFiles().forEach { file ->
                 if (file.name?.startsWith("streak_") == true && file.name?.endsWith(".yaml") == true) {
                     val target = File(internalDir, file.name!!)
-                    context.contentResolver.openInputStream(file.uri)?.use { input ->
-                        target.outputStream().use { output ->
-                            input.copyTo(output)
+                    try {
+                        context.contentResolver.openInputStream(file.uri)?.use { input ->
+                            target.outputStream().use { output ->
+                                val bytes = input.copyTo(output)
+                                logBuilder.appendLine("OK: ${file.name} (${bytes} bytes)")
+                                restoredFiles.add(file.name!!)
+                                streakCount++
+                                copied = true
+                            }
                         }
-                        copied = true
+                    } catch (e: Exception) {
+                        logBuilder.appendLine("ERROR: ${file.name} - ${e.message}")
                     }
                 }
             }
+            if (streakCount == 0) {
+                logBuilder.appendLine("No streak_*.yaml files found")
+            }
+            logBuilder.appendLine()
 
             // Migrate old streak.yaml format to new streak_<languageId>.yaml format
+            logBuilder.appendLine("--- Old Format Migration ---")
             val oldStreakFile = backupDir.findFile("streak.yaml")
             if (oldStreakFile != null) {
                 try {
@@ -215,17 +265,66 @@ class BackupManager(private val context: Context) {
                         val languageId = data?.get("languageId") as? String ?: "en"
                         val target = File(internalDir, "streak_$languageId.yaml")
                         target.writeText(content)
+                        logBuilder.appendLine("OK: Migrated streak.yaml -> streak_$languageId.yaml")
+                        restoredFiles.add("streak_$languageId.yaml (migrated)")
                         copied = true
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logBuilder.appendLine("ERROR: Failed to migrate streak.yaml - ${e.message}")
                 }
+            } else {
+                logBuilder.appendLine("No old streak.yaml found (this is normal for new backups)")
             }
+            logBuilder.appendLine()
 
+            // Summary
+            logBuilder.appendLine("=== Summary ===")
+            logBuilder.appendLine("Restored files: ${restoredFiles.size}")
+            restoredFiles.forEach { logBuilder.appendLine("  ✓ $it") }
+            if (missingFiles.isNotEmpty()) {
+                logBuilder.appendLine("Missing files: ${missingFiles.size}")
+                missingFiles.forEach { logBuilder.appendLine("  ✗ $it") }
+            }
+            logBuilder.appendLine()
+            logBuilder.appendLine("Result: ${if (copied) "SUCCESS" else "FAILED - no files copied"}")
+
+            writeRestoreLog(backupUri, logBuilder.toString())
             copied
         } catch (e: Exception) {
+            logBuilder.appendLine()
+            logBuilder.appendLine("FATAL ERROR: ${e.message}")
+            logBuilder.appendLine("Stack trace:")
+            logBuilder.appendLine(e.stackTraceToString())
+            writeRestoreLog(backupUri, logBuilder.toString())
             e.printStackTrace()
             false
+        }
+    }
+
+    private fun writeRestoreLog(backupUri: Uri, logContent: String) {
+        try {
+            val backupDir = DocumentFile.fromTreeUri(context, backupUri)
+                ?: DocumentFile.fromSingleUri(context, backupUri)
+                ?: return
+
+            // Try to write to backup directory
+            val logFile = backupDir.findFile("restore_log.txt")
+            if (logFile != null) {
+                // Overwrite existing log
+                context.contentResolver.openOutputStream(logFile.uri, "wt")?.use { output ->
+                    output.write(logContent.toByteArray())
+                }
+            } else {
+                // Create new log file
+                val newLog = backupDir.createFile("text/plain", "restore_log.txt")
+                if (newLog != null) {
+                    context.contentResolver.openOutputStream(newLog.uri)?.use { output ->
+                        output.write(logContent.toByteArray())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

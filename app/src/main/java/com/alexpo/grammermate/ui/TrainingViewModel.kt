@@ -2044,25 +2044,51 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Restore user progress from backup folder.
      */
     fun restoreBackup(backupUri: android.net.Uri) {
+        Log.d(logTag, "=== Starting Backup Restore ===")
+        Log.d(logTag, "Backup URI: $backupUri")
+
         val success = backupManager.restoreFromBackupUri(backupUri)
+        Log.d(logTag, "Backup restore result: $success")
+
         if (success) {
             // Reload all data after restore
+            Log.d(logTag, "--- Loading Progress Data ---")
             val progress = progressStore.load()
+            Log.d(logTag, "Progress: languageId=${progress.languageId}, lessonId=${progress.lessonId}, mode=${progress.mode}")
+            Log.d(logTag, "Progress: currentIndex=${progress.currentIndex}, correctCount=${progress.correctCount}, incorrectCount=${progress.incorrectCount}")
+            Log.d(logTag, "Progress: state=${progress.state}, bossRewards=${progress.bossLessonRewards.size}")
+
+            Log.d(logTag, "--- Loading Profile Data ---")
             val profile = profileStore.load()
+            Log.d(logTag, "Profile: userName=${profile.userName}")
+
             val selectedLanguageId = progress.languageId ?: "en"
+            Log.d(logTag, "Selected language: $selectedLanguageId")
+
+            Log.d(logTag, "--- Loading Lessons ---")
             val lessons = lessonStore.getLessons(selectedLanguageId)
+            Log.d(logTag, "Loaded ${lessons.size} lessons for language $selectedLanguageId")
+
             val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+            Log.d(logTag, "Selected lesson: $selectedLessonId")
+
+            Log.d(logTag, "--- Loading Streak Data ---")
             val streak = streakStore.getCurrentStreak(selectedLanguageId)
+            Log.d(logTag, "Streak: current=${streak.currentStreak}, longest=${streak.longestStreak}, totalCompleted=${streak.totalSubLessonsCompleted}")
 
             // Parse boss rewards from strings to BossReward enum
+            Log.d(logTag, "--- Parsing Boss Rewards ---")
             val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
                 val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+                Log.d(logTag, "Boss reward: $lessonId -> $parsed")
                 lessonId to parsed
             }.toMap()
             val bossMegaReward = progress.bossMegaReward?.let { reward ->
                 runCatching { BossReward.valueOf(reward) }.getOrNull()
             }
+            Log.d(logTag, "Boss Mega reward: $bossMegaReward")
 
+            Log.d(logTag, "--- Updating UI State ---")
             _uiState.update {
                 it.copy(
                     selectedLanguageId = selectedLanguageId,
@@ -2087,15 +2113,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     eliteBestSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
                 )
             }
+            Log.d(logTag, "UI state updated")
 
             // Rebuild session and schedules
+            Log.d(logTag, "--- Rebuilding Schedules ---")
             rebuildSchedules(lessons)
+            Log.d(logTag, "--- Building Session Cards ---")
             buildSessionCards()
+            Log.d(logTag, "--- Refreshing Flower States ---")
             refreshFlowerStates()
 
-            Log.d(logTag, "Backup restored successfully: userName=${profile.userName}, lessons=${lessons.size}, streak=${streak.currentStreak}")
+            Log.d(logTag, "=== Backup Restore Complete ===")
+            Log.d(logTag, "Summary: userName=${profile.userName}, lessons=${lessons.size}, lessonId=${selectedLessonId}, streak=${streak.currentStreak}")
         } else {
-            Log.e(logTag, "Failed to restore backup")
+            Log.e(logTag, "Failed to restore backup - check restore_log.txt in backup folder")
         }
     }
 }
