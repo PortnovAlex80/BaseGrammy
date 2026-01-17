@@ -1,4 +1,4 @@
-﻿package com.alexpo.grammermate.ui
+package com.alexpo.grammermate.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -106,18 +106,17 @@ import android.speech.RecognizerIntent
 
 @Composable
 fun GrammarMateApp() {
-    GrammarMateTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            val vm: TrainingViewModel = viewModel()
-            val state by vm.uiState.collectAsState()
-            var screen by remember { mutableStateOf(AppScreen.HOME) }
-            var showSettings by remember { mutableStateOf(false) }
-            var showExitDialog by remember { mutableStateOf(false) }
-            var showWelcomeDialog by remember { mutableStateOf(state.userName == "GrammarMateUser") }
-            val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
-            val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
-            val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
-            val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
+    Surface(modifier = Modifier.fillMaxSize()) {
+        val vm: TrainingViewModel = viewModel()
+        val state by vm.uiState.collectAsState()
+        var screen by remember { mutableStateOf(AppScreen.HOME) }
+        var showSettings by remember { mutableStateOf(false) }
+        var showExitDialog by remember { mutableStateOf(false) }
+        var showWelcomeDialog by remember { mutableStateOf(false) }
+        val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
+        val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
+        val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
+        val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
 
             BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
                 showExitDialog = true
@@ -160,14 +159,19 @@ fun GrammarMateApp() {
                 onRestoreBackup = vm::restoreBackup
             )
 
-            if (showWelcomeDialog) {
-                WelcomeDialog(
-                    onNameSet = { name ->
-                        vm.updateUserName(name)
-                        showWelcomeDialog = false
-                    }
-                )
+        if (showWelcomeDialog) {
+            WelcomeDialog(
+                onNameSet = { name ->
+                    vm.updateUserName(name)
+                    showWelcomeDialog = false
+                }
+            )
+        }
+        androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
+            if (screen != AppScreen.HOME && state.userName == "GrammarMateUser") {
+                showWelcomeDialog = true
             }
+        }
 
             when (screen) {
                 AppScreen.HOME -> HomeScreen(
@@ -392,7 +396,7 @@ fun GrammarMateApp() {
                         }
                     },
                     icon = {
-                        Text(text = "🔥", fontSize = 48.sp)
+                        Text(text = "??", fontSize = 48.sp)
                     },
                     title = { Text(text = "Streak!") },
                     text = {
@@ -418,7 +422,6 @@ fun GrammarMateApp() {
             }
         }
     }
-}
 
 private enum class AppScreen {
     HOME,
@@ -434,7 +437,7 @@ private enum class LessonTileState {
     SPROUT,
     FLOWER,
     LOCKED,
-    UNLOCKED  // Available but not started yet (open lock 🔓)
+    UNLOCKED  // Available but not started yet (open lock ??)
 }
 
 private data class LessonTileUi(
@@ -1146,7 +1149,7 @@ private fun VocabSprintScreen(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            // Показываем текстовое поле только если не включён Word Bank
+            // Show text input only when not using Word Bank.
             if (state.vocabInputMode != InputMode.WORD_BANK) {
                 OutlinedTextField(
                     value = state.vocabInputText,
@@ -1156,7 +1159,7 @@ private fun VocabSprintScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            // Word Bank режим - показываем только если есть минимум 2 варианта
+            // Word Bank mode: show options when there are at least 2 choices.
             if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.size >= 2) {
                 Text(
                     text = "Choose the correct translation:",
@@ -1182,7 +1185,7 @@ private fun VocabSprintScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             } else if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.size < 2) {
-                // Если вариантов мало, показываем текстовое поле
+                // If options are insufficient, fall back to text input.
                 OutlinedTextField(
                     value = state.vocabInputText,
                     onValueChange = onInputChange,
@@ -1195,7 +1198,7 @@ private fun VocabSprintScreen(
                 Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            // Иконка глаза для показа подсказки и кнопка Check
+            // Action row with Show Answer and Check buttons.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

@@ -185,34 +185,36 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
             }
         }
-        // Auto-loading of default packs removed - users should manually import packs from Settings
-        // viewModelScope.launch(Dispatchers.IO) {
-        //     val updated = lessonStore.updateDefaultPacksIfNeeded()
-        //     if (!updated) return@launch
-        //     val currentLang = _uiState.value.selectedLanguageId
-        //     val languages = lessonStore.getLanguages()
-        //     val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
-        //         ?: languages.firstOrNull()?.id
-        //         ?: "en"
-        //     val lessons = lessonStore.getLessons(selectedLang)
-        //     val selectedLessonId = lessons.firstOrNull()?.id
-        //     val packs = lessonStore.getInstalledPacks()
-        //     withContext(Dispatchers.Main) {
-        //         _uiState.update {
-        //             it.copy(
-        //                 languages = languages,
-        //                 installedPacks = packs,
-        //                 selectedLanguageId = selectedLang,
-        //                 lessons = lessons,
-        //                 selectedLessonId = selectedLessonId,
-        //                 eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
-        //             )
-        //         }
-        //         rebuildSchedules(lessons)
-        //         buildSessionCards()
-        //         refreshFlowerStates()
-        //     }
-        // }
+        // Force reload default packs on every app start to ensure latest lesson content
+        viewModelScope.launch(Dispatchers.IO) {
+            val reloaded = lessonStore.forceReloadDefaultPacks()
+            if (!reloaded) return@launch
+            val currentLang = _uiState.value.selectedLanguageId
+            val languages = lessonStore.getLanguages()
+            val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
+                ?: languages.firstOrNull()?.id
+                ?: "en"
+            val lessons = lessonStore.getLessons(selectedLang)
+            val currentLessonId = _uiState.value.selectedLessonId
+            val selectedLessonId = lessons.firstOrNull { it.id == currentLessonId }?.id
+                ?: lessons.firstOrNull()?.id
+            val packs = lessonStore.getInstalledPacks()
+            withContext(Dispatchers.Main) {
+                _uiState.update {
+                    it.copy(
+                        languages = languages,
+                        installedPacks = packs,
+                        selectedLanguageId = selectedLang,
+                        lessons = lessons,
+                        selectedLessonId = selectedLessonId,
+                        eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
+                    )
+                }
+                rebuildSchedules(lessons)
+                buildSessionCards()
+                refreshFlowerStates()
+            }
+        }
     }
 
     fun onInputChanged(text: String) {
@@ -2128,6 +2130,63 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             Log.d(logTag, "Summary: userName=${profile.userName}, lessons=${lessons.size}, lessonId=${selectedLessonId}, streak=${streak.currentStreak}")
         } else {
             Log.e(logTag, "Failed to restore backup - check restore_log.txt in backup folder")
+        }
+    }
+
+    fun reloadFromDisk() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val progress = progressStore.load()
+            val profile = profileStore.load()
+            val languages = lessonStore.getLanguages()
+            val packs = lessonStore.getInstalledPacks()
+            val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id
+                ?: languages.firstOrNull()?.id
+                ?: "en"
+            val lessons = lessonStore.getLessons(selectedLanguageId)
+            val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+            val streak = streakStore.getCurrentStreak(selectedLanguageId)
+
+            val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
+                val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+                lessonId to parsed
+            }.toMap()
+            val bossMegaReward = progress.bossMegaReward?.let { reward ->
+                runCatching { BossReward.valueOf(reward) }.getOrNull()
+            }
+            val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
+
+            withContext(Dispatchers.Main) {
+                _uiState.update {
+                    it.copy(
+                        languages = languages,
+                        installedPacks = packs,
+                        selectedLanguageId = selectedLanguageId,
+                        lessons = lessons,
+                        selectedLessonId = selectedLessonId,
+                        mode = progress.mode,
+                        sessionState = progress.state,
+                        currentIndex = progress.currentIndex,
+                        correctCount = progress.correctCount,
+                        incorrectCount = progress.incorrectCount,
+                        incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
+                        activeTimeMs = progress.activeTimeMs,
+                        voiceActiveMs = progress.voiceActiveMs,
+                        voiceWordCount = progress.voiceWordCount,
+                        hintCount = progress.hintCount,
+                        currentStreak = streak.currentStreak,
+                        longestStreak = streak.longestStreak,
+                        bossLessonRewards = bossLessonRewards,
+                        bossMegaReward = bossMegaReward,
+                        userName = profile.userName,
+                        eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
+                        eliteBestSpeeds = normalizedEliteSpeeds,
+                        eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
+                    )
+                }
+                rebuildSchedules(lessons)
+                buildSessionCards()
+                refreshFlowerStates()
+            }
         }
     }
 }

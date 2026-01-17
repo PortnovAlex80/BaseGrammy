@@ -51,7 +51,26 @@ class BackupManagerTest {
         assertTrue(internalDir.exists())
         assertEquals("mastery: 1", File(internalDir, "mastery.yaml").readText())
         assertEquals("progress: 2", File(internalDir, "progress.yaml").readText())
-        assertEquals("streak: 3", File(internalDir, "streak.yaml").readText())
+        assertEquals("streak: 3", File(internalDir, "streak_en.yaml").readText())
         assertEquals("profile: 4", File(internalDir, "profile.yaml").readText())
+    }
+
+    @Test
+    fun createBackup_writesToBackupLatestWithProgressAndProfile() {
+        internalDir.mkdirs()
+        File(internalDir, "mastery.yaml").writeText("mastery: 1")
+        File(internalDir, "progress.yaml").writeText("progress: 2")
+        File(internalDir, "streak_en.yaml").writeText("streak: 3")
+        File(internalDir, "profile.yaml").writeText("profile: 4")
+
+        val created = backupManager.createBackup()
+
+        assertTrue(created)
+        val latest = File(backupRoot, "backup_latest")
+        assertTrue(latest.exists())
+        assertEquals("mastery: 1", File(latest, "mastery.yaml").readText())
+        assertEquals("progress: 2", File(latest, "progress.yaml").readText())
+        assertEquals("streak: 3", File(latest, "streak_en.yaml").readText())
+        assertEquals("profile: 4", File(latest, "profile.yaml").readText())
     }
 }

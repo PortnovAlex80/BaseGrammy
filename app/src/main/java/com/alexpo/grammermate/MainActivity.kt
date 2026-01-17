@@ -10,13 +10,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.alexpo.grammermate.data.BackupManager
-import com.alexpo.grammermate.ui.GrammarMateApp
+import com.alexpo.grammermate.data.ProfileStore
+import com.alexpo.grammermate.data.RestoreNotifier
+import com.alexpo.grammermate.ui.AppRoot
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     private val storagePermissionsRequestCode = 101
     private val backupTreeUriKey = "backup_tree_uri"
+    private val backupManager by lazy { BackupManager(this) }
 
     private val openBackupTreeLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -29,13 +36,14 @@ class MainActivity : ComponentActivity() {
                 .edit()
                 .putString(backupTreeUriKey, uri.toString())
                 .apply()
-            initializeProgressData()
+            startRestoreFromUri(uri)
         } else {
             Toast.makeText(
                 this,
                 "Backup folder not selected",
                 Toast.LENGTH_SHORT
             ).show()
+            RestoreNotifier.markComplete(false)
         }
     }
 
@@ -45,115 +53,54 @@ class MainActivity : ComponentActivity() {
         val prefs = getSharedPreferences("backup_prefs", MODE_PRIVATE)
         val storedTreeUri = prefs.getString(backupTreeUriKey, null)
 
+        // Check if app data already exists
+        val baseDir = File(filesDir, "grammarmate")
+        val masteryFile = File(baseDir, "mastery.yaml")
+        val progressFile = File(baseDir, "progress.yaml")
+        val profileFile = File(baseDir, "profile.yaml")
+        val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
+        val profile = ProfileStore(this).load()
+        val shouldRestore = !hasFullData || profile.userName == "GrammarMateUser"
+
         if (storedTreeUri != null) {
-            initializeProgressData()
+            // We have a stored URI - use it for restore if needed
+            if (shouldRestore) {
+                startRestoreFromUri(Uri.parse(storedTreeUri))
+            } else {
+                RestoreNotifier.markComplete(false)
+            }
         } else if (android.os.Build.VERSION.SDK_INT >= 29) {
-            Toast.makeText(
-                this,
-                "Select BaseGrammy backup folder in Downloads",
-                Toast.LENGTH_LONG
-            ).show()
-            openBackupTreeLauncher.launch(null)
+            // Android 10+: Check if backup folder exists before asking user
+            val backupRoot = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "BaseGrammy"
+            )
+            val backupLatest = File(backupRoot, "backup_latest")
+
+            if (shouldRestore && backupLatest.exists() && backupLatest.isDirectory) {
+                // Backup exists and app data is missing - ask user to select folder
+                Toast.makeText(
+                    this,
+                    "Backup found! Select BaseGrammy folder to restore",
+                    Toast.LENGTH_LONG
+                ).show()
+                RestoreNotifier.requireUser()
+                openBackupTreeLauncher.launch(null)
+            } else {
+                // No backup needed or data already exists - just start the app
+                // Don't bother user with folder selection
+                RestoreNotifier.markComplete(false)
+            }
         } else if (hasStoragePermissions()) {
             // Check and restore from backup on app first launch
-            initializeProgressData()
+            startLegacyRestore(shouldRestore)
         } else {
+            RestoreNotifier.requireUser()
             requestStoragePermissions()
         }
 
         setContent {
-            GrammarMateApp()
-        }
-    }
-
-    private fun initializeProgressData() {
-        val backupManager = BackupManager(this)
-        val backupRoot = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "BaseGrammy"
-        )
-        val prefs = getSharedPreferences("backup_prefs", MODE_PRIVATE)
-        val storedTreeUri = prefs.getString(backupTreeUriKey, null)?.let { Uri.parse(it) }
-
-        // Check if app data exists
-        val masteryFile = java.io.File(filesDir, "grammarmate/mastery.yaml")
-        val hasExistingData = masteryFile.exists()
-
-        if (storedTreeUri != null) {
-            if (!hasExistingData) {
-                // First launch - try to restore from backup_latest folder
-                val restored = backupManager.restoreFromBackupUri(storedTreeUri)
-                if (restored) {
-                    Toast.makeText(
-                        this,
-                        "Backup restored successfully! Check restore_log.txt",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Backup restore failed - check restore_log.txt",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } else {
-                Toast.makeText(
-                    this,
-                    "App data already exists - backup not restored",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            return
-        }
-
-        if (android.os.Build.VERSION.SDK_INT >= 29) {
-            Toast.makeText(
-                this,
-                "Backup check: SAF not selected",
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-
-        if (!hasExistingData && backupManager.hasBackup()) {
-            // First launch after reinstall - show notification about available backups
-            val backups = backupManager.getAvailableBackups()
-            if (backups.isNotEmpty()) {
-                val latestBackup = backups.first()
-                val restored = backupManager.restoreFromBackup(latestBackup.path)
-                if (restored) {
-                    Toast.makeText(
-                        this,
-                        "Backup restored from ${latestBackup.path}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Backup restore failed from ${latestBackup.path}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } else {
-                Toast.makeText(
-                    this,
-                    "Backup check: no backups in ${backupRoot.absolutePath}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        } else if (!hasExistingData) {
-            Toast.makeText(
-                this,
-                "Backup check: no backups in ${backupRoot.absolutePath}",
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            val backupPath = backupManager.getAvailableBackups().firstOrNull()?.path ?: "none"
-            Toast.makeText(
-                this,
-                "Backup check: existing data, latest=$backupPath",
-                Toast.LENGTH_SHORT
-            ).show()
+            AppRoot()
         }
     }
 
@@ -166,13 +113,21 @@ class MainActivity : ComponentActivity() {
         if (requestCode != storagePermissionsRequestCode) return
         val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
         if (granted) {
-            initializeProgressData()
+            val baseDir = File(filesDir, "grammarmate")
+            val masteryFile = File(baseDir, "mastery.yaml")
+            val progressFile = File(baseDir, "progress.yaml")
+            val profileFile = File(baseDir, "profile.yaml")
+            val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
+            val profile = ProfileStore(this).load()
+            val shouldRestore = !hasFullData || profile.userName == "GrammarMateUser"
+            startLegacyRestore(shouldRestore)
         } else {
             Toast.makeText(
                 this,
                 "Storage permission denied; backups in Downloads won't be read",
                 Toast.LENGTH_LONG
             ).show()
+            RestoreNotifier.markComplete(false)
         }
     }
 
@@ -202,6 +157,36 @@ class MainActivity : ComponentActivity() {
                 android.Manifest.permission.READ_EXTERNAL_STORAGE,
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
+        }
+    }
+
+    private fun startRestoreFromUri(uri: Uri) {
+        RestoreNotifier.start()
+        lifecycleScope.launch {
+            val restored = withContext(Dispatchers.IO) {
+                backupManager.restoreFromBackupUri(uri)
+            }
+            RestoreNotifier.markComplete(restored)
+        }
+    }
+
+    private fun startLegacyRestore(shouldRestore: Boolean) {
+        if (!shouldRestore) {
+            RestoreNotifier.markComplete(false)
+            return
+        }
+        RestoreNotifier.start()
+        lifecycleScope.launch {
+            val restored = withContext(Dispatchers.IO) {
+                if (!backupManager.hasBackup()) {
+                    false
+                } else {
+                    val backups = backupManager.getAvailableBackups()
+                    val latest = backups.firstOrNull() ?: return@withContext false
+                    backupManager.restoreFromBackup(latest.path)
+                }
+            }
+            RestoreNotifier.markComplete(restored)
         }
     }
 }
