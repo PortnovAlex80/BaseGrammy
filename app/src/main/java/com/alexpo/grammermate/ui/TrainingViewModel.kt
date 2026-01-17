@@ -2047,10 +2047,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val success = backupManager.restoreFromBackupUri(backupUri)
         if (success) {
             // Reload all data after restore
-            val languageId = _uiState.value.selectedLanguageId
-            val lessons = lessonStore.getLessons(languageId)
             val progress = progressStore.load()
-            val streak = streakStore.load(languageId)
+            val profile = profileStore.load()
+            val selectedLanguageId = progress.languageId ?: "en"
+            val lessons = lessonStore.getLessons(selectedLanguageId)
+            val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+            val streak = streakStore.getCurrentStreak(selectedLanguageId)
 
             // Parse boss rewards from strings to BossReward enum
             val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
@@ -2063,25 +2065,35 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
             _uiState.update {
                 it.copy(
+                    selectedLanguageId = selectedLanguageId,
                     lessons = lessons,
-                    selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id,
+                    selectedLessonId = selectedLessonId,
                     mode = progress.mode,
+                    sessionState = progress.state,
                     currentIndex = progress.currentIndex,
                     correctCount = progress.correctCount,
                     incorrectCount = progress.incorrectCount,
+                    incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
                     activeTimeMs = progress.activeTimeMs,
+                    voiceActiveMs = progress.voiceActiveMs,
+                    voiceWordCount = progress.voiceWordCount,
+                    hintCount = progress.hintCount,
                     currentStreak = streak.currentStreak,
                     longestStreak = streak.longestStreak,
                     bossLessonRewards = bossLessonRewards,
-                    bossMegaReward = bossMegaReward
+                    bossMegaReward = bossMegaReward,
+                    userName = profile.userName,
+                    eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
+                    eliteBestSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
                 )
             }
 
             // Rebuild session and schedules
             rebuildSchedules(lessons)
             buildSessionCards()
+            refreshFlowerStates()
 
-            Log.d(logTag, "Backup restored successfully")
+            Log.d(logTag, "Backup restored successfully: userName=${profile.userName}, lessons=${lessons.size}, streak=${streak.currentStreak}")
         } else {
             Log.e(logTag, "Failed to restore backup")
         }

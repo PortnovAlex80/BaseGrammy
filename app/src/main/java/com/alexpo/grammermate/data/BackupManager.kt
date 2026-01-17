@@ -29,17 +29,20 @@ class BackupManager(private val context: Context) {
 
     /**
      * Create a backup of all progress data.
-     * Saves mastery.yaml and progress.yaml to Downloads/BaseGrammy
+     * Saves mastery.yaml and progress.yaml to Downloads/BaseGrammy/backup_latest
+     * Overwrites previous backup to avoid creating multiple backup folders
      * Returns true if backup succeeded
      */
     fun createBackup(): Boolean {
         return try {
             if (backupDir == null) return false
 
-            val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
-            val backupSubDir = File(backupDir, "backup_$timestamp")
+            val backupSubDir = File(backupDir, "backup_latest")
+            if (!backupSubDir.exists()) {
+                if (!backupSubDir.mkdirs()) return false
+            }
 
-            if (!backupSubDir.mkdirs()) return false
+            val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
 
             // Backup mastery data
             val masteryFile = File(internalDir, "mastery.yaml")
@@ -55,10 +58,11 @@ class BackupManager(private val context: Context) {
                 progressFile.copyTo(backupProgressFile, overwrite = true)
             }
 
-            // Backup streak data
-            val streakFile = File(internalDir, "streak.yaml")
-            if (streakFile.exists()) {
-                val backupStreakFile = File(backupSubDir, "streak.yaml")
+            // Backup streak data (all streak files)
+            internalDir.listFiles { file ->
+                file.name.startsWith("streak_") && file.name.endsWith(".yaml")
+            }?.forEach { streakFile ->
+                val backupStreakFile = File(backupSubDir, streakFile.name)
                 streakFile.copyTo(backupStreakFile, overwrite = true)
             }
 
@@ -69,7 +73,7 @@ class BackupManager(private val context: Context) {
                 profileFile.copyTo(backupProfileFile, overwrite = true)
             }
 
-            // Create backup metadata
+            // Create/update backup metadata
             createBackupMetadata(backupSubDir, timestamp)
 
             true
@@ -104,10 +108,11 @@ class BackupManager(private val context: Context) {
                 backupProgressFile.copyTo(progressFile, overwrite = true)
             }
 
-            // Restore streak data
-            val backupStreakFile = File(backupSubDir, "streak.yaml")
-            if (backupStreakFile.exists()) {
-                val streakFile = File(internalDir, "streak.yaml")
+            // Restore all streak files
+            backupSubDir.listFiles { file ->
+                file.name.startsWith("streak_") && file.name.endsWith(".yaml")
+            }?.forEach { backupStreakFile ->
+                val streakFile = File(internalDir, backupStreakFile.name)
                 backupStreakFile.copyTo(streakFile, overwrite = true)
             }
 
@@ -153,13 +158,10 @@ class BackupManager(private val context: Context) {
                 ?: return false
             if (!internalDir.exists() && !internalDir.mkdirs()) return false
             var copied = false
-            val filesToRestore = listOf(
-                "mastery.yaml",
-                "progress.yaml",
-                "streak.yaml",
-                "profile.yaml"
-            )
-            filesToRestore.forEach { name ->
+
+            // Restore main files
+            val mainFiles = listOf("mastery.yaml", "progress.yaml", "profile.yaml")
+            mainFiles.forEach { name ->
                 val source = backupDir.findFile(name) ?: return@forEach
                 val target = File(internalDir, name)
                 context.contentResolver.openInputStream(source.uri)?.use { input ->
@@ -169,6 +171,20 @@ class BackupManager(private val context: Context) {
                     copied = true
                 }
             }
+
+            // Restore all streak files (streak_en.yaml, streak_ru.yaml, etc.)
+            backupDir.listFiles().forEach { file ->
+                if (file.name?.startsWith("streak_") == true && file.name?.endsWith(".yaml") == true) {
+                    val target = File(internalDir, file.name!!)
+                    context.contentResolver.openInputStream(file.uri)?.use { input ->
+                        target.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                        copied = true
+                    }
+                }
+            }
+
             copied
         } catch (e: Exception) {
             e.printStackTrace()
