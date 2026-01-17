@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Lock
@@ -155,7 +156,8 @@ fun GrammarMateApp() {
                 onDeletePack = vm::deletePack,
                 onToggleTestMode = vm::toggleTestMode,
                 onUpdateVocabLimit = vm::updateVocabSprintLimit,
-                onUpdateUserName = vm::updateUserName
+                onUpdateUserName = vm::updateUserName,
+                onRestoreBackup = vm::restoreBackup
             )
 
             if (showWelcomeDialog) {
@@ -1641,7 +1643,8 @@ private fun SettingsSheet(
     onDeletePack: (String) -> Unit,
     onToggleTestMode: () -> Unit,
     onUpdateVocabLimit: (Int) -> Unit,
-    onUpdateUserName: (String) -> Unit
+    onUpdateUserName: (String) -> Unit,
+    onRestoreBackup: (android.net.Uri) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -1664,6 +1667,11 @@ private fun SettingsSheet(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) onResetReload(uri)
+    }
+    val restoreBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) onRestoreBackup(uri)
     }
 
     ModalBottomSheet(
@@ -1890,6 +1898,29 @@ private fun SettingsSheet(
                 enabled = userNameInput.trim().isNotEmpty() && userNameInput.trim() != state.userName
             ) {
                 Text("Save Name")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Backup & Restore",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = "Restore progress from backup folder (Downloads/BaseGrammy)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
+            OutlinedButton(
+                onClick = { restoreBackupLauncher.launch(null) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Download, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Restore from backup")
             }
 
             Spacer(modifier = Modifier.height(24.dp))

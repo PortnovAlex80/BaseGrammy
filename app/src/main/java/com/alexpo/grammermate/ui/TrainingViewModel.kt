@@ -1383,10 +1383,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             return
         }
         val selectedIndex = lessons.indexOfFirst { it.id == selectedId }
+        val maxBossCards = 300
         val cards = when (type) {
-            BossType.LESSON -> lessons.firstOrNull { it.id == selectedId }?.cards ?: emptyList()
+            BossType.LESSON -> {
+                val lessonCards = lessons.firstOrNull { it.id == selectedId }?.cards ?: emptyList()
+                lessonCards.shuffled().take(maxBossCards)
+            }
             BossType.MEGA -> {
-                if (selectedIndex <= 0) emptyList() else lessons.take(selectedIndex).flatMap { it.cards }
+                if (selectedIndex <= 0) emptyList()
+                else lessons.take(selectedIndex).flatMap { it.cards }.shuffled().take(maxBossCards)
             }
             BossType.ELITE -> {
                 val eliteSize = eliteSubLessonSize() * eliteStepCount
@@ -2032,6 +2037,44 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         _uiState.update {
             it.copy(userName = trimmed)
+        }
+    }
+
+    /**
+     * Restore user progress from backup folder.
+     */
+    fun restoreBackup(backupUri: android.net.Uri) {
+        val success = backupManager.restoreFromBackupUri(backupUri)
+        if (success) {
+            // Reload all data after restore
+            val languageId = _uiState.value.selectedLanguageId
+            val lessons = lessonStore.getLessons(languageId)
+            val progress = progressStore.load()
+            val streak = streakStore.load(languageId)
+
+            _uiState.update {
+                it.copy(
+                    lessons = lessons,
+                    selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id,
+                    mode = progress.mode,
+                    currentIndex = progress.currentIndex,
+                    correctCount = progress.correctCount,
+                    incorrectCount = progress.incorrectCount,
+                    activeTimeMs = progress.activeTimeMs,
+                    currentStreak = streak.currentStreak,
+                    longestStreak = streak.longestStreak,
+                    bossLessonRewards = progress.bossLessonRewards,
+                    bossMegaReward = progress.bossMegaReward
+                )
+            }
+
+            // Rebuild session and schedules
+            buildSchedulesIfNeeded()
+            buildSessionCards()
+
+            Log.d(logTag, "Backup restored successfully")
+        } else {
+            Log.e(logTag, "Failed to restore backup")
         }
     }
 }

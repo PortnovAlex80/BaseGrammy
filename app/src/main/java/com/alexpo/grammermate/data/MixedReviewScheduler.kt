@@ -21,6 +21,10 @@ class MixedReviewScheduler(
     private val subLessonSize: Int,
     private val intervals: List<Int> = listOf(1, 2, 4, 7, 10, 14, 20, 28, 42, 56)
 ) {
+    companion object {
+        private const val MAX_REVIEW_CARDS = 300
+    }
+
     fun build(lessons: List<Lesson>): Map<String, LessonSchedule> {
         if (lessons.isEmpty()) return emptyMap()
         val schedules = linkedMapOf<String, LessonSchedule>()
@@ -36,9 +40,15 @@ class MixedReviewScheduler(
                 reviewStartMixedIndex.putIfAbsent(previousLessonId, globalMixedIndex)
             }
 
-            // Use main pool for review queue, reserve pool for additional mixing
-            reviewQueues[lesson.id] = ArrayDeque(lesson.mainPoolCards)
-            reserveQueues[lesson.id] = ArrayDeque(lesson.reservePoolCards)
+            // Limit total review cards to MAX_REVIEW_CARDS (300)
+            val allReviewCards = (lesson.mainPoolCards + lesson.reservePoolCards)
+                .shuffled()
+                .take(MAX_REVIEW_CARDS)
+
+            // Split into main and reserve pools (50/50 split up to max)
+            val mainCount = (allReviewCards.size / 2).coerceAtLeast(lesson.mainPoolCards.size.coerceAtMost(150))
+            reviewQueues[lesson.id] = ArrayDeque(allReviewCards.take(mainCount))
+            reserveQueues[lesson.id] = ArrayDeque(allReviewCards.drop(mainCount))
 
             // Use only main pool cards (first 150) for sub-lessons
             val mainCards = lesson.mainPoolCards

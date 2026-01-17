@@ -2,6 +2,8 @@ package com.alexpo.grammermate.data
 
 import android.content.Context
 import android.os.Environment
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -86,6 +88,7 @@ class BackupManager(private val context: Context) {
         return try {
             val backupSubDir = File(backupPath)
             if (!backupSubDir.exists()) return false
+            if (!internalDir.exists() && !internalDir.mkdirs()) return false
 
             // Restore mastery data
             val backupMasteryFile = File(backupSubDir, "mastery.yaml")
@@ -122,6 +125,57 @@ class BackupManager(private val context: Context) {
         }
     }
 
+    fun getAvailableBackups(treeUri: Uri): List<BackupInfo> {
+        val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
+        return tree.listFiles()
+            .filter { it.isDirectory && (it.name?.startsWith("backup_") == true) }
+            .sortedByDescending { it.lastModified() }
+            .map { dir ->
+                val timestamp = dir.name?.removePrefix("backup_") ?: ""
+                val metadataFile = dir.findFile("metadata.txt")
+                val dataSize = safeCalculateDirSize(dir)
+
+                BackupInfo(
+                    name = dir.name ?: "",
+                    path = dir.uri.toString(),
+                    uri = dir.uri.toString(),
+                    timestamp = timestamp,
+                    dataSize = dataSize,
+                    metadata = safeReadText(metadataFile)
+                )
+            }
+    }
+
+    fun restoreFromBackupUri(backupUri: Uri): Boolean {
+        return try {
+            val backupDir = DocumentFile.fromTreeUri(context, backupUri)
+                ?: DocumentFile.fromSingleUri(context, backupUri)
+                ?: return false
+            if (!internalDir.exists() && !internalDir.mkdirs()) return false
+            var copied = false
+            val filesToRestore = listOf(
+                "mastery.yaml",
+                "progress.yaml",
+                "streak.yaml",
+                "profile.yaml"
+            )
+            filesToRestore.forEach { name ->
+                val source = backupDir.findFile(name) ?: return@forEach
+                val target = File(internalDir, name)
+                context.contentResolver.openInputStream(source.uri)?.use { input ->
+                    target.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                    copied = true
+                }
+            }
+            copied
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     /**
      * Get list of available backups
      */
@@ -133,14 +187,14 @@ class BackupManager(private val context: Context) {
         }?.sortedByDescending { it.lastModified() }?.map { dir ->
             val timestamp = dir.name.removePrefix("backup_")
             val metadataFile = File(dir, "metadata.txt")
-            val dataSize = calculateDirSize(dir)
+            val dataSize = safeCalculateDirSize(dir)
 
             BackupInfo(
                 name = dir.name,
                 path = dir.absolutePath,
                 timestamp = timestamp,
                 dataSize = dataSize,
-                metadata = if (metadataFile.exists()) metadataFile.readText() else ""
+                metadata = safeReadText(metadataFile)
             )
         } ?: emptyList()
     }
@@ -189,11 +243,45 @@ class BackupManager(private val context: Context) {
             acc + (if (file.isFile) file.length() else 0L)
         }
     }
+
+    private fun safeReadText(file: File): String {
+        return try {
+            if (file.exists()) file.readText() else ""
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    private fun safeReadText(file: DocumentFile?): String {
+        return try {
+            if (file == null || !file.exists()) return ""
+            context.contentResolver.openInputStream(file.uri)?.bufferedReader()?.use { it.readText() } ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    private fun safeCalculateDirSize(dir: File): Long {
+        return try {
+            calculateDirSize(dir)
+        } catch (e: Exception) {
+            0L
+        }
+    }
+
+    private fun safeCalculateDirSize(dir: DocumentFile): Long {
+        return try {
+            dir.listFiles().sumOf { it.length() }
+        } catch (e: Exception) {
+            0L
+        }
+    }
 }
 
 data class BackupInfo(
     val name: String,
     val path: String,
+    val uri: String? = null,
     val timestamp: String,
     val dataSize: Long,
     val metadata: String
