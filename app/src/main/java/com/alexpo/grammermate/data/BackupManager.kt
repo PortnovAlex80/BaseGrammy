@@ -1,8 +1,12 @@
 package com.alexpo.grammermate.data
 
+import android.content.ContentValues
 import android.content.Context
+import android.os.Build
 import android.os.Environment
 import android.net.Uri
+import android.provider.MediaStore
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.text.SimpleDateFormat
@@ -15,6 +19,7 @@ import java.util.*
  */
 class BackupManager(private val context: Context) {
     private val yaml = org.yaml.snakeyaml.Yaml()
+    private val logTag = "BackupManager"
 
     // Backup directory: Downloads/BaseGrammy
     private val backupDir: File? by lazy {
@@ -35,58 +40,207 @@ class BackupManager(private val context: Context) {
      */
     fun createBackup(): Boolean {
         return try {
-            if (backupDir == null) return false
-
-            val backupSubDir = File(backupDir, "backup_latest")
-            if (!backupSubDir.exists()) {
-                if (!backupSubDir.mkdirs()) return false
+            val success = if (Build.VERSION.SDK_INT >= 29) {
+                if (Environment.isExternalStorageLegacy()) {
+                    createBackupLegacy()
+                } else {
+                    createBackupScoped()
+                }
+            } else {
+                createBackupLegacy()
             }
-
-            val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
-
-            // Backup mastery data
-            val masteryFile = File(internalDir, "mastery.yaml")
-            if (masteryFile.exists()) {
-                val backupMasteryFile = File(backupSubDir, "mastery.yaml")
-                masteryFile.copyTo(backupMasteryFile, overwrite = true)
-            }
-
-            // Backup progress data
-            val progressFile = File(internalDir, "progress.yaml")
-            if (progressFile.exists()) {
-                val backupProgressFile = File(backupSubDir, "progress.yaml")
-                progressFile.copyTo(backupProgressFile, overwrite = true)
-            }
-
-            // Backup streak data (all streak files)
-            internalDir.listFiles { file ->
-                file.name.startsWith("streak_") && file.name.endsWith(".yaml")
-            }?.forEach { streakFile ->
-                val backupStreakFile = File(backupSubDir, streakFile.name)
-                streakFile.copyTo(backupStreakFile, overwrite = true)
-            }
-
-            // Remove old streak.yaml if exists (migration to new format)
-            val oldStreakBackup = File(backupSubDir, "streak.yaml")
-            if (oldStreakBackup.exists()) {
-                oldStreakBackup.delete()
-            }
-
-            // Backup user profile data
-            val profileFile = File(internalDir, "profile.yaml")
-            if (profileFile.exists()) {
-                val backupProfileFile = File(backupSubDir, "profile.yaml")
-                profileFile.copyTo(backupProfileFile, overwrite = true)
-            }
-
-            // Create/update backup metadata
-            createBackupMetadata(backupSubDir, timestamp)
-
-            true
+            Log.d(logTag, "createBackup: success=$success")
+            success
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(logTag, "createBackup failed", e)
             false
         }
+    }
+
+    private fun createBackupLegacy(): Boolean {
+        if (backupDir == null) return false
+
+        val backupSubDir = File(backupDir, "backup_latest")
+        if (!backupSubDir.exists()) {
+            if (!backupSubDir.mkdirs()) return false
+        }
+
+        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+
+        // Backup mastery data
+        val masteryFile = File(internalDir, "mastery.yaml")
+        if (masteryFile.exists()) {
+            val backupMasteryFile = File(backupSubDir, "mastery.yaml")
+            masteryFile.copyTo(backupMasteryFile, overwrite = true)
+        }
+
+        // Backup progress data
+        val progressFile = File(internalDir, "progress.yaml")
+        if (progressFile.exists()) {
+            val backupProgressFile = File(backupSubDir, "progress.yaml")
+            progressFile.copyTo(backupProgressFile, overwrite = true)
+        }
+
+        // Backup streak data (all streak files)
+        internalDir.listFiles { file ->
+            file.name.startsWith("streak_") && file.name.endsWith(".yaml")
+        }?.forEach { streakFile ->
+            val backupStreakFile = File(backupSubDir, streakFile.name)
+            streakFile.copyTo(backupStreakFile, overwrite = true)
+        }
+
+        // Remove old streak.yaml if exists (migration to new format)
+        val oldStreakBackup = File(backupSubDir, "streak.yaml")
+        if (oldStreakBackup.exists()) {
+            oldStreakBackup.delete()
+        }
+
+        // Backup user profile data
+        val profileFile = File(internalDir, "profile.yaml")
+        if (profileFile.exists()) {
+            val backupProfileFile = File(backupSubDir, "profile.yaml")
+            profileFile.copyTo(backupProfileFile, overwrite = true)
+        }
+
+        // Create/update backup metadata
+        createBackupMetadata(backupSubDir, timestamp)
+
+        return true
+    }
+
+    private fun createBackupScoped(): Boolean {
+        val resolver = context.contentResolver
+        val relativePath = "${Environment.DIRECTORY_DOWNLOADS}/BaseGrammy/backup_latest/"
+        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+        var wroteAny = false
+
+        // IMPORTANT: on Android 10+ we must overwrite existing MediaStore entries,
+        // not insert new ones with the same name, or the system will create "(1)" duplicates.
+        // Keep this behavior to ensure backup_latest always has the latest files.
+        val pathLike = "%BaseGrammy/backup_latest%"
+
+        fun deleteDuplicateEntries(name: String) {
+            val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
+            val deleted = resolver.delete(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                selection,
+                arrayOf(pathLike, "$name (%")
+            )
+            if (deleted > 0) {
+                Log.d(logTag, "Removed $deleted duplicate entries for $name in backup_latest")
+            }
+        }
+
+        fun deleteLegacyDuplicateFiles(name: String) {
+            val legacyDir = backupDir?.let { File(it, "backup_latest") } ?: return
+            legacyDir.listFiles()
+                ?.filter { it.name.startsWith("$name (") }
+                ?.forEach { file ->
+                    if (file.delete()) {
+                        Log.d(logTag, "Deleted legacy duplicate file ${file.name}")
+                    }
+                }
+        }
+
+        fun findExistingEntry(name: String): Uri? {
+            val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? AND ${MediaStore.MediaColumns.DISPLAY_NAME}=?"
+            resolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.MediaColumns._ID),
+                selection,
+                arrayOf(pathLike, name),
+                "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getLong(0)
+                    return Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString())
+                }
+            }
+            return null
+        }
+
+        fun writeFile(name: String, mimeType: String, source: File): Boolean {
+            if (!source.exists()) return false
+            deleteDuplicateEntries(name)
+            deleteLegacyDuplicateFiles(name)
+            val existingUri = findExistingEntry(name)
+            if (existingUri != null) {
+                Log.d(logTag, "Overwriting existing $name in backup_latest")
+            }
+            val targetUri = existingUri ?: run {
+                // If we cannot find a MediaStore entry, try deleting a legacy file to avoid "(1)" duplicates.
+                if (existingUri == null) {
+                    val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
+                    if (legacyFile?.exists() == true && legacyFile.delete()) {
+                        Log.d(logTag, "Deleted legacy $name before MediaStore insert")
+                    }
+                }
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                }
+                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            } ?: return false
+            resolver.openOutputStream(targetUri, "wt")?.use { output ->
+                source.inputStream().use { input ->
+                    input.copyTo(output)
+                }
+            } ?: return false
+            return true
+        }
+
+        fun writeText(name: String, text: String): Boolean {
+            deleteDuplicateEntries(name)
+            deleteLegacyDuplicateFiles(name)
+            val existingUri = findExistingEntry(name)
+            if (existingUri != null) {
+                Log.d(logTag, "Overwriting existing $name in backup_latest")
+            }
+            val targetUri = existingUri ?: run {
+                // If we cannot find a MediaStore entry, try deleting a legacy file to avoid "(1)" duplicates.
+                if (existingUri == null) {
+                    val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
+                    if (legacyFile?.exists() == true && legacyFile.delete()) {
+                        Log.d(logTag, "Deleted legacy $name before MediaStore insert")
+                    }
+                }
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                }
+                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            } ?: return false
+            resolver.openOutputStream(targetUri, "wt")?.use { output ->
+                output.write(text.toByteArray())
+            } ?: return false
+            return true
+        }
+
+        wroteAny = writeFile("mastery.yaml", "text/yaml", File(internalDir, "mastery.yaml")) || wroteAny
+        wroteAny = writeFile("progress.yaml", "text/yaml", File(internalDir, "progress.yaml")) || wroteAny
+        wroteAny = writeFile("profile.yaml", "text/yaml", File(internalDir, "profile.yaml")) || wroteAny
+
+        internalDir.listFiles { file ->
+            file.name.startsWith("streak_") && file.name.endsWith(".yaml")
+        }?.forEach { streakFile ->
+            wroteAny = writeFile(streakFile.name, "text/yaml", streakFile) || wroteAny
+        }
+
+        val metadata = """
+            Backup created: $timestamp
+            App version: 1.0
+            Data format: YAML
+            Contents:
+            - mastery.yaml (flower levels and progress)
+            - progress.yaml (training session progress)
+            - streak.yaml (daily streak data)
+            - profile.yaml (user name and settings)
+        """.trimIndent()
+        wroteAny = writeText("metadata.txt", metadata) || wroteAny
+
+        return wroteAny
     }
 
     /**

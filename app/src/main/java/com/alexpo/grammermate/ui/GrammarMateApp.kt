@@ -171,6 +171,7 @@ fun GrammarMateApp() {
                 onToggleTestMode = vm::toggleTestMode,
                 onUpdateVocabLimit = vm::updateVocabSprintLimit,
                 onUpdateUserName = vm::updateUserName,
+                onSaveProgress = vm::saveProgressNow,
                 onRestoreBackup = vm::restoreBackup
             )
 
@@ -1699,6 +1700,7 @@ private fun SettingsSheet(
     onToggleTestMode: () -> Unit,
     onUpdateVocabLimit: (Int) -> Unit,
     onUpdateUserName: (String) -> Unit,
+    onSaveProgress: () -> Unit,
     onRestoreBackup: (android.net.Uri) -> Unit
 ) {
     if (!show) return
@@ -1976,6 +1978,17 @@ private fun SettingsSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
+
+            OutlinedButton(
+                onClick = onSaveProgress,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Upload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Save progress now")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
                 onClick = { restoreBackupLauncher.launch(null) },

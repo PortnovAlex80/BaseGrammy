@@ -1235,6 +1235,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
+        val shouldPersist = allCorrect || _uiState.value.testMode
         _uiState.update {
             if (!allCorrect && !it.testMode) {
                 return@update it.copy(activeStory = null)
@@ -1243,6 +1244,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 StoryPhase.CHECK_IN -> it.copy(storyCheckInDone = true, activeStory = null)
                 StoryPhase.CHECK_OUT -> it.copy(storyCheckOutDone = true, activeStory = null)
             }
+        }
+        if (shouldPersist) {
+            forceBackupOnSave = true
+            saveProgress()
         }
     }
 
@@ -1350,6 +1355,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     vocabFinishedToken = it.vocabFinishedToken + 1
                 )
             }
+            forceBackupOnSave = true
+            saveProgress()
             return
         }
         val next = vocabSession[nextIndex]
@@ -2035,8 +2042,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun createProgressBackup() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                backupManager.createBackup()
-                Log.d(logTag, "Progress backup created successfully")
+                val success = backupManager.createBackup()
+                Log.d(logTag, "Progress backup created: success=$success")
             } catch (e: Exception) {
                 Log.e(logTag, "Failed to create progress backup", e)
             }
@@ -2056,6 +2063,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(userName = trimmed)
         }
+    }
+
+    fun saveProgressNow() {
+        Log.d(logTag, "Manual progress save requested from settings")
+        forceBackupOnSave = true
+        saveProgress()
     }
 
     /**
