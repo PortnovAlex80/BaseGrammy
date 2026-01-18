@@ -1997,14 +1997,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (isNewStreak && updatedStreak.currentStreak > 0) {
             // Генерируем сообщение о streak
             val message = when {
-                updatedStreak.currentStreak == 1 -> "🔥 Great start! Day 1 streak!"
-                updatedStreak.currentStreak == 3 -> "🔥 3 days streak! You're on fire!"
-                updatedStreak.currentStreak == 7 -> "🔥 7 days streak! One week! Amazing!"
-                updatedStreak.currentStreak == 14 -> "🔥 14 days streak! Two weeks! Incredible!"
-                updatedStreak.currentStreak == 30 -> "🔥 30 days streak! One month! Outstanding!"
-                updatedStreak.currentStreak == 100 -> "🔥 100 days streak! You're a legend!"
-                updatedStreak.currentStreak % 10 == 0 -> "🔥 ${updatedStreak.currentStreak} days streak! Keep it up!"
-                else -> "🔥 ${updatedStreak.currentStreak} days streak!"
+                updatedStreak.currentStreak == 1 -> "\uD83D\uDD25 Great start! Day 1 streak!"
+                updatedStreak.currentStreak == 3 -> "\uD83D\uDD25 3 days streak! You're on fire!"
+                updatedStreak.currentStreak == 7 -> "\uD83D\uDD25 7 days streak! One week! Amazing!"
+                updatedStreak.currentStreak == 14 -> "\uD83D\uDD25 14 days streak! Two weeks! Incredible!"
+                updatedStreak.currentStreak == 30 -> "\uD83D\uDD25 30 days streak! One month! Outstanding!"
+                updatedStreak.currentStreak == 100 -> "\uD83D\uDD25 100 days streak! You're a legend!"
+                updatedStreak.currentStreak % 10 == 0 -> "\uD83D\uDD25 ${updatedStreak.currentStreak} days streak! Keep it up!"
+                else -> "\uD83D\uDD25 ${updatedStreak.currentStreak} days streak!"
             }
 
             _uiState.update {
