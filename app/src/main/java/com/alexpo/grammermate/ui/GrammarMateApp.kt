@@ -40,12 +40,14 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -84,7 +86,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -2471,6 +2475,15 @@ private fun AnswerBox(
 ) {
     val latestState by rememberUpdatedState(state)
     val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE
+    val clipboardManager = LocalClipboardManager.current
+    var showReportDialog by remember { mutableStateOf(false) }
+    val reportCard = state.currentCard
+    val reportText = if (reportCard != null) {
+        val targetText = reportCard.acceptedAnswers.joinToString(" / ")
+        "ID: ${reportCard.id}\nSource: ${reportCard.promptRu}\nTarget: $targetText"
+    } else {
+        ""
+    }
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -2498,6 +2511,37 @@ private fun AnswerBox(
             onVoicePromptStarted()
             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
+    }
+    if (showReportDialog) {
+        AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = { Text(text = "Report sentence") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = reportText)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = {
+                                if (reportText.isNotBlank()) {
+                                    clipboardManager.setText(AnnotatedString(reportText))
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy card")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showReportDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -2634,6 +2678,18 @@ private fun AnswerBox(
                         enabled = hasCards
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                    }
+                }
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(text = "Report sentence") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(
+                        onClick = { if (hasCards) showReportDialog = true },
+                        enabled = hasCards
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
                     }
                 }
                 Text(
