@@ -25,7 +25,9 @@
       "Bash(timeout 180 bash:*)",
       "Bash(gradlew assembleDebug:*)",
       "Bash(pwsh -Command:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "mcp__plugin_serena_serena__execute_shell_command",
+      "mcp__plugin_serena_serena__activate_project"
     ]
   }
 }

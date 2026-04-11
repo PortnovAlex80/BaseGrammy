@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(cmd.exe /c \"gradlew.bat compileDebugKotlin\")",
       "Bash(./gradlew.bat assembleDebug)"
