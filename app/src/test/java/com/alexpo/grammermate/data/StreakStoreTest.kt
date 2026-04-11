@@ -264,6 +264,32 @@ class StreakStoreTest {
     }
 
     @Test
+    fun getCurrentStreak_doesNotPersistReset() {
+        // БАГ: getCurrentStreak() НЕ должен сохранять currentStreak = 0 в файл
+        // Reset должен происходить только при следующем recordSubLessonCompletion()
+        store.recordSubLessonCompletion("en")
+        var data = store.load("en")
+        assertEquals(1, data.currentStreak)
+
+        // Симулируем пропуск 3 дней
+        data = data.copy(lastCompletionDateMs = System.currentTimeMillis() - (3 * 24 * 60 * 60 * 1000L))
+        store.save(data)
+
+        // getCurrentStreak возвращает сброшенный streak...
+        val current = store.getCurrentStreak("en")
+        assertEquals(0, current.currentStreak)
+
+        // ...но файл НЕ должен быть перезаписан!
+        val fileData = store.load("en")
+        assertEquals(1, fileData.currentStreak, "File should still have original streak")
+
+        // Сброс происходит только при новом recordSubLessonCompletion
+        store.recordSubLessonCompletion("en")
+        val afterNewCompletion = store.load("en")
+        assertEquals(1, afterNewCompletion.currentStreak) // Начинаем с 1
+    }
+
+    @Test
     fun differentLanguages_independentStreaks() {
         // Разные языки имеют независимые streaks
         store.recordSubLessonCompletion("en")

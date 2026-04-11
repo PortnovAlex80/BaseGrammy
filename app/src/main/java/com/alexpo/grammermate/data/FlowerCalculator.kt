@@ -75,8 +75,8 @@ object FlowerCalculator {
         mastery: LessonMasteryState
     ): FlowerState {
         return when {
-            // Если здоровье упало ниже порога увядания
-            // Используем небольшой эпсилон т.к. формула гарантирует health >= WILTED_THRESHOLD
+            // Epsilon (0.01 = 1%) compensates for floating-point precision issues.
+            // Formula guarantees health >= 0.5, but float math can produce 0.4999999.
             healthPercent <= SpacedRepetitionConfig.WILTED_THRESHOLD + 0.01f -> FlowerState.WILTED
 
             // Если здоровье между 50% и 100% - увядает

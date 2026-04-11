@@ -143,9 +143,9 @@ class StreakStore(private val context: Context) {
         val daysSinceLastCompletion = TimeUnit.MILLISECONDS.toDays(now - lastCompletionMs)
 
         if (daysSinceLastCompletion > 1) {
-            // Пропустили больше 1 дня - сбрасываем streak
+            // Пропустили больше 1 дня - возвращаем сброшенный streak БЕЗ сохранения
+            // Сброс будет записан при следующем recordSubLessonCompletion()
             val reset = current.copy(currentStreak = 0)
-            save(reset)
             return reset
         }
 

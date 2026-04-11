@@ -573,7 +573,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                         subLessonFinishedToken = it.subLessonFinishedToken + 1
                     )
                 }
-                markSubLessonCardsShown(sessionCards)
+                markSubLessonCardsShownForProgress(sessionCards)
                 buildSessionCards()
                 // Check if lesson is completed and update flower states
                 checkAndMarkLessonCompleted()
@@ -675,7 +675,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossRewardMessage = rewardMessage
             )
         }
-        nextCard?.let { recordCardShowForMastery(it) }
+        // Note: Navigation doesn't record mastery - only actual answers (submitAnswer) count
 
         // Update word bank if in WORD_BANK mode
         if (_uiState.value.inputMode == InputMode.WORD_BANK) {
@@ -702,7 +702,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voicePromptStartMs = null
             )
         }
-        prevCard?.let { recordCardShowForMastery(it) }
+        // Note: Navigation doesn't record mastery - only actual answers (submitAnswer) count
         saveProgress()
     }
 
@@ -1355,6 +1355,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     vocabFinishedToken = it.vocabFinishedToken + 1
                 )
             }
+            // Vocab sprint completion counts toward daily streak
+            updateStreak()
             forceBackupOnSave = true
             saveProgress()
             return
@@ -1751,7 +1753,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         Log.d(logTag, "After record: uniqueCardShows=${mastery?.uniqueCardShows}, totalShows=${mastery?.totalCardShows}")
     }
 
-    private fun markSubLessonCardsShown(cards: List<SentenceCard>) {
+    /**
+     * Marks cards as shown for lesson progress tracking (not mastery/flower growth).
+     * Only WORD_BANK mode calls this - other modes don't mark progress this way.
+     * Progress = completed sub-lessons count, Mastery = flower level from VOICE/KEYBOARD practice.
+     */
+    private fun markSubLessonCardsShownForProgress(cards: List<SentenceCard>) {
         if (_uiState.value.inputMode != InputMode.WORD_BANK || cards.isEmpty()) return
         val lessonId = _uiState.value.selectedLessonId ?: return
         val lessonCardIds = _uiState.value.lessons
@@ -1896,6 +1903,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             distractors.addAll(allVocabFromLessons.take(additionalNeeded))
         }
 
+        // Если всё ещё недостаточно, используем fallback слова
+        if (distractors.size < 4) {
+            val languageId = _uiState.value.selectedLanguageId
+            val fallbackWords = if (languageId == "it") {
+                TrainingConfig.FALLBACK_WORDS_IT
+            } else {
+                TrainingConfig.FALLBACK_WORDS_EN
+            }
+            val additionalNeeded = 4 - distractors.size
+            distractors.addAll(
+                fallbackWords
+                    .filter { Normalizer.normalize(it) != normalizedCorrect }
+                    .filter { !distractors.contains(it) }
+                    .shuffled()
+                    .take(additionalNeeded)
+            )
+        }
+
         // Берём до 4 дистракторов + правильный ответ = до 5 вариантов
         val selectedDistractors = distractors.take(4)
         val result = (listOf(correctOption) + selectedDistractors).shuffled()
@@ -1995,13 +2020,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val (updatedStreak, isNewStreak) = streakStore.recordSubLessonCompletion(languageId)
 
         if (isNewStreak && updatedStreak.currentStreak > 0) {
-            // Генерируем сообщение о streak
+            // Генерируем сообщение о streak (порядок важен: специфичные проверки перед общими)
             val message = when {
                 updatedStreak.currentStreak == 1 -> "\uD83D\uDD25 Great start! Day 1 streak!"
                 updatedStreak.currentStreak == 3 -> "\uD83D\uDD25 3 days streak! You're on fire!"
                 updatedStreak.currentStreak == 7 -> "\uD83D\uDD25 7 days streak! One week! Amazing!"
                 updatedStreak.currentStreak == 14 -> "\uD83D\uDD25 14 days streak! Two weeks! Incredible!"
+                updatedStreak.currentStreak == 20 -> "\uD83D\uDD25 20 days streak! Three weeks!"
                 updatedStreak.currentStreak == 30 -> "\uD83D\uDD25 30 days streak! One month! Outstanding!"
+                updatedStreak.currentStreak == 40 -> "\uD83D\uDD25 40 days streak!"
+                updatedStreak.currentStreak == 50 -> "\uD83D\uDD25 50 days streak! Half century!"
+                updatedStreak.currentStreak == 60 -> "\uD83D\uDD25 60 days streak! Two months!"
+                updatedStreak.currentStreak == 90 -> "\uD83D\uDD25 90 days streak! Almost century!"
                 updatedStreak.currentStreak == 100 -> "\uD83D\uDD25 100 days streak! You're a legend!"
                 updatedStreak.currentStreak % 10 == 0 -> "\uD83D\uDD25 ${updatedStreak.currentStreak} days streak! Keep it up!"
                 else -> "\uD83D\uDD25 ${updatedStreak.currentStreak} days streak!"
