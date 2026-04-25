@@ -41,6 +41,11 @@ import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
+import com.alexpo.grammermate.data.TtsEngine
+import com.alexpo.grammermate.data.TtsModelManager
+import com.alexpo.grammermate.data.TtsModelRegistry
+import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.DownloadState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -71,6 +76,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val streakStore = StreakStore(application)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
+    private val ttsModelManager = TtsModelManager(application)
+    private val ttsEngine = TtsEngine(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -216,6 +223,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 refreshFlowerStates()
             }
         }
+
+        // TTS state collection
+        checkTtsModel()
+        startBackgroundTtsDownload()
+        viewModelScope.launch {
+            ttsEngine.state.collect { ttsState ->
+                _uiState.update { it.copy(ttsState = ttsState) }
+            }
+        }
     }
 
     fun onInputChanged(text: String) {
@@ -322,6 +338,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         buildSessionCards()
         refreshFlowerStates()
         saveProgress()
+        ttsModelManager.currentLanguageId = languageId
+        checkTtsModel()
     }
 
     fun selectLesson(lessonId: String) {
@@ -1699,7 +1717,117 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return normalized.split(" ").count { it.length >= 3 }
     }
 
+    fun onTtsSpeak(text: String) {
+        if (text.isBlank()) return
+        val langId = _uiState.value.selectedLanguageId
+        viewModelScope.launch {
+            if (ttsEngine.state.value != TtsState.READY
+                || ttsEngine.activeLanguageId != langId) {
+                ttsEngine.initialize(langId)
+            }
+            ttsEngine.speak(text, languageId = langId)
+        }
+    }
+
+    fun startTtsDownload() {
+        // M6: Check metered network before starting download
+        if (ttsModelManager.isNetworkMetered()) {
+            _uiState.update { it.copy(ttsMeteredNetwork = true) }
+            return
+        }
+        beginTtsDownload()
+    }
+
+    fun confirmTtsDownloadOnMetered() {
+        _uiState.update { it.copy(ttsMeteredNetwork = false) }
+        beginTtsDownload()
+    }
+
+    fun dismissMeteredWarning() {
+        _uiState.update { it.copy(ttsMeteredNetwork = false) }
+    }
+
+    /**
+     * Dismiss the TTS download dialog and reset download state to Idle.
+     * Called when the user closes the dialog after Done or Error states.
+     */
+    fun dismissTtsDownloadDialog() {
+        val state = _uiState.value.ttsDownloadState
+        // Only reset to Idle if in a terminal state (Done or Error)
+        if (state is DownloadState.Done || state is DownloadState.Error) {
+            _uiState.update { it.copy(ttsDownloadState = DownloadState.Idle) }
+        }
+    }
+
+    private var ttsDownloadJob: Job? = null
+
+    private fun beginTtsDownload() {
+        if (ttsDownloadJob?.isActive == true) {
+            Log.d(logTag, "TTS download already in progress, ignoring duplicate request")
+            return
+        }
+        val langId = _uiState.value.selectedLanguageId
+        ttsDownloadJob = viewModelScope.launch(Dispatchers.IO) {
+            ttsModelManager.download(langId).collect { downloadState ->
+                _uiState.update { it.copy(ttsDownloadState = downloadState) }
+                if (downloadState is DownloadState.Done) {
+                    _uiState.update { it.copy(ttsModelReady = true) }
+                }
+            }
+        }
+    }
+
+    private fun checkTtsModel() {
+        val langId = _uiState.value.selectedLanguageId
+        val ready = ttsModelManager.isModelReady(langId)
+        _uiState.update { it.copy(ttsModelReady = ready) }
+    }
+
+    fun stopTts() {
+        ttsEngine.stop()
+    }
+
+    private var bgDownloadJob: Job? = null
+
+    private fun startBackgroundTtsDownload() {
+        val languages = _uiState.value.languages
+        if (languages.isEmpty()) return
+
+        val missingLanguages = languages.map { it.id }
+            .filter { !ttsModelManager.isModelReady(it) }
+
+        if (missingLanguages.isEmpty()) return
+        if (bgDownloadJob?.isActive == true) return
+
+        bgDownloadJob = viewModelScope.launch(Dispatchers.IO) {
+            ttsModelManager.downloadMultiple(missingLanguages).collect { stateMap ->
+                val allDone = stateMap.values.all { it is DownloadState.Done }
+                val anyActive = stateMap.values.any {
+                    it is DownloadState.Downloading || it is DownloadState.Extracting
+                }
+
+                _uiState.update { current ->
+                    current.copy(
+                        bgTtsDownloadStates = stateMap,
+                        bgTtsDownloading = anyActive,
+                        ttsModelReady = ttsModelManager.isModelReady(current.selectedLanguageId)
+                    )
+                }
+
+                if (allDone) {
+                    _uiState.update { it.copy(bgTtsDownloading = false) }
+                }
+            }
+        }
+    }
+
+    fun setTtsDownloadStateFromBackground(bgState: DownloadState) {
+        _uiState.update { it.copy(ttsDownloadState = bgState) }
+    }
+
     override fun onCleared() {
+        bgDownloadJob?.cancel()
+        ttsEngine.release()
         soundPool.release()
         super.onCleared()
     }
@@ -2302,7 +2430,14 @@ data class TrainingUiState(
     val streakCelebrationToken: Int = 0,
     // User profile
     val userName: String = "GrammarMateUser",
-    val ladderRows: List<LessonLadderRow> = emptyList()
+    val ladderRows: List<LessonLadderRow> = emptyList(),
+    // TTS
+    val ttsState: TtsState = TtsState.IDLE,
+    val ttsDownloadState: DownloadState = DownloadState.Idle,
+    val ttsModelReady: Boolean = false,
+    val ttsMeteredNetwork: Boolean = false,
+    val bgTtsDownloading: Boolean = false,
+    val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap()
 )
 
 data class LessonLadderRow(

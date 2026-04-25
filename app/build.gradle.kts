@@ -11,8 +11,8 @@ android {
         applicationId = "com.alexpo.grammermate"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.2"
+        versionCode = 3
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -78,6 +78,11 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     implementation("org.yaml:snakeyaml:2.2")
+
+    // Sherpa-ONNX TTS (static-linked ONNX Runtime)
+    implementation(files("libs/sherpa-onnx-static-link-onnxruntime-1.12.40.aar"))
+    // tar.bz2 extraction for TTS model download
+    implementation("org.apache.commons:commons-compress:1.26.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

@@ -48,11 +48,13 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -106,6 +108,10 @@ import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.data.FlowerCalculator
+import androidx.compose.animation.AnimatedVisibility
+import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.DownloadState
+import com.alexpo.grammermate.data.TtsModelRegistry
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
@@ -126,72 +132,115 @@ fun GrammarMateApp() {
         val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
+        var showTtsDownloadDialog by remember { mutableStateOf(false) }
 
-            BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
-                showExitDialog = true
-            }
-            BackHandler(enabled = screen == AppScreen.LESSON && !showSettings) {
-                screen = AppScreen.HOME
-            }
-            BackHandler(enabled = screen == AppScreen.ELITE && !showSettings) {
-                screen = AppScreen.HOME
-            }
-            BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
-                screen = AppScreen.LESSON
-            }
-            BackHandler(enabled = screen == AppScreen.VOCAB && !showSettings) {
-                screen = AppScreen.LESSON
-            }
-            BackHandler(enabled = screen == AppScreen.LADDER && !showSettings) {
-                screen = previousScreen
-                if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
-                    vm.resumeFromSettings()
+        val onTtsSpeak: () -> Unit = {
+            if (state.ttsState == TtsState.SPEAKING) {
+                vm.stopTts()
+            } else if (!state.ttsModelReady) {
+                val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
+                if (bgState != null && bgState !is DownloadState.Idle) {
+                    vm.setTtsDownloadStateFromBackground(bgState)
                 }
+                showTtsDownloadDialog = true
+            } else {
+                val text = state.answerText
+                    ?: state.currentCard?.acceptedAnswers?.firstOrNull()
+                if (text != null) vm.onTtsSpeak(text)
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Persistent TTS download progress bar — always visible on all screens
+            AnimatedVisibility(visible = state.bgTtsDownloading) {
+                val progress = calcBgDownloadProgress(state.bgTtsDownloadStates)
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(2.dp),
+                )
             }
 
-            SettingsSheet(
-                show = showSettings,
-                state = state,
-                onDismiss = {
-                    showSettings = false
-                    if (screen == AppScreen.TRAINING && state.currentCard != null) {
+            Box(modifier = Modifier.weight(1f)) {
+                BackHandler(enabled = screen == AppScreen.TRAINING && !showSettings) {
+                    showExitDialog = true
+                }
+                BackHandler(enabled = screen == AppScreen.LESSON && !showSettings) {
+                    screen = AppScreen.HOME
+                }
+                BackHandler(enabled = screen == AppScreen.ELITE && !showSettings) {
+                    screen = AppScreen.HOME
+                }
+                BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
+                    screen = AppScreen.LESSON
+                }
+                BackHandler(enabled = screen == AppScreen.VOCAB && !showSettings) {
+                    screen = AppScreen.LESSON
+                }
+                BackHandler(enabled = screen == AppScreen.LADDER && !showSettings) {
+                    screen = previousScreen
+                    if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
                         vm.resumeFromSettings()
                     }
-                },
-                onOpenLadder = {
-                    showSettings = false
-                    screen = AppScreen.LADDER
-                },
-                onSelectLanguage = vm::selectLanguage,
-                onSelectLesson = vm::selectLesson,
-                onDeleteLesson = vm::deleteLesson,
-                onAddLanguage = vm::addLanguage,
-                onImportLessonPack = vm::importLessonPack,
-                onImportLesson = vm::importLesson,
-                onResetReload = vm::resetAndImportLesson,
-                onCreateEmptyLesson = vm::createEmptyLesson,
-                onDeleteAllLessons = vm::deleteAllLessons,
-                onDeletePack = vm::deletePack,
-                onToggleTestMode = vm::toggleTestMode,
-                onUpdateVocabLimit = vm::updateVocabSprintLimit,
-                onUpdateUserName = vm::updateUserName,
-                onSaveProgress = vm::saveProgressNow,
-                onRestoreBackup = vm::restoreBackup
-            )
-
-        if (showWelcomeDialog) {
-            WelcomeDialog(
-                onNameSet = { name ->
-                    vm.updateUserName(name)
-                    showWelcomeDialog = false
                 }
-            )
-        }
-        androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
-            if (screen != AppScreen.HOME && state.userName == "GrammarMateUser") {
-                showWelcomeDialog = true
+
+                SettingsSheet(
+                    show = showSettings,
+                    state = state,
+                    onDismiss = {
+                        showSettings = false
+                        if (screen == AppScreen.TRAINING && state.currentCard != null) {
+                            vm.resumeFromSettings()
+                        }
+                    },
+                    onOpenLadder = {
+                        showSettings = false
+                        screen = AppScreen.LADDER
+                    },
+                    onSelectLanguage = vm::selectLanguage,
+                    onSelectLesson = vm::selectLesson,
+                    onDeleteLesson = vm::deleteLesson,
+                    onAddLanguage = vm::addLanguage,
+                    onImportLessonPack = vm::importLessonPack,
+                    onImportLesson = vm::importLesson,
+                    onResetReload = vm::resetAndImportLesson,
+                    onCreateEmptyLesson = vm::createEmptyLesson,
+                    onDeleteAllLessons = vm::deleteAllLessons,
+                    onDeletePack = vm::deletePack,
+                    onToggleTestMode = vm::toggleTestMode,
+                    onUpdateVocabLimit = vm::updateVocabSprintLimit,
+                    onUpdateUserName = vm::updateUserName,
+                    onSaveProgress = vm::saveProgressNow,
+                    onRestoreBackup = vm::restoreBackup
+                )
+
+            if (showWelcomeDialog) {
+                WelcomeDialog(
+                    onNameSet = { name ->
+                        vm.updateUserName(name)
+                        showWelcomeDialog = false
+                    }
+                )
             }
-        }
+            if (showTtsDownloadDialog) {
+                TtsDownloadDialog(
+                    downloadState = state.ttsDownloadState,
+                    languageId = state.selectedLanguageId,
+                    onConfirm = { vm.startTtsDownload() },
+                    onDismiss = { vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
+                )
+            }
+            // M6: Metered network warning
+            if (state.ttsMeteredNetwork) {
+                MeteredNetworkDialog(
+                    onConfirm = { vm.confirmTtsDownloadOnMetered() },
+                    onDismiss = { vm.dismissMeteredWarning(); vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
+                )
+            }
+            androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
+                if (screen != AppScreen.HOME && state.userName == "GrammarMateUser") {
+                    showWelcomeDialog = true
+                }
+            }
 
             when (screen) {
                 AppScreen.HOME -> HomeScreen(
@@ -268,7 +317,20 @@ fun GrammarMateApp() {
                     onSetInputMode = vm::setVocabInputMode,
                     onRequestVoice = vm::requestVocabVoice,
                     onShowAnswer = vm::showVocabAnswer,
-                    onClose = { screen = AppScreen.LESSON }
+                    onClose = { screen = AppScreen.LESSON },
+                    onSpeak = { text ->
+                        if (state.ttsState == TtsState.SPEAKING) {
+                            vm.stopTts()
+                        } else if (!state.ttsModelReady) {
+                            val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
+                            if (bgState != null && bgState !is DownloadState.Idle) {
+                                vm.setTtsDownloadStateFromBackground(bgState)
+                            }
+                            showTtsDownloadDialog = true
+                        } else {
+                            vm.onTtsSpeak(text)
+                        }
+                    }
                 )
                 AppScreen.LADDER -> LadderScreen(
                     state = state,
@@ -298,7 +360,8 @@ fun GrammarMateApp() {
                     onShowAnswer = vm::showAnswer,
                     onVoicePromptStarted = vm::onVoicePromptStarted,
                     onSelectWordFromBank = vm::selectWordFromBank,
-                    onRemoveLastWord = vm::removeLastSelectedWord
+                    onRemoveLastWord = vm::removeLastSelectedWord,
+                    onTtsSpeak = onTtsSpeak
                 )
             }
 
@@ -453,8 +516,10 @@ fun GrammarMateApp() {
                     }
                 )
             }
-        }
-    }
+            } // Box
+        } // Column
+    } // Surface
+} // GrammarMateApp
 
 private enum class AppScreen {
     HOME,
@@ -1138,6 +1203,7 @@ private fun VocabSprintScreen(
     onSubmit: (String?) -> Unit,
     onSetInputMode: (InputMode) -> Unit,
     onRequestVoice: () -> Unit,
+    onSpeak: (String) -> Unit,
     onShowAnswer: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -1251,7 +1317,15 @@ private fun VocabSprintScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             state.vocabAnswerText?.let { answer ->
-                Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TtsSpeakerButton(
+                        ttsState = state.ttsState,
+                        enabled = true,
+                        onClick = { onSpeak(answer) }
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
             }
             // Action row with Show Answer and Check buttons.
@@ -2191,7 +2265,8 @@ private fun TrainingScreen(
     onShowAnswer: () -> Unit,
     onVoicePromptStarted: () -> Unit,
     onSelectWordFromBank: (String) -> Unit,
-    onRemoveLastWord: () -> Unit
+    onRemoveLastWord: () -> Unit,
+    onTtsSpeak: () -> Unit
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
@@ -2235,7 +2310,7 @@ private fun TrainingScreen(
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
             }
-            CardPrompt(state)
+            CardPrompt(state, onSpeak = onTtsSpeak)
             AnswerBox(
                 state,
                 onInputChange,
@@ -2247,7 +2322,7 @@ private fun TrainingScreen(
                 onRemoveLastWord,
                 hasCards
             )
-            ResultBlock(state)
+            ResultBlock(state, onSpeak = onTtsSpeak)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
         }
     }
@@ -2446,15 +2521,26 @@ private fun DropdownSelector(
 }
 
 @Composable
-private fun CardPrompt(state: TrainingUiState) {
+private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "RU", style = MaterialTheme.typography.labelMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = state.currentCard?.promptRu ?: "No cards",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "RU", style = MaterialTheme.typography.labelMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = state.currentCard?.promptRu ?: "No cards",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            TtsSpeakerButton(
+                ttsState = state.ttsState,
+                enabled = !state.answerText.isNullOrBlank(),
+                onClick = onSpeak
             )
         }
     }
@@ -2716,12 +2802,22 @@ private fun AnswerBox(
 }
 
 @Composable
-private fun ResultBlock(state: TrainingUiState) {
+private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        when (state.lastResult) {
-            true -> Text(text = "Correct", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-            false -> Text(text = "Incorrect", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
-            null -> Text(text = "")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            when (state.lastResult) {
+                true -> Text(text = "Correct", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                false -> Text(text = "Incorrect", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                null -> Text(text = "")
+            }
+            if (!state.answerText.isNullOrBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                TtsSpeakerButton(
+                    ttsState = state.ttsState,
+                    enabled = true,
+                    onClick = onSpeak
+                )
+            }
         }
         if (!state.answerText.isNullOrBlank()) {
             Text(text = "Answer: ${state.answerText}")
@@ -2823,4 +2919,136 @@ private fun launchVoiceRecognition(
         putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: "Say the translation")
     }
     launcher.launch(intent)
+}
+
+@Composable
+private fun TtsSpeakerButton(
+    ttsState: TtsState,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = {
+            if (ttsState == TtsState.SPEAKING) {
+                // M5: When speaking, the parent's onClick lambda already handles stopTts
+            }
+            onClick()
+        },
+        enabled = enabled
+    ) {
+        when (ttsState) {
+            TtsState.SPEAKING -> Icon(
+                Icons.Default.StopCircle,
+                contentDescription = "Stop",
+                tint = MaterialTheme.colorScheme.error
+            )
+            TtsState.INITIALIZING -> CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+            TtsState.ERROR -> Icon(
+                Icons.Default.ReportProblem,
+                contentDescription = "TTS error",
+                tint = MaterialTheme.colorScheme.error
+            )
+            else -> Icon(
+                Icons.Default.VolumeUp,
+                contentDescription = "Listen"
+            )
+        }
+    }
+}
+
+@Composable
+private fun TtsDownloadDialog(
+    downloadState: DownloadState,
+    languageId: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val spec = TtsModelRegistry.specFor(languageId)
+    val langName = spec?.displayName ?: languageId
+    val sizeText = spec?.let { "${it.fallbackDownloadSize / (1024 * 1024)} MB" } ?: "model"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Download pronunciation model?") },
+        text = {
+            when (downloadState) {
+                is DownloadState.Idle -> {
+                    Text("This will download ~$sizeText ($langName pronunciation). Uses internal storage.")
+                }
+                is DownloadState.Downloading -> {
+                    Column {
+                        Text("Downloading... ${downloadState.percent}%")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                is DownloadState.Extracting -> {
+                    Column {
+                        Text("Extracting... ${downloadState.percent}%")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                is DownloadState.Done -> {
+                    Text("Download complete! Tap the speaker icon to use pronunciation.")
+                }
+                is DownloadState.Error -> {
+                    Text("Download failed: ${downloadState.message}")
+                }
+            }
+        },
+        confirmButton = {
+            when (downloadState) {
+                is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text("Download") }
+                is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
+                else -> {}
+            }
+        },
+        dismissButton = {
+            if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting) {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
+}
+
+@Composable
+private fun MeteredNetworkDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Metered network detected") },
+        text = { Text("You appear to be on a cellular or metered connection. The pronunciation model is ~346 MB. Continue downloading?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text("Download anyway") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+private fun calcBgDownloadProgress(states: Map<String, DownloadState>): Float {
+    if (states.isEmpty()) return 0f
+    var total = 0f
+    for (s in states.values) {
+        total += when (s) {
+            is DownloadState.Downloading -> s.percent / 100f * 0.9f
+            is DownloadState.Extracting -> 0.9f + s.percent / 100f * 0.1f
+            is DownloadState.Done -> 1f
+            else -> 0f
+        }
+    }
+    return (total / states.size).coerceIn(0f, 1f)
 }
