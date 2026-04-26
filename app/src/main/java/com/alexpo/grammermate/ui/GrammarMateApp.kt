@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
@@ -67,6 +68,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
@@ -149,13 +151,26 @@ fun GrammarMateApp() {
                 if (text != null) vm.onTtsSpeak(text)
             }
         }
+        val onTtsSpeakSlow: () -> Unit = lambda@{
+            if (state.ttsState == TtsState.SPEAKING) return@lambda
+            if (!state.ttsModelReady) {
+                val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
+                if (bgState != null && bgState !is DownloadState.Idle) {
+                    vm.setTtsDownloadStateFromBackground(bgState)
+                }
+                showTtsDownloadDialog = true
+            } else {
+                val text = state.answerText
+                    ?: state.currentCard?.acceptedAnswers?.firstOrNull()
+                if (text != null) vm.onTtsSpeak(text, speed = 0.67f)
+            }
+        }
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Persistent TTS download progress bar — always visible on all screens
             AnimatedVisibility(visible = state.bgTtsDownloading) {
-                val progress = calcBgDownloadProgress(state.bgTtsDownloadStates)
                 LinearProgressIndicator(
-                    progress = { progress },
+                    progress = { calcBgDownloadProgress(state.bgTtsDownloadStates) },
                     modifier = Modifier.fillMaxWidth().height(2.dp),
                 )
             }
@@ -210,7 +225,8 @@ fun GrammarMateApp() {
                     onUpdateVocabLimit = vm::updateVocabSprintLimit,
                     onUpdateUserName = vm::updateUserName,
                     onSaveProgress = vm::saveProgressNow,
-                    onRestoreBackup = vm::restoreBackup
+                    onRestoreBackup = vm::restoreBackup,
+                    onSetTtsSpeed = vm::setTtsSpeed
                 )
 
             if (showWelcomeDialog) {
@@ -330,6 +346,18 @@ fun GrammarMateApp() {
                         } else {
                             vm.onTtsSpeak(text)
                         }
+                    },
+                    onSpeakSlow = { text ->
+                        if (state.ttsState == TtsState.SPEAKING) return@VocabSprintScreen
+                        if (!state.ttsModelReady) {
+                            val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
+                            if (bgState != null && bgState !is DownloadState.Idle) {
+                                vm.setTtsDownloadStateFromBackground(bgState)
+                            }
+                            showTtsDownloadDialog = true
+                        } else {
+                            vm.onTtsSpeak(text, speed = 0.67f)
+                        }
                     }
                 )
                 AppScreen.LADDER -> LadderScreen(
@@ -361,7 +389,13 @@ fun GrammarMateApp() {
                     onVoicePromptStarted = vm::onVoicePromptStarted,
                     onSelectWordFromBank = vm::selectWordFromBank,
                     onRemoveLastWord = vm::removeLastSelectedWord,
-                    onTtsSpeak = onTtsSpeak
+                    onTtsSpeak = onTtsSpeak,
+                    onTtsSpeakSlow = onTtsSpeakSlow,
+                    onFlagBadSentence = vm::flagBadSentence,
+                    onUnflagBadSentence = vm::unflagBadSentence,
+                    onHideCard = vm::hideCurrentCard,
+                    onExportBadSentences = vm::exportBadSentences,
+                    isBadSentence = vm::isBadSentence
                 )
             }
 
@@ -1204,6 +1238,7 @@ private fun VocabSprintScreen(
     onSetInputMode: (InputMode) -> Unit,
     onRequestVoice: () -> Unit,
     onSpeak: (String) -> Unit,
+    onSpeakSlow: (String) -> Unit = {},
     onShowAnswer: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -1323,7 +1358,8 @@ private fun VocabSprintScreen(
                     TtsSpeakerButton(
                         ttsState = state.ttsState,
                         enabled = true,
-                        onClick = { onSpeak(answer) }
+                        onClick = { onSpeak(answer) },
+                        onSlowClick = { onSpeakSlow(answer) }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1779,7 +1815,8 @@ private fun SettingsSheet(
     onUpdateVocabLimit: (Int) -> Unit,
     onUpdateUserName: (String) -> Unit,
     onSaveProgress: () -> Unit,
-    onRestoreBackup: (android.net.Uri) -> Unit
+    onRestoreBackup: (android.net.Uri) -> Unit,
+    onSetTtsSpeed: (Float) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -1869,6 +1906,35 @@ private fun SettingsSheet(
                 text = "Set how many words to show (0 = all words)",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
+            // TTS speed control
+            Text(
+                text = "Pronunciation speed",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(text = "0.5x", style = MaterialTheme.typography.bodySmall)
+                Slider(
+                    value = state.ttsSpeed,
+                    onValueChange = onSetTtsSpeed,
+                    valueRange = 0.5f..1.5f,
+                    steps = 3,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(text = "1.5x", style = MaterialTheme.typography.bodySmall)
+            }
+            Text(
+                text = String.format("%.2fx", state.ttsSpeed),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
 
             LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
@@ -2266,7 +2332,13 @@ private fun TrainingScreen(
     onVoicePromptStarted: () -> Unit,
     onSelectWordFromBank: (String) -> Unit,
     onRemoveLastWord: () -> Unit,
-    onTtsSpeak: () -> Unit
+    onTtsSpeak: () -> Unit,
+    onTtsSpeakSlow: () -> Unit = {},
+    onFlagBadSentence: () -> Unit = {},
+    onUnflagBadSentence: () -> Unit = {},
+    onHideCard: () -> Unit = {},
+    onExportBadSentences: () -> String? = { null },
+    isBadSentence: () -> Boolean = { false }
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
@@ -2310,7 +2382,7 @@ private fun TrainingScreen(
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
             }
-            CardPrompt(state, onSpeak = onTtsSpeak)
+            CardPrompt(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
             AnswerBox(
                 state,
                 onInputChange,
@@ -2320,9 +2392,14 @@ private fun TrainingScreen(
                 onVoicePromptStarted,
                 onSelectWordFromBank,
                 onRemoveLastWord,
-                hasCards
+                hasCards,
+                onFlagBadSentence,
+                onUnflagBadSentence,
+                onHideCard,
+                onExportBadSentences,
+                isBadSentence
             )
-            ResultBlock(state, onSpeak = onTtsSpeak)
+            ResultBlock(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
         }
     }
@@ -2521,7 +2598,7 @@ private fun DropdownSelector(
 }
 
 @Composable
-private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
+private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow: () -> Unit = {}) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -2540,7 +2617,8 @@ private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
             TtsSpeakerButton(
                 ttsState = state.ttsState,
                 enabled = !state.answerText.isNullOrBlank(),
-                onClick = onSpeak
+                onClick = onSpeak,
+                onSlowClick = onSpeakSlow
             )
         }
     }
@@ -2557,12 +2635,18 @@ private fun AnswerBox(
     onVoicePromptStarted: () -> Unit,
     onSelectWordFromBank: (String) -> Unit,
     onRemoveLastWord: () -> Unit,
-    hasCards: Boolean
+    hasCards: Boolean,
+    onFlagBadSentence: () -> Unit = {},
+    onUnflagBadSentence: () -> Unit = {},
+    onHideCard: () -> Unit = {},
+    onExportBadSentences: () -> String? = { null },
+    isBadSentence: () -> Boolean = { false }
 ) {
     val latestState by rememberUpdatedState(state)
     val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE
     val clipboardManager = LocalClipboardManager.current
-    var showReportDialog by remember { mutableStateOf(false) }
+    var showReportSheet by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
     val reportCard = state.currentCard
     val reportText = if (reportCard != null) {
         val targetText = reportCard.acceptedAnswers.joinToString(" / ")
@@ -2598,33 +2682,102 @@ private fun AnswerBox(
             launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
         }
     }
-    if (showReportDialog) {
-        AlertDialog(
-            onDismissRequest = { showReportDialog = false },
-            title = { Text(text = "Report sentence") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = reportText)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+    if (showReportSheet) {
+        val cardIsBad = isBadSentence()
+        ModalBottomSheet(
+            onDismissRequest = { showReportSheet = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Card options",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                if (reportCard != null) {
+                    Text(
+                        text = reportCard.promptRu,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                if (cardIsBad) {
+                    TextButton(
+                        onClick = {
+                            onUnflagBadSentence()
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        IconButton(
-                            onClick = {
-                                if (reportText.isNotBlank()) {
-                                    clipboardManager.setText(AnnotatedString(reportText))
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy card")
-                        }
+                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Remove from bad sentences list")
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            onFlagBadSentence()
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add to bad sentences list")
                     }
                 }
-            },
+                TextButton(
+                    onClick = {
+                        onHideCard()
+                        showReportSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Hide this card from lessons")
+                }
+                TextButton(
+                    onClick = {
+                        val path = onExportBadSentences()
+                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                        showReportSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Export bad sentences to file")
+                }
+                TextButton(
+                    onClick = {
+                        if (reportText.isNotBlank()) {
+                            clipboardManager.setText(AnnotatedString(reportText))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy text")
+                }
+            }
+        }
+    }
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
             confirmButton = {
-                TextButton(onClick = { showReportDialog = false }) {
-                    Text("Close")
+                TextButton(onClick = { exportMessage = null }) {
+                    Text("OK")
                 }
             }
         )
@@ -2772,7 +2925,7 @@ private fun AnswerBox(
                     state = rememberTooltipState()
                 ) {
                     IconButton(
-                        onClick = { if (hasCards) showReportDialog = true },
+                        onClick = { if (hasCards) showReportSheet = true },
                         enabled = hasCards
                     ) {
                         Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
@@ -2802,7 +2955,7 @@ private fun AnswerBox(
 }
 
 @Composable
-private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
+private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow: () -> Unit = {}) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             when (state.lastResult) {
@@ -2815,7 +2968,8 @@ private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
                 TtsSpeakerButton(
                     ttsState = state.ttsState,
                     enabled = true,
-                    onClick = onSpeak
+                    onClick = onSpeak,
+                    onSlowClick = onSpeakSlow
                 )
             }
         }
@@ -2925,36 +3079,62 @@ private fun launchVoiceRecognition(
 private fun TtsSpeakerButton(
     ttsState: TtsState,
     enabled: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onSlowClick: (() -> Unit)? = null
 ) {
-    IconButton(
-        onClick = {
-            if (ttsState == TtsState.SPEAKING) {
-                // M5: When speaking, the parent's onClick lambda already handles stopTts
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(
+            onClick = {
+                if (ttsState == TtsState.SPEAKING) {
+                    // M5: When speaking, the parent's onClick lambda already handles stopTts
+                }
+                onClick()
+            },
+            enabled = enabled
+        ) {
+            when (ttsState) {
+                TtsState.SPEAKING -> Icon(
+                    Icons.Default.StopCircle,
+                    contentDescription = "Stop",
+                    tint = MaterialTheme.colorScheme.error
+                )
+                TtsState.INITIALIZING -> CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
+                TtsState.ERROR -> Icon(
+                    Icons.Default.ReportProblem,
+                    contentDescription = "TTS error",
+                    tint = MaterialTheme.colorScheme.error
+                )
+                else -> Icon(
+                    Icons.Default.VolumeUp,
+                    contentDescription = "Listen"
+                )
             }
-            onClick()
-        },
-        enabled = enabled
-    ) {
-        when (ttsState) {
-            TtsState.SPEAKING -> Icon(
-                Icons.Default.StopCircle,
-                contentDescription = "Stop",
-                tint = MaterialTheme.colorScheme.error
-            )
-            TtsState.INITIALIZING -> CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp
-            )
-            TtsState.ERROR -> Icon(
-                Icons.Default.ReportProblem,
-                contentDescription = "TTS error",
-                tint = MaterialTheme.colorScheme.error
-            )
-            else -> Icon(
-                Icons.Default.VolumeUp,
-                contentDescription = "Listen"
-            )
+        }
+        if (onSlowClick != null) {
+            IconButton(
+                onClick = {
+                    if (ttsState == TtsState.SPEAKING) return@IconButton
+                    onSlowClick()
+                },
+                enabled = enabled && ttsState != TtsState.SPEAKING
+            ) {
+                Box {
+                    Icon(
+                        Icons.Default.VolumeUp,
+                        contentDescription = "Listen slowly",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "S",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                    )
+                }
+            }
         }
     }
 }
@@ -3010,7 +3190,9 @@ private fun TtsDownloadDialog(
             when (downloadState) {
                 is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text("Download") }
                 is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
-                else -> {}
+                is DownloadState.Downloading, is DownloadState.Extracting -> {
+                    TextButton(onClick = onDismiss) { Text("Continue in background") }
+                }
             }
         },
         dismissButton = {

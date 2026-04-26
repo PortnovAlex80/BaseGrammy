@@ -38,6 +38,8 @@ import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
+import com.alexpo.grammermate.data.BadSentenceStore
+import com.alexpo.grammermate.data.HiddenCardStore
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
@@ -74,6 +76,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val configStore = AppConfigStore(application)
     private val masteryStore = MasteryStore(application)
     private val streakStore = StreakStore(application)
+    private val badSentenceStore = BadSentenceStore(application)
+    private val hiddenCardStore = HiddenCardStore(application)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
@@ -180,7 +184,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabSprintLimit = config.vocabSprintLimit,
                 currentStreak = streakData.currentStreak,
                 longestStreak = streakData.longestStreak,
-                userName = profile.userName
+                userName = profile.userName,
+                badSentenceCount = badSentenceStore.getBadSentences().size
             )
         }
         rebuildSchedules(lessons)
@@ -1063,6 +1068,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun buildSessionCards() {
         if (_uiState.value.bossActive || _uiState.value.eliteActive) return
         val state = _uiState.value
+        val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val lessons = state.lessons
         if (state.mode == TrainingMode.LESSON) {
             val schedule = lessonSchedules[state.selectedLessonId]
@@ -1077,7 +1083,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
             val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
             val subLesson = subLessons.getOrNull(activeIndex)
-            sessionCards = subLesson?.cards ?: emptyList()
+            sessionCards = (subLesson?.cards ?: emptyList()).filter { it.id !in hiddenIds }
             subLessonTotal = sessionCards.size
             val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
             val card = sessionCards.getOrNull(safeIndex)
@@ -1100,11 +1106,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val lessonCards = when (state.mode) {
-            TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }
+            TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }.filter { it.id !in hiddenIds }
             // ALL_MIXED (Review) uses a random subset across all cards
             TrainingMode.ALL_MIXED -> {
                 val reviewLimit = 300
-                lessons.flatMap { it.allCards }.shuffled().take(reviewLimit)
+                lessons.flatMap { it.allCards }.filter { it.id !in hiddenIds }.shuffled().take(reviewLimit)
             }
             else -> emptyList()
         }
@@ -1717,16 +1723,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return normalized.split(" ").count { it.length >= 3 }
     }
 
-    fun onTtsSpeak(text: String) {
+    fun onTtsSpeak(text: String, speed: Float? = null) {
         if (text.isBlank()) return
         val langId = _uiState.value.selectedLanguageId
+        val effectiveSpeed = speed ?: _uiState.value.ttsSpeed
         viewModelScope.launch {
             if (ttsEngine.state.value != TtsState.READY
                 || ttsEngine.activeLanguageId != langId) {
                 ttsEngine.initialize(langId)
             }
-            ttsEngine.speak(text, languageId = langId)
+            ttsEngine.speak(text, languageId = langId, speed = effectiveSpeed)
         }
+    }
+
+    fun setTtsSpeed(speed: Float) {
+        _uiState.update { it.copy(ttsSpeed = speed.coerceIn(0.5f, 1.5f)) }
     }
 
     fun startTtsDownload() {
@@ -2345,6 +2356,78 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    fun flagBadSentence() {
+        val card = _uiState.value.currentCard ?: return
+        badSentenceStore.addBadSentence(
+            cardId = card.id,
+            languageId = _uiState.value.selectedLanguageId,
+            sentence = card.promptRu,
+            translation = card.acceptedAnswers.joinToString(" / ")
+        )
+        _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentences().size) }
+    }
+
+    fun unflagBadSentence() {
+        val card = _uiState.value.currentCard ?: return
+        badSentenceStore.removeBadSentence(card.id)
+        _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentences().size) }
+    }
+
+    fun isBadSentence(): Boolean {
+        val card = _uiState.value.currentCard ?: return false
+        return badSentenceStore.isBadSentence(card.id)
+    }
+
+    fun exportBadSentences(): String? {
+        val entries = badSentenceStore.getBadSentences()
+        if (entries.isEmpty()) return null
+        val file = badSentenceStore.exportToTextFile()
+        return file.absolutePath
+    }
+
+    fun hideCurrentCard() {
+        val card = _uiState.value.currentCard ?: return
+        hiddenCardStore.hideCard(card.id)
+        skipToNextCard()
+    }
+
+    fun unhideCurrentCard() {
+        val card = _uiState.value.currentCard ?: return
+        hiddenCardStore.unhideCard(card.id)
+    }
+
+    fun isCurrentCardHidden(): Boolean {
+        val card = _uiState.value.currentCard ?: return false
+        return hiddenCardStore.isHidden(card.id)
+    }
+
+    private fun skipToNextCard() {
+        val state = _uiState.value
+        val nextIndex = state.currentIndex + 1
+        if (nextIndex < sessionCards.size) {
+            _uiState.update {
+                it.copy(
+                    currentIndex = nextIndex,
+                    currentCard = sessionCards[nextIndex],
+                    inputText = "",
+                    lastResult = null,
+                    answerText = null,
+                    incorrectAttemptsForCard = 0
+                )
+            }
+        } else {
+            pauseTimer()
+            _uiState.update {
+                it.copy(
+                    sessionState = SessionState.PAUSED,
+                    inputText = "",
+                    lastResult = null,
+                    answerText = null
+                )
+            }
+        }
+    }
 }
 
 data class SubmitResult(
@@ -2437,7 +2520,10 @@ data class TrainingUiState(
     val ttsModelReady: Boolean = false,
     val ttsMeteredNetwork: Boolean = false,
     val bgTtsDownloading: Boolean = false,
-    val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap()
+    val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap(),
+    val ttsSpeed: Float = 1.0f,
+    // Bad sentences
+    val badSentenceCount: Int = 0
 )
 
 data class LessonLadderRow(
