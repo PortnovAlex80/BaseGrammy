@@ -152,6 +152,30 @@ object SpacedRepetitionConfig {
     }
 
     /**
+     * Рассчитать количество шагов отката при длительном отсутствии.
+     *
+     * @param daysSinceLastShow дней с последнего показа
+     * @param intervalStepIndex текущий шаг в лестнице интервалов
+     * @return количество шагов для отката (0 если откат не нужен)
+     */
+    fun calculateRollbackSteps(daysSinceLastShow: Int, intervalStepIndex: Int): Int {
+        val expectedInterval = if (intervalStepIndex in INTERVAL_LADDER_DAYS.indices) {
+            INTERVAL_LADDER_DAYS[intervalStepIndex]
+        } else {
+            INTERVAL_LADDER_DAYS.last()
+        }
+
+        if (daysSinceLastShow <= expectedInterval) return 0
+
+        val overdueRatio = daysSinceLastShow.toFloat() / expectedInterval
+        return when {
+            overdueRatio >= 5f -> 2
+            overdueRatio >= 2f -> 1
+            else -> 0
+        }
+    }
+
+    /**
      * Проверить, было ли повторение вовремя.
      *
      * @param daysSinceLastShow дней с последнего показа

@@ -290,8 +290,8 @@ class FlowerCalculatorTest {
     }
 
     @Test
-    fun calculate_exactly90Days_notGoneYet() {
-        // Ровно 90 дней ещё не GONE (только > 90)
+    fun calculate_exactly90Days_isGone() {
+        // Exactly 90 days is GONE (>= GONE_THRESHOLD_DAYS, consistent with SpacedRepetitionConfig)
         val mastery = LessonMasteryState(
             lessonId = "test",
             languageId = "en",
@@ -299,7 +299,7 @@ class FlowerCalculatorTest {
             lastShowDateMs = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
         )
         val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 100)
-        assertEquals(FlowerState.WILTED, flower.state) // На 90-й день ещё WILTED
+        assertEquals(FlowerState.GONE, flower.state)
     }
 
     @Test

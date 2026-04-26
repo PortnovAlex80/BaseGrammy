@@ -120,8 +120,10 @@ class MasteryStore(private val context: Context) {
 
         val currentStep = existing?.intervalStepIndex ?: 0
         val wasOnTime = SpacedRepetitionConfig.wasRepetitionOnTime(daysSinceLastShow, currentStep)
+        val rollbackSteps = if (!wasOnTime) SpacedRepetitionConfig.calculateRollbackSteps(daysSinceLastShow, currentStep) else 0
+        val steppedBack = (currentStep - rollbackSteps).coerceAtLeast(0)
         val newStep = if (existing != null && daysSinceLastShow > 0) {
-            SpacedRepetitionConfig.nextIntervalStep(currentStep, wasOnTime)
+            SpacedRepetitionConfig.nextIntervalStep(steppedBack, wasOnTime)
         } else {
             currentStep
         }
@@ -201,6 +203,15 @@ class MasteryStore(private val context: Context) {
         persistToFile()
     }
 
+    /**
+     * Очистить данные освоения для конкретного урока.
+     */
+    fun clearLesson(lessonId: String, languageId: String) {
+        loadAll()
+        cache[languageId]?.remove(lessonId)
+        persistToFile()
+    }
+
     private fun persistToFile() {
         val payload = linkedMapOf<String, Any>()
 
@@ -208,14 +219,15 @@ class MasteryStore(private val context: Context) {
             val lessonsPayload = linkedMapOf<String, Any>()
 
             for ((lessonId, mastery) in lessonMap) {
-                lessonsPayload[lessonId] = linkedMapOf(
+                val lessonData = linkedMapOf<String, Any>(
                     "uniqueCardShows" to mastery.uniqueCardShows,
                     "totalCardShows" to mastery.totalCardShows,
                     "lastShowDateMs" to mastery.lastShowDateMs,
                     "intervalStepIndex" to mastery.intervalStepIndex,
-                    "completedAtMs" to (mastery.completedAtMs ?: 0L),
                     "shownCardIds" to mastery.shownCardIds.toList()
                 )
+                mastery.completedAtMs?.let { lessonData["completedAtMs"] = it }
+                lessonsPayload[lessonId] = lessonData
             }
 
             payload[languageId] = lessonsPayload

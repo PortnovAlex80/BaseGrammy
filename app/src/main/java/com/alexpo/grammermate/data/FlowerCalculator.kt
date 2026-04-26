@@ -17,6 +17,7 @@ object FlowerCalculator {
      * @param totalCardsInLesson общее количество карточек в уроке (для определения завершённости)
      * @return визуальное представление цветка
      */
+    @Suppress("UNUSED_PARAMETER")
     fun calculate(mastery: LessonMasteryState?, totalCardsInLesson: Int = 0): FlowerVisual {
         // Урок не начат - показываем SEED (готов к началу), а не LOCKED
         // LOCKED используется только в UI для заблокированных уроков
@@ -36,8 +37,8 @@ object FlowerCalculator {
         // Дней с последнего показа
         val daysSinceLastShow = calculateDaysSince(mastery.lastShowDateMs)
 
-        // Проверка на исчезновение (> 90 дней)
-        if (daysSinceLastShow > SpacedRepetitionConfig.GONE_THRESHOLD_DAYS) {
+        // Проверка на исчезновение (>= 90 дней)
+        if (daysSinceLastShow >= SpacedRepetitionConfig.GONE_THRESHOLD_DAYS) {
             return FlowerVisual(
                 state = FlowerState.GONE,
                 masteryPercent = 0f,

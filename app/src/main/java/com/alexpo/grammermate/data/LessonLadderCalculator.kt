@@ -16,7 +16,7 @@ object LessonLadderCalculator {
             )
         }
 
-        val daysSince = ((nowMs - mastery.lastShowDateMs) / DAY_MS).toInt().coerceAtLeast(0) + 1
+        val daysSince = ((nowMs - mastery.lastShowDateMs) / DAY_MS).toInt().coerceAtLeast(0)
         val expectedInterval = ladder.getOrNull(mastery.intervalStepIndex) ?: ladder.lastOrNull()
 
         if (expectedInterval != null && daysSince > expectedInterval) {

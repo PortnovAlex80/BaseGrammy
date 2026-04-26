@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Keyboard
@@ -135,6 +136,7 @@ fun GrammarMateApp() {
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
+        var showAsrDownloadDialog by remember { mutableStateOf(false) }
 
         val onTtsSpeak: () -> Unit = {
             if (state.ttsState == TtsState.SPEAKING) {
@@ -226,7 +228,10 @@ fun GrammarMateApp() {
                     onUpdateUserName = vm::updateUserName,
                     onSaveProgress = vm::saveProgressNow,
                     onRestoreBackup = vm::restoreBackup,
-                    onSetTtsSpeed = vm::setTtsSpeed
+                    onSetTtsSpeed = vm::setTtsSpeed,
+                    onResetLessonProgress = vm::resetLessonProgress,
+                    onSetUseOfflineAsr = vm::setUseOfflineAsr,
+                    onRequestAsrDownload = { showAsrDownloadDialog = true }
                 )
 
             if (showWelcomeDialog) {
@@ -250,6 +255,21 @@ fun GrammarMateApp() {
                 MeteredNetworkDialog(
                     onConfirm = { vm.confirmTtsDownloadOnMetered() },
                     onDismiss = { vm.dismissMeteredWarning(); vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
+                )
+            }
+            // ASR download dialog
+            if (showAsrDownloadDialog) {
+                AsrDownloadDialog(
+                    downloadState = state.asrDownloadState,
+                    onConfirm = { vm.startAsrDownload() },
+                    onDismiss = { vm.dismissAsrDownloadDialog(); showAsrDownloadDialog = false }
+                )
+            }
+            // ASR metered network warning
+            if (state.asrMeteredNetwork) {
+                AsrMeteredNetworkDialog(
+                    onConfirm = { vm.confirmAsrDownloadOnMetered() },
+                    onDismiss = { vm.dismissAsrMeteredWarning(); vm.dismissAsrDownloadDialog(); showAsrDownloadDialog = false }
                 )
             }
             androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
@@ -358,7 +378,10 @@ fun GrammarMateApp() {
                         } else {
                             vm.onTtsSpeak(text, speed = 0.67f)
                         }
-                    }
+                    },
+                    onOfflineAsrTranscribe = if (state.useOfflineAsr && state.asrModelReady) {
+                        { vm.transcribeWithOfflineAsr() }
+                    } else null
                 )
                 AppScreen.LADDER -> LadderScreen(
                     state = state,
@@ -395,7 +418,10 @@ fun GrammarMateApp() {
                     onUnflagBadSentence = vm::unflagBadSentence,
                     onHideCard = vm::hideCurrentCard,
                     onExportBadSentences = vm::exportBadSentences,
-                    isBadSentence = vm::isBadSentence
+                    isBadSentence = vm::isBadSentence,
+                    onOfflineAsrTranscribe = if (state.useOfflineAsr && state.asrModelReady) {
+                        { vm.transcribeWithOfflineAsr() }
+                    } else null
                 )
             }
 
@@ -1240,7 +1266,8 @@ private fun VocabSprintScreen(
     onSpeak: (String) -> Unit,
     onSpeakSlow: (String) -> Unit = {},
     onShowAnswer: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onOfflineAsrTranscribe: (suspend () -> String)? = null
 ) {
     val vocab = state.currentVocab
     val latestState by rememberUpdatedState(state)
@@ -1264,7 +1291,15 @@ private fun VocabSprintScreen(
     ) {
         if (state.vocabInputMode == InputMode.VOICE && vocab != null) {
             kotlinx.coroutines.delay(200)
-            launchVoiceRecognition(state.selectedLanguageId, vocab.nativeText, speechLauncher)
+            if (state.useOfflineAsr && onOfflineAsrTranscribe != null) {
+                val spoken = onOfflineAsrTranscribe()
+                if (spoken.isNotBlank() && latestState.currentVocab != null) {
+                    onInputChange(spoken)
+                    onSubmit(spoken)
+                }
+            } else {
+                launchVoiceRecognition(state.selectedLanguageId, vocab.nativeText, speechLauncher)
+            }
         }
     }
     Column(
@@ -1816,7 +1851,10 @@ private fun SettingsSheet(
     onUpdateUserName: (String) -> Unit,
     onSaveProgress: () -> Unit,
     onRestoreBackup: (android.net.Uri) -> Unit,
-    onSetTtsSpeed: (Float) -> Unit
+    onSetTtsSpeed: (Float) -> Unit,
+    onResetLessonProgress: (String) -> Unit,
+    onSetUseOfflineAsr: (Boolean) -> Unit,
+    onRequestAsrDownload: () -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -1824,6 +1862,7 @@ private fun SettingsSheet(
     var newLanguageName by remember { mutableStateOf("") }
     var vocabLimitText by remember(state.vocabSprintLimit) { mutableStateOf(state.vocabSprintLimit.toString()) }
     var userNameInput by remember(state.userName) { mutableStateOf(state.userName) }
+    var lessonToReset by remember { mutableStateOf<com.alexpo.grammermate.data.Lesson?>(null) }
     val scrollState = rememberScrollState()
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -1937,6 +1976,40 @@ private fun SettingsSheet(
                 textAlign = TextAlign.Center
             )
 
+            // Offline ASR toggle
+            Text(
+                text = "Voice recognition",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Offline speech recognition", style = MaterialTheme.typography.bodyLarge)
+                }
+                Switch(
+                    checked = state.useOfflineAsr,
+                    onCheckedChange = { enabled ->
+                        if (enabled && !state.asrModelReady) {
+                            onRequestAsrDownload()
+                        }
+                        onSetUseOfflineAsr(enabled)
+                    }
+                )
+            }
+            Text(
+                text = if (state.useOfflineAsr) {
+                    if (state.asrModelReady) "Using on-device recognition (no internet required)" else "Model not downloaded yet"
+                } else {
+                    "Using Google speech recognition (requires internet)"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
             LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
             OutlinedTextField(
                 value = newLanguageName,
@@ -2034,21 +2107,35 @@ private fun SettingsSheet(
             Text(text = "Lessons", style = MaterialTheme.typography.labelLarge)
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 state.lessons.forEach { lesson ->
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = lesson.title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (lesson.id == state.selectedLessonId) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Selected",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium
+                                text = lesson.title,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (lesson.id == state.selectedLessonId) {
+                                Text(
+                                    text = "Selected",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { lessonToReset = lesson },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.RestartAlt,
+                                contentDescription = "Reset progress",
+                                tint = Color(0xFFB00020),
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -2145,6 +2232,35 @@ private fun SettingsSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    if (lessonToReset != null) {
+        AlertDialog(
+            onDismissRequest = { lessonToReset = null },
+            title = { Text(text = "Reset progress") },
+            text = {
+                Text(
+                    text = "Reset progress for \"${lessonToReset?.title}\"?\n" +
+                        "This will clear your mastery and flower data."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        lessonToReset?.id?.let { onResetLessonProgress(it) }
+                        lessonToReset = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFB00020))
+                ) {
+                    Text(text = "Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { lessonToReset = null }) {
+                    Text(text = "Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -2338,7 +2454,8 @@ private fun TrainingScreen(
     onUnflagBadSentence: () -> Unit = {},
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
-    isBadSentence: () -> Boolean = { false }
+    isBadSentence: () -> Boolean = { false },
+    onOfflineAsrTranscribe: (suspend () -> String)? = null
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
@@ -2397,7 +2514,8 @@ private fun TrainingScreen(
                 onUnflagBadSentence,
                 onHideCard,
                 onExportBadSentences,
-                isBadSentence
+                isBadSentence,
+                onOfflineAsrTranscribe
             )
             ResultBlock(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
@@ -2640,7 +2758,8 @@ private fun AnswerBox(
     onUnflagBadSentence: () -> Unit = {},
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
-    isBadSentence: () -> Boolean = { false }
+    isBadSentence: () -> Boolean = { false },
+    onOfflineAsrTranscribe: (suspend () -> String)? = null
 ) {
     val latestState by rememberUpdatedState(state)
     val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE
@@ -2679,7 +2798,17 @@ private fun AnswerBox(
         ) {
             kotlinx.coroutines.delay(200)
             onVoicePromptStarted()
-            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+            if (state.useOfflineAsr && onOfflineAsrTranscribe != null) {
+                val spoken = onOfflineAsrTranscribe()
+                if (spoken.isNotBlank()) {
+                    if (latestState.sessionState != SessionState.PAUSED) {
+                        onInputChange(spoken)
+                        onSubmit()
+                    }
+                }
+            } else {
+                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+            }
         }
     }
     if (showReportSheet) {
@@ -2794,8 +2923,6 @@ private fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
-                            onVoicePromptStarted()
-                            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
                         }
                     },
                     enabled = canLaunchVoice
@@ -2882,8 +3009,6 @@ private fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
-                            onVoicePromptStarted()
-                            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
                         }
                     },
                     enabled = canLaunchVoice
@@ -3212,6 +3337,86 @@ private fun MeteredNetworkDialog(
         onDismissRequest = onDismiss,
         title = { Text("Metered network detected") },
         text = { Text("You appear to be on a cellular or metered connection. The pronunciation model is ~346 MB. Continue downloading?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text("Download anyway") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun AsrDownloadDialog(
+    downloadState: DownloadState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val spec = com.alexpo.grammermate.data.AsrModelRegistry.defaultModel
+    val sizeText = "${spec.fallbackDownloadSize / (1024 * 1024)} MB"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Download speech recognition model?") },
+        text = {
+            when (downloadState) {
+                is DownloadState.Idle -> {
+                    Text("This will download ~$sizeText (Dolphin multilingual model supporting RU, EN, IT). Enables offline voice recognition without internet.")
+                }
+                is DownloadState.Downloading -> {
+                    Column {
+                        Text("Downloading... ${downloadState.percent}%")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                is DownloadState.Extracting -> {
+                    Column {
+                        Text("Extracting... ${downloadState.percent}%")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                is DownloadState.Done -> {
+                    Text("Download complete! Offline speech recognition is ready.")
+                }
+                is DownloadState.Error -> {
+                    Text("Download failed: ${downloadState.message}")
+                }
+            }
+        },
+        confirmButton = {
+            when (downloadState) {
+                is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text("Download") }
+                is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
+                is DownloadState.Downloading, is DownloadState.Extracting -> {
+                    TextButton(onClick = onDismiss) { Text("Continue in background") }
+                }
+            }
+        },
+        dismissButton = {
+            if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting) {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
+}
+
+@Composable
+private fun AsrMeteredNetworkDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Metered network detected") },
+        text = { Text("You appear to be on a cellular or metered connection. The speech recognition model is ~170 MB. Continue downloading?") },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text("Download anyway") }
         },

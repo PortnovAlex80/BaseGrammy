@@ -48,6 +48,9 @@ import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.DownloadState
+import com.alexpo.grammermate.data.AsrEngine
+import com.alexpo.grammermate.data.AsrModelManager
+import com.alexpo.grammermate.data.AsrState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -82,6 +85,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
     private val ttsEngine = TtsEngine(application)
+    private val asrModelManager = AsrModelManager(application)
+    private val asrEngine = AsrEngine(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -185,7 +190,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentStreak = streakData.currentStreak,
                 longestStreak = streakData.longestStreak,
                 userName = profile.userName,
-                badSentenceCount = badSentenceStore.getBadSentences().size
+                badSentenceCount = badSentenceStore.getBadSentences().size,
+                useOfflineAsr = config.useOfflineAsr,
+                asrModelReady = asrModelManager.isFullyReady()
             )
         }
         rebuildSchedules(lessons)
@@ -193,7 +200,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshFlowerStates()
         if (_uiState.value.sessionState == SessionState.ACTIVE && _uiState.value.currentCard != null) {
             resumeTimer()
-            _uiState.value.currentCard?.let { recordCardShowForMastery(it) }
             if (_uiState.value.inputMode == InputMode.VOICE) {
                 _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
             }
@@ -698,7 +704,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossRewardMessage = rewardMessage
             )
         }
-        nextCard?.let { recordCardShowForMastery(it) }
 
         // Update word bank if in WORD_BANK mode
         if (_uiState.value.inputMode == InputMode.WORD_BANK) {
@@ -725,7 +730,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voicePromptStartMs = null
             )
         }
-        prevCard?.let { recordCardShowForMastery(it) }
         saveProgress()
     }
 
@@ -955,6 +959,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore.deleteAllLessons(languageId)
         refreshLessons(null)
         _uiState.update { it.copy(installedPacks = lessonStore.getInstalledPacks()) }
+    }
+
+    /**
+     * Reset progress (mastery/flower data) for a single lesson.
+     * Runs on viewModelScope to avoid blocking the UI.
+     */
+    fun resetLessonProgress(lessonId: String) {
+        val languageId = _uiState.value.selectedLanguageId
+        viewModelScope.launch(Dispatchers.IO) {
+            masteryStore.clearLesson(lessonId, languageId)
+            withContext(Dispatchers.Main) {
+                refreshFlowerStates()
+            }
+        }
     }
 
     fun deletePack(packId: String) {
@@ -1628,7 +1646,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voicePromptStartMs = null
             )
         }
-        currentCard()?.let { recordCardShowForMastery(it) }
         saveProgress()
     }
 
@@ -1836,9 +1853,97 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(ttsDownloadState = bgState) }
     }
 
+    // ── Offline ASR ──────────────────────────────────────────────────────
+
+    fun setUseOfflineAsr(enabled: Boolean) {
+        _uiState.update { it.copy(useOfflineAsr = enabled) }
+        val config = configStore.load()
+        configStore.save(config.copy(useOfflineAsr = enabled))
+        if (enabled) {
+            checkAsrModel()
+        } else {
+            asrEngine.release()
+            _uiState.update { it.copy(asrState = AsrState.IDLE, asrModelReady = false) }
+        }
+    }
+
+    fun startAsrDownload() {
+        if (asrModelManager.isNetworkMetered()) {
+            _uiState.update { it.copy(asrMeteredNetwork = true) }
+            return
+        }
+        beginAsrDownload()
+    }
+
+    fun confirmAsrDownloadOnMetered() {
+        _uiState.update { it.copy(asrMeteredNetwork = false) }
+        beginAsrDownload()
+    }
+
+    fun dismissAsrMeteredWarning() {
+        _uiState.update { it.copy(asrMeteredNetwork = false) }
+    }
+
+    fun dismissAsrDownloadDialog() {
+        val state = _uiState.value.asrDownloadState
+        if (state is DownloadState.Done || state is DownloadState.Error) {
+            _uiState.update { it.copy(asrDownloadState = DownloadState.Idle) }
+        }
+    }
+
+    private var asrDownloadJob: Job? = null
+
+    private fun beginAsrDownload() {
+        if (asrDownloadJob?.isActive == true) {
+            Log.d(logTag, "ASR download already in progress")
+            return
+        }
+        asrDownloadJob = viewModelScope.launch(Dispatchers.IO) {
+            asrModelManager.download().collect { downloadState ->
+                _uiState.update { it.copy(asrDownloadState = downloadState) }
+                if (downloadState is DownloadState.Done) {
+                    _uiState.update { it.copy(asrModelReady = true) }
+                }
+            }
+        }
+    }
+
+    private fun checkAsrModel() {
+        val ready = asrModelManager.isFullyReady()
+        _uiState.update { it.copy(asrModelReady = ready) }
+    }
+
+    /**
+     * Initialize ASR engine and record + transcribe audio.
+     * Returns the recognized text.
+     */
+    suspend fun transcribeWithOfflineAsr(): String {
+        if (!asrEngine.isReady) {
+            asrEngine.initialize()
+        }
+        _uiState.update { it.copy(asrState = asrEngine.state.value) }
+
+        // Collect state updates from ASR engine
+        val stateJob = viewModelScope.launch {
+            asrEngine.state.collect { asrState ->
+                _uiState.update { it.copy(asrState = asrState) }
+            }
+        }
+
+        val result = asrEngine.recordAndTranscribe()
+        stateJob.cancel()
+        _uiState.update { it.copy(asrState = asrEngine.state.value) }
+        return result
+    }
+
+    fun stopAsrRecording() {
+        asrEngine.stopRecording()
+    }
+
     override fun onCleared() {
         bgDownloadJob?.cancel()
         ttsEngine.release()
+        asrEngine.release()
         soundPool.release()
         super.onCleared()
     }
@@ -2523,7 +2628,13 @@ data class TrainingUiState(
     val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap(),
     val ttsSpeed: Float = 1.0f,
     // Bad sentences
-    val badSentenceCount: Int = 0
+    val badSentenceCount: Int = 0,
+    // ASR (offline speech recognition)
+    val useOfflineAsr: Boolean = false,
+    val asrState: AsrState = AsrState.IDLE,
+    val asrModelReady: Boolean = false,
+    val asrDownloadState: DownloadState = DownloadState.Idle,
+    val asrMeteredNetwork: Boolean = false
 )
 
 data class LessonLadderRow(
