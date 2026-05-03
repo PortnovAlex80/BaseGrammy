@@ -1,32 +1,14 @@
 {
   "schemaVersion": 1,
   "packId": "EN_HOTEL_RECEPTION",
-  "packVersion": "v1",
+  "packVersion": "v2",
   "language": "en",
   "lessons": [
     {
-      "lessonId": "L01_HOTEL_A1",
+      "lessonId": "L01_WORD_ORDER",
       "order": 1,
-      "title": "Hotel Reception A1",
+      "title": "Word Order Simple Tenses",
       "file": "lesson_01.csv"
-    },
-    {
-      "lessonId": "L02_HOTEL_A2",
-      "order": 2,
-      "title": "Hotel Reception A2",
-      "file": "lesson_02.csv"
-    },
-    {
-      "lessonId": "L03_HOTEL_B1",
-      "order": 3,
-      "title": "Hotel Reception B1",
-      "file": "lesson_03.csv"
-    },
-    {
-      "lessonId": "L04_HOTEL_B2",
-      "order": 4,
-      "title": "Hotel Reception B2",
-      "file": "lesson_04.csv"
     }
   ]
 }
