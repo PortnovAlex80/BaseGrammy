@@ -86,7 +86,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val ttsModelManager = TtsModelManager(application)
     private val ttsEngine = TtsEngine(application)
     private val asrModelManager = AsrModelManager(application)
-    private val asrEngine = AsrEngine(application)
+    private val asrEngine: AsrEngine? = try {
+        AsrEngine(application)
+    } catch (e: Exception) {
+        Log.e(logTag, "ASR engine creation failed — sherpa-onnx API may not support ASR", e)
+        null
+    }
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -1099,9 +1104,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
             val completedCount = calculateCompletedSubLessons(subLessons, mastery, state.selectedLessonId)
 
-            val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
-            val subLesson = subLessons.getOrNull(activeIndex)
-            sessionCards = (subLesson?.cards ?: emptyList()).filter { it.id !in hiddenIds }
+            var activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
+            var subLesson = subLessons.getOrNull(activeIndex)
+            var filteredCards = (subLesson?.cards ?: emptyList()).filter { it.id !in hiddenIds }
+
+            // Skip empty sub-lessons (all cards hidden)
+            while (filteredCards.isEmpty() && activeIndex < subLessons.size - 1) {
+                activeIndex++
+                subLesson = subLessons.getOrNull(activeIndex)
+                filteredCards = (subLesson?.cards ?: emptyList()).filter { it.id !in hiddenIds }
+            }
+
+            sessionCards = filteredCards
             subLessonTotal = sessionCards.size
             val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
             val card = sessionCards.getOrNull(safeIndex)
@@ -1862,7 +1876,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (enabled) {
             checkAsrModel()
         } else {
-            asrEngine.release()
+            asrEngine?.release()
             _uiState.update { it.copy(asrState = AsrState.IDLE, asrModelReady = false) }
         }
     }
@@ -1918,32 +1932,37 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Returns the recognized text.
      */
     suspend fun transcribeWithOfflineAsr(): String {
-        if (!asrEngine.isReady) {
-            asrEngine.initialize()
+        val engine = asrEngine
+        if (engine == null) {
+            _uiState.update { it.copy(asrState = AsrState.ERROR) }
+            return ""
         }
-        _uiState.update { it.copy(asrState = asrEngine.state.value) }
+        if (!engine.isReady) {
+            engine.initialize()
+        }
+        _uiState.update { it.copy(asrState = engine.state.value) }
 
         // Collect state updates from ASR engine
         val stateJob = viewModelScope.launch {
-            asrEngine.state.collect { asrState ->
+            engine.state.collect { asrState ->
                 _uiState.update { it.copy(asrState = asrState) }
             }
         }
 
-        val result = asrEngine.recordAndTranscribe()
+        val result = engine.recordAndTranscribe()
         stateJob.cancel()
-        _uiState.update { it.copy(asrState = asrEngine.state.value) }
+        _uiState.update { it.copy(asrState = engine.state.value) }
         return result
     }
 
     fun stopAsrRecording() {
-        asrEngine.stopRecording()
+        asrEngine?.stopRecording()
     }
 
     override fun onCleared() {
         bgDownloadJob?.cancel()
         ttsEngine.release()
-        asrEngine.release()
+        asrEngine?.release()
         soundPool.release()
         super.onCleared()
     }
@@ -2037,10 +2056,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             ?.toSet()
             ?: return 0
 
+        val hiddenIds = hiddenCardStore.getHiddenCardIds()
         var completed = 0
         for (subLesson in subLessons) {
             val allCardsShown = subLesson.cards.all { card ->
-                !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
+                card.id in hiddenIds || !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
             }
             if (allCardsShown) {
                 completed++
