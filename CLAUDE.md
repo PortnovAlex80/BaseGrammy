@@ -299,7 +299,7 @@ Unit tests in `app/src/test/java/com/alexpo/grammermate/` using JUnit 4 + Robole
 |---|---|
 | `architecture-defense` | Before any structural change in source code (layer boundaries, new classes, refactoring) |
 | `project-reference` | `agents.md` — full method reference with line numbers for all core classes |
-| `lesson-pack-reference` | `lesson_packs/INSTRUCTIONS.md` — lesson pack ZIP format, CSV structure, manifest schema |
+| `lesson-pack-reference` | `lesson_packs/INSTRUCTIONS.md` — lesson pack ZIP format, CSV structure, manifest schema, bundled pack registration |
 | `test-plans` | `docs/TEST_PLAN.md`, `docs/UI_TEST_PLAN.md` — test coverage goals and P0/P1/P2 priorities |
 
 ---

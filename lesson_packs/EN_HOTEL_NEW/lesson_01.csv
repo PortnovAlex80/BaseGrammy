@@ -1,0 +1,307 @@
+Hotel Reception A1
+Мужчина подходит к стойке регистрации (approach, reception desk);The man approaches the reception desk.
+Мужчина не подходит к стойке регистрации (approach, reception desk);The man doesn't approach the reception desk.+The man does not approach the reception desk.
+Мужчина подходит к стойке регистрации? (approach, reception desk);Does the man approach the reception desk?
+Мужчина подошёл к стойке регистрации (approach, reception desk);The man approached the reception desk.
+Мужчина не подошёл к стойке регистрации (approach, reception desk);The man didn't approach the reception desk.+The man did not approach the reception desk.
+Мужчина подошёл к стойке регистрации? (approach, reception desk);Did the man approach the reception desk?
+Мужчина подойдёт к стойке регистрации (approach, reception desk);The man will approach the reception desk.
+Мужчина не подойдёт к стойке регистрации (approach, reception desk);The man won't approach the reception desk.+The man will not approach the reception desk.
+Мужчина подойдёт к стойке регистрации? (approach, reception desk);Will the man approach the reception desk?
+Женщина берет документ (take a document);The woman takes the document.
+Женщина не берет документ (take a document);The woman doesn't take the document.+The woman does not take the document.
+Женщина берет документ? (take a document);Does the woman take the document?
+Женщина взяла документ (take a document);The woman took the document.
+Женщина не взяла документ (take a document);The woman didn't take the document.+The woman did not take the document.
+Женщина взяла документ? (take a document);Did the woman take the document?
+Женщина возьмет документ (take a document);The woman will take the document.
+Женщина не возьмет документ (take a document);The woman won't take the document.+The woman will not take the document.
+Женщина возьмет документ? (take a document);Will the woman take the document?
+Она смотрит в свой паспорт (look at her passport);She looks at her passport.
+Она не смотрит в свой паспорт (look at her passport);She doesn't look at her passport.+She does not look at her passport.
+Она смотрит в свой паспорт? (look at her passport);Does she look at her passport?
+Она смотрела в свой паспорт (look at her passport);She looked at her passport.
+Она не смотрела в свой паспорт (look at her passport);She didn't look at her passport.+She did not look at her passport.
+Она смотрела в свой паспорт? (look at her passport);Did she look at her passport?
+Она будет смотреть в свой паспорт (look at her passport);She will look at her passport.
+Она не будет смотреть в свой паспорт (look at her passport);She won't look at her passport.+She will not look at her passport.
+Она будет смотреть в свой паспорт? (look at her passport);Will she look at her passport?
+Девушка говорит: «Здравствуйте».;The girl says, "Hello.".
+Девушка не говорит: «Здравствуйте».;The girl doesn't say, "Hello."+The girl does not say, "Hello.".
+Девушка говорит: «Здравствуйте»?;Does the girl say, "Hello?"?
+Девушка сказала: «Здравствуйте».;The girl said, "Hello.".
+Девушка не сказала: «Здравствуйте».;The girl didn't say, "Hello."+The girl did not say, "Hello.".
+Девушка сказала: «Здравствуйте»?;Did the girl say, "Hello?"?
+Девушка скажет: «Здравствуйте».;The girl will say, "Hello.".
+Девушка не скажет: «Здравствуйте».;The girl won't say, "Hello."+The girl will not say, "Hello.".
+Девушка скажет: «Здравствуйте»?;Will the girl say, "Hello?"?
+Мужчина отвечает на вопрос (answer);The man answers the question.
+Мужчина не отвечает на вопрос (answer);The man doesn't answer the question.+The man does not answer the question.
+Мужчина отвечает на вопрос? (answer);Does the man answer the question?
+Мужчина ответил на вопрос (answer);The man answered the question.
+Мужчина не ответил на вопрос (answer);The man didn't answer the question.+The man did not answer the question.
+Мужчина ответил на вопрос? (answer);Did the man answer the question?
+Мужчина ответит на вопрос (answer);The man will answer the question.
+Мужчина не ответит на вопрос (answer);The man won't answer the question.+The man will not answer the question.
+Мужчина ответит на вопрос? (answer);Will the man answer the question?
+Она указывает на бланк бумаги (point at);She points at the paper form.
+Она не указывает на бланк бумаги (point at);She doesn't point at the paper form.+She does not point at the paper form.
+Она указывает на бланк бумаги? (point at);Does she point at the paper form?
+Она указывала на бланк бумаги (point at);She pointed at the paper form.
+Она не указывала на бланк бумаги (point at);She didn't point at the paper form.+She did not point at the paper form.
+Она указывала на бланк бумаги? (point at);Did she point at the paper form?
+Она будет указывать на бланк бумаги (point at);She will point at the paper form.
+Она не будет указывать на бланк бумаги (point at);She won't point at the paper form.+She will not point at the paper form.
+Она будет указывать на бланк бумаги? (point at);Will she point at the paper form?
+Она спрашивает имя мужчины.;She asks the man's name.
+Она не спрашивает имя мужчины.;She doesn't ask the man's name.+She does not ask the man's name.
+Она спрашивает имя мужчины?;Does she ask the man's name?
+Она спросила имя мужчины.;She asked the man's name.
+Она не спрашивала имя мужчины.;She didn't ask the man's name.+She did not ask the man's name.
+Она спрашивала имя мужчины?;Did she ask the man's name?
+Она спросит имя мужчины.;She will ask the man's name.
+Она не спросит имя мужчины.;She won't ask the man's name.+She will not ask the man's name.
+Она спросит имя мужчины?;Will she ask the man's name?
+Мужчина называет своё имя.;The man names his name.
+Мужчина не называет своё имя.;The man doesn't name his name.+The man does not name his name.
+Называет ли мужчина своё имя?;Does the man name his name?
+Мужчина назвал своё имя.;The man named his name.
+Мужчина не назвал своё имя.;The man didn't name his name.+The man did not name his name.
+Назвал ли мужчина своё имя?;Did the man name his name?
+Мужчина назовёт своё имя.;The man will name his name.
+Мужчина не назовёт своё имя.;The man won't name his name.+The man will not name his name.
+Назовёт ли мужчина своё имя?;Will the man name his name?
+Он показывает на первую (the first) строку в бланке.;He shows the first line in the form.
+Он не показывает на первую (the first) строку в бланке.;He doesn't show the first line in the form.+He does not show the first line in the form.
+Он показывает на первую (the first) строку в бланке?;Does he show the first line in the form?
+Он показал на первую (the first) строку в бланке.;He showed the first line in the form.
+Он не показал на первую (the first) строку в бланке.;He didn't show the first line in the form.+He did not show the first line in the form.
+Он показал на первую (the first) строку в бланке?;Did he show the first line in the form?
+Он покажет на первую (the first) строку в бланке.;He will show the first line in the form.
+Он не покажет на первую (the first) строку в бланке.;He won't show the first line in the form.+He will not show the first line in the form.
+Он покажет на первую (the first) строку в бланке?;Will he show the first line in the form?
+Она поправляет свой пиджак (adjust her jacket);She adjusts her jacket.
+Она не поправляет свой пиджак.;She doesn't adjust her jacket.+She does not adjust her jacket.
+Она поправляет свой пиджак? (adjust her jacket);Does she adjust her jacket?
+Она поправляла свой пиджак (adjust her jacket);She adjusted her jacket.
+Она не поправляла свой пиджак.;She didn't adjust her jacket.+She did not adjust her jacket.
+Она поправляла свой пиджак? (adjust her jacket);Did she adjust her jacket?
+Она будет поправлять свой пиджак (adjust her jacket);She will adjust her jacket.
+Она не будет поправлять свой пиджак.;She won't adjust her jacket.+She will not adjust her jacket.
+Она будет поправлять свой пиджак? (adjust her jacket);Will she adjust her jacket?
+Девушка кладет свою сумку (bag) на пол (floor).;The girl puts her bag on the floor.
+Девушка не кладет свою сумку на пол.;The girl doesn't put her bag on the floor.+The girl does not put her bag on the floor.
+Девушка кладет свою сумку (bag) на пол (floor)?;Does the girl put her bag on the floor?
+Девушка положила свою сумку (bag) на пол (floor).;The girl put her bag on the floor.
+Девушка не положила свою сумку на пол.;The girl didn't put her bag on the floor.+The girl did not put her bag on the floor.
+Девушка положила свою сумку (bag) на пол (floor)?;Did the girl put her bag on the floor?
+Девушка положит свою сумку (bag) на пол (floor).;The girl will put her bag on the floor.
+Девушка не положит свою сумку на пол.;The girl won't put her bag on the floor.+The girl will not put her bag on the floor.
+Девушка поставит свою сумку (bag) на пол (floor)?;Will the girl put her bag on the floor?
+Мужчина выходит из кабинета (exit);The man exits the office.
+Мужчина не выходит из кабинета.;The man doesn't exit the office.+The man does not exit the office.
+Мужчина выходит из кабинета? (exit);Does the man exit the office?
+Мужчина вышел из кабинета (exit);The man exited the office.
+Мужчина не вышел из кабинета.;The man didn't exit the office.+The man did not exit the office.
+Мужчина вышел из кабинета? (exit);Did the man exit the office?
+Мужчина выйдет из кабинета (exit);The man will exit the office.
+Мужчина не выйдет из кабинета.;The man won't exit the office.+The man will not exit the office.
+Мужчина выйдет из кабинета? (exit);Will the man exit the office?
+Он указывает рукой на дверь (point at);He points at the door.
+Он не указывает рукой на дверь (point at);He doesn't point at the door.+He does not point at the door.
+Он указывает рукой на дверь? (point at);Does he point at the door?
+Он указал рукой на дверь (point at);He pointed at the door.
+Он не указывал рукой на дверь (point at);He didn't point at the door.+He did not point at the door.
+Он указывал рукой на дверь? (point at);Did he point at the door?
+Он будет указывать рукой на дверь (point at);He will point at the door.
+Он не будет указывать рукой на дверь (point at);He won't point at the door.+He will not point at the door.
+Он будет указывать рукой на дверь? (point at);Will he point at the door?
+Девушка проходит в кабинет (walk into);The girl walks into the office.
+Девушка не проходит в кабинет.;The girl doesn't walk into the office.+The girl does not walk into the office.
+Девушка проходит в кабинет? (walk into);Does the girl walk into the office?
+Девушка прошла в кабинет (walk into);The girl walked into the office.
+Девушка не прошла в кабинет.;The girl didn't walk into the office.+The girl did not walk into the office.
+Девушка прошла в кабинет? (walk into);Did the girl walk into the office?
+Девушка пройдет в кабинет (walk into);The girl will walk into the office.
+Девушка не пройдет в кабинет.;The girl won't walk into the office.+The girl will not walk into the office.
+Девушка пройдет в кабинет? (walk into);Will the girl walk into the office?
+Она садится на стул (sit on a chair).;She sits on the chair.
+Она не садится на стул (sit on a chair).;She doesn't sit on the chair.+She does not sit on the chair.
+Она садится на стул (sit on a chair)?;Does she sit on the chair?
+Она села на стул (sit on a chair).;She sat on the chair.
+Она не села на стул (sit on a chair).;She didn't sit on the chair.+She did not sit on the chair.
+Она села на стул (sit on a chair)?;Did she sit on the chair?
+Она сядет на стул (sit on a chair).;She will sit on the chair.
+Она не сядет на стул (sit on a chair).;She won't sit on the chair.+She will not sit on the chair.
+Она сядет на стул (sit on a chair)?;Will she sit on the chair?
+Она говорит о её университете (talk about her university);She talks about her university.
+Она не говорит о её университете (talk about her university);She doesn't talk about her university.+She does not talk about her university.
+Она говорит о её университете? (talk about her university);Does she talk about her university?
+Она говорила о её университете (talk about her university);She talked about her university.
+Она не говорила о её университете (talk about her university);She didn't talk about her university.+She did not talk about her university.
+Она говорила о её университете? (talk about her university);Did she talk about her university?
+Она будет говорить о её университете (talk about her university);She will talk about her university.
+Она не будет говорить о её университете (talk about her university);She won't talk about her university.+She will not talk about her university.
+Она будет говорить о её университете? (talk about her university);Will she talk about her university?
+Женщина-коллега (colleague) пишет в блокноте (notebook).;The colleague writes in a notebook.
+Женщина-коллега (colleague) не пишет в блокноте (notebook).;The colleague doesn't write in a notebook.+The colleague does not write in a notebook.
+Женщина-коллега (colleague) пишет в блокноте (notebook)?;Does the colleague write in a notebook?
+Женщина-коллега (colleague) писала в блокноте (notebook).;The colleague wrote in a notebook.
+Женщина-коллега (colleague) не писала в блокноте (notebook).;The colleague didn't write in a notebook.+The colleague did not write in a notebook.
+Женщина-коллега (colleague) писала в блокноте (notebook)?;Did the colleague write in a notebook?
+Женщина-коллега (colleague) будет писать в блокноте (notebook).;The colleague will write in a notebook.
+Женщина-коллега (colleague) не будет писать в блокноте (notebook).;The colleague won't write in a notebook.+The colleague will not write in a notebook.
+Женщина-коллега (colleague) будет писать в блокноте (notebook)?;Will the colleague write in a notebook?
+Мужчина заходит в аптеку (enter the pharmacy);The man enters the pharmacy.
+Мужчина не заходит в аптеку (enter the pharmacy);The man doesn't enter the pharmacy.+The man does not enter the pharmacy.
+Мужчина заходит в аптеку? (enter the pharmacy);Does the man enter the pharmacy?
+Мужчина зашёл в аптеку (enter the pharmacy);The man entered the pharmacy.
+Мужчина не заходил в аптеку (enter the pharmacy);The man didn't enter the pharmacy.+The man did not enter the pharmacy.
+Мужчина заходил в аптеку? (enter the pharmacy);Did the man enter the pharmacy?
+Мужчина войдёт в аптеку (enter the pharmacy);The man will enter the pharmacy.
+Мужчина не войдёт в аптеку (enter the pharmacy);The man won't enter the pharmacy.+The man will not enter the pharmacy.
+Мужчина войдёт в аптеку? (enter the pharmacy);Will the man enter the pharmacy?
+Женщина-фармацевт (pharmacist) смотрит на него (look at).;The pharmacist looks at him.
+Женщина-фармацевт не смотрит на него.;The pharmacist doesn't look at him.+The pharmacist does not look at him.
+Женщина-фармацевт (pharmacist) смотрит на него (look at)?;Does the pharmacist look at him?
+Женщина-фармацевт (pharmacist) смотрела на него (look at).;The pharmacist looked at him.
+Женщина-фармацевт не смотрела на него.;The pharmacist didn't look at him.+The pharmacist did not look at him.
+Женщина-фармацевт (pharmacist) смотрела на него (look at)?;Did the pharmacist look at him?
+Женщина-фармацевт (pharmacist) будет смотреть на него (look at).;The pharmacist will look at him.
+Женщина-фармацевт не будет смотреть на него.;The pharmacist won't look at him.+The pharmacist will not look at him.
+Женщина-фармацевт (pharmacist) будет смотреть на него (look at)?;Will the pharmacist look at him?
+Мужчина кладет руку на свой живот (stomach);The man puts his hand on his stomach.
+Мужчина не кладет руку на свой живот.;The man doesn't put his hand on his stomach.+The man does not put his hand on his stomach.
+Мужчина кладет руку на свой живот? (stomach);Does the man put his hand on his stomach?
+Мужчина положил руку на свой живот (stomach);The man put his hand on his stomach.
+Мужчина не положил руку на свой живот.;The man didn't put his hand on his stomach.+The man did not put his hand on his stomach.
+Мужчина положил руку на свой живот? (stomach);Did the man put his hand on his stomach?
+Мужчина положит руку на свой живот (stomach);The man will put his hand on his stomach.
+Мужчина не положит руку на свой живот.;The man won't put his hand on his stomach.+The man will not put his hand on his stomach.
+Мужчина положит руку на свой живот? (stomach);Will the man put his hand on his stomach?
+Он морщится от боли (wince, pain);He winces from pain.
+Он не морщится от боли (wince, pain);He doesn't wince from pain.+He does not wince from pain.
+Он морщится от боли? (wince, pain);Does he wince from pain?
+Он морщился от боли (wince, pain);He winced from pain.
+Он не морщился от боли (wince, pain);He didn't wince from pain.+He did not wince from pain.
+Он морщился от боли? (wince, pain);Did he wince from pain?
+Он будет морчиться от боли (wince, pain);He will wince from pain.
+Он не будет морчиться от боли (wince, pain);He won't wince from pain.+He will not wince from pain.
+Он будет морчиться от боли? (wince, pain);Will he wince from pain?
+Она внимательно слушает мужчину (listen to);She listens to the man.
+Она не слушает мужчину.;She doesn't listen to the man.+She does not listen to the man.
+Она слушает мужчину? (listen to);Does she listen to the man?
+Она внимательно слушала мужчину (listen to);She listened to the man.
+Она не слушала мужчину.;She didn't listen to the man.+She did not listen to the man.
+Она слушала мужчину? (listen to);Did she listen to the man?
+Она будет слушать мужчину (listen to);She will listen to the man.
+Она не будет слушать мужчину.;She won't listen to the man.+She will not listen to the man.
+Она будет слушать мужчину? (listen to);Will she listen to the man?
+Мужчина описывает свое состояние (describe one's condition);The man describes his condition.
+Мужчина не описывает свое состояние (describe one's condition);The man doesn't describe his condition.+The man does not describe his condition.
+Описывает ли мужчина свое состояние (describe one's condition);Does the man describe his condition?
+Мужчина описывал свое состояние (describe one's condition);The man described his condition.
+Мужчина не описывал свое состояние (describe one's condition);The man didn't describe his condition.+The man did not describe his condition.
+Описывал ли мужчина свое состояние (describe one's condition);Did the man describe his condition?
+Мужчина будет описывать свое состояние (describe one's condition);The man will describe his condition.
+Мужчина не будет описывать свое состояние (describe one's condition);The man won't describe his condition.+The man will not describe his condition.
+Будет ли мужчина описывать свое состояние (describe one's condition);Will the man describe his condition?
+Женщина (nod).;The woman nods.
+Женщина не кивает.;The woman doesn't nod.+The woman does not nod.
+Женщина (nod)?;Does the woman nod?
+Женщина (nod).;The woman nodded.
+Женщина не кивнула.;The woman didn't nod.+The woman did not nod.
+Женщина (nod)?;Did the woman nod?
+Женщина будет (nod).;The woman will nod.
+Женщина не будет кивать.;The woman won't nod.+The woman will not nod.
+Женщина будет (nod)?;Will the woman nod?
+Мужчина просит таблетки от боли (ask for painkillers);The man asks for painkillers.
+Мужчина не просит таблетки от боли.;The man doesn't ask for painkillers.+The man does not ask for painkillers.
+Мужчина просит таблетки от боли? (ask for painkillers);Does the man ask for painkillers?
+Мужчина просил таблетки от боли (ask for painkillers);The man asked for painkillers.
+Мужчина не просил таблетки от боли.;The man didn't ask for painkillers.+The man did not ask for painkillers.
+Мужчина просил таблетки от боли? (ask for painkillers);Did the man ask for painkillers?
+Мужчина будет просить таблетки от боли (ask for painkillers);The man will ask for painkillers.
+Мужчина не будет просить таблетки от боли.;The man won't ask for painkillers.+The man will not ask for painkillers.
+Мужчина будет просить таблетки от боли? (ask for painkillers);Will the man ask for painkillers?
+Она встает из-за стола (stand up);She stands up from the table.
+Она не встает из-за стола (stand up);She doesn't stand up from the table.+She does not stand up from the table.
+Она встает из-за стола? (stand up);Does she stand up from the table?
+Она встала из-за стола (stand up);She stood up from the table.
+Она не встала из-за стола (stand up);She didn't stand up from the table.+She did not stand up from the table.
+Она встала из-за стола? (stand up);Did she stand up from the table?
+Она встанет из-за стола (stand up);She will stand up from the table.
+Она не встанет из-за стола (stand up);She won't stand up from the table.+She will not stand up from the table.
+Она встанет из-за стола? (stand up);Will she stand up from the table?
+Женщина идет к полкам (shelf).;The woman walks to the shelves.
+Женщина не идет к полкам.;The woman doesn't walk to the shelves.+The woman does not walk to the shelves.
+Женщина идет к полкам (shelf)?;Does the woman walk to the shelves?
+Женщина шла к полкам (shelf).;The woman walked to the shelves.
+Женщина не шла к полкам.;The woman didn't walk to the shelves.+The woman did not walk to the shelves.
+Женщина шла к полкам (shelf)?;Did the woman walk to the shelves?
+Женщина пойдет к полкам (shelf).;The woman will walk to the shelves.
+Женщина не пойдет к полкам.;The woman won't walk to the shelves.+The woman will not walk to the shelves.
+Женщина пойдет к полкам (shelf)?;Will the woman walk to the shelves?
+Она кладет лекарство перед мужчиной (medicine, in front of);She puts the medicine in front of the man.
+Она не кладет лекарство перед мужчиной (medicine, in front of);She doesn't put the medicine in front of the man.+She does not put the medicine in front of the man.
+Она кладет лекарство перед мужчиной? (medicine, in front of);Does she put the medicine in front of the man?
+Она положила лекарство перед мужчиной (medicine, in front of);She put the medicine in front of the man.
+Она не положила лекарство перед мужчиной (medicine, in front of);She didn't put the medicine in front of the man.+She did not put the medicine in front of the man.
+Она положила лекарство перед мужчиной? (medicine, in front of);Did she put the medicine in front of the man?
+Она положит лекарство перед мужчиной (medicine, in front of);She will put the medicine in front of the man.
+Она не положит лекарство перед мужчиной (medicine, in front of);She won't put the medicine in front of the man.+She will not put the medicine in front of the man.
+Она положит лекарство перед мужчиной? (medicine, in front of);Will she put the medicine in front of the man?
+Она видит корзину с красными яблоками (basket, red, apple);She sees a basket of red apples.
+Она не видит корзину с красными яблоками (basket, red, apple);She doesn't see a basket of red apples.+She does not see a basket of red apples.
+Она видит корзину с красными яблоками? (basket, red, apple);Does she see a basket of red apples?
+Она видела корзину с красными яблоками (basket, red, apple);She saw a basket of red apples.
+Она не видела корзину с красными яблоками (basket, red, apple);She didn't see a basket of red apples.+She did not see a basket of red apples.
+Она видела корзину с красными яблоками? (basket, red, apple);Did she see a basket of red apples?
+Она увидит корзину с красными яблоками (basket, red, apple);She will see a basket of red apples.
+Она не увидит корзину с красными яблоками (basket, red, apple);She won't see a basket of red apples.+She will not see a basket of red apples.
+Она увидит корзину с красными яблоками? (basket, red, apple);Will she see a basket of red apples?
+Девушка-продавец (saleswoman) стоит за столом (stand behind);The saleswoman stands behind the table.
+Девушка-продавец не стоит за столом.;The saleswoman doesn't stand behind the table.+The saleswoman does not stand behind the table.
+Девушка-продавец (saleswoman) стоит за столом (stand behind)?;Does the saleswoman stand behind the table?
+Девушка-продавец (saleswoman) стояла за столом (stand behind);The saleswoman stood behind the table.
+Девушка-продавец не стояла за столом.;The saleswoman didn't stand behind the table.+The saleswoman did not stand behind the table.
+Девушка-продавец (saleswoman) стояла за столом (stand behind)?;Did the saleswoman stand behind the table?
+Девушка-продавец (saleswoman) будет стоять за столом (stand behind);The saleswoman will stand behind the table.
+Девушка-продавец не будет стоять за столом.;The saleswoman won't stand behind the table.+The saleswoman will not stand behind the table.
+Девушка-продавец (saleswoman) будет стоять за столом (stand behind)?;Will the saleswoman stand behind the table?
+Она осматривает плод (examine, fruit);She examines the fruit.
+Она не осматривает плод.;She doesn't examine the fruit.+She does not examine the fruit.
+Она осматривает плод? (examine, fruit);Does she examine the fruit?
+Она осматривала плод (examine, fruit);She examined the fruit.
+Она не осматривала плод.;She didn't examine the fruit.+She did not examine the fruit.
+Она осматривала плод? (examine, fruit);Did she examine the fruit?
+Она будет осматривать плод (examine, fruit);She will examine the fruit.
+Она не будет осматривать плод.;She won't examine the fruit.+She will not examine the fruit.
+Она будет осматривать плод? (examine, fruit);Will she examine the fruit?
+Женщина кладет яблоко обратно (put back an apple);The woman puts the apple back.
+Женщина не кладет яблоко обратно.;The woman doesn't put the apple back.+The woman does not put the apple back.
+Женщина кладет яблоко обратно? (put back an apple);Does the woman put the apple back?
+Женщина положила яблоко обратно (put back an apple);The woman put the apple back.
+Женщина не положила яблоко обратно.;The woman didn't put the apple back.+The woman did not put the apple back.
+Женщина положила яблоко обратно? (put back an apple);Did the woman put the apple back?
+Женщина положит яблоко обратно (put back an apple);The woman will put the apple back.
+Женщина не положит яблоко обратно.;The woman won't put the apple back.+The woman will not put the apple back.
+Женщина положит яблоко обратно? (put back an apple);Will the woman put the apple back?
+Она качает своей головой (shake her head);She shakes her head.
+Она не качает своей головой (shake her head);She doesn't shake her head.+She does not shake her head.
+Она качает своей головой? (shake her head);Does she shake her head?
+Она качала своей головой (shake her head);She shook her head.
+Она не качала своей головой (shake her head);She didn't shake her head.+She did not shake her head.
+Она качала своей головой? (shake her head);Did she shake her head?
+Она будет качать своей головой (shake her head);She will shake her head.
+Она не будет качать своей головой (shake her head);She won't shake her head.+She will not shake her head.
+Она будет качать своей головой? (shake her head);Will she shake her head?
+Продавец объясняет качество товара (seller, explain, quality);The seller explains the quality of the product.
+Продавец не объясняет качество товара (seller, explain, quality);The seller doesn't explain the quality of the product.+The seller does not explain the quality of the product.
+Продавец объясняет качество товара? (seller, explain, quality);Does the seller explain the quality of the product?
+Продавец объяснил качество товара (seller, explain, quality);The seller explained the quality of the product.
+Продавец не объяснил качество товара (seller, explain, quality);The seller didn't explain the quality of the product.+The seller did not explain the quality of the product.
+Продавец объяснил качество товара? (seller, explain, quality);Did the seller explain the quality of the product?
+Продавец объяснит качество товара (seller, explain, quality);The seller will explain the quality of the product.
+Продавец не объяснит качество товара (seller, explain, quality);The seller won't explain the quality of the product.+The seller will not explain the quality of the product.
+Продавец объяснит качество товара? (seller, explain, quality);Will the seller explain the quality of the product?

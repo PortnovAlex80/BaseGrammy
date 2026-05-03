@@ -125,9 +125,42 @@ Lesson 1
   Пример: если в манифесте `lessonId = "L01_PRESENT_SIMPLE"`, то файл словаря должен называться
   `vocab_L01_PRESENT_SIMPLE.csv`.
 
-## 7) Проверка перед импортом
+## 7) Bundled packs (assets)
 
-- В zip есть `manifest.json` и все указанные в нем CSV.
-- `schemaVersion` = 1.
-- `packId`, `packVersion`, `language`, `lessonId` не пустые.
-- В CSV урока есть заголовок и хотя бы несколько карточек.
+Default lesson packs are bundled into the APK via `app/src/main/assets/grammarmate/packs/`.
+
+**Registration** happens in `LessonStore.kt`:
+```kotlin
+private val defaultPacks = listOf(
+    DefaultPack("EN_HOTEL_RECEPTION", "grammarmate/packs/EN_HOTEL_RECEPTION.zip"),
+    DefaultPack("IT_WORD_ORDER_A1", "grammarmate/packs/IT_WORD_ORDER_A1.zip")
+)
+```
+
+Rules:
+- `packId` in `DefaultPack()` MUST match `packId` in the ZIP's `manifest.json`
+- `assetPath` is relative to `assets/` directory
+- Only packs listed in `defaultPacks` are loaded — unregistered ZIP files in assets are ignored
+- Old packs: backed up in `lesson_packs/backup/`
+- App detects updates by comparing `packVersion` — bump it in manifest to force re-import
+
+**To replace a bundled pack:**
+1. Create new pack ZIP with updated `manifest.json` (keep or change `packId`)
+2. Place ZIP in `app/src/main/assets/grammarmate/packs/`
+3. Update the `DefaultPack` entry in `LessonStore.kt` if `packId` or filename changed
+4. Delete old ZIP from assets (it won't load without `DefaultPack` entry, but keep it clean)
+5. Rebuild APK
+
+**To add a new language pack:**
+1. Add ZIP to assets
+2. Add `DefaultPack(...)` entry in `LessonStore.kt`
+3. Rebuild APK
+
+## 8) Validation
+
+Run the pack validator before importing:
+```bash
+python tools/pack_validator/pack_validator.py path/to/pack.zip
+```
+
+Checks: ZIP structure, manifest schema, CSV format (2 columns, title present), story quiz format, vocab format.
