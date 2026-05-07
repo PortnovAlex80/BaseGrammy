@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
@@ -296,6 +297,9 @@ fun GrammarMateApp() {
                     onOpenStory = { phase ->
                         vm.openStory(phase)
                         screen = AppScreen.STORY
+                    },
+                    onDrillStart = {
+                        state.selectedLessonId?.let { vm.showDrillStartDialog(it) }
                     }
                 )
                 AppScreen.ELITE -> EliteRoadmapScreen(
@@ -548,6 +552,14 @@ fun GrammarMateApp() {
                             }
                         }
                     }
+                )
+            }
+            if (state.drillShowStartDialog) {
+                DrillStartDialog(
+                    hasProgress = state.drillHasProgress,
+                    onStartFresh = { vm.startDrill(resume = false) },
+                    onResume = { vm.startDrill(resume = true) },
+                    onDismiss = { vm.dismissDrillDialog() }
                 )
             }
             } // Box
@@ -900,7 +912,8 @@ private fun LessonRoadmapScreen(
     onOpenVocab: () -> Unit,
     onStartBossLesson: () -> Unit,
     onStartBossMega: () -> Unit,
-    onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit
+    onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit,
+    onDrillStart: () -> Unit = {}
 ) {
     val lessonTitle = state.lessons
         .firstOrNull { it.id == state.selectedLessonId }
@@ -939,7 +952,8 @@ private fun LessonRoadmapScreen(
     val shownCards = state.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.bossMegaReward
-    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart)
+    val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
+    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1026,6 +1040,12 @@ private fun LessonRoadmapScreen(
                     }
                     is RoadmapEntry.Vocab -> {
                         VocabTile(label = "Vocab", onClick = onOpenVocab)
+                    }
+                    is RoadmapEntry.Drill -> {
+                        DrillTile(
+                            onClick = { onDrillStart() },
+                            enabled = true
+                        )
                     }
                     is RoadmapEntry.StoryCheckIn -> {
                         StoryTile(
@@ -1144,6 +1164,7 @@ private fun EliteStepTile(
 }
 private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
+    object Drill : RoadmapEntry()
     object Vocab : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
@@ -1154,17 +1175,24 @@ private sealed class RoadmapEntry {
 private fun buildRoadmapEntries(
     trainingTypes: List<SubLessonType>,
     hasMegaBoss: Boolean,
-    cycleStart: Int = 0
+    cycleStart: Int = 0,
+    hasDrill: Boolean = false
 ): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
     entries.add(RoadmapEntry.Vocab)
-    entries.add(RoadmapEntry.StoryCheckIn)
+    if (hasDrill) {
+        entries.add(RoadmapEntry.Drill)
+    } else {
+        entries.add(RoadmapEntry.StoryCheckIn)
+    }
     trainingTypes.forEachIndexed { index, type ->
         // Use absolute index for proper tracking
         entries.add(RoadmapEntry.Training(cycleStart + index, type))
     }
     entries.add(RoadmapEntry.Vocab)
-    entries.add(RoadmapEntry.StoryCheckOut)
+    if (!hasDrill) {
+        entries.add(RoadmapEntry.StoryCheckOut)
+    }
     entries.add(RoadmapEntry.BossLesson)
     if (hasMegaBoss) {
         entries.add(RoadmapEntry.BossMega)
@@ -1227,6 +1255,61 @@ private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onCli
             )
         }
     }
+}
+
+@Composable
+private fun DrillTile(
+    onClick: () -> Unit,
+    enabled: Boolean
+) {
+    Card(
+        onClick = { if (enabled) onClick() },
+        modifier = Modifier.fillMaxWidth().height(72.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) MaterialTheme.colorScheme.primaryContainer
+                             else MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.FitnessCenter,
+                contentDescription = "Drill",
+                tint = if (enabled) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.outline
+            )
+            Spacer(Modifier.height(4.dp))
+            Text("Drill", fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun DrillStartDialog(
+    hasProgress: Boolean,
+    onStartFresh: () -> Unit,
+    onResume: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Drill Mode") },
+        text = { Text(if (hasProgress) "Continue where you left off or start over?" else "Start drill training?") },
+        confirmButton = {
+            TextButton(onClick = if (hasProgress) onResume else onStartFresh) {
+                Text(if (hasProgress) "Continue" else "Start")
+            }
+        },
+        dismissButton = {
+            if (hasProgress) {
+                TextButton(onClick = onStartFresh) { Text("Start Fresh") }
+            }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -2381,6 +2464,14 @@ private fun TrainingScreen(
                 Text(text = "Refresh Session", fontWeight = FontWeight.SemiBold)
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
+            }
+            if (state.isDrillMode) {
+                Text(
+                    text = "${state.drillGroupIndex + 1} / ${state.drillTotalGroups}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
             CardPrompt(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
             AnswerBox(
