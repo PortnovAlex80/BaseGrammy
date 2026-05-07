@@ -39,6 +39,7 @@ import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
+import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.HiddenCardStore
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
@@ -78,6 +79,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val streakStore = StreakStore(application)
     private val badSentenceStore = BadSentenceStore(application)
     private val hiddenCardStore = HiddenCardStore(application)
+    private val drillProgressStore = DrillProgressStore(application)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
@@ -397,7 +399,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 wordBankWords = emptyList(),
-                selectedWords = emptyList()
+                selectedWords = emptyList(),
+                isDrillMode = false,
+                drillGroupIndex = 0,
+                drillTotalGroups = 0,
+                drillShowStartDialog = false,
+                drillHasProgress = false
             )
         }
         buildSessionCards()
@@ -446,7 +453,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 wordBankWords = emptyList(),
-                selectedWords = emptyList()
+                selectedWords = emptyList(),
+                isDrillMode = false,
+                drillGroupIndex = 0,
+                drillTotalGroups = 0,
+                drillShowStartDialog = false,
+                drillHasProgress = false
             )
         }
         buildSessionCards()
@@ -553,6 +565,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
                 saveProgress()
+            } else if (state.isDrillMode && isLastCard) {
+                // Drill mode: complete current group, advance to next or finish
+                pauseTimer()
+                _uiState.update {
+                    it.copy(
+                        correctCount = it.correctCount + 1,
+                        lastResult = null,
+                        incorrectAttemptsForCard = 0,
+                        answerText = null,
+                        voiceActiveMs = if (shouldAddVoiceMetrics) {
+                            it.voiceActiveMs + (voiceDurationMs ?: 0L)
+                        } else {
+                            it.voiceActiveMs
+                        },
+                        voiceWordCount = if (shouldAddVoiceMetrics) {
+                            it.voiceWordCount + voiceWords
+                        } else {
+                            it.voiceWordCount
+                        },
+                        voicePromptStartMs = null,
+                        sessionState = SessionState.PAUSED
+                    )
+                }
+                onDrillGroupComplete()
             } else if (isLastCard) {
                 pauseTimer()
 
@@ -1066,7 +1102,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun buildSessionCards() {
-        if (_uiState.value.bossActive || _uiState.value.eliteActive) return
+        if (_uiState.value.bossActive || _uiState.value.eliteActive || _uiState.value.isDrillMode) return
         val state = _uiState.value
         val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val lessons = state.lessons
@@ -1207,6 +1243,170 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
         refreshFlowerStates()
     }
+
+    // ── Drill Mode ───────────────────────────────────────────────────────
+    // Pure card training, no mastery/flower progress.
+    // Cards grouped by 9 (consecutive). Two start options: fresh or continue.
+
+    fun showDrillStartDialog(lessonId: String) {
+        val lesson = _uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
+        if (lesson.drillCards.isEmpty()) return
+        val hasProgress = drillProgressStore.hasProgress(lessonId)
+        _uiState.update {
+            it.copy(
+                drillShowStartDialog = true,
+                drillHasProgress = hasProgress
+            )
+        }
+    }
+
+    fun startDrill(resume: Boolean) {
+        val lessonId = _uiState.value.selectedLessonId ?: return
+        val lesson = _uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
+        val drillCards = lesson.drillCards
+        if (drillCards.isEmpty()) return
+
+        pauseTimer()
+        vocabSession = emptyList()
+
+        val totalGroups = if (drillCards.size % 9 == 0) drillCards.size / 9 else drillCards.size / 9 + 1
+        val startIndex = if (resume) {
+            drillProgressStore.getDrillProgress(lessonId).coerceIn(0, totalGroups - 1)
+        } else {
+            0
+        }
+
+        _uiState.update {
+            it.copy(
+                isDrillMode = true,
+                drillGroupIndex = startIndex,
+                drillTotalGroups = totalGroups,
+                drillShowStartDialog = false,
+                drillHasProgress = false,
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0,
+                correctCount = 0,
+                incorrectCount = 0,
+                activeTimeMs = 0L,
+                voiceActiveMs = 0L,
+                voiceWordCount = 0,
+                hintCount = 0,
+                voicePromptStartMs = null,
+                sessionState = SessionState.PAUSED,
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossFinishedToken = 0,
+                bossErrorMessage = null,
+                eliteActive = false,
+                wordBankWords = emptyList(),
+                selectedWords = emptyList()
+            )
+        }
+        loadDrillGroup(startIndex)
+        saveProgress()
+    }
+
+    fun dismissDrillDialog() {
+        _uiState.update { it.copy(drillShowStartDialog = false) }
+    }
+
+    private fun loadDrillGroup(groupIndex: Int) {
+        val lessonId = _uiState.value.selectedLessonId ?: return
+        val lesson = _uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
+        val drillCards = lesson.drillCards
+        val from = groupIndex * 9
+        val to = minOf(from + 9, drillCards.size)
+        val groupCards = drillCards.subList(from, to)
+
+        sessionCards = groupCards
+        subLessonTotal = groupCards.size
+        val firstCard = groupCards.firstOrNull()
+        _uiState.update {
+            it.copy(
+                currentIndex = 0,
+                currentCard = firstCard,
+                subLessonTotal = groupCards.size,
+                sessionState = SessionState.PAUSED,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0
+            )
+        }
+        if (firstCard != null && _uiState.value.inputMode == InputMode.VOICE) {
+            _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
+        }
+    }
+
+    fun onDrillGroupComplete() {
+        val lessonId = _uiState.value.selectedLessonId ?: return
+        val state = _uiState.value
+        if (!state.isDrillMode) return
+
+        val nextIndex = state.drillGroupIndex + 1
+        drillProgressStore.saveDrillProgress(lessonId, state.drillGroupIndex)
+
+        if (nextIndex >= state.drillTotalGroups) {
+            // All groups done — clear progress and exit drill mode
+            drillProgressStore.clearDrillProgress(lessonId)
+            _uiState.update {
+                it.copy(
+                    isDrillMode = false,
+                    drillGroupIndex = 0,
+                    drillTotalGroups = 0,
+                    sessionState = SessionState.PAUSED,
+                    currentIndex = 0,
+                    currentCard = null,
+                    subLessonFinishedToken = it.subLessonFinishedToken + 1
+                )
+            }
+            buildSessionCards()
+            refreshFlowerStates()
+            saveProgress()
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                drillGroupIndex = nextIndex,
+                correctCount = 0,
+                incorrectCount = 0
+            )
+        }
+        loadDrillGroup(nextIndex)
+        saveProgress()
+    }
+
+    fun exitDrillMode() {
+        if (!_uiState.value.isDrillMode) return
+        pauseTimer()
+        _uiState.update {
+            it.copy(
+                isDrillMode = false,
+                drillGroupIndex = 0,
+                drillTotalGroups = 0,
+                sessionState = SessionState.PAUSED,
+                currentIndex = 0,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0,
+                voicePromptStartMs = null
+            )
+        }
+        buildSessionCards()
+        refreshFlowerStates()
+        saveProgress()
+    }
+
+    // ── End Drill Mode ───────────────────────────────────────────────────
 
     fun openStory(phase: StoryPhase) {
         val lessonId = _uiState.value.selectedLessonId ?: return
@@ -1873,6 +2073,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Учитывается только голосовой ввод и клавиатура.
      */
     private fun recordCardShowForMastery(card: SentenceCard) {
+        // Drill mode: pure card training, no mastery/flower progress
+        if (_uiState.value.isDrillMode) return
+
         val lessonId = resolveCardLessonId(card)
         val languageId = _uiState.value.selectedLanguageId
 
@@ -2523,7 +2726,13 @@ data class TrainingUiState(
     val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap(),
     val ttsSpeed: Float = 1.0f,
     // Bad sentences
-    val badSentenceCount: Int = 0
+    val badSentenceCount: Int = 0,
+    // Drill mode
+    val isDrillMode: Boolean = false,
+    val drillGroupIndex: Int = 0,
+    val drillTotalGroups: Int = 0,
+    val drillShowStartDialog: Boolean = false,
+    val drillHasProgress: Boolean = false
 )
 
 data class LessonLadderRow(
