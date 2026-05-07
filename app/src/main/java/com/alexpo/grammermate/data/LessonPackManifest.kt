@@ -29,10 +29,11 @@ data class LessonPackManifest(
                 val file = entry.optString("file").trim()
                 val order = entry.optInt("order", i + 1)
                 val title = entry.optString("title").trim().ifBlank { null }
+                val drillFile = entry.optString("drillFile").trim().ifBlank { null }
                 if (lessonId.isBlank() || file.isBlank()) {
                     error("Invalid lesson entry at index $i")
                 }
-                lessons.add(LessonPackLesson(lessonId, order, title, file))
+                lessons.add(LessonPackLesson(lessonId, order, title, file, drillFile))
             }
             if (lessons.isEmpty()) error("Manifest has no lessons")
             return LessonPackManifest(schemaVersion, packId, packVersion, language, lessons)
@@ -44,5 +45,6 @@ data class LessonPackLesson(
     val lessonId: String,
     val order: Int,
     val title: String?,
-    val file: String
+    val file: String,
+    val drillFile: String? = null
 )

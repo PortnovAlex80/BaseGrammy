@@ -9,7 +9,8 @@ data class Lesson(
     val id: String,
     val languageId: String,
     val title: String,
-    val cards: List<SentenceCard>
+    val cards: List<SentenceCard>,
+    val drillCards: List<SentenceCard> = emptyList()
 ) {
     companion object {
         const val MAIN_POOL_SIZE = SpacedRepetitionConfig.MASTERY_THRESHOLD // 150 cards

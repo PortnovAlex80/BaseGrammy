@@ -269,7 +269,8 @@ class LessonStore(private val context: Context) {
         lessonEntries.forEach { entry ->
             val sourceFile = File(packDir, entry.file)
             if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
-            importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId)
+            val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
+            importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
         }
         importStoriesFromPack(packDir, languageId)
         importVocabFromPack(packDir, languageId)
@@ -349,7 +350,19 @@ class LessonStore(private val context: Context) {
             val csvFile = File(languageDir(languageId), fileName)
             if (!csvFile.exists()) return@mapNotNull null
             val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
-            Lesson(id = id, languageId = languageId, title = parsedTitle ?: title, cards = cards)
+            val drillFileName = entry["drillFile"] as? String
+            val drillCards = if (drillFileName != null) {
+                val drillFile = File(languageDir(languageId), drillFileName)
+                if (drillFile.exists()) {
+                    val (_, parsedDrillCards) = CsvParser.parseLesson(drillFile.inputStream())
+                    parsedDrillCards
+                } else {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+            Lesson(id = id, languageId = languageId, title = parsedTitle ?: title, cards = cards, drillCards = drillCards)
         }
     }
 
@@ -397,6 +410,11 @@ class LessonStore(private val context: Context) {
                     val csvFile = File(languageDir(languageId), fileName)
                     if (csvFile.exists()) csvFile.delete()
                 }
+                val drillFileName = entry["drillFile"] as? String
+                if (drillFileName != null) {
+                    val drillFile = File(languageDir(languageId), drillFileName)
+                    if (drillFile.exists()) drillFile.delete()
+                }
                 iterator.remove()
                 break
             }
@@ -423,7 +441,11 @@ class LessonStore(private val context: Context) {
 
     private fun saveIndex(languageId: String, entry: LessonIndexEntry) {
         val existing = loadIndex(languageId).toMutableList()
-        existing.add(mapOf("id" to entry.id, "title" to entry.title, "file" to entry.fileName))
+        val indexMap = mutableMapOf("id" to entry.id, "title" to entry.title, "file" to entry.fileName)
+        if (entry.drillFileName != null) {
+            indexMap["drillFile"] = entry.drillFileName
+        }
+        existing.add(indexMap)
         writeIndex(languageId, existing)
     }
 
@@ -451,6 +473,11 @@ class LessonStore(private val context: Context) {
                 if (fileName != null) {
                     val csvFile = File(languageDir(languageId), fileName)
                     if (csvFile.exists()) csvFile.delete()
+                }
+                val drillFileName = entry["drillFile"] as? String
+                if (drillFileName != null) {
+                    val drillFile = File(languageDir(languageId), drillFileName)
+                    if (drillFile.exists()) drillFile.delete()
                 }
                 iterator.remove()
             }
@@ -483,7 +510,8 @@ class LessonStore(private val context: Context) {
         languageId: String,
         sourceFile: File,
         fallbackTitle: String?,
-        lessonIdOverride: String? = null
+        lessonIdOverride: String? = null,
+        drillSourceFile: File? = null
     ): Lesson {
         val normalizedId = lessonIdOverride?.trim().orEmpty()
         val id = if (normalizedId.isNotBlank()) normalizedId else UUID.randomUUID().toString()
@@ -496,12 +524,26 @@ class LessonStore(private val context: Context) {
         }
         val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
         val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
+
+        var drillFileName: String? = null
+        var drillCards = emptyList<SentenceCard>()
+        if (drillSourceFile != null && drillSourceFile.exists()) {
+            val drillTargetName = "lesson_${id}_drill.csv"
+            val drillTargetFile = File(dir, drillTargetName)
+            drillSourceFile.inputStream().use { input ->
+                FileOutputStream(drillTargetFile).use { output -> input.copyTo(output) }
+            }
+            val (_, parsedDrillCards) = CsvParser.parseLesson(drillTargetFile.inputStream())
+            drillFileName = drillTargetName
+            drillCards = parsedDrillCards
+        }
+
         if (normalizedId.isNotBlank()) {
             replaceById(languageId, normalizedId)
         }
         replaceByTitle(languageId, title)
-        saveIndex(languageId, LessonIndexEntry(id, title, fileName))
-        return Lesson(id = id, languageId = languageId, title = title, cards = cards)
+        saveIndex(languageId, LessonIndexEntry(id, title, fileName, drillFileName))
+        return Lesson(id = id, languageId = languageId, title = title, cards = cards, drillCards = drillCards)
     }
 
     private fun replaceById(languageId: String, lessonId: String) {
@@ -515,6 +557,11 @@ class LessonStore(private val context: Context) {
                 if (fileName != null) {
                     val csvFile = File(languageDir(languageId), fileName)
                     if (csvFile.exists()) csvFile.delete()
+                }
+                val drillFileName = entry["drillFile"] as? String
+                if (drillFileName != null) {
+                    val drillFile = File(languageDir(languageId), drillFileName)
+                    if (drillFile.exists()) drillFile.delete()
                 }
                 iterator.remove()
             }
@@ -682,7 +729,8 @@ class LessonStore(private val context: Context) {
     private data class LessonIndexEntry(
         val id: String,
         val title: String,
-        val fileName: String
+        val fileName: String,
+        val drillFileName: String? = null
     )
 
     private data class DefaultPack(
