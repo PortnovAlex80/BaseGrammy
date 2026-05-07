@@ -557,8 +557,14 @@ fun GrammarMateApp() {
             if (state.drillShowStartDialog) {
                 DrillStartDialog(
                     hasProgress = state.drillHasProgress,
-                    onStartFresh = { vm.startDrill(resume = false) },
-                    onResume = { vm.startDrill(resume = true) },
+                    onStartFresh = {
+                        vm.startDrill(resume = false)
+                        screen = AppScreen.TRAINING
+                    },
+                    onResume = {
+                        vm.startDrill(resume = true)
+                        screen = AppScreen.TRAINING
+                    },
                     onDismiss = { vm.dismissDrillDialog() }
                 )
             }
