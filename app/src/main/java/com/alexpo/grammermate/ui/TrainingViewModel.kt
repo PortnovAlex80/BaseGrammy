@@ -2569,14 +2569,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun flagBadSentence() {
         val card = _uiState.value.currentCard ?: return
+        val state = _uiState.value
         val store = activeBadStore()
         store.addBadSentence(
             cardId = card.id,
-            languageId = _uiState.value.selectedLanguageId,
+            languageId = state.selectedLanguageId,
             sentence = card.promptRu,
             translation = card.acceptedAnswers.joinToString(" / ")
         )
         _uiState.update { it.copy(badSentenceCount = store.getBadSentences().size) }
+        if (state.isDrillMode) {
+            advanceDrillCard()
+        }
     }
 
     fun unflagBadSentence() {
