@@ -1342,7 +1342,7 @@ private fun DrillProgressRow(current: Int, total: Int, speed: Long, wordCount: I
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Progress bar — 70% width
+        // Progress bar — 70% width, fill grows left to right
         Box(
             modifier = Modifier
                 .weight(0.7f)
@@ -1352,15 +1352,16 @@ private fun DrillProgressRow(current: Int, total: Int, speed: Long, wordCount: I
         ) {
             Box(
                 modifier = Modifier
-                    .matchParentSize()
+                    .align(Alignment.CenterStart)
+                    .height(24.dp)
                     .fillMaxWidth(progress)
-                    .background(barColor)
+                    .background(barColor, RoundedCornerShape(12.dp))
             )
             Text(
                 text = "$current / $total",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (progress < 0.15f) Color(0xFF2E7D32) else Color.White,
+                color = if (progress < 0.12f) Color(0xFF2E7D32) else Color.White,
                 modifier = Modifier.align(Alignment.Center),
                 textAlign = TextAlign.Center
             )
@@ -1368,15 +1369,15 @@ private fun DrillProgressRow(current: Int, total: Int, speed: Long, wordCount: I
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Speedometer circle — 30% width
+        // Speedometer circle — 30% width, constrained to square
         Box(
             modifier = Modifier
                 .weight(0.3f)
-                .height(44.dp)
                 .padding(2.dp),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            val sizeModifier = Modifier.size(44.dp)
+            Canvas(modifier = sizeModifier) {
                 val strokeWidth = 4.dp.toPx()
                 drawArc(
                     color = Color(0xFFE0E0E0),
