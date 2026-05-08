@@ -13,10 +13,10 @@ data class BadSentenceEntry(
     val addedAtMs: Long = System.currentTimeMillis()
 )
 
-class BadSentenceStore(private val context: Context) {
+class BadSentenceStore(private val context: Context, drillMode: Boolean = false) {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file = File(baseDir, "bad_sentences.yaml")
+    private val file = if (drillMode) File(baseDir, "drill_bad_sentences.yaml") else File(baseDir, "bad_sentences.yaml")
 
     private var entries: MutableList<BadSentenceEntry> = mutableListOf()
     private var loaded = false
@@ -72,7 +72,7 @@ class BadSentenceStore(private val context: Context) {
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val exportDir = File(downloadsDir, "BaseGrammy")
         exportDir.mkdirs()
-        val exportFile = File(exportDir, "bad_sentences.txt")
+        val exportFile = if (file.name.startsWith("drill_")) File(exportDir, "drill_bad_sentences.txt") else File(exportDir, "bad_sentences.txt")
         val lines = entries.map { entry ->
             "ID: ${entry.cardId}\nSource: ${entry.sentence}\nTarget: ${entry.translation}\nLanguage: ${entry.languageId}\n---"
         }

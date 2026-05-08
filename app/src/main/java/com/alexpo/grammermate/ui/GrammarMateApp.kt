@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -91,6 +92,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
@@ -442,6 +445,11 @@ fun GrammarMateApp() {
                             if (state.eliteActive) {
                                 vm.cancelEliteSession()
                                 screen = AppScreen.ELITE
+                                return@TextButton
+                            }
+                            if (state.isDrillMode) {
+                                vm.exitDrillMode()
+                                screen = AppScreen.LESSON
                                 return@TextButton
                             }
                             vm.finishSession()
@@ -1316,6 +1324,84 @@ private fun DrillStartDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+@Composable
+private fun DrillProgressRow(current: Int, total: Int, speed: Long, wordCount: Int) {
+    val progress = if (total > 0) current.toFloat() / total else 0f
+    val barColor = Color(0xFF4CAF50)
+    val trackColor = Color(0xFFC8E6C9)
+    val speedVal = if (speed > 0) (wordCount / (speed / 60000.0)).toInt() else 0
+    val speedColor = when {
+        speedVal <= 20 -> Color(0xFFE53935)
+        speedVal <= 40 -> Color(0xFFFDD835)
+        else -> Color(0xFF43A047)
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Progress bar — 70% width
+        Box(
+            modifier = Modifier
+                .weight(0.7f)
+                .height(24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(trackColor)
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .fillMaxWidth(progress)
+                    .background(barColor)
+            )
+            Text(
+                text = "$current / $total",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (progress < 0.15f) Color(0xFF2E7D32) else Color.White,
+                modifier = Modifier.align(Alignment.Center),
+                textAlign = TextAlign.Center
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Speedometer circle — 30% width
+        Box(
+            modifier = Modifier
+                .weight(0.3f)
+                .height(44.dp)
+                .padding(2.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokeWidth = 4.dp.toPx()
+                drawArc(
+                    color = Color(0xFFE0E0E0),
+                    startAngle = -90f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth)
+                )
+                val sweep = 360f * (speedVal.coerceAtMost(100) / 100f)
+                drawArc(
+                    color = speedColor,
+                    startAngle = -90f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+            }
+            Text(
+                text = "$speedVal",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = speedColor
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -2431,8 +2517,10 @@ private fun TrainingScreen(
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
+    val drillGreen = Color(0xFFE8F5E9)
 
     Scaffold(
+        containerColor = if (state.isDrillMode) drillGreen else MaterialTheme.colorScheme.background,
         topBar = {
             Row(
                 modifier = Modifier
@@ -2463,21 +2551,32 @@ private fun TrainingScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            HeaderStats(state)
+            if (!state.isDrillMode) HeaderStats(state)
             if (state.bossActive) {
                 Text(text = "Review Session", fontWeight = FontWeight.SemiBold)
             } else if (state.eliteActive) {
                 Text(text = "Refresh Session", fontWeight = FontWeight.SemiBold)
+            } else if (state.isDrillMode) {
+                // Drill: prompt without hints + progress bar + speedometer
+                val rawPrompt = state.currentCard?.promptRu ?: ""
+                val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+                if (cleanPrompt.isNotBlank()) {
+                    Text(
+                        text = cleanPrompt,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF2E7D32),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                DrillProgressRow(
+                    current = state.drillCardIndex + 1,
+                    total = state.drillTotalCards,
+                    speed = state.voiceActiveMs,
+                    wordCount = state.voiceWordCount
+                )
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
-            }
-            if (state.isDrillMode) {
-                Text(
-                    text = "${state.drillGroupIndex + 1} / ${state.drillTotalGroups}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
             }
             CardPrompt(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
             AnswerBox(
@@ -2503,7 +2602,7 @@ private fun TrainingScreen(
 }
 
 @Composable
-private fun HeaderStats(state: TrainingUiState) {
+private fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
     val total = if (state.bossActive) state.bossTotal else state.subLessonTotal
     val progressIndex = if (total > 0) {
         if (state.bossActive) {
@@ -2525,21 +2624,25 @@ private fun HeaderStats(state: TrainingUiState) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(text = if (state.bossActive) "Review" else "Progress")
-            val progressText = when {
-                state.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
-                state.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
-                else -> "${progressPercent}%"
+        if (!isDrillMode) {
+            Column {
+                Text(text = if (state.bossActive) "Review" else "Progress")
+                val progressText = when {
+                    state.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
+                    state.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
+                    else -> "${progressPercent}%"
+                }
+                Text(
+                    text = progressText,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
-            Text(
-                text = progressText,
-                fontWeight = FontWeight.SemiBold
-            )
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(text = "Time")
-            Text(text = formatTime(state.activeTimeMs), fontWeight = FontWeight.SemiBold)
+        if (!isDrillMode) {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(text = "Time")
+                Text(text = formatTime(state.activeTimeMs), fontWeight = FontWeight.SemiBold)
+            }
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(text = "Speed")

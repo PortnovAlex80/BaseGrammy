@@ -78,6 +78,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val masteryStore = MasteryStore(application)
     private val streakStore = StreakStore(application)
     private val badSentenceStore = BadSentenceStore(application)
+    private val drillBadSentenceStore = BadSentenceStore(application, drillMode = true)
     private val hiddenCardStore = HiddenCardStore(application)
     private val drillProgressStore = DrillProgressStore(application)
     private val backupManager = BackupManager(application)
@@ -401,8 +402,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 wordBankWords = emptyList(),
                 selectedWords = emptyList(),
                 isDrillMode = false,
-                drillGroupIndex = 0,
-                drillTotalGroups = 0,
+                drillCardIndex = 0,
+                drillTotalCards = 0,
                 drillShowStartDialog = false,
                 drillHasProgress = false
             )
@@ -455,8 +456,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 wordBankWords = emptyList(),
                 selectedWords = emptyList(),
                 isDrillMode = false,
-                drillGroupIndex = 0,
-                drillTotalGroups = 0,
+                drillCardIndex = 0,
+                drillTotalCards = 0,
                 drillShowStartDialog = false,
                 drillHasProgress = false
             )
@@ -565,15 +566,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
                 saveProgress()
-            } else if (state.isDrillMode && isLastCard) {
-                // Drill mode: complete current group, advance to next or finish
-                pauseTimer()
+            } else if (state.isDrillMode) {
+                // Drill: seamless advance — same flow as regular nextCard()
                 _uiState.update {
                     it.copy(
                         correctCount = it.correctCount + 1,
                         lastResult = null,
                         incorrectAttemptsForCard = 0,
                         answerText = null,
+                        inputText = "",
                         voiceActiveMs = if (shouldAddVoiceMetrics) {
                             it.voiceActiveMs + (voiceDurationMs ?: 0L)
                         } else {
@@ -585,10 +586,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                             it.voiceWordCount
                         },
                         voicePromptStartMs = null,
-                        sessionState = SessionState.PAUSED
+                        sessionState = SessionState.ACTIVE
                     )
                 }
-                onDrillGroupComplete()
+                advanceDrillCard()
             } else if (isLastCard) {
                 pauseTimer()
 
@@ -1245,8 +1246,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     // ── Drill Mode ───────────────────────────────────────────────────────
-    // Pure card training, no mastery/flower progress.
-    // Cards grouped by 9 (consecutive). Two start options: fresh or continue.
+    // Seamless card training, no mastery/flower progress.
+    // All drill cards in one continuous stream. Save position on exit.
 
     fun showDrillStartDialog(lessonId: String) {
         val lesson = _uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
@@ -1269,9 +1270,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         pauseTimer()
         vocabSession = emptyList()
 
-        val totalGroups = if (drillCards.size % 9 == 0) drillCards.size / 9 else drillCards.size / 9 + 1
-        val startIndex = if (resume) {
-            drillProgressStore.getDrillProgress(lessonId).coerceIn(0, totalGroups - 1)
+        val startCardIndex = if (resume) {
+            drillProgressStore.getDrillProgress(lessonId).coerceIn(0, drillCards.size - 1)
         } else {
             0
         }
@@ -1279,8 +1279,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 isDrillMode = true,
-                drillGroupIndex = startIndex,
-                drillTotalGroups = totalGroups,
+                drillCardIndex = startCardIndex,
+                drillTotalCards = drillCards.size,
                 drillShowStartDialog = false,
                 drillHasProgress = false,
                 currentIndex = 0,
@@ -1306,10 +1306,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossErrorMessage = null,
                 eliteActive = false,
                 wordBankWords = emptyList(),
-                selectedWords = emptyList()
+                selectedWords = emptyList(),
+                badSentenceCount = drillBadSentenceStore.getBadSentences().size
             )
         }
-        loadDrillGroup(startIndex)
+        loadDrillCard(startCardIndex)
         saveProgress()
     }
 
@@ -1317,88 +1318,90 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(drillShowStartDialog = false) }
     }
 
-    private fun loadDrillGroup(groupIndex: Int) {
+    private fun loadDrillCard(cardIndex: Int, activate: Boolean = false) {
         val lessonId = _uiState.value.selectedLessonId ?: return
         val lesson = _uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
         val drillCards = lesson.drillCards
-        val from = groupIndex * 9
-        val to = minOf(from + 9, drillCards.size)
-        val groupCards = drillCards.subList(from, to)
+        if (cardIndex >= drillCards.size) {
+            finishDrill(lessonId)
+            return
+        }
 
-        sessionCards = groupCards
-        subLessonTotal = groupCards.size
-        val firstCard = groupCards.firstOrNull()
+        val card = drillCards[cardIndex]
+        sessionCards = listOf(card)
+        subLessonTotal = 1
         _uiState.update {
             it.copy(
                 currentIndex = 0,
-                currentCard = firstCard,
-                subLessonTotal = groupCards.size,
-                sessionState = SessionState.PAUSED,
+                currentCard = card,
+                subLessonTotal = 1,
+                drillCardIndex = cardIndex,
+                sessionState = if (activate) SessionState.ACTIVE else SessionState.PAUSED,
                 inputText = "",
                 lastResult = null,
                 answerText = null,
                 incorrectAttemptsForCard = 0
             )
         }
-        if (firstCard != null && _uiState.value.inputMode == InputMode.VOICE) {
+        if (_uiState.value.inputMode == InputMode.VOICE) {
             _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
         }
     }
 
-    fun onDrillGroupComplete() {
-        val lessonId = _uiState.value.selectedLessonId ?: return
+    fun advanceDrillCard() {
         val state = _uiState.value
         if (!state.isDrillMode) return
+        val lessonId = state.selectedLessonId ?: return
 
-        val nextIndex = state.drillGroupIndex + 1
-        drillProgressStore.saveDrillProgress(lessonId, state.drillGroupIndex)
+        val nextIndex = state.drillCardIndex + 1
+        drillProgressStore.saveDrillProgress(lessonId, nextIndex)
 
-        if (nextIndex >= state.drillTotalGroups) {
-            // All groups done — clear progress and exit drill mode
-            drillProgressStore.clearDrillProgress(lessonId)
-            _uiState.update {
-                it.copy(
-                    isDrillMode = false,
-                    drillGroupIndex = 0,
-                    drillTotalGroups = 0,
-                    sessionState = SessionState.PAUSED,
-                    currentIndex = 0,
-                    currentCard = null,
-                    subLessonFinishedToken = it.subLessonFinishedToken + 1
-                )
-            }
-            buildSessionCards()
-            refreshFlowerStates()
-            saveProgress()
-            return
+        if (nextIndex >= state.drillTotalCards) {
+            finishDrill(lessonId)
+        } else {
+            loadDrillCard(nextIndex, activate = true)
         }
+    }
 
+    private fun finishDrill(lessonId: String) {
+        drillProgressStore.clearDrillProgress(lessonId)
         _uiState.update {
             it.copy(
-                drillGroupIndex = nextIndex,
-                correctCount = 0,
-                incorrectCount = 0
+                isDrillMode = false,
+                drillCardIndex = 0,
+                drillTotalCards = 0,
+                sessionState = SessionState.PAUSED,
+                currentIndex = 0,
+                currentCard = null,
+                subLessonFinishedToken = it.subLessonFinishedToken + 1
             )
         }
-        loadDrillGroup(nextIndex)
+        buildSessionCards()
+        refreshFlowerStates()
         saveProgress()
     }
 
     fun exitDrillMode() {
-        if (!_uiState.value.isDrillMode) return
+        val state = _uiState.value
+        if (!state.isDrillMode) return
         pauseTimer()
+        val lessonId = state.selectedLessonId
+        if (lessonId != null && state.drillCardIndex > 0) {
+            drillProgressStore.saveDrillProgress(lessonId, state.drillCardIndex)
+        }
         _uiState.update {
             it.copy(
                 isDrillMode = false,
-                drillGroupIndex = 0,
-                drillTotalGroups = 0,
+                drillCardIndex = 0,
+                drillTotalCards = 0,
                 sessionState = SessionState.PAUSED,
                 currentIndex = 0,
                 inputText = "",
                 lastResult = null,
                 answerText = null,
                 incorrectAttemptsForCard = 0,
-                voicePromptStartMs = null
+                voicePromptStartMs = null,
+                badSentenceCount = badSentenceStore.getBadSentences().size
             )
         }
         buildSessionCards()
@@ -2560,32 +2563,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun activeBadStore(): BadSentenceStore {
+        return if (_uiState.value.isDrillMode) drillBadSentenceStore else badSentenceStore
+    }
+
     fun flagBadSentence() {
         val card = _uiState.value.currentCard ?: return
-        badSentenceStore.addBadSentence(
+        val store = activeBadStore()
+        store.addBadSentence(
             cardId = card.id,
             languageId = _uiState.value.selectedLanguageId,
             sentence = card.promptRu,
             translation = card.acceptedAnswers.joinToString(" / ")
         )
-        _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentences().size) }
+        _uiState.update { it.copy(badSentenceCount = store.getBadSentences().size) }
     }
 
     fun unflagBadSentence() {
         val card = _uiState.value.currentCard ?: return
-        badSentenceStore.removeBadSentence(card.id)
-        _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentences().size) }
+        val store = activeBadStore()
+        store.removeBadSentence(card.id)
+        _uiState.update { it.copy(badSentenceCount = store.getBadSentences().size) }
     }
 
     fun isBadSentence(): Boolean {
         val card = _uiState.value.currentCard ?: return false
-        return badSentenceStore.isBadSentence(card.id)
+        return activeBadStore().isBadSentence(card.id)
     }
 
     fun exportBadSentences(): String? {
-        val entries = badSentenceStore.getBadSentences()
+        val store = activeBadStore()
+        val entries = store.getBadSentences()
         if (entries.isEmpty()) return null
-        val file = badSentenceStore.exportToTextFile()
+        val file = store.exportToTextFile()
         return file.absolutePath
     }
 
@@ -2729,8 +2739,8 @@ data class TrainingUiState(
     val badSentenceCount: Int = 0,
     // Drill mode
     val isDrillMode: Boolean = false,
-    val drillGroupIndex: Int = 0,
-    val drillTotalGroups: Int = 0,
+    val drillCardIndex: Int = 0,
+    val drillTotalCards: Int = 0,
     val drillShowStartDialog: Boolean = false,
     val drillHasProgress: Boolean = false
 )
