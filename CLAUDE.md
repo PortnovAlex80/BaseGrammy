@@ -230,6 +230,7 @@ If you accidentally flood main context — acknowledge the mistake, do not attem
 5. Before any changes: `git branch --show-current`. If on `main` — create or switch to a feature branch.
 6. Commit footer: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
 7. **NEVER push without explicit user approval.** Wait for user to test before any remote operations.
+8. Before starting new feature work: `git status` — if dirty, commit or stash first. Then create a fresh branch from main: `git checkout main && git pull && git checkout -b feature/xxx`
 
 ---
 
