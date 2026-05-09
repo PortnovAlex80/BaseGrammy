@@ -34,6 +34,11 @@ class ProgressStore(private val context: Context) {
                 lessonId to reward
             }?.toMap() ?: emptyMap(),
             bossMegaReward = payload["bossMegaReward"] as? String,
+            bossMegaRewards = (payload["bossMegaRewards"] as? Map<*, *>)?.mapNotNull { (key, value) ->
+                val lessonId = key as? String ?: return@mapNotNull null
+                val reward = value as? String ?: return@mapNotNull null
+                lessonId to reward
+            }?.toMap() ?: emptyMap(),
             voiceActiveMs = (payload["voiceActiveMs"] as? Number)?.toLong() ?: 0L,
             voiceWordCount = (payload["voiceWordCount"] as? Number)?.toInt() ?: 0,
             hintCount = (payload["hintCount"] as? Number)?.toInt() ?: 0,
@@ -41,7 +46,16 @@ class ProgressStore(private val context: Context) {
             eliteBestSpeeds = (payload["eliteBestSpeeds"] as? List<*>)?.mapNotNull { it as? Number }
                 ?.map { it.toDouble() }
                 ?: emptyList()
-        )
+        ).let { progress ->
+            // Migration: if old single bossMegaReward exists but bossMegaRewards is empty,
+            // migrate it using the current lessonId as the key
+            if (progress.bossMegaReward != null && progress.bossMegaRewards.isEmpty()) {
+                val lessonId = progress.lessonId ?: return@let progress
+                progress.copy(bossMegaRewards = mapOf(lessonId to progress.bossMegaReward))
+            } else {
+                progress
+            }
+        }
     }
 
     fun save(progress: TrainingProgress) {
@@ -57,6 +71,7 @@ class ProgressStore(private val context: Context) {
             "state" to progress.state.name,
             "bossLessonRewards" to progress.bossLessonRewards,
             "bossMegaReward" to progress.bossMegaReward,
+            "bossMegaRewards" to progress.bossMegaRewards,
             "voiceActiveMs" to progress.voiceActiveMs,
             "voiceWordCount" to progress.voiceWordCount,
             "hintCount" to progress.hintCount,
