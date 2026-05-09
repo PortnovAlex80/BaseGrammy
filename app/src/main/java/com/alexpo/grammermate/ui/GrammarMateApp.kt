@@ -82,6 +82,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -129,7 +130,7 @@ fun GrammarMateApp() {
     Surface(modifier = Modifier.fillMaxSize()) {
         val vm: TrainingViewModel = viewModel()
         val state by vm.uiState.collectAsState()
-        var screen by remember { mutableStateOf(AppScreen.HOME) }
+        var screen by remember { mutableStateOf(parseScreen(state.initialScreen)) }
         var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
         var showSettings by remember { mutableStateOf(false) }
         var showExitDialog by remember { mutableStateOf(false) }
@@ -140,6 +141,10 @@ fun GrammarMateApp() {
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
         var showAsrDownloadDialog by remember { mutableStateOf(false) }
+
+        LaunchedEffect(screen) {
+            vm.onScreenChanged(screen.name)
+        }
 
         val audioPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
@@ -619,6 +624,10 @@ private enum class AppScreen {
     STORY,
     TRAINING,
     LADDER
+}
+
+private fun parseScreen(name: String): AppScreen {
+    return try { AppScreen.valueOf(name) } catch (_: IllegalArgumentException) { AppScreen.HOME }
 }
 
 private enum class LessonTileState {

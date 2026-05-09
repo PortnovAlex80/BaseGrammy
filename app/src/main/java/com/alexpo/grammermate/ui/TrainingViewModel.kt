@@ -136,8 +136,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val packs = lessonStore.getInstalledPacks()
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: "en"
         val lessons = lessonStore.getLessons(selectedLanguageId)
-        val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+        val selectedLessonId = progress.lessonId?.let { id ->
+            lessons.firstOrNull { it.id == id }?.id
+        } ?: lessons.firstOrNull()?.id
         val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
+        val lessonIdWasValid = progress.lessonId != null &&
+            lessons.any { it.id == progress.lessonId }
+        val restoredScreen = if (!lessonIdWasValid &&
+            progress.currentScreen in listOf("TRAINING", "STORY", "VOCAB")) {
+            "LESSON"
+        } else {
+            progress.currentScreen
+        }
         val streakData = streakStore.getCurrentStreak(selectedLanguageId)
         val initialActivePackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
         val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it) }
@@ -200,7 +210,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentStreak = streakData.currentStreak,
                 longestStreak = streakData.longestStreak,
                 userName = profile.userName,
-                badSentenceCount = badSentenceStore.getBadSentences().size
+                badSentenceCount = badSentenceStore.getBadSentences().size,
+                initialScreen = restoredScreen
             )
         }
         rebuildSchedules(lessons)
@@ -1985,7 +1996,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 voiceWordCount = state.voiceWordCount,
                 hintCount = state.hintCount,
                 eliteStepIndex = state.eliteStepIndex,
-                eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds)
+                eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds),
+                currentScreen = state.currentScreen
             )
         )
 
@@ -2280,6 +2292,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     override fun onCleared() {
+        saveProgress()
         bgDownloadJob?.cancel()
         ttsEngine.release()
         soundPool.release()
@@ -2664,6 +2677,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
 
+    fun onScreenChanged(screenName: String) {
+        _uiState.update { it.copy(currentScreen = screenName) }
+    }
+
     /**
      * Restore user progress from backup folder.
      */
@@ -2693,7 +2710,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val lessons = lessonStore.getLessons(selectedLanguageId)
             Log.d(logTag, "Loaded ${lessons.size} lessons for language $selectedLanguageId")
 
-            val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+            val selectedLessonId = progress.lessonId?.let { id ->
+            lessons.firstOrNull { it.id == id }?.id
+        } ?: lessons.firstOrNull()?.id
             Log.d(logTag, "Selected lesson: $selectedLessonId")
 
             Log.d(logTag, "--- Loading Streak Data ---")
@@ -2765,7 +2784,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 ?: languages.firstOrNull()?.id
                 ?: "en"
             val lessons = lessonStore.getLessons(selectedLanguageId)
-            val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
+            val selectedLessonId = progress.lessonId?.let { id ->
+            lessons.firstOrNull { it.id == id }?.id
+        } ?: lessons.firstOrNull()?.id
             val streak = streakStore.getCurrentStreak(selectedLanguageId)
 
             val bossLessonRewards = progress.bossLessonRewards.mapNotNull { (lessonId, reward) ->
@@ -3004,7 +3025,10 @@ data class TrainingUiState(
     // ASR (offline speech recognition)
     val asrState: AsrState = AsrState.IDLE,
     val asrModelReady: Boolean = false,
-    val asrDownloadState: DownloadState = DownloadState.Idle
+    val asrDownloadState: DownloadState = DownloadState.Idle,
+    // Persisted screen for state restoration
+    val initialScreen: String = "HOME",
+    val currentScreen: String = "HOME"
 )
 
 data class LessonLadderRow(

@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **WORD_BANK mode never counts for mastery** — only VOICE and KEYBOARD grow flowers. Violating this inflates progress
 - **WARMUP sub-lesson type was removed** — never re-introduce it. Only `NEW_ONLY` and `MIXED` exist
 - **All file writes must go through `AtomicFileWriter`** — temp → fsync → rename. No direct File.writeText
-- **`TrainingViewModel` is 2000+ lines** — the single ViewModel for ALL business logic. Changes here have high blast radius
+- **`TrainingViewModel` is 3000+ lines** — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
 - **Project path contains Cyrillic** (`Разработка`) — `android.overridePathCheck=true` in gradle.properties is required
 
 ---
@@ -298,14 +298,48 @@ All stores read/write YAML/CSV files in `context.filesDir/grammarmate/`. Key fil
 
 | File | Purpose |
 |------|---------|
-| `GrammarMateApp.kt` | All Compose screens: training, roadmap, settings, word bank, boss, elite, vocab sprint |
+| `GrammarMateApp.kt` | Screen router: `GrammarMateApp()` composable, `AppScreen` enum, dialog orchestration, BackHandlers |
 | `TrainingViewModel.kt` | All business logic: session management, answer validation, word bank, mastery, boss/elite modes |
 | `AppRoot.kt` | Entry point — checks backup restore status before showing main app |
 | `Theme.kt` | Material 3 theme |
+| `screens/*.kt` | Per-screen Composable files (HomeScreen, TrainingScreen, LessonRoadmapScreen, etc.) |
+| `components/*.kt` | Shared Composable components (dialogs, reusable UI) |
+| `helpers/*.kt` | ViewModel domain helpers (BossHelper, VocabHelper, etc.) — plain classes, NOT ViewModels |
 
 ### Lesson Content
 
 Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a `manifest.json` + CSV files. Default packs are bundled in `assets/grammarmate/packs/`. CSV format: rows with Russian prompt + accepted target-language answers.
+
+### File Size & Decomposition Guidelines
+
+**Hard limits — decompose when exceeded:**
+
+| Layer | Max lines | Action when exceeded |
+|-------|-----------|---------------------|
+| Screen file (Compose) | 1000 | Extract sub-composables to component files in `ui/components/` |
+| ViewModel | 1200 | Extract domain helpers to `ui/helpers/` |
+| Data store | 500 | Extract parsers or calculators to separate files in `data/` |
+| Data class (single class) | 30 fields | Group related fields into nested data classes |
+
+**Decomposition rules:**
+
+1. **Screen files go in `ui/screens/`** — one file per major screen (Home, Lesson, Training, Vocab, Story, Elite, Ladder, Settings). Helper composables used only by that screen stay in the same file. Dialog composables triggered from navigation stay in GrammarMateApp.kt.
+2. **Shared components go in `ui/components/`** — composables used by 2+ screens (TTS/ASR download dialogs, welcome dialog).
+3. **ViewModel helpers go in `ui/helpers/`** — plain Kotlin classes that implement domain logic (boss, vocab, drill, elite, TTS/ASR, word bank). They receive a `TrainingStateAccess` interface (NOT ViewModels — no lifecycle). Helpers never call other helpers directly; all coordination flows through TrainingViewModel.
+4. **NEVER create a second ViewModel.** Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint.
+5. **GrammarMateApp.kt is a router.** It contains only `GrammarMateApp()` (screen routing, dialog state, BackHandlers), `AppScreen` enum, and dialog orchestration. All screen rendering is delegated to `ui/screens/`.
+6. **Helper dependency pattern:** helpers take `TrainingStateAccess` as a constructor parameter:
+   ```kotlin
+   interface TrainingStateAccess {
+       val uiState: StateFlow<TrainingUiState>
+       fun updateState(transform: (TrainingUiState) -> TrainingUiState)
+       fun saveProgress()
+   }
+   ```
+   TrainingViewModel implements this interface. Helpers call `updateState { }` and `saveProgress()` through it.
+7. **Screen-scoped reset functions:** the ViewModel should have private `resetBossState()`, `resetVocabState()`, etc. functions that zero out the relevant fields in one `copy()` call. This gives encapsulation without nested data classes.
+8. **New feature fields:** if a feature adds 5+ fields to TrainingUiState, group them into a nested data class from the start. Do not retrofit the existing flat structure (deferred until ViewModel is under 1500 lines).
+9. **Extract in phases:** bug fixes first → UI file extraction (low risk) → ViewModel helper extraction (medium risk). Verify build after each extraction.
 
 ### App Config
 
