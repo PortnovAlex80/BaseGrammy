@@ -21,3 +21,11 @@ Thumbs.db
 
 # Build artifacts
 *.zip
+
+# Compiled class files
+*.class
+
+# Temp/generated files
+SESSION_REPORT_*.md
+TEAM.md
+generate_*.py
