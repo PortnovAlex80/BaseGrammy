@@ -230,7 +230,8 @@ fun GrammarMateApp() {
                     onUpdateUserName = vm::updateUserName,
                     onSaveProgress = vm::saveProgressNow,
                     onRestoreBackup = vm::restoreBackup,
-                    onSetTtsSpeed = vm::setTtsSpeed
+                    onSetTtsSpeed = vm::setTtsSpeed,
+                    onSetRuTextScale = vm::setRuTextScale
                 )
 
             if (showWelcomeDialog) {
@@ -1992,7 +1993,8 @@ private fun SettingsSheet(
     onUpdateUserName: (String) -> Unit,
     onSaveProgress: () -> Unit,
     onRestoreBackup: (android.net.Uri) -> Unit,
-    onSetTtsSpeed: (Float) -> Unit
+    onSetTtsSpeed: (Float) -> Unit,
+    onSetRuTextScale: (Float) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -2107,6 +2109,35 @@ private fun SettingsSheet(
             }
             Text(
                 text = String.format("%.2fx", state.ttsSpeed),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
+            // Russian text size control
+            Text(
+                text = "Размер текста перевода",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(text = "1x", style = MaterialTheme.typography.bodySmall)
+                Slider(
+                    value = state.ruTextScale,
+                    onValueChange = onSetRuTextScale,
+                    valueRange = 1.0f..2.0f,
+                    steps = 3,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(text = "2x", style = MaterialTheme.typography.bodySmall)
+            }
+            Text(
+                text = String.format("%.1fx", state.ruTextScale),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.fillMaxWidth(),
@@ -2564,7 +2595,7 @@ private fun TrainingScreen(
                 if (cleanPrompt.isNotBlank()) {
                     Text(
                         text = cleanPrompt,
-                        fontSize = 18.sp,
+                        fontSize = (18f * state.ruTextScale).sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF2E7D32),
                         modifier = Modifier.fillMaxWidth()
@@ -2811,7 +2842,7 @@ private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow:
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = state.currentCard?.promptRu ?: "No cards",
-                    fontSize = 20.sp,
+                    fontSize = (20f * state.ruTextScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }

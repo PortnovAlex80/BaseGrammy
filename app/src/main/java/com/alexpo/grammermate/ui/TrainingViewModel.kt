@@ -1943,6 +1943,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(ttsSpeed = speed.coerceIn(0.5f, 1.5f)) }
     }
 
+    fun setRuTextScale(scale: Float) {
+        _uiState.update { it.copy(ruTextScale = scale.coerceIn(1.0f, 2.0f)) }
+    }
+
     fun startTtsDownload() {
         // M6: Check metered network before starting download
         if (ttsModelManager.isNetworkMetered()) {
@@ -2739,6 +2743,7 @@ data class TrainingUiState(
     val bgTtsDownloading: Boolean = false,
     val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap(),
     val ttsSpeed: Float = 1.0f,
+    val ruTextScale: Float = 1.0f,
     // Bad sentences
     val badSentenceCount: Int = 0,
     // Drill mode
