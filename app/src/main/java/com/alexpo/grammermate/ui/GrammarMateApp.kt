@@ -1130,8 +1130,7 @@ private fun LessonRoadmapScreen(
                         VocabTile(label = "Vocab", onClick = onOpenVocab)
                     }
                     is RoadmapEntry.Drill -> {
-                        // Drill tile placeholder - drill functionality will be wired later
-                        VocabTile(label = "Drill", onClick = { })
+                        DrillTile(onClick = onDrillStart, enabled = true)
                     }
                     is RoadmapEntry.BossLesson -> {
                         BossTile(
