@@ -235,12 +235,22 @@ fun GrammarMateApp() {
                 )
             }
             if (showTtsDownloadDialog) {
-                TtsDownloadDialog(
-                    downloadState = state.ttsDownloadState,
-                    languageId = state.selectedLanguageId,
-                    onConfirm = { vm.startTtsDownload() },
-                    onDismiss = { vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
-                )
+                // Auto-close and play when download completes
+                if (state.ttsDownloadState is DownloadState.Done) {
+                    showTtsDownloadDialog = false
+                    vm.dismissTtsDownloadDialog()
+                    // Auto-play TTS after download
+                    val text = state.answerText ?: state.currentCard?.acceptedAnswers?.firstOrNull()
+                    if (text != null) vm.onTtsSpeak(text, speed = 0.67f)
+                }
+                if (showTtsDownloadDialog) {
+                    TtsDownloadDialog(
+                        downloadState = state.ttsDownloadState,
+                        languageId = state.selectedLanguageId,
+                        onConfirm = { vm.startTtsDownload() },
+                        onDismiss = { vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
+                    )
+                }
             }
             // M6: Metered network warning
             if (state.ttsMeteredNetwork) {
