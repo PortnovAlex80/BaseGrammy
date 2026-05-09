@@ -30,7 +30,8 @@ class LessonStore(private val context: Context) {
     private val defaultPacks = listOf(
         DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
         DefaultPack("IT_WORD_ORDER_A1", "grammarmate/packs/IT_WORD_ORDER_A1.zip"),
-        DefaultPack("IT_VERB_CONJUGATION_A1", "grammarmate/packs/IT_VERB_CONJUGATION_A1.zip")
+        DefaultPack("IT_VERB_CONJUGATION_A1", "grammarmate/packs/IT_VERB_CONJUGATION_A1.zip"),
+        DefaultPack("IT_VERB_TENSES_A1", "grammarmate/packs/IT_VERB_TENSES_A1.zip")
     )
 
     fun ensureSeedData() {
@@ -139,6 +140,28 @@ class LessonStore(private val context: Context) {
             val importedAt = (entry["importedAt"] as? Number)?.toLong() ?: 0L
             LessonPack(packId, packVersion, languageId, importedAt)
         }
+    }
+
+    /**
+     * Returns the pack ID that contains the given lesson, or null if not found.
+     */
+    fun getPackIdForLesson(lessonId: String): String? {
+        val packs = getInstalledPacks()
+        for (pack in packs) {
+            val manifest = readInstalledPackManifest(pack.packId) ?: continue
+            if (manifest.lessons.any { it.lessonId == lessonId }) {
+                return pack.packId
+            }
+        }
+        return null
+    }
+
+    /**
+     * Returns the lesson IDs that belong to the given pack.
+     */
+    fun getLessonIdsForPack(packId: String): List<String> {
+        val manifest = readInstalledPackManifest(packId) ?: return emptyList()
+        return manifest.lessons.sortedBy { it.order }.map { it.lessonId }
     }
 
     fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {

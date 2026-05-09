@@ -136,11 +136,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val selectedLessonId = progress.lessonId ?: lessons.firstOrNull()?.id
         val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
         val streakData = streakStore.getCurrentStreak(selectedLanguageId)
+        val initialActivePackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+        val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it) }
         _uiState.update {
             it.copy(
                 languages = languages,
                 installedPacks = packs,
                 selectedLanguageId = selectedLanguageId,
+                activePackId = initialActivePackId,
+                activePackLessonIds = initialPackLessonIds,
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
                 mode = progress.mode,
@@ -225,10 +229,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     val currentLessonId = current.selectedLessonId
                     val selectedLessonId = lessons.firstOrNull { it.id == currentLessonId }?.id
                         ?: lessons.firstOrNull()?.id
+                    val updatedPackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+                        ?: current.activePackId
+                    val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it) }
                     current.copy(
                         languages = languages,
                         installedPacks = packs,
                         selectedLanguageId = selectedLang,
+                        activePackId = updatedPackId,
+                        activePackLessonIds = updatedPackLessonIds,
                         lessons = lessons,
                         selectedLessonId = selectedLessonId,
                         eliteUnlocked = resolveEliteUnlocked(lessons, current.testMode)
@@ -243,6 +252,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         // TTS state collection
         checkTtsModel()
+        checkAllTtsModels()
         checkAsrModel()
         startBackgroundTtsDownload()
         viewModelScope.launch {
@@ -363,6 +373,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun selectLesson(lessonId: String) {
         pauseTimer()
         vocabSession = emptyList()
+        sessionCards = emptyList()
+        bossCards = emptyList()
+        eliteCards = emptyList()
+
+        // Resolve the pack for this lesson and set as active
+        val packId = lessonStore.getPackIdForLesson(lessonId)
+        val packLessonIds = packId?.let { lessonStore.getLessonIdsForPack(it) }
+
+        // Rebuild schedules BEFORE reading them
+        rebuildSchedules(_uiState.value.lessons)
 
         // Calculate active sub-lesson index based on completed count
         val schedule = lessonSchedules[lessonId]
@@ -374,6 +394,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 selectedLessonId = lessonId,
+                activePackId = packId,
+                activePackLessonIds = packLessonIds,
                 mode = TrainingMode.LESSON,
                 currentIndex = 0,
                 inputText = "",
@@ -415,7 +437,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 drillCardIndex = 0,
                 drillTotalCards = 0,
                 drillShowStartDialog = false,
-                drillHasProgress = false
+                drillHasProgress = false,
+                currentCard = null
             )
         }
         buildSessionCards()
@@ -2019,6 +2042,50 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(ttsModelReady = ready) }
     }
 
+    private fun checkAllTtsModels() {
+        val readyMap = TtsModelRegistry.models.keys.associateWith { langId ->
+            ttsModelManager.isModelReady(langId)
+        }
+        _uiState.update { it.copy(ttsModelsReady = readyMap) }
+    }
+
+    fun startTtsDownloadForLanguage(languageId: String) {
+        if (ttsModelManager.isModelReady(languageId)) {
+            _uiState.update {
+                it.copy(
+                    ttsModelsReady = it.ttsModelsReady + (languageId to true),
+                    bgTtsDownloadStates = it.bgTtsDownloadStates + (languageId to DownloadState.Done)
+                )
+            }
+            return
+        }
+        if (ttsDownloadJob?.isActive == true) {
+            Log.d(logTag, "TTS download already in progress, ignoring request for $languageId")
+            return
+        }
+        ttsDownloadJob = viewModelScope.launch(Dispatchers.IO) {
+            ttsModelManager.download(languageId).collect { downloadState ->
+                _uiState.update { current ->
+                    val updatedBgStates = current.bgTtsDownloadStates + (languageId to downloadState)
+                    val updatedReady = current.ttsModelsReady + (languageId to (downloadState is DownloadState.Done))
+                    val downloadStateOverride = if (languageId == current.selectedLanguageId
+                        && downloadState !is DownloadState.Idle
+                        && current.ttsDownloadState !is DownloadState.Done) {
+                        downloadState
+                    } else {
+                        current.ttsDownloadState
+                    }
+                    current.copy(
+                        bgTtsDownloadStates = updatedBgStates,
+                        ttsModelsReady = updatedReady,
+                        ttsDownloadState = downloadStateOverride,
+                        ttsModelReady = if (languageId == current.selectedLanguageId && downloadState is DownloadState.Done) true else current.ttsModelReady
+                    )
+                }
+            }
+        }
+    }
+
     fun stopTts() {
         ttsEngine.stop()
     }
@@ -2115,11 +2182,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     } else {
                         current.ttsDownloadState
                     }
+                    val updatedReady = current.ttsModelsReady.toMutableMap().apply {
+                        stateMap.forEach { (langId, dlState) ->
+                            if (dlState is DownloadState.Done) {
+                                this[langId] = true
+                            }
+                        }
+                    }
                     current.copy(
                         bgTtsDownloadStates = stateMap,
                         bgTtsDownloading = anyActive,
                         ttsModelReady = ttsModelManager.isModelReady(current.selectedLanguageId),
-                        ttsDownloadState = downloadStateOverride
+                        ttsDownloadState = downloadStateOverride,
+                        ttsModelsReady = updatedReady
                     )
                 }
 
@@ -2751,6 +2826,8 @@ data class TrainingUiState(
     val languages: List<com.alexpo.grammermate.data.Language> = emptyList(),
     val installedPacks: List<com.alexpo.grammermate.data.LessonPack> = emptyList(),
     val selectedLanguageId: String = "en",
+    val activePackId: String? = null,
+    val activePackLessonIds: List<String>? = null,
     val lessons: List<Lesson> = emptyList(),
     val selectedLessonId: String? = null,
     val mode: TrainingMode = TrainingMode.LESSON,
@@ -2833,6 +2910,7 @@ data class TrainingUiState(
     val ttsMeteredNetwork: Boolean = false,
     val bgTtsDownloading: Boolean = false,
     val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap(),
+    val ttsModelsReady: Map<String, Boolean> = emptyMap(),
     val ttsSpeed: Float = 1.0f,
     val ruTextScale: Float = 1.0f,
     // Bad sentences

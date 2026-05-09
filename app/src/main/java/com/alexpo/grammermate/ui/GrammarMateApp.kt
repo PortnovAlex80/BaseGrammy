@@ -601,7 +601,8 @@ private enum class LessonTileState {
     SPROUT,
     FLOWER,
     LOCKED,
-    UNLOCKED  // Available but not started yet (open lock ??)
+    UNLOCKED,  // Available but not started yet (open lock)
+    EMPTY      // No lesson in this slot (pack has fewer than 12 lessons)
 }
 
 private data class LessonTileUi(
@@ -692,12 +693,13 @@ private fun HomeScreen(
     onSelectLesson: (String) -> Unit,
     onOpenElite: () -> Unit
 ) {
-    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId) {
-        buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId)
+    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackId, state.activePackLessonIds) {
+        buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackLessonIds)
     }
     var showMethod by remember { mutableStateOf(false) }
     var showRefreshHint by remember { mutableStateOf(false) }
     var showLockedLessonHint by remember { mutableStateOf(false) }
+    var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
     val languageCode = state.languages
         .firstOrNull { it.id == state.selectedLanguageId }
         ?.id
@@ -813,7 +815,14 @@ private fun HomeScreen(
                         val lessonId = tile.lessonId ?: return@LessonTile
                         onSelectLesson(lessonId)
                     },
-                    onLockedClick = { showLockedLessonHint = true }
+                    onLockedClick = {
+                        // For locked tiles with a lesson, offer early start
+                        if (tile.lessonId != null) {
+                            earlyStartLessonId = tile.lessonId
+                        } else {
+                            showLockedLessonHint = true
+                        }
+                    }
                 )
             }
         }
@@ -887,6 +896,29 @@ private fun HomeScreen(
             },
             title = { Text(text = "Lesson locked") },
             text = { Text(text = "Please complete the previous lesson first.") }
+        )
+    }
+    if (earlyStartLessonId != null) {
+        AlertDialog(
+            onDismissRequest = { earlyStartLessonId = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    val lessonId = earlyStartLessonId
+                    earlyStartLessonId = null
+                    if (lessonId != null) {
+                        onSelectLesson(lessonId)
+                    }
+                }) {
+                    Text(text = "Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { earlyStartLessonId = null }) {
+                    Text(text = "No")
+                }
+            },
+            title = { Text(text = "Start early?") },
+            text = { Text(text = "Start this lesson early? You can always come back to review previous lessons.") }
         )
     }
 }
@@ -1843,27 +1875,49 @@ private fun LessonTile(
     onSelect: () -> Unit,
     onLockedClick: (() -> Unit)? = null
 ) {
+    val isEmpty = tile.state == LessonTileState.EMPTY
+
     // Determine emoji and scale based on flower state
     val (emoji, scale) = when {
-        tile.state == LessonTileState.LOCKED -> "\uD83D\uDD12" to 1.0f  // 🔒 closed lock
-        tile.state == LessonTileState.UNLOCKED -> "\uD83D\uDD13" to 1.0f  // 🔓 open lock
-        flower == null -> "\uD83C\uDF31" to 1.0f  // 🌱 default
+        isEmpty -> "●" to 1.0f  // gray dot for empty slots
+        tile.state == LessonTileState.LOCKED -> "������" to 1.0f  // 🔒 closed lock
+        tile.state == LessonTileState.UNLOCKED -> "������" to 1.0f  // 🔓 open lock
+        flower == null -> "������" to 1.0f  // 🌱 seed default
         else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
     }
 
     val masteryPercent = flower?.masteryPercent ?: 0f
 
+    // Empty tiles use a faded container
+    val containerColor = if (isEmpty) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val contentColor = if (isEmpty) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clickable {
-                if (tile.state == LessonTileState.LOCKED) {
-                    onLockedClick?.invoke()
-                } else {
-                    onSelect()
+            .then(
+                if (isEmpty) Modifier
+                else Modifier.clickable {
+                    if (tile.state == LessonTileState.LOCKED) {
+                        onLockedClick?.invoke()
+                    } else {
+                        onSelect()
+                    }
                 }
-            }
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        )
     ) {
         Column(
             modifier = Modifier
@@ -1877,8 +1931,8 @@ private fun LessonTile(
                 text = emoji,
                 fontSize = (18 * scale).sp
             )
-            // Show mastery percentage if > 0 (but not for locked/unlocked states)
-            if (masteryPercent > 0f && tile.state != LessonTileState.LOCKED && tile.state != LessonTileState.UNLOCKED) {
+            // Show mastery percentage if > 0 (but not for locked/unlocked/empty states)
+            if (masteryPercent > 0f && tile.state != LessonTileState.LOCKED && tile.state != LessonTileState.UNLOCKED && !isEmpty) {
                 Text(
                     text = "${(masteryPercent * 100).toInt()}%",
                     fontSize = 10.sp,
@@ -1917,16 +1971,24 @@ private fun buildLessonTiles(
     lessons: List<Lesson>,
     testMode: Boolean,
     lessonFlowers: Map<String, FlowerVisual>,
-    selectedLessonId: String?
+    selectedLessonId: String?,
+    activePackLessonIds: List<String>?
 ): List<LessonTileUi> {
+    // Filter lessons to only those in the active pack
+    val packLessons = if (activePackLessonIds != null) {
+        // Preserve the order from the pack's lesson list
+        activePackLessonIds.mapNotNull { id -> lessons.firstOrNull { it.id == id } }
+    } else {
+        lessons
+    }
     val total = 12
     val tiles = mutableListOf<LessonTileUi>()
 
     // Find the highest lesson with any progress (masteryPercent > 0)
     var lastLessonWithProgress = -1
-    for (i in lessons.indices) {
-        val flower = lessonFlowers[lessons[i].id]
-        android.util.Log.d("GrammarMate", "buildLessonTiles: lesson $i (${lessons[i].id}) -> masteryPercent=${flower?.masteryPercent}")
+    for (i in packLessons.indices) {
+        val flower = lessonFlowers[packLessons[i].id]
+        android.util.Log.d("GrammarMate", "buildLessonTiles: lesson $i (${packLessons[i].id}) -> masteryPercent=${flower?.masteryPercent}")
         if (flower != null && flower.masteryPercent > 0f) {
             lastLessonWithProgress = i
         }
@@ -1934,9 +1996,10 @@ private fun buildLessonTiles(
     android.util.Log.d("GrammarMate", "buildLessonTiles: lastLessonWithProgress=$lastLessonWithProgress, next UNLOCKED will be at index ${lastLessonWithProgress + 1}")
 
     for (i in 0 until total) {
-        val lesson = lessons.getOrNull(i)
+        val lesson = packLessons.getOrNull(i)
         val state = when {
-            lesson == null -> LessonTileState.LOCKED
+            // No lesson exists at this index in the pack - show empty slot
+            lesson == null -> LessonTileState.EMPTY
             testMode -> LessonTileState.SEED
             i == 0 -> LessonTileState.SPROUT
             else -> {
@@ -1953,7 +2016,7 @@ private fun buildLessonTiles(
                     }
                     // This lesson is before the last with progress - check if previous has progress
                     i < lastLessonWithProgress + 1 -> {
-                        val prevLesson = lessons.getOrNull(i - 1)
+                        val prevLesson = packLessons.getOrNull(i - 1)
                         val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
                         if (prevFlower != null && prevFlower.masteryPercent > 0f) {
                             LessonTileState.UNLOCKED
