@@ -87,7 +87,7 @@ object CsvParser {
         if (trimmed.isBlank()) return null
         val builder = StringBuilder()
         for (ch in trimmed) {
-            if (ch.isLetterOrDigit() || ch == ' ') {
+            if (ch.isLetterOrDigit() || ch == ' ' || ch == '-' || ch == '.' || ch == ',') {
                 builder.append(ch)
             } else {
                 break

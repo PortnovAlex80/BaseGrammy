@@ -209,8 +209,7 @@ fun GrammarMateApp() {
                         screen = AppScreen.LADDER
                     },
                     onSelectLanguage = vm::selectLanguage,
-                    onSelectLesson = vm::selectLesson,
-                    onDeleteLesson = vm::deleteLesson,
+                    onSelectPack = vm::selectPack,
                     onAddLanguage = vm::addLanguage,
                     onImportLessonPack = vm::importLessonPack,
                     onImportLesson = vm::importLesson,
@@ -708,10 +707,13 @@ private fun HomeScreen(
     val isFirstLaunch = state.correctCount == 0 &&
         state.incorrectCount == 0 &&
         state.activeTimeMs == 0L
+    val activePackDisplayName = state.installedPacks
+        .firstOrNull { it.packId == state.activePackId }
+        ?.displayName
     val primaryLabel = when {
-        isFirstLaunch -> "Start learning"
-        state.sessionState == SessionState.ACTIVE -> "Continue Learning"
-        else -> "Start learning and build new neural connections"
+        state.sessionState == SessionState.ACTIVE -> activePackDisplayName ?: "Continue Learning"
+        isFirstLaunch -> activePackDisplayName ?: "Start learning"
+        else -> activePackDisplayName ?: "Start learning"
     }
     // Calculate the actual current lesson (first incomplete or first with most recent activity)
     val currentLessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
@@ -1005,6 +1007,7 @@ private fun LessonRoadmapScreen(
     val bossMegaReward = state.bossMegaReward
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
+    var earlyStartSubLessonIndex by remember { mutableStateOf<Int?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1074,7 +1077,13 @@ private fun LessonRoadmapScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(72.dp)
-                                .clickable(enabled = canEnter) { onStartSubLesson(index) }
+                                .clickable {
+                                    if (canEnter) {
+                                        onStartSubLesson(index)
+                                    } else {
+                                        earlyStartSubLessonIndex = index
+                                    }
+                                }
                         ) {
                             Column(
                                 modifier = Modifier
@@ -1138,6 +1147,28 @@ private fun LessonRoadmapScreen(
         ) {
             Text(text = if (completed == 0) "Start Lesson" else "Continue Lesson")
         }
+    }
+
+    if (earlyStartSubLessonIndex != null) {
+        val idx = earlyStartSubLessonIndex!!
+        AlertDialog(
+            onDismissRequest = { earlyStartSubLessonIndex = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    earlyStartSubLessonIndex = null
+                    onStartSubLesson(idx)
+                }) {
+                    Text(text = "Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { earlyStartSubLessonIndex = null }) {
+                    Text(text = "No")
+                }
+            },
+            title = { Text(text = "Start early?") },
+            text = { Text(text = "Start exercise ${idx + 1} early? You can always come back to review.") }
+        )
     }
 }
 
@@ -1880,9 +1911,9 @@ private fun LessonTile(
     // Determine emoji and scale based on flower state
     val (emoji, scale) = when {
         isEmpty -> "●" to 1.0f  // gray dot for empty slots
-        tile.state == LessonTileState.LOCKED -> "������" to 1.0f  // 🔒 closed lock
-        tile.state == LessonTileState.UNLOCKED -> "������" to 1.0f  // 🔓 open lock
-        flower == null -> "������" to 1.0f  // 🌱 seed default
+        tile.state == LessonTileState.LOCKED -> "🔒" to 1.0f  // 🔒 closed lock
+        tile.state == LessonTileState.UNLOCKED -> "🔓" to 1.0f  // 🔓 open lock
+        flower == null -> "🌱" to 1.0f  // 🌱 seed default
         else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
     }
 
@@ -2044,8 +2075,7 @@ private fun SettingsSheet(
     onDismiss: () -> Unit,
     onOpenLadder: () -> Unit,
     onSelectLanguage: (String) -> Unit,
-    onSelectLesson: (String) -> Unit,
-    onDeleteLesson: (String) -> Unit,
+    onSelectPack: (String) -> Unit,
     onAddLanguage: (String) -> Unit,
     onImportLessonPack: (android.net.Uri) -> Unit,
     onImportLesson: (android.net.Uri) -> Unit,
@@ -2209,7 +2239,7 @@ private fun SettingsSheet(
                 textAlign = TextAlign.Center
             )
 
-            LanguageLessonColumn(state, onSelectLanguage, onSelectLesson, onDeleteLesson)
+            LanguageLessonColumn(state, onSelectLanguage, onSelectPack)
             OutlinedTextField(
                 value = newLanguageName,
                 onValueChange = { newLanguageName = it },
@@ -2303,30 +2333,6 @@ private fun SettingsSheet(
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Lessons", style = MaterialTheme.typography.labelLarge)
-            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                state.lessons.forEach { lesson ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = lesson.title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (lesson.id == state.selectedLessonId) {
-                            Text(
-                                text = "Selected",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
             Text(text = "Packs", style = MaterialTheme.typography.labelLarge)
             if (state.installedPacks.isEmpty()) {
                 Text(
@@ -2340,7 +2346,7 @@ private fun SettingsSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "${pack.packId} (${pack.packVersion})",
+                            text = pack.displayName ?: "${pack.packId} (${pack.packVersion})",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
@@ -2863,9 +2869,14 @@ private fun ModeIconButton(
 private fun LanguageLessonColumn(
     state: TrainingUiState,
     onSelectLanguage: (String) -> Unit,
-    onSelectLesson: (String) -> Unit,
-    onDeleteLesson: (String) -> Unit
+    onSelectPack: (String) -> Unit
 ) {
+    val languagePacks = state.installedPacks.filter { it.languageId == state.selectedLanguageId }
+    val selectedPackLabel = state.activePackId?.let { activeId ->
+        languagePacks.firstOrNull { it.packId == activeId }?.let { pack ->
+            pack.displayName ?: "${pack.packId} (${pack.packVersion})"
+        }
+    } ?: "-"
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DropdownSelector(
             title = "Language",
@@ -2875,31 +2886,13 @@ private fun LanguageLessonColumn(
             onSelect = onSelectLanguage
         )
         DropdownSelector(
-            title = "Lesson",
-            selected = state.lessons.firstOrNull { it.id == state.selectedLessonId }?.title ?: "-",
-            items = state.lessons.map { it.title to it.id },
-            onSelect = onSelectLesson
+            title = "Pack",
+            selected = selectedPackLabel,
+            items = languagePacks.map { pack ->
+                (pack.displayName ?: "${pack.packId} (${pack.packVersion})") to pack.packId
+            },
+            onSelect = onSelectPack
         )
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(text = "Delete lesson", style = MaterialTheme.typography.labelMedium)
-            state.lessons.forEach { lesson ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = lesson.title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = { onDeleteLesson(lesson.id) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete lesson")
-                    }
-                }
-            }
-        }
     }
 }
 

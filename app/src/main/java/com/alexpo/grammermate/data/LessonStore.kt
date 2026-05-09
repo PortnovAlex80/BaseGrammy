@@ -138,7 +138,8 @@ class LessonStore(private val context: Context) {
             val packVersion = entry["packVersion"] as? String ?: return@mapNotNull null
             val languageId = entry["languageId"] as? String ?: return@mapNotNull null
             val importedAt = (entry["importedAt"] as? Number)?.toLong() ?: 0L
-            LessonPack(packId, packVersion, languageId, importedAt)
+            val displayName = entry["displayName"] as? String
+            LessonPack(packId, packVersion, languageId, importedAt, displayName)
         }
     }
 
@@ -302,24 +303,26 @@ class LessonStore(private val context: Context) {
         val updated = getInstalledPacks()
             .filterNot { it.packId == manifest.packId }
             .map {
-                mapOf(
+                val map = mutableMapOf(
                     "packId" to it.packId,
                     "packVersion" to it.packVersion,
                     "languageId" to it.languageId,
                     "importedAt" to it.importedAt
                 )
+                if (it.displayName != null) map["displayName"] = it.displayName
+                map
             }
             .toMutableList()
-        updated.add(
-            mapOf(
-                "packId" to manifest.packId,
-                "packVersion" to manifest.packVersion,
+        val newEntry = mutableMapOf(
+            "packId" to manifest.packId,
+            "packVersion" to manifest.packVersion,
                 "languageId" to languageId,
                 "importedAt" to System.currentTimeMillis()
             )
-        )
+        if (manifest.displayName != null) newEntry["displayName"] = manifest.displayName
+        updated.add(newEntry)
         packsStore.write(updated)
-        return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis())
+        return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis(), manifest.displayName)
     }
 
     fun getStoryQuizzes(lessonId: String, phase: StoryPhase, languageId: String): List<StoryQuiz> {
@@ -548,6 +551,10 @@ class LessonStore(private val context: Context) {
         }
         val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
         val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
+        // Prefix card IDs with lesson ID to avoid collisions across lessons
+        val uniqueCards = cards.mapIndexed { index, card ->
+            card.copy(id = "${id}_${index}")
+        }
 
         var drillFileName: String? = null
         var drillCards = emptyList<SentenceCard>()
@@ -564,10 +571,14 @@ class LessonStore(private val context: Context) {
 
         if (normalizedId.isNotBlank()) {
             replaceById(languageId, normalizedId)
+        } else {
+            replaceByTitle(languageId, title)
         }
-        replaceByTitle(languageId, title)
         saveIndex(languageId, LessonIndexEntry(id, title, fileName, drillFileName))
-        return Lesson(id = id, languageId = languageId, title = title, cards = cards, drillCards = drillCards)
+        val uniqueDrillCards = drillCards.mapIndexed { index, card ->
+            card.copy(id = "${id}_drill_${index}")
+        }
+        return Lesson(id = id, languageId = languageId, title = title, cards = uniqueCards, drillCards = uniqueDrillCards)
     }
 
     private fun replaceById(languageId: String, lessonId: String) {

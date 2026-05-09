@@ -8,7 +8,8 @@ data class LessonPackManifest(
     val packId: String,
     val packVersion: String,
     val language: String,
-    val lessons: List<LessonPackLesson>
+    val lessons: List<LessonPackLesson>,
+    val displayName: String? = null
 ) {
     companion object {
         fun fromJson(text: String): LessonPackManifest {
@@ -36,7 +37,8 @@ data class LessonPackManifest(
                 lessons.add(LessonPackLesson(lessonId, order, title, file, drillFile))
             }
             if (lessons.isEmpty()) error("Manifest has no lessons")
-            return LessonPackManifest(schemaVersion, packId, packVersion, language, lessons)
+            val displayName = json.optString("displayName").trim().ifBlank { null }
+            return LessonPackManifest(schemaVersion, packId, packVersion, language, lessons, displayName)
         }
     }
 }

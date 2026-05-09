@@ -446,6 +446,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
 
+    fun selectPack(packId: String) {
+        val packLessonIds = lessonStore.getLessonIdsForPack(packId)
+        if (packLessonIds.isEmpty()) return
+        val currentLessonId = _uiState.value.selectedLessonId
+        val lessonId = if (currentLessonId != null && currentLessonId in packLessonIds) currentLessonId else packLessonIds.first()
+        selectLesson(lessonId)
+    }
+
     fun selectMode(mode: TrainingMode) {
         pauseTimer()
         vocabSession = emptyList()

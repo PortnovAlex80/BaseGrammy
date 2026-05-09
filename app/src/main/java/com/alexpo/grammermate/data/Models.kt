@@ -56,7 +56,8 @@ data class LessonPack(
     val packId: String,
     val packVersion: String,
     val languageId: String,
-    val importedAt: Long
+    val importedAt: Long,
+    val displayName: String? = null
 )
 
 enum class StoryPhase {
