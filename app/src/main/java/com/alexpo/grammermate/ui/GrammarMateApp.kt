@@ -427,6 +427,7 @@ fun GrammarMateApp() {
                 )
                 AppScreen.VERB_DRILL -> {
                     val verbDrillVm = viewModel<VerbDrillViewModel>()
+                    verbDrillVm.reloadForLanguage(state.selectedLanguageId)
                     VerbDrillScreen(
                         viewModel = verbDrillVm,
                         onBack = { screen = AppScreen.HOME }

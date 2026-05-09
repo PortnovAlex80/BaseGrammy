@@ -315,7 +315,11 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 2. Add a `DefaultPack` entry to the `defaultPacks` list in `LessonStore.kt`
 3. Both steps are required — the ZIP in assets alone is not enough
 
-**Pack types:** standard (default) and `verb_drill` (set `type` field in manifest lesson entry). `verb_drill` packs use CSV with columns `RU;IT;Verb;Tense;Group` and are filtered at runtime via dropdowns.
+**Pack types:** standard (default) and `verb_drill` (set `type` field in manifest lesson entry).
+- Standard packs: CSV with 2 columns `ru;answers` (answers separated by `+`), no header row.
+- `verb_drill` packs: CSV with header row `RU;IT;Verb;Tense;Group` (RU and IT required; Verb, Tense, Group optional). Filtered at runtime via dropdowns. Files are stored in `verb_drill/{languageId}_{lessonId}.csv` inside the app data directory.
+- The `type` field in manifest lesson entry defaults to `"standard"` if absent. Set `"type": "verb_drill"` for drill packs.
+- VerbDrillViewModel (`ui/VerbDrillViewModel.kt`) manages drill state; it calls `reloadForLanguage()` from GrammarMateApp when the screen opens to stay in sync with the selected language.
 
 ### File Size & Decomposition Guidelines
 

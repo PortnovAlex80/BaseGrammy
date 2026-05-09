@@ -33,9 +33,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         loadCards()
     }
 
-    private fun loadCards() {
-        val languageId = progressStore.load().languageId
-        val files = lessonStore.getVerbDrillFiles(languageId)
+    /**
+     * Reload cards for the given language.
+     * Called when the user navigates to Verb Drill with a potentially changed language.
+     */
+    fun reloadForLanguage(languageId: String) {
+        val currentLang = _uiState.value.loadedLanguageId
+        if (currentLang == languageId && !allCards.isEmpty()) return
+        loadCards(languageId)
+    }
+
+    private fun loadCards(languageId: String? = null) {
+        val lang = languageId ?: progressStore.load().languageId
+        val files = lessonStore.getVerbDrillFiles(lang)
         val cards = mutableListOf<VerbDrillCard>()
 
         for (file in files) {
@@ -55,11 +65,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             it.copy(
                 availableTenses = tenses,
                 availableGroups = groups,
-                isLoading = false
+                isLoading = false,
+                loadedLanguageId = lang
             )
         }
 
-        Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $languageId")
+        Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $lang")
     }
 
     fun selectTense(tense: String?) {

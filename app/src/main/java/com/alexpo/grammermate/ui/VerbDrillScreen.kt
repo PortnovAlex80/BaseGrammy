@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillUiState
@@ -380,11 +381,8 @@ private fun VerbDrillSessionScreen(
                     onDone = {
                         if (inputText.isNotBlank()) {
                             onSubmit(inputText)
-                            // After submitAnswer, session.currentIndex advances.
-                            // We snapshot the answered card and check correctness
-                            // by comparing input with expected answer (simple check).
                             answeredCard = currentCard
-                            wasCorrect = inputText.trim().equals(currentCard.answer, ignoreCase = true)
+                            wasCorrect = Normalizer.normalize(inputText) == Normalizer.normalize(currentCard.answer)
                             inputText = ""
                         }
                     }
@@ -395,7 +393,7 @@ private fun VerbDrillSessionScreen(
                 onClick = {
                     if (inputText.isNotBlank()) {
                         answeredCard = currentCard
-                        wasCorrect = inputText.trim().equals(currentCard.answer, ignoreCase = true)
+                        wasCorrect = Normalizer.normalize(inputText) == Normalizer.normalize(currentCard.answer)
                         onSubmit(inputText)
                         inputText = ""
                     }

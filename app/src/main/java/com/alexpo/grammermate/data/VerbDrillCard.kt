@@ -36,5 +36,6 @@ data class VerbDrillUiState(
     val todayShownCount: Int = 0,
     val session: VerbDrillSessionState? = null,
     val allDoneToday: Boolean = false,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val loadedLanguageId: String? = null
 )

@@ -131,3 +131,70 @@ Lesson 1
 - `schemaVersion` = 1.
 - `packId`, `packVersion`, `language`, `lessonId` не пустые.
 - В CSV урока есть заголовок и хотя бы несколько карточек.
+
+## 8) Verb Drill — тренировка глаголов (type: verb_drill)
+
+Урок можно пометить как `verb_drill`, добавив поле `"type": "verb_drill"` в запись урока в `manifest.json`. Такие уроки попадают в отдельный режим Verb Drill на главном экране (вместо обычной дорожки уроков).
+
+### manifest.json
+
+Пример манифеста с verb_drill:
+
+```json
+{
+  "schemaVersion": 1,
+  "packId": "IT_VERB_GROUPS_ALL",
+  "packVersion": "v1",
+  "language": "it",
+  "displayName": "Verb Drill - All Groups",
+  "lessons": [
+    {
+      "lessonId": "it_verb_groups_all",
+      "type": "verb_drill",
+      "file": "it_verb_groups_all.csv",
+      "order": 1,
+      "title": "All Verb Groups"
+    }
+  ]
+}
+```
+
+- `"type": "verb_drill"` — обязательно. Если поле отсутствует или равно `"standard"`, урок импортируется как обычный.
+- `displayName` — опционально, отображается как название пакета.
+
+### CSV формат для verb_drill
+
+- Разделитель: `;`
+- Первая непустая строка = заголовок урока (как в обычных CSV)
+- **Вторая непустая строка = строка с именами колонок (header row)** — обязательна
+- Далее строки с данными
+
+**Колонки (header row):**
+
+| Колонка | Обязательна | Описание |
+|---------|-------------|----------|
+| `RU`    | Да          | Подсказка на русском |
+| `IT`    | Да          | Правильный ответ на итальянском |
+| `Verb`  | Нет         | Инфинитив глагола (для фильтрации) |
+| `Tense` | Нет         | Время глагола (для фильтрации) |
+| `Group` | Нет         | Группа глаголов (для фильтрации) |
+
+Минимум `RU` и `IT` обязательны. Остальные колонки опциональны — при их отсутствии фильтрация по соответствующему параметру недоступна.
+
+### Пример CSV
+
+```
+Verb Conjugation Drill Italian
+RU;IT;Verb;Tense;Group
+я устал (essere stanco);Io sono stanco.;essere;Presente;irregular_unique
+ты устал (essere stanco);Tu sei stanco.;essere;Presente;irregular_unique
+он устал (essere stanco);Lui è stanco.;essere;Presente;irregular_unique
+```
+
+### Как работает фильтрация
+
+При наличии колонок `Tense` и/или `Group` в CSV, на экране Verb Drill появляются выпадающие списки для фильтрации карточек по времени и группе. Пользователь выбирает нужные фильтры и запускает сессию из 10 случайных карточек.
+
+### Куда попадают файлы
+
+При импорте verb_drill CSV копируется в `verb_drill/{languageId}_{lessonId}.csv` внутри директории данных приложения. Оттуда он читается при открытии режима Verb Drill.
