@@ -139,6 +139,7 @@ fun GrammarMateApp() {
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
+        var showAsrDownloadDialog by remember { mutableStateOf(false) }
 
         val audioPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
@@ -258,6 +259,19 @@ fun GrammarMateApp() {
                     onConfirm = { vm.confirmTtsDownloadOnMetered() },
                     onDismiss = { vm.dismissMeteredWarning(); vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
                 )
+            }
+            if (showAsrDownloadDialog) {
+                if (state.asrDownloadState is DownloadState.Done) {
+                    showAsrDownloadDialog = false
+                    vm.dismissAsrDownloadDialog()
+                }
+                if (showAsrDownloadDialog) {
+                    AsrDownloadDialog(
+                        downloadState = state.asrDownloadState,
+                        onConfirm = { vm.startAsrDownload() },
+                        onDismiss = { vm.dismissAsrDownloadDialog(); showAsrDownloadDialog = false }
+                    )
+                }
             }
             androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
                 if (screen != AppScreen.HOME && state.userName == "GrammarMateUser") {
@@ -392,7 +406,8 @@ fun GrammarMateApp() {
                     onUnflagBadSentence = vm::unflagBadSentence,
                     onHideCard = vm::hideCurrentCard,
                     onExportBadSentences = vm::exportBadSentences,
-                    isBadSentence = vm::isBadSentence
+                    isBadSentence = vm::isBadSentence,
+                    onStartOfflineRecognition = vm::startOfflineRecognition
                 )
             }
 
@@ -2531,7 +2546,8 @@ private fun TrainingScreen(
     onUnflagBadSentence: () -> Unit = {},
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
-    isBadSentence: () -> Boolean = { false }
+    isBadSentence: () -> Boolean = { false },
+    onStartOfflineRecognition: () -> Unit = {}
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
@@ -2576,6 +2592,16 @@ private fun TrainingScreen(
                 Text(text = "Refresh Session", fontWeight = FontWeight.SemiBold)
             } else if (state.isDrillMode) {
                 // Drill: prompt without hints + progress bar + speedometer
+                val cardTense = state.currentCard?.tense
+                if (!cardTense.isNullOrBlank()) {
+                    Text(
+                        text = cardTense,
+                        fontSize = 13.sp,
+                        color = Color(0xFF388E3C),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 val rawPrompt = state.currentCard?.promptRu ?: ""
                 val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
                 if (cleanPrompt.isNotBlank()) {
@@ -2594,7 +2620,34 @@ private fun TrainingScreen(
                     wordCount = state.voiceWordCount
                 )
             } else {
-                ModeSelector(state, onSelectMode, onSelectLesson)
+                val cardTense = state.currentCard?.tense
+                if (!cardTense.isNullOrBlank()) {
+                    Text(
+                        text = cardTense,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                val rawPrompt = state.currentCard?.promptRu ?: ""
+                val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+                if (cleanPrompt.isNotBlank()) {
+                    Text(
+                        text = cleanPrompt,
+                        fontSize = (18f * state.ruTextScale).sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                val total = if (state.bossActive) state.bossTotal else state.subLessonTotal
+                val current = if (state.bossActive) state.bossProgress else state.currentIndex
+                DrillProgressRow(
+                    current = (current + 1).coerceAtMost(total.coerceAtLeast(1)),
+                    total = total.coerceAtLeast(1),
+                    speed = state.voiceActiveMs,
+                    wordCount = state.voiceWordCount
+                )
             }
             CardPrompt(state, onSpeak = onTtsSpeak)
             AnswerBox(
@@ -2611,7 +2664,8 @@ private fun TrainingScreen(
                 onUnflagBadSentence,
                 onHideCard,
                 onExportBadSentences,
-                isBadSentence
+                isBadSentence,
+                onStartOfflineRecognition
             )
             ResultBlock(state, onSpeak = onTtsSpeak)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
@@ -2857,7 +2911,8 @@ private fun AnswerBox(
     onUnflagBadSentence: () -> Unit = {},
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
-    isBadSentence: () -> Boolean = { false }
+    isBadSentence: () -> Boolean = { false },
+    onStartOfflineRecognition: () -> Unit = {}
 ) {
     val latestState by rememberUpdatedState(state)
     val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE
@@ -2896,7 +2951,11 @@ private fun AnswerBox(
         ) {
             kotlinx.coroutines.delay(200)
             onVoicePromptStarted()
-            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+            if (state.asrModelReady) {
+                onStartOfflineRecognition()
+            } else {
+                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+            }
         }
     }
     if (showReportSheet) {
@@ -3012,7 +3071,11 @@ private fun AnswerBox(
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
                             onVoicePromptStarted()
-                            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                            if (state.asrModelReady) {
+                                onStartOfflineRecognition()
+                            } else {
+                                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                            }
                         }
                     },
                     enabled = canLaunchVoice
@@ -3100,7 +3163,11 @@ private fun AnswerBox(
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
                             onVoicePromptStarted()
-                            launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                            if (state.asrModelReady) {
+                                onStartOfflineRecognition()
+                            } else {
+                                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                            }
                         }
                     },
                     enabled = canLaunchVoice
@@ -3380,6 +3447,65 @@ private fun TtsDownloadDialog(
                 is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
                 is DownloadState.Downloading, is DownloadState.Extracting -> {
                     TextButton(onClick = onDismiss) { Text("Continue in background") }
+                }
+            }
+        },
+        dismissButton = {
+            if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting) {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
+}
+
+@Composable
+private fun AsrDownloadDialog(
+    downloadState: DownloadState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Download speech recognition model?") },
+        text = {
+            when (downloadState) {
+                is DownloadState.Idle -> {
+                    Text("This will download ~170 MB for offline voice recognition. Works without internet.")
+                }
+                is DownloadState.Downloading -> {
+                    Column {
+                        Text("Downloading... ${downloadState.percent}%")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                is DownloadState.Extracting -> {
+                    Column {
+                        Text("Extracting... ${downloadState.percent}%")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                is DownloadState.Done -> {
+                    Text("Speech recognition model ready!")
+                }
+                is DownloadState.Error -> {
+                    Text("Download failed: ${downloadState.message}")
+                }
+            }
+        },
+        confirmButton = {
+            when (downloadState) {
+                is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text("Download") }
+                is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
+                is DownloadState.Downloading, is DownloadState.Extracting -> {
+                    TextButton(onClick = onDismiss) { Text("Background") }
                 }
             }
         },

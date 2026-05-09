@@ -39,7 +39,8 @@ data class Lesson(
 data class SentenceCard(
     val id: String,
     val promptRu: String,
-    val acceptedAnswers: List<String>
+    val acceptedAnswers: List<String>,
+    val tense: String? = null
 )
 
 data class VocabEntry(

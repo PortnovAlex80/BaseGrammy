@@ -3,6 +3,9 @@ package com.alexpo.grammermate.ui
 import android.app.Application
 import android.net.Uri
 import android.os.SystemClock
+import com.alexpo.grammermate.data.AsrEngine
+import com.alexpo.grammermate.data.AsrModelManager
+import com.alexpo.grammermate.data.AsrState
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.util.Log
@@ -85,6 +88,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
     private val ttsEngine = TtsEngine(application)
+    private val asrModelManager = AsrModelManager(application)
+    private val asrEngine = AsrEngine(application)
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -234,6 +239,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         // TTS state collection
         checkTtsModel()
+        checkAsrModel()
         startBackgroundTtsDownload()
         viewModelScope.launch {
             ttsEngine.state.collect { ttsState ->
@@ -2005,6 +2011,68 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         ttsEngine.stop()
     }
 
+    // ── ASR (offline speech recognition) ────────────────────────────────
+
+    private var asrDownloadJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            asrEngine.state.collect { asrState ->
+                _uiState.update { it.copy(asrState = asrState) }
+            }
+        }
+    }
+
+    fun checkAsrModel() {
+        val ready = asrModelManager.isReady()
+        _uiState.update { it.copy(asrModelReady = ready) }
+    }
+
+    fun startAsrDownload() {
+        if (asrDownloadJob?.isActive == true) return
+        asrDownloadJob = viewModelScope.launch(Dispatchers.IO) {
+            // Download VAD first (small ~2MB)
+            if (!asrModelManager.isVadReady()) {
+                asrModelManager.downloadVad().collect { state ->
+                    _uiState.update { it.copy(asrDownloadState = state) }
+                }
+            }
+            // Then ASR model (~170MB)
+            if (!asrModelManager.isAsrReady()) {
+                asrModelManager.downloadAsr().collect { state ->
+                    _uiState.update { it.copy(asrDownloadState = state) }
+                    if (state is DownloadState.Done) {
+                        _uiState.update { it.copy(asrModelReady = true) }
+                    }
+                }
+            }
+        }
+    }
+
+    fun dismissAsrDownloadDialog() {
+        _uiState.update { it.copy(asrDownloadState = DownloadState.Idle) }
+    }
+
+    fun startOfflineRecognition() {
+        viewModelScope.launch {
+            try {
+                val result = asrEngine.recognizeFromMic()
+                if (result != null && result.isNotBlank()) {
+                    onInputChanged(result)
+                    submitAnswer()
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "Offline recognition failed", e)
+            }
+        }
+    }
+
+    fun stopAsr() {
+        asrEngine.stop()
+    }
+
+    // ── End ASR ─────────────────────────────────────────────────────────
+
     private var bgDownloadJob: Job? = null
 
     private fun startBackgroundTtsDownload() {
@@ -2751,7 +2819,11 @@ data class TrainingUiState(
     val drillCardIndex: Int = 0,
     val drillTotalCards: Int = 0,
     val drillShowStartDialog: Boolean = false,
-    val drillHasProgress: Boolean = false
+    val drillHasProgress: Boolean = false,
+    // ASR (offline speech recognition)
+    val asrState: AsrState = AsrState.IDLE,
+    val asrModelReady: Boolean = false,
+    val asrDownloadState: DownloadState = DownloadState.Idle
 )
 
 data class LessonLadderRow(
