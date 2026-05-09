@@ -1,0 +1,143 @@
+type,category,person,form_sg_m,form_sg_f,form_pl_m,form_pl_f,notes
+personale,soggetto,1s,io,io,io,io,first person singular subject
+personale,soggetto,2s,tu,tu,tu,tu,informal second person singular subject
+personale,soggetto,3sm,lui,lui,lui,lui,masculine singular third person subject
+personale,soggetto,3sf,lei,lei,lei,lei,feminine singular third person subject; formal 'you' singular
+personale,soggetto,3sn,esso,essa,essi,esse,literary/rare; lei/lui preferred in speech
+personale,soggetto,1p,noi,noi,noi,noi,first person plural subject
+personale,soggetto,2p,voi,voi,voi,voi,second person plural subject
+personale,soggetto,3p,loro,loro,loro,loro,third person plural subject; also formal 'you' plural
+personale,oggetto_diretto,1s,mi,mi,mi,mi,me; direct object clitic
+personale,oggetto_diretto,2s,ti,ti,ti,ti,you; direct object clitic
+personale,oggetto_diretto,3sm,lo,lo,lo,lo,him/it masculine; direct object clitic
+personale,oggetto_diretto,3sf,la,la,la,la,her/it feminine; direct object clitic
+personale,oggetto_diretto,1p,ci,ci,ci,ci,us; direct object clitic
+personale,oggetto_diretto,2p,vi,vi,vi,vi,you plural; direct object clitic
+personale,oggetto_diretto,3pm,li,li,li,li,them masculine; direct object clitic
+personale,oggetto_diretto,3pf,le,le,le,le,them feminine; direct object clitic
+personale,oggetto_diretto,3p_neutro,li;le,li;le,li;le,li;le,li for masc; le for fem plural
+personale,oggetto_indiretto,1s,mi,mi,mi,mi,to/for me; indirect object clitic
+personale,oggetto_indiretto,2s,ti,ti,ti,ti,to/for you; indirect object clitic
+personale,oggetto_indiretto,3sm,gli,gli,gli,gli,to/for him; indirect object clitic
+personale,oggetto_indiretto,3sf,le,le,le,le,to/for her; indirect object clitic
+personale,oggetto_indiretto,1p,ci,ci,ci,ci,to/for us; indirect object clitic
+personale,oggetto_indiretto,2p,vi,vi,vi,vi,to/for you plural; indirect object clitic
+personale,oggetto_indiretto,3p,gli,gli,gli,gli,to/for them; indirect object clitic (also 'loro' postposed)
+personale,oggetto_indiretto,3p_postposed,loro,loro,loro,loro,placed after the verb; literary/formal
+personale,riflessivo,1s,mi,mi,mi,mi,myself; reflexive clitic
+personale,riflessivo,2s,ti,ti,ti,ti,yourself; reflexive clitic
+personale,riflessivo,3s,si,si,si,si,himself/herself/itself; reflexive clitic
+personale,riflessivo,1p,ci,ci,ci,ci,ourselves; reflexive clitic
+personale,riflessivo,2p,vi,vi,vi,vi,yourselves; reflexive clitic
+personale,riflessivo,3p,si,si,si,si,themselves; reflexive clitic
+personale,combinato,1s+3sm,me lo,me lo,me lo,me lo,indirect mi + direct lo → me lo
+personale,combinato,1s+3sf,me la,me la,me la,me la,indirect mi + direct la → me la
+personale,combinato,1s+3pm,me li,me li,me li,me li,indirect mi + direct li → me li
+personale,combinato,1s+3pf,me le,me le,me le,me le,indirect mi + direct le → me le
+personale,combinato,1s+ne,me ne,me ne,me ne,me ne,indirect mi + ne → me ne
+personale,combinato,2s+3sm,te lo,te lo,te lo,te lo,indirect ti + direct lo → te lo
+personale,combinato,2s+3sf,te la,te la,te la,te la,indirect ti + direct la → te la
+personale,combinato,2s+3pm,te li,te li,te li,te li,indirect ti + direct li → te li
+personale,combinato,2s+3pf,te le,te le,te le,te le,indirect ti + direct le → te le
+personale,combinato,2s+ne,te ne,te ne,te ne,te ne,indirect ti + ne → te ne
+personale,combinato,3sm+3sm,glielo,glielo,glielo,glielo,indirect gli + direct lo → glielo
+personale,combinato,3sm+3sf,gliela,gliela,gliela,gliela,indirect gli + direct la → gliela
+personale,combinato,3sm+3pm,glieli,glieli,glieli,glieli,indirect gli + direct li → glieli
+personale,combinato,3sm+3pf,gliele,gliele,gliele,gliele,indirect gli + direct le → gliele
+personale,combinato,3sm+ne,gliene,gliene,gliene,gliene,indirect gli + ne → gliene
+personale,combinato,3sf+3sm,glielo,glielo,glielo,glielo,indirect le + direct lo → glielo (same form as gli+lo)
+personale,combinato,3sf+3sf,gliela,gliela,gliela,gliela,indirect le + direct la → gliela (same form as gli+la)
+personale,combinato,3s_rifl+3sm,se lo,se lo,se lo,se lo,reflexive si + direct lo → se lo
+personale,combinato,3s_rifl+3sf,se la,se la,se la,se la,reflexive si + direct la → se la
+personale,combinato,3s_rifl+3pm,se li,se li,se li,se li,reflexive si + direct li → se li
+personale,combinato,3s_rifl+3pf,se le,se le,se le,se le,reflexive si + direct le → se le
+personale,combinato,3s_rifl+ne,se ne,se ne,se ne,se ne,reflexive si + ne → se ne
+personale,combinato,1p+3sm,ce lo,ce lo,ce lo,ce lo,indirect ci + direct lo → ce lo
+personale,combinato,1p+3sf,ce la,ce la,ce la,ce la,indirect ci + direct la → ce la
+personale,combinato,1p+3pm,ce li,ce li,ce li,ce li,indirect ci + direct li → ce li
+personale,combinato,1p+3pf,ce le,ce le,ce le,ce le,indirect ci + direct le → ce le
+personale,combinato,1p+ne,ce ne,ce ne,ce ne,ce ne,indirect ci + ne → ce ne
+personale,combinato,2p+3sm,ve lo,ve lo,ve lo,ve lo,indirect vi + direct lo → ve lo
+personale,combinato,2p+3sf,ve la,ve la,ve la,ve la,indirect vi + direct la → ve la
+personale,combinato,2p+3pm,ve li,ve li,ve li,ve li,indirect vi + direct li → ve li
+personale,combinato,2p+3pf,ve le,ve le,ve le,ve le,indirect vi + direct le → ve le
+personale,combinato,2p+ne,ve ne,ve ne,ve ne,ve ne,indirect vi + ne → ve ne
+personale,combinato,3p+3sm,glielo,glielo,glielo,glielo,indirect gli + direct lo → glielo (same for 3p)
+personale,combinato,3p+3pm,glieli,glieli,glieli,glieli,indirect gli + direct li → glieli
+personale,combinato,3p+3pf,gliele,gliele,gliele,gliele,indirect gli + direct le → gliele
+personale,combinato,3p_rifl+3sm,se lo,se lo,se lo,se lo,reflexive si + direct lo → se lo
+personale,combinato,3p_rifl+3pm,se li,se li,se li,se li,reflexive si + direct li → se li
+personale,combinato,3p_rifl+3pf,se le,se le,se le,se le,reflexive si + direct le → se le
+personale,combinato,3p_rifl+ne,se ne,se ne,se ne,se ne,reflexive si + ne → se ne
+personale,tonico_diretto,1s,me,me,me,me,stressed direct object: me
+personale,tonico_diretto,2s,te,te,te,te,stressed direct object: te
+personale,tonico_diretto,3sm,lui,lui,lui,lui,stressed direct object: lui
+personale,tonico_diretto,3sf,lei,lei,lei,lei,stressed direct object: lei
+personale,tonico_diretto,1p,noi,noi,noi,noi,stressed direct object: noi
+personale,tonico_diretto,2p,voi,voi,voi,voi,stressed direct object: voi
+personale,tonico_diretto,3p,loro,loro,loro,loro,stressed direct object: loro
+personale,tonico_indiretto,1s,a me,a me,a me,a me,stressed indirect: a me
+personale,tonico_indiretto,2s,a te,a te,a te,a te,stressed indirect: a te
+personale,tonico_indiretto,3sm,a lui,a lui,a lui,a lui,stressed indirect: a lui
+personale,tonico_indiretto,3sf,a lei,a lei,a lei,a lei,stressed indirect: a lei
+personale,tonico_indiretto,1p,a noi,a noi,a noi,a noi,stressed indirect: a noi
+personale,tonico_indiretto,2p,a voi,a voi,a voi,a voi,stressed indirect: a voi
+personale,tonico_indiretto,3p,a loro,a loro,a loro,a loro,stressed indirect: a loro
+personale,ne,_,ne,ne,ne,ne,partitive/pronoun: of it; of them; some
+dimostrativo,questo,ms_sg,questo,questo,questo,questo,masculine singular: this
+dimostrativo,questo,fs_sg,questa,questa,questa,questa,feminine singular: this
+dimostrativo,questo,ms_pl,questi,questi,questi,questi,masculine plural: these
+dimostrativo,questo,fs_pl,queste,queste,queste,queste,feminine plural: these
+dimostrativo,questo,ms_sg_elision,quest',quest',quest',quest',before vowels: quest'amico; quest'anno
+dimostrativo,questo,fs_sg_elision,quest',quest',quest',quest',before vowels: quest'idea; quest'estate
+dimostrativo,quello,ms_sg,quello,quello,quello,quello,masculine singular: that (before consonant clusters: z; gn; ps; s+consonant)
+dimostrativo,quello,ms_sg_pre_vowel,quell',quell',quell',quell',masculine singular before vowel: quell'amico
+dimostrativo,quello,ms_sg_pre_consonant,quel,quel,quel,quel,masculine singular before most consonants: quel libro
+dimostrativo,quello,fs_sg,quella,quella,quella,quella,feminine singular: that
+dimostrativo,quello,fs_sg_pre_vowel,quell',quell',quell',quell',feminine singular before vowel: quell'idea
+dimostrativo,quello,ms_pl,quei,quei,quei,quei,masculine plural: those (before most consonants)
+dimostrativo,quello,ms_pl_pre_consonant_cluster,quegli,quegli,quegli,quegli,masculine plural before z; gn; ps; s+consonant: quegli studenti
+dimostrativo,quello,ms_pl_pre_vowel,quegli,quegli,quegli,quegli,masculine plural before vowel: quegli amici
+dimostrativo,quello,fs_pl,quelle,quelle,quelle,quelle,feminine plural: those
+dimostrativo,costo,ms_sg,costo,costo,costo,costo,masculine singular: this/that cost (archaic; literary)
+dimostrativo,colui,ms_sg,colui,colui,colui,colui,that man; he who (literary)
+dimostrativo,colei,fs_sg,colei,colei,colei,colei,that woman; she who (literary)
+dimostrativo,coloro,plural,coloro,coloro,coloro,coloro,those people; they who (literary)
+dimostrativo,ciò,neuter,ciò,ciò,ciò,ciò,that (which); pronoun only; invariable
+possessivo,mio,1s_sg,mio,mia,miei,mie,my — masculine sg/feminine sg/masculine pl/feminine pl
+possessivo,tuo,2s_sg,tuo,tua,tuoi,tue,your (informal sg)
+possessivo,suo,3s_sg,suo,sua,suoi,sue,his/her/your (formal sg)
+possessivo,nostro,1p_sg,nostro,nostra,nostri,nostre,our
+possessivo,vostro,2p_sg,vostro,vostra,vostri,vostre,your (plural)
+possessivo,loro,3p,loro,loro,loro,loro,their — invariable; does not agree in gender/number
+possessivo,proprio,3s_reflexive,proprio,propria,propri,proprie,own — reflexive emphasis; agrees in gender/number
+possessivo,altrui,general,altrui,altrui,altrui,altrui,of others; other people's — invariable
+possessivo,mio_determinativo,1s_sg_det,il mio,la mia,i miei,le mie,with definite article: il mio libro
+possessivo,tuo_determinativo,2s_sg_det,il tuo,la tua,i tuoi,le tue,with definite article: il tuo libro
+possessivo,suo_determinativo,3s_sg_det,il suo,la sua,i suoi,le sue,with definite article: il suo libro
+possessivo,nostro_determinativo,1p_det,il nostro,la nostra,i nostri,le nostre,with definite article: il nostro libro
+possessivo,vostro_determinativo,2p_det,il vostro,la vostra,i vostri,le vostre,with definite article: il vostro libro
+possessivo,loro_determinativo,3p_det,il loro,la loro,i loro,le loro,with definite article: il loro libro (invariable loro)
+possessivo,familiare,sg_parent,mia,mia,tue,tue,articles omitted with singular family members: mia madre; tuo fratello
+possessivo,familiare,pl_parent,le mie; i miei,le mie; i miei,le tue; i tuoi,le tue; i tuoi,articles kept with plural family: le mie sorelle; i tuoi genitori
+possessivo,familiare,sg_parent_tern,loro madre; suo padre,loro madre; suo padre,loro madre; suo padre,loro madre; suo padre,article always kept with 'loro': la loro madre
+relativo,che,general,che,che,che,che,who; whom; which; that — invariable subject or direct object
+relativo,cui,general,cui,cui,cui,cui,whom; whose; to/for which — invariable; used with prepositions
+relativo,il_quale,ms_sg,il quale,il quale,il quale,il quale,who/which — agrees in gender/number
+relativo,la_quale,fs_sg,la quale,la quale,la quale,la quale,who/which — feminine singular
+relativo,i_quali,ms_pl,i quali,i quali,i quali,i quali,who/which — masculine plural
+relativo,le_quali,fs_pl,le quali,le quali,le quali,le quali,who/which — feminine plural
+relativo,chi,general,chi,chi,chi,chi,who; whoever; those who — invariable; pronoun only; no antecedent
+relativo,dove,general,dove,dove,dove,dove,where — invariable; relative adverb of place
+relativo,in_cui,general,in cui,in cui,in cui,in cui,in which; where
+relativo,da_cui,general,da cui,da cui,da cui,da cui,from which; by which
+relativo,di_cui,general,di cui,di cui,di cui,di cui,of which; whose (about things)
+relativo,a_cui,general,a cui,a cui,a cui,a cui,to whom; to which
+relativo,con_cui,general,con cui,con cui,con cui,con cui,with whom; with which
+relativo,per_cui,general,per cui,per cui,per cui,per cui,for which; for whom; therefore
+relativo,tra_cui,general,tra cui,tra cui,tra cui,tra cui,among which; among whom
+relativo,su_cui,general,su cui,su cui,su cui,su cui,on which; on whom
+relativo,del_quale,ms_sg,del quale,del quale,del quale,del quale,of which; whose (masc sg)
+relativo,della_quale,fs_sg,della quale,della quale,della quale,della quale,of which; whose (fem sg)
+relativo,dei_quali,ms_pl,dei quali,dei quali,dei quali,dei quali,of which; whose (masc pl)
+relativo,delle_quali,fs_pl,delle quali,delle quali,delle quali,delle quali,of which; whose (fem pl)

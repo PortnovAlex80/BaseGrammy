@@ -135,6 +135,7 @@ fun GrammarMateApp() {
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
+        var showVocabStartDialog by remember { mutableStateOf(false) }
 
         val onTtsSpeak: () -> Unit = {
             if (state.ttsState == TtsState.SPEAKING) {
@@ -282,8 +283,12 @@ fun GrammarMateApp() {
                         screen = AppScreen.TRAINING
                     },
                     onOpenVocab = {
-                        vm.openVocabSprint()
-                        screen = AppScreen.VOCAB
+                        if (vm.hasVocabProgress()) {
+                            showVocabStartDialog = true
+                        } else {
+                            vm.openVocabSprint(resume = false)
+                            screen = AppScreen.VOCAB
+                        }
                     },
                     onStartBossLesson = {
                         vm.startBossLesson()
@@ -478,6 +483,31 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "Vocabulary") },
                     text = { Text(text = state.vocabErrorMessage ?: "") }
+                )
+            }
+            if (showVocabStartDialog) {
+                AlertDialog(
+                    onDismissRequest = { showVocabStartDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showVocabStartDialog = false
+                            vm.openVocabSprint(resume = true)
+                            screen = AppScreen.VOCAB
+                        }) {
+                            Text(text = "Continue")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showVocabStartDialog = false
+                            vm.openVocabSprint(resume = false)
+                            screen = AppScreen.VOCAB
+                        }) {
+                            Text(text = "Start fresh")
+                        }
+                    },
+                    title = { Text(text = "Vocabulary Sprint") },
+                    text = { Text(text = "You have previous progress. Continue where you left off or start fresh?") }
                 )
             }
             if (state.bossErrorMessage != null) {
@@ -1163,7 +1193,6 @@ private fun buildRoadmapEntries(
         // Use absolute index for proper tracking
         entries.add(RoadmapEntry.Training(cycleStart + index, type))
     }
-    entries.add(RoadmapEntry.Vocab)
     entries.add(RoadmapEntry.StoryCheckOut)
     entries.add(RoadmapEntry.BossLesson)
     if (hasMegaBoss) {

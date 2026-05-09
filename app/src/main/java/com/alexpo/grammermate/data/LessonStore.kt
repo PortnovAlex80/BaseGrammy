@@ -315,7 +315,7 @@ class LessonStore(private val context: Context) {
 
     fun getVocabEntries(lessonId: String, languageId: String): List<VocabEntry> {
         val entries = vocabStore.read()
-        return entries.flatMap { entry ->
+        val result = entries.flatMap { entry ->
             val entryLesson = entry["lessonId"] as? String ?: return@flatMap emptyList()
             val entryLang = entry["languageId"] as? String ?: return@flatMap emptyList()
             if (!entryLesson.equals(lessonId, ignoreCase = true)) return@flatMap emptyList()
@@ -336,7 +336,15 @@ class LessonStore(private val context: Context) {
                     isHard = row.isHard
                 )
             }
+        }.toMutableList()
+
+        // Load additional Italian drill vocab from assets
+        if (languageId == "it") {
+            val drillEntries = ItalianDrillVocabParser.loadAllFromAssets(context, lessonId, languageId)
+            result.addAll(drillEntries)
         }
+
+        return result
     }
 
     fun getLessons(languageId: String): List<Lesson> {

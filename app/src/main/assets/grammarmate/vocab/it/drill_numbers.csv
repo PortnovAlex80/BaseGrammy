@@ -1,0 +1,150 @@
+category,italian,russian,form_m,form_f,notes
+cardinal,zero,ноль,,,invariable
+cardinal,uno,один,uno,una,changes gender; before consonant uno/una; before vowel un'/un'
+cardinal,due,два,,,invariable
+cardinal,tre,три,,,invariable
+cardinal,quattro,четыре,,,invariable
+cardinal,cinque,пять,,,invariable
+cardinal,sei,шесть,,,invariable
+cardinal,sette,семь,,,invariable
+cardinal,otto,восемь,,,invariable
+cardinal,nove,девять,,,invariable
+cardinal,dieci,десять,,,invariable
+cardinal,undici,одиннадцать,,,irregular; dieci+uno → undici
+cardinal,dodici,двенадцать,,,irregular; dieci+due → dodici
+cardinal,tredici,тринадцать,,,regular compound
+cardinal,quattordici,четырнадцать,,,regular compound
+cardinal,quindici,пятнадцать,,,regular compound
+cardinal,sedici,шестнадцать,,,regular compound
+cardinal,diciassette,семнадцать,,,regular compound
+cardinal,diciotto,восемнадцать,,,drops vowel; dieci+otto → diciotto
+cardinal,diciannove,девятнадцать,,,regular compound
+cardinal,venti,двадцать,,,base form
+cardinal,ventuno,двадцать один,ventuno,ventuna,drops final vowel of venti; accent stays
+cardinal,ventidue,двадцать два,,,drops final vowel of venti
+cardinal,ventitré,двадцать три,,,drops final vowel of venti; accent on é
+cardinal,ventiquattro,двадцать четыре,,,drops final vowel of venti
+cardinal,venticinque,двадцать пять,,,drops final vowel of venti
+cardinal,ventisei,двадцать шесть,,,drops final vowel of venti
+cardinal,ventisette,двадцать семь,,,drops final vowel of venti
+cardinal,ventotto,двадцать восемь,,,drops final vowel of venti+otto → ventotto
+cardinal,ventinove,двадцать девять,,,drops final vowel of venti
+cardinal,trenta,тридцать,,,base form
+cardinal,trentuno,тридцать один,trentuno,trentuna,drops final vowel of trenta
+cardinal,trentadue,тридцать два,,,drops final vowel of trenta
+cardinal,trentatré,тридцать три,,,drops final vowel of trenta; accent on é
+cardinal,trentaquattro,тридцать четыре,,,drops final vowel of trenta
+cardinal,trentacinque,тридцать пять,,,drops final vowel of trenta
+cardinal,trentasei,тридцать шесть,,,drops final vowel of trenta
+cardinal,trentasette,тридцать семь,,,drops final vowel of trenta
+cardinal,trentotto,тридцать восемь,,,drops final vowel of trenta
+cardinal,trentanove,тридцать девять,,,drops final vowel of trenta
+cardinal,quaranta,сорок,,,base form
+cardinal,quarantuno,сорок один,quarantuno,quarantuna,drops final vowel of quaranta
+cardinal,quarantadue,сорок два,,,drops final vowel of quaranta
+cardinal,quarantatré,сорок три,,,accent on é
+cardinal,quarantaotto,сорок восемь,,,triple vowel: a+o+tto
+cardinal,cinquanta,пятьдесят,,,base form
+cardinal,cinquantuno,пятьдесят один,cinquantuno,cinquantuna,drops final vowel
+cardinal,cinquantatré,пятьдесят три,,,accent on é
+cardinal,sesanta,шестьдесят,,,base form
+cardinal,sesantuno,шестьдесят один,sesantuno,sesantuna,drops final vowel
+cardinal,settanta,семьдесят,,,base form
+cardinal,settantuno,семьдесят один,settantuno,settantuna,drops final vowel
+cardinal,ottanta,восемьдесят,,,base form
+cardinal,ottantuno,восемьдесят один,ottantuno,ottantuna,drops final vowel
+cardinal,novanta,девяносто,,,base form
+cardinal,novantuno,девяносто один,novantuno,novantuna,drops final vowel
+cardinal,cento,сто,,,invariable; also duecento trecento etc.
+cardinal,centuno,сто один,centuno,centuna,drops final vowel of cento
+cardinal,duecento,двести,,,due+cento
+cardinal,trecento,триста,,,tre+cento
+cardinal,quattrocento,четыреста,,,quattro+cento
+cardinal,cinquecento,пятьсот,,,cinque+cento
+cardinal,seicento,шестьсот,,,sei+cento
+cardinal,settecento,семьсот,,,sette+cento
+cardinal,ottocento,восемьсот,,,otto+cento
+cardinal,novecento,девятьсот,,,nove+cento
+cardinal,mille,тысяча,,,singular form; plural: mila
+cardinal,duemila,две тысячи,,,mille → mila after due
+cardinal,tremila,три тысячи,,,mille → mila after tre
+cardinal,quattromila,четыре тысячи,,,mille → mila after quattro
+cardinal,diecimila,десять тысяч,,,mille → mila after dieci
+cardinal,centomila,сто тысяч,,,mille → mila after cento
+cardinal,un milione,миллион,un milione,una milione,plural: milioni; takes di before noun
+cardinal,due milioni,два миллиона,,,plural form; takes di before noun
+cardinal,un miliardo,миллиард,un miliardo,una miliardo,plural: miliardi; takes di before noun
+ordinal,primo,первый,primo,prima,irregular stem
+ordinal,secondo,второй,secondo,seconda,regular
+ordinal,terzo,третий,terzo,terza,irregular stem (from tres/tre)
+ordinal,quarto,четвертый,quarto,quarta,regular
+ordinal,quinto,пятый,quinto,quinta,regular
+ordinal,sesto,шестой,sesto,sesta,irregular stem (from sei)
+ordinal,settimo,седьмой,settimo,settima,irregular stem (from sette)
+ordinal,ottavo,восьмой,ottavo,ottava,irregular stem (from otto)
+ordinal,nono,девятый,nono,nona,irregular stem (from nove)
+ordinal,decimo,десятый,decimo,decima,regular
+ordinal,undicesimo,одиннадцатый,undicesimo,undicesima,regular -esimo suffix
+ordinal,dodicesimo,двенадцатый,dodicesimo,dodicesima,regular -esimo suffix
+ordinal,tredicesimo,тринадцатый,tredicesimo,tredicesima,regular -esimo suffix
+ordinal,ventesimo,двадцатый,ventesimo,ventesima,from venti
+ordinal,centesimo,сотый,centesimo,centesima,from cento
+ordinal,millesimo,тысячный,millesimo,millesima,from mille
+ordinal,milionesimo,миллионный,milionesimo,milionesima,from milione
+time,l'una,час (1:00),,,uses article l'; feminine (ora)
+time,le due,два часа,,,plural feminine article
+time,le tre,три часа,,,plural feminine article
+time,le quattro,четыре часа,,,plural feminine article
+time,le cinque,пять часов,,,plural feminine article
+time,le sei,шесть часов,,,plural feminine article
+time,le sette,семь часов,,,plural feminine article
+time,le otto,восемь часов,,,plural feminine article
+time,le nove,девять часов,,,plural feminine article
+time,le dieci,десять часов,,,plural feminine article
+time,le undici,одиннадцать часов,,,plural feminine article
+time,le dodici,двенадцать часов,,,plural feminine article
+time,mezzogiorno,полдень,,,invariable; also = 12:00
+time,mezzanotte,полночь,,,invariable; also = 00:00
+time,e un quarto,четверть часа,,,= :15; also e quindici
+time,e mezza,половина,,,= :30; also e trenta
+time,e tre quarti,без четверти,,,= :45; also meno un quarto
+time,meno cinque,без пяти,,,= :55 pattern
+time,meno dieci,без десяти,,,= :50 pattern
+time,meno un quarto,без четверти,,,alternative to e tre quarti
+date,il primo gennaio,первое января,,,ordinal only for 1st of month
+date,il due febbraio,второе февраля,,,cardinal for dates after 1st
+date,il tre marzo,третье марта,,,cardinal for dates after 1st
+date,il quattro aprile,четвертое апреля,,,cardinal for dates after 1st
+date,l'otto marzo,восьмое марта,,,elision: l' before vowel
+date,il ventitre aprile,двадцать третье апреля,,,accent: ventitré
+date,il trentuno dicembre,тридцать первое декабря,trentuno,trentuna,ordinal for 31st is rare; cardinal used
+day,lunedì,понедельник,,,accent on final syllable; invariable
+day,martedì,вторник,,,accent on final syllable; invariable
+day,mercoledì,среда,,,accent on final syllable; invariable
+day,giovedì,четверг,,,accent on final syllable; invariable
+day,venerdì,пятница,,,accent on final syllable; invariable
+day,sabato,суббота,,,no accent; invariable
+day,domenica,воскресенье,,,feminine noun; plural: domeniche
+month,gennaio,январь,,,,
+month,febbraio,февраль,,,double b
+month,marzo,март,,,,
+month,aprile,апрель,,,,
+month,maggio,май,,,double g
+month,giugno,июнь,,,,
+month,luglio,июль,,,double l (pronounced as single)
+month,agosto,август,,,,
+month,settembre,сентябрь,,,double t
+month,ottobre,октябрь,,,double t
+month,novembre,ноябрь,,,,
+month,dicembre,декабрь,,,,
+fraction,mezzo,половина (м.р.),mezzo,mezza,changes gender; also: mezzo litro / mezza ora
+fraction,mezza,половина (ж.р.),mezzo,mezza,feminine form; mezz'ora (elision before vowel)
+fraction,un terzo,одна треть,un terzo,una terza,fraction ordinal
+fraction,un quarto,одна четверть,un quarto,una quarta,fraction ordinal
+fraction,la metà,половина (существительное),,,feminine noun; invariable
+quantity,doppio,двойной,doppio,doppia,changes gender; also adverb: doppiamente
+quantity,doppia,двойная,doppio,doppia,feminine form
+quantity,triplo,тройной,triplo,tripla,changes gender
+quantity,quadruplo,четверной,quadruplo,quadrupla,changes gender
+quantity,entrambi,оба,,,entrambi (m) / entrambe (f)
+quantity,entrambe,обе,,,feminine form
