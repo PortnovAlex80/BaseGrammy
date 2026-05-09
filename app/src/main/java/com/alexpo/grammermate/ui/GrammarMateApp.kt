@@ -140,6 +140,10 @@ fun GrammarMateApp() {
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
 
+        val audioPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { /* permission result handled by system */ }
+
         val onTtsSpeak: () -> Unit = {
             if (state.ttsState == TtsState.SPEAKING) {
                 vm.stopTts()
@@ -152,7 +156,9 @@ fun GrammarMateApp() {
             } else {
                 val text = state.answerText
                     ?: state.currentCard?.acceptedAnswers?.firstOrNull()
-                if (text != null) vm.onTtsSpeak(text, speed = 0.67f)
+                if (text != null) {
+                    vm.onTtsSpeak(text, speed = 0.67f)
+                }
             }
         }
 
@@ -3302,19 +3308,11 @@ private fun TtsSpeakerButton(
                 contentDescription = "TTS error",
                 tint = MaterialTheme.colorScheme.error
             )
-            else -> Box {
-                Icon(
-                    Icons.Default.VolumeUp,
-                    contentDescription = "Listen slowly",
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = "S",
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                )
-            }
+            else -> Icon(
+                Icons.Default.VolumeUp,
+                contentDescription = "Listen",
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
@@ -3359,7 +3357,7 @@ private fun TtsDownloadDialog(
                     }
                 }
                 is DownloadState.Done -> {
-                    Text("Download complete! Tap the speaker icon to use pronunciation.")
+                    Text("Pronunciation model ready!")
                 }
                 is DownloadState.Error -> {
                     Text("Download failed: ${downloadState.message}")
