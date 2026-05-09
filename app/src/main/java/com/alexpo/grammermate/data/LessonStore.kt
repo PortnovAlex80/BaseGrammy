@@ -295,7 +295,11 @@ class LessonStore(private val context: Context) {
             val sourceFile = File(packDir, entry.file)
             if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
             val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
-            importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
+            if (entry.type == "verb_drill") {
+                importVerbDrillFile(languageId, sourceFile, entry.lessonId)
+            } else {
+                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
+            }
         }
         importStoriesFromPack(packDir, languageId)
         importVocabFromPack(packDir, languageId)
@@ -757,6 +761,25 @@ class LessonStore(private val context: Context) {
             }
         }
         packsStore.write(remaining)
+    }
+
+    private fun importVerbDrillFile(languageId: String, sourceFile: File, lessonId: String) {
+        val verbDrillDir = File(baseDir, "verb_drill")
+        verbDrillDir.mkdirs()
+        val targetFile = File(verbDrillDir, "${languageId}_${lessonId}.csv")
+        sourceFile.copyTo(targetFile, overwrite = true)
+    }
+
+    fun getVerbDrillFiles(languageId: String): List<File> {
+        val verbDrillDir = File(baseDir, "verb_drill")
+        if (!verbDrillDir.exists()) return emptyList()
+        return verbDrillDir.listFiles()
+            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
+            ?: emptyList()
+    }
+
+    fun hasVerbDrillLessons(languageId: String): Boolean {
+        return getVerbDrillFiles(languageId).isNotEmpty()
     }
 
     private fun guessFileName(resolver: ContentResolver, uri: Uri): String? {

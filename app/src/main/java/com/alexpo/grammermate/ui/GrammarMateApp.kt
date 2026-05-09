@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.StopCircle
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
@@ -151,6 +152,11 @@ fun GrammarMateApp() {
         ) { /* permission result handled by system */ }
         var showVocabStartDialog by remember { mutableStateOf(false) }
 
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val hasVerbDrill = remember(state.selectedLanguageId) {
+            com.alexpo.grammermate.data.LessonStore(context).hasVerbDrillLessons(state.selectedLanguageId)
+        }
+
         val onTtsSpeak: () -> Unit = {
             if (state.ttsState == TtsState.SPEAKING) {
                 vm.stopTts()
@@ -199,6 +205,9 @@ fun GrammarMateApp() {
                     if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
                         vm.resumeFromSettings()
                     }
+                }
+                BackHandler(enabled = screen == AppScreen.VERB_DRILL && !showSettings) {
+                    screen = AppScreen.HOME
                 }
 
                 SettingsSheet(
@@ -298,7 +307,9 @@ fun GrammarMateApp() {
                         vm.selectLesson(lessonId)
                         screen = AppScreen.LESSON
                     },
-                    onOpenElite = { if (state.eliteUnlocked) screen = AppScreen.ELITE }
+                    onOpenElite = { if (state.eliteUnlocked) screen = AppScreen.ELITE },
+                    hasVerbDrill = hasVerbDrill,
+                    onOpenVerbDrill = { screen = AppScreen.VERB_DRILL }
                 )
                 AppScreen.LESSON -> LessonRoadmapScreen(
                     state = state,
@@ -414,6 +425,13 @@ fun GrammarMateApp() {
                     isBadSentence = vm::isBadSentence,
                     onStartOfflineRecognition = vm::startOfflineRecognition
                 )
+                AppScreen.VERB_DRILL -> {
+                    val verbDrillVm = viewModel<VerbDrillViewModel>()
+                    VerbDrillScreen(
+                        viewModel = verbDrillVm,
+                        onBack = { screen = AppScreen.HOME }
+                    )
+                }
             }
 
             if (screen == AppScreen.TRAINING && state.subLessonFinishedToken != lastFinishedToken.value) {
@@ -623,7 +641,8 @@ private enum class AppScreen {
     VOCAB,
     STORY,
     TRAINING,
-    LADDER
+    LADDER,
+    VERB_DRILL
 }
 
 private fun parseScreen(name: String): AppScreen {
@@ -636,7 +655,9 @@ private enum class LessonTileState {
     FLOWER,
     LOCKED,
     UNLOCKED,  // Available but not started yet (open lock)
-    EMPTY      // No lesson in this slot (pack has fewer than 12 lessons)
+    EMPTY,     // No lesson in this slot (pack has fewer than 12 lessons)
+    VERB_DRILL
+
 }
 
 private data class LessonTileUi(
@@ -725,7 +746,9 @@ private fun HomeScreen(
     onOpenSettings: () -> Unit,
     onPrimaryAction: () -> Unit,
     onSelectLesson: (String) -> Unit,
-    onOpenElite: () -> Unit
+    onOpenElite: () -> Unit,
+    hasVerbDrill: Boolean = false,
+    onOpenVerbDrill: () -> Unit = {}
 ) {
     val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackId, state.activePackLessonIds) {
         buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackLessonIds)
@@ -864,6 +887,10 @@ private fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+        if (hasVerbDrill) {
+            VerbDrillEntryTile(onClick = onOpenVerbDrill)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         EliteEntryTile(
             enabled = state.eliteUnlocked,
             onClick = onOpenElite,
@@ -957,6 +984,34 @@ private fun HomeScreen(
             title = { Text(text = "Start early?") },
             text = { Text(text = "Start this lesson early? You can always come back to review previous lessons.") }
         )
+    }
+}
+
+@Composable
+private fun VerbDrillEntryTile(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.FitnessCenter,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 
@@ -1915,6 +1970,31 @@ private fun LessonTile(
     onLockedClick: (() -> Unit)? = null
 ) {
     val isEmpty = tile.state == LessonTileState.EMPTY
+
+    if (tile.state == LessonTileState.VERB_DRILL) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .clickable(onClick = onSelect)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Verb", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Icon(
+                    imageVector = Icons.Default.FitnessCenter,
+                    contentDescription = "Verb Drill",
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        return
+    }
 
     // Determine emoji and scale based on flower state
     val (emoji, scale) = when {
