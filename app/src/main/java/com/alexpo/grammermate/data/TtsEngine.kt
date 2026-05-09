@@ -67,6 +67,12 @@ class TtsEngine(private val context: Context) {
             release()
         }
 
+        // Wait if currently speaking — stop first, then proceed
+        if (_state.value == TtsState.SPEAKING) {
+            stop()
+            speakJob?.join()
+        }
+
         if (!_state.compareAndSet(TtsState.IDLE, TtsState.INITIALIZING)
             && !_state.compareAndSet(TtsState.ERROR, TtsState.INITIALIZING)
         ) return
@@ -80,6 +86,11 @@ class TtsEngine(private val context: Context) {
         withContext(Dispatchers.Default) {
             try {
                 val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
+                // Validate model files before loading into native code
+                val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
+                if (missingFiles.isNotEmpty()) {
+                    throw IllegalStateException("Missing or empty model files: $missingFiles")
+                }
                 val config = buildConfig(spec, modelDir)
                 offlineTts = OfflineTts(config = config)
                 activeLanguageId = languageId
@@ -126,6 +137,7 @@ class TtsEngine(private val context: Context) {
 
     suspend fun speak(text: String, languageId: String = "en", speakerId: Int = 0, speed: Float = 1.0f) {
         if (text.isBlank()) return
+        val safeSpeed = speed.coerceIn(0.3f, 3.0f)
 
         if (activeLanguageId != languageId || _state.value != TtsState.READY) {
             initialize(languageId)
@@ -178,7 +190,7 @@ class TtsEngine(private val context: Context) {
             try {
                 tts.generateWithConfigAndCallback(
                     text = text,
-                    config = GenerationConfig(sid = speakerId, speed = speed),
+                    config = GenerationConfig(sid = speakerId, speed = safeSpeed),
                     callback = { samples ->
                         if (!isStopped.get()) {
                             audioTrack.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
@@ -225,10 +237,16 @@ class TtsEngine(private val context: Context) {
     fun release() {
         stop()
         speakJob?.cancel()
-        offlineTts?.free()
+        // Run cleanup on a coroutine so we can await speakJob completion
+        // before freeing the native object (prevents use-after-free)
+        val ttsToFree = offlineTts
         offlineTts = null
         activeLanguageId = null
         _state.value = TtsState.IDLE
+        ttsScope.launch {
+            speakJob?.join()
+            ttsToFree?.free()
+        }
     }
 
     private fun requestAudioFocus() {
