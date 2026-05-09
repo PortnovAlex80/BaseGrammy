@@ -152,20 +152,6 @@ fun GrammarMateApp() {
             } else {
                 val text = state.answerText
                     ?: state.currentCard?.acceptedAnswers?.firstOrNull()
-                if (text != null) vm.onTtsSpeak(text)
-            }
-        }
-        val onTtsSpeakSlow: () -> Unit = lambda@{
-            if (state.ttsState == TtsState.SPEAKING) return@lambda
-            if (!state.ttsModelReady) {
-                val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
-                if (bgState != null && bgState !is DownloadState.Idle) {
-                    vm.setTtsDownloadStateFromBackground(bgState)
-                }
-                showTtsDownloadDialog = true
-            } else {
-                val text = state.answerText
-                    ?: state.currentCard?.acceptedAnswers?.firstOrNull()
                 if (text != null) vm.onTtsSpeak(text, speed = 0.67f)
             }
         }
@@ -352,18 +338,6 @@ fun GrammarMateApp() {
                             }
                             showTtsDownloadDialog = true
                         } else {
-                            vm.onTtsSpeak(text)
-                        }
-                    },
-                    onSpeakSlow = { text ->
-                        if (state.ttsState == TtsState.SPEAKING) return@VocabSprintScreen
-                        if (!state.ttsModelReady) {
-                            val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
-                            if (bgState != null && bgState !is DownloadState.Idle) {
-                                vm.setTtsDownloadStateFromBackground(bgState)
-                            }
-                            showTtsDownloadDialog = true
-                        } else {
                             vm.onTtsSpeak(text, speed = 0.67f)
                         }
                     }
@@ -398,7 +372,6 @@ fun GrammarMateApp() {
                     onSelectWordFromBank = vm::selectWordFromBank,
                     onRemoveLastWord = vm::removeLastSelectedWord,
                     onTtsSpeak = onTtsSpeak,
-                    onTtsSpeakSlow = onTtsSpeakSlow,
                     onFlagBadSentence = vm::flagBadSentence,
                     onUnflagBadSentence = vm::unflagBadSentence,
                     onHideCard = vm::hideCurrentCard,
@@ -1415,7 +1388,6 @@ private fun VocabSprintScreen(
     onSetInputMode: (InputMode) -> Unit,
     onRequestVoice: () -> Unit,
     onSpeak: (String) -> Unit,
-    onSpeakSlow: (String) -> Unit = {},
     onShowAnswer: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -1535,8 +1507,7 @@ private fun VocabSprintScreen(
                     TtsSpeakerButton(
                         ttsState = state.ttsState,
                         enabled = true,
-                        onClick = { onSpeak(answer) },
-                        onSlowClick = { onSpeakSlow(answer) }
+                        onClick = { onSpeak(answer) }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -2540,7 +2511,6 @@ private fun TrainingScreen(
     onSelectWordFromBank: (String) -> Unit,
     onRemoveLastWord: () -> Unit,
     onTtsSpeak: () -> Unit,
-    onTtsSpeakSlow: () -> Unit = {},
     onFlagBadSentence: () -> Unit = {},
     onUnflagBadSentence: () -> Unit = {},
     onHideCard: () -> Unit = {},
@@ -2610,7 +2580,7 @@ private fun TrainingScreen(
             } else {
                 ModeSelector(state, onSelectMode, onSelectLesson)
             }
-            CardPrompt(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
+            CardPrompt(state, onSpeak = onTtsSpeak)
             AnswerBox(
                 state,
                 onInputChange,
@@ -2627,7 +2597,7 @@ private fun TrainingScreen(
                 onExportBadSentences,
                 isBadSentence
             )
-            ResultBlock(state, onSpeak = onTtsSpeak, onSpeakSlow = onTtsSpeakSlow)
+            ResultBlock(state, onSpeak = onTtsSpeak)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
         }
     }
@@ -2830,7 +2800,7 @@ private fun DropdownSelector(
 }
 
 @Composable
-private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow: () -> Unit = {}) {
+private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -2848,9 +2818,8 @@ private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow:
             }
             TtsSpeakerButton(
                 ttsState = state.ttsState,
-                enabled = !state.answerText.isNullOrBlank(),
-                onClick = onSpeak,
-                onSlowClick = onSpeakSlow
+                enabled = state.currentCard != null,
+                onClick = onSpeak
             )
         }
     }
@@ -3187,7 +3156,7 @@ private fun AnswerBox(
 }
 
 @Composable
-private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow: () -> Unit = {}) {
+private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             when (state.lastResult) {
@@ -3200,8 +3169,7 @@ private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit, onSpeakSlow
                 TtsSpeakerButton(
                     ttsState = state.ttsState,
                     enabled = true,
-                    onClick = onSpeak,
-                    onSlowClick = onSpeakSlow
+                    onClick = onSpeak
                 )
             }
         }
@@ -3311,61 +3279,41 @@ private fun launchVoiceRecognition(
 private fun TtsSpeakerButton(
     ttsState: TtsState,
     enabled: Boolean,
-    onClick: () -> Unit,
-    onSlowClick: (() -> Unit)? = null
+    onClick: () -> Unit
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(
-            onClick = {
-                if (ttsState == TtsState.SPEAKING) {
-                    // M5: When speaking, the parent's onClick lambda already handles stopTts
-                }
-                onClick()
-            },
-            enabled = enabled
-        ) {
-            when (ttsState) {
-                TtsState.SPEAKING -> Icon(
-                    Icons.Default.StopCircle,
-                    contentDescription = "Stop",
-                    tint = MaterialTheme.colorScheme.error
-                )
-                TtsState.INITIALIZING -> CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
-                )
-                TtsState.ERROR -> Icon(
-                    Icons.Default.ReportProblem,
-                    contentDescription = "TTS error",
-                    tint = MaterialTheme.colorScheme.error
-                )
-                else -> Icon(
+    IconButton(
+        onClick = {
+            onClick()
+        },
+        enabled = enabled
+    ) {
+        when (ttsState) {
+            TtsState.SPEAKING -> Icon(
+                Icons.Default.StopCircle,
+                contentDescription = "Stop",
+                tint = MaterialTheme.colorScheme.error
+            )
+            TtsState.INITIALIZING -> CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+            TtsState.ERROR -> Icon(
+                Icons.Default.ReportProblem,
+                contentDescription = "TTS error",
+                tint = MaterialTheme.colorScheme.error
+            )
+            else -> Box {
+                Icon(
                     Icons.Default.VolumeUp,
-                    contentDescription = "Listen"
+                    contentDescription = "Listen slowly",
+                    modifier = Modifier.size(20.dp)
                 )
-            }
-        }
-        if (onSlowClick != null) {
-            IconButton(
-                onClick = {
-                    if (ttsState == TtsState.SPEAKING) return@IconButton
-                    onSlowClick()
-                },
-                enabled = enabled && ttsState != TtsState.SPEAKING
-            ) {
-                Box {
-                    Icon(
-                        Icons.Default.VolumeUp,
-                        contentDescription = "Listen slowly",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "S",
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.BottomEnd)
-                    )
-                }
+                Text(
+                    text = "S",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                )
             }
         }
     }
