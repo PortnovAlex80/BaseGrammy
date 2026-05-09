@@ -2585,7 +2585,6 @@ private fun TrainingScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (!state.isDrillMode) HeaderStats(state)
             if (state.bossActive) {
                 Text(text = "Review Session", fontWeight = FontWeight.SemiBold)
             } else if (state.eliteActive) {

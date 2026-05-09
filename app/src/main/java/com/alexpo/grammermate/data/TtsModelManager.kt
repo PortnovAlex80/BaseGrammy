@@ -76,6 +76,10 @@ class TtsModelManager(private val context: Context) {
     }
 
     fun download(languageId: String = currentLanguageId): Flow<DownloadState> = flow {
+        if (isModelReady(languageId)) {
+            emit(DownloadState.Done)
+            return@flow
+        }
         val spec = TtsModelRegistry.specFor(languageId)
             ?: throw IllegalArgumentException("Unknown language: $languageId")
         val dir = modelDir(languageId)

@@ -17,6 +17,7 @@ import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -61,16 +62,30 @@ class TtsEngine(private val context: Context) {
     private var focusRequest: AudioFocusRequest? = null
 
     suspend fun initialize(languageId: String = "en") {
+        // Fast path: already initialized for this language
         if (_state.value == TtsState.READY && activeLanguageId == languageId) return
 
+        // If another language is loaded, release it first and await cleanup
         if (activeLanguageId != null && activeLanguageId != languageId) {
+            val oldJob = speakJob
             release()
+            oldJob?.join()  // Await the speakJob to prevent state races
         }
 
         // Wait if currently speaking — stop first, then proceed
         if (_state.value == TtsState.SPEAKING) {
             stop()
             speakJob?.join()
+        }
+
+        // Wait if another coroutine is already initializing for the same language
+        if (_state.value == TtsState.INITIALIZING) {
+            // Spin-wait until initialization completes
+            while (_state.value == TtsState.INITIALIZING) {
+                delay(50)
+            }
+            // After waiting, check if it succeeded
+            return
         }
 
         if (!_state.compareAndSet(TtsState.IDLE, TtsState.INITIALIZING)
@@ -139,11 +154,16 @@ class TtsEngine(private val context: Context) {
         if (text.isBlank()) return
         val safeSpeed = speed.coerceIn(0.3f, 3.0f)
 
+        // Ensure engine is initialized for the requested language
         if (activeLanguageId != languageId || _state.value != TtsState.READY) {
             initialize(languageId)
         }
 
-        val tts = offlineTts ?: return
+        val tts = offlineTts
+        if (tts == null) {
+            Log.e(TAG, "speak() called but offlineTts is null, state=${_state.value}, lang=$activeLanguageId")
+            return
+        }
 
         val oldJob = speakJob
         if (oldJob != null) {
@@ -234,11 +254,14 @@ class TtsEngine(private val context: Context) {
         }
     }
 
+    /**
+     * Release TTS engine resources. Safe to call from any context.
+     * When called from a suspend function (e.g., initialize()), the caller
+     * should use the suspend overload `releaseAndAwait()` instead.
+     */
     fun release() {
         stop()
         speakJob?.cancel()
-        // Run cleanup on a coroutine so we can await speakJob completion
-        // before freeing the native object (prevents use-after-free)
         val ttsToFree = offlineTts
         offlineTts = null
         activeLanguageId = null

@@ -206,32 +206,36 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
             }
         }
-        // Force reload default packs on every app start to ensure latest lesson content
+        // Force reload default packs on every app start to ensure latest lesson content.
+        // NOTE: We read _uiState.value INSIDE the update lambda to avoid a TOCTOU race
+        // where the user changes language/lesson on the main thread while we captured
+        // stale values on the IO thread.
         viewModelScope.launch(Dispatchers.IO) {
             val reloaded = lessonStore.forceReloadDefaultPacks()
             if (!reloaded) return@launch
-            val currentLang = _uiState.value.selectedLanguageId
             val languages = lessonStore.getLanguages()
-            val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
-                ?: languages.firstOrNull()?.id
-                ?: "en"
-            val lessons = lessonStore.getLessons(selectedLang)
-            val currentLessonId = _uiState.value.selectedLessonId
-            val selectedLessonId = lessons.firstOrNull { it.id == currentLessonId }?.id
-                ?: lessons.firstOrNull()?.id
             val packs = lessonStore.getInstalledPacks()
             withContext(Dispatchers.Main) {
-                _uiState.update {
-                    it.copy(
+                _uiState.update { current ->
+                    val currentLang = current.selectedLanguageId
+                    val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
+                        ?: languages.firstOrNull()?.id
+                        ?: "en"
+                    val lessons = lessonStore.getLessons(selectedLang)
+                    val currentLessonId = current.selectedLessonId
+                    val selectedLessonId = lessons.firstOrNull { it.id == currentLessonId }?.id
+                        ?: lessons.firstOrNull()?.id
+                    current.copy(
                         languages = languages,
                         installedPacks = packs,
                         selectedLanguageId = selectedLang,
                         lessons = lessons,
                         selectedLessonId = selectedLessonId,
-                        eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode)
+                        eliteUnlocked = resolveEliteUnlocked(lessons, current.testMode)
                     )
                 }
-                rebuildSchedules(lessons)
+                val updatedLessons = lessonStore.getLessons(_uiState.value.selectedLanguageId)
+                rebuildSchedules(updatedLessons)
                 buildSessionCards()
                 refreshFlowerStates()
             }
@@ -1941,7 +1945,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 || ttsEngine.activeLanguageId != langId) {
                 ttsEngine.initialize(langId)
             }
-            ttsEngine.speak(text, languageId = langId, speed = effectiveSpeed)
+            if (ttsEngine.state.value == TtsState.READY) {
+                ttsEngine.speak(text, languageId = langId, speed = effectiveSpeed)
+            } else {
+                Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+            }
         }
     }
 
@@ -1991,6 +1999,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             return
         }
         val langId = _uiState.value.selectedLanguageId
+        if (ttsModelManager.isModelReady(langId)) {
+            _uiState.update { it.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done) }
+            return
+        }
         ttsDownloadJob = viewModelScope.launch(Dispatchers.IO) {
             ttsModelManager.download(langId).collect { downloadState ->
                 _uiState.update { it.copy(ttsDownloadState = downloadState) }
@@ -2093,10 +2105,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 }
 
                 _uiState.update { current ->
+                    val selectedBgState = stateMap[current.selectedLanguageId]
+                    // Mirror bg download state to ttsDownloadState so the dialog
+                    // shows live progress if the user opened it while bg download runs
+                    val downloadStateOverride = if (selectedBgState != null
+                        && selectedBgState !is DownloadState.Idle
+                        && current.ttsDownloadState !is DownloadState.Done) {
+                        selectedBgState
+                    } else {
+                        current.ttsDownloadState
+                    }
                     current.copy(
                         bgTtsDownloadStates = stateMap,
                         bgTtsDownloading = anyActive,
-                        ttsModelReady = ttsModelManager.isModelReady(current.selectedLanguageId)
+                        ttsModelReady = ttsModelManager.isModelReady(current.selectedLanguageId),
+                        ttsDownloadState = downloadStateOverride
                     )
                 }
 
