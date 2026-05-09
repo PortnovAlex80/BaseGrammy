@@ -310,6 +310,13 @@ All stores read/write YAML/CSV files in `context.filesDir/grammarmate/`. Key fil
 
 Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a `manifest.json` + CSV files. Default packs are bundled in `assets/grammarmate/packs/`. CSV format: rows with Russian prompt + accepted target-language answers.
 
+**Adding a new lesson pack to the build:**
+1. Place the ZIP in `assets/grammarmate/packs/`
+2. Add a `DefaultPack` entry to the `defaultPacks` list in `LessonStore.kt`
+3. Both steps are required — the ZIP in assets alone is not enough
+
+**Pack types:** standard (default) and `verb_drill` (set `type` field in manifest lesson entry). `verb_drill` packs use CSV with columns `RU;IT;Verb;Tense;Group` and are filtered at runtime via dropdowns.
+
 ### File Size & Decomposition Guidelines
 
 **Hard limits — decompose when exceeded:**
