@@ -126,9 +126,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
             lessonId to parsed
         }.toMap()
-        val bossMegaReward = progress.bossMegaReward?.let { reward ->
-            runCatching { BossReward.valueOf(reward) }.getOrNull()
-        }
+        val bossMegaRewards = progress.bossMegaRewards.mapNotNull { (lessonId, reward) ->
+            val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+            lessonId to parsed
+        }.toMap()
         val languages = lessonStore.getLanguages()
         val packs = lessonStore.getInstalledPacks()
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: "en"
@@ -185,7 +186,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 bossLessonRewards = bossLessonRewards,
-                bossMegaReward = bossMegaReward,
+                bossMegaRewards = bossMegaRewards,
                 testMode = config.testMode,
                 eliteActive = false,
                 eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
@@ -355,7 +356,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossFinishedToken = 0,
                 bossErrorMessage = null,
                 bossLessonRewards = emptyMap(),
-                bossMegaReward = null,
+                bossMegaRewards = emptyMap(),
                 lessonFlowers = emptyMap(),
                 currentLessonFlower = null,
                 wordBankWords = emptyList(),
@@ -1656,8 +1657,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun startBoss(type: BossType) {
         pauseTimer()
-        val lessons = _uiState.value.lessons
-        val selectedId = _uiState.value.selectedLessonId
+        val state = _uiState.value
+        // Boss unlock guard: require at least 15 completed sub-lessons (unless test mode or elite)
+        if (type != BossType.ELITE && state.completedSubLessonCount < 15 && !state.testMode) {
+            _uiState.update { it.copy(bossErrorMessage = "Complete at least 15 exercises first") }
+            return
+        }
+        val lessons = state.lessons
+        val selectedId = state.selectedLessonId
         if (type != BossType.ELITE && selectedId == null) {
             _uiState.update { it.copy(bossErrorMessage = "Lesson not selected") }
             return
@@ -1741,10 +1748,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         } else {
             state.bossLessonRewards
         }
-        val updatedMegaReward = if (state.bossType == BossType.MEGA && reward != null) {
-            reward
+        val updatedMegaRewards = if (state.bossType == BossType.MEGA && reward != null) {
+            val lessonId = state.selectedLessonId
+            if (lessonId != null) {
+                state.bossMegaRewards + (lessonId to reward)
+            } else {
+                state.bossMegaRewards
+            }
         } else {
-            state.bossMegaReward
+            state.bossMegaRewards
         }
         bossCards = emptyList()
         _uiState.update {
@@ -1759,7 +1771,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 bossLastType = state.bossType,
                 bossErrorMessage = null,
                 bossLessonRewards = updatedLessonRewards,
-                bossMegaReward = updatedMegaReward,
+                bossMegaRewards = updatedMegaRewards,
                 selectedLessonId = restoredLessonId,
                 mode = progress.mode,
                 currentIndex = progress.currentIndex,
@@ -1918,7 +1930,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 activeTimeMs = state.activeTimeMs,
                 state = state.sessionState,
                 bossLessonRewards = state.bossLessonRewards.mapValues { it.value.name },
-                bossMegaReward = state.bossMegaReward?.name,
+                bossMegaReward = null,
+                bossMegaRewards = state.bossMegaRewards.mapValues { it.value.name },
                 voiceActiveMs = state.voiceActiveMs,
                 voiceWordCount = state.voiceWordCount,
                 hintCount = state.hintCount,
@@ -2637,10 +2650,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 Log.d(logTag, "Boss reward: $lessonId -> $parsed")
                 lessonId to parsed
             }.toMap()
-            val bossMegaReward = progress.bossMegaReward?.let { reward ->
-                runCatching { BossReward.valueOf(reward) }.getOrNull()
-            }
-            Log.d(logTag, "Boss Mega reward: $bossMegaReward")
+            val bossMegaRewards = progress.bossMegaRewards.mapNotNull { (lessonId, reward) ->
+                val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+                lessonId to parsed
+            }.toMap()
+            Log.d(logTag, "Boss Mega rewards: $bossMegaRewards")
 
             Log.d(logTag, "--- Updating UI State ---")
             _uiState.update {
@@ -2661,7 +2675,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     currentStreak = streak.currentStreak,
                     longestStreak = streak.longestStreak,
                     bossLessonRewards = bossLessonRewards,
-                    bossMegaReward = bossMegaReward,
+                    bossMegaRewards = bossMegaRewards,
                     userName = profile.userName,
                     eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
                     eliteBestSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
@@ -2701,9 +2715,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
                 lessonId to parsed
             }.toMap()
-            val bossMegaReward = progress.bossMegaReward?.let { reward ->
-                runCatching { BossReward.valueOf(reward) }.getOrNull()
-            }
+            val bossMegaRewards = progress.bossMegaRewards.mapNotNull { (lessonId, reward) ->
+                val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
+                lessonId to parsed
+            }.toMap()
             val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
 
             withContext(Dispatchers.Main) {
@@ -2727,7 +2742,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                         currentStreak = streak.currentStreak,
                         longestStreak = streak.longestStreak,
                         bossLessonRewards = bossLessonRewards,
-                        bossMegaReward = bossMegaReward,
+                        bossMegaRewards = bossMegaRewards,
                         userName = profile.userName,
                         eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
                         eliteBestSpeeds = normalizedEliteSpeeds,
@@ -2887,7 +2902,7 @@ data class TrainingUiState(
     val bossLastType: BossType? = null,
     val bossErrorMessage: String? = null,
     val bossLessonRewards: Map<String, BossReward> = emptyMap(),
-    val bossMegaReward: BossReward? = null,
+    val bossMegaRewards: Map<String, BossReward> = emptyMap(),
     val testMode: Boolean = false,
     val eliteActive: Boolean = false,
     val eliteStepIndex: Int = 0,

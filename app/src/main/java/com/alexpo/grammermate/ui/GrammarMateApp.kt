@@ -999,10 +999,11 @@ private fun LessonRoadmapScreen(
     val totalCards = currentLesson?.allCards?.size ?: 0
     val shownCards = state.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
-    val bossMegaReward = state.bossMegaReward
+    val bossMegaReward = state.selectedLessonId?.let { state.bossMegaRewards[it] }
+    val bossUnlocked = state.completedSubLessonCount >= 15 || state.testMode
+    var bossLockedMessage by remember { mutableStateOf(false) }
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
-    var earlyStartSubLessonIndex by remember { mutableStateOf<Int?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1103,17 +1104,23 @@ private fun LessonRoadmapScreen(
                     is RoadmapEntry.BossLesson -> {
                         BossTile(
                             label = "Review",
-                            enabled = true,
-                            reward = bossLessonReward,
-                            onClick = onStartBossLesson
+                            enabled = bossUnlocked,
+                            reward = if (bossUnlocked) bossLessonReward else null,
+                            locked = !bossUnlocked,
+                            onClick = if (bossUnlocked) onStartBossLesson else {
+                                { bossLockedMessage = "Complete at least 15 exercises first" }
+                            }
                         )
                     }
                     is RoadmapEntry.BossMega -> {
                         BossTile(
                             label = "Mega",
-                            enabled = true,
-                            reward = bossMegaReward,
-                            onClick = onStartBossMega
+                            enabled = bossUnlocked,
+                            reward = if (bossUnlocked) bossMegaReward else null,
+                            locked = !bossUnlocked,
+                            onClick = if (bossUnlocked) onStartBossMega else {
+                                { bossLockedMessage = "Complete at least 15 exercises first" }
+                            }
                         )
                     }
                     // StoryCheckIn/StoryCheckOut kept for backward compat but no longer rendered
@@ -1150,6 +1157,16 @@ private fun LessonRoadmapScreen(
             },
             title = { Text(text = "Start early?") },
             text = { Text(text = "Start exercise ${idx + 1} early? You can always come back to review.") }
+    if (bossLockedMessage != null) {
+        AlertDialog(
+            onDismissRequest = { bossLockedMessage = null },
+            confirmButton = {
+                TextButton(onClick = { bossLockedMessage = null }) {
+                    Text(text = "OK")
+                }
+            },
+            title = { Text(text = "Locked") },
+            text = { Text(text = bossLockedMessage ?: "") }
         )
     }
 }
@@ -1286,7 +1303,7 @@ private fun VocabTile(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onClick: () -> Unit) {
+private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, locked: Boolean = false, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1307,12 +1324,21 @@ private fun BossTile(label: String, enabled: Boolean, reward: BossReward?, onCli
             verticalArrangement = Arrangement.Center
         ) {
             Text(text = label, fontWeight = FontWeight.SemiBold)
-            Icon(
-                imageVector = Icons.Default.EmojiEvents,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = tint
-            )
+            if (locked) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = tint
+                )
+            }
         }
     }
 }
