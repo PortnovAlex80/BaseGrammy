@@ -292,10 +292,6 @@ fun GrammarMateApp() {
                     onStartBossMega = {
                         vm.startBossMega()
                         screen = AppScreen.TRAINING
-                    },
-                    onOpenStory = { phase ->
-                        vm.openStory(phase)
-                        screen = AppScreen.STORY
                     }
                 )
                 AppScreen.ELITE -> EliteRoadmapScreen(
@@ -899,8 +895,7 @@ private fun LessonRoadmapScreen(
     onStartSubLesson: (Int) -> Unit,
     onOpenVocab: () -> Unit,
     onStartBossLesson: () -> Unit,
-    onStartBossMega: () -> Unit,
-    onOpenStory: (com.alexpo.grammermate.data.StoryPhase) -> Unit
+    onStartBossMega: () -> Unit
 ) {
     val lessonTitle = state.lessons
         .firstOrNull { it.id == state.selectedLessonId }
@@ -939,7 +934,7 @@ private fun LessonRoadmapScreen(
     val shownCards = state.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.bossMegaReward
-    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart)
+    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill = false)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1027,19 +1022,9 @@ private fun LessonRoadmapScreen(
                     is RoadmapEntry.Vocab -> {
                         VocabTile(label = "Vocab", onClick = onOpenVocab)
                     }
-                    is RoadmapEntry.StoryCheckIn -> {
-                        StoryTile(
-                            label = "Story",
-                            completed = state.storyCheckInDone,
-                            onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_IN) }
-                        )
-                    }
-                    is RoadmapEntry.StoryCheckOut -> {
-                        StoryTile(
-                            label = "Story",
-                            completed = state.storyCheckOutDone,
-                            onClick = { onOpenStory(com.alexpo.grammermate.data.StoryPhase.CHECK_OUT) }
-                        )
+                    is RoadmapEntry.Drill -> {
+                        // Drill tile placeholder - drill functionality will be wired later
+                        VocabTile(label = "Drill", onClick = { })
                     }
                     is RoadmapEntry.BossLesson -> {
                         BossTile(
@@ -1057,6 +1042,9 @@ private fun LessonRoadmapScreen(
                             onClick = onStartBossMega
                         )
                     }
+                    // StoryCheckIn/StoryCheckOut kept for backward compat but no longer rendered
+                    is RoadmapEntry.StoryCheckIn -> { }
+                    is RoadmapEntry.StoryCheckOut -> { }
                 }
             }
         }
@@ -1145,6 +1133,7 @@ private fun EliteStepTile(
 private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Vocab : RoadmapEntry()
+    object Drill : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
     object BossLesson : RoadmapEntry()
@@ -1154,17 +1143,18 @@ private sealed class RoadmapEntry {
 private fun buildRoadmapEntries(
     trainingTypes: List<SubLessonType>,
     hasMegaBoss: Boolean,
-    cycleStart: Int = 0
+    cycleStart: Int = 0,
+    hasDrill: Boolean = false
 ): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
     entries.add(RoadmapEntry.Vocab)
-    entries.add(RoadmapEntry.StoryCheckIn)
+    if (hasDrill) {
+        entries.add(RoadmapEntry.Drill)
+    }
     trainingTypes.forEachIndexed { index, type ->
         // Use absolute index for proper tracking
         entries.add(RoadmapEntry.Training(cycleStart + index, type))
     }
-    entries.add(RoadmapEntry.Vocab)
-    entries.add(RoadmapEntry.StoryCheckOut)
     entries.add(RoadmapEntry.BossLesson)
     if (hasMegaBoss) {
         entries.add(RoadmapEntry.BossMega)
@@ -1462,43 +1452,6 @@ private fun VocabSprintScreen(
     }
 }
 
-@Composable
-private fun StoryTile(label: String, completed: Boolean, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = label, fontWeight = FontWeight.SemiBold)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MenuBook,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                if (completed) {
-                    Icon(
-                        imageVector = Icons.Default.LocalFlorist,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
 @Composable
 private fun StoryQuizScreen(
     story: com.alexpo.grammermate.data.StoryQuiz?,
