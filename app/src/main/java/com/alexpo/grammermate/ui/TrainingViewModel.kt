@@ -47,6 +47,7 @@ import com.alexpo.grammermate.data.HiddenCardStore
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
+import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
@@ -84,6 +85,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val drillBadSentenceStore = BadSentenceStore(application, drillMode = true)
     private val hiddenCardStore = HiddenCardStore(application)
     private val drillProgressStore = DrillProgressStore(application)
+    private val vocabProgressStore = VocabProgressStore(application)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
@@ -1464,29 +1466,64 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(activeStory = story, storyErrorMessage = null) }
     }
 
-    fun openVocabSprint() {
+    fun hasVocabProgress(): Boolean {
+        val lessonId = _uiState.value.selectedLessonId ?: return false
+        val languageId = _uiState.value.selectedLanguageId
+        val progress = vocabProgressStore.get(lessonId, languageId)
+        return progress.completedIndices.isNotEmpty()
+    }
+
+    fun openVocabSprint(resume: Boolean = false) {
         val lessonId = _uiState.value.selectedLessonId ?: return
         val languageId = _uiState.value.selectedLanguageId
-        val entries = lessonStore.getVocabEntries(lessonId, languageId)
-        val shuffled = entries.shuffled()
+        val allEntries = lessonStore.getVocabEntries(lessonId, languageId)
+
+        // Sort using SRS prioritization: overdue first, then new, then not due
+        val sorted = vocabProgressStore.sortEntriesForSprint(allEntries, lessonId, languageId)
+
         val limit = _uiState.value.vocabSprintLimit
-        val limited = if (limit <= 0 || limit >= shuffled.size) shuffled else shuffled.take(limit)
+        val limited = if (limit <= 0 || limit >= sorted.size) sorted else sorted.take(limit)
+
         if (limited.isEmpty()) {
             vocabSession = emptyList()
             _uiState.update { it.copy(vocabErrorMessage = "Vocabulary not found. Please import the pack again.") }
             return
         }
-        vocabSession = limited
-        val vocabWordBank = limited.firstOrNull()?.let { buildVocabWordBank(it, limited) }.orEmpty()
-        Log.d(logTag, "openVocabSprint: entries=${entries.size}, limited=${limited.size}, wordBank=${vocabWordBank.size}")
+
+        val startIndex: Int
+        val sessionEntries: List<VocabEntry>
+
+        if (resume) {
+            val progress = vocabProgressStore.get(lessonId, languageId)
+            // Filter out already-completed entries
+            val remaining = limited.filterIndexed { index, _ -> index !in progress.completedIndices }
+            if (remaining.isEmpty()) {
+                // All completed - start fresh
+                vocabProgressStore.clearSprintProgress(lessonId, languageId)
+                sessionEntries = limited
+                startIndex = 0
+            } else {
+                sessionEntries = remaining
+                startIndex = 0
+            }
+        } else {
+            vocabProgressStore.clearSprintProgress(lessonId, languageId)
+            sessionEntries = limited
+            startIndex = 0
+        }
+
+        vocabSession = sessionEntries
+        val firstEntry = sessionEntries.firstOrNull()
+        val vocabWordBank = firstEntry?.let { buildVocabWordBank(it, sessionEntries) }.orEmpty()
+        Log.d(logTag, "openVocabSprint: allEntries=${allEntries.size}, limited=${limited.size}, session=${sessionEntries.size}, resume=$resume, wordBank=${vocabWordBank.size}")
         _uiState.update {
             it.copy(
-                currentVocab = limited.firstOrNull(),
+                currentVocab = firstEntry,
                 vocabInputText = "",
                 vocabAttempts = 0,
                 vocabAnswerText = null,
-                vocabIndex = 0,
-                vocabTotal = limited.size,
+                vocabIndex = startIndex,
+                vocabTotal = sessionEntries.size,
                 vocabWordBankWords = vocabWordBank,
                 vocabErrorMessage = null,
                 vocabInputMode = InputMode.VOICE,
@@ -1568,10 +1605,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             .any { it == normalizedInput }
         if (accepted) {
             playSuccessTone()
+            // Save progress: record correct answer and completed index
+            val lessonId = state.selectedLessonId ?: return
+            vocabProgressStore.recordCorrect(entry.id, lessonId, state.selectedLanguageId)
+            vocabProgressStore.addCompletedIndex(lessonId, state.selectedLanguageId, state.vocabIndex)
             moveToNextVocab()
             return
         }
         playErrorTone()
+        // Record incorrect answer for SRS tracking
+        val lessonId = state.selectedLessonId ?: return
+        vocabProgressStore.recordIncorrect(entry.id, lessonId, state.selectedLanguageId)
         val nextAttempts = state.vocabAttempts + 1
         if (nextAttempts >= 3) {
             _uiState.update {
@@ -1612,6 +1656,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _uiState.value
         val nextIndex = state.vocabIndex + 1
         if (nextIndex >= vocabSession.size) {
+            // All vocab entries completed - clear sprint progress
+            val lessonId = state.selectedLessonId
+            if (lessonId != null) {
+                vocabProgressStore.clearSprintProgress(lessonId, state.selectedLanguageId)
+            }
             _uiState.update {
                 it.copy(
                     currentVocab = null,
@@ -2254,10 +2303,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Важно для Mixed-режима где карточки могут быть из разных уроков.
      */
     private fun resolveCardLessonId(card: SentenceCard): String {
+        val selectedId = _uiState.value.selectedLessonId
+        // Prefer the currently selected lesson if it contains this card
+        if (selectedId != null) {
+            val selectedLesson = _uiState.value.lessons.find { it.id == selectedId }
+            if (selectedLesson != null && selectedLesson.cards.any { it.id == card.id }) {
+                return selectedId
+            }
+        }
         return _uiState.value.lessons
             .find { lesson -> lesson.cards.any { it.id == card.id } }
             ?.id
-            ?: _uiState.value.selectedLessonId
+            ?: selectedId
             ?: "unknown"
     }
 

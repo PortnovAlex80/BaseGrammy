@@ -144,6 +144,7 @@ fun GrammarMateApp() {
         val audioPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
         ) { /* permission result handled by system */ }
+        var showVocabStartDialog by remember { mutableStateOf(false) }
 
         val onTtsSpeak: () -> Unit = {
             if (state.ttsState == TtsState.SPEAKING) {
@@ -302,8 +303,12 @@ fun GrammarMateApp() {
                         screen = AppScreen.TRAINING
                     },
                     onOpenVocab = {
-                        vm.openVocabSprint()
-                        screen = AppScreen.VOCAB
+                        if (vm.hasVocabProgress()) {
+                            showVocabStartDialog = true
+                        } else {
+                            vm.openVocabSprint(resume = false)
+                            screen = AppScreen.VOCAB
+                        }
                     },
                     onStartBossLesson = {
                         vm.startBossLesson()
@@ -490,6 +495,31 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "Vocabulary") },
                     text = { Text(text = state.vocabErrorMessage ?: "") }
+                )
+            }
+            if (showVocabStartDialog) {
+                AlertDialog(
+                    onDismissRequest = { showVocabStartDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showVocabStartDialog = false
+                            vm.openVocabSprint(resume = true)
+                            screen = AppScreen.VOCAB
+                        }) {
+                            Text(text = "Continue")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showVocabStartDialog = false
+                            vm.openVocabSprint(resume = false)
+                            screen = AppScreen.VOCAB
+                        }) {
+                            Text(text = "Start fresh")
+                        }
+                    },
+                    title = { Text(text = "Vocabulary Sprint") },
+                    text = { Text(text = "You have previous progress. Continue where you left off or start fresh?") }
                 )
             }
             if (state.bossErrorMessage != null) {
@@ -979,6 +1009,7 @@ private fun LessonRoadmapScreen(
     val total = trainingTypes.size.coerceAtLeast(1)
     val completed = state.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = completed.coerceIn(0, total - 1)
+    var earlyStartSubLessonIndex by remember { mutableStateOf<Int?>(null) }
 
     // Calculate current cycle (block of 15)
     val currentCycle = completed / 15
@@ -1001,9 +1032,10 @@ private fun LessonRoadmapScreen(
     val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
     val bossMegaReward = state.selectedLessonId?.let { state.bossMegaRewards[it] }
     val bossUnlocked = state.completedSubLessonCount >= 15 || state.testMode
-    var bossLockedMessage by remember { mutableStateOf(false) }
+    var bossLockedMessage by remember { mutableStateOf<String?>(null) }
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
+    var showVocabStartDialog by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1157,6 +1189,9 @@ private fun LessonRoadmapScreen(
             },
             title = { Text(text = "Start early?") },
             text = { Text(text = "Start exercise ${idx + 1} early? You can always come back to review.") }
+        )
+    }
+
     if (bossLockedMessage != null) {
         AlertDialog(
             onDismissRequest = { bossLockedMessage = null },
@@ -1166,7 +1201,7 @@ private fun LessonRoadmapScreen(
                 }
             },
             title = { Text(text = "Locked") },
-            text = { Text(text = bossLockedMessage ?: "") }
+            text = { Text(text = "Complete at least 15 exercises first.") }
         )
     }
 }
@@ -1247,7 +1282,6 @@ private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Drill : RoadmapEntry()
     object Vocab : RoadmapEntry()
-    object Drill : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
     object BossLesson : RoadmapEntry()
@@ -1264,7 +1298,6 @@ private fun buildRoadmapEntries(
     entries.add(RoadmapEntry.Vocab)
     if (hasDrill) {
         entries.add(RoadmapEntry.Drill)
->>>>>>> worktree-agent-a85e5c524c513b417
     }
     trainingTypes.forEachIndexed { index, type ->
         // Use absolute index for proper tracking
