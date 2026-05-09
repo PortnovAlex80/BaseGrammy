@@ -187,7 +187,7 @@ Before spawning, announce verdict and mode. User can override.
 Every request that requires working with code, files, or system operations must be handled through subagents.
 NEVER perform such work directly in the main context.
 
-**It is forbidden to execute 4 or more tool calls in the main context.**
+**It is forbidden to execute 2 or more tool calls in the main context.**
 **It is forbidden to skip this rule to save time or because the task seems simple.**
 
 ---
