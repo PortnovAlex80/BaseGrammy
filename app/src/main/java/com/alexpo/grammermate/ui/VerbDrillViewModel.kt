@@ -69,7 +69,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private var activePackIds: Set<String> = emptySet()
 
     init {
-        loadCards()
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch { loadCards() }
     }
 
     /**
@@ -79,7 +80,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     fun reloadForLanguage(languageId: String) {
         val currentLang = _uiState.value.loadedLanguageId
         if (currentLang == languageId && !allCards.isEmpty()) return
-        loadCards(languageId)
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch { loadCards(languageId) }
     }
 
     private fun loadCards(languageId: String? = null) {
