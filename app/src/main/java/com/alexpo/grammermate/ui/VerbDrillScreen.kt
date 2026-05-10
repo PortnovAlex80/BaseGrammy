@@ -6,6 +6,7 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -85,6 +86,16 @@ fun VerbDrillScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     if (state.session != null) {
         val provider = remember { VerbDrillCardSessionProvider(viewModel) }
         VerbDrillSessionWithCardSession(
@@ -160,30 +171,45 @@ private fun VerbDrillSessionWithCardSession(
                         }
                     }
 
-                    // Verb hint chip
+                    // Verb + tense hint chips
                     if (!verbText.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        SuggestionChip(
-                            onClick = {
-                                sheetVerb = verbText
-                                sheetTense = drillCard.tense
-                                showVerbSheet = true
-                            },
-                            label = {
-                                Text(
-                                    text = if (verbRank != null) "$verbText #$verbRank" else verbText,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            },
-                            icon = {
-                                Icon(
-                                    Icons.Default.ChevronRight,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SuggestionChip(
+                                onClick = {
+                                    sheetVerb = verbText
+                                    sheetTense = drillCard.tense
+                                    showVerbSheet = true
+                                },
+                                label = {
+                                    Text(
+                                        text = if (verbRank != null) "$verbText #$verbRank" else verbText,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                icon = {
+                                    Icon(
+                                        Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                            val tenseText = drillCard?.tense
+                            if (!tenseText.isNullOrBlank()) {
+                                SuggestionChip(
+                                    onClick = {},
+                                    label = {
+                                        Text(
+                                            text = abbreviateTense(tenseText),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
                                 )
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -907,4 +933,22 @@ private fun VerbDrillCompletionScreen(
             Text(text = "Выход")
         }
     }
+}
+
+private fun abbreviateTense(tense: String): String {
+    val abbreviations = mapOf(
+        "Presente" to "Pres.",
+        "Imperfetto" to "Imperf.",
+        "Passato Prossimo" to "P. Pross.",
+        "Passato Remoto" to "P. Rem.",
+        "Trapassato Prossimo" to "Trap. P.",
+        "Futuro Semplice" to "Fut. Sempl.",
+        "Futuro Anteriore" to "Fut. Ant.",
+        "Condizionale Presente" to "Cond. Pres.",
+        "Condizionale Passato" to "Cond. Pass.",
+        "Congiuntivo Presente" to "Cong. Pres.",
+        "Congiuntivo Imperfetto" to "Cong. Imp.",
+        "Congiuntivo Passato" to "Cong. Pass.",
+    )
+    return abbreviations[tense] ?: tense.take(8)
 }

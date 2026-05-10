@@ -229,7 +229,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         val updatedCorrect = session.correctCount + 1
         val nextIndex = session.currentIndex + 1
-        val isComplete = nextIndex >= session.cards.size
+        val isComplete = updatedCorrect >= session.cards.size
 
         val nextCard = if (!isComplete) session.cards[nextIndex] else null
         val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
@@ -268,7 +268,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         val updatedIncorrect = session.incorrectCount + 1
         val nextIndex = session.currentIndex + 1
-        val isComplete = nextIndex >= session.cards.size
+        val isComplete = session.correctCount >= session.cards.size
 
         val nextCard = if (!isComplete) session.cards[nextIndex] else null
         val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
