@@ -142,6 +142,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         updateProgressDisplay()
     }
 
+    fun toggleSortByFrequency() {
+        _uiState.update { it.copy(sortByFrequency = !it.sortByFrequency) }
+    }
+
     private fun updateProgressDisplay() {
         val state = _uiState.value
         val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"
@@ -188,7 +192,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
 
-        val selected = remaining.shuffled().take(10)
+        val selected = if (state.sortByFrequency) {
+            remaining.sortedBy { it.rank ?: Int.MAX_VALUE }.take(10)
+        } else {
+            remaining.shuffled().take(10)
+        }
 
         val session = VerbDrillSessionState(cards = selected)
         val firstCard = selected.firstOrNull()

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -55,6 +56,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -94,6 +97,7 @@ fun VerbDrillScreen(
             state = state,
             onSelectTense = viewModel::selectTense,
             onSelectGroup = viewModel::selectGroup,
+            onToggleSortByFrequency = viewModel::toggleSortByFrequency,
             onStart = viewModel::startSession,
             onBack = onBack
         )
@@ -130,6 +134,7 @@ private fun VerbDrillSessionWithCardSession(
             val card = currentCard ?: return@TrainingCardSession
             val drillCard = card as? VerbDrillCard
             val verbText = drillCard?.verb
+            val verbRank = drillCard?.rank
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -166,7 +171,7 @@ private fun VerbDrillSessionWithCardSession(
                             },
                             label = {
                                 Text(
-                                    text = verbText,
+                                    text = if (verbRank != null) "$verbText #$verbRank" else verbText,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -678,6 +683,7 @@ private fun VerbDrillSelectionScreen(
     state: VerbDrillUiState,
     onSelectTense: (String?) -> Unit,
     onSelectGroup: (String?) -> Unit,
+    onToggleSortByFrequency: () -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -715,6 +721,20 @@ private fun VerbDrillSelectionScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = state.sortByFrequency,
+                onCheckedChange = { onToggleSortByFrequency() }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "По частотности")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (state.totalCards > 0) {
             Text(
@@ -844,6 +864,11 @@ private fun VerbDrillCompletionScreen(
     val state by viewModel.uiState.collectAsState()
     val session = state.session ?: return
 
+    LaunchedEffect(Unit) {
+        delay(1000L)
+        viewModel.nextBatch()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -852,7 +877,7 @@ private fun VerbDrillCompletionScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "🎉", // party popper
+            text = "🎉",
             fontSize = 48.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -867,13 +892,6 @@ private fun VerbDrillCompletionScreen(
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = { viewModel.nextBatch() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Дальше")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = onExit,
             modifier = Modifier.fillMaxWidth()
