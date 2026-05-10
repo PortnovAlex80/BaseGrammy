@@ -46,11 +46,17 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     /**
      * Reload words for the given pack and language (called on navigation).
      * This is the preferred entry point for pack-scoped drill data.
+     * Always refreshes mastery from disk to reflect any external changes.
      */
     fun reloadForPack(packId: String, languageId: String) {
         val currentLang = _uiState.value.loadedLanguageId
         val currentPack = activePackId
-        if (currentPack == packId && currentLang == languageId && allWords.isNotEmpty()) return
+        if (currentPack == packId && currentLang == languageId && allWords.isNotEmpty()) {
+            // Same pack and language — just refresh mastery from disk and update counts.
+            masteryMap = masteryStore.loadAll()
+            updateCounts()
+            return
+        }
         activePackId = packId
         // Recreate mastery store scoped to the pack
         masteryStore = WordMasteryStore(getApplication(), packId = packId)
@@ -61,10 +67,16 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     /**
      * Reload words for the given language (called on navigation).
      * If a pack is active, loads from that pack. Otherwise scans all packs.
+     * Always refreshes mastery from disk to reflect any external changes.
      */
     fun reloadForLanguage(languageId: String) {
         val currentLang = _uiState.value.loadedLanguageId
-        if (currentLang == languageId && allWords.isNotEmpty()) return
+        if (currentLang == languageId && allWords.isNotEmpty()) {
+            // Same language — just refresh mastery from disk and update counts.
+            masteryMap = masteryStore.loadAll()
+            updateCounts()
+            return
+        }
         val pack = activePackId
         if (pack != null) {
             masteryStore = WordMasteryStore(getApplication(), packId = pack)
@@ -300,9 +312,11 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
     /**
      * Exit the current session.
+     * Refreshes counts to reflect any mastery changes made during the session.
      */
     fun exitSession() {
         _uiState.update { it.copy(session = null) }
+        updateCounts()
     }
 
     // ── TTS Support ──────────────────────────────────────────────────

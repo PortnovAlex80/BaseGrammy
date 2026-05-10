@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1083,14 +1084,25 @@ private fun VocabDrillEntryTile(
             containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
         )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Green progress fill from bottom
+            val progress = masteredCount.coerceAtMost(1000) / 1000f
+            if (progress > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(progress)
+                        .align(Alignment.BottomCenter)
+                        .background(Color(0xFF4CAF50).copy(alpha = 0.3f))
+                )
+            }
+            // Original content on top
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     imageVector = Icons.Default.MenuBook,
                     contentDescription = null,
@@ -1099,9 +1111,13 @@ private fun VocabDrillEntryTile(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
             }
+            // Mastered count overlay in bottom-right
             if (masteredCount > 0) {
                 Text(
-                    text = "$masteredCount mastered",
+                    text = "$masteredCount",
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF2E7D32)
                 )
