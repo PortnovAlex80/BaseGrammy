@@ -521,7 +521,12 @@ private fun DefaultVerbDrillInputControls(
                     state = rememberTooltipState()
                 ) {
                     IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
+                        onClick = {
+                            val answer = contract.showAnswer()
+                            if (answer != null) {
+                                scope.onInputChanged(answer)
+                            }
+                        },
                         enabled = hasCards
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = "Show answer")

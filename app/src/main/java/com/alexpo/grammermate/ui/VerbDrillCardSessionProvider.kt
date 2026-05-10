@@ -157,12 +157,15 @@ class VerbDrillCardSessionProvider(
     }
 
     override fun nextCard() {
+        val hadPending = pendingCard != null
         pendingCard = null
         pendingAnswerResult = null
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
-        // The ViewModel already advanced the index in submitAnswer.
+        if (!hadPending) {
+            viewModel.nextCardManual()
+        }
     }
 
     override fun prevCard() {

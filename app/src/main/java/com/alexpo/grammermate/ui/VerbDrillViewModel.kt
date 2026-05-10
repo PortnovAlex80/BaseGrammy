@@ -294,6 +294,18 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun nextCardManual() {
+        val session = _uiState.value.session ?: return
+        val nextIndex = session.currentIndex + 1
+        if (nextIndex < session.cards.size) {
+            _uiState.update { state ->
+                state.copy(
+                    session = session.copy(currentIndex = nextIndex)
+                )
+            }
+        }
+    }
+
     fun exitSession() {
         _uiState.update { it.copy(session = null, currentCardIsBad = false) }
     }
