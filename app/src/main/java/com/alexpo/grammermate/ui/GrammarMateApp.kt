@@ -214,6 +214,9 @@ fun GrammarMateApp() {
                 BackHandler(enabled = screen == AppScreen.VERB_DRILL && !showSettings) {
                     screen = AppScreen.HOME
                 }
+                BackHandler(enabled = screen == AppScreen.VOCAB_DRILL && !showSettings) {
+                    screen = AppScreen.HOME
+                }
 
                 SettingsSheet(
                     show = showSettings,
@@ -310,7 +313,8 @@ fun GrammarMateApp() {
                     },
                     onOpenElite = { if (state.eliteUnlocked) screen = AppScreen.ELITE },
                     hasVerbDrill = hasVerbDrill,
-                    onOpenVerbDrill = { screen = AppScreen.VERB_DRILL }
+                    onOpenVerbDrill = { screen = AppScreen.VERB_DRILL },
+                    onOpenVocabDrill = { screen = AppScreen.VOCAB_DRILL }
                 )
                 AppScreen.LESSON -> LessonRoadmapScreen(
                     state = state,
@@ -431,6 +435,14 @@ fun GrammarMateApp() {
                     verbDrillVm.reloadForLanguage(state.selectedLanguageId)
                     VerbDrillScreen(
                         viewModel = verbDrillVm,
+                        onBack = { screen = AppScreen.HOME }
+                    )
+                }
+                AppScreen.VOCAB_DRILL -> {
+                    val vocabDrillVm = viewModel<VocabDrillViewModel>()
+                    vocabDrillVm.reloadForLanguage(state.selectedLanguageId)
+                    VocabDrillScreen(
+                        viewModel = vocabDrillVm,
                         onBack = { screen = AppScreen.HOME }
                     )
                 }
@@ -644,7 +656,8 @@ private enum class AppScreen {
     STORY,
     TRAINING,
     LADDER,
-    VERB_DRILL
+    VERB_DRILL,
+    VOCAB_DRILL
 }
 
 private fun parseScreen(name: String): AppScreen {
@@ -750,7 +763,8 @@ private fun HomeScreen(
     onSelectLesson: (String) -> Unit,
     onOpenElite: () -> Unit,
     hasVerbDrill: Boolean = false,
-    onOpenVerbDrill: () -> Unit = {}
+    onOpenVerbDrill: () -> Unit = {},
+    onOpenVocabDrill: () -> Unit = {}
 ) {
     val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackId, state.activePackLessonIds) {
         buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackLessonIds)
@@ -890,7 +904,19 @@ private fun HomeScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
         if (hasVerbDrill) {
-            VerbDrillEntryTile(onClick = onOpenVerbDrill)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                VerbDrillEntryTile(
+                    modifier = Modifier.weight(1f),
+                    onClick = onOpenVerbDrill
+                )
+                VocabDrillEntryTile(
+                    modifier = Modifier.weight(1f),
+                    onClick = onOpenVocabDrill
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
         }
         EliteEntryTile(
@@ -990,10 +1016,12 @@ private fun HomeScreen(
 }
 
 @Composable
-private fun VerbDrillEntryTile(onClick: () -> Unit) {
+private fun VerbDrillEntryTile(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .height(64.dp)
             .clickable(onClick = onClick)
     ) {
@@ -1013,6 +1041,36 @@ private fun VerbDrillEntryTile(onClick: () -> Unit) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
             }
+        }
+    }
+}
+
+@Composable
+private fun VocabDrillEntryTile(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(64.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.MenuBook,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
         }
     }
 }
