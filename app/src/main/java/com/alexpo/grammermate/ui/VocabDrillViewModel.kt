@@ -4,8 +4,6 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.data.AsrEngine
-import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsEngine
@@ -18,7 +16,6 @@ import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.data.VocabWord
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -29,13 +26,6 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private val logTag = "VocabDrillVM"
     private val masteryStore = WordMasteryStore(application)
     private val ttsEngine = TtsEngine(application)
-    private val asrEngine: AsrEngine? = try {
-        AsrEngine(application)
-    } catch (e: Exception) {
-        Log.e(logTag, "ASR engine creation failed", e)
-        null
-    }
-    private var asrStateJob: Job? = null
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
     val uiState: StateFlow<VocabDrillUiState> = _uiState
@@ -296,19 +286,11 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         ttsEngine.stop()
     }
 
-    // ── ASR / Voice Input Support ──────────────────────────────────────
+    // ── Voice Input Support (via Android RecognizerIntent) ──────────────
 
-    /** Set the drill direction and update ASR language accordingly. */
+    /** Set the drill direction. */
     fun setDirection(direction: VocabDrillDirection) {
         _uiState.update { it.copy(drillDirection = direction) }
-        // Switch ASR language based on direction:
-        // IT_TO_RU: user speaks Russian → ASR lang = "ru"
-        // RU_TO_IT: user speaks Italian → ASR lang = "it"
-        val asrLang = when (direction) {
-            VocabDrillDirection.IT_TO_RU -> "ru"
-            VocabDrillDirection.RU_TO_IT -> "it"
-        }
-        asrEngine?.setLanguage(asrLang)
         // Also update active session direction if one exists
         _uiState.update { state ->
             val session = state.session ?: return@update state
@@ -316,65 +298,13 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    /** Start voice input: initialize ASR if needed, then record and transcribe. */
-    fun startVoiceInput() {
-        val engine = asrEngine ?: return
-
-        viewModelScope.launch {
-            // Determine ASR language from current direction
-            val direction = _uiState.value.session?.direction ?: _uiState.value.drillDirection
-            val asrLang = when (direction) {
-                VocabDrillDirection.IT_TO_RU -> "ru"
-                VocabDrillDirection.RU_TO_IT -> "it"
-            }
-
-            // Initialize if needed
-            if (!engine.isReady) {
-                _uiState.update { it.copy(asrState = AsrState.INITIALIZING) }
-                engine.initialize(asrLang)
-            }
-
-            if (engine.state.value == AsrState.ERROR) {
-                _uiState.update { it.copy(asrState = AsrState.ERROR) }
-                return@launch
-            }
-
-            _uiState.update { it.copy(asrState = engine.state.value) }
-
-            // Collect ASR state changes into UI state
-            asrStateJob?.cancel()
-            asrStateJob = viewModelScope.launch {
-                engine.state.collect { asrState ->
-                    _uiState.update { it.copy(asrState = asrState) }
-                }
-            }
-
-            val result = engine.recordAndTranscribe()
-
-            asrStateJob?.cancel()
-            asrStateJob = null
-
-            _uiState.update { it.copy(asrState = engine.state.value) }
-
-            if (result.isNotBlank()) {
-                handleVoiceResult(result)
-            }
-        }
-    }
-
-    /** Stop any ongoing ASR recording. */
-    fun stopVoiceInput() {
-        asrEngine?.stopRecording()
-        asrStateJob?.cancel()
-        asrStateJob = null
-    }
-
     /**
      * Handle voice recognition result: match against expected answers.
+     * Called from the Screen after RecognizerIntent returns.
      * IT_TO_RU: expected = meaningRu (e.g. "быть/являться")
      * RU_TO_IT: expected = word (Italian, e.g. "essere")
      */
-    private fun handleVoiceResult(recognizedText: String) {
+    fun handleVoiceResult(recognizedText: String) {
         val session = _uiState.value.session ?: return
         val index = session.currentIndex
         if (index >= session.cards.size) return
@@ -458,7 +388,5 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     override fun onCleared() {
         super.onCleared()
         ttsEngine.release()
-        asrStateJob?.cancel()
-        asrEngine?.release()
     }
 }

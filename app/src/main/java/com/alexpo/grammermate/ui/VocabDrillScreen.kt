@@ -1,10 +1,10 @@
 package com.alexpo.grammermate.ui
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,11 +51,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
 import com.alexpo.grammermate.data.VocabDrillDirection
@@ -70,6 +70,33 @@ fun VocabDrillScreen(
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    // Voice recognition launcher — same pattern as VerbDrill
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                viewModel.handleVoiceResult(spoken)
+            }
+        }
+    }
+
+    // Helper to launch voice recognition with the correct language tag
+    val onStartVoice: () -> Unit = {
+        val direction = state.session?.direction ?: state.drillDirection
+        val langTag = when (direction) {
+            VocabDrillDirection.IT_TO_RU -> "ru-RU"
+            VocabDrillDirection.RU_TO_IT -> "it-IT"
+        }
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+        }
+        speechLauncher.launch(intent)
+    }
 
     if (state.isLoading) {
         Box(
@@ -100,12 +127,11 @@ fun VocabDrillScreen(
         } else {
             VocabDrillCardScreen(
                 session = session,
-                asrState = state.asrState,
                 ttsState = viewModel.ttsState.collectAsState().value,
                 onFlip = viewModel::flipCard,
                 onAnswer = viewModel::answerRating,
                 onSpeak = viewModel::speakTts,
-                onStartVoice = viewModel::startVoiceInput,
+                onStartVoice = onStartVoice,
                 onSkipVoice = viewModel::skipVoice,
                 onExit = viewModel::exitSession
             )
@@ -256,7 +282,6 @@ private fun VocabDrillSelectionScreen(
 @Composable
 private fun VocabDrillCardScreen(
     session: VocabDrillSessionState,
-    asrState: AsrState,
     ttsState: TtsState,
     onFlip: () -> Unit,
     onAnswer: (VocabDrillViewModel.AnswerRating) -> Unit,
@@ -323,7 +348,12 @@ private fun VocabDrillCardScreen(
                 card = card,
                 direction = session.direction,
                 ttsState = ttsState,
-                onSpeak = onSpeak
+                voiceCompleted = session.voiceCompleted,
+                voiceResult = session.voiceResult,
+                voiceRecognizedText = session.voiceRecognizedText,
+                voiceAttempts = session.voiceAttempts,
+                onSpeak = onSpeak,
+                onStartVoice = onStartVoice
             )
         }
 
@@ -403,89 +433,39 @@ private fun VocabDrillCardScreen(
                 }
             }
         } else {
-            // Voice input + Flip/Skip row
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Voice status feedback (when not idle)
-                if (session.voiceResult != null || session.voiceRecognizedText != null) {
-                    VoiceResultFeedback(
-                        voiceResult = session.voiceResult,
-                        voiceAttempts = session.voiceAttempts,
-                        voiceRecognizedText = session.voiceRecognizedText,
-                        voiceCompleted = session.voiceCompleted
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Flip/Skip row (mic is on the card front)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Skip button
+                OutlinedButton(
+                    onClick = onSkipVoice,
+                    modifier = Modifier.weight(1f),
+                    enabled = !session.voiceCompleted
                 ) {
-                    // Mic button
-                    FilledTonalIconButton(
-                        onClick = onStartVoice,
-                        enabled = asrState != AsrState.RECORDING
-                            && asrState != AsrState.RECOGNIZING
-                            && asrState != AsrState.INITIALIZING
-                            && !session.voiceCompleted,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        when (asrState) {
-                            AsrState.RECORDING -> {
-                                val infiniteTransition = rememberInfiniteTransition(label = "micPulse")
-                                val pulseAlpha by infiniteTransition.animateFloat(
-                                    initialValue = 0.4f,
-                                    targetValue = 1.0f,
-                                    animationSpec = infiniteRepeatable(
-                                        animation = tween(durationMillis = 600),
-                                        repeatMode = RepeatMode.Reverse
-                                    ),
-                                    label = "micPulseAlpha"
-                                )
-                                Icon(
-                                    Icons.Default.Mic,
-                                    contentDescription = "Recording",
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha)
-                                )
-                            }
-                            AsrState.RECOGNIZING, AsrState.INITIALIZING -> {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                            else -> {
-                                Icon(Icons.Default.Mic, contentDescription = "Voice input")
-                            }
-                        }
-                    }
+                    Icon(
+                        Icons.Default.SkipNext,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Skip")
+                }
 
-                    // Skip button (alternative to voice)
-                    OutlinedButton(
-                        onClick = onSkipVoice,
-                        modifier = Modifier.weight(1f),
-                        enabled = !session.voiceCompleted
-                    ) {
-                        Icon(
-                            Icons.Default.SkipNext,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Skip")
-                    }
-
-                    // Flip button (for manual flip)
-                    Button(
-                        onClick = onFlip,
-                        modifier = Modifier.weight(1f),
-                        enabled = session.voiceCompleted
-                    ) {
-                        Icon(
-                            Icons.Default.Flip,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Flip")
-                    }
+                // Flip button
+                Button(
+                    onClick = onFlip,
+                    modifier = Modifier.weight(1f),
+                    enabled = session.voiceCompleted
+                ) {
+                    Icon(
+                        Icons.Default.Flip,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Flip")
                 }
             }
         }
@@ -499,13 +479,25 @@ private fun VocabDrillCardFront(
     card: VocabDrillCard,
     direction: VocabDrillDirection,
     ttsState: TtsState,
-    onSpeak: (String) -> Unit
+    voiceCompleted: Boolean,
+    voiceResult: VoiceResult?,
+    voiceRecognizedText: String?,
+    voiceAttempts: Int,
+    onSpeak: (String) -> Unit,
+    onStartVoice: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            containerColor = when {
+                voiceCompleted && voiceResult == VoiceResult.CORRECT ->
+                    Color(0xFFE8F5E9).copy(alpha = 0.7f) // light green tint
+                voiceCompleted && voiceResult == VoiceResult.WRONG ->
+                    Color(0xFFFFEBEE).copy(alpha = 0.7f) // light red tint
+                else ->
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            }
         )
     ) {
         Column(
@@ -514,7 +506,7 @@ private fun VocabDrillCardFront(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // POS badge
+            // POS badge + rank
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -535,10 +527,10 @@ private fun VocabDrillCardFront(
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(24.dp))
 
             // TTS button (only for IT_TO_RU, speak the Italian word)
             if (direction == VocabDrillDirection.IT_TO_RU) {
+                Spacer(modifier = Modifier.height(8.dp))
                 IconButton(
                     onClick = { onSpeak(card.word.word) },
                     enabled = ttsState != TtsState.INITIALIZING
@@ -564,6 +556,38 @@ private fun VocabDrillCardFront(
                         )
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ── Centered microphone button ──
+            if (!voiceCompleted) {
+                // Prompt text
+                Text(
+                    text = "Tap to speak",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                FilledTonalIconButton(
+                    onClick = onStartVoice,
+                    modifier = Modifier.size(72.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = "Voice input",
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            } else {
+                // Voice completed — show result feedback
+                VoiceResultFeedback(
+                    voiceResult = voiceResult,
+                    voiceAttempts = voiceAttempts,
+                    voiceRecognizedText = voiceRecognizedText,
+                    voiceCompleted = voiceCompleted
+                )
             }
         }
     }

@@ -70,9 +70,7 @@ data class VocabDrillUiState(
     val totalCount: Int = 0,
     val session: VocabDrillSessionState? = null,
     val loadedLanguageId: String? = null,
-    val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
-    val asrState: AsrState = AsrState.IDLE,
-    val asrModelReady: Boolean = false
+    val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU
 )
 
 /** State of an active drill session. */

@@ -389,7 +389,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
         ttsModelManager.currentLanguageId = languageId
         checkTtsModel()
-        asrEngine?.setLanguage(languageId)
+        // Only switch ASR language if engine is already initialized and ready.
+        // Calling setLanguage() when ASR is not ready crashes the native layer.
+        if (asrEngine?.isReady == true) {
+            asrEngine.setLanguage(languageId)
+        }
     }
 
     fun selectLesson(lessonId: String) {

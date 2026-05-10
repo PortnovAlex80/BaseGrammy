@@ -132,6 +132,10 @@ class AsrEngine(private val context: Context) {
             Log.w(TAG, "Cannot set language: recognizer not initialized")
             return
         }
+        if (_state.value != AsrState.READY) {
+            Log.w(TAG, "Cannot set language: engine not in READY state (state=${_state.value})")
+            return
+        }
 
         val whisperLang = AsrModelRegistry.whisperLanguageCode(language)
         if (whisperLang == currentLanguage) return
