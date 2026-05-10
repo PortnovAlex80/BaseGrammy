@@ -10,6 +10,7 @@ import com.alexpo.grammermate.data.InputModeConfig
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.SessionProgress
+import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillSessionState
 
@@ -38,16 +39,26 @@ class VerbDrillCardSessionProvider(
     var pendingAnswerResult: AnswerResult? by mutableStateOf(null)
         private set
 
+    /** Current input mode. */
+    private var _inputMode: InputMode by mutableStateOf(InputMode.KEYBOARD)
+
+    /** Words currently selected in word bank mode. */
+    private var _selectedWords: List<String> by mutableStateOf(emptyList())
+
+    /** Cached word bank for the current card. */
+    private var cachedWordBankCardId: String? = null
+    private var cachedWordBank: List<String> = emptyList()
+
     private val session: VerbDrillSessionState?
         get() = viewModel.uiState.value.session
 
     // ── Capabilities ─────────────────────────────────────────────────────
 
     override val supportsTts: Boolean get() = true
-    override val supportsVoiceInput: Boolean get() = false
-    override val supportsWordBank: Boolean get() = false
+    override val supportsVoiceInput: Boolean get() = true
+    override val supportsWordBank: Boolean get() = true
     override val supportsFlagging: Boolean get() = true
-    override val supportsNavigation: Boolean get() = false
+    override val supportsNavigation: Boolean get() = true
     override val supportsPause: Boolean get() = false
 
     // ── Contract state ───────────────────────────────────────────────────
@@ -78,7 +89,7 @@ class VerbDrillCardSessionProvider(
 
     override val inputModeConfig: InputModeConfig
         get() = InputModeConfig(
-            availableModes = setOf(InputMode.KEYBOARD),
+            availableModes = setOf(InputMode.KEYBOARD, InputMode.VOICE, InputMode.WORD_BANK),
             defaultMode = InputMode.KEYBOARD,
             showInputModeButtons = false
         )
@@ -91,6 +102,18 @@ class VerbDrillCardSessionProvider(
             val s = session ?: return false
             return !s.isComplete
         }
+
+    override val ttsState: TtsState
+        get() = viewModel.ttsState.value
+
+    override val currentInputMode: InputMode
+        get() = _inputMode
+
+    override val languageId: String
+        get() = viewModel.uiState.value.loadedLanguageId ?: "it"
+
+    override val currentSpeedWpm: Int
+        get() = viewModel.currentSpeedWpm
 
     // ── Actions ──────────────────────────────────────────────────────────
 
@@ -123,6 +146,7 @@ class VerbDrillCardSessionProvider(
 
         // Forward to ViewModel (this advances the index internally)
         viewModel.submitAnswer(input)
+        viewModel.recordAnswerTime()
 
         return pendingAnswerResult
     }
@@ -136,11 +160,71 @@ class VerbDrillCardSessionProvider(
     override fun nextCard() {
         pendingCard = null
         pendingAnswerResult = null
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
         // The ViewModel already advanced the index in submitAnswer.
     }
 
     override fun prevCard() {
-        // VerbDrill does not support backward navigation
+        viewModel.prevCard()
+        pendingCard = null
+        pendingAnswerResult = null
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+    }
+
+    // ── Voice Input ───────────────────────────────────────────────────────
+
+    override fun onVoiceInputResult(text: String) {
+        // Voice input result is handled by the caller who sets input text
+        // and triggers submit. The composable manages this flow.
+    }
+
+    override fun setInputMode(mode: InputMode) {
+        _inputMode = mode
+        _selectedWords = emptyList()
+    }
+
+    // ── Word Bank ─────────────────────────────────────────────────────────
+
+    override fun getWordBankWords(): List<String> {
+        val s = session ?: return emptyList()
+        val card = pendingCard ?: s.cards.getOrElse(s.currentIndex) { return emptyList() }
+
+        // Cache word bank per card to avoid re-generating on every recomposition
+        if (cachedWordBankCardId == card.id) return cachedWordBank
+
+        val answerWords = card.answer.split(Regex("\\s+")).filter { it.isNotBlank() }
+        val distractorWords = s.cards
+            .filter { it.id != card.id }
+            .flatMap { it.answer.split(Regex("\\s+")).filter { w -> w.isNotBlank() && w !in answerWords } }
+            .distinct()
+            .shuffled()
+            .take(maxOf(0, 8 - answerWords.size))
+
+        val bank = (answerWords + distractorWords).shuffled()
+        cachedWordBankCardId = card.id
+        cachedWordBank = bank
+        return bank
+    }
+
+    override fun getSelectedWords(): List<String> = _selectedWords
+
+    override fun selectWordFromBank(word: String) {
+        val bank = getWordBankWords()
+        val availableCount = bank.count { it == word }
+        val usedCount = _selectedWords.count { it == word }
+        if (usedCount < availableCount) {
+            _selectedWords = _selectedWords + word
+        }
+    }
+
+    override fun removeLastSelectedWord() {
+        if (_selectedWords.isNotEmpty()) {
+            _selectedWords = _selectedWords.dropLast(1)
+        }
     }
 
     // ── TTS ──────────────────────────────────────────────────────────────

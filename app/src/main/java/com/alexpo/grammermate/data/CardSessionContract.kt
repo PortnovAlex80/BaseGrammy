@@ -53,11 +53,32 @@ interface CardSessionContract : CardSessionCapabilities {
     val lastResult: AnswerResult?
     val sessionActive: Boolean
 
+    /** Current TTS state for speaker button rendering. */
+    val ttsState: TtsState get() = TtsState.IDLE
+
+    /** Current input mode (VOICE, KEYBOARD, WORD_BANK). */
+    val currentInputMode: InputMode get() = inputModeConfig.defaultMode
+
+    /** Language ID for voice recognition locale resolution. */
+    val languageId: String get() = "en"
+
+    /** Current typing speed in words per minute. */
+    val currentSpeedWpm: Int get() = 0
+
     fun onInputChanged(text: String)
     fun submitAnswer(): AnswerResult?
     fun showAnswer(): String?
     fun nextCard()
     fun prevCard()
+
+    /** Called when voice recognition returns a result. */
+    fun onVoiceInputResult(text: String) { onInputChanged(text) }
+
+    /** Set the current input mode. */
+    fun setInputMode(mode: InputMode) {}
+
+    /** Get the currently selected word bank words (in order). */
+    fun getSelectedWords(): List<String> = emptyList()
 
     // Optional capabilities with default no-op implementations
     fun getWordBankWords(): List<String> = emptyList()

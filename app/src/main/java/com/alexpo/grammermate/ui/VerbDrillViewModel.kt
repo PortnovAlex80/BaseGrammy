@@ -40,6 +40,31 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /** Maps card ID to pack ID for bad sentence scoping */
     private var packIdForCardId: Map<String, String> = emptyMap()
 
+    // ── Speed tracking ──────────────────────────────────────────────────
+    private var cardShownTimestamp: Long = 0L
+    private var totalAnswerTimeMs: Long = 0L
+    private var totalAnswersForSpeed: Int = 0
+    val currentSpeedWpm: Int
+        get() {
+            val minutes = totalAnswerTimeMs / 60000.0
+            if (minutes <= 0.0) return 0
+            return (totalAnswersForSpeed / minutes).toInt()
+        }
+
+    /** Called when a new card is displayed to start timing. */
+    fun markCardShown() {
+        cardShownTimestamp = System.currentTimeMillis()
+    }
+
+    /** Called when an answer is submitted to record elapsed time. */
+    fun recordAnswerTime() {
+        if (cardShownTimestamp > 0) {
+            totalAnswerTimeMs += System.currentTimeMillis() - cardShownTimestamp
+            totalAnswersForSpeed++
+            cardShownTimestamp = 0L
+        }
+    }
+
     /** Tracks pack IDs that have verb drill cards, for counting bad sentences */
     private var activePackIds: Set<String> = emptySet()
 
@@ -176,6 +201,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 currentCardIsBad = firstCardIsBad
             )
         }
+
+        // Reset speed tracking for new session
+        totalAnswerTimeMs = 0L
+        totalAnswersForSpeed = 0
+        cardShownTimestamp = System.currentTimeMillis()
     }
 
     fun submitAnswer(input: String) {
@@ -229,11 +259,31 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         progressMap = progressMap.toMutableMap().apply { this[comboKey] = updatedProgress }
         verbDrillStore.upsertComboProgress(comboKey, updatedProgress)
 
+        // Mark next card shown for speed tracking
+        if (!isComplete) {
+            cardShownTimestamp = System.currentTimeMillis()
+        }
+
         updateProgressDisplay()
     }
 
     fun nextBatch() {
         startSession()
+    }
+
+    fun prevCard() {
+        val session = _uiState.value.session ?: return
+        if (session.currentIndex > 0) {
+            val prevIndex = session.currentIndex - 1
+            _uiState.update { state ->
+                state.copy(
+                    session = session.copy(
+                        currentIndex = prevIndex,
+                        isComplete = false
+                    )
+                )
+            }
+        }
     }
 
     fun exitSession() {
