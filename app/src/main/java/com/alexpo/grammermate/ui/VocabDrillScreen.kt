@@ -1,9 +1,10 @@
 package com.alexpo.grammermate.ui
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flip
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,6 +33,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,7 +41,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,14 +50,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
+import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.data.VocabDrillSessionState
 import com.alexpo.grammermate.data.VocabDrillUiState
+import com.alexpo.grammermate.data.VoiceResult
 import kotlinx.coroutines.delay
 
 @Composable
@@ -93,10 +100,13 @@ fun VocabDrillScreen(
         } else {
             VocabDrillCardScreen(
                 session = session,
+                asrState = state.asrState,
                 ttsState = viewModel.ttsState.collectAsState().value,
                 onFlip = viewModel::flipCard,
                 onAnswer = viewModel::answerRating,
                 onSpeak = viewModel::speakTts,
+                onStartVoice = viewModel::startVoiceInput,
+                onSkipVoice = viewModel::skipVoice,
                 onExit = viewModel::exitSession
             )
         }
@@ -105,13 +115,14 @@ fun VocabDrillScreen(
             state = state,
             onSelectPos = viewModel::selectPos,
             onSetRankRange = viewModel::setRankRange,
+            onSetDirection = viewModel::setDirection,
             onStart = viewModel::startSession,
             onBack = onBack
         )
     }
 }
 
-// ── Selection Screen ──────────────────────────────────────────────────
+// -- Selection Screen --
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,37 +130,40 @@ private fun VocabDrillSelectionScreen(
     state: VocabDrillUiState,
     onSelectPos: (String?) -> Unit,
     onSetRankRange: (Int, Int) -> Unit,
+    onSetDirection: (VocabDrillDirection) -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
         }
         Spacer(modifier = Modifier.height(16.dp))
-
-        // POS filter chips
-        Text(
-            text = "Part of speech",
-            style = MaterialTheme.typography.labelMedium
-        )
+        // Direction filter chips
+        Text(text = "Direction", style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            FilterChip(
+                selected = state.drillDirection == VocabDrillDirection.IT_TO_RU,
+                onClick = { onSetDirection(VocabDrillDirection.IT_TO_RU) },
+                label = { Text("IT → RU") }
+            )
+            FilterChip(
+                selected = state.drillDirection == VocabDrillDirection.RU_TO_IT,
+                onClick = { onSetDirection(VocabDrillDirection.RU_TO_IT) },
+                label = { Text("RU → IT") }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        // POS filter chips
+        Text(text = "Part of speech", style = MaterialTheme.typography.labelMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             FilterChip(
                 selected = state.selectedPos == null,
                 onClick = { onSelectPos(null) },
@@ -171,17 +185,10 @@ private fun VocabDrillSelectionScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-
         // Rank range filter
-        Text(
-            text = "Word frequency",
-            style = MaterialTheme.typography.labelMedium
-        )
+        Text(text = "Word frequency", style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             val rankOptions = listOf(
                 "Top 100" to (0 to 100),
                 "Top 500" to (0 to 500),
@@ -244,20 +251,31 @@ private fun VocabDrillSelectionScreen(
     }
 }
 
-// ── Card Screen ──────────────────────────────────────────────────────
+// -- Card Screen --
 
 @Composable
 private fun VocabDrillCardScreen(
     session: VocabDrillSessionState,
+    asrState: AsrState,
     ttsState: TtsState,
     onFlip: () -> Unit,
     onAnswer: (VocabDrillViewModel.AnswerRating) -> Unit,
     onSpeak: (String) -> Unit,
+    onStartVoice: () -> Unit,
+    onSkipVoice: () -> Unit,
     onExit: () -> Unit
 ) {
     val card = session.cards.getOrElse(session.currentIndex) { return }
     val totalCards = session.cards.size
     val currentIndex = session.currentIndex + 1 // 1-based for display
+
+    // Auto-flip when voice is completed with a result
+    LaunchedEffect(session.voiceCompleted, session.voiceResult) {
+        if (session.voiceCompleted && session.voiceResult != null && !session.isFlipped) {
+            delay(800L)
+            onFlip()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -296,12 +314,14 @@ private fun VocabDrillCardScreen(
         if (session.isFlipped) {
             VocabDrillCardBack(
                 card = card,
+                direction = session.direction,
                 ttsState = ttsState,
                 onSpeak = onSpeak
             )
         } else {
             VocabDrillCardFront(
                 card = card,
+                direction = session.direction,
                 ttsState = ttsState,
                 onSpeak = onSpeak
             )
@@ -383,26 +403,101 @@ private fun VocabDrillCardScreen(
                 }
             }
         } else {
-            // Flip button
-            Button(
-                onClick = onFlip,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    Icons.Default.Flip,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Flip")
+            // Voice input + Flip/Skip row
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Voice status feedback (when not idle)
+                if (session.voiceResult != null || session.voiceRecognizedText != null) {
+                    VoiceResultFeedback(
+                        voiceResult = session.voiceResult,
+                        voiceAttempts = session.voiceAttempts,
+                        voiceRecognizedText = session.voiceRecognizedText,
+                        voiceCompleted = session.voiceCompleted
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Mic button
+                    FilledTonalIconButton(
+                        onClick = onStartVoice,
+                        enabled = asrState != AsrState.RECORDING
+                            && asrState != AsrState.RECOGNIZING
+                            && asrState != AsrState.INITIALIZING
+                            && !session.voiceCompleted,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        when (asrState) {
+                            AsrState.RECORDING -> {
+                                val infiniteTransition = rememberInfiniteTransition(label = "micPulse")
+                                val pulseAlpha by infiniteTransition.animateFloat(
+                                    initialValue = 0.4f,
+                                    targetValue = 1.0f,
+                                    animationSpec = infiniteRepeatable(
+                                        animation = tween(durationMillis = 600),
+                                        repeatMode = RepeatMode.Reverse
+                                    ),
+                                    label = "micPulseAlpha"
+                                )
+                                Icon(
+                                    Icons.Default.Mic,
+                                    contentDescription = "Recording",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha)
+                                )
+                            }
+                            AsrState.RECOGNIZING, AsrState.INITIALIZING -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                            else -> {
+                                Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                            }
+                        }
+                    }
+
+                    // Skip button (alternative to voice)
+                    OutlinedButton(
+                        onClick = onSkipVoice,
+                        modifier = Modifier.weight(1f),
+                        enabled = !session.voiceCompleted
+                    ) {
+                        Icon(
+                            Icons.Default.SkipNext,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Skip")
+                    }
+
+                    // Flip button (for manual flip)
+                    Button(
+                        onClick = onFlip,
+                        modifier = Modifier.weight(1f),
+                        enabled = session.voiceCompleted
+                    ) {
+                        Icon(
+                            Icons.Default.Flip,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Flip")
+                    }
+                }
             }
         }
     }
 }
 
+// -- Card Front --
+
 @Composable
 private fun VocabDrillCardFront(
     card: VocabDrillCard,
+    direction: VocabDrillDirection,
     ttsState: TtsState,
     onSpeak: (String) -> Unit
 ) {
@@ -429,48 +524,57 @@ private fun VocabDrillCardFront(
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Italian word (large)
+            // Main word display based on direction
+            val displayText = when (direction) {
+                VocabDrillDirection.IT_TO_RU -> card.word.word
+                VocabDrillDirection.RU_TO_IT -> card.word.meaningRu ?: "?"
+            }
             Text(
-                text = card.word.word,
+                text = displayText,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // TTS button
-            IconButton(
-                onClick = { onSpeak(card.word.word) },
-                enabled = ttsState != TtsState.INITIALIZING
-            ) {
-                when (ttsState) {
-                    TtsState.SPEAKING -> Icon(
-                        Icons.Default.VolumeUp,
-                        contentDescription = "Speaking",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    TtsState.INITIALIZING -> CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                    TtsState.ERROR -> Icon(
-                        Icons.Default.Close,
-                        contentDescription = "TTS error",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    else -> Icon(
-                        Icons.Default.VolumeUp,
-                        contentDescription = "Listen"
-                    )
+            // TTS button (only for IT_TO_RU, speak the Italian word)
+            if (direction == VocabDrillDirection.IT_TO_RU) {
+                IconButton(
+                    onClick = { onSpeak(card.word.word) },
+                    enabled = ttsState != TtsState.INITIALIZING
+                ) {
+                    when (ttsState) {
+                        TtsState.SPEAKING -> Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Speaking",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        TtsState.INITIALIZING -> CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                        TtsState.ERROR -> Icon(
+                            Icons.Default.Close,
+                            contentDescription = "TTS error",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        else -> Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Listen"
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+// -- Card Back --
+
 @Composable
 private fun VocabDrillCardBack(
     card: VocabDrillCard,
+    direction: VocabDrillDirection,
     ttsState: TtsState,
     onSpeak: (String) -> Unit
 ) {
@@ -487,39 +591,79 @@ private fun VocabDrillCardBack(
                 .padding(20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Italian word (smaller, with TTS)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            if (direction == VocabDrillDirection.IT_TO_RU) {
+                // IT_TO_RU: back shows Russian meaning + Italian word with TTS
+                // Italian word (smaller, with TTS)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PosBadge(pos = card.word.pos)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = card.word.word,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    IconButton(
+                        onClick = { onSpeak(card.word.word) },
+                        enabled = ttsState != TtsState.INITIALIZING
+                    ) {
+                        Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                    }
+                }
+
+                // Russian translation
+                val meaningRu = card.word.meaningRu
+                if (!meaningRu.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = meaningRu,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                // RU_TO_IT: back shows Italian word + collocations
+                // Russian meaning (smaller)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     PosBadge(pos = card.word.pos)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = card.word.word,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = card.word.meaningRu ?: "?",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
-                IconButton(
-                    onClick = { onSpeak(card.word.word) },
-                    enabled = ttsState != TtsState.INITIALIZING
-                ) {
-                    Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
-                }
-            }
 
-            // Russian translation
-            val meaningRu = card.word.meaningRu
-            if (!meaningRu.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = meaningRu,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Italian word (large) with TTS
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = card.word.word,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    IconButton(
+                        onClick = { onSpeak(card.word.word) },
+                        enabled = ttsState != TtsState.INITIALIZING
+                    ) {
+                        Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                    }
+                }
             }
 
             // Forms (for adjectives: msg, fsg, mpl, fpl)
@@ -595,6 +739,105 @@ private fun VocabDrillCardBack(
     }
 }
 
+// -- Voice Result Feedback --
+
+@Composable
+private fun VoiceResultFeedback(
+    voiceResult: VoiceResult?,
+    voiceAttempts: Int,
+    voiceRecognizedText: String?,
+    voiceCompleted: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when (voiceResult) {
+                VoiceResult.CORRECT -> Color(0xFFE8F5E9) // light green
+                VoiceResult.WRONG -> Color(0xFFFFEBEE)   // light red
+                VoiceResult.SKIPPED -> MaterialTheme.colorScheme.surfaceVariant
+                null -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Recognized text
+            if (!voiceRecognizedText.isNullOrBlank()) {
+                Text(
+                    text = "\"$voiceRecognizedText\"",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            // Result indicator
+            when (voiceResult) {
+                VoiceResult.CORRECT -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Correct!",
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF2E7D32)
+                        )
+                    }
+                }
+                VoiceResult.WRONG -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        if (voiceCompleted) {
+                            Text(
+                                text = "Moving on...",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            Text(
+                                text = "Try again (${voiceAttempts}/3)",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+                VoiceResult.SKIPPED -> {
+                    Text(
+                        text = "Skipped",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+                null -> { /* no result yet */ }
+            }
+        }
+    }
+}
+
+// -- Badges & Helpers --
+
 @Composable
 private fun PosBadge(pos: String) {
     val (label, color) = when (pos) {
@@ -650,7 +893,7 @@ private fun FormItem(label: String, value: String?) {
     }
 }
 
-// ── Completion Screen ──────────────────────────────────────────────────
+// -- Completion Screen --
 
 @Composable
 private fun VocabDrillCompletionScreen(
