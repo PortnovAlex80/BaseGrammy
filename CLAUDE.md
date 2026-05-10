@@ -24,9 +24,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Interval ladder | Spaced repetition schedule in days: [1, 2, 4, 7, 10, 14, 20, 28, 42, 56] |
 | Boss battle | End-of-lesson challenge testing pattern stability under pressure |
 | Elite mode | Infinite mixed review for long-term skill maintenance |
-| Vocab sprint | Vocabulary drill mode with 5-option word bank (1 correct + 4 distractors) |
+| Vocab sprint | Vocabulary drill mode with 5-option word bank (1 correct + 4 distractors). Distinct from VocabDrill — uses multiple choice, not flashcards |
 | Lesson pack | ZIP archive containing `manifest.json` + CSV lesson files, imported via Settings |
 | Active Set / Reserve Set | Two 150-card pools per lesson that rotate to prevent phrase memorization |
+| VocabDrill | Anki-like flashcard drill for vocabulary mastery with spaced repetition. Separate from Vocab Sprint — uses card flip + voice input + difficulty rating |
+| VocabWord | Vocabulary entry with word, POS, rank, Russian meaning, collocations, and optional gender forms |
+| Mastery step | Index 0–9 into the interval ladder; step ≥ 3 = "learned" |
+| AnswerRating | AGAIN (reset to step 0), HARD (stay), GOOD (+1 step), EASY (+2 steps) |
+| Voice mode | Auto-launch RecognizerIntent on each new card for hands-free drill |
+| Drill direction | IT→RU (see Italian, speak Russian) or RU→IT (reverse) |
 
 ### Critical gotchas
 
@@ -37,6 +43,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`TrainingViewModel` is 3000+ lines** — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
 - **Project path contains Cyrillic** (`Разработка`) — `android.overridePathCheck=true` in gradle.properties is required
 - **Drill visibility is pack-scoped** — `hasVerbDrill`/`hasVocabDrill` check the active pack's manifest, not all installed packs. A pack without `verbDrill`/`vocabDrill` sections shows no drill tiles.
+- **VocabDrill mastery is stored at `drills/{packId}/word_mastery.yaml`** — `forceReloadDefaultPacks()` deletes CSV subdirs but preserves mastery data. Never delete the entire `drills/{packId}/` directory.
+- **VocabDrillViewModel is a second ViewModel** — the only permitted exception to the single-ViewModel rule. Do NOT create more.
+- **VocabDrillScreen is 1100+ lines** — approaching the 1000-line limit. Extract composables to `ui/components/` if it grows further.
+- **Mastery "learned" threshold is step ≥ 3** — a word needs at minimum 2 consecutive "Easy" ratings or 3 "Good" ratings to be marked learned. This is different from the full mastery at step 9.
 
 ---
 
@@ -50,7 +60,7 @@ Correctness beats speed. Transparency beats silence.
 Any deviation from Level B–D rules must be acknowledged explicitly in the response to the user, not only in thinking.
 
 **Level B — Architecture integrity**
-Never violate the single-ViewModel pattern. UI (`GrammarMateApp.kt`) must remain a stateless renderer.
+Never violate the single-ViewModel pattern (VocabDrillViewModel is the sole permitted exception). UI (`GrammarMateApp.kt`) must remain a stateless renderer.
 Data layer stores must use atomic file writes. A working but architecturally wrong solution is not acceptable.
 
 **Level C — Process rules**
@@ -263,9 +273,15 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 
 ## Architecture
 
-### MVVM — Single ViewModel
+### MVVM — Single ViewModel (with one exception)
 
-`TrainingViewModel` (AndroidViewModel) is the sole ViewModel. It holds all training state in a `StateFlow<TrainingUiState>` and handles every domain action. `GrammarMateApp.kt` is a pure stateless renderer that collects the state flow and dispatches actions.
+`TrainingViewModel` (AndroidViewModel) is the primary ViewModel for ALL training/lesson business logic.
+
+**Exception:** `VocabDrillViewModel` is a separate ViewModel for the Anki-style vocab drill screen. It manages its own state flow (`VocabDrillUiState`), mastery store, and session lifecycle independently. This exception exists because VocabDrill has isolated state with no shared dependencies with the main training flow.
+
+All other rules still apply — do NOT create additional ViewModels.
+
+`GrammarMateApp.kt` is a pure stateless renderer that collects the state flow and dispatches actions.
 
 ```
 MainActivity → AppRoot (restore check) → GrammarMateApp (Compose UI)
@@ -282,10 +298,11 @@ All stores read/write YAML/CSV files in `context.filesDir/grammarmate/`. Key fil
 | File | Purpose |
 |------|---------|
 | `Models.kt` | Data classes: `Lesson`, `SentenceCard`, `VocabEntry`, `TrainingUiState`, enums |
+| `VocabWord.kt` | Data classes: `VocabWord`, `WordMasteryState`, `VocabDrillCard`, `VocabDrillDirection`, `VoiceResult`, `VocabDrillUiState`, `VocabDrillSessionState` |
 | `LessonStore.kt` | Lesson pack import (ZIP), seed data, language management, pack-scoped drill import/query |
 | `LessonPackManifest.kt` | Pack manifest data classes including `DrillFiles`, `verbDrill`/`vocabDrill` optional sections |
 | `VerbDrillStore.kt` | Verb drill progress, scoped per-pack at `drills/{packId}/verb_drill_progress.yaml` |
-| `WordMasteryStore.kt` | Vocab drill word mastery, scoped per-pack at `drills/{packId}/word_mastery.yaml` |
+| `WordMasteryStore.kt` | Vocab drill word mastery, scoped per-pack at `drills/{packId}/word_mastery.yaml`. Legacy path `word_mastery.yaml` (no packId) exists but is not actively written during normal drill usage |
 | `ItalianDrillVocabParser.kt` | Parses Italian vocab drill CSVs (nouns, verbs, adjectives, etc.) |
 | `MasteryStore.kt` | Per-lesson card show tracking (uniqueCardShows, shownCardIds) |
 | `ProgressStore.kt` | Training session position/state |
@@ -305,6 +322,8 @@ All stores read/write YAML/CSV files in `context.filesDir/grammarmate/`. Key fil
 |------|---------|
 | `GrammarMateApp.kt` | Screen router: `GrammarMateApp()` composable, `AppScreen` enum, dialog orchestration, BackHandlers |
 | `TrainingViewModel.kt` | All business logic: session management, answer validation, word bank, mastery, boss/elite modes |
+| `VocabDrillViewModel.kt` | Anki-style vocab drill: session management, spaced repetition, answer matching via voice, mastery tracking, direction switching |
+| `VocabDrillScreen.kt` | VocabDrill screen: card front/back with voice input, filter selection (POS, rank, direction, voice mode), session completion |
 | `AppRoot.kt` | Entry point — checks backup restore status before showing main app |
 | `Theme.kt` | Material 3 theme |
 | `screens/*.kt` | Per-screen Composable files (HomeScreen, TrainingScreen, LessonRoadmapScreen, etc.) |
@@ -341,6 +360,18 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 - Verb drill CSV: header row `RU;IT;Verb;Tense;Group` (RU and IT required; Verb, Tense, Group optional).
 - Vocab drill CSV: language-specific format parsed by `ItalianDrillVocabParser`.
 
+**Vocab drill CSV formats** (comma-separated, in `assets/grammarmate/vocab/it/`):
+- `drill_nouns.csv`: `rank,noun,collocations,ru`
+- `drill_verbs.csv`: `rank,verb,collocations,ru`
+- `drill_adjectives.csv`: `rank,adjective,msg,fsg,mpl,fpl,collocations,ru`
+- `drill_adverbs.csv`: `rank,adverb,comparative,superlative,ru,collocations`
+- `drill_numbers.csv`: `category,italian,ru,form_m,form_f,notes`
+- `drill_pronouns.csv`: `type,category,person,form_sg_m,form_sg_f,form_pl_m,form_pl_f,notes,ru`
+
+The `ru` column contains Russian translations with `/` as synonym separator (e.g., "дом/жилище/семья").
+POS type is derived from filename: `drill_{pos}.csv` → POS name.
+Parser (`ItalianDrillVocabParser`) auto-detects format from header row and reads `ru` column dynamically.
+
 ### File Size & Decomposition Guidelines
 
 **Hard limits — decompose when exceeded:**
@@ -357,7 +388,7 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 1. **Screen files go in `ui/screens/`** — one file per major screen (Home, Lesson, Training, Vocab, Story, Elite, Ladder, Settings). Helper composables used only by that screen stay in the same file. Dialog composables triggered from navigation stay in GrammarMateApp.kt.
 2. **Shared components go in `ui/components/`** — composables used by 2+ screens (TTS/ASR download dialogs, welcome dialog).
 3. **ViewModel helpers go in `ui/helpers/`** — plain Kotlin classes that implement domain logic (boss, vocab, drill, elite, TTS/ASR, word bank). They receive a `TrainingStateAccess` interface (NOT ViewModels — no lifecycle). Helpers never call other helpers directly; all coordination flows through TrainingViewModel.
-4. **NEVER create a second ViewModel.** Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint.
+4. **NEVER create a second ViewModel** (except VocabDrillViewModel). Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint. VocabDrillViewModel is the sole permitted exception.
 5. **GrammarMateApp.kt is a router.** It contains only `GrammarMateApp()` (screen routing, dialog state, BackHandlers), `AppScreen` enum, and dialog orchestration. All screen rendering is delegated to `ui/screens/`.
 6. **Helper dependency pattern:** helpers take `TrainingStateAccess` as a constructor parameter:
    ```kotlin
