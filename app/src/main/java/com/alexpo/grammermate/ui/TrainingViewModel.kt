@@ -2680,6 +2680,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Refresh the vocab mastered count from the store.
+     * Called when returning from VocabDrill to reflect updated mastery.
+     */
+    fun refreshVocabMasteryCount() {
+        val count = wordMasteryStore.getMasteredCount()
+        _uiState.update { it.copy(vocabMasteredCount = count) }
+    }
+
+    /**
      * Обновляет streak после завершения подурока
      */
     private fun updateStreak() {

@@ -255,7 +255,8 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             else -> (currentStep + delta).coerceIn(0, maxStep)
         }
         val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
-        val isLearned = newStepIndex >= maxStep
+        val LEARNED_THRESHOLD = 3  // words at step 3+ are considered learned
+        val isLearned = newStepIndex >= LEARNED_THRESHOLD
 
         val updatedMastery = card.mastery.copy(
             intervalStepIndex = newStepIndex,

@@ -458,7 +458,10 @@ fun GrammarMateApp() {
                     }
                     VocabDrillScreen(
                         viewModel = vocabDrillVm,
-                        onBack = { screen = AppScreen.HOME }
+                        onBack = {
+                            vm.refreshVocabMasteryCount()
+                            screen = AppScreen.HOME
+                        }
                     )
                 }
             }
