@@ -226,13 +226,13 @@ class LessonStore(private val context: Context) {
     }
 
     /**
-     * Delete the pack-scoped drill directory: grammarmate/drills/{packId}/
+     * Delete only the CSV drill subdirectories under grammarmate/drills/{packId}/,
+     * preserving mastery YAML files (e.g. word_mastery.yaml).
      */
     private fun deletePackDrills(packId: String) {
-        val drillsDir = File(baseDir, "drills/$packId")
-        if (drillsDir.exists()) {
-            drillsDir.deleteRecursively()
-        }
+        val packDrillDir = File(baseDir, "drills/$packId")
+        File(packDrillDir, "verb_drill").deleteRecursively()
+        File(packDrillDir, "vocab_drill").deleteRecursively()
     }
 
     private fun readInstalledPackManifest(packId: String): LessonPackManifest? {
