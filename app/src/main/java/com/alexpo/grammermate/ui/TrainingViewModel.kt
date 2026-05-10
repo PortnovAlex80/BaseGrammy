@@ -86,7 +86,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val hiddenCardStore = HiddenCardStore(application)
     private val drillProgressStore = DrillProgressStore(application)
     private val vocabProgressStore = VocabProgressStore(application)
-    private val wordMasteryStore = WordMasteryStore(application)
+    private fun createWordMasteryStore(packId: String? = _uiState.value.activePackId): WordMasteryStore {
+        return if (packId != null) {
+            WordMasteryStore(getApplication(), packId = packId)
+        } else {
+            WordMasteryStore(getApplication())
+        }
+    }
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
@@ -229,7 +235,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 useOfflineAsr = config.useOfflineAsr,
                 asrModelReady = asrModelManager.isReady(),
                 initialScreen = restoredScreen,
-                vocabMasteredCount = wordMasteryStore.getMasteredCount()
+                vocabMasteredCount = createWordMasteryStore(initialActivePackId).getMasteredCount()
             )
         }
         rebuildSchedules(lessons)
@@ -403,7 +409,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentLessonFlower = null,
                 wordBankWords = emptyList(),
                 selectedWords = emptyList(),
-                vocabMasteredCount = wordMasteryStore.getMasteredCount()
+                vocabMasteredCount = createWordMasteryStore(newPackId).getMasteredCount()
             )
         }
         rebuildSchedules(lessons)
@@ -2704,7 +2710,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Called when returning from VocabDrill to reflect updated mastery.
      */
     fun refreshVocabMasteryCount() {
-        val count = wordMasteryStore.getMasteredCount()
+        val count = createWordMasteryStore().getMasteredCount()
         _uiState.update { it.copy(vocabMasteredCount = count) }
     }
 
