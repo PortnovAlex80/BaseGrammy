@@ -9,13 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -26,6 +22,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,11 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import com.alexpo.grammermate.data.Normalizer
-import com.alexpo.grammermate.data.VerbDrillCard
-import com.alexpo.grammermate.data.VerbDrillSessionState
+import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.VerbDrillUiState
 
 @Composable
@@ -55,10 +49,10 @@ fun VerbDrillScreen(
     val state by viewModel.uiState.collectAsState()
 
     if (state.session != null) {
-        VerbDrillSessionScreen(
-            session = state.session!!,
-            onSubmit = viewModel::submitAnswer,
-            onNextBatch = viewModel::nextBatch,
+        val provider = remember { VerbDrillCardSessionProvider(viewModel) }
+        VerbDrillSessionWithCardSession(
+            provider = provider,
+            viewModel = viewModel,
             onExit = viewModel::exitSession
         )
     } else {
@@ -70,6 +64,55 @@ fun VerbDrillScreen(
             onBack = onBack
         )
     }
+}
+
+@Composable
+private fun VerbDrillSessionWithCardSession(
+    provider: VerbDrillCardSessionProvider,
+    viewModel: VerbDrillViewModel,
+    onExit: () -> Unit
+) {
+    TrainingCardSession(
+        contract = provider,
+        header = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onExit) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
+            }
+        },
+        inputControls = {
+            VerbDrillInputControls(
+                inputText = inputText,
+                onInputChanged = onInputChanged,
+                onSubmit = {
+                    val input = inputText
+                    if (input.isNotBlank()) {
+                        provider.submitAnswerWithInput(input)
+                        onInputChanged("")
+                    }
+                }
+            )
+        },
+        resultContent = {
+            DefaultVerbDrillResultContent(
+                result = lastResult,
+                onNext = onNext
+            )
+        },
+        completionScreen = {
+            VerbDrillCompletionScreen(
+                viewModel = viewModel,
+                onExit = onExit
+            )
+        },
+        onExit = onExit
+    )
 }
 
 @Composable
@@ -233,176 +276,112 @@ private fun GroupDropdown(
     }
 }
 
+// --- VerbDrill-specific composable pieces ---
+
 @Composable
-private fun VerbDrillSessionScreen(
-    session: VerbDrillSessionState,
-    onSubmit: (String) -> Unit,
-    onNextBatch: () -> Unit,
+private fun VerbDrillInputControls(
+    inputText: String,
+    onInputChanged: (String) -> Unit,
+    onSubmit: () -> Unit
+) {
+    Column {
+        OutlinedTextField(
+            value = inputText,
+            onValueChange = onInputChanged,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(text = "Answer") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() })
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = onSubmit,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = inputText.isNotBlank()
+        ) {
+            Text(text = "Ответ")
+        }
+    }
+}
+
+@Composable
+private fun DefaultVerbDrillResultContent(
+    result: AnswerResult?,
+    onNext: () -> Unit
+) {
+    if (result == null) return
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (result.correct) {
+            Text(
+                text = "Правильно",
+                color = Color(0xFF2E7D32),
+                fontWeight = FontWeight.Bold
+            )
+        } else {
+            Text(
+                text = "Неправильно",
+                color = Color(0xFFC62828),
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+    Text(
+        text = "Ответ: ${result.displayAnswer}",
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Button(
+        onClick = onNext,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(text = "Дальше")
+    }
+}
+
+@Composable
+private fun VerbDrillCompletionScreen(
+    viewModel: VerbDrillViewModel,
     onExit: () -> Unit
 ) {
-    // Track the pending answer state locally
-    var inputText by remember { mutableStateOf("") }
-    var answeredCard by remember { mutableStateOf<VerbDrillCard?>(null) }
-    var wasCorrect by remember { mutableStateOf(false) }
-
-    if (session.isComplete) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = "🎉", fontSize = 48.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Отлично!",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Правильных: ${session.correctCount}  |  Ошибок: ${session.incorrectCount}",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = {
-                    answeredCard = null
-                    inputText = ""
-                    onNextBatch()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Дальше")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onExit,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Выход")
-            }
-        }
-        return
-    }
-
-    val currentCard = session.cards.getOrElse(session.currentIndex) { null }
-    val showingResult = answeredCard != null
+    val state by viewModel.uiState.collectAsState()
+    val session = state.session ?: return
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onExit) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
-        }
-
         Text(
-            text = "${session.currentIndex + 1} / ${session.cards.size}",
-            style = MaterialTheme.typography.labelMedium,
+            text = "🎉", // party popper
+            fontSize = 48.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Отлично!",
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Правильных: ${session.correctCount}  |  Ошибок: ${session.incorrectCount}",
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
-        LinearProgressIndicator(
-            progress = (session.currentIndex + 1).toFloat() / session.cards.size.toFloat(),
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = { viewModel.nextBatch() },
             modifier = Modifier.fillMaxWidth()
-        )
-
-        // Show the prompt from the current card (or the answered card while showing result)
-        val displayCard = if (showingResult) answeredCard else currentCard
-        if (displayCard != null) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "RU",
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = displayCard.promptRu,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+        ) {
+            Text(text = "Дальше")
         }
-
-        if (showingResult) {
-            // Show result for the answered card
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (wasCorrect) {
-                    Text(
-                        text = "Правильно",
-                        color = Color(0xFF2E7D32),
-                        fontWeight = FontWeight.Bold
-                    )
-                } else {
-                    Text(
-                        text = "Неправильно",
-                        color = Color(0xFFC62828),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Text(
-                text = "Ответ: ${answeredCard?.answer}",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    answeredCard = null
-                    inputText = ""
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Дальше")
-            }
-        } else if (currentCard != null) {
-            // Input mode
-            OutlinedTextField(
-                value = inputText,
-                onValueChange = { inputText = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Answer") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        if (inputText.isNotBlank()) {
-                            onSubmit(inputText)
-                            answeredCard = currentCard
-                            wasCorrect = Normalizer.normalize(inputText) == Normalizer.normalize(currentCard.answer)
-                            inputText = ""
-                        }
-                    }
-                )
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    if (inputText.isNotBlank()) {
-                        answeredCard = currentCard
-                        wasCorrect = Normalizer.normalize(inputText) == Normalizer.normalize(currentCard.answer)
-                        onSubmit(inputText)
-                        inputText = ""
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = inputText.isNotBlank()
-            ) {
-                Text(text = "Ответ")
-            }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = onExit,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Выход")
         }
     }
 }

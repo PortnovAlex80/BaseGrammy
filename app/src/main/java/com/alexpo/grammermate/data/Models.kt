@@ -37,11 +37,11 @@ data class Lesson(
 }
 
 data class SentenceCard(
-    val id: String,
-    val promptRu: String,
-    val acceptedAnswers: List<String>,
+    override val id: String,
+    override val promptRu: String,
+    override val acceptedAnswers: List<String>,
     val tense: String? = null
-)
+) : SessionCard
 
 data class VocabEntry(
     val id: String,

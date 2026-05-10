@@ -82,7 +82,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val masteryStore = MasteryStore(application)
     private val streakStore = StreakStore(application)
     private val badSentenceStore = BadSentenceStore(application)
-    private val drillBadSentenceStore = BadSentenceStore(application, drillMode = true)
     private val hiddenCardStore = HiddenCardStore(application)
     private val drillProgressStore = DrillProgressStore(application)
     private val vocabProgressStore = VocabProgressStore(application)
@@ -120,6 +119,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
         lessonStore.ensureSeedData()
+        badSentenceStore.migrateIfNeeded(lessonStore)
         val progress = progressStore.load()
         val config = configStore.load()
         val profile = profileStore.load()
@@ -210,7 +210,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentStreak = streakData.currentStreak,
                 longestStreak = streakData.longestStreak,
                 userName = profile.userName,
-                badSentenceCount = badSentenceStore.getBadSentences().size,
+                badSentenceCount = initialActivePackId?.let { badSentenceStore.getBadSentenceCount(it) } ?: 0,
                 initialScreen = restoredScreen
             )
         }
@@ -1362,7 +1362,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteActive = false,
                 wordBankWords = emptyList(),
                 selectedWords = emptyList(),
-                badSentenceCount = drillBadSentenceStore.getBadSentences().size
+                badSentenceCount = _uiState.value.activePackId?.let { badSentenceStore.getBadSentenceCount(it) } ?: 0
             )
         }
         loadDrillCard(startCardIndex)
@@ -1456,7 +1456,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 answerText = null,
                 incorrectAttemptsForCard = 0,
                 voicePromptStartMs = null,
-                badSentenceCount = badSentenceStore.getBadSentences().size
+                badSentenceCount = _uiState.value.activePackId?.let { badSentenceStore.getBadSentenceCount(it) } ?: 0
             )
         }
         buildSessionCards()
@@ -2834,21 +2834,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun activeBadStore(): BadSentenceStore {
-        return if (_uiState.value.isDrillMode) drillBadSentenceStore else badSentenceStore
-    }
-
     fun flagBadSentence() {
         val card = _uiState.value.currentCard ?: return
         val state = _uiState.value
-        val store = activeBadStore()
-        store.addBadSentence(
+        val packId = state.activePackId ?: return
+        badSentenceStore.addBadSentence(
+            packId = packId,
             cardId = card.id,
             languageId = state.selectedLanguageId,
             sentence = card.promptRu,
             translation = card.acceptedAnswers.joinToString(" / ")
         )
-        _uiState.update { it.copy(badSentenceCount = store.getBadSentences().size) }
+        _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId)) }
         if (state.isDrillMode) {
             advanceDrillCard()
         }
@@ -2856,21 +2853,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun unflagBadSentence() {
         val card = _uiState.value.currentCard ?: return
-        val store = activeBadStore()
-        store.removeBadSentence(card.id)
-        _uiState.update { it.copy(badSentenceCount = store.getBadSentences().size) }
+        val packId = _uiState.value.activePackId ?: return
+        badSentenceStore.removeBadSentence(packId, card.id)
+        _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId)) }
     }
 
     fun isBadSentence(): Boolean {
         val card = _uiState.value.currentCard ?: return false
-        return activeBadStore().isBadSentence(card.id)
+        val packId = _uiState.value.activePackId ?: return false
+        return badSentenceStore.isBadSentence(packId, card.id)
     }
 
     fun exportBadSentences(): String? {
-        val store = activeBadStore()
-        val entries = store.getBadSentences()
+        val packId = _uiState.value.activePackId ?: return null
+        val entries = badSentenceStore.getBadSentences(packId)
         if (entries.isEmpty()) return null
-        val file = store.exportToTextFile()
+        val file = badSentenceStore.exportToTextFile(packId)
         return file.absolutePath
     }
 

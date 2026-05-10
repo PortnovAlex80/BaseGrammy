@@ -3,6 +3,8 @@ package com.alexpo.grammermate.ui
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import com.alexpo.grammermate.data.BadSentenceEntry
+import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
@@ -22,12 +24,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private val verbDrillStore = VerbDrillStore(application)
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
+    private val badSentenceStore = BadSentenceStore(application)
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
     val uiState: StateFlow<VerbDrillUiState> = _uiState
 
     private var allCards: List<VerbDrillCard> = emptyList()
     private var progressMap: Map<String, VerbDrillComboProgress> = emptyMap()
+
+    /** Maps card ID to pack ID for bad sentence scoping */
+    private var packIdForCardId: Map<String, String> = emptyMap()
+
+    /** Tracks pack IDs that have verb drill cards, for counting bad sentences */
+    private var activePackIds: Set<String> = emptySet()
 
     init {
         loadCards()
@@ -47,26 +56,46 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val lang = languageId ?: progressStore.load().languageId
         val files = lessonStore.getVerbDrillFiles(lang)
         val cards = mutableListOf<VerbDrillCard>()
+        val cardToPack = mutableMapOf<String, String>()
+        val packIds = mutableSetOf<String>()
 
         for (file in files) {
             val content = file.readText()
             val (_, parsed) = VerbDrillCsvParser.parse(content)
+
+            // Extract lessonId from filename: "{languageId}_{lessonId}.csv"
+            val fileName = file.nameWithoutExtension
+            val lessonId = fileName.removePrefix("${lang}_")
+
+            // Resolve packId for this lesson
+            val packId = lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+            packIds.add(packId)
+
+            for (card in parsed) {
+                cardToPack[card.id] = packId
+            }
             cards.addAll(parsed)
         }
 
         allCards = cards
+        packIdForCardId = cardToPack
+        activePackIds = packIds
 
         val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
         val groups = cards.mapNotNull { it.group }.distinct().sorted()
 
         progressMap = verbDrillStore.loadProgress()
 
+        // Sum bad sentence counts across all active packs
+        val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+
         _uiState.update {
             it.copy(
                 availableTenses = tenses,
                 availableGroups = groups,
                 isLoading = false,
-                loadedLanguageId = lang
+                loadedLanguageId = lang,
+                badSentenceCount = badCount
             )
         }
 
@@ -132,7 +161,16 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val selected = remaining.shuffled().take(10)
 
         val session = VerbDrillSessionState(cards = selected)
-        _uiState.update { it.copy(session = session, allDoneToday = false) }
+        val firstCard = selected.firstOrNull()
+        val firstCardIsBad = firstCard?.let { isCardBad(it) } ?: false
+
+        _uiState.update {
+            it.copy(
+                session = session,
+                allDoneToday = false,
+                currentCardIsBad = firstCardIsBad
+            )
+        }
     }
 
     fun submitAnswer(input: String) {
@@ -148,6 +186,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val nextIndex = session.currentIndex + 1
         val isComplete = nextIndex >= session.cards.size
 
+        val nextCard = if (!isComplete) session.cards[nextIndex] else null
+        val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
+
         _uiState.update { state ->
             state.copy(
                 session = session.copy(
@@ -155,7 +196,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                     correctCount = updatedCorrect,
                     incorrectCount = updatedIncorrect,
                     isComplete = isComplete
-                )
+                ),
+                currentCardIsBad = nextCardIsBad
             )
         }
 
@@ -190,7 +232,69 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun exitSession() {
-        _uiState.update { it.copy(session = null) }
+        _uiState.update { it.copy(session = null, currentCardIsBad = false) }
+    }
+
+    // ── Bad Sentence Support ──────────────────────────────────────────────
+
+    fun flagBadSentence() {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+        val card = session.cards[index]
+        val packId = packIdForCardId[card.id] ?: return
+
+        badSentenceStore.addBadSentence(
+            packId = packId,
+            cardId = card.id,
+            languageId = _uiState.value.loadedLanguageId ?: "",
+            sentence = card.promptRu,
+            translation = card.answer
+        )
+        _uiState.update {
+            it.copy(
+                badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) },
+                currentCardIsBad = true
+            )
+        }
+    }
+
+    fun unflagBadSentence() {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+        val card = session.cards[index]
+        val packId = packIdForCardId[card.id] ?: return
+
+        badSentenceStore.removeBadSentence(packId, card.id)
+        _uiState.update {
+            it.copy(
+                badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) },
+                currentCardIsBad = false
+            )
+        }
+    }
+
+    fun isBadSentence(): Boolean {
+        return _uiState.value.currentCardIsBad
+    }
+
+    fun exportBadSentences(): String? {
+        if (activePackIds.isEmpty()) return null
+        // Export all packs' bad sentences; use the first non-empty pack's file
+        for (packId in activePackIds) {
+            val entries = badSentenceStore.getBadSentences(packId)
+            if (entries.isNotEmpty()) {
+                val file = badSentenceStore.exportToTextFile(packId)
+                return file.absolutePath
+            }
+        }
+        return null
+    }
+
+    private fun isCardBad(card: VerbDrillCard): Boolean {
+        val packId = packIdForCardId[card.id] ?: return false
+        return badSentenceStore.isBadSentence(packId, card.id)
     }
 
     private fun checkAnswer(input: String, expected: String): Boolean {

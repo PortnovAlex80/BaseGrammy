@@ -1,13 +1,15 @@
 package com.alexpo.grammermate.data
 
 data class VerbDrillCard(
-    val id: String,
-    val promptRu: String,
+    override val id: String,
+    override val promptRu: String,
     val answer: String,
     val verb: String? = null,
     val tense: String? = null,
     val group: String? = null
-)
+) : SessionCard {
+    override val acceptedAnswers: List<String> get() = listOf(answer)
+}
 
 data class VerbDrillComboProgress(
     val group: String,
@@ -37,5 +39,7 @@ data class VerbDrillUiState(
     val session: VerbDrillSessionState? = null,
     val allDoneToday: Boolean = false,
     val isLoading: Boolean = true,
-    val loadedLanguageId: String? = null
+    val loadedLanguageId: String? = null,
+    val badSentenceCount: Int = 0,
+    val currentCardIsBad: Boolean = false
 )
