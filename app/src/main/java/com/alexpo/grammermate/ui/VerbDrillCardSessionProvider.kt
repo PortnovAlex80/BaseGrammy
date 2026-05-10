@@ -74,10 +74,12 @@ class VerbDrillCardSessionProvider(
     override val progress: SessionProgress
         get() {
             val s = session ?: return SessionProgress(0, 0)
-            return SessionProgress(
-                current = s.currentIndex + 1,
-                total = s.cards.size
-            )
+            val displayIndex = if (pendingCard != null) {
+                s.currentIndex  // already advanced, so this is correct for "just answered card N"
+            } else {
+                s.currentIndex + 1
+            }
+            return SessionProgress(current = displayIndex, total = s.cards.size)
         }
 
     override val isComplete: Boolean
@@ -99,7 +101,7 @@ class VerbDrillCardSessionProvider(
     override val sessionActive: Boolean
         get() {
             val s = session ?: return false
-            return !s.isComplete
+            return !s.isComplete || pendingCard != null
         }
 
     override val ttsState: TtsState

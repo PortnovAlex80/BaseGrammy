@@ -871,7 +871,9 @@ private fun VerbDrillCompletionScreen(
 
     LaunchedEffect(Unit) {
         delay(1000L)
-        viewModel.nextBatch()
+        if (!state.allDoneToday) {
+            viewModel.nextBatch()
+        }
     }
 
     Column(
