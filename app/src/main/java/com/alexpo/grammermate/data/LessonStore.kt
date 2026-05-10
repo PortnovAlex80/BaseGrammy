@@ -29,9 +29,6 @@ class LessonStore(private val context: Context) {
     private val vocabStore = YamlListStore(yaml, vocabIndexFile)
     private val defaultPacks = listOf(
         DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
-        DefaultPack("IT_WORD_ORDER_A1", "grammarmate/packs/IT_WORD_ORDER_A1.zip"),
-        DefaultPack("IT_VERB_CONJUGATION_A1", "grammarmate/packs/IT_VERB_CONJUGATION_A1.zip"),
-        DefaultPack("IT_VERB_TENSES_A1", "grammarmate/packs/IT_VERB_TENSES_A1.zip"),
         DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip")
     )
 
