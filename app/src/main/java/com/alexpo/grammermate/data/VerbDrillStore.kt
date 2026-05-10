@@ -5,10 +5,17 @@ import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.time.LocalDate
 
-class VerbDrillStore(private val context: Context) {
+class VerbDrillStore(
+    context: Context,
+    private val packId: String? = null
+) {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file = File(baseDir, "verb_drill_progress.yaml")
+    private val file: File = if (packId != null) {
+        File(baseDir, "drills/$packId/verb_drill_progress.yaml")
+    } else {
+        File(baseDir, "verb_drill_progress.yaml")
+    }
     private val schemaVersion = 1
 
     fun loadProgress(): Map<String, VerbDrillComboProgress> {

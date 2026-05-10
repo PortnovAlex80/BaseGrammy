@@ -40,7 +40,8 @@ data class TenseExample(
 class VerbDrillViewModel(application: Application) : AndroidViewModel(application) {
 
     private val logTag = "VerbDrillVM"
-    private val verbDrillStore = VerbDrillStore(application)
+    private val application = application
+    private var verbDrillStore = VerbDrillStore(application)
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private val badSentenceStore = BadSentenceStore(application)
@@ -51,6 +52,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     private var allCards: List<VerbDrillCard> = emptyList()
     private var progressMap: Map<String, VerbDrillComboProgress> = emptyMap()
+
+    /** Active pack ID for pack-scoped drill loading, null for legacy global mode */
+    private var currentPackId: String? = null
 
     /** Maps card ID to pack ID for bad sentence scoping */
     private var packIdForCardId: Map<String, String> = emptyMap()
@@ -94,17 +98,36 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /**
      * Reload cards for the given language.
      * Called when the user navigates to Verb Drill with a potentially changed language.
+     * Uses the current [currentPackId] if set, otherwise falls back to global mode.
      */
     fun reloadForLanguage(languageId: String) {
         val currentLang = _uiState.value.loadedLanguageId
-        if (currentLang == languageId && !allCards.isEmpty()) return
+        if (currentLang == languageId && allCards.isNotEmpty()) return
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards(languageId) }
     }
 
+    /**
+     * Switch to a pack-scoped drill and reload cards.
+     * Creates a new [VerbDrillStore] scoped to the given packId,
+     * then loads cards from [LessonStore.getVerbDrillFiles] with the pack parameter.
+     */
+    fun reloadForPack(packId: String) {
+        if (currentPackId == packId && allCards.isNotEmpty()) return
+        currentPackId = packId
+        verbDrillStore = VerbDrillStore(application, packId = packId)
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch { loadCards() }
+    }
+
     private fun loadCards(languageId: String? = null) {
         val lang = languageId ?: progressStore.load().languageId
-        val files = lessonStore.getVerbDrillFiles(lang)
+        val files = if (currentPackId != null) {
+            lessonStore.getVerbDrillFiles(currentPackId!!, lang)
+        } else {
+            @Suppress("DEPRECATION")
+            lessonStore.getVerbDrillFiles(lang)
+        }
         val cards = mutableListOf<VerbDrillCard>()
         val cardToPack = mutableMapOf<String, String>()
         val packIds = mutableSetOf<String>()
@@ -113,12 +136,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             val content = file.readText()
             val (_, parsed) = VerbDrillCsvParser.parse(content)
 
-            // Extract lessonId from filename: "{languageId}_{lessonId}.csv"
-            val fileName = file.nameWithoutExtension
-            val lessonId = fileName.removePrefix("${lang}_")
-
-            // Resolve packId for this lesson
-            val packId = lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+            // Use the active packId, or resolve from filename in global mode
+            val packId = currentPackId ?: run {
+                val fileName = file.nameWithoutExtension
+                val lessonId = fileName.removePrefix("${lang}_")
+                lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+            }
             packIds.add(packId)
 
             for (card in parsed) {

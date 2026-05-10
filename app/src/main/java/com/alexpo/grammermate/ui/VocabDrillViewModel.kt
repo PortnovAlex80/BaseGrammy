@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
+import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsState
@@ -24,7 +25,8 @@ import kotlinx.coroutines.launch
 class VocabDrillViewModel(application: Application) : AndroidViewModel(application) {
 
     private val logTag = "VocabDrillVM"
-    private val masteryStore = WordMasteryStore(application)
+    private val lessonStore = LessonStore(application)
+    private var masteryStore = WordMasteryStore(application)
     private val ttsEngine = TtsEngine(application)
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
@@ -33,43 +35,69 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private var allWords: List<VocabWord> = emptyList()
     private var masteryMap: Map<String, WordMasteryState> = emptyMap()
 
+    /** Currently active pack ID, null means no pack scoping (legacy mode). */
+    private var activePackId: String? = null
+
     init {
+        // Do not auto-load; wait for reloadForPack() or reloadForLanguage() call.
+        _uiState.update { it.copy(isLoading = false) }
+    }
+
+    /**
+     * Reload words for the given pack and language (called on navigation).
+     * This is the preferred entry point for pack-scoped drill data.
+     */
+    fun reloadForPack(packId: String, languageId: String) {
+        val currentLang = _uiState.value.loadedLanguageId
+        val currentPack = activePackId
+        if (currentPack == packId && currentLang == languageId && allWords.isNotEmpty()) return
+        activePackId = packId
+        // Recreate mastery store scoped to the pack
+        masteryStore = WordMasteryStore(getApplication(), packId = packId)
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch { loadWords() }
+        viewModelScope.launch { loadWords(languageId) }
     }
 
     /**
      * Reload words for the given language (called on navigation).
+     * If a pack is active, loads from that pack. Otherwise scans all packs.
      */
     fun reloadForLanguage(languageId: String) {
         val currentLang = _uiState.value.loadedLanguageId
         if (currentLang == languageId && allWords.isNotEmpty()) return
+        val pack = activePackId
+        if (pack != null) {
+            masteryStore = WordMasteryStore(getApplication(), packId = pack)
+        }
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadWords(languageId) }
     }
 
     private fun loadWords(languageId: String? = null) {
         val lang = languageId ?: "it"
-        val context = getApplication<Application>()
-        val assetBase = "grammarmate/vocab/$lang"
-        val files = listOf(
-            "drill_nouns.csv",
-            "drill_verbs.csv",
-            "drill_adjectives.csv",
-            "drill_adverbs.csv",
-            "drill_numbers.csv"
-        )
-
+        val pack = activePackId
         val words = mutableListOf<VocabWord>()
 
-        for (fileName in files) {
+        val files = if (pack != null) {
+            // Pack-scoped: load from the pack's vocab drill directory
+            lessonStore.getVocabDrillFiles(pack, lang)
+        } else {
+            // No active pack: scan all installed packs for vocab drill files
+            lessonStore.getInstalledPacks().flatMap { installedPack ->
+                lessonStore.getVocabDrillFiles(installedPack.packId, lang)
+            }
+        }
+
+        for (file in files) {
             try {
-                val stream = context.assets.open("$assetBase/$fileName")
+                val stream = file.inputStream()
+                val fileName = file.name
                 val rows = ItalianDrillVocabParser.parse(stream, fileName)
                 stream.close()
 
-                // Derive POS from filename: drill_nouns.csv -> "nouns"
+                // Derive POS from filename: drill_nouns.csv -> "nouns", it_drill_nouns.csv -> "nouns"
                 val pos = fileName
+                    .removePrefix("${lang}_")
                     .removePrefix("drill_")
                     .removeSuffix(".csv")
 
@@ -85,7 +113,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
                     ))
                 }
             } catch (e: Exception) {
-                Log.w(logTag, "Failed to load $fileName", e)
+                Log.w(logTag, "Failed to load ${file.name}", e)
             }
         }
 
@@ -103,7 +131,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         }
 
         updateCounts()
-        Log.d(logTag, "Loaded ${words.size} vocab words for language $lang")
+        Log.d(logTag, "Loaded ${words.size} vocab words for language $lang, pack=${pack ?: "all"}")
     }
 
     /**

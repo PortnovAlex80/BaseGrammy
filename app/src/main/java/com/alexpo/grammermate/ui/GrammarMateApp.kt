@@ -158,8 +158,12 @@ fun GrammarMateApp() {
         var showVocabStartDialog by remember { mutableStateOf(false) }
 
         val context = androidx.compose.ui.platform.LocalContext.current
-        val hasVerbDrill = remember(state.selectedLanguageId) {
-            com.alexpo.grammermate.data.LessonStore(context).hasVerbDrillLessons(state.selectedLanguageId)
+        val lessonStore = remember { com.alexpo.grammermate.data.LessonStore(context) }
+        val hasVerbDrill = remember(state.activePackId, state.selectedLanguageId) {
+            state.activePackId?.let { lessonStore.hasVerbDrill(it, state.selectedLanguageId) } ?: false
+        }
+        val hasVocabDrill = remember(state.activePackId, state.selectedLanguageId) {
+            state.activePackId?.let { lessonStore.hasVocabDrill(it, state.selectedLanguageId) } ?: false
         }
 
         val onTtsSpeak: () -> Unit = {
@@ -313,6 +317,7 @@ fun GrammarMateApp() {
                     },
                     onOpenElite = { if (state.eliteUnlocked) screen = AppScreen.ELITE },
                     hasVerbDrill = hasVerbDrill,
+                    hasVocabDrill = hasVocabDrill,
                     onOpenVerbDrill = { screen = AppScreen.VERB_DRILL },
                     onOpenVocabDrill = { screen = AppScreen.VOCAB_DRILL }
                 )
@@ -432,7 +437,12 @@ fun GrammarMateApp() {
                 )
                 AppScreen.VERB_DRILL -> {
                     val verbDrillVm = viewModel<VerbDrillViewModel>()
-                    verbDrillVm.reloadForLanguage(state.selectedLanguageId)
+                    val activePackId = state.activePackId
+                    if (activePackId != null) {
+                        verbDrillVm.reloadForPack(activePackId)
+                    } else {
+                        verbDrillVm.reloadForLanguage(state.selectedLanguageId)
+                    }
                     VerbDrillScreen(
                         viewModel = verbDrillVm,
                         onBack = { screen = AppScreen.HOME }
@@ -440,7 +450,12 @@ fun GrammarMateApp() {
                 }
                 AppScreen.VOCAB_DRILL -> {
                     val vocabDrillVm = viewModel<VocabDrillViewModel>()
-                    vocabDrillVm.reloadForLanguage(state.selectedLanguageId)
+                    val packId = state.activePackId
+                    if (packId != null) {
+                        vocabDrillVm.reloadForPack(packId, state.selectedLanguageId)
+                    } else {
+                        vocabDrillVm.reloadForLanguage(state.selectedLanguageId)
+                    }
                     VocabDrillScreen(
                         viewModel = vocabDrillVm,
                         onBack = { screen = AppScreen.HOME }
@@ -763,6 +778,7 @@ private fun HomeScreen(
     onSelectLesson: (String) -> Unit,
     onOpenElite: () -> Unit,
     hasVerbDrill: Boolean = false,
+    hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
     onOpenVocabDrill: () -> Unit = {}
 ) {
@@ -903,20 +919,24 @@ private fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
-        if (hasVerbDrill) {
+        if (hasVerbDrill || hasVocabDrill) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                VerbDrillEntryTile(
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenVerbDrill
-                )
-                VocabDrillEntryTile(
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenVocabDrill,
-                    masteredCount = state.vocabMasteredCount
-                )
+                if (hasVerbDrill) {
+                    VerbDrillEntryTile(
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenVerbDrill
+                    )
+                }
+                if (hasVocabDrill) {
+                    VocabDrillEntryTile(
+                        modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                        onClick = onOpenVocabDrill,
+                        masteredCount = state.vocabMasteredCount
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
