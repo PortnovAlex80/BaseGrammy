@@ -101,4 +101,36 @@ class WordMasteryStore(context: Context) {
             state.nextReviewDateMs <= now || state.lastReviewDateMs == 0L
         }.keys
     }
+
+    /**
+     * Count words that have been mastered (isLearned == true).
+     * Optionally filter by part of speech extracted from the word ID prefix
+     * (e.g. "nouns_casa" -> "nouns").
+     */
+    fun getMasteredCount(pos: String? = null): Int {
+        val all = loadAll()
+        val learned = all.filter { (_, state) -> state.isLearned }
+        return if (pos != null) {
+            learned.count { (wordId, _) -> wordId.startsWith("${pos}_") }
+        } else {
+            learned.size
+        }
+    }
+
+    /**
+     * Return a map of POS -> count of mastered words.
+     * POS is extracted from the word ID prefix (e.g. "nouns_casa" -> "nouns").
+     */
+    fun getMasteredByPos(): Map<String, Int> {
+        val all = loadAll()
+        val result = mutableMapOf<String, Int>()
+        for ((wordId, state) in all) {
+            if (!state.isLearned) continue
+            val pos = wordId.indexOf('_').let { idx ->
+                if (idx > 0) wordId.substring(0, idx) else "unknown"
+            }
+            result[pos] = (result[pos] ?: 0) + 1
+        }
+        return result
+    }
 }

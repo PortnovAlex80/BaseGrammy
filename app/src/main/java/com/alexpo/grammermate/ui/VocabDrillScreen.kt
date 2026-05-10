@@ -285,6 +285,35 @@ private fun VocabDrillSelectionScreen(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
                     )
+                    if (state.masteredCount > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Mastered: ${state.masteredCount} words",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF2E7D32)
+                        )
+                        // Per-POS breakdown
+                        val posBreakdown = state.masteredByPos.entries
+                            .sortedByDescending { it.value }
+                            .map { (pos, count) ->
+                                val label = when (pos) {
+                                    "nouns" -> "Nouns"
+                                    "verbs" -> "Verbs"
+                                    "adjectives" -> "Adj."
+                                    "adverbs" -> "Adv."
+                                    else -> pos.replaceFirstChar { it.uppercase() }
+                                }
+                                "$label: $count"
+                            }
+                        if (posBreakdown.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = posBreakdown.joinToString(" | "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(
                         progress = if (state.totalCount > 0) {

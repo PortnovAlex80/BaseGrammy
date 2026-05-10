@@ -71,7 +71,9 @@ data class VocabDrillUiState(
     val session: VocabDrillSessionState? = null,
     val loadedLanguageId: String? = null,
     val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
-    val voiceModeEnabled: Boolean = false
+    val voiceModeEnabled: Boolean = false,
+    val masteredCount: Int = 0,
+    val masteredByPos: Map<String, Int> = emptyMap()
 )
 
 /** State of an active drill session. */

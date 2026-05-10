@@ -914,7 +914,8 @@ private fun HomeScreen(
                 )
                 VocabDrillEntryTile(
                     modifier = Modifier.weight(1f),
-                    onClick = onOpenVocabDrill
+                    onClick = onOpenVocabDrill,
+                    masteredCount = state.vocabMasteredCount
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -1048,7 +1049,8 @@ private fun VerbDrillEntryTile(
 @Composable
 private fun VocabDrillEntryTile(
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    masteredCount: Int = 0
 ) {
     Card(
         modifier = modifier
@@ -1062,15 +1064,25 @@ private fun VocabDrillEntryTile(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = Icons.Default.MenuBook,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.MenuBook,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
+            }
+            if (masteredCount > 0) {
+                Text(
+                    text = "$masteredCount mastered",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF2E7D32)
+                )
+            }
         }
     }
 }

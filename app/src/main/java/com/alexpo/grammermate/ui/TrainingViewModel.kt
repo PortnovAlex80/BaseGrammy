@@ -48,6 +48,7 @@ import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
 import com.alexpo.grammermate.data.VocabProgressStore
+import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
@@ -85,6 +86,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val hiddenCardStore = HiddenCardStore(application)
     private val drillProgressStore = DrillProgressStore(application)
     private val vocabProgressStore = VocabProgressStore(application)
+    private val wordMasteryStore = WordMasteryStore(application)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
@@ -218,7 +220,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 badSentenceCount = initialActivePackId?.let { badSentenceStore.getBadSentenceCount(it) } ?: 0,
                 useOfflineAsr = config.useOfflineAsr,
                 asrModelReady = asrModelManager.isReady(),
-                initialScreen = restoredScreen
+                initialScreen = restoredScreen,
+                vocabMasteredCount = wordMasteryStore.getMasteredCount()
             )
         }
         rebuildSchedules(lessons)
@@ -380,7 +383,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lessonFlowers = emptyMap(),
                 currentLessonFlower = null,
                 wordBankWords = emptyList(),
-                selectedWords = emptyList()
+                selectedWords = emptyList(),
+                vocabMasteredCount = wordMasteryStore.getMasteredCount()
             )
         }
         rebuildSchedules(lessons)
@@ -3112,7 +3116,9 @@ data class TrainingUiState(
     val audioPermissionDenied: Boolean = false,
     // Persisted screen for state restoration
     val initialScreen: String = "HOME",
-    val currentScreen: String = "HOME"
+    val currentScreen: String = "HOME",
+    // Vocab drill mastered count (global, across all POS)
+    val vocabMasteredCount: Int = 0
 )
 
 data class LessonLadderRow(
