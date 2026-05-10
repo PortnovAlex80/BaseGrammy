@@ -25,6 +25,9 @@ Thumbs.db
 # Compiled class files
 *.class
 
+# ML models (too large for git)
+/models/
+
 # Temp/generated files
 SESSION_REPORT_*.md
 TEAM.md
