@@ -212,13 +212,27 @@ class LessonStore(private val context: Context) {
                     deleteLesson(languageId, lesson.lessonId)
                 }
                 removePacksForLanguage(packId, languageId)
+                // Clean up pack-scoped drill directory
+                deletePackDrills(packId)
                 return true
             }
         }
         val removedEntry = removePackEntry(packId)
         val packDir = File(packsDir, packId)
         val removedDir = if (packDir.exists()) packDir.deleteRecursively() else false
+        // Clean up pack-scoped drill directory even without manifest
+        deletePackDrills(packId)
         return removedEntry || removedDir
+    }
+
+    /**
+     * Delete the pack-scoped drill directory: grammarmate/drills/{packId}/
+     */
+    private fun deletePackDrills(packId: String) {
+        val drillsDir = File(baseDir, "drills/$packId")
+        if (drillsDir.exists()) {
+            drillsDir.deleteRecursively()
+        }
     }
 
     private fun readInstalledPackManifest(packId: String): LessonPackManifest? {
@@ -291,17 +305,19 @@ class LessonStore(private val context: Context) {
         tempDir.copyRecursively(packDir, overwrite = true)
         tempDir.deleteRecursively()
 
-        val lessonEntries = manifest.lessons.sortedBy { it.order }
+        val lessonEntries = manifest.lessons
+            .filter { it.type != "verb_drill" }
+            .sortedBy { it.order }
         lessonEntries.forEach { entry ->
             val sourceFile = File(packDir, entry.file)
             if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
             val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
-            if (entry.type == "verb_drill") {
-                importVerbDrillFile(languageId, sourceFile, entry.lessonId)
-            } else {
-                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
-            }
+            importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
         }
+
+        // Import pack-scoped drill files (new pack-manifest drill sections)
+        importPackDrills(packDir, manifest)
+
         importStoriesFromPack(packDir, languageId)
         importVocabFromPack(packDir, languageId)
 
@@ -771,6 +787,86 @@ class LessonStore(private val context: Context) {
         sourceFile.copyTo(targetFile, overwrite = true)
     }
 
+    /**
+     * Import pack-scoped drill files declared in the manifest's verbDrill/vocabDrill sections.
+     * Copies listed files from the extracted pack directory to grammarmate/drills/{packId}/.
+     */
+    private fun importPackDrills(packDir: File, manifest: LessonPackManifest) {
+        manifest.verbDrill?.files?.forEach { fileName ->
+            val source = File(packDir, fileName)
+            if (!source.exists()) return@forEach
+            val targetDir = File(baseDir, "drills/${manifest.packId}/verb_drill")
+            targetDir.mkdirs()
+            val target = File(targetDir, source.name)
+            source.copyTo(target, overwrite = true)
+        }
+        manifest.vocabDrill?.files?.forEach { fileName ->
+            val source = File(packDir, fileName)
+            if (!source.exists()) return@forEach
+            val targetDir = File(baseDir, "drills/${manifest.packId}/vocab_drill")
+            targetDir.mkdirs()
+            val target = File(targetDir, source.name)
+            source.copyTo(target, overwrite = true)
+        }
+    }
+
+    /**
+     * Get verb drill CSV files for a specific pack and language.
+     * Looks in grammarmate/drills/{packId}/verb_drill/.
+     */
+    fun getVerbDrillFiles(packId: String, languageId: String): List<File> {
+        val drillDir = File(baseDir, "drills/$packId/verb_drill")
+        if (!drillDir.exists()) return emptyList()
+        return drillDir.listFiles()
+            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
+            ?: emptyList()
+    }
+
+    /**
+     * Get all verb drill CSV files for a specific pack (any language prefix).
+     * Looks in grammarmate/drills/{packId}/verb_drill/.
+     */
+    fun getVerbDrillFilesForPack(packId: String): List<File> {
+        val drillDir = File(baseDir, "drills/$packId/verb_drill")
+        if (!drillDir.exists()) return emptyList()
+        return drillDir.listFiles()
+            ?.filter { it.extension == "csv" }
+            ?: emptyList()
+    }
+
+    /**
+     * Get vocab drill CSV files for a specific pack and language.
+     * Looks in grammarmate/drills/{packId}/vocab_drill/.
+     */
+    fun getVocabDrillFiles(packId: String, languageId: String): List<File> {
+        val drillDir = File(baseDir, "drills/$packId/vocab_drill")
+        if (!drillDir.exists()) return emptyList()
+        return drillDir.listFiles()
+            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
+            ?: emptyList()
+    }
+
+    /**
+     * Get all vocab drill CSV files for a specific pack (any language prefix).
+     * Looks in grammarmate/drills/{packId}/vocab_drill/.
+     */
+    fun getVocabDrillFilesForPack(packId: String): List<File> {
+        val drillDir = File(baseDir, "drills/$packId/vocab_drill")
+        if (!drillDir.exists()) return emptyList()
+        return drillDir.listFiles()
+            ?.filter { it.extension == "csv" }
+            ?: emptyList()
+    }
+
+    fun hasVerbDrill(packId: String, languageId: String): Boolean {
+        return getVerbDrillFiles(packId, languageId).isNotEmpty()
+    }
+
+    fun hasVocabDrill(packId: String, languageId: String): Boolean {
+        return getVocabDrillFiles(packId, languageId).isNotEmpty()
+    }
+
+    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
     fun getVerbDrillFiles(languageId: String): List<File> {
         val verbDrillDir = File(baseDir, "verb_drill")
         if (!verbDrillDir.exists()) return emptyList()
@@ -779,6 +875,7 @@ class LessonStore(private val context: Context) {
             ?: emptyList()
     }
 
+    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
     fun hasVerbDrillLessons(languageId: String): Boolean {
         return getVerbDrillFiles(languageId).isNotEmpty()
     }

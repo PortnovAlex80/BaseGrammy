@@ -156,7 +156,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             progress.currentScreen
         }
         val streakData = streakStore.getCurrentStreak(selectedLanguageId)
-        val initialActivePackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+        // Resolve activePackId: prefer saved value if pack still exists,
+        // then derive from lessonId, then fall back to first pack for language.
+        val savedPackId = progress.activePackId
+        val allPackIds = packs.map { it.packId }.toSet()
+        val initialActivePackId = if (savedPackId != null && savedPackId in allPackIds) {
+            savedPackId
+        } else {
+            selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+        }
         val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it) }
         _uiState.update {
             it.copy(
@@ -253,8 +261,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     val currentLessonId = current.selectedLessonId
                     val selectedLessonId = lessons.firstOrNull { it.id == currentLessonId }?.id
                         ?: lessons.firstOrNull()?.id
-                    val updatedPackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
-                        ?: current.activePackId
+                    val reloadedPackIds = packs.map { it.packId }.toSet()
+                    // Keep current activePackId if it still exists after reload,
+                    // otherwise derive from lessonId, otherwise fall back to first pack.
+                    val updatedPackId = if (current.activePackId != null && current.activePackId in reloadedPackIds) {
+                        current.activePackId
+                    } else {
+                        selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+                    }
                     val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it) }
                     current.copy(
                         languages = languages,
@@ -335,11 +349,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         scheduleKey = "" // Force rebuild schedules
         val lessons = lessonStore.getLessons(languageId)
         val selectedLessonId = lessons.firstOrNull()?.id
+        // Derive activePackId for the new language from the selected lesson.
+        val newPackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+        val newPackLessonIds = newPackId?.let { lessonStore.getLessonIdsForPack(it) }
         _uiState.update {
             it.copy(
                 selectedLanguageId = languageId,
                 lessons = lessons,
                 selectedLessonId = selectedLessonId,
+                activePackId = newPackId,
+                activePackLessonIds = newPackLessonIds,
                 eliteActive = false,
                 eliteUnlocked = resolveEliteUnlocked(lessons, it.testMode),
                 currentIndex = 0,
@@ -2005,7 +2024,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 hintCount = state.hintCount,
                 eliteStepIndex = state.eliteStepIndex,
                 eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds),
-                currentScreen = state.currentScreen
+                currentScreen = state.currentScreen,
+                activePackId = state.activePackId
             )
         )
 
@@ -2677,6 +2697,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 ladderRows = ladderRows
             )
         }
+    }
+
+    /**
+     * Refresh the vocab mastered count from the store.
+     * Called when returning from VocabDrill to reflect updated mastery.
+     */
+    fun refreshVocabMasteryCount() {
+        val count = wordMasteryStore.getMasteredCount()
+        _uiState.update { it.copy(vocabMasteredCount = count) }
     }
 
     /**

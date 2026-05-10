@@ -3,13 +3,21 @@ package com.alexpo.grammermate.data
 import org.json.JSONArray
 import org.json.JSONObject
 
+/**
+ * Lists drill content files declared in a lesson pack manifest.
+ * Used for optional `verbDrill` and `vocabDrill` sections.
+ */
+data class DrillFiles(val files: List<String>)
+
 data class LessonPackManifest(
     val schemaVersion: Int,
     val packId: String,
     val packVersion: String,
     val language: String,
     val lessons: List<LessonPackLesson>,
-    val displayName: String? = null
+    val displayName: String? = null,
+    val verbDrill: DrillFiles? = null,
+    val vocabDrill: DrillFiles? = null
 ) {
     companion object {
         fun fromJson(text: String): LessonPackManifest {
@@ -38,9 +46,26 @@ data class LessonPackManifest(
                 lessons.add(LessonPackLesson(lessonId, order, title, file, drillFile, type))
 
             }
-            if (lessons.isEmpty()) error("Manifest has no lessons")
             val displayName = json.optString("displayName").trim().ifBlank { null }
-            return LessonPackManifest(schemaVersion, packId, packVersion, language, lessons, displayName)
+
+            val verbDrill = parseDrillFiles(json.optJSONObject("verbDrill"))
+            val vocabDrill = parseDrillFiles(json.optJSONObject("vocabDrill"))
+
+            // Manifest must have at least one lesson, or drill/vocab sections
+            val hasStandardLessons = lessons.any { it.type != "verb_drill" }
+            if (!hasStandardLessons && verbDrill == null && vocabDrill == null) {
+                error("Manifest has no lessons and no drill sections")
+            }
+
+            return LessonPackManifest(schemaVersion, packId, packVersion, language, lessons, displayName, verbDrill, vocabDrill)
+        }
+
+        private fun parseDrillFiles(obj: JSONObject?): DrillFiles? {
+            if (obj == null) return null
+            val arr = obj.optJSONArray("files") ?: return null
+            val files = (0 until arr.length()).mapNotNull { arr.optString(it)?.trim()?.ifBlank { null } }
+            if (files.isEmpty()) return null
+            return DrillFiles(files)
         }
     }
 }

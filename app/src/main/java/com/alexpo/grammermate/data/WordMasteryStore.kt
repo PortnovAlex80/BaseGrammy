@@ -12,13 +12,21 @@ import java.io.File
  *   - saveAll() writes the full map via AtomicFileWriter
  *   - upsertMastery() does load-modify-save
  *
- * File location: grammarmate/word_mastery.yaml
+ * File location: grammarmate/drills/{packId}/word_mastery.yaml (pack-scoped)
+ *                or grammarmate/word_mastery.yaml (legacy, when packId is null)
  */
-class WordMasteryStore(context: Context) {
+class WordMasteryStore(
+    context: Context,
+    private val packId: String? = null
+) {
 
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file = File(baseDir, "word_mastery.yaml")
+    private val file: File = if (packId != null) {
+        File(baseDir, "drills/$packId/word_mastery.yaml")
+    } else {
+        File(baseDir, "word_mastery.yaml")
+    }
     private val schemaVersion = 1
 
     /**
