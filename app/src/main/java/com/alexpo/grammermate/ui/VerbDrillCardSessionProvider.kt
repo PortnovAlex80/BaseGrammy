@@ -41,6 +41,17 @@ class VerbDrillCardSessionProvider(
     private val session: VerbDrillSessionState?
         get() = viewModel.uiState.value.session
 
+    // ── Capabilities ─────────────────────────────────────────────────────
+
+    override val supportsTts: Boolean get() = true
+    override val supportsVoiceInput: Boolean get() = false
+    override val supportsWordBank: Boolean get() = false
+    override val supportsFlagging: Boolean get() = true
+    override val supportsNavigation: Boolean get() = false
+    override val supportsPause: Boolean get() = false
+
+    // ── Contract state ───────────────────────────────────────────────────
+
     override val currentCard: SessionCard?
         get() {
             val s = session ?: return null
@@ -80,6 +91,8 @@ class VerbDrillCardSessionProvider(
             val s = session ?: return false
             return !s.isComplete
         }
+
+    // ── Actions ──────────────────────────────────────────────────────────
 
     override fun onInputChanged(text: String) {
         // Input is managed locally in the composable; no-op
@@ -129,6 +142,43 @@ class VerbDrillCardSessionProvider(
     override fun prevCard() {
         // VerbDrill does not support backward navigation
     }
+
+    // ── TTS ──────────────────────────────────────────────────────────────
+
+    override fun speakTts() {
+        val s = session
+        val card = pendingCard ?: s?.cards?.getOrElse(s.currentIndex) { null } ?: return
+        val text = card.answer
+        viewModel.speakTts(text)
+    }
+
+    override fun stopTts() {
+        viewModel.stopTts()
+    }
+
+    // ── Flagging ─────────────────────────────────────────────────────────
+
+    override fun flagCurrentCard() {
+        viewModel.flagBadSentence()
+    }
+
+    override fun unflagCurrentCard() {
+        viewModel.unflagBadSentence()
+    }
+
+    override fun isCurrentCardFlagged(): Boolean {
+        return viewModel.isBadSentence()
+    }
+
+    override fun hideCurrentCard() {
+        // Not yet supported for VerbDrill
+    }
+
+    override fun exportFlaggedCards(): String? {
+        return viewModel.exportBadSentences()
+    }
+
+    // ── Session lifecycle ────────────────────────────────────────────────
 
     override fun requestExit() {
         viewModel.exitSession()

@@ -3,11 +3,14 @@ package com.alexpo.grammermate.ui
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.BadSentenceEntry
 import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
+import com.alexpo.grammermate.data.TtsEngine
+import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
 import com.alexpo.grammermate.data.VerbDrillCsvParser
@@ -17,6 +20,7 @@ import com.alexpo.grammermate.data.VerbDrillUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class VerbDrillViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,6 +29,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private val badSentenceStore = BadSentenceStore(application)
+    private val ttsEngine = TtsEngine(application)
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
     val uiState: StateFlow<VerbDrillUiState> = _uiState
@@ -295,6 +300,35 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private fun isCardBad(card: VerbDrillCard): Boolean {
         val packId = packIdForCardId[card.id] ?: return false
         return badSentenceStore.isBadSentence(packId, card.id)
+    }
+
+    // ── TTS Support ──────────────────────────────────────────────────────
+
+    val ttsState: StateFlow<TtsState> = ttsEngine.state
+
+    fun speakTts(text: String, speed: Float = 0.67f) {
+        if (text.isBlank()) return
+        val langId = _uiState.value.loadedLanguageId ?: "it"
+        viewModelScope.launch {
+            if (ttsEngine.state.value != TtsState.READY
+                || ttsEngine.activeLanguageId != langId) {
+                ttsEngine.initialize(langId)
+            }
+            if (ttsEngine.state.value == TtsState.READY) {
+                ttsEngine.speak(text, languageId = langId, speed = speed)
+            } else {
+                Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+            }
+        }
+    }
+
+    fun stopTts() {
+        ttsEngine.stop()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        ttsEngine.release()
     }
 
     private fun checkAnswer(input: String, expected: String): Boolean {

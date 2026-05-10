@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -102,7 +104,8 @@ private fun VerbDrillSessionWithCardSession(
         resultContent = {
             DefaultVerbDrillResultContent(
                 result = lastResult,
-                onNext = onNext
+                onNext = onNext,
+                onSpeak = { contract.speakTts() }
             )
         },
         completionScreen = {
@@ -308,34 +311,47 @@ private fun VerbDrillInputControls(
 @Composable
 private fun DefaultVerbDrillResultContent(
     result: AnswerResult?,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onSpeak: () -> Unit = {}
 ) {
     if (result == null) return
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (result.correct) {
-            Text(
-                text = "Правильно",
-                color = Color(0xFF2E7D32),
-                fontWeight = FontWeight.Bold
-            )
-        } else {
-            Text(
-                text = "Неправильно",
-                color = Color(0xFFC62828),
-                fontWeight = FontWeight.Bold
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (result.correct) {
+                Text(
+                    text = "Correct",
+                    color = Color(0xFF2E7D32),
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Text(
+                    text = "Incorrect",
+                    color = Color(0xFFC62828),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            if (result.displayAnswer.isNotBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = onSpeak, enabled = true) {
+                    Icon(
+                        Icons.Default.VolumeUp,
+                        contentDescription = "Listen",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
-    }
-    Text(
-        text = "Ответ: ${result.displayAnswer}",
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Button(
-        onClick = onNext,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(text = "Дальше")
+        Text(
+            text = "Answer: ${result.displayAnswer}",
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = onNext,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Дальше")
+        }
     }
 }
 
