@@ -12,17 +12,20 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
@@ -33,6 +36,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -125,6 +129,8 @@ private fun VerbDrillSessionWithCardSession(
     var showVerbSheet by remember { mutableStateOf(false) }
     var sheetVerb by remember { mutableStateOf<String?>(null) }
     var sheetTense by remember { mutableStateOf<String?>(null) }
+    var showTenseSheet by remember { mutableStateOf(false) }
+    var tenseSheetTense by remember { mutableStateOf<String?>(null) }
 
     TrainingCardSession(
         contract = provider,
@@ -199,7 +205,10 @@ private fun VerbDrillSessionWithCardSession(
                             val tenseText = drillCard?.tense
                             if (!tenseText.isNullOrBlank()) {
                                 SuggestionChip(
-                                    onClick = {},
+                                    onClick = {
+                                        tenseSheetTense = tenseText
+                                        showTenseSheet = true
+                                    },
                                     label = {
                                         Text(
                                             text = abbreviateTense(tenseText),
@@ -241,6 +250,18 @@ private fun VerbDrillSessionWithCardSession(
                 showVerbSheet = false
                 sheetVerb = null
                 sheetTense = null
+            }
+        )
+    }
+
+    // Tense info bottom sheet
+    if (showTenseSheet && tenseSheetTense != null) {
+        TenseInfoBottomSheet(
+            tenseName = tenseSheetTense!!,
+            viewModel = viewModel,
+            onDismiss = {
+                showTenseSheet = false
+                tenseSheetTense = null
             }
         )
     }
@@ -703,6 +724,162 @@ private fun VerbReferenceBottomSheet(
                             style = MaterialTheme.typography.bodyLarge,
                             fontSize = 16.sp
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Bottom sheet showing tense reference info: formula, usage in Russian, examples.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TenseInfoBottomSheet(
+    tenseName: String,
+    viewModel: VerbDrillViewModel,
+    onDismiss: () -> Unit
+) {
+    val tenseInfo = remember(tenseName) { viewModel.getTenseInfo(tenseName) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (tenseInfo == null) {
+                // Fallback: show abbreviated name only
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tenseName,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Text(
+                    text = "Справочная информация для этого времени недоступна.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            } else {
+                // Tense name header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tenseInfo.name,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${tenseInfo.short})",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+
+                // Formula card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Формула",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = tenseInfo.formula,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                // Usage explanation
+                Text(
+                    text = "Когда использовать",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = tenseInfo.usageRu,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                // Examples
+                if (tenseInfo.examples.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Примеры",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        tenseInfo.examples.forEach { example ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(
+                                        text = example.it,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = example.ru,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                    if (example.note.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = example.note,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -17,10 +17,25 @@ import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
+import org.yaml.snakeyaml.Yaml
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class TenseInfo(
+    val name: String,
+    val short: String,
+    val formula: String,
+    val usageRu: String,
+    val examples: List<TenseExample>
+)
+
+data class TenseExample(
+    val it: String,
+    val ru: String,
+    val note: String
+)
 
 class VerbDrillViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -67,6 +82,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Tracks pack IDs that have verb drill cards, for counting bad sentences */
     private var activePackIds: Set<String> = emptySet()
+
+    /** Tense reference info keyed by full tense name (e.g. "Passato Prossimo") */
+    private var tenseInfoMap: Map<String, TenseInfo> = emptyMap()
 
     init {
         _uiState.update { it.copy(isLoading = true) }
@@ -132,6 +150,56 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $lang")
+
+        // Load tense reference info
+        loadTenseInfo(lang)
+    }
+
+    private fun loadTenseInfo(languageId: String) {
+        val fileName = "grammarmate/tenses/${languageId}_tenses.yaml"
+        try {
+            val yaml = getApplication<Application>().assets.open(fileName).bufferedReader().readText()
+            tenseInfoMap = parseTenseInfo(yaml)
+            Log.d(logTag, "Loaded tense info for $languageId: ${tenseInfoMap.size} tenses")
+        } catch (e: Exception) {
+            Log.w(logTag, "Failed to load tense info from $fileName", e)
+            tenseInfoMap = emptyMap()
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseTenseInfo(yamlText: String): Map<String, TenseInfo> {
+        val yaml = Yaml()
+        val data = yaml.load<Map<String, Any>>(yamlText)
+        val tensesList = data["tenses"] as? List<Map<String, Any>> ?: return emptyMap()
+        val result = mutableMapOf<String, TenseInfo>()
+        for (entry in tensesList) {
+            val name = entry["name"] as? String ?: continue
+            val short = entry["short"] as? String ?: name.take(8)
+            val formula = entry["formula"] as? String ?: ""
+            val usageRu = entry["usage_ru"] as? String ?: ""
+            val examplesList = entry["examples"] as? List<Map<String, String>> ?: emptyList()
+            val examples = examplesList.map { ex ->
+                TenseExample(
+                    it = ex["it"] ?: "",
+                    ru = ex["ru"] ?: "",
+                    note = ex["note"] ?: ""
+                )
+            }
+            result[name] = TenseInfo(
+                name = name,
+                short = short,
+                formula = formula,
+                usageRu = usageRu,
+                examples = examples
+            )
+        }
+        return result
+    }
+
+    fun getTenseInfo(tenseName: String?): TenseInfo? {
+        if (tenseName.isNullOrBlank()) return null
+        return tenseInfoMap[tenseName]
     }
 
     fun selectTense(tense: String?) {
