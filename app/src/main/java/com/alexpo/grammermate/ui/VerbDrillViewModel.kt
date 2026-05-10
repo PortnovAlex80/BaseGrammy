@@ -352,6 +352,27 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         return badSentenceStore.isBadSentence(packId, card.id)
     }
 
+    // ── Verb Reference ──────────────────────────────────────────────────
+
+    /**
+     * Returns all cards from the current session matching the given verb+tense,
+     * sorted by their original order in the session.
+     */
+    fun getConjugationForVerb(verb: String, tense: String): List<VerbDrillCard> {
+        val session = _uiState.value.session ?: return emptyList()
+        return session.cards.filter { card ->
+            card.verb == verb && card.tense == tense
+        }
+    }
+
+    /**
+     * Speaks just the verb infinitive at a slightly slower speed for clarity.
+     */
+    fun speakVerbInfinitive(verb: String) {
+        if (verb.isBlank()) return
+        speakTts(verb, speed = 0.8f)
+    }
+
     // ── TTS Support ──────────────────────────────────────────────────────
 
     val ttsState: StateFlow<TtsState> = ttsEngine.state

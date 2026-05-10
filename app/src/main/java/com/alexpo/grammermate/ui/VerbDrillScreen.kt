@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Keyboard
@@ -30,11 +31,14 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -43,6 +47,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
@@ -66,6 +71,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillUiState
 
 @Composable
@@ -93,12 +100,17 @@ fun VerbDrillScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VerbDrillSessionWithCardSession(
     provider: VerbDrillCardSessionProvider,
     viewModel: VerbDrillViewModel,
     onExit: () -> Unit
 ) {
+    var showVerbSheet by remember { mutableStateOf(false) }
+    var sheetVerb by remember { mutableStateOf<String?>(null) }
+    var sheetTense by remember { mutableStateOf<String?>(null) }
+
     TrainingCardSession(
         contract = provider,
         header = {
@@ -112,6 +124,63 @@ private fun VerbDrillSessionWithCardSession(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
+            }
+        },
+        cardContent = {
+            val card = currentCard ?: return@TrainingCardSession
+            val drillCard = card as? VerbDrillCard
+            val verbText = drillCard?.verb
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "RU", style = MaterialTheme.typography.labelMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = card.promptRu,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        IconButton(
+                            onClick = { contract.speakTts() },
+                            enabled = card.promptRu.isNotBlank()
+                        ) {
+                            Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                        }
+                    }
+
+                    // Verb hint chip
+                    if (!verbText.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SuggestionChip(
+                            onClick = {
+                                sheetVerb = verbText
+                                sheetTense = drillCard.tense
+                                showVerbSheet = true
+                            },
+                            label = {
+                                Text(
+                                    text = verbText,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            icon = {
+                                Icon(
+                                    Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                    }
+                }
             }
         },
         inputControls = {
@@ -130,6 +199,20 @@ private fun VerbDrillSessionWithCardSession(
         },
         onExit = onExit
     )
+
+    // Verb reference bottom sheet
+    if (showVerbSheet && sheetVerb != null) {
+        VerbReferenceBottomSheet(
+            verb = sheetVerb!!,
+            tense = sheetTense,
+            viewModel = viewModel,
+            onDismiss = {
+                showVerbSheet = false
+                sheetVerb = null
+                sheetTense = null
+            }
+        )
+    }
 }
 
 /**
@@ -477,6 +560,115 @@ private fun DefaultVerbDrillInputControls(
             enabled = scope.inputText.isNotBlank() && hasCards
         ) {
             Text(text = "Check")
+        }
+    }
+}
+
+/**
+ * Bottom sheet showing verb conjugation reference for the current verb+tense.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VerbReferenceBottomSheet(
+    verb: String,
+    tense: String?,
+    viewModel: VerbDrillViewModel,
+    onDismiss: () -> Unit
+) {
+    val conjugation = remember(verb, tense) {
+        viewModel.getConjugationForVerb(verb, tense ?: "")
+    }
+    val ttsState by viewModel.ttsState.collectAsState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Verb name + TTS button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = verb,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(
+                    onClick = { viewModel.speakVerbInfinitive(verb) },
+                    enabled = ttsState != TtsState.INITIALIZING
+                ) {
+                    when (ttsState) {
+                        TtsState.SPEAKING -> Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Speaking",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        TtsState.INITIALIZING -> CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                        TtsState.ERROR -> Icon(
+                            Icons.Default.ReportProblem,
+                            contentDescription = "TTS error",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        else -> Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Listen"
+                        )
+                    }
+                }
+            }
+
+            // Group label
+            val group = conjugation.firstOrNull()?.group
+            if (!group.isNullOrBlank()) {
+                Text(
+                    text = "Группа: $group",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+
+            // Tense label
+            if (!tense.isNullOrBlank()) {
+                Text(
+                    text = "Время: $tense",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+
+            // Conjugation table
+            if (conjugation.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Спряжение:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    conjugation.forEach { card ->
+                        Text(
+                            text = card.answer,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            }
         }
     }
 }

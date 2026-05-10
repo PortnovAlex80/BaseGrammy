@@ -57,13 +57,21 @@ object VerbDrillCsvParser {
                 columns[groupIndex].trim().trim('"').ifBlank { null }
             } else null
 
+            // Fallback: extract verb from parenthetical hint in promptRu
+            // e.g. "я устал (essere stanco)" → "essere"
+            // e.g. "я хочу есть (avere fame)" → "avere"
+            val resolvedVerb = if (verb == null && ru.contains("(")) {
+                val match = Regex("\\(([\\w]+)").find(ru)
+                match?.groupValues?.get(1)
+            } else verb
+
             val id = "${group ?: ""}_${tense ?: ""}_$dataRowIndex"
             cards.add(
                 VerbDrillCard(
                     id = id,
                     promptRu = ru,
                     answer = answer,
-                    verb = verb,
+                    verb = resolvedVerb,
                     tense = tense,
                     group = group
                 )
