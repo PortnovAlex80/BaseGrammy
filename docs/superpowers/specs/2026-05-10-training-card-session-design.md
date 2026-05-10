@@ -91,7 +91,48 @@ Customization slots (all optional lambdas, all have sensible defaults):
 ## Adapters
 
 - `TrainingCardSessionProvider` — wraps TrainingViewModel. Supports all capabilities (TTS, ASR, word bank, flagging, navigation, pause).
-- `VerbDrillCardSessionProvider` — wraps VerbDrillViewModel. Keyboard-only, no TTS/ASR/word bank. Has custom completionScreen and navigationControls.
+- `VerbDrillCardSessionProvider` — wraps VerbDrillViewModel. Full capabilities: TTS, voice input, word bank, flagging, navigation. No pause.
+
+## Canonical Training Screen Layout
+
+This is the standard layout that ALL training modes must replicate. The only difference between modes is card source/selection logic, not the UI.
+
+```
+┌──────────────────────────────────────────┐
+│  GrammarMate                    ⚙ (настр) │
+│  Present Perfect                          │ ← tense label (conditional)
+│  он готов (essere pronto)                 │ ← clean prompt (hints stripped)
+│  ████████░░░ 3/10    (◎ 35wpm)           │ ← progress bar + speedometer
+│  ┌────────────────────────────────────┐   │
+│  │ RU                       🔊       │   │ ← card with TTS (4 states)
+│  │ он готов (essere pronto)          │   │
+│  └────────────────────────────────────┘   │
+│  ┌─────────────────────────────────── 🎤│  ← input field + mic icon
+│  │ Your translation                  │   │
+│  └────────────────────────────────────┘   │
+│  [🎤 Voice] [⌨ Keyboard] [📖 WordBank]   │ ← input mode selector
+│  [👁 Show] [⚠ Report]                     │ ← show answer + flag/report
+│  [        Check        ]                  │ ← submit button
+│                                           │
+│  ✓ Correct  🔊 Answer: Lui è pronto.     │ ← result with TTS replay
+│                                           │
+│  [◀]  [⏸]  [⏹]  [▶]                     │ ← navigation (prev/pause/exit/next)
+└──────────────────────────────────────────┘
+```
+
+**Elements (top to bottom):**
+1. **Title bar** — app name + settings gear (VerbDrill omits gear)
+2. **Tense label** — card tense, primary/green color, 13sp semi-bold (conditional: only if card has tense)
+3. **Clean prompt** — promptRu with parenthetical hints stripped via regex `\s*\([^)]+\)`
+4. **Progress bar + speedometer** — green bar (70% width) with text overlay + circular wpm arc (30% width, 44dp, color by speed: red<=20, yellow<=40, green>40)
+5. **Card prompt** — Material Card: "RU" label + full promptRu (20sp, semi-bold, WITH parenthetical hints) + TTS speaker button (4 states: speaking/stop, initializing/spinner, error/warning, idle/volume)
+6. **Input field** — OutlinedTextField "Your translation" + Mic trailing icon (when supportsVoiceInput)
+7. **Word bank** — FlowRow of FilterChip words + Undo (when mode is WORD_BANK)
+8. **Input mode selector** — 3 FilledTonalIconButtons: Voice, Keyboard, WordBank (when multiple modes available)
+9. **Show answer + Report** — Eye icon (reveals answer) + Warning icon (opens bottom sheet: flag/unflag, hide, export, copy)
+10. **Check button** — full width, submits answer
+11. **Result** — Correct (green) / Incorrect (red) + TTS replay button + "Answer: ..." text
+12. **Navigation** — styled NavIconButtons (44dp, surfaceVariant, 3dp accent bar): Prev, Pause/Play, Exit (with confirmation dialog), Next
 
 ## Data Model Changes
 
