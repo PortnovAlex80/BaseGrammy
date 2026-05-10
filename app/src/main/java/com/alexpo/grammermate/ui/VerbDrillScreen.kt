@@ -524,10 +524,11 @@ private fun DefaultVerbDrillInputControls(
                         onClick = {
                             val answer = contract.showAnswer()
                             if (answer != null) {
-                                scope.onInputChanged(answer)
+                                // Show answer as hint result instead of filling input
+                                scope.onInputChanged("")
                             }
                         },
-                        enabled = hasCards
+                        enabled = hasCards && !scope.isShowingResult
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                     }

@@ -39,6 +39,13 @@ class VerbDrillCardSessionProvider(
     var pendingAnswerResult: AnswerResult? by mutableStateOf(null)
         private set
 
+    /** Consecutive incorrect attempts for the current card. */
+    private var incorrectAttempts: Int by mutableStateOf(0)
+
+    /** When non-null, the answer is being shown as a hint (auto or manual). */
+    var hintAnswer: String? by mutableStateOf(null)
+        private set
+
     /** Current input mode. */
     private var _inputMode: InputMode by mutableStateOf(InputMode.KEYBOARD)
 
@@ -130,24 +137,47 @@ class VerbDrillCardSessionProvider(
     /**
      * Submit an answer with the given input text. This is the primary method
      * called by the VerbDrill integration.
+     *
+     * Retry/hint flow:
+     * - Correct answer -> advance card, mark correct
+     * - Wrong answer -> show error, increment attempt counter, stay on card
+     * - 3 wrong attempts -> auto-show answer as hint
+     * - Manual "Show Answer" (eye button) -> show answer as hint
+     * After hint is shown, next click advances to next card.
      */
     fun submitAnswerWithInput(input: String): AnswerResult? {
         val s = session ?: return null
         if (s.isComplete) return null
         if (s.currentIndex >= s.cards.size) return null
 
+        // Already showing hint — ignore further submissions until nextCard()
+        if (hintAnswer != null) return null
+
         val card = s.cards[s.currentIndex]
         val isCorrect = Normalizer.normalize(input) == Normalizer.normalize(card.answer)
 
-        pendingCard = card
-        pendingAnswerResult = AnswerResult(
-            correct = isCorrect,
-            displayAnswer = card.answer
-        )
-
-        // Forward to ViewModel (this advances the index internally)
-        viewModel.submitAnswer(input)
-        viewModel.recordAnswerTime()
+        if (isCorrect) {
+            pendingCard = card
+            pendingAnswerResult = AnswerResult(correct = true, displayAnswer = card.answer)
+            viewModel.submitCorrectAnswer()
+            viewModel.recordAnswerTime()
+            incorrectAttempts = 0
+        } else {
+            incorrectAttempts++
+            if (incorrectAttempts >= 3) {
+                // Auto-show answer after 3 wrong attempts
+                hintAnswer = card.answer
+                pendingCard = card
+                pendingAnswerResult = AnswerResult(
+                    correct = false,
+                    displayAnswer = card.answer,
+                    hintShown = true
+                )
+            }
+            // For attempts < 3: don't set pendingCard/pendingAnswerResult.
+            // The input stays visible so the user can retry.
+            // The attempt count is tracked and the user sees the input was cleared.
+        }
 
         return pendingAnswerResult
     }
@@ -155,25 +185,45 @@ class VerbDrillCardSessionProvider(
     override fun showAnswer(): String? {
         val s = session ?: return null
         val card = s.cards.getOrElse(s.currentIndex) { return null }
+        // Manual eye button — show answer as hint, prevent further attempts
+        hintAnswer = card.answer
+        incorrectAttempts = 3
+        pendingCard = card
+        pendingAnswerResult = AnswerResult(
+            correct = false,
+            displayAnswer = card.answer,
+            hintShown = true
+        )
         return card.answer
     }
 
     override fun nextCard() {
         val hadPending = pendingCard != null
+        val hadHint = hintAnswer != null
+
         pendingCard = null
         pendingAnswerResult = null
+        hintAnswer = null
+        incorrectAttempts = 0
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
-        if (!hadPending) {
+
+        if (hadHint) {
+            // Hint was shown (3 wrong attempts or manual eye button) — persist and advance
+            viewModel.markCardCompleted()
+        } else if (!hadPending) {
             viewModel.nextCardManual()
         }
+        // If hadPending && !hadHint, it was a correct answer — already advanced by submitCorrectAnswer
     }
 
     override fun prevCard() {
         viewModel.prevCard()
         pendingCard = null
         pendingAnswerResult = null
+        hintAnswer = null
+        incorrectAttempts = 0
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()

@@ -216,18 +216,20 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         cardShownTimestamp = System.currentTimeMillis()
     }
 
-    fun submitAnswer(input: String) {
+    /**
+     * Submit a correct answer: advances the card index, increments correct count,
+     * persists progress, and marks the next card shown timestamp.
+     */
+    fun submitCorrectAnswer() {
         val session = _uiState.value.session ?: return
         if (session.isComplete) return
         if (session.currentIndex >= session.cards.size) return
 
         val card = session.cards[session.currentIndex]
-        val isCorrect = checkAnswer(input, card.answer)
 
-        val updatedCorrect = if (isCorrect) session.correctCount + 1 else session.correctCount
-        val updatedIncorrect = if (!isCorrect) session.incorrectCount + 1 else session.incorrectCount
+        val updatedCorrect = session.correctCount + 1
         val nextIndex = session.currentIndex + 1
-        val isComplete = updatedCorrect >= session.cards.size
+        val isComplete = nextIndex >= session.cards.size
 
         val nextCard = if (!isComplete) session.cards[nextIndex] else null
         val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
@@ -237,6 +239,44 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 session = session.copy(
                     currentIndex = nextIndex,
                     correctCount = updatedCorrect,
+                    isComplete = isComplete
+                ),
+                currentCardIsBad = nextCardIsBad
+            )
+        }
+
+        persistCardProgress(card)
+
+        if (!isComplete) {
+            cardShownTimestamp = System.currentTimeMillis()
+        }
+
+        updateProgressDisplay()
+    }
+
+    /**
+     * Mark a card as completed (hint-shown / skipped): increments incorrect count,
+     * advances the card index, and persists progress.
+     * Used when a card is "done" but not answered correctly (hint or skip).
+     */
+    fun markCardCompleted() {
+        val session = _uiState.value.session ?: return
+        if (session.isComplete) return
+        if (session.currentIndex >= session.cards.size) return
+
+        val card = session.cards[session.currentIndex]
+
+        val updatedIncorrect = session.incorrectCount + 1
+        val nextIndex = session.currentIndex + 1
+        val isComplete = nextIndex >= session.cards.size
+
+        val nextCard = if (!isComplete) session.cards[nextIndex] else null
+        val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
+
+        _uiState.update { state ->
+            state.copy(
+                session = session.copy(
+                    currentIndex = nextIndex,
                     incorrectCount = updatedIncorrect,
                     isComplete = isComplete
                 ),
@@ -244,7 +284,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             )
         }
 
-        // Persist progress for this combo
+        persistCardProgress(card)
+
+        if (!isComplete) {
+            cardShownTimestamp = System.currentTimeMillis()
+        }
+
+        updateProgressDisplay()
+    }
+
+    /**
+     * Persist progress for a card to the verb drill store.
+     */
+    private fun persistCardProgress(card: VerbDrillCard) {
         val uiState = _uiState.value
         val comboKey = "${uiState.selectedGroup ?: ""}|${uiState.selectedTense ?: ""}"
         val existing = progressMap[comboKey]
@@ -266,13 +318,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         progressMap = progressMap.toMutableMap().apply { this[comboKey] = updatedProgress }
         verbDrillStore.upsertComboProgress(comboKey, updatedProgress)
-
-        // Mark next card shown for speed tracking
-        if (!isComplete) {
-            cardShownTimestamp = System.currentTimeMillis()
-        }
-
-        updateProgressDisplay()
     }
 
     fun nextBatch() {
@@ -423,9 +468,5 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     override fun onCleared() {
         super.onCleared()
         ttsEngine.release()
-    }
-
-    private fun checkAnswer(input: String, expected: String): Boolean {
-        return Normalizer.normalize(input) == Normalizer.normalize(expected)
     }
 }
