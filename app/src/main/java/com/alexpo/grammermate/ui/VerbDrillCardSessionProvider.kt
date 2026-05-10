@@ -66,9 +66,8 @@ class VerbDrillCardSessionProvider(
     override val currentCard: SessionCard?
         get() {
             val s = session ?: return null
-            if (s.isComplete) return null
-            // If we have a pending result, show the card that was answered
             if (pendingCard != null) return pendingCard
+            if (s.isComplete) return null
             return s.cards.getOrElse(s.currentIndex) { null }
         }
 
