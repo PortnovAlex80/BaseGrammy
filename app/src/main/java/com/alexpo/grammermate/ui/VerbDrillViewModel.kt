@@ -17,10 +17,25 @@ import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
+import org.yaml.snakeyaml.Yaml
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class TenseInfo(
+    val name: String,
+    val short: String,
+    val formula: String,
+    val usageRu: String,
+    val examples: List<TenseExample>
+)
+
+data class TenseExample(
+    val it: String,
+    val ru: String,
+    val note: String
+)
 
 class VerbDrillViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -68,8 +83,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /** Tracks pack IDs that have verb drill cards, for counting bad sentences */
     private var activePackIds: Set<String> = emptySet()
 
+    /** Tense reference info keyed by full tense name (e.g. "Passato Prossimo") */
+    private var tenseInfoMap: Map<String, TenseInfo> = emptyMap()
+
     init {
-        loadCards()
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch { loadCards() }
     }
 
     /**
@@ -79,7 +98,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     fun reloadForLanguage(languageId: String) {
         val currentLang = _uiState.value.loadedLanguageId
         if (currentLang == languageId && !allCards.isEmpty()) return
-        loadCards(languageId)
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch { loadCards(languageId) }
     }
 
     private fun loadCards(languageId: String? = null) {
@@ -130,6 +150,56 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $lang")
+
+        // Load tense reference info
+        loadTenseInfo(lang)
+    }
+
+    private fun loadTenseInfo(languageId: String) {
+        val fileName = "grammarmate/tenses/${languageId}_tenses.yaml"
+        try {
+            val yaml = getApplication<Application>().assets.open(fileName).bufferedReader().readText()
+            tenseInfoMap = parseTenseInfo(yaml)
+            Log.d(logTag, "Loaded tense info for $languageId: ${tenseInfoMap.size} tenses")
+        } catch (e: Exception) {
+            Log.w(logTag, "Failed to load tense info from $fileName", e)
+            tenseInfoMap = emptyMap()
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseTenseInfo(yamlText: String): Map<String, TenseInfo> {
+        val yaml = Yaml()
+        val data = yaml.load<Map<String, Any>>(yamlText)
+        val tensesList = data["tenses"] as? List<Map<String, Any>> ?: return emptyMap()
+        val result = mutableMapOf<String, TenseInfo>()
+        for (entry in tensesList) {
+            val name = entry["name"] as? String ?: continue
+            val short = entry["short"] as? String ?: name.take(8)
+            val formula = entry["formula"] as? String ?: ""
+            val usageRu = entry["usage_ru"] as? String ?: ""
+            val examplesList = entry["examples"] as? List<Map<String, String>> ?: emptyList()
+            val examples = examplesList.map { ex ->
+                TenseExample(
+                    it = ex["it"] ?: "",
+                    ru = ex["ru"] ?: "",
+                    note = ex["note"] ?: ""
+                )
+            }
+            result[name] = TenseInfo(
+                name = name,
+                short = short,
+                formula = formula,
+                usageRu = usageRu,
+                examples = examples
+            )
+        }
+        return result
+    }
+
+    fun getTenseInfo(tenseName: String?): TenseInfo? {
+        if (tenseName.isNullOrBlank()) return null
+        return tenseInfoMap[tenseName]
     }
 
     fun selectTense(tense: String?) {
@@ -140,6 +210,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     fun selectGroup(group: String?) {
         _uiState.update { it.copy(selectedGroup = group, allDoneToday = false) }
         updateProgressDisplay()
+    }
+
+    fun toggleSortByFrequency() {
+        _uiState.update { it.copy(sortByFrequency = !it.sortByFrequency) }
     }
 
     private fun updateProgressDisplay() {
@@ -188,7 +262,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
 
-        val selected = remaining.shuffled().take(10)
+        val selected = if (state.sortByFrequency) {
+            remaining.sortedBy { it.rank ?: Int.MAX_VALUE }.take(10)
+        } else {
+            remaining.shuffled().take(10)
+        }
 
         val session = VerbDrillSessionState(cards = selected)
         val firstCard = selected.firstOrNull()
@@ -208,18 +286,20 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         cardShownTimestamp = System.currentTimeMillis()
     }
 
-    fun submitAnswer(input: String) {
+    /**
+     * Submit a correct answer: advances the card index, increments correct count,
+     * persists progress, and marks the next card shown timestamp.
+     */
+    fun submitCorrectAnswer() {
         val session = _uiState.value.session ?: return
         if (session.isComplete) return
         if (session.currentIndex >= session.cards.size) return
 
         val card = session.cards[session.currentIndex]
-        val isCorrect = checkAnswer(input, card.answer)
 
-        val updatedCorrect = if (isCorrect) session.correctCount + 1 else session.correctCount
-        val updatedIncorrect = if (!isCorrect) session.incorrectCount + 1 else session.incorrectCount
+        val updatedCorrect = session.correctCount + 1
         val nextIndex = session.currentIndex + 1
-        val isComplete = nextIndex >= session.cards.size
+        val isComplete = updatedCorrect >= session.cards.size
 
         val nextCard = if (!isComplete) session.cards[nextIndex] else null
         val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
@@ -229,6 +309,44 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 session = session.copy(
                     currentIndex = nextIndex,
                     correctCount = updatedCorrect,
+                    isComplete = isComplete
+                ),
+                currentCardIsBad = nextCardIsBad
+            )
+        }
+
+        persistCardProgress(card)
+
+        if (!isComplete) {
+            cardShownTimestamp = System.currentTimeMillis()
+        }
+
+        updateProgressDisplay()
+    }
+
+    /**
+     * Mark a card as completed (hint-shown / skipped): increments incorrect count,
+     * advances the card index, and persists progress.
+     * Used when a card is "done" but not answered correctly (hint or skip).
+     */
+    fun markCardCompleted() {
+        val session = _uiState.value.session ?: return
+        if (session.isComplete) return
+        if (session.currentIndex >= session.cards.size) return
+
+        val card = session.cards[session.currentIndex]
+
+        val updatedIncorrect = session.incorrectCount + 1
+        val nextIndex = session.currentIndex + 1
+        val isComplete = session.correctCount >= session.cards.size
+
+        val nextCard = if (!isComplete) session.cards[nextIndex] else null
+        val nextCardIsBad = nextCard?.let { isCardBad(it) } ?: false
+
+        _uiState.update { state ->
+            state.copy(
+                session = session.copy(
+                    currentIndex = nextIndex,
                     incorrectCount = updatedIncorrect,
                     isComplete = isComplete
                 ),
@@ -236,7 +354,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             )
         }
 
-        // Persist progress for this combo
+        persistCardProgress(card)
+
+        if (!isComplete) {
+            cardShownTimestamp = System.currentTimeMillis()
+        }
+
+        updateProgressDisplay()
+    }
+
+    /**
+     * Persist progress for a card to the verb drill store.
+     */
+    private fun persistCardProgress(card: VerbDrillCard) {
         val uiState = _uiState.value
         val comboKey = "${uiState.selectedGroup ?: ""}|${uiState.selectedTense ?: ""}"
         val existing = progressMap[comboKey]
@@ -258,13 +388,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         progressMap = progressMap.toMutableMap().apply { this[comboKey] = updatedProgress }
         verbDrillStore.upsertComboProgress(comboKey, updatedProgress)
-
-        // Mark next card shown for speed tracking
-        if (!isComplete) {
-            cardShownTimestamp = System.currentTimeMillis()
-        }
-
-        updateProgressDisplay()
     }
 
     fun nextBatch() {
@@ -283,6 +406,21 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                     )
                 )
             }
+        }
+    }
+
+    fun nextCardManual() {
+        val session = _uiState.value.session ?: return
+        val nextIndex = session.currentIndex + 1
+        if (nextIndex < session.cards.size) {
+            _uiState.update { state ->
+                state.copy(
+                    session = session.copy(currentIndex = nextIndex)
+                )
+            }
+            cardShownTimestamp = System.currentTimeMillis()
+        } else {
+            startSession()
         }
     }
 
@@ -400,9 +538,5 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     override fun onCleared() {
         super.onCleared()
         ttsEngine.release()
-    }
-
-    private fun checkAnswer(input: String, expected: String): Boolean {
-        return Normalizer.normalize(input) == Normalizer.normalize(expected)
     }
 }

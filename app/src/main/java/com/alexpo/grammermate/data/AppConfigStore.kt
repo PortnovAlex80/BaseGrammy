@@ -7,7 +7,8 @@ import java.io.File
 data class AppConfig(
     val testMode: Boolean = false,
     val eliteSizeMultiplier: Double = 1.25,
-    val vocabSprintLimit: Int = 20
+    val vocabSprintLimit: Int = 20,
+    val useOfflineAsr: Boolean = false
 )
 
 class AppConfigStore(private val context: Context) {
@@ -20,7 +21,8 @@ class AppConfigStore(private val context: Context) {
         val payload = mapOf(
             "testMode" to config.testMode,
             "eliteSizeMultiplier" to config.eliteSizeMultiplier,
-            "vocabSprintLimit" to config.vocabSprintLimit
+            "vocabSprintLimit" to config.vocabSprintLimit,
+            "useOfflineAsr" to config.useOfflineAsr
         )
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
@@ -47,10 +49,12 @@ class AppConfigStore(private val context: Context) {
         val testMode = data["testMode"] as? Boolean ?: false
         val eliteSizeMultiplier = (data["eliteSizeMultiplier"] as? Number)?.toDouble() ?: 1.25
         val vocabSprintLimit = (data["vocabSprintLimit"] as? Number)?.toInt() ?: 20
+        val useOfflineAsr = data["useOfflineAsr"] as? Boolean ?: false
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
-            vocabSprintLimit = vocabSprintLimit
+            vocabSprintLimit = vocabSprintLimit,
+            useOfflineAsr = useOfflineAsr
         )
     }
 }

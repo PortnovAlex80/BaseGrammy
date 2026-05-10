@@ -872,8 +872,11 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
                     onClick = { scope.contract.togglePause() },
                     enabled = scope.currentCard != null
                 ) {
-                    // Show play/pause based on session state
-                    Icon(Icons.Default.Pause, contentDescription = "Pause")
+                    if (scope.contract.sessionActive) {
+                        Icon(Icons.Default.Pause, contentDescription = "Pause")
+                    } else {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                    }
                 }
             }
             NavIconButton(

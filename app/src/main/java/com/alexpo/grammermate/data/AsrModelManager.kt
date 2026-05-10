@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.os.Environment
 import android.os.StatFs
 import android.util.Log
 import kotlinx.coroutines.currentCoroutineContext
@@ -35,6 +36,50 @@ class AsrModelManager(private val context: Context) {
         return stat.availableBlocksLong * stat.blockSizeLong
     }
 
+    /**
+     * Search for a pre-placed VAD model file in known local directories.
+     * Returns the first file found that is non-empty, or null.
+     */
+    private fun findLocalVadFile(): File? {
+        val candidates = buildList {
+            // Public Downloads/BaseGrammy/
+            val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            add(File(publicDownloads, "BaseGrammy/${AsrModelRegistry.VAD_FILE_NAME}"))
+            // App-specific external storage
+            context.getExternalFilesDir(null)?.let { extDir ->
+                add(File(extDir, "asr-models/${AsrModelRegistry.VAD_FILE_NAME}"))
+            }
+        }
+        return candidates.firstOrNull { it.exists() && it.length() > 0 }
+    }
+
+    /**
+     * Search for a pre-placed ASR archive file in known local directories.
+     * Returns the first file found that exceeds the minimum size threshold, or null.
+     */
+    private fun findLocalAsrArchive(spec: AsrModelSpec): File? {
+        val archiveName = "${spec.modelDirName}.tar.bz2"
+        val minSize = 100L * 1024 * 1024 // 100 MB minimum reasonable size
+        val candidates = buildList {
+            // Public Downloads/BaseGrammy/
+            val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            add(File(publicDownloads, "BaseGrammy/$archiveName"))
+            // Also check with the full archive prefix name
+            val prefixName = spec.archivePrefix.trimEnd('/').substringAfterLast('/')
+            if (prefixName != spec.modelDirName) {
+                add(File(publicDownloads, "BaseGrammy/$prefixName.tar.bz2"))
+            }
+            // App-specific external storage
+            context.getExternalFilesDir(null)?.let { extDir ->
+                add(File(extDir, "asr-models/$archiveName"))
+                if (prefixName != spec.modelDirName) {
+                    add(File(extDir, "asr-models/$prefixName.tar.bz2"))
+                }
+            }
+        }
+        return candidates.firstOrNull { it.exists() && it.length() > minSize }
+    }
+
     fun downloadVad(): Flow<DownloadState> = flow {
         val dir = AsrModelRegistry.vadModelDir(context)
         val targetFile = File(dir, AsrModelRegistry.VAD_FILE_NAME)
@@ -43,6 +88,28 @@ class AsrModelManager(private val context: Context) {
             return@flow
         }
         dir.mkdirs()
+
+        // Try local file fallback first
+        val localVad = findLocalVadFile()
+        if (localVad != null) {
+            Log.i(TAG, "Found local VAD model file: ${localVad.absolutePath} (${localVad.length()} bytes)")
+            try {
+                localVad.copyTo(targetFile, overwrite = true)
+                if (targetFile.exists() && targetFile.length() > 0) {
+                    Log.i(TAG, "VAD model copied from local file successfully")
+                    emit(DownloadState.Done)
+                    return@flow
+                } else {
+                    Log.w(TAG, "Local VAD copy produced empty file, falling back to download")
+                    targetFile.delete()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to copy local VAD file: ${e.message}, falling back to download")
+                targetFile.delete()
+            }
+        }
+
+        // Internet download fallback
         try {
             val url = URL(AsrModelRegistry.VAD_MODEL_URL)
             val connection = url.openConnection() as HttpURLConnection
@@ -113,6 +180,32 @@ class AsrModelManager(private val context: Context) {
             return@flow
         }
 
+        // Try local file fallback first
+        val localArchive = findLocalAsrArchive(spec)
+        if (localArchive != null) {
+            Log.i(TAG, "Found local ASR archive: ${localArchive.absolutePath} (${localArchive.length()} bytes)")
+            dir.mkdirs()
+            try {
+                emit(DownloadState.Extracting(0))
+                extractTarBz2(localArchive, dir, spec.archivePrefix) { percent ->
+                    emit(DownloadState.Extracting(percent))
+                }
+                emit(DownloadState.Extracting(100))
+                if (isAsrReady()) {
+                    Log.i(TAG, "ASR model extracted from local archive successfully")
+                    emit(DownloadState.Done)
+                    return@flow
+                } else {
+                    Log.w(TAG, "Local archive extraction did not produce required files, falling back to download")
+                    dir.deleteRecursively()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to extract local ASR archive: ${e.message}, falling back to download")
+                dir.deleteRecursively()
+            }
+        }
+
+        // Internet download fallback
         val archive = File(context.cacheDir, "${spec.modelDirName}.tar.bz2")
         archive.parentFile?.mkdirs()
 

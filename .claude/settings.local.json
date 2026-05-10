@@ -25,7 +25,16 @@
       "Bash(timeout 180 bash:*)",
       "Bash(gradlew assembleDebug:*)",
       "Bash(pwsh -Command:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(java -version)",
+      "Bash(which java *)",
+      "Bash(export JAVA_HOME=\"/c/Users/user/.jdks/corretto-21.0.8\")",
+      "Bash(java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain compileDebugKotlin)",
+      "Bash(chmod +x gradlew)",
+      "Bash(java -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain compileDebugKotlin --no-daemon)",
+      "Bash(java -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain assembleDebug)",
+      "Bash(java -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain compileDebugKotlin)",
+      "Bash(git push *)"
     ]
   }
 }

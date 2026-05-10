@@ -6,22 +6,26 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
@@ -32,6 +36,8 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -55,6 +61,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -81,6 +89,24 @@ fun VerbDrillScreen(
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Loading...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+        return
+    }
 
     if (state.session != null) {
         val provider = remember { VerbDrillCardSessionProvider(viewModel) }
@@ -94,6 +120,7 @@ fun VerbDrillScreen(
             state = state,
             onSelectTense = viewModel::selectTense,
             onSelectGroup = viewModel::selectGroup,
+            onToggleSortByFrequency = viewModel::toggleSortByFrequency,
             onStart = viewModel::startSession,
             onBack = onBack
         )
@@ -110,6 +137,21 @@ private fun VerbDrillSessionWithCardSession(
     var showVerbSheet by remember { mutableStateOf(false) }
     var sheetVerb by remember { mutableStateOf<String?>(null) }
     var sheetTense by remember { mutableStateOf<String?>(null) }
+    var showTenseSheet by remember { mutableStateOf(false) }
+    var tenseSheetTense by remember { mutableStateOf<String?>(null) }
+
+    // Auto-advance after correct voice answer — no manual "Next" tap needed
+    LaunchedEffect(provider.pendingAnswerResult, provider.currentInputMode) {
+        val result = provider.pendingAnswerResult
+        if (result != null && result.correct && provider.currentInputMode == InputMode.VOICE) {
+            delay(500)
+            provider.nextCard()
+        }
+    }
+
+    // Auto-advance after hint shown in voice mode — Play button behavior
+    // (When hint is shown via eye or 3 wrong attempts, user presses Play to advance)
+    // This is handled by togglePause() calling nextCard() directly
 
     TrainingCardSession(
         contract = provider,
@@ -130,6 +172,7 @@ private fun VerbDrillSessionWithCardSession(
             val card = currentCard ?: return@TrainingCardSession
             val drillCard = card as? VerbDrillCard
             val verbText = drillCard?.verb
+            val verbRank = drillCard?.rank
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -155,37 +198,53 @@ private fun VerbDrillSessionWithCardSession(
                         }
                     }
 
-                    // Verb hint chip
+                    // Verb + tense hint chips
                     if (!verbText.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        SuggestionChip(
-                            onClick = {
-                                sheetVerb = verbText
-                                sheetTense = drillCard.tense
-                                showVerbSheet = true
-                            },
-                            label = {
-                                Text(
-                                    text = verbText,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            },
-                            icon = {
-                                Icon(
-                                    Icons.Default.ChevronRight,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SuggestionChip(
+                                onClick = {
+                                    sheetVerb = verbText
+                                    sheetTense = drillCard.tense
+                                    showVerbSheet = true
+                                },
+                                label = {
+                                    Text(
+                                        text = if (verbRank != null) "$verbText #$verbRank" else verbText,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                icon = {
+                                    Icon(
+                                        Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                            val tenseText = drillCard?.tense
+                            if (!tenseText.isNullOrBlank()) {
+                                SuggestionChip(
+                                    onClick = {
+                                        tenseSheetTense = tenseText
+                                        showTenseSheet = true
+                                    },
+                                    label = {
+                                        Text(
+                                            text = abbreviateTense(tenseText),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
                                 )
                             }
-                        )
+                        }
                     }
                 }
             }
         },
         inputControls = {
-            // Use the submit flow that goes through provider.submitAnswerWithInput
-            // but with the default UI from TrainingCardSession
             DefaultVerbDrillInputControls(
                 provider = provider,
                 scope = this
@@ -213,11 +272,23 @@ private fun VerbDrillSessionWithCardSession(
             }
         )
     }
+
+    // Tense info bottom sheet
+    if (showTenseSheet && tenseSheetTense != null) {
+        TenseInfoBottomSheet(
+            tenseName = tenseSheetTense!!,
+            viewModel = viewModel,
+            onDismiss = {
+                showTenseSheet = false
+                tenseSheetTense = null
+            }
+        )
+    }
 }
 
 /**
- * Custom input controls for VerbDrill that delegates submit to provider.submitAnswerWithInput
- * but renders the full AnswerBox-style UI.
+ * Input controls for VerbDrill that mirrors AnswerBox logic exactly.
+ * Delegates submit to provider.submitAnswerWithInput for drill-specific retry/hint flow.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -227,6 +298,8 @@ private fun DefaultVerbDrillInputControls(
 ) {
     val contract = scope.contract
     val hasCards = scope.currentCard != null
+    val canLaunchVoice = hasCards && contract.sessionActive
+    val canSelectInputMode = hasCards && contract.sessionActive
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
@@ -238,7 +311,7 @@ private fun DefaultVerbDrillInputControls(
         ""
     }
 
-    // Voice recognition launcher
+    // Voice recognition launcher — same pattern as AnswerBox
     val latestProvider by rememberUpdatedState(provider)
     val latestOnInputChanged by rememberUpdatedState(scope.onInputChanged)
     val speechLauncher = rememberLauncherForActivityResult(
@@ -252,6 +325,34 @@ private fun DefaultVerbDrillInputControls(
                 latestProvider.submitAnswerWithInput(spoken)
                 latestOnInputChanged("")
             }
+        }
+    }
+
+    // Auto-voice LaunchedEffect — mirrors AnswerBox exactly:
+    // triggers when voiceTriggerToken changes, inputMode is VOICE, card exists, session is active
+    val voiceToken = provider.voiceTriggerToken
+    LaunchedEffect(
+        scope.currentCard?.id,
+        contract.currentInputMode,
+        contract.sessionActive,
+        voiceToken
+    ) {
+        if (contract.currentInputMode == InputMode.VOICE &&
+            contract.sessionActive &&
+            scope.currentCard != null
+        ) {
+            kotlinx.coroutines.delay(200)
+            val languageId = contract.languageId
+            val languageTag = when (languageId) {
+                "it" -> "it-IT"
+                else -> "en-US"
+            }
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+            }
+            speechLauncher.launch(intent)
         }
     }
 
@@ -359,36 +460,85 @@ private fun DefaultVerbDrillInputControls(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Hint answer text — shown when eye button pressed or 3 wrong attempts
+        // Input controls remain visible below this text
+        if (provider.hintAnswer != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Answer: ${provider.hintAnswer}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if (contract.supportsTts) {
+                        IconButton(
+                            onClick = { contract.speakTts() },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.VolumeUp,
+                                contentDescription = "Listen",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Incorrect feedback — red text with remaining attempts, shown above input
+        if (provider.showIncorrectFeedback) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Incorrect",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${provider.remainingAttempts} attempts left",
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
         OutlinedTextField(
             value = scope.inputText,
-            onValueChange = scope.onInputChanged,
+            onValueChange = { newText ->
+                if (provider.showIncorrectFeedback) {
+                    provider.clearIncorrectFeedback()
+                }
+                scope.onInputChanged(newText)
+            },
             modifier = Modifier.fillMaxWidth(),
             label = { Text(text = "Your translation") },
-            singleLine = true,
             enabled = hasCards,
             trailingIcon = {
-                if (contract.supportsVoiceInput) {
-                    IconButton(
-                        onClick = {
-                            if (hasCards) {
-                                contract.setInputMode(InputMode.VOICE)
-                                val languageId = contract.languageId
-                                val languageTag = when (languageId) {
-                                    "it" -> "it-IT"
-                                    else -> "en-US"
-                                }
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                                }
-                                speechLauncher.launch(intent)
-                            }
-                        },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = "Voice input")
-                    }
+                IconButton(
+                    onClick = {
+                        if (canLaunchVoice) {
+                            contract.setInputMode(InputMode.VOICE)
+                        }
+                    },
+                    enabled = canLaunchVoice
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice input")
                 }
             }
         )
@@ -401,8 +551,8 @@ private fun DefaultVerbDrillInputControls(
             )
         }
 
-        // Voice mode hint
-        if (contract.currentInputMode == InputMode.VOICE) {
+        // Voice mode hint — same guard as AnswerBox
+        if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
             Text(
                 text = scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
@@ -463,53 +613,44 @@ private fun DefaultVerbDrillInputControls(
             }
         }
 
-        // Input mode selector + show answer + flag
+        // Input mode selector + show answer + flag — mirrors AnswerBox exactly
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (contract.supportsVoiceInput) {
-                    FilledTonalIconButton(
-                        onClick = {
+                // Voice mode button — ONLY sets input mode, does NOT launch speech
+                FilledTonalIconButton(
+                    onClick = {
+                        if (canLaunchVoice) {
                             contract.setInputMode(InputMode.VOICE)
-                            val languageId = contract.languageId
-                            val languageTag = when (languageId) {
-                                "it" -> "it-IT"
-                                else -> "en-US"
-                            }
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                            }
-                            speechLauncher.launch(intent)
-                        },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = "Voice mode")
-                    }
+                        }
+                    },
+                    enabled = canLaunchVoice
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                 }
+                // Keyboard mode button
                 FilledTonalIconButton(
                     onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                    enabled = hasCards
+                    enabled = canSelectInputMode
                 ) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
-                if (contract.supportsWordBank) {
-                    FilledTonalIconButton(
-                        onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
-                    }
+                // Word bank mode button
+                FilledTonalIconButton(
+                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                    enabled = canSelectInputMode
+                ) {
+                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
                 }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Show answer button — disabled when hint already shown
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
                     tooltip = { PlainTooltip { Text(text = "Show answer") } },
@@ -517,7 +658,7 @@ private fun DefaultVerbDrillInputControls(
                 ) {
                     IconButton(
                         onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards
+                        enabled = hasCards && provider.hintAnswer == null
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                     }
@@ -547,7 +688,7 @@ private fun DefaultVerbDrillInputControls(
             }
         }
 
-        // Check button - uses provider.submitAnswerWithInput
+        // Check button — uses provider.submitAnswerWithInput for drill-specific flow
         Button(
             onClick = {
                 val input = scope.inputText
@@ -557,7 +698,10 @@ private fun DefaultVerbDrillInputControls(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = scope.inputText.isNotBlank() && hasCards
+            enabled = hasCards &&
+                scope.inputText.isNotBlank() &&
+                contract.sessionActive &&
+                scope.currentCard != null
         ) {
             Text(text = "Check")
         }
@@ -673,11 +817,168 @@ private fun VerbReferenceBottomSheet(
     }
 }
 
+/**
+ * Bottom sheet showing tense reference info: formula, usage in Russian, examples.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TenseInfoBottomSheet(
+    tenseName: String,
+    viewModel: VerbDrillViewModel,
+    onDismiss: () -> Unit
+) {
+    val tenseInfo = remember(tenseName) { viewModel.getTenseInfo(tenseName) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (tenseInfo == null) {
+                // Fallback: show abbreviated name only
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tenseName,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Text(
+                    text = "Справочная информация для этого времени недоступна.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            } else {
+                // Tense name header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tenseInfo.name,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${tenseInfo.short})",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+
+                // Formula card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Формула",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = tenseInfo.formula,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                // Usage explanation
+                Text(
+                    text = "Когда использовать",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = tenseInfo.usageRu,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                // Examples
+                if (tenseInfo.examples.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Примеры",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        tenseInfo.examples.forEach { example ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(
+                                        text = example.it,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = example.ru,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                    if (example.note.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = example.note,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun VerbDrillSelectionScreen(
     state: VerbDrillUiState,
     onSelectTense: (String?) -> Unit,
     onSelectGroup: (String?) -> Unit,
+    onToggleSortByFrequency: () -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -715,6 +1016,20 @@ private fun VerbDrillSelectionScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = state.sortByFrequency,
+                onCheckedChange = { onToggleSortByFrequency() }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "По частотности")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (state.totalCards > 0) {
             Text(
@@ -844,6 +1159,13 @@ private fun VerbDrillCompletionScreen(
     val state by viewModel.uiState.collectAsState()
     val session = state.session ?: return
 
+    LaunchedEffect(Unit) {
+        delay(1000L)
+        if (!state.allDoneToday) {
+            viewModel.nextBatch()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -852,7 +1174,7 @@ private fun VerbDrillCompletionScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "🎉", // party popper
+            text = "🎉",
             fontSize = 48.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -867,13 +1189,6 @@ private fun VerbDrillCompletionScreen(
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = { viewModel.nextBatch() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Дальше")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = onExit,
             modifier = Modifier.fillMaxWidth()
@@ -881,4 +1196,22 @@ private fun VerbDrillCompletionScreen(
             Text(text = "Выход")
         }
     }
+}
+
+private fun abbreviateTense(tense: String): String {
+    val abbreviations = mapOf(
+        "Presente" to "Pres.",
+        "Imperfetto" to "Imperf.",
+        "Passato Prossimo" to "P. Pross.",
+        "Passato Remoto" to "P. Rem.",
+        "Trapassato Prossimo" to "Trap. P.",
+        "Futuro Semplice" to "Fut. Sempl.",
+        "Futuro Anteriore" to "Fut. Ant.",
+        "Condizionale Presente" to "Cond. Pres.",
+        "Condizionale Passato" to "Cond. Pass.",
+        "Congiuntivo Presente" to "Cong. Pres.",
+        "Congiuntivo Imperfetto" to "Cong. Imp.",
+        "Congiuntivo Passato" to "Cong. Pass.",
+    )
+    return abbreviations[tense] ?: tense.take(8)
 }

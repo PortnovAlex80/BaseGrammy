@@ -6,7 +6,8 @@ data class VerbDrillCard(
     val answer: String,
     val verb: String? = null,
     val tense: String? = null,
-    val group: String? = null
+    val group: String? = null,
+    val rank: Int? = null
 ) : SessionCard {
     override val acceptedAnswers: List<String> get() = listOf(answer)
 }
@@ -41,5 +42,6 @@ data class VerbDrillUiState(
     val isLoading: Boolean = true,
     val loadedLanguageId: String? = null,
     val badSentenceCount: Int = 0,
-    val currentCardIsBad: Boolean = false
+    val currentCardIsBad: Boolean = false,
+    val sortByFrequency: Boolean = false
 )

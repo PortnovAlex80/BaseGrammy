@@ -11,6 +11,7 @@ object VerbDrillCsvParser {
         var verbIndex = -1
         var tenseIndex = -1
         var groupIndex = -1
+        var rankIndex = -1
         var dataRowIndex = 0
 
         for (rawLine in lines) {
@@ -32,6 +33,7 @@ object VerbDrillCsvParser {
                         "verb" -> verbIndex = index
                         "tense" -> tenseIndex = index
                         "group" -> groupIndex = index
+                        "rank" -> rankIndex = index
                     }
                 }
                 headerConsumed = true
@@ -56,6 +58,9 @@ object VerbDrillCsvParser {
             val group = if (groupIndex >= 0 && columns.size > groupIndex) {
                 columns[groupIndex].trim().trim('"').ifBlank { null }
             } else null
+            val rank = if (rankIndex >= 0 && columns.size > rankIndex) {
+                columns[rankIndex].trim().trim('"').toIntOrNull()
+            } else null
 
             // Fallback: extract verb from parenthetical hint in promptRu
             // e.g. "я устал (essere stanco)" → "essere"
@@ -73,7 +78,8 @@ object VerbDrillCsvParser {
                     answer = answer,
                     verb = resolvedVerb,
                     tense = tense,
-                    group = group
+                    group = group,
+                    rank = rank
                 )
             )
             dataRowIndex += 1
