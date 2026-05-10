@@ -40,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,10 +72,14 @@ fun VocabDrillScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    // Track whether RecognizerIntent is currently active (to prevent double-launch)
+    var isVoiceActive by remember { mutableStateOf(false) }
+
     // Voice recognition launcher — same pattern as VerbDrill
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        isVoiceActive = false
         if (result.resultCode == Activity.RESULT_OK) {
             val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
@@ -85,17 +90,20 @@ fun VocabDrillScreen(
 
     // Helper to launch voice recognition with the correct language tag
     val onStartVoice: () -> Unit = {
-        val direction = state.session?.direction ?: state.drillDirection
-        val langTag = when (direction) {
-            VocabDrillDirection.IT_TO_RU -> "ru-RU"
-            VocabDrillDirection.RU_TO_IT -> "it-IT"
+        if (!isVoiceActive) {
+            isVoiceActive = true
+            val direction = state.session?.direction ?: state.drillDirection
+            val langTag = when (direction) {
+                VocabDrillDirection.IT_TO_RU -> "ru-RU"
+                VocabDrillDirection.RU_TO_IT -> "it-IT"
+            }
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+            }
+            speechLauncher.launch(intent)
         }
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-        }
-        speechLauncher.launch(intent)
     }
 
     if (state.isLoading) {
@@ -127,11 +135,14 @@ fun VocabDrillScreen(
         } else {
             VocabDrillCardScreen(
                 session = session,
+                voiceModeEnabled = state.voiceModeEnabled,
+                isVoiceActive = isVoiceActive,
                 ttsState = viewModel.ttsState.collectAsState().value,
                 onFlip = viewModel::flipCard,
                 onAnswer = viewModel::answerRating,
                 onSpeak = viewModel::speakTts,
                 onStartVoice = onStartVoice,
+                onAutoStartVoice = onStartVoice,
                 onSkipVoice = viewModel::skipVoice,
                 onExit = viewModel::exitSession
             )
@@ -142,6 +153,7 @@ fun VocabDrillScreen(
             onSelectPos = viewModel::selectPos,
             onSetRankRange = viewModel::setRankRange,
             onSetDirection = viewModel::setDirection,
+            onSetVoiceMode = viewModel::setVoiceMode,
             onStart = viewModel::startSession,
             onBack = onBack
         )
@@ -157,6 +169,7 @@ private fun VocabDrillSelectionScreen(
     onSelectPos: (String?) -> Unit,
     onSetRankRange: (Int, Int) -> Unit,
     onSetDirection: (VocabDrillDirection) -> Unit,
+    onSetVoiceMode: (Boolean) -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -183,6 +196,32 @@ private fun VocabDrillSelectionScreen(
                 selected = state.drillDirection == VocabDrillDirection.RU_TO_IT,
                 onClick = { onSetDirection(VocabDrillDirection.RU_TO_IT) },
                 label = { Text("RU → IT") }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        // Voice input toggle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (state.voiceModeEnabled) MaterialTheme.colorScheme.primary
+                           else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Voice input (auto)",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Switch(
+                checked = state.voiceModeEnabled,
+                onCheckedChange = onSetVoiceMode
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -282,11 +321,14 @@ private fun VocabDrillSelectionScreen(
 @Composable
 private fun VocabDrillCardScreen(
     session: VocabDrillSessionState,
+    voiceModeEnabled: Boolean,
+    isVoiceActive: Boolean,
     ttsState: TtsState,
     onFlip: () -> Unit,
     onAnswer: (VocabDrillViewModel.AnswerRating) -> Unit,
     onSpeak: (String) -> Unit,
     onStartVoice: () -> Unit,
+    onAutoStartVoice: () -> Unit,
     onSkipVoice: () -> Unit,
     onExit: () -> Unit
 ) {
@@ -299,6 +341,17 @@ private fun VocabDrillCardScreen(
         if (session.voiceCompleted && session.voiceResult != null && !session.isFlipped) {
             delay(800L)
             onFlip()
+        }
+    }
+
+    // Auto-launch voice input when voice mode is on and a new card appears
+    LaunchedEffect(session.currentIndex, voiceModeEnabled) {
+        if (voiceModeEnabled && !session.isFlipped && !session.voiceCompleted && !isVoiceActive) {
+            delay(500L) // Let the card animate in before launching
+            // Re-check conditions after delay (state may have changed)
+            if (!session.voiceCompleted && !session.isFlipped) {
+                onAutoStartVoice()
+            }
         }
     }
 
@@ -438,11 +491,16 @@ private fun VocabDrillCardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Skip button
+                // Skip button — always active, skips voice input and auto-flips
                 OutlinedButton(
-                    onClick = onSkipVoice,
-                    modifier = Modifier.weight(1f),
-                    enabled = !session.voiceCompleted
+                    onClick = {
+                        if (!session.voiceCompleted) {
+                            onSkipVoice()
+                        } else {
+                            onFlip()
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         Icons.Default.SkipNext,
@@ -453,11 +511,10 @@ private fun VocabDrillCardScreen(
                     Text("Skip")
                 }
 
-                // Flip button
+                // Flip button — always active, user can flip at any time
                 Button(
                     onClick = onFlip,
-                    modifier = Modifier.weight(1f),
-                    enabled = session.voiceCompleted
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         Icons.Default.Flip,

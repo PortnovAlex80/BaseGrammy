@@ -70,7 +70,8 @@ data class VocabDrillUiState(
     val totalCount: Int = 0,
     val session: VocabDrillSessionState? = null,
     val loadedLanguageId: String? = null,
-    val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU
+    val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
+    val voiceModeEnabled: Boolean = false
 )
 
 /** State of an active drill session. */
@@ -85,5 +86,6 @@ data class VocabDrillSessionState(
     val voiceAttempts: Int = 0,           // 0-3
     val voiceRecognizedText: String? = null,
     val voiceResult: VoiceResult? = null, // CORRECT, WRONG, SKIPPED
-    val voiceCompleted: Boolean = false   // true after correct or 3 wrong or skip
+    val voiceCompleted: Boolean = false,  // true after correct or 3 wrong or skip
+    val voiceModeEnabled: Boolean = false // auto-launch voice input on new cards
 )

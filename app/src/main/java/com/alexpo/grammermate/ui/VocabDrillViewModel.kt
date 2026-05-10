@@ -170,7 +170,8 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update {
             it.copy(session = VocabDrillSessionState(
                 cards = dueCards,
-                direction = it.drillDirection
+                direction = it.drillDirection,
+                voiceModeEnabled = it.voiceModeEnabled
             ))
         }
     }
@@ -296,6 +297,26 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             val session = state.session ?: return@update state
             state.copy(session = session.copy(direction = direction))
         }
+    }
+
+    /** Enable or disable voice mode (auto-launch mic on new cards). */
+    fun setVoiceMode(enabled: Boolean) {
+        _uiState.update { it.copy(voiceModeEnabled = enabled) }
+        // Also update active session if one exists
+        _uiState.update { state ->
+            val session = state.session ?: return@update state
+            state.copy(session = session.copy(voiceModeEnabled = enabled))
+        }
+    }
+
+    /**
+     * Returns true if voice mode is on, card is not flipped, and voice is not completed.
+     * Used by the UI to decide whether to auto-launch RecognizerIntent.
+     */
+    fun shouldAutoStartVoice(): Boolean {
+        val state = _uiState.value
+        val session = state.session ?: return false
+        return session.voiceModeEnabled && !session.isFlipped && !session.voiceCompleted
     }
 
     /**
