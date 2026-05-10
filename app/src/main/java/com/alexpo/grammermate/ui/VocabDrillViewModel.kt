@@ -131,10 +131,23 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             mastery == null || mastery.nextReviewDateMs <= now || mastery.lastReviewDateMs == 0L
         }
 
+        // Count mastered words (isLearned == true)
+        val masteredByPos = mutableMapOf<String, Int>()
+        for ((wordId, state) in masteryMap) {
+            if (!state.isLearned) continue
+            val pos = wordId.indexOf('_').let { idx ->
+                if (idx > 0) wordId.substring(0, idx) else "unknown"
+            }
+            masteredByPos[pos] = (masteredByPos[pos] ?: 0) + 1
+        }
+        val masteredCount = masteredByPos.values.sum()
+
         _uiState.update {
             it.copy(
                 totalCount = filtered.size,
-                dueCount = dueWords.size
+                dueCount = dueWords.size,
+                masteredCount = masteredCount,
+                masteredByPos = masteredByPos
             )
         }
     }
