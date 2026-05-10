@@ -117,6 +117,12 @@ import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.data.FlowerCalculator
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.TtsModelRegistry
@@ -141,8 +147,7 @@ fun GrammarMateApp() {
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
-        var showAsrDownloadDialog by remember { mutableStateOf(false) }
-
+    
         LaunchedEffect(screen) {
             vm.onScreenChanged(screen.name)
         }
@@ -238,7 +243,9 @@ fun GrammarMateApp() {
                     onSaveProgress = vm::saveProgressNow,
                     onRestoreBackup = vm::restoreBackup,
                     onSetTtsSpeed = vm::setTtsSpeed,
-                    onSetRuTextScale = vm::setRuTextScale
+                    onSetRuTextScale = vm::setRuTextScale,
+                    onSetUseOfflineAsr = vm::setUseOfflineAsr,
+                    onStartAsrDownload = { vm.startAsrDownload() }
                 )
 
             if (showWelcomeDialog) {
@@ -274,18 +281,12 @@ fun GrammarMateApp() {
                     onDismiss = { vm.dismissMeteredWarning(); vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
                 )
             }
-            if (showAsrDownloadDialog) {
-                if (state.asrDownloadState is DownloadState.Done) {
-                    showAsrDownloadDialog = false
-                    vm.dismissAsrDownloadDialog()
-                }
-                if (showAsrDownloadDialog) {
-                    AsrDownloadDialog(
-                        downloadState = state.asrDownloadState,
-                        onConfirm = { vm.startAsrDownload() },
-                        onDismiss = { vm.dismissAsrDownloadDialog(); showAsrDownloadDialog = false }
-                    )
-                }
+            // ASR metered network warning
+            if (state.asrMeteredNetwork) {
+                AsrMeteredNetworkDialog(
+                    onConfirm = { vm.confirmAsrDownloadOnMetered() },
+                    onDismiss = { vm.dismissAsrMeteredWarning(); vm.dismissAsrDownloadDialog() }
+                )
             }
             androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
                 if (screen != AppScreen.HOME && state.userName == "GrammarMateUser") {
@@ -2178,7 +2179,9 @@ private fun SettingsSheet(
     onSaveProgress: () -> Unit,
     onRestoreBackup: (android.net.Uri) -> Unit,
     onSetTtsSpeed: (Float) -> Unit,
-    onSetRuTextScale: (Float) -> Unit
+    onSetRuTextScale: (Float) -> Unit,
+    onSetUseOfflineAsr: (Boolean) -> Unit,
+    onStartAsrDownload: () -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -2298,6 +2301,73 @@ private fun SettingsSheet(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
+
+            // Offline ASR toggle
+            Text(
+                text = "Voice recognition",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Offline speech recognition", style = MaterialTheme.typography.bodyLarge)
+                }
+                Switch(
+                    checked = state.useOfflineAsr,
+                    onCheckedChange = { enabled ->
+                        onSetUseOfflineAsr(enabled)
+                        if (enabled && !state.asrModelReady) {
+                            onStartAsrDownload()
+                        }
+                    }
+                )
+            }
+            when (val dlState = state.asrDownloadState) {
+                is DownloadState.Downloading -> {
+                    LinearProgressIndicator(
+                        progress = { dlState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Downloading model... ${dlState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Extracting -> {
+                    LinearProgressIndicator(
+                        progress = { dlState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Extracting model... ${dlState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Error -> {
+                    Text(
+                        text = dlState.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                else -> {
+                    Text(
+                        text = if (state.useOfflineAsr) {
+                            if (state.asrModelReady) "Using on-device recognition (no internet required)" else "Model not downloaded yet"
+                        } else {
+                            "Using Google speech recognition (requires internet)"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
 
             // Russian text size control
             Text(
@@ -3095,7 +3165,7 @@ private fun AnswerBox(
         ) {
             kotlinx.coroutines.delay(200)
             onVoicePromptStarted()
-            if (state.asrModelReady) {
+            if (state.useOfflineAsr && state.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
                 launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
@@ -3214,12 +3284,6 @@ private fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
-                            onVoicePromptStarted()
-                            if (state.asrModelReady) {
-                                onStartOfflineRecognition()
-                            } else {
-                                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
-                            }
                         }
                     },
                     enabled = canLaunchVoice
@@ -3241,6 +3305,9 @@ private fun AnswerBox(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 style = MaterialTheme.typography.bodySmall
             )
+        }
+        if (state.useOfflineAsr) {
+            AsrStatusIndicator(state.asrState)
         }
 
         // Word Bank UI
@@ -3306,12 +3373,6 @@ private fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
-                            onVoicePromptStarted()
-                            if (state.asrModelReady) {
-                                onStartOfflineRecognition()
-                            } else {
-                                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
-                            }
                         }
                     },
                     enabled = canLaunchVoice
@@ -3603,65 +3664,6 @@ private fun TtsDownloadDialog(
 }
 
 @Composable
-private fun AsrDownloadDialog(
-    downloadState: DownloadState,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Download speech recognition model?") },
-        text = {
-            when (downloadState) {
-                is DownloadState.Idle -> {
-                    Text("This will download ~170 MB for offline voice recognition. Works without internet.")
-                }
-                is DownloadState.Downloading -> {
-                    Column {
-                        Text("Downloading... ${downloadState.percent}%")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LinearProgressIndicator(
-                            progress = downloadState.percent / 100f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-                is DownloadState.Extracting -> {
-                    Column {
-                        Text("Extracting... ${downloadState.percent}%")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LinearProgressIndicator(
-                            progress = downloadState.percent / 100f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-                is DownloadState.Done -> {
-                    Text("Speech recognition model ready!")
-                }
-                is DownloadState.Error -> {
-                    Text("Download failed: ${downloadState.message}")
-                }
-            }
-        },
-        confirmButton = {
-            when (downloadState) {
-                is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text("Download") }
-                is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
-                is DownloadState.Downloading, is DownloadState.Extracting -> {
-                    TextButton(onClick = onDismiss) { Text("Background") }
-                }
-            }
-        },
-        dismissButton = {
-            if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-            }
-        }
-    )
-}
-
-@Composable
 private fun MeteredNetworkDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -3677,6 +3679,86 @@ private fun MeteredNetworkDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+@Composable
+private fun AsrMeteredNetworkDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Metered network detected") },
+        text = { Text("You appear to be on a cellular or metered connection. The speech recognition model is ~375 MB. Continue downloading?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text("Download anyway") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+/**
+ * Visual indicator for offline ASR state near the microphone button.
+ * Shows a pulsing red dot when recording, a spinner when recognizing,
+ * and an error message on failure. Auto-dismisses when state returns to IDLE.
+ */
+@Composable
+private fun AsrStatusIndicator(asrState: AsrState) {
+    when (asrState) {
+        AsrState.RECORDING -> {
+            val infiniteTransition = rememberInfiniteTransition(label = "asrPulse")
+            val pulseAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.4f,
+                targetValue = 1.0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 600),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "asrPulseAlpha"
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(Color.Red.copy(alpha = pulseAlpha), CircleShape)
+                )
+                Text(
+                    text = "Listening...",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+        AsrState.RECOGNIZING -> {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(12.dp),
+                    strokeWidth = 2.dp
+                )
+                Text(
+                    text = "Processing...",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+        AsrState.ERROR -> {
+            Text(
+                text = "Recognition error",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        else -> { /* IDLE, INITIALIZING, READY — no indicator */ }
+    }
 }
 
 private fun calcBgDownloadProgress(states: Map<String, DownloadState>): Float {

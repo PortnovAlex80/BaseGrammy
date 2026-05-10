@@ -90,7 +90,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val ttsModelManager = TtsModelManager(application)
     private val ttsEngine = TtsEngine(application)
     private val asrModelManager = AsrModelManager(application)
-    private val asrEngine = AsrEngine(application)
+    private val asrEngine: AsrEngine? = try {
+        AsrEngine(application)
+    } catch (e: Exception) {
+        Log.e(logTag, "ASR engine creation failed — sherpa-onnx API may not support ASR", e)
+        null
+    }
     private var sessionCards: List<SentenceCard> = emptyList()
     private var bossCards: List<SentenceCard> = emptyList()
     private var eliteCards: List<SentenceCard> = emptyList()
@@ -211,6 +216,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 longestStreak = streakData.longestStreak,
                 userName = profile.userName,
                 badSentenceCount = initialActivePackId?.let { badSentenceStore.getBadSentenceCount(it) } ?: 0,
+                useOfflineAsr = config.useOfflineAsr,
+                asrModelReady = asrModelManager.isReady(),
                 initialScreen = restoredScreen
             )
         }
@@ -382,6 +389,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
         ttsModelManager.currentLanguageId = languageId
         checkTtsModel()
+        asrEngine?.setLanguage(languageId)
     }
 
     fun selectLesson(lessonId: String) {
@@ -1067,11 +1075,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         configStore.save(
-            AppConfig(
-                testMode = newTestMode,
-                eliteSizeMultiplier = _uiState.value.eliteSizeMultiplier,
-                vocabSprintLimit = _uiState.value.vocabSprintLimit
-            )
+            configStore.load().copy(testMode = newTestMode)
         )
         Log.d(logTag, "Test mode toggled: $newTestMode")
     }
@@ -1080,11 +1084,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val nextLimit = limit.coerceAtLeast(0)
         _uiState.update { it.copy(vocabSprintLimit = nextLimit) }
         configStore.save(
-            AppConfig(
-                testMode = _uiState.value.testMode,
-                eliteSizeMultiplier = _uiState.value.eliteSizeMultiplier,
-                vocabSprintLimit = nextLimit
-            )
+            configStore.load().copy(vocabSprintLimit = nextLimit)
         )
     }
 
@@ -2176,20 +2176,63 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private var asrDownloadJob: Job? = null
 
-    init {
-        viewModelScope.launch {
-            asrEngine.state.collect { asrState ->
-                _uiState.update { it.copy(asrState = asrState) }
-            }
-        }
-    }
-
     fun checkAsrModel() {
         val ready = asrModelManager.isReady()
         _uiState.update { it.copy(asrModelReady = ready) }
     }
 
+    fun dismissAsrDownloadDialog() {
+        _uiState.update { it.copy(asrDownloadState = DownloadState.Idle) }
+    }
+
+    fun startOfflineRecognition() {
+        viewModelScope.launch {
+            try {
+                val result = transcribeWithOfflineAsr()
+                if (result.isNotBlank()) {
+                    onInputChanged(result)
+                    // Don't auto-submit — let user review recognized text and submit manually
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "Offline recognition failed", e)
+            }
+        }
+    }
+
+    fun stopAsr() {
+        asrEngine?.stopRecording()
+    }
+
+    fun setUseOfflineAsr(enabled: Boolean) {
+        _uiState.update { it.copy(useOfflineAsr = enabled) }
+        val config = configStore.load()
+        configStore.save(config.copy(useOfflineAsr = enabled))
+        if (enabled) {
+            checkAsrModel()
+        } else {
+            asrEngine?.release()
+            _uiState.update { it.copy(asrState = AsrState.IDLE, asrModelReady = false, asrErrorMessage = null) }
+        }
+    }
+
     fun startAsrDownload() {
+        if (asrModelManager.isNetworkMetered()) {
+            _uiState.update { it.copy(asrMeteredNetwork = true) }
+            return
+        }
+        beginAsrDownload()
+    }
+
+    fun confirmAsrDownloadOnMetered() {
+        _uiState.update { it.copy(asrMeteredNetwork = false) }
+        beginAsrDownload()
+    }
+
+    fun dismissAsrMeteredWarning() {
+        _uiState.update { it.copy(asrMeteredNetwork = false) }
+    }
+
+    private fun beginAsrDownload() {
         if (asrDownloadJob?.isActive == true) return
         asrDownloadJob = viewModelScope.launch(Dispatchers.IO) {
             // Download VAD first (small ~2MB)
@@ -2198,7 +2241,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     _uiState.update { it.copy(asrDownloadState = state) }
                 }
             }
-            // Then ASR model (~170MB)
+            // Then ASR model
             if (!asrModelManager.isAsrReady()) {
                 asrModelManager.downloadAsr().collect { state ->
                     _uiState.update { it.copy(asrDownloadState = state) }
@@ -2210,26 +2253,60 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun dismissAsrDownloadDialog() {
-        _uiState.update { it.copy(asrDownloadState = DownloadState.Idle) }
-    }
+    /**
+     * Initialize ASR engine and record + transcribe audio.
+     * Returns the recognized text.
+     */
+    private suspend fun transcribeWithOfflineAsr(): String {
+        val engine = asrEngine
+        if (engine == null) {
+            _uiState.update {
+                it.copy(
+                    asrState = AsrState.ERROR,
+                    asrErrorMessage = "ASR engine unavailable on this device"
+                )
+            }
+            return ""
+        }
+        if (!engine.isReady) {
+            engine.initialize(_uiState.value.selectedLanguageId)
+        }
 
-    fun startOfflineRecognition() {
-        viewModelScope.launch {
-            try {
-                val result = asrEngine.recognizeFromMic()
-                if (result != null && result.isNotBlank()) {
-                    onInputChanged(result)
-                    submitAnswer()
-                }
-            } catch (e: Exception) {
-                Log.e(logTag, "Offline recognition failed", e)
+        // Check if initialization failed
+        if (engine.state.value == AsrState.ERROR) {
+            _uiState.update {
+                it.copy(
+                    asrState = AsrState.ERROR,
+                    asrErrorMessage = engine.errorMessage ?: "ASR initialization failed"
+                )
+            }
+            return ""
+        }
+
+        _uiState.update { it.copy(asrState = engine.state.value, asrErrorMessage = null) }
+
+        // Collect state updates from ASR engine
+        val stateJob = viewModelScope.launch {
+            engine.state.collect { asrState ->
+                _uiState.update { it.copy(asrState = asrState) }
             }
         }
-    }
 
-    fun stopAsr() {
-        asrEngine.stop()
+        val result = engine.recordAndTranscribe()
+        stateJob.cancel()
+
+        // Check for errors after recording/transcription
+        val finalState = engine.state.value
+        val errorMsg = engine.errorMessage
+        _uiState.update {
+            it.copy(
+                asrState = finalState,
+                asrErrorMessage = if (result.isBlank() && errorMsg != null) errorMsg
+                    else if (result.isBlank() && finalState == AsrState.ERROR) "ASR recognition failed"
+                    else null
+            )
+        }
+        return result
     }
 
     // ── End ASR ─────────────────────────────────────────────────────────
@@ -2295,6 +2372,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
         bgDownloadJob?.cancel()
         ttsEngine.release()
+        asrEngine?.release()
         soundPool.release()
         super.onCleared()
     }
@@ -3021,9 +3099,13 @@ data class TrainingUiState(
     val drillShowStartDialog: Boolean = false,
     val drillHasProgress: Boolean = false,
     // ASR (offline speech recognition)
+    val useOfflineAsr: Boolean = false,
     val asrState: AsrState = AsrState.IDLE,
     val asrModelReady: Boolean = false,
     val asrDownloadState: DownloadState = DownloadState.Idle,
+    val asrMeteredNetwork: Boolean = false,
+    val asrErrorMessage: String? = null,
+    val audioPermissionDenied: Boolean = false,
     // Persisted screen for state restoration
     val initialScreen: String = "HOME",
     val currentScreen: String = "HOME"
