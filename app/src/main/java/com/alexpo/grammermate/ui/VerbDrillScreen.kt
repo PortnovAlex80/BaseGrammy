@@ -95,7 +95,15 @@ fun VerbDrillScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Loading...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
         }
         return
     }
@@ -131,6 +139,19 @@ private fun VerbDrillSessionWithCardSession(
     var sheetTense by remember { mutableStateOf<String?>(null) }
     var showTenseSheet by remember { mutableStateOf(false) }
     var tenseSheetTense by remember { mutableStateOf<String?>(null) }
+
+    // Auto-advance after correct voice answer — no manual "Next" tap needed
+    LaunchedEffect(provider.pendingAnswerResult, provider.currentInputMode) {
+        val result = provider.pendingAnswerResult
+        if (result != null && result.correct && provider.currentInputMode == InputMode.VOICE) {
+            delay(500)
+            provider.nextCard()
+        }
+    }
+
+    // Auto-advance after hint shown in voice mode — Play button behavior
+    // (When hint is shown via eye or 3 wrong attempts, user presses Play to advance)
+    // This is handled by togglePause() calling nextCard() directly
 
     TrainingCardSession(
         contract = provider,
@@ -224,8 +245,6 @@ private fun VerbDrillSessionWithCardSession(
             }
         },
         inputControls = {
-            // Use the submit flow that goes through provider.submitAnswerWithInput
-            // but with the default UI from TrainingCardSession
             DefaultVerbDrillInputControls(
                 provider = provider,
                 scope = this
@@ -268,8 +287,8 @@ private fun VerbDrillSessionWithCardSession(
 }
 
 /**
- * Custom input controls for VerbDrill that delegates submit to provider.submitAnswerWithInput
- * but renders the full AnswerBox-style UI.
+ * Input controls for VerbDrill that mirrors AnswerBox logic exactly.
+ * Delegates submit to provider.submitAnswerWithInput for drill-specific retry/hint flow.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -279,6 +298,8 @@ private fun DefaultVerbDrillInputControls(
 ) {
     val contract = scope.contract
     val hasCards = scope.currentCard != null
+    val canLaunchVoice = hasCards && contract.sessionActive
+    val canSelectInputMode = hasCards && contract.sessionActive
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
@@ -290,7 +311,7 @@ private fun DefaultVerbDrillInputControls(
         ""
     }
 
-    // Voice recognition launcher
+    // Voice recognition launcher — same pattern as AnswerBox
     val latestProvider by rememberUpdatedState(provider)
     val latestOnInputChanged by rememberUpdatedState(scope.onInputChanged)
     val speechLauncher = rememberLauncherForActivityResult(
@@ -304,6 +325,34 @@ private fun DefaultVerbDrillInputControls(
                 latestProvider.submitAnswerWithInput(spoken)
                 latestOnInputChanged("")
             }
+        }
+    }
+
+    // Auto-voice LaunchedEffect — mirrors AnswerBox exactly:
+    // triggers when voiceTriggerToken changes, inputMode is VOICE, card exists, session is active
+    val voiceToken = provider.voiceTriggerToken
+    LaunchedEffect(
+        scope.currentCard?.id,
+        contract.currentInputMode,
+        contract.sessionActive,
+        voiceToken
+    ) {
+        if (contract.currentInputMode == InputMode.VOICE &&
+            contract.sessionActive &&
+            scope.currentCard != null
+        ) {
+            kotlinx.coroutines.delay(200)
+            val languageId = contract.languageId
+            val languageTag = when (languageId) {
+                "it" -> "it-IT"
+                else -> "en-US"
+            }
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+            }
+            speechLauncher.launch(intent)
         }
     }
 
@@ -411,36 +460,85 @@ private fun DefaultVerbDrillInputControls(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Hint answer text — shown when eye button pressed or 3 wrong attempts
+        // Input controls remain visible below this text
+        if (provider.hintAnswer != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Answer: ${provider.hintAnswer}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if (contract.supportsTts) {
+                        IconButton(
+                            onClick = { contract.speakTts() },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.VolumeUp,
+                                contentDescription = "Listen",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Incorrect feedback — red text with remaining attempts, shown above input
+        if (provider.showIncorrectFeedback) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Incorrect",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${provider.remainingAttempts} attempts left",
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
         OutlinedTextField(
             value = scope.inputText,
-            onValueChange = scope.onInputChanged,
+            onValueChange = { newText ->
+                if (provider.showIncorrectFeedback) {
+                    provider.clearIncorrectFeedback()
+                }
+                scope.onInputChanged(newText)
+            },
             modifier = Modifier.fillMaxWidth(),
             label = { Text(text = "Your translation") },
-            singleLine = true,
             enabled = hasCards,
             trailingIcon = {
-                if (contract.supportsVoiceInput) {
-                    IconButton(
-                        onClick = {
-                            if (hasCards) {
-                                contract.setInputMode(InputMode.VOICE)
-                                val languageId = contract.languageId
-                                val languageTag = when (languageId) {
-                                    "it" -> "it-IT"
-                                    else -> "en-US"
-                                }
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                                }
-                                speechLauncher.launch(intent)
-                            }
-                        },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = "Voice input")
-                    }
+                IconButton(
+                    onClick = {
+                        if (canLaunchVoice) {
+                            contract.setInputMode(InputMode.VOICE)
+                        }
+                    },
+                    enabled = canLaunchVoice
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice input")
                 }
             }
         )
@@ -453,8 +551,8 @@ private fun DefaultVerbDrillInputControls(
             )
         }
 
-        // Voice mode hint
-        if (contract.currentInputMode == InputMode.VOICE) {
+        // Voice mode hint — same guard as AnswerBox
+        if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
             Text(
                 text = scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
@@ -515,67 +613,52 @@ private fun DefaultVerbDrillInputControls(
             }
         }
 
-        // Input mode selector + show answer + flag
+        // Input mode selector + show answer + flag — mirrors AnswerBox exactly
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (contract.supportsVoiceInput) {
-                    FilledTonalIconButton(
-                        onClick = {
+                // Voice mode button — ONLY sets input mode, does NOT launch speech
+                FilledTonalIconButton(
+                    onClick = {
+                        if (canLaunchVoice) {
                             contract.setInputMode(InputMode.VOICE)
-                            val languageId = contract.languageId
-                            val languageTag = when (languageId) {
-                                "it" -> "it-IT"
-                                else -> "en-US"
-                            }
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                            }
-                            speechLauncher.launch(intent)
-                        },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = "Voice mode")
-                    }
+                        }
+                    },
+                    enabled = canLaunchVoice
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                 }
+                // Keyboard mode button
                 FilledTonalIconButton(
                     onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                    enabled = hasCards
+                    enabled = canSelectInputMode
                 ) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
-                if (contract.supportsWordBank) {
-                    FilledTonalIconButton(
-                        onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
-                    }
+                // Word bank mode button
+                FilledTonalIconButton(
+                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                    enabled = canSelectInputMode
+                ) {
+                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
                 }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Show answer button — disabled when hint already shown
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
                     tooltip = { PlainTooltip { Text(text = "Show answer") } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
-                        onClick = {
-                            val answer = contract.showAnswer()
-                            if (answer != null) {
-                                // Show answer as hint result instead of filling input
-                                scope.onInputChanged("")
-                            }
-                        },
-                        enabled = hasCards && !scope.isShowingResult
+                        onClick = { if (hasCards) contract.showAnswer() },
+                        enabled = hasCards && provider.hintAnswer == null
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                     }
@@ -605,7 +688,7 @@ private fun DefaultVerbDrillInputControls(
             }
         }
 
-        // Check button - uses provider.submitAnswerWithInput
+        // Check button — uses provider.submitAnswerWithInput for drill-specific flow
         Button(
             onClick = {
                 val input = scope.inputText
@@ -615,7 +698,10 @@ private fun DefaultVerbDrillInputControls(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = scope.inputText.isNotBlank() && hasCards
+            enabled = hasCards &&
+                scope.inputText.isNotBlank() &&
+                contract.sessionActive &&
+                scope.currentCard != null
         ) {
             Text(text = "Check")
         }

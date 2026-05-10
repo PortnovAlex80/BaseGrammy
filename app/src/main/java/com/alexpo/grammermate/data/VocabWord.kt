@@ -53,6 +53,12 @@ data class VocabDrillCard(
     val mastery: WordMasteryState
 )
 
+/** Direction for vocab drill: which language is prompted, which is the answer. */
+enum class VocabDrillDirection { IT_TO_RU, RU_TO_IT }
+
+/** Result of a voice recognition attempt. */
+enum class VoiceResult { CORRECT, WRONG, SKIPPED }
+
 /** Top-level UI state for the vocab drill screen. */
 data class VocabDrillUiState(
     val isLoading: Boolean = true,
@@ -63,7 +69,10 @@ data class VocabDrillUiState(
     val dueCount: Int = 0,
     val totalCount: Int = 0,
     val session: VocabDrillSessionState? = null,
-    val loadedLanguageId: String? = null
+    val loadedLanguageId: String? = null,
+    val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
+    val asrState: AsrState = AsrState.IDLE,
+    val asrModelReady: Boolean = false
 )
 
 /** State of an active drill session. */
@@ -73,5 +82,10 @@ data class VocabDrillSessionState(
     val correctCount: Int = 0,
     val incorrectCount: Int = 0,
     val isComplete: Boolean = false,
-    val isFlipped: Boolean = false       // card flipped to show answer
+    val isFlipped: Boolean = false,       // card flipped to show answer
+    val direction: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
+    val voiceAttempts: Int = 0,           // 0-3
+    val voiceRecognizedText: String? = null,
+    val voiceResult: VoiceResult? = null, // CORRECT, WRONG, SKIPPED
+    val voiceCompleted: Boolean = false   // true after correct or 3 wrong or skip
 )

@@ -4,16 +4,21 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.alexpo.grammermate.data.AsrEngine
+import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
+import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.data.VocabDrillSessionState
 import com.alexpo.grammermate.data.VocabDrillUiState
+import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.data.VocabWord
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -24,6 +29,13 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private val logTag = "VocabDrillVM"
     private val masteryStore = WordMasteryStore(application)
     private val ttsEngine = TtsEngine(application)
+    private val asrEngine: AsrEngine? = try {
+        AsrEngine(application)
+    } catch (e: Exception) {
+        Log.e(logTag, "ASR engine creation failed", e)
+        null
+    }
+    private var asrStateJob: Job? = null
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
     val uiState: StateFlow<VocabDrillUiState> = _uiState
@@ -54,7 +66,8 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             "drill_nouns.csv",
             "drill_verbs.csv",
             "drill_adjectives.csv",
-            "drill_adverbs.csv"
+            "drill_adverbs.csv",
+            "drill_numbers.csv"
         )
 
         val words = mutableListOf<VocabWord>()
@@ -71,28 +84,14 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
                     .removeSuffix(".csv")
 
                 for (row in rows) {
-                    // For adjectives, extract forms from the CSV columns
-                    val forms = if (pos == "adjectives") {
-                        extractAdjectiveForms(fileName, row.word, context, assetBase)
-                    } else {
-                        emptyMap()
-                    }
-
-                    // For adverbs, try to extract meaning_ru
-                    val meaningRu = if (pos == "adverbs") {
-                        extractAdverbMeaning(fileName, row.rank, context, assetBase)
-                    } else {
-                        null
-                    }
-
                     words.add(VocabWord(
                         id = "${pos}_${row.rank}_${row.word}",
                         word = row.word,
                         pos = pos,
                         rank = row.rank,
-                        meaningRu = meaningRu,
+                        meaningRu = row.meaningRu,
                         collocations = row.collocations,
-                        forms = forms
+                        forms = row.forms
                     ))
                 }
             } catch (e: Exception) {
@@ -115,82 +114,6 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
         updateCounts()
         Log.d(logTag, "Loaded ${words.size} vocab words for language $lang")
-    }
-
-    /**
-     * Extract adjective forms (msg, fsg, mpl, fpl) by re-reading the CSV.
-     * The parser returns ItalianDrillRow which doesn't include forms,
-     * so we parse the raw CSV again to get the form columns.
-     */
-    private fun extractAdjectiveForms(
-        fileName: String,
-        targetWord: String,
-        context: Application,
-        assetBase: String
-    ): Map<String, String> {
-        try {
-            val stream = context.assets.open("$assetBase/$fileName")
-            val reader = java.io.BufferedReader(
-                java.io.InputStreamReader(stream, Charsets.UTF_8)
-            )
-            reader.useLines { lines ->
-                val dataLines = lines.drop(1) // skip header
-                for (line in dataLines) {
-                    val trimmed = line.trim()
-                    if (trimmed.isBlank()) continue
-                    val columns = trimmed.split(",")
-                    if (columns.size < 6) continue
-                    val word = columns[1].trim().trim('"')
-                    if (word == targetWord) {
-                        return mapOf(
-                            "msg" to columns[2].trim().trim('"'),
-                            "fsg" to columns[3].trim().trim('"'),
-                            "mpl" to columns[4].trim().trim('"'),
-                            "fpl" to columns[5].trim().trim('"')
-                        )
-                    }
-                }
-            }
-            stream.close()
-        } catch (e: Exception) {
-            Log.w(logTag, "Failed to extract adjective forms for $targetWord", e)
-        }
-        return emptyMap()
-    }
-
-    /**
-     * Extract meaning_ru for adverbs by re-reading the CSV.
-     * Adverb format: rank,adverb,comparative,superlative,meaning_ru,collocations
-     */
-    private fun extractAdverbMeaning(
-        fileName: String,
-        targetRank: Int,
-        context: Application,
-        assetBase: String
-    ): String? {
-        try {
-            val stream = context.assets.open("$assetBase/$fileName")
-            val reader = java.io.BufferedReader(
-                java.io.InputStreamReader(stream, Charsets.UTF_8)
-            )
-            reader.useLines { lines ->
-                val dataLines = lines.drop(1) // skip header
-                for (line in dataLines) {
-                    val trimmed = line.trim()
-                    if (trimmed.isBlank()) continue
-                    val columns = trimmed.split(",")
-                    val rank = columns.getOrNull(0)?.trim()?.toIntOrNull() ?: continue
-                    if (rank == targetRank) {
-                        val meaning = columns.getOrNull(4)?.trim()?.trim('"')
-                        return if (!meaning.isNullOrBlank()) meaning else null
-                    }
-                }
-            }
-            stream.close()
-        } catch (e: Exception) {
-            Log.w(logTag, "Failed to extract adverb meaning for rank $targetRank", e)
-        }
-        return null
     }
 
     /**
@@ -255,7 +178,10 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         }
 
         _uiState.update {
-            it.copy(session = VocabDrillSessionState(cards = dueCards))
+            it.copy(session = VocabDrillSessionState(
+                cards = dueCards,
+                direction = it.drillDirection
+            ))
         }
     }
 
@@ -272,23 +198,37 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     /**
      * User knew the word. Advance interval step, update mastery, move to next card.
      */
-    fun markCorrect() {
+    enum class AnswerRating { AGAIN, HARD, GOOD, EASY }
+
+    private val ratingIntervalDelta = mapOf(
+        AnswerRating.AGAIN to -100,  // reset to step 0
+        AnswerRating.HARD to 0,      // stay same step (review again sooner)
+        AnswerRating.GOOD to 1,      // advance 1 step
+        AnswerRating.EASY to 2       // advance 2 steps
+    )
+
+    fun answerRating(rating: AnswerRating) {
         val session = _uiState.value.session ?: return
         val index = session.currentIndex
         if (index >= session.cards.size) return
 
         val card = session.cards[index]
         val now = System.currentTimeMillis()
+        val currentStep = card.mastery.intervalStepIndex
+        val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1
 
-        val newStepIndex = SpacedRepetitionConfig.nextIntervalStep(
-            card.mastery.intervalStepIndex, wasOnTime = true
-        )
+        val delta = ratingIntervalDelta[rating] ?: 0
+        val newStepIndex = when {
+            rating == AnswerRating.AGAIN -> 0
+            else -> (currentStep + delta).coerceIn(0, maxStep)
+        }
         val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
-        val isLearned = newStepIndex >= SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1
+        val isLearned = newStepIndex >= maxStep
 
         val updatedMastery = card.mastery.copy(
             intervalStepIndex = newStepIndex,
-            correctCount = card.mastery.correctCount + 1,
+            correctCount = card.mastery.correctCount + (if (rating != AnswerRating.AGAIN) 1 else 0),
+            incorrectCount = card.mastery.incorrectCount + (if (rating == AnswerRating.AGAIN) 1 else 0),
             lastReviewDateMs = now,
             nextReviewDateMs = newNextReview,
             isLearned = isLearned
@@ -297,35 +237,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         masteryMap = masteryMap.toMutableMap().apply { this[card.word.id] = updatedMastery }
         masteryStore.upsertMastery(updatedMastery)
 
-        advanceCard(session, correct = true)
-    }
-
-    /**
-     * User didn't know the word. Reset interval to step 0, update mastery, move to next card.
-     */
-    fun markWrong() {
-        val session = _uiState.value.session ?: return
-        val index = session.currentIndex
-        if (index >= session.cards.size) return
-
-        val card = session.cards[index]
-        val now = System.currentTimeMillis()
-
-        // Reset to step 0
-        val newNextReview = WordMasteryState.computeNextReview(now, 0)
-
-        val updatedMastery = card.mastery.copy(
-            intervalStepIndex = 0,
-            incorrectCount = card.mastery.incorrectCount + 1,
-            lastReviewDateMs = now,
-            nextReviewDateMs = newNextReview,
-            isLearned = false
-        )
-
-        masteryMap = masteryMap.toMutableMap().apply { this[card.word.id] = updatedMastery }
-        masteryStore.upsertMastery(updatedMastery)
-
-        advanceCard(session, correct = false)
+        advanceCard(session, correct = rating != AnswerRating.AGAIN)
     }
 
     private fun advanceCard(session: VocabDrillSessionState, correct: Boolean) {
@@ -341,7 +253,11 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
                     correctCount = newCorrect,
                     incorrectCount = newIncorrect,
                     isComplete = isComplete,
-                    isFlipped = false
+                    isFlipped = false,
+                    voiceAttempts = 0,
+                    voiceRecognizedText = null,
+                    voiceResult = null,
+                    voiceCompleted = false
                 )
             )
         }
@@ -380,8 +296,169 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         ttsEngine.stop()
     }
 
+    // ── ASR / Voice Input Support ──────────────────────────────────────
+
+    /** Set the drill direction and update ASR language accordingly. */
+    fun setDirection(direction: VocabDrillDirection) {
+        _uiState.update { it.copy(drillDirection = direction) }
+        // Switch ASR language based on direction:
+        // IT_TO_RU: user speaks Russian → ASR lang = "ru"
+        // RU_TO_IT: user speaks Italian → ASR lang = "it"
+        val asrLang = when (direction) {
+            VocabDrillDirection.IT_TO_RU -> "ru"
+            VocabDrillDirection.RU_TO_IT -> "it"
+        }
+        asrEngine?.setLanguage(asrLang)
+        // Also update active session direction if one exists
+        _uiState.update { state ->
+            val session = state.session ?: return@update state
+            state.copy(session = session.copy(direction = direction))
+        }
+    }
+
+    /** Start voice input: initialize ASR if needed, then record and transcribe. */
+    fun startVoiceInput() {
+        val engine = asrEngine ?: return
+
+        viewModelScope.launch {
+            // Determine ASR language from current direction
+            val direction = _uiState.value.session?.direction ?: _uiState.value.drillDirection
+            val asrLang = when (direction) {
+                VocabDrillDirection.IT_TO_RU -> "ru"
+                VocabDrillDirection.RU_TO_IT -> "it"
+            }
+
+            // Initialize if needed
+            if (!engine.isReady) {
+                _uiState.update { it.copy(asrState = AsrState.INITIALIZING) }
+                engine.initialize(asrLang)
+            }
+
+            if (engine.state.value == AsrState.ERROR) {
+                _uiState.update { it.copy(asrState = AsrState.ERROR) }
+                return@launch
+            }
+
+            _uiState.update { it.copy(asrState = engine.state.value) }
+
+            // Collect ASR state changes into UI state
+            asrStateJob?.cancel()
+            asrStateJob = viewModelScope.launch {
+                engine.state.collect { asrState ->
+                    _uiState.update { it.copy(asrState = asrState) }
+                }
+            }
+
+            val result = engine.recordAndTranscribe()
+
+            asrStateJob?.cancel()
+            asrStateJob = null
+
+            _uiState.update { it.copy(asrState = engine.state.value) }
+
+            if (result.isNotBlank()) {
+                handleVoiceResult(result)
+            }
+        }
+    }
+
+    /** Stop any ongoing ASR recording. */
+    fun stopVoiceInput() {
+        asrEngine?.stopRecording()
+        asrStateJob?.cancel()
+        asrStateJob = null
+    }
+
+    /**
+     * Handle voice recognition result: match against expected answers.
+     * IT_TO_RU: expected = meaningRu (e.g. "быть/являться")
+     * RU_TO_IT: expected = word (Italian, e.g. "essere")
+     */
+    private fun handleVoiceResult(recognizedText: String) {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+
+        val card = session.cards[index]
+        val direction = session.direction
+
+        // Get expected answer based on direction
+        val expectedRaw = when (direction) {
+            VocabDrillDirection.IT_TO_RU -> card.word.meaningRu ?: ""
+            VocabDrillDirection.RU_TO_IT -> card.word.word
+        }
+
+        // Split by "/" to get list of valid answers
+        val validAnswers = expectedRaw.split("/").map { normalizeForMatch(it) }
+        val normalizedRecognized = normalizeForMatch(recognizedText)
+
+        val isCorrect = validAnswers.any { valid ->
+            valid.isNotBlank() && (
+                normalizedRecognized == valid ||
+                normalizedRecognized.contains(valid)
+            )
+        }
+
+        if (isCorrect) {
+            _uiState.update { state ->
+                state.copy(
+                    session = session.copy(
+                        voiceRecognizedText = recognizedText,
+                        voiceResult = VoiceResult.CORRECT,
+                        voiceCompleted = true
+                    )
+                )
+            }
+        } else {
+            val newAttempts = session.voiceAttempts + 1
+            val maxAttempts = 3
+            if (newAttempts >= maxAttempts) {
+                _uiState.update { state ->
+                    state.copy(
+                        session = session.copy(
+                            voiceAttempts = newAttempts,
+                            voiceRecognizedText = recognizedText,
+                            voiceResult = VoiceResult.WRONG,
+                            voiceCompleted = true
+                        )
+                    )
+                }
+            } else {
+                _uiState.update { state ->
+                    state.copy(
+                        session = session.copy(
+                            voiceAttempts = newAttempts,
+                            voiceRecognizedText = recognizedText,
+                            voiceResult = VoiceResult.WRONG,
+                            voiceCompleted = false
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /** Skip voice input for the current card. */
+    fun skipVoice() {
+        _uiState.update { state ->
+            val session = state.session ?: return@update state
+            state.copy(
+                session = session.copy(
+                    voiceResult = VoiceResult.SKIPPED,
+                    voiceCompleted = true
+                )
+            )
+        }
+    }
+
+    private fun normalizeForMatch(text: String): String {
+        return text.trim().lowercase().replace(Regex("[.!?,;:]$"), "")
+    }
+
     override fun onCleared() {
         super.onCleared()
         ttsEngine.release()
+        asrStateJob?.cancel()
+        asrEngine?.release()
     }
 }

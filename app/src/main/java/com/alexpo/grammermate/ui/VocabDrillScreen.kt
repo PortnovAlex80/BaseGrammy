@@ -2,6 +2,7 @@ package com.alexpo.grammermate.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,7 +69,15 @@ fun VocabDrillScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Loading...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
         }
         return
     }
@@ -86,8 +95,7 @@ fun VocabDrillScreen(
                 session = session,
                 ttsState = viewModel.ttsState.collectAsState().value,
                 onFlip = viewModel::flipCard,
-                onCorrect = viewModel::markCorrect,
-                onWrong = viewModel::markWrong,
+                onAnswer = viewModel::answerRating,
                 onSpeak = viewModel::speakTts,
                 onExit = viewModel::exitSession
             )
@@ -243,8 +251,7 @@ private fun VocabDrillCardScreen(
     session: VocabDrillSessionState,
     ttsState: TtsState,
     onFlip: () -> Unit,
-    onCorrect: () -> Unit,
-    onWrong: () -> Unit,
+    onAnswer: (VocabDrillViewModel.AnswerRating) -> Unit,
     onSpeak: (String) -> Unit,
     onExit: () -> Unit
 ) {
@@ -304,42 +311,75 @@ private fun VocabDrillCardScreen(
 
         // Bottom action buttons
         if (session.isFlipped) {
-            // Answer buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // "Didn't know" button
-                OutlinedButton(
-                    onClick = onWrong,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+            // Anki-style 4 rating buttons
+            val currentStep = session.cards.getOrElse(session.currentIndex) { null }
+                ?.mastery?.intervalStepIndex ?: 0
+            val ladder = listOf(1, 2, 4, 7, 10, 14, 20, 28, 42, 56)
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Didn't know")
+                    // Again
+                    OutlinedButton(
+                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.AGAIN) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Again", fontWeight = FontWeight.Bold)
+                            Text("<1m", fontSize = 11.sp, color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                        }
+                    }
+                    // Hard
+                    OutlinedButton(
+                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.HARD) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFE65100)
+                        )
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Hard", fontWeight = FontWeight.Bold)
+                            Text("${ladder[currentStep]}d", fontSize = 11.sp, color = Color(0xFFE65100).copy(alpha = 0.7f))
+                        }
+                    }
                 }
-                // "Knew it" button
-                Button(
-                    onClick = onCorrect,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Knew it")
+                    // Good
+                    Button(
+                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.GOOD) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Good", fontWeight = FontWeight.Bold)
+                            val goodStep = (currentStep + 1).coerceAtMost(ladder.size - 1)
+                            Text("${ladder[goodStep]}d", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                        }
+                    }
+                    // Easy
+                    Button(
+                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.EASY) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32)
+                        )
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Easy", fontWeight = FontWeight.Bold)
+                            val easyStep = (currentStep + 2).coerceAtMost(ladder.size - 1)
+                            Text("${ladder[easyStep]}d", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                        }
+                    }
                 }
             }
         } else {
