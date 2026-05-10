@@ -36,6 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **All file writes must go through `AtomicFileWriter`** — temp → fsync → rename. No direct File.writeText
 - **`TrainingViewModel` is 3000+ lines** — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
 - **Project path contains Cyrillic** (`Разработка`) — `android.overridePathCheck=true` in gradle.properties is required
+- **Drill visibility is pack-scoped** — `hasVerbDrill`/`hasVocabDrill` check the active pack's manifest, not all installed packs. A pack without `verbDrill`/`vocabDrill` sections shows no drill tiles.
 
 ---
 
@@ -281,7 +282,11 @@ All stores read/write YAML/CSV files in `context.filesDir/grammarmate/`. Key fil
 | File | Purpose |
 |------|---------|
 | `Models.kt` | Data classes: `Lesson`, `SentenceCard`, `VocabEntry`, `TrainingUiState`, enums |
-| `LessonStore.kt` | Lesson pack import (ZIP), seed data, language management |
+| `LessonStore.kt` | Lesson pack import (ZIP), seed data, language management, pack-scoped drill import/query |
+| `LessonPackManifest.kt` | Pack manifest data classes including `DrillFiles`, `verbDrill`/`vocabDrill` optional sections |
+| `VerbDrillStore.kt` | Verb drill progress, scoped per-pack at `drills/{packId}/verb_drill_progress.yaml` |
+| `WordMasteryStore.kt` | Vocab drill word mastery, scoped per-pack at `drills/{packId}/word_mastery.yaml` |
+| `ItalianDrillVocabParser.kt` | Parses Italian vocab drill CSVs (nouns, verbs, adjectives, etc.) |
 | `MasteryStore.kt` | Per-lesson card show tracking (uniqueCardShows, shownCardIds) |
 | `ProgressStore.kt` | Training session position/state |
 | `SpacedRepetitionConfig.kt` | Ebbinghaus forgetting curve math, interval ladder [1,2,4,7,10,14,20,28,42,56 days] |
@@ -315,11 +320,26 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 2. Add a `DefaultPack` entry to the `defaultPacks` list in `LessonStore.kt`
 3. Both steps are required — the ZIP in assets alone is not enough
 
-**Pack types:** standard (default) and `verb_drill` (set `type` field in manifest lesson entry).
-- Standard packs: CSV with 2 columns `ru;answers` (answers separated by `+`), no header row.
-- `verb_drill` packs: CSV with header row `RU;IT;Verb;Tense;Group` (RU and IT required; Verb, Tense, Group optional). Filtered at runtime via dropdowns. Files are stored in `verb_drill/{languageId}_{lessonId}.csv` inside the app data directory.
-- The `type` field in manifest lesson entry defaults to `"standard"` if absent. Set `"type": "verb_drill"` for drill packs.
-- VerbDrillViewModel (`ui/VerbDrillViewModel.kt`) manages drill state; it calls `reloadForLanguage()` from GrammarMateApp when the screen opens to stay in sync with the selected language.
+**Manifest format:**
+```json
+{
+  "packId": "...",
+  "schemaVersion": 1,
+  "language": "it",
+  "lessons": [...],
+  "verbDrill": { "files": ["verb_drill.csv"] },
+  "vocabDrill": { "files": ["drill_nouns.csv", "drill_verbs.csv"] }
+}
+```
+- `verbDrill` and `vocabDrill` are optional top-level sections. Omit them for packs without drill content.
+- Lesson entries with `type: "verb_drill"` are filtered during import — the CSV is NOT parsed as a standard lesson.
+- On import, drill files are copied to `grammarmate/drills/{packId}/verb_drill/` and `grammarmate/drills/{packId}/vocab_drill/`.
+- Progress is scoped per-pack: `grammarmate/drills/{packId}/verb_drill_progress.yaml` and `word_mastery.yaml`.
+- Drill tiles on HomeScreen are visible only when the active pack declares the corresponding drill section.
+- Drill ViewModels accept `packId` via `reloadForPack(packId)` to load pack-scoped data.
+- Standard lesson CSV: 2 columns `ru;answers` (answers separated by `+`), no header row.
+- Verb drill CSV: header row `RU;IT;Verb;Tense;Group` (RU and IT required; Verb, Tense, Group optional).
+- Vocab drill CSV: language-specific format parsed by `ItalianDrillVocabParser`.
 
 ### File Size & Decomposition Guidelines
 
