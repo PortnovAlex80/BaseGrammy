@@ -46,7 +46,8 @@ class ProgressStore(private val context: Context) {
             eliteBestSpeeds = (payload["eliteBestSpeeds"] as? List<*>)?.mapNotNull { it as? Number }
                 ?.map { it.toDouble() }
                 ?: emptyList(),
-            currentScreen = payload["currentScreen"] as? String ?: "HOME"
+            currentScreen = payload["currentScreen"] as? String ?: "HOME",
+            activePackId = payload["activePackId"] as? String
         ).let { progress ->
             // Migration: if old single bossMegaReward exists but bossMegaRewards is empty,
             // migrate it using the current lessonId as the key
@@ -78,7 +79,8 @@ class ProgressStore(private val context: Context) {
             "hintCount" to progress.hintCount,
             "eliteStepIndex" to progress.eliteStepIndex,
             "eliteBestSpeeds" to progress.eliteBestSpeeds,
-            "currentScreen" to progress.currentScreen
+            "currentScreen" to progress.currentScreen,
+            "activePackId" to progress.activePackId
         )
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,
