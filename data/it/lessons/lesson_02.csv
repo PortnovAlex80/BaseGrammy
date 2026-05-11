@@ -1,0 +1,151 @@
+RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
+это красивый дом (bella casa).;Questa è una bella casa.;Presente;106;casa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я был (essere) в доме (casa) отдыха (vacanza).;Io ero in una casa vacanze.;Imperfetto;106;casa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы видели красивые (belle) дома (case).;Noi vedevamo delle belle case.;Imperfetto;106;casa;f;;;noun;enriched
+мы должны выплатить должную сумму (pagare, somma dovuta).;Noi dobbiamo pagare la somma dovuta.;Presente;126;;;dovere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты должен был проявлять должную заботу (prestare la dovuta cura).;Tu dovevi prestare la dovuta cura.;Imperfetto;126;;;dovere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+у меня много (molto) свободного (libero) времени (tempo).;Io ho molto tempo libero.;Presente;132;tempo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он ведет (condurre) прекрасную (bella) жизнь.;Lui conduce una bella vita.;Presente;137;vita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у неё была простая повседневная жизнь (semplice, quotidiana).;Lei aveva una semplice vita quotidiana.;Imperfetto;137;vita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+каждый (ogni) год (anno) он ест (mangiare) яблоко (mela).;Ogni anno lui mangia una mela.;Presente;143;anno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+прошлый (scorso) год (anno) мы жили (vivere) в Риме (Roma).;L'anno scorso noi vivevamo a Roma.;Imperfetto;143;anno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я делаю часть работы по дому (fare, parte del lavoro, casa).;Io faccio una parte del lavoro di casa.;Presente;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он делил (dividere) пирог (torta) на части (parti).;Lui divideva la torta in parti.;Imperfetto;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он делал (fare) тяжелую (duro) работу (lavoro).;Lui faceva un duro lavoro.;Imperfetto;151;lavoro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы много раз ели пиццу (molte volte).;Noi mangiavamo la pizza molte volte.;Imperfetto;155;volta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он хороший (buono) человек (uomo).;Lui è un buon uomo.;Presente;159;uomo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это был обычный (comune) человек (uomo).;Era un uomo comune.;Imperfetto;159;uomo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он хороший (buono) отец (padre).;Lui è un buon padre.;Presente;160;padre;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мой отец (padre) был дома (casa).;Mio padre era a casa.;Imperfetto;160;padre;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он находит (trovare) нового (nuovo) друга (amico).;Lui trova un nuovo amico.;Presente;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я выходил с друзьями (uscire, amici).;Io uscivo con gli amici.;Imperfetto;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он — настоящий джентльмен (vero, signore).;Lui è un vero signore.;Presente;171;signore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него хорошие манеры (avere, buono, modo).;Lui ha dei buoni modi.;Presente;180;modo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы делали работу по-разному (fare, lavoro, in modo diverso).;Noi facevamo il lavoro in modo diverso.;Imperfetto;180;modo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она говорит громко (a voce alta);Lei parla a voce alta.;Presente;189;;;parlare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+она — хорошая (brava) мама (mamma).;Lei è una brava mamma.;Presente;191;mamma;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты была молодая (giovane) мама (mamma).;Tu eri una giovane mamma.;Imperfetto;191;mamma;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она — молодая (giovane) мать (madre).;Lei è una giovane madre.;Presente;201;madre;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+моя мама (madre) была очень заботливой (premurosa).;Mia madre era molto premurosa.;Imperfetto;201;madre;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он делал (fare) маленькую (piccolo) услугу (favore).;Lui faceva un piccolo favore.;Imperfetto;204;favore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него большой (grande) успех (successo).;Lui ha un grande successo.;Presente;205;successo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у тебя был неожиданный (inaspettato) успех (successo).;Tu avevi un successo inaspettato.;Imperfetto;205;successo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты плаваешь (nuotare) в море (mare).;Tu nuoti nel mare.;Presente;220;;;nuotare;tu;verb;enriched
+он красивый парень (bello, ragazzo).;Lui è un bel ragazzo.;Presente;221;ragazzo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он был застенчивым парнем (timido, ragazzo).;Lui era un ragazzo timido.;Imperfetto;221;ragazzo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он — добрый (brava) человек (persona).;Lui è una brava persona.;Presente;223;persona;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она была пожилым (anziana) человеком (persona).;Lei era una persona anziana.;Imperfetto;223;persona;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он был странным парнем (tipo strano).;Lui era un tipo strano.;Imperfetto;225;tipo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он тратит деньги (soldi).;Lui spende i soldi.;Presente;232;soldo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у меня есть хорошая идея (avere, buona).;Io ho una buona idea.;Presente;239;idea;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у меня есть идея (un'idea).;Io ho un'idea.;Presente;239;idea;f;;;noun;enriched
+это была плохая идея (essere, brutta).;Era una brutta idea.;Imperfetto;239;idea;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мой сын был маленький (essere, piccolo).;Mio figlio era piccolo.;Imperfetto;243;figlio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я иду (andare) на рынок (mercato).;Io vado al mercato.;Presente;250;mercato;m;;;noun;enriched
+он студент (uno studente).;Lui è uno studente.;Presente;250;studente;m;;;noun;enriched
+это счастливый (fortunato) случай (caso).;Questo è un caso fortunato.;Presente;253;caso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+это был изолированный (isolato) случай (caso).;Era un caso isolato.;Imperfetto;253;caso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у него много сил (forza).;Lui ha tanta forza.;Presente;254;forza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у нас была (avere) большая (grande) сила (forza).;Noi avevamo una grande forza.;Imperfetto;254;forza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я писал (scrivere) полное (completo) имя (nome).;Io scrivevo il nome completo.;Imperfetto;260;nome;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у него есть техническая проблема (tecnico, problema).;Lui ha un problema tecnico.;Presente;262;problema;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у нас были некоторые проблемы (avere, problemi).;Noi avevamo dei problemi.;Imperfetto;262;problema;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я знаю (conoscere) весь (intero) мир (mondo).;Io conosco l'intero mondo.;Presente;266;mondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы изучали (studiare) мир (mondo) животных (animale).;Noi studiavamo il mondo animale.;Imperfetto;266;mondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он жил (vivere) в мире (mondo) фантазий.;Lui viveva nel mondo delle fantasie.;Imperfetto;266;mondo;m;;;noun;enriched
+это хорошие (bei) книги (libri).;Questi sono bei libri.;Presente;270;libro;m;;;noun;enriched
+она — красивая (bello) женщина (donna).;Lei è una bella donna.;Presente;271;donna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она была сильной женщиной (donna forte).;Lei era una donna forte.;Imperfetto;271;donna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я люблю (amare) мою (mia) семью (famiglia).;Io amo la mia famiglia.;Presente;278;famiglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы были (essere) большой (grande) семьей (famiglia).;Noi eravamo una grande famiglia.;Imperfetto;278;famiglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+книга (libro) лежит (stare) на столе (tavolo).;Il libro sta sul tavolo.;Presente;280;tavolo;m;;;noun;enriched
+это хорошие (buone) новости (notizie).;Queste sono buone notizie.;Presente;280;notizia;f;;;noun;enriched
+ты прав (avere ragione);Tu hai ragione.;Presente;285;ragione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него была веская причина (avere, buona, ragione);Lui aveva una buona ragione.;Imperfetto;285;ragione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+была тихая ночь (essere, silenziosa).;La notte era silenziosa.;Imperfetto;289;notte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы поете (cantare) красивую песню.;Voi cantate una bella canzone.;Presente;290;;;cantare;voi;verb;enriched
+у него горячая голова (caldo).;Lui ha una testa calda.;Presente;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она теряла голову (perdere).;Lei perdeva la testa.;Imperfetto;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я работаю (lavorare) за компьютером (computer).;Io lavoro al computer.;Presente;300;computer;m;;;noun;enriched
+она была подругой (un'amica) моей сестры.;Lei era un'amica di mia sorella.;Imperfetto;300;amica;f;;;noun;enriched
+моя жена (moglie) дома (casa).;Mia moglie è a casa.;Presente;310;moglie;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это дядя (lo zio) моей мамы.;Questo è lo zio di mia mamma.;Presente;310;zio;m;;;noun;enriched
+вы бегали (correre) в парке (parco).;Voi correvate nel parco.;Imperfetto;310;;;correre;voi;verb;enriched
+у него была молодая (giovane) жена (moglie).;Lui aveva una giovane moglie.;Imperfetto;310;moglie;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он рассказывает (raccontare) историю (storia).;Lui racconta una storia.;Presente;312;storia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она читала (leggere) древнюю (antica) историю (storia).;Lei leggeva una storia antica.;Imperfetto;312;storia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он умирает от жажды (morire di sete);Lui muore di sete.;Presente;314;;;morire;lui;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты умирал от жажды (morire di sete);Tu morivi di sete.;Imperfetto;314;;;morire;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы шли (camminare) по мосту (ponte).;Noi camminavamo sul ponte.;Imperfetto;320;ponte;m;;;noun;enriched
+я звоню (chiamare) в полицию (polizia).;Io chiamo la polizia.;Presente;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы читаем между строк (leggere tra le righe);Noi leggiamo tra le righe.;Presente;330;;;leggere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+это хороший конец дня (buona fine, giornata).;È una buona fine della giornata.;Presente;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+это был конец (fine) дня (giorno).;Era la fine del giorno.;Imperfetto;334;giorno;m;;;noun;enriched
+у меня большой (grande) страх (paura).;Io ho una grande paura.;Presente;336;paura;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у него был внезапный (improvviso) страх (paura).;Lui aveva una paura improvvisa.;Imperfetto;336;paura;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мой брат был маленький (essere, piccolo).;Mio fratello era piccolo.;Imperfetto;337;fratello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он хороший (buono) начальник (capo).;Lui è un buon capo.;Presente;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она была начальником отдела (capo, reparto).;Lei era il capo del reparto.;Imperfetto;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у него большая любовь к детям и родителям (amore, bambini, genitori).;Lui ha un grande amore per i bambini e per i genitori.;Presente;345;amore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у неё была материнская (materno) любовь (amore).;Lei aveva l'amore materno.;Imperfetto;345;amore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я играю (suonare) на пианино (piano).;Io suono il piano.;Presente;349;piano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он жил (vivere) на первом этаже (primo piano).;Lui viveva al primo piano.;Imperfetto;349;piano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+это цвет (colore) неба (cielo).;Questo è il colore del cielo.;Presente;350;cielo;m;;;noun;enriched
+я смотрел в зеркало (guardare, specchio).;Io guardavo nello specchio.;Imperfetto;350;specchio;m;;;noun;enriched
+это любопытный (curioso) мальчик (bambino).;Questo è un bambino curioso.;Presente;362;bambino;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мальчик (bambino) был капризным (capriccioso).;Il bambino era capriccioso.;Imperfetto;362;bambino;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+это был тихий вечер (sera).;Era una sera tranquilla.;Imperfetto;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он читал весь (tutta) вечер (sera).;Lui leggeva tutta la sera.;Imperfetto;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты делал короткую прогулку (fare, breve, giro);Tu facevi un breve giro.;Imperfetto;372;giro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+маленький дьявол (piccolo) бегал (correre).;Il piccolo diavolo correva.;Imperfetto;380;diavolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы посещали (visitare) зоопарк (uno zoo).;Noi visitavamo uno zoo.;Imperfetto;380;zoo;m;;;noun;enriched
+это моя вина (colpa mia).;È colpa mia.;Presente;389;colpa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы просили информацию о бронировании отеля (chiedere informazioni, prenotazione, hotel).;Voi chiedevate informazioni sulla prenotazione dell'hotel.;Imperfetto;395;;;chiedere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я верю (credere) в будущее (futuro).;Io credo nel futuro.;Presente;400;futuro;m;;;noun;enriched
+он — католический (cattolico) папа (papa).;Lui è un papa cattolico.;Presente;403;Papa;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мой папа (papa) был (essere) добрый (buono).;Mio papà era buono.;Imperfetto;403;Papa;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я жду (aspettare) несколько часов (ore).;Io aspetto delle ore.;Presente;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я жду (aspettare) некоторые минуты (alcuni minuti).;Io aspetto alcuni minuti.;Presente;411;minuto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он считал (contare) минуты (minuto).;Lui contava i minuti.;Imperfetto;411;minuto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он шел по сельской дороге (andare, strada di campagna).;Lui andava per la strada di campagna.;Imperfetto;414;strada;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я провожу эту неделю дома (passare, settimana, casa).;Io passo questa settimana a casa.;Presente;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+обычно мы проводили неделю дома (passare, settimana, casa).;Di solito passavamo una settimana a casa.;Imperfetto;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы идете ужинать (uscire a cena);Voi uscite a cena.;Presente;422;;;uscire;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты выходил на ужин (uscire a cena);Tu uscivi a cena.;Imperfetto;422;;;uscire;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мой папа (mio papà) работает (lavorare).;Mio papà lavora.;Presente;424;papà;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты звонишь (chiamare) папе (papà).;Tu chiami papà.;Presente;424;papà;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он был (essere) добрым (bravo) папой (papà).;Lui era un bravo papà.;Imperfetto;424;papà;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у меня один (solo) доллар (dollaro).;Io ho un solo dollaro.;Presente;427;dollaro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он тратил (spendere) много (molti) долларов (dollari).;Lui spendeva molti dollari.;Imperfetto;427;dollaro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него голубые (azzurro) глаза.;Lui ha gli occhi azzurri.;Presente;428;occhio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты открывал (aprire) глаза.;Tu aprivi gli occhi.;Imperfetto;428;occhio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты пьёшь (bere) воду (acqua).;Tu bevi l'acqua.;Presente;430;;;bere;tu;verb;enriched
+я иду (venire) из школы (scuola).;Io vengo dalla scuola.;Presente;432;scuola;f;;;noun;enriched
+он был в (essere) начальной (elementare) школе (scuola).;Lui era in una scuola elementare.;Imperfetto;432;scuola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он теряет (perdere) кровь.;Lui perde il sangue.;Presente;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы делали (fare) забор (prelievo) крови.;Noi facevamo un prelievo di sangue.;Imperfetto;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она звонит по телефону (chiamare al telefono);Lei chiama al telefono.;Presente;444;;;chiamare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+перевод был автоматическим (automatico).;La traduzione era automatica.;Imperfetto;447;traduzione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него золотое сердце (oro).;Lui ha un cuore d'oro.;Presente;449;cuore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у неё было нежное сердце (tenero).;Lei aveva un cuore tenero.;Imperfetto;449;cuore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у меня сладкие воспоминания (avere, dolce, ricordo);Io ho dei dolci ricordi.;Presente;455;ricordo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него было детское воспоминание (avere, infanzia, ricordo);Lui aveva un ricordo d'infanzia.;Imperfetto;455;ricordo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты слушаешь советы (ascoltare i consigli);Tu ascolti i consigli.;Presente;459;;;ascoltare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты слушал тишину (ascoltare il silenzio);Tu ascoltavi il silenzio.;Imperfetto;459;;;ascoltare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он набирает (comporre) номер телефона (numero di telefono).;Lui compone il numero di telefono.;Presente;470;numero;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы говорили (parlare) по-итальянски.;Voi parlavate in italiano.;Imperfetto;470;;;parlare;voi;verb;enriched
+я пью (bere) горячую (calda) воду (acqua).;Io bevo l'acqua calda.;Presente;482;acqua;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы хотели (volere) проточную (corrente) воду (acqua).;Noi volevamo l'acqua corrente.;Imperfetto;482;acqua;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+эта маленькая комната (piccola, stanza) очень красивая (bella).;Questa piccola stanza è molto bella.;Presente;484;stanza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы любили свою работу (amare, nostro lavoro).;Noi amavamo il nostro lavoro.;Imperfetto;489;;;amare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он покупает полезные вещи (comprare, oggetti utili).;Lui compra degli oggetti utili.;Presente;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я убирал старые предметы со стола (mettere via, oggetti vecchi, tavolo).;Io mettevo via gli oggetti vecchi dal tavolo.;Imperfetto;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он — полицейский (poliziotto).;Lui è un agente di polizia.;Presente;491;agente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она была секретным агентом (segreto).;Lei era un agente segreto.;Imperfetto;491;agente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он видел (vedere) небесное (celeste) тело (corpo).;Lui vedeva un corpo celeste.;Imperfetto;493;Corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он кажется странным (parere strano);Lui pare strano.;Presente;494;;;parere;lui;verb;gemma-4-26b-a4b-it@q4_k_xl
+я казался слабее, чем на самом деле (parere, più debole, del vero).;Io parevo più debole del vero.;Imperfetto;494;;;parere;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я делаю (fare) красивое (bello) фото (foto).;Io faccio una bella foto.;Presente;496;foto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он отправлял (mandare) групповое (di gruppo) фото (foto).;Lui mandava una foto di gruppo.;Imperfetto;496;foto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он отвечал на телефонный звонок (rispondere, telefono).;Lui rispondeva al telefono.;Imperfetto;497;telefono;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он говорил (parlare) по телефону (telefono).;Lui parlava al telefono.;Imperfetto;497;telefono;m;;;noun;enriched
