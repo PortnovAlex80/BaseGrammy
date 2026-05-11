@@ -1097,7 +1097,7 @@ private fun VocabDrillEntryTile(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
+                Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
             }
             if (masteredCount > 0) {
                 Text(

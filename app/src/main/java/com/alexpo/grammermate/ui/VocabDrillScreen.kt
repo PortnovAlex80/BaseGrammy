@@ -180,7 +180,7 @@ private fun VocabDrillSelectionScreen(
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
+            Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
         }
         Spacer(modifier = Modifier.height(16.dp))
         // Direction filter chips
@@ -400,7 +400,7 @@ private fun VocabDrillCardScreen(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Vocab Drill", fontWeight = FontWeight.SemiBold)
+                Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
             }
             Text(
                 text = "$currentIndex/$totalCards",
