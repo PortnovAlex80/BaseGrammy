@@ -1358,6 +1358,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── Daily Practice ────────────────────────────────────────────────────
 
+    /** Check if there is a saved daily session that can be resumed. */
+    fun hasResumableDailySession(): Boolean {
+        val progress = progressStore.load()
+        return progress.dailyLevel > 0 && progress.dailyTaskIndex > 0
+    }
+
     fun startDailyPractice(lessonLevel: Int): Boolean {
         val state = _uiState.value
         val packId = state.activePackId ?: return false
@@ -1372,6 +1378,36 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (tasks.isEmpty()) return false
 
         dailySessionHelper.startDailySession(tasks, lessonLevel)
+        return true
+    }
+
+    /**
+     * Resume a daily practice session from saved progress.
+     * Rebuilds the session with the same level and advances to the saved taskIndex.
+     */
+    fun resumeDailyPractice(): Boolean {
+        val progress = progressStore.load()
+        val lessonLevel = progress.dailyLevel
+        val savedTaskIndex = progress.dailyTaskIndex
+        if (lessonLevel <= 0) return false
+
+        val state = _uiState.value
+        val packId = state.activePackId ?: return false
+        val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return false
+
+        val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+        val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        if (tasks.isEmpty()) return false
+
+        // Start session then fast-forward to saved position
+        dailySessionHelper.startDailySession(tasks, lessonLevel)
+        if (savedTaskIndex > 0 && savedTaskIndex < tasks.size) {
+            dailySessionHelper.fastForwardTo(savedTaskIndex)
+        }
         return true
     }
 
@@ -2141,7 +2177,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteStepIndex = state.eliteStepIndex,
                 eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds),
                 currentScreen = state.currentScreen,
-                activePackId = state.activePackId
+                activePackId = state.activePackId,
+                dailyLevel = if (state.dailySession.active) state.dailySession.level else 0,
+                dailyTaskIndex = if (state.dailySession.active) state.dailySession.taskIndex else 0
             )
         )
 

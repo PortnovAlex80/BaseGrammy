@@ -142,6 +142,8 @@ fun GrammarMateApp() {
         var showSettings by remember { mutableStateOf(false) }
         var showExitDialog by remember { mutableStateOf(false) }
         var showWelcomeDialog by remember { mutableStateOf(false) }
+        var showDailyResumeDialog by remember { mutableStateOf(false) }
+        var pendingDailyLevel by remember { mutableStateOf(0) }
         val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
@@ -312,8 +314,13 @@ fun GrammarMateApp() {
                     onOpenElite = {
                         val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
                         val level = (lessonIndex + 1).coerceIn(1, 12)
-                        val started = vm.startDailyPractice(level)
-                        if (started) screen = AppScreen.DAILY_PRACTICE
+                        if (vm.hasResumableDailySession()) {
+                            pendingDailyLevel = level
+                            showDailyResumeDialog = true
+                        } else {
+                            val started = vm.startDailyPractice(level)
+                            if (started) screen = AppScreen.DAILY_PRACTICE
+                        }
                     },
                     hasVerbDrill = hasVerbDrill,
                     hasVocabDrill = hasVocabDrill,
@@ -496,6 +503,32 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "End session?") },
                     text = { Text(text = "Current session will be completed.") }
+                )
+            }
+
+            if (showDailyResumeDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDailyResumeDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDailyResumeDialog = false
+                            val resumed = vm.resumeDailyPractice()
+                            if (resumed) screen = AppScreen.DAILY_PRACTICE
+                        }) {
+                            Text(text = "Continue")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showDailyResumeDialog = false
+                            val started = vm.startDailyPractice(pendingDailyLevel)
+                            if (started) screen = AppScreen.DAILY_PRACTICE
+                        }) {
+                            Text(text = "Start fresh")
+                        }
+                    },
+                    title = { Text(text = "Resume your session?") },
+                    text = { Text(text = "You have an unfinished daily practice session.") }
                 )
             }
 

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.CardSessionContract
+import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.InputModeConfig
@@ -28,7 +29,7 @@ import com.alexpo.grammermate.data.VerbDrillCard
  */
 class DailyPracticeSessionProvider(
     private val tasks: List<DailyTask>,
-    private val startOffset: Int,
+    blockType: DailyBlockType,
     private val onBlockComplete: () -> Unit,
     override val languageId: String = "en",
     private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> },
@@ -37,13 +38,10 @@ class DailyPracticeSessionProvider(
     private val ttsStateProvider: () -> TtsState = { TtsState.IDLE }
 ) : CardSessionContract {
 
+    /** All tasks matching the requested block type, limited to 5 cards. */
     private val blockCards: List<DailyTask> = tasks
-        .filter { it is DailyTask.TranslateSentence || it is DailyTask.ConjugateVerb }
-        .let { block ->
-            val start = block.indexOfFirst { it == tasks[startOffset] }.coerceAtLeast(0)
-            val firstType = block.getOrNull(start)?.blockType ?: return@let emptyList()
-            block.drop(start).takeWhile { it.blockType == firstType }
-        }
+        .filter { it.blockType == blockType }
+        .take(5)
 
     private var currentIndex: Int by mutableStateOf(0)
     private var _pendingCard: SessionCard? by mutableStateOf(null)

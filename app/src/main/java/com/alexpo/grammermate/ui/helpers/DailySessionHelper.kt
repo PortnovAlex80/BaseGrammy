@@ -81,6 +81,33 @@ class DailySessionHelper(
         stateAccess.saveProgress()
     }
 
+    /**
+     * Fast-forward the session to a specific task index.
+     * Used when resuming a saved daily practice session.
+     * Computes the correct blockIndex for the target position.
+     */
+    fun fastForwardTo(taskIndex: Int) {
+        val ds = stateAccess.uiState.value.dailySession
+        if (!ds.active || taskIndex >= ds.tasks.size) return
+
+        var blockIndex = 0
+        for (i in 1..taskIndex) {
+            if (ds.tasks[i].blockType != ds.tasks[i - 1].blockType) {
+                blockIndex++
+            }
+        }
+
+        stateAccess.updateState {
+            it.copy(
+                dailySession = it.dailySession.copy(
+                    taskIndex = taskIndex,
+                    blockIndex = blockIndex
+                )
+            )
+        }
+        stateAccess.saveProgress()
+    }
+
     fun getBlockProgress(): BlockProgress {
         val ds = stateAccess.uiState.value.dailySession
         if (!ds.active) return BlockProgress.Empty

@@ -131,7 +131,9 @@ data class TrainingProgress(
     val eliteStepIndex: Int = 0,
     val eliteBestSpeeds: List<Double> = emptyList(),
     val currentScreen: String = "HOME",
-    val activePackId: String? = null
+    val activePackId: String? = null,
+    val dailyLevel: Int = 0,
+    val dailyTaskIndex: Int = 0
 )
 
 /**

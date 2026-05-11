@@ -5,9 +5,7 @@ import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -186,9 +184,14 @@ private fun ColumnScope.CardSessionBlock(
     var blockComplete by remember { mutableStateOf(false) }
 
     val provider = remember(blockKey) {
+        val currentBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
+            is DailyTask.TranslateSentence -> DailyBlockType.TRANSLATE
+            is DailyTask.ConjugateVerb -> DailyBlockType.VERBS
+            else -> DailyBlockType.TRANSLATE
+        }
         DailyPracticeSessionProvider(
             tasks = state.tasks,
-            startOffset = state.taskIndex,
+            blockType = currentBlockType,
             onBlockComplete = { blockComplete = true },
             languageId = languageId,
             onAnswerChecked = { input, correct ->
@@ -728,8 +731,9 @@ private fun ColumnScope.VocabFlashcardBlock(
     onComplete: () -> Unit,
     onSpeak: (String) -> Unit
 ) {
-    var isFlipped by remember(task.id) { mutableStateOf(false) }
     var isRated by remember(task.id) { mutableStateOf(false) }
+    var isVoiceActive by remember { mutableStateOf(false) }
+    var voiceRecognizedText by remember { mutableStateOf<String?>(null) }
 
     val promptText = when (task.direction) {
         VocabDrillDirection.IT_TO_RU -> task.word.word
@@ -739,21 +743,32 @@ private fun ColumnScope.VocabFlashcardBlock(
         VocabDrillDirection.IT_TO_RU -> task.word.meaningRu ?: task.word.word
         VocabDrillDirection.RU_TO_IT -> task.word.word
     }
-    val directionLabel = when (task.direction) {
-        VocabDrillDirection.IT_TO_RU -> "Italian -> Russian"
-        VocabDrillDirection.RU_TO_IT -> "Russian -> Italian"
+
+    // Voice recognition launcher
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isVoiceActive = false
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                voiceRecognizedText = spoken
+                // Compare with answer and auto-rate
+                val normalizedSpoken = com.alexpo.grammermate.data.Normalizer.normalize(spoken)
+                val normalizedAnswer = com.alexpo.grammermate.data.Normalizer.normalize(answerText)
+                val isCorrect = normalizedSpoken == normalizedAnswer
+                if (!isRated) {
+                    isRated = true
+                    onRate(if (isCorrect) 2 else 0) // 2 = Good, 0 = Again
+                }
+            }
+        }
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = !isFlipped) {
-                isFlipped = true
-                onFlip()
-            },
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isFlipped) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
@@ -762,60 +777,78 @@ private fun ColumnScope.VocabFlashcardBlock(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = directionLabel,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            // Main word (large)
             Text(
                 text = promptText,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            if (!isFlipped) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "Tap to flip",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
+
+            // TTS button for the word
+            Spacer(modifier = Modifier.height(4.dp))
+            IconButton(onClick = { onSpeak(promptText) }) {
+                Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
             }
 
-            AnimatedVisibility(visible = isFlipped) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = answerText,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    IconButton(onClick = { onSpeak(answerText) }) {
-                        Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
-                    }
-                }
-            }
+            // Answer text (always visible, smaller)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = answerText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 
     Spacer(modifier = Modifier.weight(1f))
 
-    if (isFlipped && !isRated) {
+    // Voice recognized feedback
+    if (voiceRecognizedText != null) {
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "How well did you know this?",
-            style = MaterialTheme.typography.bodyMedium,
+            text = "You said: \"$voiceRecognizedText\"",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
+    }
+
+    if (!isRated) {
+        // Microphone button
         Spacer(modifier = Modifier.height(8.dp))
+        FilledTonalIconButton(
+            onClick = {
+                if (!isVoiceActive) {
+                    isVoiceActive = true
+                    val langTag = when (task.direction) {
+                        VocabDrillDirection.IT_TO_RU -> "ru-RU"
+                        VocabDrillDirection.RU_TO_IT -> "it-IT"
+                    }
+                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+                    }
+                    speechLauncher.launch(intent)
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(64.dp)
+        ) {
+            Icon(
+                Icons.Default.Mic,
+                contentDescription = "Voice input",
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        // Rating buttons (always visible)
+        Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -850,8 +883,8 @@ private fun ColumnScope.VocabFlashcardBlock(
             onClick = {
                 val hasMore = onAdvance()
                 if (!hasMore) onComplete()
-                isFlipped = false
                 isRated = false
+                voiceRecognizedText = null
             },
             modifier = Modifier.fillMaxWidth()
         ) {
