@@ -163,6 +163,22 @@ class LessonStore(private val context: Context) {
         return manifest.lessons.sortedBy { it.order }.map { it.lessonId }
     }
 
+    /**
+     * Returns cumulative tenses active for the given lesson level within a pack.
+     * Reads tenses from manifest lessons 1..lessonLevel and deduplicates.
+     */
+    fun getCumulativeTenses(packId: String, lessonLevel: Int): List<String> {
+        val manifest = readInstalledPackManifest(packId) ?: return emptyList()
+        val sortedLessons = manifest.lessons
+            .filter { it.type != "verb_drill" }
+            .sortedBy { it.order }
+        if (lessonLevel < 1 || lessonLevel > sortedLessons.size) return emptyList()
+        return sortedLessons
+            .take(lessonLevel)
+            .flatMap { it.tenses }
+            .distinct()
+    }
+
     fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
         ensureSeedData()
         val input = resolver.openInputStream(uri) ?: error("Cannot open zip")
@@ -853,6 +869,35 @@ class LessonStore(private val context: Context) {
         return drillDir.listFiles()
             ?.filter { it.extension == "csv" }
             ?: emptyList()
+    }
+
+    fun getVocabWordsByRankRange(packId: String, languageId: String, fromRank: Int, toRank: Int): List<VocabWord> {
+        val files = getVocabDrillFiles(packId, languageId)
+        val words = mutableListOf<VocabWord>()
+        for (file in files) {
+            val stream = file.inputStream()
+            val fileName = file.name
+            val rows = ItalianDrillVocabParser.parse(stream, fileName)
+            stream.close()
+            val pos = fileName
+                .removePrefix("${languageId}_")
+                .removePrefix("drill_")
+                .removeSuffix(".csv")
+            for (row in rows) {
+                if (row.rank in fromRank..toRank) {
+                    words.add(VocabWord(
+                        id = "${pos}_${row.rank}_${row.word}",
+                        word = row.word,
+                        pos = pos,
+                        rank = row.rank,
+                        meaningRu = row.meaningRu,
+                        collocations = row.collocations,
+                        forms = emptyMap()
+                    ))
+                }
+            }
+        }
+        return words.sortedBy { it.rank }
     }
 
     fun hasVerbDrill(packId: String, languageId: String): Boolean {

@@ -42,11 +42,15 @@ import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
+import com.alexpo.grammermate.data.DailyBlockType
+import com.alexpo.grammermate.data.DailySessionState
+import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.HiddenCardStore
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
+import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TtsEngine
@@ -62,6 +66,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.alexpo.grammermate.ui.helpers.DailySessionComposer
+import com.alexpo.grammermate.ui.helpers.DailySessionHelper
+import com.alexpo.grammermate.ui.helpers.TrainingStateAccess
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val soundPool = SoundPool.Builder()
@@ -117,6 +124,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private val _uiState = MutableStateFlow(TrainingUiState())
     val uiState: StateFlow<TrainingUiState> = _uiState
+
+    private val dailySessionHelper = DailySessionHelper(object : TrainingStateAccess {
+        override val uiState: StateFlow<TrainingUiState> = _uiState
+        override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
+            _uiState.update(transform)
+        }
+        override fun saveProgress() = this@TrainingViewModel.saveProgress()
+    })
 
     init {
         soundPool.setOnLoadCompleteListener { _, sampleId, status ->
@@ -1339,6 +1354,90 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         saveProgress()
         refreshFlowerStates()
+    }
+
+    // ── Daily Practice ────────────────────────────────────────────────────
+
+    fun startDailyPractice(lessonLevel: Int) {
+        val state = _uiState.value
+        val packId = state.activePackId ?: return
+        val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return
+
+        val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, wordMasteryStore)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId)
+        if (tasks.isEmpty()) return
+
+        dailySessionHelper.startDailySession(tasks, lessonLevel)
+    }
+
+    fun advanceDailyTask(): Boolean {
+        return dailySessionHelper.nextTask()
+    }
+
+    fun cancelDailySession() {
+        dailySessionHelper.endSession()
+    }
+
+    fun getDailyCurrentTask(): DailyTask? {
+        return dailySessionHelper.getCurrentTask()
+    }
+
+    fun getDailyBlockProgress(): com.alexpo.grammermate.ui.helpers.BlockProgress {
+        return dailySessionHelper.getBlockProgress()
+    }
+
+    fun submitDailySentenceAnswer(input: String): Boolean {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence ?: return false
+        val card = task.card
+        val normalized = com.alexpo.grammermate.data.Normalizer.normalize(input)
+        val correct = card.acceptedAnswers.any {
+            com.alexpo.grammermate.data.Normalizer.normalize(it) == normalized
+        }
+        if (correct) {
+            playSuccessSound()
+        } else {
+            playErrorSound()
+        }
+        return correct
+    }
+
+    fun submitDailyVerbAnswer(input: String): Boolean {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.ConjugateVerb ?: return false
+        val card = task.card
+        val normalized = com.alexpo.grammermate.data.Normalizer.normalize(input)
+        val correct = card.acceptedAnswers.any {
+            com.alexpo.grammermate.data.Normalizer.normalize(it) == normalized
+        }
+        if (correct) {
+            playSuccessSound()
+        } else {
+            playErrorSound()
+        }
+        return correct
+    }
+
+    fun getDailySentenceAnswer(): String? {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence ?: return null
+        return task.card.acceptedAnswers.firstOrNull()
+    }
+
+    fun getDailyVerbAnswer(): String? {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.ConjugateVerb ?: return null
+        return task.card.answer
+    }
+
+    private fun playSuccessSound() {
+        if (successSoundId in loadedSounds) {
+            soundPool.play(successSoundId, 1f, 1f, 0, 0, 1f)
+        }
+    }
+
+    private fun playErrorSound() {
+        if (errorSoundId in loadedSounds) {
+            soundPool.play(errorSoundId, 1f, 1f, 0, 0, 1f)
+        }
     }
 
     // ── Drill Mode ───────────────────────────────────────────────────────
@@ -3161,7 +3260,9 @@ data class TrainingUiState(
     val initialScreen: String = "HOME",
     val currentScreen: String = "HOME",
     // Vocab drill mastered count (global, across all POS)
-    val vocabMasteredCount: Int = 0
+    val vocabMasteredCount: Int = 0,
+    // Daily practice session
+    val dailySession: DailySessionState = DailySessionState()
 )
 
 data class LessonLadderRow(

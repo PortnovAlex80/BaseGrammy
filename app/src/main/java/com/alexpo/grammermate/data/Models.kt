@@ -181,3 +181,43 @@ data class StreakData(
     val lastCompletionDateMs: Long? = null,
     val totalSubLessonsCompleted: Int = 0
 )
+
+enum class DailyBlockType { TRANSLATE, VOCAB, VERBS }
+
+sealed class DailyTask {
+    abstract val id: String
+    abstract val blockType: DailyBlockType
+
+    data class TranslateSentence(
+        override val id: String,
+        val card: SentenceCard,
+        val inputMode: InputMode
+    ) : DailyTask() {
+        override val blockType = DailyBlockType.TRANSLATE
+    }
+
+    data class VocabFlashcard(
+        override val id: String,
+        val word: VocabWord,
+        val direction: VocabDrillDirection
+    ) : DailyTask() {
+        override val blockType = DailyBlockType.VOCAB
+    }
+
+    data class ConjugateVerb(
+        override val id: String,
+        val card: VerbDrillCard,
+        val inputMode: InputMode
+    ) : DailyTask() {
+        override val blockType = DailyBlockType.VERBS
+    }
+}
+
+data class DailySessionState(
+    val active: Boolean = false,
+    val tasks: List<DailyTask> = emptyList(),
+    val taskIndex: Int = 0,
+    val blockIndex: Int = 0,
+    val level: Int = 0,
+    val finishedToken: Boolean = false
+)

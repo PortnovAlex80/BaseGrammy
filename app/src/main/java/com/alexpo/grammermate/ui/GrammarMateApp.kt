@@ -143,9 +143,7 @@ fun GrammarMateApp() {
         var showExitDialog by remember { mutableStateOf(false) }
         var showWelcomeDialog by remember { mutableStateOf(false) }
         val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
-        val lastVocabFinishedToken = remember { mutableStateOf(state.vocabFinishedToken) }
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
-        val lastEliteFinishedToken = remember { mutableStateOf(state.eliteFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
     
         LaunchedEffect(screen) {
@@ -155,7 +153,6 @@ fun GrammarMateApp() {
         val audioPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
         ) { /* permission result handled by system */ }
-        var showVocabStartDialog by remember { mutableStateOf(false) }
 
         val context = androidx.compose.ui.platform.LocalContext.current
         val lessonStore = remember { com.alexpo.grammermate.data.LessonStore(context) }
@@ -200,13 +197,10 @@ fun GrammarMateApp() {
                 BackHandler(enabled = screen == AppScreen.LESSON && !showSettings) {
                     screen = AppScreen.HOME
                 }
-                BackHandler(enabled = screen == AppScreen.ELITE && !showSettings) {
+                BackHandler(enabled = screen == AppScreen.DAILY_PRACTICE && !showSettings) {
                     screen = AppScreen.HOME
                 }
                 BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
-                    screen = AppScreen.LESSON
-                }
-                BackHandler(enabled = screen == AppScreen.VOCAB && !showSettings) {
                     screen = AppScreen.LESSON
                 }
                 BackHandler(enabled = screen == AppScreen.LADDER && !showSettings) {
@@ -315,7 +309,12 @@ fun GrammarMateApp() {
                         vm.selectLesson(lessonId)
                         screen = AppScreen.LESSON
                     },
-                    onOpenElite = { if (state.eliteUnlocked) screen = AppScreen.ELITE },
+                    onOpenElite = {
+                        val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+                        val level = (lessonIndex + 1).coerceIn(1, 12)
+                        vm.startDailyPractice(level)
+                        screen = AppScreen.DAILY_PRACTICE
+                    },
                     hasVerbDrill = hasVerbDrill,
                     hasVocabDrill = hasVocabDrill,
                     onOpenVerbDrill = { screen = AppScreen.VERB_DRILL },
@@ -327,14 +326,6 @@ fun GrammarMateApp() {
                     onStartSubLesson = { index ->
                         vm.selectSubLesson(index)
                         screen = AppScreen.TRAINING
-                    },
-                    onOpenVocab = {
-                        if (vm.hasVocabProgress()) {
-                            showVocabStartDialog = true
-                        } else {
-                            vm.openVocabSprint(resume = false)
-                            screen = AppScreen.VOCAB
-                        }
                     },
                     onStartBossLesson = {
                         vm.startBossLesson()
@@ -348,18 +339,38 @@ fun GrammarMateApp() {
                         state.selectedLessonId?.let { vm.showDrillStartDialog(it) }
                     }
                 )
-                AppScreen.ELITE -> EliteRoadmapScreen(
-                    state = state,
-                    onBack = { screen = AppScreen.HOME },
-                    onStartStep = { index ->
-                        vm.openEliteStep(index)
-                        screen = AppScreen.TRAINING
-                    },
-                    onStartBoss = {
-                        vm.startBossElite()
-                        screen = AppScreen.TRAINING
-                    }
-                )
+                AppScreen.ELITE -> { screen = AppScreen.HOME }
+                AppScreen.VOCAB -> { screen = AppScreen.HOME }
+                AppScreen.DAILY_PRACTICE -> {
+                    val dailyState = state.dailySession
+                    val dailyTask = vm.getDailyCurrentTask()
+                    val dailyProgress = vm.getDailyBlockProgress()
+                    DailyPracticeScreen(
+                        state = dailyState,
+                        blockProgress = dailyProgress,
+                        currentTask = dailyTask,
+                        onSubmitSentence = vm::submitDailySentenceAnswer,
+                        onSubmitVerb = vm::submitDailyVerbAnswer,
+                        onShowSentenceAnswer = vm::getDailySentenceAnswer,
+                        onShowVerbAnswer = vm::getDailyVerbAnswer,
+                        onFlipVocabCard = { /* no-op: flip is tracked locally in composable */ },
+                        onRateVocabCard = { _ -> /* rating recorded locally */ },
+                        onAdvance = vm::advanceDailyTask,
+                        onSpeak = { text ->
+                            if (state.ttsModelReady) {
+                                vm.onTtsSpeak(text, speed = 0.67f)
+                            }
+                        },
+                        onExit = {
+                            vm.cancelDailySession()
+                            screen = AppScreen.HOME
+                        },
+                        onComplete = {
+                            vm.cancelDailySession()
+                            screen = AppScreen.HOME
+                        }
+                    )
+                }
                 AppScreen.STORY -> StoryQuizScreen(
                     story = state.activeStory,
                     testMode = state.testMode,
@@ -374,28 +385,6 @@ fun GrammarMateApp() {
                             vm.completeStory(phase, allCorrect)
                         }
                         screen = AppScreen.LESSON
-                    }
-                )
-                AppScreen.VOCAB -> VocabSprintScreen(
-                    state = state,
-                    onInputChange = vm::onVocabInputChanged,
-                    onSubmit = { input -> vm.submitVocabAnswer(input) },
-                    onSetInputMode = vm::setVocabInputMode,
-                    onRequestVoice = vm::requestVocabVoice,
-                    onShowAnswer = vm::showVocabAnswer,
-                    onClose = { screen = AppScreen.LESSON },
-                    onSpeak = { text ->
-                        if (state.ttsState == TtsState.SPEAKING) {
-                            vm.stopTts()
-                        } else if (!state.ttsModelReady) {
-                            val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
-                            if (bgState != null && bgState !is DownloadState.Idle) {
-                                vm.setTtsDownloadStateFromBackground(bgState)
-                            }
-                            showTtsDownloadDialog = true
-                        } else {
-                            vm.onTtsSpeak(text, speed = 0.67f)
-                        }
                     }
                 )
                 AppScreen.LADDER -> LadderScreen(
@@ -470,21 +459,9 @@ fun GrammarMateApp() {
                 lastFinishedToken.value = state.subLessonFinishedToken
                 screen = AppScreen.LESSON
             }
-            if (screen == AppScreen.VOCAB && state.vocabFinishedToken != lastVocabFinishedToken.value) {
-                lastVocabFinishedToken.value = state.vocabFinishedToken
-                screen = AppScreen.LESSON
-            }
             if (screen == AppScreen.TRAINING && state.bossFinishedToken != lastBossFinishedToken.value) {
                 lastBossFinishedToken.value = state.bossFinishedToken
-                screen = if (state.bossLastType == com.alexpo.grammermate.data.BossType.ELITE) {
-                    AppScreen.ELITE
-                } else {
-                    AppScreen.LESSON
-                }
-            }
-            if (screen == AppScreen.TRAINING && state.eliteFinishedToken != lastEliteFinishedToken.value) {
-                lastEliteFinishedToken.value = state.eliteFinishedToken
-                screen = AppScreen.ELITE
+                screen = AppScreen.LESSON
             }
 
             if (showExitDialog) {
@@ -495,16 +472,7 @@ fun GrammarMateApp() {
                             showExitDialog = false
                             if (state.bossActive) {
                                 vm.finishBoss()
-                                screen = if (state.bossType == com.alexpo.grammermate.data.BossType.ELITE) {
-                                    AppScreen.ELITE
-                                } else {
-                                    AppScreen.LESSON
-                                }
-                                return@TextButton
-                            }
-                            if (state.eliteActive) {
-                                vm.cancelEliteSession()
-                                screen = AppScreen.ELITE
+                                screen = AppScreen.LESSON
                                 return@TextButton
                             }
                             if (state.isDrillMode) {
@@ -538,43 +506,6 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "Story") },
                     text = { Text(text = state.storyErrorMessage ?: "") }
-                )
-            }
-            if (state.vocabErrorMessage != null) {
-                AlertDialog(
-                    onDismissRequest = { vm.clearVocabError() },
-                    confirmButton = {
-                        TextButton(onClick = { vm.clearVocabError() }) {
-                            Text(text = "OK")
-                        }
-                    },
-                    title = { Text(text = "Vocabulary") },
-                    text = { Text(text = state.vocabErrorMessage ?: "") }
-                )
-            }
-            if (showVocabStartDialog) {
-                AlertDialog(
-                    onDismissRequest = { showVocabStartDialog = false },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            showVocabStartDialog = false
-                            vm.openVocabSprint(resume = true)
-                            screen = AppScreen.VOCAB
-                        }) {
-                            Text(text = "Continue")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            showVocabStartDialog = false
-                            vm.openVocabSprint(resume = false)
-                            screen = AppScreen.VOCAB
-                        }) {
-                            Text(text = "Start fresh")
-                        }
-                    },
-                    title = { Text(text = "Vocabulary Sprint") },
-                    text = { Text(text = "You have previous progress. Continue where you left off or start fresh?") }
                 )
             }
             if (state.bossErrorMessage != null) {
@@ -671,6 +602,7 @@ private enum class AppScreen {
     LESSON,
     ELITE,
     VOCAB,
+    DAILY_PRACTICE,
     STORY,
     TRAINING,
     LADDER,
@@ -789,7 +721,6 @@ private fun HomeScreen(
         buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackLessonIds)
     }
     var showMethod by remember { mutableStateOf(false) }
-    var showRefreshHint by remember { mutableStateOf(false) }
     var showLockedLessonHint by remember { mutableStateOf(false) }
     var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
     val languageCode = state.languages
@@ -943,10 +874,8 @@ private fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
-        EliteEntryTile(
-            enabled = state.eliteUnlocked,
-            onClick = onOpenElite,
-            onLockedClick = { showRefreshHint = true }
+        DailyPracticeEntryTile(
+            onClick = onOpenElite
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
@@ -981,23 +910,6 @@ private fun HomeScreen(
                 Text(
                     text = "GrammarMate builds automatic grammar patterns with repeated retrieval. " +
                         "States show how stable each pattern is and when it needs refresh."
-                )
-            }
-        )
-    }
-    if (showRefreshHint) {
-        AlertDialog(
-            onDismissRequest = { showRefreshHint = false },
-            confirmButton = {
-                TextButton(onClick = { showRefreshHint = false }) {
-                    Text(text = "OK")
-                }
-            },
-            title = { Text(text = "Refresh") },
-            text = {
-                Text(
-                    text = "This mode is designed to keep all learned material active in the background. " +
-                        "Refresh becomes available after completing the full course."
                 )
             }
         )
@@ -1111,21 +1023,17 @@ private fun VocabDrillEntryTile(
 }
 
 @Composable
-private fun EliteEntryTile(
-    enabled: Boolean,
-    onClick: () -> Unit,
-    onLockedClick: () -> Unit
+private fun DailyPracticeEntryTile(
+    onClick: () -> Unit
 ) {
-    val labelColor = if (enabled) {
-        MaterialTheme.colorScheme.onSurface
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .clickable { if (enabled) onClick() else onLockedClick() }
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     ) {
         Row(
             modifier = Modifier
@@ -1134,10 +1042,16 @@ private fun EliteEntryTile(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "Refresh", fontWeight = FontWeight.SemiBold, color = labelColor)
-            if (!enabled) {
-                Icon(Icons.Default.Lock, contentDescription = "Refresh locked")
-            }
+            Text(
+                text = "Daily Practice",
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Icon(
+                Icons.Default.PlayArrow,
+                contentDescription = "Start",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
     }
 }
@@ -1147,7 +1061,6 @@ private fun LessonRoadmapScreen(
     state: TrainingUiState,
     onBack: () -> Unit,
     onStartSubLesson: (Int) -> Unit,
-    onOpenVocab: () -> Unit,
     onStartBossLesson: () -> Unit,
     onStartBossMega: () -> Unit,
     onDrillStart: () -> Unit = {}
@@ -1194,7 +1107,6 @@ private fun LessonRoadmapScreen(
     var bossLockedMessage by remember { mutableStateOf<String?>(null) }
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
-    var showVocabStartDialog by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1284,9 +1196,6 @@ private fun LessonRoadmapScreen(
                                 Text(text = kindLabel, fontSize = 10.sp)
                             }
                         }
-                    }
-                    is RoadmapEntry.Vocab -> {
-                        VocabTile(label = "Vocab", onClick = onOpenVocab)
                     }
                     is RoadmapEntry.Drill -> {
                         DrillTile(onClick = onDrillStart, enabled = true)
@@ -1439,7 +1348,6 @@ private fun EliteStepTile(
 private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Drill : RoadmapEntry()
-    object Vocab : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
     object BossLesson : RoadmapEntry()
@@ -1453,7 +1361,6 @@ private fun buildRoadmapEntries(
     hasDrill: Boolean = false
 ): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
-    entries.add(RoadmapEntry.Vocab)
     if (hasDrill) {
         entries.add(RoadmapEntry.Drill)
     }

@@ -88,4 +88,26 @@ class VerbDrillStore(
         all[key] = progress
         saveProgress(all)
     }
+
+    fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
+        val verbDrillDir = File(baseDir, "drills/$targetPackId/verb_drill")
+        if (!verbDrillDir.exists()) return emptyList()
+        val files = verbDrillDir.listFiles()
+            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
+            ?: return emptyList()
+        val cards = mutableListOf<VerbDrillCard>()
+        for (file in files) {
+            val content = file.readText()
+            val (_, parsed) = VerbDrillCsvParser.parse(content)
+            cards.addAll(parsed)
+        }
+        return cards
+    }
+
+    fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard> {
+        if (tenses.isEmpty()) return emptyList()
+        val allCards = loadAllCardsForPack(packId, languageId)
+        val tenseSet = tenses.toSet()
+        return allCards.filter { it.tense != null && it.tense in tenseSet }
+    }
 }
