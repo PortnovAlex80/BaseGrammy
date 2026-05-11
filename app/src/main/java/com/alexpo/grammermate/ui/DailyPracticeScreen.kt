@@ -760,14 +760,14 @@ private fun ColumnScope.VocabFlashcardBlock(
             val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
                 voiceRecognizedText = spoken
-                // Compare with answer and auto-rate
                 val normalizedSpoken = com.alexpo.grammermate.data.Normalizer.normalize(spoken)
                 val normalizedAnswer = com.alexpo.grammermate.data.Normalizer.normalize(answerText)
                 val isCorrect = normalizedSpoken == normalizedAnswer
-                if (!isRated) {
+                if (isCorrect && !isRated) {
                     isRated = true
-                    onRate(if (isCorrect) 2 else 0) // 2 = Good, 0 = Again
+                    onRate(2) // Good
                 }
+                // On incorrect: stay, user can retry voice or tap a rating button
             }
         }
     }
