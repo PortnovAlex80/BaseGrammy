@@ -268,6 +268,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                         current.activePackId
                     } else {
                         selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+                            ?: packs.firstOrNull { it.languageId == selectedLang }?.packId
                     }
                     val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it) }
                     current.copy(
@@ -351,6 +352,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val selectedLessonId = lessons.firstOrNull()?.id
         // Derive activePackId for the new language from the selected lesson.
         val newPackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
+            ?: lessonStore.getInstalledPacks().firstOrNull { it.languageId == languageId }?.packId
         val newPackLessonIds = newPackId?.let { lessonStore.getLessonIdsForPack(it) }
         _uiState.update {
             it.copy(
@@ -497,10 +499,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun selectPack(packId: String) {
         val packLessonIds = lessonStore.getLessonIdsForPack(packId)
-        if (packLessonIds.isEmpty()) return
-        val currentLessonId = _uiState.value.selectedLessonId
-        val lessonId = if (currentLessonId != null && currentLessonId in packLessonIds) currentLessonId else packLessonIds.first()
-        selectLesson(lessonId)
+        if (packLessonIds.isNotEmpty()) {
+            val currentLessonId = _uiState.value.selectedLessonId
+            val lessonId = if (currentLessonId != null && currentLessonId in packLessonIds) currentLessonId else packLessonIds.first()
+            selectLesson(lessonId)
+        } else {
+            // Drill-only pack — set activePackId without selecting a lesson
+            _uiState.update {
+                it.copy(
+                    activePackId = packId,
+                    activePackLessonIds = emptyList(),
+                    selectedLessonId = null
+                )
+            }
+            saveProgress()
+        }
     }
 
     fun selectMode(mode: TrainingMode) {
@@ -1086,8 +1099,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun deletePack(packId: String) {
         val pack = lessonStore.getInstalledPacks().firstOrNull { it.packId == packId } ?: return
-        lessonStore.deleteAllLessons(pack.languageId)
-        if (_uiState.value.selectedLanguageId == pack.languageId) {
+        val languageId = pack.languageId
+        lessonStore.removeInstalledPackData(packId)
+        if (_uiState.value.selectedLanguageId == languageId) {
             refreshLessons(null)
         }
         _uiState.update { it.copy(installedPacks = lessonStore.getInstalledPacks()) }

@@ -421,12 +421,15 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val session = _uiState.value.session ?: return
         if (session.currentIndex > 0) {
             val prevIndex = session.currentIndex - 1
+            val prevCard = session.cards.getOrElse(prevIndex) { null }
+            val prevCardIsBad = prevCard?.let { isCardBad(it) } ?: false
             _uiState.update { state ->
                 state.copy(
                     session = session.copy(
                         currentIndex = prevIndex,
                         isComplete = false
-                    )
+                    ),
+                    currentCardIsBad = prevCardIsBad
                 )
             }
         }

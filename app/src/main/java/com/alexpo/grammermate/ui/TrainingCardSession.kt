@@ -97,6 +97,7 @@ class TrainingCardSessionScope(
     val inputText: String,
     val onInputChanged: (String) -> Unit,
     val onSubmit: () -> Unit,
+    val onPrev: () -> Unit,
     val onNext: () -> Unit,
     val onExit: () -> Unit
 )
@@ -170,6 +171,10 @@ fun TrainingCardSession(
                 if (contract.isComplete) {
                     onComplete()
                 }
+            },
+            onPrev = {
+                contract.prevCard()
+                localInputText = ""
             },
             onExit = onExit
         )
@@ -858,7 +863,7 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavIconButton(
-            onClick = { scope.contract.prevCard() },
+            onClick = scope.onPrev,
             enabled = scope.currentCard != null
         ) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Prev")

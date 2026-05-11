@@ -200,7 +200,7 @@ class LessonStore(private val context: Context) {
         }
     }
 
-    private fun removeInstalledPackData(packId: String): Boolean {
+    fun removeInstalledPackData(packId: String): Boolean {
         val manifest = readInstalledPackManifest(packId)
         if (manifest != null) {
             val languageId = manifest.language.lowercase().trim()
