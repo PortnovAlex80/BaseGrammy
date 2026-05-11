@@ -1,0 +1,100 @@
+RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
+это красивый (bello) дом (casa).;Questa è una bella casa.;Presente;106;casa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они должны (dovere) заплатить (pagare) сумму (somma).;Loro devono pagare la somma.;Presente;126;;;dovere;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+у меня много (molto) свободного (libero) времени (tempo).;Io ho molto tempo libero.;Presente;132;tempo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она верит в бога (credere in Dio);Lei crede in Dio.;Presente;136;;;credere;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+у него прекрасная (bella) жизнь (vita).;Lui ha una bella vita.;Presente;137;vita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+каждый (ogni) год (anno) он читает (leggere) книгу.;Ogni anno lui legge un libro.;Presente;143;anno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+эта часть (parte) важна.;Questa parte è importante.;Presente;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они видят (vedere) героя (eroe).;Loro vedono un eroe.;Presente;148;;;vedere;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+я ищу (cercare) работу (lavoro).;Io cerco un lavoro.;Presente;151;lavoro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я иду туда один (una) раз (volta).;Io vado lì una volta.;Presente;155;volta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он хороший (bravo) человек (persona).;Lui è una brava persona.;Presente;159;persona;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он хороший (buono) отец (padre).;Lui è un buon padre.;Presente;160;padre;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мне нужна (avere bisogno) помощь (aiuto).;Ho bisogno di aiuto.;Presente;162;bisogno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он находит (trovare) нового (nuovo) друга (amico).;Lui trova un nuovo amico.;Presente;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она заканчивает (finire) историю (storia).;Lei finisce la storia.;Presente;166;;;finire;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+этот господин (signore) хороший.;Questo signore è buono.;Presente;171;signore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я ничего не понимаю (capire, niente).;Io non capisco niente.;Presente;173;;;capire;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты готовишь (cucinare) обед.;Tu cucini il pranzo.;Presente;174;;;cucinare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+я выгляжу готовым (sembrare pronto);Io sembro pronto.;Presente;177;;;sembrare;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+я говорю (dire) правду (verità).;Io dico la verità.;Presente;178;verità;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это хороший (buono) способ (modo).;Questo è un buon modo.;Presente;180;modo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты думаешь (pensare) обо мне.;Tu pensi a me.;Presente;187;;;pensare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+он говорит обо всем (parlare di tutto);Lui parla di tutto.;Presente;189;;;parlare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl
+она — хорошая (brava) мама (mamma).;Lei è una brava mamma.;Presente;191;mamma;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это студент (studente).;Questo è uno studente.;Presente;200;studente;m;;;noun;enriched
+она — молодая (giovane) мать (madre).;Lei è una giovane madre.;Presente;201;madre;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я прошу (chiedere) об услуге (favore).;Io chiedo un favore.;Presente;204;favore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у него большой (grande) успех (successo).;Lui ha un grande successo.;Presente;205;successo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я вижу (vedere) девушку (ragazza).;Io vedo una ragazza.;Presente;210;ragazza;f;;;noun;enriched
+она ждет (aspettare) ответ (risposta).;Lei aspetta la risposta.;Presente;211;;;aspettare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+у меня есть подруга (amica).;Io ho un'amica.;Presente;215;amica;f;;;noun;enriched
+в этот (questo) момент (momento) я (io) сплю (dormire).;In questo momento io dormo.;Presente;218;momento;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я читаю (leggere) книгу (libro).;Io leggo un libro.;Presente;220;libro;m;;;noun;enriched
+он красивый парень (bello, ragazzo).;Lui è un bel ragazzo.;Presente;221;ragazzo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он — хороший (brava) человек (persona).;Lui è una brava persona.;Presente;223;persona;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+этот (questo) парень (ragazzo) хороший (bravo).;Questo ragazzo è bravo.;Presente;225;ragazzo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они молятся за меня (pregare per);Loro pregano per me.;Presente;226;;;pregare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+у него красивая (bel) книга (libro).;Lui ha un bel libro.;Presente;228;libro;m;;;noun;enriched
+вы слышите (sentire) разговор (conversazione);Voi sentite una conversazione.;Presente;229;;;sentire;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+это мой дядя (zio).;Questo è mio zio.;Presente;230;zio;m;;;noun;enriched
+он тратит (spendere) деньги (soldi).;Lui spende i soldi.;Presente;232;soldi;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы видим нашего дядю (zio).;Noi vediamo nostro zio.;Presente;235;zio;m;;;noun;enriched
+у меня есть хорошая идея (avere, buona).;Io ho una buona idea.;Presente;239;idea;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он хороший (bravo) студент (studente).;Lui è un bravo studente.;Presente;240;studente;m;;;noun;enriched
+я беру (prendere) книгу (libro).;Io prendo il libro.;Presente;240;libro;m;;;noun;enriched
+у него есть сын (avere, figlio).;Lui ha un figlio.;Presente;243;figlio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у нас есть соглашение (accordo).;Noi abbiamo un accordo.;Presente;244;;;avere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+там много (tanta) людей (gente).;C'è tanta gente.;Presente;245;gente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они делают (fare) работу.;Loro fanno il lavoro.;Presente;247;;;fare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+у неё красивые (belle) руки (mani).;Lei ha belle mani.;Presente;248;mani;f;;;noun;enriched
+он смотрит вперед (avanti);Lui guarda avanti.;Presente;249;;;guardare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl
+она видит (vedere) друга (amico).;Lei vede un amico.;Presente;250;amico;m;;;noun;enriched
+ты находишь (trovare) дом (casa).;Tu trovi una casa.;Presente;251;;;trovare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+это счастливый (fortunato) случай (caso).;Questo è un caso fortunato.;Presente;253;caso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у него много сил (forza).;Lui ha molta forza.;Presente;254;forza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+у неё хорошая (buona) идея (idea).;Lei ha una buona idea.;Presente;256;idea;f;;;noun;enriched
+он называет (dire) свое имя (nome).;Lui dice il suo nome.;Presente;260;nome;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+студенты (studente) читают (leggere).;Gli studenti leggono.;Presente;260;studente;m;;;noun;enriched
+у него есть техническая проблема (tecnico, problema).;Lui ha un problema tecnico.;Presente;262;problema;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он великий (grande) человек (uomo).;Lui è un grande uomo.;Presente;265;uomo;m;;;noun;enriched
+мир (mondo) большой (grande).;Il mondo è grande.;Presente;266;mondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он крупный (grande) мужчина (uomo).;Lui è un uomo grande.;Presente;267;uomo;m;;;noun;enriched
+мы берём (prendere) поезд.;Noi prendiamo il treno.;Presente;268;;;prendere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+у нее новая (nuova) машина (macchina).;Lei ha una nuova macchina.;Presente;270;macchina;f;;;noun;enriched
+я вижу (vedere) мою тётю (zia).;Io vedo mia zia.;Presente;270;zia;f;;;noun;enriched
+она — красивая (bello) женщина (donna).;Lei è una bella donna.;Presente;271;donna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+этого достаточно (bastare).;Questo basta.;Presente;273;;;bastare;;verb;gemma-4-26b-a4b-it@q4_k_xl
+у него маленький (piccolo) пёс (cane).;Lui ha un piccolo cane.;Presente;275;cane;m;;;noun;enriched
+у неё есть идея (idea).;Lei ha un'idea.;Presente;275;idea;f;;;noun;enriched
+я люблю (amare) мою (mia) семью (famiglia).;Io amo la mia famiglia.;Presente;278;famiglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она хорошая (brava) студентка (studentessa).;Lei è una brava studentessa.;Presente;280;studentessa;f;;;noun;enriched
+мальчики (ragazzo) играют (giocare).;I ragazzi giocano.;Presente;280;ragazzo;m;;;noun;enriched
+он хороший (bravo) учитель (insegnante).;Lui è un bravo insegnante.;Presente;282;insegnante;m;;;noun;enriched
+ты прав (avere ragione);Tu hai ragione.;Presente;285;ragione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я понимаю причину (il motivo);Io capisco il motivo.;Presente;288;;;capire;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+сейчас ночь (notte).;È notte.;Presente;289;notte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+голова (testa) болит.;La testa fa male.;Presente;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы подаем обед (servire il pranzo);Noi serviamo il pranzo.;Presente;292;;;servire;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+он ищет (cercare) сокровище (tesoro).;Lui cerca il tesoro.;Presente;293;tesoro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у нее маленькая (piccola) комната (stanza).;Lei ha una piccola stanza.;Presente;295;stanza;f;;;noun;enriched
+это новый (nuovo) мир (mondo).;Questo è un nuovo mondo.;Presente;300;mondo;m;;;noun;enriched
+ты просишь прощения (chiedere scusa);Tu chiedi scusa.;Presente;302;;;chiedere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+она уносит (portare via) сумку (borsa).;Lei porta via la borsa.;Presente;308;borsa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+моя жена (moglie) дома (casa).;Mia moglie è a casa.;Presente;310;moglie;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он рассказывает (raccontare) историю (storia).;Lui racconta una storia.;Presente;312;storia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+что-то происходит (succedere qualcosa).;Succede qualcosa.;Presente;313;;;succedere;;verb;gemma-4-26b-a4b-it@q4_k_xl
+они работают (lavorare) много.;Loro lavorano molto.;Presente;314;;;lavorare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+вы пытаетесь понять (cercare di capire);Voi cercate di capire.;Presente;315;;;cercare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+я звоню (chiamare) в полицию (polizia).;Io chiamo la polizia.;Presente;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я внимательно читаю (attentamente);Io leggo attentamente.;Presente;330;;;leggere;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+это конец (fine).;Questa è la fine.;Presente;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я прошу (chiedere) помощи (aiuto).;Io chiedo aiuto.;Presente;335;aiuto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я очень боюсь (avere molta paura).;Io ho molta paura.;Presente;336;paura;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у меня есть брат (avere, fratello).;Io ho un fratello.;Presente;337;fratello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он хороший (buono) начальник (capo).;Lui è un buon capo.;Presente;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+это любовь (amore).;Questo è amore.;Presente;345;amore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я выбираю (scegliere) книгу (libro).;Io scelgo un libro.;Presente;347;libro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я играю (suonare) на пианино (pianoforte).;Io suono il pianoforte.;Presente;349;pianoforte;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я вожу (guidare) машину (macchina).;Io guido la macchina.;Presente;350;macchina;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
