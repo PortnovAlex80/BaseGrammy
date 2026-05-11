@@ -35,7 +35,8 @@ class DailyPracticeSessionProvider(
     private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> },
     private val onSpeakTts: (String) -> Unit = {},
     private val onStopTts: () -> Unit = {},
-    private val ttsStateProvider: () -> TtsState = { TtsState.IDLE }
+    private val ttsStateProvider: () -> TtsState = { TtsState.IDLE },
+    private val onExit: () -> Unit = {}
 ) : CardSessionContract {
 
     /** All tasks matching the requested block type, limited to 5 cards. */
@@ -355,7 +356,7 @@ class DailyPracticeSessionProvider(
     }
 
     override fun requestExit() {
-        onBlockComplete()
+        onExit()
     }
 
     override fun requestNextBatch() {

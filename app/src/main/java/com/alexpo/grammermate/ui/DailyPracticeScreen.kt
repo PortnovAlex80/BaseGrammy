@@ -98,8 +98,21 @@ fun DailyPracticeScreen(
     onComplete: () -> Unit,
     languageId: String = "en"
 ) {
+    var hasShownCompletionSparkle by remember { mutableStateOf(false) }
+    val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
+
     if (!state.active && state.finishedToken) {
-        DailyPracticeCompletionScreen(onExit = onExit)
+        if (showCompletionSparkle) {
+            BlockSparkleOverlay(
+                blockType = DailyBlockType.VERBS,
+                isLastBlock = true,
+                onDismiss = {
+                    hasShownCompletionSparkle = true
+                }
+            )
+        } else {
+            DailyPracticeCompletionScreen(onExit = onExit)
+        }
         return
     }
 
@@ -245,7 +258,8 @@ private fun ColumnScope.CardSessionBlock(
             },
             onSpeakTts = onSpeak,
             onStopTts = onStopTts,
-            ttsStateProvider = { ttsState }
+            ttsStateProvider = { ttsState },
+            onExit = onExit
         )
     }
 
@@ -282,6 +296,7 @@ private fun DailyTrainingCardSession(
 ) {
     // Voice recognition launcher -- same pattern as VerbDrillScreen
     val latestProvider by rememberUpdatedState(provider)
+    var voiceInputText by remember { mutableStateOf<String?>(null) }
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -289,7 +304,12 @@ private fun DailyTrainingCardSession(
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
-                latestProvider.submitAnswerWithInput(spoken)
+                // Submit the answer
+                val submitResult = latestProvider.submitAnswerWithInput(spoken)
+                // If wrong, put text into input field for manual editing
+                if (submitResult == null || !submitResult.correct) {
+                    voiceInputText = spoken
+                }
             }
         }
     }
@@ -430,7 +450,9 @@ private fun DailyTrainingCardSession(
             DailyInputControls(
                 provider = provider,
                 scope = this,
-                speechLauncher = speechLauncher
+                speechLauncher = speechLauncher,
+                voiceInputText = voiceInputText,
+                onVoiceInputConsumed = { voiceInputText = null }
             )
         },
         onExit = onExit,
@@ -449,8 +471,18 @@ private fun DailyTrainingCardSession(
 private fun DailyInputControls(
     provider: DailyPracticeSessionProvider,
     scope: TrainingCardSessionScope,
-    speechLauncher: androidx.activity.result.ActivityResultLauncher<Intent>
+    speechLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
+    voiceInputText: String?,
+    onVoiceInputConsumed: () -> Unit
 ) {
+    // Apply voice input text to the text field when available
+    LaunchedEffect(voiceInputText) {
+        if (voiceInputText != null) {
+            scope.onInputChanged(voiceInputText)
+            onVoiceInputConsumed()
+        }
+    }
+
     val contract = scope.contract
     val hasCards = scope.currentCard != null
     val canLaunchVoice = hasCards && contract.sessionActive
@@ -507,7 +539,7 @@ private fun DailyInputControls(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${provider.remainingAttempts} attempts left",
+                    text = "${provider.remainingAttempts} ${if (provider.remainingAttempts == 1) "attempt" else "attempts"} left",
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -529,6 +561,7 @@ private fun DailyInputControls(
                 IconButton(
                     onClick = {
                         if (canLaunchVoice) {
+                            scope.onInputChanged("")
                             contract.setInputMode(InputMode.VOICE)
                         }
                     },
@@ -619,6 +652,7 @@ private fun DailyInputControls(
                 FilledTonalIconButton(
                     onClick = {
                         if (canLaunchVoice) {
+                            scope.onInputChanged("")
                             contract.setInputMode(InputMode.VOICE)
                         }
                     },
@@ -672,8 +706,10 @@ private fun DailyInputControls(
             onClick = {
                 val input = scope.inputText
                 if (input.isNotBlank()) {
-                    provider.submitAnswerWithInput(input)
-                    scope.onInputChanged("")
+                    val result = provider.submitAnswerWithInput(input)
+                    if (result != null && result.correct) {
+                        scope.onInputChanged("")
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
