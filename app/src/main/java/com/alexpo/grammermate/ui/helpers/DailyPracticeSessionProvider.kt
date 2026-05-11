@@ -11,6 +11,8 @@ import com.alexpo.grammermate.data.InputModeConfig
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.SessionProgress
+import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.VerbDrillCard
 
 /**
  * CardSessionContract adapter for Daily Practice Blocks 1 (Translation) and 3 (Verb Drill).
@@ -29,7 +31,10 @@ class DailyPracticeSessionProvider(
     private val startOffset: Int,
     private val onBlockComplete: () -> Unit,
     override val languageId: String = "en",
-    private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> }
+    private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> },
+    private val onSpeakTts: (String) -> Unit = {},
+    private val onStopTts: () -> Unit = {},
+    private val ttsStateProvider: () -> TtsState = { TtsState.IDLE }
 ) : CardSessionContract {
 
     private val blockCards: List<DailyTask> = tasks
@@ -71,8 +76,14 @@ class DailyPracticeSessionProvider(
     override val supportsTts: Boolean get() = true
     override val supportsVoiceInput: Boolean get() = true
     override val supportsWordBank: Boolean get() = true
+    override val supportsFlagging: Boolean get() = false
     override val supportsNavigation: Boolean get() = true
     override val supportsPause: Boolean get() = true
+
+    // ── TTS state ────────────────────────────────────────────────────────
+
+    override val ttsState: TtsState
+        get() = ttsStateProvider()
 
     // ── Contract state ───────────────────────────────────────────────────
 
@@ -290,6 +301,27 @@ class DailyPracticeSessionProvider(
         if (_selectedWords.isNotEmpty()) {
             _selectedWords = _selectedWords.dropLast(1)
         }
+    }
+
+    // ── TTS ──────────────────────────────────────────────────────────────
+
+    override fun speakTts() {
+        val card = _pendingCard ?: taskToSessionCard(blockCards.getOrNull(currentIndex) ?: return)
+            ?: return
+        val text = card.acceptedAnswers.firstOrNull() ?: return
+        onSpeakTts(text)
+    }
+
+    override fun stopTts() {
+        onStopTts()
+    }
+
+    // ── Verb/Tense info (for Block 3 chips) ──────────────────────────────
+
+    /** Returns the VerbDrillCard for the current task if this is a verb block. */
+    fun currentVerbDrillCard(): VerbDrillCard? {
+        val task = blockCards.getOrNull(currentIndex) ?: return null
+        return (task as? DailyTask.ConjugateVerb)?.card
     }
 
     override fun requestExit() {

@@ -362,6 +362,8 @@ fun GrammarMateApp() {
                                 vm.onTtsSpeak(text, speed = 0.67f)
                             }
                         },
+                        onStopTts = { vm.stopTts() },
+                        ttsState = state.ttsState,
                         onExit = {
                             vm.cancelDailySession()
                             screen = AppScreen.HOME
