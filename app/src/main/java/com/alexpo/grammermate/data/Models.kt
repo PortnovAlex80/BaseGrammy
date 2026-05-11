@@ -132,8 +132,8 @@ data class TrainingProgress(
     val eliteBestSpeeds: List<Double> = emptyList(),
     val currentScreen: String = "HOME",
     val activePackId: String? = null,
-    val dailyLevel: Int = 0,
-    val dailyTaskIndex: Int = 0
+    val dailyLessonIndex: Int = 0,
+    val dailySubLessonIndex: Int = 0
 )
 
 /**
@@ -217,9 +217,9 @@ sealed class DailyTask {
 
 data class DailySessionState(
     val active: Boolean = false,
-    val tasks: List<DailyTask> = emptyList(),
-    val taskIndex: Int = 0,
-    val blockIndex: Int = 0,
-    val level: Int = 0,
+    val lessonIndex: Int = 0,
+    val subLessonIndex: Int = 0,
+    val totalSubLessons: Int = 0,
+    val globalSubLessonPosition: Int = 0,
     val finishedToken: Boolean = false
 )

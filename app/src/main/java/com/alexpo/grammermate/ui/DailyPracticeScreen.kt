@@ -23,13 +23,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
@@ -44,10 +40,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
@@ -68,29 +62,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailySessionState
-import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.TtsState
-import com.alexpo.grammermate.data.VocabDrillDirection
-import com.alexpo.grammermate.ui.helpers.BlockProgress
+import com.alexpo.grammermate.ui.helpers.DailyPipelineProgress
 import com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider
 
 @Composable
 fun DailyPracticeScreen(
     state: DailySessionState,
-    blockProgress: BlockProgress,
-    currentTask: DailyTask?,
-    onSubmitSentence: (String) -> Boolean,
-    onSubmitVerb: (String) -> Boolean,
-    onShowSentenceAnswer: () -> String?,
-    onShowVerbAnswer: () -> String?,
-    onFlipVocabCard: () -> Unit,
-    onRateVocabCard: (Int) -> Unit,
-    onAdvance: () -> Boolean,
-    onAdvanceBlock: () -> Boolean,
-    onRepeatBlock: () -> Boolean,
+    cards: List<SentenceCard>,
+    lessonTitle: String,
+    subLessonLabel: String,
+    progress: DailyPipelineProgress,
+    onSubmitAnswer: (input: String, correct: Boolean, inputMode: InputMode) -> Unit,
+    onAdvanceSubLesson: () -> Boolean,
     onSpeak: (String) -> Unit,
     onStopTts: () -> Unit,
     ttsState: TtsState,
@@ -98,17 +85,11 @@ fun DailyPracticeScreen(
     onComplete: () -> Unit,
     languageId: String = "en"
 ) {
-    var hasShownCompletionSparkle by remember { mutableStateOf(false) }
-    val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
-
     if (!state.active && state.finishedToken) {
-        if (showCompletionSparkle) {
-            BlockSparkleOverlay(
-                blockType = DailyBlockType.VERBS,
-                isLastBlock = true,
-                onDismiss = {
-                    hasShownCompletionSparkle = true
-                }
+        var hasShownSparkle by remember { mutableStateOf(false) }
+        if (!hasShownSparkle) {
+            CompletionSparkle(
+                onDismiss = { hasShownSparkle = true }
             )
         } else {
             DailyPracticeCompletionScreen(onExit = onExit)
@@ -116,19 +97,16 @@ fun DailyPracticeScreen(
         return
     }
 
-    if (!state.active || currentTask == null) {
+    if (!state.active || cards.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Loading session...",
+                    "Loading...",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
@@ -142,120 +120,49 @@ fun DailyPracticeScreen(
             .padding(16.dp)
     ) {
         DailyPracticeHeader(
-            blockProgress = blockProgress,
+            lessonTitle = lessonTitle,
+            subLessonLabel = subLessonLabel,
             onExit = onExit
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
-        BlockProgressBar(blockProgress = blockProgress)
-
+        DailyProgressBar(progress = progress)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Block-transition sparkle overlay — detects when block type changes
-        var previousBlockType by remember { mutableStateOf<DailyBlockType?>(null) }
-        var showBlockTransition by remember { mutableStateOf(false) }
-        val currentBlockType = currentTask.blockType
-
-        LaunchedEffect(currentBlockType) {
-            if (previousBlockType != null && currentBlockType != null && previousBlockType != currentBlockType) {
-                showBlockTransition = true
-            }
-            previousBlockType = currentBlockType
-        }
-
-        if (showBlockTransition) {
-            BlockSparkleOverlay(
-                blockType = currentBlockType ?: DailyBlockType.TRANSLATE,
-                isLastBlock = currentBlockType == DailyBlockType.VERBS && blockProgress.globalPosition >= blockProgress.totalTasks,
-                onDismiss = {
-                    showBlockTransition = false
-                }
-            )
-        }
-
-        when (currentTask.blockType) {
-            DailyBlockType.TRANSLATE,
-            DailyBlockType.VERBS -> {
-                CardSessionBlock(
-                    state = state,
-                    blockProgress = blockProgress,
-                    onAdvance = onAdvance,
-                    onAdvanceBlock = onAdvanceBlock,
-                    onRepeatBlock = onRepeatBlock,
-                    onComplete = onComplete,
-                    onExit = onExit,
-                    onSubmitSentence = onSubmitSentence,
-                    onSubmitVerb = onSubmitVerb,
-                    onSpeak = onSpeak,
-                    onStopTts = onStopTts,
-                    ttsState = ttsState,
-                    languageId = languageId
-                )
-            }
-            DailyBlockType.VOCAB -> {
-                val task = currentTask as DailyTask.VocabFlashcard
-
-                VocabFlashcardBlock(
-                    task = task,
-                    onFlip = onFlipVocabCard,
-                    onRate = onRateVocabCard,
-                    onAdvance = onAdvance,
-                    onComplete = {
-                        val hasMore = onAdvanceBlock()
-                        if (!hasMore) {
-                            onComplete()
-                        }
-                    },
-                    onSpeak = onSpeak
-                )
-            }
-        }
+        SubLessonCardSession(
+            cards = cards,
+            onAdvanceSubLesson = onAdvanceSubLesson,
+            onComplete = onComplete,
+            onExit = onExit,
+            onSubmitAnswer = onSubmitAnswer,
+            onSpeak = onSpeak,
+            onStopTts = onStopTts,
+            ttsState = ttsState,
+            languageId = languageId
+        )
     }
 }
 
-/**
- * Card session block for TRANSLATE and VERBS.
- * Mirrors VerbDrillSessionWithCardSession from VerbDrillScreen.kt exactly.
- */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ColumnScope.CardSessionBlock(
-    state: DailySessionState,
-    blockProgress: BlockProgress,
-    onAdvance: () -> Boolean,
-    onAdvanceBlock: () -> Boolean,
-    onRepeatBlock: () -> Boolean,
+private fun ColumnScope.SubLessonCardSession(
+    cards: List<SentenceCard>,
+    onAdvanceSubLesson: () -> Boolean,
     onComplete: () -> Unit,
     onExit: () -> Unit,
-    onSubmitSentence: (String) -> Boolean,
-    onSubmitVerb: (String) -> Boolean,
+    onSubmitAnswer: (String, Boolean, InputMode) -> Unit,
     onSpeak: (String) -> Unit,
     onStopTts: () -> Unit,
     ttsState: TtsState,
     languageId: String
 ) {
-    val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
 
-    val provider = remember(blockKey) {
-        val currentBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
-            is DailyTask.TranslateSentence -> DailyBlockType.TRANSLATE
-            is DailyTask.ConjugateVerb -> DailyBlockType.VERBS
-            else -> DailyBlockType.TRANSLATE
-        }
+    val provider = remember(cards) {
         DailyPracticeSessionProvider(
-            tasks = state.tasks,
-            blockType = currentBlockType,
+            cards = cards,
             onBlockComplete = { blockComplete = true },
             languageId = languageId,
-            onAnswerChecked = { input, correct ->
-                val task = state.tasks.getOrNull(state.taskIndex)
-                when (task) {
-                    is DailyTask.TranslateSentence -> onSubmitSentence(input)
-                    is DailyTask.ConjugateVerb -> onSubmitVerb(input)
-                    else -> {}
-                }
-            },
+            onAnswerChecked = { input, correct, mode -> onSubmitAnswer(input, correct, mode) },
             onSpeakTts = onSpeak,
             onStopTts = onStopTts,
             ttsStateProvider = { ttsState },
@@ -263,9 +170,8 @@ private fun ColumnScope.CardSessionBlock(
         )
     }
 
-    // Auto-advance when block completes (sparkle is handled at DailyPracticeScreen level)
     if (blockComplete) {
-        val hasMore = onAdvanceBlock()
+        val hasMore = onAdvanceSubLesson()
         blockComplete = false
         if (!hasMore) {
             onComplete()
@@ -273,40 +179,16 @@ private fun ColumnScope.CardSessionBlock(
         }
     }
 
-    // Custom input controls mirroring VerbDrillScreen's DefaultVerbDrillInputControls
-    DailyTrainingCardSession(
-        provider = provider,
-        onExit = onExit,
-        onComplete = { blockComplete = true },
-        modifier = Modifier.weight(1f)
-    )
-}
-
-/**
- * TrainingCardSession wrapper that mirrors VerbDrillSessionWithCardSession:
- * custom cardContent for verb chips, custom inputControls for hint/incorrect/retry flow.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DailyTrainingCardSession(
-    provider: DailyPracticeSessionProvider,
-    onExit: () -> Unit,
-    onComplete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Voice recognition launcher -- same pattern as VerbDrillScreen
+    // Voice recognition
     val latestProvider by rememberUpdatedState(provider)
     var voiceInputText by remember { mutableStateOf<String?>(null) }
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull()
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
-                // Submit the answer
                 val submitResult = latestProvider.submitAnswerWithInput(spoken)
-                // If wrong, put text into input field for manual editing
                 if (submitResult == null || !submitResult.correct) {
                     voiceInputText = spoken
                 }
@@ -314,155 +196,48 @@ private fun DailyTrainingCardSession(
         }
     }
 
-    // Auto-voice LaunchedEffect -- mirrors VerbDrillScreen exactly:
-    // triggers when voiceTriggerToken changes, inputMode is VOICE, card exists, session is active
+    // Auto-voice trigger
     val voiceToken = provider.voiceTriggerToken
     val voiceCardId = provider.currentCard?.id
-    LaunchedEffect(
-        voiceCardId,
-        provider.currentInputMode,
-        provider.sessionActive,
-        voiceToken
-    ) {
-        if (provider.currentInputMode == InputMode.VOICE &&
-            provider.sessionActive &&
-            provider.currentCard != null
-        ) {
-            if (provider.showIncorrectFeedback) {
-                kotlinx.coroutines.delay(1200)
-            } else {
-                kotlinx.coroutines.delay(200)
-            }
-            val languageTag = when (provider.languageId) {
-                "it" -> "it-IT"
-                else -> "en-US"
-            }
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+    LaunchedEffect(voiceCardId, provider.currentInputMode, provider.sessionActive, voiceToken) {
+        if (provider.currentInputMode == InputMode.VOICE && provider.sessionActive && provider.currentCard != null) {
+            kotlinx.coroutines.delay(if (provider.showIncorrectFeedback) 1200L else 200L)
+            val langTag = if (languageId == "it") "it-IT" else "en-US"
+            speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
                 putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-            }
-            speechLauncher.launch(intent)
+            })
         }
     }
 
-    // Auto-advance after correct voice answer — mirrors VerbDrillScreen
-    val latestProviderForAdvance by rememberUpdatedState(provider)
+    // Auto-advance after correct voice answer
     LaunchedEffect(provider.pendingAnswerResult, provider.currentInputMode) {
-        val result = latestProviderForAdvance.pendingAnswerResult
-        if (result != null && result.correct && latestProviderForAdvance.currentInputMode == InputMode.VOICE) {
+        val result = latestProvider.pendingAnswerResult
+        if (result != null && result.correct && latestProvider.currentInputMode == InputMode.VOICE) {
             kotlinx.coroutines.delay(400)
-            latestProviderForAdvance.nextCard()
+            latestProvider.nextCard()
         }
     }
 
     TrainingCardSession(
         contract = provider,
-        cardContent = {
-            val card = currentCard ?: return@TrainingCardSession
-            val drillCard = provider.currentVerbDrillCard()
-            val verbText = drillCard?.verb
-            val verbRank = drillCard?.rank
-
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "RU", style = MaterialTheme.typography.labelMedium)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = card.promptRu,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        IconButton(
-                            onClick = { contract.speakTts() },
-                            enabled = card.promptRu.isNotBlank()
-                        ) {
-                            when (provider.ttsState) {
-                                TtsState.SPEAKING -> Icon(
-                                    Icons.Default.StopCircle,
-                                    contentDescription = "Stop",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                                TtsState.INITIALIZING -> CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                TtsState.ERROR -> Icon(
-                                    Icons.Default.ReportProblem,
-                                    contentDescription = "TTS error",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                                else -> Icon(
-                                    Icons.Default.VolumeUp,
-                                    contentDescription = "Listen"
-                                )
-                            }
-                        }
-                    }
-
-                    // Verb + tense hint chips (Block 3 only)
-                    if (!verbText.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            SuggestionChip(
-                                onClick = { /* no bottom sheet for daily practice */ },
-                                label = {
-                                    Text(
-                                        text = if (verbRank != null) "$verbText #$verbRank" else verbText,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Default.ChevronRight,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            )
-                            val tenseText = drillCard?.tense
-                            if (!tenseText.isNullOrBlank()) {
-                                SuggestionChip(
-                                    onClick = { /* no bottom sheet for daily practice */ },
-                                    label = {
-                                        Text(
-                                            text = abbreviateTense(tenseText),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
         inputControls = {
             DailyInputControls(
                 provider = provider,
                 scope = this,
-                speechLauncher = speechLauncher,
                 voiceInputText = voiceInputText,
                 onVoiceInputConsumed = { voiceInputText = null }
             )
         },
         onExit = onExit,
-        onComplete = onComplete,
-        modifier = modifier
+        onComplete = { blockComplete = true },
+        modifier = Modifier.weight(1f)
     )
 }
 
 /**
- * Input controls for Daily Practice, mirroring VerbDrillScreen's DefaultVerbDrillInputControls.
+ * Input controls for Daily Practice v2.
  * Handles: hint card, incorrect feedback, text field with voice, word bank, input mode selector,
  * show answer button, check button with submitAnswerWithInput.
  */
@@ -471,7 +246,6 @@ private fun DailyTrainingCardSession(
 private fun DailyInputControls(
     provider: DailyPracticeSessionProvider,
     scope: TrainingCardSessionScope,
-    speechLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
     voiceInputText: String?,
     onVoiceInputConsumed: () -> Unit
 ) {
@@ -642,7 +416,7 @@ private fun DailyInputControls(
             }
         }
 
-        // Input mode selector + show answer -- mirrors VerbDrillScreen exactly
+        // Input mode selector + show answer
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -701,7 +475,7 @@ private fun DailyInputControls(
             }
         }
 
-        // Check button -- uses provider.submitAnswerWithInput for retry/hint flow
+        // Check button
         Button(
             onClick = {
                 val input = scope.inputText
@@ -725,15 +499,11 @@ private fun DailyInputControls(
 
 @Composable
 private fun DailyPracticeHeader(
-    blockProgress: BlockProgress,
+    lessonTitle: String,
+    subLessonLabel: String,
     onExit: () -> Unit
 ) {
     var showExitDialog by remember { mutableStateOf(false) }
-    val blockLabel = when (blockProgress.blockType) {
-        DailyBlockType.TRANSLATE -> "Translation"
-        DailyBlockType.VOCAB -> "Vocabulary"
-        DailyBlockType.VERBS -> "Verbs"
-    }
 
     if (showExitDialog) {
         AlertDialog(
@@ -760,31 +530,25 @@ private fun DailyPracticeHeader(
             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
         }
         Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Daily Practice",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 18.sp
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = blockLabel,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                text = "Daily Practice",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp
+            )
+            Text(
+                text = "$lessonTitle - $subLessonLabel",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
     }
 }
 
 @Composable
-private fun BlockProgressBar(blockProgress: BlockProgress) {
-    if (blockProgress.totalTasks == 0) return
-    val overallProgress = blockProgress.globalPosition.toFloat() / blockProgress.totalTasks.toFloat()
+private fun DailyProgressBar(progress: DailyPipelineProgress) {
+    if (progress.totalSubLessons == 0) return
+    val overallProgress = progress.globalPosition.toFloat() / progress.totalSubLessons.toFloat()
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -798,183 +562,14 @@ private fun BlockProgressBar(blockProgress: BlockProgress) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "${blockProgress.globalPosition}/${blockProgress.totalTasks}",
+            text = "${progress.globalPosition}/${progress.totalSubLessons}",
             style = MaterialTheme.typography.labelSmall
         )
     }
 }
 
 @Composable
-private fun ColumnScope.VocabFlashcardBlock(
-    task: DailyTask.VocabFlashcard,
-    onFlip: () -> Unit,
-    onRate: (Int) -> Unit,
-    onAdvance: () -> Boolean,
-    onComplete: () -> Unit,
-    onSpeak: (String) -> Unit
-) {
-    var isRated by remember(task.id) { mutableStateOf(false) }
-    var isVoiceActive by remember { mutableStateOf(false) }
-    var voiceRecognizedText by remember { mutableStateOf<String?>(null) }
-
-    val promptText = when (task.direction) {
-        VocabDrillDirection.IT_TO_RU -> task.word.word
-        VocabDrillDirection.RU_TO_IT -> task.word.meaningRu ?: task.word.word
-    }
-    val answerText = when (task.direction) {
-        VocabDrillDirection.IT_TO_RU -> task.word.meaningRu ?: task.word.word
-        VocabDrillDirection.RU_TO_IT -> task.word.word
-    }
-
-    // Voice recognition launcher
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        isVoiceActive = false
-        if (result.resultCode == Activity.RESULT_OK) {
-            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            if (!spoken.isNullOrBlank()) {
-                voiceRecognizedText = spoken
-                val normalizedSpoken = com.alexpo.grammermate.data.Normalizer.normalize(spoken)
-                val normalizedAnswer = com.alexpo.grammermate.data.Normalizer.normalize(answerText)
-                val isCorrect = normalizedSpoken == normalizedAnswer
-                if (isCorrect && !isRated) {
-                    isRated = true
-                    onRate(2) // Good
-                    // Auto-advance after correct voice answer
-                    val hasMore = onAdvance()
-                    if (!hasMore) onComplete()
-                }
-                // On incorrect: stay, user can retry voice or tap a rating button
-            }
-        }
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Main word (large)
-            Text(
-                text = promptText,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            // TTS button for the word
-            Spacer(modifier = Modifier.height(4.dp))
-            IconButton(onClick = { onSpeak(promptText) }) {
-                Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
-            }
-
-            // Answer text (always visible, smaller)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = answerText,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-
-    Spacer(modifier = Modifier.weight(1f))
-
-    // Voice recognized feedback
-    if (voiceRecognizedText != null) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "You said: \"$voiceRecognizedText\"",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-    }
-
-    // Microphone button
-    Spacer(modifier = Modifier.height(8.dp))
-    FilledTonalIconButton(
-        onClick = {
-            if (!isVoiceActive) {
-                isVoiceActive = true
-                val langTag = when (task.direction) {
-                    VocabDrillDirection.IT_TO_RU -> "ru-RU"
-                    VocabDrillDirection.RU_TO_IT -> "it-IT"
-                }
-                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                }
-                speechLauncher.launch(intent)
-            }
-        },
-        modifier = Modifier
-            .align(Alignment.CenterHorizontally)
-            .size(64.dp)
-    ) {
-        Icon(
-            Icons.Default.Mic,
-            contentDescription = "Voice input",
-            modifier = Modifier.size(32.dp)
-        )
-    }
-
-    // Rating buttons -- auto-advance on tap
-    Spacer(modifier = Modifier.height(12.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        listOf("Again" to 0, "Hard" to 1, "Good" to 2, "Easy" to 3).forEach { (label, rating) ->
-            val colors = when (rating) {
-                0 -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
-                1 -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
-                2 -> Pair(Color(0xFFE8F5E9), Color(0xFF4CAF50))
-                else -> Pair(Color(0xFFE3F2FD), Color(0xFF2196F3))
-            }
-            OutlinedButton(
-                onClick = {
-                    onRate(rating)
-                    val hasMore = onAdvance()
-                    if (!hasMore) onComplete()
-                },
-                modifier = Modifier.weight(1f),
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                    containerColor = colors.first,
-                    contentColor = colors.second
-                )
-            ) {
-                Text(label, fontSize = 12.sp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun BlockSparkleOverlay(
-    blockType: DailyBlockType,
-    isLastBlock: Boolean,
-    onDismiss: () -> Unit
-) {
-    val blockLabel = when (blockType) {
-        DailyBlockType.TRANSLATE -> "Translation"
-        DailyBlockType.VOCAB -> "Vocabulary"
-        DailyBlockType.VERBS -> "Verbs"
-    }
-    val message = if (isLastBlock) "Daily practice complete!" else "Next: $blockLabel"
-
+private fun CompletionSparkle(onDismiss: () -> Unit) {
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(2000)
         onDismiss()
@@ -996,23 +591,16 @@ private fun BlockSparkleOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "✨",
-                    fontSize = 48.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = message,
+                    text = "All sub-lessons complete!",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                if (isLastBlock) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Great job today!",
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Great job today!",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
             }
         }
     }
@@ -1035,7 +623,7 @@ private fun DailyPracticeCompletionScreen(onExit: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Great job! You practiced translations, vocabulary, and verb conjugations.",
+            text = "Great job! You practiced all available sub-lessons.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
@@ -1048,32 +636,4 @@ private fun DailyPracticeCompletionScreen(onExit: () -> Unit) {
             Text("Back to Home")
         }
     }
-}
-
-@Composable
-private fun HorizontalDivider() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(MaterialTheme.colorScheme.outlineVariant)
-    )
-}
-
-private fun abbreviateTense(tense: String): String {
-    val abbreviations = mapOf(
-        "Presente" to "Pres.",
-        "Imperfetto" to "Imperf.",
-        "Passato Prossimo" to "P. Pross.",
-        "Passato Remoto" to "P. Rem.",
-        "Trapassato Prossimo" to "Trap. P.",
-        "Futuro Semplice" to "Fut. Sempl.",
-        "Futuro Anteriore" to "Fut. Ant.",
-        "Condizionale Presente" to "Cond. Pres.",
-        "Condizionale Passato" to "Cond. Pass.",
-        "Congiuntivo Presente" to "Cong. Pres.",
-        "Congiuntivo Imperfetto" to "Cong. Imp.",
-        "Congiuntivo Passato" to "Cong. Pass.",
-    )
-    return abbreviations[tense] ?: tense.take(8)
 }
