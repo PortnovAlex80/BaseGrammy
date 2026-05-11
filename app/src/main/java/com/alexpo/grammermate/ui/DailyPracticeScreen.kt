@@ -273,7 +273,11 @@ private fun DailyTrainingCardSession(
             provider.sessionActive &&
             provider.currentCard != null
         ) {
-            kotlinx.coroutines.delay(200)
+            if (provider.showIncorrectFeedback) {
+                kotlinx.coroutines.delay(1200)
+            } else {
+                kotlinx.coroutines.delay(200)
+            }
             val languageTag = when (provider.languageId) {
                 "it" -> "it-IT"
                 else -> "en-US"
@@ -766,6 +770,9 @@ private fun ColumnScope.VocabFlashcardBlock(
                 if (isCorrect && !isRated) {
                     isRated = true
                     onRate(2) // Good
+                    // Auto-advance after correct voice answer
+                    val hasMore = onAdvance()
+                    if (!hasMore) onComplete()
                 }
                 // On incorrect: stay, user can retry voice or tap a rating button
             }
@@ -824,80 +831,62 @@ private fun ColumnScope.VocabFlashcardBlock(
         )
     }
 
-    if (!isRated) {
-        // Microphone button
-        Spacer(modifier = Modifier.height(8.dp))
-        FilledTonalIconButton(
-            onClick = {
-                if (!isVoiceActive) {
-                    isVoiceActive = true
-                    val langTag = when (task.direction) {
-                        VocabDrillDirection.IT_TO_RU -> "ru-RU"
-                        VocabDrillDirection.RU_TO_IT -> "it-IT"
-                    }
-                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                    }
-                    speechLauncher.launch(intent)
+    // Microphone button
+    Spacer(modifier = Modifier.height(8.dp))
+    FilledTonalIconButton(
+        onClick = {
+            if (!isVoiceActive) {
+                isVoiceActive = true
+                val langTag = when (task.direction) {
+                    VocabDrillDirection.IT_TO_RU -> "ru-RU"
+                    VocabDrillDirection.RU_TO_IT -> "it-IT"
                 }
-            },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .size(64.dp)
-        ) {
-            Icon(
-                Icons.Default.Mic,
-                contentDescription = "Voice input",
-                modifier = Modifier.size(32.dp)
-            )
-        }
-
-        // Rating buttons (always visible)
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf("Again" to 0, "Hard" to 1, "Good" to 2, "Easy" to 3).forEach { (label, rating) ->
-                val colors = when (rating) {
-                    0 -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
-                    1 -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
-                    2 -> Pair(Color(0xFFE8F5E9), Color(0xFF4CAF50))
-                    else -> Pair(Color(0xFFE3F2FD), Color(0xFF2196F3))
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
                 }
-                OutlinedButton(
-                    onClick = {
-                        isRated = true
-                        onRate(rating)
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        containerColor = colors.first,
-                        contentColor = colors.second
-                    )
-                ) {
-                    Text(label, fontSize = 12.sp)
-                }
+                speechLauncher.launch(intent)
             }
-        }
+        },
+        modifier = Modifier
+            .align(Alignment.CenterHorizontally)
+            .size(64.dp)
+    ) {
+        Icon(
+            Icons.Default.Mic,
+            contentDescription = "Voice input",
+            modifier = Modifier.size(32.dp)
+        )
     }
 
-    if (isRated) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = {
-                val hasMore = onAdvance()
-                if (!hasMore) onComplete()
-                isRated = false
-                voiceRecognizedText = null
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Continue")
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
+    // Rating buttons -- auto-advance on tap
+    Spacer(modifier = Modifier.height(12.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf("Again" to 0, "Hard" to 1, "Good" to 2, "Easy" to 3).forEach { (label, rating) ->
+            val colors = when (rating) {
+                0 -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
+                1 -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
+                2 -> Pair(Color(0xFFE8F5E9), Color(0xFF4CAF50))
+                else -> Pair(Color(0xFFE3F2FD), Color(0xFF2196F3))
+            }
+            OutlinedButton(
+                onClick = {
+                    onRate(rating)
+                    val hasMore = onAdvance()
+                    if (!hasMore) onComplete()
+                },
+                modifier = Modifier.weight(1f),
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                    containerColor = colors.first,
+                    contentColor = colors.second
+                )
+            ) {
+                Text(label, fontSize = 12.sp)
+            }
         }
     }
 }
