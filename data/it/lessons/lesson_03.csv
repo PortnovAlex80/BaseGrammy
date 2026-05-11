@@ -1,13 +1,13 @@
 RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 прошлый (scorso) год (anno) мы жили (vivere) в Риме (Roma).;L'anno scorso noi vivevamo a Roma.;Imperfetto;143;anno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 я делаю одну часть работы (parte del lavoro).;Io faccio una parte del lavoro.;Presente;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы взяли (prendere) одну часть (parte) пиццы (della pizza).;Noi abbiamo preso una parte della pizza.;Passato Prossimo;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы много раз (molte volte) ели (mangiare) пиццу (pizza).;Noi mangiavamo la pizza molte volte.;Imperfetto;155;volta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы взяли кусок пиццы.;Noi abbiamo preso un pezzo di pizza.;Passato Prossimo;147;pezzo;m;;;noun;enriched
+мы часто ели пиццу.;Noi mangiavamo spesso la pizza.;Imperfetto;155;volta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 я гулял (uscire) с друзьями (amici).;Io uscivo con gli amici.;Imperfetto;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы встретили (incontrare) старых (vecchi) друзей (amici).;Noi abbiamo incontrato dei vecchi amici.;Passato Prossimo;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы делали это по-разному.;Noi lo facevamo in modo diverso.;Imperfetto;180;modo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 она искала один способ (cercare, uno, modo).;Lei ha cercato un modo.;Passato Prossimo;180;modo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он делал (fare) маленькую (piccolo) услугу (favore).;Lui faceva un piccolo favore.;Imperfetto;204;favore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он оказывал небольшую услугу.;Lui faceva un piccolo favore.;Imperfetto;204;favore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 ты сделал (fare) большую (grande) услугу (favore).;Tu hai fatto un grande favore.;Passato Prossimo;204;favore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 ты знаешь (conoscere) эту девушку (la).;Tu la conosci.;Presente;210;ragazza;f;;;noun;enriched
 она позвонила (chiamare) подруге (la).;Lei l'ha chiamata.;Passato Prossimo;215;amica;f;;;noun;enriched
@@ -53,11 +53,11 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 мы вызвали (chiamare) полицию (polizia).;Noi abbiamo chiamato la polizia.;Passato Prossimo;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 я прочитал газету (leggere il giornale);Io ho letto il giornale.;Passato Prossimo;330;;;leggere;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
 это хороший (buono) конец (fine) дня (giorno).;È un buon finale di giornata.;Presente;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы ждали (aspettare) конец (fine) недели (settimana).;Aspettavamo la fine della settimana.;Imperfetto;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы ждали конца недели (aspettare, fine, settimana).;Aspettavamo la fine della settimana.;Imperfetto;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы почувствовали (sentire) большой (grande) страх (paura).;Noi abbiamo sentito una grande paura.;Passato Prossimo;336;paura;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мой брат был маленький (essere, piccolo).;Mio fratello era piccolo.;Imperfetto;337;fratello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он хороший (buono) начальник (capo).;Lui è un buon capo.;Presente;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она была начальницей отдела.;Lei era la caporeparto.;Imperfetto;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она была начальницей отдела.;Lei era la caporeparto.;Imperfetto;344;caporeparto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы купили одежду (capi d'abbigliamento).;Noi abbiamo comprato dei capi d'abbigliamento.;Passato Prossimo;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы потеряли (perdere) любовь (amore).;Noi abbiamo perso l'amore.;Passato Prossimo;345;amore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 она убила его хладнокровно (uccidere a sangue freddo);Lei lo ha ucciso a sangue freddo.;Passato Prossimo;347;;;uccidere;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
@@ -72,11 +72,11 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 он вернулся к жизни (tornare in vita);Lui è tornato in vita.;Passato Prossimo;365;;;tornare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
 он читал весь вечер.;Lui leggeva tutta la sera.;Imperfetto;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 мы провели (passare) вечер (sera) дома (casa).;Noi abbiamo passato la sera a casa.;Passato Prossimo;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я гуляю.;Io faccio un giro.;Presente;372;giro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты делал короткую прогулку (fare, breve, giro);Tu facevi un breve giro.;Imperfetto;372;giro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он стал папой.;Lui è diventato papà.;Passato Prossimo;403;Papa;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я жду (aspettare) несколько часов (ore).;Io aspetto delle ore.;Presente;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы работали (lavorare) допоздна (fare le ore piccole).;Noi abbiamo fatto le ore piccole.;Passato Prossimo;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я иду прогуляться.;Io vado a fare un giro.;Presente;372;giro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты делал короткий круг.;Tu facevi un breve giro.;Imperfetto;372;giro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он стал папой.;Lui è diventato papà.;Passato Prossimo;403;papà;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я жду уже несколько часов (aspettare, ore).;Io aspetto da alcune ore.;Presente;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы засиделись допоздна.;Noi abbiamo fatto le ore piccole.;Passato Prossimo;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он шел по сельской дороге (andare, strada di campagna).;Lui andava per la strada di campagna.;Imperfetto;414;strada;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы проводили неделю дома.;Noi passavamo la settimana a casa.;Imperfetto;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он работал (lavorare) всю (tutta) неделю (settimana).;Lui ha lavorato tutta la settimana.;Passato Prossimo;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
@@ -86,7 +86,7 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 она закрыла (chiudere) глаза.;Lei ha chiuso gli occhi.;Passato Prossimo;428;occhio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 он был в (essere) начальной (elementare) школе (scuola).;Lui era in una scuola elementare.;Imperfetto;432;scuola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 мы делали (fare) забор (prelievo) крови.;Noi facevamo un prelievo di sangue.;Imperfetto;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она видела (vedere) красную (rosso) кровь.;Lei ha visto il sangue rosso.;Passato Prossimo;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она видела красную кровь.;Lei ha visto il sangue rosso.;Passato Prossimo;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 перевод был автоматическим.;La traduzione era automatica.;Imperfetto;447;traduzione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 у него золотое сердце (oro).;Lui ha un cuore d'oro.;Presente;449;cuore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 ты разбил ему сердце (spezzare).;Tu hai spezzato il suo cuore.;Passato Prossimo;449;cuore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
@@ -102,10 +102,10 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 он покупает кое-что хорошее.;Lui compra della roba buona.;Presente;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 я убирал старые вещи (mettere via, vecchia).;Io mettevo via la roba vecchia.;Imperfetto;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 мы купили много вещей (comprare, tanta).;Noi abbiamo comprato tanta roba.;Passato Prossimo;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-она была секретным агентом (segreto).;Lei era un agente segreto.;Imperfetto;491;agente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она была секретным агентом.;Lei era un'agente segreta.;Imperfetto;491;agente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 я нанял агента по недвижимости (immobiliare).;Io ho assunto un agente immobiliare.;Passato Prossimo;491;agente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он видел (vedere) небесное (celeste) тело (corpo).;Lui vedeva un corpo celeste.;Imperfetto;493;Corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы изучали (studiare) человеческое (umano) тело (corpo).;Noi abbiamo studiato il corpo umano.;Passato Prossimo;493;Corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он видел (vedere) небесное (celeste) тело (corpo).;Lui vedeva un corpo celeste.;Imperfetto;493;corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы изучали (studiare) человеческое (umano) тело (corpo).;Noi abbiamo studiato il corpo umano.;Passato Prossimo;493;corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 я делаю (fare) красивое (bello) фото (foto).;Io faccio una bella foto.;Presente;496;foto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 он отправлял (mandare) групповое (di gruppo) фото (foto).;Lui mandava una foto di gruppo.;Imperfetto;496;foto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы сделали (fare) памятное (ricordo) фото (foto).;Noi abbiamo fatto una foto ricordo.;Passato Prossimo;496;foto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
@@ -117,8 +117,8 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 та девушка (ragazza) была блондинкой (bionda).;Quella ragazza era bionda.;Imperfetto;515;ragazza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 я видел (vedere) красивых (belle) девушек (ragazze).;Io ho visto delle belle ragazze.;Passato Prossimo;515;ragazza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 она устраивала большую вечеринку (organizzare, grande festa);Lei organizzava una grande festa.;Imperfetto;516;festa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты потерял (perdere) смысл (senso).;Tu hai perso il senso.;Passato Prossimo;517;senso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он сделал это за мгновение.;Lui ha fatto questo in un attimo.;Passato Prossimo;521;attimo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+это потеряло смысл (perdere, senso).;Questo ha perso senso.;Passato Prossimo;517;senso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он сделал это за мгновение.;Lui l'ha fatto in un attimo.;Passato Prossimo;521;attimo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 она была моей старшей сестрой (essere, maggiore).;Lei era mia sorella maggiore.;Imperfetto;522;sorella;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 мы встретили сестер-близнецов (incontrare, gemelle).;Noi abbiamo incontrato delle sorelle gemelle.;Passato Prossimo;522;sorella;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 я смотрю (vedere) хороший (bello) фильм.;Io vedo un bel film.;Presente;525;film;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
@@ -127,12 +127,12 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 он ждал (aspettare) весь (intero) месяц (mese).;Lui aspettava l'intero mese.;Imperfetto;529;mese;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 они объявляют (dichiarare) войну (guerra).;Loro dichiarano la guerra.;Presente;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он вел (fare) войну (guerra).;Lui faceva la guerra.;Imperfetto;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы начали (scoppiare) войну (guerra).;Noi abbiamo fatto scoppiare la guerra.;Passato Prossimo;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы развязали войну (fare scoppiare la guerra).;Noi abbiamo fatto scoppiare la guerra.;Passato Prossimo;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он шел (andare) к врачу (dottore).;Lui andava dal dottore.;Imperfetto;538;dottore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы встретили (incontrare) хорошего врача (bravo dottore).;Noi abbiamo incontrato un bravo dottore.;Passato Prossimo;538;dottore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 она живёт как в мечте;Lei vive un sogno.;Presente;541;;;vivere;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
 ты прожил мечту (vivere un sogno);Tu hai vissuto un sogno.;Passato Prossimo;541;;;vivere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-мы испытываем её терпение;Noi mettiamo alla prova la sua pazienza.;Presente;543;;;provare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы испытываем её терпение;Noi mettiamo alla prova la sua pazienza.;Presente;543;;;mettere alla prova;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
 они проявили терпение.;Loro hanno mostrato pazienza.;Passato Prossimo;543;;;provare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl:2
 у меня есть (avere) одна пара (paio) перчаток (guanti).;Io ho un paio di guanti.;Presente;549;paio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 она носила (indossare) одну пару (paio) носков (calzini).;Lei indossava un paio di calzini.;Imperfetto;549;paio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
@@ -150,21 +150,21 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 ты поставил правую ногу.;Tu hai messo il piede destro.;Passato Prossimo;567;piede;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он купил брюссельскую капусту.;Lui ha comprato un cavolo di Bruxelles.;Passato Prossimo;571;cavolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он — капитан команды (squadra).;Lui è il capitano della squadra.;Presente;572;capitano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она была капитаном корабля (nave).;Lei era il capitano della nave.;Imperfetto;572;capitano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она была капитаном корабля (nave).;Lei era la capitana della nave.;Imperfetto;572;capitana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 он играл (giocare) в настольную (da tavolo) игру (gioco).;Lui giocava a un gioco da tavolo.;Imperfetto;577;gioco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 нам повезло.;Noi abbiamo avuto fortuna.;Passato Prossimo;584;fortuna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты извлекаешь сок (trarre linfa);Tu trai linfa.;Presente;585;;;trarre;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты делаешь вывод (trarre una conclusione);Tu trai una conclusione.;Presente;585;;;trarre;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
 она черпала вдохновение (trarre ispirazione);Lei traeva ispirazione.;Imperfetto;585;;;trarre;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
 вы извлекли выгоду (trarre profitto);Voi avete tratto profitto.;Passato Prossimo;585;;;trarre;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
 он ел (mangiare) легкий (leggera) ужин (cena).;Lui mangiava una cena leggera.;Imperfetto;592;cena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы плотно поужинали.;Noi abbiamo mangiato una cena abbondante.;Passato Prossimo;592;cena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 он делает (fare) проверки (controllo) безопасности (sicurezza).;Lui fa i controlli di sicurezza.;Presente;595;controllo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 мы прошли (superare) проверки (controllo).;Noi abbiamo superato i controlli.;Passato Prossimo;595;controllo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он делает (fare) хороший (buono) бизнес (affare).;Lui fa un buon affare.;Presente;596;affare;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он заключает выгодную сделку.;Lui fa un buon affare.;Presente;596;affare;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 ты услышал (sentire) того парня (quel tizio lì).;Tu hai sentito quel tizio lì.;Passato Prossimo;603;tizio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 ты принял меры безопасности.;Tu hai preso delle misure di sicurezza.;Passato Prossimo;605;sicurezza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 они празднуют свадьбу.;Loro festeggiano il matrimonio.;Presente;609;matrimonio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он планировал счастливый брак (pianificare, felice, matrimonio).;Lui pianificava un matrimonio felice.;Imperfetto;609;matrimonio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он планировал свадьбу.;Lui pianificava il matrimonio.;Imperfetto;609;matrimonio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 мы отменили свадьбу (annullare, matrimonio).;Noi abbiamo annullato il matrimonio.;Passato Prossimo;609;matrimonio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 ты видел (vedere) фейерверк (fuoco d'artificio).;Tu hai visto i fuochi d'artificio.;Passato Prossimo;614;fuoco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 она видела (vedere) заряженный (carica) пистолет (pistola).;Lei vedeva una pistola carica.;Imperfetto;616;pistola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
@@ -175,9 +175,9 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 мы были в начале (all'inizio) пути (percorso).;Noi eravamo all'inizio del percorso.;Imperfetto;623;inizio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 я был (essere) молодым родителем (giovane genitore).;Io ero un giovane genitore.;Imperfetto;633;genitore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он — нынешний (attuale) президент (presidente).;Lui è l'attuale presidente.;Presente;638;presidente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-она была (essere) председателем комиссии (presidente della commissione).;Lei era la presidente della commissione.;Imperfetto;638;presidente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я живу (abitare) в большом (grande) городе (città).;Io abito in una grande città.;Presente;640;citta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы посетили маленький город.;Noi abbiamo visitato una piccola città.;Passato Prossimo;640;citta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она была (essere) председателем комиссии (presidente della commissione).;Lei era la presidente della commissione.;Imperfetto;638;presidente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я живу (abitare) в большом (grande) городе (città).;Io abito in una grande città.;Presente;640;città;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы посетили маленький город.;Noi abbiamo visitato una piccola città.;Passato Prossimo;640;città;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он был в (essere) большом (grande) госпитале (ospedale).;Lui era in un grande ospedale.;Imperfetto;642;ospedale;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы пошли (andare) в центральную (centrale) больницу (ospedale).;Noi siamo andati all'ospedale centrale.;Passato Prossimo;642;ospedale;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 это сложная (difficile) ситуация (situazione).;Questa è una situazione difficile.;Presente;651;situazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
@@ -198,11 +198,11 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 я смотрю на голубое небо (guardare, azzurro).;Io guardo il cielo azzurro.;Presente;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 было ясное небо (essere, sereno).;Il cielo era sereno.;Imperfetto;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он видел облачное небо (vedere, nuvoloso).;Lui ha visto il cielo nuvoloso.;Passato Prossimo;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы искали (cercare) частную (privato) ванную (bagno).;Noi cercavamo un bagno privato.;Imperfetto;720;bagno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы искали отдельный санузел.;Noi cercavamo un bagno privato.;Imperfetto;720;bagno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 он использовал общественный туалет.;Lui ha usato un bagno pubblico.;Passato Prossimo;720;bagno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я выхожу подышать свежим воздухом.;Io prendo un po' d'aria fresca.;Presente;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я выхожу подышать свежим воздухом.;Io esco a prendere un po' d'aria fresca.;Presente;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он включал (accendere) кондиционер (aria condizionata).;Lui accendeva l'aria condizionata.;Imperfetto;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы нашли (trovare) чистый (puro) воздух (aria).;Noi abbiamo trovato l'aria pura.;Passato Prossimo;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы нашли чистый воздух.;Noi abbiamo trovato aria pulita.;Passato Prossimo;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
 он говорит (parlare) тихим (basso) голосом (voce).;Lui parla a bassa voce.;Presente;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 ты слышал (sentire) голоса (voce).;Tu sentivi delle voci.;Imperfetto;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 я гуляю с собакой (portare a spasso, cane).;Io porto a spasso il cane.;Presente;730;cane;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
@@ -213,6 +213,8 @@ RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
 это большая (grande) группа (gruppo).;Questo è un grande gruppo.;Presente;745;gruppo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 мы были маленькой (piccolo) группой (gruppo).;Noi eravamo un piccolo gruppo.;Imperfetto;745;gruppo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
 они создали музыкальную (musicale) группу (gruppo).;Loro hanno formato un gruppo musicale.;Passato Prossimo;745;gruppo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты увидел (vedere) внезапное (improvviso) прибытие (arrivo).;Tu hai visto un arrivo improvviso.;Passato Prossimo;747;arrivo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он видит виртуальную реальность (vedere, realtà virtuale).;Lui vede la realtà virtuale.;Presente;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты встретил суровую реальность (incontrare, cruda, realtà).;Tu hai incontrato la cruda realtà.;Passato Prossimo;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты увидел внезапное прибытие поезда.;Tu hai visto un arrivo improvviso del treno.;Passato Prossimo;747;arrivo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он видит виртуальную реальность (vedere, realtà virtuale).;Lui vede la realtà virtuale.;Presente;749;realtà;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты встретил суровую реальность (incontrare, cruda, realtà).;Tu hai incontrato la cruda realtà.;Passato Prossimo;749;realtà;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я жил в маленьком городе.;Io vivevo nel piccolo paese.;Imperfetto;500;paese;m;;;noun;enriched
+ключ лежит на столе.;La chiave è sul tavolo.;Presente;500;tavolo;m;;;noun;enriched
