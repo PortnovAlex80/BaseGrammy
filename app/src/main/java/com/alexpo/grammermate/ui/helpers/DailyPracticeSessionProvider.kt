@@ -267,8 +267,19 @@ class DailyPracticeSessionProvider(
 
     override fun togglePause() {
         if (_isPaused) {
-            // Play pressed while paused — advance to next card and restart
-            nextCard()
+            // Play pressed — unpause and restart current card (fresh attempt)
+            _isPaused = false
+            _pendingCard = null
+            _pendingResult = null
+            pendingAnswerResult = null
+            hintAnswer = null
+            incorrectAttempts = 0
+            showIncorrectFeedback = false
+            remainingAttempts = 3
+            _selectedWords = emptyList()
+            cachedWordBankCardId = null
+            cachedWordBank = emptyList()
+            pendingInput = ""
         } else {
             _isPaused = true
         }

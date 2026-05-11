@@ -139,6 +139,28 @@ fun DailyPracticeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Block-transition sparkle overlay — detects when block type changes
+        var previousBlockType by remember { mutableStateOf<DailyBlockType?>(null) }
+        var showBlockTransition by remember { mutableStateOf(false) }
+        val currentBlockType = currentTask.blockType
+
+        LaunchedEffect(currentBlockType) {
+            if (previousBlockType != null && currentBlockType != null && previousBlockType != currentBlockType) {
+                showBlockTransition = true
+            }
+            previousBlockType = currentBlockType
+        }
+
+        if (showBlockTransition) {
+            BlockSparkleOverlay(
+                blockType = currentBlockType ?: DailyBlockType.TRANSLATE,
+                isLastBlock = currentBlockType == DailyBlockType.VERBS && blockProgress.globalPosition >= blockProgress.totalTasks,
+                onDismiss = {
+                    showBlockTransition = false
+                }
+            )
+        }
+
         when (currentTask.blockType) {
             DailyBlockType.TRANSLATE,
             DailyBlockType.VERBS -> {
@@ -160,42 +182,18 @@ fun DailyPracticeScreen(
             }
             DailyBlockType.VOCAB -> {
                 val task = currentTask as DailyTask.VocabFlashcard
-                var vocabBlockComplete by remember { mutableStateOf(false) }
-                var showVocabDialog by remember { mutableStateOf(false) }
-                var vocabJustCompleted by remember { mutableStateOf(false) }
-
-                if (vocabBlockComplete && !vocabJustCompleted) {
-                    vocabJustCompleted = true
-                    showVocabDialog = true
-                }
-
-                if (showVocabDialog) {
-                    BlockCompleteDialog(
-                        blockType = DailyBlockType.VOCAB,
-                        onRepeat = {
-                            showVocabDialog = false
-                            vocabJustCompleted = false
-                            vocabBlockComplete = false
-                            onRepeatBlock()
-                        },
-                        onContinue = {
-                            showVocabDialog = false
-                            vocabJustCompleted = false
-                            vocabBlockComplete = false
-                            val hasMore = onAdvanceBlock()
-                            if (!hasMore) {
-                                onComplete()
-                            }
-                        }
-                    )
-                }
 
                 VocabFlashcardBlock(
                     task = task,
                     onFlip = onFlipVocabCard,
                     onRate = onRateVocabCard,
                     onAdvance = onAdvance,
-                    onComplete = { vocabBlockComplete = true },
+                    onComplete = {
+                        val hasMore = onAdvanceBlock()
+                        if (!hasMore) {
+                            onComplete()
+                        }
+                    },
                     onSpeak = onSpeak
                 )
             }
@@ -225,8 +223,6 @@ private fun ColumnScope.CardSessionBlock(
 ) {
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
-    var showBlockDialog by remember { mutableStateOf(false) }
-    var blockJustCompleted by remember { mutableStateOf(false) }
 
     val provider = remember(blockKey) {
         val currentBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
@@ -253,36 +249,14 @@ private fun ColumnScope.CardSessionBlock(
         )
     }
 
-    // When block completes, show dialog instead of auto-advancing
-    if (blockComplete && !blockJustCompleted) {
-        blockJustCompleted = true
-        showBlockDialog = true
-    }
-
-    if (showBlockDialog) {
-        val dialogBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
-            is DailyTask.TranslateSentence -> DailyBlockType.TRANSLATE
-            is DailyTask.ConjugateVerb -> DailyBlockType.VERBS
-            else -> DailyBlockType.TRANSLATE
+    // Auto-advance when block completes (sparkle is handled at DailyPracticeScreen level)
+    if (blockComplete) {
+        val hasMore = onAdvanceBlock()
+        blockComplete = false
+        if (!hasMore) {
+            onComplete()
+            return
         }
-        BlockCompleteDialog(
-            blockType = dialogBlockType,
-            onRepeat = {
-                showBlockDialog = false
-                blockJustCompleted = false
-                blockComplete = false
-                onRepeatBlock()
-            },
-            onContinue = {
-                showBlockDialog = false
-                blockJustCompleted = false
-                blockComplete = false
-                val hasMore = onAdvanceBlock()
-                if (!hasMore) {
-                    onComplete()
-                }
-            }
-        )
     }
 
     // Custom input controls mirroring VerbDrillScreen's DefaultVerbDrillInputControls
@@ -953,31 +927,59 @@ private fun ColumnScope.VocabFlashcardBlock(
 }
 
 @Composable
-private fun BlockCompleteDialog(
+private fun BlockSparkleOverlay(
     blockType: DailyBlockType,
-    onRepeat: () -> Unit,
-    onContinue: () -> Unit
+    isLastBlock: Boolean,
+    onDismiss: () -> Unit
 ) {
     val blockLabel = when (blockType) {
         DailyBlockType.TRANSLATE -> "Translation"
         DailyBlockType.VOCAB -> "Vocabulary"
         DailyBlockType.VERBS -> "Verbs"
     }
-    AlertDialog(
-        onDismissRequest = { /* no dismiss — must choose */ },
-        title = { Text("$blockLabel block complete!") },
-        text = { Text("You finished 5 $blockLabel cards.") },
-        confirmButton = {
-            Button(onClick = onContinue) {
-                Text("Continue")
-            }
-        },
-        dismissButton = {
-            OutlinedButton(onClick = onRepeat) {
-                Text("Repeat")
+    val message = if (isLastBlock) "Daily practice complete!" else "Next: $blockLabel"
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2000)
+        onDismiss()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "✨",
+                    fontSize = 48.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = message,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                if (isLastBlock) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Great job today!",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
-    )
+    }
 }
 
 @Composable
