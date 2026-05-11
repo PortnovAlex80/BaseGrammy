@@ -1415,6 +1415,31 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return dailySessionHelper.nextTask()
     }
 
+    fun advanceDailyBlock(): Boolean {
+        return dailySessionHelper.advanceToNextBlock()
+    }
+
+    fun repeatDailyBlock(): Boolean {
+        val state = _uiState.value
+        val ds = state.dailySession
+        if (!ds.active) return false
+        val blockType = dailySessionHelper.getCurrentBlockType() ?: return false
+        val packId = state.activePackId ?: return false
+        val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return false
+        val lessonLevel = ds.level
+
+        val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+        val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val newTasks = composer.rebuildBlock(blockType, lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        if (newTasks.isEmpty()) return false
+
+        dailySessionHelper.replaceCurrentBlock(newTasks)
+        return true
+    }
+
     fun cancelDailySession() {
         dailySessionHelper.endSession()
     }

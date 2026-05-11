@@ -89,6 +89,8 @@ fun DailyPracticeScreen(
     onFlipVocabCard: () -> Unit,
     onRateVocabCard: (Int) -> Unit,
     onAdvance: () -> Boolean,
+    onAdvanceBlock: () -> Boolean,
+    onRepeatBlock: () -> Boolean,
     onSpeak: (String) -> Unit,
     onStopTts: () -> Unit,
     ttsState: TtsState,
@@ -144,6 +146,8 @@ fun DailyPracticeScreen(
                     state = state,
                     blockProgress = blockProgress,
                     onAdvance = onAdvance,
+                    onAdvanceBlock = onAdvanceBlock,
+                    onRepeatBlock = onRepeatBlock,
                     onComplete = onComplete,
                     onExit = onExit,
                     onSubmitSentence = onSubmitSentence,
@@ -156,12 +160,42 @@ fun DailyPracticeScreen(
             }
             DailyBlockType.VOCAB -> {
                 val task = currentTask as DailyTask.VocabFlashcard
+                var vocabBlockComplete by remember { mutableStateOf(false) }
+                var showVocabDialog by remember { mutableStateOf(false) }
+                var vocabJustCompleted by remember { mutableStateOf(false) }
+
+                if (vocabBlockComplete && !vocabJustCompleted) {
+                    vocabJustCompleted = true
+                    showVocabDialog = true
+                }
+
+                if (showVocabDialog) {
+                    BlockCompleteDialog(
+                        blockType = DailyBlockType.VOCAB,
+                        onRepeat = {
+                            showVocabDialog = false
+                            vocabJustCompleted = false
+                            vocabBlockComplete = false
+                            onRepeatBlock()
+                        },
+                        onContinue = {
+                            showVocabDialog = false
+                            vocabJustCompleted = false
+                            vocabBlockComplete = false
+                            val hasMore = onAdvanceBlock()
+                            if (!hasMore) {
+                                onComplete()
+                            }
+                        }
+                    )
+                }
+
                 VocabFlashcardBlock(
                     task = task,
                     onFlip = onFlipVocabCard,
                     onRate = onRateVocabCard,
                     onAdvance = onAdvance,
-                    onComplete = onComplete,
+                    onComplete = { vocabBlockComplete = true },
                     onSpeak = onSpeak
                 )
             }
@@ -178,6 +212,8 @@ private fun ColumnScope.CardSessionBlock(
     state: DailySessionState,
     blockProgress: BlockProgress,
     onAdvance: () -> Boolean,
+    onAdvanceBlock: () -> Boolean,
+    onRepeatBlock: () -> Boolean,
     onComplete: () -> Unit,
     onExit: () -> Unit,
     onSubmitSentence: (String) -> Boolean,
@@ -187,8 +223,10 @@ private fun ColumnScope.CardSessionBlock(
     ttsState: TtsState,
     languageId: String
 ) {
-    val blockKey = state.blockIndex to state.taskIndex
+    val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+    var blockJustCompleted by remember { mutableStateOf(false) }
 
     val provider = remember(blockKey) {
         val currentBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
@@ -215,13 +253,36 @@ private fun ColumnScope.CardSessionBlock(
         )
     }
 
-    if (blockComplete) {
-        val hasMore = onAdvance()
-        blockComplete = false
-        if (!hasMore) {
-            onComplete()
-            return
+    // When block completes, show dialog instead of auto-advancing
+    if (blockComplete && !blockJustCompleted) {
+        blockJustCompleted = true
+        showBlockDialog = true
+    }
+
+    if (showBlockDialog) {
+        val dialogBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
+            is DailyTask.TranslateSentence -> DailyBlockType.TRANSLATE
+            is DailyTask.ConjugateVerb -> DailyBlockType.VERBS
+            else -> DailyBlockType.TRANSLATE
         }
+        BlockCompleteDialog(
+            blockType = dialogBlockType,
+            onRepeat = {
+                showBlockDialog = false
+                blockJustCompleted = false
+                blockComplete = false
+                onRepeatBlock()
+            },
+            onContinue = {
+                showBlockDialog = false
+                blockJustCompleted = false
+                blockComplete = false
+                val hasMore = onAdvanceBlock()
+                if (!hasMore) {
+                    onComplete()
+                }
+            }
+        )
     }
 
     // Custom input controls mirroring VerbDrillScreen's DefaultVerbDrillInputControls
@@ -889,6 +950,34 @@ private fun ColumnScope.VocabFlashcardBlock(
             }
         }
     }
+}
+
+@Composable
+private fun BlockCompleteDialog(
+    blockType: DailyBlockType,
+    onRepeat: () -> Unit,
+    onContinue: () -> Unit
+) {
+    val blockLabel = when (blockType) {
+        DailyBlockType.TRANSLATE -> "Translation"
+        DailyBlockType.VOCAB -> "Vocabulary"
+        DailyBlockType.VERBS -> "Verbs"
+    }
+    AlertDialog(
+        onDismissRequest = { /* no dismiss — must choose */ },
+        title = { Text("$blockLabel block complete!") },
+        text = { Text("You finished 5 $blockLabel cards.") },
+        confirmButton = {
+            Button(onClick = onContinue) {
+                Text("Continue")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onRepeat) {
+                Text("Repeat")
+            }
+        }
+    )
 }
 
 @Composable

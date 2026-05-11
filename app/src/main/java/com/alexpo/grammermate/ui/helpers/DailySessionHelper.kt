@@ -69,6 +69,78 @@ class DailySessionHelper(
         return true
     }
 
+    /**
+     * Advance taskIndex to the first task of the next block.
+     * Returns false if no more blocks (session complete).
+     */
+    fun advanceToNextBlock(): Boolean {
+        val ds = stateAccess.uiState.value.dailySession
+        if (!ds.active) return false
+
+        val currentBlock = getCurrentBlockType() ?: return false
+        var idx = ds.taskIndex
+        // Skip past all tasks of the current block type
+        while (idx < ds.tasks.size && ds.tasks[idx].blockType == currentBlock) {
+            idx++
+        }
+
+        if (idx >= ds.tasks.size) {
+            endSession()
+            return false
+        }
+
+        val nextBlock = ds.tasks[idx].blockType
+        val nextBlockIndex = ds.blockIndex + 1
+
+        stateAccess.updateState {
+            it.copy(
+                dailySession = it.dailySession.copy(
+                    taskIndex = idx,
+                    blockIndex = nextBlockIndex
+                )
+            )
+        }
+        stateAccess.saveProgress()
+        return true
+    }
+
+    /**
+     * Replace the current block's tasks with new ones and reset position to the start of that block.
+     */
+    fun replaceCurrentBlock(newTasks: List<DailyTask>) {
+        val ds = stateAccess.uiState.value.dailySession
+        if (!ds.active) return
+
+        val currentBlock = getCurrentBlockType() ?: return
+
+        // Find where the current block starts and ends
+        var blockStart = ds.taskIndex
+        for (i in ds.tasks.indices) {
+            if (ds.tasks[i].blockType == currentBlock) {
+                blockStart = i
+                break
+            }
+        }
+        var blockEnd = blockStart
+        for (i in blockStart until ds.tasks.size) {
+            if (ds.tasks[i].blockType != currentBlock) break
+            blockEnd = i
+        }
+
+        // Replace tasks in the current block
+        val newTaskList = ds.tasks.subList(0, blockStart) + newTasks + ds.tasks.subList(blockEnd + 1, ds.tasks.size)
+
+        stateAccess.updateState {
+            it.copy(
+                dailySession = it.dailySession.copy(
+                    tasks = newTaskList,
+                    taskIndex = blockStart
+                )
+            )
+        }
+        stateAccess.saveProgress()
+    }
+
     fun endSession() {
         stateAccess.updateState { state ->
             state.copy(

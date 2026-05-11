@@ -75,6 +75,23 @@ class DailySessionComposer(
         return tasks
     }
 
+    fun rebuildBlock(
+        blockType: DailyBlockType,
+        lessonLevel: Int,
+        packId: String,
+        languageId: String,
+        lessonId: String,
+        cumulativeTenses: List<String> = emptyList()
+    ): List<DailyTask> {
+        val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
+                     else TENSE_LADDER[lessonLevel] ?: emptyList()
+        return when (blockType) {
+            DailyBlockType.TRANSLATE -> buildSentenceBlock(lessonLevel, packId, languageId, lessonId)
+            DailyBlockType.VOCAB -> buildVocabBlock(lessonLevel, packId, languageId)
+            DailyBlockType.VERBS -> buildVerbBlock(packId, languageId, tenses)
+        }
+    }
+
     private fun buildSentenceBlock(
         lessonLevel: Int,
         packId: String,

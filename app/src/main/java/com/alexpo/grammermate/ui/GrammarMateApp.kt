@@ -376,6 +376,8 @@ fun GrammarMateApp() {
                         onFlipVocabCard = { /* no-op: flip is tracked locally in composable */ },
                         onRateVocabCard = { _ -> /* rating recorded locally */ },
                         onAdvance = vm::advanceDailyTask,
+                        onAdvanceBlock = { vm.advanceDailyBlock() },
+                        onRepeatBlock = { vm.repeatDailyBlock() },
                         onSpeak = { text ->
                             if (state.ttsModelReady) {
                                 vm.onTtsSpeak(text, speed = 0.67f)
