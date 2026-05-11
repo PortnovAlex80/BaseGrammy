@@ -277,6 +277,16 @@ private fun DailyTrainingCardSession(
         }
     }
 
+    // Auto-advance after correct voice answer — mirrors VerbDrillScreen
+    val latestProviderForAdvance by rememberUpdatedState(provider)
+    LaunchedEffect(provider.pendingAnswerResult, provider.currentInputMode) {
+        val result = latestProviderForAdvance.pendingAnswerResult
+        if (result != null && result.correct && latestProviderForAdvance.currentInputMode == InputMode.VOICE) {
+            kotlinx.coroutines.delay(400)
+            latestProviderForAdvance.nextCard()
+        }
+    }
+
     TrainingCardSession(
         contract = provider,
         cardContent = {

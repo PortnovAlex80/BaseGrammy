@@ -47,6 +47,8 @@ class DailyPracticeSessionProvider(
 
     private var currentIndex: Int by mutableStateOf(0)
     private var _pendingCard: SessionCard? by mutableStateOf(null)
+    var pendingAnswerResult: AnswerResult? by mutableStateOf(null)
+        private set
     private var _pendingResult: AnswerResult? by mutableStateOf(null)
     private var _isPaused: Boolean by mutableStateOf(false)
     private var _inputMode: InputMode by mutableStateOf(InputMode.VOICE)
@@ -175,6 +177,7 @@ class DailyPracticeSessionProvider(
         if (isCorrect) {
             _pendingCard = card
             _pendingResult = AnswerResult(correct = true, displayAnswer = card.acceptedAnswers.first())
+            pendingAnswerResult = _pendingResult
             incorrectAttempts = 0
             showIncorrectFeedback = false
             remainingAttempts = 3
@@ -223,6 +226,7 @@ class DailyPracticeSessionProvider(
     override fun nextCard() {
         _pendingCard = null
         _pendingResult = null
+        pendingAnswerResult = null
         _isPaused = false
         _selectedWords = emptyList()
         cachedWordBankCardId = null
@@ -251,6 +255,7 @@ class DailyPracticeSessionProvider(
             currentIndex--
             _pendingCard = null
             _pendingResult = null
+            pendingAnswerResult = null
             _isPaused = false
             _selectedWords = emptyList()
             cachedWordBankCardId = null
