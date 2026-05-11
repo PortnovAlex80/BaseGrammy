@@ -249,12 +249,15 @@ private fun DailyTrainingCardSession(
         }
     }
 
-    // Auto-voice LaunchedEffect -- mirrors VerbDrillScreen exactly
+    // Auto-voice LaunchedEffect -- mirrors VerbDrillScreen exactly:
+    // triggers when voiceTriggerToken changes, inputMode is VOICE, card exists, session is active
+    val voiceToken = provider.voiceTriggerToken
     val voiceCardId = provider.currentCard?.id
     LaunchedEffect(
         voiceCardId,
         provider.currentInputMode,
-        provider.sessionActive
+        provider.sessionActive,
+        voiceToken
     ) {
         if (provider.currentInputMode == InputMode.VOICE &&
             provider.sessionActive &&

@@ -63,6 +63,10 @@ class DailyPracticeSessionProvider(
     var hintAnswer: String? by mutableStateOf(null)
         private set
 
+    /** Token incremented to trigger automatic voice recognition (mirrors VerbDrillCardSessionProvider). */
+    var voiceTriggerToken: Int by mutableStateOf(0)
+        private set
+
     /** When true, shows "Incorrect" feedback inline in input controls (wrong attempt < 3). */
     var showIncorrectFeedback: Boolean by mutableStateOf(false)
         private set
@@ -188,6 +192,10 @@ class DailyPracticeSessionProvider(
             } else {
                 // Show inline "Incorrect" feedback for attempts < 3
                 showIncorrectFeedback = true
+                // Auto-trigger voice recognition in VOICE mode for retry
+                if (_inputMode == InputMode.VOICE) {
+                    voiceTriggerToken++
+                }
             }
         }
 
@@ -228,6 +236,11 @@ class DailyPracticeSessionProvider(
         // Always advance to next card
         currentIndex++
 
+        // Auto-trigger voice recognition when advancing to next card in VOICE mode
+        if (_inputMode == InputMode.VOICE) {
+            voiceTriggerToken++
+        }
+
         if (currentIndex >= blockCards.size) {
             onBlockComplete()
         }
@@ -261,6 +274,9 @@ class DailyPracticeSessionProvider(
     override fun setInputMode(mode: InputMode) {
         _inputMode = mode
         _selectedWords = emptyList()
+        if (mode == InputMode.VOICE) {
+            voiceTriggerToken++
+        }
     }
 
     // ── Word Bank ────────────────────────────────────────────────────────
