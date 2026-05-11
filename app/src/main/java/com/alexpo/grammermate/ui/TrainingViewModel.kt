@@ -1365,8 +1365,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessonId = state.selectedLessonId ?: return
 
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
-        val composer = DailySessionComposer(lessonStore, verbDrillStore, wordMasteryStore)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId)
+        val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
         if (tasks.isEmpty()) return
 
         dailySessionHelper.startDailySession(tasks, lessonLevel)
