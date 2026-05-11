@@ -110,6 +110,11 @@ fun DailyPracticeScreen(
                     onAdvance = onAdvance,
                     onComplete = onComplete,
                     onExit = onExit,
+                    onSubmitSentence = onSubmitSentence,
+                    onSubmitVerb = onSubmitVerb,
+                    onShowSentenceAnswer = onShowSentenceAnswer,
+                    onShowVerbAnswer = onShowVerbAnswer,
+                    onSpeak = onSpeak,
                     languageId = languageId
                 )
             }
@@ -135,6 +140,11 @@ private fun ColumnScope.CardSessionBlock(
     onAdvance: () -> Boolean,
     onComplete: () -> Unit,
     onExit: () -> Unit,
+    onSubmitSentence: (String) -> Boolean,
+    onSubmitVerb: (String) -> Boolean,
+    onShowSentenceAnswer: () -> String?,
+    onShowVerbAnswer: () -> String?,
+    onSpeak: (String) -> Unit,
     languageId: String
 ) {
     val blockKey = state.blockIndex to state.taskIndex
@@ -145,7 +155,16 @@ private fun ColumnScope.CardSessionBlock(
             tasks = state.tasks,
             startOffset = state.taskIndex,
             onBlockComplete = { blockComplete = true },
-            languageId = languageId
+            languageId = languageId,
+            onAnswerChecked = { input, correct ->
+                // Fire ViewModel-side effects (sounds) via the appropriate callback
+                val task = state.tasks.getOrNull(state.taskIndex)
+                when (task) {
+                    is DailyTask.TranslateSentence -> onSubmitSentence(input)
+                    is DailyTask.ConjugateVerb -> onSubmitVerb(input)
+                    else -> {}
+                }
+            }
         )
     }
 

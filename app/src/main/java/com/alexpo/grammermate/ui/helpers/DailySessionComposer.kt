@@ -17,9 +17,9 @@ import java.io.File
  * Pure builder that constructs a daily practice session (List<DailyTask>)
  * for a given lesson level and pack.
  *
- * Block 1 (Translation): 10 SentenceCards, SRS-priority.
+ * Block 1 (Translation): 5 SentenceCards, SRS-priority.
  * Block 2 (Vocab): 5 VocabWords by rank range, SRS-due first.
- * Block 3 (Verb Drill): 10 VerbDrillCards from cumulative tenses, weak-first.
+ * Block 3 (Verb Drill): 5 VerbDrillCards from cumulative tenses, weak-first.
  */
 class DailySessionComposer(
     private val lessonStore: LessonStore,
@@ -28,9 +28,9 @@ class DailySessionComposer(
 ) {
 
     companion object {
-        const val SENTENCE_COUNT = 10
+        const val SENTENCE_COUNT = 5
         const val VOCAB_COUNT = 5
-        const val VERB_COUNT = 10
+        const val VERB_COUNT = 5
 
         val TENSE_LADDER: Map<Int, List<String>> = mapOf(
             1  to listOf("Presente"),

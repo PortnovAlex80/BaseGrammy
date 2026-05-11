@@ -11,11 +11,16 @@ import com.alexpo.grammermate.data.InputModeConfig
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.SessionProgress
-import com.alexpo.grammermate.data.TtsState
 
 /**
  * CardSessionContract adapter for Daily Practice Blocks 1 (Translation) and 3 (Verb Drill).
  * Block 2 (Vocab Flashcard) does NOT use this — the UI switches composables at block boundaries.
+ *
+ * Mirrors the retry/hint flow from VerbDrillCardSessionProvider:
+ * - Correct answer -> set result (pendingCard/pendingResult)
+ * - Wrong answer -> show inline error, increment attempt counter, stay on card
+ * - 3 wrong attempts -> auto-show answer as hint (input controls stay visible)
+ * - Manual "Show Answer" -> show answer as hint (input controls stay visible)
  *
  * Create a fresh instance when the session enters a TRANSLATE or VERBS block.
  */
@@ -23,7 +28,8 @@ class DailyPracticeSessionProvider(
     private val tasks: List<DailyTask>,
     private val startOffset: Int,
     private val onBlockComplete: () -> Unit,
-    override val languageId: String = "en"
+    override val languageId: String = "en",
+    private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> }
 ) : CardSessionContract {
 
     private val blockCards: List<DailyTask> = tasks
@@ -43,7 +49,22 @@ class DailyPracticeSessionProvider(
 
     private var cachedWordBankCardId: String? = null
     private var cachedWordBank: List<String> = emptyList()
-    private var pendingInput: String = ""
+    private var pendingInput: String by mutableStateOf("")
+
+    /** Consecutive incorrect attempts for the current card. */
+    private var incorrectAttempts: Int by mutableStateOf(0)
+
+    /** When non-null, the answer is being shown as a hint (auto or manual). */
+    var hintAnswer: String? by mutableStateOf(null)
+        private set
+
+    /** When true, shows "Incorrect" feedback inline in input controls (wrong attempt < 3). */
+    var showIncorrectFeedback: Boolean by mutableStateOf(false)
+        private set
+
+    /** Remaining attempts before hint auto-shows. */
+    var remainingAttempts: Int by mutableStateOf(3)
+        private set
 
     // ── Capabilities ─────────────────────────────────────────────────────
 
@@ -91,21 +112,40 @@ class DailyPracticeSessionProvider(
     override val lastResult: AnswerResult? get() = _pendingResult
 
     override val sessionActive: Boolean
-        get() = !_isPaused && currentIndex < blockCards.size
+        get() {
+            if (_isPaused) return false
+            if (hintAnswer != null) return false
+            return currentIndex < blockCards.size
+        }
 
     override val currentInputMode: InputMode
         get() = _inputMode
 
     // ── Actions ──────────────────────────────────────────────────────────
 
+    /** Clear incorrect feedback when the user starts typing a new attempt. */
+    fun clearIncorrectFeedback() {
+        showIncorrectFeedback = false
+    }
+
     override fun onInputChanged(text: String) {
         pendingInput = text
+        // Clear hint when user starts typing after seeing the answer
+        if (text.isNotBlank() && hintAnswer != null) {
+            hintAnswer = null
+            _isPaused = false
+            incorrectAttempts = 0
+            remainingAttempts = 3
+        }
     }
 
     override fun submitAnswer(): AnswerResult? {
         if (currentIndex >= blockCards.size) return null
         val task = blockCards[currentIndex]
         val card = taskToSessionCard(task) ?: return null
+
+        // Already showing hint — ignore further submissions until nextCard()
+        if (hintAnswer != null) return null
 
         val input = if (currentInputMode == InputMode.WORD_BANK && _selectedWords.isNotEmpty()) {
             _selectedWords.joinToString(" ")
@@ -120,6 +160,24 @@ class DailyPracticeSessionProvider(
         if (isCorrect) {
             _pendingCard = card
             _pendingResult = AnswerResult(correct = true, displayAnswer = card.acceptedAnswers.first())
+            incorrectAttempts = 0
+            showIncorrectFeedback = false
+            remainingAttempts = 3
+            onAnswerChecked(input, true)
+        } else {
+            onAnswerChecked(input, false)
+            incorrectAttempts++
+            remainingAttempts = 3 - incorrectAttempts
+            if (incorrectAttempts >= 3) {
+                // Auto-show answer after 3 wrong attempts
+                hintAnswer = card.acceptedAnswers.first()
+                _pendingCard = card
+                showIncorrectFeedback = false
+                _isPaused = true
+            } else {
+                // Show inline "Incorrect" feedback for attempts < 3
+                showIncorrectFeedback = true
+            }
         }
 
         return _pendingResult
@@ -133,14 +191,17 @@ class DailyPracticeSessionProvider(
     override fun showAnswer(): String? {
         if (currentIndex >= blockCards.size) return null
         val card = taskToSessionCard(blockCards[currentIndex]) ?: return null
+        // Manual eye button — show answer as hint, keep input controls visible
+        hintAnswer = card.acceptedAnswers.first()
         _pendingCard = card
+        incorrectAttempts = 3
+        showIncorrectFeedback = false
+        remainingAttempts = 0
         _isPaused = true
         return card.acceptedAnswers.first()
     }
 
     override fun nextCard() {
-        val hadPending = _pendingCard != null || _isPaused
-
         _pendingCard = null
         _pendingResult = null
         _isPaused = false
@@ -148,12 +209,16 @@ class DailyPracticeSessionProvider(
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
         pendingInput = ""
+        hintAnswer = null
+        incorrectAttempts = 0
+        showIncorrectFeedback = false
+        remainingAttempts = 3
 
-        if (hadPending) {
-            currentIndex++
-            if (currentIndex >= blockCards.size) {
-                onBlockComplete()
-            }
+        // Always advance to next card
+        currentIndex++
+
+        if (currentIndex >= blockCards.size) {
+            onBlockComplete()
         }
     }
 
@@ -166,11 +231,16 @@ class DailyPracticeSessionProvider(
             _selectedWords = emptyList()
             cachedWordBankCardId = null
             cachedWordBank = emptyList()
+            hintAnswer = null
+            incorrectAttempts = 0
+            showIncorrectFeedback = false
+            remainingAttempts = 3
         }
     }
 
     override fun togglePause() {
         if (_isPaused) {
+            // Play pressed while paused — advance to next card and restart
             nextCard()
         } else {
             _isPaused = true
