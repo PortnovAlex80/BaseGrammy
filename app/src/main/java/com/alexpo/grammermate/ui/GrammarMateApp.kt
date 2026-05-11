@@ -312,8 +312,8 @@ fun GrammarMateApp() {
                     onOpenElite = {
                         val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
                         val level = (lessonIndex + 1).coerceIn(1, 12)
-                        vm.startDailyPractice(level)
-                        screen = AppScreen.DAILY_PRACTICE
+                        val started = vm.startDailyPractice(level)
+                        if (started) screen = AppScreen.DAILY_PRACTICE
                     },
                     hasVerbDrill = hasVerbDrill,
                     hasVocabDrill = hasVocabDrill,
@@ -351,6 +351,7 @@ fun GrammarMateApp() {
                         currentTask = dailyTask,
                         onSubmitSentence = vm::submitDailySentenceAnswer,
                         onSubmitVerb = vm::submitDailyVerbAnswer,
+                        languageId = state.selectedLanguageId,
                         onShowSentenceAnswer = vm::getDailySentenceAnswer,
                         onShowVerbAnswer = vm::getDailyVerbAnswer,
                         onFlipVocabCard = { /* no-op: flip is tracked locally in composable */ },
@@ -875,6 +876,7 @@ private fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
         DailyPracticeEntryTile(
+            level = currentLessonIndex + 1,
             onClick = onOpenElite
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -1024,6 +1026,7 @@ private fun VocabDrillEntryTile(
 
 @Composable
 private fun DailyPracticeEntryTile(
+    level: Int,
     onClick: () -> Unit
 ) {
     Card(
@@ -1042,11 +1045,18 @@ private fun DailyPracticeEntryTile(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Daily Practice",
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            Column {
+                Text(
+                    text = "Daily Practice",
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = "L$level",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
             Icon(
                 Icons.Default.PlayArrow,
                 contentDescription = "Start",
@@ -1272,79 +1282,6 @@ private fun LessonRoadmapScreen(
         )
     }
 }
-
-@Composable
-private fun EliteRoadmapScreen(
-    state: TrainingUiState,
-    onBack: () -> Unit,
-    onStartStep: (Int) -> Unit,
-    onStartBoss: () -> Unit
-) {
-    val stepCount = com.alexpo.grammermate.data.TrainingConfig.ELITE_STEP_COUNT
-    val currentIndex = state.eliteStepIndex.coerceIn(0, stepCount - 1)
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
-            Text(text = "Refresh", fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.width(40.dp))
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            userScrollEnabled = false
-        ) {
-            itemsIndexed(List(stepCount) { it }) { _, index ->
-                EliteStepTile(
-                    index = index,
-                    isActive = index == currentIndex,
-                    onClick = { onStartStep(index) }
-                )
-            }
-            item {
-                BossTile(label = "Review", enabled = true, reward = null, onClick = onStartBoss)
-            }
-        }
-    }
-}
-
-@Composable
-private fun EliteStepTile(
-    index: Int,
-    isActive: Boolean,
-    onClick: () -> Unit
-) {
-    val icon = if (isActive) Icons.Default.PlayArrow else Icons.Default.Lock
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .clickable(enabled = isActive, onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = "Step ${index + 1}", fontWeight = FontWeight.SemiBold)
-            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
-        }
-    }
-}
 private sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
     object Drill : RoadmapEntry()
@@ -1373,31 +1310,6 @@ private fun buildRoadmapEntries(
         entries.add(RoadmapEntry.BossMega)
     }
     return entries
-}
-
-@Composable
-private fun VocabTile(label: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = label, fontWeight = FontWeight.SemiBold)
-            Icon(
-                imageVector = Icons.Default.LibraryBooks,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
 }
 
 @Composable
@@ -1571,237 +1483,6 @@ private fun DrillProgressRow(current: Int, total: Int, speed: Long, wordCount: I
                 fontWeight = FontWeight.Bold,
                 color = speedColor
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun VocabSprintScreen(
-    state: TrainingUiState,
-    onInputChange: (String) -> Unit,
-    onSubmit: (String?) -> Unit,
-    onSetInputMode: (InputMode) -> Unit,
-    onRequestVoice: () -> Unit,
-    onSpeak: (String) -> Unit,
-    onShowAnswer: () -> Unit,
-    onClose: () -> Unit
-) {
-    val vocab = state.currentVocab
-    val latestState by rememberUpdatedState(state)
-    val canLaunchVoice = vocab != null
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull()
-            if (!spoken.isNullOrBlank() && latestState.currentVocab != null) {
-                onInputChange(spoken)
-                onSubmit(spoken)
-            }
-        }
-    }
-    androidx.compose.runtime.LaunchedEffect(
-        state.vocabVoiceTriggerToken,
-        state.vocabInputMode,
-        vocab?.id
-    ) {
-        if (state.vocabInputMode == InputMode.VOICE && vocab != null) {
-            kotlinx.coroutines.delay(200)
-            launchVoiceRecognition(state.selectedLanguageId, vocab.nativeText, speechLauncher)
-        }
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Vocabulary Sprint", fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        val progressText = if (state.vocabTotal > 0) {
-            "${state.vocabIndex + 1} / ${state.vocabTotal}"
-        } else {
-            "0 / 0"
-        }
-        Text(text = progressText)
-        Spacer(modifier = Modifier.height(16.dp))
-        if (vocab != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(text = vocab.nativeText, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            // Show text input only when not using Word Bank.
-            if (state.vocabInputMode != InputMode.WORD_BANK) {
-                OutlinedTextField(
-                    value = state.vocabInputText,
-                    onValueChange = onInputChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(text = "Answer") }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            // Word Bank mode: show options when there are at least 2 choices.
-            if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.size >= 2) {
-                Text(
-                    text = "Choose the correct translation:",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    state.vocabWordBankWords.forEach { option ->
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                onInputChange(option)
-                                onSubmit(option)
-                            },
-                            label = { Text(text = option) }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            } else if (state.vocabInputMode == InputMode.WORD_BANK && state.vocabWordBankWords.size < 2) {
-                // If options are insufficient, fall back to text input.
-                OutlinedTextField(
-                    value = state.vocabInputText,
-                    onValueChange = onInputChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(text = "Answer (not enough words for word bank)") }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            state.vocabAnswerText?.let { answer ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Answer: $answer", color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TtsSpeakerButton(
-                        ttsState = state.ttsState,
-                        enabled = true,
-                        onClick = { onSpeak(answer) }
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            // Action row with Show Answer and Check buttons.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = onShowAnswer,
-                        enabled = state.vocabAnswerText == null
-                    ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                    }
-                }
-                Button(
-                    onClick = { onSubmit(state.vocabInputText) },
-                    modifier = Modifier.weight(1f),
-                    enabled = state.vocabInputText.isNotBlank() || state.vocabInputMode == InputMode.WORD_BANK
-                ) {
-                    Text(text = "Check")
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(72.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = vocab.nativeText, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                    }
-                }
-                Card(
-                    modifier = Modifier
-                        .width(96.dp)
-                        .height(72.dp)
-                ) {
-                    val isVoice = state.vocabInputMode == InputMode.VOICE
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        val micClick = { onRequestVoice() }
-                        if (isVoice) {
-                            FilledTonalIconButton(onClick = micClick, enabled = canLaunchVoice) {
-                                Icon(Icons.Default.Mic, contentDescription = "Voice")
-                            }
-                        } else {
-                            IconButton(onClick = micClick, enabled = canLaunchVoice) {
-                                Icon(Icons.Default.Mic, contentDescription = "Voice")
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        if (isVoice) {
-                            IconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
-                                Icon(Icons.Default.Keyboard, contentDescription = "Keyboard")
-                            }
-                        } else {
-                            FilledTonalIconButton(onClick = { onSetInputMode(InputMode.KEYBOARD) }) {
-                                Icon(Icons.Default.Keyboard, contentDescription = "Keyboard")
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        if (state.vocabInputMode == InputMode.WORD_BANK) {
-                            FilledTonalIconButton(onClick = { onSetInputMode(InputMode.WORD_BANK) }) {
-                                Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank")
-                            }
-                        } else {
-                            IconButton(onClick = { onSetInputMode(InputMode.WORD_BANK) }) {
-                                Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank")
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            Text(text = "No words")
         }
     }
 }

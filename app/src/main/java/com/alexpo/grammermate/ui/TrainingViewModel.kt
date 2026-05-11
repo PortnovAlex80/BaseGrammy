@@ -1358,20 +1358,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── Daily Practice ────────────────────────────────────────────────────
 
-    fun startDailyPractice(lessonLevel: Int) {
+    fun startDailyPractice(lessonLevel: Int): Boolean {
         val state = _uiState.value
-        val packId = state.activePackId ?: return
+        val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
-        val lessonId = state.selectedLessonId ?: return
+        val lessonId = state.selectedLessonId ?: return false
 
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
         val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
-        if (tasks.isEmpty()) return
+        if (tasks.isEmpty()) return false
 
         dailySessionHelper.startDailySession(tasks, lessonLevel)
+        return true
     }
 
     fun advanceDailyTask(): Boolean {

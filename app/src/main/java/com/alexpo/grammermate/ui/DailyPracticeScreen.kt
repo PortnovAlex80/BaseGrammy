@@ -17,23 +17,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,9 +46,9 @@ import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DailyTask
-import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.ui.helpers.BlockProgress
+import com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider
 
 @Composable
 fun DailyPracticeScreen(
@@ -68,7 +64,8 @@ fun DailyPracticeScreen(
     onAdvance: () -> Boolean,
     onSpeak: (String) -> Unit,
     onExit: () -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    languageId: String = "en"
 ) {
     if (!state.active && state.finishedToken) {
         DailyPracticeCompletionScreen(onExit = onExit)
@@ -80,7 +77,10 @@ fun DailyPracticeScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("No active session", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(
+                "No active session",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
         return
     }
@@ -102,15 +102,15 @@ fun DailyPracticeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         when (currentTask.blockType) {
-            DailyBlockType.TRANSLATE -> {
-                val task = currentTask as DailyTask.TranslateSentence
-                SentenceBlock(
-                    task = task,
-                    onSubmit = onSubmitSentence,
-                    onShowAnswer = onShowSentenceAnswer,
-                    onSpeak = onSpeak,
+            DailyBlockType.TRANSLATE,
+            DailyBlockType.VERBS -> {
+                CardSessionBlock(
+                    state = state,
+                    blockProgress = blockProgress,
                     onAdvance = onAdvance,
-                    onComplete = onComplete
+                    onComplete = onComplete,
+                    onExit = onExit,
+                    languageId = languageId
                 )
             }
             DailyBlockType.VOCAB -> {
@@ -124,19 +124,46 @@ fun DailyPracticeScreen(
                     onSpeak = onSpeak
                 )
             }
-            DailyBlockType.VERBS -> {
-                val task = currentTask as DailyTask.ConjugateVerb
-                VerbBlock(
-                    task = task,
-                    onSubmit = onSubmitVerb,
-                    onShowAnswer = onShowVerbAnswer,
-                    onSpeak = onSpeak,
-                    onAdvance = onAdvance,
-                    onComplete = onComplete
-                )
-            }
         }
     }
+}
+
+@Composable
+private fun ColumnScope.CardSessionBlock(
+    state: DailySessionState,
+    blockProgress: BlockProgress,
+    onAdvance: () -> Boolean,
+    onComplete: () -> Unit,
+    onExit: () -> Unit,
+    languageId: String
+) {
+    val blockKey = state.blockIndex to state.taskIndex
+    var blockComplete by remember { mutableStateOf(false) }
+
+    val provider = remember(blockKey) {
+        DailyPracticeSessionProvider(
+            tasks = state.tasks,
+            startOffset = state.taskIndex,
+            onBlockComplete = { blockComplete = true },
+            languageId = languageId
+        )
+    }
+
+    if (blockComplete) {
+        val hasMore = onAdvance()
+        blockComplete = false
+        if (!hasMore) {
+            onComplete()
+            return
+        }
+    }
+
+    TrainingCardSession(
+        contract = provider,
+        onExit = onExit,
+        onComplete = { blockComplete = true },
+        modifier = Modifier.weight(1f)
+    )
 }
 
 @Composable
@@ -144,16 +171,35 @@ private fun DailyPracticeHeader(
     blockProgress: BlockProgress,
     onExit: () -> Unit
 ) {
+    var showExitDialog by remember { mutableStateOf(false) }
     val blockLabel = when (blockProgress.blockType) {
         DailyBlockType.TRANSLATE -> "Translation"
         DailyBlockType.VOCAB -> "Vocabulary"
         DailyBlockType.VERBS -> "Verbs"
     }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Exit practice?") },
+            text = { Text("Your progress in this session will be lost.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitDialog = false
+                    onExit()
+                }) { Text("Exit") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) { Text("Stay") }
+            }
+        )
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onExit) {
+        IconButton(onClick = { showExitDialog = true }) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -198,177 +244,6 @@ private fun BlockProgressBar(blockProgress: BlockProgress) {
             text = "${blockProgress.globalPosition}/${blockProgress.totalTasks}",
             style = MaterialTheme.typography.labelSmall
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ColumnScope.SentenceBlock(
-    task: DailyTask.TranslateSentence,
-    onSubmit: (String) -> Boolean,
-    onShowAnswer: () -> String?,
-    onSpeak: (String) -> Unit,
-    onAdvance: () -> Boolean,
-    onComplete: () -> Unit
-) {
-    var inputText by remember { mutableStateOf("") }
-    var result by remember { mutableStateOf<Boolean?>(null) }
-    var shownAnswer by remember { mutableStateOf<String?>(null) }
-    var incorrectAttempts by remember { mutableStateOf(0) }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Translate to Italian",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = task.card.promptRu,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = { onSpeak(task.card.promptRu) }) {
-                    Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
-                }
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    if (result == null) {
-        val inputLabel = when (task.inputMode) {
-            InputMode.VOICE -> "Speak your answer"
-            InputMode.KEYBOARD -> "Type your answer"
-            InputMode.WORD_BANK -> "Build your answer"
-        }
-
-        OutlinedTextField(
-            value = inputText,
-            onValueChange = {
-                inputText = it
-                shownAnswer = null
-            },
-            label = { Text(inputLabel) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = shownAnswer == null
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = {
-                    val correct = onSubmit(inputText)
-                    if (correct) {
-                        result = true
-                    } else {
-                        incorrectAttempts++
-                        if (incorrectAttempts >= 3) {
-                            shownAnswer = onShowAnswer()
-                        }
-                    }
-                },
-                enabled = inputText.isNotBlank() && shownAnswer == null,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Check")
-            }
-            if (shownAnswer == null) {
-                IconButton(onClick = {
-                    shownAnswer = onShowAnswer()
-                }) {
-                    Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                }
-            }
-        }
-
-        AnimatedVisibility(visible = incorrectAttempts > 0 && result == null && shownAnswer == null) {
-            Text(
-                text = "Incorrect ($incorrectAttempts/3)",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-
-        if (shownAnswer != null && result == null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = shownAnswer ?: "",
-                    modifier = Modifier.padding(12.dp),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-        }
-    } else {
-        val isCorrect = result == true
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (isCorrect) Icons.Default.Check else Icons.Default.Close,
-                    contentDescription = null,
-                    tint = if (isCorrect) Color(0xFF4CAF50) else Color(0xFFE53935)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = task.card.acceptedAnswers.firstOrNull() ?: "",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.weight(1f))
-
-    if (result != null || shownAnswer != null) {
-        Button(
-            onClick = {
-                val hasMore = onAdvance()
-                if (!hasMore) onComplete()
-                inputText = ""
-                result = null
-                shownAnswer = null
-                incorrectAttempts = 0
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Continue")
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
-        }
     }
 }
 
@@ -505,204 +380,6 @@ private fun ColumnScope.VocabFlashcardBlock(
                 if (!hasMore) onComplete()
                 isFlipped = false
                 isRated = false
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Continue")
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ColumnScope.VerbBlock(
-    task: DailyTask.ConjugateVerb,
-    onSubmit: (String) -> Boolean,
-    onShowAnswer: () -> String?,
-    onSpeak: (String) -> Unit,
-    onAdvance: () -> Boolean,
-    onComplete: () -> Unit
-) {
-    var inputText by remember { mutableStateOf("") }
-    var result by remember { mutableStateOf<Boolean?>(null) }
-    var shownAnswer by remember { mutableStateOf<String?>(null) }
-    var incorrectAttempts by remember { mutableStateOf(0) }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (task.card.verb != null) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                        )
-                    ) {
-                        Text(
-                            text = task.card.verb,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
-                if (task.card.tense != null) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Text(
-                            text = task.card.tense,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "RU",
-                style = MaterialTheme.typography.labelMedium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = task.card.promptRu,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = { onSpeak(task.card.promptRu) }) {
-                    Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
-                }
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    if (result == null) {
-        OutlinedTextField(
-            value = inputText,
-            onValueChange = {
-                inputText = it
-                shownAnswer = null
-            },
-            label = { Text("Conjugate") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = shownAnswer == null
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = {
-                    val correct = onSubmit(inputText)
-                    if (correct) {
-                        result = true
-                    } else {
-                        incorrectAttempts++
-                        if (incorrectAttempts >= 3) {
-                            shownAnswer = onShowAnswer()
-                        }
-                    }
-                },
-                enabled = inputText.isNotBlank() && shownAnswer == null,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Check")
-            }
-            if (shownAnswer == null) {
-                IconButton(onClick = {
-                    shownAnswer = onShowAnswer()
-                }) {
-                    Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                }
-            }
-        }
-
-        AnimatedVisibility(visible = incorrectAttempts > 0 && result == null && shownAnswer == null) {
-            Text(
-                text = "Incorrect ($incorrectAttempts/3)",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-
-        if (shownAnswer != null && result == null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = shownAnswer ?: "",
-                    modifier = Modifier.padding(12.dp),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-        }
-    } else {
-        val isCorrect = result == true
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (isCorrect) Icons.Default.Check else Icons.Default.Close,
-                    contentDescription = null,
-                    tint = if (isCorrect) Color(0xFF4CAF50) else Color(0xFFE53935)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = task.card.answer,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.weight(1f))
-
-    if (result != null || shownAnswer != null) {
-        Button(
-            onClick = {
-                val hasMore = onAdvance()
-                if (!hasMore) onComplete()
-                inputText = ""
-                result = null
-                shownAnswer = null
-                incorrectAttempts = 0
             },
             modifier = Modifier.fillMaxWidth()
         ) {

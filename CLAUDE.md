@@ -23,8 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Flower state | Visual progress indicator: LOCKED → SEED → SPROUT → BLOOM → (WILTING → WILTED → GONE if neglected) |
 | Interval ladder | Spaced repetition schedule in days: [1, 2, 4, 7, 10, 14, 20, 28, 42, 56] |
 | Boss battle | End-of-lesson challenge testing pattern stability under pressure |
-| Elite mode | Infinite mixed review for long-term skill maintenance |
-| Vocab sprint | Vocabulary drill mode with 5-option word bank (1 correct + 4 distractors) |
+| Daily Practice | Unified session with 3 blocks: 10 translations, 5 vocab flashcards (Anki-style), 10 verb conjugations. Replaces former Elite mode and Vocab Sprint. |
 | Lesson pack | ZIP archive containing `manifest.json` + CSV lesson files, imported via Settings |
 | Active Set / Reserve Set | Two 150-card pools per lesson that rotate to prevent phrase memorization |
 
@@ -37,6 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`TrainingViewModel` is 3000+ lines** — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
 - **Project path contains Cyrillic** (`Разработка`) — `android.overridePathCheck=true` in gradle.properties is required
 - **Drill visibility is pack-scoped** — `hasVerbDrill`/`hasVocabDrill` check the active pack's manifest, not all installed packs. A pack without `verbDrill`/`vocabDrill` sections shows no drill tiles.
+- **`AppScreen.ELITE` and `AppScreen.VOCAB` enum values are kept for backward compat** — they redirect to HOME if restored from saved state. Do not remove them; removing would crash users with saved `currentScreen: "ELITE"` or `"VOCAB"` values.
 
 ---
 
@@ -304,12 +304,13 @@ All stores read/write YAML/CSV files in `context.filesDir/grammarmate/`. Key fil
 | File | Purpose |
 |------|---------|
 | `GrammarMateApp.kt` | Screen router: `GrammarMateApp()` composable, `AppScreen` enum, dialog orchestration, BackHandlers |
-| `TrainingViewModel.kt` | All business logic: session management, answer validation, word bank, mastery, boss/elite modes |
+| `TrainingViewModel.kt` | All business logic: session management, answer validation, word bank, mastery, boss/daily practice modes |
+| `DailyPracticeScreen.kt` | Daily Practice UI: 3-block session renderer (sentence translation, vocab flashcard, verb conjugation) |
 | `AppRoot.kt` | Entry point — checks backup restore status before showing main app |
 | `Theme.kt` | Material 3 theme |
 | `screens/*.kt` | Per-screen Composable files (HomeScreen, TrainingScreen, LessonRoadmapScreen, etc.) |
 | `components/*.kt` | Shared Composable components (dialogs, reusable UI) |
-| `helpers/*.kt` | ViewModel domain helpers (BossHelper, VocabHelper, etc.) — plain classes, NOT ViewModels |
+| `helpers/*.kt` | ViewModel domain helpers (BossHelper, VocabHelper, DailySessionHelper, DailySessionComposer, DailyPracticeSessionProvider, etc.) — plain classes, NOT ViewModels |
 
 ### Lesson Content
 
@@ -354,12 +355,12 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 
 **Decomposition rules:**
 
-1. **Screen files go in `ui/screens/`** — one file per major screen (Home, Lesson, Training, Vocab, Story, Elite, Ladder, Settings). Helper composables used only by that screen stay in the same file. Dialog composables triggered from navigation stay in GrammarMateApp.kt.
+1. **Screen files go in `ui/screens/`** — one file per major screen (Home, Lesson, Training, DailyPractice, Story, Ladder, Settings). Helper composables used only by that screen stay in the same file. Dialog composables triggered from navigation stay in GrammarMateApp.kt.
 2. **Shared components go in `ui/components/`** — composables used by 2+ screens (TTS/ASR download dialogs, welcome dialog).
 3. **ViewModel helpers go in `ui/helpers/`** — plain Kotlin classes that implement domain logic (boss, vocab, drill, elite, TTS/ASR, word bank). They receive a `TrainingStateAccess` interface (NOT ViewModels — no lifecycle). Helpers never call other helpers directly; all coordination flows through TrainingViewModel.
 4. **NEVER create a second ViewModel.** Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint.
 5. **GrammarMateApp.kt is a router.** It contains only `GrammarMateApp()` (screen routing, dialog state, BackHandlers), `AppScreen` enum, and dialog orchestration. All screen rendering is delegated to `ui/screens/`.
-6. **Helper dependency pattern:** helpers take `TrainingStateAccess` as a constructor parameter:
+6. **Helper dependency pattern:** helpers take `TrainingStateAccess` as a constructor parameter (defined in `DailySessionHelper.kt`):
    ```kotlin
    interface TrainingStateAccess {
        val uiState: StateFlow<TrainingUiState>
@@ -367,7 +368,7 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
        fun saveProgress()
    }
    ```
-   TrainingViewModel implements this interface. Helpers call `updateState { }` and `saveProgress()` through it.
+   TrainingViewModel provides this via an anonymous object. Helpers call `updateState { }` and `saveProgress()` through it.
 7. **Screen-scoped reset functions:** the ViewModel should have private `resetBossState()`, `resetVocabState()`, etc. functions that zero out the relevant fields in one `copy()` call. This gives encapsulation without nested data classes.
 8. **New feature fields:** if a feature adds 5+ fields to TrainingUiState, group them into a nested data class from the start. Do not retrofit the existing flat structure (deferred until ViewModel is under 1500 lines).
 9. **Extract in phases:** bug fixes first → UI file extraction (low risk) → ViewModel helper extraction (medium risk). Verify build after each extraction.

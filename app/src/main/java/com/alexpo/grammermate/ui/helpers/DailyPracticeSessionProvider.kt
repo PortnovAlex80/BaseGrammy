@@ -22,7 +22,8 @@ import com.alexpo.grammermate.data.TtsState
 class DailyPracticeSessionProvider(
     private val tasks: List<DailyTask>,
     private val startOffset: Int,
-    private val onBlockComplete: () -> Unit
+    private val onBlockComplete: () -> Unit,
+    override val languageId: String = "en"
 ) : CardSessionContract {
 
     private val blockCards: List<DailyTask> = tasks
@@ -42,6 +43,7 @@ class DailyPracticeSessionProvider(
 
     private var cachedWordBankCardId: String? = null
     private var cachedWordBank: List<String> = emptyList()
+    private var pendingInput: String = ""
 
     // ── Capabilities ─────────────────────────────────────────────────────
 
@@ -97,17 +99,19 @@ class DailyPracticeSessionProvider(
     // ── Actions ──────────────────────────────────────────────────────────
 
     override fun onInputChanged(text: String) {
-        // Handled by composable
+        pendingInput = text
     }
 
     override fun submitAnswer(): AnswerResult? {
-        return null // Use submitAnswerWithInput instead
-    }
-
-    fun submitAnswerWithInput(input: String): AnswerResult? {
         if (currentIndex >= blockCards.size) return null
         val task = blockCards[currentIndex]
         val card = taskToSessionCard(task) ?: return null
+
+        val input = if (currentInputMode == InputMode.WORD_BANK && _selectedWords.isNotEmpty()) {
+            _selectedWords.joinToString(" ")
+        } else {
+            pendingInput
+        }
 
         val isCorrect = card.acceptedAnswers.any { ans ->
             Normalizer.normalize(input) == Normalizer.normalize(ans)
@@ -117,9 +121,13 @@ class DailyPracticeSessionProvider(
             _pendingCard = card
             _pendingResult = AnswerResult(correct = true, displayAnswer = card.acceptedAnswers.first())
         }
-        // Wrong answers are handled by the composable (retry logic)
 
         return _pendingResult
+    }
+
+    fun submitAnswerWithInput(input: String): AnswerResult? {
+        pendingInput = input
+        return submitAnswer()
     }
 
     override fun showAnswer(): String? {
@@ -139,6 +147,7 @@ class DailyPracticeSessionProvider(
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
+        pendingInput = ""
 
         if (hadPending) {
             currentIndex++
