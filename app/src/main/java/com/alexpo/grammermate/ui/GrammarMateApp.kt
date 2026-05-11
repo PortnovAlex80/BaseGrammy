@@ -88,6 +88,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -131,6 +132,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun GrammarMateApp() {
@@ -144,6 +148,8 @@ fun GrammarMateApp() {
         var showWelcomeDialog by remember { mutableStateOf(false) }
         var showDailyResumeDialog by remember { mutableStateOf(false) }
         var pendingDailyLevel by remember { mutableStateOf(0) }
+        var isLoadingDaily by remember { mutableStateOf(false) }
+        val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
         val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
@@ -318,8 +324,14 @@ fun GrammarMateApp() {
                             pendingDailyLevel = level
                             showDailyResumeDialog = true
                         } else {
-                            val started = vm.startDailyPractice(level)
-                            if (started) screen = AppScreen.DAILY_PRACTICE
+                            isLoadingDaily = true
+                            dailyScope.launch {
+                                val started = withContext(Dispatchers.IO) {
+                                    vm.startDailyPractice(level)
+                                }
+                                isLoadingDaily = false
+                                if (started) screen = AppScreen.DAILY_PRACTICE
+                            }
                         }
                     },
                     hasVerbDrill = hasVerbDrill,
@@ -465,6 +477,29 @@ fun GrammarMateApp() {
                 }
             }
 
+            // Daily practice loading overlay
+            if (isLoadingDaily) {
+                androidx.compose.ui.window.Dialog(onDismissRequest = {}) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Loading session...",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            }
+
             if (screen == AppScreen.TRAINING && state.subLessonFinishedToken != lastFinishedToken.value) {
                 lastFinishedToken.value = state.subLessonFinishedToken
                 screen = AppScreen.LESSON
@@ -512,8 +547,14 @@ fun GrammarMateApp() {
                     confirmButton = {
                         TextButton(onClick = {
                             showDailyResumeDialog = false
-                            val resumed = vm.resumeDailyPractice()
-                            if (resumed) screen = AppScreen.DAILY_PRACTICE
+                            isLoadingDaily = true
+                            dailyScope.launch {
+                                val resumed = withContext(Dispatchers.IO) {
+                                    vm.resumeDailyPractice()
+                                }
+                                isLoadingDaily = false
+                                if (resumed) screen = AppScreen.DAILY_PRACTICE
+                            }
                         }) {
                             Text(text = "Continue")
                         }
@@ -521,8 +562,14 @@ fun GrammarMateApp() {
                     dismissButton = {
                         TextButton(onClick = {
                             showDailyResumeDialog = false
-                            val started = vm.startDailyPractice(pendingDailyLevel)
-                            if (started) screen = AppScreen.DAILY_PRACTICE
+                            isLoadingDaily = true
+                            dailyScope.launch {
+                                val started = withContext(Dispatchers.IO) {
+                                    vm.startDailyPractice(pendingDailyLevel)
+                                }
+                                isLoadingDaily = false
+                                if (started) screen = AppScreen.DAILY_PRACTICE
+                            }
                         }) {
                             Text(text = "Start fresh")
                         }
