@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LibraryBooks
@@ -44,6 +46,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
@@ -52,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +68,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -98,7 +104,11 @@ fun DailyPracticeScreen(
     ttsState: TtsState,
     onExit: () -> Unit,
     onComplete: () -> Unit,
-    languageId: String = "en"
+    languageId: String = "en",
+    onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
+    onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
+    isDailyBadSentence: (cardId: String) -> Boolean = { false },
+    onExportDailyBadSentences: () -> String? = { null }
 ) {
     var hasShownCompletionSparkle by remember { mutableStateOf(false) }
     val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
@@ -194,7 +204,11 @@ fun DailyPracticeScreen(
                     ttsState = ttsState,
                     languageId = languageId,
                     onPersistVerbProgress = onPersistVerbProgress,
-                    onCardPracticed = onCardPracticed
+                    onCardPracticed = onCardPracticed,
+                    onFlagDailyBadSentence = onFlagDailyBadSentence,
+                    onUnflagDailyBadSentence = onUnflagDailyBadSentence,
+                    isDailyBadSentence = isDailyBadSentence,
+                    onExportDailyBadSentences = onExportDailyBadSentences
                 )
             }
             DailyBlockType.VOCAB -> {
@@ -211,7 +225,12 @@ fun DailyPracticeScreen(
                             onComplete()
                         }
                     },
-                    onSpeak = onSpeak
+                    onSpeak = onSpeak,
+                    onFlagDailyBadSentence = onFlagDailyBadSentence,
+                    onUnflagDailyBadSentence = onUnflagDailyBadSentence,
+                    isDailyBadSentence = isDailyBadSentence,
+                    onExportDailyBadSentences = onExportDailyBadSentences,
+                    languageId = languageId
                 )
             }
         }
@@ -238,7 +257,11 @@ private fun ColumnScope.CardSessionBlock(
     ttsState: TtsState,
     languageId: String,
     onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {},
-    onCardPracticed: (DailyBlockType) -> Unit = {}
+    onCardPracticed: (DailyBlockType) -> Unit = {},
+    onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
+    onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
+    isDailyBadSentence: (cardId: String) -> Boolean = { false },
+    onExportDailyBadSentences: () -> String? = { null }
 ) {
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
@@ -273,6 +296,29 @@ private fun ColumnScope.CardSessionBlock(
                 // Track VOICE/KEYBOARD practiced cards for cursor advancement.
                 // The provider only calls onCardAdvanced for non-WORD_BANK modes.
                 onCardPracticed(task.blockType)
+            },
+            onFlagCard = { card, blockType ->
+                val mode = when (blockType) {
+                    DailyBlockType.TRANSLATE -> "daily_translate"
+                    DailyBlockType.VERBS -> "daily_verb"
+                    DailyBlockType.VOCAB -> "daily_vocab"
+                }
+                onFlagDailyBadSentence(
+                    card.id,
+                    languageId,
+                    card.promptRu,
+                    card.acceptedAnswers.joinToString(" / "),
+                    mode
+                )
+            },
+            onUnflagCard = { card, _ ->
+                onUnflagDailyBadSentence(card.id)
+            },
+            isCardFlagged = { card ->
+                isDailyBadSentence(card.id)
+            },
+            onExportFlagged = {
+                onExportDailyBadSentences()
             }
         )
     }
@@ -502,6 +548,16 @@ private fun DailyInputControls(
     voiceInputText: String?,
     onVoiceInputConsumed: () -> Unit
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    var showReportSheet by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    val reportCard = scope.currentCard
+    val reportText = if (reportCard != null) {
+        val targetText = reportCard.acceptedAnswers.joinToString(" / ")
+        "ID: ${reportCard.id}\nSource: ${reportCard.promptRu}\nTarget: $targetText"
+    } else {
+        ""
+    }
     // Apply voice input text to the text field when available
     LaunchedEffect(voiceInputText) {
         if (voiceInputText != null) {
@@ -717,6 +773,21 @@ private fun DailyInputControls(
                         Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                     }
                 }
+                // Report/Flag button
+                if (contract.supportsFlagging) {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        tooltip = { PlainTooltip { Text(text = "Report sentence") } },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(
+                            onClick = { if (hasCards) showReportSheet = true },
+                            enabled = hasCards
+                        ) {
+                            Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
+                        }
+                    }
+                }
                 Text(
                     text = when (contract.currentInputMode) {
                         InputMode.VOICE -> "Voice"
@@ -747,6 +818,98 @@ private fun DailyInputControls(
         ) {
             Text(text = "Check")
         }
+    }
+
+    // Report sheet
+    if (showReportSheet) {
+        val cardIsBad = contract.isCurrentCardFlagged()
+        ModalBottomSheet(
+            onDismissRequest = { showReportSheet = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Card options",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                if (reportCard != null) {
+                    Text(
+                        text = reportCard.promptRu,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                if (cardIsBad) {
+                    TextButton(
+                        onClick = {
+                            contract.unflagCurrentCard()
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Remove from bad sentences list")
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            contract.flagCurrentCard()
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add to bad sentences list")
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        val path = contract.exportFlaggedCards()
+                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                        showReportSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Export bad sentences to file")
+                }
+                TextButton(
+                    onClick = {
+                        if (reportText.isNotBlank()) {
+                            clipboardManager.setText(AnnotatedString(reportText))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy text")
+                }
+            }
+        }
+    }
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { exportMessage = null }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 
@@ -831,6 +994,7 @@ private fun BlockProgressBar(blockProgress: BlockProgress) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColumnScope.VocabFlashcardBlock(
     task: DailyTask.VocabFlashcard,
@@ -838,11 +1002,19 @@ private fun ColumnScope.VocabFlashcardBlock(
     onRate: (Int) -> Unit,
     onAdvance: () -> Boolean,
     onComplete: () -> Unit,
-    onSpeak: (String) -> Unit
+    onSpeak: (String) -> Unit,
+    onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
+    onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
+    isDailyBadSentence: (cardId: String) -> Boolean = { false },
+    onExportDailyBadSentences: () -> String? = { null },
+    languageId: String = "en"
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
     var isVoiceActive by remember { mutableStateOf(false) }
     var voiceRecognizedText by remember { mutableStateOf<String?>(null) }
+    var showReportSheet by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    val clipboardManager = LocalClipboardManager.current
 
     val promptText = when (task.direction) {
         VocabDrillDirection.IT_TO_RU -> task.word.word
@@ -899,8 +1071,22 @@ private fun ColumnScope.VocabFlashcardBlock(
 
             // TTS button for the word
             Spacer(modifier = Modifier.height(4.dp))
-            IconButton(onClick = { onSpeak(promptText) }) {
-                Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { onSpeak(promptText) }) {
+                    Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = { showReportSheet = true }) {
+                    Icon(
+                        Icons.Default.ReportProblem,
+                        contentDescription = "Report word",
+                        tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error
+                               else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // Answer text (always visible, smaller)
@@ -986,6 +1172,101 @@ private fun ColumnScope.VocabFlashcardBlock(
                 Text(label, fontSize = 12.sp)
             }
         }
+    }
+
+    // Report sheet for vocab flashcard
+    if (showReportSheet) {
+        val word = task.word
+        val cardIsBad = isDailyBadSentence(word.id)
+        ModalBottomSheet(
+            onDismissRequest = { showReportSheet = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Word options",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "${word.word} — ${word.meaningRu ?: ""}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                if (cardIsBad) {
+                    TextButton(
+                        onClick = {
+                            onUnflagDailyBadSentence(word.id)
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Remove from bad sentences list")
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            onFlagDailyBadSentence(
+                                word.id,
+                                languageId,
+                                word.meaningRu ?: word.word,
+                                word.word,
+                                "daily_vocab"
+                            )
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add to bad sentences list")
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        val path = onExportDailyBadSentences()
+                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                        showReportSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Export bad sentences to file")
+                }
+                TextButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString("Word: ${word.word}\nMeaning: ${word.meaningRu}"))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy text")
+                }
+            }
+        }
+    }
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { exportMessage = null }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 

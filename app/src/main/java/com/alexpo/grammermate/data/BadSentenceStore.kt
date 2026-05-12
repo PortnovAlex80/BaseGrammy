@@ -10,6 +10,7 @@ data class BadSentenceEntry(
     val languageId: String,
     val sentence: String,
     val translation: String,
+    val mode: String = "training",
     val addedAtMs: Long = System.currentTimeMillis()
 )
 
@@ -42,6 +43,7 @@ class BadSentenceStore(private val context: Context) {
                         languageId = map["languageId"] as? String ?: "",
                         sentence = map["sentence"] as? String ?: "",
                         translation = map["translation"] as? String ?: "",
+                        mode = map["mode"] as? String ?: "training",
                         addedAtMs = (map["addedAtMs"] as? Number)?.toLong() ?: 0L
                     )
                 }.toMutableList()
@@ -62,6 +64,7 @@ class BadSentenceStore(private val context: Context) {
                             languageId = map["languageId"] as? String ?: "",
                             sentence = map["sentence"] as? String ?: "",
                             translation = map["translation"] as? String ?: "",
+                            mode = map["mode"] as? String ?: "training",
                             addedAtMs = (map["addedAtMs"] as? Number)?.toLong() ?: 0L
                         )
                     }.toMutableList()
@@ -96,6 +99,7 @@ class BadSentenceStore(private val context: Context) {
                         languageId = map["languageId"] as? String ?: "",
                         sentence = map["sentence"] as? String ?: "",
                         translation = map["translation"] as? String ?: "",
+                        mode = map["mode"] as? String ?: "verb_drill",
                         addedAtMs = (map["addedAtMs"] as? Number)?.toLong() ?: 0L
                     )
                 }
@@ -171,8 +175,8 @@ class BadSentenceStore(private val context: Context) {
         persist()
     }
 
-    fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String) {
-        addBadSentence(packId, BadSentenceEntry(cardId, languageId, sentence, translation))
+    fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String = "training") {
+        addBadSentence(packId, BadSentenceEntry(cardId, languageId, sentence, translation, mode))
     }
 
     fun removeBadSentence(packId: String, cardId: String) {
@@ -224,9 +228,73 @@ class BadSentenceStore(private val context: Context) {
         exportDir.mkdirs()
         val exportFile = File(exportDir, "bad_sentences_$packId.txt")
         val lines = entries.map { entry ->
-            "ID: ${entry.cardId}\nSource: ${entry.sentence}\nTarget: ${entry.translation}\nLanguage: ${entry.languageId}\n---"
+            "ID: ${entry.cardId}\nSource: ${entry.sentence}\nTarget: ${entry.translation}\nLanguage: ${entry.languageId}\nMode: ${entry.mode}\n---"
         }
         AtomicFileWriter.writeText(exportFile, lines.joinToString("\n"))
+        return exportFile
+    }
+
+    /**
+     * Unified export: produces one file with all bad sentences grouped by
+     * language, then pack, then mode. Returns the exported file.
+     */
+    fun exportUnified(): File {
+        ensureLoaded()
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val exportDir = File(downloadsDir, "BaseGrammy")
+        exportDir.mkdirs()
+        val exportFile = File(exportDir, "bad_sentences_all.txt")
+
+        // Collect all entries with their packId
+        val allEntries = mutableListOf<Triple<String, BadSentenceEntry, String>>() // packId, entry, languageId
+        for ((packId, entries) in packs) {
+            for (entry in entries) {
+                allEntries.add(Triple(packId, entry, entry.languageId))
+            }
+        }
+
+        if (allEntries.isEmpty()) {
+            AtomicFileWriter.writeText(exportFile, "No bad sentences reported.")
+            return exportFile
+        }
+
+        val sb = StringBuilder()
+        sb.appendLine("=== Bad Sentences Report ===")
+        sb.appendLine("Generated: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).format(System.currentTimeMillis())}")
+        sb.appendLine("Total entries: ${allEntries.size}")
+        sb.appendLine()
+
+        // Group by language
+        val byLanguage = allEntries.groupBy { it.third }
+        for ((languageId, langEntries) in byLanguage.toSortedMap()) {
+            sb.appendLine("## Language: ${languageId.ifBlank { "(unknown)" }}")
+            sb.appendLine()
+
+            // Group by pack
+            val byPack = langEntries.groupBy { it.first }
+            for ((packId, packEntries) in byPack.toSortedMap()) {
+                sb.appendLine("  ### Pack: $packId")
+                sb.appendLine()
+
+                // Group by mode
+                val byMode = packEntries.groupBy { it.second.mode }
+                for ((mode, modeEntries) in byMode.toSortedMap()) {
+                    sb.appendLine("    #### Mode: $mode (${modeEntries.size} entries)")
+                    sb.appendLine()
+                    for ((_, entry, _) in modeEntries) {
+                        val date = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).format(entry.addedAtMs)
+                        sb.appendLine("    - ID: ${entry.cardId}")
+                        sb.appendLine("      Source: ${entry.sentence}")
+                        sb.appendLine("      Target: ${entry.translation}")
+                        sb.appendLine("      Reported: $date")
+                        sb.appendLine()
+                    }
+                }
+            }
+            sb.appendLine()
+        }
+
+        AtomicFileWriter.writeText(exportFile, sb.toString())
         return exportFile
     }
 
@@ -249,6 +317,7 @@ class BadSentenceStore(private val context: Context) {
                     "languageId" to entry.languageId,
                     "sentence" to entry.sentence,
                     "translation" to entry.translation,
+                    "mode" to entry.mode,
                     "addedAtMs" to entry.addedAtMs
                 )
             }

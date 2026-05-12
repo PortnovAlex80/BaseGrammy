@@ -479,7 +479,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             cardId = card.id,
             languageId = _uiState.value.loadedLanguageId ?: "",
             sentence = card.promptRu,
-            translation = card.answer
+            translation = card.answer,
+            mode = "verb_drill"
         )
         _uiState.update {
             it.copy(
@@ -511,11 +512,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun exportBadSentences(): String? {
         if (activePackIds.isEmpty()) return null
-        // Export all packs' bad sentences; use the first non-empty pack's file
+        // Use unified export for all packs
         for (packId in activePackIds) {
             val entries = badSentenceStore.getBadSentences(packId)
             if (entries.isNotEmpty()) {
-                val file = badSentenceStore.exportToTextFile(packId)
+                val file = badSentenceStore.exportUnified()
                 return file.absolutePath
             }
         }

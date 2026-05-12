@@ -399,6 +399,18 @@ fun GrammarMateApp() {
                             // Do NOT navigate to HOME here — the completion screen needs to render.
                             // The completion screen's "Back to Home" button calls onExit which does the navigation.
                             vm.cancelDailySession()
+                        },
+                        onFlagDailyBadSentence = { cardId, langId, sentence, translation, mode ->
+                            vm.flagDailyBadSentence(cardId, langId, sentence, translation, mode)
+                        },
+                        onUnflagDailyBadSentence = { cardId ->
+                            vm.unflagDailyBadSentence(cardId)
+                        },
+                        isDailyBadSentence = { cardId ->
+                            vm.isDailyBadSentence(cardId)
+                        },
+                        onExportDailyBadSentences = {
+                            vm.exportDailyBadSentences()
                         }
                     )
                 }

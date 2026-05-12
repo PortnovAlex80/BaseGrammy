@@ -23,10 +23,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Flip
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,9 +43,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,7 +59,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -144,7 +152,11 @@ fun VocabDrillScreen(
                 onStartVoice = onStartVoice,
                 onAutoStartVoice = onStartVoice,
                 onSkipVoice = viewModel::skipVoice,
-                onExit = viewModel::exitSession
+                onExit = viewModel::exitSession,
+                onFlagBadSentence = viewModel::flagBadSentence,
+                onUnflagBadSentence = viewModel::unflagBadSentence,
+                isBadSentence = viewModel::isBadSentence,
+                onExportBadSentences = viewModel::exportBadSentences
             )
         }
     } else {
@@ -347,6 +359,7 @@ private fun VocabDrillSelectionScreen(
 
 // -- Card Screen --
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VocabDrillCardScreen(
     session: VocabDrillSessionState,
@@ -359,11 +372,24 @@ private fun VocabDrillCardScreen(
     onStartVoice: () -> Unit,
     onAutoStartVoice: () -> Unit,
     onSkipVoice: () -> Unit,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    onFlagBadSentence: () -> Unit = {},
+    onUnflagBadSentence: () -> Unit = {},
+    isBadSentence: () -> Boolean = { false },
+    onExportBadSentences: () -> String? = { null }
 ) {
     val card = session.cards.getOrElse(session.currentIndex) { return }
     val totalCards = session.cards.size
     val currentIndex = session.currentIndex + 1 // 1-based for display
+
+    var showReportSheet by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    val clipboardManager = LocalClipboardManager.current
+    val reportText = buildString {
+        appendLine("ID: ${card.word.id}")
+        appendLine("Word: ${card.word.word}")
+        appendLine("Meaning: ${card.word.meaningRu}")
+    }
 
     // Auto-flip when voice is completed with a result
     LaunchedEffect(session.voiceCompleted, session.voiceResult) {
@@ -389,7 +415,7 @@ private fun VocabDrillCardScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header with back + progress
+        // Header with back + progress + report
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -402,11 +428,22 @@ private fun VocabDrillCardScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
             }
-            Text(
-                text = "$currentIndex/$totalCards",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "$currentIndex/$totalCards",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = { showReportSheet = true }) {
+                    Icon(
+                        Icons.Default.ReportProblem,
+                        contentDescription = "Report word",
+                        tint = if (isBadSentence()) MaterialTheme.colorScheme.error
+                               else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -555,6 +592,96 @@ private fun VocabDrillCardScreen(
                 }
             }
         }
+    }
+
+    // Report sheet
+    if (showReportSheet) {
+        val cardIsBad = isBadSentence()
+        ModalBottomSheet(
+            onDismissRequest = { showReportSheet = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Word options",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "${card.word.word} — ${card.word.meaningRu ?: ""}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                if (cardIsBad) {
+                    TextButton(
+                        onClick = {
+                            onUnflagBadSentence()
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Remove from bad sentences list")
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            onFlagBadSentence()
+                            showReportSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add to bad sentences list")
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        val path = onExportBadSentences()
+                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                        showReportSheet = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Export bad sentences to file")
+                }
+                TextButton(
+                    onClick = {
+                        if (reportText.isNotBlank()) {
+                            clipboardManager.setText(AnnotatedString(reportText))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy text")
+                }
+            }
+        }
+    }
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { exportMessage = null }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 

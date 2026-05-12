@@ -37,10 +37,15 @@ class DailyPracticeSessionProvider(
     private val onStopTts: () -> Unit = {},
     private val ttsStateProvider: () -> TtsState = { TtsState.IDLE },
     private val onExit: () -> Unit = {},
-    private val onCardAdvanced: (DailyTask) -> Unit = {}
+    private val onCardAdvanced: (DailyTask) -> Unit = {},
+    private val onFlagCard: ((SessionCard, DailyBlockType) -> Unit)? = null,
+    private val onUnflagCard: ((SessionCard, DailyBlockType) -> Unit)? = null,
+    private val isCardFlagged: ((SessionCard) -> Boolean)? = null,
+    private val onExportFlagged: (() -> String?)? = null
 ) : CardSessionContract {
 
     /** All tasks matching the requested block type, capped by the global per-block limit. */
+    private val blockType: DailyBlockType = blockType
     private val blockCards: List<DailyTask> = tasks
         .filter { it.blockType == blockType }
         .take(DailySessionComposer.CARDS_PER_BLOCK)
@@ -82,7 +87,7 @@ class DailyPracticeSessionProvider(
     override val supportsTts: Boolean get() = true
     override val supportsVoiceInput: Boolean get() = true
     override val supportsWordBank: Boolean get() = true
-    override val supportsFlagging: Boolean get() = false
+    override val supportsFlagging: Boolean get() = true
     override val supportsNavigation: Boolean get() = true
     override val supportsPause: Boolean get() = true
 
@@ -360,6 +365,31 @@ class DailyPracticeSessionProvider(
     fun currentVerbDrillCard(): VerbDrillCard? {
         val task = blockCards.getOrNull(currentIndex) ?: return null
         return (task as? DailyTask.ConjugateVerb)?.card
+    }
+
+    // ── Flagging ──────────────────────────────────────────────────────────
+
+    override fun flagCurrentCard() {
+        val card = currentCard ?: return
+        onFlagCard?.invoke(card, blockType)
+    }
+
+    override fun unflagCurrentCard() {
+        val card = currentCard ?: return
+        onUnflagCard?.invoke(card, blockType)
+    }
+
+    override fun isCurrentCardFlagged(): Boolean {
+        val card = currentCard ?: return false
+        return isCardFlagged?.invoke(card) ?: false
+    }
+
+    override fun hideCurrentCard() {
+        // No-op for daily practice — flagging is enough, no card hiding
+    }
+
+    override fun exportFlaggedCards(): String? {
+        return onExportFlagged?.invoke()
     }
 
     override fun requestExit() {

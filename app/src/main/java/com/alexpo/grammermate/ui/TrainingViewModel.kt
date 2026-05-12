@@ -3438,7 +3438,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             cardId = card.id,
             languageId = state.selectedLanguageId,
             sentence = card.promptRu,
-            translation = card.acceptedAnswers.joinToString(" / ")
+            translation = card.acceptedAnswers.joinToString(" / "),
+            mode = "training"
         )
         _uiState.update { it.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId)) }
         if (state.isDrillMode) {
@@ -3463,7 +3464,43 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val packId = _uiState.value.activePackId ?: return null
         val entries = badSentenceStore.getBadSentences(packId)
         if (entries.isEmpty()) return null
-        val file = badSentenceStore.exportToTextFile(packId)
+        val file = badSentenceStore.exportUnified()
+        return file.absolutePath
+    }
+
+    // ── Daily Practice Bad Sentence Support ────────────────────────────────
+
+    private val dailyBadCardIds = mutableSetOf<String>()
+
+    fun flagDailyBadSentence(cardId: String, languageId: String, sentence: String, translation: String, mode: String) {
+        val packId = _uiState.value.activePackId ?: return
+        badSentenceStore.addBadSentence(
+            packId = packId,
+            cardId = cardId,
+            languageId = languageId,
+            sentence = sentence,
+            translation = translation,
+            mode = mode
+        )
+        dailyBadCardIds.add(cardId)
+    }
+
+    fun unflagDailyBadSentence(cardId: String) {
+        val packId = _uiState.value.activePackId ?: return
+        badSentenceStore.removeBadSentence(packId, cardId)
+        dailyBadCardIds.remove(cardId)
+    }
+
+    fun isDailyBadSentence(cardId: String): Boolean {
+        return dailyBadCardIds.contains(cardId) ||
+            _uiState.value.activePackId?.let { badSentenceStore.isBadSentence(it, cardId) } == true
+    }
+
+    fun exportDailyBadSentences(): String? {
+        val packId = _uiState.value.activePackId ?: return null
+        val entries = badSentenceStore.getBadSentences(packId)
+        if (entries.isEmpty()) return null
+        val file = badSentenceStore.exportUnified()
         return file.absolutePath
     }
 

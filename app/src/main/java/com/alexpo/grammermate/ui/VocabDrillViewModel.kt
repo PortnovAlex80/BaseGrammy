@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
@@ -27,6 +28,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private val logTag = "VocabDrillVM"
     private val lessonStore = LessonStore(application)
     private var masteryStore = WordMasteryStore(application)
+    private val badSentenceStore = BadSentenceStore(application)
     private val ttsEngine = TtsEngine(application)
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
@@ -446,6 +448,57 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun normalizeForMatch(text: String): String {
         return text.trim().lowercase().replace(Regex("[.!?,;:]$"), "")
+    }
+
+    // ── Bad Sentence Support ──────────────────────────────────────────────
+
+    /**
+     * Flag the current vocab card as a bad sentence.
+     * Uses activePackId if available, otherwise falls back to "__vocab_drill__".
+     */
+    fun flagBadSentence() {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+        val card = session.cards[index]
+        val packId = activePackId ?: "__vocab_drill__"
+        val languageId = _uiState.value.loadedLanguageId ?: ""
+
+        val word = card.word
+        badSentenceStore.addBadSentence(
+            packId = packId,
+            cardId = word.id,
+            languageId = languageId,
+            sentence = word.meaningRu ?: word.word,
+            translation = word.word,
+            mode = "vocab_drill"
+        )
+    }
+
+    fun unflagBadSentence() {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+        val card = session.cards[index]
+        val packId = activePackId ?: "__vocab_drill__"
+        badSentenceStore.removeBadSentence(packId, card.word.id)
+    }
+
+    fun isBadSentence(): Boolean {
+        val session = _uiState.value.session ?: return false
+        val index = session.currentIndex
+        if (index >= session.cards.size) return false
+        val card = session.cards[index]
+        val packId = activePackId ?: "__vocab_drill__"
+        return badSentenceStore.isBadSentence(packId, card.word.id)
+    }
+
+    fun exportBadSentences(): String? {
+        val packId = activePackId ?: "__vocab_drill__"
+        val entries = badSentenceStore.getBadSentences(packId)
+        if (entries.isEmpty()) return null
+        val file = badSentenceStore.exportToTextFile(packId)
+        return file.absolutePath
     }
 
     override fun onCleared() {
