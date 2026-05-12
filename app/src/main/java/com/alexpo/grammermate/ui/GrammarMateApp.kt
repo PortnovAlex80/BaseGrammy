@@ -2751,7 +2751,8 @@ private fun TrainingScreen(
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
     isBadSentence: () -> Boolean = { false },
-    onStartOfflineRecognition: () -> Unit = {}
+    onStartOfflineRecognition: () -> Unit = {},
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val hasCards = state.currentCard != null
     val scrollState = rememberScrollState()
@@ -2885,7 +2886,8 @@ private fun TrainingScreen(
                 onHideCard,
                 onExportBadSentences,
                 isBadSentence,
-                onStartOfflineRecognition
+                onStartOfflineRecognition,
+                hintLevel
             )
             ResultBlock(state, onSpeak = onTtsSpeak)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
@@ -3119,7 +3121,8 @@ private fun AnswerBox(
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
     isBadSentence: () -> Boolean = { false },
-    onStartOfflineRecognition: () -> Unit = {}
+    onStartOfflineRecognition: () -> Unit = {},
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val latestState by rememberUpdatedState(state)
     val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE

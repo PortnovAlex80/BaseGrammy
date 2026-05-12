@@ -1131,7 +1131,6 @@ private fun ColumnScope.VocabFlashcardBlock(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            )
         }
     }
 
