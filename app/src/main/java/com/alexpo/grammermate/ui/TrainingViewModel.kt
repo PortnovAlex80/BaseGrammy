@@ -31,6 +31,7 @@ import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
+import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.LessonMasteryState
@@ -43,6 +44,7 @@ import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.DailyBlockType
+import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.HiddenCardStore
@@ -64,6 +66,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+import com.alexpo.grammermate.ui.helpers.DailySessionComposer
 import com.alexpo.grammermate.ui.helpers.DailySessionHelper
 import com.alexpo.grammermate.ui.helpers.TrainingStateAccess
 
@@ -130,6 +134,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         override fun saveProgress() = this@TrainingViewModel.saveProgress()
     })
 
+
     init {
         soundPool.setOnLoadCompleteListener { _, sampleId, status ->
             if (status == 0) {
@@ -161,12 +166,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
         val lessonIdWasValid = progress.lessonId != null &&
             lessons.any { it.id == progress.lessonId }
-        val restoredScreen = if (!lessonIdWasValid &&
-            progress.currentScreen in listOf("TRAINING", "STORY", "VOCAB")) {
-            "LESSON"
-        } else {
-            progress.currentScreen
-        }
+        val restoredScreen = "HOME"
         val streakData = streakStore.getCurrentStreak(selectedLanguageId)
         // Resolve activePackId: prefer saved value if pack still exists,
         // then derive from lessonId, then fall back to first pack for language.
@@ -1353,121 +1353,130 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshFlowerStates()
     }
 
-    // ── Daily Practice v2: Sequential Sub-Lesson Pipeline ───────────────
+    // ── Daily Practice ────────────────────────────────────────────────────
 
-    fun startDailyPractice(): Boolean {
+    fun hasResumableDailySession(): Boolean {
+        val progress = progressStore.load()
+        return progress.dailyLevel > 0 && progress.dailyTaskIndex > 0
+    }
+
+    fun startDailyPractice(lessonLevel: Int): Boolean {
         val state = _uiState.value
-        val lessons = state.lessons
-        if (lessons.isEmpty()) return false
+        val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return false
 
-        // Build schedules for all lessons
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        val schedules = MixedReviewScheduler(blockSize).build(lessons)
+        val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+        val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        if (tasks.isEmpty()) return false
 
-        // Find resume position based on mastery
-        var totalSubLessons = 0
-        var startLessonIndex = 0
-        var startSubLessonIndex = 0
-        var foundIncomplete = false
+        dailySessionHelper.startDailySession(tasks, lessonLevel)
+        return true
+    }
 
-        for ((lessonIdx, lesson) in lessons.withIndex()) {
-            val schedule = schedules[lesson.id] ?: continue
-            val mastery = masteryStore.get(lesson.id, langId)
+    fun resumeDailyPractice(): Boolean {
+        val progress = progressStore.load()
+        val lessonLevel = progress.dailyLevel
+        val savedTaskIndex = progress.dailyTaskIndex
+        if (lessonLevel <= 0) return false
 
-            for ((subIdx, subLesson) in schedule.subLessons.withIndex()) {
-                if (!foundIncomplete) {
-                    val lessonCardIds = lesson.cards.map { it.id }.toSet()
-                    val allShown = subLesson.cards.all { card ->
-                        !lessonCardIds.contains(card.id) || mastery?.shownCardIds?.contains(card.id) == true
-                    }
-                    if (!allShown) {
-                        startLessonIndex = lessonIdx
-                        startSubLessonIndex = subIdx
-                        foundIncomplete = true
-                    }
-                }
-                totalSubLessons++
-            }
+        val state = _uiState.value
+        val packId = state.activePackId ?: return false
+        val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return false
+
+        val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+        val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        if (tasks.isEmpty()) return false
+
+        dailySessionHelper.startDailySession(tasks, lessonLevel)
+        if (savedTaskIndex > 0 && savedTaskIndex < tasks.size) {
+            dailySessionHelper.fastForwardTo(savedTaskIndex)
         }
-
-        if (!foundIncomplete && totalSubLessons > 0) {
-            // All complete -- start from beginning
-            startLessonIndex = 0
-            startSubLessonIndex = 0
-        }
-
-        dailySessionHelper.startDailyPipeline(startLessonIndex, startSubLessonIndex, totalSubLessons, 0)
         return true
     }
 
     fun advanceDailyTask(): Boolean {
+        return dailySessionHelper.nextTask()
+    }
+
+    fun advanceDailyBlock(): Boolean {
+        return dailySessionHelper.advanceToNextBlock()
+    }
+
+    fun repeatDailyBlock(): Boolean {
         val state = _uiState.value
-        val lessons = state.lessons
+        val ds = state.dailySession
+        if (!ds.active) return false
+        val blockType = dailySessionHelper.getCurrentBlockType() ?: return false
+        val packId = state.activePackId ?: return false
+        val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return false
+        val lessonLevel = ds.level
 
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        val schedules = MixedReviewScheduler(blockSize).build(lessons)
+        val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+        val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val newTasks = composer.rebuildBlock(blockType, lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        if (newTasks.isEmpty()) return false
 
-        return dailySessionHelper.advanceToNextSubLesson(lessons, schedules)
+        dailySessionHelper.replaceCurrentBlock(newTasks)
+        return true
     }
 
     fun cancelDailySession() {
         dailySessionHelper.endSession()
     }
 
-    fun getDailyCurrentCards(): List<SentenceCard> {
-        val state = _uiState.value
-        val ds = state.dailySession
-        if (!ds.active) return emptyList()
-
-        val lessons = state.lessons
-        val lesson = lessons.getOrNull(ds.lessonIndex) ?: return emptyList()
-
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        val schedules = MixedReviewScheduler(blockSize).build(lessons)
-        val schedule = schedules[lesson.id] ?: return emptyList()
-        val subLesson = schedule.subLessons.getOrNull(ds.subLessonIndex) ?: return emptyList()
-
-        val hiddenIds = hiddenCardStore.getHiddenCardIds()
-        return subLesson.cards.filter { it.id !in hiddenIds }
+    fun getDailyCurrentTask(): DailyTask? {
+        return dailySessionHelper.getCurrentTask()
     }
 
-    fun getDailyLessonTitle(): String {
-        val ds = _uiState.value.dailySession
-        val lesson = _uiState.value.lessons.getOrNull(ds.lessonIndex)
-        return lesson?.title ?: "Lesson ${ds.lessonIndex + 1}"
+    fun getDailyBlockProgress(): com.alexpo.grammermate.ui.helpers.BlockProgress {
+        return dailySessionHelper.getBlockProgress()
     }
 
-    fun getDailySubLessonLabel(): String {
-        val ds = _uiState.value.dailySession
-        return "Sub-lesson ${ds.subLessonIndex + 1}"
-    }
-
-    fun getDailyProgress(): com.alexpo.grammermate.ui.helpers.DailyPipelineProgress {
-        return dailySessionHelper.getProgress()
-    }
-
-    fun onDailyAnswerChecked(input: String, correct: Boolean, inputMode: InputMode) {
-        val state = _uiState.value
-        val ds = state.dailySession
-        val lesson = state.lessons.getOrNull(ds.lessonIndex) ?: return
-
+    fun submitDailySentenceAnswer(input: String): Boolean {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence ?: return false
+        val card = task.card
+        val normalized = Normalizer.normalize(input)
+        val correct = card.acceptedAnswers.any { Normalizer.normalize(it) == normalized }
         if (correct) {
             playSuccessSound()
-            if (inputMode != InputMode.WORD_BANK) {
-                val cards = getDailyCurrentCards()
-                val card = cards.firstOrNull {
-                    it.acceptedAnswers.any { ans ->
-                        Normalizer.normalize(ans) == Normalizer.normalize(input)
-                    }
-                }
-                if (card != null) {
-                    masteryStore.recordCardShow(lesson.id, state.selectedLanguageId, card.id)
-                }
-            }
         } else {
             playErrorSound()
         }
+        return correct
+    }
+
+    fun submitDailyVerbAnswer(input: String): Boolean {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.ConjugateVerb ?: return false
+        val card = task.card
+        val normalized = Normalizer.normalize(input)
+        val correct = card.acceptedAnswers.any { Normalizer.normalize(it) == normalized }
+        if (correct) {
+            playSuccessSound()
+        } else {
+            playErrorSound()
+        }
+        return correct
+    }
+
+    fun getDailySentenceAnswer(): String? {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence ?: return null
+        return task.card.acceptedAnswers.firstOrNull()
+    }
+
+    fun getDailyVerbAnswer(): String? {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.ConjugateVerb ?: return null
+        return task.card.answer
     }
 
     private fun playSuccessSound() {
@@ -2181,8 +2190,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds),
                 currentScreen = state.currentScreen,
                 activePackId = state.activePackId,
-                dailyLessonIndex = if (state.dailySession.active) state.dailySession.lessonIndex else 0,
-                dailySubLessonIndex = if (state.dailySession.active) state.dailySession.subLessonIndex else 0
+                dailyLevel = if (state.dailySession.active) state.dailySession.level else 0,
+                dailyTaskIndex = if (state.dailySession.active) state.dailySession.taskIndex else 0
             )
         )
 

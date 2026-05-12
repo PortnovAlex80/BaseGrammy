@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
         val profileFile = File(baseDir, "profile.yaml")
         val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
         val profile = ProfileStore(this).load()
-        val shouldRestore = !hasFullData || profile.userName == "GrammarMateUser"
+        val shouldRestore = !hasFullData
 
         if (storedTreeUri != null) {
             // We have a stored URI - use it for restore if needed
@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
             val profileFile = File(baseDir, "profile.yaml")
             val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
             val profile = ProfileStore(this).load()
-            val shouldRestore = !hasFullData || profile.userName == "GrammarMateUser"
+            val shouldRestore = !hasFullData
             startLegacyRestore(shouldRestore)
         } else {
             Toast.makeText(
@@ -155,10 +155,14 @@ class MainActivity : ComponentActivity() {
     private fun startRestoreFromUri(uri: Uri) {
         RestoreNotifier.start()
         lifecycleScope.launch {
-            val restored = withContext(Dispatchers.IO) {
-                backupManager.restoreFromBackupUri(uri)
+            try {
+                val restored = withContext(Dispatchers.IO) {
+                    backupManager.restoreFromBackupUri(uri)
+                }
+                RestoreNotifier.markComplete(restored)
+            } catch (e: Exception) {
+                RestoreNotifier.markComplete(false)
             }
-            RestoreNotifier.markComplete(restored)
         }
     }
 
@@ -169,16 +173,20 @@ class MainActivity : ComponentActivity() {
         }
         RestoreNotifier.start()
         lifecycleScope.launch {
-            val restored = withContext(Dispatchers.IO) {
-                if (!backupManager.hasBackup()) {
-                    false
-                } else {
-                    val backups = backupManager.getAvailableBackups()
-                    val latest = backups.firstOrNull() ?: return@withContext false
-                    backupManager.restoreFromBackup(latest.path)
+            try {
+                val restored = withContext(Dispatchers.IO) {
+                    if (!backupManager.hasBackup()) {
+                        false
+                    } else {
+                        val backups = backupManager.getAvailableBackups()
+                        val latest = backups.firstOrNull() ?: return@withContext false
+                        backupManager.restoreFromBackup(latest.path)
+                    }
                 }
+                RestoreNotifier.markComplete(restored)
+            } catch (e: Exception) {
+                RestoreNotifier.markComplete(false)
             }
-            RestoreNotifier.markComplete(restored)
         }
     }
 }

@@ -48,8 +48,8 @@ class ProgressStore(private val context: Context) {
                 ?: emptyList(),
             currentScreen = payload["currentScreen"] as? String ?: "HOME",
             activePackId = payload["activePackId"] as? String,
-            dailyLessonIndex = (payload["dailyLessonIndex"] as? Number)?.toInt() ?: 0,
-            dailySubLessonIndex = (payload["dailySubLessonIndex"] as? Number)?.toInt() ?: 0
+            dailyLevel = (payload["dailyLevel"] as? Number)?.toInt() ?: 0,
+            dailyTaskIndex = (payload["dailyTaskIndex"] as? Number)?.toInt() ?: 0
         ).let { progress ->
             // Migration: if old single bossMegaReward exists but bossMegaRewards is empty,
             // migrate it using the current lessonId as the key
@@ -83,8 +83,8 @@ class ProgressStore(private val context: Context) {
             "eliteBestSpeeds" to progress.eliteBestSpeeds,
             "currentScreen" to progress.currentScreen,
             "activePackId" to progress.activePackId,
-            "dailyLessonIndex" to progress.dailyLessonIndex,
-            "dailySubLessonIndex" to progress.dailySubLessonIndex
+            "dailyLevel" to progress.dailyLevel,
+            "dailyTaskIndex" to progress.dailyTaskIndex
         )
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,

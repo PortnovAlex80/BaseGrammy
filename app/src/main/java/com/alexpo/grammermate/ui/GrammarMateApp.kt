@@ -146,6 +146,8 @@ fun GrammarMateApp() {
         var showSettings by remember { mutableStateOf(false) }
         var showExitDialog by remember { mutableStateOf(false) }
         var showWelcomeDialog by remember { mutableStateOf(false) }
+        var showDailyResumeDialog by remember { mutableStateOf(false) }
+        var pendingDailyLevel by remember { mutableStateOf(0) }
         var isLoadingDaily by remember { mutableStateOf(false) }
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
@@ -316,13 +318,20 @@ fun GrammarMateApp() {
                         screen = AppScreen.LESSON
                     },
                     onOpenElite = {
-                        isLoadingDaily = true
-                        dailyScope.launch {
-                            val started = withContext(Dispatchers.IO) {
-                                vm.startDailyPractice()
+                        val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+                        val level = (lessonIndex + 1).coerceIn(1, 12)
+                        if (vm.hasResumableDailySession()) {
+                            pendingDailyLevel = level
+                            showDailyResumeDialog = true
+                        } else {
+                            isLoadingDaily = true
+                            dailyScope.launch {
+                                val started = withContext(Dispatchers.IO) {
+                                    vm.startDailyPractice(level)
+                                }
+                                isLoadingDaily = false
+                                if (started) screen = AppScreen.DAILY_PRACTICE
                             }
-                            isLoadingDaily = false
-                            if (started) screen = AppScreen.DAILY_PRACTICE
                         }
                     },
                     hasVerbDrill = hasVerbDrill,
@@ -353,20 +362,22 @@ fun GrammarMateApp() {
                 AppScreen.VOCAB -> { screen = AppScreen.HOME }
                 AppScreen.DAILY_PRACTICE -> {
                     val dailyState = state.dailySession
-                    val dailyCards = vm.getDailyCurrentCards()
-                    val dailyLessonTitle = vm.getDailyLessonTitle()
-                    val dailySubLessonLabel = vm.getDailySubLessonLabel()
-                    val dailyProgress = vm.getDailyProgress()
+                    val dailyTask = vm.getDailyCurrentTask()
+                    val dailyProgress = vm.getDailyBlockProgress()
                     DailyPracticeScreen(
                         state = dailyState,
-                        cards = dailyCards,
-                        lessonTitle = dailyLessonTitle,
-                        subLessonLabel = dailySubLessonLabel,
-                        progress = dailyProgress,
-                        onSubmitAnswer = { input, correct, mode ->
-                            vm.onDailyAnswerChecked(input, correct, mode)
-                        },
-                        onAdvanceSubLesson = vm::advanceDailyTask,
+                        blockProgress = dailyProgress,
+                        currentTask = dailyTask,
+                        onSubmitSentence = vm::submitDailySentenceAnswer,
+                        onSubmitVerb = vm::submitDailyVerbAnswer,
+                        languageId = state.selectedLanguageId,
+                        onShowSentenceAnswer = vm::getDailySentenceAnswer,
+                        onShowVerbAnswer = vm::getDailyVerbAnswer,
+                        onFlipVocabCard = { /* no-op: flip tracked locally */ },
+                        onRateVocabCard = { _ -> /* rating recorded locally */ },
+                        onAdvance = vm::advanceDailyTask,
+                        onAdvanceBlock = { vm.advanceDailyBlock() },
+                        onRepeatBlock = { vm.repeatDailyBlock() },
                         onSpeak = { text ->
                             if (state.ttsModelReady) {
                                 vm.onTtsSpeak(text, speed = 0.67f)
@@ -381,8 +392,7 @@ fun GrammarMateApp() {
                         onComplete = {
                             vm.cancelDailySession()
                             screen = AppScreen.HOME
-                        },
-                        languageId = state.selectedLanguageId
+                        }
                     )
                 }
                 AppScreen.STORY -> StoryQuizScreen(
@@ -530,6 +540,44 @@ fun GrammarMateApp() {
                     },
                     title = { Text(text = "End session?") },
                     text = { Text(text = "Current session will be completed.") }
+                )
+            }
+
+            if (showDailyResumeDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDailyResumeDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDailyResumeDialog = false
+                            isLoadingDaily = true
+                            dailyScope.launch {
+                                val resumed = withContext(Dispatchers.IO) {
+                                    vm.resumeDailyPractice()
+                                }
+                                isLoadingDaily = false
+                                if (resumed) screen = AppScreen.DAILY_PRACTICE
+                            }
+                        }) {
+                            Text(text = "Continue")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showDailyResumeDialog = false
+                            isLoadingDaily = true
+                            dailyScope.launch {
+                                val started = withContext(Dispatchers.IO) {
+                                    vm.startDailyPractice(pendingDailyLevel)
+                                }
+                                isLoadingDaily = false
+                                if (started) screen = AppScreen.DAILY_PRACTICE
+                            }
+                        }) {
+                            Text(text = "Start fresh")
+                        }
+                    },
+                    title = { Text(text = "Resume your session?") },
+                    text = { Text(text = "You have an unfinished daily practice session.") }
                 )
             }
 
