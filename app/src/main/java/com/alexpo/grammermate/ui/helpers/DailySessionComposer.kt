@@ -134,19 +134,39 @@ class DailySessionComposer(
 
         if (inRange.isEmpty()) return emptyList()
 
-        val dueWordIds = wordMasteryStore.getDueWords()
-        val dueInRange = inRange.filter { word ->
-            word.id in dueWordIds
+        // Only include words that are due (never reviewed or nextReviewDateMs <= now)
+        val allMastery = wordMasteryStore.loadAll()
+        val now = System.currentTimeMillis()
+        val availableWords = inRange.filter { word ->
+            val mastery = allMastery[word.id]
+            mastery == null || mastery.nextReviewDateMs <= now
+        }
+
+        if (availableWords.isEmpty()) {
+            // All words in range are scheduled for future review — pick least recently reviewed
+            val fallback = inRange.sortedBy { word ->
+                allMastery[word.id]?.lastReviewDateMs ?: 0L
+            }.take(VOCAB_COUNT)
+            if (fallback.isEmpty()) return emptyList()
+            return fallback.mapIndexed { index, word ->
+                val direction = if (index % 2 == 0) VocabDrillDirection.IT_TO_RU else VocabDrillDirection.RU_TO_IT
+                DailyTask.VocabFlashcard(id = "voc_${word.id}", word = word, direction = direction)
+            }
+        }
+
+        // Prioritize due words, then fill with new (never reviewed)
+        val dueInRange = availableWords.filter { word ->
+            val mastery = allMastery[word.id]
+            mastery != null && mastery.nextReviewDateMs <= now
         }
 
         val selected = if (dueInRange.size >= VOCAB_COUNT) {
             dueInRange.sortedBy { it.rank }.take(VOCAB_COUNT)
         } else {
-            val dueSorted = dueInRange.sortedBy { it.rank }
-            val newByRank = inRange
-                .filter { it.id !in dueWordIds }
-                .sortedBy { it.rank }
-            (dueSorted + newByRank).take(VOCAB_COUNT)
+            val newWords = availableWords.filter { word ->
+                allMastery[word.id] == null
+            }
+            (dueInRange.sortedBy { it.rank } + newWords.sortedBy { it.rank }).take(VOCAB_COUNT)
         }
 
         return selected.mapIndexed { index, word ->
@@ -186,16 +206,12 @@ class DailySessionComposer(
             val comboTotal = filtered.count { it.tense == card.tense }
             val weakness = if (comboTotal == 0) 0f else 1f - (shownInCombo.toFloat() / comboTotal)
             card to weakness
-        }.sortedByDescending { it.second }
-
-        // Take weak-first, then fill remaining with random from available tenses
-        val weakCards = scored.take(VERB_COUNT)
-        val selected = if (weakCards.size < VERB_COUNT) {
-            val remaining = scored.drop(weakCards.size).shuffled()
-            (weakCards + remaining).take(VERB_COUNT)
-        } else {
-            weakCards
         }
+
+        // Weak-first order, stable within same weakness (preserves CSV/frequency order)
+        val selected = scored
+            .sortedByDescending { it.second }
+            .take(VERB_COUNT)
 
         return selected.mapIndexed { index, (card, _) ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
