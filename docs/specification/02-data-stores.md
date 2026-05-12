@@ -1,6 +1,43 @@
-# 2. Data Stores — Specification
+# 2. Data Stores -- Specification
 
 All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` and use YAML as the serialization format (via SnakeYAML). Every store that writes files uses `AtomicFileWriter` (temp -> fsync -> rename) to prevent data corruption on crash or power loss.
+
+Sources:
+- `app/src/main/java/com/alexpo/grammermate/data/MasteryStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/ProgressStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/VocabProgressStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/DrillProgressStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/LessonStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/StreakStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/AppConfigStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/HiddenCardStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/BadSentenceStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/ProfileStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/BackupManager.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/YamlListStore.kt`
+
+---
+
+## Store Inventory
+
+| # | Store | Source File | Disk Path | Purpose | Atomic Writes | Pack-Scoped | Caching |
+|---|-------|-------------|-----------|---------|---------------|-------------|---------|
+| 2.1 | LessonStore | `data/LessonStore.kt` | `grammarmate/` (multiple subdirs) | Content management: packs, lessons, stories, vocab, drill files | Yes (via YamlListStore) | Yes (drills) | None |
+| 2.2 | MasteryStore | `data/MasteryStore.kt` | `grammarmate/mastery.yaml` | Per-lesson card mastery tracking | Yes | No (global) | Lazy in-memory |
+| 2.3 | ProgressStore | `data/ProgressStore.kt` | `grammarmate/progress.yaml` | Training session state persistence | Yes | No (global) | None |
+| 2.4 | DrillProgressStore | `data/DrillProgressStore.kt` | `grammarmate/drill_progress_{lessonId}.yaml` | Per-lesson drill card index | Yes | No (per-lesson) | None |
+| 2.5 | VerbDrillStore | `data/VerbDrillStore.kt` | `grammarmate/drills/{packId}/verb_drill_progress.yaml` | Verb conjugation drill progress | Yes | Yes | None |
+| 2.6 | WordMasteryStore | `data/WordMasteryStore.kt` | `grammarmate/drills/{packId}/word_mastery.yaml` | Per-word vocab mastery (Anki-style) | Yes | Yes | None |
+| 2.7 | ProfileStore | `data/ProfileStore.kt` | `grammarmate/profile.yaml` | User profile (name) | Yes | No (global) | None |
+| 2.8 | StreakStore | `data/StreakStore.kt` | `grammarmate/streak_{languageId}.yaml` | Daily practice streak per language | Yes | No (per-language) | None |
+| 2.9 | HiddenCardStore | `data/HiddenCardStore.kt` | `grammarmate/hidden_cards.yaml` | Hidden card ID set | Yes | No (global) | Lazy in-memory |
+| 2.10 | BadSentenceStore | `data/BadSentenceStore.kt` | `grammarmate/bad_sentences.yaml` | User-reported bad sentences by pack | Yes | Yes (schema v2) | Lazy in-memory |
+| 2.11 | VocabProgressStore | `data/VocabProgressStore.kt` | `grammarmate/vocab_progress.yaml` | Vocab sprint progress + per-entry SRS | Yes | No (global) | Lazy in-memory |
+| 2.12 | AppConfigStore | `data/AppConfigStore.kt` | `grammarmate/config.yaml` | Runtime configuration flags | Yes | No (global) | None |
+| 2.13 | BackupManager | `data/BackupManager.kt` | `Downloads/BaseGrammy/backup_latest/` | Backup/restore of all progress data | Mixed (see notes) | N/A | None |
+| 2.14 | YamlListStore | `data/YamlListStore.kt` | Configurable | Generic YAML list storage primitive | Yes | N/A | None |
 
 ---
 
@@ -23,11 +60,11 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
   - Seed marker: `grammarmate/seed_v1.done`
 
 - **Data format**:
-  - `languages.yaml` — YamlListStore schema: `{ schemaVersion: 1, items: [{ id: "en", name: "English" }, ...] }`
-  - `{languageId}_index.yaml` — YamlListStore schema: `{ schemaVersion: 1, items: [{ id: "...", title: "...", file: "lesson_xxx.csv", drillFile: "lesson_xxx_drill.csv" (optional) }] }`
-  - `packs.yaml` — YamlListStore schema: `{ schemaVersion: 1, items: [{ packId: "...", packVersion: "...", languageId: "...", importedAt: 123456, displayName: "..." (optional) }] }`
-  - `stories.yaml` — YamlListStore schema: `{ schemaVersion: 1, items: [{ storyId: "...", lessonId: "...", phase: "CHECK_IN|CHECK_OUT", languageId: "...", file: "{storyId}.json" }] }`
-  - `vocab.yaml` — YamlListStore schema: `{ schemaVersion: 1, items: [{ lessonId: "...", languageId: "...", file: "vocab_{lessonId}.csv" }] }`
+  - `languages.yaml` -- YamlListStore schema: `{ schemaVersion: 1, items: [{ id: "en", name: "English" }, ...] }`
+  - `{languageId}_index.yaml` -- YamlListStore schema: `{ schemaVersion: 1, items: [{ id: "...", title: "...", file: "lesson_xxx.csv", drillFile: "lesson_xxx_drill.csv" (optional) }] }`
+  - `packs.yaml` -- YamlListStore schema: `{ schemaVersion: 1, items: [{ packId: "...", packVersion: "...", languageId: "...", importedAt: 123456, displayName: "..." (optional) }] }`
+  - `stories.yaml` -- YamlListStore schema: `{ schemaVersion: 1, items: [{ storyId: "...", lessonId: "...", phase: "CHECK_IN|CHECK_OUT", languageId: "...", file: "{storyId}.json" }] }`
+  - `vocab.yaml` -- YamlListStore schema: `{ schemaVersion: 1, items: [{ lessonId: "...", languageId: "...", file: "vocab_{lessonId}.csv" }] }`
   - Lesson CSV: 2-column semicolon-delimited (`ru;answers`), no header. Answers separated by `+`.
   - Drill CSV: same format as lesson CSV, used for drill practice.
 
@@ -64,8 +101,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
   | `hasVocabDrill` | `fun hasVocabDrill(packId: String, languageId: String): Boolean` | Boolean | Returns true if `drills/{packId}/vocab_drill/` contains any CSV for the given language. |
 
   Deprecated methods (kept for backward compat):
-  - `getVerbDrillFiles(languageId: String)` — legacy, reads from global `verb_drill/` directory
-  - `hasVerbDrillLessons(languageId: String)` — legacy counterpart
+  - `getVerbDrillFiles(languageId: String)` -- legacy, reads from global `verb_drill/` directory
+  - `hasVerbDrillLessons(languageId: String)` -- legacy counterpart
 
 - **Write semantics**: All index and registry files written via `YamlListStore.write()` which uses `AtomicFileWriter`. Story JSON files and vocab CSV files also use `AtomicFileWriter`. Lesson CSVs during import use stream copy (not atomic, but sourced from immutable asset/ZIP content).
 
@@ -87,6 +124,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
   - Seed marker ensures default pack import only happens once (or on explicit force reload).
   - Lessons with `type: "verb_drill"` in the manifest are excluded from standard lesson import; their CSVs are imported as drill content instead.
 
+- **Pack scoping**: Drill CSV files (verb drill, vocab drill) are stored under `grammarmate/drills/{packId}/`, making them pack-scoped. Lesson content itself is scoped by language, not by pack (multiple packs for the same language share the `lessons/{languageId}/` directory).
+
 - **Dependencies**:
   - `YamlListStore` (for all YAML index/registry files)
   - `AtomicFileWriter` (for all file writes)
@@ -101,7 +140,7 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 ## 2.2 MasteryStore
 
-- **Purpose**: Tracks per-lesson card mastery — how many unique cards have been practiced, total shows, which specific card IDs have been seen, and interval-based spaced repetition progress. This is the core store for flower state computation.
+- **Purpose**: Tracks per-lesson card mastery -- how many unique cards have been practiced, total shows, which specific card IDs have been seen, and interval-based spaced repetition progress. This is the core store for flower state computation.
 - **File location**: `grammarmate/mastery.yaml`
 - **Data format**: YAML, schema version 1:
   ```yaml
@@ -137,7 +176,9 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Read semantics**: Lazy-cached. First call to `loadAll()` reads the file and populates `cache`. Subsequent calls return the cache directly. Cache is never invalidated (assumes single-process access).
 
-- **Error handling**: On parse error, cache is reset to empty. The file is not deleted on error — next restart will attempt to read it again.
+- **Error handling**: On parse error, cache is reset to empty. The file is not deleted on error -- next restart will attempt to read it again.
+
+- **Pack scoping**: Global. Mastery data is keyed by `(languageId, lessonId)` and is not scoped by pack. All packs sharing the same lesson IDs contribute to the same mastery state.
 
 - **Invariants**:
   - `uniqueCardShows` <= `totalCardShows` (unique is a subset of total).
@@ -204,6 +245,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns defaults. Unparseable YAML returns defaults. Enum parsing failures fall back to default values (`LESSON` for mode, `PAUSED` for state).
 
+- **Pack scoping**: Global. Stores `activePackId` as a field value but the file itself is not scoped by pack.
+
 - **Invariants**:
   - `currentIndex` >= 0.
   - `correctCount` >= 0, `incorrectCount` >= 0.
@@ -240,6 +283,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 - **Read semantics**: No caching. Reads from disk every time. Returns -1 on any error.
 
 - **Error handling**: Missing file returns -1. Parse error returns -1. No crash on corrupt data.
+
+- **Pack scoping**: Per-lesson (not per-pack). File is keyed by `lessonId`, regardless of which pack the lesson belongs to.
 
 - **Invariants**:
   - A progress file exists only if the user has started and not completed a drill.
@@ -286,12 +331,14 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns empty map. Parse errors result in empty map return.
 
+- **Pack scoping**: Yes. The `packId` constructor parameter determines the file path. Each pack has independent verb drill progress. When `packId` is null, falls back to legacy global file path.
+
 - **Invariants**:
   - Combo key format: `"{group}_{tense}"`.
   - `todayShownCardIds` is always a subset of `everShownCardIds`.
   - `todayShownCardIds` is automatically cleared when `lastDate` does not match today's date.
   - `totalCards` is the total number of available cards for the combo (set externally, not computed from shown IDs).
-  - File path is scoped by `packId` — different packs have completely independent verb drill progress.
+  - File path is scoped by `packId` -- different packs have completely independent verb drill progress.
 
 - **Dependencies**:
   - `VerbDrillCsvParser` (for CSV parsing in `loadAllCardsForPack`)
@@ -336,6 +383,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns empty map. Parse errors return empty map.
 
+- **Pack scoping**: Yes. The `packId` constructor parameter determines the file path. Each pack has independent word mastery data. When `packId` is null, falls back to legacy global file path.
+
 - **Invariants**:
   - `intervalStepIndex` is in range [0, 9] (index into `INTERVAL_LADDER_DAYS` which has 10 entries).
   - `isLearned` is set to true when the word reaches the last interval step (step 9).
@@ -370,16 +419,24 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns default. Parse error returns default and prints stack trace.
 
+- **Pack scoping**: Global. Single profile shared across all packs and languages.
+
 - **Invariants**:
   - `userName` is always non-null and non-blank (defaults to "GrammarMateUser").
 
 - **Dependencies**: `AtomicFileWriter`.
 
+- **Data class**:
+
+  | Field | Type | Default |
+  |-------|------|---------|
+  | `userName` | `String` | `"GrammarMateUser"` |
+
 ---
 
 ## 2.8 StreakStore
 
-- **Purpose**: Tracks daily practice streaks per language — consecutive days of practice, longest streak, total sub-lessons completed.
+- **Purpose**: Tracks daily practice streaks per language -- consecutive days of practice, longest streak, total sub-lessons completed.
 - **File location**: `grammarmate/streak_{languageId}.yaml` (one file per language)
 - **Data format**: YAML, no schema version:
   ```yaml
@@ -404,6 +461,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 - **Read semantics**: No caching. Reads from disk every time.
 
 - **Error handling**: Missing file returns default `StreakData`. Parse error returns default.
+
+- **Pack scoping**: Per-language. Each language has its own streak file, independent of packs.
 
 - **Invariants**:
   - `currentStreak` >= 0.
@@ -445,6 +504,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns empty set. Parse error resets to empty set.
 
+- **Pack scoping**: Global. Hidden card IDs span all packs and languages in a single set.
+
 - **Invariants**:
   - All card IDs in the set are non-null, non-blank strings.
   - The set contains no duplicates (enforced by `MutableSet`).
@@ -466,7 +527,7 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
         - cardId: "lesson1_42"
           languageId: "en"
           sentence: "The cat sits on mat"
-          translation: "Кот сидит на коврике"
+          translation: "The cat sits on the mat"
           mode: "training"
           addedAtMs: 1715500800000
   ```
@@ -487,14 +548,14 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **BadSentenceEntry data class**:
 
-  | Field | Type | Description |
-  |-------|------|-------------|
-  | `cardId` | `String` | Unique card identifier |
-  | `languageId` | `String` | Language ID (e.g., "it", "en") |
-  | `sentence` | `String` | Source text (Russian prompt for translation/verb cards, meaning or word for vocab) |
-  | `translation` | `String` | Target text (accepted answer(s) for translation, Italian word for vocab) |
-  | `mode` | `String` | Training context where the card was flagged. Default: `"training"` |
-  | `addedAtMs` | `Long` | Timestamp when the entry was created |
+  | Field | Type | Default | Description |
+  |-------|------|---------|-------------|
+  | `cardId` | `String` | -- | Unique card identifier |
+  | `languageId` | `String` | -- | Language ID (e.g., "it", "en") |
+  | `sentence` | `String` | -- | Source text (Russian prompt for translation/verb cards, meaning or word for vocab) |
+  | `translation` | `String` | -- | Target text (accepted answer(s) for translation, Italian word for vocab) |
+  | `mode` | `String` | `"training"` | Training context where the card was flagged |
+  | `addedAtMs` | `Long` | `System.currentTimeMillis()` | Timestamp when the entry was created |
 
 - **Mode field values**:
 
@@ -531,6 +592,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns empty. Parse error resets to empty. Old drill file parse errors are silently ignored.
 
+- **Pack scoping**: Yes. Schema v2 organizes entries by `packId`. Legacy schema v1 data is migrated to pack-scoped format on first load.
+
 - **Invariants**:
   - Schema v2 is always written on persist (even if loaded from v1).
   - Within a pack, `cardId` values are unique (duplicate `addBadSentence` calls are no-ops).
@@ -541,7 +604,7 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
   - `__vocab_drill__` pack key is used by `VocabDrillViewModel` when no active pack ID is available.
 
 - **Dependencies**:
-  - `LessonStore` (only for `migrateIfNeeded` — resolves `packId` from `lessonId`)
+  - `LessonStore` (only for `migrateIfNeeded` -- resolves `packId` from `lessonId`)
   - `AtomicFileWriter`
 
 ---
@@ -566,6 +629,23 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
   Spaced repetition intervals (in days): `[1, 3, 7, 14, 30]`
 
+- **Inner data classes**:
+
+  `EntrySrsState`:
+
+  | Field | Type | Default | Description |
+  |-------|------|---------|-------------|
+  | `lastCorrectMs` | `Long` | `0L` | Timestamp of last correct answer |
+  | `lastIncorrectMs` | `Long` | `0L` | Timestamp of last incorrect answer |
+  | `intervalStep` | `Int` | `0` | Current step in the interval ladder [0..4] |
+
+  `LessonVocabProgress`:
+
+  | Field | Type | Default | Description |
+  |-------|------|---------|-------------|
+  | `completedIndices` | `Set<Int>` | `emptySet()` | Entry indices completed in current sprint |
+  | `entryStates` | `Map<String, EntrySrsState>` | `emptyMap()` | Per-entry SRS state map |
+
 - **Public API**:
 
   | Method | Signature | Return | Behavior |
@@ -587,6 +667,8 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 - **Error handling**: Missing file returns empty cache. Parse error resets cache to empty.
 
+- **Pack scoping**: Global. Vocab progress is keyed by `(languageId, lessonId)` and is not scoped by pack.
+
 - **Invariants**:
   - `completedIndices` contains only non-negative integers.
   - `intervalStep` is in range `[0, INTERVALS_DAYS.lastIndex]` (0-4 for the 5-element ladder `[1, 3, 7, 14, 30]`).
@@ -598,11 +680,128 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
 
 ---
 
-## 2.12 Supporting Infrastructure
+## 2.12 AppConfigStore
 
-### YamlListStore
+- **Purpose**: Manages runtime configuration flags. On first load, seeds defaults from `assets/grammarmate/config.yaml` (or hardcoded fallback). Provides test-mode toggle, elite size multiplier, vocab sprint limit, and offline ASR preference.
+- **File location**: `grammarmate/config.yaml`
+- **Data format**: YAML, no schema version:
+  ```yaml
+  testMode: false
+  eliteSizeMultiplier: 1.25
+  vocabSprintLimit: 20
+  useOfflineAsr: false
+  ```
 
-- **Purpose**: Generic YAML-backed list storage used by `LessonStore` for all index/registry files.
+- **AppConfig data class**:
+
+  | Field | Type | Default | Description |
+  |-------|------|---------|-------------|
+  | `testMode` | `Boolean` | `false` | Enables test/debug mode |
+  | `eliteSizeMultiplier` | `Double` | `1.25` | Multiplier for elite mode card pool size |
+  | `vocabSprintLimit` | `Int` | `20` | Maximum entries per vocab sprint |
+  | `useOfflineAsr` | `Boolean` | `false` | Use offline ASR engine instead of online |
+
+- **Public API**:
+
+  | Method | Signature | Return | Behavior |
+  |--------|-----------|--------|----------|
+  | `save` | `fun save(config: AppConfig)` | Unit | Writes config to file via `AtomicFileWriter`. Creates `baseDir` if needed. |
+  | `load` | `fun load(): AppConfig` | `AppConfig` | If file does not exist, seeds from `assets/grammarmate/config.yaml` via `AtomicFileWriter`. If asset also unavailable, writes hardcoded defaults. Then reads and parses the file. Returns defaults on any parse error. |
+
+- **Write semantics**: Full rewrite via `AtomicFileWriter`.
+
+- **Read semantics**: No caching. Reads from disk every time. First load triggers seeding from assets if file is absent.
+
+- **Error handling**: Missing file triggers seeding. Asset read failure falls back to hardcoded defaults (`testMode = false`, `vocabSprintLimit = 20`). Parse error returns `AppConfig()` defaults.
+
+- **Pack scoping**: Global. Single configuration file shared across all packs and languages.
+
+- **Invariants**:
+  - `testMode` is only `true` in development/testing scenarios.
+  - `eliteSizeMultiplier` > 0 (controls card pool sizing).
+  - `vocabSprintLimit` > 0 (controls sprint batch size).
+
+- **Dependencies**: `AtomicFileWriter`.
+
+---
+
+## 2.13 BackupManager
+
+- **Purpose**: Handles backup and restore of all user progress data. Backs up to external storage (`Downloads/BaseGrammy/backup_latest/`). Supports both legacy file-path access (Android 9 and below) and scoped storage (Android 10+). Restore reads from file path or SAF URI.
+- **File location**: External storage `Downloads/BaseGrammy/backup_latest/` (backup), internal `grammarmate/` (restore target).
+- **Source file**: `data/BackupManager.kt`
+
+### Files Backed Up
+
+| Internal File | Backup Name | Notes |
+|---------------|-------------|-------|
+| `grammarmate/mastery.yaml` | `mastery.yaml` | |
+| `grammarmate/progress.yaml` | `progress.yaml` | |
+| `grammarmate/profile.yaml` | `profile.yaml` | |
+| `grammarmate/hidden_cards.yaml` | `hidden_cards.yaml` | |
+| `grammarmate/bad_sentences.yaml` | `bad_sentences.yaml` | |
+| `grammarmate/vocab_progress.yaml` | `vocab_progress.yaml` | |
+| `grammarmate/streak_{lang}.yaml` | `streak_{lang}.yaml` | All matching files |
+| `grammarmate/drill_progress_{id}.yaml` | `drill_progress_{id}.yaml` | All matching files |
+| `grammarmate/drills/{packId}/verb_drill_progress.yaml` | `drills/{packId}/verb_drill_progress.yaml` (legacy) or `drills_{packId}_verb_drill_progress.yaml` (scoped) | Pack-scoped |
+| `grammarmate/drills/{packId}/word_mastery.yaml` | `drills/{packId}/word_mastery.yaml` (legacy) or `drills_{packId}_word_mastery.yaml` (scoped) | Pack-scoped |
+
+- **Public API**:
+
+  | Method | Signature | Return | Behavior |
+  |--------|-----------|--------|----------|
+  | `createBackup` | `fun createBackup(): Boolean` | Boolean | Creates backup of all progress data. On Android 10+ with scoped storage, uses `MediaStore` API. On legacy storage, uses direct file copy. Returns true on success. Overwrites previous `backup_latest` directory. |
+  | `restoreFromBackup` | `fun restoreFromBackup(backupPath: String): Boolean` | Boolean | Restores from a file path (legacy access). Copies each file from backup to internal storage. Handles old `streak.yaml` -> `streak_{lang}.yaml` migration. Returns true on success. |
+  | `restoreFromBackupUri` | `fun restoreFromBackupUri(backupUri: Uri): Boolean` | Boolean | Restores from a SAF tree URI (scoped storage). Looks for `backup_latest` subfolder first, then falls back to root. Creates a detailed restore log file. Returns true if any file was copied. |
+  | `getAvailableBackups` | `fun getAvailableBackups(): List<BackupInfo>` | List of `BackupInfo` | Lists backup directories in `Downloads/BaseGrammy/` (legacy access). |
+  | `getAvailableBackups` | `fun getAvailableBackups(treeUri: Uri): List<BackupInfo>` | List of `BackupInfo` | Lists backup directories via SAF tree URI (scoped storage). |
+  | `deleteBackup` | `fun deleteBackup(backupPath: String): Boolean` | Boolean | Deletes a backup directory. |
+  | `hasBackup` | `fun hasBackup(): Boolean` | Boolean | Returns true if any backup directories exist. |
+
+- **BackupInfo data class**:
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `name` | `String` | Directory name (e.g., `"backup_latest"`) |
+  | `path` | `String` | File path |
+  | `uri` | `String?` | SAF URI (scoped storage variant) |
+  | `timestamp` | `String` | `"latest"` or date string extracted from directory name |
+  | `dataSize` | `Long` | Total size of backup files in bytes |
+  | `metadata` | `String` | Contents of `metadata.txt` if present |
+
+- **Write semantics**: Mixed.
+  - **Legacy backup** (`createBackupLegacy`): Uses `File.copyTo()` for data files -- **not** atomic. Metadata file uses `File.writeText()` -- **not** atomic. This is acceptable because backup is a best-effort operation and the originals remain intact in internal storage.
+  - **Scoped backup** (`createBackupScoped`): Uses `ContentResolver.openOutputStream()` via MediaStore API -- **not** atomic. Handles duplicate `(1)` file names by querying and overwriting existing MediaStore entries.
+  - **Restore**: Uses `File.copyTo()` for legacy, `ContentResolver.openInputStream()` + `File.outputStream()` for scoped. **Not** atomic.
+
+- **Read semantics**: No caching. Reads from external storage on every call.
+
+- **Error handling**:
+  - `createBackup`: catches all exceptions, logs via `Log.e`, returns `false`.
+  - `restoreFromBackup`: catches all exceptions, returns `false`.
+  - `restoreFromBackupUri`: catches all exceptions, writes detailed error log to backup directory, returns `false`.
+  - Missing individual files during backup are silently skipped.
+  - Missing individual files during restore are logged and skipped; other files continue restoring.
+  - Old `streak.yaml` format is migrated to `streak_{languageId}.yaml` during restore.
+
+- **Pack scoping**: N/A. BackupManager copies all files including pack-scoped drill subdirectories (`drills/{packId}/`).
+
+- **Invariants**:
+  - Backup always targets `Downloads/BaseGrammy/backup_latest/` (overwrites previous).
+  - Scoped storage backup flattens pack-scoped drill files to `drills_{packId}_verb_drill_progress.yaml` format to avoid subdirectory issues with MediaStore.
+  - Legacy backup preserves subdirectory structure under `drills/`.
+  - Restore from scoped backup reverses the flat-name flattening back to the subdirectory structure.
+
+- **Dependencies**: None directly. Reads files from internal storage and writes to external storage. Does not depend on other stores.
+
+- **Cross-store relationships**: BackupManager is a *consumer* of all other stores' files. It reads their disk files directly (not through their APIs) and writes them back to external storage. On restore, it copies files back into `grammarmate/`, overwriting what other stores will read on next load. This means:
+  - After restore, any in-memory caches (MasteryStore, HiddenCardStore, BadSentenceStore, VocabProgressStore) may be stale. The app must be restarted or stores must be re-instantiated for restored data to take effect.
+
+---
+
+## 2.14 YamlListStore
+
+- **Purpose**: Generic YAML-backed list storage primitive used by `LessonStore` for all index/registry files (languages, packs, stories, vocab indexes, per-language lesson indexes).
 - **File location**: Configurable (passed via constructor).
 - **Data format**:
   ```yaml
@@ -611,102 +810,129 @@ All persistent stores in GrammarMate live under `context.filesDir/grammarmate/` 
     - key1: value1
       key2: value2
   ```
+
 - **Public API**:
-  - `read(): List<Map<String, Any>>` — Reads and returns items list. Supports both wrapped (`{schemaVersion, items}`) and bare list formats.
-  - `write(items: List<Map<String, Any>>)` — Writes items wrapped in schema container via `AtomicFileWriter`.
 
-### AtomicFileWriter
+  | Method | Signature | Return | Behavior |
+  |--------|-----------|--------|----------|
+  | `read` | `fun read(): List<Map<String, Any>>` | List of String-keyed maps | Reads file. Supports both wrapped format (`{schemaVersion, items}`) and bare YAML list format (backward compat). Returns empty list if file missing. |
+  | `write` | `fun write(items: List<Map<String, Any>>)` | Unit | Writes items wrapped in `{schemaVersion, items}` container via `AtomicFileWriter`. |
 
-- **Purpose**: Ensures atomic file writes across all stores. Prevents data corruption from crashes during write.
-- **Mechanism**: Write to `.tmp` file -> `fd.sync()` -> delete original -> rename `.tmp` to target. On Windows, retries temp file deletion up to 10 times with 10ms sleep between attempts (handles file locking).
+- **Write semantics**: Full rewrite via `AtomicFileWriter`.
+
+- **Read semantics**: No caching. Reads from disk every time.
+
+- **Error handling**: Missing file returns empty list. Parse error returns empty list.
+
+- **Pack scoping**: N/A. This is a generic utility, scoping is determined by the file path passed to the constructor.
+
+- **Dependencies**: `AtomicFileWriter`.
 
 ---
 
-## 2.13 Cross-Store Dependencies
+## Cross-Store Dependencies
 
 ### Dependency Graph
 
 ```
 LessonStore
-  ├── uses YamlListStore (languages, packs, stories, vocab indexes)
-  ├── uses AtomicFileWriter (all file writes)
-  ├── uses CsvParser (lesson CSV parsing)
-  ├── uses VocabCsvParser (vocab CSV parsing)
-  ├── uses ItalianDrillVocabParser (Italian drill vocab from assets)
-  ├── uses StoryQuizParser (story JSON parsing)
-  └── uses LessonPackManifest (manifest parsing)
+  +-- uses YamlListStore (languages, packs, stories, vocab indexes)
+  +-- uses AtomicFileWriter (all file writes)
+  +-- uses CsvParser (lesson CSV parsing)
+  +-- uses VocabCsvParser (vocab CSV parsing)
+  +-- uses ItalianDrillVocabParser (Italian drill vocab from assets)
+  +-- uses StoryQuizParser (story JSON parsing)
+  +-- uses LessonPackManifest (manifest parsing)
 
 MasteryStore
-  ├── uses SpacedRepetitionConfig (interval step calculation)
-  └── uses AtomicFileWriter
+  +-- uses SpacedRepetitionConfig (interval step calculation)
+  +-- uses AtomicFileWriter
 
 ProgressStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
 
 DrillProgressStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
 
 VerbDrillStore
-  ├── uses VerbDrillCsvParser (CSV parsing)
-  └── uses AtomicFileWriter
+  +-- uses VerbDrillCsvParser (CSV parsing)
+  +-- uses AtomicFileWriter
 
 WordMasteryStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
 
 ProfileStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
 
 StreakStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
 
 HiddenCardStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
 
 BadSentenceStore
-  ├── uses LessonStore (only during migration: getPackIdForLesson)
-  └── uses AtomicFileWriter
+  +-- uses LessonStore (only during migration: getPackIdForLesson)
+  +-- uses AtomicFileWriter
 
 VocabProgressStore
-  └── uses AtomicFileWriter
+  +-- uses AtomicFileWriter
+
+AppConfigStore
+  +-- uses AtomicFileWriter
+
+BackupManager
+  +-- reads/writes all store files directly (no store API dependency)
 ```
 
 ### Data Flow
 
 ```
 User imports pack ZIP
-    │
-    ▼
+    |
+    v
 LessonStore.importPackFromStream()
-    ├── Creates pack directory in grammarmate/packs/{packId}/
-    ├── Imports lesson CSVs -> grammarmate/lessons/{lang}/
-    ├── Imports drill CSVs -> grammarmate/drills/{packId}/verb_drill/ and vocab_drill/
-    ├── Imports stories -> grammarmate/stories/
-    ├── Imports vocab -> grammarmate/vocab/{lang}/
-    └── Updates packs.yaml registry
-         │
-         ▼
+    +-- Creates pack directory in grammarmate/packs/{packId}/
+    +-- Imports lesson CSVs -> grammarmate/lessons/{lang}/
+    +-- Imports drill CSVs -> grammarmate/drills/{packId}/verb_drill/ and vocab_drill/
+    +-- Imports stories -> grammarmate/stories/
+    +-- Imports vocab -> grammarmate/vocab/{lang}/
+    +-- Updates packs.yaml registry
+         |
+         v
     VerbDrillStore loads CSVs from grammarmate/drills/{packId}/verb_drill/
     WordMasteryStore tracks progress in grammarmate/drills/{packId}/word_mastery.yaml
     LessonStore.hasVerbDrill() / hasVocabDrill() checks determine UI tile visibility
 
 User completes training session
-    │
-    ▼
+    |
+    v
 MasteryStore.recordCardShow() -> updates mastery.yaml
 StreakStore.recordSubLessonCompletion() -> updates streak_{lang}.yaml
 ProgressStore.save() -> persists session state to progress.yaml
 
 User reports bad sentence
-    │
-    ▼
+    |
+    v
 BadSentenceStore.addBadSentence(packId, ...) -> updates bad_sentences.yaml
 (BadSentenceStore.migrateIfNeeded called at init, depends on LessonStore)
 
 User hides a card
-    │
-    ▼
+    |
+    v
 HiddenCardStore.hideCard() -> updates hidden_cards.yaml
 (TrainingViewModel filters cards using HiddenCardStore.isHidden())
+
+User triggers backup
+    |
+    v
+BackupManager.createBackup() -> copies all YAML files to Downloads/BaseGrammy/backup_latest/
+
+User restores from backup
+    |
+    v
+BackupManager.restoreFromBackupUri() -> copies files back to grammarmate/
+(In-memory caches in MasteryStore, HiddenCardStore, BadSentenceStore, VocabProgressStore
+ become stale -- app restart required for full consistency)
 ```
 
 ### Potential Consistency Issues
@@ -724,3 +950,7 @@ HiddenCardStore.hideCard() -> updates hidden_cards.yaml
 6. **No transactional writes across stores**: When a training session ends, `MasteryStore`, `StreakStore`, `ProgressStore`, and possibly `VerbDrillStore`/`WordMasteryStore`/`VocabProgressStore` are all updated independently. A crash mid-sequence can leave the stores in an inconsistent state (e.g., streak incremented but mastery not updated). This is mitigated by `AtomicFileWriter` ensuring each individual store's file is never corrupt, but cross-store atomicity is not guaranteed.
 
 7. **BadSentenceStore migration idempotency**: `migrateIfNeeded()` is designed to be called repeatedly without harm (legacy entries are consumed and removed), but if the app crashes between removing legacy data and persisting the v2 data, legacy entries could be lost. The old drill file is deleted only after successful persist.
+
+8. **BackupManager vs. in-memory caches**: After restore, `MasteryStore`, `HiddenCardStore`, `BadSentenceStore`, and `VocabProgressStore` all hold stale in-memory caches. These stores must be re-instantiated or their caches explicitly cleared for the restored data to become visible. The current design relies on app restart after restore.
+
+9. **BackupManager non-atomic writes**: The backup operation itself uses `File.copyTo()` and `File.writeText()`, not `AtomicFileWriter`. If backup is interrupted, the backup directory may contain a partial set of files. This is acceptable because the originals in internal storage are never modified during backup.

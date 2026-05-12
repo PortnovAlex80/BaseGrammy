@@ -80,7 +80,24 @@ data class ItalianDrillRow(
 
 This is the raw parsed row before conversion to `VocabWord`. The parser returns `ItalianDrillRow` objects; the ViewModel/composer converts them to `VocabWord` by constructing the compound ID.
 
-### 11.2.3 WordMasteryState
+### 11.2.3 VocabEntry (legacy asset format)
+
+Source file: `data/Models.kt`
+
+```kotlin
+data class VocabEntry(
+    val id: String,                  // e.g. "it_drill_drill_nouns.csv_106"
+    val lessonId: String,
+    val languageId: String,
+    val nativeText: String,          // Italian word
+    val targetText: String,          // Collocations joined with "+" or the word itself
+    val isHard: Boolean = false
+)
+```
+
+This model is used only by `ItalianDrillVocabParser.loadAllFromAssets()`, a legacy method that loads from bundled asset files. The current pack-scoped loading path does not use `VocabEntry`; it uses `ItalianDrillRow` -> `VocabWord` directly.
+
+### 11.2.4 WordMasteryState
 
 Source file: `data/VocabWord.kt`
 
@@ -103,7 +120,7 @@ data class WordMasteryState(
 - **Day constant:** `DAY_MS = 86_400_000L` (milliseconds in one day).
 - **Next review computation:** `lastReviewMs + INTERVAL_LADDER_DAYS[step] * DAY_MS`.
 
-### 11.2.4 VocabDrillCard
+### 11.2.5 VocabDrillCard
 
 ```kotlin
 data class VocabDrillCard(
@@ -114,7 +131,7 @@ data class VocabDrillCard(
 
 Combines a vocab word with its current mastery state for use in a drill session.
 
-### 11.2.5 VocabDrillDirection
+### 11.2.6 VocabDrillDirection
 
 ```kotlin
 enum class VocabDrillDirection { IT_TO_RU, RU_TO_IT }
@@ -125,7 +142,7 @@ enum class VocabDrillDirection { IT_TO_RU, RU_TO_IT }
 | `IT_TO_RU`  | Italian word shown | User says/writes Russian meaning |
 | `RU_TO_IT`  | Russian meaning shown | User says/writes Italian word |
 
-### 11.2.6 VoiceResult
+### 11.2.7 VoiceResult
 
 ```kotlin
 enum class VoiceResult { CORRECT, WRONG, SKIPPED }
@@ -133,7 +150,7 @@ enum class VoiceResult { CORRECT, WRONG, SKIPPED }
 
 Outcome of a voice recognition attempt on a flashcard.
 
-### 11.2.7 VocabDrillUiState
+### 11.2.8 VocabDrillUiState
 
 ```kotlin
 data class VocabDrillUiState(
@@ -155,7 +172,7 @@ data class VocabDrillUiState(
 
 Top-level state for the standalone VocabDrillScreen. `session` is non-null when a drill session is active.
 
-### 11.2.8 VocabDrillSessionState
+### 11.2.9 VocabDrillSessionState
 
 ```kotlin
 data class VocabDrillSessionState(
@@ -174,7 +191,7 @@ data class VocabDrillSessionState(
 )
 ```
 
-### 11.2.9 DailyTask.VocabFlashcard (Daily Practice integration)
+### 11.2.10 DailyTask.VocabFlashcard (Daily Practice integration)
 
 Source file: `data/Models.kt`
 
@@ -300,6 +317,35 @@ data:
 
 ---
 
+## 11.4a ItalianDrillVocabParser Additional Methods
+
+Source file: `data/ItalianDrillVocabParser.kt`
+
+### `parse(inputStream, fileName) -> List<ItalianDrillRow>`
+
+Auto-detects the CSV format from the header row:
+
+| Header contains                       | Parser method                | POS type    |
+|---------------------------------------|------------------------------|-------------|
+| `rank` + (`verb` or `noun`)           | `parseRankWordCollocations`  | verbs/nouns |
+| `rank` + `adjective`                  | `parseAdjectives`            | adjectives  |
+| `rank` + `adverb`                     | `parseAdverbs`               | adverbs     |
+| `category` + `italian`                | `parseNumbers`               | numbers     |
+| `type` + `person`                     | `parsePronouns`              | pronouns    |
+| (fallback: unrecognized header)       | `parseRankWordCollocations`  | verbs/nouns |
+
+The `ru` column is auto-detected by scanning for column headers `ru`, `meaning_ru`, or `russian` (case-insensitive).
+
+### `loadAllFromAssets(context, lessonId, languageId) -> List<VocabEntry>`
+
+Legacy method that loads from hardcoded asset paths (`grammarmate/vocab/it/`). Loads all six CSV files in order: adjectives, adverbs, nouns, numbers, pronouns, verbs. Produces `VocabEntry` objects (not `VocabWord`). **Not used by the pack-scoped loading path.**
+
+### `splitCsvLine(line) -> List<String>`
+
+CSV line splitter that respects double-quoted fields. Commas inside quotes are treated as part of the field value.
+
+---
+
 ## 11.5 VocabDrillViewModel
 
 Source file: `ui/VocabDrillViewModel.kt`
@@ -309,9 +355,10 @@ Source file: `ui/VocabDrillViewModel.kt`
 `VocabDrillViewModel` is an `AndroidViewModel` that manages the standalone vocab drill screen. It is a **separate ViewModel** from `TrainingViewModel` (exempt from the single-ViewModel rule because it manages its own isolated domain).
 
 Dependencies:
-- `LessonStore` — for accessing vocab drill CSV files from installed packs
-- `WordMasteryStore` — for per-word SRS state (recreated when pack changes)
-- `TtsEngine` — for pronouncing Italian words
+- `LessonStore` -- for accessing vocab drill CSV files from installed packs
+- `WordMasteryStore` -- for per-word SRS state (recreated when pack changes)
+- `BadSentenceStore` -- for flagging/unflagging bad vocab cards
+- `TtsEngine` -- for pronouncing Italian words
 
 ### 11.5.2 Initialization Flow
 
@@ -360,8 +407,10 @@ Users can filter the word pool before starting a session:
 
 | Filter         | Values                                              | Default       |
 |----------------|-----------------------------------------------------|---------------|
-| Part of speech | `null` (All), `nouns`, `verbs`, `adjectives`, `adverbs` | `null` (All)  |
+| Part of speech | `null` (All), `nouns`, `verbs`, `adjectives`, `adverbs`, `numbers`, `pronouns` | `null` (All)  |
 | Rank range     | Top 100 (0-100), Top 500 (0-500), Top 1000 (0-1000), All (0-MAX) | All           |
+
+**Note:** When "All" POS is selected (`selectedPos == null`), words with `pos == "numbers"` are excluded from the filtered set. Numbers only appear when explicitly selected via the POS filter.
 
 `updateCounts()` recomputes `dueCount`, `totalCount`, `masteredCount`, and `masteredByPos` after any filter change.
 
@@ -415,9 +464,20 @@ The interval ladder is: `[1, 2, 4, 7, 10, 14, 20, 28, 42, 56]` days (from `Space
 6. On wrong: increments `voiceAttempts`. If attempts >= 3, sets `voiceCompleted = true` with `WRONG`. Otherwise allows retry.
 7. Skip: sets `voiceResult = SKIPPED`, `voiceCompleted = true`.
 
+**Normalization method (`normalizeForMatch`):**
+```kotlin
+fun normalizeForMatch(text: String): String {
+    return text.trim().lowercase().replace(Regex("[.!?,;:]$"), "")
+}
+```
+Strips leading/trailing whitespace, converts to lowercase, and removes trailing punctuation characters.
+
 **Language tag for voice recognition:**
 - `IT_TO_RU` direction: `ru-RU` (user speaks Russian)
 - `RU_TO_IT` direction: `it-IT` (user speaks Italian)
+
+**Auto-voice check (`shouldAutoStartVoice()`):**
+Returns `true` when `voiceModeEnabled && !isFlipped && !voiceCompleted`. Used by the UI to decide whether to auto-launch RecognizerIntent on a new card.
 
 ### 11.5.10 Session Completion
 
@@ -455,7 +515,7 @@ Layout (top to bottom):
 1. **Header:** Back arrow + "Flashcards" title.
 2. **Direction filter chips:** "IT -> RU" and "RU -> IT". Default: IT -> RU.
 3. **Voice input toggle:** Mic icon + "Voice input (auto)" label + Switch.
-4. **Part of speech filter chips:** "All" + one chip per available POS. Labels: Nouns, Verbs, Adj., Adv. (with capitalize-first fallback for unknown POS).
+4. **Part of speech filter chips:** "All" + one chip per available POS. Labels: Nouns, Verbs, Adj., Adv., Numbers (with capitalize-first-char fallback for unknown POS like "pronouns").
 5. **Word frequency filter chips:** "Top 100", "Top 500", "Top 1000", "All".
 6. **Stats card** (shown when `totalCount > 0`):
    - "Due: {dueCount} / {totalCount}" heading.
@@ -476,7 +536,7 @@ Layout:
 
 ### 11.6.4 Card Front (VocabDrillCardFront)
 
-- POS badge (colored chip: noun=primary, verb=secondary, adj.=tertiary, adv.=error).
+- POS badge (colored chip): nouns=`primaryContainer` (label "noun"), verbs=`secondaryContainer` (label "verb"), adjectives=`tertiaryContainer` (label "adj."), adverbs=`errorContainer` (label "adv."), numbers=`surfaceVariant` (label "num."), pronouns=`surfaceVariant` (label "pronouns" with capitalize-first-char fallback).
 - Rank badge ("#106" style).
 - **Main word** (32sp, bold):
   - IT_TO_RU: Italian word (e.g. "casa").
@@ -504,9 +564,13 @@ Background: secondary container at 0.5 alpha.
 2. Italian word (24sp, bold, primary color) + TTS button.
 
 **Both directions:**
-3. **Forms card** (if `forms` is non-empty): "Forms" label + 4-column grid (m sg, f sg, m pl, f pl). Shown for adjectives, numbers, and pronouns.
+3. **Forms card** (if `forms` is non-empty): "Forms" label inside a tertiary-container-tinted card. The grid columns vary by POS:
+   - **Adjectives:** 4-column grid: m sg (`forms["msg"]`), f sg (`forms["fsg"]`), m pl (`forms["mpl"]`), f pl (`forms["fpl"]`).
+   - **Numbers:** 2-column grid: m (`forms["form_m"]`), f (`forms["form_f"]`).
+   - **Pronouns:** 4-column grid: sg m (`forms["form_sg_m"]`), sg f (`forms["form_sg_f"]`), pl m (`forms["form_pl_m"]`), pl f (`forms["form_pl_f"]`).
+   - Each form item shows a label and the value (or "-" if null).
 4. **Collocations** (if non-empty): "Collocations" label + up to 5 phrases + "+N more" overflow.
-5. **Mastery indicator:** "Step {step+1}/9" or "Learned" (when step >= 9).
+5. **Mastery indicator:** "Step {step+1}/9" or "Learned" (when step >= LEARNED_THRESHOLD = 3). Displayed in label-small text at 0.5 alpha.
 
 ### 11.6.6 Voice Result Feedback (VoiceResultFeedback)
 
@@ -980,8 +1044,14 @@ When `activePackId` is set (via `reloadForPack()`), bad sentences are scoped to 
 
 ### 11.10.5 Report Button Location
 
-The report button is available on the vocab drill card screen. It is rendered as a flag icon in the card area. Tapping it opens a report bottom sheet with:
+The report button is available on the vocab drill card screen header row (right side), rendered as a `ReportProblem` icon. When the current card is already flagged, the icon tint changes to `colorScheme.error`. Tapping it opens a `ModalBottomSheet` with:
 
-- **"Add to bad sentences list"** (or "Remove from bad sentences list" if already flagged)
-- **"Export bad sentences to file"**
-- **"Copy text"** -- copies card ID, source word, and translation to clipboard
+- Card word and meaning displayed at the top (e.g. "essere -- быть/являться").
+- **"Add to bad sentences list"** (or "Remove from bad sentences list" if already flagged) with `ReportProblem` icon.
+- **"Export bad sentences to file"** with `Download` icon -- exports via `BadSentenceStore.exportToTextFile(packId)`, shows result in an `AlertDialog`.
+- **"Copy text"** with `ContentCopy` icon -- copies a formatted string to clipboard:
+  ```
+  ID: {card.word.id}
+  Word: {card.word.word}
+  Meaning: {card.word.meaningRu}
+  ```

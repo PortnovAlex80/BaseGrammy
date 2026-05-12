@@ -1,1081 +1,919 @@
-# 8. TrainingViewModel — Specification
+# 8. TrainingViewModel -- Migration Playbook & Complete Inventory
 
-## 8.1 Architecture Overview
-
-TrainingViewModel is the sole AndroidViewModel in GrammarMate, following a strict single-ViewModel pattern (Level B architectural constraint). It is the brain of the entire application: every piece of training business logic, session management, answer validation, mastery tracking, boss battles, daily practice, vocabulary sprints, TTS/ASR orchestration, and progress persistence flows through this class.
-
-**Why single ViewModel:** The app deliberately avoids multi-ViewModel architectures. All UI screens (`GrammarMateApp.kt` and per-screen composables) are stateless renderers that collect `StateFlow<TrainingUiState>` and dispatch actions via public methods. This eliminates cross-ViewModel synchronization bugs and ensures a single source of truth.
-
-**Class hierarchy:**
-```
-AndroidViewModel (Jetpack)
-  └── TrainingViewModel(application: Application)
-        ├── StateFlow<TrainingUiState>  (sole state holder)
-        ├── ~15 data store instances    (data layer)
-        ├── DailySessionHelper           (domain helper)
-        └── private mutable state vars   (session buffers)
-```
-
-**Data layer connections (stores initialized in constructor):**
-
-| Store | Purpose |
-|-------|---------|
-| `LessonStore` | Lesson pack import, seed data, language management, pack-scoped drill file queries |
-| `ProgressStore` | Training session position/state persistence (YAML) |
-| `AppConfigStore` | Runtime config flags (testMode, eliteSizeMultiplier, vocabSprintLimit) |
-| `MasteryStore` | Per-lesson card show tracking (uniqueCardShows, shownCardIds) |
-| `StreakStore` | Daily streak tracking per language |
-| `BadSentenceStore` | User-flagged bad sentences per pack |
-| `HiddenCardStore` | User-hidden cards |
-| `DrillProgressStore` | Drill mode card position |
-| `VocabProgressStore` | Vocab sprint SRS tracking |
-| `WordMasteryStore` | Vocab drill word mastery (pack-scoped) |
-| `BackupManager` | Backup/restore to Downloads/BaseGrammy/ |
-| `ProfileStore` | User profile (userName) |
-| `TtsModelManager` / `TtsEngine` | Sherpa-ONNX TTS (offline) |
-| `AsrModelManager` / `AsrEngine` | Sherpa-ONNX ASR (offline speech recognition) |
-
-**Sound system:** A `SoundPool` with two loaded sounds (`voicy_correct_answer`, `voicy_bad_answer`) for answer feedback. Loaded asynchronously; sounds only play after `onLoadCompleteListener` confirms readiness.
+> **Purpose:** This document is the authoritative migration playbook for decomposing the 3625-line TrainingViewModel into 11 modules as defined in `arch-module-decomposition.md`. Every method, field, private var, and store access is inventoried here. If anything is missed, the migration will introduce bugs. **Completeness is everything.**
 
 ---
 
-## 8.2 State Management
+## 1. Overview
 
-### 8.2.1 TrainingUiState Structure
+### 1.1 File Location & Size
 
-`TrainingUiState` is a data class defined at the bottom of TrainingViewModel.kt (line ~3490). It contains 70+ fields organized by domain:
+| Property | Value |
+|----------|-------|
+| File path | `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt` |
+| Total lines | 3756 (including TrainingUiState, SubmitResult, LessonLadderRow data classes) |
+| Class lines | 3624 (class body: line 80 through line 3624) |
+| Data class lines | 132 (TrainingUiState lines 3631-3746, SubmitResult lines 3626-3629, LessonLadderRow lines 3748-3755) |
 
-| Domain | Key Fields |
-|--------|-----------|
-| **Language & Packs** | `languages`, `installedPacks`, `selectedLanguageId`, `activePackId`, `activePackLessonIds` |
-| **Lessons** | `lessons`, `selectedLessonId` |
-| **Session Core** | `mode`, `sessionState`, `currentIndex`, `currentCard`, `inputText`, `correctCount`, `incorrectCount`, `incorrectAttemptsForCard` |
-| **Timer & Metrics** | `activeTimeMs`, `voiceActiveMs`, `voiceWordCount`, `hintCount`, `voicePromptStartMs`, `lastRating` |
-| **Answer** | `answerText`, `lastResult`, `inputMode`, `voiceTriggerToken` |
-| **Sub-lessons** | `subLessonTotal`, `subLessonCount`, `subLessonTypes`, `activeSubLessonIndex`, `completedSubLessonCount`, `subLessonFinishedToken` |
-| **Story** | `storyCheckInDone`, `storyCheckOutDone`, `activeStory`, `storyErrorMessage` |
-| **Vocab Sprint** | `currentVocab`, `vocabInputText`, `vocabAttempts`, `vocabAnswerText`, `vocabIndex`, `vocabTotal`, `vocabWordBankWords`, `vocabFinishedToken`, `vocabErrorMessage`, `vocabInputMode`, `vocabVoiceTriggerToken` |
-| **Boss** | `bossActive`, `bossType`, `bossTotal`, `bossProgress`, `bossReward`, `bossRewardMessage`, `bossFinishedToken`, `bossLastType`, `bossErrorMessage`, `bossLessonRewards`, `bossMegaRewards` |
-| **Elite** | `eliteActive`, `eliteStepIndex`, `eliteBestSpeeds`, `eliteFinishedToken`, `eliteUnlocked`, `eliteSizeMultiplier`, `vocabSprintLimit` |
-| **Flowers & Mastery** | `lessonFlowers`, `currentLessonFlower`, `currentLessonShownCount` |
-| **Word Bank** | `wordBankWords`, `selectedWords` |
-| **Streak** | `currentStreak`, `longestStreak`, `streakMessage`, `streakCelebrationToken` |
-| **User Profile** | `userName` |
-| **Ladder** | `ladderRows` (list of `LessonLadderRow`) |
-| **TTS** | `ttsState`, `ttsDownloadState`, `ttsModelReady`, `ttsMeteredNetwork`, `bgTtsDownloading`, `bgTtsDownloadStates`, `ttsModelsReady`, `ttsSpeed`, `ruTextScale` |
-| **ASR** | `useOfflineAsr`, `asrState`, `asrModelReady`, `asrDownloadState`, `asrMeteredNetwork`, `asrErrorMessage`, `audioPermissionDenied` |
-| **Bad Sentences** | `badSentenceCount` |
-| **Drill** | `isDrillMode`, `drillCardIndex`, `drillTotalCards`, `drillShowStartDialog`, `drillHasProgress` |
-| **Navigation** | `initialScreen`, `currentScreen`, `testMode` |
-| **Vocab Mastery** | `vocabMasteredCount` |
-| **Daily Practice** | `dailySession: DailySessionState`, `dailyCursor: DailyCursorState` |
-
-### 8.2.2 State Update Pattern
-
-All state mutations go through `_uiState.update { it.copy(...) }`. This is an atomic snapshot update on `MutableStateFlow`. The ViewModel never exposes `_uiState` directly; the public `uiState: StateFlow<TrainingUiState>` is read-only.
-
-**Token-based events:** Many UI events use incrementing integer tokens rather than booleans to avoid stale-event problems:
-- `subLessonFinishedToken` — incremented when a sub-lesson completes
-- `vocabFinishedToken` — incremented when vocab sprint finishes
-- `bossFinishedToken` — incremented when boss battle ends
-- `eliteFinishedToken` — incremented when elite step completes
-- `voiceTriggerToken` — incremented to trigger voice input prompt
-- `vocabVoiceTriggerToken` — voice trigger for vocab mode
-- `streakCelebrationToken` — incremented for streak celebration dialog
-
-The UI observes these tokens and fires one-shot side effects (dialogs, animations) when they change.
-
-### 8.2.3 State Persistence (`saveProgress()`)
-
-The private `saveProgress()` method serializes a `TrainingProgress` data class to disk via `ProgressStore`:
+### 1.2 Class Signature
 
 ```kotlin
-progressStore.save(TrainingProgress(
-    languageId, mode, lessonId, currentIndex, correctCount, incorrectCount,
-    incorrectAttemptsForCard, activeTimeMs, state, bossLessonRewards,
-    bossMegaRewards, voiceActiveMs, voiceWordCount, hintCount,
-    eliteStepIndex, eliteBestSpeeds, currentScreen, activePackId,
-    dailyLevel, dailyTaskIndex, dailyCursor
-))
+class TrainingViewModel(application: Application) : AndroidViewModel(application)
 ```
 
-**When progress is saved:**
-- After every answer submission (`submitAnswer()`)
-- After every card navigation (`nextCard()`, `prevCard()`)
-- After session state changes (`togglePause()`, `startSession()`)
-- After lesson/language/pack selection
-- After boss/elite mode transitions
-- Timer saves every 500ms tick
+### 1.3 Constructor Dependencies (Stores, Engines, Managers)
 
-**Skip conditions:** `saveProgress()` is skipped when `bossActive == true && bossType != BossType.ELITE` (boss sessions are not persisted mid-battle).
+All initialized as private vals/vars at the top of the class body (lines 81-136):
 
-**Force backup:** A `forceBackupOnSave` flag triggers `createProgressBackup()` on the next save after sub-lesson completion, story completion, or vocab sprint completion.
+| Instance | Line | Type | Category | Target Module |
+|----------|------|------|----------|---------------|
+| `soundPool` | 81 | `SoundPool` | Audio | AudioCoordinator |
+| `successSoundId` | 91 | `Int` | Audio | AudioCoordinator |
+| `errorSoundId` | 92 | `Int` | Audio | AudioCoordinator |
+| `loadedSounds` | 93 | `MutableSet<Int>` | Audio | AudioCoordinator |
+| `lessonStore` | 94 | `LessonStore` | Data | ViewModel (stays) / CardProvider / DailyCoordinator |
+| `progressStore` | 95 | `ProgressStore` | Data | ProgressTracker |
+| `configStore` | 96 | `AppConfigStore` | Data | ViewModel (stays) |
+| `masteryStore` | 97 | `MasteryStore` | Data | ProgressTracker |
+| `streakStore` | 98 | `StreakStore` | Data | StreakManager |
+| `badSentenceStore` | 99 | `BadSentenceStore` | Data | ViewModel (stays) |
+| `hiddenCardStore` | 100 | `HiddenCardStore` | Data | CardProvider |
+| `drillProgressStore` | 101 | `DrillProgressStore` | Data | SessionRunner (drill sub-mode) |
+| `vocabProgressStore` | 102 | `VocabProgressStore` | Data | VocabSprintRunner |
+| `wordMasteryStore` | 103 | `WordMasteryStore` (var) | Data | DailyCoordinator / VocabSprintRunner |
+| `backupManager` | 104 | `BackupManager` | Data | ViewModel (stays) |
+| `profileStore` | 105 | `ProfileStore` | Data | ViewModel (stays) |
+| `ttsModelManager` | 106 | `TtsModelManager` | Audio | AudioCoordinator |
+| `ttsEngine` | 107 | `TtsEngine` | Audio | AudioCoordinator |
+| `asrModelManager` | 108 | `AsrModelManager` | Audio | AudioCoordinator |
+| `asrEngine` | 109 | `AsrEngine?` | Audio | AudioCoordinator |
+
+### 1.4 Helper Dependencies
+
+| Instance | Line | Type | Target Module |
+|----------|------|------|---------------|
+| `dailySessionHelper` | 141 | `DailySessionHelper` | DailyPracticeCoordinator |
+
+### 1.5 Private Mutable State Variables
+
+| Variable | Line | Type | Purpose | Used By | Target Module |
+|----------|------|------|---------|---------|---------------|
+| `sessionCards` | 115 | `List<SentenceCard>` | Cards for current sub-lesson/boss/elite | `buildSessionCards()`, `submitAnswer()`, `nextCard()`, `prevCard()`, `startSession()`, `currentCard()`, `startBoss()`, `openEliteStep()`, `startDrill()`, `loadDrillCard()`, `finishSession()`, `markSubLessonCardsShown()`, `skipToNextCard()` | SessionRunner |
+| `bossCards` | 116 | `List<SentenceCard>` | Cards for current boss battle | `startBoss()`, `finishBoss()` | BossBattleRunner |
+| `eliteCards` | 117 | `List<SentenceCard>` | Cards for current elite step | `openEliteStep()` | SessionRunner (elite sub-mode) |
+| `vocabSession` | 118 | `List<VocabEntry>` | Entries for current vocab sprint | `openVocabSprint()`, `moveToNextVocab()`, `buildVocabWordBank()`, `updateVocabWordBank()` | VocabSprintRunner |
+| `subLessonTotal` | 119 | `Int` | Cards in current sub-lesson | `buildSessionCards()`, `startBoss()`, `startDrill()`, `loadDrillCard()` | SessionRunner |
+| `subLessonCount` | 120 | `Int` | Total sub-lessons for schedule | `buildSessionCards()`, `startBoss()` | SessionRunner |
+| `lessonSchedules` | 121 | `Map<String, LessonSchedule>` | Cached schedules per lesson | `rebuildSchedules()`, `buildSessionCards()`, `selectLesson()`, `submitAnswer()` | CardProvider |
+| `scheduleKey` | 122 | `String` | Cache key for schedule validity | `rebuildSchedules()` | CardProvider |
+| `timerJob` | 123 | `Job?` | Active timer coroutine | `resumeTimer()`, `pauseTimer()` | SessionRunner |
+| `activeStartMs` | 124 | `Long?` | Timestamp for timer accumulation | `resumeTimer()`, `pauseTimer()` | SessionRunner |
+| `forceBackupOnSave` | 125 | `Boolean` | Trigger backup on next save | `saveProgress()`, `submitAnswer()`, `completeStory()`, `moveToNextVocab()`, `saveProgressNow()` | ViewModel (stays) |
+| `prebuiltDailySession` | 126 | `List<DailyTask>?` | Pre-computed daily session | `init`, `startDailyPractice()`, `resetAllProgress()` | DailyCoordinator |
+| `lastDailyTasks` | 127 | `List<DailyTask>?` | In-memory cache for repeat | `startDailyPractice()`, `repeatDailyPractice()`, `resetAllProgress()` | DailyCoordinator |
+| `dailyPracticeAnsweredCounts` | 129 | `MutableMap<DailyBlockType, Int>` | Per-block VOICE/KEYBOARD tracking | `recordDailyCardPracticed()`, `cancelDailySession()`, `startDailyPractice()` | DailyCoordinator |
+| `dailyCursorAtSessionStart` | 131 | `DailyCursorState` | Snapshot for cancel rollback | `startDailyPractice()` | DailyCoordinator |
+| `eliteSizeMultiplier` | 136 | `Double` | Config: elite card count multiplier | `buildEliteCards()`, `eliteSubLessonSize()`, `init` | SessionRunner (elite sub-mode) |
+| `dailyBadCardIds` | 3548 | `MutableSet<String>` | Flagged daily cards | `flagDailyBadSentence()`, `unflagDailyBadSentence()`, `isDailyBadSentence()` | ViewModel (stays) |
+| `ttsDownloadJob` | 2671 | `Job?` | Active TTS download coroutine | `beginTtsDownload()`, `startTtsDownloadForLanguage()` | AudioCoordinator |
+| `asrDownloadJob` | 2749 | `Job?` | Active ASR download coroutine | `beginAsrDownload()` | AudioCoordinator |
+| `bgDownloadJob` | 2886 | `Job?` | Background TTS download coroutine | `startBackgroundTtsDownload()` | AudioCoordinator |
 
 ---
 
-## 8.3 Session Lifecycle
+## 2. Complete Method Inventory
 
-### 8.3.1 Initialization (`init` block)
+### Legend
 
-The init block runs these steps in order:
+- **Visibility:** `pub` = public, `pri` = private
+- **Category:** Domain grouping
+- **Target Module:** Where this method should live after decomposition (per `arch-module-decomposition.md`)
+- **Reads Fields:** Which `TrainingUiState` fields the method reads (non-exhaustive for trivial reads)
+- **Writes Fields:** Which `TrainingUiState` fields the method writes via `_uiState.update`
+- **Stores Touched:** Which data stores are accessed
 
-1. **Sound pool setup** — loads success/error sounds, sets load-complete listener
-2. **Seed data** — `lessonStore.ensureSeedData()`
-3. **Migration** — `badSentenceStore.migrateIfNeeded(lessonStore)`
-4. **State restoration** — loads `ProgressStore`, `AppConfigStore`, `ProfileStore`
-5. **Boss reward parsing** — converts stored string values to `BossReward` enum
-6. **Language/lesson resolution** — validates saved IDs against available data, falls back to first available
-7. **Pack resolution** — resolves `activePackId` from saved value, lesson derivation, or first pack for language
-8. **UI state initialization** — massive `copy()` call setting all fields
-9. **Schedule rebuild** — `rebuildSchedules(lessons)`
-10. **Session card build** — `buildSessionCards()`
-11. **Flower refresh** — `refreshFlowerStates()`
-12. **Active session resume** — if state was `ACTIVE` with a current card, resumes timer and records mastery
-13. **Background pack reload** — `viewModelScope.launch(Dispatchers.IO)` to force-reload default packs, then updates UI on Main thread
-14. **TTS/ASR initialization** — checks model readiness, starts background TTS downloads
-15. **TTS state collection** — collects `ttsEngine.state` flow into UI state
-16. **Daily session pre-build** — on IO thread, builds daily practice session for faster start
+### 2.1 Session Management Methods
 
-### 8.3.2 Session Start (`startSession()`)
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 1 | `init {}` | - | 150-351 | Initialization | ViewModel (stays) | All | All | lessonStore, progressStore, configStore, profileStore, masteryStore, streakStore, badSentenceStore, wordMasteryStore, ttsModelManager, asrModelManager, ttsEngine |
+| 2 | `onInputChanged(text)` | pub | 353-362 | Input | SessionRunner | inputText, answerText, incorrectAttemptsForCard | inputText, incorrectAttemptsForCard, answerText | none |
+| 3 | `onVoicePromptStarted()` | pub | 364-368 | Session | SessionRunner | voicePromptStartMs | voicePromptStartMs | none |
+| 4 | `setInputMode(mode)` | pub | 370-391 | Input | SessionRunner | inputMode, sessionState, answerText, incorrectAttemptsForCard | inputMode, incorrectAttemptsForCard, answerText, voiceTriggerToken, voicePromptStartMs | none |
+| 5 | `togglePause()` | pub | 924-932 | Session | SessionRunner | sessionState | sessionState, voicePromptStartMs | progressStore (via saveProgress) |
+| 6 | `pauseSession()` | pub | 934-938 | Session | SessionRunner | sessionState, voicePromptStartMs | sessionState, voicePromptStartMs | progressStore (via saveProgress) |
+| 7 | `finishSession()` | pub | 940-971 | Session | SessionRunner | eliteActive, bossActive, activeTimeMs, correctCount, voicePromptStartMs | sessionState, lastRating, incorrectAttemptsForCard, lastResult, answerText, currentIndex, currentCard, inputText, voicePromptStartMs | progressStore (via saveProgress) |
+| 8 | `showAnswer()` | pub | 973-986 | Session | SessionRunner | currentCard, inputMode | answerText, sessionState, inputText, hintCount, voicePromptStartMs | progressStore (via saveProgress) |
+| 9 | `resumeFromSettings()` | pub | 1289-1292 | Session | SessionRunner | sessionState | (delegates to startSession) | (delegates) |
+| 10 | `startSession()` | pri | 2436-2459 | Session | SessionRunner | bossActive, eliteActive, currentCard, inputMode | sessionState, inputText, voiceTriggerToken, voicePromptStartMs | progressStore (via saveProgress) |
+| 11 | `currentCard()` | pri | 2461-2465 | Session | SessionRunner | currentIndex | (returns SentenceCard?) | none |
+| 12 | `resumeTimer()` | pri | 2467-2480 | Timer | SessionRunner | activeTimeMs | activeTimeMs | progressStore (via saveProgress) |
+| 13 | `pauseTimer()` | pri | 2482-2486 | Timer | SessionRunner | (none) | (none) | none |
 
-Called from `togglePause()` when resuming, or from `resumeFromSettings()`.
+### 2.2 Answer Submission & Validation Methods
 
-1. If not in boss or elite mode, rebuilds session cards
-2. If no cards or no current card, pauses and returns
-3. Pauses any existing timer, then starts a new one
-4. Sets `sessionState = ACTIVE`, clears input, triggers voice if in VOICE mode
-5. Records mastery for the current card
-6. Saves progress
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 14 | `submitAnswer()` | pub | 624-849 | Answer | SessionRunner + ProgressTracker + BossBattleRunner + FlowerProgressRenderer + StreakManager | sessionState, inputText, testMode, currentIndex, inputMode, voicePromptStartMs, bossActive, eliteActive, isDrillMode, completedSubLessonCount, subLessonCount, activeSubLessonIndex, eliteStepIndex, eliteBestSpeeds, activeTimeMs, voiceActiveMs, voiceWordCount | correctCount, incorrectCount, incorrectAttemptsForCard, lastResult, answerText, inputText, sessionState, voiceTriggerToken, voicePromptStartMs, voiceActiveMs, voiceWordCount, currentIndex, activeSubLessonIndex, completedSubLessonCount, subLessonFinishedToken, eliteActive, eliteStepIndex, eliteBestSpeeds, eliteFinishedToken | masteryStore, progressStore, streakStore (indirect via helpers) |
 
-### 8.3.3 Session Progression
+### 2.3 Card Navigation Methods
 
-**Card advancement flow:**
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 15 | `nextCard(triggerVoice)` | pub | 851-904 | Navigation | SessionRunner | sessionState, currentIndex, inputMode, bossActive, bossProgress, bossTotal, bossReward, bossRewardMessage | currentIndex, currentCard, inputText, lastResult, answerText, incorrectAttemptsForCard, sessionState, voiceTriggerToken, voicePromptStartMs, bossProgress, bossReward, bossRewardMessage | masteryStore (via recordCardShowForMastery), progressStore (via saveProgress) |
+| 16 | `prevCard()` | pub | 906-922 | Navigation | SessionRunner | currentIndex | currentIndex, currentCard, inputText, lastResult, answerText, incorrectAttemptsForCard, voicePromptStartMs | masteryStore (via recordCardShowForMastery), progressStore (via saveProgress) |
 
-```
-submitAnswer()
-  |-- accepted?
-  |     |-- YES + boss + last card --> updateBossProgress(), finishBoss()
-  |     |-- YES + elite + last card --> calculate speed, save best, next step, eliteFinishedToken++
-  |     |-- YES + drill mode --> increment counters, advanceDrillCard()
-  |     |-- YES + normal last card --> pause timer, advance sub-lesson, buildSessionCards(),
-  |     |                           checkAndMarkLessonCompleted(), refreshFlowerStates(),
-  |     |                           updateStreak(), forceBackupOnSave
-  |     |-- YES + not last card --> increment counters, nextCard(triggerVoice)
-  |     |-- NO --> playErrorTone, increment incorrect
-  |           |-- attempts >= 3? --> show hint (all accepted answers), pause timer
-  |           |-- otherwise --> allow retry
-```
+### 2.4 Language / Lesson / Pack Selection Methods
 
-**Sub-lesson transition (last card of sub-lesson):**
-1. Pause timer
-2. Calculate completed sub-lessons from mastery data
-3. Advance `completedSubLessonCount` and `activeSubLessonIndex`
-4. Increment `subLessonFinishedToken`
-5. Mark shown cards via `markSubLessonCardsShown()`
-6. Rebuild session cards for the next sub-lesson
-7. Check lesson completion (15 sub-lessons)
-8. Refresh flower states
-9. Update streak
-10. Trigger backup on next save
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 17 | `selectLanguage(languageId)` | pub | 393-472 | Selection | ViewModel (stays) | All session fields | selectedLanguageId, lessons, selectedLessonId, activePackId, activePackLessonIds + full reset | lessonStore, progressStore, wordMasteryStore, masteryStore (via helpers) |
+| 18 | `selectLesson(lessonId)` | pub | 474-549 | Selection | ViewModel (stays) | selectedLanguageId, lessons, selectedLessonId | selectedLessonId, activePackId, activePackLessonIds, mode + full reset | lessonStore, progressStore, masteryStore (via helpers) |
+| 19 | `selectPack(packId)` | pub | 551-569 | Selection | ViewModel (stays) | selectedLessonId, activePackId, activePackLessonIds | (delegates to selectLesson or sets packId directly) | lessonStore, progressStore, wordMasteryStore |
+| 20 | `selectMode(mode)` | pub | 571-622 | Selection | ViewModel (stays) | All session fields | mode + full reset | progressStore (via saveProgress) |
+| 21 | `selectSubLesson(index)` | pub | 1377-1391 | Selection | SessionRunner | activeSubLessonIndex, currentIndex | activeSubLessonIndex, currentIndex, inputText, lastResult, answerText, sessionState | progressStore (via saveProgress) |
 
-### 8.3.4 Session End
+### 2.5 Lesson Content Management Methods
 
-**Normal end (`finishSession()`):**
-- For elite mode: delegates to `cancelEliteSession()`
-- For boss mode: delegates to `finishBoss()`
-- Otherwise: pauses timer, calculates `lastRating` (correctCount / minutes), resets to PAUSED with first card, saves progress
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 22 | `importLesson(uri)` | pub | 988-992 | Content | ViewModel (stays) | selectedLanguageId | (delegates to refreshLessons) | lessonStore |
+| 23 | `importLessonPack(uri)` | pub | 994-1060 | Content | ViewModel (stays) | selectedLanguageId | All selection + session fields | lessonStore, progressStore (via helpers) |
+| 24 | `resetAndImportLesson(uri)` | pub | 1061-1066 | Content | ViewModel (stays) | selectedLanguageId | (delegates to refreshLessons) | lessonStore |
+| 25 | `deleteLesson(lessonId)` | pub | 1068-1073 | Content | ViewModel (stays) | selectedLanguageId, selectedLessonId | (delegates to refreshLessons) | lessonStore |
+| 26 | `createEmptyLesson(title)` | pub | 1075-1079 | Content | ViewModel (stays) | selectedLanguageId | (delegates to refreshLessons) | lessonStore |
+| 27 | `addLanguage(name)` | pub | 1081-1143 | Content | ViewModel (stays) | All session fields | languages, installedPacks, selectedLanguageId, lessons, selectedLessonId + full reset | lessonStore, progressStore (via helpers) |
+| 28 | `deleteAllLessons()` | pub | 1145-1150 | Content | ViewModel (stays) | selectedLanguageId | installedPacks | lessonStore, progressStore (via helpers) |
+| 29 | `resetAllProgress()` | pub | 1155-1200 | Content | ViewModel (stays) | dailySession, dailyCursor, currentIndex, correctCount, incorrectCount, sessionState | dailySession, dailyCursor, currentIndex, correctCount, incorrectCount, sessionState, inputText, lastResult, answerText, incorrectAttemptsForCard | progressStore, masteryStore, wordMasteryStore, VerbDrillStore (via file ops) |
+| 30 | `deletePack(packId)` | pub | 1202-1210 | Content | ViewModel (stays) | selectedLanguageId, installedPacks | installedPacks | lessonStore |
+| 31 | `refreshLessons(selectedLessonId)` | pri | 1234-1287 | Content | ViewModel (stays) | selectedLanguageId | lessons, selectedLessonId + full reset | lessonStore, progressStore (via helpers), masteryStore (via helpers) |
 
-**Pause (`pauseSession()` / `togglePause()`):**
-- Pauses timer
-- Sets `sessionState = PAUSED`
-- Clears `voicePromptStartMs`
-- Saves progress
+### 2.6 Schedule & Card Building Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 32 | `rebuildSchedules(lessons)` | pri | 1294-1301 | Scheduling | CardProvider | (uses private vars) | (updates lessonSchedules, scheduleKey) | none (delegates to MixedReviewScheduler) |
+| 33 | `buildSessionCards()` | pri | 1303-1375 | Scheduling | CardProvider | bossActive, eliteActive, isDrillMode, mode, selectedLessonId, activeSubLessonIndex, lessons, currentIndex | currentIndex, currentCard, sessionState, subLessonTotal, subLessonCount, activeSubLessonIndex, completedSubLessonCount, subLessonTypes | masteryStore, hiddenCardStore |
+| 34 | `buildEliteCards()` | pri | 2604-2608 | Scheduling | CardProvider | lessons | (returns List<SentenceCard>) | none |
+
+### 2.7 Boss Battle Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 35 | `startBossLesson()` | pub | 2216-2218 | Boss | BossBattleRunner | (delegates to startBoss) | (delegates) | (delegates) |
+| 36 | `startBossMega()` | pub | 2220-2222 | Boss | BossBattleRunner | (delegates to startBoss) | (delegates) | (delegates) |
+| 37 | `startBossElite()` | pub | 2224-2226 | Boss | BossBattleRunner | (delegates to startBoss) | (delegates) | (delegates) |
+| 38 | `startBoss(type)` | pri | 2228-2303 | Boss | BossBattleRunner | completedSubLessonCount, testMode, selectedLessonId, lessons | bossActive, bossType, bossTotal, bossProgress, bossReward, bossRewardMessage, bossErrorMessage, currentIndex, currentCard + all session counters | none |
+| 39 | `finishBoss()` | pub | 2305-2365 | Boss | BossBattleRunner | bossActive, bossType, bossProgress, bossTotal, bossReward, bossLessonRewards, bossMegaRewards, selectedLessonId | bossActive, bossType, bossTotal, bossProgress, bossReward, bossRewardMessage, bossFinishedToken, bossLastType, bossErrorMessage, bossLessonRewards, bossMegaRewards, selectedLessonId, mode + session fields | progressStore (via saveProgress), masteryStore (via helpers) |
+| 40 | `clearBossRewardMessage()` | pub | 2367-2388 | Boss | BossBattleRunner | bossActive, sessionState, currentCard, inputMode | bossRewardMessage, sessionState, voiceTriggerToken, inputText | none |
+| 41 | `clearBossError()` | pub | 2390-2392 | Boss | BossBattleRunner | bossErrorMessage | bossErrorMessage | none |
+| 42 | `updateBossProgress(progress)` | pri | 2394-2415 | Boss | BossBattleRunner | bossTotal, bossReward, bossRewardMessage, sessionState | bossProgress, bossReward, bossRewardMessage, sessionState | none |
+| 43 | `resolveBossReward(progress, total)` | pri | 2417-2426 | Boss | BossBattleRunner | (pure function) | (returns BossReward?) | none |
+| 44 | `bossRewardMessage(reward)` | pri | 2428-2434 | Boss | BossBattleRunner | (pure function) | (returns String) | none |
+
+### 2.8 Elite Mode Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 45 | `openEliteStep(index)` | pub | 1393-1425 | Elite | SessionRunner (elite sub-mode) | eliteStepIndex, eliteBestSpeeds | eliteActive, eliteStepIndex, currentIndex, currentCard + all session counters | progressStore (via saveProgress) |
+| 46 | `cancelEliteSession()` | pub | 1427-1444 | Elite | SessionRunner (elite sub-mode) | eliteActive | eliteActive, sessionState, currentIndex, inputText, lastResult, answerText, incorrectAttemptsForCard, voicePromptStartMs | progressStore (via saveProgress), masteryStore (via helpers) |
+| 47 | `resolveEliteUnlocked(lessons, testMode)` | pri | 2582-2584 | Elite | SessionRunner (elite sub-mode) | (pure function) | (returns Boolean) | none |
+| 48 | `normalizeEliteSpeeds(speeds)` | pri | 2586-2592 | Elite | SessionRunner (elite sub-mode) | (pure function) | (returns List<Double>) | none |
+| 49 | `eliteSubLessonSize()` | pri | 2594-2596 | Elite | SessionRunner (elite sub-mode) | (uses private var) | (returns Int) | none |
+| 50 | `calculateSpeedPerMinute(activeMs, words)` | pri | 2598-2602 | Elite | SessionRunner (elite sub-mode) | (pure function) | (returns Double) | none |
+
+### 2.9 Daily Practice Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 51 | `hasResumableDailySession()` | pub | 1448-1455 | Daily | DailyCoordinator | dailyCursor | (returns Boolean) | progressStore |
+| 52 | `startDailyPractice(lessonLevel)` | pub | 1457-1521 | Daily | DailyCoordinator | dailyCursor, activePackId, selectedLanguageId, dailySession | dailyCursor (via storeFirstSessionCardIds) | VerbDrillStore, WordMasteryStore, lessonStore, progressStore (via saveProgress) |
+| 53 | `storeFirstSessionCardIds(sentenceIds, verbIds)` | pri | 1527-1539 | Daily | DailyCoordinator | dailyCursor | dailyCursor | progressStore (via saveProgress) |
+| 54 | `advanceCursor(sentenceCount)` | pri | 1546-1564 | Daily | DailyCoordinator / ProgressTracker | dailyCursor | dailyCursor | lessonStore |
+| 55 | `repeatDailyPractice(lessonLevel)` | pub | 1566-1619 | Daily | DailyCoordinator | dailyCursor, activePackId, selectedLanguageId | (delegates to dailySessionHelper) | VerbDrillStore, WordMasteryStore, lessonStore |
+| 56 | `advanceDailyTask()` | pub | 1621-1628 | Daily | DailyCoordinator | dailySession | (delegates to dailySessionHelper + persistDailyVerbProgress) | VerbDrillStore |
+| 57 | `recordDailyCardPracticed(blockType)` | pub | 1635-1650 | Daily | DailyCoordinator / ProgressTracker | dailySession, activePackId, selectedLanguageId | (none via updateState) | masteryStore |
+| 58 | `advanceDailyBlock()` | pub | 1652-1657 | Daily | DailyCoordinator | dailySession | (delegates to dailySessionHelper) | none |
+| 59 | `persistDailyVerbProgress(card)` | pub | 1659-1675 | Daily | DailyCoordinator | activePackId | (none via updateState) | VerbDrillStore |
+| 60 | `repeatDailyBlock()` | pub | 1677-1699 | Daily | DailyCoordinator | dailySession, activePackId, selectedLanguageId | (delegates to dailySessionHelper) | VerbDrillStore, WordMasteryStore, lessonStore |
+| 61 | `cancelDailySession()` | pub | 1701-1722 | Daily | DailyCoordinator | dailySession, dailyPracticeAnsweredCounts | (delegates to dailySessionHelper) | progressStore (via advanceCursor) |
+| 62 | `rateVocabCard(rating)` | pub | 1728-1755 | Daily | DailyCoordinator | activePackId | (none via updateState) | WordMasteryStore |
+| 63 | `getDailyCurrentTask()` | pub | 1757-1759 | Daily | DailyCoordinator | dailySession | (delegates to dailySessionHelper) | none |
+| 64 | `getDailyBlockProgress()` | pub | 1761-1763 | Daily | DailyCoordinator | dailySession | (delegates to dailySessionHelper) | none |
+| 65 | `submitDailySentenceAnswer(input)` | pub | 1765-1776 | Daily | DailyCoordinator + AnswerValidator | dailySession | (none via updateState) | none |
+| 66 | `submitDailyVerbAnswer(input)` | pub | 1778-1789 | Daily | DailyCoordinator + AnswerValidator | dailySession | (none via updateState) | none |
+| 67 | `getDailySentenceAnswer()` | pub | 1791-1794 | Daily | DailyCoordinator | dailySession | (returns String?) | none |
+| 68 | `getDailyVerbAnswer()` | pub | 1796-1799 | Daily | DailyCoordinator | dailySession | (returns String?) | none |
+
+### 2.10 Drill Mode Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 69 | `showDrillStartDialog(lessonId)` | pub | 1817-1827 | Drill | SessionRunner (drill sub-mode) | lessons, selectedLessonId | drillShowStartDialog, drillHasProgress | drillProgressStore |
+| 70 | `startDrill(resume)` | pub | 1829-1880 | Drill | SessionRunner (drill sub-mode) | selectedLessonId, lessons, drillCardIndex, activePackId | isDrillMode, drillCardIndex, drillTotalCards, drillShowStartDialog, drillHasProgress + all session + boss + elite reset | drillProgressStore, badSentenceStore, progressStore (via saveProgress) |
+| 71 | `dismissDrillDialog()` | pub | 1882-1884 | Drill | SessionRunner (drill sub-mode) | drillShowStartDialog | drillShowStartDialog | none |
+| 72 | `loadDrillCard(cardIndex, activate)` | pri | 1886-1914 | Drill | SessionRunner (drill sub-mode) | selectedLessonId, lessons, inputMode | currentIndex, currentCard, subLessonTotal, drillCardIndex, sessionState, inputText, lastResult, answerText, incorrectAttemptsForCard, voiceTriggerToken | none |
+| 73 | `advanceDrillCard()` | pub | 1916-1929 | Drill | SessionRunner (drill sub-mode) | isDrillMode, selectedLessonId, drillCardIndex, drillTotalCards | (delegates to loadDrillCard or finishDrill) | drillProgressStore |
+| 74 | `finishDrill(lessonId)` | pri | 1931-1947 | Drill | SessionRunner (drill sub-mode) | isDrillMode | isDrillMode, drillCardIndex, drillTotalCards, sessionState, currentIndex, currentCard, subLessonFinishedToken | drillProgressStore, masteryStore (via helpers), progressStore (via saveProgress) |
+| 75 | `exitDrillMode()` | pub | 1949-1975 | Drill | SessionRunner (drill sub-mode) | isDrillMode, selectedLessonId, drillCardIndex, activePackId | isDrillMode, drillCardIndex, drillTotalCards, sessionState, currentIndex, inputText, lastResult, answerText, incorrectAttemptsForCard, voicePromptStartMs, badSentenceCount | drillProgressStore, badSentenceStore, masteryStore (via helpers), progressStore (via saveProgress) |
+
+### 2.11 Story Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 76 | `openStory(phase)` | pub | 1979-1988 | Story | ViewModel (stays) | selectedLessonId, selectedLanguageId | activeStory, storyErrorMessage | lessonStore |
+| 77 | `completeStory(phase, allCorrect)` | pub | 2064-2079 | Story | ViewModel (stays) | testMode | storyCheckInDone, storyCheckOutDone, activeStory | progressStore (via saveProgress) |
+| 78 | `clearStoryError()` | pub | 2081-2083 | Story | ViewModel (stays) | storyErrorMessage | storyErrorMessage | none |
+
+### 2.12 Vocab Sprint Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 79 | `hasVocabProgress()` | pub | 1990-1995 | Vocab | VocabSprintRunner | selectedLessonId, selectedLanguageId | (returns Boolean) | vocabProgressStore |
+| 80 | `openVocabSprint(resume)` | pub | 1997-2062 | Vocab | VocabSprintRunner | selectedLessonId, selectedLanguageId, vocabSprintLimit | currentVocab, vocabInputText, vocabAttempts, vocabAnswerText, vocabIndex, vocabTotal, vocabWordBankWords, vocabErrorMessage, vocabInputMode, vocabVoiceTriggerToken + boss reset | lessonStore, vocabProgressStore |
+| 81 | `clearVocabError()` | pub | 2085-2087 | Vocab | VocabSprintRunner | vocabErrorMessage | vocabErrorMessage | none |
+| 82 | `onVocabInputChanged(text)` | pub | 2089-2098 | Vocab | VocabSprintRunner | vocabInputText, vocabAttempts, vocabAnswerText | vocabInputText, vocabAttempts, vocabAnswerText | none |
+| 83 | `setVocabInputMode(mode)` | pub | 2100-2107 | Vocab | VocabSprintRunner | vocabInputMode, vocabWordBankWords | vocabInputMode, vocabWordBankWords | none |
+| 84 | `requestVocabVoice()` | pub | 2109-2116 | Vocab | VocabSprintRunner | vocabInputMode, vocabVoiceTriggerToken | vocabInputMode, vocabVoiceTriggerToken | none |
+| 85 | `submitVocabAnswer(inputOverride)` | pub | 2118-2163 | Vocab | VocabSprintRunner + AnswerValidator | currentVocab, vocabInputText, vocabAttempts, vocabIndex, testMode, vocabInputMode, selectedLessonId, selectedLanguageId | vocabAttempts, vocabAnswerText, vocabInputText, vocabVoiceTriggerToken | vocabProgressStore |
+| 86 | `showVocabAnswer()` | pub | 2165-2174 | Vocab | VocabSprintRunner | currentVocab | vocabAnswerText, vocabInputText, vocabAttempts | none |
+| 87 | `moveToNextVocab()` | pri | 2176-2214 | Vocab | VocabSprintRunner | currentVocab, vocabIndex, vocabSession | currentVocab, vocabInputText, vocabAttempts, vocabAnswerText, vocabIndex, vocabTotal, vocabWordBankWords, vocabFinishedToken | vocabProgressStore, progressStore (via saveProgress) |
+
+### 2.13 Word Bank Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 88 | `generateWordBank(correctAnswer, extraWords)` | pri | 3071-3075 | WordBank | WordBankGenerator | (pure function) | (returns List<String>) | none |
+| 89 | `updateWordBank()` | pri | 3080-3114 | WordBank | WordBankGenerator | currentCard, lessons | wordBankWords, selectedWords, inputText | none |
+| 90 | `buildVocabWordBank(entry, pool)` | pri | 3116-3163 | WordBank | WordBankGenerator | selectedLanguageId, lessons | (returns List<String>) | lessonStore |
+| 91 | `updateVocabWordBank()` | pri | 3165-3169 | WordBank | WordBankGenerator | currentVocab, vocabWordBankWords | vocabWordBankWords | none |
+| 92 | `selectWordFromBank(word)` | pub | 3174-3185 | WordBank | SessionRunner | selectedWords, inputText | selectedWords, inputText | none |
+| 93 | `removeLastSelectedWord()` | pub | 3190-3203 | WordBank | SessionRunner | selectedWords, inputText | selectedWords, inputText | none |
+
+### 2.14 TTS Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 94 | `onTtsSpeak(text, speed)` | pub | 2616-2631 | TTS | AudioCoordinator | selectedLanguageId, ttsSpeed | (delegates to ttsEngine) | ttsEngine, ttsModelManager |
+| 95 | `setTtsSpeed(speed)` | pub | 2633-2635 | TTS | AudioCoordinator | ttsSpeed | ttsSpeed | none |
+| 96 | `setRuTextScale(scale)` | pub | 2637-2639 | TTS | AudioCoordinator | ruTextScale | ruTextScale | none |
+| 97 | `startTtsDownload()` | pub | 2641-2648 | TTS | AudioCoordinator | ttsMeteredNetwork | ttsMeteredNetwork | ttsModelManager |
+| 98 | `confirmTtsDownloadOnMetered()` | pub | 2650-2653 | TTS | AudioCoordinator | ttsMeteredNetwork | ttsMeteredNetwork | none |
+| 99 | `dismissMeteredWarning()` | pub | 2655-2657 | TTS | AudioCoordinator | ttsMeteredNetwork | ttsMeteredNetwork | none |
+| 100 | `dismissTtsDownloadDialog()` | pub | 2663-2669 | TTS | AudioCoordinator | ttsDownloadState | ttsDownloadState | none |
+| 101 | `beginTtsDownload()` | pri | 2673-2691 | TTS | AudioCoordinator | selectedLanguageId, ttsModelReady, ttsDownloadState | ttsModelReady, ttsDownloadState | ttsModelManager |
+| 102 | `checkTtsModel()` | pri | 2693-2697 | TTS | AudioCoordinator | selectedLanguageId, ttsModelReady | ttsModelReady | ttsModelManager |
+| 103 | `checkAllTtsModels()` | pri | 2699-2704 | TTS | AudioCoordinator | ttsModelsReady | ttsModelsReady | ttsModelManager |
+| 104 | `startTtsDownloadForLanguage(languageId)` | pub | 2706-2741 | TTS | AudioCoordinator | ttsModelsReady, bgTtsDownloadStates, ttsDownloadState, ttsModelReady | ttsModelsReady, bgTtsDownloadStates, ttsDownloadState, ttsModelReady | ttsModelManager |
+| 105 | `stopTts()` | pub | 2743-2745 | TTS | AudioCoordinator | (delegates to ttsEngine) | (none) | ttsEngine |
+| 106 | `startBackgroundTtsDownload()` | pri | 2888-2937 | TTS | AudioCoordinator | languages, selectedLanguageId, ttsModelReady, ttsDownloadState, bgTtsDownloading, ttsModelsReady | bgTtsDownloadStates, bgTtsDownloading, ttsModelReady, ttsDownloadState, ttsModelsReady | ttsModelManager |
+| 107 | `setTtsDownloadStateFromBackground(bgState)` | pub | 2939-2941 | TTS | AudioCoordinator | ttsDownloadState | ttsDownloadState | none |
+| 108 | `playSuccessTone()` | pri | 2952-2956 | Audio | AudioCoordinator | (none) | (none) | soundPool |
+| 109 | `playErrorTone()` | pri | 2958-2962 | Audio | AudioCoordinator | (none) | (none) | soundPool |
+| 110 | `playSuccessSound()` | pri | 1801-1805 | Audio | AudioCoordinator | (none) | (none) | soundPool |
+| 111 | `playErrorSound()` | pri | 1807-1811 | Audio | AudioCoordinator | (none) | (none) | soundPool |
+
+> **Note on dual sound methods:** `playSuccessTone()` and `playSuccessSound()` are duplicates (same implementation). Similarly `playErrorTone()` / `playErrorSound()`. They exist because one set was introduced for session mode and the other for daily practice mode. During migration, these should be unified into a single method.
+
+### 2.15 ASR Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 112 | `checkAsrModel()` | pub | 2751-2754 | ASR | AudioCoordinator | asrModelReady | asrModelReady | asrModelManager |
+| 113 | `dismissAsrDownloadDialog()` | pub | 2756-2758 | ASR | AudioCoordinator | asrDownloadState | asrDownloadState | none |
+| 114 | `startOfflineRecognition()` | pub | 2760-2772 | ASR | AudioCoordinator | asrState, asrErrorMessage | (delegates to transcribeWithOfflineAsr + onInputChanged) | asrEngine |
+| 115 | `stopAsr()` | pub | 2774-2776 | ASR | AudioCoordinator | (delegates to asrEngine) | (none) | asrEngine |
+| 116 | `setUseOfflineAsr(enabled)` | pub | 2778-2788 | ASR | AudioCoordinator | useOfflineAsr, asrState, asrModelReady, asrErrorMessage | useOfflineAsr, asrState, asrModelReady, asrErrorMessage | configStore, asrEngine |
+| 117 | `startAsrDownload()` | pub | 2790-2796 | ASR | AudioCoordinator | asrMeteredNetwork | asrMeteredNetwork | asrModelManager |
+| 118 | `confirmAsrDownloadOnMetered()` | pub | 2798-2801 | ASR | AudioCoordinator | asrMeteredNetwork | asrMeteredNetwork | none |
+| 119 | `dismissAsrMeteredWarning()` | pub | 2803-2805 | ASR | AudioCoordinator | asrMeteredNetwork | asrMeteredNetwork | none |
+| 120 | `beginAsrDownload()` | pri | 2807-2826 | ASR | AudioCoordinator | asrDownloadState, asrModelReady | asrDownloadState, asrModelReady | asrModelManager |
+| 121 | `transcribeWithOfflineAsr()` | pri | 2832-2882 | ASR | AudioCoordinator | selectedLanguageId, asrState, asrErrorMessage | asrState, asrErrorMessage | asrEngine |
+
+### 2.16 Progress & Mastery Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 122 | `saveProgress()` | pri | 2488-2522 | Persistence | ProgressTracker | selectedLanguageId, mode, selectedLessonId, currentIndex, correctCount, incorrectCount, incorrectAttemptsForCard, activeTimeMs, sessionState, bossLessonRewards, bossMegaRewards, voiceActiveMs, voiceWordCount, hintCount, eliteStepIndex, eliteBestSpeeds, currentScreen, activePackId, dailySession | (none via updateState) | progressStore, backupManager |
+| 123 | `recordCardShowForMastery(card)` | pri | 2989-3010 | Mastery | ProgressTracker | bossActive, isDrillMode, inputMode, selectedLanguageId | (none via updateState) | masteryStore |
+| 124 | `markSubLessonCardsShown(cards)` | pri | 3012-3023 | Mastery | ProgressTracker | inputMode, selectedLessonId, lessons | (none via updateState) | masteryStore |
+| 125 | `checkAndMarkLessonCompleted()` | pri | 3028-3035 | Mastery | ProgressTracker | completedSubLessonCount, selectedLessonId | (none via updateState) | masteryStore |
+| 126 | `calculateCompletedSubLessons(subLessons, mastery, lessonId)` | pri | 3040-3067 | Mastery | ProgressTracker | lessons | (returns Int) | none |
+| 127 | `resolveCardLessonId(card)` | pri | 2968-2982 | Mastery | ProgressTracker | selectedLessonId, lessons | (returns String) | none |
+| 128 | `resolveProgressLessonInfo()` | pri | 2533-2572 | Mastery | ProgressTracker | activePackId, selectedLanguageId, activePackLessonIds, lessons, dailyCursor | (returns Pair?) | masteryStore |
+| 129 | `getProgressLessonLevel()` | pub | 2578-2580 | Mastery | ProgressTracker | (delegates to resolveProgressLessonInfo) | (returns Int) | none |
+| 130 | `refreshFlowerStates()` | pri | 3208-3246 | Flowers | FlowerProgressRenderer | selectedLanguageId, lessons, selectedLessonId | lessonFlowers, currentLessonFlower, currentLessonShownCount, ladderRows | masteryStore |
+| 131 | `rebindWordMasteryStore(packId)` | pri | 3253-3255 | Stores | ViewModel (stays) | (none) | (updates private var) | WordMasteryStore (constructor) |
+| 132 | `countMetricWords(text)` | pri | 2610-2614 | Utility | AnswerValidator | (pure function) | (returns Int) | none |
+
+### 2.17 Streak Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 133 | `updateStreak()` | pri | 3269-3303 | Streak | StreakManager | selectedLanguageId, currentStreak, longestStreak, streakMessage, streakCelebrationToken | currentStreak, longestStreak, streakMessage, streakCelebrationToken | streakStore |
+| 134 | `dismissStreakMessage()` | pub | 3308-3312 | Streak | StreakManager | streakMessage | streakMessage | none |
+
+### 2.18 Configuration & Profile Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 135 | `toggleTestMode()` | pub | 1212-1224 | Config | ViewModel (stays) | testMode, lessons | testMode, eliteUnlocked | configStore |
+| 136 | `updateVocabSprintLimit(limit)` | pub | 2226-2232 | Config | ViewModel (stays) | vocabSprintLimit | vocabSprintLimit | configStore |
+| 137 | `updateUserName(newName)` | pub | 3332-3342 | Config | ViewModel (stays) | userName | userName | profileStore |
+| 138 | `saveProgressNow()` | pub | 3344-3348 | Config | ViewModel (stays) | (none) | (none) | progressStore (via saveProgress) |
+| 139 | `onScreenChanged(screenName)` | pub | 3350-3352 | Config | ViewModel (stays) | currentScreen | currentScreen | none |
+
+### 2.19 Bad Sentences & Hidden Cards Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 140 | `flagBadSentence()` | pub | 3507-3523 | BadSentence | ViewModel (stays) | currentCard, activePackId, selectedLanguageId, isDrillMode, badSentenceCount | badSentenceCount | badSentenceStore |
+| 141 | `unflagBadSentence()` | pub | 3525-3530 | BadSentence | ViewModel (stays) | currentCard, activePackId, badSentenceCount | badSentenceCount | badSentenceStore |
+| 142 | `isBadSentence()` | pub | 3532-3536 | BadSentence | ViewModel (stays) | currentCard, activePackId | (returns Boolean) | badSentenceStore |
+| 143 | `exportBadSentences()` | pub | 3538-3544 | BadSentence | ViewModel (stays) | activePackId | (returns String?) | badSentenceStore |
+| 144 | `flagDailyBadSentence(cardId, languageId, sentence, translation, mode)` | pub | 3550-3561 | BadSentence | ViewModel (stays) | activePackId | (none via updateState) | badSentenceStore |
+| 145 | `unflagDailyBadSentence(cardId)` | pub | 3563-3567 | BadSentence | ViewModel (stays) | activePackId | (none via updateState) | badSentenceStore |
+| 146 | `isDailyBadSentence(cardId)` | pub | 3569-3572 | BadSentence | ViewModel (stays) | activePackId | (returns Boolean) | badSentenceStore |
+| 147 | `exportDailyBadSentences()` | pub | 3574-3580 | BadSentence | ViewModel (stays) | activePackId | (returns String?) | badSentenceStore |
+| 148 | `hideCurrentCard()` | pub | 3582-3586 | HiddenCards | ViewModel (stays) | currentCard | (delegates to skipToNextCard) | hiddenCardStore |
+| 149 | `unhideCurrentCard()` | pub | 3588-3591 | HiddenCards | ViewModel (stays) | currentCard | (none via updateState) | hiddenCardStore |
+| 150 | `isCurrentCardHidden()` | pub | 3593-3596 | HiddenCards | ViewModel (stays) | currentCard | (returns Boolean) | hiddenCardStore |
+| 151 | `skipToNextCard()` | pri | 3598-3623 | HiddenCards | SessionRunner | currentIndex, sessionCards, sessionState | currentIndex, currentCard, inputText, lastResult, answerText, incorrectAttemptsForCard, sessionState | none |
+
+### 2.20 Backup & Restore Methods
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 152 | `createProgressBackup()` | pub | 3318-3327 | Backup | ViewModel (stays) | (none) | (none) | backupManager |
+| 153 | `restoreBackup(backupUri)` | pub | 3357-3445 | Backup | ViewModel (stays) | selectedLanguageId, all session fields | selectedLanguageId, lessons, selectedLessonId, mode, sessionState, currentIndex, correctCount, incorrectCount, incorrectAttemptsForCard, activeTimeMs, voiceActiveMs, voiceWordCount, hintCount, currentStreak, longestStreak, bossLessonRewards, bossMegaRewards, userName, eliteStepIndex, eliteBestSpeeds | backupManager, progressStore, profileStore, lessonStore, streakStore, masteryStore (via helpers) |
+| 154 | `reloadFromDisk()` | pub | 3447-3505 | Backup | ViewModel (stays) | selectedLanguageId, all session fields | languages, installedPacks, selectedLanguageId, lessons, selectedLessonId, mode, sessionState + many others | progressStore, profileStore, lessonStore, streakStore, masteryStore (via helpers) |
+
+### 2.21 Lifecycle & Misc
+
+| # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
+|---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
+| 155 | `onCleared()` | pub | 2943-2950 | Lifecycle | ViewModel (stays) | (none) | (none) | progressStore (via saveProgress), ttsEngine, asrEngine, soundPool |
+| 156 | `refreshVocabMasteryCount()` | pub | 3261-3264 | Misc | ViewModel (stays) | vocabMasteredCount | vocabMasteredCount | wordMasteryStore |
+
+**Total public methods: 108**
+**Total private methods: 48**
+**Grand total: 156 methods (including `init {}`)**
+
+> Note: The `init {}` block is counted as 1 entry. Sound methods `playSuccessSound()`/`playErrorSound()` (lines 1801-1811) are separate from `playSuccessTone()`/`playErrorTone()` (lines 2952-2962) and are listed separately.
 
 ---
 
-## 8.4 Answer Validation
+## 3. Complete Field Inventory (TrainingUiState)
 
-### 8.4.1 Normalization Pipeline
+All fields from `TrainingUiState` data class (lines 3631-3746):
 
-All answer comparison uses `Normalizer.normalize()`:
-```kotlin
-val normalizedInput = Normalizer.normalize(state.inputText)
-val accepted = card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
-```
+| # | Field | Type | Default | Category | Target Module Owner |
+|---|-------|------|---------|----------|---------------------|
+| 1 | `languages` | `List<Language>` | `emptyList()` | Language & Packs | ViewModel |
+| 2 | `installedPacks` | `List<LessonPack>` | `emptyList()` | Language & Packs | ViewModel |
+| 3 | `selectedLanguageId` | `String` | `"en"` | Language & Packs | ViewModel |
+| 4 | `activePackId` | `String?` | `null` | Language & Packs | ViewModel |
+| 5 | `activePackLessonIds` | `List<String>?` | `null` | Language & Packs | ViewModel |
+| 6 | `lessons` | `List<Lesson>` | `emptyList()` | Lessons | ViewModel |
+| 7 | `selectedLessonId` | `String?` | `null` | Lessons | ViewModel |
+| 8 | `mode` | `TrainingMode` | `TrainingMode.LESSON` | Session Core | SessionRunner |
+| 9 | `sessionState` | `SessionState` | `SessionState.ACTIVE` | Session Core | SessionRunner |
+| 10 | `currentIndex` | `Int` | `0` | Session Core | SessionRunner |
+| 11 | `currentCard` | `SentenceCard?` | `null` | Session Core | SessionRunner |
+| 12 | `inputText` | `String` | `""` | Session Core | SessionRunner |
+| 13 | `correctCount` | `Int` | `0` | Session Core | SessionRunner |
+| 14 | `incorrectCount` | `Int` | `0` | Session Core | SessionRunner |
+| 15 | `incorrectAttemptsForCard` | `Int` | `0` | Session Core | SessionRunner |
+| 16 | `activeTimeMs` | `Long` | `0L` | Timer & Metrics | SessionRunner |
+| 17 | `voiceActiveMs` | `Long` | `0L` | Timer & Metrics | SessionRunner |
+| 18 | `voiceWordCount` | `Int` | `0` | Timer & Metrics | SessionRunner |
+| 19 | `hintCount` | `Int` | `0` | Timer & Metrics | SessionRunner |
+| 20 | `voicePromptStartMs` | `Long?` | `null` | Timer & Metrics | SessionRunner |
+| 21 | `answerText` | `String?` | `null` | Answer | SessionRunner |
+| 22 | `lastResult` | `Boolean?` | `null` | Answer | SessionRunner |
+| 23 | `lastRating` | `Double?` | `null` | Answer | SessionRunner |
+| 24 | `inputMode` | `InputMode` | `InputMode.VOICE` | Answer | SessionRunner |
+| 25 | `voiceTriggerToken` | `Int` | `0` | Answer | SessionRunner |
+| 26 | `subLessonTotal` | `Int` | `0` | Sub-lessons | SessionRunner |
+| 27 | `subLessonCount` | `Int` | `0` | Sub-lessons | SessionRunner |
+| 28 | `subLessonTypes` | `List<SubLessonType>` | `emptyList()` | Sub-lessons | SessionRunner |
+| 29 | `activeSubLessonIndex` | `Int` | `0` | Sub-lessons | SessionRunner |
+| 30 | `completedSubLessonCount` | `Int` | `0` | Sub-lessons | SessionRunner |
+| 31 | `subLessonFinishedToken` | `Int` | `0` | Sub-lessons | SessionRunner |
+| 32 | `storyCheckInDone` | `Boolean` | `false` | Story | ViewModel |
+| 33 | `storyCheckOutDone` | `Boolean` | `false` | Story | ViewModel |
+| 34 | `activeStory` | `StoryQuiz?` | `null` | Story | ViewModel |
+| 35 | `storyErrorMessage` | `String?` | `null` | Story | ViewModel |
+| 36 | `currentVocab` | `VocabEntry?` | `null` | Vocab Sprint | VocabSprintRunner |
+| 37 | `vocabInputText` | `String` | `""` | Vocab Sprint | VocabSprintRunner |
+| 38 | `vocabAttempts` | `Int` | `0` | Vocab Sprint | VocabSprintRunner |
+| 39 | `vocabAnswerText` | `String?` | `null` | Vocab Sprint | VocabSprintRunner |
+| 40 | `vocabIndex` | `Int` | `0` | Vocab Sprint | VocabSprintRunner |
+| 41 | `vocabTotal` | `Int` | `0` | Vocab Sprint | VocabSprintRunner |
+| 42 | `vocabWordBankWords` | `List<String>` | `emptyList()` | Vocab Sprint | VocabSprintRunner |
+| 43 | `vocabFinishedToken` | `Int` | `0` | Vocab Sprint | VocabSprintRunner |
+| 44 | `vocabErrorMessage` | `String?` | `null` | Vocab Sprint | VocabSprintRunner |
+| 45 | `vocabInputMode` | `InputMode` | `InputMode.VOICE` | Vocab Sprint | VocabSprintRunner |
+| 46 | `vocabVoiceTriggerToken` | `Int` | `0` | Vocab Sprint | VocabSprintRunner |
+| 47 | `bossActive` | `Boolean` | `false` | Boss | BossBattleRunner |
+| 48 | `bossType` | `BossType?` | `null` | Boss | BossBattleRunner |
+| 49 | `bossTotal` | `Int` | `0` | Boss | BossBattleRunner |
+| 50 | `bossProgress` | `Int` | `0` | Boss | BossBattleRunner |
+| 51 | `bossReward` | `BossReward?` | `null` | Boss | BossBattleRunner |
+| 52 | `bossRewardMessage` | `String?` | `null` | Boss | BossBattleRunner |
+| 53 | `bossFinishedToken` | `Int` | `0` | Boss | BossBattleRunner |
+| 54 | `bossLastType` | `BossType?` | `null` | Boss | BossBattleRunner |
+| 55 | `bossErrorMessage` | `String?` | `null` | Boss | BossBattleRunner |
+| 56 | `bossLessonRewards` | `Map<String, BossReward>` | `emptyMap()` | Boss | BossBattleRunner |
+| 57 | `bossMegaRewards` | `Map<String, BossReward>` | `emptyMap()` | Boss | BossBattleRunner |
+| 58 | `testMode` | `Boolean` | `false` | Config | ViewModel |
+| 59 | `eliteActive` | `Boolean` | `false` | Elite | SessionRunner (elite sub-mode) |
+| 60 | `eliteStepIndex` | `Int` | `0` | Elite | SessionRunner (elite sub-mode) |
+| 61 | `eliteBestSpeeds` | `List<Double>` | `emptyList()` | Elite | SessionRunner (elite sub-mode) |
+| 62 | `eliteFinishedToken` | `Int` | `0` | Elite | SessionRunner (elite sub-mode) |
+| 63 | `eliteUnlocked` | `Boolean` | `false` | Elite | SessionRunner (elite sub-mode) |
+| 64 | `eliteSizeMultiplier` | `Double` | `1.25` | Elite | SessionRunner (elite sub-mode) |
+| 65 | `vocabSprintLimit` | `Int` | `20` | Config | ViewModel |
+| 66 | `lessonFlowers` | `Map<String, FlowerVisual>` | `emptyMap()` | Flowers | FlowerProgressRenderer |
+| 67 | `currentLessonFlower` | `FlowerVisual?` | `null` | Flowers | FlowerProgressRenderer |
+| 68 | `currentLessonShownCount` | `Int` | `0` | Flowers | FlowerProgressRenderer |
+| 69 | `wordBankWords` | `List<String>` | `emptyList()` | Word Bank | SessionRunner / WordBankGenerator |
+| 70 | `selectedWords` | `List<String>` | `emptyList()` | Word Bank | SessionRunner |
+| 71 | `currentStreak` | `Int` | `0` | Streak | StreakManager |
+| 72 | `longestStreak` | `Int` | `0` | Streak | StreakManager |
+| 73 | `streakMessage` | `String?` | `null` | Streak | StreakManager |
+| 74 | `streakCelebrationToken` | `Int` | `0` | Streak | StreakManager |
+| 75 | `userName` | `String` | `"GrammarMateUser"` | Profile | ViewModel |
+| 76 | `ladderRows` | `List<LessonLadderRow>` | `emptyList()` | Ladder | FlowerProgressRenderer |
+| 77 | `ttsState` | `TtsState` | `TtsState.IDLE` | TTS | AudioCoordinator |
+| 78 | `ttsDownloadState` | `DownloadState` | `DownloadState.Idle` | TTS | AudioCoordinator |
+| 79 | `ttsModelReady` | `Boolean` | `false` | TTS | AudioCoordinator |
+| 80 | `ttsMeteredNetwork` | `Boolean` | `false` | TTS | AudioCoordinator |
+| 81 | `bgTtsDownloading` | `Boolean` | `false` | TTS | AudioCoordinator |
+| 82 | `bgTtsDownloadStates` | `Map<String, DownloadState>` | `emptyMap()` | TTS | AudioCoordinator |
+| 83 | `ttsModelsReady` | `Map<String, Boolean>` | `emptyMap()` | TTS | AudioCoordinator |
+| 84 | `ttsSpeed` | `Float` | `1.0f` | TTS | AudioCoordinator |
+| 85 | `ruTextScale` | `Float` | `1.0f` | TTS | AudioCoordinator |
+| 86 | `badSentenceCount` | `Int` | `0` | Bad Sentences | ViewModel |
+| 87 | `isDrillMode` | `Boolean` | `false` | Drill | SessionRunner (drill sub-mode) |
+| 88 | `drillCardIndex` | `Int` | `0` | Drill | SessionRunner (drill sub-mode) |
+| 89 | `drillTotalCards` | `Int` | `0` | Drill | SessionRunner (drill sub-mode) |
+| 90 | `drillShowStartDialog` | `Boolean` | `false` | Drill | SessionRunner (drill sub-mode) |
+| 91 | `drillHasProgress` | `Boolean` | `false` | Drill | SessionRunner (drill sub-mode) |
+| 92 | `useOfflineAsr` | `Boolean` | `false` | ASR | AudioCoordinator |
+| 93 | `asrState` | `AsrState` | `AsrState.IDLE` | ASR | AudioCoordinator |
+| 94 | `asrModelReady` | `Boolean` | `false` | ASR | AudioCoordinator |
+| 95 | `asrDownloadState` | `DownloadState` | `DownloadState.Idle` | ASR | AudioCoordinator |
+| 96 | `asrMeteredNetwork` | `Boolean` | `false` | ASR | AudioCoordinator |
+| 97 | `asrErrorMessage` | `String?` | `null` | ASR | AudioCoordinator |
+| 98 | `audioPermissionDenied` | `Boolean` | `false` | ASR | AudioCoordinator |
+| 99 | `initialScreen` | `String` | `"HOME"` | Navigation | ViewModel |
+| 100 | `currentScreen` | `String` | `"HOME"` | Navigation | ViewModel |
+| 101 | `vocabMasteredCount` | `Int` | `0` | Vocab Mastery | ViewModel |
+| 102 | `dailySession` | `DailySessionState` | `DailySessionState()` | Daily Practice | DailyCoordinator |
+| 103 | `dailyCursor` | `DailyCursorState` | `DailyCursorState()` | Daily Practice | DailyCoordinator |
 
-In test mode, all answers are accepted regardless of input.
-
-### 8.4.2 Correct Answer Handling
-
-On correct answer:
-1. Play success tone
-2. Record card show for mastery tracking
-3. Update counters: `correctCount++`, `incorrectAttemptsForCard = 0`
-4. Clear answer display state
-5. Track voice metrics if applicable (duration, word count)
-6. Navigate based on session mode (see Session Progression above)
-7. Save progress
-8. Refresh flower states
-
-### 8.4.3 Incorrect Answer Handling
-
-On incorrect answer:
-1. Play error tone
-2. `incorrectCount++`, `incorrectAttemptsForCard++`
-3. `lastResult = false`
-4. **After 3 attempts:** show all accepted answers as hint (`answerText`), pause timer, reset `incorrectAttemptsForCard` to 0
-5. **Before 3 attempts:** allow retry, auto-trigger voice if in VOICE mode
-
-### 8.4.4 Multiple Accepted Answers
-
-Cards have an `acceptedAnswers: List<String>` field. During validation, the input is compared against each accepted answer after normalization. When showing hints (3 incorrect attempts), all accepted answers are displayed joined with " / ".
-
-### 8.4.5 SubmitResult
-
-`submitAnswer()` returns a `SubmitResult(accepted: Boolean, hintShown: Boolean)` data class, allowing the UI to react to the answer outcome.
-
----
-
-## 8.5 Training Modes
-
-### 8.5.1 LESSON Mode (Normal Training)
-
-**Purpose:** The primary training mode. Users work through a selected lesson's cards in sub-lessons of ~10 cards each.
-
-**Trigger:** `selectLesson(lessonId)` or `selectMode(TrainingMode.LESSON)`
-
-**Session flow:**
-1. `rebuildSchedules()` creates sub-lesson schedule via `MixedReviewScheduler`
-2. `buildSessionCards()` selects cards for the current sub-lesson based on `activeSubLessonIndex`
-3. Hidden cards are filtered out via `HiddenCardStore`
-4. Sub-lesson types are stored in `subLessonTypes: List<SubLessonType>` (NEW_ONLY or MIXED)
-5. User answers each card; on last card, sub-lesson completion is triggered
-
-**Sub-lesson index calculation:**
-- `activeSubLessonIndex` starts at the first incomplete sub-lesson based on mastery data
-- `calculateCompletedSubLessons()` walks sub-lessons in order and counts how many have ALL cards shown
-- The active index never moves backward (uses `maxOf` to preserve progress)
-
-**Lesson completion condition:** After 15 completed sub-lessons, the lesson is marked as completed via `masteryStore.markLessonCompleted()`.
-
-### 8.5.2 ALL_SEQUENTIAL Mode
-
-**Purpose:** Train through all cards from all lessons in sequence.
-
-**Session flow:**
-- Cards from all lessons are concatenated, hidden cards filtered
-- Split into sub-lesson blocks of `subLessonSize` (default ~10)
-- Navigate through blocks sequentially
-
-### 8.5.3 ALL_MIXED Mode (Review)
-
-**Purpose:** Random review across all cards.
-
-**Session flow:**
-- All cards from all lessons are collected, hidden cards filtered, then shuffled
-- Limited to 300 cards max
-- Split into sub-lesson blocks
-
-### 8.5.4 BOSS Mode
-
-**Purpose:** End-of-lesson challenge testing pattern stability under pressure. Three boss types exist.
-
-**Trigger:** `startBossLesson()`, `startBossMega()`, `startBossElite()`
-
-**Unlock guard:** Requires at least 15 completed sub-lessons (unless test mode or ELITE type).
-
-**Card selection by type:**
-| Boss Type | Card Source | Max Cards |
-|-----------|-------------|-----------|
-| LESSON | Current lesson cards, shuffled | 300 |
-| MEGA | All cards from lessons up to current (exclusive), shuffled | 300 |
-| ELITE | All cards from all lessons, shuffled | `eliteSubLessonSize() * eliteStepCount` |
-
-**Boss session setup:**
-- Sets `bossActive = true`, resets counters, creates single sub-lesson
-- `sessionCards = bossCards`, first card loaded
-
-**Boss progression:**
-- `bossProgress` tracks how far through the battle the user has gotten
-- On each correct answer (not last card): `nextCard()` with boss progress update
-- On last correct answer: `updateBossProgress()`, `finishBoss()`
-
-**Reward system:**
-```kotlin
-fun resolveBossReward(progress: Int, total: Int): BossReward? {
-    val percent = (progress.toDouble() / total) * 100.0
-    return when {
-        percent >= 100.0 -> GOLD
-        percent > 75.0   -> SILVER
-        percent > 50.0   -> BRONZE
-        else             -> null
-    }
-}
-```
-
-**Mid-boss reward milestones:** When boss progress crosses a reward threshold (50%, 75%, 100%), the session pauses, shows a reward message, and resumes after user dismissal.
-
-**Boss finish (`finishBoss()`):**
-1. Resolve final reward
-2. Update `bossLessonRewards` (LESSON type) or `bossMegaRewards` (MEGA type) maps
-3. Clear boss state, restore previous lesson/session state from ProgressStore
-4. Rebuild session cards, save progress, refresh flowers
-
-### 8.5.5 ELITE Mode
-
-**Purpose:** Speed challenge measuring words-per-minute across multiple steps.
-
-**Trigger:** `openEliteStep(index)`
-
-**Unlock condition:** `eliteUnlocked = testMode || lessons.size >= 12`
-
-**Session flow:**
-1. `buildEliteCards()` — all lesson cards shuffled, take `ceil(subLessonSize * 1.25)` cards
-2. Elite uses `eliteStepCount` steps (from `TrainingConfig.ELITE_STEP_COUNT`)
-3. User answers all cards in the step
-4. On completion: calculates speed (`voiceWordCount / voiceActiveMs * 60000`)
-5. Compares to `eliteBestSpeeds[stepIndex]`, stores if better
-6. Advances to next step (`(stepIndex + 1) % eliteStepCount`)
-7. Sets `eliteFinishedToken++`
-
-**Cancel:** `cancelEliteSession()` resets to PAUSED, clears elite state.
-
-### 8.5.6 DAILY PRACTICE Mode
-
-**Purpose:** Unified daily session with 3 blocks (10 translations, 10 vocab flashcards, 10 verb conjugations). Replaces former Elite mode and Vocab Sprint.
-
-**Session composition (by `DailySessionComposer`):**
-- **Block 1 (TRANSLATE):** Cursor-driven sentence selection from current lesson. Takes next 10 cards in order (no shuffle). Input modes rotate: VOICE, KEYBOARD, WORD_BANK (repeating).
-- **Block 2 (VOCAB):** Pure SRS selection across full word list. Most-overdue first, then new words, then least-recently-reviewed fallback. Direction alternates IT_TO_RU / RU_TO_IT.
-- **Block 3 (VERBS):** Weak-first verb drill. Excludes previously shown cards. Scores by weakness (1 - shownInCombo/totalInCombo). Alternates KEYBOARD / WORD_BANK input modes.
-
-**Cursor management:**
-- `DailyCursorState` tracks: `sentenceOffset`, `currentLessonIndex`, `firstSessionDate`, first-session card IDs
-- Cursor advances ONLY when full session completes with all VOICE/KEYBOARD answers
-- WORD_BANK answers do NOT count toward cursor advancement
-- First session of the day stores card IDs for Repeat functionality
-
-**Start flow:**
-1. `startDailyPractice(lessonLevel)` — tries pre-built session first, falls back to synchronous build
-2. Saves cursor at session start for rollback on cancel
-3. Resets per-block answered counters
-4. Delegates to `dailySessionHelper.startDailySession(tasks, lessonLevel)`
-
-**Repeat flow (`repeatDailyPractice()`):**
-1. Try in-memory `lastDailyTasks` cache (fastest)
-2. Try reconstructing from `firstSessionSentenceCardIds` / `firstSessionVerbCardIds`
-3. Last resort: build fresh with cursor at offset 0
-4. Does NOT advance cursor
-
-**Task/block advancement:**
-- `advanceDailyTask()` — moves to next task within session
-- `advanceDailyBlock()` — skips to first task of next block type
-- `repeatDailyBlock()` — rebuilds and replaces current block with fresh cards
-
-**Session completion (`cancelDailySession()`):**
-- If `finishedToken == true` and all TRANSLATE + VERBS cards were answered via VOICE/KEYBOARD: advance cursor
-- Otherwise: cursor stays, enabling re-entry with same cards
-
-**Verb progress persistence:** `persistDailyVerbProgress()` records each verb card as shown in `VerbDrillStore` when advancing.
-
-**Vocab SRS rating:** `rateVocabCard(rating)` applies spaced repetition:
-- 0 (Again): reset to step 0
-- 1 (Hard): stay at current step
-- 2 (Good): step +1
-- 3 (Easy): step +2
-- Learned threshold: step index >= 3
-
-### 8.5.7 DRILL Mode
-
-**Purpose:** Seamless card training without mastery/flower progress. All drill cards in one continuous stream. Position is saved on exit.
-
-**Trigger:** `startDrill(resume: Boolean)`
-
-**Session flow:**
-1. Get drill cards from selected lesson
-2. If resuming, start from saved position; otherwise start at 0
-3. Each card loaded individually via `loadDrillCard(index)`
-4. On correct answer: seamless advance via `advanceDrillCard()`
-5. On completion: `finishDrill()` clears progress and returns to normal mode
-
-**Key difference from normal mode:** `recordCardShowForMastery()` returns early when `isDrillMode == true`. No mastery tracking, no flower growth.
-
-### 8.5.8 VOCAB SPRINT Mode
-
-**Purpose:** Vocabulary sprint through lesson vocab entries with SRS prioritization.
-
-**Trigger:** `openVocabSprint(resume: Boolean)`
-
-**Card selection:**
-1. Load all vocab entries for lesson + language
-2. Sort via `vocabProgressStore.sortEntriesForSprint()` (SRS prioritization: overdue, new, not due)
-3. Apply `vocabSprintLimit` cap
-4. If resuming, filter out completed indices; if all done, restart fresh
-
-**Answer handling:**
-- Correct: `vocabProgressStore.recordCorrect()`, `addCompletedIndex()`, move to next
-- Incorrect after 3 attempts: show answer, reset
-- Incorrect before 3: allow retry, auto-trigger voice
-
-**Completion:** When all entries answered, clear sprint progress, increment `vocabFinishedToken`, force backup.
+**Total: 103 fields**
 
 ---
 
-## 8.6 Word Bank
+## 4. Store Access Map
 
-### 8.6.1 Word Bank Generation Algorithm
+### 4.1 Read Access
 
-**Sentence training word bank (`updateWordBank()`):**
+| Store | Methods that read (non-exhaustive list of key callers) |
+|-------|------------------------------------------------------|
+| `lessonStore` | `init`, `selectLanguage`, `selectLesson`, `selectPack`, `importLesson`, `importLessonPack`, `addLanguage`, `deleteLesson`, `deletePack`, `buildSessionCards`, `openStory`, `openVocabSprint`, `buildVocabWordBank`, `startDailyPractice`, `repeatDailyPractice`, `repeatDailyBlock`, `advanceCursor`, `resolveProgressLessonInfo`, `restoreBackup`, `reloadFromDisk`, `rebuildSchedules` |
+| `progressStore` | `init`, `saveProgress`, `startDailyPractice` (via hasResumableDailySession), `finishBoss`, `resetAllProgress`, `restoreBackup`, `reloadFromDisk` |
+| `configStore` | `init`, `toggleTestMode`, `updateVocabSprintLimit`, `setUseOfflineAsr` |
+| `masteryStore` | `recordCardShowForMastery`, `markSubLessonCardsShown`, `checkAndMarkLessonCompleted`, `calculateCompletedSubLessons`, `buildSessionCards`, `selectLesson`, `submitAnswer`, `refreshFlowerStates`, `resolveProgressLessonInfo`, `recordDailyCardPracticed`, `resetAllProgress` |
+| `streakStore` | `init`, `updateStreak`, `restoreBackup`, `reloadFromDisk` |
+| `badSentenceStore` | `init`, `startDrill`, `exitDrillMode`, `flagBadSentence`, `unflagBadSentence`, `isBadSentence`, `exportBadSentences`, `flagDailyBadSentence`, `unflagDailyBadSentence`, `isDailyBadSentence`, `exportDailyBadSentences` |
+| `hiddenCardStore` | `buildSessionCards`, `hideCurrentCard`, `unhideCurrentCard`, `isCurrentCardHidden` |
+| `drillProgressStore` | `showDrillStartDialog`, `startDrill`, `advanceDrillCard`, `finishDrill`, `exitDrillMode` |
+| `vocabProgressStore` | `hasVocabProgress`, `openVocabSprint`, `submitVocabAnswer`, `moveToNextVocab` |
+| `wordMasteryStore` | `init`, `rebindWordMasteryStore`, `refreshVocabMasteryCount`, `rateVocabCard`, `startDailyPractice`, `repeatDailyPractice`, `repeatDailyBlock`, `resetAllProgress` |
+| `backupManager` | `createProgressBackup`, `restoreBackup`, `saveProgress` (conditional) |
+| `profileStore` | `init`, `updateUserName`, `restoreBackup`, `reloadFromDisk` |
+| `ttsModelManager` | `onTtsSpeak`, `checkTtsModel`, `checkAllTtsModels`, `startTtsDownload`, `beginTtsDownload`, `startTtsDownloadForLanguage`, `startBackgroundTtsDownload` |
+| `ttsEngine` | `onTtsSpeak`, `stopTts`, `init` (state collection), `onCleared` |
+| `asrModelManager` | `init`, `checkAsrModel`, `startAsrDownload`, `beginAsrDownload`, `setUseOfflineAsr` |
+| `asrEngine` | `startOfflineRecognition`, `stopAsr`, `setUseOfflineAsr`, `transcribeWithOfflineAsr`, `selectLanguage`, `onCleared` |
 
-1. Take `card.acceptedAnswers.first()` as the correct answer
-2. Split into individual words, filter blanks, normalize
-3. Build distractor pool from all lesson cards:
-   - Filter out the current card
-   - Split all other cards' accepted answers into words
-   - Filter: length >= 3, not matching any normalized correct word
-   - Take distinct values
-4. Select 3 random distractors from the pool
-5. Call `generateWordBank(correctAnswer, extraWords)`:
-   - Split correct answer into words
-   - Add extra words (if not already in correct words)
-   - Shuffle the combined list
+### 4.2 Write Access
 
-**Vocab sprint word bank (`buildVocabWordBank()`):**
-
-1. Extract first accepted variant from `entry.targetText` (split by "+")
-2. Build distractor pool from current vocab session entries (split by "+", distinct)
-3. Take up to 4 distractors from session pool
-4. If not enough, supplement from all lessons' vocab entries
-5. Result: 1 correct + up to 4 distractors, shuffled
-
-### 8.6.2 Target Word Selection and Distractors
-
-For sentence training:
-- Target words = all words in `acceptedAnswers[0]`
-- Distractors = 3 random words (length >= 3) from other cards' accepted answers, excluding words matching the correct answer (normalized)
-
-For vocab:
-- Target = first variant of `targetText` (split by "+")
-- Distractors = up to 4 entries from session pool, supplemented from all lessons if needed
-
-### 8.6.3 Word Bank UI Interaction Model
-
-- `selectWordFromBank(word)` — appends word to `selectedWords` list and builds `inputText` by joining with spaces
-- `removeLastSelectedWord()` — removes last word from `selectedWords`, rebuilds `inputText`
-- `inputText` is the space-joined representation of `selectedWords`, used by `submitAnswer()`
-
-**Mode switching:** When user switches to `InputMode.WORD_BANK`, `updateWordBank()` is called automatically. Switching away preserves the word bank state.
-
----
-
-## 8.7 Mastery System Integration
-
-### 8.7.1 How Mastery Is Tracked During Training
-
-The `recordCardShowForMastery(card)` method is the sole entry point for mastery tracking:
-
-```kotlin
-private fun recordCardShowForMastery(card: SentenceCard) {
-    if (_uiState.value.isDrillMode) return           // No mastery in drill mode
-    val lessonId = resolveCardLessonId(card)
-    val languageId = _uiState.value.selectedLanguageId
-    if (_uiState.value.inputMode == InputMode.WORD_BANK) return  // WORD_BANK doesn't count
-    masteryStore.recordCardShow(lessonId, languageId, card.id)
-}
-```
-
-**When it is called:**
-- On `submitAnswer()` when answer is correct (line 633)
-- On `nextCard()` when a new card is loaded (line 886)
-- On `prevCard()` when navigating back (line 913)
-- On `startSession()` when resuming (line 2422)
-- On init when restoring an active session (line 265)
-
-**Card-to-lesson resolution (`resolveCardLessonId()`):**
-- First checks if the current `selectedLessonId` contains the card
-- Falls back to searching all lessons for the card
-- Returns "unknown" if not found anywhere
-
-### 8.7.2 When Mastery Updates Are Persisted
-
-Mastery is persisted immediately on each `masteryStore.recordCardShow()` call. The store writes to YAML files atomically.
-
-**Additional mastery operations:**
-- `markSubLessonCardsShown()` — after sub-lesson completion, marks all cards as shown for progress tracking (WORD_BANK mode path)
-- `checkAndMarkLessonCompleted()` — after 15 sub-lessons, marks lesson as completed in MasteryStore
-
-### 8.7.3 WORD_BANK vs VOICE vs KEYBOARD Distinction
-
-This is a critical business rule (Level A):
-
-| Input Mode | Counts for Mastery | Grows Flowers | Advances Daily Cursor |
-|------------|-------------------|---------------|----------------------|
-| VOICE | YES | YES | YES |
-| KEYBOARD | YES | YES | YES |
-| WORD_BANK | NO | NO | NO |
-
-The distinction is enforced in:
-- `recordCardShowForMastery()` — early return for WORD_BANK
-- `recordDailyCardPracticed()` — only called for non-WORD_BANK modes
-- `cancelDailySession()` — cursor advances only if all TRANSLATE and VERBS cards were practiced via VOICE/KEYBOARD
+| Store | Methods that write |
+|-------|-------------------|
+| `lessonStore` | `importLesson`, `importLessonPack`, `resetAndImportLesson`, `deleteLesson`, `createEmptyLesson`, `addLanguage`, `deleteAllLessons`, `deletePack`, `init` (ensureSeedData, forceReloadDefaultPacks) |
+| `progressStore` | `saveProgress` (called from ~30+ methods), `resetAllProgress` (clear) |
+| `configStore` | `toggleTestMode`, `updateVocabSprintLimit`, `setUseOfflineAsr` |
+| `masteryStore` | `recordCardShowForMastery`, `markSubLessonCardsShown`, `checkAndMarkLessonCompleted`, `resetAllProgress` (clear) |
+| `streakStore` | `updateStreak` |
+| `badSentenceStore` | `flagBadSentence`, `unflagBadSentence`, `flagDailyBadSentence`, `unflagDailyBadSentence` |
+| `hiddenCardStore` | `hideCurrentCard`, `unhideCurrentCard` |
+| `drillProgressStore` | `advanceDrillCard` (saveDrillProgress), `finishDrill` (clearDrillProgress), `exitDrillMode` (saveDrillProgress) |
+| `vocabProgressStore` | `submitVocabAnswer` (recordCorrect/recordIncorrect), `openVocabSprint` (clearSprintProgress), `moveToNextVocab` (clearSprintProgress) |
+| `wordMasteryStore` | `rateVocabCard` (upsertMastery), `resetAllProgress` (saveAll empty) |
+| `backupManager` | `createProgressBackup`, `restoreBackup` |
+| `profileStore` | `updateUserName` |
+| `ttsEngine` | `onTtsSpeak` (speak), `stopTts` (stop), `onCleared` (release) |
+| `ttsModelManager` | `beginTtsDownload`, `startTtsDownloadForLanguage`, `startBackgroundTtsDownload` |
+| `asrEngine` | `startOfflineRecognition`, `stopAsr` (stopRecording), `setUseOfflineAsr` (release), `selectLanguage` (setLanguage), `onCleared` (release) |
+| `asrModelManager` | `beginAsrDownload` |
+| `soundPool` | `playSuccessTone`, `playErrorTone`, `playSuccessSound`, `playErrorSound`, `onCleared` (release) |
 
 ---
 
-## 8.8 Public API
+## 5. Reset Blocks
 
-### 8.8.1 Session Management
+Six methods contain large `copy()` reset blocks that reset nearly all session state. These are the primary source of bugs when a new field is added to `TrainingUiState` but forgotten in one of these blocks.
 
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `togglePause()` | `fun togglePause()` | Toggle between ACTIVE and PAUSED session states |
-| `pauseSession()` | `fun pauseSession()` | Force pause the active session |
-| `finishSession()` | `fun finishSession()` | End current session, calculate rating |
-| `resumeFromSettings()` | `fun resumeFromSettings()` | Resume session when returning from Settings |
-| `startSession()` | `private fun startSession()` | Internal: activate session, start timer |
+### 5.1 Field Reset Matrix
 
-### 8.8.2 Answer & Input
+| Field | selectLanguage | selectLesson | selectMode | importLessonPack | addLanguage | refreshLessons |
+|-------|:-:|:-:|:-:|:-:|:-:|:-:|
+| `selectedLanguageId` | SET | - | - | SET | SET | - |
+| `lessons` | SET | - | - | SET | SET | SET |
+| `selectedLessonId` | SET | SET | - | SET | SET | SET |
+| `activePackId` | SET | SET | - | - | - | - |
+| `activePackLessonIds` | SET | SET | - | - | - | - |
+| `eliteActive` | `false` | - | - | `false` | `false` | `false` |
+| `eliteUnlocked` | CALC | - | - | CALC | CALC | CALC |
+| `currentIndex` | `0` | `0` | `0` | `0` | `0` | `0` |
+| `correctCount` | `0` | - | - | `0` | `0` | - |
+| `incorrectCount` | `0` | - | - | `0` | `0` | - |
+| `incorrectAttemptsForCard` | `0` | `0` | `0` | `0` | `0` | `0` |
+| `inputText` | `""` | `""` | `""` | `""` | `""` | `""` |
+| `lastResult` | `null` | `null` | `null` | `null` | `null` | `null` |
+| `answerText` | `null` | `null` | `null` | `null` | `null` | `null` |
+| `inputMode` | VOICE | VOICE | VOICE | VOICE | VOICE | VOICE |
+| `sessionState` | PAUSED | PAUSED | PAUSED | PAUSED | PAUSED | PAUSED |
+| `voicePromptStartMs` | `null` | `null` | `null` | `null` | `null` | `null` |
+| `activeSubLessonIndex` | `0` | CALC | `0` | `0` | `0` | `0` |
+| `completedSubLessonCount` | `0` | CALC | `0` | `0` | `0` | `0` |
+| `subLessonFinishedToken` | `0` | `0` | `0` | `0` | `0` | `0` |
+| `storyCheckInDone` | `false` | `false` | `false` | `false` | `false` | `false` |
+| `storyCheckOutDone` | `false` | `false` | `false` | `false` | `false` | `false` |
+| `activeStory` | `null` | `null` | `null` | `null` | `null` | `null` |
+| `storyErrorMessage` | `null` | `null` | `null` | `null` | `null` | `null` |
+| `currentVocab` | `null` | - | `null` | `null` | `null` | `null` |
+| `vocabInputText` | `""` | - | `""` | `""` | `""` | `""` |
+| `vocabAttempts` | `0` | - | `0` | `0` | `0` | `0` |
+| `vocabAnswerText` | `null` | - | `null` | `null` | `null` | `null` |
+| `vocabIndex` | `0` | - | `0` | `0` | `0` | `0` |
+| `vocabTotal` | `0` | - | `0` | `0` | `0` | `0` |
+| `vocabWordBankWords` | `emptyList()` | - | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` |
+| `vocabFinishedToken` | `0` | - | `0` | `0` | `0` | `0` |
+| `vocabErrorMessage` | `null` | - | `null` | `null` | `null` | `null` |
+| `vocabInputMode` | VOICE | - | VOICE | VOICE | VOICE | VOICE |
+| `vocabVoiceTriggerToken` | `0` | - | `0` | `0` | `0` | `0` |
+| `bossActive` | `false` | - | `false` | `false` | `false` | `false` |
+| `bossType` | `null` | - | `null` | `null` | `null` | `null` |
+| `bossTotal` | `0` | - | `0` | `0` | `0` | `0` |
+| `bossProgress` | `0` | - | `0` | `0` | `0` | `0` |
+| `bossReward` | `null` | - | `null` | `null` | `null` | `null` |
+| `bossRewardMessage` | `null` | - | `null` | `null` | `null` | `null` |
+| `bossFinishedToken` | `0` | - | `0` | `0` | `0` | `0` |
+| `bossErrorMessage` | `null` | - | `null` | `null` | `null` | `null` |
+| `bossLessonRewards` | `emptyMap()` | - | - | - | - | - |
+| `bossMegaRewards` | `emptyMap()` | - | - | - | - | - |
+| `lessonFlowers` | `emptyMap()` | - | - | - | - | - |
+| `currentLessonFlower` | `null` | - | - | - | - | - |
+| `wordBankWords` | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` |
+| `selectedWords` | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` | `emptyList()` |
+| `isDrillMode` | - | `false` | `false` | - | - | - |
+| `drillCardIndex` | - | `0` | `0` | - | - | - |
+| `drillTotalCards` | - | `0` | `0` | - | - | - |
+| `drillShowStartDialog` | - | `false` | `false` | - | - | - |
+| `drillHasProgress` | - | `false` | `false` | - | - | - |
+| `currentCard` | - | `null` | - | - | - | - |
+| `activeTimeMs` | - | - | - | `0L` | `0L` | - |
+| `voiceActiveMs` | - | - | - | `0L` | `0L` | - |
+| `voiceWordCount` | - | - | - | `0` | `0` | - |
+| `hintCount` | - | - | - | `0` | `0` | - |
+| `mode` | - | LESSON | - | LESSON | LESSON | - |
+| `vocabMasteredCount` | CALC | - | - | - | - | - |
 
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `onInputChanged(text)` | `fun onInputChanged(text: String)` | Update input text; resets attempts if previous answer was shown |
-| `submitAnswer()` | `fun submitAnswer(): SubmitResult` | Validate and process current answer |
-| `showAnswer()` | `fun showAnswer()` | Manually reveal the answer (hint) |
-| `nextCard(triggerVoice)` | `fun nextCard(triggerVoice: Boolean)` | Advance to next card |
-| `prevCard()` | `fun prevCard()` | Go back to previous card |
-| `setInputMode(mode)` | `fun setInputMode(mode: InputMode)` | Switch input mode; auto-updates word bank |
-| `onVoicePromptStarted()` | `fun onVoicePromptStarted()` | Record voice prompt start timestamp |
+**Key:**
+- `-` = field is NOT reset in this method
+- `SET` = field is explicitly set to a new value
+- `CALC` = field is computed from data
+- `false`/`0`/`null`/`""`/`emptyList()`/`emptyMap()` = reset to default
 
-### 8.8.3 Language, Lesson, Pack Selection
+### 5.2 Inconsistencies Found
 
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `selectLanguage(languageId)` | `fun selectLanguage(languageId: String)` | Switch active language; full state reset |
-| `selectLesson(lessonId)` | `fun selectLesson(lessonId: String)` | Switch active lesson; resolves pack, rebuilds schedule |
-| `selectPack(packId)` | `fun selectPack(packId: String)` | Switch active pack; delegates to selectLesson or sets pack directly for drill-only packs |
-| `selectMode(mode)` | `fun selectMode(mode: TrainingMode)` | Switch training mode; partial state reset |
-| `selectSubLesson(index)` | `fun selectSubLesson(index: Int)` | Jump to a specific sub-lesson |
+1. **`selectLanguage` clears `bossLessonRewards` and `bossMegaRewards`** but `selectLesson`, `selectMode`, `refreshLessons`, `importLessonPack`, `addLanguage` do NOT. This is intentional -- switching language invalidates rewards, but switching lessons within a language preserves them.
 
-### 8.8.4 Lesson Content Management
+2. **`selectLanguage` resets `activeTimeMs`, `voiceActiveMs`, `voiceWordCount`, `hintCount` implicitly** (they are not in the copy block, so they retain their previous values). However `importLessonPack` and `addLanguage` explicitly reset them to 0. This is a potential inconsistency -- `selectLanguage` should probably also reset these.
 
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `importLesson(uri)` | `fun importLesson(uri: Uri)` | Import a single lesson file |
-| `importLessonPack(uri)` | `fun importLessonPack(uri: Uri)` | Import a lesson pack ZIP |
-| `resetAndImportLesson(uri)` | `fun resetAndImportLesson(uri: Uri)` | Delete all lessons, then import |
-| `deleteLesson(lessonId)` | `fun deleteLesson(lessonId: String)` | Delete a single lesson |
-| `createEmptyLesson(title)` | `fun createEmptyLesson(title: String)` | Create a new empty lesson |
-| `addLanguage(name)` | `fun addLanguage(name: String)` | Add a new language |
-| `deleteAllLessons()` | `fun deleteAllLessons()` | Delete all lessons for current language |
-| `deletePack(packId)` | `fun deletePack(packId: String)` | Delete an entire pack and its data |
-| `resetAllProgress()` | `fun resetAllProgress()` | Clear all progress: mastery, daily, verb drill, vocab, training |
+3. **`selectLesson` resets drill state (`isDrillMode`, `drillCardIndex`, etc.)** but `selectLanguage` does NOT. After switching languages, drill mode state could leak. This is likely a bug -- the language switch re-runs `buildSessionCards()` which returns early if `isDrillMode == true`.
 
-### 8.8.5 Boss Battles
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `startBossLesson()` | `fun startBossLesson()` | Start LESSON boss |
-| `startBossMega()` | `fun startBossMega()` | Start MEGA boss |
-| `startBossElite()` | `fun startBossElite()` | Start ELITE boss |
-| `finishBoss()` | `fun finishBoss()` | End boss session, record rewards |
-| `clearBossRewardMessage()` | `fun clearBossRewardMessage()` | Dismiss reward popup, resume session |
-| `clearBossError()` | `fun clearBossError()` | Dismiss boss error message |
-
-### 8.8.6 Elite Mode
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `openEliteStep(index)` | `fun openEliteStep(index: Int)` | Start an elite step |
-| `cancelEliteSession()` | `fun cancelEliteSession()` | Cancel active elite session |
-
-### 8.8.7 Daily Practice
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `hasResumableDailySession()` | `fun hasResumableDailySession(): Boolean` | Check if today's first session can be repeated |
-| `startDailyPractice(lessonLevel)` | `fun startDailyPractice(lessonLevel: Int): Boolean` | Start new daily session |
-| `repeatDailyPractice(lessonLevel)` | `fun repeatDailyPractice(lessonLevel: Int): Boolean` | Repeat today's first session |
-| `advanceDailyTask()` | `fun advanceDailyTask(): Boolean` | Advance to next task in daily session |
-| `advanceDailyBlock()` | `fun advanceDailyBlock(): Boolean` | Skip to next block in daily session |
-| `repeatDailyBlock()` | `fun repeatDailyBlock(): Boolean` | Rebuild and restart current block |
-| `cancelDailySession()` | `fun cancelDailySession()` | End daily session; conditionally advance cursor |
-| `recordDailyCardPracticed(blockType)` | `fun recordDailyCardPracticed(blockType: DailyBlockType)` | Track VOICE/KEYBOARD practice per block |
-| `rateVocabCard(rating)` | `fun rateVocabCard(rating: Int)` | Rate a daily vocab card (0=Again, 1=Hard, 2=Good, 3=Easy) |
-| `persistDailyVerbProgress(card)` | `fun persistDailyVerbProgress(card: VerbDrillCard)` | Persist verb card as shown |
-| `submitDailySentenceAnswer(input)` | `fun submitDailySentenceAnswer(input: String): Boolean` | Validate daily sentence answer |
-| `submitDailyVerbAnswer(input)` | `fun submitDailyVerbAnswer(input: String): Boolean` | Validate daily verb answer |
-| `getDailyCurrentTask()` | `fun getDailyCurrentTask(): DailyTask?` | Get current daily task |
-| `getDailyBlockProgress()` | `fun getDailyBlockProgress(): BlockProgress` | Get progress within current block |
-| `getDailySentenceAnswer()` | `fun getDailySentenceAnswer(): String?` | Get accepted answer for current sentence task |
-| `getDailyVerbAnswer()` | `fun getDailyVerbAnswer(): String?` | Get accepted answer for current verb task |
-
-### 8.8.8 Drill Mode
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `showDrillStartDialog(lessonId)` | `fun showDrillStartDialog(lessonId: String)` | Show drill start dialog |
-| `startDrill(resume)` | `fun startDrill(resume: Boolean)` | Start or resume drill |
-| `dismissDrillDialog()` | `fun dismissDrillDialog()` | Close drill start dialog |
-| `advanceDrillCard()` | `fun advanceDrillCard()` | Move to next drill card |
-| `exitDrillMode()` | `fun exitDrillMode()` | Exit drill, saving position |
-
-### 8.8.9 Vocab Sprint
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `hasVocabProgress()` | `fun hasVocabProgress(): Boolean` | Check if sprint has in-progress data |
-| `openVocabSprint(resume)` | `fun openVocabSprint(resume: Boolean)` | Start or resume vocab sprint |
-| `onVocabInputChanged(text)` | `fun onVocabInputChanged(text: String)` | Update vocab input text |
-| `setVocabInputMode(mode)` | `fun setVocabInputMode(mode: InputMode)` | Switch vocab input mode |
-| `requestVocabVoice()` | `fun requestVocabVoice()` | Trigger voice input for vocab |
-| `submitVocabAnswer(inputOverride)` | `fun submitVocabAnswer(inputOverride: String? = null)` | Validate vocab answer |
-| `showVocabAnswer()` | `fun showVocabAnswer()` | Reveal vocab answer |
-| `clearVocabError()` | `fun clearVocabError()` | Dismiss vocab error |
-
-### 8.8.10 Story
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `openStory(phase)` | `fun openStory(phase: StoryPhase)` | Load and display a story quiz |
-| `completeStory(phase, allCorrect)` | `fun completeStory(phase: StoryPhase, allCorrect: Boolean)` | Mark story phase complete |
-| `clearStoryError()` | `fun clearStoryError()` | Dismiss story error |
-
-### 8.8.11 Word Bank
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `selectWordFromBank(word)` | `fun selectWordFromBank(word: String)` | Append word to selected words |
-| `removeLastSelectedWord()` | `fun removeLastSelectedWord()` | Remove last selected word |
-
-### 8.8.12 TTS & ASR
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `onTtsSpeak(text, speed)` | `fun onTtsSpeak(text: String, speed: Float? = null)` | Speak text via TTS |
-| `setTtsSpeed(speed)` | `fun setTtsSpeed(speed: Float)` | Set TTS speed (0.5-1.5) |
-| `setRuTextScale(scale)` | `fun setRuTextScale(scale: Float)` | Set Russian text scale (1.0-2.0) |
-| `startTtsDownload()` | `fun startTtsDownload()` | Start TTS model download (with metered check) |
-| `confirmTtsDownloadOnMetered()` | `fun confirmTtsDownloadOnMetered()` | Proceed with download on metered network |
-| `dismissMeteredWarning()` | `fun dismissMeteredWarning()` | Dismiss metered network warning |
-| `dismissTtsDownloadDialog()` | `fun dismissTtsDownloadDialog()` | Close download dialog after Done/Error |
-| `startTtsDownloadForLanguage(id)` | `fun startTtsDownloadForLanguage(languageId: String)` | Download TTS for specific language |
-| `stopTts()` | `fun stopTts()` | Stop current TTS playback |
-| `startOfflineRecognition()` | `fun startOfflineRecognition()` | Start ASR recording + transcription |
-| `stopAsr()` | `fun stopAsr()` | Stop ASR recording |
-| `setUseOfflineAsr(enabled)` | `fun setUseOfflineAsr(enabled: Boolean)` | Toggle offline ASR, save config |
-| `startAsrDownload()` | `fun startAsrDownload()` | Download ASR model (with metered check) |
-| `confirmAsrDownloadOnMetered()` | `fun confirmAsrDownloadOnMetered()` | Proceed with ASR download on metered |
-| `dismissAsrMeteredWarning()` | `fun dismissAsrMeteredWarning()` | Dismiss ASR metered warning |
-| `dismissAsrDownloadDialog()` | `fun dismissAsrDownloadDialog()` | Close ASR download dialog |
-| `checkAsrModel()` | `fun checkAsrModel()` | Check ASR model readiness |
-| `setTtsDownloadStateFromBackground(bgState)` | `fun setTtsDownloadStateFromBackground(bgState: DownloadState)` | Mirror background download to dialog state |
-
-### 8.8.13 Configuration & Profile
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `toggleTestMode()` | `fun toggleTestMode()` | Toggle test mode (accept all answers) |
-| `updateVocabSprintLimit(limit)` | `fun updateVocabSprintLimit(limit: Int)` | Set vocab sprint size limit |
-| `updateUserName(newName)` | `fun updateUserName(newName: String)` | Update user profile name (max 50 chars) |
-| `saveProgressNow()` | `fun saveProgressNow()` | Manual save + trigger backup |
-| `onScreenChanged(screenName)` | `fun onScreenChanged(screenName: String)` | Track current screen for state restoration |
-
-### 8.8.14 Bad Sentences & Hidden Cards
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `flagBadSentence()` | `fun flagBadSentence()` | Flag current card as bad sentence |
-| `unflagBadSentence()` | `fun unflagBadSentence()` | Unflag current card |
-| `isBadSentence()` | `fun isBadSentence(): Boolean` | Check if current card is flagged |
-| `exportBadSentences()` | `fun exportBadSentences(): String?` | Export bad sentences to text file |
-| `hideCurrentCard()` | `fun hideCurrentCard()` | Hide current card and skip to next |
-| `unhideCurrentCard()` | `fun unhideCurrentCard()` | Unhide current card |
-| `isCurrentCardHidden()` | `fun isCurrentCardHidden(): Boolean` | Check if current card is hidden |
-| `flagDailyBadSentence(...)` | `fun flagDailyBadSentence(cardId, languageId, sentence, translation, mode)` | Flag a daily practice card as bad |
-| `unflagDailyBadSentence(...)` | `fun unflagDailyBadSentence(cardId)` | Unflag a daily practice card |
-| `isDailyBadSentence(...)` | `fun isDailyBadSentence(cardId): Boolean` | Check if a daily practice card is flagged |
-| `exportDailyBadSentences()` | `fun exportDailyBadSentences(): String?` | Export daily practice bad sentences |
+4. **`correctCount`/`incorrectCount` are NOT reset in `selectLesson` or `refreshLessons`** but ARE reset in `selectLanguage`, `importLessonPack`, `addLanguage`. This means switching lessons preserves the running score, which may or may not be intentional.
 
 ---
 
-## 8.12 Bad Card Reporting
-
-### 8.12.1 Overview
-
-Bad card reporting allows users to flag cards with errors, unnatural phrasing, or incorrect translations. The feature is available in all training modes: regular lesson training, daily practice (all 3 blocks), verb drill, and vocab drill.
-
-All flagged cards are stored in a single `BadSentenceStore` and can be exported to a text file for review by content creators.
-
-### 8.12.2 Reporting in Training Mode
-
-In regular lesson training, flagging is accessed via the report button (flag icon) in the `AnswerBox` component, which opens a `ModalBottomSheet` with report options.
-
-**Methods:**
-
-- `flagBadSentence()`: Adds the current card to `BadSentenceStore` with `mode = "training"`. The `sentence` field is set to `card.promptRu`, and `translation` is set to `card.acceptedAnswers.joinToString(" / ")`. After flagging in drill mode, the card is automatically skipped via `advanceDrillCard()`.
-- `unflagBadSentence()`: Removes the current card from `BadSentenceStore`.
-- `isBadSentence()`: Checks if the current card is flagged.
-- `exportBadSentences()`: Calls `BadSentenceStore.exportUnified()` which generates a single text file with all flagged cards grouped by language, pack, and mode. Returns the file path or `null` if no bad sentences exist.
-
-**Mode field:** `"training"` -- used in the `BadSentenceEntry.mode` field to identify the source training mode.
-
-### 8.12.3 Reporting in Daily Practice
-
-Daily practice supports bad card reporting across all 3 blocks. The flagging is handled through the `DailyPracticeSessionProvider` (for Blocks 1 and 3) and the `VocabFlashcardBlock` composable (for Block 2).
-
-**Daily-specific methods in TrainingViewModel:**
-
-- `flagDailyBadSentence(cardId, languageId, sentence, translation, mode)`: Adds the entry to `BadSentenceStore` and also tracks the card ID in an in-memory `dailyBadCardIds` set for fast lookup during the session.
-- `unflagDailyBadSentence(cardId)`: Removes the entry from `BadSentenceStore` and the in-memory set.
-- `isDailyBadSentence(cardId)`: Checks both the in-memory set and the persistent store.
-- `exportDailyBadSentences()`: Calls `BadSentenceStore.exportUnified()`.
-
-**Mode fields by block:**
-
-| Block | Mode Field | Description |
-|-------|-----------|-------------|
-| Block 1 (Translation) | `"daily_translate"` | Sentence translation cards |
-| Block 2 (Vocab Flashcard) | `"daily_vocab"` | Vocabulary flashcard words |
-| Block 3 (Verb Conjugation) | `"daily_verb"` | Verb conjugation cards |
-
-The `DailyPracticeSessionProvider` determines the mode from `blockType` when calling `onFlagCard`:
-
-```kotlin
-val mode = when (blockType) {
-    DailyBlockType.TRANSLATE -> "daily_translate"
-    DailyBlockType.VERBS -> "daily_verb"
-    DailyBlockType.VOCAB -> "daily_vocab"
-}
-```
-
-**UI integration:**
-
-- **Blocks 1 and 3**: Report button is in `DailyInputControls`, alongside input mode buttons and the show-answer button. Tapping it opens a `ModalBottomSheet` with flag/unflag/export options.
-- **Block 2**: Report button is in `VocabFlashcardBlock`, shown as a flag icon next to the flashcard content. Tapping it opens a separate report bottom sheet.
-- **`supportsFlagging = true`** on `DailyPracticeSessionProvider` enables the flagging capability.
-
-**Hidden cards in daily practice**: `hideCurrentCard()` is a no-op in `DailyPracticeSessionProvider` -- flagging is the only action available. Hidden cards do NOT affect session progress.
-
-### 8.12.4 Export Format
-
-The unified export (`BadSentenceStore.exportUnified()`) produces a text file at `Downloads/BaseGrammy/bad_sentences_all.txt` with entries grouped by language, then pack, then mode:
-
-```
-=== Bad Sentences Report ===
-Generated: 2026-05-12 14:30
-Total entries: 5
-
-## Language: it
-
-  ### Pack: italian_basics
-
-    #### Mode: training (2 entries)
-
-    - ID: lesson1_42
-      Source: Он работает в офисе
-      Target: Lui lavora in ufficio
-      Reported: 2026-05-12 14:25
-
-    #### Mode: daily_verb (1 entries)
-
-    - ID: regular_are_Presente_5
-      Source: я готов
-      Target: Io sono pronto.
-      Reported: 2026-05-12 14:28
-```
-
-Per-pack export (`exportToTextFile(packId)`) produces a simpler format at `Downloads/BaseGrammy/bad_sentences_{packId}.txt`:
-
-```
-ID: lesson1_42
-Source: Он работает в офисе
-Target: Lui lavora in ufficio
-Language: it
-Mode: training
----
-```
-
-### 8.8.15 Backup & Restore
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `createProgressBackup()` | `fun createProgressBackup()` | Create backup in Downloads/BaseGrammy/ |
-| `restoreBackup(backupUri)` | `fun restoreBackup(backupUri: Uri)` | Restore progress from backup |
-| `reloadFromDisk()` | `fun reloadFromDisk()` | Reload all data from disk (IO thread) |
-
-### 8.8.16 Streak
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `dismissStreakMessage()` | `fun dismissStreakMessage()` | Dismiss streak celebration message |
-
-### 8.8.17 Misc
-
-| Method | Signature | Purpose |
-|--------|-----------|---------|
-| `refreshVocabMasteryCount()` | `fun refreshVocabMasteryCount()` | Update vocab mastered count from store |
-
----
-
-## 8.9 Helper Integration
-
-### 8.9.1 DailySessionHelper
-
-The primary domain helper, managing daily practice session state within `DailySessionState`.
-
-**Initialization:**
-```kotlin
-private val dailySessionHelper = DailySessionHelper(object : TrainingStateAccess {
-    override val uiState: StateFlow<TrainingUiState> = _uiState
-    override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
-        _uiState.update(transform)
-    }
-    override fun saveProgress() = this@TrainingViewModel.saveProgress()
-})
-```
-
-**Helper methods used by ViewModel:**
-| Method | Purpose |
-|--------|---------|
-| `startDailySession(tasks, level)` | Initialize DailySessionState with tasks |
-| `getCurrentTask()` | Get current DailyTask |
-| `getCurrentBlockType()` | Get current block type |
-| `nextTask()` | Advance to next task; ends session if last |
-| `advanceToNextBlock()` | Skip to first task of next block |
-| `replaceCurrentBlock(newTasks)` | Swap current block's tasks (for repeat) |
-| `endSession()` | Set active=false, finishedToken=true |
-| `fastForwardTo(taskIndex)` | Jump to specific task (for resume) |
-| `getBlockProgress()` | Calculate BlockProgress for current position |
-| `isSessionComplete()` | Check if all tasks done |
-
-### 8.9.2 DailySessionComposer
-
-A pure builder class (no state) that constructs `List<DailyTask>` sessions. Created fresh each time it is needed:
-
-```kotlin
-val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-```
-
-**Key methods:**
-| Method | Purpose |
-|--------|---------|
-| `buildSession(...)` | Build full 3-block session with cursor |
-| `buildRepeatSession(...)` | Rebuild session from stored card IDs |
-| `rebuildBlock(...)` | Rebuild a single block by type |
-
-### 8.9.3 TrainingStateAccess Interface
-
-Defined in `DailySessionHelper.kt`:
-```kotlin
-interface TrainingStateAccess {
-    val uiState: StateFlow<TrainingUiState>
-    fun updateState(transform: (TrainingUiState) -> TrainingUiState)
-    fun saveProgress()
-}
-```
-
-This interface is the contract between helpers and the ViewModel. Helpers receive state access but have no lifecycle awareness and cannot call other helpers directly. All coordination flows through the ViewModel.
-
----
-
-## 8.10 Critical Business Logic
-
-### 8.10.1 Sub-lesson Type Selection (NEW_ONLY vs MIXED)
-
-Sub-lessons are built by `MixedReviewScheduler` (external to ViewModel). The ViewModel consumes the result:
-
-```kotlin
-private fun rebuildSchedules(lessons: List<Lesson>) {
-    val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
-    val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-    val key = "${lessonKey}|${blockSize}"
-    if (key == scheduleKey) return  // Skip if unchanged
-    scheduleKey = key
-    lessonSchedules = MixedReviewScheduler(blockSize).build(lessons)
-}
-```
-
-The schedule is keyed by lesson IDs, card counts, and block size. It is rebuilt only when the key changes. Sub-lesson types are stored in `subLessonTypes: List<SubLessonType>`.
-
-### 8.10.2 Card Selection and Ordering
-
-**LESSON mode:**
-1. Get schedule for selected lesson
-2. Get sub-lessons list
-3. Select sub-lesson at `activeSubLessonIndex`
-4. Filter out hidden cards
-5. Cards maintain their original order from the CSV
-
-**ALL_SEQUENTIAL mode:**
-1. Concatenate all lesson cards in order
-2. Filter hidden cards
-3. Split into blocks by `subLessonSize`
-
-**ALL_MIXED mode:**
-1. Collect all cards from all lessons (using `allCards` which includes reserve pool)
-2. Filter hidden cards
-3. Shuffle
-4. Take up to 300 cards
-5. Split into blocks
-
-**Boss mode:**
-- LESSON: shuffle current lesson cards, take up to 300
-- MEGA: shuffle all cards from previous lessons, take up to 300
-- ELITE: shuffle all cards, take `eliteSubLessonSize() * eliteStepCount`
-
-**Daily Practice:**
-- TRANSLATE: cursor-driven, sequential (no shuffle), next 10 from current lesson offset
-- VOCAB: SRS-prioritized (overdue > new > least-recent)
-- VERBS: weak-first, excluding previously shown
-
-### 8.10.3 Boss Battle Rules
-
-1. **Unlock requirement:** 15 completed sub-lessons (except ELITE and test mode)
-2. **Single attempt:** Boss sessions are not saved mid-battle (`saveProgress()` skips when `bossActive && bossType != ELITE`)
-3. **No skipping:** User must answer each card; no skip mechanism
-4. **Progress tracking:** `bossProgress` = max of current index and previous progress (never decreases within a battle)
-5. **Reward milestones at 50% (BRONZE), 75% (SILVER), 100% (GOLD):** Session pauses, message displayed, user must dismiss
-6. **Reward persistence:** LESSON rewards stored per lesson in `bossLessonRewards`, MEGA rewards per lesson in `bossMegaRewards`
-7. **State restoration after boss:** Previous lesson ID and session state are restored from ProgressStore
-
-### 8.10.4 Spaced Repetition Integration Within Training
-
-**Flower state calculation (`refreshFlowerStates()`):**
-1. For each lesson, get `LessonMasteryState` from MasteryStore
-2. Calculate flower via `FlowerCalculator.calculate(mastery, lesson.cards.size)`
-3. Result: `FlowerVisual` with state, masteryPercent, healthPercent, scaleMultiplier
-4. Store in `lessonFlowers` map and `currentLessonFlower`
-
-**Ladder row calculation:**
-1. For each lesson, get mastery and calculate metrics via `LessonLadderCalculator.calculate(mastery, nowMs)`
-2. Produce `LessonLadderRow` with index, lessonId, title, uniqueCardShows, daysSinceLastShow, intervalLabel
-
-**Vocab SRS (daily practice):**
-- Words tracked in `WordMasteryStore` with `intervalStepIndex`, `nextReviewDateMs`, `correctCount`, `incorrectCount`
-- `rateVocabCard(rating)` applies step changes based on rating
-- Next review date computed from interval ladder: `[1, 2, 4, 7, 10, 14, 20, 28, 42, 56]` days
-- Learned threshold: `intervalStepIndex >= 3`
-
-**Verb drill SRS:**
-- Cards tracked per tense combo in `VerbDrillStore`
-- `everShownCardIds` / `todayShownCardIds` sets track exposure
-- Weakness scoring: `1 - (shownInCombo / totalInCombo)` per tense
-- Selection: weak-first, excluding previously shown cards
-
-### 8.10.5 Timer Mechanics
-
-The active timer runs as a coroutine:
-```kotlin
-private fun resumeTimer() {
-    activeStartMs = SystemClock.elapsedRealtime()
-    timerJob = viewModelScope.launch {
-        while (true) {
-            delay(500)
-            val elapsed = SystemClock.elapsedRealtime() - start
-            _uiState.update { it.copy(activeTimeMs = it.activeTimeMs + elapsed) }
-            activeStartMs = SystemClock.elapsedRealtime()
-            saveProgress()
-        }
-    }
-}
-```
-
-- Ticks every 500ms
-- Accumulates `activeTimeMs`
-- Saves progress on each tick
-- Cancelled on `pauseTimer()`
-- Only one timer can run (checked via `timerJob?.isActive`)
-
-### 8.10.6 Voice Metrics Tracking
-
-When a correct answer is submitted via VOICE mode:
-- `voicePromptStartMs` is set when voice prompt starts
-- `voiceActiveMs` accumulates the duration: `SystemClock.elapsedRealtime() - voicePromptStartMs`
-- `voiceWordCount` accumulates metric words (normalized words with length >= 3)
-- These metrics are used for elite speed calculation: `words / (activeMs / 60000.0)`
-
-### 8.10.7 Background TTS Download
-
-On init, the ViewModel starts background downloads for all missing TTS models:
-```kotlin
-private fun startBackgroundTtsDownload() {
-    val missingLanguages = languages.map { it.id }
-        .filter { !ttsModelManager.isModelReady(it) }
-    // Downloads all missing models concurrently
-    // Updates bgTtsDownloadStates and ttsModelsReady in UI state
-}
-```
-
-The download state is mirrored to `ttsDownloadState` so the download dialog shows live progress if opened while background download runs.
-
-### 8.10.8 Pack Reload on App Start
-
-The init block launches a background coroutine to force-reload default packs:
-```kotlin
-viewModelScope.launch(Dispatchers.IO) {
-    val reloaded = lessonStore.forceReloadDefaultPacks()
-    if (!reloaded) return@launch
-    // Rebuild everything on Main thread
-}
-```
-
-This ensures the latest bundled content is always available. State is read inside the `update` lambda to avoid TOCTOU races.
-
-### 8.10.9 Lifecycle
-
-```kotlin
-override fun onCleared() {
-    saveProgress()
-    bgDownloadJob?.cancel()
-    ttsEngine.release()
-    asrEngine?.release()
-    soundPool.release()
-    super.onCleared()
-}
-```
-
-The ViewModel saves progress on destruction and releases all native resources (TTS engine, ASR engine, sound pool).
+## 6. Method-to-Module Completeness Checklist
+
+Every method in TrainingViewModel.kt is listed below with its target module assignment. Methods marked "ViewModel (stays)" will remain in the thin orchestrator after decomposition.
+
+### SessionRunner (lesson flow + elite/drill sub-modes + word bank interaction)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 1 | `init {}` | ViewModel (stays) | 150-351 | [ ] |
+| 2 | `onInputChanged(text)` | SessionRunner | 353-362 | [ ] |
+| 3 | `onVoicePromptStarted()` | SessionRunner | 364-368 | [ ] |
+| 4 | `setInputMode(mode)` | SessionRunner | 370-391 | [ ] |
+| 5 | `togglePause()` | SessionRunner | 924-932 | [ ] |
+| 6 | `pauseSession()` | SessionRunner | 934-938 | [ ] |
+| 7 | `finishSession()` | SessionRunner | 940-971 | [ ] |
+| 8 | `showAnswer()` | SessionRunner | 973-986 | [ ] |
+| 9 | `resumeFromSettings()` | SessionRunner | 1289-1292 | [ ] |
+| 10 | `submitAnswer()` | SessionRunner | 624-849 | [ ] |
+| 11 | `nextCard(triggerVoice)` | SessionRunner | 851-904 | [ ] |
+| 12 | `prevCard()` | SessionRunner | 906-922 | [ ] |
+| 13 | `startSession()` | SessionRunner | 2436-2459 | [ ] |
+| 14 | `currentCard()` | SessionRunner | 2461-2465 | [ ] |
+| 15 | `resumeTimer()` | SessionRunner | 2467-2480 | [ ] |
+| 16 | `pauseTimer()` | SessionRunner | 2482-2486 | [ ] |
+| 17 | `selectSubLesson(index)` | SessionRunner | 1377-1391 | [ ] |
+| 18 | `openEliteStep(index)` | SessionRunner | 1393-1425 | [ ] |
+| 19 | `cancelEliteSession()` | SessionRunner | 1427-1444 | [ ] |
+| 20 | `resolveEliteUnlocked(lessons, testMode)` | SessionRunner | 2582-2584 | [ ] |
+| 21 | `normalizeEliteSpeeds(speeds)` | SessionRunner | 2586-2592 | [ ] |
+| 22 | `eliteSubLessonSize()` | SessionRunner | 2594-2596 | [ ] |
+| 23 | `calculateSpeedPerMinute(activeMs, words)` | SessionRunner | 2598-2602 | [ ] |
+| 24 | `showDrillStartDialog(lessonId)` | SessionRunner | 1817-1827 | [ ] |
+| 25 | `startDrill(resume)` | SessionRunner | 1829-1880 | [ ] |
+| 26 | `dismissDrillDialog()` | SessionRunner | 1882-1884 | [ ] |
+| 27 | `loadDrillCard(cardIndex, activate)` | SessionRunner | 1886-1914 | [ ] |
+| 28 | `advanceDrillCard()` | SessionRunner | 1916-1929 | [ ] |
+| 29 | `finishDrill(lessonId)` | SessionRunner | 1931-1947 | [ ] |
+| 30 | `exitDrillMode()` | SessionRunner | 1949-1975 | [ ] |
+| 31 | `selectWordFromBank(word)` | SessionRunner | 3174-3185 | [ ] |
+| 32 | `removeLastSelectedWord()` | SessionRunner | 3190-3203 | [ ] |
+| 33 | `skipToNextCard()` | SessionRunner | 3598-3623 | [ ] |
+
+### CardProvider (card selection algorithms)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 34 | `rebuildSchedules(lessons)` | CardProvider | 1294-1301 | [ ] |
+| 35 | `buildSessionCards()` | CardProvider | 1303-1375 | [ ] |
+| 36 | `buildEliteCards()` | CardProvider | 2604-2608 | [ ] |
+
+### AnswerValidator (normalization + comparison)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 37 | `countMetricWords(text)` | AnswerValidator | 2610-2614 | [ ] |
+
+> Note: Core validation logic is inline in `submitAnswer()`, `submitDailySentenceAnswer()`, `submitDailyVerbAnswer()`, `submitVocabAnswer()`. These inline patterns must be extracted into `AnswerValidator` during migration.
+
+### WordBankGenerator (word bank + distractors)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 38 | `generateWordBank(correctAnswer, extraWords)` | WordBankGenerator | 3071-3075 | [ ] |
+| 39 | `updateWordBank()` | WordBankGenerator | 3080-3114 | [ ] |
+| 40 | `buildVocabWordBank(entry, pool)` | WordBankGenerator | 3116-3163 | [ ] |
+| 41 | `updateVocabWordBank()` | WordBankGenerator | 3165-3169 | [ ] |
+
+### ProgressTracker (mastery + persistence)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 42 | `saveProgress()` | ProgressTracker | 2488-2522 | [ ] |
+| 43 | `recordCardShowForMastery(card)` | ProgressTracker | 2989-3010 | [ ] |
+| 44 | `markSubLessonCardsShown(cards)` | ProgressTracker | 3012-3023 | [ ] |
+| 45 | `checkAndMarkLessonCompleted()` | ProgressTracker | 3028-3035 | [ ] |
+| 46 | `calculateCompletedSubLessons(subLessons, mastery, lessonId)` | ProgressTracker | 3040-3067 | [ ] |
+| 47 | `resolveCardLessonId(card)` | ProgressTracker | 2968-2982 | [ ] |
+| 48 | `resolveProgressLessonInfo()` | ProgressTracker | 2533-2572 | [ ] |
+| 49 | `getProgressLessonLevel()` | ProgressTracker | 2578-2580 | [ ] |
+
+### FlowerProgressRenderer (flower state computation)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 50 | `refreshFlowerStates()` | FlowerProgressRenderer | 3208-3246 | [ ] |
+
+### BossBattleRunner (boss session lifecycle)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 51 | `startBossLesson()` | BossBattleRunner | 2216-2218 | [ ] |
+| 52 | `startBossMega()` | BossBattleRunner | 2220-2222 | [ ] |
+| 53 | `startBossElite()` | BossBattleRunner | 2224-2226 | [ ] |
+| 54 | `startBoss(type)` | BossBattleRunner | 2228-2303 | [ ] |
+| 55 | `finishBoss()` | BossBattleRunner | 2305-2365 | [ ] |
+| 56 | `clearBossRewardMessage()` | BossBattleRunner | 2367-2388 | [ ] |
+| 57 | `clearBossError()` | BossBattleRunner | 2390-2392 | [ ] |
+| 58 | `updateBossProgress(progress)` | BossBattleRunner | 2394-2415 | [ ] |
+| 59 | `resolveBossReward(progress, total)` | BossBattleRunner | 2417-2426 | [ ] |
+| 60 | `bossRewardMessage(reward)` | BossBattleRunner | 2428-2434 | [ ] |
+
+### DailyPracticeCoordinator (3-block session)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 61 | `hasResumableDailySession()` | DailyCoordinator | 1448-1455 | [ ] |
+| 62 | `startDailyPractice(lessonLevel)` | DailyCoordinator | 1457-1521 | [ ] |
+| 63 | `storeFirstSessionCardIds(sentenceIds, verbIds)` | DailyCoordinator | 1527-1539 | [ ] |
+| 64 | `advanceCursor(sentenceCount)` | DailyCoordinator | 1546-1564 | [ ] |
+| 65 | `repeatDailyPractice(lessonLevel)` | DailyCoordinator | 1566-1619 | [ ] |
+| 66 | `advanceDailyTask()` | DailyCoordinator | 1621-1628 | [ ] |
+| 67 | `recordDailyCardPracticed(blockType)` | DailyCoordinator | 1635-1650 | [ ] |
+| 68 | `advanceDailyBlock()` | DailyCoordinator | 1652-1657 | [ ] |
+| 69 | `persistDailyVerbProgress(card)` | DailyCoordinator | 1659-1675 | [ ] |
+| 70 | `repeatDailyBlock()` | DailyCoordinator | 1677-1699 | [ ] |
+| 71 | `cancelDailySession()` | DailyCoordinator | 1701-1722 | [ ] |
+| 72 | `rateVocabCard(rating)` | DailyCoordinator | 1728-1755 | [ ] |
+| 73 | `getDailyCurrentTask()` | DailyCoordinator | 1757-1759 | [ ] |
+| 74 | `getDailyBlockProgress()` | DailyCoordinator | 1761-1763 | [ ] |
+| 75 | `submitDailySentenceAnswer(input)` | DailyCoordinator | 1765-1776 | [ ] |
+| 76 | `submitDailyVerbAnswer(input)` | DailyCoordinator | 1778-1789 | [ ] |
+| 77 | `getDailySentenceAnswer()` | DailyCoordinator | 1791-1794 | [ ] |
+| 78 | `getDailyVerbAnswer()` | DailyCoordinator | 1796-1799 | [ ] |
+
+### VocabSprintRunner (vocab flashcard session)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 79 | `hasVocabProgress()` | VocabSprintRunner | 1990-1995 | [ ] |
+| 80 | `openVocabSprint(resume)` | VocabSprintRunner | 1997-2062 | [ ] |
+| 81 | `clearVocabError()` | VocabSprintRunner | 2085-2087 | [ ] |
+| 82 | `onVocabInputChanged(text)` | VocabSprintRunner | 2089-2098 | [ ] |
+| 83 | `setVocabInputMode(mode)` | VocabSprintRunner | 2100-2107 | [ ] |
+| 84 | `requestVocabVoice()` | VocabSprintRunner | 2109-2116 | [ ] |
+| 85 | `submitVocabAnswer(inputOverride)` | VocabSprintRunner | 2118-2163 | [ ] |
+| 86 | `showVocabAnswer()` | VocabSprintRunner | 2165-2174 | [ ] |
+| 87 | `moveToNextVocab()` | VocabSprintRunner | 2176-2214 | [ ] |
+
+### AudioCoordinator (TTS + ASR + SoundPool)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 88 | `onTtsSpeak(text, speed)` | AudioCoordinator | 2616-2631 | [ ] |
+| 89 | `setTtsSpeed(speed)` | AudioCoordinator | 2633-2635 | [ ] |
+| 90 | `setRuTextScale(scale)` | AudioCoordinator | 2637-2639 | [ ] |
+| 91 | `startTtsDownload()` | AudioCoordinator | 2641-2648 | [ ] |
+| 92 | `confirmTtsDownloadOnMetered()` | AudioCoordinator | 2650-2653 | [ ] |
+| 93 | `dismissMeteredWarning()` | AudioCoordinator | 2655-2657 | [ ] |
+| 94 | `dismissTtsDownloadDialog()` | AudioCoordinator | 2663-2669 | [ ] |
+| 95 | `beginTtsDownload()` | AudioCoordinator | 2673-2691 | [ ] |
+| 96 | `checkTtsModel()` | AudioCoordinator | 2693-2697 | [ ] |
+| 97 | `checkAllTtsModels()` | AudioCoordinator | 2699-2704 | [ ] |
+| 98 | `startTtsDownloadForLanguage(languageId)` | AudioCoordinator | 2706-2741 | [ ] |
+| 99 | `stopTts()` | AudioCoordinator | 2743-2745 | [ ] |
+| 100 | `startBackgroundTtsDownload()` | AudioCoordinator | 2888-2937 | [ ] |
+| 101 | `setTtsDownloadStateFromBackground(bgState)` | AudioCoordinator | 2939-2941 | [ ] |
+| 102 | `playSuccessTone()` | AudioCoordinator | 2952-2956 | [ ] |
+| 103 | `playErrorTone()` | AudioCoordinator | 2958-2962 | [ ] |
+| 104 | `playSuccessSound()` | AudioCoordinator | 1801-1805 | [ ] |
+| 105 | `playErrorSound()` | AudioCoordinator | 1807-1811 | [ ] |
+| 106 | `checkAsrModel()` | AudioCoordinator | 2751-2754 | [ ] |
+| 107 | `dismissAsrDownloadDialog()` | AudioCoordinator | 2756-2758 | [ ] |
+| 108 | `startOfflineRecognition()` | AudioCoordinator | 2760-2772 | [ ] |
+| 109 | `stopAsr()` | AudioCoordinator | 2774-2776 | [ ] |
+| 110 | `setUseOfflineAsr(enabled)` | AudioCoordinator | 2778-2788 | [ ] |
+| 111 | `startAsrDownload()` | AudioCoordinator | 2790-2796 | [ ] |
+| 112 | `confirmAsrDownloadOnMetered()` | AudioCoordinator | 2798-2801 | [ ] |
+| 113 | `dismissAsrMeteredWarning()` | AudioCoordinator | 2803-2805 | [ ] |
+| 114 | `beginAsrDownload()` | AudioCoordinator | 2807-2826 | [ ] |
+| 115 | `transcribeWithOfflineAsr()` | AudioCoordinator | 2832-2882 | [ ] |
+
+### StreakManager (streak tracking)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 116 | `updateStreak()` | StreakManager | 3269-3303 | [ ] |
+| 117 | `dismissStreakMessage()` | StreakManager | 3308-3312 | [ ] |
+
+### ViewModel (stays in thin orchestrator)
+
+| # | Method | Target Module | Source Lines | Checklist |
+|---|--------|---------------|-------------|-----------|
+| 118 | `selectLanguage(languageId)` | ViewModel | 393-472 | [ ] |
+| 119 | `selectLesson(lessonId)` | ViewModel | 474-549 | [ ] |
+| 120 | `selectPack(packId)` | ViewModel | 551-569 | [ ] |
+| 121 | `selectMode(mode)` | ViewModel | 571-622 | [ ] |
+| 122 | `importLesson(uri)` | ViewModel | 988-992 | [ ] |
+| 123 | `importLessonPack(uri)` | ViewModel | 994-1060 | [ ] |
+| 124 | `resetAndImportLesson(uri)` | ViewModel | 1061-1066 | [ ] |
+| 125 | `deleteLesson(lessonId)` | ViewModel | 1068-1073 | [ ] |
+| 126 | `createEmptyLesson(title)` | ViewModel | 1075-1079 | [ ] |
+| 127 | `addLanguage(name)` | ViewModel | 1081-1143 | [ ] |
+| 128 | `deleteAllLessons()` | ViewModel | 1145-1150 | [ ] |
+| 129 | `resetAllProgress()` | ViewModel | 1155-1200 | [ ] |
+| 130 | `deletePack(packId)` | ViewModel | 1202-1210 | [ ] |
+| 131 | `refreshLessons(selectedLessonId)` | ViewModel | 1234-1287 | [ ] |
+| 132 | `toggleTestMode()` | ViewModel | 1212-1224 | [ ] |
+| 133 | `updateVocabSprintLimit(limit)` | ViewModel | 2226-2232 | [ ] |
+| 134 | `updateUserName(newName)` | ViewModel | 3332-3342 | [ ] |
+| 135 | `saveProgressNow()` | ViewModel | 3344-3348 | [ ] |
+| 136 | `onScreenChanged(screenName)` | ViewModel | 3350-3352 | [ ] |
+| 137 | `openStory(phase)` | ViewModel | 1979-1988 | [ ] |
+| 138 | `completeStory(phase, allCorrect)` | ViewModel | 2064-2079 | [ ] |
+| 139 | `clearStoryError()` | ViewModel | 2081-2083 | [ ] |
+| 140 | `flagBadSentence()` | ViewModel | 3507-3523 | [ ] |
+| 141 | `unflagBadSentence()` | ViewModel | 3525-3530 | [ ] |
+| 142 | `isBadSentence()` | ViewModel | 3532-3536 | [ ] |
+| 143 | `exportBadSentences()` | ViewModel | 3538-3544 | [ ] |
+| 144 | `flagDailyBadSentence(...)` | ViewModel | 3550-3561 | [ ] |
+| 145 | `unflagDailyBadSentence(cardId)` | ViewModel | 3563-3567 | [ ] |
+| 146 | `isDailyBadSentence(cardId)` | ViewModel | 3569-3572 | [ ] |
+| 147 | `exportDailyBadSentences()` | ViewModel | 3574-3580 | [ ] |
+| 148 | `hideCurrentCard()` | ViewModel | 3582-3586 | [ ] |
+| 149 | `unhideCurrentCard()` | ViewModel | 3588-3591 | [ ] |
+| 150 | `isCurrentCardHidden()` | ViewModel | 3593-3596 | [ ] |
+| 151 | `createProgressBackup()` | ViewModel | 3318-3327 | [ ] |
+| 152 | `restoreBackup(backupUri)` | ViewModel | 3357-3445 | [ ] |
+| 153 | `reloadFromDisk()` | ViewModel | 3447-3505 | [ ] |
+| 154 | `onCleared()` | ViewModel | 2943-2950 | [ ] |
+| 155 | `refreshVocabMasteryCount()` | ViewModel | 3261-3264 | [ ] |
+| 156 | `rebindWordMasteryStore(packId)` | ViewModel | 3253-3255 | [ ] |
+
+### Summary by Module
+
+| Module | Method Count | Est. Lines |
+|--------|:---:|:---:|
+| SessionRunner | 33 | ~450 |
+| CardProvider | 3 | ~250 |
+| AnswerValidator | 1 (pure) + inline logic | ~80 |
+| WordBankGenerator | 4 | ~120 |
+| ProgressTracker | 8 | ~300 |
+| FlowerProgressRenderer | 1 | ~60 |
+| BossBattleRunner | 10 | ~200 |
+| DailyPracticeCoordinator | 18 | ~350 |
+| VocabSprintRunner | 9 | ~250 |
+| AudioCoordinator | 28 | ~300 |
+| StreakManager | 2 | ~80 |
+| ViewModel (stays) | 39 | ~400 |
+| **Total** | **156** | **~2840** |
 
 ---
 
-## 8.11 Supporting Data Classes
+## 7. Cross-Cutting Concerns for Migration
 
-### SubmitResult
+### 7.1 Methods That Span Multiple Modules
+
+These methods touch multiple module domains and require careful decomposition:
+
+| Method | Modules Touched | Migration Strategy |
+|--------|----------------|-------------------|
+| `submitAnswer()` | SessionRunner + ProgressTracker + BossBattleRunner + FlowerProgressRenderer + StreakManager | Split into: SessionRunner handles card flow, delegates mastery to ProgressTracker, boss branch to BossBattleRunner, elite branch stays in SessionRunner, end-of-sublesson triggers ProgressTracker + StreakManager + FlowerRenderer |
+| `nextCard(triggerVoice)` | SessionRunner + BossBattleRunner + ProgressTracker | Boss progress tracking moves to BossBattleRunner, mastery recording to ProgressTracker, card navigation stays in SessionRunner |
+| `startBoss(type)` | BossBattleRunner + CardProvider + SessionRunner | Card building moves to CardProvider, session setup moves to BossBattleRunner |
+| `startDailyPractice(lessonLevel)` | DailyCoordinator + ProgressTracker + CardProvider (via DailySessionComposer) | Stays in DailyCoordinator, delegates cursor ops to ProgressTracker |
+| `cancelDailySession()` | DailyCoordinator + ProgressTracker | Cursor advancement delegated to ProgressTracker |
+| `init {}` | All modules | Must be decomposed: ViewModel keeps selection logic, delegates audio init to AudioCoordinator, daily pre-build to DailyCoordinator, etc. |
+
+### 7.2 Shared Private State That Must Be Threaded
+
+| Private Var | Accessing Modules | Migration Strategy |
+|-------------|-------------------|-------------------|
+| `sessionCards` | SessionRunner, BossBattleRunner (temporarily during startBoss) | SessionRunner owns. BossBattleRunner returns cards from `startBoss()`, SessionRunner assigns them. |
+| `bossCards` | BossBattleRunner, SessionRunner (via `sessionCards`) | BossBattleRunner owns. Returns card list to SessionRunner for assignment to `sessionCards`. |
+| `lessonSchedules` | CardProvider (build), SessionRunner (consume in buildSessionCards) | CardProvider owns. SessionRunner reads via getter. |
+| `timerJob` / `activeStartMs` | SessionRunner | SessionRunner owns exclusively. |
+| `dailyPracticeAnsweredCounts` | DailyCoordinator | DailyCoordinator owns exclusively. |
+| `dailyCursorAtSessionStart` | DailyCoordinator | DailyCoordinator owns exclusively. |
+
+### 7.3 Answer Validation Deduplication
+
+Answer normalization + comparison is duplicated across 4 sites:
+
+| Location | Current Code | Target |
+|----------|-------------|--------|
+| `submitAnswer()` line 629-630 | `Normalizer.normalize(input)` + comparison | AnswerValidator |
+| `submitDailySentenceAnswer()` line 1768-1769 | Same pattern | AnswerValidator |
+| `submitDailyVerbAnswer()` line 1781-1782 | Same pattern | AnswerValidator |
+| `submitVocabAnswer()` line 2123-2126 | Same pattern (with `+` split) | AnswerValidator |
+
+After migration, all 4 call `AnswerValidator.validate()`.
+
+### 7.4 Sound Method Deduplication
+
+| Duplicate Set | Method A | Method B | Merge Target |
+|---------------|----------|----------|-------------|
+| Success | `playSuccessTone()` (line 2952) | `playSuccessSound()` (line 1801) | `AudioCoordinator.playSuccessSound()` |
+| Error | `playErrorTone()` (line 2958) | `playErrorSound()` (line 1807) | `AudioCoordinator.playErrorSound()` |
+
+### 7.5 Reset Block Consolidation
+
+The 6 nearly-identical reset blocks should be replaced with a single `resetSessionState()` helper that resets all session-related fields. The ViewModel calls this and then applies its domain-specific overrides (e.g., `selectLanguage` also sets `languages`, `selectedLanguageId`, etc.).
+
 ```kotlin
-data class SubmitResult(val accepted: Boolean, val hintShown: Boolean)
-```
-
-### TrainingUiState
-70+ field data class (defined in TrainingViewModel.kt, lines 3490-3605). See section 8.2.1 for field breakdown.
-
-### LessonLadderRow
-```kotlin
-data class LessonLadderRow(
-    val index: Int,
-    val lessonId: String,
-    val title: String,
-    val uniqueCardShows: Int?,
-    val daysSinceLastShow: Int?,
-    val intervalLabel: String?
+// Proposed: single reset helper
+private fun TrainingUiState.resetSessionState() = copy(
+    currentIndex = 0,
+    correctCount = 0,
+    // ... all 30+ reset fields
 )
 ```
 
-### Private Mutable State
-
-| Variable | Type | Purpose |
-|----------|------|---------|
-| `sessionCards` | `List<SentenceCard>` | Cards for current sub-lesson (mutated by buildSessionCards) |
-| `bossCards` | `List<SentenceCard>` | Cards for current boss battle |
-| `eliteCards` | `List<SentenceCard>` | Cards for current elite step |
-| `vocabSession` | `List<VocabEntry>` | Entries for current vocab sprint |
-| `subLessonTotal` | `Int` | Cards in current sub-lesson |
-| `subLessonCount` | `Int` | Total sub-lessons for current schedule |
-| `lessonSchedules` | `Map<String, LessonSchedule>` | Cached schedules per lesson |
-| `scheduleKey` | `String` | Cache key for schedule validity |
-| `timerJob` | `Job?` | Active timer coroutine |
-| `activeStartMs` | `Long?` | Timestamp for timer accumulation |
-| `forceBackupOnSave` | `Boolean` | Trigger backup on next saveProgress |
-| `prebuiltDailySession` | `List<DailyTask>?` | Pre-computed daily session for fast start |
-| `lastDailyTasks` | `List<DailyTask>?` | In-memory cache for repeat |
-| `dailyPracticeAnsweredCounts` | `MutableMap<DailyBlockType, Int>` | Per-block VOICE/KEYBOARD answer tracking |
-| `dailyCursorAtSessionStart` | `DailyCursorState` | Snapshot for cancel rollback |
-| `eliteSizeMultiplier` | `Double` | From config, default 1.25 |
+Each reset site then becomes:
+```kotlin
+_uiState.update { it.resetSessionState().copy(selectedLanguageId = languageId, lessons = lessons) }
+```

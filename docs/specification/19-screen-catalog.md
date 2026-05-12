@@ -1,1395 +1,582 @@
-# 19. Complete Screen Catalog -- Specification
+# 19. Screen Catalog
 
-This document catalogs every screen and dialog in GrammarMate. Each entry covers purpose, entry/exit conditions, layout wireframe, UI components, displayed state, user interactions, business rules, and edge cases.
+## Overview
 
-The app uses a single-activity, single-ViewModel architecture. `GrammarMateApp()` is the root composable that routes between screens via an `AppScreen` enum. All screens are composables defined in `GrammarMateApp.kt` or dedicated screen files (`DailyPracticeScreen.kt`, `VerbDrillScreen.kt`, `VocabDrillScreen.kt`, `TrainingCardSession.kt`, `AppRoot.kt`).
+GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` enum values, 3 sub-screens), **1 modal bottom sheet** (SettingsSheet), and **16 dialogs**. Navigation is managed via a private `AppScreen` enum inside `GrammarMateApp.kt` -- there is no Jetpack Navigation component. Screen state is held in `remember { mutableStateOf(parseScreen(state.initialScreen)) }` and transitions occur by reassigning this variable.
+
+**Total screen count**: 10 screens + 1 modal sheet + 16 dialogs = 27 UI surfaces.
+
+**Navigation pattern**: Single-activity, no Navigation Component. `GrammarMateApp()` is the root composable that routes between screens via `when (screen)` on `AppScreen`. Dialogs and sheets are conditionally rendered overlays. Back navigation is handled per-screen via `BackHandler` composables.
+
+**Source files**:
+- `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` -- AppScreen enum, HomeScreen, LessonRoadmapScreen, TrainingScreen, StoryQuizScreen, LadderScreen, SettingsSheet, all dialogs
+- `app/src/main/java/com/alexpo/grammermate/ui/AppRoot.kt` -- StartupScreen
+- `app/src/main/java/com/alexpo/grammermate/ui/DailyPracticeScreen.kt` -- DailyPracticeScreen
+- `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillScreen.kt` -- VerbDrillScreen (Selection, Session, Completion)
+- `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillScreen.kt` -- VocabDrillScreen (Selection, CardScreen, Completion)
+- `app/src/main/java/com/alexpo/grammermate/ui/TrainingCardSession.kt` -- Reusable card session component used by VerbDrill and DailyPractice
 
 ---
 
-## 19.1 App Startup Screen
+## Navigation Graph
 
-- **Purpose**: Displayed during app initialization while checking for backup restore status. Shows a loading spinner and status message.
-- **Entry conditions**: App launch. Shown by `AppRoot()` when `RestoreNotifier.restoreState.status` is not `DONE`.
-- **Exit conditions**: Automatically dismissed when restore status becomes `DONE`, at which point `GrammarMateApp()` is rendered.
-- **Layout**:
 ```
-+----------------------------------+
-|                                  |
-|                                  |
-|          [Spinner]               |
-|       "Restoring backup..."      |
-|       "Waiting for backup..."    |
-|       "Preparing..."             |
-|                                  |
-|                                  |
-+----------------------------------+
+[Startup] --(restore done)--> [HOME]
+                                  |
+                                  +-- Primary Action Card / "Continue Learning" / LessonTile --> [LESSON]
+                                  |       |
+                                  |       +-- LessonTile (exercise) --> [TRAINING] --(exit)--> [LESSON]
+                                  |       +-- DrillTile --> DrillStartDialog --> [TRAINING] (drill mode)
+                                  |       +-- BossTile "Review" --> [TRAINING] (boss mode)
+                                  |       +-- BossTile "Mega" --> [TRAINING] (boss mega mode)
+                                  |
+                                  +-- DailyPracticeEntryTile --> [DAILY_PRACTICE] --(exit)--> [HOME]
+                                  |
+                                  +-- VerbDrillEntryTile --> [VERB_DRILL] --(exit/back)--> [HOME]
+                                  |       (Selection --> Session --> Completion)
+                                  |
+                                  +-- VocabDrillEntryTile --> [VOCAB_DRILL] --(exit/back)--> [HOME]
+                                  |       (Selection --> CardScreen --> Completion)
+                                  |
+                                  +-- Settings gear --> SettingsSheet (ModalBottomSheet)
+                                          +-- "Show Ladder" --> [LADDER] --(back)--> caller
+
+[TRAINING] SettingsSheet --> "Show Ladder" --> [LADDER] --(back)--> [TRAINING]
+[LESSON] Story trigger --> [STORY] --(close/complete)--> [LESSON]
+
+AppScreen.ELITE --> redirects to HOME (backward compat, enum kept)
+AppScreen.VOCAB --> redirects to HOME (backward compat, enum kept)
+
+Global dialogs (overlay on any screen):
+  WelcomeDialog, StreakDialog, BossRewardDialog, BossErrorDialog,
+  StoryErrorDialog, TtsDownloadDialog, MeteredNetworkDialog (TTS),
+  AsrMeteredNetworkDialog
 ```
-- **Components**:
+
+---
+
+## Screen Inventory
+
+| # | Screen | AppScreen | Source File | Purpose | Routes In | Routes Out |
+|---|--------|-----------|-------------|---------|-----------|------------|
+| 1 | StartupScreen | N/A (AppRoot) | AppRoot.kt | Loading state during backup restore | App launch | HOME (restore done) |
+| 2 | HomeScreen | HOME | GrammarMateApp.kt:819 | Main hub with lesson grid, drill tiles, daily practice | Start, back from LESSON/TRAINING/DAILY/VERB/VOCAB | LESSON, DAILY_PRACTICE, VERB_DRILL, VOCAB_DRILL |
+| 3 | LessonRoadmapScreen | LESSON | GrammarMateApp.kt:1178 | Sub-lesson grid with boss/drill tiles | HOME (tap lesson), TRAINING (session end) | HOME (back), TRAINING (start sub-lesson/boss/drill) |
+| 4 | TrainingScreen | TRAINING | GrammarMateApp.kt:2554 | Card-by-card translation practice | LESSON (start sub-lesson/boss/drill) | LESSON (exit/session end) |
+| 5 | DailyPracticeScreen | DAILY_PRACTICE | DailyPracticeScreen.kt | 3-block daily session (translate, vocab, verbs) | HOME (tap Daily Practice) | HOME (exit/complete) |
+| 6 | VerbDrillScreen | VERB_DRILL | VerbDrillScreen.kt | Verb conjugation drill (selection + session + completion) | HOME (tap Verb Drill) | HOME (back/exit) |
+| 7 | VocabDrillScreen | VOCAB_DRILL | VocabDrillScreen.kt | Flashcard vocab drill (selection + cards + completion) | HOME (tap Flashcards) | HOME (back/exit) |
+| 8 | LadderScreen | LADDER | GrammarMateApp.kt:2388 | Interval ladder overview | SettingsSheet (Show Ladder) | caller (back) |
+| 9 | StoryQuizScreen | STORY | GrammarMateApp.kt:1599 | Reading comprehension quiz | LESSON (story phase) | LESSON (close/complete) |
+| 10 | SettingsSheet | N/A (ModalBottomSheet) | GrammarMateApp.kt:1951 | Full app configuration | Any screen (gear icon) | Dismiss (returns to caller) |
+
+### Dialog Inventory
+
+| # | Dialog | Trigger | Source Location |
+|---|--------|---------|-----------------|
+| D1 | WelcomeDialog | First launch (userName == "GrammarMateUser") | GrammarMateApp.kt:759 |
+| D2 | StreakDialog | After session (streakMessage != null) | GrammarMateApp.kt:659 |
+| D3 | BossRewardDialog | Boss completion (bossRewardMessage + bossReward) | GrammarMateApp.kt:634 |
+| D4 | BossErrorDialog | Boss error (bossErrorMessage != null) | GrammarMateApp.kt:622 |
+| D5 | StoryErrorDialog | Story error (storyErrorMessage != null) | GrammarMateApp.kt:610 |
+| D6 | DrillStartDialog | Tap DrillTile in LESSON | GrammarMateApp.kt:1495 |
+| D7 | ExitConfirmationDialog | Back/Stop during TRAINING or DAILY_PRACTICE | GrammarMateApp.kt:535 |
+| D8 | TtsDownloadDialog | Tap TTS button without model | GrammarMateApp.kt:3414 |
+| D9 | MeteredNetworkDialog (TTS) | TTS download on metered connection | GrammarMateApp.kt:3478 |
+| D10 | AsrMeteredNetworkDialog | ASR download on metered connection | GrammarMateApp.kt:3496 |
+| D11 | DailyResumeDialog | Tap Daily Practice with resumable session | GrammarMateApp.kt:572 |
+| D12 | LessonLockedDialog | Tap EMPTY lesson tile | GrammarMateApp.kt:1028 |
+| D13 | EarlyStartDialog | Tap locked lesson or sub-lesson | GrammarMateApp.kt:1040, 1358 |
+| D14 | HowThisTrainingWorksDialog | Tap "How This Training Works" button | GrammarMateApp.kt:1011 |
+| D15 | DailyPracticeLoadingOverlay | During session initialization | GrammarMateApp.kt:504 |
+| D16 | ExportBadSentencesResultDialog | After exporting bad sentences | GrammarMateApp.kt:3062 |
+
+---
+
+## Per-Screen Details
+
+### 1. StartupScreen
+
+- **AppScreen enum**: N/A (not a routed screen -- renders in `AppRoot()` before `GrammarMateApp()`)
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/AppRoot.kt` (lines 21-52)
+- **Parent**: App launch entry point
+- **Key UI elements**:
   - `CircularProgressIndicator` (centered)
-  - `Text` (status message, bodyMedium)
-- **State displayed**: `RestoreStatus` (IN_PROGRESS, NEEDS_USER, or other)
-- **User interactions**: None. This is a blocking wait screen.
+  - `Text` status message: "Restoring backup..." (IN_PROGRESS), "Waiting for backup folder..." (NEEDS_USER), "Preparing..." (other)
+- **State dependencies**: `RestoreNotifier.restoreState` (StateFlow of RestoreStatus)
+- **User interactions**: None (blocking wait)
 - **Business rules**:
-  - Messages are localized to English, keyed by `RestoreStatus` enum.
-  - Cannot be dismissed by the user.
-- **Edge cases**: If restore hangs indefinitely, the user sees the spinner forever. No timeout is implemented at this level.
+  - Cannot be dismissed by user
+  - Transitions to HOME when `restoreState.status == DONE`
+  - `GrammarMateTheme` wraps the entire startup flow
+- **Cross-reference**: Matches Russian spec section 1 exactly. No discrepancies.
 
 ---
 
-## 19.2 Home Screen
+### 2. HomeScreen
 
-- **Purpose**: Main hub. Shows user profile, language selector, lesson grid (flower progress), daily practice tile, drill tiles, and navigation to all features.
-- **Entry conditions**: Default screen on app start (`AppScreen.HOME`). Also returned to from Lesson Roadmap (back button), Training (session end), Daily Practice (exit/complete), Verb Drill (back), Vocab Drill (back).
-- **Exit conditions**: Tap a lesson tile -> `AppScreen.LESSON`. Tap Daily Practice tile -> `AppScreen.DAILY_PRACTICE`. Tap Verb Drill tile -> `AppScreen.VERB_DRILL`. Tap Vocab Drill tile -> `AppScreen.VOCAB_DRILL`. Tap settings gear -> SettingsSheet overlay. Tap "Continue Learning" card -> `AppScreen.LESSON`.
-- **Layout**:
-```
-+-------------------------------------------+
-| [Avatar] UserName        [EN v] [Settings] |
-+-------------------------------------------+
-| +---------------------------------------+ |
-| | Pack Name / Continue Learning         | |
-| | Lesson 3. Exercise 2/10              | |
-| +---------------------------------------+ |
-|                                           |
-| Grammar Roadmap                           |
-| +------+------+------+------+            |
-| | 1    | 2    | 3    | 4    |            |
-| | 🌱   | 🔓   | 🔒   | 🔒   |            |
-| | 45%  |      |      |      |            |
-| +------+------+------+------+            |
-| | 5    | 6    | 7    | 8    |            |
-| | ●    | ●    | ●    | ●    |            |
-| +------+------+------+------+            |
-| | 9    | 10   | 11   | 12   |            |
-| | ●    | ●    | ●    | ●    |            |
-| +------+------+------+------+            |
-|                                           |
-| +-----------------+ +------------------+  |
-| | Verb Drill      | | Flashcards       |  |
-| +-----------------+ | 3 mastered       |  |
-|                     +------------------+  |
-| +---------------------------------------+ |
-| | Daily Practice           [Play icon]  | |
-| | Practice all sub-lessons              | |
-| +---------------------------------------+ |
-|                                           |
-| Legend:                                   |
-|  seed  growing  bloom                    |
-|  wilting  wilted  forgotten              |
-|                                           |
-| [How This Training Works]                |
-| [Continue Learning]                       |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Profile avatar**: Circular box with user initials (first two words, max 2 chars), primary color background
-  - **User name text**: Semi-bold weight
-  - **LanguageSelector dropdown**: Shows current language code (e.g., "EN"), opens menu of installed languages
-  - **Settings icon button**: Gear icon, opens `SettingsSheet`
-  - **Primary action Card**: Clickable card showing active pack display name and lesson progress hint
-  - **Lesson grid**: 4-column `LazyVerticalGrid` with `LessonTile` cards. Each tile shows: lesson number, flower emoji (from `FlowerCalculator`), mastery percentage. Tile states: SEED, SPROUT, FLOWER, LOCKED, UNLOCKED, EMPTY, VERB_DRILL
-  - **VerbDrillEntryTile**: Card with FitnessCenter icon and "Verb Drill" label. Only visible when `hasVerbDrill` is true (active pack has verbDrill section)
-  - **VocabDrillEntryTile**: Card with MenuBook icon, "Flashcards" label, mastered count. Only visible when `hasVocabDrill` is true
-  - **DailyPracticeEntryTile**: primaryContainer-colored card with "Daily Practice" title, "Practice all sub-lessons" subtitle, PlayArrow icon
-  - **Legend text**: Flower state emoji legend
-  - **"How This Training Works" OutlinedButton**: Opens explanation dialog
-  - **"Continue Learning" Button**: Navigates to Lesson Roadmap
-- **State displayed**:
-  - `userName`, `selectedLanguageId`, `languages`, `lessons`, `lessonFlowers`, `activePackId`, `activePackLessonIds`, `activePackDisplayName`, `selectedLessonId`, `completedSubLessonCount`, `subLessonCount`, `sessionState`, `correctCount`, `incorrectCount`, `activeTimeMs`, `testMode`, `installedPacks`, `vocabMasteredCount`
+- **AppScreen enum**: `HOME`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 819)
+- **Parent**: Default landing screen after startup
+- **Key UI elements**:
+  - **Profile header**: Avatar circle (40dp, primary background, initials) + userName (SemiBold) + LanguageSelector dropdown + Settings gear IconButton
+  - **Primary action Card**: Clickable card showing activePackDisplayName ("Continue Learning" / "Start learning") + lesson progress hint ("Lesson N. Exercise X/Y")
+  - **Grammar Roadmap**: "Grammar Roadmap" header + 4-column `LazyVerticalGrid` of LessonTile cards (72dp). Each shows: lesson number, flower emoji (LOCKED/UNLOCKED/SEED/SPROUT/FLOWER/EMPTY), mastery percentage
+  - **Drill tiles row**: VerbDrillEntryTile (FitnessCenter icon) + VocabDrillEntryTile (MenuBook icon + mastered count). Row visible when `hasVerbDrill || hasVocabDrill`
+  - **DailyPracticeEntryTile**: primaryContainer card with "Daily Practice" title, "Practice all sub-lessons" subtitle, PlayArrow icon
+  - **Legend**: Flower state emoji legend text
+  - **Action buttons**: "How This Training Works" OutlinedButton + "Continue Learning" Button
+- **State dependencies**: `userName`, `selectedLanguageId`, `languages`, `lessons`, `lessonFlowers`, `activePackId`, `activePackLessonIds`, `sessionState`, `correctCount`, `incorrectCount`, `activeTimeMs`, `testMode`, `completedSubLessonCount`, `subLessonCount`, `selectedLessonId`, `installedPacks`, `vocabMasteredCount`
 - **User interactions**:
-  - Tap avatar/settings: Open settings sheet
-  - Tap language selector: Switch language
-  - Tap lesson tile: Select lesson and navigate to Lesson Roadmap
-  - Tap locked tile: Show "Start early?" dialog (offers to unlock the lesson)
-  - Tap empty tile: Show "Lesson locked" dialog
-  - Tap Daily Practice tile: Start/resume daily practice (with resume dialog if session exists)
-  - Tap Verb Drill tile: Navigate to Verb Drill screen
-  - Tap Flashcards tile: Navigate to Vocab Drill screen
-  - Tap "How This Training Works": Show explanation AlertDialog
-  - Tap "Continue Learning": Navigate to Lesson Roadmap
+  - Tap avatar/settings gear -> SettingsSheet
+  - Tap language selector -> language dropdown menu
+  - Tap lesson tile -> selectLesson + navigate to LESSON
+  - Tap locked tile -> EarlyStartDialog or LessonLockedDialog
+  - Tap Verb Drill tile -> navigate to VERB_DRILL
+  - Tap Flashcards tile -> navigate to VOCAB_DRILL
+  - Tap Daily Practice tile -> start/resume daily practice
+  - Tap "Continue Learning" / Primary card -> navigate to LESSON
+  - Tap "How This Training Works" -> explanation dialog
 - **Business rules**:
-  - Lesson grid always shows exactly 12 tiles (padded with EMPTY if pack has fewer)
-  - Lesson unlock logic: first lesson always SPROUT; subsequent lessons UNLOCKED only after the previous lesson has masteryPercent > 0; all others LOCKED
-  - Drill tiles are pack-scoped: visibility depends on `hasVerbDrill`/`hasVocabDrill` checking the active pack manifest
-  - Daily Practice resume dialog offers "Continue" (new cards) or "Repeat" (same cards from start)
-  - When `sessionState == ACTIVE`, primary card shows "Continue Learning"
-- **Edge cases**:
-  - No installed packs: tiles show as EMPTY, drill tiles hidden
-  - Test mode: all lessons shown as SEED (unlocked)
-  - User name is "GrammarMateUser": triggers WelcomeDialog if not on HOME screen (but auto-triggered on first launch via LaunchedEffect)
+  - Grid always shows 12 tiles (EMPTY padding for packs with fewer lessons)
+  - First lesson always SPROUT state. Subsequent lessons UNLOCKED only after previous lesson has masteryPercent > 0
+  - Drill tiles visibility is pack-scoped (`hasVerbDrill`/`hasVocabDrill` check active pack manifest)
+  - Daily Practice entry: if resumable session exists, shows DailyResumeDialog
+- **Cross-reference**: Russian spec section 2 matches. One addition: Russian spec mentions `activePackDisplayName` in Primary Action Card which matches code. The Russian spec's "LanguageSelector" label at line 62 matches code. No discrepancies found.
 
 ---
 
-## 19.3 Lesson Roadmap Screen
+### 3. LessonRoadmapScreen
 
-- **Purpose**: Shows sub-lesson exercises for the currently selected lesson with progress visualization. Entry point for starting training sessions, boss battles, and drill mode.
-- **Entry conditions**: From Home Screen (tap lesson tile or "Continue Learning"). From Training Screen (session auto-completes via `subLessonFinishedToken`/`bossFinishedToken`).
-- **Exit conditions**: Back button -> Home Screen. Tap exercise tile or "Start Lesson"/"Continue Lesson" -> Training Screen. Tap Boss tile -> Training Screen (boss mode). Tap Drill tile -> DrillStartDialog -> Training Screen (drill mode).
-- **Layout**:
-```
-+-------------------------------------------+
-| [<-] Lesson Title                    [  ] |
-+-------------------------------------------+
-| [=========                     ] 60%      |
-|        Exercise 4 of 15                   |
-|        Cards: 45 of 150                   |
-|                                           |
-| +------+------+------+------+            |
-| | 1    | 2    | 3    | 4    |            |
-| | NEW  | NEW  | NEW  | MIX  |            |
-| +------+------+------+------+            |
-| | 5    | 6    | ...  | 15   |            |
-| | MIX  | MIX  |      | MIX  |            |
-| +------+------+------+------+            |
-|                                           |
-| [Start Lesson] / [Continue Lesson]        |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Header row**: Back IconButton, lesson title (Semi-bold), spacer for alignment
-  - **Progress bar**: `LinearProgressIndicator` showing completed/total ratio
-  - **Exercise counter**: "Exercise X of Y" centered text
-  - **Card counter**: "Cards: X of Y" centered text (smaller, alpha 0.7)
-  - **Sub-lesson grid**: 4-column `LazyVerticalGrid`. Each tile is a Card (72dp height) with: exercise number, flower emoji or lock icon, type label ("NEW" or "MIX")
-  - **BossTile**: Card with "Review"/"Mega" label, trophy icon colored by reward (bronze/silver/gold), or lock icon if locked
-  - **DrillTile**: Card with FitnessCenter icon and "Drill" label (if lesson has drill cards)
-  - **Action button**: "Start Lesson" (if completed==0) or "Continue Lesson"
-  - **Early start dialog**: AlertDialog asking "Start exercise N early?"
-  - **Boss locked dialog**: AlertDialog "Complete at least 15 exercises first."
-- **State displayed**:
-  - `selectedLessonId`, `lessons`, `subLessonCount`, `completedSubLessonCount`, `subLessonTypes`, `currentLessonShownCount`, `currentLessonFlower`, `bossLessonRewards`, `bossMegaRewards`, `testMode`
+- **AppScreen enum**: `LESSON`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 1178)
+- **Parent**: HomeScreen (tap lesson tile or "Continue Learning")
+- **Key UI elements**:
+  - **Header row**: Back IconButton + lesson title (SemiBold) + spacer
+  - **Progress section**: LinearProgressIndicator + "Exercise X of Y" + "Cards: X of Y"
+  - **Sub-lesson grid**: 4-column `LazyVerticalGrid` with entries from `buildRoadmapEntries()`:
+    - `RoadmapEntry.Training`: exercise tile with number, flower emoji, "NEW"/"MIX" label
+    - `RoadmapEntry.Drill`: FitnessCenter icon + "Drill" label (if lesson has drill cards)
+    - `RoadmapEntry.BossLesson`: "Review" label + trophy/lock icon (colored by reward)
+    - `RoadmapEntry.BossMega`: "Mega" label + trophy/lock icon (only for lessonIndex > 0)
+    - `RoadmapEntry.StoryCheckIn`/`StoryCheckOut`: kept for backward compat but NOT rendered
+  - **Action button**: "Start Lesson" (completed==0) or "Continue Lesson"
+- **State dependencies**: `selectedLessonId`, `lessons`, `subLessonCount`, `completedSubLessonCount`, `subLessonTypes`, `currentLessonShownCount`, `currentLessonFlower`, `bossLessonRewards`, `bossMegaRewards`, `testMode`
 - **User interactions**:
-  - Tap completed/active exercise tile: Start that sub-lesson
-  - Tap locked exercise tile: Show "Start early?" dialog
-  - Tap Boss tile (unlocked): Start boss battle
-  - Tap Boss tile (locked): Show locked message
-  - Tap Drill tile: Show DrillStartDialog
-  - Tap action button: Start current exercise
+  - Tap back -> HOME
+  - Tap exercise tile (canEnter) -> startSubLesson + TRAINING
+  - Tap locked exercise tile -> EarlyStartDialog
+  - Tap Boss tile (unlocked) -> startBossLesson/startBossMega + TRAINING
+  - Tap Boss tile (locked) -> BossLockedDialog
+  - Tap Drill tile -> DrillStartDialog -> TRAINING (drill mode)
+  - Tap action button -> startSubLesson(currentIndex) + TRAINING
 - **Business rules**:
-  - Sub-lessons display in cycles of 15 (pagination). Shows current cycle based on completed count.
-  - Boss battles unlock when `completedSubLessonCount >= 15` or `testMode` is on
-  - "Mega Boss" only appears for lessons at index > 0 (not the first lesson)
-  - Story tiles (`StoryCheckIn`, `StoryCheckOut`) exist in the `RoadmapEntry` sealed class for backward compat but are not rendered
-  - Exercise tiles show the lesson's flower state (same flower for all exercises of a lesson)
-- **Edge cases**:
-  - No sub-lesson types loaded: falls back to default pattern (first 3 NEW_ONLY, rest MIXED)
-  - All exercises completed: visible list becomes empty, cycle calculation shows no tiles
-  - Test mode: all tiles are accessible regardless of completion order
+  - Sub-lessons paginated in cycles of 15
+  - Boss unlocked when `completedSubLessonCount >= 15` or `testMode`
+  - Mega Boss only for `lessonIndex > 0`
+  - Story entries in RoadmapEntry sealed class are NOT rendered (backward compat only)
+  - Default fallback sub-lesson types: first 3 NEW_ONLY, rest MIXED
+- **Cross-reference**: Russian spec section 3 matches. No discrepancies. Note: Russian spec mentions `DrillTile` and `BossTile` inline which matches the code.
 
 ---
 
-## 19.4 Training Screen
+### 4. TrainingScreen
 
-- **Purpose**: Core card-by-card training session. Presents a Russian prompt, accepts user translation via keyboard/voice/word bank, shows correct/incorrect feedback, and tracks progress.
-- **Entry conditions**: From Lesson Roadmap (start sub-lesson, start boss, start drill). Uses `AppScreen.TRAINING`.
-- **Exit conditions**: Back button -> exit confirmation dialog. Session auto-completes -> returns to Lesson Roadmap. Stop button -> exit dialog.
-- **Layout** (normal lesson mode):
-```
-+-------------------------------------------+
-| GrammarMate                      [Settings]|
-+-------------------------------------------+
-| Presente Indicativo                       |
-| Он работает в офисе                       |
-| [===========        ] 5/10    [Speed 42]  |
-|                                           |
-| +---------------------------------------+ |
-| | RU                                    | |
-| | Он работает в офисе        [Speaker]  | |
-| +---------------------------------------+ |
-|                                           |
-| [Your translation              ] [Mic]    |
-| [Mic] [Keyboard] [Book]  [Eye] [Flag] KB |
-|           [Check]                         |
-|                                           |
-| Correct                                   |
-| Answer: Lui lavora in ufficio  [Speaker]  |
-|                                           |
-| [<]   [Pause] [Stop] [>]                 |
-+-------------------------------------------+
-```
-- **Layout** (drill mode): Same structure but with green background (`Color(0xFFE8F5E9)`), green prompt text, and no session title.
-- **Layout** (boss mode): Title shows "Review Session" instead of lesson info.
-- **Components**:
-  - **Scaffold**: Top bar with "GrammarMate" title and settings gear. Background color changes to green in drill mode.
-  - **Tense label**: Optional, shown when card has tense info (13sp, primary/green, semi-bold)
-  - **Clean prompt**: Russian prompt with parenthetical hints stripped (18sp * ruTextScale, medium weight)
-  - **DrillProgressRow**: Progress bar (70% width, green fill, white "X/Y" overlay) + circular speedometer (30% width, color-coded by WPM)
-  - **CardPrompt Card**: "RU" label + Russian prompt text (20sp * ruTextScale) + TTS speaker button
-  - **TtsSpeakerButton**: 4 states -- idle (VolumeUp), speaking (StopCircle, red), initializing (spinner), error (ReportProblem, red)
-  - **AnswerBox**:
-    - `OutlinedTextField` with "Your translation" label + Mic trailing icon
-    - Voice mode hint text ("Say translation: ...")
-    - ASR status indicator (offline mode): pulsing red dot (recording), spinner (processing), error text
-    - Word bank `FlowRow` with `FilterChip` words + "Undo" button + selection counter
-    - Input mode selector: Mic, Keyboard, Book `FilledTonalIconButton`s
-    - Show answer `IconButton` with tooltip (eye icon)
-    - Report `IconButton` with tooltip (warning icon)
-    - Current mode label text ("Voice"/"Keyboard"/"Word Bank")
-    - "Check" `Button` (full width)
-  - **ResultBlock**: "Correct" (green) or "Incorrect" (red) text + TTS replay + "Answer: ..." text
-  - **NavigationRow**: Prev (ArrowBack), Pause/Play, Exit (StopCircle), Next (ArrowForward) -- all as styled `NavIconButton` (44dp, surfaceVariant background, 3dp primary accent bar)
-  - **Report ModalBottomSheet**: Shows card prompt, options to flag/unflag as bad sentence, hide card, export bad sentences, copy text
-- **State displayed**:
-  - `currentCard`, `inputText`, `inputMode`, `sessionState`, `lastResult`, `answerText`, `ttsState`, `currentIndex`, `subLessonTotal`, `bossActive`, `bossProgress`, `bossTotal`, `isDrillMode`, `drillCardIndex`, `drillTotalCards`, `voiceActiveMs`, `voiceWordCount`, `wordBankWords`, `selectedWords`, `ruTextScale`, `useOfflineAsr`, `asrState`
+- **AppScreen enum**: `TRAINING`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 2554)
+- **Parent**: LessonRoadmapScreen (start sub-lesson, boss, or drill)
+- **Key UI elements**:
+  - **Scaffold TopBar**: "GrammarMate" title + Settings gear IconButton
+  - **Session header**: "Review Session" (boss), "Refresh Session" (elite), or drill-specific green header
+  - **Tense label**: Optional (13sp, SemiBold) when card has tense
+  - **Prompt text**: Russian prompt with parenthetical hints stripped (18sp * ruTextScale)
+  - **DrillProgressRow**: Progress bar (70% width, green fill, "X/Y" overlay) + Speedometer (30% width, Canvas arc, color by WPM: red <=20, yellow <=40, green >40)
+  - **CardPrompt Card**: "RU" label + prompt text (20sp * ruTextScale) + TtsSpeakerButton
+  - **AnswerBox**: OutlinedTextField "Your translation" + Mic trailing icon + ASR status indicator (offline) + Word bank FlowRow (FilterChips + Undo + counter) + Input mode buttons (Mic/Keyboard/Book) + Show answer (eye) + Report (flag) + Mode label + "Check" Button
+  - **ResultBlock**: "Correct" (green) / "Incorrect" (red) + TTS replay + "Answer: ..."
+  - **NavigationRow**: Prev + Pause/Play + Exit (StopCircle) + Next (all 44dp NavIconButton with accent bar)
+  - **Report ModalBottomSheet**: Card prompt + flag/unflag bad sentence + hide card + export bad sentences + copy text
+  - **Export result dialog**: Shows export file path after exporting bad sentences
+- **State dependencies**: `currentCard`, `inputText`, `inputMode`, `sessionState`, `lastResult`, `answerText`, `ttsState`, `currentIndex`, `subLessonTotal`, `bossActive`, `bossProgress`, `bossTotal`, `isDrillMode`, `drillCardIndex`, `drillTotalCards`, `voiceActiveMs`, `voiceWordCount`, `wordBankWords`, `selectedWords`, `ruTextScale`, `useOfflineAsr`, `asrState`
 - **User interactions**:
-  - Type in text field and tap "Check" or press Enter
-  - Tap Mic button: Switch to voice mode, launch speech recognition
-  - Tap Keyboard button: Switch to keyboard input mode
-  - Tap Book button: Switch to word bank mode
-  - Tap word bank FilterChips to build answer
-  - Tap Undo to remove last selected word
-  - Tap Show Answer (eye icon): Reveal the correct answer
-  - Tap Report (flag icon): Open report bottom sheet
-  - Tap TTS speaker: Play/stop pronunciation
-  - Tap Prev/Next: Navigate between cards
-  - Tap Pause/Play: Toggle session pause
-  - Tap Stop: Open exit confirmation dialog
-  - Back gesture: Open exit confirmation dialog
+  - Type answer + Check / Enter
+  - Tap Mic -> voice input mode, auto-launches recognition
+  - Tap Keyboard/Book -> switch input mode
+  - Tap word bank chips -> build answer; Undo -> remove last
+  - Show answer (eye) -> reveal correct answer
+  - Report (flag) -> open report bottom sheet
+  - TTS speaker -> play/stop pronunciation
+  - Prev/Next -> navigate cards; Pause/Play -> toggle; Exit/Stop -> exit dialog
+  - Back gesture -> exit dialog
 - **Business rules**:
-  - WORD_BANK input mode never counts for mastery (only VOICE and KEYBOARD)
-  - Voice mode auto-triggers speech recognition when a new card appears (200ms delay)
-  - Voice mode auto-submits when speech result is received
-  - In offline ASR mode, `startOfflineRecognition()` is called instead of `RecognizerIntent`
-  - Check button disabled when input is blank, no cards, or session is paused
-  - "Show answer" triggers answer display but does not submit
-  - Navigation prev/next wrap around or stop at bounds depending on ViewModel logic
-  - Boss mode uses `bossProgress`/`bossTotal` instead of `currentIndex`/`subLessonTotal`
-  - Drill mode uses `drillCardIndex`/`drillTotalCards`
-  - Report sheet options: flag/unflag card, hide card (removes from future lessons), export all flagged cards to file, copy card text to clipboard
-  - TTS requires model download (346 MB). If not downloaded, tapping speaker opens TtsDownloadDialog
-  - TTS speed controlled by `ttsSpeed` setting (0.5x-1.5x)
-- **Edge cases**:
-  - No cards loaded: "No cards" error text shown, Check button disabled
-  - Session paused: Voice mode and Check button disabled
-  - TTS model not downloaded: Download dialog shown instead of playing audio
-  - Metered network detected during download: Warning dialog before proceeding
-  - `AppScreen.ELITE` and `AppScreen.VOCAB` redirect to HOME immediately (backward compat)
+  - WORD_BANK input mode does NOT count for mastery (only VOICE and KEYBOARD)
+  - Voice mode auto-triggers on new card (200ms delay), auto-submits on result
+  - Check disabled when input blank, no cards, or session paused
+  - Boss mode uses `bossProgress`/`bossTotal`; Drill mode uses `drillCardIndex`/`drillTotalCards`
+  - Drill mode: green background (Color(0xFFE8F5E9))
+  - TTS requires model download (~346 MB)
+  - Report sheet: flag/unflag persisted immediately; export to `Downloads/BaseGrammy/bad_sentences_all.txt`
+- **Cross-reference**: Russian spec section 4 matches closely. Note: Russian spec says TrainingScreen "does NOT use TrainingCardSession" which matches code (it has its own inline implementation). The report sheet in Training is a `ModalBottomSheet`, not a Dialog, matching both specs. No discrepancies.
 
 ---
 
-## 19.5 Daily Practice Screen
+### 5. DailyPracticeScreen
 
-- **Purpose**: Unified daily session with 3 sequential blocks: 10 sentence translations, 5 vocabulary flashcards (Anki-style), 10 verb conjugations. Provides varied practice in a single session.
-- **Entry conditions**: From Home Screen (tap Daily Practice tile). If a resumable session exists, a resume dialog offers "Continue" (new cards) or "Repeat" (restart same cards).
-- **Exit conditions**: Back button -> exit confirmation dialog ("Exit practice? Progress will be lost."). Session completion -> completion screen -> Home Screen.
-- **Layout** (card session -- TRANSLATE/VERBS block):
-```
-+-------------------------------------------+
-| [<-] Daily Practice        [Translation]  |
-+-------------------------------------------+
-| [========                        ] 5/25   |
-|                                           |
-| +---------------------------------------+ |
-| | RU                                    | |
-| | Он работает в офисе        [Speaker]  | |
-| |                                       | |
-| | lavorare #5 [>] Presente [>] 2nd [>] | |
-| +---------------------------------------+ |
-|                                           |
-| [Your translation              ] [Mic]    |
-| [Mic] [Keyboard] [Book]    [Eye] KB      |
-|           [Check]                         |
-|                                           |
-| [<]   [Pause] [Stop] [>]                 |
-+-------------------------------------------+
-```
-- **Layout** (vocab flashcard block):
-```
-+-------------------------------------------+
-| [<-] Daily Practice        [Vocabulary]   |
-+-------------------------------------------+
-| [========                        ] 15/25  |
-|                                           |
-| +---------------------------------------+ |
-| |        lavorare                        | |
-| |            [Speaker]                   | |
-| |         to work                        | |
-| +---------------------------------------+ |
-|                                           |
-|        "You said: lavorare"               |
-|              [Mic 64dp]                   |
-|                                           |
-| [Again] [Hard] [Good] [Easy]             |
-+-------------------------------------------+
-```
-- **Layout** (block transition sparkle overlay):
-```
-+-------------------------------------------+
-|  (dimmed background)                      |
-|                                           |
-|    +---------------------------------+    |
-|    |          sparkle                |    |
-|    |    "Next: Vocabulary"           |    |
-|    +---------------------------------+    |
-|                                           |
-+-------------------------------------------+
-```
-- **Layout** (completion screen):
-```
-+-------------------------------------------+
-|                                           |
-|       "Session Complete!"                 |
-|                                           |
-|  Great job! You practiced translations,   |
-|  vocabulary, and verb conjugations.       |
-|                                           |
-|         [Back to Home]                    |
-+-------------------------------------------+
-```
-- **Components**:
-  - **DailyPracticeHeader**: Back button + "Daily Practice" title + block type badge (Translation/Vocabulary/Verbs in primaryContainer Card)
-  - **BlockProgressBar**: Linear progress bar + "X/Y" label
-  - **BlockSparkleOverlay**: Full-screen semi-transparent overlay with sparkle emoji, "Next: [BlockType]" or "Daily practice complete!" message. Auto-dismisses after 800ms.
-  - **CardSessionBlock** (TRANSLATE/VERBS): Wraps `TrainingCardSession` with `DailyPracticeSessionProvider`. Shows Russian prompt card with verb/tense/group hint chips (SuggestionChip) for verb cards, input controls (hint card, incorrect feedback, text field, word bank, input mode selector, show answer, check button), and navigation.
-  - **VocabFlashcardBlock**: Shows word in prompt language (large, 28sp, bold), TTS button, translation text (18sp, primary), microphone button (64dp), voice recognition feedback, and 4 rating buttons (Again=red, Hard=orange, Good=green, Easy=blue).
-  - **DailyPracticeCompletionScreen**: "Session Complete!" heading, description text, "Back to Home" button
-  - **Exit dialog**: AlertDialog "Exit practice?" with "Stay" and "Exit" buttons
-  - **Loading dialog**: CircularProgressIndicator + "Loading session..." shown during session initialization
-- **State displayed**:
-  - `dailySession` (DailySessionState), `blockProgress` (BlockProgress), `currentTask` (DailyTask), `ttsState`, `selectedLanguageId`
+- **AppScreen enum**: `DAILY_PRACTICE`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/DailyPracticeScreen.kt`
+- **Parent**: HomeScreen (tap Daily Practice tile)
+- **Key UI elements**:
+  - **DailyPracticeHeader**: Back button + "Daily Practice" title + block type badge (Translation/Vocabulary/Verbs in colored Card)
+  - **BlockProgressBar**: LinearProgressIndicator + "X/Y" label
+  - **BlockSparkleOverlay**: Semi-transparent overlay with sparkle + "Next: [BlockType]" or "Daily practice complete!". Auto-dismisses after ~800ms
+  - **TRANSLATE/VERBS block**: Wraps `TrainingCardSession` via `DailyPracticeSessionProvider`. Shows Russian prompt card with optional verb/tense hint SuggestionChips, input controls (text field, word bank, voice), navigation, result display
+  - **VOCAB block (VocabFlashcardBlock)**: Word display (28sp, bold) + TTS button + translation + Mic button (64dp) + voice recognition feedback + 4 rating buttons (Again=red, Hard=orange, Good=primary, Easy=green)
+  - **CompletionScreen**: "Session Complete!" heading + description + "Back to Home" button
+  - **Exit dialog**: "Exit practice?" with "Stay"/"Exit"
+  - **Loading state**: Spinner + "Loading session..." when `!state.active || currentTask == null`
+- **State dependencies**: `dailySession` (DailySessionState), `blockProgress` (BlockProgress), `currentTask` (DailyTask), `ttsState`, `selectedLanguageId`
 - **User interactions**:
-  - TRANSLATE/VERBS block: Same as Training Screen -- type/speak answer, check, navigate cards
-  - VOCAB block: Tap mic to speak translation, tap rating button (Again/Hard/Good/Easy)
-  - Tap back: Exit confirmation dialog
-  - Rating buttons auto-advance to next card
-  - Correct voice answer in VOCAB block auto-advances with "Good" rating
+  - TRANSLATE/VERBS: Same as TrainingScreen -- type/speak answer, check, navigate
+  - VOCAB: Tap mic for voice recognition, tap rating button (Again/Hard/Good/Easy)
+  - Back -> exit confirmation
+  - Rating auto-advances to next card
 - **Business rules**:
   - 3-block structure: TRANSLATE (10 cards) -> VOCAB (5 cards) -> VERBS (10 cards)
-  - Block transitions show sparkle overlay with next block name for 800ms
-  - Final block completion shows "Daily practice complete!" sparkle
-  - Verb cards show hint chips: verb name + rank, tense (abbreviated), conjugation group
-  - Verb hint chips do NOT open bottom sheets in daily practice (unlike standalone Verb Drill)
-  - Voice auto-trigger: When voice mode is active and new card appears, speech recognition launches after 200ms (1200ms after incorrect feedback)
+  - Block transitions show sparkle overlay (~800ms)
+  - Verb hint chips in daily practice do NOT open bottom sheets (unlike standalone Verb Drill)
+  - Voice auto-trigger on new card (200ms delay; 1200ms after incorrect feedback)
   - Correct voice answer auto-advances after 400ms
-  - Vocab flashcard block: both prompt and answer text are always visible (no flip mechanic)
-  - Vocab voice recognition: compares normalized spoken text against answer, auto-rates "Good" on match
-  - Exit dialog warns "progress in this session will be lost"
-  - Session completion calls `cancelDailySession()` and returns to HOME
-- **Edge cases**:
-  - Loading state: If session not yet active or no current task, shows spinner with "Loading session..."
-  - Resume dialog: If resumable daily session exists, offers Continue (new cards) or Repeat (restart)
-  - Session loading overlay: Dialog with spinner during `startDailyPractice` / `repeatDailyPractice` IO operations
+  - Vocab flashcards: both prompt and answer always visible (no flip mechanic)
+  - Exit: "progress in this session will be lost"
+- **Cross-reference**: Russian spec section 5 matches. Russian spec describes TrainingCardSession slots (DefaultProgressIndicator, DefaultCardContent, etc.) reused by DailyPractice which matches the code architecture. No discrepancies.
 
 ---
 
-## 19.6 Verb Drill Selection Screen
+### 6. VerbDrillScreen
 
-- **Purpose**: Pre-session configuration screen for verb conjugation drill. Allows filtering by tense, conjugation group, and frequency sorting before starting.
-- **Entry conditions**: From Home Screen (tap Verb Drill tile) -> `AppScreen.VERB_DRILL`. Shown when `VerbDrillViewModel.uiState.session == null`.
-- **Exit conditions**: Back button -> Home Screen. "Start"/"Continue" button -> Verb Drill Session.
-- **Layout**:
-```
-+-------------------------------------------+
-| [<-] Verb Drill                           |
-+-------------------------------------------+
-|                                           |
-| Time:                                     |
-| [All tenses v]                            |
-|                                           |
-| Group:                                    |
-| [All groups v]                            |
-|                                           |
-| [x] Po chastotnosti                      |
-|                                           |
-| Progress: 45 / 120                        |
-| Today: 10                                 |
-| [=========                     ]          |
-|                                           |
-|           [Start] / [Continue]            |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Header row**: Back IconButton + "Verb Drill" title
-  - **TenseDropdown**: Label "Time:" + TextButton dropdown with "All tenses" + available tenses
-  - **GroupDropdown**: Label "Group:" + TextButton dropdown with "All groups" + available groups
-  - **Checkbox**: "Po chastotnosti" (sort by frequency)
-  - **Progress section**: "Progress: X/Y" + "Today: N" + LinearProgressIndicator
-  - **Start/Continue Button**: Full-width. Text changes based on `todayShownCount > 0`
-- **State displayed**: `VerbDrillUiState` fields: `selectedTense`, `availableTenses`, `selectedGroup`, `availableGroups`, `sortByFrequency`, `everShownCount`, `totalCards`, `todayShownCount`, `allDoneToday`
+- **AppScreen enum**: `VERB_DRILL`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillScreen.kt`
+- **Parent**: HomeScreen (tap Verb Drill tile)
+- **Key UI elements**:
+  - **SelectionScreen**: Back button + "Verb Drill" title + Tense dropdown + Group dropdown + "Sort by frequency" Checkbox + Progress stats ("Progress: X/Y", "Today: N") + LinearProgressIndicator + "All done today!" text or Start/Continue button
+  - **Active Session (VerbDrillSessionWithCardSession)**: Custom header (back + "Verb Drill") + progress bar/speedometer + Card with "RU" label + prompt + TTS button + verb SuggestionChip (infinitive + #rank) + tense SuggestionChip (abbreviated) + input controls (text field, word bank, voice, show answer, report) + result display + navigation
+  - **VerbReferenceBottomSheet**: Verb infinitive + TTS button + group + tense + conjugation table (triggered by verb chip tap)
+  - **TenseInfoBottomSheet**: Tense name + formula Card + usage explanation (Russian) + example cards (Italian + Russian + notes) (triggered by tense chip tap)
+  - **Report ModalBottomSheet**: Same structure as Training report sheet (flag/unflag, hide, export, copy)
+  - **CompletionScreen**: Sparkle emoji + "Otlichno!" text + "Pravilnykh: X | Oshibok: Y" + "Eshche" (more) Button + "Vykhod" (exit) OutlinedButton
+- **State dependencies**: `VerbDrillUiState` (isLoading, session, selectedTense, availableTenses, selectedGroup, availableGroups, sortByFrequency, everShownCount, totalCards, todayShownCount, allDoneToday, correctCount, incorrectCount)
 - **User interactions**:
-  - Tap tense dropdown: Select a tense filter
-  - Tap group dropdown: Select a conjugation group filter
-  - Toggle frequency checkbox: Sort cards by frequency
-  - Tap Start/Continue: Begin or resume session
+  - Selection: filter by tense/group, toggle frequency sort, start session
+  - Session: same input modes as Training (keyboard/voice/word bank), tap verb chip -> reference sheet, tap tense chip -> tense info, report
+  - Completion: "Eshche" for next batch, "Vykhod" to exit
 - **Business rules**:
-  - If `allDoneToday` is true, shows "Na segodnya vsyo!" message instead of start button
-  - Progress shows cumulative cards ever shown vs total, plus today's count
-  - Filters narrow the card pool for the session
-- **Edge cases**:
-  - No verb drill data loaded: Loading spinner shown at screen level
-  - All cards done today: Disable start, show completion message
+  - 3 attempts per card in session. After 3 wrong, hint answer shown.
+  - Show answer reveals hint immediately (no attempts consumed)
+  - Session is batch-based (10 cards per batch)
+  - "Eshche" hidden when `allDoneToday`
+  - Tense names abbreviated in chips (Presente -> Pres., etc.)
+  - Uses `VerbDrillViewModel` (separate ViewModel scoped to pack via `reloadForPack()`)
+- **Cross-reference**: Russian spec section 6 matches. Russian spec describes TrainingCardSession slots reused by VerbDrill which matches code. VerbReferenceBottomSheet and TenseInfoBottomSheet are described accurately. No discrepancies.
 
 ---
 
-## 19.7 Verb Drill Session Screen
+### 7. VocabDrillScreen
 
-- **Purpose**: Card-by-card verb conjugation drill session. Shows Russian prompt, accepts Italian conjugated form, provides verb/tense hints, and tracks correct/incorrect with retry logic.
-- **Entry conditions**: From Verb Drill Selection Screen (tap Start/Continue). Also `VerbDrillCardSessionProvider` manages state.
-- **Exit conditions**: Back button -> exits session. Session completion -> Verb Drill Completion Screen.
-- **Layout**:
-```
-+-------------------------------------------+
-| [<-] Verb Drill                           |
-+-------------------------------------------+
-| +---------------------------------------+ |
-| | RU                                    | |
-| | Я работаю в офисе          [Speaker]  | |
-| |                                       | |
-| | lavorare #5 [>]  Presente [>]        | |
-| +---------------------------------------+ |
-|                                           |
-| [=========                     ] 3/10     |
-|                                           |
-| + Answer: lui lavora in ufficio [Speaker]+|
-|                                           |
-| Incorrect    2 attempts left              |
-| [Your translation              ] [Mic]    |
-| [Mic] [Keyboard] [Book]  [Eye] [Flag] KB |
-|           [Check]                         |
-|                                           |
-| [<]   [Pause] [Stop] [>]                 |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Custom header**: Back IconButton + "Verb Drill" title
-  - **Card content**: Material Card with "RU" label + Russian prompt (20sp) + TTS speaker button. Below prompt: verb name SuggestionChip (with rank, chevron icon) + tense SuggestionChip (abbreviated)
-  - **ProgressIndicator**: Default `DrillProgressRow`-style bar + speedometer from `TrainingCardSession`
-  - **Hint answer card**: Red-tinted Card showing "Answer: [text]" + error-colored TTS button. Shown when eye button pressed or 3 wrong attempts.
-  - **Incorrect feedback row**: "Incorrect" red text + "N attempts left" text
-  - **Input controls**: OutlinedTextField (clears incorrect feedback on type change), voice/keyboard/word bank mode buttons, show answer button (disabled when hint shown), report button, mode label, Check button
-  - **Navigation**: Prev/Pause/Exit/Next NavIconButtons from TrainingCardSession
-  - **VerbReferenceBottomSheet**: Modal bottom sheet showing verb infinitive, group, tense, full conjugation table, TTS for infinitive
-  - **TenseInfoBottomSheet**: Modal bottom sheet showing tense name (full + abbreviated), formula card, usage explanation (Russian), example cards (Italian + Russian + optional note)
-- **State displayed**: `VerbDrillUiState.session`, `VerbDrillCardSessionProvider` state (current card, hint answer, incorrect feedback, remaining attempts, voice trigger)
+- **AppScreen enum**: `VOCAB_DRILL`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillScreen.kt`
+- **Parent**: HomeScreen (tap Flashcards tile)
+- **Key UI elements**:
+  - **SelectionScreen**: Back button + "Flashcards" title + Direction FilterChips ("IT -> RU" / "RU -> IT") + Voice input Switch + POS FilterChips (All/Nouns/Verbs/etc.) + Frequency FilterChips (Top 100/500/1000/All) + Stats Card (due count, mastered, POS breakdown, progress bar) + Start button
+  - **CardScreen (VocabDrillCardScreen)**:
+    - *Front (unflipped)*: POS badge + rank badge + word (32sp, bold) + TTS button + "Tap to speak" text + Mic button (72dp) + voice result feedback + Skip/Flip buttons
+    - *Back (flipped)*: POS badge + word + TTS button + translation + Forms table (m sg, f sg, m pl, f pl) + Collocations list (max 5) + mastery step ("Step X/9" / "Learned") + 4 rating buttons (Again/Hard/Good/Easy with interval labels)
+  - **CompletionScreen**: "Perfect!"/"Done!" title + Stats Card (correct/wrong/reviewed) + Exit + Continue buttons (fade-in after 800ms)
+  - **Report ModalBottomSheet**: Same structure (flag/unflag, export, copy)
+- **State dependencies**: `VocabDrillUiState` (drillDirection, voiceModeEnabled, selectedPos, availablePos, rankMin, rankMax, dueCount, totalCount, masteredCount, masteredByPos, session with cards/currentIndex/isFlipped/voiceCompleted/voiceResult)
 - **User interactions**:
-  - Same input modes as Training Screen (keyboard, voice, word bank)
-  - Tap verb chip: Open verb reference bottom sheet
-  - Tap tense chip: Open tense info bottom sheet
-  - Tap show answer: Reveal hint answer (disables further show-answer taps)
-  - Tap report: Open report bottom sheet (flag/unflag, hide, export, copy)
-  - Auto-advance: After correct voice answer, auto-advances after 500ms
+  - Selection: filter direction, POS, frequency; toggle voice; start session
+  - Card front: tap mic for voice, tap Skip to skip voice, tap Flip to reveal
+  - Card back: tap rating button (Again/Hard/Good/Easy) to advance
+  - Completion: Exit to selection, Continue for new session
 - **Business rules**:
-  - 3 attempts per card. After 3 wrong attempts, hint answer is shown.
-  - Show answer button reveals hint immediately (no attempts consumed)
-  - Hint answer card is red-tinted (errorContainer at 0.3 alpha)
-  - Incorrect feedback clears when user starts typing again
-  - Verb chip shows verb infinitive + rank number (e.g., "lavorare #5")
-  - Tense names abbreviated: "Presente" -> "Pres.", "Passato Prossimo" -> "P. Pross.", etc.
-  - Tense info includes: formula, usage explanation in Russian, Italian-Russian example pairs
-  - Session is batch-based: 10 cards per batch. After completion, "Eshche" button starts next batch.
-- **Edge cases**:
-  - Loading state: Full-screen spinner with "Loading..." text
-  - All cards done today: Completion screen shows only "Vykhod" button, no "Eshche"
-
----
-
-## 19.8 Verb Drill Completion Screen
-
-- **Purpose**: Post-session summary showing results and option to continue with another batch.
-- **Entry conditions**: After all cards in a verb drill batch are completed.
-- **Exit conditions**: "Vykhod" (Exit) button -> back to Verb Drill Selection. "Eshche" (More) button -> new batch of cards.
-- **Layout**:
-```
-+-------------------------------------------+
-|                                           |
-|              sparkle                      |
-|           "Otlichno!"                     |
-|                                           |
-|  Pravilnykh: 8  |  Oshibok: 2            |
-|                                           |
-|           [Eshche]                        |
-|           [Vykhod]                        |
-+-------------------------------------------+
-```
-- **Components**:
-  - Sparkle emoji (48sp)
-  - "Otlichno!" text (bold, 24sp)
-  - Stats: "Pravilnykh: N | Oshibok: N" (semi-transparent)
-  - "Eshche" (More) Button: Full-width. Starts next batch.
-  - "Vykhod" (Exit) OutlinedButton: Full-width. Returns to selection screen.
-- **State displayed**: `session.correctCount`, `session.incorrectCount`, `state.allDoneToday`
-- **User interactions**:
-  - Tap "Eshche": Start new batch of 10 cards
-  - Tap "Vykhod": Exit to selection screen
-- **Business rules**:
-  - "Eshche" button hidden when `allDoneToday` is true (all available cards exhausted for today)
-- **Edge cases**: None -- this screen is straightforward.
-
----
-
-## 19.9 Vocab Drill Selection Screen
-
-- **Purpose**: Pre-session configuration for vocabulary flashcard drill (Anki-style). Allows filtering by direction, part of speech, word frequency, and voice input mode.
-- **Entry conditions**: From Home Screen (tap Flashcards tile) -> `AppScreen.VOCAB_DRILL`. Shown when `VocabDrillViewModel.uiState.session == null`.
-- **Exit conditions**: Back button -> Home Screen (triggers `refreshVocabMasteryCount`). "Start (N due)" button -> Vocab Drill Card Screen.
-- **Layout**:
-```
-+-------------------------------------------+
-| [<-] Flashcards                           |
-+-------------------------------------------+
-|                                           |
-| Direction                                 |
-| [IT -> RU] [RU -> IT]                    |
-|                                           |
-| [Mic icon] Voice input (auto)    [Switch] |
-|                                           |
-| Part of speech                            |
-| [All] [Nouns] [Verbs] [Adj.] [Adv.]      |
-|                                           |
-| Word frequency                            |
-| [Top 100] [Top 500] [Top 1000] [All]     |
-|                                           |
-| +---------------------------------------+ |
-| | Due: 45 / 200                         | |
-| | Mastered: 15 words                    | |
-| | Nouns: 8 | Verbs: 5 | Adj.: 2        | |
-| | [===========                ]          | |
-| +---------------------------------------+ |
-|                                           |
-|      [Start (45 due)]                     |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Header row**: Back IconButton + "Flashcards" title
-  - **Direction FilterChips**: "IT -> RU" and "RU -> IT" options
-  - **Voice input toggle**: Mic icon + "Voice input (auto)" label + Switch
-  - **POS FilterChips**: "All" + dynamic list (Nouns, Verbs, Adj., Adv.) based on available data
-  - **Frequency FilterChips**: "Top 100" (0-100), "Top 500" (0-500), "Top 1000" (0-1000), "All" (0-MAX)
-  - **Stats Card**: primaryContainer background. Shows due count, mastered count, per-POS breakdown, progress bar (learned/total)
-  - **Start Button**: Full-width. Disabled when `dueCount == 0`. Shows "Start (N due)" or "No due words"
-- **State displayed**: `VocabDrillUiState`: `drillDirection`, `voiceModeEnabled`, `selectedPos`, `availablePos`, `rankMin`, `rankMax`, `dueCount`, `totalCount`, `masteredCount`, `masteredByPos`
-- **User interactions**:
-  - Tap direction chips: Switch drill direction
-  - Toggle voice switch: Enable/disable automatic voice input mode
-  - Tap POS chips: Filter by part of speech
-  - Tap frequency chips: Filter by rank range
-  - Tap Start: Begin session with due words
-- **Business rules**:
-  - Due words are calculated based on Spaced Repetition Config (interval ladder)
-  - Start button disabled when no words are due
-  - Stats card updates in real-time as filters change
-- **Edge cases**:
-  - No words loaded: "No words loaded" text instead of stats card
-  - No due words: Button shows "No due words" and is disabled
-
----
-
-## 19.10 Vocab Drill Card Screen
-
-- **Purpose**: Anki-style flashcard review. Shows word on front, user can attempt voice translation, then flip to see full details and rate recall.
-- **Entry conditions**: From Vocab Drill Selection (tap Start).
-- **Exit conditions**: Back button -> exits session. Session completion -> Vocab Drill Completion Screen. All cards reviewed -> completion.
-- **Layout** (front/unflipped):
-```
-+-------------------------------------------+
-| [<-] Flashcards                   3/15    |
-| [=========                ]               |
-|                                           |
-| +---------------------------------------+ |
-| | [noun] [#42]                          | |
-| |                                       | |
-| |           lavorare                    | |
-| |            [Speaker]                  | |
-| |                                       | |
-| |         "Tap to speak"                | |
-| |           [Mic 72dp]                  | |
-| +---------------------------------------+ |
-|                                           |
-|     [Skip]            [Flip]              |
-+-------------------------------------------+
-```
-- **Layout** (front, voice completed correct):
-```
-|           lavorare                        |
-|            [Speaker]                      |
-|                                           |
-| +---------------------------------------+ |
-| | "lavorare" (recognized text)          | |
-| | [check] Correct!                      | |
-| +---------------------------------------+ |
-+-------------------------------------------+
-```
-- **Layout** (back/flipped):
-```
-+-------------------------------------------+
-| [<-] Flashcards                   3/15    |
-| [=========                ]               |
-|                                           |
-| +---------------------------------------+ |
-| | [noun] lavorare          [Speaker]    | |
-| | to work                                | |
-| |                                       | |
-| | Forms                                 | |
-| | m sg    f sg    m pl    f pl          | |
-| | -       -       -       -             | |
-| |                                       | |
-| | Collocations                          | |
-| | lavorare bene                         | |
-| | lavorare sodo                         | |
-| |                                       | |
-| | Step 3/9                              | |
-| +---------------------------------------+ |
-|                                           |
-| [Again]  [Hard]                           |
-| [<1m]    [2d]                             |
-| [Good]   [Easy]                           |
-| [4d]     [7d]                             |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Header row**: Back IconButton + "Flashcards" title + "X/Y" progress counter (primary color)
-  - **LinearProgressIndicator**: Full-width progress bar
-  - **Card front**: RoundedCornerShape(16dp) Card with dynamic background color (green tint on correct, red tint on wrong, default surfaceVariant). Contains: POS badge, rank badge, main word (32sp, bold), TTS button (IT_TO_RU only), microphone button (72dp FilledTonalIconButton) or voice result feedback
-  - **VoiceResultFeedback**: Card showing recognized text (italic), result (Correct with green check / Wrong with red X / Skipped)
-  - **Card back**: secondaryContainer Card with: word + TTS button, Russian translation, forms table (adjectives: msg/fsg/mpl/fpl), collocations list (max 5 shown), mastery step indicator
-  - **POS badge**: Small colored Card with part of speech label (noun=primaryContainer, verb=secondaryContainer, adj.=tertiaryContainer, adv.=errorContainer)
-  - **Rank badge**: Small surfaceVariant Card with "#N" rank
-  - **Rating buttons** (flipped): 2x2 grid:
-    - "Again" (OutlinedButton, red) with "<1m" interval
-    - "Hard" (OutlinedButton, orange) with current step interval
-    - "Good" (Button, primary) with next step interval
-    - "Easy" (Button, green) with step+2 interval
-  - **Skip/Flip buttons** (unflipped): "Skip" (OutlinedButton with SkipNext icon) + "Flip" (Button with Flip icon)
-- **State displayed**: `VocabDrillSessionState`: cards, currentIndex, isFlipped, direction, voiceCompleted, voiceResult, voiceRecognizedText, voiceAttempts
-- **User interactions**:
-  - Tap mic: Start voice recognition for translation
-  - Tap TTS button: Play word pronunciation
-  - Tap Skip: Skip voice input and flip card (or auto-flip if voice already completed)
-  - Tap Flip: Show card back with answer details
-  - Tap rating button (Again/Hard/Good/Easy): Rate recall quality, advance interval, move to next card
-- **Business rules**:
-  - Voice auto-starts when voice mode is enabled (500ms delay on new card)
-  - Voice auto-flips card on correct answer (800ms delay after voice result)
-  - Voice attempts: max 3. After 3 wrong, shows "Moving on..." and auto-flips
-  - Voice skips: counted as SKIPPED result
+  - Due words calculated by Spaced Repetition Config (interval ladder)
+  - Voice auto-starts when voice mode enabled (500ms delay)
+  - Voice auto-flips on correct answer (800ms)
+  - Max 3 voice attempts, then auto-flip with "Moving on..."
   - Interval ladder: [1, 2, 4, 7, 10, 14, 20, 28, 42, 56] days
-  - "Again" resets interval to step 0 (<1m = 1 day)
-  - "Hard" keeps current interval step
-  - "Good" advances 1 step
-  - "Easy" advances 2 steps
-  - Forms section only shown for words with non-empty `forms` map
-  - Collocations show max 5, with "+N more" overflow
-  - Mastery step indicator shows "Step X/9" or "Learned" when max
-- **Edge cases**:
-  - Card index out of bounds: `getOrElse` returns early, nothing rendered
-  - Voice already completed: Mic button replaced by result feedback
-  - No voice completed and user taps Skip: Calls `skipVoice()`, then flips
+  - Rating: Again = reset to step 0, Hard = same step, Good = +1 step, Easy = +2 steps
+  - Uses `VocabDrillViewModel` (separate ViewModel, `reloadForPack()`)
+- **Cross-reference**: Russian spec section 7 matches. Direction chips, POS chips, frequency chips, front/back card layouts all match. No discrepancies.
 
 ---
 
-## 19.11 Vocab Drill Completion Screen
+### 8. LadderScreen
 
-- **Purpose**: Post-session summary for vocabulary flashcard drill.
-- **Entry conditions**: After all cards in a vocab drill session are reviewed.
-- **Exit conditions**: "Exit" button -> returns to selection screen. "Continue" button -> starts a new session.
-- **Layout**:
-```
-+-------------------------------------------+
-|                                           |
-|           "Perfect!" / "Done!"            |
-|                                           |
-| +---------------------------------------+ |
-| |      12          3                     | |
-| |   Correct      Wrong                  | |
-| |      15 words reviewed                | |
-| +---------------------------------------+ |
-|                                           |
-|    [Exit]            [Continue]           |
-+-------------------------------------------+
-```
-- **Components**:
-  - Title text: "Perfect!" (if all correct) or "Done!" (bold, 28sp, primary)
-  - Stats Card: Correct count (32sp, primary, bold) + Wrong count (32sp, error, bold) + "N words reviewed" text
-  - "Exit" OutlinedButton + "Continue" Button (full-width row)
-  - Fade-in animation: Stats appear after 800ms delay
-- **State displayed**: `session.correctCount`, `session.incorrectCount`, `session.cards.size`
-- **User interactions**:
-  - Tap Exit: Return to selection screen
-  - Tap Continue: Start new session
+- **AppScreen enum**: `LADDER`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 2388)
+- **Parent**: SettingsSheet (tap "Show Ladder")
+- **Key UI elements**:
+  - **Header**: Back IconButton + "Lestnitsa intervalov" title (titleLarge, SemiBold) + "Vse uroki tekushchego paketa" subtitle (bodySmall, alpha 0.65)
+  - **LadderHeaderRow**: Column headers (#, Urok, Karty, Dney, Interval) in labelMedium
+  - **LadderRowCard**: Per-lesson Card (RoundedCornerShape 14dp) with index + title (ellipsized) + uniqueCardShows + daysSinceLastShow + intervalLabel. Overdue rows use `errorContainer` background
+  - **Empty state**: "Net dannykh po urokam" placeholder text
+- **State dependencies**: `ladderRows` (List of `LessonLadderRow`)
+- **User interactions**: Scroll list. Back -> returns to caller screen (HOME or TRAINING, with resumeFromSettings if from TRAINING)
 - **Business rules**:
-  - Stats card hidden for first 800ms (animated reveal)
-  - "Perfect!" shown only when `correctCount == cards.size`
-- **Edge cases**: None.
+  - Overdue lessons (interval label starts with "Prosrochka") highlighted in red
+  - No data: shows placeholder and returns early
+- **Cross-reference**: Russian spec section 8 matches exactly. No discrepancies.
 
 ---
 
-## 19.12 Boss Battle Screen
+### 9. StoryQuizScreen
 
-- **Purpose**: End-of-lesson review challenge that tests pattern stability under pressure. Reuses the Training Screen in boss mode.
-- **Entry conditions**: From Lesson Roadmap (tap Review or Mega boss tile). Sets `bossActive = true` in TrainingUiState.
-- **Exit conditions**: Same as Training Screen. Completion auto-returns to Lesson Roadmap via `bossFinishedToken`.
-- **Layout**: Identical to Training Screen layout, with "Review Session" title instead of lesson info.
-- **Components**: Same as Training Screen components.
-- **State displayed**: `bossActive`, `bossProgress`, `bossTotal`, plus all Training Screen state.
-- **User interactions**: Same as Training Screen.
+- **AppScreen enum**: `STORY`
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 1599)
+- **Parent**: LessonRoadmapScreen (story phase trigger). Currently unused (story tiles not rendered).
+- **Key UI elements**:
+  - **Phase title**: "Story Check-in" or "Story Check-out"
+  - **Story text**: bodyMedium
+  - **Question counter**: "Question X / Y"
+  - **Question prompt**: SemiBold
+  - **Option rows**: Clickable rows with ">" indicator for selection. Result annotations: "(correct)", "(your choice)"
+  - **Correct answer text**: Primary color (after checking)
+  - **Error message**: Red text
+  - **Navigation**: Prev (outlined) + Check (filled) + Next/Finish (filled) buttons
+  - **Scroll hint**: "Scroll to continue" when content exceeds viewport
+- **State dependencies**: `activeStory` (StoryQuiz), `testMode`, local selection/result state
+- **User interactions**: Select option, Check answer, Next/Finish, Prev
 - **Business rules**:
-  - Boss battles unlock after completing 15 sub-lessons
-  - "Review" boss uses lesson cards; "Mega" boss uses cross-lesson cards
-  - Boss reward shown after completion: bronze/silver/gold trophy (BossReward dialog)
-  - Exit dialog during boss: calls `finishBoss()` instead of `finishSession()`
-- **Edge cases**:
-  - Boss error: Shows error AlertDialog with boss error message
-  - Boss reward: Shows reward AlertDialog with colored trophy icon
+  - Must select before checking
+  - Next validates first; on last question, completes story
+  - Test mode: all stories marked completed regardless of correctness
+  - Empty questions: auto-completes as correct
+  - Null story: auto-closes
+- **Cross-reference**: Not covered in Russian spec (absent from that document). This screen is maintained for backward compatibility but effectively unused since story tiles are not rendered.
 
 ---
 
-## 19.13 Settings Sheet
+### 10. SettingsSheet
 
-- **Purpose**: Full configuration panel for the app. Opened as a `ModalBottomSheet` from any screen.
-- **Entry conditions**: Tap settings gear icon on any screen.
-- **Exit conditions**: Tap outside sheet, swipe down, or tap any navigation action within the sheet.
-- **Layout** (scrollable):
-```
-+-------------------------------------------+
-| Service Mode                              |
-+-------------------------------------------+
-| Test Mode                    [Switch]     |
-| Enables all lessons, accepts all answers  |
-|                                           |
-| [Show Ladder]                             |
-| [Vocabulary Sprint limit     ]            |
-| Set how many words to show (0 = all)      |
-|                                           |
-| Pronunciation speed                       |
-| 0.5x [====Slider====] 1.5x               |
-|           0.67x                           |
-|                                           |
-| Voice recognition                         |
-| Offline speech recognition     [Switch]   |
-| Using Google speech recognition           |
-|                                           |
-| Translation text size                     |
-| 1.0x [====Slider====] 2.0x               |
-|           1.0x                            |
-|                                           |
-| Language: [English v]                     |
-| Pack: [Italian Basics v]                  |
-|                                           |
-| [New language          ]                  |
-| [Add language]                            |
-| [Import lesson pack (ZIP)]                |
-| [Import lesson (CSV)]                     |
-| [Reset/Reload (clear + import)]           |
-| [Empty lesson (title)  ]                  |
-| [Create empty lesson]                     |
-| [Delete all lessons]        (red)         |
-| [Reset all progress]        (red)         |
-|                                           |
-| CSV format                                |
-| UTF-8, delimiter ';'...                   |
-|                                           |
-| Instructions                              |
-| Play - start/continue...                  |
-|                                           |
-| Packs                                     |
-| Italian Basics (1.0)              [Delete]|
-|                                           |
-| Profile                                   |
-| [Your Name          ]                     |
-| [Save Name]                               |
-|                                           |
-| Backup & Restore                          |
-| [Save progress now]                       |
-| [Restore from backup]                     |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Test Mode toggle**: Switch + description
-  - **Ladder button**: OutlinedButton with Insights icon -> navigates to LadderScreen
-  - **Vocab limit field**: OutlinedTextField (digits only)
-  - **TTS speed slider**: Slider (0.5-1.5, 3 steps) + current value display
-  - **Offline ASR toggle**: Switch + download state indicator (downloading/extracting/error/ready status text + progress bar)
-  - **Russian text scale slider**: Slider (1.0-2.0, 3 steps) + current value display
-  - **Language dropdown**: DropdownSelector with installed languages
-  - **Pack dropdown**: DropdownSelector with packs for current language
-  - **Add language**: OutlinedTextField + "Add language" button
-  - **Import lesson pack**: OutlinedButton with Upload icon, launches file picker for ZIP
-  - **Import lesson CSV**: OutlinedButton with Upload icon, launches file picker for CSV
-  - **Reset/Reload**: OutlinedButton with Upload icon, clears + re-imports CSV
-  - **Create empty lesson**: OutlinedTextField + "Create empty lesson" button
-  - **Delete all lessons**: Red OutlinedButton with Delete icon
-  - **Reset all progress**: Red OutlinedButton with Refresh icon
-  - **CSV format info**: Static text explaining CSV format
-  - **Instructions**: Static text about play/pause/stop
+- **AppScreen enum**: N/A (ModalBottomSheet overlay)
+- **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 1951)
+- **Parent**: Any screen (gear icon)
+- **Key UI elements**:
+  - **Service Mode section**: Test Mode Switch + description + "Show Ladder" OutlinedButton (Insights icon) + Vocabulary Sprint limit OutlinedTextField
+  - **Pronunciation speed**: Slider (0.5-1.5x, 3 steps) + current value display
+  - **Voice recognition**: Offline ASR Switch + download state indicator (downloading/extracting/error/ready with progress bar)
+  - **Translation text size**: Slider (1.0-2.0x, 3 steps) + current value display
+  - **Language/Pack selectors**: Language DropdownSelector + Pack DropdownSelector
+  - **Content management**: "New language" TextField + Add button + Import lesson pack (ZIP) + Import lesson (CSV) + Reset/Reload + Create empty lesson + Delete all lessons (red) + Reset all progress (red)
+  - **Info sections**: CSV format explanation + Instructions
   - **Installed packs list**: Pack name + Delete IconButton per pack
-  - **Profile section**: Name text field + "Save Name" button
-  - **Backup section**: "Save progress now" + "Restore from backup" buttons
-- **State displayed**: `testMode`, `vocabSprintLimit`, `ttsSpeed`, `useOfflineAsr`, `asrModelReady`, `asrDownloadState`, `ruTextScale`, `languages`, `selectedLanguageId`, `installedPacks`, `activePackId`, `userName`
-- **User interactions**:
-  - Toggle test mode: Enable/disable test mode
-  - Tap ladder: Navigate to LadderScreen
-  - Change vocab limit: Update sprint limit
-  - Adjust TTS speed slider: Set pronunciation speed
-  - Toggle offline ASR: Enable/disable offline speech recognition; triggers download if model not ready
-  - Adjust text scale slider: Scale Russian text size
-  - Select language: Switch active language
-  - Select pack: Switch active lesson pack
-  - Add language: Create new language entry
-  - Import pack: Launch file picker, import ZIP lesson pack
-  - Import CSV: Launch file picker, import single CSV lesson
-  - Reset/Reload: Launch file picker, clear existing lessons and import new CSV
-  - Create empty lesson: Create a new lesson with no cards
-  - Delete all lessons: Remove all lessons (destructive, red button)
-  - Reset all progress: Clear all progress data (destructive, red button)
-  - Delete pack: Remove an installed pack
-  - Save name: Update user profile name
-  - Save/restore backup: Export/import progress data
+  - **Profile section**: Name TextField + "Save Name" Button
+  - **Backup & Restore**: "Save progress now" + "Restore from backup" buttons
+- **State dependencies**: `testMode`, `vocabSprintLimit`, `ttsSpeed`, `useOfflineAsr`, `asrModelReady`, `asrDownloadState`, `ruTextScale`, `languages`, `selectedLanguageId`, `installedPacks`, `activePackId`, `userName`
+- **User interactions**: Toggle test mode, open ladder, change vocab limit, adjust TTS speed, toggle offline ASR, adjust text scale, select language/pack, add language, import pack/CSV, reset/reload, create/delete lessons, delete packs, save name, backup/restore
 - **Business rules**:
   - Changing language reloads lessons and resets active pack
-  - Changing pack updates active pack and refreshes lesson list
-  - TTS download continues in background (persistent progress bar on all screens)
-  - ASR download triggered when offline ASR toggled on and model not ready
-  - File pickers use `ActivityResultContracts.OpenDocument` (CSV/ZIP) and `OpenDocumentTree` (backup restore)
-- **Edge cases**:
-  - No installed packs: Shows "No installed packs" text
-  - ASR download error: Shows error message in red
-  - Name field empty or unchanged: Save button disabled
+  - TTS download persists in background (progress bar on all screens)
+  - ASR download triggered when toggled on without model
+  - File pickers: `ActivityResultContracts.OpenDocument` (CSV/ZIP), `OpenDocumentTree` (backup restore)
+  - On dismiss from TRAINING: calls `resumeFromSettings()` if card is active
+- **Cross-reference**: Russian spec section 17 (SettingsSheet) matches. All controls listed in the Russian spec are present in code. No discrepancies.
 
 ---
 
-## 19.14 Ladder Screen
+## Dialog Details
 
-- **Purpose**: Displays the interval ladder for all lessons in the current pack. Shows each lesson's card count, days since last review, and current interval status.
-- **Entry conditions**: From Settings Sheet (tap "Show Ladder" button).
-- **Exit conditions**: Back button -> returns to previous screen (Settings or Training).
-- **Layout**:
-```
-+-------------------------------------------+
-| [<-] Lestnitsa intervalov                 |
-|      Vse uroki tekushchego paketa         |
-+-------------------------------------------+
-| #   Urok        Karty Dney Interval       |
-|                                           |
-| [1  Lesson 1     45    3    4d          ] |
-| [2  Lesson 2     30    12   Prosrochka! ] |
-| [3  Lesson 3     0     -    -           ] |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Header**: Back IconButton + "Lestnitsa intervalov" title + "Vse uroki tekushchego paketa" subtitle
-  - **LadderHeaderRow**: Column headers (#, Urok, Karty, Dney, Interval) in labelMedium, alpha 0.7
-  - **LadderRowCard**: Card per lesson showing: index, title (ellipsized), unique card shows, days since last show, interval label
-  - Overdue rows use `errorContainer` background
-- **State displayed**: `ladderRows` (List of `LessonLadderRow`)
-- **User interactions**: Scroll the list. No interactive elements beyond back navigation.
+### D1. WelcomeDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 759)
+- **Trigger**: First launch when `userName == "GrammarMateUser"` (via LaunchedEffect)
+- **Key UI elements**: Title "Welcome to GrammarMate!" (headlineSmall) + "What's your name?" text + OutlinedTextField (50 char limit, single line, Done IME) + "Skip" TextButton + "Continue" TextButton
+- **Business rules**: Cannot dismiss by tapping outside (empty onDismissRequest). Blank input treated as "GrammarMateUser".
+- **Cross-reference**: Russian spec section 9 (WelcomeDialog) matches exactly.
+
+### D2. StreakDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 659)
+- **Trigger**: `streakMessage != null` in TrainingUiState
+- **Key UI elements**: "??" icon text (48sp) + "Streak!" title + streakMessage (titleMedium, centered) + "Longest streak: N days" (when longestStreak > currentStreak) + "Continue" button
+- **Business rules**: Longest streak only shown when it exceeds current streak.
+- **Cross-reference**: Russian spec section 9 (Streak Dialog) matches. No discrepancies.
+
+### D3. BossRewardDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 634)
+- **Trigger**: `bossRewardMessage != null && bossReward != null`
+- **Key UI elements**: Trophy icon (EmojiEvents, colored: bronze=#CD7F32, silver=#C0C0C0, gold=#FFD700) + "Boss Reward" title + rewardMessage text + "OK" button
+- **Cross-reference**: Russian spec section 9 (Boss Reward Dialog) matches. No discrepancies.
+
+### D4. BossErrorDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 622)
+- **Trigger**: `bossErrorMessage != null`
+- **Key UI elements**: "Boss" title + error message text + "OK" button
+- **Cross-reference**: Russian spec section 9 (Boss Error Dialog) matches. No discrepancies.
+
+### D5. StoryErrorDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 610)
+- **Trigger**: `storyErrorMessage != null`
+- **Key UI elements**: "Story" title + error message text + "OK" button
+- **Cross-reference**: Russian spec section 9 (Story Error Dialog) matches. No discrepancies.
+
+### D6. DrillStartDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 1495)
+- **Trigger**: Tap DrillTile in Lesson Roadmap (`drillShowStartDialog`)
+- **Key UI elements**: "Drill Mode" title + message (resume or fresh) + "Start"/"Continue" (confirm) + "Start Fresh" (dismiss, only if hasProgress) + "Cancel" buttons
+- **Business rules**: If progress exists: "Continue" (resume) + "Start Fresh". If no progress: "Start" only.
+- **Cross-reference**: Russian spec section 5-7 (DrillStartDialog in Lesson Roadmap) matches. No discrepancies.
+
+### D7. ExitConfirmationDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 535)
+- **Trigger**: Back gesture or Stop button during TRAINING or DAILY_PRACTICE
+- **Key UI elements**: Title "End session?" or "Exit practice?" + message + "Cancel" + "Exit" buttons
 - **Business rules**:
-  - Overdue lessons (interval label starts with "Prosrochka") highlighted with red background
-  - No data: Shows "Net dannykh po urokam" placeholder text
-- **Edge cases**:
-  - Empty `ladderRows`: Shows placeholder text and returns early
+  - DAILY_PRACTICE: calls `cancelDailySession()`, navigates HOME
+  - Boss mode: calls `finishBoss()`, navigates LESSON
+  - Drill mode: calls `exitDrillMode()`, navigates LESSON
+  - Normal training: calls `finishSession()`, navigates LESSON
+- **Cross-reference**: Russian spec mentions exit dialogs in TrainingScreen (section 4, block 13) and DailyPracticeScreen (section 5, block 6). Both match. No discrepancies.
+
+### D8. TtsDownloadDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 3414)
+- **Trigger**: Tap TTS speaker when model not downloaded (`ttsModelReady == false`)
+- **Key UI elements**: "Download pronunciation model?" title + dynamic content (Idle: size info; Downloading/Extracting: progress bar + percentage; Done: "ready!"; Error: failure message) + Download/OK/Cancel buttons
+- **Business rules**: Auto-closes on completion and auto-plays TTS for current card.
+- **Cross-reference**: Russian spec section 4 (block 14, TtsDownloadDialog) matches. No discrepancies.
+
+### D9. MeteredNetworkDialog (TTS)
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 3478)
+- **Trigger**: TTS download on metered connection (`ttsMeteredNetwork == true`)
+- **Key UI elements**: "Metered network detected" title + "~346 MB" warning + "Download anyway" + "Cancel"
+- **Cross-reference**: Russian spec section 4 (block 15, MeteredNetworkDialog) matches. No discrepancies.
+
+### D10. AsrMeteredNetworkDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 3496)
+- **Trigger**: ASR download on metered connection (`asrMeteredNetwork == true`)
+- **Key UI elements**: "Metered network detected" title + "~375 MB" warning + "Download anyway" + "Cancel"
+- **Cross-reference**: Russian spec section 4 (block 16, AsrMeteredNetworkDialog) matches. No discrepancies.
+
+### D11. DailyResumeDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 572)
+- **Trigger**: Tap Daily Practice when `hasResumableDailySession()` returns true
+- **Key UI elements**: "Ezhednevnaya praktika" title + "Repeat = same cards, Continue = new cards" text + "Repeat" (dismissButton) + "Continue" (confirmButton)
+- **Business rules**: "Continue" calls `startDailyPractice(level)`, "Repeat" calls `repeatDailyPractice(level)`.
+- **Cross-reference**: Not explicitly described in Russian spec (resume dialog is mentioned in DailyPracticeScreen sub-screen section but not as a separate dialog). The code implementation matches the described behavior.
+
+### D12. LessonLockedDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 1028, inside HomeScreen)
+- **Trigger**: Tap EMPTY lesson tile on Home Screen
+- **Key UI elements**: "Lesson locked" title + "Please complete the previous lesson first." text + "OK" button
+- **Cross-reference**: Russian spec section 2 (block 8, "Lesson locked" dialog) matches. No discrepancies.
+
+### D13. EarlyStartDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 1040 in HomeScreen, line 1358 in LessonRoadmapScreen)
+- **Trigger**: Tap locked lesson tile (HomeScreen) or locked sub-lesson tile (LessonRoadmapScreen)
+- **Key UI elements**: "Start early?" title + "Start this lesson early? You can always come back..." text + "No" + "Yes" buttons
+- **Business rules**: "Yes" unlocks and proceeds. Does not affect other lessons' unlock state.
+- **Cross-reference**: Russian spec section 2 (block 8, "Start early?" dialog) and section 3 (block 5) both match. No discrepancies.
+
+### D14. HowThisTrainingWorksDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 1011, inside HomeScreen)
+- **Trigger**: Tap "How This Training Works" button on Home Screen
+- **Key UI elements**: Title + "GrammarMate builds automatic grammar patterns with repeated retrieval..." text + "OK" button
+- **Cross-reference**: Russian spec section 2 (block 8, "How This Training Works" dialog) matches. No discrepancies.
+
+### D15. DailyPracticeLoadingOverlay
+
+- **AppScreen enum**: N/A (Dialog)
+- **Source file**: `GrammarMateApp.kt` (line 504)
+- **Trigger**: Starting/resuming daily practice (`isLoadingDaily == true`)
+- **Key UI elements**: Card with CircularProgressIndicator + "Loading session..." text
+- **Business rules**: Blocking dialog, auto-dismissed when initialization completes.
+
+### D16. ExportBadSentencesResultDialog
+
+- **AppScreen enum**: N/A (AlertDialog)
+- **Source file**: `GrammarMateApp.kt` (line 3062, inside AnswerBox)
+- **Trigger**: After exporting bad sentences from report sheet
+- **Key UI elements**: "Export" title + file path or "No bad sentences to export" + "OK" button
 
 ---
 
-## 19.15 Story Quiz Screen
+## Report Bottom Sheets (Cross-Cutting)
 
-- **Purpose**: Reading comprehension quiz shown during story check-in/check-out phases. Presents a story text followed by multiple-choice questions.
-- **Entry conditions**: From Lesson Roadmap (story phase triggers). Currently story tiles are not rendered in the roadmap, so this screen is effectively unused but maintained for backward compatibility.
-- **Exit conditions**: Back/close button -> Lesson Roadmap. Complete all questions -> Lesson Roadmap.
-- **Layout**:
-```
-+-------------------------------------------+
-| Story Check-in / Story Check-out          |
-+-------------------------------------------+
-| [Story text body]                         |
-|                                           |
-| Question 1 / 3                            |
-| The question prompt text                  |
-|                                           |
-|  > Option A                               |
-|    Option B                               |
-|    Option C                               |
-|                                           |
-| Correct: Option A                         |
-|                                           |
-| [Prev]  [Check]  [Next/Finish]            |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Phase title**: "Story Check-in" or "Story Check-out"
-  - **Story text**: Body medium text
-  - **Question counter**: "Question X / Y"
-  - **Question prompt**: Semi-bold text
-  - **Option rows**: Clickable rows with ">" indicator for selected option. Result annotations: "(correct)", "(your choice)"
-  - **Correct answer text**: Primary color, shown after checking
-  - **Error message**: Red text for "Select an answer" or "Incorrect"
-  - **Navigation**: Prev (outlined), Check (filled), Next/Finish (filled) buttons
-  - **Scroll hint**: "Scroll to continue" shown when content exceeds viewport
-- **State displayed**: `activeStory` (StoryQuiz), `testMode`, local selection/result state
-- **User interactions**:
-  - Tap option row: Select answer (can re-select before checking)
-  - Tap Check: Validate selected answer, show result
-  - Tap Next: Move to next question (validates first)
-  - Tap Finish: Complete story (last question)
-  - Tap Prev: Go to previous question
-- **Business rules**:
-  - Must select an option before checking
-  - "Check" shows correct/incorrect result inline
-  - "Next" validates then advances; on last question, completes the story
-  - In test mode, all stories are marked as completed regardless of correctness
-  - Empty questions list: Auto-completes with `onComplete(true)`
-  - Null story: Auto-closes via `onClose()`
-- **Edge cases**:
-  - Null story: Immediately closes
-  - Empty questions: Immediately completes as correct
-  - Story error: Shows error AlertDialog
+The report bottom sheet (ModalBottomSheet with flag/unflag/export/copy options) appears in multiple contexts. The core UI is identical across all contexts:
+
+| Context | Trigger Location | Mode String | ViewModel Source |
+|---------|-----------------|-------------|------------------|
+| Training Screen | AnswerBox flag button | "training" | TrainingViewModel |
+| Daily Practice Block 1/3 | DailyInputControls | "daily_translate" / "daily_verb" | TrainingViewModel (daily methods) |
+| Daily Practice Block 2 | VocabFlashcardBlock | "daily_vocab" | TrainingViewModel (daily methods) |
+| Verb Drill | DefaultVerbDrillInputControls | "verb_drill" | VerbDrillViewModel |
+| Vocab Drill | Card screen report button | "vocab_drill" | VocabDrillViewModel |
 
 ---
 
-## 19.16 Welcome/Onboarding Dialog
+## Persistent UI Elements (All Screens)
 
-- **Purpose**: First-launch dialog asking for user's name to personalize the experience.
-- **Entry conditions**: Triggered by `LaunchedEffect` when user navigates away from HOME and `userName == "GrammarMateUser"` (default). Also shown on first launch.
-- **Exit conditions**: Tap "Continue" (with name entered) or "Skip" (keeps default name).
-- **Layout**:
-```
-+-------------------------------------------+
-|        Welcome to GrammarMate!            |
-+-------------------------------------------+
-|                                           |
-| What's your name?                         |
-| [Enter your name        ]                 |
-|                                           |
-|           [Skip]  [Continue]              |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Title**: "Welcome to GrammarMate!" (headlineSmall)
-  - **Body text**: "What's your name?"
-  - **OutlinedTextField**: Name input with "Enter your name" placeholder, max 50 chars, single line, Done IME action
-  - **"Skip" TextButton**: Sets name to "GrammarMateUser"
-  - **"Continue" TextButton**: Sets name to trimmed input (or "GrammarMateUser" if blank)
-- **State displayed**: None (local input state only)
-- **User interactions**:
-  - Type name in text field
-  - Press Done on keyboard -> same as Continue
-  - Tap Skip -> dismiss with default name
-  - Tap Continue -> save name
-- **Business rules**:
-  - Cannot be dismissed by tapping outside (empty `onDismissRequest`)
-  - Name truncated to 50 characters
-  - Blank input treated as "GrammarMateUser"
-- **Edge cases**: None -- straightforward dialog.
+These elements render on every screen regardless of current AppScreen:
+
+| Element | Condition | Description |
+|---------|-----------|-------------|
+| TTS Background Progress Bar | `bgTtsDownloading == true` | 2dp LinearProgressIndicator at top of all content. Aggregates progress from all language downloads. |
+| WelcomeDialog | `userName == "GrammarMateUser"` | LaunchedEffect triggers on any screen transition |
+| TtsDownloadDialog | `showTtsDownloadDialog == true` | Triggered by TTS tap without model |
+| MeteredNetworkDialog (TTS) | `ttsMeteredNetwork == true` | Metered connection warning |
+| AsrMeteredNetworkDialog | `asrMeteredNetwork == true` | ASR metered connection warning |
+| StreakDialog | `streakMessage != null` | Post-session streak display |
+| BossRewardDialog | `bossRewardMessage + bossReward != null` | Post-boss reward |
+| BossErrorDialog | `bossErrorMessage != null` | Boss session error |
+| StoryErrorDialog | `storyErrorMessage != null` | Story session error |
+| DrillStartDialog | `drillShowStartDialog == true` | Drill start confirmation |
+| SettingsSheet | `showSettings == true` | Settings modal overlay |
 
 ---
 
-## 19.17 TTS Download Dialog
+## Cross-Reference with Russian Spec
 
-- **Purpose**: Modal dialog for downloading text-to-speech pronunciation models. Shows download progress and handles completion/errors.
-- **Entry conditions**: Tap TTS speaker button when TTS model is not downloaded (`ttsModelReady == false`).
-- **Exit conditions**: Dismiss, download complete (auto-closes and plays), or error.
-- **Layout** (varies by state):
-```
-+-------------------------------------------+
-| Download pronunciation model?             |
-+-------------------------------------------+
-| This will download ~346 MB (Italian       |
-| pronunciation). Uses internal storage.    |
-|                                           |
-|              [Cancel]  [Download]         |
-+-------------------------------------------+
+The Russian specification file ("Ekstrannye formy. Spetsifikatsiya") covers sections 1-9 with detailed element tables. Comparison results:
 
-+-------------------------------------------+
-| Download pronunciation model?             |
-+-------------------------------------------+
-| Downloading... 67%                        |
-| [===========                  ]           |
-|                                           |
-|    [Continue in background]               |
-+-------------------------------------------+
-```
-- **Components**:
-  - **AlertDialog** with dynamic content based on `DownloadState`:
-    - Idle: Size info + "Download" button
-    - Downloading: Percentage + progress bar + "Continue in background" button
-    - Extracting: Same as downloading
-    - Done: "Pronunciation model ready!" + "OK" button
-    - Error: "Download failed: [message]" + "OK" button
-- **State displayed**: `ttsDownloadState`, `selectedLanguageId`
-- **User interactions**:
-  - Tap Download: Start model download
-  - Tap Cancel: Dismiss dialog
-  - Tap Continue in background: Dismiss dialog, download continues
-  - Tap OK: Dismiss after completion/error
-- **Business rules**:
-  - Auto-closes when download completes and auto-plays TTS for the current card
-  - Background download progress shown as persistent bar on all screens
-  - Metered network warning shown separately before download begins
-- **Edge cases**:
-  - Background download state synced from `bgTtsDownloadStates` when dialog opens
+| Russian Spec Section | Code Match | Discrepancies |
+|----------------------|------------|---------------|
+| 1. StartupScreen | Exact match | None |
+| 2. HomeScreen | Exact match | None |
+| 3. LessonRoadmapScreen | Exact match | None |
+| 4. TrainingScreen | Exact match | Note: Russian spec says "TrainingScreen has its own implementation and does NOT use TrainingCardSession" which matches code |
+| 4a. TrainingCardSession | Exact match | Component is defined in `TrainingCardSession.kt`, used by VerbDrill and DailyPractice |
+| 5. DailyPracticeScreen | Exact match | None |
+| 6. VerbDrillScreen | Exact match | None |
+| 7. VocabDrillScreen | Exact match | None |
+| 8. LadderScreen | Exact match | None |
+| 9. Dialogs | Exact match | None |
 
----
+**Screens present in code but absent from Russian spec**: StoryQuizScreen (section 9.15 in this catalog). This screen exists in code but story tiles are not rendered in the roadmap, making it effectively unused.
 
-## 19.18 Metered Network Warning Dialog (TTS)
-
-- **Purpose**: Warns user before downloading TTS model on cellular/metered connection.
-- **Entry conditions**: TTS download initiated on metered network (`ttsMeteredNetwork == true`).
-- **Exit conditions**: "Download anyway" -> proceed with download. "Cancel" -> abort.
-- **Layout**:
-```
-+-------------------------------------------+
-| Metered network detected                  |
-+-------------------------------------------+
-| You appear to be on a cellular or         |
-| metered connection. The pronunciation     |
-| model is ~346 MB. Continue downloading?   |
-|                                           |
-|              [Cancel]  [Download anyway]  |
-+-------------------------------------------+
-```
-- **Components**: Standard AlertDialog with warning text and two action buttons.
-- **Business rules**: Must confirm before download proceeds on metered connection.
-
----
-
-## 19.19 ASR Metered Network Warning Dialog
-
-- **Purpose**: Same as TTS metered warning but for offline speech recognition model (~375 MB).
-- **Entry conditions**: ASR download initiated on metered network (`asrMeteredNetwork == true`).
-- **Exit conditions**: Same as TTS metered warning.
-- **Layout**: Identical to TTS metered warning with model size updated to ~375 MB.
-
----
-
-## 19.20 Exit Confirmation Dialog
-
-- **Purpose**: Confirms user wants to end the current training/daily practice session.
-- **Entry conditions**: Back gesture/button during training, or tap Stop button.
-- **Exit conditions**: "Exit" -> end session. "Cancel" -> dismiss.
-- **Layout**:
-```
-+-------------------------------------------+
-| End session?                              |
-+-------------------------------------------+
-| Current session will be completed.        |
-|                                           |
-|              [Cancel]  [Exit]             |
-+-------------------------------------------+
-```
-- **Components**: Standard AlertDialog.
-- **Business rules**:
-  - During boss mode: calls `finishBoss()` instead of `finishSession()`
-  - During drill mode: calls `exitDrillMode()` instead of `finishSession()`
-  - After exit, navigates to Lesson Roadmap
-
----
-
-## 19.21 Daily Practice Resume Dialog
-
-- **Purpose**: Offers user choice between continuing a resumable daily session or starting fresh.
-- **Entry conditions**: Tapping Daily Practice tile when `hasResumableDailySession()` returns true.
-- **Exit conditions**: "Continue" -> resume with new cards. "Repeat" -> restart with same cards.
-- **Layout**:
-```
-+-------------------------------------------+
-| Ezhednevnaya praktika                     |
-+-------------------------------------------+
-| Povtorit - te zhe kartochki snachala      |
-| Prodolzhit - novyy nabor kartochek        |
-|                                           |
-|              [Repeat]  [Continue]         |
-+-------------------------------------------+
-```
-- **Components**: Standard AlertDialog with title "Ezhednevnaya praktika" and descriptive text.
-- **Business rules**:
-  - "Continue" calls `startDailyPractice(level)` with new card selection
-  - "Repeat" calls `repeatDailyPractice(level)` with same cards from beginning
-  - Both show loading overlay during session initialization
-
----
-
-## 19.22 Drill Start Dialog
-
-- **Purpose**: Confirms starting a drill session from the lesson roadmap. Offers resume if previous progress exists.
-- **Entry conditions**: Tap Drill tile in Lesson Roadmap.
-- **Exit conditions**: "Start"/"Continue" -> begin drill. "Start Fresh" -> restart from beginning. "Cancel" -> dismiss.
-- **Layout**:
-```
-+-------------------------------------------+
-| Drill Mode                                |
-+-------------------------------------------+
-| Continue where you left off or start over?|
-|                                           |
-| [Cancel] [Start Fresh] [Continue]         |
-+-------------------------------------------+
-```
-- **Components**: Standard AlertDialog.
-- **Business rules**:
-  - If `hasProgress`: Shows "Continue" (confirm) + "Start Fresh" (dismiss) + "Cancel"
-  - If no progress: Shows "Start" (confirm) + "Cancel"
-
----
-
-## 19.23 Boss Reward Dialog
-
-- **Purpose**: Displays boss battle completion reward (bronze/silver/gold trophy).
-- **Entry conditions**: After boss battle completion when `bossRewardMessage != null` and `bossReward != null`.
-- **Exit conditions**: "OK" button -> dismiss.
-- **Layout**:
-```
-+-------------------------------------------+
-|          [Trophy icon]                    |
-| Boss Reward                               |
-+-------------------------------------------+
-| You earned a gold trophy!                 |
-|                                           |
-|                    [OK]                   |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Trophy icon**: `EmojiEvents` icon colored by reward: bronze (#CD7F32), silver (#C0C0C0), gold (#FFD700)
-  - **Title**: "Boss Reward"
-  - **Message text**: `bossRewardMessage`
-  - **OK button**: Dismisses reward
-- **State displayed**: `bossReward` (BRONZE/SILVER/GOLD), `bossRewardMessage`
-
----
-
-## 19.24 Streak Dialog
-
-- **Purpose**: Displays streak information (consecutive days of practice).
-- **Entry conditions**: When `streakMessage != null` in TrainingUiState.
-- **Exit conditions**: "Continue" button -> dismiss.
-- **Layout**:
-```
-+-------------------------------------------+
-|          "??"                              |
-| Streak!                                   |
-+-------------------------------------------+
-| 5 days in a row!                          |
-| Longest streak: 12 days                   |
-|                                           |
-|               [Continue]                  |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Icon**: "??" text (48sp) as icon
-  - **Title**: "Streak!"
-  - **Message**: `streakMessage` (titleMedium, centered)
-  - **Longest streak**: Shown only when `longestStreak > currentStreak`
-  - **Continue button**: Dismisses
-- **State displayed**: `streakMessage`, `currentStreak`, `longestStreak`
-
----
-
-## 19.25 Locked Lesson Hint Dialog
-
-- **Purpose**: Informative dialog when user taps an empty lesson slot (no lesson content in pack).
-- **Entry conditions**: Tap an EMPTY lesson tile on Home Screen.
-- **Exit conditions**: "OK" button -> dismiss.
-- **Layout**:
-```
-+-------------------------------------------+
-| Lesson locked                             |
-+-------------------------------------------+
-| Please complete the previous lesson first.|
-|                                           |
-|                    [OK]                   |
-+-------------------------------------------+
-```
-
----
-
-## 19.26 Early Start Dialog
-
-- **Purpose**: Confirmation dialog when user tries to start a locked lesson or locked sub-lesson early.
-- **Entry conditions**: Tap a locked lesson tile on Home Screen, or tap a locked sub-lesson tile on Lesson Roadmap.
-- **Exit conditions**: "Yes" -> unlock and proceed. "No" -> dismiss.
-- **Layout**:
-```
-+-------------------------------------------+
-| Start early?                              |
-+-------------------------------------------+
-| Start this lesson early? You can always   |
-| come back to review previous lessons.     |
-|                                           |
-|              [No]  [Yes]                  |
-+-------------------------------------------+
-```
-- **Business rules**: Allows accessing locked content with a warning. Does not affect unlock state of other lessons.
-
----
-
-## 19.27 How This Training Works Dialog
-
-- **Purpose**: Explains the GrammarMate training methodology.
-- **Entry conditions**: Tap "How This Training Works" button on Home Screen.
-- **Exit conditions**: "OK" button -> dismiss.
-- **Layout**: Simple AlertDialog with explanatory text: "GrammarMate builds automatic grammar patterns with repeated retrieval. States show how stable each pattern is and when it needs refresh."
-
----
-
-## 19.28 Report Bottom Sheet (Training Screen)
-
-- **Purpose**: Allows users to flag problematic cards, hide cards, export flagged cards, or copy card text during training sessions.
-- **Entry conditions**: Tap the flag/report button (ReportProblem icon) in the Training Screen `AnswerBox`.
-- **Exit conditions**: Tap outside sheet, swipe down, or complete any action (sheet auto-dismisses).
-- **Layout**:
-```
-+-------------------------------------------+
-| Report                                    |
-+-------------------------------------------+
-| Он работает в офисе                       |
-|                                           |
-| [!] Remove from bad sentences list        |  <- shown if flagged
-|   OR                                      |
-| [!] Add to bad sentences list             |  <- shown if not flagged
-|                                           |
-| [Download] Export bad sentences to file   |
-|                                           |
-| [Copy] Copy text                          |
-+-------------------------------------------+
-```
-- **Components**:
-  - **Card prompt text**: Shows `reportCard.promptRu` for context (bodyMedium, 0.7 alpha)
-  - **Flag/unflag TextButton**: Icon + "Add to bad sentences list" or "Remove from bad sentences list". Flag icon is red (error color) when card is already flagged.
-  - **Export TextButton**: Download icon + "Export bad sentences to file". Calls `contract.exportFlaggedCards()`.
-  - **Copy TextButton**: Copy icon + "Copy text". Copies card ID, source, and target to clipboard.
-- **State displayed**: `currentCard` (for prompt text and flag status)
-- **User interactions**:
-  - Tap flag/unflag: Adds or removes the card from `BadSentenceStore` with `mode = "training"`. Sheet dismisses.
-  - Tap export: Calls `exportBadSentences()` and shows exported file path or "No bad sentences to export" message. Sheet dismisses.
-  - Tap copy: Copies `ID: {id}\nSource: {promptRu}\nTarget: {acceptedAnswers}` to clipboard.
-- **Business rules**:
-  - Export uses `BadSentenceStore.exportUnified()` producing `Downloads/BaseGrammy/bad_sentences_all.txt`
-  - Flagged card status is persisted immediately
-  - In drill mode, flagging also advances to the next card via `advanceDrillCard()`
-- **Edge cases**:
-  - No card loaded: Sheet content is empty, no actions available
-
----
-
-## 19.28a Report Bottom Sheet (Daily Practice -- Blocks 1 and 3)
-
-- **Purpose**: Same as Training Screen report sheet but for daily practice sentence translation (Block 1) and verb conjugation (Block 3) cards. Uses `CardSessionContract` methods.
-- **Entry conditions**: Tap the flag/report button in `DailyInputControls` during a daily practice session.
-- **Exit conditions**: Same as Training Screen report sheet.
-- **Layout**: Identical to Training Screen report sheet (19.28).
-- **Components**: Same as Training Screen report sheet, but uses `contract.flagCurrentCard()`, `contract.unflagCurrentCard()`, and `contract.exportFlaggedCards()` from the `CardSessionContract` interface.
-- **Business rules**:
-  - Mode field is `"daily_translate"` (Block 1) or `"daily_verb"` (Block 3) depending on the current block type
-  - `hideCurrentCard()` is a no-op in daily practice -- no card hiding
-  - Flagged cards do NOT affect session progress or cursor advancement
-  - Uses `TrainingViewModel.flagDailyBadSentence()` / `unflagDailyBadSentence()` / `isDailyBadSentence()` / `exportDailyBadSentences()`
-- **Edge cases**: Same as Training Screen report sheet
-
----
-
-## 19.28b Report Bottom Sheet (Daily Practice -- Block 2 Vocab)
-
-- **Purpose**: Report sheet for daily practice vocabulary flashcards. Similar to Training Screen report sheet but uses direct ViewModel callbacks instead of `CardSessionContract`.
-- **Entry conditions**: Tap the flag/report button in `VocabFlashcardBlock` during daily practice.
-- **Exit conditions**: Same as Training Screen report sheet.
-- **Layout**: Identical to Training Screen report sheet (19.28), but prompt shows the vocab word instead of a sentence.
-- **Components**: Same options (flag/unflag, export, copy). Uses direct callback parameters:
-  - `onFlagDailyBadSentence(word.id, languageId, word.meaningRu ?: word.word, word.word, "daily_vocab")`
-  - `onUnflagDailyBadSentence(word.id)`
-  - `isDailyBadSentence(word.id)`
-  - `onExportDailyBadSentences()`
-- **Business rules**:
-  - Mode field is always `"daily_vocab"`
-  - Flagged icon turns red when card is flagged
-  - Export uses `BadSentenceStore.exportUnified()`
-- **Edge cases**: Same as Training Screen report sheet
-
----
-
-## 19.28c Report Bottom Sheet (Verb Drill)
-
-- **Purpose**: Report sheet for standalone verb drill sessions. Same structure as Training Screen report sheet.
-- **Entry conditions**: Tap the flag/report button in `DefaultVerbDrillInputControls` during a verb drill session.
-- **Exit conditions**: Same as Training Screen report sheet.
-- **Layout**: Identical to Training Screen report sheet (19.28).
-- **Components**: Same options (flag/unflag, export, copy). Uses `VerbDrillViewModel` methods:
-  - `flagBadSentence()` -- mode = `"verb_drill"`, sentence = `card.promptRu`, translation = `card.answer`
-  - `unflagBadSentence()`
-  - `isBadSentence()` -- checks `currentCardIsBad` from UI state
-  - `exportBadSentences()` -- uses `BadSentenceStore.exportUnified()`
-- **Business rules**:
-  - Mode field is `"verb_drill"`
-  - "Hide this card" button is visible but non-functional (known issue R5 in discrepancy report)
-  - Flag status updates `currentCardIsBad` in `VerbDrillUiState`, which is checked on card advancement
-- **Edge cases**: Same as Training Screen report sheet
-
----
-
-## 19.28d Report Bottom Sheet (Vocab Drill)
-
-- **Purpose**: Report sheet for standalone vocab drill flashcards. Similar to Vocab Drill Card Screen but with report options.
-- **Entry conditions**: Tap the flag/report button on the Vocab Drill card screen.
-- **Exit conditions**: Same as Training Screen report sheet.
-- **Layout**: Identical to Training Screen report sheet (19.28), but prompt shows the vocab word and its meaning.
-- **Components**: Same options (flag/unflag, export, copy). Uses `VocabDrillViewModel` methods:
-  - `flagBadSentence()` -- mode = `"vocab_drill"`, sentence = `word.meaningRu ?: word.word`, translation = `word.word`
-  - `unflagBadSentence()`
-  - `isBadSentence()`
-  - `exportBadSentences()` -- uses `BadSentenceStore.exportToTextFile(packId)`
-- **Business rules**:
-  - Mode field is `"vocab_drill"`
-  - Pack ID is `activePackId` if set, otherwise falls back to `"__vocab_drill__"`
-  - Flagged icon turns red when card is flagged
-- **Edge cases**: Same as Training Screen report sheet
-
-- **Purpose**: Confirmation dialog after exporting flagged bad sentences to a file.
-- **Entry conditions**: Tap "Export bad sentences to file" in any report bottom sheet.
-- **Exit conditions**: "OK" button -> dismiss.
-- **Layout**: AlertDialog with "Export" title and message showing the export file path or "No bad sentences to export".
-
----
-
-## 19.29 Daily Practice Loading Overlay
-
-- **Purpose**: Blocking dialog shown while daily practice session initializes on IO thread.
-- **Entry conditions**: Triggered when starting or resuming daily practice (`isLoadingDaily == true`).
-- **Exit conditions**: Automatically dismissed when session initialization completes.
-- **Layout**:
-```
-+-------------------------------------------+
-|  +------------------------------------+  |
-|  |        [Spinner]                   |  |
-|  |     Loading session...             |  |
-|  +------------------------------------+  |
-+-------------------------------------------+
-```
-- **Components**: `Dialog` with Card containing `CircularProgressIndicator` + "Loading session..." text.
-
----
-
-## 19.30 Persistent TTS Download Progress Bar
-
-- **Purpose**: Thin progress bar shown at the top of every screen while a TTS model download is in progress.
-- **Entry conditions**: `bgTtsDownloading == true` (any background download active).
-- **Exit conditions**: Automatically hidden when all downloads complete.
-- **Layout**: 2dp tall `LinearProgressIndicator` spanning full width, shown above all screen content.
-- **Business rules**: Aggregates progress from all language downloads (downloading = 90% weighted, extracting = remaining 10%).
-
----
-
-## 19.31 AppScreen Enum Reference
-
-The `AppScreen` enum defines all possible screen destinations:
-
-| Value | Screen | Notes |
-|-------|--------|-------|
-| `HOME` | Home Screen | Default/landing screen |
-| `LESSON` | Lesson Roadmap | Sub-lesson grid for selected lesson |
-| `TRAINING` | Training Screen | Card presentation + answer input |
-| `ELITE` | (redirects to HOME) | Kept for backward compat |
-| `VOCAB` | (redirects to HOME) | Kept for backward compat |
-| `DAILY_PRACTICE` | Daily Practice Screen | 3-block daily session |
-| `STORY` | Story Quiz Screen | Reading comprehension quiz |
-| `LADDER` | Ladder Screen | Interval ladder overview |
-| `VERB_DRILL` | Verb Drill Screen | Verb conjugation practice |
-| `VOCAB_DRILL` | Vocab Drill Screen | Flashcard vocabulary review |
-
-**Navigation flow**:
-```
-HOME -----> LESSON -----> TRAINING
-  |              |-----> STORY
-  |-----> DAILY_PRACTICE
-  |-----> VERB_DRILL
-  |-----> VOCAB_DRILL
-  |-----> LADDER (via Settings)
-
-Settings: ModalBottomSheet overlay on any screen
-BackHandler: Context-sensitive per screen
-```
+**Elements in Russian spec matching code exactly**: All TtsDownloadDialog, MeteredNetworkDialog, AsrMeteredNetworkDialog, WelcomeDialog, StreakDialog, BossRewardDialog, BossErrorDialog, StoryErrorDialog, DrillStartDialog, Report Sheet variants.

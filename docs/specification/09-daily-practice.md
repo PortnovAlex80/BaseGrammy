@@ -1,14 +1,36 @@
 # 9. Daily Practice System -- Specification
 
+**Sources:**
+- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailySessionComposer.kt`
+- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailySessionHelper.kt`
+- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailyPracticeSessionProvider.kt`
+- `app/src/main/java/com/alexpo/grammermate/ui/DailyPracticeScreen.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/Models.kt` (DailyTask, DailySessionState, DailyCursorState, DailyBlockType)
+- `app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt` (VerbDrillComboProgress)
+- `app/src/main/java/com/alexpo/grammermate/data/VocabWord.kt` (VocabWord, WordMasteryState, VocabDrillDirection)
+- `app/src/main/java/com/alexpo/grammermate/data/CardSessionContract.kt` (SessionCard, CardSessionContract)
+- `app/src/main/java/com/alexpo/grammermate/data/SpacedRepetitionConfig.kt` (INTERVAL_LADDER_DAYS)
+- `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt` (startDailyPractice, cancelDailySession, rateVocabCard, etc.)
+
+---
+
 ## 9.1 Overview
 
 Daily Practice is GrammarMate's unified daily training session, combining three distinct exercise blocks into a single flow:
 
-1. **Block 1 -- Sentence Translations** (10 cards): Translate sentences from Russian to the target language using voice, keyboard, or word bank input.
-2. **Block 2 -- Vocabulary Flashcards** (10 cards, Anki-style): Review vocabulary words with a show-and-rate mechanism integrating spaced repetition scheduling.
-3. **Block 3 -- Verb Conjugations** (10 cards): Conjugate verbs in context, with verb metadata (infinitive, tense, group) displayed as hint chips.
+1. **Block 1 -- Sentence Translations** (`DailyBlockType.TRANSLATE`, 10 cards): Translate sentences from Russian to the target language using voice, keyboard, or word bank input. Cursor-driven sequential card selection.
+2. **Block 2 -- Vocabulary Flashcards** (`DailyBlockType.VOCAB`, 10 cards, Anki-style): Review vocabulary words with a show-and-rate mechanism integrating spaced repetition scheduling. Pure SRS-based selection from full pack word list.
+3. **Block 3 -- Verb Conjugations** (`DailyBlockType.VERBS`, 10 cards): Conjugate verbs in context, with verb metadata (infinitive, tense, group) displayed as hint chips. Weak-first ordering with previously-shown exclusion.
 
 Total session size: up to 30 cards across 3 blocks. Blocks are served sequentially; the session ends when all blocks are complete or the user exits.
+
+**Constants** (all in `DailySessionComposer.Companion`):
+```kotlin
+const val CARDS_PER_BLOCK = 10
+const val SENTENCE_COUNT = 10    // alias for CARDS_PER_BLOCK
+const val VOCAB_COUNT = 10       // alias for CARDS_PER_BLOCK
+const val VERB_COUNT = 10        // alias for CARDS_PER_BLOCK
+```
 
 ### Historical Context
 
@@ -121,10 +143,10 @@ data class DailyCursorState(
 
 | Field | Purpose |
 |-------|---------|
-| `sentenceOffset` | How many sentence cards have been completed in the current lesson. Advances by up to 10 per session. Used to select the next batch of cards. |
-| `currentLessonIndex` | Index into the lesson list for the pack. Advances when all cards in a lesson have been practiced. |
-| `lastSessionHash` | Used to detect whether a new session is needed vs. repeating the same cards. |
-| `firstSessionDate` | ISO date string (`yyyy-MM-dd`). Used to determine if the "first session of the day" card cache is still valid (24-hour lifetime). |
+| `sentenceOffset` | How many sentence cards have been completed in the current lesson. Advances by the count of VOICE/KEYBOARD-practiced sentence cards per completed session. When the offset exceeds the lesson's card count, `currentLessonIndex` advances and offset resets to 0. |
+| `currentLessonIndex` | Index into the lesson list for the pack. Advances when `sentenceOffset` exceeds the current lesson's card count (handled in `TrainingViewModel.advanceCursor()`). |
+| `lastSessionHash` | Defined in model but currently unused (dead field). Reserved for future "repeat" cache optimization. |
+| `firstSessionDate` | ISO date string (`yyyy-MM-dd`). Used to determine if the "first session of the day" card cache is still valid. Compared against today's date; if different, a new first session is started. |
 | `firstSessionSentenceCardIds` | Stores the card IDs from the first session's Block 1, enabling the "Repeat" feature to replay the exact same cards. |
 | `firstSessionVerbCardIds` | Stores the card IDs from the first session's Block 3, enabling the "Repeat" feature for verb cards. |
 
@@ -171,7 +193,64 @@ DailyTask.TranslateSentence(
 
 ### 9.3.4 Scoring and Progression
 
-Answer validation is handled by `DailyPracticeSessionProvider`:
+Answer validation is handled by `DailyPracticeSessionProvider`, which implements `CardSessionContract`.
+
+**Constructor:**
+```kotlin
+class DailyPracticeSessionProvider(
+    private val tasks: List<DailyTask>,
+    blockType: DailyBlockType,
+    private val onBlockComplete: () -> Unit,
+    override val languageId: String = "en",
+    private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> },
+    private val onSpeakTts: (String) -> Unit = {},
+    private val onStopTts: () -> Unit = {},
+    private val ttsStateProvider: () -> TtsState = { TtsState.IDLE },
+    private val onExit: () -> Unit = {},
+    private val onCardAdvanced: (DailyTask) -> Unit = {},
+    private val onFlagCard: ((SessionCard, DailyBlockType) -> Unit)? = null,
+    private val onUnflagCard: ((SessionCard, DailyBlockType) -> Unit)? = null,
+    private val isCardFlagged: ((SessionCard) -> Boolean)? = null,
+    private val onExportFlagged: (() -> String?)? = null
+) : CardSessionContract
+```
+
+**Key internal state (Compose mutableStateOf):**
+```kotlin
+private var currentIndex: Int             // 0-based index into blockCards
+private var _pendingCard: SessionCard?    // set on correct answer or hint
+private var pendingAnswerResult: AnswerResult?  // exposed to UI for auto-advance
+private var _isPaused: Boolean            // true when hint shown
+private var _inputMode: InputMode         // current input mode (starts VOICE)
+private var _selectedWords: List<String>  // word bank selection
+private var incorrectAttempts: Int        // consecutive wrong attempts (0-3)
+private var hintAnswer: String?           // non-null when answer shown as hint
+private var voiceTriggerToken: Int        // incremented to trigger ASR
+private var showIncorrectFeedback: Boolean // inline "Incorrect" display
+private var remainingAttempts: Int        // 3 - incorrectAttempts
+```
+
+**Capabilities (all true):**
+```kotlin
+override val supportsTts: Boolean get() = true
+override val supportsVoiceInput: Boolean get() = true
+override val supportsWordBank: Boolean get() = true
+override val supportsFlagging: Boolean get() = true
+override val supportsNavigation: Boolean get() = true
+override val supportsPause: Boolean get() = true
+```
+
+**sessionActive property:**
+```kotlin
+override val sessionActive: Boolean
+    get() {
+        if (_isPaused) return false
+        if (hintAnswer != null) return false
+        return currentIndex < blockCards.size
+    }
+```
+
+Answer validation flow:
 
 1. User submits an answer (via voice, keyboard, or word bank).
 2. The input is normalized using `Normalizer.normalize()` and compared against each accepted answer (also normalized).
@@ -192,9 +271,36 @@ if (currentIndex < blockCards.size && _inputMode != InputMode.WORD_BANK) {
 
 WORD_BANK answers and simple forward navigation (no answer submitted) do NOT count.
 
+The `onCardAdvanced` callback triggers two actions in the ViewModel (via `CardSessionBlock`'s `onCardAdvanced` lambda):
+1. For `ConjugateVerb` tasks: calls `onPersistVerbProgress(task.card)`.
+2. For all tasks: calls `onCardPracticed(task.blockType)` which increments `dailyPracticeAnsweredCounts[blockType]` and, for TRANSLATE block, records card mastery via `MasteryStore.recordCardShow()` (which grows flowers).
+
+```kotlin
+// TrainingViewModel.recordDailyCardPracticed()
+fun recordDailyCardPracticed(blockType: DailyBlockType) {
+    val count = dailyPracticeAnsweredCounts[blockType] ?: 0
+    dailyPracticeAnsweredCounts[blockType] = count + 1
+    // Record mastery for TRANSLATE block sentence cards (grows flowers).
+    // VERBS and VOCAB blocks do NOT count toward flower growth.
+    if (blockType == DailyBlockType.TRANSLATE) {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence
+        if (task != null) {
+            masteryStore.recordCardShow(lessonId, languageId, card.id)
+        }
+    }
+}
+```
+
 ### 9.3.6 Repeat Session for Block 1
 
-`DailySessionComposer.buildSentenceBlockFromIds()` reconstructs the block from stored card IDs (from `DailyCursorState.firstSessionSentenceCardIds`). Cards are looked up across all lessons, preserving the original ID order. Input mode rotation follows the same index-based pattern.
+`DailySessionComposer.buildSentenceBlockFromIds()` reconstructs the block from stored card IDs (from `DailyCursorState.firstSessionSentenceCardIds`). Cards are looked up across all lessons via `lessons.flatMap { it.cards }.associateBy { it.id }`, preserving the original ID order. Input mode rotation follows the same index-based pattern.
+
+```kotlin
+private fun buildSentenceBlockFromIds(
+    lessonLevel: Int, packId: String, languageId: String, lessonId: String,
+    cardIds: List<String>
+): List<DailyTask.TranslateSentence>
+```
 
 ---
 
@@ -212,11 +318,13 @@ DailyTask.VocabFlashcard(
 )
 ```
 
+The `VocabWord.id` is generated in `DailySessionComposer.loadVocabWords()` as `"{pos}_{rank}_{word}"` where `pos` is derived from the filename (e.g., `"nouns"`, `"verbs"`, `"adjectives"`). Words are sorted by `rank` (frequency) after loading.
+
 ### 9.4.2 Card Selection Algorithm
 
 Block 2 uses **pure SRS (Spaced Repetition System) selection** from the full pack word list. It is NOT tied to lesson level or cursor position. The algorithm is in `DailySessionComposer.buildVocabBlock()`:
 
-1. Load all vocab words from the pack's vocab drill files via `LessonStore.getVocabDrillFiles()` and `ItalianDrillVocabParser`.
+1. Load all vocab words from the pack's vocab drill files via `LessonStore.getVocabDrillFiles()` and `ItalianDrillVocabParser`. **Numbers are excluded** (`pos != "numbers"`) -- they should only appear in standalone Vocab Drill when the user explicitly selects the Numbers filter.
 2. Load all mastery states from `WordMasteryStore.loadAll()`.
 3. Categorize every word into one of three buckets:
    - **Due words**: `mastery.nextReviewDateMs <= now` or `mastery.lastReviewDateMs == 0`.
@@ -273,20 +381,41 @@ data class WordMasteryState(
     val correctCount: Int = 0,
     val incorrectCount: Int = 0,
     val lastReviewDateMs: Long = 0L,
-    val nextReviewDateMs: Long = 0L,        // lastReviewDate + ladder[step] * DAY_MS
-    val isLearned: Boolean = false           // reached step 9
+    val nextReviewDateMs: Long = 0L,        // computed: lastReviewDate + ladder[step] * DAY_MS
+    val isLearned: Boolean = false           // true when intervalStepIndex >= LEARNED_THRESHOLD (3)
 )
 ```
 
-The interval ladder is `[1, 2, 4, 7, 10, 14, 20, 28, 42, 56]` days (from `SpacedRepetitionConfig.INTERVAL_LADDER_DAYS`).
+The interval ladder is `[1, 2, 4, 7, 10, 14, 20, 28, 42, 56]` days (from `SpacedRepetitionConfig.INTERVAL_LADDER_DAYS`, size = 10, max index = 9).
 
-Rating affects the interval step:
-- **Again (0)**: Reset step to 0 (relearn from scratch).
-- **Hard (1)**: Step stays the same or moves down.
-- **Good (2)**: Step increments by 1.
-- **Easy (3)**: Step increments by 2 or more.
+Rating affects the interval step (computed in `TrainingViewModel.rateVocabCard()`):
 
-The `nextReviewDateMs` is recalculated after each review as `lastReviewDateMs + INTERVAL_LADDER_DAYS[step] * DAY_MS`.
+```kotlin
+val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1  // 9
+val newStepIndex = when (rating) {
+    0 -> 0                                                    // Again: reset to 0
+    1 -> current.intervalStepIndex                            // Hard: stay the same
+    2 -> (current.intervalStepIndex + 1).coerceIn(0, maxStep) // Good: +1
+    else -> (current.intervalStepIndex + 2).coerceIn(0, maxStep) // Easy: +2
+}
+```
+
+The `LEARNED_THRESHOLD` is `3` (local constant in `rateVocabCard()`). A word is marked `isLearned = true` when `newStepIndex >= 3`.
+
+The `nextReviewDateMs` is recalculated via `WordMasteryState.computeNextReview(now, newStepIndex)`:
+```kotlin
+fun computeNextReview(lastReviewMs: Long, stepIndex: Int): Long {
+    val ladder = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS
+    val days = if (stepIndex in ladder.indices) ladder[stepIndex] else ladder.last()
+    return lastReviewMs + days * DAY_MS  // DAY_MS = 86_400_000L
+}
+```
+
+Side effect counters:
+```kotlin
+correctCount + (if (rating != 0) 1 else 0)
+incorrectCount + (if (rating == 0) 1 else 0)
+```
 
 ### 9.4.7 Vocab Block Independence
 
@@ -312,13 +441,54 @@ Block 3 uses **weak-first ordering**, excluding previously shown cards. The algo
 3. Load progress from `VerbDrillStore.loadProgress()`.
 4. Collect IDs of all previously shown cards across all combos (`everShownCardIds`).
 5. **Exclude** previously shown cards to produce the `unshown` set.
-6. Score unshown cards by **weakness**: for each card, compute `1 - (shownInSameTense / totalInSameTense)`. Higher weakness score means more cards remain unshown in that tense.
-7. Sort by weakness descending, stable by original index (preserves CSV order for ties).
+6. Score unshown cards by **weakness**:
+
+```kotlin
+// For each unshown card:
+val shownInCombo = progressMap.values
+    .filter { it.tense == card.tense }
+    .sumOf { it.everShownCardIds.size }
+val comboTotal = filtered.count { it.tense == card.tense }
+val weakness = if (comboTotal == 0) 0f else 1f - (shownInCombo.toFloat() / comboTotal)
+```
+
+   Weakness = 1.0 means no cards in that tense have been shown (weakest). Weakness = 0.0 means all cards shown (strongest).
+
+7. Sort by weakness descending, stable by original index (preserves CSV order for ties):
+
+```kotlin
+scored.sortedWith(
+    compareByDescending<Triple<VerbDrillCard, Float, Int>> { it.second }  // weakness descending
+        .thenBy { it.third }                                                // original index ascending
+)
+```
+
 8. Take the top `VERB_COUNT` (10) cards.
 
 ### 9.5.2 Tense Ladder
 
-The tense ladder maps lesson levels (1-12) to cumulative sets of active tenses:
+The tense ladder maps lesson levels (1-12) to cumulative sets of active tenses. This is defined as `DailySessionComposer.TENSE_LADDER`:
+
+```kotlin
+val TENSE_LADDER: Map<Int, List<String>> = mapOf(
+    1  to listOf("Presente"),
+    2  to listOf("Presente", "Imperfetto"),
+    3  to listOf("Presente", "Imperfetto", "Passato Prossimo"),
+    4  to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice"),
+    5  to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente"),
+    6  to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto"),
+    7  to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto", "Congiuntivo Presente"),
+    8  to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto", "Congiuntivo Presente", "Trapassato Prossimo"),
+    9  to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto", "Congiuntivo Presente", "Trapassato Prossimo", "Futuro Anteriore"),
+    10 to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto", "Congiuntivo Presente", "Trapassato Prossimo", "Futuro Anteriore", "Congiuntivo Imperfetto"),
+    11 to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto", "Congiuntivo Presente", "Trapassato Prossimo", "Futuro Anteriore", "Congiuntivo Imperfetto", "Condizionale Passato"),
+    12 to listOf("Presente", "Imperfetto", "Passato Prossimo", "Futuro Semplice", "Condizionale Presente", "Passato Remoto", "Congiuntivo Presente", "Trapassato Prossimo", "Futuro Anteriore", "Congiuntivo Imperfetto", "Condizionale Passato", "Congiuntivo Passato")
+)
+```
+
+**Fallback behavior:** If `cumulativeTenses` is provided (from `LessonStore.getCumulativeTenses()`), it takes precedence over `TENSE_LADDER`. If neither provides tenses, the verb block returns empty.
+
+Summarized:
 
 | Level | Tenses |
 |-------|--------|
@@ -351,6 +521,22 @@ DailyTask.ConjugateVerb(
 
 Input mode alternates: even indices get `KEYBOARD`, odd indices get `WORD_BANK`. Note: `VOICE` is NOT used for verb conjugation cards.
 
+The `VerbDrillCard` data class:
+```kotlin
+data class VerbDrillCard(
+    override val promptRu: String,
+    val answer: String,
+    val verb: String? = null,
+    val tense: String? = null,
+    val group: String? = null,
+    val rank: Int? = null
+) : SessionCard {
+    override val acceptedAnswers: List<String> get() = listOf(answer)
+}
+```
+
+Progress is keyed by `comboKey = "${group ?: ""}|${tense ?: ""}"` in `VerbDrillStore`.
+
 ### 9.5.4 Verb Info Display (Hint Chips)
 
 When the current task is a `ConjugateVerb`, the card content renders three `SuggestionChip` components:
@@ -361,7 +547,24 @@ When the current task is a `ConjugateVerb`, the card content renders three `Sugg
 | Tense | `VerbDrillCard.tense` | Abbreviated (e.g., "Pres.", "Imperf.", "P. Pross.") | Hidden if blank |
 | Group | `VerbDrillCard.group` | As-is | Hidden if blank |
 
-Tense abbreviation is handled by `abbreviateTense()` which maps full Italian tense names to short forms (e.g., "Passato Prossimo" -> "P. Pross."). Unrecognized tenses are truncated to 8 characters.
+Tense abbreviation is handled by `abbreviateTense()` which maps full Italian tense names to short forms. Full mapping:
+
+| Full Name | Abbreviation |
+|-----------|-------------|
+| Presente | Pres. |
+| Imperfetto | Imperf. |
+| Passato Prossimo | P. Pross. |
+| Passato Remoto | P. Rem. |
+| Trapassato Prossimo | Trap. P. |
+| Futuro Semplice | Fut. Sempl. |
+| Futuro Anteriore | Fut. Ant. |
+| Condizionale Presente | Cond. Pres. |
+| Condizionale Passato | Cond. Pass. |
+| Congiuntivo Presente | Cong. Pres. |
+| Congiuntivo Imperfetto | Cong. Imp. |
+| Congiuntivo Passato | Cong. Pass. |
+
+Unrecognized tenses are truncated to 8 characters.
 
 Chips are non-interactive in Daily Practice (no bottom sheet on tap), unlike the standalone Verb Drill screen.
 
@@ -382,11 +585,39 @@ data class VerbDrillComboProgress(
 
 When a verb card is advanced (via `onCardAdvanced`), the card's ID is added to both `everShownCardIds` and `todayShownCardIds`. The `todayShownCardIds` set is cleared on a new day (when `lastDate != today`).
 
+The exact persistence logic in `TrainingViewModel.persistDailyVerbProgress()`:
+```kotlin
+fun persistDailyVerbProgress(card: VerbDrillCard) {
+    val packId = _uiState.value.activePackId ?: return
+    val store = VerbDrillStore(getApplication(), packId = packId)
+    val comboKey = "${card.group ?: ""}|${card.tense ?: ""}"
+    val existing = store.loadProgress()[comboKey]
+    val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
+    val todayShown = (existing?.todayShownCardIds ?: emptySet()) + card.id
+    val updated = VerbDrillComboProgress(
+        group = card.group ?: "",
+        tense = card.tense ?: "",
+        totalCards = existing?.totalCards ?: 0,
+        everShownCardIds = everShown,
+        todayShownCardIds = todayShown,
+        lastDate = java.time.LocalDate.now().toString()
+    )
+    store.upsertComboProgress(comboKey, updated)
+}
+```
+
 Only VOICE and KEYBOARD modes trigger `onCardAdvanced` (WORD_BANK does not), matching the mastery counting rule from Block 1.
 
 ### 9.5.6 Repeat Session for Block 3
 
-`DailySessionComposer.buildVerbBlockFromIds()` reconstructs the block from stored card IDs (from `DailyCursorState.firstSessionVerbCardIds`). Cards are looked up from verb drill files, preserving original order. Input mode rotation follows the same KEYBOARD/WORD_BANK alternation.
+`DailySessionComposer.buildVerbBlockFromIds()` reconstructs the block from stored card IDs (from `DailyCursorState.firstSessionVerbCardIds`). Cards are looked up from verb drill files via `loadVerbDrillCards().associateBy { it.id }`, preserving original order. Input mode rotation follows the same KEYBOARD/WORD_BANK alternation.
+
+```kotlin
+private fun buildVerbBlockFromIds(
+    packId: String, languageId: String,
+    cardIds: List<String>
+): List<DailyTask.ConjugateVerb>
+```
 
 ---
 
@@ -395,27 +626,68 @@ Only VOICE and KEYBOARD modes trigger `onCardAdvanced` (WORD_BANK does not), mat
 ### 9.6.1 Start Sequence
 
 1. User taps the Daily Practice tile on HomeScreen.
-2. `TrainingViewModel.startDailyPractice()` is called.
-3. The ViewModel reads `activePackId`, `selectedLanguageId`, `selectedLessonId`, and `lessons` from the current UI state.
-4. Lesson level is derived from the lesson index: `(lessons.indexOfFirst { it.id == selectedLessonId } + 1).coerceIn(1, 12)`.
-5. `DailySessionComposer.buildSession()` is called with the lesson level, pack ID, language ID, lesson ID, cumulative tenses, and the current `DailyCursorState`.
-6. If all blocks return empty, the session start fails (returns `false`).
-7. `DailySessionHelper.startDailySession()` initializes the `DailySessionState` with `active=true`, `taskIndex=0`, `blockIndex=0`.
-8. Navigation transitions to `AppScreen.DAILY_PRACTICE`.
-9. `DailyPracticeScreen` renders the first task of Block 1 (TRANSLATE).
+2. `TrainingViewModel.startDailyPractice(lessonLevel)` is called.
+3. The ViewModel saves `dailyCursorAtSessionStart` for rollback on cancel.
+4. `dailyPracticeAnsweredCounts` is reset to an empty map.
+5. The ViewModel reads `activePackId` and `selectedLanguageId` from current UI state.
+6. **IMPORTANT**: The ViewModel uses `resolveProgressLessonInfo()` (NOT `selectedLessonId`) to determine the current lesson. `selectedLessonId` can change when the user browses locked lessons, but daily practice always follows the main learning path. `resolveProgressLessonInfo()` returns `(lessonId, effectiveLevel)`.
+7. Reads current `dailyCursor` from state.
+8. Determines `isFirstSessionToday` by comparing `cursor.firstSessionDate` to today's ISO date.
+9. For the first session of the day, tries the pre-built session cache (`prebuiltDailySession`, built at init time for faster startup). If valid, uses it and clears the cache.
+10. Falls back to synchronous build via `DailySessionComposer.buildSession(effectiveLevel, packId, langId, lessonId, cumulativeTenses, cursor)`.
+11. `DailySessionComposer` creates all three blocks:
+    - `buildSentenceBlock()` -- cursor-driven sequential selection from lesson cards.
+    - `buildVocabBlock()` -- pure SRS selection from pack vocab drill files.
+    - `buildVerbBlock()` -- weak-first selection from pack verb drill files, filtered by cumulative tenses.
+12. If all blocks return empty, session start fails (returns `false`).
+13. `DailySessionHelper.startDailySession(tasks, effectiveLevel)` initializes the `DailySessionState` with `active=true, tasks=..., taskIndex=0, blockIndex=0`.
+14. If first session today, stores first-session card IDs via `storeFirstSessionCardIds(sentenceIds, verbIds)`. This updates `DailyCursorState.firstSessionDate`, `firstSessionSentenceCardIds`, and `firstSessionVerbCardIds`.
+15. Navigation transitions to `AppScreen.DAILY_PRACTICE`.
+16. `DailyPracticeScreen` renders the first task of Block 1 (TRANSLATE).
+
+**Key method signatures:**
+```kotlin
+// TrainingViewModel
+fun startDailyPractice(lessonLevel: Int): Boolean
+fun hasResumableDailySession(): Boolean
+private fun storeFirstSessionCardIds(sentenceIds: List<String>, verbIds: List<String>)
+private fun advanceCursor(sentenceCount: Int)
+
+// DailySessionComposer
+fun buildSession(
+    lessonLevel: Int, packId: String, languageId: String, lessonId: String,
+    cumulativeTenses: List<String> = emptyList(),
+    cursor: DailyCursorState = DailyCursorState()
+): List<DailyTask>
+
+// DailySessionHelper
+fun startDailySession(tasks: List<DailyTask>, lessonLevel: Int)
+```
 
 ### 9.6.2 Block Transition Sequence
 
 When a block completes (all cards in the block finished):
 
-1. `DailyPracticeSessionProvider` calls its `onBlockComplete` callback.
-2. In `CardSessionBlock`, this sets `blockComplete = true`.
-3. `onAdvanceBlock()` is called, which invokes `DailySessionHelper.advanceToNextBlock()`.
-4. `advanceToNextBlock()` scans forward in the task list, skipping all tasks of the current `blockType`, and sets `taskIndex` to the first task of the next block type.
-5. `blockIndex` is incremented.
-6. If no more blocks exist (no more task types), `endSession()` is called and `false` is returned.
-7. A `BlockSparkleOverlay` is displayed for 800ms, showing "Next: {BlockLabel}" (or "Daily practice complete!" for the last block).
-8. After the sparkle dismisses, the new block's content is rendered.
+1. `DailyPracticeSessionProvider.nextCard()` increments `currentIndex`.
+2. Before incrementing, calls `onCardAdvanced(blockCards[currentIndex])` if current input mode is NOT `WORD_BANK`. This fires `onPersistVerbProgress` for verb cards and `onCardPracticed` for cursor tracking.
+3. When `currentIndex >= blockCards.size`, calls `onBlockComplete()`.
+4. In `CardSessionBlock`, `blockComplete = true`.
+5. `onAdvanceBlock()` is called, which invokes `DailySessionHelper.advanceToNextBlock()`.
+6. `advanceToNextBlock()` scans forward in the task list, skipping all tasks of the current `blockType`, and sets `taskIndex` to the first task of the next block type.
+7. `blockIndex` is incremented.
+8. If no more blocks exist (scanned past end of task list), `endSession()` is called and `false` is returned.
+9. A `BlockSparkleOverlay` is displayed for 800ms, showing "Next: {BlockLabel}" (or "Daily practice complete!" for the last block).
+10. After the sparkle dismisses, the new block's content is rendered.
+
+**Key method signatures:**
+```kotlin
+// DailySessionHelper
+fun advanceToNextBlock(): Boolean   // scans forward, updates taskIndex/blockIndex, calls endSession() if no more blocks
+fun nextTask(): Boolean             // increments taskIndex by 1, computes blockIndex, calls endSession() if past end
+
+// DailyPracticeSessionProvider
+fun nextCard()                      // increments currentIndex, calls onCardAdvanced (non-WORD_BANK), calls onBlockComplete at end
+```
 
 ### 9.6.3 Block Labels
 
@@ -425,34 +697,115 @@ When a block completes (all cards in the block finished):
 | `VOCAB` | "Vocabulary" | "Next: Verbs" |
 | `VERBS` | "Verbs" | "Daily practice complete!" |
 
-### 9.6.4 Session Completion
+### 9.6.4 Session Completion and Cursor Advancement
 
 After all blocks are complete:
 
 1. `DailySessionHelper.endSession()` sets `active=false`, `finishedToken=true`.
-2. A final `BlockSparkleOverlay` is shown for 800ms with the message "Daily practice complete!" and subtitle "Great job today!".
-3. After the sparkle, `DailyPracticeCompletionScreen` is displayed with:
+2. `cancelDailySession()` is called (from `onComplete` callback in GrammarMateApp).
+3. Inside `cancelDailySession()`:
+   - Checks `ds.finishedToken == true`.
+   - Reads `dailyPracticeAnsweredCounts[TRANSLATE]` and `[VERBS]`.
+   - Compares against expected counts from the task list.
+   - Only advances cursor if ALL TRANSLATE cards were practiced via VOICE/KEYBOARD AND ALL VERB cards were practiced via VOICE/KEYBOARD.
+   - If conditions met, calls `advanceCursor(sentenceCount)`.
+   - `advanceCursor()` increments `sentenceOffset` by `sentenceCount`. If the new offset >= lesson card count, advances `currentLessonIndex` and resets `sentenceOffset` to 0.
+   - Clears `dailyPracticeAnsweredCounts`.
+   - Calls `dailySessionHelper.endSession()` (idempotent).
+
+```kotlin
+// TrainingViewModel.cancelDailySession()
+fun cancelDailySession() {
+    val ds = _uiState.value.dailySession
+    if (ds.finishedToken) {
+        val sentenceCount = dailyPracticeAnsweredCounts[DailyBlockType.TRANSLATE] ?: 0
+        val verbCount = dailyPracticeAnsweredCounts[DailyBlockType.VERBS] ?: 0
+        val expectedSentenceCount = ds.tasks.count { it is DailyTask.TranslateSentence }
+        val expectedVerbCount = ds.tasks.count { it is DailyTask.ConjugateVerb }
+        val allSentencePracticed = sentenceCount >= expectedSentenceCount
+        val allVerbsPracticed = verbCount >= expectedVerbCount
+        if (allSentencePracticed && allVerbsPracticed) {
+            advanceCursor(sentenceCount)
+        }
+    }
+    dailyPracticeAnsweredCounts.clear()
+    dailySessionHelper.endSession()
+}
+```
+
+4. A `BlockSparkleOverlay` is shown for 800ms with the message "Daily practice complete!" and subtitle "Great job today!".
+5. After the sparkle, `DailyPracticeCompletionScreen` is displayed with:
    - Title: "Session Complete!"
    - Message: "Great job! You practiced translations, vocabulary, and verb conjugations."
    - Button: "Back to Home" which calls `onExit()`.
 
-### 9.6.5 Navigation Between Blocks: Repeat vs. Continue
+**Note:** There is a known race condition -- `onComplete` navigates to HOME immediately while the sparkle/completion screen should be visible. In practice, the navigation may win, causing the user to return to Home without seeing the completion UI.
 
-The daily practice system supports two navigation modes for subsequent sessions on the same day:
+### 9.6.5 Navigation Between Sessions: Repeat vs. Continue
 
-**Repeat (same cards)**:
-- Replays the exact same sentence and verb cards from the first session of the day.
-- Uses `DailyCursorState.firstSessionSentenceCardIds` and `firstSessionVerbCardIds` to reconstruct blocks.
-- Block 2 (Vocab) always generates fresh SRS-based cards regardless.
+The daily practice system supports two navigation modes for subsequent sessions on the same day. These are presented via a resume dialog in `GrammarMateApp.kt` when `hasResumableDailySession()` returns true.
+
+**`hasResumableDailySession()`**: Returns `true` when `cursor.firstSessionDate == today` AND (`firstSessionSentenceCardIds` is non-empty OR `firstSessionVerbCardIds` is non-empty).
+
+**Repeat (same cards) -- `repeatDailyPractice(lessonLevel)`**:
+- Tries, in order:
+  1. In-memory cache (`lastDailyTasks`) -- fastest path, same app run.
+  2. Reconstruct from stored first-session card IDs via `DailySessionComposer.buildRepeatSession()`. Block 1 rebuilt from `firstSessionSentenceCardIds`, Block 3 from `firstSessionVerbCardIds`. Block 2 always generates fresh SRS-based cards.
+  3. Last resort: build fresh with cursor at `sentenceOffset = 0`.
+- Does NOT advance cursor -- this is a replay of the first session's cards.
 - Mastery progress is NOT reset -- previously answered cards remain answered.
-- First session card IDs are valid for 24 hours (tracked by `firstSessionDate`).
+- First session card IDs are valid for the same day (tracked by `firstSessionDate`).
 
-**Continue (new cards)**:
-- If the cursor has advanced (all cards in the block practiced with VOICE/KEYBOARD), generates a new batch of cards starting from the new cursor position.
-- If the cursor has NOT advanced, behaves identically to Repeat.
+```kotlin
+// DailySessionComposer
+fun buildRepeatSession(
+    lessonLevel: Int, packId: String, languageId: String, lessonId: String,
+    cumulativeTenses: List<String> = emptyList(),
+    sentenceCardIds: List<String> = emptyList(),
+    verbCardIds: List<String> = emptyList()
+): List<DailyTask>
+```
+
+**Continue (new cards) -- `startDailyPractice(lessonLevel)`**:
+- If the cursor has advanced (previous session completed with full VOICE/KEYBOARD), generates a new batch of cards starting from the new cursor position.
+- If the cursor has NOT advanced, builds from the current cursor position (which may produce overlapping or same cards).
 - Block 2 always follows its independent SRS process.
+- Does NOT store first-session card IDs again (only stored for the actual first session of the day).
 
-### 9.6.6 Mic/Start Behavior on First Card
+### 9.6.6 In-Session Card Advancement
+
+Within a block, card advancement is managed by `DailyPracticeSessionProvider`:
+
+```kotlin
+// DailyPracticeSessionProvider
+override fun nextCard()  // advances currentIndex, calls onCardAdvanced if non-WORD_BANK, calls onBlockComplete at end
+override fun prevCard()  // decrements currentIndex if > 0, resets all card state
+fun submitAnswerWithInput(input: String): AnswerResult?  // sets pendingInput then calls submitAnswer()
+```
+
+Between blocks, `TrainingViewModel` manages transitions:
+
+```kotlin
+// TrainingViewModel
+fun advanceDailyTask(): Boolean   // persists verb progress, then calls dailySessionHelper.nextTask()
+fun advanceDailyBlock(): Boolean  // calls dailySessionHelper.advanceToNextBlock()
+fun repeatDailyBlock(): Boolean   // rebuilds current block via DailySessionComposer.rebuildBlock(), replaces tasks in session
+fun recordDailyCardPracticed(blockType: DailyBlockType)  // increments answeredCounts, records mastery for TRANSLATE
+fun persistDailyVerbProgress(card: VerbDrillCard)  // upserts VerbDrillComboProgress
+```
+
+The `DailySessionComposer.rebuildBlock()` method builds a fresh set of tasks for a single block type:
+
+```kotlin
+fun rebuildBlock(
+    blockType: DailyBlockType,
+    lessonLevel: Int, packId: String, languageId: String, lessonId: String,
+    cumulativeTenses: List<String> = emptyList(),
+    cursor: DailyCursorState = DailyCursorState()
+): List<DailyTask>
+```
+
+### 9.6.7 Mic/Start Behavior on First Card
 
 On the first card of Block 1:
 - TTS does NOT auto-play (this is correct behavior for the first card of a new session).
@@ -460,7 +813,7 @@ On the first card of Block 1:
 - The microphone icon is active and launches ASR when tapped.
 - These elements are controlled by `inputMode` and `isListening` state, which are NOT blocked by the absence of auto-play.
 
-### 9.6.7 Card Counting and Batch Management
+### 9.6.8 Card Counting and Batch Management
 
 - Each block targets exactly 10 cards (`CARDS_PER_BLOCK` constant).
 - Cards within a block are consumed sequentially (no wrap-around within a single session).
@@ -531,9 +884,15 @@ Renders a `TrainingCardSession` composable with custom `cardContent` and `inputC
 **Input controls** (`DailyInputControls`):
 - Hint answer card: displayed when `hintAnswer` is non-null (after 3 wrong attempts or manual "Show Answer"). Shows the correct answer in an `errorContainer`-colored card with a TTS button.
 - Incorrect feedback row: "Incorrect" text (red) + remaining attempts count.
-- Text field: "Your translation" label, with a microphone trailing icon.
+- Text field: "Your translation" label, with a microphone trailing icon. **Auto-submit in KEYBOARD mode**: when the typed text exactly matches an accepted answer (via `Normalizer.isExactMatch()`), the answer is auto-submitted and the input field is cleared, providing a seamless typing experience without requiring the Check button.
 - Voice mode hint: "Say translation: {promptRu}" when in VOICE mode and session is active.
-- Word bank: `FlowRow` of `FilterChip` words. Selected count shown. "Undo" button removes last selected word.
+- Word bank: `FlowRow` of `FilterChip` words. The word bank is constructed as follows:
+  1. Split the first accepted answer into words (by whitespace).
+  2. Collect distractor words from other cards' first accepted answers (excluding words already in the answer).
+  3. Shuffle distractors and take `max(0, 8 - answerWords.size)`.
+  4. Combine answer words + distractor words and shuffle the final bank.
+  5. The bank is cached per card ID to avoid re-computation.
+  - Selected count shown ("Selected: N / M"). "Undo" button removes last selected word. `selectWordFromBank` respects duplicate words (tracks usage count per word).
 - Input mode selector: three `FilledTonalIconButton` buttons for Mic, Keyboard, and Word Bank. Active mode label displayed as text.
 - Show answer button: Eye icon in a `TooltipBox`. Disabled when hint is already shown.
 - Check button: Full-width `Button`. Enabled only when input text is not blank, a card exists, and the session is active. Calls `provider.submitAnswerWithInput(input)`.
@@ -596,7 +955,7 @@ When the session is active but `currentTask` is null:
 
 ### 9.8.1 TrainingStateAccess Interface
 
-`DailySessionHelper` and other helpers access the ViewModel's state through a narrow interface:
+`DailySessionHelper` and other helpers access the ViewModel's state through a narrow interface (defined in `DailySessionHelper.kt`):
 
 ```kotlin
 interface TrainingStateAccess {
@@ -607,6 +966,33 @@ interface TrainingStateAccess {
 ```
 
 `TrainingViewModel` provides this via an anonymous object implementation. Helpers never reference the ViewModel directly -- they call `updateState { }` and `saveProgress()` through the interface.
+
+**DailySessionHelper public API:**
+
+```kotlin
+class DailySessionHelper(private val stateAccess: TrainingStateAccess) {
+    fun startDailySession(tasks: List<DailyTask>, lessonLevel: Int)
+    fun getCurrentTask(): DailyTask?
+    fun getCurrentBlockType(): DailyBlockType?
+    fun nextTask(): Boolean
+    fun advanceToNextBlock(): Boolean
+    fun replaceCurrentBlock(newTasks: List<DailyTask>)
+    fun endSession()
+    fun fastForwardTo(taskIndex: Int)
+    fun getBlockProgress(): BlockProgress
+    fun isSessionComplete(): Boolean
+}
+```
+
+**Key in-memory fields on TrainingViewModel for Daily Practice:**
+
+```kotlin
+private var prebuiltDailySession: List<DailyTask>? = null     // pre-built at init for first session
+private var lastDailyTasks: List<DailyTask>? = null            // cached for fast Repeat
+private var dailyPracticeAnsweredCounts: MutableMap<DailyBlockType, Int> = mutableMapOf()  // VOICE/KEYBOARD per block
+private var dailyCursorAtSessionStart: DailyCursorState = DailyCursorState()  // for rollback on cancel
+private val dailyBadCardIds = mutableSetOf<String>()           // flagged card IDs during session
+```
 
 ### 9.8.2 Dual State Tracking
 
@@ -627,7 +1013,15 @@ data class BlockProgress(
     val blockSize: Int,               // total cards in the current block
     val totalTasks: Int,              // total tasks across all blocks
     val globalPosition: Int           // 1-based position across all blocks
-)
+) {
+    companion object {
+        val Empty = BlockProgress(
+            blockType = DailyBlockType.TRANSLATE,
+            positionInBlock = 0, blockSize = 0,
+            totalTasks = 0, globalPosition = 0
+        )
+    }
+}
 ```
 
 Computed by `DailySessionHelper.getBlockProgress()`:
@@ -638,13 +1032,18 @@ Computed by `DailySessionHelper.getBlockProgress()`:
 
 ### 9.8.4 Persistence of Daily Progress
 
-| What | Where | Format |
-|------|-------|--------|
-| Session position | `DailySessionState` in `TrainingUiState` (in-memory) | Not persisted across app restarts (session is lost). |
-| Cursor state | `TrainingProgress.dailyCursor` in `ProgressStore` | YAML in `grammarmate/progress.yaml`. |
-| Verb drill progress | `VerbDrillStore` | YAML in `grammarmate/drills/{packId}/verb_drill_progress.yaml`. |
-| Word mastery | `WordMasteryStore` | YAML in `grammarmate/drills/{packId}/word_mastery.yaml`. |
-| General progress | `ProgressStore` | YAML in `grammarmate/progress.yaml`. |
+| What | Where | Format | Persists Across Restart? |
+|------|-------|--------|--------------------------|
+| Session position (`DailySessionState`) | `TrainingUiState` (in-memory `StateFlow`) | Not persisted | No (session is lost) |
+| `DailyCursorState` | `TrainingProgress.dailyCursor` in `ProgressStore` | YAML in `grammarmate/progress.yaml` | Yes |
+| Verb drill progress | `VerbDrillStore` | YAML in `grammarmate/drills/{packId}/verb_drill_progress.yaml` | Yes |
+| Word mastery | `WordMasteryStore` | YAML in `grammarmate/drills/{packId}/word_mastery.yaml` | Yes |
+| Sentence card mastery | `MasteryStore` | Per-lesson YAML in `grammarmate/` | Yes |
+| `prebuiltDailySession` | In-memory field on `TrainingViewModel` | N/A | No |
+| `lastDailyTasks` | In-memory field on `TrainingViewModel` | N/A | No |
+| `dailyPracticeAnsweredCounts` | In-memory `MutableMap<DailyBlockType, Int>` on `TrainingViewModel` | N/A | No |
+| `dailyCursorAtSessionStart` | In-memory `DailyCursorState` on `TrainingViewModel` | N/A | No |
+| `dailyBadCardIds` | In-memory `MutableSet<String>` on `TrainingViewModel` | N/A | No |
 
 All file writes use `AtomicFileWriter` (temp -> fsync -> rename) to prevent data corruption.
 
@@ -652,12 +1051,35 @@ All file writes use `AtomicFileWriter` (temp -> fsync -> rename) to prevent data
 
 `DailySessionHelper.fastForwardTo(taskIndex)` allows jumping to a specific task index when resuming a saved session. It computes the correct `blockIndex` by counting `blockType` transitions from index 1 to `taskIndex`.
 
+```kotlin
+fun fastForwardTo(taskIndex: Int) {
+    // Computes blockIndex by counting blockType changes from 1..taskIndex
+    var blockIndex = 0
+    for (i in 1..taskIndex) {
+        if (ds.tasks[i].blockType != ds.tasks[i - 1].blockType) {
+            blockIndex++
+        }
+    }
+    // Updates taskIndex and blockIndex
+}
+```
+
+**Note:** This method is defined but currently unused in the codebase. In-session position (`taskIndex`, `blockIndex`) is NOT persisted across app restarts, so full mid-session resume is not supported. After restart, the user can only Repeat (same cards from first session) or Continue (new cards from cursor position).
+
 ### 9.8.6 Block Replacement
 
-`DailySessionHelper.replaceCurrentBlock(newTasks)` replaces the current block's tasks in the task list with new tasks (used for the Repeat feature). It:
-1. Finds the start and end indices of the current block type.
-2. Replaces the tasks in that range with the new tasks.
-3. Resets `taskIndex` to the block start.
+`DailySessionHelper.replaceCurrentBlock(newTasks)` replaces the current block's tasks in the task list with new tasks (used for the Repeat Block feature):
+
+```kotlin
+fun replaceCurrentBlock(newTasks: List<DailyTask>)
+```
+
+It:
+1. Finds the start index of the current block type in the task list (first task matching `currentBlockType`).
+2. Finds the end index (last consecutive task of the same `blockType`).
+3. Replaces the tasks in that range with the new tasks: `tasks[0..blockStart) + newTasks + tasks[blockEnd+1..size)`.
+4. Resets `taskIndex` to `blockStart`.
+5. Calls `saveProgress()`.
 
 ---
 
