@@ -376,3 +376,66 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 ### App Config
 
 `assets/grammarmate/config.yaml` — runtime flags (testMode, eliteSizeMultiplier, vocabSprintLimit).
+
+---
+
+## SPECIFICATION & DOCUMENTATION
+
+All project documentation is in `docs/specification/`. When working on a specific component, read the corresponding spec section first.
+
+### Document map by component
+
+| Component | Spec file | When to read |
+|-----------|-----------|-------------|
+| Data models, enums, state | 01-models-and-state.md | Any change to Models.kt, VocabWord.kt, VerbDrillCard.kt |
+| Any data store | 02-data-stores.md | Changes to MasteryStore, ProgressStore, VerbDrillStore, WordMasteryStore, etc. |
+| Spaced repetition, flowers | 03-algorithms-and-calculators.md | SRS logic, FlowerCalculator, MixedReviewScheduler, Normalization |
+| CSV parsing | 04-parsers.md | Lesson content import, CSV format changes |
+| TTS / ASR | 05-audio-tts-asr.md | Audio playback, speech recognition, model downloads |
+| AtomicFileWriter, BackupManager | 06-infrastructure.md | File I/O, backup/restore, AppConfigStore |
+| GrammarMateApp navigation | 07-app-router.md | Screen routing, dialog orchestration, BackHandlers |
+| TrainingViewModel | 08-training-viewmodel.md | Session management, answer validation, word bank, boss battles |
+| Daily Practice | 09-daily-practice.md | 3-block session, cursor, block transitions |
+| Verb Drill | 10-verb-drill.md | Conjugation practice, CardSessionProvider |
+| Vocab Drill | 11-vocab-drill.md | Flashcard SRS, Anki-style rating, word mastery |
+| TrainingCardSession | 12-training-card-session.md | Reusable card UI, slots, input controls |
+| App entry, state restoration | 13-app-entry-and-navigation.md | MainActivity, AppRoot, init sequence |
+| Theme, sounds, strings | 14-theme-and-ui-components.md | Material 3 theme, shared composables |
+| Lesson packs, CSV formats | 15-lesson-content-and-packs.md | Pack import/export, manifest format |
+| All prior specs history | 16-existing-specs-consolidation.md | Design evolution, gaps, conflicts |
+| User stories & use cases | 17-user-stories-and-use-cases.md | Feature requirements, edge cases |
+| Learning methodology | 18-learning-methodology.md | Ebbinghaus curve, flower metaphor, scheduling |
+| All screens & dialogs | 19-screen-catalog.md | Screen layouts, wireframes, interactions |
+| Performance, offline, security | 20-non-functional-requirements.md | NFRs, scalability, compatibility |
+
+### Architecture docs
+
+| Document | Purpose |
+|----------|---------|
+| arch-audit-dependencies.md | Component dependency map, state duplication analysis |
+| arch-audit-spec-vs-code.md | Spec vs code discrepancies (24 found) |
+| arch-module-decomposition.md | Proposed modular architecture (11 modules) |
+
+### Scenario verification (code traces)
+
+| Scenario | File |
+|----------|------|
+| Lesson training flow | scenario-01-training-flow.md |
+| Answer validation | scenario-02-answer-validation.md |
+| Mastery & flower progression | scenario-03-mastery-flower.md |
+| Spaced repetition scheduling | scenario-04-spaced-repetition.md |
+| Input modes (voice/keyboard/wordbank) | scenario-05-input-modes.md |
+| Daily practice session | scenario-06-daily-practice.md |
+| Verb drill standalone | scenario-07-verb-drill.md |
+| Vocab drill standalone | scenario-08-vocab-drill.md |
+| Boss battle | scenario-09-boss-battle.md |
+| Pack-scoped drills | scenario-10-pack-drills.md |
+| Navigation flow | scenario-11-navigation.md |
+| State persistence | scenario-12-state-persistence.md |
+| Lesson pack import | scenario-13-pack-import.md |
+| Backup & restore | scenario-14-backup-restore.md |
+| First launch & onboarding | scenario-15-onboarding.md |
+
+### Rule: Read spec before modifying code
+
+Before modifying any component listed above, read the corresponding spec file. If the spec and code disagree, the CODE is the source of truth (specs may be outdated). Update the spec after code changes.
