@@ -36,7 +36,8 @@ class DailyPracticeSessionProvider(
     private val onSpeakTts: (String) -> Unit = {},
     private val onStopTts: () -> Unit = {},
     private val ttsStateProvider: () -> TtsState = { TtsState.IDLE },
-    private val onExit: () -> Unit = {}
+    private val onExit: () -> Unit = {},
+    private val onCardAdvanced: (DailyTask) -> Unit = {}
 ) : CardSessionContract {
 
     /** All tasks matching the requested block type, capped by the global per-block limit. */
@@ -235,6 +236,11 @@ class DailyPracticeSessionProvider(
         incorrectAttempts = 0
         showIncorrectFeedback = false
         remainingAttempts = 3
+
+        // Notify caller about the card being advanced (for progress persistence)
+        if (currentIndex < blockCards.size) {
+            onCardAdvanced(blockCards[currentIndex])
+        }
 
         // Always advance to next card
         currentIndex++

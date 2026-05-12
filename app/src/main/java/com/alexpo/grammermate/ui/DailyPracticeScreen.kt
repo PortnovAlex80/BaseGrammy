@@ -259,7 +259,12 @@ private fun ColumnScope.CardSessionBlock(
             onSpeakTts = onSpeak,
             onStopTts = onStopTts,
             ttsStateProvider = { ttsState },
-            onExit = onExit
+            onExit = onExit,
+            onCardAdvanced = { task ->
+                if (task is DailyTask.ConjugateVerb) {
+                    onAdvance()
+                }
+            }
         )
     }
 
