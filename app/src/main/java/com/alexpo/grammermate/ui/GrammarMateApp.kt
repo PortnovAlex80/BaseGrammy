@@ -321,8 +321,10 @@ fun GrammarMateApp() {
                         screen = AppScreen.LESSON
                     },
                     onOpenElite = {
-                        val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
-                        val level = (lessonIndex + 1).coerceIn(1, 12)
+                        // Use progress-based lesson level, NOT derived from selectedLessonId.
+                        // selectedLessonId changes when the user previews locked lessons,
+                        // but daily practice must follow the actual learning path.
+                        val level = vm.getProgressLessonLevel()
                         if (vm.hasResumableDailySession()) {
                             pendingDailyLevel = level
                             showDailyResumeDialog = true

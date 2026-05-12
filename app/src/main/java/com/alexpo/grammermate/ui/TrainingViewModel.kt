@@ -326,14 +326,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Pre-build daily practice session in background for faster start
+        // Pre-build daily practice session in background for faster start.
+        // Uses progress-based lesson, NOT selectedLessonId, so that browsing
+        // locked lessons does not affect the daily practice session.
         viewModelScope.launch(Dispatchers.IO) {
             val state = _uiState.value
             val packId = state.activePackId
             val langId = state.selectedLanguageId
-            val lessonId = state.selectedLessonId
-            if (packId != null && lessonId != null) {
-                val lessonLevel = (state.lessons.indexOfFirst { it.id == lessonId } + 1).coerceIn(1, 12)
+            val progressInfo = resolveProgressLessonInfo()
+            if (packId != null && progressInfo != null) {
+                val lessonId = progressInfo.first
+                val lessonLevel = progressInfo.second
                 val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
                 val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
                 val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
@@ -1460,7 +1463,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _uiState.value
         val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
-        val lessonId = state.selectedLessonId ?: return false
+
+        // IMPORTANT: Use progress-based lesson, NOT selectedLessonId.
+        // selectedLessonId can change when the user previews/browses locked lessons,
+        // but daily practice must always follow the main learning path.
+        val progressInfo = resolveProgressLessonInfo()
+        val lessonId = progressInfo?.first ?: return false
+        val effectiveLevel = progressInfo.second
+
         val cursor = state.dailyCursor
         val today = java.time.LocalDate.now().toString()
         val isFirstSessionToday = cursor.firstSessionDate != today
@@ -1469,7 +1479,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val cached = prebuiltDailySession
         if (isFirstSessionToday && cached != null && cached.isNotEmpty()) {
             lastDailyTasks = cached
-            dailySessionHelper.startDailySession(cached, lessonLevel)
+            dailySessionHelper.startDailySession(cached, effectiveLevel)
             prebuiltDailySession = null
             // Store first-session card IDs for repeat, but do NOT advance cursor yet.
             // Cursor advances only when the full session completes with VOICE/KEYBOARD answers.
@@ -1485,14 +1495,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Fallback to synchronous build
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
-        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, effectiveLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
+        val tasks = composer.buildSession(effectiveLevel, packId, langId, lessonId, cumulativeTenses, cursor)
         Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
         if (tasks.isEmpty()) return false
 
         lastDailyTasks = tasks
-        dailySessionHelper.startDailySession(tasks, lessonLevel)
+        dailySessionHelper.startDailySession(tasks, effectiveLevel)
 
         if (isFirstSessionToday) {
             // First session of the day: store card IDs for repeat, but do NOT advance cursor.
@@ -1557,7 +1567,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _uiState.value
         val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
-        val lessonId = state.selectedLessonId ?: return false
+
+        // Use progress-based lesson, NOT selectedLessonId (same as startDailyPractice)
+        val progressInfo = resolveProgressLessonInfo()
+        val lessonId = progressInfo?.first ?: return false
+
         val cursor = state.dailyCursor
         val today = java.time.LocalDate.now().toString()
 
@@ -1667,7 +1681,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val blockType = dailySessionHelper.getCurrentBlockType() ?: return false
         val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
-        val lessonId = state.selectedLessonId ?: return false
+
+        // Use progress-based lesson, NOT selectedLessonId (same as startDailyPractice)
+        val progressInfo = resolveProgressLessonInfo()
+        val lessonId = progressInfo?.first ?: return false
         val lessonLevel = ds.level
 
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
@@ -2502,6 +2519,64 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             forceBackupOnSave = false
             createProgressBackup()
         }
+    }
+
+    /**
+     * Resolve the user's actual progress lesson based on mastery data.
+     * This is independent of [selectedLessonId] — it uses the flower/mastery
+     * state to find the highest lesson with any progress, then returns the
+     * NEXT lesson (the one the user should be practicing).
+     *
+     * Falls back to the first lesson if no progress exists.
+     * Returns (lessonId, lessonLevel) where lessonLevel is 1-based.
+     */
+    private fun resolveProgressLessonInfo(): Pair<String, Int>? {
+        val state = _uiState.value
+        val packId = state.activePackId ?: return null
+        val langId = state.selectedLanguageId
+        val packLessonIds = state.activePackLessonIds ?: return null
+        if (packLessonIds.isEmpty()) return null
+
+        val lessons = state.lessons
+        val orderedLessons = packLessonIds.mapNotNull { id -> lessons.firstOrNull { it.id == id } }
+        if (orderedLessons.isEmpty()) return null
+
+        // Find the highest lesson with any progress (mastery > 0)
+        var lastLessonWithProgress = -1
+        for (i in orderedLessons.indices) {
+            val mastery = masteryStore.get(orderedLessons[i].id, langId)
+            val flower = FlowerCalculator.calculate(mastery, orderedLessons[i].cards.size)
+            if (flower.masteryPercent > 0f) {
+                lastLessonWithProgress = i
+            }
+        }
+
+        // The "current" lesson for daily practice:
+        // - If no progress: first lesson (index 0)
+        // - If progress exists: next lesson after the last with progress
+        //   BUT if the cursor has already advanced past it, use cursor position
+        val cursorLessonIndex = state.dailyCursor.currentLessonIndex
+        val progressIndex = if (lastLessonWithProgress < 0) {
+            0
+        } else {
+            // The user's actual position is the lesson AFTER the last completed,
+            // but bounded by the cursor if the cursor has already moved ahead.
+            // Use the MAX of (next-unlocked, cursor) to respect ongoing sessions.
+            val nextUnlocked = (lastLessonWithProgress + 1).coerceAtMost(orderedLessons.size - 1)
+            maxOf(nextUnlocked, cursorLessonIndex).coerceAtMost(orderedLessons.size - 1)
+        }
+
+        val lesson = orderedLessons.getOrNull(progressIndex) ?: return null
+        val level = (progressIndex + 1).coerceIn(1, 12)
+        return lesson.id to level
+    }
+
+    /**
+     * Public helper for UI layer to get the progress-based lesson level
+     * without depending on [selectedLessonId].
+     */
+    fun getProgressLessonLevel(): Int {
+        return resolveProgressLessonInfo()?.second ?: 1
     }
 
     private fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean {
