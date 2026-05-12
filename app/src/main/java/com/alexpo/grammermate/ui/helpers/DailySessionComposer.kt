@@ -22,7 +22,7 @@ import java.io.File
  *   Takes next 10 cards in order from the current lesson (no shuffle).
  * Block 2 (Vocab): Pure SRS selection across the full word list.
  *   Most-overdue first, then new words, then least-recently-reviewed fallback.
- * Block 3 (Verb Drill): Cursor-driven by verb offset, weak-first ordering.
+ * Block 3 (Verb Drill): Weak-first ordering, excluding previously shown cards.
  */
 class DailySessionComposer(
     private val lessonStore: LessonStore,
@@ -55,7 +55,7 @@ class DailySessionComposer(
     /**
      * @param cumulativeTenses active tenses for this lesson level, built from
      *   manifest lessons 1..lessonLevel. Caller reads from LessonPackManifest.
-     * @param cursor cursor state tracking lesson index, sentence offset, and verb offset.
+     * @param cursor cursor state tracking lesson index and sentence offset.
      */
     fun buildSession(
         lessonLevel: Int,
@@ -293,12 +293,11 @@ class DailySessionComposer(
     }
 
     /**
-     * Block 3: Cursor-based verb drill selection.
+     * Block 3: Weak-first verb drill selection.
      *
-     * Uses cursor.verbOffset to track position. Cards that have been
-     * previously shown (tracked in VerbDrillStore progress) are excluded.
-     * Remaining cards are sorted by weakness (weak-first), stable within
-     * same weakness. Takes next 10 from verbOffset position.
+     * Cards that have been previously shown (tracked in VerbDrillStore progress)
+     * are excluded. Remaining cards are sorted by weakness (weak-first), stable
+     * within same weakness. Takes next 10 unshown cards.
      * Returns empty if no remaining unshown cards.
      */
     private fun buildVerbBlock(

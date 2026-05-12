@@ -1527,11 +1527,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /**
      * Advance the daily cursor offsets after a session is built.
      */
-    private fun advanceCursor(sentenceCount: Int, verbCount: Int) {
+    private fun advanceCursor(sentenceCount: Int) {
         val current = _uiState.value.dailyCursor
         val advanced = current.copy(
-            sentenceOffset = current.sentenceOffset + sentenceCount,
-            verbOffset = current.verbOffset + verbCount
+            sentenceOffset = current.sentenceOffset + sentenceCount
         )
         _uiState.update { it.copy(dailyCursor = advanced) }
     }
@@ -1573,7 +1572,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         // Last resort: build fresh with cursor at position 0 (start of day)
-        val resetCursor = cursor.copy(sentenceOffset = 0, verbOffset = 0)
+        val resetCursor = cursor.copy(sentenceOffset = 0)
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
@@ -1604,6 +1603,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun recordDailyCardPracticed(blockType: DailyBlockType) {
         val count = dailyPracticeAnsweredCounts[blockType] ?: 0
         dailyPracticeAnsweredCounts[blockType] = count + 1
+
+        // Record mastery for TRANSLATE block sentence cards (grows flowers).
+        // VERBS and VOCAB blocks do NOT count toward flower growth.
+        if (blockType == DailyBlockType.TRANSLATE) {
+            val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence
+            if (task != null) {
+                val card = task.card
+                val lessonId = resolveCardLessonId(card)
+                val languageId = _uiState.value.selectedLanguageId
+                masteryStore.recordCardShow(lessonId, languageId, card.id)
+            }
+        }
     }
 
     fun advanceDailyBlock(): Boolean {
@@ -1668,7 +1679,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val allSentencePracticed = sentenceCount >= expectedSentenceCount
             val allVerbsPracticed = verbCount >= expectedVerbCount
             if (allSentencePracticed && allVerbsPracticed) {
-                advanceCursor(sentenceCount, verbCount)
+                advanceCursor(sentenceCount)
             }
         }
         dailyPracticeAnsweredCounts.clear()

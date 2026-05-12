@@ -228,7 +228,6 @@ data class DailySessionState(
 data class DailyCursorState(
     val sentenceOffset: Int = 0,        // cards shown in current lesson (0, 10, 20, ...)
     val currentLessonIndex: Int = 0,    // which lesson in the pack (0-based)
-    val verbOffset: Int = 0,            // verb cards shown for current tenses (0, 10, 20, ...)
     val lastSessionHash: Int = 0,       // hash of last completed session for "repeat" cache
     val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
     val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
