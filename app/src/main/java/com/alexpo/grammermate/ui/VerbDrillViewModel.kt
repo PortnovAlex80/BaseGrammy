@@ -113,7 +113,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * then loads cards from [LessonStore.getVerbDrillFiles] with the pack parameter.
      */
     fun reloadForPack(packId: String) {
-        if (currentPackId == packId && allCards.isNotEmpty()) return
+        if (currentPackId == packId && allCards.isNotEmpty()) {
+            // Cards already loaded, but progress may be stale — force re-read from disk
+            progressMap = verbDrillStore.loadProgress()
+            updateProgressDisplay()
+            return
+        }
         currentPackId = packId
         verbDrillStore = VerbDrillStore(application, packId = packId)
         _uiState.update { it.copy(isLoading = true) }

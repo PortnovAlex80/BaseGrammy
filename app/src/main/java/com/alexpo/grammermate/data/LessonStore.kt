@@ -589,7 +589,7 @@ class LessonStore(private val context: Context) {
         dir.mkdirs()
         val targetFile = File(dir, fileName)
         sourceFile.inputStream().use { input ->
-            FileOutputStream(targetFile).use { output -> input.copyTo(output) }
+            AtomicFileWriter.writeText(targetFile, input.bufferedReader().readText())
         }
         val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
         val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
@@ -604,7 +604,7 @@ class LessonStore(private val context: Context) {
             val drillTargetName = "lesson_${id}_drill.csv"
             val drillTargetFile = File(dir, drillTargetName)
             drillSourceFile.inputStream().use { input ->
-                FileOutputStream(drillTargetFile).use { output -> input.copyTo(output) }
+                AtomicFileWriter.writeText(drillTargetFile, input.bufferedReader().readText())
             }
             val (_, parsedDrillCards) = CsvParser.parseLesson(drillTargetFile.inputStream())
             drillFileName = drillTargetName
@@ -811,7 +811,7 @@ class LessonStore(private val context: Context) {
             val targetDir = File(baseDir, "drills/${manifest.packId}/verb_drill")
             targetDir.mkdirs()
             val target = File(targetDir, source.name)
-            source.copyTo(target, overwrite = true)
+            AtomicFileWriter.writeText(target, source.readText())
         }
         manifest.vocabDrill?.files?.forEach { fileName ->
             val source = File(packDir, fileName)
@@ -819,7 +819,7 @@ class LessonStore(private val context: Context) {
             val targetDir = File(baseDir, "drills/${manifest.packId}/vocab_drill")
             targetDir.mkdirs()
             val target = File(targetDir, source.name)
-            source.copyTo(target, overwrite = true)
+            AtomicFileWriter.writeText(target, source.readText())
         }
     }
 

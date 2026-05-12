@@ -100,7 +100,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val hiddenCardStore = HiddenCardStore(application)
     private val drillProgressStore = DrillProgressStore(application)
     private val vocabProgressStore = VocabProgressStore(application)
-    private val wordMasteryStore = WordMasteryStore(application)
+    private var wordMasteryStore = WordMasteryStore(application, packId = null)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val ttsModelManager = TtsModelManager(application)
@@ -257,6 +257,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 dailyCursor = progress.dailyCursor
             )
         }
+        rebindWordMasteryStore(initialActivePackId)
         rebuildSchedules(lessons)
         buildSessionCards()
         refreshFlowerStates()
@@ -399,6 +400,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val newPackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it) }
             ?: lessonStore.getInstalledPacks().firstOrNull { it.languageId == languageId }?.packId
         val newPackLessonIds = newPackId?.let { lessonStore.getLessonIdsForPack(it) }
+        rebindWordMasteryStore(newPackId)
         _uiState.update {
             it.copy(
                 selectedLanguageId = languageId,
@@ -476,6 +478,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Resolve the pack for this lesson and set as active
         val packId = lessonStore.getPackIdForLesson(lessonId)
         val packLessonIds = packId?.let { lessonStore.getLessonIdsForPack(it) }
+        rebindWordMasteryStore(packId)
 
         // Rebuild schedules BEFORE reading them
         rebuildSchedules(_uiState.value.lessons)
@@ -550,6 +553,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             selectLesson(lessonId)
         } else {
             // Drill-only pack — set activePackId without selecting a lesson
+            rebindWordMasteryStore(packId)
             _uiState.update {
                 it.copy(
                     activePackId = packId,
@@ -2894,6 +2898,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Учитывается только голосовой ввод и клавиатура.
      */
     private fun recordCardShowForMastery(card: SentenceCard) {
+        // Boss battles do not count toward mastery/flower/SRS progress
+        if (_uiState.value.bossActive) return
         // Drill mode: pure card training, no mastery/flower progress
         if (_uiState.value.isDrillMode) return
 
@@ -3148,6 +3154,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 ladderRows = ladderRows
             )
         }
+    }
+
+    /**
+     * Re-scope wordMasteryStore to the given packId.
+     * Must be called whenever activePackId changes so that mastery reads/writes
+     * go to the pack-scoped file instead of the legacy global file.
+     */
+    private fun rebindWordMasteryStore(packId: String?) {
+        wordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
     }
 
     /**
