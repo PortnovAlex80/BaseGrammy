@@ -88,6 +88,7 @@ fun DailyPracticeScreen(
     onShowVerbAnswer: () -> String?,
     onFlipVocabCard: () -> Unit,
     onRateVocabCard: (Int) -> Unit,
+    onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {},
     onAdvance: () -> Boolean,
     onAdvanceBlock: () -> Boolean,
     onRepeatBlock: () -> Boolean,
@@ -190,7 +191,8 @@ fun DailyPracticeScreen(
                     onSpeak = onSpeak,
                     onStopTts = onStopTts,
                     ttsState = ttsState,
-                    languageId = languageId
+                    languageId = languageId,
+                    onPersistVerbProgress = onPersistVerbProgress
                 )
             }
             DailyBlockType.VOCAB -> {
@@ -232,7 +234,8 @@ private fun ColumnScope.CardSessionBlock(
     onSpeak: (String) -> Unit,
     onStopTts: () -> Unit,
     ttsState: TtsState,
-    languageId: String
+    languageId: String,
+    onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {}
 ) {
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
@@ -262,7 +265,7 @@ private fun ColumnScope.CardSessionBlock(
             onExit = onExit,
             onCardAdvanced = { task ->
                 if (task is DailyTask.ConjugateVerb) {
-                    onAdvance()
+                    onPersistVerbProgress(task.card)
                 }
             }
         )

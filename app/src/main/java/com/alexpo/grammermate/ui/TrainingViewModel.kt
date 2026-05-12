@@ -1527,7 +1527,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return dailySessionHelper.advanceToNextBlock()
     }
 
-    private fun persistDailyVerbProgress(card: VerbDrillCard) {
+    fun persistDailyVerbProgress(card: VerbDrillCard) {
         val packId = _uiState.value.activePackId ?: return
         val store = VerbDrillStore(getApplication(), packId = packId)
         val comboKey = "|${card.tense ?: ""}"
