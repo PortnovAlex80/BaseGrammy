@@ -204,10 +204,11 @@ class NormalizerTest {
 
     @Test
     fun normalize_unicodeCharacters_preserved() {
-        // Юникодные символы сохраняются
+        // Юникодные символы сохраняются (кириллица не содержит диакритики)
         assertEquals("привет", Normalizer.normalize("Привет"))
-        assertEquals("café", Normalizer.normalize("Café"))
-        assertEquals("naïve", Normalizer.normalize("Naïve"))
+        // Diacritical marks are stripped: café → cafe, naïve → naive
+        assertEquals("cafe", Normalizer.normalize("Café"))
+        assertEquals("naive", Normalizer.normalize("Naïve"))
     }
 
     @Test

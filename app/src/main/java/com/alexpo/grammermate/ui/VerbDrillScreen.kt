@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -407,17 +406,6 @@ private fun DefaultVerbDrillInputControls(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Add to bad sentences list")
                     }
-                }
-                TextButton(
-                    onClick = {
-                        contract.hideCurrentCard()
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hide this card from lessons")
                 }
                 TextButton(
                     onClick = {

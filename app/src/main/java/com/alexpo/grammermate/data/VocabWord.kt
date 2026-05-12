@@ -25,7 +25,7 @@ data class WordMasteryState(
     val incorrectCount: Int = 0,            // total wrong answers
     val lastReviewDateMs: Long = 0L,        // epoch millis of last review
     val nextReviewDateMs: Long = 0L,        // computed: lastReviewDate + ladder[step] * DAY_MS
-    val isLearned: Boolean = false           // reached the last interval step (9)
+    val isLearned: Boolean = false           // reached LEARNED_THRESHOLD (step 3)
 ) {
     companion object {
         const val DAY_MS = 86_400_000L

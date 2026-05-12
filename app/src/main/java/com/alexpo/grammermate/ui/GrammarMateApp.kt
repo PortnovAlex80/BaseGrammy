@@ -222,6 +222,7 @@ fun GrammarMateApp() {
                     screen = AppScreen.HOME
                 }
                 BackHandler(enabled = screen == AppScreen.VOCAB_DRILL && !showSettings) {
+                    vm.refreshVocabMasteryCount()
                     screen = AppScreen.HOME
                 }
 

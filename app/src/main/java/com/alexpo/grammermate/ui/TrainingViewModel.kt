@@ -1530,12 +1530,26 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Advance the daily cursor offsets after a session is built.
+     * If the sentence offset exceeds the current lesson's card count,
+     * advances currentLessonIndex and resets sentenceOffset.
      */
     private fun advanceCursor(sentenceCount: Int) {
         val current = _uiState.value.dailyCursor
-        val advanced = current.copy(
-            sentenceOffset = current.sentenceOffset + sentenceCount
-        )
+        val newOffset = current.sentenceOffset + sentenceCount
+        val lessons = lessonStore.getLessons(_uiState.value.selectedLanguageId)
+        val currentLesson = lessons.getOrNull(current.currentLessonIndex)
+        val lessonSize = currentLesson?.cards?.size ?: 0
+
+        val advanced = if (lessonSize > 0 && newOffset >= lessonSize) {
+            // Current lesson exhausted — advance to next lesson, reset offset
+            val nextIndex = (current.currentLessonIndex + 1).coerceAtMost(lessons.size - 1)
+            current.copy(
+                currentLessonIndex = nextIndex,
+                sentenceOffset = 0
+            )
+        } else {
+            current.copy(sentenceOffset = newOffset)
+        }
         _uiState.update { it.copy(dailyCursor = advanced) }
     }
 
@@ -2387,9 +2401,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (total <= 0) return null
         val percent = (progress.toDouble() / total.toDouble()) * 100.0
         return when {
-            percent >= 100.0 -> BossReward.GOLD
-            percent > 75.0 -> BossReward.SILVER
-            percent > 50.0 -> BossReward.BRONZE
+            percent >= 90.0 -> BossReward.GOLD
+            percent >= 60.0 -> BossReward.SILVER
+            percent >= 30.0 -> BossReward.BRONZE
             else -> null
         }
     }

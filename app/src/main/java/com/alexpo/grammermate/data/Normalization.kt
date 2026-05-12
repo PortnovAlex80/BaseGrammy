@@ -3,7 +3,10 @@
 object Normalizer {
     fun normalize(input: String): String {
         val trimmed = input.trim().replace(Regex("\\s+"), " ")
-        val timeFixed = trimmed.replace(Regex("\\b(\\d{1,2}):\\d{2}\\b"), "$1")
+        // NFD decomposition + strip combining diacritical marks (e.g. "perche" == "perché")
+        val decomposed = java.text.Normalizer.normalize(trimmed, java.text.Normalizer.Form.NFD)
+        val noDiacritics = decomposed.replace(Regex("\\p{M}"), "")
+        val timeFixed = noDiacritics.replace(Regex("\\b(\\d{1,2}):\\d{2}\\b"), "$1")
         val lower = timeFixed.lowercase()
         val builder = StringBuilder()
         for (ch in lower) {

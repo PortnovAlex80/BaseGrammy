@@ -776,7 +776,7 @@ private fun VocabDrillCardBack(
                 }
             }
 
-            // Forms (for adjectives: msg, fsg, mpl, fpl)
+            // Forms — display depends on word type (pos)
             val forms = card.word.forms
             if (forms.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -794,14 +794,31 @@ private fun VocabDrillCardBack(
                             color = MaterialTheme.colorScheme.tertiary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val formItems: List<Pair<String, String?>> = when (card.word.pos) {
+                            "numbers" -> listOf(
+                                "m" to forms["form_m"],
+                                "f" to forms["form_f"]
+                            )
+                            "pronouns" -> listOf(
+                                "sg m" to forms["form_sg_m"],
+                                "sg f" to forms["form_sg_f"],
+                                "pl m" to forms["form_pl_m"],
+                                "pl f" to forms["form_pl_f"]
+                            )
+                            else -> listOf(
+                                "m sg" to forms["msg"],
+                                "f sg" to forms["fsg"],
+                                "m pl" to forms["mpl"],
+                                "f pl" to forms["fpl"]
+                            )
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            FormItem(label = "m sg", value = forms["msg"])
-                            FormItem(label = "f sg", value = forms["fsg"])
-                            FormItem(label = "m pl", value = forms["mpl"])
-                            FormItem(label = "f pl", value = forms["fpl"])
+                            formItems.forEach { (label, value) ->
+                                FormItem(label = label, value = value)
+                            }
                         }
                     }
                 }
@@ -838,8 +855,9 @@ private fun VocabDrillCardBack(
             // Mastery indicator
             Spacer(modifier = Modifier.height(12.dp))
             val step = card.mastery.intervalStepIndex
+            val learnedThreshold = 3
             val maxStep = 9
-            val stepLabel = if (step >= maxStep) "Learned" else "Step ${step + 1}/$maxStep"
+            val stepLabel = if (step >= learnedThreshold) "Learned" else "Step ${step + 1}/$maxStep"
             Text(
                 text = stepLabel,
                 style = MaterialTheme.typography.labelSmall,
