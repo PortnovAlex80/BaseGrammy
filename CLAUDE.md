@@ -439,3 +439,12 @@ All project documentation is in `docs/specification/`. When working on a specifi
 ### Rule: Read spec before modifying code
 
 Before modifying any component listed above, read the corresponding spec file. If the spec and code disagree, the CODE is the source of truth (specs may be outdated). Update the spec after code changes.
+
+### Rule: Update changelog on spec changes
+
+Whenever a specification file is created or modified, add an entry to `docs/specification/CHANGELOG.md` with:
+- Date
+- Version (matches app versionName)
+- Which file(s) changed
+- What changed (created / updated section X / fixed discrepancy Y)
+- Commit hash
