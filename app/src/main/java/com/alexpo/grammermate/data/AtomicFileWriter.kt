@@ -26,10 +26,8 @@ object AtomicFileWriter {
             output.write(text.toByteArray(charset))
             output.fd.sync()
         }
-        if (file.exists() && !file.delete()) {
-            tempFile.delete()
-            error("Failed to replace ${file.absolutePath}")
-        }
+        // On Android/Linux renameTo() atomically replaces the destination,
+        // so no explicit file.delete() is needed before the rename.
         if (!tempFile.renameTo(file)) {
             tempFile.delete()
             error("Failed to finalize ${file.absolutePath}")

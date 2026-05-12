@@ -299,64 +299,70 @@ class LessonStore(private val context: Context) {
     }
 
     private fun importPackFromTempDir(tempDir: File): LessonPack {
-        val manifestFile = File(tempDir, "manifest.json")
-        if (!manifestFile.exists()) {
-            tempDir.deleteRecursively()
-            error("Manifest not found")
-        }
-        val manifest = LessonPackManifest.fromJson(manifestFile.readText())
-        val languageId = manifest.language.lowercase().trim()
-        ensureLanguage(languageId)
-        // Don't delete all lessons - we'll do incremental update instead
-        // Only remove the old pack directory for this specific packId
-        removePacksForLanguage(manifest.packId, languageId)
-
-        val packDir = File(packsDir, manifest.packId)
-        if (packDir.exists()) {
-            packDir.deleteRecursively()
-        }
-        tempDir.copyRecursively(packDir, overwrite = true)
-        tempDir.deleteRecursively()
-
-        val lessonEntries = manifest.lessons
-            .filter { it.type != "verb_drill" }
-            .sortedBy { it.order }
-        lessonEntries.forEach { entry ->
-            val sourceFile = File(packDir, entry.file)
-            if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
-            val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
-            importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
-        }
-
-        // Import pack-scoped drill files (new pack-manifest drill sections)
-        importPackDrills(packDir, manifest)
-
-        importStoriesFromPack(packDir, languageId)
-        importVocabFromPack(packDir, languageId)
-
-        val updated = getInstalledPacks()
-            .filterNot { it.packId == manifest.packId }
-            .map {
-                val map = mutableMapOf(
-                    "packId" to it.packId,
-                    "packVersion" to it.packVersion,
-                    "languageId" to it.languageId,
-                    "importedAt" to it.importedAt
-                )
-                if (it.displayName != null) map["displayName"] = it.displayName
-                map
+        try {
+            val manifestFile = File(tempDir, "manifest.json")
+            if (!manifestFile.exists()) {
+                error("Manifest not found")
             }
-            .toMutableList()
-        val newEntry = mutableMapOf(
-            "packId" to manifest.packId,
-            "packVersion" to manifest.packVersion,
-                "languageId" to languageId,
-                "importedAt" to System.currentTimeMillis()
-            )
-        if (manifest.displayName != null) newEntry["displayName"] = manifest.displayName
-        updated.add(newEntry)
-        packsStore.write(updated)
-        return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis(), manifest.displayName)
+            val manifest = LessonPackManifest.fromJson(manifestFile.readText())
+            val languageId = manifest.language.lowercase().trim()
+            ensureLanguage(languageId)
+            // Don't delete all lessons - we'll do incremental update instead
+            // Only remove the old pack directory for this specific packId
+            removePacksForLanguage(manifest.packId, languageId)
+
+            val packDir = File(packsDir, manifest.packId)
+            if (packDir.exists()) {
+                packDir.deleteRecursively()
+            }
+            tempDir.copyRecursively(packDir, overwrite = true)
+            tempDir.deleteRecursively()
+
+            val lessonEntries = manifest.lessons
+                .filter { it.type != "verb_drill" }
+                .sortedBy { it.order }
+            lessonEntries.forEach { entry ->
+                val sourceFile = File(packDir, entry.file)
+                if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
+                val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
+                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
+            }
+
+            // Import pack-scoped drill files (new pack-manifest drill sections)
+            importPackDrills(packDir, manifest)
+
+            importStoriesFromPack(packDir, languageId)
+            importVocabFromPack(packDir, languageId)
+
+            val updated = getInstalledPacks()
+                .filterNot { it.packId == manifest.packId }
+                .map {
+                    val map = mutableMapOf(
+                        "packId" to it.packId,
+                        "packVersion" to it.packVersion,
+                        "languageId" to it.languageId,
+                        "importedAt" to it.importedAt
+                    )
+                    if (it.displayName != null) map["displayName"] = it.displayName
+                    map
+                }
+                .toMutableList()
+            val newEntry = mutableMapOf(
+                "packId" to manifest.packId,
+                "packVersion" to manifest.packVersion,
+                    "languageId" to languageId,
+                    "importedAt" to System.currentTimeMillis()
+                )
+            if (manifest.displayName != null) newEntry["displayName"] = manifest.displayName
+            updated.add(newEntry)
+            packsStore.write(updated)
+            return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis(), manifest.displayName)
+        } finally {
+            // Always clean up temp directory on any error
+            if (tempDir.exists()) {
+                tempDir.deleteRecursively()
+            }
+        }
     }
 
     fun getStoryQuizzes(lessonId: String, phase: StoryPhase, languageId: String): List<StoryQuiz> {

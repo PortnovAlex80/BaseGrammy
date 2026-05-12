@@ -1631,12 +1631,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun persistDailyVerbProgress(card: VerbDrillCard) {
         val packId = _uiState.value.activePackId ?: return
         val store = VerbDrillStore(getApplication(), packId = packId)
-        val comboKey = "|${card.tense ?: ""}"
+        val comboKey = "${card.group ?: ""}|${card.tense ?: ""}"
         val existing = store.loadProgress()[comboKey]
         val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
         val todayShown = (existing?.todayShownCardIds ?: emptySet()) + card.id
         val updated = VerbDrillComboProgress(
-            group = "",
+            group = card.group ?: "",
             tense = card.tense ?: "",
             totalCards = existing?.totalCards ?: 0,
             everShownCardIds = everShown,
