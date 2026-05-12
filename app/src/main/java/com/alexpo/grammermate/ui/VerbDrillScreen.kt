@@ -513,6 +513,17 @@ private fun DefaultVerbDrillInputControls(
                     provider.clearIncorrectFeedback()
                 }
                 scope.onInputChanged(newText)
+                // Auto-submit in keyboard mode when the typed text matches an accepted answer
+                if (contract.currentInputMode == InputMode.KEYBOARD &&
+                    contract.sessionActive &&
+                    scope.currentCard != null &&
+                    newText.isNotBlank()
+                ) {
+                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, scope.currentCard!!.acceptedAnswers)) {
+                        provider.submitAnswerWithInput(newText)
+                        scope.onInputChanged("")
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             label = { Text(text = "Your translation") },

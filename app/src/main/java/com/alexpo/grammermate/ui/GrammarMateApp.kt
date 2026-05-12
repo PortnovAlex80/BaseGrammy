@@ -3074,7 +3074,19 @@ private fun AnswerBox(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = state.inputText,
-            onValueChange = onInputChange,
+            onValueChange = { newText ->
+                onInputChange(newText)
+                // Auto-submit in keyboard mode when the typed text matches an accepted answer
+                if (state.inputMode == InputMode.KEYBOARD &&
+                    state.sessionState == SessionState.ACTIVE &&
+                    state.currentCard != null &&
+                    newText.isNotBlank()
+                ) {
+                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, state.currentCard!!.acceptedAnswers)) {
+                        onSubmit()
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             label = { Text(text = "Your translation") },
             enabled = hasCards,
