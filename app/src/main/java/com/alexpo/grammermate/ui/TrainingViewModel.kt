@@ -32,6 +32,8 @@ import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
+import com.alexpo.grammermate.data.VerbDrillCard
+import com.alexpo.grammermate.data.VerbDrillComboProgress
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.MasteryStore
@@ -1493,11 +1495,34 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun advanceDailyTask(): Boolean {
+        // Persist verb drill progress before advancing
+        val task = dailySessionHelper.getCurrentTask()
+        if (task is DailyTask.ConjugateVerb) {
+            persistDailyVerbProgress(task.card)
+        }
         return dailySessionHelper.nextTask()
     }
 
     fun advanceDailyBlock(): Boolean {
         return dailySessionHelper.advanceToNextBlock()
+    }
+
+    private fun persistDailyVerbProgress(card: VerbDrillCard) {
+        val packId = _uiState.value.activePackId ?: return
+        val store = VerbDrillStore(getApplication(), packId = packId)
+        val comboKey = "|${card.tense ?: ""}"
+        val existing = store.loadProgress()[comboKey]
+        val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
+        val todayShown = (existing?.todayShownCardIds ?: emptySet()) + card.id
+        val updated = VerbDrillComboProgress(
+            group = "",
+            tense = card.tense ?: "",
+            totalCards = existing?.totalCards ?: 0,
+            everShownCardIds = everShown,
+            todayShownCardIds = todayShown,
+            lastDate = java.time.LocalDate.now().toString()
+        )
+        store.upsertComboProgress(comboKey, updated)
     }
 
     fun repeatDailyBlock(): Boolean {

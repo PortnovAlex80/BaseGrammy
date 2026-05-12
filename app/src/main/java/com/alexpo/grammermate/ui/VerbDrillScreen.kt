@@ -1159,13 +1159,6 @@ private fun VerbDrillCompletionScreen(
     val state by viewModel.uiState.collectAsState()
     val session = state.session ?: return
 
-    LaunchedEffect(Unit) {
-        delay(1000L)
-        if (!state.allDoneToday) {
-            viewModel.nextBatch()
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1189,6 +1182,15 @@ private fun VerbDrillCompletionScreen(
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Spacer(modifier = Modifier.height(24.dp))
+        if (!state.allDoneToday) {
+            Button(
+                onClick = { viewModel.nextBatch() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Ещё")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         OutlinedButton(
             onClick = onExit,
             modifier = Modifier.fillMaxWidth()
