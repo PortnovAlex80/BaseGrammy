@@ -3,6 +3,7 @@ package com.alexpo.grammermate.ui
 import android.app.Application
 import android.net.Uri
 import android.os.SystemClock
+import java.io.File
 import com.alexpo.grammermate.data.AsrEngine
 import com.alexpo.grammermate.data.AsrModelManager
 import com.alexpo.grammermate.data.AsrState
@@ -1131,6 +1132,51 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(installedPacks = lessonStore.getInstalledPacks()) }
     }
 
+    /**
+     * Reset ALL progress: mastery, daily practice, verb drill, vocab mastery, training progress.
+     */
+    fun resetAllProgress() {
+        // Clear training progress file
+        progressStore.clear()
+
+        // Clear mastery (card show tracking)
+        masteryStore.clear()
+
+        // Clear verb drill and word mastery for every installed pack
+        val packs = lessonStore.getInstalledPacks()
+        val baseDir = File(getApplication<Application>().filesDir, "grammarmate")
+        for (pack in packs) {
+            val verbDrillFile = File(baseDir, "drills/${pack.packId}/verb_drill_progress.yaml")
+            if (verbDrillFile.exists()) verbDrillFile.delete()
+
+            val wordMasteryFile = File(baseDir, "drills/${pack.packId}/word_mastery.yaml")
+            if (wordMasteryFile.exists()) wordMasteryFile.delete()
+        }
+
+        // Clear legacy (pack-less) stores if they exist
+        wordMasteryStore.saveAll(emptyMap())
+
+        // Reset UI state
+        _uiState.update {
+            it.copy(
+                dailySession = DailySessionState(),
+                currentIndex = 0,
+                correctCount = 0,
+                incorrectCount = 0,
+                sessionState = SessionState.PAUSED,
+                inputText = "",
+                lastResult = null,
+                answerText = null,
+                incorrectAttemptsForCard = 0
+            )
+        }
+
+        // Refresh lessons to reflect reset mastery (flower states)
+        refreshLessons(null)
+
+        Log.d(logTag, "All progress reset: mastery, daily, verb drill, vocab mastery, training progress")
+    }
+
     fun deletePack(packId: String) {
         val pack = lessonStore.getInstalledPacks().firstOrNull { it.packId == packId } ?: return
         val languageId = pack.languageId
@@ -2254,8 +2300,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 eliteBestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds),
                 currentScreen = state.currentScreen,
                 activePackId = state.activePackId,
-                dailyLevel = if (state.dailySession.active) state.dailySession.level else 0,
-                dailyTaskIndex = if (state.dailySession.active) state.dailySession.taskIndex else 0
+                dailyLevel = state.dailySession.level,
+                dailyTaskIndex = state.dailySession.taskIndex
             )
         )
 

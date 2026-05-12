@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -254,7 +255,8 @@ fun GrammarMateApp() {
                     onSetTtsSpeed = vm::setTtsSpeed,
                     onSetRuTextScale = vm::setRuTextScale,
                     onSetUseOfflineAsr = vm::setUseOfflineAsr,
-                    onStartAsrDownload = { vm.startAsrDownload() }
+                    onStartAsrDownload = { vm.startAsrDownload() },
+                    onResetAllProgress = vm::resetAllProgress
                 )
 
             if (showWelcomeDialog) {
@@ -1944,7 +1946,8 @@ private fun SettingsSheet(
     onSetTtsSpeed: (Float) -> Unit,
     onSetRuTextScale: (Float) -> Unit,
     onSetUseOfflineAsr: (Boolean) -> Unit,
-    onStartAsrDownload: () -> Unit
+    onStartAsrDownload: () -> Unit,
+    onResetAllProgress: () -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -2238,6 +2241,15 @@ private fun SettingsSheet(
                 Icon(Icons.Default.Delete, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Delete all lessons")
+            }
+            OutlinedButton(
+                onClick = { onResetAllProgress() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
+            ) {
+                Icon(Icons.Filled.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Сбросить весь прогресс")
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "CSV format", style = MaterialTheme.typography.labelLarge)
