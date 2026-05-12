@@ -16,7 +16,6 @@ import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.LessonSchedule
-import com.alexpo.grammermate.data.MixedReviewScheduler
 import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.AppConfig
 import com.alexpo.grammermate.data.Normalizer
@@ -73,6 +72,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import com.alexpo.grammermate.ui.helpers.AnswerValidator
+import com.alexpo.grammermate.ui.helpers.WordBankGenerator
+import com.alexpo.grammermate.ui.helpers.CardProvider
+import com.alexpo.grammermate.ui.helpers.CardSetResult
+import com.alexpo.grammermate.ui.helpers.StreakManager
 import com.alexpo.grammermate.ui.helpers.DailySessionComposer
 import com.alexpo.grammermate.ui.helpers.DailySessionHelper
 import com.alexpo.grammermate.ui.helpers.TrainingStateAccess
@@ -119,7 +123,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var subLessonTotal: Int = 0
     private var subLessonCount: Int = 0
     private var lessonSchedules: Map<String, LessonSchedule> = emptyMap()
-    private var scheduleKey: String = ""
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
     private var forceBackupOnSave: Boolean = false
@@ -145,6 +148,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         override fun saveProgress() = this@TrainingViewModel.saveProgress()
     })
+
+    private val answerValidator = AnswerValidator()
+    private val streakManager = StreakManager(streakStore)
+    private val cardProvider = CardProvider(
+        subLessonSize = subLessonSize,
+        subLessonSizeMin = subLessonSizeMin,
+        subLessonSizeMax = subLessonSizeMax,
+        eliteSizeMultiplier = eliteSizeMultiplier,
+        eliteStepCount = eliteStepCount
+    )
 
 
     init {
@@ -396,7 +409,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         sessionCards = emptyList()
         bossCards = emptyList()
         eliteCards = emptyList()
-        scheduleKey = "" // Force rebuild schedules
         val lessons = lessonStore.getLessons(languageId)
         val selectedLessonId = lessons.firstOrNull()?.id
         // Derive activePackId for the new language from the selected lesson.
@@ -626,8 +638,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (state.sessionState != SessionState.ACTIVE) return SubmitResult(false, false)
         if (state.inputText.isBlank() && !state.testMode) return SubmitResult(false, false)
         val card = currentCard() ?: return SubmitResult(false, false)
-        val normalizedInput = Normalizer.normalize(state.inputText)
-        val accepted = state.testMode || card.acceptedAnswers.any { Normalizer.normalize(it) == normalizedInput }
+        val validationResult = answerValidator.validate(state.inputText, card.acceptedAnswers, state.testMode)
+        val accepted = validationResult.isCorrect
         val voiceStartMs = if (state.inputMode == InputMode.VOICE) state.voicePromptStartMs else null
         val voiceDurationMs = voiceStartMs?.let { SystemClock.elapsedRealtime() - it }
         val voiceWords = if (voiceStartMs != null) countMetricWords(state.inputText) else 0
@@ -1292,12 +1304,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun rebuildSchedules(lessons: List<Lesson>) {
-        val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        val key = "${lessonKey}|${blockSize}"
-        if (key == scheduleKey) return
-        scheduleKey = key
-        lessonSchedules = MixedReviewScheduler(blockSize).build(lessons)
+        lessonSchedules = cardProvider.buildSchedules(lessons, lessonSchedules)
     }
 
     private fun buildSessionCards() {
@@ -1305,57 +1312,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _uiState.value
         val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val lessons = state.lessons
-        if (state.mode == TrainingMode.LESSON) {
-            val schedule = lessonSchedules[state.selectedLessonId]
-            val subLessons = schedule?.subLessons.orEmpty()
-            subLessonCount = subLessons.size
 
-            // Calculate completed sub-lessons based on shown cards
-            val mastery = state.selectedLessonId?.let {
-                masteryStore.get(it, state.selectedLanguageId)
-            }
-            val completedCount = calculateCompletedSubLessons(subLessons, mastery, state.selectedLessonId)
-
-            val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
-            val subLesson = subLessons.getOrNull(activeIndex)
-            sessionCards = (subLesson?.cards ?: emptyList()).filter { it.id !in hiddenIds }
-            subLessonTotal = sessionCards.size
-            val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
-            val card = sessionCards.getOrNull(safeIndex)
-            if (card == null && state.sessionState == SessionState.ACTIVE) {
-                pauseTimer()
-            }
-            _uiState.update {
-                it.copy(
-                    currentIndex = safeIndex,
-                    currentCard = card,
-                    sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
-                    subLessonTotal = subLessonTotal,
-                    subLessonCount = subLessonCount,
-                    activeSubLessonIndex = activeIndex,
-                    completedSubLessonCount = completedCount,
-                    subLessonTypes = subLessons.map { item -> item.type }
-                )
-            }
-            return
+        val mastery = state.selectedLessonId?.let {
+            masteryStore.get(it, state.selectedLanguageId)
         }
+        val result = cardProvider.buildSessionCards(
+            lessons = lessons,
+            mode = state.mode,
+            selectedLessonId = state.selectedLessonId,
+            schedules = lessonSchedules,
+            activeSubLessonIndex = state.activeSubLessonIndex,
+            hiddenCardIds = hiddenIds,
+            mastery = mastery
+        )
 
-        val lessonCards = when (state.mode) {
-            TrainingMode.ALL_SEQUENTIAL -> lessons.flatMap { it.cards }.filter { it.id !in hiddenIds }
-            // ALL_MIXED (Review) uses a random subset across all cards
-            TrainingMode.ALL_MIXED -> {
-                val reviewLimit = 300
-                lessons.flatMap { it.allCards }.filter { it.id !in hiddenIds }.shuffled().take(reviewLimit)
-            }
-            else -> emptyList()
-        }
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
-        subLessonCount = if (lessonCards.isEmpty()) 0 else (lessonCards.size + blockSize - 1) / blockSize
-        val activeIndex = state.activeSubLessonIndex.coerceIn(0, (subLessonCount - 1).coerceAtLeast(0))
-        val blockStart = activeIndex * blockSize
-        val block = lessonCards.drop(blockStart).take(blockSize)
-        sessionCards = block
-        subLessonTotal = block.size
+        sessionCards = result.cards
+        subLessonTotal = result.subLessonTotal
+        subLessonCount = result.subLessonCount
         val safeIndex = _uiState.value.currentIndex.coerceIn(0, (sessionCards.size - 1).coerceAtLeast(0))
         val card = sessionCards.getOrNull(safeIndex)
         if (card == null && state.sessionState == SessionState.ACTIVE) {
@@ -1366,10 +1339,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentIndex = safeIndex,
                 currentCard = card,
                 sessionState = if (card == null) SessionState.PAUSED else state.sessionState,
-                subLessonTotal = subLessonTotal,
-                subLessonCount = subLessonCount,
-                activeSubLessonIndex = activeIndex,
-                subLessonTypes = emptyList()
+                subLessonTotal = result.subLessonTotal,
+                subLessonCount = result.subLessonCount,
+                activeSubLessonIndex = result.activeSubLessonIndex,
+                completedSubLessonCount = result.completedSubLessonCount,
+                subLessonTypes = result.subLessonTypes
             )
         }
     }
@@ -1765,8 +1739,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun submitDailySentenceAnswer(input: String): Boolean {
         val task = dailySessionHelper.getCurrentTask() as? DailyTask.TranslateSentence ?: return false
         val card = task.card
-        val normalized = Normalizer.normalize(input)
-        val correct = card.acceptedAnswers.any { Normalizer.normalize(it) == normalized }
+        val correct = answerValidator.validate(input, card.acceptedAnswers).isCorrect
         if (correct) {
             playSuccessSound()
         } else {
@@ -1778,8 +1751,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun submitDailyVerbAnswer(input: String): Boolean {
         val task = dailySessionHelper.getCurrentTask() as? DailyTask.ConjugateVerb ?: return false
         val card = task.card
-        val normalized = Normalizer.normalize(input)
-        val correct = card.acceptedAnswers.any { Normalizer.normalize(it) == normalized }
+        val correct = answerValidator.validate(input, card.acceptedAnswers).isCorrect
         if (correct) {
             playSuccessSound()
         } else {
@@ -2120,10 +2092,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val entry = state.currentVocab ?: return
         val input = inputOverride ?: state.vocabInputText
         if (input.isBlank() && !state.testMode) return
-        val normalizedInput = Normalizer.normalize(input)
-        val accepted = state.testMode || entry.targetText.split("+")
-            .map { Normalizer.normalize(it) }
-            .any { it == normalizedInput }
+        val accepted = answerValidator.validate(input, listOf(entry.targetText), state.testMode).isCorrect
         if (accepted) {
             playSuccessTone()
             // Save progress: record correct answer and completed index
@@ -2240,21 +2209,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             return
         }
         val selectedIndex = lessons.indexOfFirst { it.id == selectedId }
-        val maxBossCards = 300
-        val cards = when (type) {
-            BossType.LESSON -> {
-                val lessonCards = lessons.firstOrNull { it.id == selectedId }?.cards ?: emptyList()
-                lessonCards.shuffled().take(maxBossCards)
-            }
-            BossType.MEGA -> {
-                if (selectedIndex <= 0) emptyList()
-                else lessons.take(selectedIndex).flatMap { it.cards }.shuffled().take(maxBossCards)
-            }
-            BossType.ELITE -> {
-                val eliteSize = eliteSubLessonSize() * eliteStepCount
-                lessons.flatMap { it.cards }.shuffled().take(eliteSize)
-            }
-        }
+        val cards = cardProvider.buildBossCards(lessons, type, selectedId, selectedIndex)
         if (cards.isEmpty()) {
             val message = if (type == BossType.MEGA) {
                 "Mega boss is available after the first lesson"
@@ -2591,10 +2546,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun eliteSubLessonSize(): Int {
-        return kotlin.math.ceil(subLessonSize * eliteSizeMultiplier).toInt()
-    }
-
     private fun calculateSpeedPerMinute(activeMs: Long, words: Int): Double {
         val minutes = activeMs / 60000.0
         if (minutes <= 0.0) return 0.0
@@ -2604,7 +2555,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun buildEliteCards(): List<SentenceCard> {
         val cards = _uiState.value.lessons.flatMap { it.cards }
         if (cards.isEmpty()) return emptyList()
-        return cards.shuffled().take(eliteSubLessonSize())
+        val eliteSize = kotlin.math.ceil(subLessonSize * eliteSizeMultiplier).toInt()
+        return cards.shuffled().take(eliteSize)
     }
 
     private fun countMetricWords(text: String): Int {
@@ -3066,15 +3018,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return completed
     }
     /**
-     * Генерирует word bank из правильного ответа
-     */
-    private fun generateWordBank(correctAnswer: String, extraWords: List<String> = emptyList()): List<String> {
-        val words = correctAnswer.split(" ").filter { it.isNotBlank() }
-        val extras = extraWords.filter { it.isNotBlank() && !words.contains(it) }
-        return (words + extras).shuffled()
-    }
-
-    /**
      * Обновляет word bank для текущей карточки
      */
     private fun updateWordBank() {
@@ -3090,19 +3033,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val correctAnswer = card.acceptedAnswers.firstOrNull() ?: ""
-        val correctWords = correctAnswer.split(" ").map { it.trim() }.filter { it.isNotBlank() }
-        val normalizedCorrect = correctWords.map { Normalizer.normalize(it) }.toSet()
-        val distractorPool = _uiState.value.lessons
-            .flatMap { it.cards }
-            .filter { it.id != card.id }
-            .flatMap { it.acceptedAnswers }
-            .flatMap { it.split(" ") }
-            .map { it.trim() }
-            .filter { it.length >= 3 }
-            .filter { Normalizer.normalize(it) !in normalizedCorrect }
-            .distinct()
-        val extraWords = distractorPool.shuffled().take(3)
-        val wordBank = generateWordBank(correctAnswer, extraWords)
+        val allCards = _uiState.value.lessons.flatMap { it.cards }
+        val wordBank = WordBankGenerator.generateForSentence(correctAnswer, allCards)
 
         _uiState.update {
             it.copy(
@@ -3210,8 +3142,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessons = _uiState.value.lessons
         val nowMs = System.currentTimeMillis()
 
+        val masteryMap = lessons.associate { lesson ->
+            lesson.id to masteryStore.get(lesson.id, languageId)
+        }
+
         val flowerStates = lessons.associate { lesson ->
-            val mastery = masteryStore.get(lesson.id, languageId)
+            val mastery = masteryMap[lesson.id]
             val flower = FlowerCalculator.calculate(mastery, lesson.cards.size)
             Log.d(logTag, "Flower for lesson ${lesson.id}: mastery=${mastery?.uniqueCardShows ?: 0}, state=${flower.state}, scale=${flower.scaleMultiplier}")
             lesson.id to flower
@@ -3220,10 +3156,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val currentLessonId = _uiState.value.selectedLessonId
         val currentFlower = currentLessonId?.let { flowerStates[it] }
         val currentShownCount = currentLessonId?.let { lessonId ->
-            masteryStore.get(lessonId, languageId)?.shownCardIds?.size ?: 0
+            masteryMap[lessonId]?.shownCardIds?.size ?: 0
         } ?: 0
         val ladderRows = lessons.mapIndexed { index, lesson ->
-            val mastery = masteryStore.get(lesson.id, languageId)
+            val mastery = masteryMap[lesson.id]
             val metrics = LessonLadderCalculator.calculate(mastery, nowMs)
             LessonLadderRow(
                 index = index + 1,
@@ -3268,20 +3204,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     private fun updateStreak() {
         val languageId = _uiState.value.selectedLanguageId
-        val (updatedStreak, isNewStreak) = streakStore.recordSubLessonCompletion(languageId)
+        val (updatedStreak, isNewStreak) = streakManager.recordSubLessonCompletion(languageId)
 
         if (isNewStreak && updatedStreak.currentStreak > 0) {
-            // Генерируем сообщение о streak
-            val message = when {
-                updatedStreak.currentStreak == 1 -> "\uD83D\uDD25 Great start! Day 1 streak!"
-                updatedStreak.currentStreak == 3 -> "\uD83D\uDD25 3 days streak! You're on fire!"
-                updatedStreak.currentStreak == 7 -> "\uD83D\uDD25 7 days streak! One week! Amazing!"
-                updatedStreak.currentStreak == 14 -> "\uD83D\uDD25 14 days streak! Two weeks! Incredible!"
-                updatedStreak.currentStreak == 30 -> "\uD83D\uDD25 30 days streak! One month! Outstanding!"
-                updatedStreak.currentStreak == 100 -> "\uD83D\uDD25 100 days streak! You're a legend!"
-                updatedStreak.currentStreak % 10 == 0 -> "\uD83D\uDD25 ${updatedStreak.currentStreak} days streak! Keep it up!"
-                else -> "\uD83D\uDD25 ${updatedStreak.currentStreak} days streak!"
-            }
+            val message = streakManager.getCelebrationMessage(updatedStreak.currentStreak)
 
             _uiState.update {
                 it.copy(
