@@ -252,6 +252,7 @@ private fun VocabDrillSelectionScreen(
                     "verbs" -> "Verbs"
                     "adjectives" -> "Adj."
                     "adverbs" -> "Adv."
+                    "numbers" -> "Numbers"
                     else -> pos.replaceFirstChar { it.uppercase() }
                 }
                 FilterChip(
@@ -313,6 +314,7 @@ private fun VocabDrillSelectionScreen(
                                     "verbs" -> "Verbs"
                                     "adjectives" -> "Adj."
                                     "adverbs" -> "Adv."
+                                    "numbers" -> "Numbers"
                                     else -> pos.replaceFirstChar { it.uppercase() }
                                 }
                                 "$label: $count"
@@ -1100,6 +1102,7 @@ private fun PosBadge(pos: String) {
         "verbs" -> "verb" to MaterialTheme.colorScheme.secondaryContainer
         "adjectives" -> "adj." to MaterialTheme.colorScheme.tertiaryContainer
         "adverbs" -> "adv." to MaterialTheme.colorScheme.errorContainer
+        "numbers" -> "num." to MaterialTheme.colorScheme.surfaceVariant
         else -> pos to MaterialTheme.colorScheme.surfaceVariant
     }
     Card(

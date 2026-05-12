@@ -187,7 +187,9 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         return allWords.filter { word ->
             (state.selectedPos == null || word.pos == state.selectedPos) &&
             word.rank >= state.rankMin &&
-            word.rank <= state.rankMax
+            word.rank <= state.rankMax &&
+            // Numbers only appear when explicitly selected via filter
+            (state.selectedPos != null || word.pos != "numbers")
         }
     }
 

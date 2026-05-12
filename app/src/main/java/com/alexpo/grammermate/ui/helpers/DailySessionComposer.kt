@@ -414,7 +414,9 @@ class DailySessionComposer(
             }
         }
 
-        return words.sortedBy { it.rank }
+        // Exclude numbers from daily practice vocab block — they should only
+        // appear when the user explicitly selects the Numbers filter in Vocab Drill.
+        return words.filter { it.pos != "numbers" }.sortedBy { it.rank }
     }
 
     private fun loadVerbDrillCards(packId: String, languageId: String): List<VerbDrillCard> {
