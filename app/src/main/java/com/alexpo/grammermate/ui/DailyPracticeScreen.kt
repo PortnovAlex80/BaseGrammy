@@ -326,7 +326,8 @@ private fun DailyTrainingCardSession(
     ) {
         if (provider.currentInputMode == InputMode.VOICE &&
             provider.sessionActive &&
-            provider.currentCard != null
+            provider.currentCard != null &&
+            provider.progress.current > 1
         ) {
             if (provider.showIncorrectFeedback) {
                 kotlinx.coroutines.delay(1200)
@@ -976,7 +977,7 @@ private fun BlockSparkleOverlay(
     val message = if (isLastBlock) "Daily practice complete!" else "Next: $blockLabel"
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(2000)
+        kotlinx.coroutines.delay(800)
         onDismiss()
     }
 

@@ -53,6 +53,8 @@ import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.UserProfile
 import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.WordMasteryStore
+import com.alexpo.grammermate.data.WordMasteryState
+import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
@@ -117,6 +119,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
     private var forceBackupOnSave: Boolean = false
+    private var prebuiltDailySession: List<DailyTask>? = null
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -309,6 +312,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             ttsEngine.state.collect { ttsState ->
                 _uiState.update { it.copy(ttsState = ttsState) }
+            }
+        }
+
+        // Pre-build daily practice session in background for faster start
+        viewModelScope.launch(Dispatchers.IO) {
+            val state = _uiState.value
+            val packId = state.activePackId
+            val langId = state.selectedLanguageId
+            val lessonId = state.selectedLessonId
+            if (packId != null && lessonId != null) {
+                val lessonLevel = (state.lessons.indexOfFirst { it.id == lessonId } + 1).coerceIn(1, 12)
+                val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+                val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+                val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+                val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+                val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+                if (tasks.isNotEmpty()) {
+                    prebuiltDailySession = tasks
+                }
             }
         }
     }
@@ -1357,10 +1379,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun hasResumableDailySession(): Boolean {
         val progress = progressStore.load()
-        return progress.dailyLevel > 0 && progress.dailyTaskIndex > 0
+        return progress.dailyLevel > 0
     }
 
     fun startDailyPractice(lessonLevel: Int): Boolean {
+        // Try pre-built session first
+        val cached = prebuiltDailySession
+        if (cached != null && cached.isNotEmpty()) {
+            dailySessionHelper.startDailySession(cached, lessonLevel)
+            prebuiltDailySession = null
+            return true
+        }
+        // Fallback to synchronous build
         val state = _uiState.value
         val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
@@ -1371,6 +1401,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
         val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
         if (tasks.isEmpty()) return false
 
         dailySessionHelper.startDailySession(tasks, lessonLevel)
@@ -1433,6 +1464,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun cancelDailySession() {
         dailySessionHelper.endSession()
+    }
+
+    /**
+     * Record an SRS rating for the current vocab flashcard in Daily Practice.
+     * Rating: 0=Again, 1=Hard, 2=Good, 3=Easy — mirrors VocabDrillViewModel.answerRating logic.
+     */
+    fun rateVocabCard(rating: Int) {
+        val task = dailySessionHelper.getCurrentTask() as? DailyTask.VocabFlashcard ?: return
+        val wordId = task.word.id
+        val state = _uiState.value
+        val packId = state.activePackId ?: return
+        val store = WordMasteryStore(getApplication(), packId = packId)
+        val current = store.getMastery(wordId) ?: WordMasteryState.new(wordId)
+        val now = System.currentTimeMillis()
+        val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1
+        val newStepIndex = when (rating) {
+            0 -> 0  // Again — reset
+            1 -> current.intervalStepIndex  // Hard — stay
+            2 -> (current.intervalStepIndex + 1).coerceIn(0, maxStep)  // Good — +1
+            else -> (current.intervalStepIndex + 2).coerceIn(0, maxStep)  // Easy — +2
+        }
+        val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
+        val LEARNED_THRESHOLD = 3
+        val isLearned = newStepIndex >= LEARNED_THRESHOLD
+        val updated = current.copy(
+            intervalStepIndex = newStepIndex,
+            correctCount = current.correctCount + (if (rating != 0) 1 else 0),
+            incorrectCount = current.incorrectCount + (if (rating == 0) 1 else 0),
+            lastReviewDateMs = now,
+            nextReviewDateMs = newNextReview,
+            isLearned = isLearned
+        )
+        store.upsertMastery(updated)
     }
 
     fun getDailyCurrentTask(): DailyTask? {

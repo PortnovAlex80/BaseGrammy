@@ -39,10 +39,10 @@ class DailyPracticeSessionProvider(
     private val onExit: () -> Unit = {}
 ) : CardSessionContract {
 
-    /** All tasks matching the requested block type, limited to 5 cards. */
+    /** All tasks matching the requested block type, capped by the global per-block limit. */
     private val blockCards: List<DailyTask> = tasks
         .filter { it.blockType == blockType }
-        .take(5)
+        .take(DailySessionComposer.CARDS_PER_BLOCK)
 
     private var currentIndex: Int by mutableStateOf(0)
     private var _pendingCard: SessionCard? by mutableStateOf(null)

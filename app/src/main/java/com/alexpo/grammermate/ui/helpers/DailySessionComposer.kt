@@ -28,9 +28,10 @@ class DailySessionComposer(
 ) {
 
     companion object {
-        const val SENTENCE_COUNT = 10
-        const val VOCAB_COUNT = 10
-        const val VERB_COUNT = 10
+        const val CARDS_PER_BLOCK = 10
+        const val SENTENCE_COUNT = CARDS_PER_BLOCK
+        const val VOCAB_COUNT = CARDS_PER_BLOCK
+        const val VERB_COUNT = CARDS_PER_BLOCK
 
         val TENSE_LADDER: Map<Int, List<String>> = mapOf(
             1  to listOf("Presente"),
@@ -125,8 +126,8 @@ class DailySessionComposer(
         packId: String,
         languageId: String
     ): List<DailyTask.VocabFlashcard> {
-        val rankMin = (lessonLevel - 1) * 5 + 1
-        val rankMax = lessonLevel * 5
+        val rankMin = (lessonLevel - 1) * 10 + 1
+        val rankMax = lessonLevel * 10
 
         val allWords = loadVocabWords(packId, languageId)
         val inRange = allWords.filter { it.rank in rankMin..rankMax }

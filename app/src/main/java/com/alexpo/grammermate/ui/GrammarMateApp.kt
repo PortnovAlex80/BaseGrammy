@@ -374,7 +374,7 @@ fun GrammarMateApp() {
                         onShowSentenceAnswer = vm::getDailySentenceAnswer,
                         onShowVerbAnswer = vm::getDailyVerbAnswer,
                         onFlipVocabCard = { /* no-op: flip tracked locally */ },
-                        onRateVocabCard = { _ -> /* rating recorded locally */ },
+                        onRateVocabCard = { rating -> vm.rateVocabCard(rating) },
                         onAdvance = vm::advanceDailyTask,
                         onAdvanceBlock = { vm.advanceDailyBlock() },
                         onRepeatBlock = { vm.repeatDailyBlock() },
