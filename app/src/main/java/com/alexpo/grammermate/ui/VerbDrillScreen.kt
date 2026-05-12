@@ -85,7 +85,8 @@ import com.alexpo.grammermate.data.VerbDrillUiState
 @Composable
 fun VerbDrillScreen(
     viewModel: VerbDrillViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -112,7 +113,8 @@ fun VerbDrillScreen(
         VerbDrillSessionWithCardSession(
             provider = provider,
             viewModel = viewModel,
-            onExit = viewModel::exitSession
+            onExit = viewModel::exitSession,
+            hintLevel = hintLevel
         )
     } else {
         VerbDrillSelectionScreen(
@@ -131,7 +133,8 @@ fun VerbDrillScreen(
 private fun VerbDrillSessionWithCardSession(
     provider: VerbDrillCardSessionProvider,
     viewModel: VerbDrillViewModel,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     var showVerbSheet by remember { mutableStateOf(false) }
     var sheetVerb by remember { mutableStateOf<String?>(null) }
@@ -154,6 +157,7 @@ private fun VerbDrillSessionWithCardSession(
 
     TrainingCardSession(
         contract = provider,
+        hintLevel = hintLevel,
         header = {
             // Custom header: back arrow + "Verb Drill" title (no settings gear)
             Row(
@@ -197,8 +201,8 @@ private fun VerbDrillSessionWithCardSession(
                         }
                     }
 
-                    // Verb + tense hint chips
-                    if (!verbText.isNullOrBlank()) {
+                    // Verb + tense hint chips -- hidden on HARD
+                    if (!verbText.isNullOrBlank() && hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             SuggestionChip(
@@ -246,7 +250,8 @@ private fun VerbDrillSessionWithCardSession(
         inputControls = {
             DefaultVerbDrillInputControls(
                 provider = provider,
-                scope = this
+                scope = this,
+                hintLevel = hintLevel
             )
         },
         completionScreen = {
@@ -293,7 +298,8 @@ private fun VerbDrillSessionWithCardSession(
 @Composable
 private fun DefaultVerbDrillInputControls(
     provider: VerbDrillCardSessionProvider,
-    scope: TrainingCardSessionScope
+    scope: TrainingCardSessionScope,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val contract = scope.contract
     val hasCards = scope.currentCard != null
@@ -448,9 +454,9 @@ private fun DefaultVerbDrillInputControls(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text — shown when eye button pressed or 3 wrong attempts
+        // Hint answer text -- only on EASY
         // Input controls remain visible below this text
-        if (provider.hintAnswer != null) {
+        if (provider.hintAnswer != null && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -559,8 +565,8 @@ private fun DefaultVerbDrillInputControls(
             )
         }
 
-        // Word Bank UI
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
+        // Word Bank UI -- only on EASY
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
             val wordBankWords = contract.getWordBankWords()
             val selectedWords = contract.getSelectedWords()
             if (wordBankWords.isNotEmpty()) {
@@ -637,30 +643,34 @@ private fun DefaultVerbDrillInputControls(
                 ) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                 }
-                // Word bank mode button
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                // Word bank mode button -- only on EASY
+                if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+                    FilledTonalIconButton(
+                        onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                        enabled = canSelectInputMode
+                    ) {
+                        Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                    }
                 }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Show answer button — disabled when hint already shown
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards && provider.hintAnswer == null
+                // Show answer button -- only on EASY, disabled when hint already shown
+                if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                        state = rememberTooltipState()
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                    }
+                        IconButton(
+                            onClick = { if (hasCards) contract.showAnswer() },
+                            enabled = hasCards && provider.hintAnswer == null
+                        ) {
+                            Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        }
+                }
                 }
                 if (contract.supportsFlagging) {
                     TooltipBox(

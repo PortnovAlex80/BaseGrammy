@@ -76,7 +76,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun VocabDrillScreen(
     viewModel: VocabDrillViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -156,7 +157,8 @@ fun VocabDrillScreen(
                 onFlagBadSentence = viewModel::flagBadSentence,
                 onUnflagBadSentence = viewModel::unflagBadSentence,
                 isBadSentence = viewModel::isBadSentence,
-                onExportBadSentences = viewModel::exportBadSentences
+                onExportBadSentences = viewModel::exportBadSentences,
+                hintLevel = hintLevel
             )
         }
     } else {
@@ -378,7 +380,8 @@ private fun VocabDrillCardScreen(
     onFlagBadSentence: () -> Unit = {},
     onUnflagBadSentence: () -> Unit = {},
     isBadSentence: () -> Boolean = { false },
-    onExportBadSentences: () -> String? = { null }
+    onExportBadSentences: () -> String? = { null },
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val card = session.cards.getOrElse(session.currentIndex) { return }
     val totalCards = session.cards.size
@@ -462,7 +465,8 @@ private fun VocabDrillCardScreen(
                 card = card,
                 direction = session.direction,
                 ttsState = ttsState,
-                onSpeak = onSpeak
+                onSpeak = onSpeak,
+                hintLevel = hintLevel
             )
         } else {
             VocabDrillCardFront(
@@ -474,7 +478,8 @@ private fun VocabDrillCardScreen(
                 voiceRecognizedText = session.voiceRecognizedText,
                 voiceAttempts = session.voiceAttempts,
                 onSpeak = onSpeak,
-                onStartVoice = onStartVoice
+                onStartVoice = onStartVoice,
+                hintLevel = hintLevel
             )
         }
 
@@ -699,7 +704,8 @@ private fun VocabDrillCardFront(
     voiceRecognizedText: String?,
     voiceAttempts: Int,
     onSpeak: (String) -> Unit,
-    onStartVoice: () -> Unit
+    onStartVoice: () -> Unit,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -721,13 +727,15 @@ private fun VocabDrillCardFront(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // POS badge + rank
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PosBadge(pos = card.word.pos)
-                RankBadge(rank = card.word.rank)
+            // POS badge + rank -- hidden on HARD
+            if (hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PosBadge(pos = card.word.pos)
+                    RankBadge(rank = card.word.rank)
+                }
             }
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -815,7 +823,8 @@ private fun VocabDrillCardBack(
     card: VocabDrillCard,
     direction: VocabDrillDirection,
     ttsState: TtsState,
-    onSpeak: (String) -> Unit
+    onSpeak: (String) -> Unit,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -905,9 +914,9 @@ private fun VocabDrillCardBack(
                 }
             }
 
-            // Forms — display depends on word type (pos)
+            // Forms -- only on EASY
             val forms = card.word.forms
-            if (forms.isNotEmpty()) {
+            if (forms.isNotEmpty() && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -953,9 +962,9 @@ private fun VocabDrillCardBack(
                 }
             }
 
-            // Collocations
+            // Collocations -- only on EASY
             val collocations = card.word.collocations
-            if (collocations.isNotEmpty()) {
+            if (collocations.isNotEmpty() && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "Collocations",

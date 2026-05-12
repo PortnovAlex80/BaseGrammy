@@ -108,7 +108,8 @@ fun DailyPracticeScreen(
     onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
     isDailyBadSentence: (cardId: String) -> Boolean = { false },
-    onExportDailyBadSentences: () -> String? = { null }
+    onExportDailyBadSentences: () -> String? = { null },
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     var hasShownCompletionSparkle by remember { mutableStateOf(false) }
     val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
@@ -208,7 +209,8 @@ fun DailyPracticeScreen(
                     onFlagDailyBadSentence = onFlagDailyBadSentence,
                     onUnflagDailyBadSentence = onUnflagDailyBadSentence,
                     isDailyBadSentence = isDailyBadSentence,
-                    onExportDailyBadSentences = onExportDailyBadSentences
+                    onExportDailyBadSentences = onExportDailyBadSentences,
+                    hintLevel = hintLevel
                 )
             }
             DailyBlockType.VOCAB -> {
@@ -261,7 +263,8 @@ private fun ColumnScope.CardSessionBlock(
     onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
     isDailyBadSentence: (cardId: String) -> Boolean = { false },
-    onExportDailyBadSentences: () -> String? = { null }
+    onExportDailyBadSentences: () -> String? = { null },
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
@@ -338,7 +341,8 @@ private fun ColumnScope.CardSessionBlock(
         provider = provider,
         onExit = onExit,
         onComplete = { blockComplete = true },
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(1f),
+        hintLevel = hintLevel
     )
 }
 
@@ -352,7 +356,8 @@ private fun DailyTrainingCardSession(
     provider: DailyPracticeSessionProvider,
     onExit: () -> Unit,
     onComplete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     // Voice recognition launcher -- same pattern as VerbDrillScreen
     val latestProvider by rememberUpdatedState(provider)
@@ -418,6 +423,7 @@ private fun DailyTrainingCardSession(
 
     TrainingCardSession(
         contract = provider,
+        hintLevel = hintLevel,
         cardContent = {
             val card = currentCard ?: return@TrainingCardSession
             val drillCard = provider.currentVerbDrillCard()
@@ -467,8 +473,8 @@ private fun DailyTrainingCardSession(
                         }
                     }
 
-                    // Verb + tense + group hint chips (Block 3 only)
-                    if (!verbText.isNullOrBlank()) {
+                    // Verb + tense + group hint chips (Block 3 only) -- hidden on HARD
+                    if (!verbText.isNullOrBlank() && hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             SuggestionChip(
@@ -501,8 +507,9 @@ private fun DailyTrainingCardSession(
                                     }
                                 )
                             }
+                            // Group chip -- only on EASY
                             val groupText = drillCard?.group
-                            if (!groupText.isNullOrBlank()) {
+                            if (!groupText.isNullOrBlank() && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
                                 SuggestionChip(
                                     onClick = { /* no bottom sheet for daily practice */ },
                                     label = {
@@ -525,7 +532,8 @@ private fun DailyTrainingCardSession(
                 scope = this,
                 speechLauncher = speechLauncher,
                 voiceInputText = voiceInputText,
-                onVoiceInputConsumed = { voiceInputText = null }
+                onVoiceInputConsumed = { voiceInputText = null },
+                hintLevel = hintLevel
             )
         },
         onExit = onExit,
@@ -546,7 +554,8 @@ private fun DailyInputControls(
     scope: TrainingCardSessionScope,
     speechLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
     voiceInputText: String?,
-    onVoiceInputConsumed: () -> Unit
+    onVoiceInputConsumed: () -> Unit,
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
@@ -572,8 +581,8 @@ private fun DailyInputControls(
     val canSelectInputMode = hasCards && contract.sessionActive
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text -- shown when eye button pressed or 3 wrong attempts
-        if (provider.hintAnswer != null) {
+        // Hint answer text -- only on EASY
+        if (provider.hintAnswer != null && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -685,8 +694,8 @@ private fun DailyInputControls(
             )
         }
 
-        // Word Bank UI
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
+        // Word Bank UI -- only on EASY
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
             val wordBankWords = contract.getWordBankWords()
             val selectedWords = contract.getSelectedWords()
             if (wordBankWords.isNotEmpty()) {
@@ -756,34 +765,42 @@ private fun DailyInputControls(
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                 }
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+                // Keyboard button -- hidden on HARD
+                if (hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
+                    FilledTonalIconButton(
+                        onClick = { contract.setInputMode(InputMode.KEYBOARD) },
+                        enabled = canSelectInputMode
+                    ) {
+                        Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+                    }
                 }
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                // Word bank button -- only on EASY
+                if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+                    FilledTonalIconButton(
+                        onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                        enabled = canSelectInputMode
+                    ) {
+                        Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                    }
                 }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Show answer button -- disabled when hint already shown
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards && provider.hintAnswer == null
+                // Show answer button -- only on EASY
+                if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                        state = rememberTooltipState()
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        IconButton(
+                            onClick = { if (hasCards) contract.showAnswer() },
+                            enabled = hasCards && provider.hintAnswer == null
+                        ) {
+                            Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        }
                     }
                 }
                 // Report/Flag button
@@ -1020,7 +1037,8 @@ private fun ColumnScope.VocabFlashcardBlock(
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
     isDailyBadSentence: (cardId: String) -> Boolean = { false },
     onExportDailyBadSentences: () -> String? = { null },
-    languageId: String = "en"
+    languageId: String = "en",
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
     var isVoiceActive by remember { mutableStateOf(false) }
@@ -1102,14 +1120,17 @@ private fun ColumnScope.VocabFlashcardBlock(
                 }
             }
 
-            // Answer text (always visible, smaller)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = answerText,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary
+            // Answer text -- hidden on HARD
+            if (hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = answerText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             )
         }
     }

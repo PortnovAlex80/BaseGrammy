@@ -63,6 +63,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -427,7 +428,8 @@ fun GrammarMateApp() {
                         },
                         onExportDailyBadSentences = {
                             vm.exportDailyBadSentences()
-                        }
+                        },
+                        hintLevel = state.hintLevel
                     )
                 }
                 AppScreen.MIX_CHALLENGE -> TrainingScreen(
@@ -456,7 +458,8 @@ fun GrammarMateApp() {
                     onHideCard = vm::hideCurrentCard,
                     onExportBadSentences = vm::exportBadSentences,
                     isBadSentence = vm::isBadSentence,
-                    onStartOfflineRecognition = vm::startOfflineRecognition
+                    onStartOfflineRecognition = vm::startOfflineRecognition,
+                    hintLevel = state.hintLevel
                 )
                 AppScreen.STORY -> StoryQuizScreen(
                     story = state.activeStory,
@@ -521,7 +524,8 @@ fun GrammarMateApp() {
                     }
                     VerbDrillScreen(
                         viewModel = verbDrillVm,
-                        onBack = { screen = AppScreen.HOME }
+                        onBack = { screen = AppScreen.HOME },
+                        hintLevel = state.hintLevel
                     )
                 }
                 AppScreen.VOCAB_DRILL -> {
@@ -537,7 +541,8 @@ fun GrammarMateApp() {
                         onBack = {
                             vm.refreshVocabMasteryCount()
                             screen = AppScreen.HOME
-                        }
+                        },
+                        hintLevel = state.hintLevel
                     )
                 }
             }
@@ -2509,6 +2514,46 @@ private fun SettingsSheet(
                 Icon(Icons.Default.Download, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Restore from backup")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "GrammarMate",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "v${state.appVersion}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Your language starter.\nSpeak first — fluency follows.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Automatize grammar patterns through\ndrill repetition. Then read, listen, and live\nthe language on a prepared skeleton.",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
