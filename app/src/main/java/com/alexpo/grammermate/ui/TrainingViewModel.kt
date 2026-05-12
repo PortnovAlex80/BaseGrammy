@@ -125,6 +125,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var forceBackupOnSave: Boolean = false
     private var prebuiltDailySession: List<DailyTask>? = null
     private var lastDailyTasks: List<DailyTask>? = null
+    /** Tracks VOICE/KEYBOARD answered cards per block type for cursor advancement. */
+    private var dailyPracticeAnsweredCounts: MutableMap<DailyBlockType, Int> = mutableMapOf()
+    /** Cursor state saved at session start; used to roll back on cancel. */
+    private var dailyCursorAtSessionStart: DailyCursorState = DailyCursorState()
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -1436,29 +1440,45 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun hasResumableDailySession(): Boolean {
         val progress = progressStore.load()
-        return progress.dailyLevel > 0
+        val cursor = progress.dailyCursor
+        val today = java.time.LocalDate.now().toString()
+        // Resumable only if we have first-session card data from today
+        return cursor.firstSessionDate == today &&
+            (cursor.firstSessionSentenceCardIds.isNotEmpty() || cursor.firstSessionVerbCardIds.isNotEmpty())
     }
 
     fun startDailyPractice(lessonLevel: Int): Boolean {
-        // Try pre-built session first
-        val cached = prebuiltDailySession
-        if (cached != null && cached.isNotEmpty()) {
-            lastDailyTasks = cached
-            dailySessionHelper.startDailySession(cached, lessonLevel)
-            prebuiltDailySession = null
-            // Advance cursor by actual card counts from the pre-built session
-            val sentenceCount = cached.count { it is DailyTask.TranslateSentence }
-            val verbCount = cached.count { it is DailyTask.ConjugateVerb }
-            advanceCursor(sentenceCount, verbCount)
-            return true
-        }
-        // Fallback to synchronous build
+        // Save cursor at session start for rollback on cancel
+        dailyCursorAtSessionStart = _uiState.value.dailyCursor
+        // Reset per-block VOICE/KEYBOARD answered counters
+        dailyPracticeAnsweredCounts = mutableMapOf()
+
         val state = _uiState.value
         val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
         val lessonId = state.selectedLessonId ?: return false
-
         val cursor = state.dailyCursor
+        val today = java.time.LocalDate.now().toString()
+        val isFirstSessionToday = cursor.firstSessionDate != today
+
+        // Try pre-built session first (only valid for first session of the day)
+        val cached = prebuiltDailySession
+        if (isFirstSessionToday && cached != null && cached.isNotEmpty()) {
+            lastDailyTasks = cached
+            dailySessionHelper.startDailySession(cached, lessonLevel)
+            prebuiltDailySession = null
+            // Store first-session card IDs for repeat, but do NOT advance cursor yet.
+            // Cursor advances only when the full session completes with VOICE/KEYBOARD answers.
+            val sentenceIds = cached
+                .filterIsInstance<DailyTask.TranslateSentence>()
+                .map { it.card.id }
+            val verbIds = cached
+                .filterIsInstance<DailyTask.ConjugateVerb>()
+                .map { it.card.id }
+            storeFirstSessionCardIds(sentenceIds, verbIds)
+            return true
+        }
+        // Fallback to synchronous build
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
@@ -1469,11 +1489,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         lastDailyTasks = tasks
         dailySessionHelper.startDailySession(tasks, lessonLevel)
-        // Advance cursor by actual card counts
-        val sentenceCount = tasks.count { it is DailyTask.TranslateSentence }
-        val verbCount = tasks.count { it is DailyTask.ConjugateVerb }
-        advanceCursor(sentenceCount, verbCount)
+
+        if (isFirstSessionToday) {
+            // First session of the day: store card IDs for repeat, but do NOT advance cursor.
+            // Cursor advances only when the full session completes with VOICE/KEYBOARD answers.
+            val sentenceIds = tasks
+                .filterIsInstance<DailyTask.TranslateSentence>()
+                .map { it.card.id }
+            val verbIds = tasks
+                .filterIsInstance<DailyTask.ConjugateVerb>()
+                .map { it.card.id }
+            storeFirstSessionCardIds(sentenceIds, verbIds)
+        }
+        // If NOT the first session today (Continue), cursor was already advanced
+        // when the previous session completed successfully, so tasks are the next batch.
         return true
+    }
+
+    /**
+     * Store the first session of the day's card IDs in the cursor state.
+     * This allows Repeat to reconstruct the exact same cards even after restart.
+     */
+    private fun storeFirstSessionCardIds(sentenceIds: List<String>, verbIds: List<String>) {
+        val today = java.time.LocalDate.now().toString()
+        _uiState.update {
+            it.copy(
+                dailyCursor = it.dailyCursor.copy(
+                    firstSessionDate = today,
+                    firstSessionSentenceCardIds = sentenceIds,
+                    firstSessionVerbCardIds = verbIds
+                )
+            )
+        }
+        saveProgress()
     }
 
     /**
@@ -1489,28 +1537,53 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun repeatDailyPractice(lessonLevel: Int): Boolean {
+        val state = _uiState.value
+        val packId = state.activePackId ?: return false
+        val langId = state.selectedLanguageId
+        val lessonId = state.selectedLessonId ?: return false
+        val cursor = state.dailyCursor
+        val today = java.time.LocalDate.now().toString()
+
+        // Try in-memory cache first (fastest path, same app run)
         val cached = lastDailyTasks
         if (cached != null && cached.isNotEmpty()) {
             dailySessionHelper.startDailySession(cached, lessonLevel)
             return true
         }
-        // No cache — build fresh with current cursor but do NOT advance
-        val state = _uiState.value
-        val packId = state.activePackId ?: return false
-        val langId = state.selectedLanguageId
-        val lessonId = state.selectedLessonId ?: return false
 
-        val cursor = state.dailyCursor
+        // Reconstruct from stored first-session card IDs
+        if (cursor.firstSessionDate == today &&
+            (cursor.firstSessionSentenceCardIds.isNotEmpty() || cursor.firstSessionVerbCardIds.isNotEmpty())
+        ) {
+            val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+            val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
+            val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+            val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+            val tasks = composer.buildRepeatSession(
+                lessonLevel, packId, langId, lessonId, cumulativeTenses,
+                sentenceCardIds = cursor.firstSessionSentenceCardIds,
+                verbCardIds = cursor.firstSessionVerbCardIds
+            )
+            if (tasks.isNotEmpty()) {
+                lastDailyTasks = tasks
+                dailySessionHelper.startDailySession(tasks, lessonLevel)
+                // Do NOT advance cursor — this is a repeat of the first session
+                return true
+            }
+        }
+
+        // Last resort: build fresh with cursor at position 0 (start of day)
+        val resetCursor = cursor.copy(sentenceOffset = 0, verbOffset = 0)
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, resetCursor)
         if (tasks.isEmpty()) return false
 
         lastDailyTasks = tasks
         dailySessionHelper.startDailySession(tasks, lessonLevel)
-        // Do NOT advance cursor — this is a repeat of the same set
+        // Do NOT advance cursor — this is a repeat
         return true
     }
 
@@ -1523,7 +1596,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return dailySessionHelper.nextTask()
     }
 
+    /**
+     * Record that a card in the current daily practice block was practiced via VOICE or KEYBOARD.
+     * Called from DailyPracticeScreen's onCardAdvanced callback (which the provider only fires
+     * for non-WORD_BANK modes). Used to track per-block completion for cursor advancement.
+     */
+    fun recordDailyCardPracticed(blockType: DailyBlockType) {
+        val count = dailyPracticeAnsweredCounts[blockType] ?: 0
+        dailyPracticeAnsweredCounts[blockType] = count + 1
+    }
+
     fun advanceDailyBlock(): Boolean {
+        // Move to the next block but do NOT advance the daily cursor yet.
+        // Cursor advancement happens only when the full session completes successfully,
+        // and only for blocks where all cards were answered via VOICE or KEYBOARD.
         return dailySessionHelper.advanceToNextBlock()
     }
 
@@ -1567,6 +1653,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun cancelDailySession() {
+        val ds = _uiState.value.dailySession
+        // Only advance the cursor when the full session completed (finishedToken = true).
+        // Check that ALL translate and verb cards were answered via VOICE/KEYBOARD.
+        // If any block was incomplete or had WORD_BANK answers, cursor stays put,
+        // so re-entry shows the same cards.
+        if (ds.finishedToken) {
+            val sentenceCount = dailyPracticeAnsweredCounts[DailyBlockType.TRANSLATE] ?: 0
+            val verbCount = dailyPracticeAnsweredCounts[DailyBlockType.VERBS] ?: 0
+            // Only advance if all blocks had full VOICE/KEYBOARD completion.
+            // Block sizes are determined from the session tasks.
+            val expectedSentenceCount = ds.tasks.count { it is DailyTask.TranslateSentence }
+            val expectedVerbCount = ds.tasks.count { it is DailyTask.ConjugateVerb }
+            val allSentencePracticed = sentenceCount >= expectedSentenceCount
+            val allVerbsPracticed = verbCount >= expectedVerbCount
+            if (allSentencePracticed && allVerbsPracticed) {
+                advanceCursor(sentenceCount, verbCount)
+            }
+        }
+        dailyPracticeAnsweredCounts.clear()
         dailySessionHelper.endSession()
     }
 

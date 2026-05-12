@@ -100,6 +100,41 @@ class DailySessionComposer(
     }
 
     /**
+     * Build a Repeat session using specific card IDs from the first session of the day.
+     *
+     * Block 1 (Translation): looks up sentence cards by ID from all lessons.
+     * Block 2 (Vocab): always follows its own SRS process independently.
+     * Block 3 (Verb Drill): looks up verb cards by ID from verb drill files.
+     *
+     * @param sentenceCardIds card IDs from the first session's block 1.
+     * @param verbCardIds card IDs from the first session's block 3.
+     */
+    fun buildRepeatSession(
+        lessonLevel: Int,
+        packId: String,
+        languageId: String,
+        lessonId: String,
+        cumulativeTenses: List<String> = emptyList(),
+        sentenceCardIds: List<String> = emptyList(),
+        verbCardIds: List<String> = emptyList()
+    ): List<DailyTask> {
+        val tasks = mutableListOf<DailyTask>()
+
+        // Block 1: Rebuild sentence block from stored card IDs
+        tasks.addAll(buildSentenceBlockFromIds(lessonLevel, packId, languageId, lessonId, sentenceCardIds))
+
+        // Block 2: Vocab always follows independent SRS
+        tasks.addAll(buildVocabBlock(packId, languageId))
+
+        // Block 3: Rebuild verb block from stored card IDs
+        val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
+                     else TENSE_LADDER[lessonLevel] ?: emptyList()
+        tasks.addAll(buildVerbBlockFromIds(packId, languageId, verbCardIds))
+
+        return tasks
+    }
+
+    /**
      * Block 1: Cursor-based sentence selection by lesson index.
      *
      * Uses cursor.currentLessonIndex to pick which lesson to draw from,
@@ -133,6 +168,39 @@ class DailySessionComposer(
         val selected = remaining.take(SENTENCE_COUNT)
 
         return selected.mapIndexed { index, card ->
+            val mode = when (index % 3) {
+                0 -> InputMode.VOICE
+                1 -> InputMode.KEYBOARD
+                else -> InputMode.WORD_BANK
+            }
+            DailyTask.TranslateSentence(
+                id = "sent_${card.id}",
+                card = card,
+                inputMode = mode
+            )
+        }
+    }
+
+    /**
+     * Build sentence block from a specific list of card IDs (for Repeat).
+     * Looks up cards across all lessons, preserves the original ID order.
+     */
+    private fun buildSentenceBlockFromIds(
+        lessonLevel: Int,
+        packId: String,
+        languageId: String,
+        lessonId: String,
+        cardIds: List<String>
+    ): List<DailyTask.TranslateSentence> {
+        if (cardIds.isEmpty()) return emptyList()
+
+        val lessons = lessonStore.getLessons(languageId)
+        val allCards = lessons.flatMap { it.cards }
+        val cardMap = allCards.associateBy { it.id }
+
+        return cardIds.mapNotNull { id ->
+            cardMap[id]
+        }.take(SENTENCE_COUNT).mapIndexed { index, card ->
             val mode = when (index % 3) {
                 0 -> InputMode.VOICE
                 1 -> InputMode.KEYBOARD
@@ -281,6 +349,32 @@ class DailySessionComposer(
         val selected = sorted.take(VERB_COUNT)
 
         return selected.mapIndexed { index, (card, _, _) ->
+            val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
+            DailyTask.ConjugateVerb(
+                id = "verb_${card.id}",
+                card = card,
+                inputMode = mode
+            )
+        }
+    }
+
+    /**
+     * Build verb block from a specific list of card IDs (for Repeat).
+     * Looks up cards from verb drill files, preserves the original ID order.
+     */
+    private fun buildVerbBlockFromIds(
+        packId: String,
+        languageId: String,
+        cardIds: List<String>
+    ): List<DailyTask.ConjugateVerb> {
+        if (cardIds.isEmpty()) return emptyList()
+
+        val allCards = loadVerbDrillCards(packId, languageId)
+        val cardMap = allCards.associateBy { it.id }
+
+        return cardIds.mapNotNull { id ->
+            cardMap[id]
+        }.take(VERB_COUNT).mapIndexed { index, card ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
             DailyTask.ConjugateVerb(
                 id = "verb_${card.id}",

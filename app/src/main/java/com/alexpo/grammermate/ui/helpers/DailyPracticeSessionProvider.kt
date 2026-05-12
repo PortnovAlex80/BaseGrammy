@@ -238,7 +238,8 @@ class DailyPracticeSessionProvider(
         remainingAttempts = 3
 
         // Notify caller about the card being advanced (for progress persistence)
-        if (currentIndex < blockCards.size) {
+        // Only VOICE and KEYBOARD count as "practiced"; WORD_BANK does not.
+        if (currentIndex < blockCards.size && _inputMode != InputMode.WORD_BANK) {
             onCardAdvanced(blockCards[currentIndex])
         }
 

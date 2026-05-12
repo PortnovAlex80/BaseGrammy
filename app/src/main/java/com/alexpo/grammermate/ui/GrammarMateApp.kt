@@ -378,6 +378,7 @@ fun GrammarMateApp() {
                         onFlipVocabCard = { /* no-op: flip tracked locally */ },
                         onRateVocabCard = { rating -> vm.rateVocabCard(rating) },
                         onPersistVerbProgress = { card -> vm.persistDailyVerbProgress(card) },
+                        onCardPracticed = { blockType -> vm.recordDailyCardPracticed(blockType) },
                         onAdvance = vm::advanceDailyTask,
                         onAdvanceBlock = { vm.advanceDailyBlock() },
                         onRepeatBlock = { vm.repeatDailyBlock() },

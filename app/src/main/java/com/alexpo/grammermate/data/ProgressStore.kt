@@ -56,7 +56,12 @@ class ProgressStore(private val context: Context) {
                     sentenceOffset = (cursorPayload?.get("sentenceOffset") as? Number)?.toInt() ?: 0,
                     currentLessonIndex = (cursorPayload?.get("currentLessonIndex") as? Number)?.toInt() ?: 0,
                     verbOffset = (cursorPayload?.get("verbOffset") as? Number)?.toInt() ?: 0,
-                    lastSessionHash = (cursorPayload?.get("lastSessionHash") as? Number)?.toInt() ?: 0
+                    lastSessionHash = (cursorPayload?.get("lastSessionHash") as? Number)?.toInt() ?: 0,
+                    firstSessionDate = cursorPayload?.get("firstSessionDate") as? String ?: "",
+                    firstSessionSentenceCardIds = (cursorPayload?.get("firstSessionSentenceCardIds") as? List<*>)
+                        ?.mapNotNull { it as? String } ?: emptyList(),
+                    firstSessionVerbCardIds = (cursorPayload?.get("firstSessionVerbCardIds") as? List<*>)
+                        ?.mapNotNull { it as? String } ?: emptyList()
                 )
             }
         ).let { progress ->
@@ -98,7 +103,10 @@ class ProgressStore(private val context: Context) {
                 "sentenceOffset" to progress.dailyCursor.sentenceOffset,
                 "currentLessonIndex" to progress.dailyCursor.currentLessonIndex,
                 "verbOffset" to progress.dailyCursor.verbOffset,
-                "lastSessionHash" to progress.dailyCursor.lastSessionHash
+                "lastSessionHash" to progress.dailyCursor.lastSessionHash,
+                "firstSessionDate" to progress.dailyCursor.firstSessionDate,
+                "firstSessionSentenceCardIds" to progress.dailyCursor.firstSessionSentenceCardIds,
+                "firstSessionVerbCardIds" to progress.dailyCursor.firstSessionVerbCardIds
             )
         )
         val data = linkedMapOf(

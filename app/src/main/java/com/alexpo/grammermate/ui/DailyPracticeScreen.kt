@@ -89,6 +89,7 @@ fun DailyPracticeScreen(
     onFlipVocabCard: () -> Unit,
     onRateVocabCard: (Int) -> Unit,
     onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {},
+    onCardPracticed: (DailyBlockType) -> Unit = {},
     onAdvance: () -> Boolean,
     onAdvanceBlock: () -> Boolean,
     onRepeatBlock: () -> Boolean,
@@ -192,7 +193,8 @@ fun DailyPracticeScreen(
                     onStopTts = onStopTts,
                     ttsState = ttsState,
                     languageId = languageId,
-                    onPersistVerbProgress = onPersistVerbProgress
+                    onPersistVerbProgress = onPersistVerbProgress,
+                    onCardPracticed = onCardPracticed
                 )
             }
             DailyBlockType.VOCAB -> {
@@ -235,7 +237,8 @@ private fun ColumnScope.CardSessionBlock(
     onStopTts: () -> Unit,
     ttsState: TtsState,
     languageId: String,
-    onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {}
+    onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {},
+    onCardPracticed: (DailyBlockType) -> Unit = {}
 ) {
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
@@ -267,6 +270,9 @@ private fun ColumnScope.CardSessionBlock(
                 if (task is DailyTask.ConjugateVerb) {
                     onPersistVerbProgress(task.card)
                 }
+                // Track VOICE/KEYBOARD practiced cards for cursor advancement.
+                // The provider only calls onCardAdvanced for non-WORD_BANK modes.
+                onCardPracticed(task.blockType)
             }
         )
     }
@@ -334,8 +340,7 @@ private fun DailyTrainingCardSession(
     ) {
         if (provider.currentInputMode == InputMode.VOICE &&
             provider.sessionActive &&
-            provider.currentCard != null &&
-            provider.progress.current > 1
+            provider.currentCard != null
         ) {
             if (provider.showIncorrectFeedback) {
                 kotlinx.coroutines.delay(1200)
@@ -416,7 +421,7 @@ private fun DailyTrainingCardSession(
                         }
                     }
 
-                    // Verb + tense hint chips (Block 3 only)
+                    // Verb + tense + group hint chips (Block 3 only)
                     if (!verbText.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -444,6 +449,19 @@ private fun DailyTrainingCardSession(
                                     label = {
                                         Text(
                                             text = abbreviateTense(tenseText),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                )
+                            }
+                            val groupText = drillCard?.group
+                            if (!groupText.isNullOrBlank()) {
+                                SuggestionChip(
+                                    onClick = { /* no bottom sheet for daily practice */ },
+                                    label = {
+                                        Text(
+                                            text = groupText,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium
                                         )
