@@ -207,7 +207,7 @@ fun GrammarMateApp() {
                     screen = AppScreen.HOME
                 }
                 BackHandler(enabled = screen == AppScreen.DAILY_PRACTICE && !showSettings) {
-                    screen = AppScreen.HOME
+                    showExitDialog = true
                 }
                 BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
                     screen = AppScreen.LESSON
@@ -300,7 +300,7 @@ fun GrammarMateApp() {
                 )
             }
             androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
-                if (screen != AppScreen.HOME && state.userName == "GrammarMateUser") {
+                if (state.userName == "GrammarMateUser") {
                     showWelcomeDialog = true
                 }
             }
@@ -394,8 +394,10 @@ fun GrammarMateApp() {
                             screen = AppScreen.HOME
                         },
                         onComplete = {
+                            // Only end the session (sets finishedToken=true, active=false).
+                            // Do NOT navigate to HOME here — the completion screen needs to render.
+                            // The completion screen's "Back to Home" button calls onExit which does the navigation.
                             vm.cancelDailySession()
-                            screen = AppScreen.HOME
                         }
                     )
                 }
@@ -521,6 +523,11 @@ fun GrammarMateApp() {
                     confirmButton = {
                         TextButton(onClick = {
                             showExitDialog = false
+                            if (screen == AppScreen.DAILY_PRACTICE) {
+                                vm.cancelDailySession()
+                                screen = AppScreen.HOME
+                                return@TextButton
+                            }
                             if (state.bossActive) {
                                 vm.finishBoss()
                                 screen = AppScreen.LESSON
@@ -542,8 +549,8 @@ fun GrammarMateApp() {
                             Text(text = "Cancel")
                         }
                     },
-                    title = { Text(text = "End session?") },
-                    text = { Text(text = "Current session will be completed.") }
+                    title = { Text(text = if (screen == AppScreen.DAILY_PRACTICE) "Exit practice?" else "End session?") },
+                    text = { Text(text = if (screen == AppScreen.DAILY_PRACTICE) "Your progress in this session will be lost." else "Current session will be completed.") }
                 )
             }
 

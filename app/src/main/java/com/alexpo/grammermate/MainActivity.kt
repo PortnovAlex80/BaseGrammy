@@ -69,8 +69,11 @@ class MainActivity : ComponentActivity() {
                 RestoreNotifier.markComplete(false)
             }
         } else if (android.os.Build.VERSION.SDK_INT >= 29) {
-            // Android 10+: request SAF access for restore when needed
-            if (shouldRestore) {
+            // Android 10+: request SAF access for restore when needed.
+            // Only prompt the SAF picker if a backup is known to exist (check legacy path).
+            // On a fresh install with no backup data, skip straight to the app.
+            val hasBackupAvailable = backupManager.hasBackup()
+            if (shouldRestore && hasBackupAvailable) {
                 Toast.makeText(
                     this,
                     "Select BaseGrammy or backup_latest folder to restore",
