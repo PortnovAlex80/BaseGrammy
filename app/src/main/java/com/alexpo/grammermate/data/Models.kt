@@ -133,7 +133,8 @@ data class TrainingProgress(
     val currentScreen: String = "HOME",
     val activePackId: String? = null,
     val dailyLevel: Int = 0,
-    val dailyTaskIndex: Int = 0
+    val dailyTaskIndex: Int = 0,
+    val dailyCursor: DailyCursorState = DailyCursorState()
 )
 
 /**
@@ -222,4 +223,11 @@ data class DailySessionState(
     val blockIndex: Int = 0,
     val level: Int = 0,
     val finishedToken: Boolean = false
+)
+
+data class DailyCursorState(
+    val sentenceOffset: Int = 0,        // cards shown in current lesson (0, 10, 20, ...)
+    val currentLessonIndex: Int = 0,    // which lesson in the pack (0-based)
+    val verbOffset: Int = 0,            // verb cards shown for current tenses (0, 10, 20, ...)
+    val lastSessionHash: Int = 0        // hash of last completed session for "repeat" cache
 )

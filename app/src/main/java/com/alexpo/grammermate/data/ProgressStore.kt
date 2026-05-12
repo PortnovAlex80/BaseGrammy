@@ -49,7 +49,16 @@ class ProgressStore(private val context: Context) {
             currentScreen = payload["currentScreen"] as? String ?: "HOME",
             activePackId = payload["activePackId"] as? String,
             dailyLevel = (payload["dailyLevel"] as? Number)?.toInt() ?: 0,
-            dailyTaskIndex = (payload["dailyTaskIndex"] as? Number)?.toInt() ?: 0
+            dailyTaskIndex = (payload["dailyTaskIndex"] as? Number)?.toInt() ?: 0,
+            dailyCursor = run {
+                val cursorPayload = payload["dailyCursor"] as? Map<*, *>
+                DailyCursorState(
+                    sentenceOffset = (cursorPayload?.get("sentenceOffset") as? Number)?.toInt() ?: 0,
+                    currentLessonIndex = (cursorPayload?.get("currentLessonIndex") as? Number)?.toInt() ?: 0,
+                    verbOffset = (cursorPayload?.get("verbOffset") as? Number)?.toInt() ?: 0,
+                    lastSessionHash = (cursorPayload?.get("lastSessionHash") as? Number)?.toInt() ?: 0
+                )
+            }
         ).let { progress ->
             // Migration: if old single bossMegaReward exists but bossMegaRewards is empty,
             // migrate it using the current lessonId as the key
@@ -84,7 +93,13 @@ class ProgressStore(private val context: Context) {
             "currentScreen" to progress.currentScreen,
             "activePackId" to progress.activePackId,
             "dailyLevel" to progress.dailyLevel,
-            "dailyTaskIndex" to progress.dailyTaskIndex
+            "dailyTaskIndex" to progress.dailyTaskIndex,
+            "dailyCursor" to linkedMapOf(
+                "sentenceOffset" to progress.dailyCursor.sentenceOffset,
+                "currentLessonIndex" to progress.dailyCursor.currentLessonIndex,
+                "verbOffset" to progress.dailyCursor.verbOffset,
+                "lastSessionHash" to progress.dailyCursor.lastSessionHash
+            )
         )
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,

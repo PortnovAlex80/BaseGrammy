@@ -47,6 +47,7 @@ import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.DailyBlockType
+import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DrillProgressStore
@@ -248,7 +249,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 useOfflineAsr = config.useOfflineAsr,
                 asrModelReady = asrModelManager.isReady(),
                 initialScreen = restoredScreen,
-                vocabMasteredCount = wordMasteryStore.getMasteredCount()
+                vocabMasteredCount = wordMasteryStore.getMasteredCount(),
+                dailyCursor = progress.dailyCursor
             )
         }
         rebuildSchedules(lessons)
@@ -331,7 +333,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
                 val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
                 val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-                val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+                val cursor = state.dailyCursor
+                val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
                 if (tasks.isNotEmpty()) {
                     prebuiltDailySession = tasks
                 }
@@ -1159,10 +1162,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Clear legacy (pack-less) stores if they exist
         wordMasteryStore.saveAll(emptyMap())
 
+        // Clear cached daily sessions
+        lastDailyTasks = null
+        prebuiltDailySession = null
+
         // Reset UI state
         _uiState.update {
             it.copy(
                 dailySession = DailySessionState(),
+                dailyCursor = DailyCursorState(),
                 currentIndex = 0,
                 correctCount = 0,
                 incorrectCount = 0,
@@ -1438,6 +1446,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lastDailyTasks = cached
             dailySessionHelper.startDailySession(cached, lessonLevel)
             prebuiltDailySession = null
+            // Advance cursor by actual card counts from the pre-built session
+            val sentenceCount = cached.count { it is DailyTask.TranslateSentence }
+            val verbCount = cached.count { it is DailyTask.ConjugateVerb }
+            advanceCursor(sentenceCount, verbCount)
             return true
         }
         // Fallback to synchronous build
@@ -1446,17 +1458,34 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val langId = state.selectedLanguageId
         val lessonId = state.selectedLessonId ?: return false
 
+        val cursor = state.dailyCursor
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
         Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
         if (tasks.isEmpty()) return false
 
         lastDailyTasks = tasks
         dailySessionHelper.startDailySession(tasks, lessonLevel)
+        // Advance cursor by actual card counts
+        val sentenceCount = tasks.count { it is DailyTask.TranslateSentence }
+        val verbCount = tasks.count { it is DailyTask.ConjugateVerb }
+        advanceCursor(sentenceCount, verbCount)
         return true
+    }
+
+    /**
+     * Advance the daily cursor offsets after a session is built.
+     */
+    private fun advanceCursor(sentenceCount: Int, verbCount: Int) {
+        val current = _uiState.value.dailyCursor
+        val advanced = current.copy(
+            sentenceOffset = current.sentenceOffset + sentenceCount,
+            verbOffset = current.verbOffset + verbCount
+        )
+        _uiState.update { it.copy(dailyCursor = advanced) }
     }
 
     fun repeatDailyPractice(lessonLevel: Int): Boolean {
@@ -1465,32 +1494,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             dailySessionHelper.startDailySession(cached, lessonLevel)
             return true
         }
-        // No cache — build fresh (same as start)
-        return startDailyPractice(lessonLevel)
-    }
-
-    fun resumeDailyPractice(): Boolean {
-        val progress = progressStore.load()
-        val lessonLevel = progress.dailyLevel
-        val savedTaskIndex = progress.dailyTaskIndex
-        if (lessonLevel <= 0) return false
-
+        // No cache — build fresh with current cursor but do NOT advance
         val state = _uiState.value
         val packId = state.activePackId ?: return false
         val langId = state.selectedLanguageId
         val lessonId = state.selectedLessonId ?: return false
 
+        val cursor = state.dailyCursor
         val verbDrillStore = VerbDrillStore(getApplication(), packId = packId)
         val packWordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
         if (tasks.isEmpty()) return false
 
+        lastDailyTasks = tasks
         dailySessionHelper.startDailySession(tasks, lessonLevel)
-        if (savedTaskIndex > 0 && savedTaskIndex < tasks.size) {
-            dailySessionHelper.fastForwardTo(savedTaskIndex)
-        }
+        // Do NOT advance cursor — this is a repeat of the same set
         return true
     }
 
@@ -2339,7 +2359,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 currentScreen = state.currentScreen,
                 activePackId = state.activePackId,
                 dailyLevel = state.dailySession.level,
-                dailyTaskIndex = state.dailySession.taskIndex
+                dailyTaskIndex = state.dailySession.taskIndex,
+                dailyCursor = state.dailyCursor
             )
         )
 
@@ -3463,7 +3484,8 @@ data class TrainingUiState(
     // Vocab drill mastered count (global, across all POS)
     val vocabMasteredCount: Int = 0,
     // Daily practice session
-    val dailySession: DailySessionState = DailySessionState()
+    val dailySession: DailySessionState = DailySessionState(),
+    val dailyCursor: DailyCursorState = DailyCursorState()
 )
 
 data class LessonLadderRow(

@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.ui.helpers
 
 import com.alexpo.grammermate.data.DailyBlockType
+import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.LessonStore
@@ -15,11 +16,13 @@ import java.io.File
 
 /**
  * Pure builder that constructs a daily practice session (List<DailyTask>)
- * for a given lesson level and pack.
+ * for a given lesson level and pack, using cursor-based card selection.
  *
- * Block 1 (Translation): 5 SentenceCards, SRS-priority.
- * Block 2 (Vocab): 5 VocabWords by rank range, SRS-due first.
- * Block 3 (Verb Drill): 5 VerbDrillCards from cumulative tenses, weak-first.
+ * Block 1 (Translation): Cursor-driven by lesson index + sentence offset.
+ *   Takes next 10 cards in order from the current lesson (no shuffle).
+ * Block 2 (Vocab): Pure SRS selection across the full word list.
+ *   Most-overdue first, then new words, then least-recently-reviewed fallback.
+ * Block 3 (Verb Drill): Cursor-driven by verb offset, weak-first ordering.
  */
 class DailySessionComposer(
     private val lessonStore: LessonStore,
@@ -52,26 +55,28 @@ class DailySessionComposer(
     /**
      * @param cumulativeTenses active tenses for this lesson level, built from
      *   manifest lessons 1..lessonLevel. Caller reads from LessonPackManifest.
+     * @param cursor cursor state tracking lesson index, sentence offset, and verb offset.
      */
     fun buildSession(
         lessonLevel: Int,
         packId: String,
         languageId: String,
         lessonId: String,
-        cumulativeTenses: List<String> = emptyList()
+        cumulativeTenses: List<String> = emptyList(),
+        cursor: DailyCursorState = DailyCursorState()
     ): List<DailyTask> {
         val tasks = mutableListOf<DailyTask>()
 
-        // Block 1: Translation sentences
-        tasks.addAll(buildSentenceBlock(lessonLevel, packId, languageId, lessonId))
+        // Block 1: Translation sentences (cursor-driven)
+        tasks.addAll(buildSentenceBlock(lessonLevel, packId, languageId, lessonId, cursor))
 
-        // Block 2: Vocab flashcards
-        tasks.addAll(buildVocabBlock(lessonLevel, packId, languageId))
+        // Block 2: Vocab flashcards (pure SRS, no cursor)
+        tasks.addAll(buildVocabBlock(packId, languageId))
 
-        // Block 3: Verb drill
+        // Block 3: Verb drill (cursor-driven)
         val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
                      else TENSE_LADDER[lessonLevel] ?: emptyList()
-        tasks.addAll(buildVerbBlock(packId, languageId, tenses))
+        tasks.addAll(buildVerbBlock(packId, languageId, tenses, cursor))
 
         return tasks
     }
@@ -82,30 +87,50 @@ class DailySessionComposer(
         packId: String,
         languageId: String,
         lessonId: String,
-        cumulativeTenses: List<String> = emptyList()
+        cumulativeTenses: List<String> = emptyList(),
+        cursor: DailyCursorState = DailyCursorState()
     ): List<DailyTask> {
         val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
                      else TENSE_LADDER[lessonLevel] ?: emptyList()
         return when (blockType) {
-            DailyBlockType.TRANSLATE -> buildSentenceBlock(lessonLevel, packId, languageId, lessonId)
-            DailyBlockType.VOCAB -> buildVocabBlock(lessonLevel, packId, languageId)
-            DailyBlockType.VERBS -> buildVerbBlock(packId, languageId, tenses)
+            DailyBlockType.TRANSLATE -> buildSentenceBlock(lessonLevel, packId, languageId, lessonId, cursor)
+            DailyBlockType.VOCAB -> buildVocabBlock(packId, languageId)
+            DailyBlockType.VERBS -> buildVerbBlock(packId, languageId, tenses, cursor)
         }
     }
 
+    /**
+     * Block 1: Cursor-based sentence selection by lesson index.
+     *
+     * Uses cursor.currentLessonIndex to pick which lesson to draw from,
+     * and cursor.sentenceOffset to resume within that lesson.
+     * Cards are taken in order (no shuffle). Returns empty if the lesson
+     * is exhausted, signalling the caller to advance the lesson index.
+     */
     private fun buildSentenceBlock(
         lessonLevel: Int,
         packId: String,
         languageId: String,
-        lessonId: String
+        lessonId: String,
+        cursor: DailyCursorState
     ): List<DailyTask.TranslateSentence> {
         val lessons = lessonStore.getLessons(languageId)
-        val lesson = lessons.firstOrNull { it.id == lessonId } ?: return emptyList()
+
+        // Use cursor index to select lesson; fall back to lessonId match
+        val lesson = if (cursor.currentLessonIndex in lessons.indices) {
+            lessons[cursor.currentLessonIndex]
+        } else {
+            lessons.firstOrNull { it.id == lessonId }
+        } ?: return emptyList()
 
         val cards = lesson.cards
         if (cards.isEmpty()) return emptyList()
 
-        val selected = cards.shuffled().take(SENTENCE_COUNT)
+        // Take cards starting at sentenceOffset, in order (no shuffle)
+        val remaining = cards.drop(cursor.sentenceOffset)
+        if (remaining.isEmpty()) return emptyList()
+
+        val selected = remaining.take(SENTENCE_COUNT)
 
         return selected.mapIndexed { index, card ->
             val mode = when (index % 3) {
@@ -121,53 +146,69 @@ class DailySessionComposer(
         }
     }
 
+    /**
+     * Block 2: Pure SRS vocab selection from the full pack word list.
+     *
+     * No rank range tied to lessonLevel. Selection logic:
+     * 1. Load all mastery states from WordMasteryStore.
+     * 2. Get SRS-due words (nextReviewDateMs <= now or lastReviewDateMs == 0).
+     * 3. Sort due words by most overdue first (now - nextReviewDateMs descending).
+     * 4. If enough due words (>=10), take 10 by most overdue.
+     * 5. If not enough due words, fill with new (never reviewed) words by rank.
+     * 6. If still not enough, fallback to least recently reviewed.
+     */
     private fun buildVocabBlock(
-        lessonLevel: Int,
         packId: String,
         languageId: String
     ): List<DailyTask.VocabFlashcard> {
-        val rankMin = (lessonLevel - 1) * 10 + 1
-        val rankMax = lessonLevel * 10
-
         val allWords = loadVocabWords(packId, languageId)
-        val inRange = allWords.filter { it.rank in rankMin..rankMax }
+        if (allWords.isEmpty()) return emptyList()
 
-        if (inRange.isEmpty()) return emptyList()
-
-        // Only include words that are due (never reviewed or nextReviewDateMs <= now)
         val allMastery = wordMasteryStore.loadAll()
         val now = System.currentTimeMillis()
-        val availableWords = inRange.filter { word ->
-            val mastery = allMastery[word.id]
-            mastery == null || mastery.nextReviewDateMs <= now
-        }
 
-        if (availableWords.isEmpty()) {
-            // All words in range are scheduled for future review — pick least recently reviewed
-            val fallback = inRange.sortedBy { word ->
-                allMastery[word.id]?.lastReviewDateMs ?: 0L
-            }.take(VOCAB_COUNT)
-            if (fallback.isEmpty()) return emptyList()
-            return fallback.mapIndexed { index, word ->
-                val direction = if (index % 2 == 0) VocabDrillDirection.IT_TO_RU else VocabDrillDirection.RU_TO_IT
-                DailyTask.VocabFlashcard(id = "voc_${word.id}", word = word, direction = direction)
+        // Categorise words by SRS status
+        val dueWords = mutableListOf<Pair<VocabWord, Long>>()      // word, overdueMs
+        val newWords = mutableListOf<VocabWord>()                    // never reviewed
+        val scheduledWords = mutableListOf<Pair<VocabWord, Long>>() // word, lastReviewDateMs (for fallback)
+
+        for (word in allWords) {
+            val mastery = allMastery[word.id]
+            if (mastery == null) {
+                newWords.add(word)
+            } else if (mastery.nextReviewDateMs <= now || mastery.lastReviewDateMs == 0L) {
+                val overdueMs = now - mastery.nextReviewDateMs
+                dueWords.add(word to overdueMs)
+            } else {
+                scheduledWords.add(word to mastery.lastReviewDateMs)
             }
         }
 
-        // Prioritize due words, then fill with new (never reviewed)
-        val dueInRange = availableWords.filter { word ->
-            val mastery = allMastery[word.id]
-            mastery != null && mastery.nextReviewDateMs <= now
+        // Sort due words by most overdue first
+        dueWords.sortByDescending { it.second }
+
+        val selected = mutableListOf<VocabWord>()
+
+        // Take due words, most overdue first
+        selected.addAll(dueWords.take(VOCAB_COUNT).map { it.first })
+
+        // Fill with new words (never reviewed), sorted by rank
+        if (selected.size < VOCAB_COUNT) {
+            val remaining = VOCAB_COUNT - selected.size
+            selected.addAll(newWords.sortedBy { it.rank }.take(remaining))
         }
 
-        val selected = if (dueInRange.size >= VOCAB_COUNT) {
-            dueInRange.sortedBy { it.rank }.take(VOCAB_COUNT)
-        } else {
-            val newWords = availableWords.filter { word ->
-                allMastery[word.id] == null
-            }
-            (dueInRange.sortedBy { it.rank } + newWords.sortedBy { it.rank }).take(VOCAB_COUNT)
+        // Fallback: least recently reviewed
+        if (selected.size < VOCAB_COUNT) {
+            val remaining = VOCAB_COUNT - selected.size
+            val alreadySelectedIds = selected.map { it.id }.toSet()
+            val fallbackCandidates = scheduledWords
+                .filter { it.first.id !in alreadySelectedIds }
+                .sortedBy { it.second }
+            selected.addAll(fallbackCandidates.take(remaining).map { it.first })
         }
+
+        if (selected.isEmpty()) return emptyList()
 
         return selected.mapIndexed { index, word ->
             val direction = if (index % 2 == 0) {
@@ -183,10 +224,20 @@ class DailySessionComposer(
         }
     }
 
+    /**
+     * Block 3: Cursor-based verb drill selection.
+     *
+     * Uses cursor.verbOffset to track position. Cards that have been
+     * previously shown (tracked in VerbDrillStore progress) are excluded.
+     * Remaining cards are sorted by weakness (weak-first), stable within
+     * same weakness. Takes next 10 from verbOffset position.
+     * Returns empty if no remaining unshown cards.
+     */
     private fun buildVerbBlock(
         packId: String,
         languageId: String,
-        activeTenses: List<String>
+        activeTenses: List<String>,
+        cursor: DailyCursorState
     ): List<DailyTask.ConjugateVerb> {
         if (activeTenses.isEmpty()) return emptyList()
         val allCards = loadVerbDrillCards(packId, languageId)
@@ -199,21 +250,37 @@ class DailySessionComposer(
 
         val progressMap = verbDrillStore.loadProgress()
 
-        // Score each card by weakness: more unshown = weaker
-        val scored = filtered.map { card ->
-            val shownInCombo = progressMap.values.filter { it.tense == card.tense }
+        // Collect IDs of cards already shown across all combos
+        val shownCardIds = mutableSetOf<String>()
+        for (progress in progressMap.values) {
+            shownCardIds.addAll(progress.everShownCardIds)
+        }
+
+        // Exclude previously shown cards
+        val unshown = filtered.filter { it.id !in shownCardIds }
+
+        // Score unshown cards by weakness: more unshown in that tense = weaker
+        val scored = unshown.mapIndexed { idx, card ->
+            val shownInCombo = progressMap.values
+                .filter { it.tense == card.tense }
                 .sumOf { it.everShownCardIds.size }
             val comboTotal = filtered.count { it.tense == card.tense }
             val weakness = if (comboTotal == 0) 0f else 1f - (shownInCombo.toFloat() / comboTotal)
-            card to weakness
+            Triple(card, weakness, idx)  // idx preserves original order for stability
         }
 
-        // Weak-first order, stable within same weakness (preserves CSV/frequency order)
-        val selected = scored
-            .sortedByDescending { it.second }
-            .take(VERB_COUNT)
+        // Weak-first, stable within same weakness (by original index)
+        val sorted = scored.sortedWith(
+            compareByDescending<Triple<VerbDrillCard, Float, Int>> { it.second }
+                .thenBy { it.third }
+        )
 
-        return selected.mapIndexed { index, (card, _) ->
+        // Take next batch of unshown cards (already excludes previously shown)
+        if (sorted.isEmpty()) return emptyList()
+
+        val selected = sorted.take(VERB_COUNT)
+
+        return selected.mapIndexed { index, (card, _, _) ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
             DailyTask.ConjugateVerb(
                 id = "verb_${card.id}",
