@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.CardSessionContract
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.TtsState
@@ -99,7 +100,8 @@ class TrainingCardSessionScope(
     val onSubmit: () -> Unit,
     val onPrev: () -> Unit,
     val onNext: () -> Unit,
-    val onExit: () -> Unit
+    val onExit: () -> Unit,
+    val hintLevel: HintLevel = HintLevel.EASY
 )
 
 /**
@@ -136,7 +138,8 @@ fun TrainingCardSession(
     progressIndicator: (@Composable TrainingCardSessionScope.() -> Unit)? = null,
     onExit: () -> Unit,
     onComplete: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hintLevel: HintLevel = HintLevel.EASY
 ) {
     // Local input text state managed by the composable
     var localInputText by remember { mutableStateOf("") }
@@ -148,7 +151,7 @@ fun TrainingCardSession(
     val progress = contract.progress
 
     // Create scope for customization slots
-    val scope = remember(contract, currentCard, isShowingResult, lastResult, localInputText) {
+    val scope = remember(contract, currentCard, isShowingResult, lastResult, localInputText, hintLevel) {
         TrainingCardSessionScope(
             contract = contract,
             currentCard = currentCard,
@@ -176,7 +179,8 @@ fun TrainingCardSession(
                 contract.prevCard()
                 localInputText = ""
             },
-            onExit = onExit
+            onExit = onExit,
+            hintLevel = hintLevel
         )
     }
 
@@ -251,19 +255,21 @@ fun TrainingCardSession(
 @Composable
 private fun DefaultHeader(scope: TrainingCardSessionScope) {
     val card = scope.currentCard
-    // Tense label
-    val cardTense = card?.let {
-        // VerbDrillCard has a tense field; SentenceCard also has tense
-        if (it is com.alexpo.grammermate.data.VerbDrillCard) it.tense else null
-    }
-    if (!cardTense.isNullOrBlank()) {
-        Text(
-            text = cardTense,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.fillMaxWidth()
-        )
+    // Tense label -- hidden on HARD
+    if (scope.hintLevel != HintLevel.HARD) {
+        val cardTense = card?.let {
+            // VerbDrillCard has a tense field; SentenceCard also has tense
+            if (it is com.alexpo.grammermate.data.VerbDrillCard) it.tense else null
+        }
+        if (!cardTense.isNullOrBlank()) {
+            Text(
+                text = cardTense,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
     // Clean prompt (strip parenthetical hints)
     val rawPrompt = card?.promptRu ?: ""
@@ -641,8 +647,8 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
             )
         }
 
-        // Word Bank UI
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
+        // Word Bank UI -- only on EASY
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && scope.hintLevel == HintLevel.EASY) {
             val wordBankWords = contract.getWordBankWords()
             val selectedWords = contract.getSelectedWords()
             if (wordBankWords.isNotEmpty()) {
@@ -726,7 +732,8 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                             Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                         }
                     }
-                    if (InputMode.KEYBOARD in modeConfig.availableModes) {
+                    // Keyboard button: hidden on HARD (voice only)
+                    if (InputMode.KEYBOARD in modeConfig.availableModes && scope.hintLevel != HintLevel.HARD) {
                         FilledTonalIconButton(
                             onClick = { contract.setInputMode(InputMode.KEYBOARD) },
                             enabled = hasCards
@@ -734,7 +741,8 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                             Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
                         }
                     }
-                    if (InputMode.WORD_BANK in modeConfig.availableModes && contract.supportsWordBank) {
+                    // Word bank button: only on EASY
+                    if (InputMode.WORD_BANK in modeConfig.availableModes && contract.supportsWordBank && scope.hintLevel == HintLevel.EASY) {
                         FilledTonalIconButton(
                             onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                             enabled = hasCards
@@ -748,17 +756,19 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Show answer button
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards
+                // Show answer button -- only on EASY
+                if (scope.hintLevel == HintLevel.EASY) {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                        state = rememberTooltipState()
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        IconButton(
+                            onClick = { if (hasCards) contract.showAnswer() },
+                            enabled = hasCards
+                        ) {
+                            Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        }
                     }
                 }
                 // Flag/Report button

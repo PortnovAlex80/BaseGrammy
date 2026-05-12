@@ -118,6 +118,85 @@ class CardProvider(
         )
     }
 
+    // ── Mix Challenge cards ─────────────────────────────────────────────
+
+    /**
+     * Build a card list for the Mix Challenge (interleaved practice) mode.
+     *
+     * Selects cards from multiple lessons, maximizing tense alternation so
+     * consecutive cards come from different tenses whenever possible.
+     * Research shows interleaved practice produces ~43% better long-term
+     * retention compared to blocked practice.
+     *
+     * @param lessons         all loaded lessons for the current language
+     * @param startedLessonIds  IDs of lessons the user has started (non-locked)
+     * @param count           number of cards to return (default 10)
+     * @return shuffled & alternation-sorted card list, or empty if fewer than
+     *         3 started lessons with cards exist
+     */
+    fun buildMixChallengeCards(
+        lessons: List<Lesson>,
+        startedLessonIds: Set<String>,
+        count: Int = 10
+    ): List<SentenceCard> {
+        // Only use lessons the user has started
+        val activeLessons = lessons.filter { it.id in startedLessonIds }
+        if (activeLessons.size < 2) return emptyList()
+
+        // Build candidate pool: pick up to 5 cards per lesson from main pool
+        val candidates = mutableListOf<SentenceCard>()
+        for (lesson in activeLessons) {
+            val cards = lesson.mainPoolCards.shuffled().take(5)
+            candidates.addAll(cards)
+        }
+
+        if (candidates.isEmpty()) return emptyList()
+
+        // Apply maximum alternation sort
+        val sorted = applyAlternationSort(candidates)
+
+        return sorted.take(count)
+    }
+
+    /**
+     * Sort cards so no two consecutive cards share the same tense.
+     * Uses a greedy round-robin approach grouped by tense.
+     */
+    private fun applyAlternationSort(cards: List<SentenceCard>): List<SentenceCard> {
+        if (cards.size <= 1) return cards
+
+        // Group cards by tense (null tense grouped under a sentinel)
+        val byTense = cards.groupBy { it.tense ?: "__none__" }
+        if (byTense.size == 1) return cards.shuffled() // all same tense, nothing to alternate
+
+        // Sort groups largest-first for round-robin fairness
+        val groups = byTense.values.sortedByDescending { it.size }.map { it.shuffled().toMutableList() }
+        val result = mutableListOf<SentenceCard>()
+        var lastGroupIndex = -1
+
+        while (result.size < cards.size) {
+            // Pick the group with the most remaining cards that isn't the last used group
+            val candidate = groups
+                .filterIndexed { idx, _ -> idx != lastGroupIndex }
+                .maxByOrNull { it.size }
+
+            if (candidate == null || candidate.isEmpty()) {
+                // Fallback: just take from the last used group (only option left)
+                val fallback = groups.firstOrNull { it.isNotEmpty() }
+                if (fallback != null && fallback.isNotEmpty()) {
+                    result.add(fallback.removeAt(0))
+                }
+                continue
+            }
+
+            val groupIdx = groups.indexOf(candidate)
+            result.add(candidate.removeAt(0))
+            lastGroupIndex = groupIdx
+        }
+
+        return result
+    }
+
     // ── Boss cards ─────────────────────────────────────────────────────
 
     /**

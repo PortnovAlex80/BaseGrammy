@@ -84,7 +84,8 @@ data class StoryQuiz(
 enum class TrainingMode {
     LESSON,
     ALL_SEQUENTIAL,
-    ALL_MIXED
+    ALL_MIXED,
+    MIX_CHALLENGE
 }
 
 enum class BossType {
@@ -110,6 +111,16 @@ enum class InputMode {
     VOICE,
     KEYBOARD,
     WORD_BANK
+}
+
+/** Difficulty level controlling which hints are visible during practice. */
+enum class HintLevel {
+    /** All hints visible: verb info, word bank, first-letter hints. Current default. */
+    EASY,
+    /** Partial hints: infinitive+tense only, no word bank, keyboard/voice only. */
+    MEDIUM,
+    /** No hints: voice only, user must produce from Russian prompt alone. */
+    HARD
 }
 
 data class TrainingProgress(

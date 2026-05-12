@@ -1,223 +1,24 @@
 package com.alexpo.grammermate.ui.helpers
 
 import com.alexpo.grammermate.data.DailyBlockType
-import com.alexpo.grammermate.data.DailySessionState
-import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.ui.TrainingUiState
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * Interface providing read/write access to shared training state.
+ * Implemented by TrainingViewModel via an anonymous object and passed to
+ * helper modules so they can read and update [TrainingUiState].
+ */
 interface TrainingStateAccess {
     val uiState: StateFlow<TrainingUiState>
     fun updateState(transform: (TrainingUiState) -> TrainingUiState)
     fun saveProgress()
 }
 
-class DailySessionHelper(
-    private val stateAccess: TrainingStateAccess
-) {
-
-    fun startDailySession(tasks: List<DailyTask>, lessonLevel: Int) {
-        if (tasks.isEmpty()) return
-        stateAccess.updateState { state ->
-            state.copy(
-                dailySession = DailySessionState(
-                    active = true,
-                    tasks = tasks,
-                    taskIndex = 0,
-                    blockIndex = 0,
-                    level = lessonLevel,
-                    finishedToken = false
-                )
-            )
-        }
-        stateAccess.saveProgress()
-    }
-
-    fun getCurrentTask(): DailyTask? {
-        val ds = stateAccess.uiState.value.dailySession
-        if (!ds.active) return null
-        return ds.tasks.getOrNull(ds.taskIndex)
-    }
-
-    fun getCurrentBlockType(): DailyBlockType? {
-        return getCurrentTask()?.blockType
-    }
-
-    fun nextTask(): Boolean {
-        val ds = stateAccess.uiState.value.dailySession
-        if (!ds.active) return false
-
-        val nextIndex = ds.taskIndex + 1
-        if (nextIndex >= ds.tasks.size) {
-            endSession()
-            return false
-        }
-
-        val currentBlock = getCurrentBlockType()
-        val nextBlock = ds.tasks.getOrNull(nextIndex)?.blockType
-        val nextBlockIndex = if (nextBlock != currentBlock) ds.blockIndex + 1 else ds.blockIndex
-
-        stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
-                    taskIndex = nextIndex,
-                    blockIndex = nextBlockIndex
-                )
-            )
-        }
-        stateAccess.saveProgress()
-        return true
-    }
-
-    /**
-     * Advance taskIndex to the first task of the next block.
-     * Returns false if no more blocks (session complete).
-     */
-    fun advanceToNextBlock(): Boolean {
-        val ds = stateAccess.uiState.value.dailySession
-        if (!ds.active) return false
-
-        val currentBlock = getCurrentBlockType() ?: return false
-        var idx = ds.taskIndex
-        // Skip past all tasks of the current block type
-        while (idx < ds.tasks.size && ds.tasks[idx].blockType == currentBlock) {
-            idx++
-        }
-
-        if (idx >= ds.tasks.size) {
-            endSession()
-            return false
-        }
-
-        val nextBlock = ds.tasks[idx].blockType
-        val nextBlockIndex = ds.blockIndex + 1
-
-        stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
-                    taskIndex = idx,
-                    blockIndex = nextBlockIndex
-                )
-            )
-        }
-        stateAccess.saveProgress()
-        return true
-    }
-
-    /**
-     * Replace the current block's tasks with new ones and reset position to the start of that block.
-     */
-    fun replaceCurrentBlock(newTasks: List<DailyTask>) {
-        val ds = stateAccess.uiState.value.dailySession
-        if (!ds.active) return
-
-        val currentBlock = getCurrentBlockType() ?: return
-
-        // Find where the current block starts and ends
-        var blockStart = ds.taskIndex
-        for (i in ds.tasks.indices) {
-            if (ds.tasks[i].blockType == currentBlock) {
-                blockStart = i
-                break
-            }
-        }
-        var blockEnd = blockStart
-        for (i in blockStart until ds.tasks.size) {
-            if (ds.tasks[i].blockType != currentBlock) break
-            blockEnd = i
-        }
-
-        // Replace tasks in the current block
-        val newTaskList = ds.tasks.subList(0, blockStart) + newTasks + ds.tasks.subList(blockEnd + 1, ds.tasks.size)
-
-        stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
-                    tasks = newTaskList,
-                    taskIndex = blockStart
-                )
-            )
-        }
-        stateAccess.saveProgress()
-    }
-
-    fun endSession() {
-        stateAccess.updateState { state ->
-            state.copy(
-                dailySession = state.dailySession.copy(
-                    active = false,
-                    finishedToken = true
-                )
-            )
-        }
-        stateAccess.saveProgress()
-    }
-
-    /**
-     * Fast-forward the session to a specific task index.
-     * Used when resuming a saved daily practice session.
-     * Computes the correct blockIndex for the target position.
-     */
-    fun fastForwardTo(taskIndex: Int) {
-        val ds = stateAccess.uiState.value.dailySession
-        if (!ds.active || taskIndex >= ds.tasks.size) return
-
-        var blockIndex = 0
-        for (i in 1..taskIndex) {
-            if (ds.tasks[i].blockType != ds.tasks[i - 1].blockType) {
-                blockIndex++
-            }
-        }
-
-        stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
-                    taskIndex = taskIndex,
-                    blockIndex = blockIndex
-                )
-            )
-        }
-        stateAccess.saveProgress()
-    }
-
-    fun getBlockProgress(): BlockProgress {
-        val ds = stateAccess.uiState.value.dailySession
-        if (!ds.active) return BlockProgress.Empty
-
-        val tasks = ds.tasks
-        val currentBlock = getCurrentBlockType() ?: return BlockProgress.Empty
-
-        var blockStart = 0
-        for (i in tasks.indices) {
-            if (tasks[i].blockType == currentBlock) {
-                blockStart = i
-                break
-            }
-        }
-
-        var blockEnd = blockStart
-        for (i in blockStart until tasks.size) {
-            if (tasks[i].blockType != currentBlock) break
-            blockEnd = i
-        }
-        val blockSize = blockEnd - blockStart + 1
-        val positionInBlock = ds.taskIndex - blockStart + 1
-
-        return BlockProgress(
-            blockType = currentBlock,
-            positionInBlock = positionInBlock.coerceIn(1, blockSize),
-            blockSize = blockSize,
-            totalTasks = tasks.size,
-            globalPosition = ds.taskIndex + 1
-        )
-    }
-
-    fun isSessionComplete(): Boolean {
-        val ds = stateAccess.uiState.value.dailySession
-        return !ds.active || ds.taskIndex >= ds.tasks.size
-    }
-}
-
+/**
+ * Progress information for the current block within a daily practice session.
+ * Used by DailyPracticeScreen and DailyPracticeCoordinator.
+ */
 data class BlockProgress(
     val blockType: DailyBlockType,
     val positionInBlock: Int,

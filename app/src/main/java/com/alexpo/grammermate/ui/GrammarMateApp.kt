@@ -209,6 +209,9 @@ fun GrammarMateApp() {
                 BackHandler(enabled = screen == AppScreen.DAILY_PRACTICE && !showSettings) {
                     showExitDialog = true
                 }
+                BackHandler(enabled = screen == AppScreen.MIX_CHALLENGE && !showSettings) {
+                    showExitDialog = true
+                }
                 BackHandler(enabled = screen == AppScreen.STORY && !showSettings) {
                     screen = AppScreen.LESSON
                 }
@@ -257,7 +260,8 @@ fun GrammarMateApp() {
                     onSetRuTextScale = vm::setRuTextScale,
                     onSetUseOfflineAsr = vm::setUseOfflineAsr,
                     onStartAsrDownload = { vm.startAsrDownload() },
-                    onResetAllProgress = vm::resetAllProgress
+                    onResetAllProgress = vm::resetAllProgress,
+                    onSetHintLevel = vm::setHintLevel
                 )
 
             if (showWelcomeDialog) {
@@ -342,7 +346,17 @@ fun GrammarMateApp() {
                     hasVerbDrill = hasVerbDrill,
                     hasVocabDrill = hasVocabDrill,
                     onOpenVerbDrill = { screen = AppScreen.VERB_DRILL },
-                    onOpenVocabDrill = { screen = AppScreen.VOCAB_DRILL }
+                    onOpenVocabDrill = { screen = AppScreen.VOCAB_DRILL },
+                    onOpenMixChallenge = {
+                        isLoadingDaily = true
+                        dailyScope.launch {
+                            val started = withContext(Dispatchers.IO) {
+                                vm.startMixChallenge()
+                            }
+                            isLoadingDaily = false
+                            if (started) screen = AppScreen.MIX_CHALLENGE
+                        }
+                    }
                 )
                 AppScreen.LESSON -> LessonRoadmapScreen(
                     state = state,
@@ -416,6 +430,34 @@ fun GrammarMateApp() {
                         }
                     )
                 }
+                AppScreen.MIX_CHALLENGE -> TrainingScreen(
+                    state = state,
+                    onInputChange = vm::onInputChanged,
+                    onSubmit = vm::submitAnswer,
+                    onPrev = vm::prevCard,
+                    onNext = vm::nextCard,
+                    onTogglePause = vm::togglePause,
+                    onRequestExit = { showExitDialog = true },
+                    onOpenSettings = {
+                        previousScreen = screen
+                        vm.pauseSession()
+                    },
+                    onShowSettings = { showSettings = true },
+                    onSelectLesson = vm::selectLesson,
+                    onSelectMode = vm::selectMode,
+                    onSetInputMode = vm::setInputMode,
+                    onShowAnswer = vm::showAnswer,
+                    onVoicePromptStarted = vm::onVoicePromptStarted,
+                    onSelectWordFromBank = vm::selectWordFromBank,
+                    onRemoveLastWord = vm::removeLastSelectedWord,
+                    onTtsSpeak = onTtsSpeak,
+                    onFlagBadSentence = vm::flagBadSentence,
+                    onUnflagBadSentence = vm::unflagBadSentence,
+                    onHideCard = vm::hideCurrentCard,
+                    onExportBadSentences = vm::exportBadSentences,
+                    isBadSentence = vm::isBadSentence,
+                    onStartOfflineRecognition = vm::startOfflineRecognition
+                )
                 AppScreen.STORY -> StoryQuizScreen(
                     story = state.activeStory,
                     testMode = state.testMode,
@@ -526,6 +568,10 @@ fun GrammarMateApp() {
             if (screen == AppScreen.TRAINING && state.subLessonFinishedToken != lastFinishedToken.value) {
                 lastFinishedToken.value = state.subLessonFinishedToken
                 screen = AppScreen.LESSON
+            }
+            if (screen == AppScreen.MIX_CHALLENGE && state.subLessonFinishedToken != lastFinishedToken.value) {
+                lastFinishedToken.value = state.subLessonFinishedToken
+                screen = AppScreen.HOME
             }
             if (screen == AppScreen.TRAINING && state.bossFinishedToken != lastBossFinishedToken.value) {
                 lastBossFinishedToken.value = state.bossFinishedToken
@@ -714,6 +760,7 @@ private enum class AppScreen {
     ELITE,
     VOCAB,
     DAILY_PRACTICE,
+    MIX_CHALLENGE,
     STORY,
     TRAINING,
     LADDER,
@@ -826,7 +873,8 @@ private fun HomeScreen(
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
-    onOpenVocabDrill: () -> Unit = {}
+    onOpenVocabDrill: () -> Unit = {},
+    onOpenMixChallenge: () -> Unit = {}
 ) {
     val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackId, state.activePackLessonIds) {
         buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackLessonIds)
@@ -987,6 +1035,10 @@ private fun HomeScreen(
         }
         DailyPracticeEntryTile(
             onClick = onOpenElite
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        MixChallengeEntryTile(
+            onClick = onOpenMixChallenge
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
@@ -1169,6 +1221,47 @@ private fun DailyPracticeEntryTile(
                 Icons.Default.PlayArrow,
                 contentDescription = "Start",
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
+@Composable
+private fun MixChallengeEntryTile(
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFE3F2FD)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "Mix Challenge",
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF1565C0)
+                )
+                Text(
+                    text = "Interleaved practice across tenses",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF1565C0).copy(alpha = 0.7f)
+                )
+            }
+            Icon(
+                Icons.Default.SwapHoriz,
+                contentDescription = "Start",
+                tint = Color(0xFF1565C0)
             )
         }
     }
@@ -1971,7 +2064,8 @@ private fun SettingsSheet(
     onSetRuTextScale: (Float) -> Unit,
     onSetUseOfflineAsr: (Boolean) -> Unit,
     onStartAsrDownload: () -> Unit,
-    onResetAllProgress: () -> Unit
+    onResetAllProgress: () -> Unit,
+    onSetHintLevel: (com.alexpo.grammermate.data.HintLevel) -> Unit
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -2042,6 +2136,44 @@ private fun SettingsSheet(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Показать лестницу")
             }
+
+            // Difficulty / Hint level selector
+            Text(
+                text = "Difficulty",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.alexpo.grammermate.data.HintLevel.entries.forEach { level ->
+                    val isSelected = state.hintLevel == level
+                    val label = when (level) {
+                        com.alexpo.grammermate.data.HintLevel.EASY -> "Easy"
+                        com.alexpo.grammermate.data.HintLevel.MEDIUM -> "Medium"
+                        com.alexpo.grammermate.data.HintLevel.HARD -> "Hard"
+                    }
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onSetHintLevel(level) },
+                        label = { Text(text = label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Text(
+                text = when (state.hintLevel) {
+                    com.alexpo.grammermate.data.HintLevel.EASY ->
+                        "All hints visible: verb info, word bank, first-letter hints"
+                    com.alexpo.grammermate.data.HintLevel.MEDIUM ->
+                        "Partial hints: infinitive + tense only, no word bank"
+                    com.alexpo.grammermate.data.HintLevel.HARD ->
+                        "No hints: voice only, produce from Russian prompt alone"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
             OutlinedTextField(
                 value = vocabLimitText,
                 onValueChange = { next ->
@@ -2647,14 +2779,31 @@ private fun TrainingScreen(
                 )
             } else {
                 val cardTense = state.currentCard?.tense
+                val isMixChallenge = state.mode == TrainingMode.MIX_CHALLENGE
                 if (!cardTense.isNullOrBlank()) {
-                    Text(
-                        text = cardTense,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    if (isMixChallenge) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.small,
+                            color = Color(0xFFE3F2FD)
+                        ) {
+                            Text(
+                                text = cardTense,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1565C0),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = cardTense,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 val rawPrompt = state.currentCard?.promptRu ?: ""
                 val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")

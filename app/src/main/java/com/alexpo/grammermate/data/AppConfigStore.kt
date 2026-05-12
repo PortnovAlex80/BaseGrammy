@@ -8,7 +8,8 @@ data class AppConfig(
     val testMode: Boolean = false,
     val eliteSizeMultiplier: Double = 1.25,
     val vocabSprintLimit: Int = 20,
-    val useOfflineAsr: Boolean = false
+    val useOfflineAsr: Boolean = false,
+    val hintLevel: HintLevel = HintLevel.EASY
 )
 
 class AppConfigStore(private val context: Context) {
@@ -22,7 +23,8 @@ class AppConfigStore(private val context: Context) {
             "testMode" to config.testMode,
             "eliteSizeMultiplier" to config.eliteSizeMultiplier,
             "vocabSprintLimit" to config.vocabSprintLimit,
-            "useOfflineAsr" to config.useOfflineAsr
+            "useOfflineAsr" to config.useOfflineAsr,
+            "hintLevel" to config.hintLevel.name
         )
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
@@ -50,11 +52,14 @@ class AppConfigStore(private val context: Context) {
         val eliteSizeMultiplier = (data["eliteSizeMultiplier"] as? Number)?.toDouble() ?: 1.25
         val vocabSprintLimit = (data["vocabSprintLimit"] as? Number)?.toInt() ?: 20
         val useOfflineAsr = data["useOfflineAsr"] as? Boolean ?: false
+        val hintLevelStr = data["hintLevel"] as? String ?: "EASY"
+        val hintLevel = runCatching { HintLevel.valueOf(hintLevelStr) }.getOrDefault(HintLevel.EASY)
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
             vocabSprintLimit = vocabSprintLimit,
-            useOfflineAsr = useOfflineAsr
+            useOfflineAsr = useOfflineAsr,
+            hintLevel = hintLevel
         )
     }
 }
