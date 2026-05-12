@@ -121,6 +121,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var activeStartMs: Long? = null
     private var forceBackupOnSave: Boolean = false
     private var prebuiltDailySession: List<DailyTask>? = null
+    private var lastDailyTasks: List<DailyTask>? = null
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -1432,6 +1433,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Try pre-built session first
         val cached = prebuiltDailySession
         if (cached != null && cached.isNotEmpty()) {
+            lastDailyTasks = cached
             dailySessionHelper.startDailySession(cached, lessonLevel)
             prebuiltDailySession = null
             return true
@@ -1450,8 +1452,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
         if (tasks.isEmpty()) return false
 
+        lastDailyTasks = tasks
         dailySessionHelper.startDailySession(tasks, lessonLevel)
         return true
+    }
+
+    fun repeatDailyPractice(lessonLevel: Int): Boolean {
+        val cached = lastDailyTasks
+        if (cached != null && cached.isNotEmpty()) {
+            dailySessionHelper.startDailySession(cached, lessonLevel)
+            return true
+        }
+        // No cache — build fresh (same as start)
+        return startDailyPractice(lessonLevel)
     }
 
     fun resumeDailyPractice(): Boolean {

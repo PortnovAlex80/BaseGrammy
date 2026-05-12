@@ -553,14 +553,14 @@ fun GrammarMateApp() {
                             showDailyResumeDialog = false
                             isLoadingDaily = true
                             dailyScope.launch {
-                                val resumed = withContext(Dispatchers.IO) {
-                                    vm.resumeDailyPractice()
+                                val started = withContext(Dispatchers.IO) {
+                                    vm.startDailyPractice(pendingDailyLevel)
                                 }
                                 isLoadingDaily = false
-                                if (resumed) screen = AppScreen.DAILY_PRACTICE
+                                if (started) screen = AppScreen.DAILY_PRACTICE
                             }
                         }) {
-                            Text(text = "Continue")
+                            Text(text = "Продолжить")
                         }
                     },
                     dismissButton = {
@@ -569,17 +569,17 @@ fun GrammarMateApp() {
                             isLoadingDaily = true
                             dailyScope.launch {
                                 val started = withContext(Dispatchers.IO) {
-                                    vm.startDailyPractice(pendingDailyLevel)
+                                    vm.repeatDailyPractice(pendingDailyLevel)
                                 }
                                 isLoadingDaily = false
                                 if (started) screen = AppScreen.DAILY_PRACTICE
                             }
                         }) {
-                            Text(text = "Start fresh")
+                            Text(text = "Повторить")
                         }
                     },
-                    title = { Text(text = "Resume your session?") },
-                    text = { Text(text = "You have an unfinished daily practice session.") }
+                    title = { Text(text = "Ежедневная практика") },
+                    text = { Text(text = "Повторить — те же карточки сначала\nПродолжить — новый набор карточек") }
                 )
             }
 
