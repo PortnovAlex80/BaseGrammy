@@ -1,4 +1,4 @@
-﻿package com.alexpo.grammermate.data
+package com.alexpo.grammermate.data
 
 object Normalizer {
     fun normalize(input: String): String {
@@ -21,5 +21,19 @@ object Normalizer {
             }
         }
         return builder.toString().replace(Regex("\\s+"), " ").trim()
+    }
+
+
+    /**
+     * Check whether [input] is a complete, exact match against any of [acceptedAnswers]
+     * after normalization. Used for auto-submit: only returns true when the user has
+     * typed the full answer (not just a prefix).
+     */
+    fun isExactMatch(input: String, acceptedAnswers: List<String>, minLength: Int = 2): Boolean {
+        val normalizedInput = normalize(input)
+        if (normalizedInput.length < minLength) return false
+        return acceptedAnswers.any { ans ->
+            normalizedInput == normalize(ans)
+        }
     }
 }

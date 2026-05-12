@@ -130,7 +130,7 @@ class BackupManager(private val context: Context) {
         // Backup pack-scoped drill data (drills/{packId}/verb_drill_progress.yaml, word_mastery.yaml)
         val drillsDir = File(internalDir, "drills")
         if (drillsDir.exists()) {
-            drillsDir.listFiles { it.isDirectory }?.forEach { packDir ->
+            drillsDir.listFiles(java.io.FileFilter { file -> file.isDirectory })?.forEach { packDir ->
                 val verbProgressFile = File(packDir, "verb_drill_progress.yaml")
                 if (verbProgressFile.exists()) {
                     val targetDir = File(backupSubDir, "drills/${packDir.name}")
@@ -287,7 +287,7 @@ class BackupManager(private val context: Context) {
         // to avoid needing subdirectory support in MediaStore.
         val drillsDir = File(internalDir, "drills")
         if (drillsDir.exists()) {
-            drillsDir.listFiles { it.isDirectory }?.forEach { packDir ->
+            drillsDir.listFiles(java.io.FileFilter { file -> file.isDirectory })?.forEach { packDir ->
                 val verbProgressFile = File(packDir, "verb_drill_progress.yaml")
                 if (verbProgressFile.exists()) {
                     val name = "drills_${packDir.name}_verb_drill_progress.yaml"
@@ -404,7 +404,7 @@ class BackupManager(private val context: Context) {
             // Restore pack-scoped drill data (from drills/ subdirectory in backup)
             val backupDrillsDir = File(backupSubDir, "drills")
             if (backupDrillsDir.exists()) {
-                backupDrillsDir.listFiles { it.isDirectory }?.forEach { packBackupDir ->
+                backupDrillsDir.listFiles(java.io.FileFilter { file -> file.isDirectory })?.forEach { packBackupDir ->
                     val targetPackDir = File(File(internalDir, "drills"), packBackupDir.name)
                     targetPackDir.mkdirs()
                     val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
