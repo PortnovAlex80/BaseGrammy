@@ -24,7 +24,7 @@ object VerbDrillCsvParser {
             }
 
             if (!headerConsumed) {
-                val columns = parseLine(line)
+                val columns = CsvLineParser.parseLine(line)
                 columns.forEachIndexed { index, col ->
                     val trimmed = col.trim().trim('"')
                     when (trimmed.lowercase()) {
@@ -42,7 +42,7 @@ object VerbDrillCsvParser {
 
             if (ruIndex < 0 || itIndex < 0) continue
 
-            val columns = parseLine(line)
+            val columns = CsvLineParser.parseLine(line)
             if (columns.size <= maxOf(ruIndex, itIndex)) continue
 
             val ru = columns[ruIndex].trim().trim('"')
@@ -86,34 +86,6 @@ object VerbDrillCsvParser {
         }
 
         return title to cards
-    }
-
-    private fun parseLine(line: String): List<String> {
-        val result = mutableListOf<String>()
-        val current = StringBuilder()
-        var inQuotes = false
-        var i = 0
-        while (i < line.length) {
-            val ch = line[i]
-            when (ch) {
-                '"' -> {
-                    inQuotes = !inQuotes
-                    current.append(ch)
-                }
-                ';' -> {
-                    if (inQuotes) {
-                        current.append(ch)
-                    } else {
-                        result.add(current.toString())
-                        current.clear()
-                    }
-                }
-                else -> current.append(ch)
-            }
-            i += 1
-        }
-        result.add(current.toString())
-        return result
     }
 
     private fun extractTitle(raw: String): String? {

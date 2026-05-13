@@ -1,5 +1,9 @@
 ﻿package com.alexpo.grammermate.data
 
+@JvmInline value class LessonId(val value: String)
+@JvmInline value class LanguageId(val value: String)
+@JvmInline value class PackId(val value: String)
+
 data class Language(
     val id: String,
     val displayName: String
@@ -112,6 +116,8 @@ enum class InputMode {
     KEYBOARD,
     WORD_BANK
 }
+
+enum class SrsRating { AGAIN, HARD, GOOD, EASY }
 
 /** Difficulty level controlling which hints are visible during practice. */
 enum class HintLevel {

@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alexpo.grammermate.data.AppScreen
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.HintLevel
@@ -84,7 +85,7 @@ fun GrammarMateApp() {
     Surface(modifier = Modifier.fillMaxSize()) {
         val vm: TrainingViewModel = viewModel()
         val state by vm.uiState.collectAsState()
-        var screen by remember { mutableStateOf(parseScreen(state.navigation.initialScreen)) }
+        var screen by remember { mutableStateOf(AppScreen.parse(state.navigation.initialScreen)) }
         var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
         var dialogs by remember { mutableStateOf(DialogState()) }
         val dailyScope = rememberCoroutineScope()
@@ -822,24 +823,6 @@ private fun DailyResumeDialog(
 }
 
 // ── Enum & helpers ───────────────────────────────────────────────────────────
-
-private enum class AppScreen {
-    HOME,
-    LESSON,
-    ELITE,
-    VOCAB,
-    DAILY_PRACTICE,
-    MIX_CHALLENGE,
-    STORY,
-    TRAINING,
-    LADDER,
-    VERB_DRILL,
-    VOCAB_DRILL
-}
-
-private fun parseScreen(name: String): AppScreen {
-    return try { AppScreen.valueOf(name) } catch (_: IllegalArgumentException) { AppScreen.HOME }
-}
 
 @Composable
 private fun WelcomeDialog(
