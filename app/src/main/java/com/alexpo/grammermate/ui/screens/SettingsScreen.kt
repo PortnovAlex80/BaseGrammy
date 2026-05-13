@@ -453,7 +453,7 @@ fun SettingsSheet(
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { onDeletePack(pack.packId) }) {
+                        IconButton(onClick = { onDeletePack(pack.packId.value) }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete pack")
                         }
                     }
@@ -586,14 +586,14 @@ fun LanguageLessonColumn(
             title = "Language",
             selected = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName
                 ?: "-",
-            items = state.navigation.languages.map { it.displayName to it.id },
+            items = state.navigation.languages.map { it.displayName to it.id.value },
             onSelect = onSelectLanguage
         )
         DropdownSelector(
             title = "Pack",
             selected = selectedPackLabel,
             items = languagePacks.map { pack ->
-                (pack.displayName ?: "${pack.packId} (${pack.packVersion})") to pack.packId
+                (pack.displayName ?: "${pack.packId.value} (${pack.packVersion})") to pack.packId.value
             },
             onSelect = onSelectPack
         )

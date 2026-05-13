@@ -348,7 +348,7 @@ fun ModeSelector(
                             text = { Text(text = lesson.title) },
                             onClick = {
                                 lessonExpanded = false
-                                onSelectLesson(lesson.id)
+                                onSelectLesson(lesson.id.value)
                             }
                         )
                     }
@@ -472,7 +472,7 @@ fun AnswerBox(
             if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
-                launchVoiceRecognition(state.navigation.selectedLanguageId, state.cardSession.currentCard?.promptRu, speechLauncher)
+                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher)
             }
         }
     }
