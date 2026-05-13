@@ -10,7 +10,6 @@ import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.AppConfigStore
-import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
@@ -27,9 +26,7 @@ import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.ScheduledSubLesson
-import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
-import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
@@ -60,9 +57,12 @@ import com.alexpo.grammermate.ui.helpers.CardSetResult
 import com.alexpo.grammermate.ui.helpers.StreakManager
 import com.alexpo.grammermate.ui.helpers.DailyPracticeCoordinator
 import com.alexpo.grammermate.ui.helpers.AudioCoordinator
+import com.alexpo.grammermate.ui.helpers.FlowerRefresher
 import com.alexpo.grammermate.ui.helpers.ProgressTracker
 import com.alexpo.grammermate.ui.helpers.SessionRunner
 import com.alexpo.grammermate.ui.helpers.TrainingStateAccess
+import com.alexpo.grammermate.ui.helpers.StoryRunner
+import com.alexpo.grammermate.ui.helpers.VocabSprintRunner
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -91,7 +91,28 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         coroutineScope = viewModelScope,
         configStore = configStore
     )
-    private var vocabSession: List<VocabEntry> = emptyList()
+    private val answerValidator = AnswerValidator()
+    private val vocabSprintRunner = VocabSprintRunner(
+        stateAccess = object : TrainingStateAccess {
+            override val uiState: StateFlow<TrainingUiState> = _uiState
+            override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
+                _uiState.update(transform)
+            }
+            override fun saveProgress() = this@TrainingViewModel.saveProgress()
+        },
+        lessonStore = lessonStore,
+        vocabProgressStore = vocabProgressStore,
+        answerValidator = answerValidator
+    ).also { runner ->
+        runner.onPlaySuccess = { audioCoordinator.playSuccessSound() }
+        runner.onPlayError = { audioCoordinator.playErrorSound() }
+        runner.onSaveProgress = { saveProgress() }
+        runner.onForceBackup = { forceBackupOnSave = true }
+    }
+
+    private var vocabSession: List<VocabEntry>
+        get() = vocabSprintRunner.vocabSession
+        set(value) { vocabSprintRunner.vocabSession = value }
     private var subLessonTotal: Int = 0
     private var subLessonCount: Int = 0
     private var lessonSchedules: Map<String, LessonSchedule> = emptyMap()
@@ -102,7 +123,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = 1.25
 
-    private val answerValidator = AnswerValidator()
     private val streakManager = StreakManager(streakStore)
     private val bossBattleRunner = BossBattleRunner()
     private val cardProvider = CardProvider(
@@ -157,6 +177,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore = lessonStore
     )
 
+    private val flowerRefresher = FlowerRefresher(
+        stateAccess = object : TrainingStateAccess {
+            override val uiState: StateFlow<TrainingUiState> = _uiState
+            override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
+                _uiState.update(transform)
+            }
+            override fun saveProgress() = this@TrainingViewModel.saveProgress()
+        },
+        masteryStore = masteryStore
+    )
+
     private val dailyPracticeCoordinator = DailyPracticeCoordinator(
         stateAccess = object : TrainingStateAccess {
             override val uiState: StateFlow<TrainingUiState> = _uiState
@@ -170,6 +201,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore = lessonStore,
         masteryStore = masteryStore
     )
+
+    private val storyRunner = StoryRunner(
+        stateAccess = object : TrainingStateAccess {
+            override val uiState: StateFlow<TrainingUiState> = _uiState
+            override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
+                _uiState.update(transform)
+            }
+            override fun saveProgress() = this@TrainingViewModel.saveProgress()
+        },
+        lessonStore = lessonStore,
+    ).also { runner ->
+        runner.onForceBackup = { forceBackupOnSave = true }
+        runner.onSaveProgress = { saveProgress() }
+    }
 
     init {
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
@@ -779,16 +824,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── End Drill Mode ───────────────────────────────────────────────────
 
-    fun openStory(phase: StoryPhase) {
-        val lessonId = _uiState.value.navigation.selectedLessonId ?: return
-        val languageId = _uiState.value.navigation.selectedLanguageId
-        val story = lessonStore.getStoryQuizzes(lessonId, phase, languageId).firstOrNull()
-        if (story == null) {
-            _uiState.update { it.copy(story = it.story.copy(storyErrorMessage = "Story not found. Please import the pack again.")) }
-            return
-        }
-        _uiState.update { it.copy(story = it.story.copy(activeStory = story, storyErrorMessage = null)) }
-    }
+    fun openStory(phase: StoryPhase) = storyRunner.openStory(phase)
 
     fun hasVocabProgress(): Boolean {
         val lessonId = _uiState.value.navigation.selectedLessonId ?: return false
@@ -797,166 +833,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return progress.completedIndices.isNotEmpty()
     }
 
-    fun openVocabSprint(resume: Boolean = false) {
-        val lessonId = _uiState.value.navigation.selectedLessonId ?: return
-        val languageId = _uiState.value.navigation.selectedLanguageId
-        val allEntries = lessonStore.getVocabEntries(lessonId, languageId)
+    fun openVocabSprint(resume: Boolean = false) = vocabSprintRunner.openSprint(resume)
 
-        // Sort using SRS prioritization: overdue first, then new, then not due
-        val sorted = vocabProgressStore.sortEntriesForSprint(allEntries, lessonId, languageId)
+    fun completeStory(phase: StoryPhase, allCorrect: Boolean) = storyRunner.completeStory(phase, allCorrect)
 
-        val limit = _uiState.value.cardSession.vocabSprintLimit
-        val limited = if (limit <= 0 || limit >= sorted.size) sorted else sorted.take(limit)
+    fun clearStoryError() = storyRunner.clearStoryError()
 
-        if (limited.isEmpty()) {
-            vocabSession = emptyList()
-            _uiState.update { it.copy(vocabSprint = it.vocabSprint.copy(vocabErrorMessage = "Vocabulary not found. Please import the pack again.")) }
-            return
-        }
+    fun clearVocabError() = vocabSprintRunner.clearError()
 
-        val startIndex: Int
-        val sessionEntries: List<VocabEntry>
+    fun onVocabInputChanged(text: String) = vocabSprintRunner.onInputChanged(text)
 
-        if (resume) {
-            val progress = vocabProgressStore.get(lessonId, languageId)
-            // Filter out already-completed entries
-            val remaining = limited.filterIndexed { index, _ -> index !in progress.completedIndices }
-            if (remaining.isEmpty()) {
-                // All completed - start fresh
-                vocabProgressStore.clearSprintProgress(lessonId, languageId)
-                sessionEntries = limited
-                startIndex = 0
-            } else {
-                sessionEntries = remaining
-                startIndex = 0
-            }
-        } else {
-            vocabProgressStore.clearSprintProgress(lessonId, languageId)
-            sessionEntries = limited
-            startIndex = 0
-        }
+    fun setVocabInputMode(mode: InputMode) = vocabSprintRunner.setInputMode(mode)
 
-        vocabSession = sessionEntries
-        val firstEntry = sessionEntries.firstOrNull()
-        val vocabWordBank = firstEntry?.let { buildVocabWordBank(it, sessionEntries) }.orEmpty()
-        Log.d(logTag, "openVocabSprint: allEntries=${allEntries.size}, limited=${limited.size}, session=${sessionEntries.size}, resume=$resume, wordBank=${vocabWordBank.size}")
-        _uiState.update {
-            it.copy(vocabSprint = it.vocabSprint.copy(currentVocab = firstEntry, vocabInputText = "", vocabAttempts = 0, vocabAnswerText = null, vocabIndex = startIndex, vocabTotal = sessionEntries.size, vocabWordBankWords = vocabWordBank, vocabErrorMessage = null, vocabInputMode = InputMode.VOICE, vocabVoiceTriggerToken = 0), boss = it.boss.copy(bossActive = false, bossType = null, bossTotal = 0, bossProgress = 0, bossReward = null, bossRewardMessage = null, bossFinishedToken = 0, bossErrorMessage = null))
-        }
-    }
+    fun requestVocabVoice() = vocabSprintRunner.requestVoice()
 
-    fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
-        val shouldPersist = allCorrect || _uiState.value.cardSession.testMode
-        _uiState.update {
-            if (!allCorrect && !it.cardSession.testMode) {
-                return@update it.copy(story = it.story.copy(activeStory = null))
-            }
-            when (phase) {
-                StoryPhase.CHECK_IN -> it.copy(story = it.story.copy(storyCheckInDone = true, activeStory = null))
-                StoryPhase.CHECK_OUT -> it.copy(story = it.story.copy(storyCheckOutDone = true, activeStory = null))
-            }
-        }
-        if (shouldPersist) {
-            forceBackupOnSave = true
-            saveProgress()
-        }
-    }
+    fun submitVocabAnswer(inputOverride: String? = null) = vocabSprintRunner.submitAnswer(inputOverride)
 
-    fun clearStoryError() {
-        _uiState.update { it.copy(story = it.story.copy(storyErrorMessage = null)) }
-    }
+    fun showVocabAnswer() = vocabSprintRunner.showAnswer()
 
-    fun clearVocabError() {
-        _uiState.update { it.copy(vocabSprint = it.vocabSprint.copy(vocabErrorMessage = null)) }
-    }
-
-    fun onVocabInputChanged(text: String) {
-        _uiState.update {
-            val resetAttempts = it.vocabSprint.vocabAnswerText != null || it.vocabSprint.vocabAttempts >= 3
-            it.copy(vocabSprint = it.vocabSprint.copy(vocabInputText = text, vocabAttempts = if (resetAttempts) 0 else it.vocabSprint.vocabAttempts, vocabAnswerText = if (resetAttempts) null else it.vocabSprint.vocabAnswerText))
-        }
-    }
-
-    fun setVocabInputMode(mode: InputMode) {
-        Log.d(logTag, "setVocabInputMode: $mode")
-        _uiState.update { it.copy(vocabSprint = it.vocabSprint.copy(vocabInputMode = mode)) }
-        if (mode == InputMode.WORD_BANK) {
-            updateVocabWordBank()
-            Log.d(logTag, "Word bank updated. Words: ${_uiState.value.vocabSprint.vocabWordBankWords.size}")
-        }
-    }
-
-    fun requestVocabVoice() {
-        _uiState.update {
-            it.copy(vocabSprint = it.vocabSprint.copy(vocabInputMode = InputMode.VOICE, vocabVoiceTriggerToken = it.vocabSprint.vocabVoiceTriggerToken + 1))
-        }
-    }
-
-    fun submitVocabAnswer(inputOverride: String? = null) {
-        val state = _uiState.value
-        val entry = state.vocabSprint.currentVocab ?: return
-        val input = inputOverride ?: state.vocabSprint.vocabInputText
-        if (input.isBlank() && !state.cardSession.testMode) return
-        val accepted = answerValidator.validate(input, listOf(entry.targetText), state.cardSession.testMode).isCorrect
-        if (accepted) {
-            audioCoordinator.playSuccessSound()
-            // Save progress: record correct answer and completed index
-            val lessonId = state.navigation.selectedLessonId ?: return
-            vocabProgressStore.recordCorrect(entry.id, lessonId, state.navigation.selectedLanguageId)
-            vocabProgressStore.addCompletedIndex(lessonId, state.navigation.selectedLanguageId, state.vocabSprint.vocabIndex)
-            moveToNextVocab()
-            return
-        }
-        audioCoordinator.playErrorSound()
-        // Record incorrect answer for SRS tracking
-        val lessonId = state.navigation.selectedLessonId ?: return
-        vocabProgressStore.recordIncorrect(entry.id, lessonId, state.navigation.selectedLanguageId)
-        val nextAttempts = state.vocabSprint.vocabAttempts + 1
-        if (nextAttempts >= 3) {
-            _uiState.update {
-                it.copy(vocabSprint = it.vocabSprint.copy(vocabAttempts = nextAttempts, vocabAnswerText = entry.targetText, vocabInputText = ""))
-            }
-        } else {
-            _uiState.update {
-                val nextToken = if (state.vocabSprint.vocabInputMode == InputMode.VOICE) {
-                    it.vocabSprint.vocabVoiceTriggerToken + 1
-                } else {
-                    it.vocabSprint.vocabVoiceTriggerToken
-                }
-                it.copy(vocabSprint = it.vocabSprint.copy(vocabAttempts = nextAttempts, vocabInputText = "", vocabVoiceTriggerToken = nextToken))
-            }
-        }
-    }
-
-    fun showVocabAnswer() {
-        val entry = _uiState.value.vocabSprint.currentVocab ?: return
-        _uiState.update {
-            it.copy(vocabSprint = it.vocabSprint.copy(vocabAnswerText = entry.targetText, vocabInputText = "", vocabAttempts = 3))
-        }
-    }
-
-    private fun moveToNextVocab() {
-        val state = _uiState.value
-        val nextIndex = state.vocabSprint.vocabIndex + 1
-        if (nextIndex >= vocabSession.size) {
-            // All vocab entries completed - clear sprint progress
-            val lessonId = state.navigation.selectedLessonId
-            if (lessonId != null) {
-                vocabProgressStore.clearSprintProgress(lessonId, state.navigation.selectedLanguageId)
-            }
-            _uiState.update {
-                it.copy(vocabSprint = it.vocabSprint.copy(currentVocab = null, vocabInputText = "", vocabAttempts = 0, vocabAnswerText = null, vocabIndex = nextIndex, vocabTotal = vocabSession.size, vocabWordBankWords = emptyList(), vocabFinishedToken = it.vocabSprint.vocabFinishedToken + 1))
-            }
-            forceBackupOnSave = true
-            saveProgress()
-            return
-        }
-        val next = vocabSession[nextIndex]
-        val vocabWordBank = buildVocabWordBank(next, vocabSession)
-        _uiState.update {
-            it.copy(vocabSprint = it.vocabSprint.copy(currentVocab = next, vocabInputText = "", vocabAttempts = 0, vocabAnswerText = null, vocabIndex = nextIndex, vocabTotal = vocabSession.size, vocabWordBankWords = vocabWordBank))
-        }
-    }
 
     /**
      * Start a Mix Challenge (interleaved practice) session.
@@ -1333,60 +1227,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    private fun buildVocabWordBank(entry: VocabEntry, pool: List<VocabEntry>): List<String> {
-        val correctOption = entry.targetText.split("+")
-            .map { it.trim() }
-            .firstOrNull { it.isNotBlank() }
-            ?: entry.targetText
-        val normalizedCorrect = Normalizer.normalize(correctOption)
-
-        // Собираем все возможные варианты из пула словаря
-        val poolOptions = pool
-            .flatMap { it.targetText.split("+") }
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .distinct()
-
-        // Убираем правильный ответ из списка вариантов словаря
-        val poolDistractors = poolOptions
-            .filter { Normalizer.normalize(it) != normalizedCorrect }
-            .shuffled()
-
-        // Начинаем с дистракторов из словаря
-        val distractors = poolDistractors.take(4).toMutableList()
-
-        // Если дистракторов недостаточно, добираем из всех уроков
-        if (distractors.size < 4) {
-            val languageId = _uiState.value.navigation.selectedLanguageId
-            val allVocabFromLessons = _uiState.value.navigation.lessons
-                .flatMap { lesson ->
-                    lessonStore.getVocabEntries(lesson.id, languageId)
-                }
-                .flatMap { it.targetText.split("+") }
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .filter { Normalizer.normalize(it) != normalizedCorrect }
-                .filter { !distractors.contains(it) }
-                .shuffled()
-
-            val additionalNeeded = 4 - distractors.size
-            distractors.addAll(allVocabFromLessons.take(additionalNeeded))
-        }
-
-        // Берём до 4 дистракторов + правильный ответ = до 5 вариантов
-        val selectedDistractors = distractors.take(4)
-        val result = (listOf(correctOption) + selectedDistractors).shuffled()
-
-        Log.d(logTag, "buildVocabWordBank: entry=${entry.nativeText}, correct=$correctOption, pool=${pool.size}, poolDistractors=${poolDistractors.size}, finalDistractors=${selectedDistractors.size}, result=${result.size}, words=$result")
-        return result
-    }
-
-    private fun updateVocabWordBank() {
-        val entry = _uiState.value.vocabSprint.currentVocab ?: return
-        val options = buildVocabWordBank(entry, vocabSession)
-        _uiState.update { it.copy(vocabSprint = it.vocabSprint.copy(vocabWordBankWords = options)) }
-    }
 
     /**
      * Добавляет слово в выбранные для word bank режима
@@ -1401,44 +1241,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /**
      * Обновить состояния цветков для всех уроков.
      */
-    private fun refreshFlowerStates() {
-        val languageId = _uiState.value.navigation.selectedLanguageId
-        val lessons = _uiState.value.navigation.lessons
-        val nowMs = System.currentTimeMillis()
-
-        val masteryMap = lessons.associate { lesson ->
-            lesson.id to masteryStore.get(lesson.id, languageId)
-        }
-
-        val flowerStates = lessons.associate { lesson ->
-            val mastery = masteryMap[lesson.id]
-            val flower = FlowerCalculator.calculate(mastery, lesson.cards.size)
-            Log.d(logTag, "Flower for lesson ${lesson.id}: mastery=${mastery?.uniqueCardShows ?: 0}, state=${flower.state}, scale=${flower.scaleMultiplier}")
-            lesson.id to flower
-        }
-
-        val currentLessonId = _uiState.value.navigation.selectedLessonId
-        val currentFlower = currentLessonId?.let { flowerStates[it] }
-        val currentShownCount = currentLessonId?.let { lessonId ->
-            masteryMap[lessonId]?.shownCardIds?.size ?: 0
-        } ?: 0
-        val ladderRows = lessons.mapIndexed { index, lesson ->
-            val mastery = masteryMap[lesson.id]
-            val metrics = LessonLadderCalculator.calculate(mastery, nowMs)
-            LessonLadderRow(
-                index = index + 1,
-                lessonId = lesson.id,
-                title = lesson.title,
-                uniqueCardShows = metrics.uniqueCardShows,
-                daysSinceLastShow = metrics.daysSinceLastShow,
-                intervalLabel = metrics.intervalLabel
-            )
-        }
-
-        _uiState.update {
-            it.copy(flowerDisplay = it.flowerDisplay.copy(lessonFlowers = flowerStates, currentLessonFlower = currentFlower, currentLessonShownCount = currentShownCount), navigation = it.navigation.copy(ladderRows = ladderRows))
-        }
-    }
+    private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
 
     /**
      * Re-scope wordMasteryStore to the given packId.
