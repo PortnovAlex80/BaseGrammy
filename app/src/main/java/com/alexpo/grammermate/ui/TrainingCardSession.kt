@@ -609,7 +609,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         }
 
         // Word Bank UI -- only on EASY
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && scope.hintLevel == HintLevel.EASY) {
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
             val wordBankWords = contract.getWordBankWords()
             val selectedWords = contract.getSelectedWords()
             if (wordBankWords.isNotEmpty()) {
@@ -703,7 +703,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                         }
                     }
                     // Word bank button: only on EASY
-                    if (InputMode.WORD_BANK in modeConfig.availableModes && contract.supportsWordBank && scope.hintLevel == HintLevel.EASY) {
+                    if (InputMode.WORD_BANK in modeConfig.availableModes && contract.supportsWordBank) {
                         FilledTonalIconButton(
                             onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                             enabled = hasCards
@@ -717,19 +717,17 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Show answer button -- only on EASY
-                if (scope.hintLevel == HintLevel.EASY) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                        state = rememberTooltipState()
+                // Show answer button
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(
+                        onClick = { if (hasCards) contract.showAnswer() },
+                        enabled = hasCards
                     ) {
-                        IconButton(
-                            onClick = { if (hasCards) contract.showAnswer() },
-                            enabled = hasCards
-                        ) {
-                            Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                        }
+                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                     }
                 }
                 // Flag/Report button
