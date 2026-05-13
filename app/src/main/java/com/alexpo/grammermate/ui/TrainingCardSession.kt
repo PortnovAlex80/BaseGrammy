@@ -37,11 +37,9 @@ import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
@@ -82,7 +80,8 @@ import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
-import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 
 /**
  * Scope object passed to customization slots inside [TrainingCardSession].
@@ -396,45 +395,6 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
                 ttsState = scope.contract.ttsState,
                 enabled = card.promptRu.isNotBlank(),
                 onClick = { scope.contract.speakTts() }
-            )
-        }
-    }
-}
-
-/**
- * TTS speaker button with 4 states: speaking (stop icon, red), initializing (spinner),
- * error (warning, red), idle (VolumeUp icon).
- * Matches GrammarMateApp's TtsSpeakerButton exactly.
- */
-@Composable
-private fun TtsSpeakerButton(
-    ttsState: TtsState,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled
-    ) {
-        when (ttsState) {
-            TtsState.SPEAKING -> Icon(
-                Icons.Default.StopCircle,
-                contentDescription = "Stop",
-                tint = MaterialTheme.colorScheme.error
-            )
-            TtsState.INITIALIZING -> CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp
-            )
-            TtsState.ERROR -> Icon(
-                Icons.Default.ReportProblem,
-                contentDescription = "TTS error",
-                tint = MaterialTheme.colorScheme.error
-            )
-            else -> Icon(
-                Icons.Default.VolumeUp,
-                contentDescription = "Listen",
-                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -918,41 +878,6 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
             ) {
                 Icon(Icons.Default.ArrowForward, contentDescription = "Next")
             }
-        }
-    }
-}
-
-/**
- * Navigation icon button matching GrammarMateApp's NavIconButton:
- * surfaceVariant background with primary accent bottom bar.
- */
-@Composable
-private fun NavIconButton(
-    onClick: () -> Unit,
-    enabled: Boolean,
-    content: @Composable () -> Unit
-) {
-    val surface = MaterialTheme.colorScheme.surfaceVariant
-    val accent = MaterialTheme.colorScheme.primary
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (enabled) surface else surface.copy(alpha = 0.5f))
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(3.dp)
-                .background(if (enabled) accent else accent.copy(alpha = 0.3f))
-        )
-        IconButton(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            content()
         }
     }
 }

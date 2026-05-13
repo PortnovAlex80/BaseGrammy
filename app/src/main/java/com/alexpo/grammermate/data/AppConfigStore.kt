@@ -12,12 +12,19 @@ data class AppConfig(
     val hintLevel: HintLevel = HintLevel.EASY
 )
 
-class AppConfigStore(private val context: Context) {
+interface AppConfigStore {
+
+    fun save(config: AppConfig)
+
+    fun load(): AppConfig
+}
+
+class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "config.yaml")
 
-    fun save(config: AppConfig) {
+    override fun save(config: AppConfig) {
         baseDir.mkdirs()
         val payload = mapOf(
             "testMode" to config.testMode,
@@ -29,7 +36,7 @@ class AppConfigStore(private val context: Context) {
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
 
-    fun load(): AppConfig {
+    override fun load(): AppConfig {
         if (!file.exists()) {
             baseDir.mkdirs()
             val seeded = runCatching {

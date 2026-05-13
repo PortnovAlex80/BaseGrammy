@@ -14,6 +14,7 @@ import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.ui.helpers.CardSessionStateMachine
+import com.alexpo.grammermate.ui.helpers.WordBankGenerator
 
 /**
  * Adapter that wraps [VerbDrillViewModel] to implement [CardSessionContract].
@@ -262,15 +263,12 @@ class VerbDrillCardSessionProvider(
         // Cache word bank per card to avoid re-generating on every recomposition
         if (cachedWordBankCardId == card.id) return cachedWordBank
 
-        val answerWords = card.answer.split(Regex("\\s+")).filter { it.isNotBlank() }
-        val distractorWords = s.cards
-            .filter { it.id != card.id }
-            .flatMap { it.answer.split(Regex("\\s+")).filter { w -> w.isNotBlank() && w !in answerWords } }
-            .distinct()
-            .shuffled()
-            .take(maxOf(0, 8 - answerWords.size))
-
-        val bank = (answerWords + distractorWords).shuffled()
+        val allAnswers = s.cards.map { it.answer }
+        val bank = WordBankGenerator.generateForVerb(
+            answer = card.answer,
+            allAnswers = allAnswers,
+            maxDistractors = 8
+        )
         cachedWordBankCardId = card.id
         cachedWordBank = bank
         return bank

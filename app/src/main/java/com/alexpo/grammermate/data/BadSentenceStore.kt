@@ -14,7 +14,36 @@ data class BadSentenceEntry(
     val addedAtMs: Long = System.currentTimeMillis()
 )
 
-class BadSentenceStore(private val context: Context) {
+interface BadSentenceStore {
+
+    fun migrateIfNeeded(lessonStore: LessonStore)
+
+    fun addBadSentence(packId: String, entry: BadSentenceEntry)
+
+    fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String = "training")
+
+    fun removeBadSentence(packId: String, cardId: String)
+
+    fun getBadSentences(packId: String): List<BadSentenceEntry>
+
+    fun isBadSentence(packId: String, cardId: String): Boolean
+
+    fun isBadSentence(cardId: String): Boolean
+
+    fun getBadSentenceCount(packId: String): Int
+
+    fun getTotalBadSentenceCount(): Int
+
+    fun exportToTextFile(packId: String): File
+
+    fun exportUnified(): File
+
+    fun clearPack(packId: String)
+
+    fun clearAll()
+}
+
+class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "bad_sentences.yaml")
@@ -83,7 +112,7 @@ class BadSentenceStore(private val context: Context) {
      * Uses LessonStore to resolve packId from lessonId extracted from card IDs.
      * Called during init in TrainingViewModel.
      */
-    fun migrateIfNeeded(lessonStore: LessonStore) {
+    override fun migrateIfNeeded(lessonStore: LessonStore) {
         ensureLoaded()
 
         // Merge old drill_bad_sentences.yaml entries into the legacy pack
@@ -167,7 +196,7 @@ class BadSentenceStore(private val context: Context) {
         return null
     }
 
-    fun addBadSentence(packId: String, entry: BadSentenceEntry) {
+    override fun addBadSentence(packId: String, entry: BadSentenceEntry) {
         ensureLoaded()
         val packEntries = packs.getOrPut(packId) { mutableListOf() }
         if (packEntries.any { it.cardId == entry.cardId }) return
@@ -175,11 +204,11 @@ class BadSentenceStore(private val context: Context) {
         persist()
     }
 
-    fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String = "training") {
+    override fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String) {
         addBadSentence(packId, BadSentenceEntry(cardId, languageId, sentence, translation, mode))
     }
 
-    fun removeBadSentence(packId: String, cardId: String) {
+    override fun removeBadSentence(packId: String, cardId: String) {
         ensureLoaded()
         packs[packId]?.let { entries ->
             entries.removeAll { it.cardId == cardId }
@@ -188,12 +217,12 @@ class BadSentenceStore(private val context: Context) {
         persist()
     }
 
-    fun getBadSentences(packId: String): List<BadSentenceEntry> {
+    override fun getBadSentences(packId: String): List<BadSentenceEntry> {
         ensureLoaded()
         return packs[packId]?.toList() ?: emptyList()
     }
 
-    fun isBadSentence(packId: String, cardId: String): Boolean {
+    override fun isBadSentence(packId: String, cardId: String): Boolean {
         ensureLoaded()
         return packs[packId]?.any { it.cardId == cardId } == true
     }
@@ -202,12 +231,12 @@ class BadSentenceStore(private val context: Context) {
      * Backward-compatible: checks all packs for the given cardId.
      * Used during migration period.
      */
-    fun isBadSentence(cardId: String): Boolean {
+    override fun isBadSentence(cardId: String): Boolean {
         ensureLoaded()
         return packs.values.any { entries -> entries.any { it.cardId == cardId } }
     }
 
-    fun getBadSentenceCount(packId: String): Int {
+    override fun getBadSentenceCount(packId: String): Int {
         ensureLoaded()
         return packs[packId]?.size ?: 0
     }
@@ -215,12 +244,12 @@ class BadSentenceStore(private val context: Context) {
     /**
      * Total bad sentence count across all packs.
      */
-    fun getTotalBadSentenceCount(): Int {
+    override fun getTotalBadSentenceCount(): Int {
         ensureLoaded()
         return packs.values.sumOf { it.size }
     }
 
-    fun exportToTextFile(packId: String): File {
+    override fun exportToTextFile(packId: String): File {
         ensureLoaded()
         val entries = packs[packId] ?: emptyList()
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -238,7 +267,7 @@ class BadSentenceStore(private val context: Context) {
      * Unified export: produces one file with all bad sentences grouped by
      * language, then pack, then mode. Returns the exported file.
      */
-    fun exportUnified(): File {
+    override fun exportUnified(): File {
         ensureLoaded()
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val exportDir = File(downloadsDir, "BaseGrammy")
@@ -298,12 +327,12 @@ class BadSentenceStore(private val context: Context) {
         return exportFile
     }
 
-    fun clearPack(packId: String) {
+    override fun clearPack(packId: String) {
         packs.remove(packId)
         persist()
     }
 
-    fun clearAll() {
+    override fun clearAll() {
         packs.clear()
         persist()
     }

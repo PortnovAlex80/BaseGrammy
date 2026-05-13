@@ -11,31 +11,31 @@ import android.app.Application
  */
 class StoreFactory private constructor(private val appContext: Application) {
 
-    private val wordMasteryCache = mutableMapOf<String?, WordMasteryStore>()
-    private val verbDrillCache = mutableMapOf<String?, VerbDrillStore>()
-    private val badSentenceCache: BadSentenceStore by lazy { BadSentenceStore(appContext) }
+    private val wordMasteryCache = mutableMapOf<String?, WordMasteryStoreImpl>()
+    private val verbDrillCache = mutableMapOf<String?, VerbDrillStoreImpl>()
+    private val badSentenceCache: BadSentenceStoreImpl by lazy { BadSentenceStoreImpl(appContext) }
 
     @Synchronized
-    fun getWordMasteryStore(packId: String?): WordMasteryStore {
+    fun getWordMasteryStore(packId: String?): WordMasteryStoreImpl {
         return wordMasteryCache.getOrPut(packId) {
-            WordMasteryStore(appContext, packId = packId)
+            WordMasteryStoreImpl(appContext, packId = packId)
         }
     }
 
     @Synchronized
-    fun getVerbDrillStore(packId: String?): VerbDrillStore {
+    fun getVerbDrillStore(packId: String?): VerbDrillStoreImpl {
         return verbDrillCache.getOrPut(packId) {
-            VerbDrillStore(appContext, packId = packId)
+            VerbDrillStoreImpl(appContext, packId = packId)
         }
     }
 
     /**
-     * Returns the singleton [BadSentenceStore] instance.
+     * Returns the singleton [BadSentenceStoreImpl] instance.
      * All consumers share the same in-memory cache so that a bad sentence
      * flagged from any screen (training, verb drill, vocab drill) is
      * immediately visible to all others.
      */
-    fun getBadSentenceStore(): BadSentenceStore = badSentenceCache
+    fun getBadSentenceStore(): BadSentenceStoreImpl = badSentenceCache
 
     /**
      * Remove cached entries for the given packId, forcing fresh instances

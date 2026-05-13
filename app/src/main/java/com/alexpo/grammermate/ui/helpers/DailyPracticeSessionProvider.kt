@@ -14,6 +14,7 @@ import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.SessionProgress
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
+import com.alexpo.grammermate.ui.helpers.WordBankGenerator
 
 /**
  * CardSessionContract adapter for Daily Practice Blocks 1 (Translation) and 3 (Verb Drill).
@@ -277,16 +278,15 @@ class DailyPracticeSessionProvider(
 
         if (cachedWordBankCardId == card.id) return cachedWordBank
 
-        val answerWords = card.acceptedAnswers.first().split(Regex("\\s+")).filter { it.isNotBlank() }
-        val distractorWords = blockCards
+        val allAnswers = blockCards
             .mapNotNull { taskToSessionCard(it) }
-            .filter { it.id != card.id }
-            .flatMap { it.acceptedAnswers.first().split(Regex("\\s+")).filter { w -> w.isNotBlank() && w !in answerWords } }
-            .distinct()
-            .shuffled()
-            .take(maxOf(0, 8 - answerWords.size))
+            .flatMap { it.acceptedAnswers }
 
-        val bank = (answerWords + distractorWords).shuffled()
+        val bank = WordBankGenerator.generateForVerb(
+            answer = card.acceptedAnswers.first(),
+            allAnswers = allAnswers,
+            maxDistractors = 8
+        )
         cachedWordBankCardId = card.id
         cachedWordBank = bank
         return bank

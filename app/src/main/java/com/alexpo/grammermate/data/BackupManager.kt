@@ -2,43 +2,60 @@ package com.alexpo.grammermate.data
 
 import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
+
+interface BackupManager {
+
+    fun createBackup(): Boolean
+
+    fun restoreFromBackup(backupPath: String): Boolean
+
+    fun restoreFromBackupUri(backupUri: Uri): Boolean
+
+    fun getAvailableBackups(treeUri: Uri): List<BackupInfo>
+
+    fun getAvailableBackups(): List<BackupInfo>
+
+    fun deleteBackup(backupPath: String): Boolean
+
+    fun hasBackup(): Boolean
+}
 
 /**
  * Manages backup and restore of user progress data.
  * Saves mastery and progress data to external storage (Downloads/BaseGrammy).
  * Allows recovery after app reinstallation.
+ *
+ * File enumeration is delegated to [BackupFileCollector].
+ * Restore logic is delegated to [BackupRestorer].
+ * All internal file writes use [AtomicFileWriter].
  */
-class BackupManager(private val context: Context) {
-    private val yaml = org.yaml.snakeyaml.Yaml()
+class BackupManagerImpl(private val context: Context) : BackupManager {
+
     private val logTag = "BackupManager"
 
-    // Backup directory: Downloads/BaseGrammy
-    private val backupDir: File? by lazy {
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        File(downloadsDir, "BaseGrammy").apply {
-            if (!exists()) mkdirs()
-        }
-    }
+    private val collector = BackupFileCollector(context)
+    private val restorer = BackupRestorer(context)
 
-    // Internal data directory
+    // Expose backupDir for callers that need it (e.g. getAvailableBackups legacy).
+    private val backupDir: File? get() = collector.backupDir
+
+    // Internal data directory (kept here for legacy createBackup path).
     private val internalDir = File(context.filesDir, "grammarmate")
+
+    // region -- Public API --
 
     /**
      * Create a backup of all progress data.
-     * Saves mastery.yaml and progress.yaml to Downloads/BaseGrammy/backup_latest
-     * Overwrites previous backup to avoid creating multiple backup folders
-     * Returns true if backup succeeded
+     * Returns true if backup succeeded.
      */
-    fun createBackup(): Boolean {
+    override fun createBackup(): Boolean {
         return try {
             val success = if (Build.VERSION.SDK_INT >= 29) {
                 if (Environment.isExternalStorageLegacy()) {
@@ -57,110 +74,128 @@ class BackupManager(private val context: Context) {
         }
     }
 
+    override fun restoreFromBackup(backupPath: String): Boolean {
+        return try {
+            restorer.restoreFromPath(backupPath)
+        } catch (e: Exception) {
+            Log.e(logTag, "restoreFromBackup failed", e)
+            false
+        }
+    }
+
+    override fun restoreFromBackupUri(backupUri: Uri): Boolean {
+        return try {
+            restorer.restoreFromUri(backupUri)
+        } catch (e: Exception) {
+            Log.e(logTag, "restoreFromBackupUri failed", e)
+            false
+        }
+    }
+
+    override fun getAvailableBackups(treeUri: Uri): List<BackupInfo> {
+        val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
+        return tree.listFiles()
+            .filter { file ->
+                file.isDirectory && (
+                    file.name?.startsWith("backup_") == true ||
+                        file.name == "backup_latest"
+                    )
+            }
+            .sortedByDescending { it.lastModified() }
+            .map { dir ->
+                val timestamp = if (dir.name == "backup_latest") "latest"
+                                else dir.name?.removePrefix("backup_") ?: ""
+                BackupInfo(
+                    name = dir.name ?: "",
+                    path = dir.uri.toString(),
+                    uri = dir.uri.toString(),
+                    timestamp = timestamp,
+                    dataSize = safeCalculateDirSize(dir),
+                    metadata = safeReadText(dir.findFile("metadata.txt"))
+                )
+            }
+    }
+
+    override fun getAvailableBackups(): List<BackupInfo> {
+        return collector.getAvailableBackupsLegacy()
+    }
+
+    override fun deleteBackup(backupPath: String): Boolean {
+        return try {
+            File(backupPath).deleteRecursively()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    override fun hasBackup(): Boolean = getAvailableBackups().isNotEmpty()
+
+    // endregion
+
+    // region -- Legacy backup (file-system) --
+
     private fun createBackupLegacy(): Boolean {
-        if (backupDir == null) return false
+        val dir = backupDir ?: return false
+        val backupSubDir = File(dir, "backup_latest")
+        if (!backupSubDir.exists() && !backupSubDir.mkdirs()) return false
 
-        val backupSubDir = File(backupDir, "backup_latest")
-        if (!backupSubDir.exists()) {
-            if (!backupSubDir.mkdirs()) return false
-        }
+        val timestamp = collector.currentTimestamp()
 
-        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
-
-        // Backup mastery data
-        val masteryFile = File(internalDir, "mastery.yaml")
-        if (masteryFile.exists()) {
-            val backupMasteryFile = File(backupSubDir, "mastery.yaml")
-            masteryFile.copyTo(backupMasteryFile, overwrite = true)
-        }
-
-        // Backup progress data
-        val progressFile = File(internalDir, "progress.yaml")
-        if (progressFile.exists()) {
-            val backupProgressFile = File(backupSubDir, "progress.yaml")
-            progressFile.copyTo(backupProgressFile, overwrite = true)
-        }
-
-        // Backup streak data (all streak files)
-        internalDir.listFiles { file ->
-            file.name.startsWith("streak_") && file.name.endsWith(".yaml")
-        }?.forEach { streakFile ->
-            val backupStreakFile = File(backupSubDir, streakFile.name)
-            streakFile.copyTo(backupStreakFile, overwrite = true)
-        }
-
-        // Remove old streak.yaml if exists (migration to new format)
-        val oldStreakBackup = File(backupSubDir, "streak.yaml")
-        if (oldStreakBackup.exists()) {
-            oldStreakBackup.delete()
-        }
-
-        // Backup user profile data
-        val profileFile = File(internalDir, "profile.yaml")
-        if (profileFile.exists()) {
-            val backupProfileFile = File(backupSubDir, "profile.yaml")
-            profileFile.copyTo(backupProfileFile, overwrite = true)
-        }
-
-        // Backup hidden cards
-        val hiddenCardsFile = File(internalDir, "hidden_cards.yaml")
-        if (hiddenCardsFile.exists()) {
-            hiddenCardsFile.copyTo(File(backupSubDir, "hidden_cards.yaml"), overwrite = true)
-        }
-
-        // Backup bad sentences
-        val badSentencesFile = File(internalDir, "bad_sentences.yaml")
-        if (badSentencesFile.exists()) {
-            badSentencesFile.copyTo(File(backupSubDir, "bad_sentences.yaml"), overwrite = true)
-        }
-
-        // Backup vocab progress
-        val vocabProgressFile = File(internalDir, "vocab_progress.yaml")
-        if (vocabProgressFile.exists()) {
-            vocabProgressFile.copyTo(File(backupSubDir, "vocab_progress.yaml"), overwrite = true)
-        }
-
-        // Backup drill progress files (drill_progress_{language}.yaml)
-        internalDir.listFiles { file ->
-            file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
-        }?.forEach { drillProgressFile ->
-            drillProgressFile.copyTo(File(backupSubDir, drillProgressFile.name), overwrite = true)
-        }
-
-        // Backup pack-scoped drill data (drills/{packId}/verb_drill_progress.yaml, word_mastery.yaml)
-        val drillsDir = File(internalDir, "drills")
-        if (drillsDir.exists()) {
-            drillsDir.listFiles(java.io.FileFilter { file -> file.isDirectory })?.forEach { packDir ->
-                val verbProgressFile = File(packDir, "verb_drill_progress.yaml")
-                if (verbProgressFile.exists()) {
-                    val targetDir = File(backupSubDir, "drills/${packDir.name}")
-                    targetDir.mkdirs()
-                    verbProgressFile.copyTo(File(targetDir, "verb_drill_progress.yaml"), overwrite = true)
-                }
-                val wordMasteryFile = File(packDir, "word_mastery.yaml")
-                if (wordMasteryFile.exists()) {
-                    val targetDir = File(backupSubDir, "drills/${packDir.name}")
-                    targetDir.mkdirs()
-                    wordMasteryFile.copyTo(File(targetDir, "word_mastery.yaml"), overwrite = true)
-                }
+        // Copy main files
+        collector.mainBackupFileNames.forEach { name ->
+            val src = File(internalDir, name)
+            if (src.exists()) {
+                src.copyTo(File(backupSubDir, name), overwrite = true)
             }
         }
 
-        // Create/update backup metadata
-        createBackupMetadata(backupSubDir, timestamp)
+        // Copy streak files
+        collector.listStreakFiles().forEach { file ->
+            file.copyTo(File(backupSubDir, file.name), overwrite = true)
+        }
+
+        // Remove old streak.yaml if present (migration)
+        val oldStreakBackup = File(backupSubDir, "streak.yaml")
+        if (oldStreakBackup.exists()) oldStreakBackup.delete()
+
+        // Copy drill-progress files
+        collector.listDrillProgressFiles().forEach { file ->
+            file.copyTo(File(backupSubDir, file.name), overwrite = true)
+        }
+
+        // Copy pack-scoped drill data
+        collector.listPackDrillDirs().forEach { packDir ->
+            val verbProgress = File(packDir, "verb_drill_progress.yaml")
+            if (verbProgress.exists()) {
+                val targetDir = File(backupSubDir, "drills/${packDir.name}")
+                targetDir.mkdirs()
+                verbProgress.copyTo(File(targetDir, "verb_drill_progress.yaml"), overwrite = true)
+            }
+            val wordMastery = File(packDir, "word_mastery.yaml")
+            if (wordMastery.exists()) {
+                val targetDir = File(backupSubDir, "drills/${packDir.name}")
+                targetDir.mkdirs()
+                wordMastery.copyTo(File(targetDir, "word_mastery.yaml"), overwrite = true)
+            }
+        }
+
+        // Write metadata via AtomicFileWriter (fixes violation)
+        writeBackupMetadata(backupSubDir, timestamp)
 
         return true
     }
 
+    // endregion
+
+    // region -- Scoped backup (MediaStore, Android 10+) --
+
     private fun createBackupScoped(): Boolean {
         val resolver = context.contentResolver
         val relativePath = "${Environment.DIRECTORY_DOWNLOADS}/BaseGrammy/backup_latest/"
-        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+        val timestamp = collector.currentTimestamp()
         var wroteAny = false
 
-        // IMPORTANT: on Android 10+ we must overwrite existing MediaStore entries,
-        // not insert new ones with the same name, or the system will create "(1)" duplicates.
-        // Keep this behavior to ensure backup_latest always has the latest files.
         val pathLike = "%BaseGrammy/backup_latest%"
 
         fun deleteDuplicateEntries(name: String) {
@@ -212,12 +247,9 @@ class BackupManager(private val context: Context) {
                 Log.d(logTag, "Overwriting existing $name in backup_latest")
             }
             val targetUri = existingUri ?: run {
-                // If we cannot find a MediaStore entry, try deleting a legacy file to avoid "(1)" duplicates.
-                if (existingUri == null) {
-                    val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
-                    if (legacyFile?.exists() == true && legacyFile.delete()) {
-                        Log.d(logTag, "Deleted legacy $name before MediaStore insert")
-                    }
+                val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
+                if (legacyFile?.exists() == true && legacyFile.delete()) {
+                    Log.d(logTag, "Deleted legacy $name before MediaStore insert")
                 }
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, name)
@@ -227,9 +259,7 @@ class BackupManager(private val context: Context) {
                 resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
             } ?: return false
             resolver.openOutputStream(targetUri, "wt")?.use { output ->
-                source.inputStream().use { input ->
-                    input.copyTo(output)
-                }
+                source.inputStream().use { input -> input.copyTo(output) }
             } ?: return false
             return true
         }
@@ -242,12 +272,9 @@ class BackupManager(private val context: Context) {
                 Log.d(logTag, "Overwriting existing $name in backup_latest")
             }
             val targetUri = existingUri ?: run {
-                // If we cannot find a MediaStore entry, try deleting a legacy file to avoid "(1)" duplicates.
-                if (existingUri == null) {
-                    val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
-                    if (legacyFile?.exists() == true && legacyFile.delete()) {
-                        Log.d(logTag, "Deleted legacy $name before MediaStore insert")
-                    }
+                val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
+                if (legacyFile?.exists() == true && legacyFile.delete()) {
+                    Log.d(logTag, "Deleted legacy $name before MediaStore insert")
                 }
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, name)
@@ -262,579 +289,70 @@ class BackupManager(private val context: Context) {
             return true
         }
 
-        wroteAny = writeFile("mastery.yaml", "text/yaml", File(internalDir, "mastery.yaml")) || wroteAny
-        wroteAny = writeFile("progress.yaml", "text/yaml", File(internalDir, "progress.yaml")) || wroteAny
-        wroteAny = writeFile("profile.yaml", "text/yaml", File(internalDir, "profile.yaml")) || wroteAny
-        wroteAny = writeFile("hidden_cards.yaml", "text/yaml", File(internalDir, "hidden_cards.yaml")) || wroteAny
-        wroteAny = writeFile("bad_sentences.yaml", "text/yaml", File(internalDir, "bad_sentences.yaml")) || wroteAny
-        wroteAny = writeFile("vocab_progress.yaml", "text/yaml", File(internalDir, "vocab_progress.yaml")) || wroteAny
-
-        internalDir.listFiles { file ->
-            file.name.startsWith("streak_") && file.name.endsWith(".yaml")
-        }?.forEach { streakFile ->
-            wroteAny = writeFile(streakFile.name, "text/yaml", streakFile) || wroteAny
+        // Write main files
+        collector.mainBackupFileNames.forEach { name ->
+            wroteAny = writeFile(name, "text/yaml", File(internalDir, name)) || wroteAny
         }
 
-        // Backup drill progress files (drill_progress_{language}.yaml)
-        internalDir.listFiles { file ->
-            file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
-        }?.forEach { drillProgressFile ->
-            wroteAny = writeFile(drillProgressFile.name, "text/yaml", drillProgressFile) || wroteAny
+        // Write streak files
+        collector.listStreakFiles().forEach { file ->
+            wroteAny = writeFile(file.name, "text/yaml", file) || wroteAny
         }
 
-        // Backup pack-scoped drill data (drills/{packId}/verb_drill_progress.yaml, word_mastery.yaml)
-        // Note: Scoped storage backup places these flat as drills_{packId}_verb_drill_progress.yaml
-        // to avoid needing subdirectory support in MediaStore.
-        val drillsDir = File(internalDir, "drills")
-        if (drillsDir.exists()) {
-            drillsDir.listFiles(java.io.FileFilter { file -> file.isDirectory })?.forEach { packDir ->
-                val verbProgressFile = File(packDir, "verb_drill_progress.yaml")
-                if (verbProgressFile.exists()) {
-                    val name = "drills_${packDir.name}_verb_drill_progress.yaml"
-                    wroteAny = writeFile(name, "text/yaml", verbProgressFile) || wroteAny
-                }
-                val wordMasteryFile = File(packDir, "word_mastery.yaml")
-                if (wordMasteryFile.exists()) {
-                    val name = "drills_${packDir.name}_word_mastery.yaml"
-                    wroteAny = writeFile(name, "text/yaml", wordMasteryFile) || wroteAny
-                }
+        // Write drill-progress files
+        collector.listDrillProgressFiles().forEach { file ->
+            wroteAny = writeFile(file.name, "text/yaml", file) || wroteAny
+        }
+
+        // Write pack-scoped drill data (flat names for MediaStore)
+        collector.listPackDrillDirs().forEach { packDir ->
+            val verbProgress = File(packDir, "verb_drill_progress.yaml")
+            if (verbProgress.exists()) {
+                wroteAny = writeFile("drills_${packDir.name}_verb_drill_progress.yaml", "text/yaml", verbProgress) || wroteAny
+            }
+            val wordMastery = File(packDir, "word_mastery.yaml")
+            if (wordMastery.exists()) {
+                wroteAny = writeFile("drills_${packDir.name}_word_mastery.yaml", "text/yaml", wordMastery) || wroteAny
             }
         }
 
-        val metadata = """
-            Backup created: $timestamp
-            App version: 1.0
-            Data format: YAML
-            Contents:
-            - mastery.yaml (flower levels and progress)
-            - progress.yaml (training session progress)
-            - streak.yaml (daily streak data)
-            - profile.yaml (user name and settings)
-            - hidden_cards.yaml (hidden card IDs)
-            - bad_sentences.yaml (reported bad sentences)
-            - vocab_progress.yaml (vocab sprint progress)
-            - drill_progress_*.yaml (per-language drill progress)
-            - drills/{packId}/verb_drill_progress.yaml (verb drill progress per pack)
-            - drills/{packId}/word_mastery.yaml (word mastery per pack)
-        """.trimIndent()
+        // Write metadata
+        val metadata = collector.buildMetadataContent(timestamp)
         wroteAny = writeText("metadata.txt", metadata) || wroteAny
 
         return wroteAny
     }
 
-    /**
-     * Restore progress from a backup file.
-     * User should manually select which backup to restore.
-     * Returns true if restore succeeded
-     */
-    fun restoreFromBackup(backupPath: String): Boolean {
-        return try {
-            val backupSubDir = File(backupPath)
-            if (!backupSubDir.exists()) return false
-            if (!internalDir.exists() && !internalDir.mkdirs()) return false
+    // endregion
 
-            // Restore mastery data
-            val backupMasteryFile = File(backupSubDir, "mastery.yaml")
-            if (backupMasteryFile.exists()) {
-                val masteryFile = File(internalDir, "mastery.yaml")
-                backupMasteryFile.copyTo(masteryFile, overwrite = true)
-            }
+    // region -- Metadata write (AtomicFileWriter) --
 
-            // Restore progress data
-            val backupProgressFile = File(backupSubDir, "progress.yaml")
-            if (backupProgressFile.exists()) {
-                val progressFile = File(internalDir, "progress.yaml")
-                backupProgressFile.copyTo(progressFile, overwrite = true)
-            }
-
-            // Restore all streak files
-            backupSubDir.listFiles { file ->
-                file.name.startsWith("streak_") && file.name.endsWith(".yaml")
-            }?.forEach { backupStreakFile ->
-                val streakFile = File(internalDir, backupStreakFile.name)
-                backupStreakFile.copyTo(streakFile, overwrite = true)
-            }
-
-            // Migrate old streak.yaml format to new streak_<languageId>.yaml format
-            val oldStreakFile = File(backupSubDir, "streak.yaml")
-            if (oldStreakFile.exists()) {
-                try {
-                    val content = oldStreakFile.readText()
-                    val data = yaml.load<Any>(content) as? Map<*, *>
-                    val languageId = data?.get("languageId") as? String ?: "en"
-                    val streakFile = File(internalDir, "streak_$languageId.yaml")
-                    oldStreakFile.copyTo(streakFile, overwrite = true)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-
-            // Restore user profile data
-            val backupProfileFile = File(backupSubDir, "profile.yaml")
-            if (backupProfileFile.exists()) {
-                val profileFile = File(internalDir, "profile.yaml")
-                backupProfileFile.copyTo(profileFile, overwrite = true)
-            }
-
-            // Restore hidden cards
-            val backupHiddenCards = File(backupSubDir, "hidden_cards.yaml")
-            if (backupHiddenCards.exists()) {
-                backupHiddenCards.copyTo(File(internalDir, "hidden_cards.yaml"), overwrite = true)
-            }
-
-            // Restore bad sentences
-            val backupBadSentences = File(backupSubDir, "bad_sentences.yaml")
-            if (backupBadSentences.exists()) {
-                backupBadSentences.copyTo(File(internalDir, "bad_sentences.yaml"), overwrite = true)
-            }
-
-            // Restore vocab progress
-            val backupVocabProgress = File(backupSubDir, "vocab_progress.yaml")
-            if (backupVocabProgress.exists()) {
-                backupVocabProgress.copyTo(File(internalDir, "vocab_progress.yaml"), overwrite = true)
-            }
-
-            // Restore drill progress files
-            backupSubDir.listFiles { file ->
-                file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
-            }?.forEach { drillProgressFile ->
-                drillProgressFile.copyTo(File(internalDir, drillProgressFile.name), overwrite = true)
-            }
-
-            // Restore pack-scoped drill data (from drills/ subdirectory in backup)
-            val backupDrillsDir = File(backupSubDir, "drills")
-            if (backupDrillsDir.exists()) {
-                backupDrillsDir.listFiles(java.io.FileFilter { file -> file.isDirectory })?.forEach { packBackupDir ->
-                    val targetPackDir = File(File(internalDir, "drills"), packBackupDir.name)
-                    targetPackDir.mkdirs()
-                    val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
-                    if (verbProgress.exists()) {
-                        verbProgress.copyTo(File(targetPackDir, "verb_drill_progress.yaml"), overwrite = true)
-                    }
-                    val wordMastery = File(packBackupDir, "word_mastery.yaml")
-                    if (wordMastery.exists()) {
-                        wordMastery.copyTo(File(targetPackDir, "word_mastery.yaml"), overwrite = true)
-                    }
-                }
-            }
-
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
-    fun getAvailableBackups(treeUri: Uri): List<BackupInfo> {
-        val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
-        return tree.listFiles()
-            .filter { file ->
-                file.isDirectory && (
-                    file.name?.startsWith("backup_") == true ||
-                        file.name == "backup_latest"
-                    )
-            }
-            .sortedByDescending { it.lastModified() }
-            .map { dir ->
-                val timestamp = if (dir.name == "backup_latest") {
-                    "latest"
-                } else {
-                    dir.name?.removePrefix("backup_") ?: ""
-                }
-                val metadataFile = dir.findFile("metadata.txt")
-                val dataSize = safeCalculateDirSize(dir)
-
-                BackupInfo(
-                    name = dir.name ?: "",
-                    path = dir.uri.toString(),
-                    uri = dir.uri.toString(),
-                    timestamp = timestamp,
-                    dataSize = dataSize,
-                    metadata = safeReadText(metadataFile)
-                )
-            }
-    }
-
-    fun restoreFromBackupUri(backupUri: Uri): Boolean {
-        val logBuilder = StringBuilder()
-        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-        logBuilder.appendLine("=== Backup Restore Log ===")
-        logBuilder.appendLine("Timestamp: $timestamp")
-        logBuilder.appendLine("Backup URI: $backupUri")
-        logBuilder.appendLine()
-
-        return try {
-            val rootDir = DocumentFile.fromTreeUri(context, backupUri)
-                ?: DocumentFile.fromSingleUri(context, backupUri)
-                ?: run {
-                    logBuilder.appendLine("ERROR: Failed to open backup directory from URI")
-                    writeRestoreLog(backupUri, logBuilder.toString())
-                    return false
-                }
-
-            logBuilder.appendLine("Root directory: ${rootDir.uri}")
-
-            // Look for backup_latest subfolder first, then fall back to root
-            val backupDir = rootDir.findFile("backup_latest") ?: rootDir
-            val isSubfolder = backupDir != rootDir
-
-            logBuilder.appendLine("Using backup source: ${if (isSubfolder) "backup_latest subfolder" else "root folder"}")
-            logBuilder.appendLine("Backup directory: ${backupDir.uri}")
-            logBuilder.appendLine("Internal data directory: ${internalDir.absolutePath}")
-            logBuilder.appendLine()
-
-            if (!internalDir.exists() && !internalDir.mkdirs()) {
-                logBuilder.appendLine("ERROR: Failed to create internal directory")
-                writeRestoreLog(backupUri, logBuilder.toString())
-                return false
-            }
-
-            var copied = false
-            val restoredFiles = mutableListOf<String>()
-            val missingFiles = mutableListOf<String>()
-
-            // Restore main files
-            logBuilder.appendLine("--- Main Files ---")
-            val mainFiles = listOf("mastery.yaml", "progress.yaml", "profile.yaml", "hidden_cards.yaml", "bad_sentences.yaml", "vocab_progress.yaml")
-            mainFiles.forEach { name ->
-                val source = backupDir.findFile(name)
-                if (source == null) {
-                    logBuilder.appendLine("MISSING: $name")
-                    missingFiles.add(name)
-                } else {
-                    val target = File(internalDir, name)
-                    try {
-                        context.contentResolver.openInputStream(source.uri)?.use { input ->
-                            target.outputStream().use { output ->
-                                val bytes = input.copyTo(output)
-                                logBuilder.appendLine("OK: $name (${bytes} bytes)")
-                                restoredFiles.add(name)
-                                copied = true
-                            }
-                        }
-                    } catch (e: Exception) {
-                        logBuilder.appendLine("ERROR: $name - ${e.message}")
-                    }
-                }
-            }
-            logBuilder.appendLine()
-
-            // Restore all streak files (streak_en.yaml, streak_ru.yaml, etc.)
-            logBuilder.appendLine("--- Streak Files ---")
-            var streakCount = 0
-            backupDir.listFiles().forEach { file ->
-                if (file.name?.startsWith("streak_") == true && file.name?.endsWith(".yaml") == true) {
-                    val target = File(internalDir, file.name!!)
-                    try {
-                        context.contentResolver.openInputStream(file.uri)?.use { input ->
-                            target.outputStream().use { output ->
-                                val bytes = input.copyTo(output)
-                                logBuilder.appendLine("OK: ${file.name} (${bytes} bytes)")
-                                restoredFiles.add(file.name!!)
-                                streakCount++
-                                copied = true
-                            }
-                        }
-                    } catch (e: Exception) {
-                        logBuilder.appendLine("ERROR: ${file.name} - ${e.message}")
-                    }
-                }
-            }
-            if (streakCount == 0) {
-                logBuilder.appendLine("No streak_*.yaml files found")
-            }
-            logBuilder.appendLine()
-
-            // Migrate old streak.yaml format to new streak_<languageId>.yaml format
-            logBuilder.appendLine("--- Old Format Migration ---")
-            val oldStreakFile = backupDir.findFile("streak.yaml")
-            if (oldStreakFile != null) {
-                try {
-                    val content = context.contentResolver.openInputStream(oldStreakFile.uri)?.bufferedReader()?.use { it.readText() }
-                    if (content != null) {
-                        val data = yaml.load<Any>(content) as? Map<*, *>
-                        val languageId = data?.get("languageId") as? String ?: "en"
-                        val target = File(internalDir, "streak_$languageId.yaml")
-                        target.writeText(content)
-                        logBuilder.appendLine("OK: Migrated streak.yaml -> streak_$languageId.yaml")
-                        restoredFiles.add("streak_$languageId.yaml (migrated)")
-                        copied = true
-                    }
-                } catch (e: Exception) {
-                    logBuilder.appendLine("ERROR: Failed to migrate streak.yaml - ${e.message}")
-                }
-            } else {
-                logBuilder.appendLine("No old streak.yaml found (this is normal for new backups)")
-            }
-            logBuilder.appendLine()
-
-            // Restore drill progress files (drill_progress_{language}.yaml)
-            logBuilder.appendLine("--- Drill Progress Files ---")
-            var drillProgressCount = 0
-            backupDir.listFiles().forEach { file ->
-                if (file.name?.startsWith("drill_progress_") == true && file.name?.endsWith(".yaml") == true) {
-                    val target = File(internalDir, file.name!!)
-                    try {
-                        context.contentResolver.openInputStream(file.uri)?.use { input ->
-                            target.outputStream().use { output ->
-                                val bytes = input.copyTo(output)
-                                logBuilder.appendLine("OK: ${file.name} (${bytes} bytes)")
-                                restoredFiles.add(file.name!!)
-                                drillProgressCount++
-                                copied = true
-                            }
-                        }
-                    } catch (e: Exception) {
-                        logBuilder.appendLine("ERROR: ${file.name} - ${e.message}")
-                    }
-                }
-            }
-            // Also restore flat-name pack-scoped drill files from scoped backup (drills_{packId}_*.yaml)
-            backupDir.listFiles().forEach { file ->
-                val name = file.name ?: return@forEach
-                if (name.startsWith("drills_") && name.endsWith(".yaml")) {
-                    // Parse packId from filename: drills_{packId}_verb_drill_progress.yaml or drills_{packId}_word_mastery.yaml
-                    val remainder = name.removePrefix("drills_")
-                    val verbMatch = Regex("^(.+)_verb_drill_progress\\.yaml$").matchEntire(remainder)
-                    val masteryMatch = Regex("^(.+)_word_mastery\\.yaml$").matchEntire(remainder)
-                    if (verbMatch != null) {
-                        val packId = verbMatch.groupValues[1]
-                        val targetDir = File(File(internalDir, "drills"), packId)
-                        targetDir.mkdirs()
-                        val target = File(targetDir, "verb_drill_progress.yaml")
-                        try {
-                            context.contentResolver.openInputStream(file.uri)?.use { input ->
-                                target.outputStream().use { output ->
-                                    val bytes = input.copyTo(output)
-                                    logBuilder.appendLine("OK: $name -> drills/$packId/verb_drill_progress.yaml (${bytes} bytes)")
-                                    restoredFiles.add(name)
-                                    copied = true
-                                }
-                            }
-                        } catch (e: Exception) {
-                            logBuilder.appendLine("ERROR: $name - ${e.message}")
-                        }
-                    } else if (masteryMatch != null) {
-                        val packId = masteryMatch.groupValues[1]
-                        val targetDir = File(File(internalDir, "drills"), packId)
-                        targetDir.mkdirs()
-                        val target = File(targetDir, "word_mastery.yaml")
-                        try {
-                            context.contentResolver.openInputStream(file.uri)?.use { input ->
-                                target.outputStream().use { output ->
-                                    val bytes = input.copyTo(output)
-                                    logBuilder.appendLine("OK: $name -> drills/$packId/word_mastery.yaml (${bytes} bytes)")
-                                    restoredFiles.add(name)
-                                    copied = true
-                                }
-                            }
-                        } catch (e: Exception) {
-                            logBuilder.appendLine("ERROR: $name - ${e.message}")
-                        }
-                    }
-                }
-            }
-            if (drillProgressCount == 0) {
-                logBuilder.appendLine("No drill_progress_*.yaml files found")
-            }
-            logBuilder.appendLine()
-
-            // Parse and log mastery data
-            logBuilder.appendLine("--- Mastery Data Analysis ---")
-            try {
-                val masteryFile = File(internalDir, "mastery.yaml")
-                if (masteryFile.exists()) {
-                    val masteryContent = yaml.load<Any>(masteryFile.readText()) as? Map<*, *>
-                    val data = masteryContent?.get("data") as? Map<*, *>
-                    if (data != null) {
-                        data.forEach { (lang, lessons) ->
-                            logBuilder.appendLine("Language: $lang")
-                            val lessonsMap = lessons as? Map<*, *>
-                            lessonsMap?.forEach { (lessonId, lessonData) ->
-                                val ld = lessonData as? Map<*, *>
-                                val uniqueShows = ld?.get("uniqueCardShows") as? Number
-                                val totalShows = ld?.get("totalCardShows") as? Number
-                                val lastShowMs = ld?.get("lastShowDateMs") as? Number
-                                val intervalStep = ld?.get("intervalStepIndex") as? Number
-                                logBuilder.appendLine("  $lessonId: unique=$uniqueShows, total=$totalShows, intervalStep=$intervalStep")
-                                if (lastShowMs != null) {
-                                    val daysSinceShow = (System.currentTimeMillis() - lastShowMs.toLong()) / (24 * 60 * 60 * 1000)
-                                    logBuilder.appendLine("    Last shown: $daysSinceShow days ago")
-                                }
-                            }
-                        }
-                    } else {
-                        logBuilder.appendLine("No mastery data found in file")
-                    }
-                } else {
-                    logBuilder.appendLine("Mastery file not found after restore")
-                }
-            } catch (e: Exception) {
-                logBuilder.appendLine("ERROR parsing mastery: ${e.message}")
-            }
-            logBuilder.appendLine()
-
-            // Summary
-            logBuilder.appendLine("=== Summary ===")
-            logBuilder.appendLine("Restored files: ${restoredFiles.size}")
-            restoredFiles.forEach { logBuilder.appendLine("  ✓ $it") }
-            if (missingFiles.isNotEmpty()) {
-                logBuilder.appendLine("Missing files: ${missingFiles.size}")
-                missingFiles.forEach { logBuilder.appendLine("  ✗ $it") }
-            }
-            logBuilder.appendLine()
-            logBuilder.appendLine("Result: ${if (copied) "SUCCESS" else "FAILED - no files copied"}")
-
-            writeRestoreLog(backupUri, logBuilder.toString())
-            copied
-        } catch (e: Exception) {
-            logBuilder.appendLine()
-            logBuilder.appendLine("FATAL ERROR: ${e.message}")
-            logBuilder.appendLine("Stack trace:")
-            logBuilder.appendLine(e.stackTraceToString())
-            writeRestoreLog(backupUri, logBuilder.toString())
-            e.printStackTrace()
-            false
-        }
-    }
-
-    private fun writeRestoreLog(backupUri: Uri, logContent: String) {
-        try {
-            val backupDir = DocumentFile.fromTreeUri(context, backupUri)
-                ?: DocumentFile.fromSingleUri(context, backupUri)
-                ?: return
-
-            // Try to write to backup directory
-            val logFile = backupDir.findFile("restore_log.txt")
-            if (logFile != null) {
-                // Overwrite existing log
-                context.contentResolver.openOutputStream(logFile.uri, "wt")?.use { output ->
-                    output.write(logContent.toByteArray())
-                }
-            } else {
-                // Create new log file
-                val newLog = backupDir.createFile("text/plain", "restore_log.txt")
-                if (newLog != null) {
-                    context.contentResolver.openOutputStream(newLog.uri)?.use { output ->
-                        output.write(logContent.toByteArray())
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    /**
-     * Get list of available backups
-     */
-    fun getAvailableBackups(): List<BackupInfo> {
-        if (backupDir == null) return emptyList()
-
-        return backupDir!!.listFiles { file ->
-            file.isDirectory && (file.name.startsWith("backup_") || file.name == "backup_latest")
-        }?.sortedByDescending { it.lastModified() }?.map { dir ->
-            val timestamp = if (dir.name == "backup_latest") {
-                "latest"
-            } else {
-                dir.name.removePrefix("backup_")
-            }
-            val metadataFile = File(dir, "metadata.txt")
-            val dataSize = safeCalculateDirSize(dir)
-
-            BackupInfo(
-                name = dir.name,
-                path = dir.absolutePath,
-                timestamp = timestamp,
-                dataSize = dataSize,
-                metadata = safeReadText(metadataFile)
-            )
-        } ?: emptyList()
-    }
-
-    /**
-     * Delete a backup
-     */
-    fun deleteBackup(backupPath: String): Boolean {
-        return try {
-            val backupDir = File(backupPath)
-            backupDir.deleteRecursively()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
-    /**
-     * Check if there's any backup available
-     */
-    fun hasBackup(): Boolean {
-        return getAvailableBackups().isNotEmpty()
-    }
-
-    private fun createBackupMetadata(backupDir: File, timestamp: String) {
+    private fun writeBackupMetadata(backupDir: File, timestamp: String) {
         try {
             val metadataFile = File(backupDir, "metadata.txt")
-            val metadata = """
-                Backup created: $timestamp
-                App version: 1.0
-                Data format: YAML
-                Contents:
-                - mastery.yaml (flower levels and progress)
-                - progress.yaml (training session progress)
-                - streak.yaml (daily streak data)
-                - profile.yaml (user name and settings)
-                - hidden_cards.yaml (hidden card IDs)
-                - bad_sentences.yaml (reported bad sentences)
-                - vocab_progress.yaml (vocab sprint progress)
-                - drill_progress_*.yaml (per-language drill progress)
-                - drills/{packId}/verb_drill_progress.yaml (verb drill progress per pack)
-                - drills/{packId}/word_mastery.yaml (word mastery per pack)
-            """.trimIndent()
-            metadataFile.writeText(metadata)
+            val content = collector.buildMetadataContent(timestamp)
+            AtomicFileWriter.writeText(metadataFile, content)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun calculateDirSize(dir: File): Long {
-        return dir.walkTopDown().fold(0L) { acc, file ->
-            acc + (if (file.isFile) file.length() else 0L)
-        }
-    }
+    // endregion
 
-    private fun safeReadText(file: File): String {
-        return try {
-            if (file.exists()) file.readText() else ""
-        } catch (e: Exception) {
-            ""
-        }
-    }
+    // region -- DocumentFile helpers --
 
     private fun safeReadText(file: DocumentFile?): String {
         return try {
             if (file == null || !file.exists()) return ""
             context.contentResolver.openInputStream(file.uri)?.bufferedReader()?.use { it.readText() } ?: ""
-        } catch (e: Exception) {
-            ""
-        }
+        } catch (_: Exception) { "" }
     }
 
-    private fun safeCalculateDirSize(dir: File): Long {
-        return try {
-            calculateDirSize(dir)
-        } catch (e: Exception) {
-            0L
-        }
-    }
+    private fun safeCalculateDirSize(dir: DocumentFile): Long = try {
+        dir.listFiles().sumOf { it.length() }
+    } catch (_: Exception) { 0L }
 
-    private fun safeCalculateDirSize(dir: DocumentFile): Long {
-        return try {
-            dir.listFiles().sumOf { it.length() }
-        } catch (e: Exception) {
-            0L
-        }
-    }
+    // endregion
 }
 
 data class BackupInfo(

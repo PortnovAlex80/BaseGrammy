@@ -1,17 +1,101 @@
-﻿package com.alexpo.grammermate.data
+package com.alexpo.grammermate.data
 
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import org.yaml.snakeyaml.Yaml
 import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.util.UUID
-import java.util.zip.ZipInputStream
 
-class LessonStore(private val context: Context) {
+interface LessonStore {
+
+    // -- Seed & defaults --
+
+    fun ensureSeedData()
+
+    fun seedDefaultPacksIfNeeded(): Boolean
+
+    fun updateDefaultPacksIfNeeded(): Boolean
+
+    fun forceReloadDefaultPacks(): Boolean
+
+    // -- Language & pack queries --
+
+    fun getLanguages(): List<Language>
+
+    fun addLanguage(name: String): Language
+
+    fun getInstalledPacks(): List<LessonPack>
+
+    fun getPackIdForLesson(lessonId: String): String?
+
+    fun getLessonIdsForPack(packId: String): List<String>
+
+    fun getCumulativeTenses(packId: String, lessonLevel: Int): List<String>
+
+    // -- Pack import --
+
+    fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack
+
+    fun importPackFromAssets(assetPath: String): LessonPack
+
+    // -- Pack removal --
+
+    fun removeInstalledPackData(packId: String): Boolean
+
+    // -- CSV lesson import --
+
+    fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson
+
+    // -- Lesson CRUD --
+
+    fun getLessons(languageId: String): List<Lesson>
+
+    fun deleteAllLessons(languageId: String)
+
+    fun deleteLesson(languageId: String, lessonId: String)
+
+    fun createEmptyLesson(languageId: String, title: String): Lesson
+
+    // -- Story & vocab queries --
+
+    fun getStoryQuizzes(lessonId: String, phase: StoryPhase, languageId: String): List<StoryQuiz>
+
+    fun getVocabEntries(lessonId: String, languageId: String): List<VocabEntry>
+
+    // -- Drill file queries --
+
+    fun getVerbDrillFiles(packId: String, languageId: String): List<File>
+
+    fun getVerbDrillFilesForPack(packId: String): List<File>
+
+    fun getVocabDrillFiles(packId: String, languageId: String): List<File>
+
+    fun getVocabDrillFilesForPack(packId: String): List<File>
+
+    fun getVocabWordsByRankRange(packId: String, languageId: String, fromRank: Int, toRank: Int): List<VocabWord>
+
+    fun hasVerbDrill(packId: String, languageId: String): Boolean
+
+    fun hasVocabDrill(packId: String, languageId: String): Boolean
+
+    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
+    fun getVerbDrillFiles(languageId: String): List<File>
+
+    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
+    fun hasVerbDrillLessons(languageId: String): Boolean
+}
+
+/**
+ * Primary data store for lessons, packs, languages, drills, stories, and vocab.
+ *
+ * Delegates to:
+ * - [LanguageManager] for language/pack CRUD and seed data
+ * - [PackImporter] for ZIP import, SAF URI import, manifest handling
+ * - [DrillFileManager] for drill file queries, story/vocab lookups
+ *
+ * All existing public method signatures are preserved — consumers import LessonStore only.
+ */
+class LessonStoreImpl(private val context: Context) : LessonStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val lessonsDir = File(baseDir, "lessons")
@@ -27,127 +111,73 @@ class LessonStore(private val context: Context) {
     private val vocabDir = File(baseDir, "vocab")
     private val vocabIndexFile = File(vocabDir, "vocab.yaml")
     private val vocabStore = YamlListStore(yaml, vocabIndexFile)
+
     private val defaultPacks = listOf(
-        DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
-        DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip")
+        LanguageManager.DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
+        LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip")
     )
 
-    fun ensureSeedData() {
-        if (!lessonsDir.exists()) {
-            lessonsDir.mkdirs()
-        }
-        if (!languagesFile.exists()) {
-            val defaults = listOf(
-                mapOf("id" to "en", "name" to "English"),
-                mapOf("id" to "it", "name" to "Italian")
-            )
-            languagesStore.write(defaults)
-        }
+    private val languageManager = LanguageManager(
+        baseDir, lessonsDir, packsDir, languagesFile, languagesStore,
+        packsStore, seedMarker, defaultPacks
+    )
+
+    private val drillFileManager = DrillFileManager(
+        context, baseDir, storiesDir, storiesStore, vocabDir, vocabStore
+    )
+
+    private val packImporter = PackImporter(
+        context, baseDir, packsDir, packsStore,
+        storiesDir, storiesStore, vocabDir, vocabStore,
+        languageEnsurer = { languageManager.ensureLanguage(it) },
+        languageDir = { languageDir(it) },
+        lessonsDir = lessonsDir,
+        lessonIndexWriter = { langId, id, title, fileName, drillFileName ->
+            saveIndex(langId, LessonIndexEntry(id, title, fileName, drillFileName))
+        },
+        replaceById = { langId, id -> replaceById(langId, id) },
+        replaceByTitle = { langId, title -> replaceByTitle(langId, title) },
+        removePacksForLanguage = { packId, langId -> languageManager.removePacksForLanguage(packId, langId) },
+        getInstalledPacks = { languageManager.getInstalledPacks() }
+    )
+
+    // ── Seed & defaults ──────────────────────────────────────────────────
+
+    override fun ensureSeedData() = languageManager.ensureSeedData()
+
+    override fun seedDefaultPacksIfNeeded(): Boolean = languageManager.seedDefaultPacksIfNeeded { path ->
+        packImporter.importPackFromAssets(path)
+        true
     }
 
-    private fun hasLessonContent(): Boolean {
-        if (!lessonsDir.exists()) return false
-        return lessonsDir.walkTopDown().any { it.isFile && it.extension.equals("csv", ignoreCase = true) }
-    }
+    override fun updateDefaultPacksIfNeeded(): Boolean = languageManager.updateDefaultPacksIfNeeded(
+        importFromAssets = { path ->
+            packImporter.importPackFromAssets(path)
+            true
+        },
+        readManifestFromAssets = { path -> packImporter.readPackManifestFromAssets(path) }
+    )
 
-    fun seedDefaultPacksIfNeeded(): Boolean {
-        ensureSeedData()
-        if (seedMarker.exists()) return false
-        if (hasLessonContent()) {
-            AtomicFileWriter.writeText(seedMarker, "skip")
-            return false
+    override fun forceReloadDefaultPacks(): Boolean = languageManager.forceReloadDefaultPacks(
+        removeInstalledPackData = { packId -> removeInstalledPackData(packId) },
+        importFromAssets = { path ->
+            packImporter.importPackFromAssets(path)
+            true
         }
-        var seededAny = false
-        defaultPacks.forEach { pack ->
-            val seeded = runCatching { importPackFromAssetsInternal(pack.assetPath) }.isSuccess
-            if (seeded) seededAny = true
-        }
-        AtomicFileWriter.writeText(seedMarker, if (seededAny) "ok" else "none")
-        return seededAny
-    }
+    )
 
-    fun updateDefaultPacksIfNeeded(): Boolean {
-        ensureSeedData()
-        val installed = getInstalledPacks()
-        var updatedAny = false
-        defaultPacks.forEach { pack ->
-            val manifest = runCatching { readPackManifestFromAssets(pack.assetPath) }.getOrNull() ?: return@forEach
-            val existing = installed.firstOrNull { it.packId == manifest.packId }
-            val shouldUpdate = existing == null || existing.packVersion != manifest.packVersion
-            if (shouldUpdate) {
-                val updated = runCatching { importPackFromAssetsInternal(pack.assetPath) }.isSuccess
-                if (updated) updatedAny = true
-            }
-        }
-        return updatedAny
-    }
+    // ── Language & pack queries ──────────────────────────────────────────
 
-    /**
-     * Force reload default packs from assets.
-     * Used on app reinstall to ensure latest lesson content is loaded.
-     */
-    fun forceReloadDefaultPacks(): Boolean {
-        ensureSeedData()
-        var reloadedAny = false
-        defaultPacks.forEach { pack ->
-            val removed = removeInstalledPackData(pack.packId)
-            val reloaded = runCatching { importPackFromAssetsInternal(pack.assetPath) }.isSuccess
-            if (removed || reloaded) reloadedAny = true
-        }
-        return reloadedAny
-    }
+    override fun getLanguages(): List<Language> = languageManager.getLanguages()
 
-    fun getLanguages(): List<Language> {
-        ensureSeedData()
-        val entries = languagesStore.read()
-        return entries.mapNotNull { entry ->
-            val id = entry["id"] as? String ?: return@mapNotNull null
-            val name = entry["name"] as? String ?: return@mapNotNull null
-            Language(id, name)
-        }
-    }
+    override fun addLanguage(name: String): Language = languageManager.addLanguage(name)
 
-    fun addLanguage(name: String): Language {
-        ensureSeedData()
-        val normalized = name.trim()
-        if (normalized.isBlank()) error("Language name is empty")
-        val existing = getLanguages()
-        val baseId = normalized
-            .lowercase()
-            .replace(Regex("\\s+"), "_")
-            .replace(Regex("[^a-z0-9_]+"), "")
-            .ifBlank { "lang" }
-        var candidate = baseId
-        var suffix = 2
-        while (existing.any { it.id == candidate }) {
-            candidate = "${baseId}_$suffix"
-            suffix += 1
-        }
-        val newEntry = mapOf("id" to candidate, "name" to normalized)
-        val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
-        languagesStore.write(updated)
-        return Language(candidate, normalized)
-    }
+    override fun getInstalledPacks(): List<LessonPack> = languageManager.getInstalledPacks()
 
-    fun getInstalledPacks(): List<LessonPack> {
-        val entries = packsStore.read()
-        return entries.mapNotNull { entry ->
-            val packId = entry["packId"] as? String ?: return@mapNotNull null
-            val packVersion = entry["packVersion"] as? String ?: return@mapNotNull null
-            val languageId = entry["languageId"] as? String ?: return@mapNotNull null
-            val importedAt = (entry["importedAt"] as? Number)?.toLong() ?: 0L
-            val displayName = entry["displayName"] as? String
-            LessonPack(packId, packVersion, languageId, importedAt, displayName)
-        }
-    }
-
-    /**
-     * Returns the pack ID that contains the given lesson, or null if not found.
-     */
-    fun getPackIdForLesson(lessonId: String): String? {
+    override fun getPackIdForLesson(lessonId: String): String? {
         val packs = getInstalledPacks()
         for (pack in packs) {
-            val manifest = readInstalledPackManifest(pack.packId) ?: continue
+            val manifest = languageManager.readInstalledPackManifest(pack.packId) ?: continue
             if (manifest.lessons.any { it.lessonId == lessonId }) {
                 return pack.packId
             }
@@ -155,20 +185,13 @@ class LessonStore(private val context: Context) {
         return null
     }
 
-    /**
-     * Returns the lesson IDs that belong to the given pack.
-     */
-    fun getLessonIdsForPack(packId: String): List<String> {
-        val manifest = readInstalledPackManifest(packId) ?: return emptyList()
+    override fun getLessonIdsForPack(packId: String): List<String> {
+        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
         return manifest.lessons.sortedBy { it.order }.map { it.lessonId }
     }
 
-    /**
-     * Returns cumulative tenses active for the given lesson level within a pack.
-     * Reads tenses from manifest lessons 1..lessonLevel and deduplicates.
-     */
-    fun getCumulativeTenses(packId: String, lessonLevel: Int): List<String> {
-        val manifest = readInstalledPackManifest(packId) ?: return emptyList()
+    override fun getCumulativeTenses(packId: String, lessonLevel: Int): List<String> {
+        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
         val sortedLessons = manifest.lessons
             .filter { it.type != "verb_drill" }
             .sortedBy { it.order }
@@ -179,243 +202,54 @@ class LessonStore(private val context: Context) {
             .distinct()
     }
 
-    fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
+    // ── Pack import ──────────────────────────────────────────────────────
+
+    override fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
         ensureSeedData()
-        val input = resolver.openInputStream(uri) ?: error("Cannot open zip")
-        input.use { stream -> return importPackFromStream(stream) }
+        return packImporter.importPackFromUri(uri, resolver)
     }
 
-    fun importPackFromAssets(assetPath: String): LessonPack {
+    override fun importPackFromAssets(assetPath: String): LessonPack {
         ensureSeedData()
-        return importPackFromAssetsInternal(assetPath)
+        return packImporter.importPackFromAssets(assetPath)
     }
 
-    private fun importPackFromAssetsInternal(assetPath: String): LessonPack {
-        val input = context.assets.open(assetPath)
-        input.use { stream -> return importPackFromStream(stream) }
-    }
+    // ── Pack removal ─────────────────────────────────────────────────────
 
-    private fun importPackFromStream(input: InputStream): LessonPack {
-        packsDir.mkdirs()
-        val tempDir = extractZipToTemp(input)
-        return importPackFromTempDir(tempDir)
-    }
-
-    private fun readPackManifestFromAssets(assetPath: String): LessonPackManifest {
-        val input = context.assets.open(assetPath)
-        input.use { stream ->
-            val tempDir = extractZipToTemp(stream)
-            val manifestFile = File(tempDir, "manifest.json")
-            if (!manifestFile.exists()) {
-                tempDir.deleteRecursively()
-                error("Manifest not found")
-            }
-            val manifest = LessonPackManifest.fromJson(manifestFile.readText())
-            tempDir.deleteRecursively()
-            return manifest
-        }
-    }
-
-    fun removeInstalledPackData(packId: String): Boolean {
-        val manifest = readInstalledPackManifest(packId)
+    override fun removeInstalledPackData(packId: String): Boolean {
+        val manifest = languageManager.readInstalledPackManifest(packId)
         if (manifest != null) {
             val languageId = manifest.language.lowercase().trim()
             if (languageId.isNotBlank()) {
                 manifest.lessons.forEach { lesson ->
                     deleteLesson(languageId, lesson.lessonId)
                 }
-                removePacksForLanguage(packId, languageId)
-                // Clean up pack-scoped drill directory
-                deletePackDrills(packId)
+                languageManager.removePacksForLanguage(packId, languageId)
+                languageManager.deletePackDrills(packId)
                 return true
             }
         }
-        val removedEntry = removePackEntry(packId)
+        val removedEntry = languageManager.removePackEntry(packId)
         val packDir = File(packsDir, packId)
         val removedDir = if (packDir.exists()) packDir.deleteRecursively() else false
-        // Clean up pack-scoped drill directory even without manifest
-        deletePackDrills(packId)
+        languageManager.deletePackDrills(packId)
         return removedEntry || removedDir
     }
 
-    /**
-     * Delete the pack-scoped drill directory: grammarmate/drills/{packId}/
-     */
-    private fun deletePackDrills(packId: String) {
-        val drillsDir = File(baseDir, "drills/$packId")
-        if (drillsDir.exists()) {
-            drillsDir.deleteRecursively()
-        }
+    // ── CSV lesson import ────────────────────────────────────────────────
+
+    override fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson {
+        return packImporter.importLessonFromUri(
+            languageId, uri, resolver,
+            ensureSeedData = { ensureSeedData() },
+            loadIndex = { loadIndex(it) },
+            writeIndex = { langId, entries -> writeIndex(langId, entries) }
+        )
     }
 
-    private fun readInstalledPackManifest(packId: String): LessonPackManifest? {
-        val manifestFile = File(File(packsDir, packId), "manifest.json")
-        if (!manifestFile.exists()) return null
-        return runCatching { LessonPackManifest.fromJson(manifestFile.readText()) }.getOrNull()
-    }
+    // ── Lesson CRUD ──────────────────────────────────────────────────────
 
-    private fun removePackEntry(packId: String): Boolean {
-        val entries = packsStore.read()
-        if (entries.isEmpty()) return false
-        var removed = false
-        val remaining = entries.filterNot { entry ->
-            val entryPackId = entry["packId"] as? String
-            if (entryPackId == packId) {
-                removed = true
-                true
-            } else {
-                false
-            }
-        }
-        if (removed) {
-            packsStore.write(remaining)
-        }
-        return removed
-    }
-
-    private fun extractZipToTemp(input: InputStream): File {
-        val tempDir = File(packsDir, "tmp_${UUID.randomUUID()}")
-        tempDir.mkdirs()
-        ZipInputStream(input).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                val outFile = File(tempDir, entry.name)
-                val canonicalParent = tempDir.canonicalPath + File.separator
-                val canonicalTarget = outFile.canonicalPath
-                if (!canonicalTarget.startsWith(canonicalParent)) {
-                    error("Invalid zip entry: ${entry.name}")
-                }
-                if (entry.isDirectory) {
-                    outFile.mkdirs()
-                } else {
-                    outFile.parentFile?.mkdirs()
-                    FileOutputStream(outFile).use { out -> zip.copyTo(out) }
-                }
-                zip.closeEntry()
-                entry = zip.nextEntry
-            }
-        }
-        return tempDir
-    }
-
-    private fun importPackFromTempDir(tempDir: File): LessonPack {
-        try {
-            val manifestFile = File(tempDir, "manifest.json")
-            if (!manifestFile.exists()) {
-                error("Manifest not found")
-            }
-            val manifest = LessonPackManifest.fromJson(manifestFile.readText())
-            val languageId = manifest.language.lowercase().trim()
-            ensureLanguage(languageId)
-            // Don't delete all lessons - we'll do incremental update instead
-            // Only remove the old pack directory for this specific packId
-            removePacksForLanguage(manifest.packId, languageId)
-
-            val packDir = File(packsDir, manifest.packId)
-            if (packDir.exists()) {
-                packDir.deleteRecursively()
-            }
-            tempDir.copyRecursively(packDir, overwrite = true)
-            tempDir.deleteRecursively()
-
-            val lessonEntries = manifest.lessons
-                .filter { it.type != "verb_drill" }
-                .sortedBy { it.order }
-            lessonEntries.forEach { entry ->
-                val sourceFile = File(packDir, entry.file)
-                if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
-                val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
-                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile = drillSourceFile)
-            }
-
-            // Import pack-scoped drill files (new pack-manifest drill sections)
-            importPackDrills(packDir, manifest)
-
-            importStoriesFromPack(packDir, languageId)
-            importVocabFromPack(packDir, languageId)
-
-            val updated = getInstalledPacks()
-                .filterNot { it.packId == manifest.packId }
-                .map {
-                    val map = mutableMapOf(
-                        "packId" to it.packId,
-                        "packVersion" to it.packVersion,
-                        "languageId" to it.languageId,
-                        "importedAt" to it.importedAt
-                    )
-                    if (it.displayName != null) map["displayName"] = it.displayName
-                    map
-                }
-                .toMutableList()
-            val newEntry = mutableMapOf(
-                "packId" to manifest.packId,
-                "packVersion" to manifest.packVersion,
-                    "languageId" to languageId,
-                    "importedAt" to System.currentTimeMillis()
-                )
-            if (manifest.displayName != null) newEntry["displayName"] = manifest.displayName
-            updated.add(newEntry)
-            packsStore.write(updated)
-            return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis(), manifest.displayName)
-        } finally {
-            // Always clean up temp directory on any error
-            if (tempDir.exists()) {
-                tempDir.deleteRecursively()
-            }
-        }
-    }
-
-    fun getStoryQuizzes(lessonId: String, phase: StoryPhase, languageId: String): List<StoryQuiz> {
-        val entries = storiesStore.read()
-        return entries.mapNotNull { entry ->
-            val entryLesson = entry["lessonId"] as? String ?: return@mapNotNull null
-            val entryPhase = entry["phase"] as? String ?: return@mapNotNull null
-            val entryLang = entry["languageId"] as? String ?: return@mapNotNull null
-            if (!entryLesson.equals(lessonId, ignoreCase = true)) return@mapNotNull null
-            if (!entryPhase.equals(phase.name, ignoreCase = true)) return@mapNotNull null
-            if (!entryLang.equals(languageId, ignoreCase = true)) return@mapNotNull null
-            val fileName = entry["file"] as? String ?: return@mapNotNull null
-            val file = File(storiesDir, fileName)
-            if (!file.exists()) return@mapNotNull null
-            runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull()
-        }
-    }
-
-    fun getVocabEntries(lessonId: String, languageId: String): List<VocabEntry> {
-        val entries = vocabStore.read()
-        val result = entries.flatMap { entry ->
-            val entryLesson = entry["lessonId"] as? String ?: return@flatMap emptyList()
-            val entryLang = entry["languageId"] as? String ?: return@flatMap emptyList()
-            if (!entryLesson.equals(lessonId, ignoreCase = true)) return@flatMap emptyList()
-            if (!entryLang.equals(languageId, ignoreCase = true)) return@flatMap emptyList()
-            val fileName = entry["file"] as? String ?: return@flatMap emptyList()
-            val languageDir = vocabDirForLanguage(entryLang)
-            val file = File(languageDir, fileName).takeIf { it.exists() }
-                ?: File(vocabDir, fileName).takeIf { it.exists() }
-            if (file == null) return@flatMap emptyList()
-            val rows = runCatching { VocabCsvParser.parse(file.inputStream()) }.getOrNull() ?: return@flatMap emptyList()
-            rows.mapIndexed { index, row ->
-                VocabEntry(
-                    id = "${entryLesson}_${index + 1}",
-                    lessonId = entryLesson,
-                    languageId = entryLang,
-                    nativeText = row.nativeText,
-                    targetText = row.targetText,
-                    isHard = row.isHard
-                )
-            }
-        }.toMutableList()
-
-        // Load additional Italian drill vocab from assets
-        if (languageId == "it") {
-            val drillEntries = ItalianDrillVocabParser.loadAllFromAssets(context, lessonId, languageId)
-            result.addAll(drillEntries)
-        }
-
-        return result
-    }
-
-    fun getLessons(languageId: String): List<Lesson> {
+    override fun getLessons(languageId: String): List<Lesson> {
         ensureSeedData()
         val entries = loadIndex(languageId)
         return entries.mapNotNull { entry ->
@@ -441,38 +275,17 @@ class LessonStore(private val context: Context) {
         }
     }
 
-    fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson {
-        ensureSeedData()
-        val input = resolver.openInputStream(uri) ?: error("Cannot open CSV")
-        val title = guessFileName(resolver, uri) ?: "Lesson"
-        val id = UUID.randomUUID().toString()
-        val fileName = "lesson_$id.csv"
-        val dir = languageDir(languageId)
-        dir.mkdirs()
-        val csvFile = File(dir, fileName)
-        input.use { stream ->
-            csvFile.outputStream().use { out ->
-                stream.copyTo(out)
-            }
-        }
-        val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
-        val lessonTitle = parsedTitle ?: title
-        replaceByTitle(languageId, lessonTitle)
-        saveIndex(languageId, LessonIndexEntry(id, lessonTitle, fileName))
-        return Lesson(id = id, languageId = languageId, title = lessonTitle, cards = cards)
-    }
-
-    fun deleteAllLessons(languageId: String) {
+    override fun deleteAllLessons(languageId: String) {
         val dir = languageDir(languageId)
         if (dir.exists()) dir.deleteRecursively()
         val index = indexFileFor(languageId)
         if (index.exists()) index.delete()
-        removeVocabEntries(languageId, null)
-        removeStoriesForLanguage(languageId)
-        removePacksForLanguage(languageId)
+        drillFileManager.removeVocabEntries(languageId, null)
+        drillFileManager.removeStoriesForLanguage(languageId)
+        languageManager.removePacksForLanguage(languageId)
     }
 
-    fun deleteLesson(languageId: String, lessonId: String) {
+    override fun deleteLesson(languageId: String, lessonId: String) {
         ensureSeedData()
         val entries = loadIndex(languageId).toMutableList()
         val iterator = entries.iterator()
@@ -495,14 +308,14 @@ class LessonStore(private val context: Context) {
             }
         }
         writeIndex(languageId, entries)
-        removeVocabEntries(languageId, lessonId)
+        drillFileManager.removeVocabEntries(languageId, lessonId)
     }
 
-    fun createEmptyLesson(languageId: String, title: String): Lesson {
+    override fun createEmptyLesson(languageId: String, title: String): Lesson {
         ensureSeedData()
         val normalizedTitle = title.trim().ifBlank { "Lesson" }
         replaceByTitle(languageId, normalizedTitle)
-        val id = UUID.randomUUID().toString()
+        val id = java.util.UUID.randomUUID().toString()
         val fileName = "lesson_$id.csv"
         val dir = languageDir(languageId)
         dir.mkdirs()
@@ -512,7 +325,46 @@ class LessonStore(private val context: Context) {
         return Lesson(id = id, languageId = languageId, title = normalizedTitle, cards = emptyList())
     }
 
+    // ── Story & vocab queries (delegated) ────────────────────────────────
 
+    override fun getStoryQuizzes(lessonId: String, phase: StoryPhase, languageId: String): List<StoryQuiz> =
+        drillFileManager.getStoryQuizzes(lessonId, phase, languageId)
+
+    override fun getVocabEntries(lessonId: String, languageId: String): List<VocabEntry> =
+        drillFileManager.getVocabEntries(lessonId, languageId)
+
+    // ── Drill file queries (delegated) ───────────────────────────────────
+
+    override fun getVerbDrillFiles(packId: String, languageId: String): List<File> =
+        drillFileManager.getVerbDrillFiles(packId, languageId)
+
+    override fun getVerbDrillFilesForPack(packId: String): List<File> =
+        drillFileManager.getVerbDrillFilesForPack(packId)
+
+    override fun getVocabDrillFiles(packId: String, languageId: String): List<File> =
+        drillFileManager.getVocabDrillFiles(packId, languageId)
+
+    override fun getVocabDrillFilesForPack(packId: String): List<File> =
+        drillFileManager.getVocabDrillFilesForPack(packId)
+
+    override fun getVocabWordsByRankRange(packId: String, languageId: String, fromRank: Int, toRank: Int): List<VocabWord> =
+        drillFileManager.getVocabWordsByRankRange(packId, languageId, fromRank, toRank)
+
+    override fun hasVerbDrill(packId: String, languageId: String): Boolean =
+        drillFileManager.hasVerbDrill(packId, languageId)
+
+    override fun hasVocabDrill(packId: String, languageId: String): Boolean =
+        drillFileManager.hasVocabDrill(packId, languageId)
+
+    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
+    override fun getVerbDrillFiles(languageId: String): List<File> =
+        drillFileManager.getVerbDrillFilesLegacy(languageId)
+
+    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
+    override fun hasVerbDrillLessons(languageId: String): Boolean =
+        drillFileManager.hasVerbDrillLessons(languageId)
+
+    // ── Private helpers ──────────────────────────────────────────────────
 
     private fun saveIndex(languageId: String, entry: LessonIndexEntry) {
         val existing = loadIndex(languageId).toMutableList()
@@ -560,75 +412,6 @@ class LessonStore(private val context: Context) {
         writeIndex(languageId, entries)
     }
 
-    private fun languageDir(languageId: String): File = File(lessonsDir, languageId)
-
-    private fun indexFileFor(languageId: String): File = File(lessonsDir, "${languageId}_index.yaml")
-
-    private fun vocabDirForLanguage(languageId: String): File = File(vocabDir, languageId)
-
-    private fun ensureLanguage(languageId: String) {
-        val normalized = languageId.lowercase().trim()
-        if (normalized.isBlank()) return
-        val existing = getLanguages()
-        if (existing.any { it.id == normalized }) return
-        val displayName = when (normalized) {
-            "en" -> "English"
-            "it" -> "Italian"
-            else -> normalized.uppercase()
-        }
-        val newEntry = mapOf("id" to normalized, "name" to displayName)
-        val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
-        languagesStore.write(updated)
-    }
-
-    private fun importLessonFromFile(
-        languageId: String,
-        sourceFile: File,
-        fallbackTitle: String?,
-        lessonIdOverride: String? = null,
-        drillSourceFile: File? = null
-    ): Lesson {
-        val normalizedId = lessonIdOverride?.trim().orEmpty()
-        val id = if (normalizedId.isNotBlank()) normalizedId else UUID.randomUUID().toString()
-        val fileName = "lesson_$id.csv"
-        val dir = languageDir(languageId)
-        dir.mkdirs()
-        val targetFile = File(dir, fileName)
-        sourceFile.inputStream().use { input ->
-            AtomicFileWriter.writeText(targetFile, input.bufferedReader().readText())
-        }
-        val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
-        val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
-        // Prefix card IDs with lesson ID to avoid collisions across lessons
-        val uniqueCards = cards.mapIndexed { index, card ->
-            card.copy(id = "${id}_${index}")
-        }
-
-        var drillFileName: String? = null
-        var drillCards = emptyList<SentenceCard>()
-        if (drillSourceFile != null && drillSourceFile.exists()) {
-            val drillTargetName = "lesson_${id}_drill.csv"
-            val drillTargetFile = File(dir, drillTargetName)
-            drillSourceFile.inputStream().use { input ->
-                AtomicFileWriter.writeText(drillTargetFile, input.bufferedReader().readText())
-            }
-            val (_, parsedDrillCards) = CsvParser.parseLesson(drillTargetFile.inputStream())
-            drillFileName = drillTargetName
-            drillCards = parsedDrillCards
-        }
-
-        if (normalizedId.isNotBlank()) {
-            replaceById(languageId, normalizedId)
-        } else {
-            replaceByTitle(languageId, title)
-        }
-        saveIndex(languageId, LessonIndexEntry(id, title, fileName, drillFileName))
-        val uniqueDrillCards = drillCards.mapIndexed { index, card ->
-            card.copy(id = "${id}_drill_${index}")
-        }
-        return Lesson(id = id, languageId = languageId, title = title, cards = uniqueCards, drillCards = uniqueDrillCards)
-    }
-
     private fun replaceById(languageId: String, lessonId: String) {
         val entries = loadIndex(languageId).toMutableList()
         val iterator = entries.iterator()
@@ -652,291 +435,9 @@ class LessonStore(private val context: Context) {
         writeIndex(languageId, entries)
     }
 
-    private fun importStoriesFromPack(packDir: File, languageId: String) {
-        storiesDir.mkdirs()
-        val existing = storiesStore.read().toMutableList()
+    private fun languageDir(languageId: String): File = File(lessonsDir, languageId)
 
-        packDir.walkTopDown()
-            .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
-            .filterNot { it.name.equals("manifest.json", ignoreCase = true) }
-            .forEach { file ->
-                val story = runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull() ?: return@forEach
-                val storedName = "${story.storyId}.json"
-                val target = File(storiesDir, storedName)
-                AtomicFileWriter.writeText(target, file.readText())
-
-                // Remove old version of this story if exists
-                existing.removeIf { entry ->
-                    val entryStoryId = entry["storyId"] as? String
-                    val entryLessonId = entry["lessonId"] as? String
-                    val entryPhase = entry["phase"] as? String
-                    entryStoryId == story.storyId &&
-                    entryLessonId == story.lessonId &&
-                    entryPhase == story.phase.name
-                }
-
-                // Add new/updated story
-                existing.add(
-                    mapOf(
-                        "storyId" to story.storyId,
-                        "lessonId" to story.lessonId,
-                        "phase" to story.phase.name,
-                        "languageId" to languageId,
-                        "file" to storedName
-                    )
-                )
-            }
-        storiesStore.write(existing)
-    }
-
-    private fun importVocabFromPack(packDir: File, languageId: String) {
-        vocabDir.mkdirs()
-        val languageDir = vocabDirForLanguage(languageId)
-        languageDir.mkdirs()
-
-        val existing = vocabStore.read().toMutableList()
-
-        packDir.walkTopDown()
-            .filter { it.isFile && it.extension.equals("csv", ignoreCase = true) }
-            .filter { it.nameWithoutExtension.startsWith("vocab_", ignoreCase = true) }
-            .forEach { file ->
-                val lessonId = file.nameWithoutExtension.removePrefix("vocab_")
-                if (lessonId.isBlank()) return@forEach
-                val storedName = "${file.nameWithoutExtension}.csv"
-                val target = File(languageDir, storedName)
-                AtomicFileWriter.writeText(target, file.readText())
-
-                // Remove old version of this vocab if exists
-                existing.removeIf { entry ->
-                    val entryLessonId = entry["lessonId"] as? String
-                    val entryLang = entry["languageId"] as? String
-                    entryLessonId == lessonId && entryLang?.equals(languageId, ignoreCase = true) == true
-                }
-
-                // Add new/updated vocab
-                existing.add(
-                    mapOf(
-                        "lessonId" to lessonId,
-                        "languageId" to languageId,
-                        "file" to storedName
-                    )
-                )
-            }
-        vocabStore.write(existing)
-    }
-
-    private fun removeVocabEntries(languageId: String, lessonId: String?) {
-        val entries = vocabStore.read()
-        val remaining = mutableListOf<Map<String, Any>>()
-        entries.forEach { entry ->
-            val entryLang = entry["languageId"] as? String ?: return@forEach
-            val entryLesson = entry["lessonId"] as? String
-            val shouldRemove = entryLang.equals(languageId, ignoreCase = true) &&
-                (lessonId == null || entryLesson?.equals(lessonId, ignoreCase = true) == true)
-            if (shouldRemove) {
-                val fileName = entry["file"] as? String
-                if (fileName != null) {
-                    File(vocabDir, fileName).delete()
-                    File(vocabDirForLanguage(entryLang), fileName).delete()
-                }
-            } else {
-                remaining.add(entry)
-            }
-        }
-        vocabStore.write(remaining)
-    }
-
-    private fun removeStoriesForLanguage(languageId: String) {
-        val entries = storiesStore.read()
-        val remaining = mutableListOf<Map<String, Any>>()
-        entries.forEach { entry ->
-            val entryLang = entry["languageId"] as? String ?: return@forEach
-            if (entryLang.equals(languageId, ignoreCase = true)) {
-                val fileName = entry["file"] as? String
-                if (fileName != null) {
-                    val file = File(storiesDir, fileName)
-                    if (file.exists()) file.delete()
-                }
-            } else {
-                remaining.add(entry)
-            }
-        }
-        storiesStore.write(remaining)
-    }
-
-    private fun removePacksForLanguage(languageId: String) {
-        val entries = packsStore.read()
-        val remaining = mutableListOf<Map<String, Any>>()
-        entries.forEach { entry ->
-            val entryLang = entry["languageId"] as? String ?: return@forEach
-            val packId = entry["packId"] as? String
-            if (entryLang.equals(languageId, ignoreCase = true)) {
-                if (packId != null) {
-                    val dir = File(packsDir, packId)
-                    if (dir.exists()) dir.deleteRecursively()
-                }
-            } else {
-                remaining.add(entry)
-            }
-        }
-        packsStore.write(remaining)
-    }
-
-    private fun removePacksForLanguage(packIdToRemove: String, languageId: String) {
-        val entries = packsStore.read()
-        val remaining = mutableListOf<Map<String, Any>>()
-        entries.forEach { entry ->
-            val entryPackId = entry["packId"] as? String
-            val entryLang = entry["languageId"] as? String
-            if (entryPackId == packIdToRemove && entryLang?.equals(languageId, ignoreCase = true) == true) {
-                // Remove old version of this pack
-                val dir = File(packsDir, packIdToRemove)
-                if (dir.exists()) dir.deleteRecursively()
-            } else {
-                remaining.add(entry)
-            }
-        }
-        packsStore.write(remaining)
-    }
-
-    private fun importVerbDrillFile(languageId: String, sourceFile: File, lessonId: String) {
-        val verbDrillDir = File(baseDir, "verb_drill")
-        verbDrillDir.mkdirs()
-        val targetFile = File(verbDrillDir, "${languageId}_${lessonId}.csv")
-        sourceFile.copyTo(targetFile, overwrite = true)
-    }
-
-    /**
-     * Import pack-scoped drill files declared in the manifest's verbDrill/vocabDrill sections.
-     * Copies listed files from the extracted pack directory to grammarmate/drills/{packId}/.
-     */
-    private fun importPackDrills(packDir: File, manifest: LessonPackManifest) {
-        manifest.verbDrill?.files?.forEach { fileName ->
-            val source = File(packDir, fileName)
-            if (!source.exists()) return@forEach
-            val targetDir = File(baseDir, "drills/${manifest.packId}/verb_drill")
-            targetDir.mkdirs()
-            val target = File(targetDir, source.name)
-            AtomicFileWriter.writeText(target, source.readText())
-        }
-        manifest.vocabDrill?.files?.forEach { fileName ->
-            val source = File(packDir, fileName)
-            if (!source.exists()) return@forEach
-            val targetDir = File(baseDir, "drills/${manifest.packId}/vocab_drill")
-            targetDir.mkdirs()
-            val target = File(targetDir, source.name)
-            AtomicFileWriter.writeText(target, source.readText())
-        }
-    }
-
-    /**
-     * Get verb drill CSV files for a specific pack and language.
-     * Looks in grammarmate/drills/{packId}/verb_drill/.
-     */
-    fun getVerbDrillFiles(packId: String, languageId: String): List<File> {
-        val drillDir = File(baseDir, "drills/$packId/verb_drill")
-        if (!drillDir.exists()) return emptyList()
-        return drillDir.listFiles()
-            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
-            ?: emptyList()
-    }
-
-    /**
-     * Get all verb drill CSV files for a specific pack (any language prefix).
-     * Looks in grammarmate/drills/{packId}/verb_drill/.
-     */
-    fun getVerbDrillFilesForPack(packId: String): List<File> {
-        val drillDir = File(baseDir, "drills/$packId/verb_drill")
-        if (!drillDir.exists()) return emptyList()
-        return drillDir.listFiles()
-            ?.filter { it.extension == "csv" }
-            ?: emptyList()
-    }
-
-    /**
-     * Get vocab drill CSV files for a specific pack and language.
-     * Looks in grammarmate/drills/{packId}/vocab_drill/.
-     */
-    fun getVocabDrillFiles(packId: String, languageId: String): List<File> {
-        val drillDir = File(baseDir, "drills/$packId/vocab_drill")
-        if (!drillDir.exists()) return emptyList()
-        return drillDir.listFiles()
-            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
-            ?: emptyList()
-    }
-
-    /**
-     * Get all vocab drill CSV files for a specific pack (any language prefix).
-     * Looks in grammarmate/drills/{packId}/vocab_drill/.
-     */
-    fun getVocabDrillFilesForPack(packId: String): List<File> {
-        val drillDir = File(baseDir, "drills/$packId/vocab_drill")
-        if (!drillDir.exists()) return emptyList()
-        return drillDir.listFiles()
-            ?.filter { it.extension == "csv" }
-            ?: emptyList()
-    }
-
-    fun getVocabWordsByRankRange(packId: String, languageId: String, fromRank: Int, toRank: Int): List<VocabWord> {
-        val files = getVocabDrillFiles(packId, languageId)
-        val words = mutableListOf<VocabWord>()
-        for (file in files) {
-            val stream = file.inputStream()
-            val fileName = file.name
-            val rows = ItalianDrillVocabParser.parse(stream, fileName)
-            stream.close()
-            val pos = fileName
-                .removePrefix("${languageId}_")
-                .removePrefix("drill_")
-                .removeSuffix(".csv")
-            for (row in rows) {
-                if (row.rank in fromRank..toRank) {
-                    words.add(VocabWord(
-                        id = "${pos}_${row.rank}_${row.word}",
-                        word = row.word,
-                        pos = pos,
-                        rank = row.rank,
-                        meaningRu = row.meaningRu,
-                        collocations = row.collocations,
-                        forms = emptyMap()
-                    ))
-                }
-            }
-        }
-        return words.sortedBy { it.rank }
-    }
-
-    fun hasVerbDrill(packId: String, languageId: String): Boolean {
-        return getVerbDrillFiles(packId, languageId).isNotEmpty()
-    }
-
-    fun hasVocabDrill(packId: String, languageId: String): Boolean {
-        return getVocabDrillFiles(packId, languageId).isNotEmpty()
-    }
-
-    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
-    fun getVerbDrillFiles(languageId: String): List<File> {
-        val verbDrillDir = File(baseDir, "verb_drill")
-        if (!verbDrillDir.exists()) return emptyList()
-        return verbDrillDir.listFiles()
-            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
-            ?: emptyList()
-    }
-
-    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
-    fun hasVerbDrillLessons(languageId: String): Boolean {
-        return getVerbDrillFiles(languageId).isNotEmpty()
-    }
-
-    private fun guessFileName(resolver: ContentResolver, uri: Uri): String? {
-        val cursor = resolver.query(uri, null, null, null, null) ?: return null
-        cursor.use {
-            if (!it.moveToFirst()) return null
-            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameIndex == -1) return null
-            return it.getString(nameIndex)
-        }
-    }
+    private fun indexFileFor(languageId: String): File = File(lessonsDir, "${languageId}_index.yaml")
 
     private data class LessonIndexEntry(
         val id: String,
@@ -944,10 +445,4 @@ class LessonStore(private val context: Context) {
         val fileName: String,
         val drillFileName: String? = null
     )
-
-    private data class DefaultPack(
-        val packId: String,
-        val assetPath: String
-    )
-
 }

@@ -26,7 +26,8 @@ class CardProvider(
     private val subLessonSizeMin: Int = TrainingConfig.SUB_LESSON_SIZE_MIN,
     private val subLessonSizeMax: Int = TrainingConfig.SUB_LESSON_SIZE_MAX,
     private val eliteSizeMultiplier: Double = 1.25,
-    private val eliteStepCount: Int = TrainingConfig.ELITE_STEP_COUNT
+    private val eliteStepCount: Int = TrainingConfig.ELITE_STEP_COUNT,
+    private val progressTracker: ProgressTracker? = null
 ) {
 
     private var cachedScheduleKey: String = ""
@@ -250,9 +251,9 @@ class CardProvider(
         val subLessons = schedule?.subLessons.orEmpty()
         val subCount = subLessons.size
 
-        val completedCount = calculateCompletedSubLessons(
+        val completedCount = progressTracker?.calculateCompletedSubLessons(
             subLessons, mastery, selectedLessonId, lessons
-        )
+        ) ?: 0
 
         val activeIdx = activeSubLessonIndex.coerceIn(
             0, (subCount - 1).coerceAtLeast(0)
@@ -269,40 +270,6 @@ class CardProvider(
             completedSubLessonCount = completedCount,
             subLessonTypes = subLessons.map { it.type }
         )
-    }
-
-    /**
-     * Count how many sub-lessons are fully completed based on shown card IDs.
-     * A sub-lesson is considered completed when every card from the main pool
-     * in that sub-lesson has been shown at least once.
-     */
-    private fun calculateCompletedSubLessons(
-        subLessons: List<ScheduledSubLesson>,
-        mastery: LessonMasteryState?,
-        lessonId: String?,
-        lessons: List<Lesson>
-    ): Int {
-        if (lessonId == null || mastery == null || mastery.shownCardIds.isEmpty()) return 0
-
-        val lessonCardIds = lessons
-            .firstOrNull { it.id == lessonId }
-            ?.cards
-            ?.map { it.id }
-            ?.toSet()
-            ?: return 0
-
-        var completed = 0
-        for (subLesson in subLessons) {
-            val allCardsShown = subLesson.cards.all { card ->
-                !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
-            }
-            if (allCardsShown) {
-                completed++
-            } else {
-                break
-            }
-        }
-        return completed
     }
 
     private fun eliteSubLessonSize(): Int {

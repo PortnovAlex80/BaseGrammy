@@ -12,20 +12,17 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
@@ -43,7 +40,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -69,7 +65,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -78,9 +73,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import com.alexpo.grammermate.data.InputMode
-import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
+import com.alexpo.grammermate.data.CardSessionContract
+import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.VerbDrillUiState
+import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
+import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 
 @Composable
 fun VerbDrillScreen(
@@ -363,82 +361,17 @@ private fun DefaultVerbDrillInputControls(
 
     // Report sheet
     if (showReportSheet) {
-        val cardIsBad = contract.isCurrentCardFlagged()
-        ModalBottomSheet(
-            onDismissRequest = { showReportSheet = false },
-            sheetState = rememberModalBottomSheetState()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = "Card options",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (reportCard != null) {
-                    Text(
-                        text = reportCard.promptRu,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                if (cardIsBad) {
-                    TextButton(
-                        onClick = {
-                            contract.unflagCurrentCard()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Remove from bad sentences list")
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            contract.flagCurrentCard()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add to bad sentences list")
-                    }
-                }
-                TextButton(
-                    onClick = {
-                        val path = contract.exportFlaggedCards()
-                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Download, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export bad sentences to file")
-                }
-                TextButton(
-                    onClick = {
-                        if (reportText.isNotBlank()) {
-                            clipboardManager.setText(AnnotatedString(reportText))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Copy text")
-                }
+        VerbDrillReportSheet(
+            contract = contract,
+            reportCard = reportCard,
+            reportText = reportText,
+            clipboardManager = clipboardManager,
+            onDismiss = { showReportSheet = false },
+            onExport = { path ->
+                exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                showReportSheet = false
             }
-        }
+        )
     }
     if (exportMessage != null) {
         AlertDialog(
@@ -567,135 +500,19 @@ private fun DefaultVerbDrillInputControls(
 
         // Word Bank UI -- only on EASY
         if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-            val wordBankWords = contract.getWordBankWords()
-            val selectedWords = contract.getSelectedWords()
-            if (wordBankWords.isNotEmpty()) {
-                Text(
-                    text = "Tap words in correct order:",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    wordBankWords.forEach { word ->
-                        val availableCount = wordBankWords.count { it == word }
-                        val usedCount = selectedWords.count { it == word }
-                        val isFullyUsed = usedCount >= availableCount
-
-                        FilterChip(
-                            selected = usedCount > 0,
-                            onClick = {
-                                if (!isFullyUsed) {
-                                    contract.selectWordFromBank(word)
-                                }
-                            },
-                            label = { Text(text = word) },
-                            enabled = !isFullyUsed
-                        )
-                    }
-                }
-                if (selectedWords.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Selected: ${selectedWords.size} / ${wordBankWords.size}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        TextButton(onClick = { contract.removeLastSelectedWord() }) {
-                            Text(text = "Undo")
-                        }
-                    }
-                }
-            }
+            VerbDrillWordBankSection(contract = contract)
         }
 
         // Input mode selector + show answer + flag — mirrors AnswerBox exactly
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Voice mode button — ONLY sets input mode, does NOT launch speech
-                FilledTonalIconButton(
-                    onClick = {
-                        if (canLaunchVoice) {
-                            contract.setInputMode(InputMode.VOICE)
-                        }
-                    },
-                    enabled = canLaunchVoice
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
-                }
-                // Keyboard mode button
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
-                }
-                // Word bank mode button -- only on EASY
-                if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-                    FilledTonalIconButton(
-                        onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                        enabled = canSelectInputMode
-                    ) {
-                        Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
-                    }
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Show answer button -- only on EASY, disabled when hint already shown
-                if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(
-                            onClick = { if (hasCards) contract.showAnswer() },
-                            enabled = hasCards && provider.hintAnswer == null
-                        ) {
-                            Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                        }
-                }
-                }
-                if (contract.supportsFlagging) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(text = "Report sentence") } },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(
-                            onClick = { if (hasCards) showReportSheet = true },
-                            enabled = hasCards
-                        ) {
-                            Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
-                        }
-                    }
-                }
-                Text(
-                    text = when (contract.currentInputMode) {
-                        InputMode.VOICE -> "Voice"
-                        InputMode.KEYBOARD -> "Keyboard"
-                        InputMode.WORD_BANK -> "Word Bank"
-                    },
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
+        VerbDrillInputModeBar(
+            contract = contract,
+            provider = provider,
+            hintLevel = hintLevel,
+            hasCards = hasCards,
+            canLaunchVoice = canLaunchVoice,
+            canSelectInputMode = canSelectInputMode,
+            onReport = { showReportSheet = true }
+        )
 
         // Check button — uses provider.submitAnswerWithInput for drill-specific flow
         Button(
@@ -713,271 +530,6 @@ private fun DefaultVerbDrillInputControls(
                 scope.currentCard != null
         ) {
             Text(text = "Check")
-        }
-    }
-}
-
-/**
- * Bottom sheet showing verb conjugation reference for the current verb+tense.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun VerbReferenceBottomSheet(
-    verb: String,
-    tense: String?,
-    viewModel: VerbDrillViewModel,
-    onDismiss: () -> Unit
-) {
-    val conjugation = remember(verb, tense) {
-        viewModel.getConjugationForVerb(verb, tense ?: "")
-    }
-    val ttsState by viewModel.ttsState.collectAsState()
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Verb name + TTS button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = verb,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(
-                    onClick = { viewModel.speakVerbInfinitive(verb) },
-                    enabled = ttsState != TtsState.INITIALIZING
-                ) {
-                    when (ttsState) {
-                        TtsState.SPEAKING -> Icon(
-                            Icons.Default.VolumeUp,
-                            contentDescription = "Speaking",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        TtsState.INITIALIZING -> CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                        TtsState.ERROR -> Icon(
-                            Icons.Default.ReportProblem,
-                            contentDescription = "TTS error",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        else -> Icon(
-                            Icons.Default.VolumeUp,
-                            contentDescription = "Listen"
-                        )
-                    }
-                }
-            }
-
-            // Group label
-            val group = conjugation.firstOrNull()?.group
-            if (!group.isNullOrBlank()) {
-                Text(
-                    text = "Группа: $group",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-
-            // Tense label
-            if (!tense.isNullOrBlank()) {
-                Text(
-                    text = "Время: $tense",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-
-            // Conjugation table
-            if (conjugation.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Спряжение:",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    conjugation.forEach { card ->
-                        Text(
-                            text = card.answer,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontSize = 16.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Bottom sheet showing tense reference info: formula, usage in Russian, examples.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TenseInfoBottomSheet(
-    tenseName: String,
-    viewModel: VerbDrillViewModel,
-    onDismiss: () -> Unit
-) {
-    val tenseInfo = remember(tenseName) { viewModel.getTenseInfo(tenseName) }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (tenseInfo == null) {
-                // Fallback: show abbreviated name only
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = tenseName,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Text(
-                    text = "Справочная информация для этого времени недоступна.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            } else {
-                // Tense name header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = tenseInfo.name,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "(${tenseInfo.short})",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                }
-
-                // Formula card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Формула",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = tenseInfo.formula,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
-                // Usage explanation
-                Text(
-                    text = "Когда использовать",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = tenseInfo.usageRu,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                // Examples
-                if (tenseInfo.examples.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Примеры",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        tenseInfo.examples.forEach { example ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
-                                    Text(
-                                        text = example.it,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = example.ru,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                    )
-                                    if (example.note.isNotBlank()) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = example.note,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -1009,18 +561,22 @@ private fun VerbDrillSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (state.availableTenses.isNotEmpty()) {
-            TenseDropdown(
-                selectedTense = state.selectedTense,
-                availableTenses = state.availableTenses,
+            VerbDrillDropdown(
+                label = "Время",
+                allLabel = "Все времена",
+                selected = state.selectedTense,
+                items = state.availableTenses,
                 onSelect = onSelectTense
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
 
         if (state.availableGroups.isNotEmpty()) {
-            GroupDropdown(
-                selectedGroup = state.selectedGroup,
-                availableGroups = state.availableGroups,
+            VerbDrillDropdown(
+                label = "Группа",
+                allLabel = "Все группы",
+                selected = state.selectedGroup,
+                items = state.availableGroups,
                 onSelect = onSelectGroup
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -1083,75 +639,29 @@ private fun VerbDrillSelectionScreen(
 }
 
 @Composable
-private fun TenseDropdown(
-    selectedTense: String?,
-    availableTenses: List<String>,
+private fun VerbDrillDropdown(
+    label: String,
+    allLabel: String,
+    selected: String?,
+    items: List<String>,
     onSelect: (String?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val label = selectedTense ?: "Все времена"
     Column {
-        Text(
-            text = "Время:",
-            style = MaterialTheme.typography.labelMedium
-        )
+        Text(text = "$label:", style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(4.dp))
         TextButton(onClick = { expanded = true }) {
-            Text(text = label)
+            Text(text = selected ?: allLabel)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text(text = "Все времена") },
-                onClick = {
-                    expanded = false
-                    onSelect(null)
-                }
+                text = { Text(text = allLabel) },
+                onClick = { expanded = false; onSelect(null) }
             )
-            availableTenses.forEach { tense ->
+            items.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(text = tense) },
-                    onClick = {
-                        expanded = false
-                        onSelect(tense)
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun GroupDropdown(
-    selectedGroup: String?,
-    availableGroups: List<String>,
-    onSelect: (String?) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val label = selectedGroup ?: "Все группы"
-    Column {
-        Text(
-            text = "Группа:",
-            style = MaterialTheme.typography.labelMedium
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        TextButton(onClick = { expanded = true }) {
-            Text(text = label)
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text(text = "Все группы") },
-                onClick = {
-                    expanded = false
-                    onSelect(null)
-                }
-            )
-            availableGroups.forEach { group ->
-                DropdownMenuItem(
-                    text = { Text(text = group) },
-                    onClick = {
-                        expanded = false
-                        onSelect(group)
-                    }
+                    text = { Text(text = item) },
+                    onClick = { expanded = false; onSelect(item) }
                 )
             }
         }
@@ -1205,6 +715,241 @@ private fun VerbDrillCompletionScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = "Выход")
+        }
+    }
+}
+
+// --- Extracted sub-composables for DefaultVerbDrillInputControls ---
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VerbDrillReportSheet(
+    contract: CardSessionContract,
+    reportCard: SessionCard?,
+    reportText: String,
+    clipboardManager: androidx.compose.ui.platform.ClipboardManager,
+    onDismiss: () -> Unit,
+    onExport: (String?) -> Unit
+) {
+    val cardIsBad = contract.isCurrentCardFlagged()
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "Card options",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            if (reportCard != null) {
+                Text(
+                    text = reportCard.promptRu,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            if (cardIsBad) {
+                TextButton(
+                    onClick = {
+                        contract.unflagCurrentCard()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Remove from bad sentences list")
+                }
+            } else {
+                TextButton(
+                    onClick = {
+                        contract.flagCurrentCard()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ReportProblem, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add to bad sentences list")
+                }
+            }
+            TextButton(
+                onClick = {
+                    val path = contract.exportFlaggedCards()
+                    onExport(path)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Download, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Export bad sentences to file")
+            }
+            TextButton(
+                onClick = {
+                    if (reportText.isNotBlank()) {
+                        clipboardManager.setText(AnnotatedString(reportText))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.ContentCopy, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Copy text")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun VerbDrillWordBankSection(
+    contract: CardSessionContract
+) {
+    val wordBankWords = contract.getWordBankWords()
+    val selectedWords = contract.getSelectedWords()
+    if (wordBankWords.isNotEmpty()) {
+        Text(
+            text = "Tap words in correct order:",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            wordBankWords.forEach { word ->
+                val availableCount = wordBankWords.count { it == word }
+                val usedCount = selectedWords.count { it == word }
+                val isFullyUsed = usedCount >= availableCount
+
+                FilterChip(
+                    selected = usedCount > 0,
+                    onClick = {
+                        if (!isFullyUsed) {
+                            contract.selectWordFromBank(word)
+                        }
+                    },
+                    label = { Text(text = word) },
+                    enabled = !isFullyUsed
+                )
+            }
+        }
+        if (selectedWords.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Selected: ${selectedWords.size} / ${wordBankWords.size}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                TextButton(onClick = { contract.removeLastSelectedWord() }) {
+                    Text(text = "Undo")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VerbDrillInputModeBar(
+    contract: CardSessionContract,
+    provider: VerbDrillCardSessionProvider,
+    hintLevel: com.alexpo.grammermate.data.HintLevel,
+    hasCards: Boolean,
+    canLaunchVoice: Boolean,
+    canSelectInputMode: Boolean,
+    onReport: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Voice mode button — ONLY sets input mode, does NOT launch speech
+            FilledTonalIconButton(
+                onClick = {
+                    if (canLaunchVoice) {
+                        contract.setInputMode(InputMode.VOICE)
+                    }
+                },
+                enabled = canLaunchVoice
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+            }
+            // Keyboard mode button
+            FilledTonalIconButton(
+                onClick = { contract.setInputMode(InputMode.KEYBOARD) },
+                enabled = canSelectInputMode
+            ) {
+                Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+            }
+            // Word bank mode button -- only on EASY
+            if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+                FilledTonalIconButton(
+                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                    enabled = canSelectInputMode
+                ) {
+                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                }
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Show answer button -- only on EASY, disabled when hint already shown
+            if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(
+                        onClick = { if (hasCards) contract.showAnswer() },
+                        enabled = hasCards && provider.hintAnswer == null
+                    ) {
+                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                    }
+                }
+            }
+            if (contract.supportsFlagging) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(text = "Report sentence") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(
+                        onClick = { if (hasCards) onReport() },
+                        enabled = hasCards
+                    ) {
+                        Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
+                    }
+                }
+            }
+            Text(
+                text = when (contract.currentInputMode) {
+                    InputMode.VOICE -> "Voice"
+                    InputMode.KEYBOARD -> "Keyboard"
+                    InputMode.WORD_BANK -> "Word Bank"
+                },
+                style = MaterialTheme.typography.labelMedium
+            )
         }
     }
 }

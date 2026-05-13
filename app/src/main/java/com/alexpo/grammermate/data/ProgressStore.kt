@@ -4,13 +4,22 @@ import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
-class ProgressStore(private val context: Context) {
+interface ProgressStore {
+
+    fun load(): TrainingProgress
+
+    fun save(progress: TrainingProgress)
+
+    fun clear()
+}
+
+class ProgressStoreImpl(private val context: Context) : ProgressStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "progress.yaml")
     private val schemaVersion = 1
 
-    fun load(): TrainingProgress {
+    override fun load(): TrainingProgress {
         if (!file.exists()) return TrainingProgress()
         val raw = yaml.load<Any>(file.readText()) ?: return TrainingProgress()
         val data = when (raw) {
@@ -75,7 +84,7 @@ class ProgressStore(private val context: Context) {
         }
     }
 
-    fun save(progress: TrainingProgress) {
+    override fun save(progress: TrainingProgress) {
         val payload = linkedMapOf(
             "languageId" to progress.languageId,
             "mode" to progress.mode.name,
@@ -114,7 +123,7 @@ class ProgressStore(private val context: Context) {
         AtomicFileWriter.writeText(file, yaml.dump(data))
     }
 
-    fun clear() {
+    override fun clear() {
         if (file.exists()) file.delete()
     }
 }

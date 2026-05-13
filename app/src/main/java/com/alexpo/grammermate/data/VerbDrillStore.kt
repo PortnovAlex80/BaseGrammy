@@ -5,10 +5,25 @@ import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.time.LocalDate
 
-class VerbDrillStore(
+interface VerbDrillStore {
+
+    fun loadProgress(): Map<String, VerbDrillComboProgress>
+
+    fun saveProgress(progress: Map<String, VerbDrillComboProgress>)
+
+    fun getComboProgress(key: String): VerbDrillComboProgress?
+
+    fun upsertComboProgress(key: String, progress: VerbDrillComboProgress)
+
+    fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard>
+
+    fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard>
+}
+
+class VerbDrillStoreImpl(
     context: Context,
     private val packId: String? = null
-) {
+) : VerbDrillStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file: File = if (packId != null) {
@@ -18,7 +33,7 @@ class VerbDrillStore(
     }
     private val schemaVersion = 1
 
-    fun loadProgress(): Map<String, VerbDrillComboProgress> {
+    override fun loadProgress(): Map<String, VerbDrillComboProgress> {
         if (!file.exists()) return emptyMap()
         val raw = yaml.load<Any>(file.readText()) ?: return emptyMap()
         val data = when (raw) {
@@ -60,7 +75,7 @@ class VerbDrillStore(
         return result
     }
 
-    fun saveProgress(progress: Map<String, VerbDrillComboProgress>) {
+    override fun saveProgress(progress: Map<String, VerbDrillComboProgress>) {
         val comboPayload = linkedMapOf<String, Any>()
         for ((key, value) in progress) {
             comboPayload[key] = linkedMapOf(
@@ -79,17 +94,17 @@ class VerbDrillStore(
         AtomicFileWriter.writeText(file, yaml.dump(data))
     }
 
-    fun getComboProgress(key: String): VerbDrillComboProgress? {
+    override fun getComboProgress(key: String): VerbDrillComboProgress? {
         return loadProgress()[key]
     }
 
-    fun upsertComboProgress(key: String, progress: VerbDrillComboProgress) {
+    override fun upsertComboProgress(key: String, progress: VerbDrillComboProgress) {
         val all = loadProgress().toMutableMap()
         all[key] = progress
         saveProgress(all)
     }
 
-    fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
+    override fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
         val verbDrillDir = File(baseDir, "drills/$targetPackId/verb_drill")
         if (!verbDrillDir.exists()) return emptyList()
         val files = verbDrillDir.listFiles()
@@ -104,7 +119,7 @@ class VerbDrillStore(
         return cards
     }
 
-    fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard> {
+    override fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard> {
         if (tenses.isEmpty()) return emptyList()
         val allCards = loadAllCardsForPack(packId, languageId)
         val tenseSet = tenses.toSet()

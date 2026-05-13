@@ -294,6 +294,52 @@ class BossOrchestrator(
     // ── Pure helper ────────────────────────────────────────────────────
 
     /**
+     * Advance boss progress when the user moves to the next card.
+     *
+     * Computes the new progress and reward tier. If a new reward threshold is crossed,
+     * pauses the session and sets the reward message. Returns true if a new reward
+     * was reached (caller should pause the session after nextCard).
+     *
+     * @param nextIndex     The next card index the session will advance to.
+     * @param totalCards    Total cards in the session.
+     * @return Pair of (rewardMessageChanged, previousRewardMessage) so the caller
+     *         can detect if the pause should be applied after sessionRunner.nextCard().
+     */
+    data class BossAdvanceResult(
+        val rewardMessageChanged: Boolean,
+        val previousRewardMessage: String?
+    )
+
+    fun advanceBossProgressOnNextCard(nextIndex: Int, totalCards: Int): BossAdvanceResult {
+        val state = stateAccess.uiState.value
+        val nextProgress = (state.boss.bossProgress.coerceAtLeast(nextIndex)).coerceAtMost(state.boss.bossTotal)
+        val nextReward = bossBattleRunner.resolveBossReward(nextProgress, state.boss.bossTotal)
+        val isNewReward = nextReward != null && nextReward != state.boss.bossReward
+        val rewardMessage = if (isNewReward) {
+            bossBattleRunner.bossRewardMessage(nextReward!!)
+        } else {
+            state.boss.bossRewardMessage
+        }
+        val previousRewardMessage = state.boss.bossRewardMessage
+        if (isNewReward) {
+            onPauseTimer?.invoke()
+        }
+        stateAccess.updateState {
+            it.copy(
+                boss = it.boss.copy(
+                    bossProgress = nextProgress,
+                    bossReward = nextReward ?: it.boss.bossReward,
+                    bossRewardMessage = rewardMessage
+                )
+            )
+        }
+        return BossAdvanceResult(
+            rewardMessageChanged = rewardMessage != previousRewardMessage,
+            previousRewardMessage = previousRewardMessage
+        )
+    }
+
+    /**
      * Parse boss reward map from string-keyed progress store to typed [BossReward] map.
      */
     fun parseBossRewards(rewardMap: Map<String, String>): Map<String, BossReward> {

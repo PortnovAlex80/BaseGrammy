@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.alexpo.grammermate.data.BackupManager
+import com.alexpo.grammermate.data.BackupManagerImpl
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.ui.AppRoot
@@ -22,7 +23,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private val storagePermissionsRequestCode = 101
     private val backupTreeUriKey = "backup_tree_uri"
-    private val backupManager by lazy { BackupManager(this) }
+    private val backupManager by lazy { BackupManagerImpl(this) }
 
     private val openBackupTreeLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()

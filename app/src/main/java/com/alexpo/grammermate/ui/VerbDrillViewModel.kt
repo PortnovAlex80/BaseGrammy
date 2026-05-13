@@ -6,8 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.BadSentenceEntry
 import com.alexpo.grammermate.data.LessonStore
+import com.alexpo.grammermate.data.LessonStoreImpl
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
+import com.alexpo.grammermate.data.ProgressStoreImpl
 import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -43,8 +45,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private val application = application
     private val storeFactory = StoreFactory.getInstance(application)
     private var verbDrillStore = storeFactory.getVerbDrillStore(null)
-    private val lessonStore = LessonStore(application)
-    private val progressStore = ProgressStore(application)
+    private val lessonStore = LessonStoreImpl(application)
+    private val progressStore = ProgressStoreImpl(application)
     private val badSentenceStore = storeFactory.getBadSentenceStore()
     private val ttsEngine = TtsProvider.getInstance(application).ttsEngine
 

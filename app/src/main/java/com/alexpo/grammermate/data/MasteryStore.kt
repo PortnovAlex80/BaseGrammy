@@ -4,11 +4,32 @@ import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
+interface MasteryStore {
+
+    fun loadAll(): Map<String, Map<String, LessonMasteryState>>
+
+    fun get(lessonId: String, languageId: String): LessonMasteryState?
+
+    fun save(state: LessonMasteryState)
+
+    fun recordCardShow(lessonId: String, languageId: String, cardId: String)
+
+    fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>)
+
+    fun markLessonCompleted(lessonId: String, languageId: String)
+
+    fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState
+
+    fun clear()
+
+    fun clearLanguage(languageId: String)
+}
+
 /**
  * Хранилище состояний освоения уроков (mastery).
  * Сохраняет данные о показах карточек для каждого урока.
  */
-class MasteryStore(private val context: Context) {
+class MasteryStoreImpl(private val context: Context) : MasteryStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "mastery.yaml")
@@ -22,7 +43,7 @@ class MasteryStore(private val context: Context) {
      * Загрузить все состояния освоения.
      * @return Map<languageId, Map<lessonId, LessonMasteryState>>
      */
-    fun loadAll(): Map<String, Map<String, LessonMasteryState>> {
+    override fun loadAll(): Map<String, Map<String, LessonMasteryState>> {
         if (cacheLoaded) return cache
 
         if (!file.exists()) {
@@ -76,7 +97,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Получить состояние освоения для конкретного урока.
      */
-    fun get(lessonId: String, languageId: String): LessonMasteryState? {
+    override fun get(lessonId: String, languageId: String): LessonMasteryState? {
         loadAll()
         return cache[languageId]?.get(lessonId)
     }
@@ -84,7 +105,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Сохранить состояние освоения урока.
      */
-    fun save(state: LessonMasteryState) {
+    override fun save(state: LessonMasteryState) {
         loadAll()
 
         if (!cache.containsKey(state.languageId)) {
@@ -102,7 +123,7 @@ class MasteryStore(private val context: Context) {
      * @param languageId ID языка
      * @param cardId ID показанной карточки
      */
-    fun recordCardShow(lessonId: String, languageId: String, cardId: String) {
+    override fun recordCardShow(lessonId: String, languageId: String, cardId: String) {
         loadAll()
 
         val existing = cache[languageId]?.get(lessonId)
@@ -147,7 +168,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Mark cards as shown for progress tracking without affecting mastery metrics.
      */
-    fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>) {
+    override fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>) {
         loadAll()
         if (cardIds.isEmpty()) return
 
@@ -162,7 +183,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Отметить урок как завершённый (все карточки урока пройдены хотя бы раз).
      */
-    fun markLessonCompleted(lessonId: String, languageId: String) {
+    override fun markLessonCompleted(lessonId: String, languageId: String) {
         val existing = get(lessonId, languageId) ?: return
 
         if (existing.completedAtMs != null) return // Уже завершён
@@ -174,7 +195,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Получить или создать состояние для урока.
      */
-    fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState {
+    override fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState {
         return get(lessonId, languageId) ?: LessonMasteryState(
             lessonId = lessonId,
             languageId = languageId
@@ -184,7 +205,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Очистить все данные.
      */
-    fun clear() {
+    override fun clear() {
         cache.clear()
         cacheLoaded = true
         if (file.exists()) {
@@ -195,7 +216,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Очистить данные для конкретного языка.
      */
-    fun clearLanguage(languageId: String) {
+    override fun clearLanguage(languageId: String) {
         loadAll()
         cache.remove(languageId)
         persistToFile()
