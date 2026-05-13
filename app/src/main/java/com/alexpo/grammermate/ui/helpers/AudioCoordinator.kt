@@ -11,6 +11,7 @@ import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.TtsEngine
+import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
@@ -57,7 +58,7 @@ class AudioCoordinator(
 
     // ── Engines ────────────────────────────────────────────────────────────
 
-    val ttsEngine = TtsEngine(appContext)
+    val ttsEngine = TtsProvider.getInstance(appContext).ttsEngine
     val ttsModelManager = TtsModelManager(appContext)
     val asrModelManager = AsrModelManager(appContext)
     val asrEngine: AsrEngine? = try {
@@ -335,7 +336,6 @@ class AudioCoordinator(
 
     fun release() {
         bgDownloadJob?.cancel()
-        ttsEngine.release()
         asrEngine?.release()
         soundPool.release()
     }

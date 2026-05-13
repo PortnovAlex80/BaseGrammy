@@ -8,7 +8,7 @@ import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
-import com.alexpo.grammermate.data.TtsEngine
+import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
 import com.alexpo.grammermate.data.VocabDrillDirection
@@ -29,7 +29,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private val lessonStore = LessonStore(application)
     private var masteryStore = WordMasteryStore(application)
     private val badSentenceStore = BadSentenceStore(application)
-    private val ttsEngine = TtsEngine(application)
+    private val ttsEngine = TtsProvider.getInstance(application).ttsEngine
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
     val uiState: StateFlow<VocabDrillUiState> = _uiState
@@ -505,6 +505,5 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
     override fun onCleared() {
         super.onCleared()
-        ttsEngine.release()
     }
 }

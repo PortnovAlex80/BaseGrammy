@@ -9,7 +9,7 @@ import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
-import com.alexpo.grammermate.data.TtsEngine
+import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
@@ -45,7 +45,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
     private val badSentenceStore = BadSentenceStore(application)
-    private val ttsEngine = TtsEngine(application)
+    private val ttsEngine = TtsProvider.getInstance(application).ttsEngine
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
     val uiState: StateFlow<VerbDrillUiState> = _uiState
@@ -563,6 +563,5 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         super.onCleared()
-        ttsEngine.release()
     }
 }
