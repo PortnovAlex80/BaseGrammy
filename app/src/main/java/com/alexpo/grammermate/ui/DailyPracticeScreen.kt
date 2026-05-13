@@ -525,7 +525,18 @@ private fun DailyInputControls(
             enabled = hasCards,
             trailingIcon = {
                 IconButton(
-                    onClick = { if (canLaunchVoice) { scope.onInputChanged(""); contract.setInputMode(InputMode.VOICE) } },
+                    onClick = {
+                        if (canLaunchVoice) {
+                            scope.onInputChanged("")
+                            contract.setInputMode(InputMode.VOICE)
+                            val languageTag = if (provider.languageId == "it") "it-IT" else "en-US"
+                            speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+                            })
+                        }
+                    },
                     enabled = canLaunchVoice
                 ) { Icon(Icons.Default.Mic, "Voice input") }
             }
@@ -548,7 +559,15 @@ private fun DailyInputControls(
             canLaunchVoice = canLaunchVoice, canSelectInputMode = canSelectInputMode, hasCards = hasCards,
             onClearInput = { scope.onInputChanged("") },
             onShowReport = { showReportSheet = true },
-            hintLevel = hintLevel
+            hintLevel = hintLevel,
+            onLaunchVoice = {
+                val languageTag = if (provider.languageId == "it") "it-IT" else "en-US"
+                speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+                })
+            }
         )
 
         Button(

@@ -154,92 +154,99 @@ class TtsEngine(private val context: Context) {
         if (text.isBlank()) return
         val safeSpeed = speed.coerceIn(0.3f, 3.0f)
 
-        // Ensure engine is initialized for the requested language
-        if (activeLanguageId != languageId || _state.value != TtsState.READY) {
-            initialize(languageId)
-        }
+        try {
+            // Ensure engine is initialized for the requested language
+            if (activeLanguageId != languageId || _state.value != TtsState.READY) {
+                initialize(languageId)
+            }
 
-        val tts = offlineTts
-        if (tts == null) {
-            Log.e(TAG, "speak() called but offlineTts is null, state=${_state.value}, lang=$activeLanguageId")
-            return
-        }
+            val tts = offlineTts
+            if (tts == null) {
+                Log.w(TAG, "speak() skipped: engine not ready, state=${_state.value}, lang=$activeLanguageId")
+                return
+            }
 
-        val oldJob = speakJob
-        if (oldJob != null) {
-            oldJob.cancel()
-            oldJob.join()
-        }
+            val oldJob = speakJob
+            if (oldJob != null) {
+                oldJob.cancel()
+                oldJob.join()
+            }
 
-        val myGeneration = generation.incrementAndGet()
-        isStopped.set(false)
+            val myGeneration = generation.incrementAndGet()
+            isStopped.set(false)
 
-        speakJob = ttsScope.launch {
-            _state.value = TtsState.SPEAKING
+            speakJob = ttsScope.launch {
+                _state.value = TtsState.SPEAKING
 
-            requestAudioFocus()
+                requestAudioFocus()
 
-            val sampleRate = tts.sampleRate()
-            val minBufferSize = AudioTrack.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_FLOAT
-            )
-
-            val audioTrack = AudioTrack.Builder()
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build()
+                val sampleRate = tts.sampleRate()
+                val minBufferSize = AudioTrack.getMinBufferSize(
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_FLOAT
                 )
-                .setAudioFormat(
-                    AudioFormat.Builder()
-                        .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                        .setSampleRate(sampleRate)
-                        .build()
-                )
-                .setBufferSizeInBytes(minBufferSize)
-                .setTransferMode(AudioTrack.MODE_STREAM)
-                .build()
 
-            currentTrack = audioTrack
-            audioTrack.play()
+                val audioTrack = AudioTrack.Builder()
+                    .setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build()
+                    )
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .setSampleRate(sampleRate)
+                            .build()
+                    )
+                    .setBufferSizeInBytes(minBufferSize)
+                    .setTransferMode(AudioTrack.MODE_STREAM)
+                    .build()
 
-            try {
-                tts.generateWithConfigAndCallback(
-                    text = text,
-                    config = GenerationConfig(sid = speakerId, speed = safeSpeed),
-                    callback = { samples ->
-                        if (!isStopped.get()) {
-                            audioTrack.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
-                            1
-                        } else {
-                            0
+                currentTrack = audioTrack
+                audioTrack.play()
+
+                try {
+                    tts.generateWithConfigAndCallback(
+                        text = text,
+                        config = GenerationConfig(sid = speakerId, speed = safeSpeed),
+                        callback = { samples ->
+                            if (!isStopped.get()) {
+                                audioTrack.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
+                                1
+                            } else {
+                                0
+                            }
                         }
+                    )
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    Log.e(TAG, "Playback failed", e)
+                } finally {
+                    if (generation.get() == myGeneration) {
+                        try {
+                            audioTrack.stop()
+                        } catch (_: IllegalStateException) {}
+                        audioTrack.release()
+                        currentTrack = null
+                        if (_state.value == TtsState.SPEAKING) {
+                            _state.value = TtsState.READY
+                        }
+                    } else {
+                        try {
+                            audioTrack.stop()
+                        } catch (_: IllegalStateException) {}
+                        audioTrack.release()
                     }
-                )
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Log.e(TAG, "Playback failed", e)
-            } finally {
-                if (generation.get() == myGeneration) {
-                    try {
-                        audioTrack.stop()
-                    } catch (_: IllegalStateException) {}
-                    audioTrack.release()
-                    currentTrack = null
-                    if (_state.value == TtsState.SPEAKING) {
-                        _state.value = TtsState.READY
-                    }
-                } else {
-                    try {
-                        audioTrack.stop()
-                    } catch (_: IllegalStateException) {}
-                    audioTrack.release()
+                    abandonAudioFocus()
                 }
-                abandonAudioFocus()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "speak() failed, models may not be loaded", e)
+            if (_state.value == TtsState.SPEAKING) {
+                _state.value = if (offlineTts != null) TtsState.READY else TtsState.ERROR
             }
         }
     }

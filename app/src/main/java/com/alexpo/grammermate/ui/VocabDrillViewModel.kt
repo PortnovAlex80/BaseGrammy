@@ -317,14 +317,18 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         if (text.isBlank()) return
         val langId = _uiState.value.loadedLanguageId ?: "it"
         viewModelScope.launch {
-            if (ttsEngine.state.value != TtsState.READY
-                || ttsEngine.activeLanguageId != langId) {
-                ttsEngine.initialize(langId)
-            }
-            if (ttsEngine.state.value == TtsState.READY) {
-                ttsEngine.speak(text, languageId = langId, speed = speed)
-            } else {
-                Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+            try {
+                if (ttsEngine.state.value != TtsState.READY
+                    || ttsEngine.activeLanguageId != langId) {
+                    ttsEngine.initialize(langId)
+                }
+                if (ttsEngine.state.value == TtsState.READY) {
+                    ttsEngine.speak(text, languageId = langId, speed = speed)
+                } else {
+                    Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "speakTts failed", e)
             }
         }
     }

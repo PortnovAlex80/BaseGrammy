@@ -111,7 +111,8 @@ fun DailyInputModeBar(
     hasCards: Boolean,
     onClearInput: () -> Unit,
     onShowReport: () -> Unit,
-    hintLevel: HintLevel = HintLevel.EASY
+    hintLevel: HintLevel = HintLevel.EASY,
+    onLaunchVoice: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -120,7 +121,13 @@ fun DailyInputModeBar(
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalIconButton(
-                onClick = { if (canLaunchVoice) { onClearInput(); contract.setInputMode(InputMode.VOICE) } },
+                onClick = {
+                    if (canLaunchVoice) {
+                        onClearInput()
+                        contract.setInputMode(InputMode.VOICE)
+                        onLaunchVoice()
+                    }
+                },
                 enabled = canLaunchVoice
             ) { Icon(Icons.Default.Mic, "Voice mode") }
             FilledTonalIconButton(

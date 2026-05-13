@@ -112,15 +112,19 @@ class AudioCoordinator(
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         val effectiveSpeed = speed ?: stateAccess.uiState.value.audio.ttsSpeed
         coroutineScope.launch {
-            if (ttsEngine.state.value != TtsState.READY
-                || ttsEngine.activeLanguageId != langId.value
-            ) {
-                ttsEngine.initialize(langId.value)
-            }
-            if (ttsEngine.state.value == TtsState.READY) {
-                ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
-            } else {
-                Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+            try {
+                if (ttsEngine.state.value != TtsState.READY
+                    || ttsEngine.activeLanguageId != langId.value
+                ) {
+                    ttsEngine.initialize(langId.value)
+                }
+                if (ttsEngine.state.value == TtsState.READY) {
+                    ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
+                } else {
+                    Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "onTtsSpeak failed", e)
             }
         }
     }
