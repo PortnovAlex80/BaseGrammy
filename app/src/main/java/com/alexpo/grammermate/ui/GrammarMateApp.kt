@@ -297,17 +297,7 @@ private fun AppScreenContent(
             hasVerbDrill = state.navigation.hasVerbDrill,
             hasVocabDrill = state.navigation.hasVocabDrill,
             onOpenVerbDrill = { onScreenChange(AppScreen.VERB_DRILL) },
-            onOpenVocabDrill = { onScreenChange(AppScreen.VOCAB_DRILL) },
-            onOpenMixChallenge = {
-                onStartDailyLoading()
-                dailyScope.launch {
-                    val started = withContext(Dispatchers.IO) {
-                        vm.startMixChallenge()
-                    }
-                    onStopDailyLoading()
-                    if (started) onScreenChange(AppScreen.MIX_CHALLENGE)
-                }
-            }
+            onOpenVocabDrill = { onScreenChange(AppScreen.VOCAB_DRILL) }
         )
         AppScreen.LESSON -> LessonRoadmapScreen(
             state = state,

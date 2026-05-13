@@ -491,8 +491,8 @@ private fun DefaultVerbDrillInputControls(
             )
         }
 
-        // Word Bank UI -- only on EASY
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+        // Word Bank UI
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
             VerbDrillWordBankSection(contract = contract)
         }
 
@@ -834,14 +834,12 @@ private fun VerbDrillInputModeBar(
             ) {
                 Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
             }
-            // Word bank mode button -- only on EASY
-            if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
-                }
+            // Word bank mode button
+            FilledTonalIconButton(
+                onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                enabled = canSelectInputMode
+            ) {
+                Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
             }
         }
         Row(

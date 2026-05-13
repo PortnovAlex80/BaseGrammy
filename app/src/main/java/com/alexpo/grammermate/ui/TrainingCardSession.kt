@@ -608,7 +608,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
             )
         }
 
-        // Word Bank UI -- only on EASY
+        // Word Bank UI
         if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
             val wordBankWords = contract.getWordBankWords()
             val selectedWords = contract.getSelectedWords()

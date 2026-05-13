@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -94,8 +93,7 @@ fun HomeScreen(
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
-    onOpenVocabDrill: () -> Unit = {},
-    onOpenMixChallenge: () -> Unit = {}
+    onOpenVocabDrill: () -> Unit = {}
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -257,8 +255,6 @@ fun HomeScreen(
         DailyPracticeEntryTile(
             onClick = onOpenElite
         )
-        // MixChallenge tile hidden — feature not yet ready
-        // MixChallengeEntryTile(onClick = onOpenMixChallenge)
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
         Text(text = "🌱 seed • 🌿 growing • 🌸 bloom")
@@ -440,47 +436,6 @@ fun DailyPracticeEntryTile(
                 Icons.Default.PlayArrow,
                 contentDescription = "Start",
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-fun MixChallengeEntryTile(
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE3F2FD)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "Mix Challenge",
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1565C0)
-                )
-                Text(
-                    text = "Interleaved practice across tenses",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF1565C0).copy(alpha = 0.7f)
-                )
-            }
-            Icon(
-                Icons.Default.SwapHoriz,
-                contentDescription = "Start",
-                tint = Color(0xFF1565C0)
             )
         }
     }

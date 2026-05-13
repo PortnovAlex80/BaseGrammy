@@ -460,8 +460,8 @@ private fun DailyInputControls(
             Text(scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), style = MaterialTheme.typography.bodySmall)
         }
 
-        // Word Bank UI -- only on EASY
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+        // Word Bank UI
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
             DailyWordBankSection(contract = contract)
         }
 

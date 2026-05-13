@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
@@ -128,25 +129,21 @@ fun DailyInputModeBar(
                     enabled = canSelectInputMode
                 ) { Icon(Icons.Default.Keyboard, "Keyboard mode") }
             }
-            if (hintLevel == HintLevel.EASY) {
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                    enabled = canSelectInputMode
-                ) { Icon(Icons.Default.LibraryBooks, "Word bank mode") }
-            }
+            FilledTonalIconButton(
+                onClick = { contract.setInputMode(InputMode.WORD_BANK) },
+                enabled = canSelectInputMode
+            ) { Icon(Icons.Default.LibraryBooks, "Word bank mode") }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (hintLevel == HintLevel.EASY) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text("Show answer") } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards && provider.hintAnswer == null
-                    ) { Icon(Icons.Default.Visibility, "Show answer") }
-                }
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = { PlainTooltip { Text("Show answer") } },
+                state = rememberTooltipState()
+            ) {
+                IconButton(
+                    onClick = { if (hasCards) contract.showAnswer() },
+                    enabled = hasCards && provider.hintAnswer == null
+                ) { Icon(Icons.Default.Visibility, "Show answer") }
             }
             if (contract.supportsFlagging) {
                 TooltipBox(
@@ -188,6 +185,7 @@ fun DailyReportSheet(
     isFlagged: Boolean,
     onFlag: () -> Unit,
     onUnflag: () -> Unit,
+    onHideCard: () -> Unit,
     onExport: () -> Unit,
     exportMessage: String?,
     onExportMessageDismiss: () -> Unit,
@@ -224,6 +222,11 @@ fun DailyReportSheet(
                 Icon(Icons.Default.Download, null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Export bad sentences to file")
+            }
+            TextButton(onClick = { onHideCard(); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.VisibilityOff, null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Hide this card from lessons")
             }
             TextButton(
                 onClick = { if (copyText.isNotBlank()) clipboardManager.setText(AnnotatedString(copyText)) },

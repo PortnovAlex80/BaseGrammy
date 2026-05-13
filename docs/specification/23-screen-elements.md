@@ -108,13 +108,13 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Mic trailing icon | TCS-08 | button | `contract.supportsVoiceInput && hasCards` | IconButton. Switches to VOICE mode + launches speech recognition. | ? |
 | "No cards" error | TCS-09 | text | `currentCard == null` and not complete | Red error text "No cards". | ? |
 | Voice mode hint | TCS-10 | text | `currentInputMode == VOICE` | "Say translation: {prompt}" in muted text. | ? |
-| Word bank chips | TCS-11 | chip | `currentInputMode == WORD_BANK && supportsWordBank && hintLevel == EASY` | FlowRow of FilterChips with duplicate tracking. Fully-used words disabled. | ? |
+| Word bank chips | TCS-11 | chip | `currentInputMode == WORD_BANK && supportsWordBank` | FlowRow of FilterChips with duplicate tracking. Fully-used words disabled. | ? |
 | Word bank counter | TCS-12 | text | Word bank has selected words | "Selected: N / M" in primary color. | ? |
 | Word bank Undo | TCS-13 | button | Word bank has selected words | TextButton "Undo". Calls `contract.removeLastSelectedWord()`. | ? |
 | Voice mode button | TCS-14 | button | `supportsVoiceInput && hasCards` | FilledTonalIconButton Mic. Switches to VOICE mode + launches recognition. | ? |
 | Keyboard mode button | TCS-15 | button | `hintLevel != HARD && hasCards` | FilledTonalIconButton Keyboard. Switches to KEYBOARD mode. | ? |
-| Word bank mode button | TCS-16 | button | `supportsWordBank && hintLevel == EASY && hasCards` | FilledTonalIconButton LibraryBooks. Switches to WORD_BANK mode. | ? |
-| Show answer button | TCS-17 | button | `hintLevel == EASY && hasCards` | IconButton Visibility + "Show answer" tooltip. Calls `contract.showAnswer()`. | ? |
+| Word bank mode button | TCS-16 | button | `supportsWordBank && hasCards` | FilledTonalIconButton LibraryBooks. Switches to WORD_BANK mode. | ? |
+| Show answer button | TCS-17 | button | `hasCards` | IconButton Visibility + "Show answer" tooltip. Calls `contract.showAnswer()`. | ? |
 | Report button | TCS-18 | button | `supportsFlagging && hasCards` | IconButton ReportProblem + "Report sentence" tooltip. Opens report sheet. | ? |
 | Current mode label | TCS-19 | text | Always | "Voice" / "Keyboard" / "Word Bank" label. | ? |
 | Check button | TCS-20 | button | `inputText.isNotBlank() && hasCards` | Full-width "Check" button. Calls `scope.onSubmit()`. | ? |
@@ -148,7 +148,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Incorrect feedback (translate/verbs) | DP-12 | text | `provider.showIncorrectFeedback` | Red "Incorrect" + "N attempts left" text. | ? |
 | Answer text field (translate/verbs) | DP-13 | input-field | Card session active | OutlinedTextField "Your translation". Auto-submits on exact match. | ? |
 | Mic trailing icon (translate/verbs) | DP-14 | button | `canLaunchVoice` | Switches to VOICE mode. | ? |
-| Word bank section (translate/verbs) | DP-15 | chip | `WORD_BANK mode && hintLevel == EASY` | DailyWordBankSection: chips + counter + Undo. | ? |
+| Word bank section (translate/verbs) | DP-15 | chip | `WORD_BANK mode` | DailyWordBankSection: chips + counter + Undo. | ? |
 | Input mode bar (translate/verbs) | DP-16 | button | Card session active | DailyInputModeBar: Voice/Keyboard/WordBank buttons + Show answer + Report. | ? |
 | Check button (translate/verbs) | DP-17 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check" button. Submits via `provider.submitAnswerWithInput()`. | ? |
 | Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | DailyReportSheet: flag/unflag + export + copy. | ? |
@@ -199,11 +199,11 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Answer text field | VD-19 | input-field | `hasCards` | OutlinedTextField "Your translation". Auto-submits on exact match. Typing clears incorrect feedback. | ? |
 | Mic trailing icon | VD-20 | button | `canLaunchVoice` | Switches to VOICE mode. | ? |
 | Voice mode hint | VD-21 | text | `inputMode == VOICE && sessionActive` | "Say translation: {prompt}" muted text. | ? |
-| Word bank section | VD-22 | chip | `WORD_BANK mode && hintLevel == EASY` | VerbDrillWordBankSection: chips + counter + Undo. | ? |
+| Word bank section | VD-22 | chip | `WORD_BANK mode` | VerbDrillWordBankSection: chips + counter + Undo. | ? |
 | Voice mode button | VD-23 | button | `canLaunchVoice` | Sets input mode to VOICE (does NOT directly launch speech). | ? |
 | Keyboard mode button | VD-24 | button | `canSelectInputMode` | Sets input mode to KEYBOARD. | ? |
-| Word bank mode button | VD-25 | button | `hintLevel == EASY && canSelectInputMode` | Sets input mode to WORD_BANK. | ? |
-| Show answer button | VD-26 | button | `hintLevel == EASY && hasCards && hintAnswer == null` | Visibility icon. Calls `contract.showAnswer()`. Disabled when hint already shown. | ? |
+| Word bank mode button | VD-25 | button | `canSelectInputMode` | Sets input mode to WORD_BANK. | ? |
+| Show answer button | VD-26 | button | `hasCards && hintAnswer == null` | Visibility icon. Calls `contract.showAnswer()`. Disabled when hint already shown. Always visible regardless of HintLevel. | ? |
 | Report button | VD-27 | button | `supportsFlagging && hasCards` | ReportProblem icon. Opens VerbDrillReportSheet. | ? |
 | Mode label | VD-28 | text | Always | "Voice" / "Keyboard" / "Word Bank". | ? |
 | Check button | VD-29 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check". Uses `provider.submitAnswerWithInput()` for retry/hint flow. | ? |
