@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.progress
 
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore

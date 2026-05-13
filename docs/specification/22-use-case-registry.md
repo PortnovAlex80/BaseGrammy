@@ -8,31 +8,32 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 61 |
-| Total Acceptance Criteria | 267 |
-| Domains | 17 |
+| Total Use Cases | 62 |
+| Total Acceptance Criteria | 307 |
+| Domains | 18 |
 
 ### Per-Domain Counts
 
 | # | Domain | UCs | ACs |
 |---|--------|-----|-----|
-| 1 | Training session (start, answer, next, finish) | 6 | 25 |
-| 2 | Mastery & flowers (progress, SRS, bloom) | 5 | 22 |
-| 3 | Input modes (voice, keyboard, word bank) | 5 | 20 |
-| 4 | Boss battle | 4 | 15 |
-| 5 | Daily Practice (3 blocks, cursor) | 5 | 22 |
-| 6 | Verb Drill | 5 | 20 |
-| 7 | Vocab Drill | 5 | 19 |
-| 8 | Navigation & screens | 4 | 15 |
-| 9 | Lesson packs (import, manifest) | 4 | 16 |
-| 10 | State persistence (backup, restore, onboarding) | 5 | 20 |
-| 11 | Difficulty & hints (HintLevel, parenthetical stripping) | 3 | 11 |
-| 12 | [UI-CONSISTENCY-2025] UI consistency (eye mode, voice auto, report sheet, mix challenge, shared components) | 5 | 31 |
+| 1 | Training session (start, answer, next, finish) | 6 | 31 |
+| 2 | Mastery & flowers (progress, SRS, bloom) | 5 | 26 |
+| 3 | Input modes (voice, keyboard, word bank) | 5 | 21 |
+| 4 | Boss battle | 4 | 17 |
+| 5 | Daily Practice (3 blocks, cursor) | 5 | 21 |
+| 6 | Verb Drill | 5 | 25 |
+| 7 | Vocab Drill | 5 | 23 |
+| 8 | Navigation & screens | 4 | 14 |
+| 9 | Lesson packs (import, manifest) | 4 | 17 |
+| 10 | State persistence (backup, restore, onboarding) | 5 | 26 |
+| 11 | Difficulty & hints (HintLevel, parenthetical stripping) | 3 | 16 |
+| 12 | [UI-CONSISTENCY-2025] UI consistency (eye mode, voice auto, report sheet, mix challenge, shared components) | 5 | 30 |
 | 13 | Font size scaling (ruTextScale across training screens) | 1 | 10 |
-| 14 | Voice auto-start toggle (global setting for all training screens) | 1 | 8 |
+| 14 | Voice auto-start toggle (global setting for all training screens) | 1 | 9 |
 | 15 | Verb/tense info sheets (interactive chips on VerbDrillScreen and DailyPracticeScreen) | 1 | 5 |
 | 16 | Performance (IO dispatchers, caching, parallel loading) | 1 | 5 |
 | 17 | TTS icon auto-recovery (speaker icon updates after model download) | 1 | 3 |
+| 18 | Progress reset | 1 | 8 |
 
 ---
 

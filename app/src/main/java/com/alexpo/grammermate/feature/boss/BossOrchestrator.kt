@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.boss
 
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossType
@@ -11,6 +11,9 @@ import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.feature.training.CardProvider
+import com.alexpo.grammermate.feature.training.SessionRunner
 
 /**
  * Callback interface for cross-module orchestration from [BossOrchestrator].

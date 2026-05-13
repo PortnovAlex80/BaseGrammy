@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **WORD_BANK mode never counts for mastery** — only VOICE and KEYBOARD grow flowers. Violating this inflates progress
 - **WARMUP sub-lesson type was removed** — never re-introduce it. Only `NEW_ONLY` and `MIXED` exist
 - **All file writes must go through `AtomicFileWriter`** — temp → fsync → rename. No direct File.writeText
-- **`TrainingViewModel` is 3000+ lines** — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
+- **`TrainingViewModel` is ~1500 lines** (refactored from 3400) — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
 - **Project path contains Cyrillic** (`Разработка`) — `android.overridePathCheck=true` in gradle.properties is required
 - **Drill visibility is pack-scoped** — `hasVerbDrill`/`hasVocabDrill` check the active pack's manifest, not all installed packs. A pack without `verbDrill`/`vocabDrill` sections shows no drill tiles.
 - **`AppScreen.ELITE` and `AppScreen.VOCAB` enum values are kept for backward compat** — they redirect to HOME if restored from saved state. Do not remove them; removing would crash users with saved `currentScreen: "ELITE"` or `"VOCAB"` values.
@@ -235,7 +235,6 @@ UI-AGENT: ui/        → TrainingViewModel, GrammarMateApp, screens (waits for H
 | Architecture audit | WAVES | SUBAGENTS |
 | Bug fix in one layer | Single agent | N/A |
 | Mixed (some layers change, some don't) | LAYERS for affected only | TEAM |
-| Bug fix in one layer | Single agent |
 
 **Hard rules:**
 1. Never assign the same file to two agents

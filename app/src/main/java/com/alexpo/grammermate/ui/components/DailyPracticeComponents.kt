@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
-import com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider
+import com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider
 
 /**
  * Word bank chip grid with undo control.

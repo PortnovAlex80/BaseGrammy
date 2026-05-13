@@ -1,9 +1,10 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
 import com.alexpo.grammermate.data.StoryState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 
 /**
  * Callback interface for cross-module orchestration from [StoryRunner].

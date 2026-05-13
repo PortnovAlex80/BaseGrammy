@@ -13,8 +13,8 @@ import com.alexpo.grammermate.data.SessionProgress
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillSessionState
-import com.alexpo.grammermate.ui.helpers.CardSessionStateMachine
-import com.alexpo.grammermate.ui.helpers.WordBankGenerator
+import com.alexpo.grammermate.feature.training.CardSessionStateMachine
+import com.alexpo.grammermate.feature.training.WordBankGenerator
 
 /**
  * Adapter that wraps [VerbDrillViewModel] to implement [CardSessionContract].

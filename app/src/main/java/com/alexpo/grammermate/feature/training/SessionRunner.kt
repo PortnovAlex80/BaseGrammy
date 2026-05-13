@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.training
 
 import android.app.Application
 import android.os.SystemClock
@@ -15,6 +15,9 @@ import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingConfig
+import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.feature.progress.StreakManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

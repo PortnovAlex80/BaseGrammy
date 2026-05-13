@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.SentenceCard
@@ -9,7 +9,7 @@ import com.alexpo.grammermate.data.SentenceCard
  * Consolidates word bank generation logic that was previously duplicated across
  * [TrainingViewModel][com.alexpo.grammermate.ui.TrainingViewModel],
  * [VerbDrillCardSessionProvider][com.alexpo.grammermate.ui.VerbDrillCardSessionProvider], and
- * [DailyPracticeSessionProvider][com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider].
+ * [DailyPracticeSessionProvider][com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider].
  *
  * All functions are stateless and pure — no Android dependencies, no side effects.
  */

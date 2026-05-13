@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.daily
 
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.TrainingUiState

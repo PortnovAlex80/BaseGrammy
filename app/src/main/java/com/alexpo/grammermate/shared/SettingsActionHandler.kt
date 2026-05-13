@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.shared
 
 import android.util.Log
 import com.alexpo.grammermate.data.AppConfigStore
@@ -10,6 +10,7 @@ import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.UserProfile
 import com.alexpo.grammermate.data.WordMasteryStore
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update

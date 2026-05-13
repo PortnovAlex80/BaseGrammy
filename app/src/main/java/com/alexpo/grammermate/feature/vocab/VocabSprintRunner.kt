@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.vocab
 
 import android.util.Log
 import com.alexpo.grammermate.data.InputMode
@@ -7,6 +7,8 @@ import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.feature.training.AnswerValidator
 
 /**
  * Callback interface for cross-module orchestration from [VocabSprintRunner].

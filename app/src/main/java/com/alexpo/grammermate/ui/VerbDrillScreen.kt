@@ -506,6 +506,17 @@ private fun DefaultVerbDrillInputControls(
                     onClick = {
                         if (canLaunchVoice) {
                             contract.setInputMode(InputMode.VOICE)
+                            val languageId = contract.languageId
+                            val languageTag = when (languageId) {
+                                "it" -> "it-IT"
+                                else -> "en-US"
+                            }
+                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+                            }
+                            speechLauncher.launch(intent)
                         }
                     },
                     enabled = canLaunchVoice
@@ -545,7 +556,20 @@ private fun DefaultVerbDrillInputControls(
             hasCards = hasCards,
             canLaunchVoice = canLaunchVoice,
             canSelectInputMode = canSelectInputMode,
-            onReport = { showReportSheet = true }
+            onReport = { showReportSheet = true },
+            onLaunchVoice = {
+                val languageId = contract.languageId
+                val languageTag = when (languageId) {
+                    "it" -> "it-IT"
+                    else -> "en-US"
+                }
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+                }
+                speechLauncher.launch(intent)
+            }
         )
 
         // Check button — uses provider.submitAnswerWithInput for drill-specific flow
@@ -820,7 +844,8 @@ private fun VerbDrillInputModeBar(
     hasCards: Boolean,
     canLaunchVoice: Boolean,
     canSelectInputMode: Boolean,
-    onReport: () -> Unit
+    onReport: () -> Unit,
+    onLaunchVoice: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -828,11 +853,12 @@ private fun VerbDrillInputModeBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Voice mode button — ONLY sets input mode, does NOT launch speech
+            // Voice mode button — sets input mode AND launches speech directly
             FilledTonalIconButton(
                 onClick = {
                     if (canLaunchVoice) {
                         contract.setInputMode(InputMode.VOICE)
+                        onLaunchVoice()
                     }
                 },
                 enabled = canLaunchVoice

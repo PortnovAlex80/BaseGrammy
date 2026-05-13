@@ -5,18 +5,18 @@
 | Screen | Prefix | Element Count |
 |--------|--------|---------------|
 | HomeScreen | HS | 22 |
-| TrainingScreen | TS | 28 |
-| TrainingCardSession | TCS | 22 |
+| TrainingScreen | TS | 37 |
+| TrainingCardSession | TCS | 29 |
 | DailyPracticeScreen | DP | 30 |
-| VerbDrillScreen | VD | 32 |
-| VocabDrillScreen | VOC | 35 |
-| LessonRoadmapScreen | LR | 16 |
+| VerbDrillScreen | VD | 41 |
+| VocabDrillScreen | VOC | 48 |
+| LessonRoadmapScreen | LR | 13 |
 | LadderScreen | LS | 11 |
-| SettingsScreen (SettingsSheet) | SS | 38 |
+| SettingsScreen (SettingsSheet) | SS | 46 |
 | StoryQuizScreen | SQ | 13 |
 | GrammarMateApp Dialogs | DG | 17 |
 | [UI-CONSISTENCY-2025] Shared Components | SH | 6 |
-| **Total** | | **270** |
+| **Total** | | **313** |
 
 ---
 

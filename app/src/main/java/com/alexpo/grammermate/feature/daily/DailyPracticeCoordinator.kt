@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.daily
 
 import android.app.Application
 import android.util.Log
@@ -18,6 +18,7 @@ import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.training.AnswerValidator
 
 /**
  * Stateful module that orchestrates the 3-block daily practice session

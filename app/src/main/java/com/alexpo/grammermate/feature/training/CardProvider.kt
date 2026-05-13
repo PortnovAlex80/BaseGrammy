@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.LanguageId
@@ -13,6 +13,7 @@ import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
+import com.alexpo.grammermate.feature.progress.ProgressTracker
 
 /**
  * Pure Kotlin card selection module extracted from TrainingViewModel.

@@ -49,30 +49,31 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-import com.alexpo.grammermate.ui.helpers.AnswerValidator
-import com.alexpo.grammermate.ui.helpers.AudioCoordinator
-import com.alexpo.grammermate.ui.helpers.BadSentenceCallbacks
-import com.alexpo.grammermate.ui.helpers.BadSentenceHelper
-import com.alexpo.grammermate.ui.helpers.BossBattleRunner
-import com.alexpo.grammermate.ui.helpers.BossCallbacks
-import com.alexpo.grammermate.ui.helpers.BossOrchestrator
-import com.alexpo.grammermate.ui.helpers.CardProvider
-import com.alexpo.grammermate.ui.helpers.DailyPracticeCoordinator
-import com.alexpo.grammermate.ui.helpers.FlowerRefresher
-import com.alexpo.grammermate.ui.helpers.ProgressCallbacks
-import com.alexpo.grammermate.ui.helpers.ProgressRestorer
-import com.alexpo.grammermate.ui.helpers.ProgressTracker
-import com.alexpo.grammermate.ui.helpers.SessionCallbacks
-import com.alexpo.grammermate.ui.helpers.SessionRunner
-import com.alexpo.grammermate.ui.helpers.SettingsCallbacks
-import com.alexpo.grammermate.ui.helpers.SettingsActionHandler
-import com.alexpo.grammermate.ui.helpers.StoryCallbacks
-import com.alexpo.grammermate.ui.helpers.StoryRunner
-import com.alexpo.grammermate.ui.helpers.StreakManager
-import com.alexpo.grammermate.ui.helpers.TrainingStateAccess
-import com.alexpo.grammermate.ui.helpers.VocabSprintCallbacks
-import com.alexpo.grammermate.ui.helpers.VocabSprintRunner
-import com.alexpo.grammermate.ui.helpers.WordBankGenerator
+import com.alexpo.grammermate.feature.boss.BossBattleRunner
+import com.alexpo.grammermate.feature.boss.BossCallbacks
+import com.alexpo.grammermate.feature.boss.BossOrchestrator
+import com.alexpo.grammermate.feature.daily.BlockProgress
+import com.alexpo.grammermate.feature.daily.DailyPracticeCoordinator
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.feature.progress.BadSentenceCallbacks
+import com.alexpo.grammermate.feature.progress.BadSentenceHelper
+import com.alexpo.grammermate.feature.progress.FlowerRefresher
+import com.alexpo.grammermate.feature.progress.ProgressCallbacks
+import com.alexpo.grammermate.feature.progress.ProgressRestorer
+import com.alexpo.grammermate.feature.progress.ProgressTracker
+import com.alexpo.grammermate.feature.progress.StreakManager
+import com.alexpo.grammermate.feature.training.AnswerValidator
+import com.alexpo.grammermate.feature.training.CardProvider
+import com.alexpo.grammermate.feature.training.SessionCallbacks
+import com.alexpo.grammermate.feature.training.SessionRunner
+import com.alexpo.grammermate.feature.training.StoryCallbacks
+import com.alexpo.grammermate.feature.training.StoryRunner
+import com.alexpo.grammermate.feature.training.WordBankGenerator
+import com.alexpo.grammermate.feature.vocab.VocabSprintCallbacks
+import com.alexpo.grammermate.feature.vocab.VocabSprintRunner
+import com.alexpo.grammermate.shared.SettingsActionHandler
+import com.alexpo.grammermate.shared.SettingsCallbacks
+import com.alexpo.grammermate.shared.audio.AudioCoordinator
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application),
     SessionCallbacks, BossCallbacks, SettingsCallbacks, ProgressCallbacks,
@@ -703,7 +704,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return dailyPracticeCoordinator.getDailyCurrentTask()
     }
 
-    fun getDailyBlockProgress(): com.alexpo.grammermate.ui.helpers.BlockProgress {
+    fun getDailyBlockProgress(): BlockProgress {
         return dailyPracticeCoordinator.getDailyBlockProgress()
     }
 

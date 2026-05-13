@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.progress
 
 import android.util.Log
 import com.alexpo.grammermate.data.DailyCursorState
@@ -17,6 +17,7 @@ import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 
 /**
  * Stateful module that wraps MasteryStore + ProgressStore operations.

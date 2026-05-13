@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.progress
 
 import android.util.Log
 import com.alexpo.grammermate.data.BackupManager
@@ -17,6 +17,7 @@ import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.UserProfile
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

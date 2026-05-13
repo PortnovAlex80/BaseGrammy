@@ -1,8 +1,9 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.progress
 
 import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.HiddenCardStore
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.flow.StateFlow
 
 /**

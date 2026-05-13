@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.daily
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,7 +14,8 @@ import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.SessionProgress
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
-import com.alexpo.grammermate.ui.helpers.WordBankGenerator
+import com.alexpo.grammermate.feature.training.WordBankGenerator
+import com.alexpo.grammermate.feature.training.CardSessionStateMachine
 
 /**
  * CardSessionContract adapter for Daily Practice Blocks 1 (Translation) and 3 (Verb Drill).

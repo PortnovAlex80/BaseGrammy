@@ -1,9 +1,10 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.progress
 
 import android.util.Log
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 
 /**
  * Stateless module that recomputes flower visuals and ladder rows for all lessons.

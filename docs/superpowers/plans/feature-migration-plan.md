@@ -97,49 +97,49 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 ## PHASE 1: Feature Directory Reorganization (file moves only)
 
 ### Step 1.1: Create directory structure
-- [ ] Create `feature/training/`, `feature/boss/`, `feature/daily/`, `feature/progress/`, `feature/vocab/`, `shared/audio/`, `shared/infra/`, `shared/content/`
-- [ ] Update build.gradle package source sets if needed (or use standard Kotlin package structure)
+- [x] Create `feature/training/`, `feature/boss/`, `feature/daily/`, `feature/progress/`, `feature/vocab/`, `shared/audio/`, `shared/`
+- [x] Standard Kotlin package structure — no build.gradle changes needed
 
 ### Step 1.2: Move training feature files
-- [ ] Move SessionRunner.kt → feature/training/
-- [ ] Move CardProvider.kt → feature/training/
-- [ ] Move AnswerValidator.kt → feature/training/
-- [ ] Move WordBankGenerator.kt → feature/training/
-- [ ] Move StoryRunner.kt → feature/training/
-- [ ] Update ALL import statements across project
-- [ ] Build verify
+- [x] Move SessionRunner.kt → feature/training/
+- [x] Move CardProvider.kt → feature/training/
+- [x] Move AnswerValidator.kt → feature/training/
+- [x] Move WordBankGenerator.kt → feature/training/
+- [x] Move StoryRunner.kt → feature/training/
+- [x] Update ALL import statements across project
+- [x] Build verify
 
 ### Step 1.3: Move boss feature files
-- [ ] Move BossOrchestrator.kt → feature/boss/
-- [ ] Move BossBattleRunner.kt → feature/boss/
-- [ ] Update imports
-- [ ] Build verify
+- [x] Move BossOrchestrator.kt → feature/boss/
+- [x] Move BossBattleRunner.kt → feature/boss/
+- [x] Update imports
+- [x] Build verify
 
 ### Step 1.4: Move daily feature files
-- [ ] Move DailyPracticeCoordinator.kt → feature/daily/
-- [ ] Move DailySessionComposer.kt → feature/daily/
-- [ ] Move DailyPracticeSessionProvider.kt → feature/daily/
-- [ ] Move DailySessionHelper.kt → feature/daily/
-- [ ] Update imports
-- [ ] Build verify
+- [x] Move DailyPracticeCoordinator.kt → feature/daily/
+- [x] Move DailySessionComposer.kt → feature/daily/
+- [x] Move DailyPracticeSessionProvider.kt → feature/daily/
+- [x] Move DailySessionHelper.kt → feature/daily/
+- [x] Update imports
+- [x] Build verify
 
 ### Step 1.5: Move progress feature files
-- [ ] Move ProgressTracker.kt → feature/progress/
-- [ ] Move ProgressRestorer.kt → feature/progress/
-- [ ] Move FlowerRefresher.kt → feature/progress/
-- [ ] Move StreakManager.kt → feature/progress/
-- [ ] Move BadSentenceHelper.kt → feature/progress/
-- [ ] Move SettingsActionHandler.kt → feature/shared/ (cross-cutting)
-- [ ] Update imports
-- [ ] Build verify
+- [x] Move ProgressTracker.kt → feature/progress/
+- [x] Move ProgressRestorer.kt → feature/progress/
+- [x] Move FlowerRefresher.kt → feature/progress/
+- [x] Move StreakManager.kt → feature/progress/
+- [x] Move BadSentenceHelper.kt → feature/progress/
+- [x] Move SettingsActionHandler.kt → shared/ (cross-cutting)
+- [x] Update imports
+- [x] Build verify
 
 ### Step 1.6: Move remaining files
-- [ ] Move VocabSprintRunner.kt → feature/vocab/
-- [ ] Move AudioCoordinator.kt → shared/audio/
-- [ ] Move CardSessionStateMachine.kt → feature/training/ (session state machine)
-- [ ] Update imports
-- [ ] Full build verify
-- [ ] Commit
+- [x] Move VocabSprintRunner.kt → feature/vocab/
+- [x] Move AudioCoordinator.kt → shared/audio/
+- [x] Move CardSessionStateMachine.kt → feature/training/ (session state machine)
+- [x] Update imports
+- [x] Full build verify — PASS
+- [x] Commit
 
 ---
 
@@ -231,8 +231,8 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 | Phase | Steps | Done | Remaining |
 |-------|-------|------|-----------|
-| Phase 1 | File moves | 0/6 | 6 |
+| Phase 1 | File moves | 6/6 | 0 |
 | Phase 2 | AudioState | 0/2 | 2 |
 | Phase 3 | Result types | 0/5 | 5 |
 | Phase 4 | StateFlow decomposition | 0/5 | 5 |
-| **Total** | | **0/18** | **18** |
+| **Total** | | **6/18** | **12** |

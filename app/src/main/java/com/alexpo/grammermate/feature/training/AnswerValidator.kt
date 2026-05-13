@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.TrainingConfig
@@ -23,7 +23,7 @@ data class ValidationResult(
  * Pure-Kotlin answer validation logic extracted from the duplicated patterns in
  * [com.alexpo.grammermate.ui.TrainingViewModel],
  * [com.alexpo.grammermate.ui.VerbDrillCardSessionProvider], and
- * [com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider].
+ * [com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider].
  *
  * Normalizes the user's input via [Normalizer], then compares it against every
  * accepted answer (each answer string may contain alternatives separated by `+`,
@@ -97,7 +97,7 @@ class AnswerValidator(
      *
      * Returns the first accepted answer, matching the behaviour of both
      * [com.alexpo.grammermate.ui.VerbDrillCardSessionProvider] and
-     * [com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider]
+     * [com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider]
      * which show `card.acceptedAnswers.first()` or `card.answer` as the hint.
      *
      * @param acceptedAnswers List of accepted answer strings.

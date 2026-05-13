@@ -531,6 +531,11 @@ fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
+                            if (!state.audio.useOfflineAsr || !state.audio.asrModelReady) {
+                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher)
+                            } else {
+                                onStartOfflineRecognition()
+                            }
                         }
                     },
                     enabled = canLaunchVoice
@@ -620,6 +625,11 @@ fun AnswerBox(
                     onClick = {
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
+                            if (!state.audio.useOfflineAsr || !state.audio.asrModelReady) {
+                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher)
+                            } else {
+                                onStartOfflineRecognition()
+                            }
                         }
                     },
                     enabled = canLaunchVoice

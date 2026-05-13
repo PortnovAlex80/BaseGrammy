@@ -76,8 +76,8 @@ import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
-import com.alexpo.grammermate.ui.helpers.BlockProgress
-import com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider
+import com.alexpo.grammermate.feature.daily.BlockProgress
+import com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider
 
 @Composable
 fun DailyPracticeScreen(

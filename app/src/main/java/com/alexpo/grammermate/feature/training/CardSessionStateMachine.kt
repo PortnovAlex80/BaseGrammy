@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.training
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

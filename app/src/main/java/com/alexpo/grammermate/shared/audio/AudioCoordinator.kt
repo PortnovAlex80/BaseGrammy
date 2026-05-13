@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.shared.audio
 
 import android.app.Application
 import android.media.AudioAttributes
@@ -16,6 +16,7 @@ import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

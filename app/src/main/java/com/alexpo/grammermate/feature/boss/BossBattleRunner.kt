@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.helpers
+package com.alexpo.grammermate.feature.boss
 
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossType
