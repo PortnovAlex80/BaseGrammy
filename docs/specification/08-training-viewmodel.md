@@ -939,6 +939,8 @@ _uiState.update { it.resetSessionState().copy(selectedLanguageId = languageId, l
 
 **Invariant:** Auto-submit timing (keyboard exact match, voice auto-advance) is NOT affected by this flag. The flag only controls whether the speech recognition intent is launched automatically on card entry. The mic button in the input mode bar ALWAYS works regardless of this flag.
 
+**Manual mic button click:** Mic button onClick handlers directly call `speechLauncher.launch()` and do NOT depend on the LaunchedEffect. The LaunchedEffect handles ONLY auto-launch on new card.
+
 **Guard pattern in LaunchedEffect:**
 ```kotlin
 if (state.audio.voiceAutoStart &&

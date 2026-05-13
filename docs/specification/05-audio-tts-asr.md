@@ -331,6 +331,8 @@ Only target-language text is ever spoken. Russian prompts are never synthesized.
 
 **Icon auto-recovery**: When TTS models finish downloading in the background, the AudioCoordinator automatically re-initializes the TTS engine. The engine transitions from ERROR -> INITIALIZING -> READY, which propagates through `ttsEngine.state` -> `startTtsStateCollection()` -> `uiState.audio.ttsState` -> composable recomposition. The speaker icon updates from red error to VolumeUp within 2 seconds of download completion, without requiring user action or screen re-entry.
 
+**TTS error handling**: TTS `speak()` calls are wrapped in try-catch at both engine level and caller level. If models are not loaded, `speak()` silently skips — no crash. This is expected behavior when a user taps the TTS button before models finish downloading.
+
 #### Download Dialog
 
 When the user taps the speaker icon for a language whose model is not downloaded, a dialog appears:
