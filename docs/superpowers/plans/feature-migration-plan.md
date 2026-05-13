@@ -21,7 +21,7 @@
 ## Current State
 
 - TrainingViewModel: ~1133 lines (reduced from ~3400, 67% reduction)
-- 20 helpers in flat `ui/helpers/` directory
+- 20 helpers in feature-based directories (`feature/training/`, `feature/boss/`, `feature/daily/`, `feature/progress/`, `feature/vocab/`, `shared/audio/`)
 - TrainingUiState: single StateFlow, 10 nested data classes
 - 7 callback interfaces (BossCallbacks, SessionCallbacks, etc.)
 - Build: PASSES
@@ -30,7 +30,7 @@
 ## Problem Statement
 
 Agents struggle because:
-1. Files scattered across flat `data/`, `ui/helpers/`, `ui/screens/` — no locality
+1. Files scattered across flat `data/`, `feature/`, `ui/screens/` — no locality
 2. Single `updateState {}` funnel — 106 mutation sites, any can touch any slice
 3. 7 generic callback interfaces — behavioral coupling hidden in ViewModel wiring
 4. Specs fragmented by layer, not by feature
@@ -72,7 +72,8 @@ shared/
 | File | Purpose |
 |------|---------|
 | `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt` | ViewModel — thin during migration, router at end |
-| `app/src/main/java/com/alexpo/grammermate/ui/helpers/` | Current flat helpers dir — migrate FROM here |
+| `app/src/main/java/com/alexpo/grammermate/feature/` | Feature directories (training, boss, daily, progress, vocab) |
+| `app/src/main/java/com/alexpo/grammermate/shared/` | Shared directories (audio, infra) |
 | `app/src/main/java/com/alexpo/grammermate/feature/` | Target feature dir — migrate TO here |
 | `docs/superpowers/plans/refactoring-execution-plan.md` | Previous refactoring (COMPLETE) |
 
@@ -146,17 +147,17 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 ## PHASE 2: AudioState Isolation (proof of concept)
 
 ### Step 2.1: Extract AudioState to its own StateFlow
-- [ ] Create `MutableStateFlow<AudioState>` in AudioCoordinator
-- [ ] Expose as `StateFlow<AudioState>` public
-- [ ] ViewModel combines: `combine(audioCoordinator.stateFlow, ...) { audio, ... -> ... }`
-- [ ] Remove audio fields from TrainingUiState (delegate to combined flow)
-- [ ] Build verify
+- [x] Create `MutableStateFlow<AudioState>` in AudioCoordinator
+- [x] Expose as `StateFlow<AudioState>` public
+- [x] ViewModel combines: `combine(audioCoordinator.stateFlow, ...) { audio, ... -> ... }`
+- [x] Remove audio fields from TrainingUiState (delegate to combined flow)
+- [x] Build verify — PASS
 
 ### Step 2.2: Validate audio isolation
-- [ ] Verify AudioCoordinator has zero cross-dependencies
-- [ ] Verify Compose UI reads audio state correctly
-- [ ] Run regression check on UC-48..UC-50 (audio/hint UCs)
-- [ ] Commit
+- [x] Verify AudioCoordinator has zero cross-dependencies
+- [x] Verify Compose UI reads audio state correctly
+- [x] Run regression check on UC-48..UC-50 (audio/hint UCs)
+- [x] Commit
 
 ---
 
@@ -232,7 +233,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 | Phase | Steps | Done | Remaining |
 |-------|-------|------|-----------|
 | Phase 1 | File moves | 6/6 | 0 |
-| Phase 2 | AudioState | 0/2 | 2 |
+| Phase 2 | AudioState | 2/2 | 0 |
 | Phase 3 | Result types | 0/5 | 5 |
 | Phase 4 | StateFlow decomposition | 0/5 | 5 |
-| **Total** | | **6/18** | **12** |
+| **Total** | | **8/18** | **10** |

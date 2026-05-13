@@ -21,7 +21,7 @@ The key design principle: the only difference between training modes is **card s
 | `data/CardSessionContract.kt` | Interface definitions: `SessionCard`, `CardSessionContract`, `CardSessionCapabilities`, `SessionProgress`, `AnswerResult`, `InputModeConfig` |
 | `ui/TrainingCardSession.kt` | `TrainingCardSession` composable, `TrainingCardSessionScope`, all default slot implementations |
 | `ui/VerbDrillCardSessionProvider.kt` | Adapter wrapping `VerbDrillViewModel` to implement `CardSessionContract` |
-| `ui/helpers/DailyPracticeSessionProvider.kt` | Adapter for Daily Practice translation and verb blocks |
+| `feature/daily/DailyPracticeSessionProvider.kt` | Adapter for Daily Practice translation and verb blocks |
 | `ui/VerbDrillScreen.kt` | Verb Drill screen: selection screen + `TrainingCardSession` with custom slots + reference sheets |
 | `ui/DailyPracticeScreen.kt` | Daily Practice screen: 3-block session with `TrainingCardSession` for blocks 1 and 3 |
 

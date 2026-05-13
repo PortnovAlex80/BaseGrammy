@@ -1,9 +1,9 @@
 # 9. Daily Practice System -- Specification
 
 **Sources:**
-- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailySessionComposer.kt`
-- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailySessionHelper.kt`
-- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailyPracticeSessionProvider.kt`
+- `app/src/main/java/com/alexpo/grammermate/feature/daily/DailySessionComposer.kt`
+- `app/src/main/java/com/alexpo/grammermate/feature/daily/DailySessionHelper.kt`
+- `app/src/main/java/com/alexpo/grammermate/feature/daily/DailyPracticeSessionProvider.kt`
 - `app/src/main/java/com/alexpo/grammermate/ui/DailyPracticeScreen.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/Models.kt` (DailyTask, DailySessionState, DailyCursorState, DailyBlockType)
 - `app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt` (VerbDrillComboProgress)
@@ -50,9 +50,9 @@ The Daily Practice system consists of four primary components:
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| `DailySessionComposer` | `ui/helpers/DailySessionComposer.kt` | Pure builder: constructs `List<DailyTask>` for all three blocks from lesson, vocab, and verb drill data using cursor-based card selection. |
-| `DailySessionHelper` | `ui/helpers/DailySessionHelper.kt` | State manager: tracks `taskIndex` and `blockIndex` within the task list, provides block-level and session-level progress, handles block transitions and session lifecycle. |
-| `DailyPracticeSessionProvider` | `ui/helpers/DailyPracticeSessionProvider.kt` | `CardSessionContract` adapter for Blocks 1 and 3. Manages per-card state (current index, input mode, retry/hint flow, word bank). Block 2 does NOT use this provider. |
+| `DailySessionComposer` | `feature/daily/DailySessionComposer.kt` | Pure builder: constructs `List<DailyTask>` for all three blocks from lesson, vocab, and verb drill data using cursor-based card selection. |
+| `DailySessionHelper` | `feature/daily/DailySessionHelper.kt` | State manager: tracks `taskIndex` and `blockIndex` within the task list, provides block-level and session-level progress, handles block transitions and session lifecycle. |
+| `DailyPracticeSessionProvider` | `feature/daily/DailyPracticeSessionProvider.kt` | `CardSessionContract` adapter for Blocks 1 and 3. Manages per-card state (current index, input mode, retry/hint flow, word bank). Block 2 does NOT use this provider. |
 | `DailyPracticeScreen` | `ui/screens/DailyPracticeScreen.kt` (currently in `ui/DailyPracticeScreen.kt`) | Composable UI: renders the current block's content, handles block transitions with sparkle overlays, displays session completion screen. |
 
 ### 9.2.2 Data Flow

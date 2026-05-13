@@ -38,7 +38,7 @@ git merge feature/daily-cursors
 | File | Purpose |
 |------|---------|
 | `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt` | ViewModel — extract FROM here |
-| `app/src/main/java/com/alexpo/grammermate/ui/helpers/` | Modules dir — extract TO here |
+| `app/src/main/java/com/alexpo/grammermate/feature/` + `shared/` | Feature dirs — migrated TO here |
 | `docs/specification/08-training-viewmodel.md` | Method inventory (156 methods, 103 fields) |
 | `docs/specification/arch-phase3-interfaces.md` | Phase 3 interface definitions (943 lines) |
 | `docs/specification/arch-module-decomposition.md` | Original module proposal with diagrams |
@@ -68,7 +68,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 - [x] **Status: COMPLETE**
 - **Commit:** `3ebcd37`
-- **File:** `ui/helpers/ProgressTracker.kt`
+- **File:** `feature/progress/ProgressTracker.kt`
 - **Interface:** see `arch-phase3-interfaces.md` section 1
 - **Wraps:** MasteryStore + ProgressStore
 - **Extracts from TrainingViewModel:**
@@ -98,7 +98,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 - [x] **Status: COMPLETE**
 - **Commit:** `3ebcd37`
-- **File:** `ui/helpers/BossBattleRunner.kt`
+- **File:** `feature/boss/BossBattleRunner.kt`
 - **Interface:** see `arch-phase3-interfaces.md` section 2
 - **Pure logic** — returns result objects, does NOT own bossCards
 - **Extracts from TrainingViewModel:**
@@ -125,7 +125,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 - [x] **Status: COMPLETE**
 - **Commit:** `3ebcd37`
-- **File:** `ui/helpers/AudioCoordinator.kt`
+- **File:** `shared/audio/AudioCoordinator.kt`
 - **Interface:** see `arch-phase3-interfaces.md` section 5
 - **Owns:** TtsEngine, AsrEngine, SoundPool, download Jobs
 - **Needs:** CoroutineScope + Application context
@@ -150,7 +150,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 - [x] **Status: COMPLETE**
 - **Commit:** `3ebcd37`
-- **File:** `ui/helpers/DailyPracticeCoordinator.kt`
+- **File:** `feature/daily/DailyPracticeCoordinator.kt`
 - **Interface:** see `arch-phase3-interfaces.md` section 4
 - **Absorbs:** DailySessionHelper + DailySessionComposer + 18 VM daily methods
 - **Owns:** prebuiltDailySession, lastDailyTasks, dailyPracticeAnsweredCounts, dailyCursorAtSessionStart
@@ -179,7 +179,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 - [x] **Status: COMPLETE**
 - **Commit:** `3ebcd37`
-- **File:** `ui/helpers/SessionRunner.kt`
+- **File:** `feature/training/SessionRunner.kt`
 - **Interface:** see `arch-phase3-interfaces.md` section 3
 - **THE LARGEST extraction** — 33 methods
 - **Owns:** sessionCards, eliteCards, timerJob, activeStartMs
@@ -273,7 +273,7 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 - [x] **Status: COMPLETE**
 - **Commit:** `797bda3` (extracted as part of Step 4.2)
-- **File:** `ui/helpers/VocabSprintRunner.kt`
+- **File:** `feature/vocab/VocabSprintRunner.kt`
 - **Interface:** see `arch-module-decomposition.md` section 2.11
 - **9 methods**, depends on AnswerValidator + WordBankGenerator
 - **Can be done at any point after Step 3.1-3.2**

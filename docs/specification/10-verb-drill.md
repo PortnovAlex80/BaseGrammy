@@ -906,7 +906,7 @@ Verb drill cards appear as **Block 3** (VERBS) of the Daily Practice session, al
 
 ### 10.7.2 DailySessionComposer -- Verb Block Construction
 
-**File:** `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailySessionComposer.kt`
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/daily/DailySessionComposer.kt`
 
 The `buildVerbBlock()` method constructs Block 3:
 
@@ -936,7 +936,7 @@ Each verb drill task wraps a `VerbDrillCard` with a predetermined input mode and
 
 ### 10.7.4 DailyPracticeSessionProvider -- Verb Block Handling
 
-**File:** `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailyPracticeSessionProvider.kt`
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/daily/DailyPracticeSessionProvider.kt`
 
 `DailyPracticeSessionProvider` implements `CardSessionContract` and handles all three block types. For the VERBS block:
 

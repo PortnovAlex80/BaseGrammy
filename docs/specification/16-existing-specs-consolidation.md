@@ -329,7 +329,7 @@ These features were added after the FR document was written and are not covered:
 
 | Decision | Date | Rationale | Status |
 |---|---|---|---|
-| Single ViewModel (TrainingViewModel) for all business logic | Early | Simplicity, centralized state, Compose stateless renderer | Active. Decomposed into helpers in `ui/helpers/` but single ViewModel retained. |
+| Single ViewModel (TrainingViewModel) for all business logic | Early | Simplicity, centralized state, Compose stateless renderer | Active. Decomposed into helpers in `feature/` but single ViewModel retained. |
 | Verb Drill uses separate ViewModel | 2026-05-09 | TrainingViewModel already 3000+ lines. Isolated feature = zero blast radius | Active |
 | TrainingCardSession as reusable composable | 2026-05-10 | Multiple modes (standard training, daily practice, verb drill, vocab drill) need the same card training UI with different data sources | Active |
 | Atomic file writes for all persistence | Early | Prevent data corruption on crash during write | Active |

@@ -17,7 +17,7 @@ Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/AsrEngine.kt` (for `AsrState`)
 - `app/src/main/java/com/alexpo/grammermate/data/TtsModelManager.kt` (for `DownloadState`)
 - `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (for `AppScreen`, `LessonTileState`)
-- `app/src/main/java/com/alexpo/grammermate/ui/helpers/DailySessionHelper.kt` (for `TrainingStateAccess`)
+- `app/src/main/java/com/alexpo/grammermate/feature/daily/DailySessionHelper.kt` (for `TrainingStateAccess`)
 
 ---
 
@@ -1128,7 +1128,7 @@ Special cases:
 
 ### 1.4.4 `TrainingStateAccess` (interface)
 
-**File:** `ui/helpers/DailySessionHelper.kt`
+**File:** `feature/daily/DailySessionHelper.kt`
 **Purpose:** Interface provided by `TrainingViewModel` to its helper classes. Allows helpers to read and update UI state without directly referencing the ViewModel.
 
 | Member | Type | Description |
@@ -1137,7 +1137,7 @@ Special cases:
 | `updateState(transform: (TrainingUiState) -> TrainingUiState)` | Function | Atomically update the UI state. |
 | `saveProgress()` | Function | Persist the current progress to storage. |
 
-**Implementation:** `TrainingViewModel` creates an anonymous object implementing this interface. All helpers in `ui/helpers/` receive this via constructor injection.
+**Implementation:** `TrainingViewModel` creates an anonymous object implementing this interface. All helpers in `feature/` receive this via constructor injection.
 
 **Constraint:** Helpers never call other helpers directly. All coordination flows through `TrainingViewModel`.
 

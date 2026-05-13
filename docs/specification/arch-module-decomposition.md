@@ -39,7 +39,7 @@ Unit testing `submitAnswer()` or `startBoss()` requires instrumented tests or he
 
 ### 1.5 No Module Boundaries
 
-VerbDrillViewModel (575 lines) and VocabDrillViewModel (456 lines) are separate ViewModels that duplicate patterns from TrainingViewModel (TTS management, answer validation, word bank generation). DailySessionComposer, DailySessionHelper, and DailyPracticeSessionProvider are in `ui/helpers/` but their relationship to TrainingViewModel is ad-hoc rather than through defined interfaces.
+VerbDrillViewModel (575 lines) and VocabDrillViewModel (456 lines) are separate ViewModels that duplicate patterns from TrainingViewModel (TTS management, answer validation, word bank generation). DailySessionComposer, DailySessionHelper, and DailyPracticeSessionProvider are in `feature/daily/` but their relationship to TrainingViewModel is ad-hoc rather than through defined interfaces.
 
 ---
 
@@ -627,9 +627,9 @@ This allows targeted updates: `it.copy(session = it.session.copy(correctCount = 
 ### Phase 1: Extract Pure Functions (Zero Risk)
 
 **What moves where:**
-1. Create `AnswerValidator` in `ui/helpers/AnswerValidator.kt` -- extract normalization + comparison from `submitAnswer()`.
-2. Create `WordBankGenerator` in `ui/helpers/WordBankGenerator.kt` -- extract from `generateWordBank()`, `buildVocabWordBank()`.
-3. Create `FlowerProgressRenderer` in `ui/helpers/FlowerProgressRenderer.kt` -- extract from `refreshFlowerStates()`.
+1. Create `AnswerValidator` in `feature/training/AnswerValidator.kt` -- extract normalization + comparison from `submitAnswer()`.
+2. Create `WordBankGenerator` in `feature/training/WordBankGenerator.kt` -- extract from `generateWordBank()`, `buildVocabWordBank()`.
+3. Create `FlowerProgressRenderer` in `feature/training/FlowerProgressRenderer.kt` -- extract from `refreshFlowerStates()`.
 
 **Tests to add first:**
 - `AnswerValidatorTest`: correct/incorrect answers, testMode bypass, hint after 3 attempts.
@@ -647,9 +647,9 @@ This allows targeted updates: `it.copy(session = it.session.copy(correctCount = 
 ### Phase 2: Extract Stateless Helpers (Low Risk)
 
 **What moves where:**
-1. Create `BossBattleRunner` in `ui/helpers/BossBattleRunner.kt` -- extract boss card selection, reward calculation, unlock guards.
-2. Create `CardProvider` in `ui/helpers/CardProvider.kt` -- extract `rebuildSchedules()`, `buildSessionCards()`, `buildEliteCards()`.
-3. Create `StreakManager` in `ui/helpers/StreakManager.kt` -- extract `updateStreak()`, `dismissStreakMessage()`.
+1. Create `BossBattleRunner` in `feature/boss/BossBattleRunner.kt` -- extract boss card selection, reward calculation, unlock guards.
+2. Create `CardProvider` in `feature/training/CardProvider.kt` -- extract `rebuildSchedules()`, `buildSessionCards()`, `buildEliteCards()`.
+3. Create `StreakManager` in `feature/progress/StreakManager.kt` -- extract `updateStreak()`, `dismissStreakMessage()`.
 
 **Tests to add first:**
 - `BossBattleRunnerTest`: reward thresholds (50%=Bronze, 75%=Silver, 100%=Gold), unlock guard (15 sub-lessons), empty cards error.
@@ -669,11 +669,11 @@ This allows targeted updates: `it.copy(session = it.session.copy(correctCount = 
 ### Phase 3: Extract Stateful Modules with Interfaces (Medium Risk)
 
 **What moves where:**
-1. Create `SessionRunner` in `ui/helpers/SessionRunner.kt` -- the largest extraction. Moves card navigation, timer, answer submission, word bank interaction.
-2. Create `DailyPracticeCoordinator` in `ui/helpers/DailyPracticeCoordinator.kt` -- merge DailySessionHelper + DailySessionComposer + TrainingViewModel daily methods.
-3. Create `VocabSprintRunner` in `ui/helpers/VocabSprintRunner.kt` -- extract vocab sprint session.
-4. Create `ProgressTracker` in `ui/helpers/ProgressTracker.kt` -- wrap MasteryStore + ProgressStore access patterns.
-5. Create `AudioCoordinator` in `ui/helpers/AudioCoordinator.kt` -- extract TTS/ASR/SoundPool management.
+1. Create `SessionRunner` in `feature/training/SessionRunner.kt` -- the largest extraction. Moves card navigation, timer, answer submission, word bank interaction.
+2. Create `DailyPracticeCoordinator` in `feature/daily/DailyPracticeCoordinator.kt` -- merge DailySessionHelper + DailySessionComposer + TrainingViewModel daily methods.
+3. Create `VocabSprintRunner` in `feature/vocab/VocabSprintRunner.kt` -- extract vocab sprint session.
+4. Create `ProgressTracker` in `feature/progress/ProgressTracker.kt` -- wrap MasteryStore + ProgressStore access patterns.
+5. Create `AudioCoordinator` in `shared/audio/AudioCoordinator.kt` -- extract TTS/ASR/SoundPool management.
 
 **Tests to add first:**
 - `SessionRunnerTest`: full session lifecycle (start -> answer all -> finish), hint flow (3 wrong -> show answer), word bank mode does not record mastery.

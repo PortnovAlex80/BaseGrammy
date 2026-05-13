@@ -74,7 +74,7 @@ All changes to specification documents are tracked here. Each entry references t
 
 ### Metrics
 - Total .kt files: 86 (was 69)
-- ui/helpers/: 20 files, 5366 lines (was 16 files, ~4981 lines)
+- feature/ + shared/: 20 files, 5366 lines (was 16 files in ui/helpers/, ~4981 lines)
 - data/: 45 files, 7635 lines (was 38 files, ~7058 lines)
 - 0 files exceed line limits
 - Build: SUCCESS, 0 compilation errors
@@ -113,11 +113,11 @@ All changes to specification documents are tracked here. Each entry references t
 - Auto-submit on correct keyboard input
 
 ### Architecture Modules Created
-- AnswerValidator (ui/helpers/AnswerValidator.kt)
-- WordBankGenerator (ui/helpers/WordBankGenerator.kt)
-- CardProvider (ui/helpers/CardProvider.kt)
-- StreakManager (ui/helpers/StreakManager.kt)
-- FlowerProgressRenderer (ui/helpers/FlowerProgressRenderer.kt)
+- AnswerValidator (feature/training/AnswerValidator.kt)
+- WordBankGenerator (feature/training/WordBankGenerator.kt)
+- CardProvider (feature/training/CardProvider.kt)
+- StreakManager (feature/progress/StreakManager.kt)
+- FlowerProgressRenderer (feature/training/FlowerProgressRenderer.kt)
 
 ### Documentation Reorganized
 - All legacy specs, design docs, plans moved into docs/specification/

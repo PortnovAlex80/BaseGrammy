@@ -15,9 +15,9 @@
 | `VerbDrillViewModel` | `ui/VerbDrillViewModel.kt` | 575 | ViewModel | Standalone verb drill: card loading, session management, progress persistence, TTS, bad sentences, speed tracking |
 | `VocabDrillViewModel` | `ui/VocabDrillViewModel.kt` | 456 | ViewModel | Standalone vocab drill: word loading, SRS session, rating, TTS, voice input |
 | `VerbDrillCardSessionProvider` | `ui/VerbDrillCardSessionProvider.kt` | 389 | Adapter | `CardSessionContract` adapter wrapping `VerbDrillViewModel`; manages retry/hint flow, word bank, voice triggers in Compose state |
-| `DailyPracticeSessionProvider` | `ui/helpers/DailyPracticeSessionProvider.kt` | 381 | Adapter | `CardSessionContract` adapter for daily practice blocks 1 & 3; self-contained retry/hint/word-bank logic mirroring `VerbDrillCardSessionProvider` |
-| `DailySessionHelper` | `ui/helpers/DailySessionHelper.kt` | 238 | Helper | Navigates `DailySessionState` (task/block index); start/end/fast-forward/replace blocks |
-| `DailySessionComposer` | `ui/helpers/DailySessionComposer.kt` | 437 | Builder | Builds `List<DailyTask>` for a daily session: sentence block (cursor), vocab block (SRS), verb block (weak-first) |
+| `DailyPracticeSessionProvider` | `feature/daily/DailyPracticeSessionProvider.kt` | 381 | Adapter | `CardSessionContract` adapter for daily practice blocks 1 & 3; self-contained retry/hint/word-bank logic mirroring `VerbDrillCardSessionProvider` |
+| `DailySessionHelper` | `feature/daily/DailySessionHelper.kt` | 238 | Helper | Navigates `DailySessionState` (task/block index); start/end/fast-forward/replace blocks |
+| `DailySessionComposer` | `feature/daily/DailySessionComposer.kt` | 437 | Builder | Builds `List<DailyTask>` for a daily session: sentence block (cursor), vocab block (SRS), verb block (weak-first) |
 | `CardSessionContract` | `data/CardSessionContract.kt` | 98 | Interface | Contract for card session providers: currentCard, progress, submitAnswer, word bank, TTS, flagging |
 | `Models.kt` | `data/Models.kt` | 236 | Data | Core domain models: Lesson, SentenceCard, DailyTask, DailySessionState, DailyCursorState, TrainingProgress, LessonMasteryState |
 | `MasteryStore` | `data/MasteryStore.kt` | 232 | Store | YAML-backed per-lesson card show tracking (uniqueCardShows, shownCardIds); mastery/flower calculation input |
@@ -458,7 +458,7 @@ Create a singleton `TtsEngine` managed at the Application level, or pass it via 
 Move daily practice orchestration (lines 1439-1776, ~340 lines) into a dedicated `DailyPracticeOrchestrator` helper class that receives `TrainingStateAccess`. This would include `startDailyPractice`, `repeatDailyPractice`, `advanceDailyTask`, `cancelDailySession`, `persistDailyVerbProgress`, `rateVocabCard`, and `repeatDailyBlock`.
 
 **R7: Extract BossHelper from TrainingVM**
-Move boss mode logic (lines 2181-2400, ~220 lines) into an existing or new helper in `ui/helpers/`.
+Move boss mode logic (lines 2181-2400, ~220 lines) into an existing or new helper in `feature/boss/`.
 
 **R8: Extract DrillHelper from TrainingVM**
 Move drill mode logic (lines 1778-1941, ~160 lines) into a helper.

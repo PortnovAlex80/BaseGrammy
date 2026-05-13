@@ -48,7 +48,7 @@ submitAnswer()
 
 **Files:**
 - `ui/VerbDrillCardSessionProvider.kt:185-227` (`submitAnswerWithInput`)
-- `ui/helpers/DailyPracticeSessionProvider.kt:159-206` (`submitAnswer`)
+- `feature/daily/DailyPracticeSessionProvider.kt:159-206` (`submitAnswer`)
 
 Both follow the same pattern:
 ```

@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **WORD_BANK mode never counts for mastery** — only VOICE and KEYBOARD grow flowers. Violating this inflates progress
 - **WARMUP sub-lesson type was removed** — never re-introduce it. Only `NEW_ONLY` and `MIXED` exist
 - **All file writes must go through `AtomicFileWriter`** — temp → fsync → rename. No direct File.writeText
-- **`TrainingViewModel` is ~1500 lines** (refactored from 3400) — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `ui/helpers/` when adding new domain logic.
+- **`TrainingViewModel` is ~1500 lines** (refactored from 3400) — the single ViewModel for ALL business logic. Changes here have high blast radius. Decompose into helpers in `feature/` when adding new domain logic.
 - **Project path contains Cyrillic** (`Разработка`) — `android.overridePathCheck=true` in gradle.properties is required
 - **Drill visibility is pack-scoped** — `hasVerbDrill`/`hasVocabDrill` check the active pack's manifest, not all installed packs. A pack without `verbDrill`/`vocabDrill` sections shows no drill tiles.
 - **`AppScreen.ELITE` and `AppScreen.VOCAB` enum values are kept for backward compat** — they redirect to HOME if restored from saved state. Do not remove them; removing would crash users with saved `currentScreen: "ELITE"` or `"VOCAB"` values.
@@ -211,7 +211,7 @@ When work cascades across layers (data → helpers → UI), agents need to know 
 **LAYER-TEAM** (default for any task touching ≥2 layers):
 ```
 DATA-AGENT: data/    → Models.kt, stores, parsers, calculators
-HELPERS-AGENT: ui/helpers/ → all helper files (waits for DATA-AGENT summary)
+HELPERS-AGENT: feature/ + shared/ → all helper files (waits for DATA-AGENT summary)
 UI-AGENT: ui/        → TrainingViewModel, GrammarMateApp, screens (waits for HELPERS-AGENT summary)
 ```
 - Sequential execution with SendMessage coordination between layers
@@ -460,7 +460,7 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 | Layer | Max lines | Action when exceeded |
 |-------|-----------|---------------------|
 | Screen file (Compose) | 1000 | Extract sub-composables to component files in `ui/components/` |
-| ViewModel | 1200 | Extract domain helpers to `ui/helpers/` |
+| ViewModel | 1200 | Extract domain helpers to `feature/` |
 | Data store | 500 | Extract parsers or calculators to separate files in `data/` |
 | Data class (single class) | 30 fields | Group related fields into nested data classes |
 
@@ -468,7 +468,7 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 
 1. **Screen files go in `ui/screens/`** — one file per major screen (Home, Lesson, Training, DailyPractice, Story, Ladder, Settings). Helper composables used only by that screen stay in the same file. Dialog composables triggered from navigation stay in GrammarMateApp.kt.
 2. **Shared components go in `ui/components/`** — composables used by 2+ screens (TTS/ASR download dialogs, welcome dialog).
-3. **ViewModel helpers go in `ui/helpers/`** — plain Kotlin classes that implement domain logic (boss, vocab, drill, elite, TTS/ASR, word bank). They receive a `TrainingStateAccess` interface (NOT ViewModels — no lifecycle). Helpers never call other helpers directly; all coordination flows through TrainingViewModel.
+3. **ViewModel helpers go in `feature/`** — plain Kotlin classes organized by domain (training, boss, daily, progress, vocab in `feature/`, audio in `shared/audio/`). They implement domain logic and receive a `TrainingStateAccess` interface (NOT ViewModels — no lifecycle). Helpers never call other helpers directly; all coordination flows through TrainingViewModel.
 4. **NEVER create a second ViewModel.** Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint.
 5. **GrammarMateApp.kt is a router.** It contains only `GrammarMateApp()` (screen routing, dialog state, BackHandlers), `AppScreen` enum, and dialog orchestration. All screen rendering is delegated to `ui/screens/`.
 6. **Helper dependency pattern:** helpers take `TrainingStateAccess` as a constructor parameter (defined in `DailySessionHelper.kt`):

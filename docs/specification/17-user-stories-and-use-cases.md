@@ -873,7 +873,7 @@
 
 **EC-21: TrainingViewModel exceeds line budget**
 - The `TrainingViewModel` is explicitly acknowledged as a high-blast-radius file (3000+ lines).
-- All new domain logic must be decomposed into helpers in `ui/helpers/` rather than added directly to the ViewModel.
+- All new domain logic must be decomposed into helpers in `feature/` rather than added directly to the ViewModel.
 - Helpers use the `TrainingStateAccess` interface and never call other helpers directly. Coordination flows through the ViewModel.
 - Violation of this rule creates maintenance hazards and must be caught in code review.
 

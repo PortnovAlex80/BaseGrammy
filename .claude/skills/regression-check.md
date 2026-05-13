@@ -18,7 +18,7 @@ User invokes `/regression-check` or asks "check for regressions", "verify change
 Spawn ONE Explore agent that runs:
 1. `git diff --name-only HEAD` (or `git diff --name-only main...HEAD` for PR checks)
 2. For each changed file, determine:
-   - Which screen(s) it belongs to (check file path: ui/screens/, ui/helpers/, data/)
+   - Which screen(s) it belongs to (check file path: ui/screens/, feature/, shared/, data/)
    - Which Element IDs are affected (cross-reference with 23-screen-elements.md)
    - Which UC-IDs are affected (cross-reference via Screen and Source columns in 22-use-case-registry.md)
 
@@ -108,6 +108,6 @@ Quick reference for which files map to which screens:
 | ui/VocabDrillScreen.kt | VocabDrillScreen (VOC-*) |
 | ui/GrammarMateApp.kt | Dialogs (DG-*) |
 | ui/TrainingViewModel.kt | All screens (state source) |
-| ui/helpers/*.kt | All screens (logic source) |
+| feature/**/*.kt, shared/**/*.kt | All screens (logic source) |
 | data/Models.kt | All screens (type definitions) |
 | data/*.kt | All screens (data layer) |

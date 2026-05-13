@@ -459,7 +459,7 @@ GrammarMate
 **Architectural constraints:**
 - Single ViewModel: `TrainingViewModel` is the only ViewModel. It holds all training state in `StateFlow<TrainingUiState>`.
 - Stateless UI: `GrammarMateApp.kt` is a pure stateless renderer that collects the state flow and dispatches actions.
-- Helper pattern: Domain helpers in `ui/helpers/` are plain Kotlin classes implementing `TrainingStateAccess` interface. They are owned by the ViewModel and call `updateState { }` and `saveProgress()` through it.
+- Helper pattern: Domain helpers in `feature/` are plain Kotlin classes implementing `TrainingStateAccess` interface. They are owned by the ViewModel and call `updateState { }` and `saveProgress()` through it.
 - No helper-to-helper calls: All coordination flows through TrainingViewModel.
 
 ### 20.7.2 Test Coverage
@@ -502,7 +502,7 @@ GrammarMate
 | Layer | Max Lines | Action When Exceeded |
 |-------|-----------|---------------------|
 | Screen file (Compose) | 1000 lines | Extract sub-composables to `ui/components/` |
-| ViewModel | 1200 lines | Extract domain helpers to `ui/helpers/` |
+| ViewModel | 1200 lines | Extract domain helpers to `feature/` |
 | Data store | 500 lines | Extract parsers or calculators to separate files in `data/` |
 | Data class (single class) | 30 fields | Group related fields into nested data classes |
 

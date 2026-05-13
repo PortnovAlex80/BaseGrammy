@@ -108,7 +108,7 @@
 - **Recommendation:** Expose helpers directly via facade, or use Kotlin delegation.
 
 #### [WARNING] A1-W4. 7 callback interfaces with 30 methods — saveProgress appears 5 times
-- **File:** ui/helpers/*.kt
+- **File:** feature/**/*.kt, shared/**/*.kt
 - **Problem:** SessionCallbacks(13), BossCallbacks(5), SettingsCallbacks(8), ProgressCallbacks(6), VocabSprintCallbacks(4), StoryCallbacks(2), BadSentenceCallbacks(2). Significant overlap.
 - **Recommendation:** Consolidate into single ViewModelCallbacks or sealed class ViewModelEvent.
 
@@ -223,37 +223,37 @@
 - **Problem:** All business logic unverified by automation.
 
 #### [CRITICAL] A3-C2. Zero tests for SessionRunner — 51 functions, complex state machine
-- **File:** ui/helpers/SessionRunner.kt
+- **File:** feature/training/SessionRunner.kt
 - **Problem:** submitAnswer() alone has 6 branching paths. None tested.
 
 #### [CRITICAL] A3-C3. Zero tests for DailyPracticeCoordinator — 27 functions
-- **File:** ui/helpers/DailyPracticeCoordinator.kt
+- **File:** feature/daily/DailyPracticeCoordinator.kt
 - **Problem:** cancelDailySession() has conditional cursor advancement — classic off-by-one source.
 
 #### [CRITICAL] A3-C4. AudioCoordinator untestable — 5 hardware-bound services hardcoded
-- **File:** ui/helpers/AudioCoordinator.kt:46-68
+- **File:** shared/audio/AudioCoordinator.kt:46-68
 - **Problem:** SoundPool, TtsProvider, TtsModelManager, AsrEngine, AsrModelManager all created in constructor. Not injectable.
 
 #### [CRITICAL] A3-C5. BossBattleRunner — pure Kotlin, explicitly designed for testing, ZERO tests
-- **File:** ui/helpers/BossBattleRunner.kt (line 22 comment: "No Android dependencies — suitable for unit testing")
+- **File:** feature/boss/BossBattleRunner.kt (line 22 comment: "No Android dependencies — suitable for unit testing")
 - **Problem:** Reward thresholds (30%/60%/90%) are business-critical. No verification.
 
 #### [CRITICAL] A3-C6. AnswerValidator — pure Kotlin, explicitly designed for testing, ZERO tests
-- **File:** ui/helpers/AnswerValidator.kt (line 33 comment: "no Android dependencies and can be unit-tested in isolation")
+- **File:** feature/training/AnswerValidator.kt (line 33 comment: "no Android dependencies and can be unit-tested in isolation")
 
 #### [CRITICAL] A3-C7. CardSessionStateMachine uses Compose mutableStateOf — untestable in JUnit
-- **File:** ui/helpers/CardSessionStateMachine.kt:29-49
+- **File:** feature/training/CardSessionStateMachine.kt:29-49
 - **Problem:** Requires Compose runtime for plain state machine logic.
 
 #### [CRITICAL] A3-C8. CardProvider — pure Kotlin, explicitly designed for testing, ZERO tests
-- **File:** ui/helpers/CardProvider.kt (line 26 comment: "No Android dependencies — suitable for unit testing")
+- **File:** feature/training/CardProvider.kt (line 26 comment: "No Android dependencies — suitable for unit testing")
 
 ### HIGH Findings
 
 | ID | File | Title |
 |----|------|-------|
 | A3-H1 | TrainingViewModel.kt:81-93 | No DI — all 12 stores hardcoded, cannot mock |
-| A3-H2 | ui/helpers/*.kt | 7 callback interfaces with 30+ methods — ViewModel implements all |
+| A3-H2 | feature/**/*.kt, shared/**/*.kt | 7 callback interfaces with 30+ methods — ViewModel implements all |
 | A3-H3 | SessionRunner.kt:82 | Depends on Application for DrillProgressStore |
 | A3-H4 | DailyPracticeCoordinator.kt:41 | Depends on Application for StoreFactory |
 | A3-H5 | AudioCoordinator.kt:46-68 | 5 hardware services instantiated in constructor |
@@ -269,7 +269,7 @@
 | Total @Test methods | 231 |
 | Tests in data/ layer | 100% (18/18) |
 | Tests in ui/ layer | 0% |
-| Tests in ui/helpers/ layer | 0% |
+| Tests in feature/ layer | 0% |
 | Pure-Kotlin helpers with ZERO tests | 4 |
 | Untestable helpers (need refactoring) | 3 |
 | Instrumented UI tests | 0 |

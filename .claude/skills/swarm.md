@@ -134,7 +134,7 @@ TeamCreate + TaskCreate×N + TaskUpdate×2N + SendMessage shutdown×N + TeamDele
 ```
 Phase 1: Assessment → identifies layers affected
 Phase 2: Layer 1 agent (data/) → commit → build check
-Phase 3: Layer 2 agents (ui/helpers/ or ui/) → can be parallel if different files
+Phase 3: Layer 2 agents (feature/ or shared/ or ui/) → can be parallel if different files
 Phase 4: Layer 3 agents (remaining screens) → commit → build check
 Phase 5: Full build verification
 ```
