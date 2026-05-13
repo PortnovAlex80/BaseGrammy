@@ -177,9 +177,9 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     override fun getPackIdForLesson(lessonId: String): String? {
         val packs = getInstalledPacks()
         for (pack in packs) {
-            val manifest = languageManager.readInstalledPackManifest(pack.packId) ?: continue
+            val manifest = languageManager.readInstalledPackManifest(pack.packId.value) ?: continue
             if (manifest.lessons.any { it.lessonId == lessonId }) {
-                return pack.packId
+                return pack.packId.value
             }
         }
         return null
@@ -271,7 +271,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             } else {
                 emptyList()
             }
-            Lesson(id = id, languageId = languageId, title = parsedTitle ?: title, cards = cards, drillCards = drillCards)
+            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards, drillCards = drillCards)
         }
     }
 
@@ -322,7 +322,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         val csvFile = File(dir, fileName)
         AtomicFileWriter.writeText(csvFile, normalizedTitle)
         saveIndex(languageId, LessonIndexEntry(id, normalizedTitle, fileName))
-        return Lesson(id = id, languageId = languageId, title = normalizedTitle, cards = emptyList())
+        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = normalizedTitle, cards = emptyList())
     }
 
     // ── Story & vocab queries (delegated) ────────────────────────────────

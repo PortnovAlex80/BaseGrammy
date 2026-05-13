@@ -11,6 +11,7 @@ import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
 
@@ -105,7 +106,7 @@ class ProgressTracker(
         selectedLessonId: String?,
         selectedLanguageId: String
     ) {
-        val completedFirstCycle = completedSubLessonCount >= 15
+        val completedFirstCycle = completedSubLessonCount >= TrainingConfig.BOSS_UNLOCK_SUB_LESSONS
         if (completedFirstCycle && selectedLessonId != null) {
             masteryStore.markLessonCompleted(selectedLessonId, selectedLanguageId)
         }

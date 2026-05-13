@@ -25,7 +25,7 @@ class CardProvider(
     private val subLessonSize: Int = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
     private val subLessonSizeMin: Int = TrainingConfig.SUB_LESSON_SIZE_MIN,
     private val subLessonSizeMax: Int = TrainingConfig.SUB_LESSON_SIZE_MAX,
-    private val eliteSizeMultiplier: Double = 1.25,
+    private val eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER,
     private val eliteStepCount: Int = TrainingConfig.ELITE_STEP_COUNT,
     private val progressTracker: ProgressTracker? = null
 ) {
@@ -93,7 +93,7 @@ class CardProvider(
             TrainingMode.ALL_SEQUENTIAL ->
                 lessons.flatMap { it.cards }.filter { it.id !in hiddenCardIds }
             TrainingMode.ALL_MIXED -> {
-                val reviewLimit = 300
+                val reviewLimit = TrainingConfig.REVIEW_LIMIT
                 lessons.flatMap { it.allCards }
                     .filter { it.id !in hiddenCardIds }
                     .shuffled()
@@ -215,7 +215,7 @@ class CardProvider(
         selectedLessonId: String?,
         selectedIndex: Int
     ): List<SentenceCard> {
-        val maxBossCards = 300
+        val maxBossCards = TrainingConfig.MAX_BOSS_CARDS
         return when (type) {
             BossType.LESSON -> {
                 val lessonCards = lessons

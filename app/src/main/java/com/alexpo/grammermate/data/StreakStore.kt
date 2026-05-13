@@ -30,9 +30,9 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
      */
     override fun save(data: StreakData) {
         baseDir.mkdirs()
-        val file = getFile(data.languageId)
+        val file = getFile(data.languageId.value)
         val payload = mapOf(
-            "languageId" to data.languageId,
+            "languageId" to data.languageId.value,
             "currentStreak" to data.currentStreak,
             "longestStreak" to data.longestStreak,
             "lastCompletionDateMs" to data.lastCompletionDateMs,
@@ -47,10 +47,10 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
     override fun load(languageId: String): StreakData {
         val file = getFile(languageId)
         if (!file.exists()) {
-            return StreakData(languageId = languageId)
+            return StreakData(languageId = LanguageId(languageId))
         }
-        val raw = yaml.load<Any>(file.readText()) ?: return StreakData(languageId = languageId)
-        val data = raw as? Map<*, *> ?: return StreakData(languageId = languageId)
+        val raw = yaml.load<Any>(file.readText()) ?: return StreakData(languageId = LanguageId(languageId))
+        val data = raw as? Map<*, *> ?: return StreakData(languageId = LanguageId(languageId))
 
         val currentStreak = (data["currentStreak"] as? Number)?.toInt() ?: 0
         val longestStreak = (data["longestStreak"] as? Number)?.toInt() ?: 0
@@ -58,7 +58,7 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         val totalSubLessonsCompleted = (data["totalSubLessonsCompleted"] as? Number)?.toInt() ?: 0
 
         return StreakData(
-            languageId = languageId,
+            languageId = LanguageId(languageId),
             currentStreak = currentStreak,
             longestStreak = longestStreak,
             lastCompletionDateMs = lastCompletionDateMs,

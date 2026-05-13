@@ -28,7 +28,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         }
         val payload = (data["data"] as? Map<*, *>) ?: data
         return TrainingProgress(
-            languageId = payload["languageId"] as? String ?: "en",
+            languageId = LanguageId(payload["languageId"] as? String ?: "en"),
             mode = TrainingMode.valueOf(payload["mode"] as? String ?: TrainingMode.LESSON.name),
             lessonId = payload["lessonId"] as? String,
             currentIndex = (payload["currentIndex"] as? Number)?.toInt() ?: 0,
@@ -56,7 +56,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
                 ?.map { it.toDouble() }
                 ?: emptyList(),
             currentScreen = payload["currentScreen"] as? String ?: "HOME",
-            activePackId = payload["activePackId"] as? String,
+            activePackId = (payload["activePackId"] as? String)?.let { PackId(it) },
             dailyLevel = (payload["dailyLevel"] as? Number)?.toInt() ?: 0,
             dailyTaskIndex = (payload["dailyTaskIndex"] as? Number)?.toInt() ?: 0,
             dailyCursor = run {
@@ -86,7 +86,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
 
     override fun save(progress: TrainingProgress) {
         val payload = linkedMapOf(
-            "languageId" to progress.languageId,
+            "languageId" to progress.languageId.value,
             "mode" to progress.mode.name,
             "lessonId" to progress.lessonId,
             "currentIndex" to progress.currentIndex,
@@ -104,7 +104,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
             "eliteStepIndex" to progress.eliteStepIndex,
             "eliteBestSpeeds" to progress.eliteBestSpeeds,
             "currentScreen" to progress.currentScreen,
-            "activePackId" to progress.activePackId,
+            "activePackId" to progress.activePackId?.value,
             "dailyLevel" to progress.dailyLevel,
             "dailyTaskIndex" to progress.dailyTaskIndex,
             "dailyCursor" to linkedMapOf(

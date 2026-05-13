@@ -90,7 +90,7 @@ internal class PackImporter(
         val lessonTitle = parsedTitle ?: title
         replaceByTitle(languageId, lessonTitle)
         saveIndex(languageId, id, lessonTitle, fileName, null)
-        return Lesson(id = id, languageId = languageId, title = lessonTitle, cards = cards)
+        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = lessonTitle, cards = cards)
     }
 
     // ── ZIP extraction ───────────────────────────────────────────────────
@@ -164,12 +164,12 @@ internal class PackImporter(
             importVocabFromPack(packDir, languageId)
 
             val updated = getInstalledPacks()
-                .filterNot { it.packId == manifest.packId }
+                .filterNot { it.packId.value == manifest.packId }
                 .map {
                     val map = mutableMapOf(
-                        "packId" to it.packId,
+                        "packId" to it.packId.value,
                         "packVersion" to it.packVersion,
-                        "languageId" to it.languageId,
+                        "languageId" to it.languageId.value,
                         "importedAt" to it.importedAt
                     )
                     if (it.displayName != null) map["displayName"] = it.displayName
@@ -185,7 +185,7 @@ internal class PackImporter(
             if (manifest.displayName != null) newEntry["displayName"] = manifest.displayName
             updated.add(newEntry)
             packsStore.write(updated)
-            return LessonPack(manifest.packId, manifest.packVersion, languageId, System.currentTimeMillis(), manifest.displayName)
+            return LessonPack(PackId(manifest.packId), manifest.packVersion, LanguageId(languageId), System.currentTimeMillis(), manifest.displayName)
         } finally {
             // Always clean up temp directory on any error
             if (tempDir.exists()) {
@@ -241,7 +241,7 @@ internal class PackImporter(
         val uniqueDrillCards = drillCards.mapIndexed { index, card ->
             card.copy(id = "${id}_drill_${index}")
         }
-        return Lesson(id = id, languageId = languageId, title = title, cards = uniqueCards, drillCards = uniqueDrillCards)
+        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = title, cards = uniqueCards, drillCards = uniqueDrillCards)
     }
 
     // ── Pack-scoped drill import ─────────────────────────────────────────
@@ -302,7 +302,7 @@ internal class PackImporter(
                     val entryLessonId = entry["lessonId"] as? String
                     val entryPhase = entry["phase"] as? String
                     entryStoryId == story.storyId &&
-                    entryLessonId == story.lessonId &&
+                    entryLessonId == story.lessonId.value &&
                     entryPhase == story.phase.name
                 }
 
@@ -310,7 +310,7 @@ internal class PackImporter(
                 existing.add(
                     mapOf(
                         "storyId" to story.storyId,
-                        "lessonId" to story.lessonId,
+                        "lessonId" to story.lessonId.value,
                         "phase" to story.phase.name,
                         "languageId" to languageId,
                         "file" to storedName

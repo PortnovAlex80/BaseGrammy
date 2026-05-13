@@ -3,6 +3,7 @@ package com.alexpo.grammermate.ui.helpers
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.TrainingConfig
 
 /**
  * Pure-logic module for boss battle session lifecycle.
@@ -88,11 +89,11 @@ class BossBattleRunner {
         testMode: Boolean
     ): BossStartResult {
         // Unlock guard: require at least 15 completed sub-lessons (unless test mode or elite)
-        if (type != BossType.ELITE && completedSubLessonCount < 15 && !testMode) {
+        if (type != BossType.ELITE && completedSubLessonCount < TrainingConfig.BOSS_UNLOCK_SUB_LESSONS && !testMode) {
             return BossStartResult(
                 success = false,
                 cards = emptyList(),
-                errorMessage = "Complete at least 15 exercises first"
+                errorMessage = "Complete at least ${TrainingConfig.BOSS_UNLOCK_SUB_LESSONS} exercises first"
             )
         }
 
@@ -257,9 +258,9 @@ class BossBattleRunner {
         if (total <= 0) return null
         val percent = (progress.toDouble() / total.toDouble()) * 100.0
         return when {
-            percent >= 90.0 -> BossReward.GOLD
-            percent >= 60.0 -> BossReward.SILVER
-            percent >= 30.0 -> BossReward.BRONZE
+            percent >= TrainingConfig.BOSS_GOLD_PCT -> BossReward.GOLD
+            percent >= TrainingConfig.BOSS_SILVER_PCT -> BossReward.SILVER
+            percent >= TrainingConfig.BOSS_BRONZE_PCT -> BossReward.BRONZE
             else -> null
         }
     }

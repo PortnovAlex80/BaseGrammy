@@ -5,13 +5,13 @@
 @JvmInline value class PackId(val value: String)
 
 data class Language(
-    val id: String,
+    val id: LanguageId,
     val displayName: String
 )
 
 data class Lesson(
-    val id: String,
-    val languageId: String,
+    val id: LessonId,
+    val languageId: LanguageId,
     val title: String,
     val cards: List<SentenceCard>,
     val drillCards: List<SentenceCard> = emptyList()
@@ -49,17 +49,17 @@ data class SentenceCard(
 
 data class VocabEntry(
     val id: String,
-    val lessonId: String,
-    val languageId: String,
+    val lessonId: LessonId,
+    val languageId: LanguageId,
     val nativeText: String,
     val targetText: String,
     val isHard: Boolean = false
 )
 
 data class LessonPack(
-    val packId: String,
+    val packId: PackId,
     val packVersion: String,
-    val languageId: String,
+    val languageId: LanguageId,
     val importedAt: Long,
     val displayName: String? = null
 )
@@ -79,7 +79,7 @@ data class StoryQuestion(
 
 data class StoryQuiz(
     val storyId: String,
-    val lessonId: String,
+    val lessonId: LessonId,
     val phase: StoryPhase,
     val text: String,
     val questions: List<StoryQuestion>
@@ -130,7 +130,7 @@ enum class HintLevel {
 }
 
 data class TrainingProgress(
-    val languageId: String = "en",
+    val languageId: LanguageId = LanguageId("en"),
     val mode: TrainingMode = TrainingMode.LESSON,
     val lessonId: String? = null,
     val currentIndex: Int = 0,
@@ -148,7 +148,7 @@ data class TrainingProgress(
     val eliteStepIndex: Int = 0,
     val eliteBestSpeeds: List<Double> = emptyList(),
     val currentScreen: String = "HOME",
-    val activePackId: String? = null,
+    val activePackId: PackId? = null,
     val dailyLevel: Int = 0,
     val dailyTaskIndex: Int = 0,
     val dailyCursor: DailyCursorState = DailyCursorState()
@@ -158,8 +158,8 @@ data class TrainingProgress(
  * Состояние освоения урока (данные для расчёта "цветка")
  */
 data class LessonMasteryState(
-    val lessonId: String,
-    val languageId: String,
+    val lessonId: LessonId,
+    val languageId: LanguageId,
     val uniqueCardShows: Int = 0,
     val totalCardShows: Int = 0,
     val lastShowDateMs: Long = 0L,
@@ -195,7 +195,7 @@ data class FlowerVisual(
  * Данные о streak (ежедневных занятиях)
  */
 data class StreakData(
-    val languageId: String,
+    val languageId: LanguageId,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val lastCompletionDateMs: Long? = null,
@@ -259,11 +259,11 @@ data class SubmitResult(
 data class NavigationState(
     val languages: List<Language> = emptyList(),
     val installedPacks: List<LessonPack> = emptyList(),
-    val selectedLanguageId: String = "en",
-    val activePackId: String? = null,
+    val selectedLanguageId: LanguageId = LanguageId("en"),
+    val activePackId: PackId? = null,
     val activePackLessonIds: List<String>? = null,
     val lessons: List<Lesson> = emptyList(),
-    val selectedLessonId: String? = null,
+    val selectedLessonId: LessonId? = null,
     val mode: TrainingMode = TrainingMode.LESSON,
     val userName: String = "GrammarMateUser",
     val ladderRows: List<LessonLadderRow> = emptyList(),
@@ -432,7 +432,7 @@ data class TrainingUiState(
 
 data class LessonLadderRow(
     val index: Int,
-    val lessonId: String,
+    val lessonId: LessonId,
     val title: String,
     val uniqueCardShows: Int?,
     val daysSinceLastShow: Int?,

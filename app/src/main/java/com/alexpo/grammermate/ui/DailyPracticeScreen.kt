@@ -63,6 +63,7 @@ import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.ui.components.DailyReportSheet
@@ -81,7 +82,7 @@ fun DailyPracticeScreen(
     onShowSentenceAnswer: () -> String?,
     onShowVerbAnswer: () -> String?,
     onFlipVocabCard: () -> Unit,
-    onRateVocabCard: (Int) -> Unit,
+    onRateVocabCard: (SrsRating) -> Unit,
     onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {},
     onCardPracticed: (DailyBlockType) -> Unit = {},
     onAdvance: () -> Boolean,
@@ -556,7 +557,7 @@ private fun BlockProgressBar(blockProgress: BlockProgress) {
 private fun ColumnScope.VocabFlashcardBlock(
     task: DailyTask.VocabFlashcard,
     onFlip: () -> Unit,
-    onRate: (Int) -> Unit,
+    onRate: (SrsRating) -> Unit,
     onAdvance: () -> Boolean,
     onComplete: () -> Unit,
     onSpeak: (String) -> Unit,
@@ -592,7 +593,7 @@ private fun ColumnScope.VocabFlashcardBlock(
                 val isCorrect = com.alexpo.grammermate.data.Normalizer.normalize(spoken) == com.alexpo.grammermate.data.Normalizer.normalize(answerText)
                 if (isCorrect && !isRated) {
                     isRated = true
-                    onRate(2)
+                    onRate(SrsRating.GOOD)
                     if (!onAdvance()) onComplete()
                 }
             }
@@ -642,12 +643,12 @@ private fun ColumnScope.VocabFlashcardBlock(
 
     Spacer(modifier = Modifier.height(12.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("Again" to 0, "Hard" to 1, "Good" to 2, "Easy" to 3).forEach { (label, rating) ->
+        listOf("Again" to SrsRating.AGAIN, "Hard" to SrsRating.HARD, "Good" to SrsRating.GOOD, "Easy" to SrsRating.EASY).forEach { (label, rating) ->
             val colors = when (rating) {
-                0 -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
-                1 -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
-                2 -> Pair(Color(0xFFE8F5E9), Color(0xFF4CAF50))
-                else -> Pair(Color(0xFFE3F2FD), Color(0xFF2196F3))
+                SrsRating.AGAIN -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
+                SrsRating.HARD -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
+                SrsRating.GOOD -> Pair(Color(0xFFE8F5E9), Color(0xFF4CAF50))
+                SrsRating.EASY -> Pair(Color(0xFFE3F2FD), Color(0xFF2196F3))
             }
             OutlinedButton(
                 onClick = { onRate(rating); if (!onAdvance()) onComplete() },

@@ -64,7 +64,7 @@ internal class LanguageManager(
         var updatedAny = false
         defaultPacks.forEach { pack ->
             val manifest = runCatching { readManifestFromAssets(pack.assetPath) }.getOrNull() ?: return@forEach
-            val existing = installed.firstOrNull { it.packId == manifest.packId }
+            val existing = installed.firstOrNull { it.packId.value == manifest.packId }
             val shouldUpdate = existing == null || existing.packVersion != manifest.packVersion
             if (shouldUpdate) {
                 val updated = runCatching { importFromAssets(pack.assetPath) }.isSuccess
@@ -96,7 +96,7 @@ internal class LanguageManager(
         return entries.mapNotNull { entry ->
             val id = entry["id"] as? String ?: return@mapNotNull null
             val name = entry["name"] as? String ?: return@mapNotNull null
-            Language(id, name)
+            Language(LanguageId(id), name)
         }
     }
 
@@ -112,28 +112,28 @@ internal class LanguageManager(
             .ifBlank { "lang" }
         var candidate = baseId
         var suffix = 2
-        while (existing.any { it.id == candidate }) {
+        while (existing.any { it.id.value == candidate }) {
             candidate = "${baseId}_$suffix"
             suffix += 1
         }
         val newEntry = mapOf("id" to candidate, "name" to normalized)
-        val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
+        val updated = existing.map { mapOf("id" to it.id.value, "name" to it.displayName) } + newEntry
         languagesStore.write(updated)
-        return Language(candidate, normalized)
+        return Language(LanguageId(candidate), normalized)
     }
 
     fun ensureLanguage(languageId: String) {
         val normalized = languageId.lowercase().trim()
         if (normalized.isBlank()) return
         val existing = getLanguages()
-        if (existing.any { it.id == normalized }) return
+        if (existing.any { it.id.value == normalized }) return
         val displayName = when (normalized) {
             "en" -> "English"
             "it" -> "Italian"
             else -> normalized.uppercase()
         }
         val newEntry = mapOf("id" to normalized, "name" to displayName)
-        val updated = existing.map { mapOf("id" to it.id, "name" to it.displayName) } + newEntry
+        val updated = existing.map { mapOf("id" to it.id.value, "name" to it.displayName) } + newEntry
         languagesStore.write(updated)
     }
 
@@ -147,7 +147,7 @@ internal class LanguageManager(
             val languageId = entry["languageId"] as? String ?: return@mapNotNull null
             val importedAt = (entry["importedAt"] as? Number)?.toLong() ?: 0L
             val displayName = entry["displayName"] as? String
-            LessonPack(packId, packVersion, languageId, importedAt, displayName)
+            LessonPack(PackId(packId), packVersion, LanguageId(languageId), importedAt, displayName)
         }
     }
 

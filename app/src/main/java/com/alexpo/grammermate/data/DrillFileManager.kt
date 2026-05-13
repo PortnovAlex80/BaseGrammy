@@ -52,8 +52,8 @@ internal class DrillFileManager(
             rows.mapIndexed { index, row ->
                 VocabEntry(
                     id = "${entryLesson}_${index + 1}",
-                    lessonId = entryLesson,
-                    languageId = entryLang,
+                    lessonId = LessonId(entryLesson),
+                    languageId = LanguageId(entryLang),
                     nativeText = row.nativeText,
                     targetText = row.targetText,
                     isHard = row.isHard

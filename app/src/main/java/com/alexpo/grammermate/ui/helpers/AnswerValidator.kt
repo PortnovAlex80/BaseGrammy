@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.ui.helpers
 
 import com.alexpo.grammermate.data.Normalizer
+import com.alexpo.grammermate.data.TrainingConfig
 
 /**
  * Result of validating a user's answer against accepted answers.
@@ -40,7 +41,7 @@ class AnswerValidator(
 
     companion object {
         /** Number of incorrect attempts before a hint is automatically shown. */
-        const val HINT_THRESHOLD = 3
+        const val HINT_THRESHOLD = TrainingConfig.HINT_THRESHOLD
     }
 
     /**

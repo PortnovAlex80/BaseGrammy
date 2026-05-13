@@ -65,6 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
 import com.alexpo.grammermate.data.VocabDrillDirection
@@ -371,7 +372,7 @@ private fun VocabDrillCardScreen(
     isVoiceActive: Boolean,
     ttsState: TtsState,
     onFlip: () -> Unit,
-    onAnswer: (VocabDrillViewModel.AnswerRating) -> Unit,
+    onAnswer: (SrsRating) -> Unit,
     onSpeak: (String) -> Unit,
     onStartVoice: () -> Unit,
     onAutoStartVoice: () -> Unit,
@@ -499,7 +500,7 @@ private fun VocabDrillCardScreen(
                 ) {
                     // Again
                     OutlinedButton(
-                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.AGAIN) },
+                        onClick = { onAnswer(SrsRating.AGAIN) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
@@ -512,7 +513,7 @@ private fun VocabDrillCardScreen(
                     }
                     // Hard
                     OutlinedButton(
-                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.HARD) },
+                        onClick = { onAnswer(SrsRating.HARD) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = Color(0xFFE65100)
@@ -530,7 +531,7 @@ private fun VocabDrillCardScreen(
                 ) {
                     // Good
                     Button(
-                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.GOOD) },
+                        onClick = { onAnswer(SrsRating.GOOD) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
@@ -544,7 +545,7 @@ private fun VocabDrillCardScreen(
                     }
                     // Easy
                     Button(
-                        onClick = { onAnswer(VocabDrillViewModel.AnswerRating.EASY) },
+                        onClick = { onAnswer(SrsRating.EASY) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF2E7D32)

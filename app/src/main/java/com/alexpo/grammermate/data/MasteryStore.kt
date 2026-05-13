@@ -72,8 +72,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                         ?: emptySet()
 
                     val mastery = LessonMasteryState(
-                        lessonId = lessonId,
-                        languageId = languageId,
+                        lessonId = LessonId(lessonId),
+                        languageId = LanguageId(languageId),
                         uniqueCardShows = (lessonData["uniqueCardShows"] as? Number)?.toInt() ?: 0,
                         totalCardShows = (lessonData["totalCardShows"] as? Number)?.toInt() ?: 0,
                         lastShowDateMs = (lessonData["lastShowDateMs"] as? Number)?.toLong() ?: 0L,
@@ -108,10 +108,10 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     override fun save(state: LessonMasteryState) {
         loadAll()
 
-        if (!cache.containsKey(state.languageId)) {
-            cache[state.languageId] = mutableMapOf()
+        if (!cache.containsKey(state.languageId.value)) {
+            cache[state.languageId.value] = mutableMapOf()
         }
-        cache[state.languageId]!![state.lessonId] = state
+        cache[state.languageId.value]!![state.lessonId.value] = state
 
         persistToFile()
     }
@@ -148,8 +148,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
         }
 
         val updated = LessonMasteryState(
-            lessonId = lessonId,
-            languageId = languageId,
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId),
             uniqueCardShows = if (isNewCard) {
                 (existing?.uniqueCardShows ?: 0) + 1
             } else {
@@ -173,8 +173,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
         if (cardIds.isEmpty()) return
 
         val existing = get(lessonId, languageId) ?: LessonMasteryState(
-            lessonId = lessonId,
-            languageId = languageId
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId)
         )
         val updated = existing.copy(shownCardIds = existing.shownCardIds + cardIds)
         save(updated)
@@ -197,8 +197,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
      */
     override fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState {
         return get(lessonId, languageId) ?: LessonMasteryState(
-            lessonId = lessonId,
-            languageId = languageId
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId)
         )
     }
 

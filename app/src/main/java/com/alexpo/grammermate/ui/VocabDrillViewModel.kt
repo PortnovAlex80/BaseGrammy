@@ -7,9 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.LessonStoreImpl
+import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.VocabDrillCard
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.data.VocabDrillSessionState
@@ -236,16 +238,14 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     /**
      * User knew the word. Advance interval step, update mastery, move to next card.
      */
-    enum class AnswerRating { AGAIN, HARD, GOOD, EASY }
-
     private val ratingIntervalDelta = mapOf(
-        AnswerRating.AGAIN to -100,  // reset to step 0
-        AnswerRating.HARD to 0,      // stay same step (review again sooner)
-        AnswerRating.GOOD to 1,      // advance 1 step
-        AnswerRating.EASY to 2       // advance 2 steps
+        SrsRating.AGAIN to -100,  // reset to step 0
+        SrsRating.HARD to 0,      // stay same step (review again sooner)
+        SrsRating.GOOD to 1,      // advance 1 step
+        SrsRating.EASY to 2       // advance 2 steps
     )
 
-    fun answerRating(rating: AnswerRating) {
+    fun answerRating(rating: SrsRating) {
         val session = _uiState.value.session ?: return
         val index = session.currentIndex
         if (index >= session.cards.size) return
@@ -257,17 +257,16 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
         val delta = ratingIntervalDelta[rating] ?: 0
         val newStepIndex = when {
-            rating == AnswerRating.AGAIN -> 0
+            rating == SrsRating.AGAIN -> 0
             else -> (currentStep + delta).coerceIn(0, maxStep)
         }
         val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
-        val LEARNED_THRESHOLD = 3  // words at step 3+ are considered learned
-        val isLearned = newStepIndex >= LEARNED_THRESHOLD
+        val isLearned = newStepIndex >= TrainingConfig.LEARNED_THRESHOLD
 
         val updatedMastery = card.mastery.copy(
             intervalStepIndex = newStepIndex,
-            correctCount = card.mastery.correctCount + (if (rating != AnswerRating.AGAIN) 1 else 0),
-            incorrectCount = card.mastery.incorrectCount + (if (rating == AnswerRating.AGAIN) 1 else 0),
+            correctCount = card.mastery.correctCount + (if (rating != SrsRating.AGAIN) 1 else 0),
+            incorrectCount = card.mastery.incorrectCount + (if (rating == SrsRating.AGAIN) 1 else 0),
             lastReviewDateMs = now,
             nextReviewDateMs = newNextReview,
             isLearned = isLearned
@@ -276,7 +275,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         masteryMap = masteryMap.toMutableMap().apply { this[card.word.id] = updatedMastery }
         masteryStore.upsertMastery(updatedMastery)
 
-        advanceCard(session, correct = rating != AnswerRating.AGAIN)
+        advanceCard(session, correct = rating != SrsRating.AGAIN)
     }
 
     private fun advanceCard(session: VocabDrillSessionState, correct: Boolean) {

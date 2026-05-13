@@ -77,7 +77,7 @@ class SessionRunner(
 
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
-    private var eliteSizeMultiplier: Double = 1.25
+    private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER
 
     private val drillProgressStore = DrillProgressStore(appContext)
 
@@ -173,7 +173,7 @@ class SessionRunner(
 
     fun onInputChanged(text: String) {
         stateAccess.updateState {
-            val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= 3
+            val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= AnswerValidator.HINT_THRESHOLD
             it.copy(cardSession = it.cardSession.copy(inputText = text, incorrectAttemptsForCard = if (resetAttempts) 0 else it.cardSession.incorrectAttemptsForCard, answerText = if (resetAttempts) null else it.cardSession.answerText))
         }
     }
@@ -186,7 +186,7 @@ class SessionRunner(
 
     fun setInputMode(mode: InputMode) {
         stateAccess.updateState {
-            val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= 3
+            val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= AnswerValidator.HINT_THRESHOLD
             val shouldTriggerVoice = mode == InputMode.VOICE &&
                 resetAttempts &&
                 it.cardSession.sessionState == SessionState.ACTIVE
@@ -248,7 +248,7 @@ class SessionRunner(
         } else {
             callbacks.playError()
             val nextIncorrect = state.cardSession.incorrectAttemptsForCard + 1
-            val hint = if (nextIncorrect >= 3) card.acceptedAnswers.joinToString(" / ") else null
+            val hint = if (nextIncorrect >= AnswerValidator.HINT_THRESHOLD) card.acceptedAnswers.joinToString(" / ") else null
             hintShown = hint != null
             val shouldTriggerVoice = !hintShown && state.cardSession.inputMode == InputMode.VOICE
             stateAccess.updateState {

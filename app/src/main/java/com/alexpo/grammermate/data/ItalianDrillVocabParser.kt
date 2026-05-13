@@ -378,8 +378,8 @@ object ItalianDrillVocabParser {
 
                     entries.add(VocabEntry(
                         id = "it_drill_${fileName}_${row.rank}",
-                        lessonId = lessonId,
-                        languageId = languageId,
+                        lessonId = LessonId(lessonId),
+                        languageId = LanguageId(languageId),
                         nativeText = row.word,
                         targetText = targetText,
                         isHard = row.isHard

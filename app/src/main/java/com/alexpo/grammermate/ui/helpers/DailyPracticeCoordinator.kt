@@ -8,8 +8,10 @@ import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.StoreFactory
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
 import com.alexpo.grammermate.data.WordMasteryState
@@ -450,7 +452,7 @@ class DailyPracticeCoordinator(
 
     // ── Vocab SRS ──────────────────────────────────────────────────────
 
-    fun rateVocabCard(rating: Int) {
+    fun rateVocabCard(rating: SrsRating) {
         val task = getCurrentTask() as? DailyTask.VocabFlashcard ?: return
         val wordId = task.word.id
         val state = stateAccess.uiState.value
@@ -460,15 +462,14 @@ class DailyPracticeCoordinator(
         val now = System.currentTimeMillis()
         val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1
         val newStepIndex = when (rating) {
-            0 -> 0  // Again - reset
-            1 -> current.intervalStepIndex  // Hard - stay
-            2 -> (current.intervalStepIndex + 1).coerceIn(0, maxStep)  // Good - +1
-            else -> (current.intervalStepIndex + 2).coerceIn(0, maxStep)  // Easy - +2
+            SrsRating.AGAIN -> 0  // reset
+            SrsRating.HARD -> current.intervalStepIndex  // stay
+            SrsRating.GOOD -> (current.intervalStepIndex + 1).coerceIn(0, maxStep)  // +1
+            SrsRating.EASY -> (current.intervalStepIndex + 2).coerceIn(0, maxStep)  // +2
         }
         val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
-        val LEARNED_THRESHOLD = 3
-        val isLearned = newStepIndex >= LEARNED_THRESHOLD
-        val updated = current.copy(correctCount = current.correctCount + (if (rating != 0) 1 else 0), incorrectCount = current.incorrectCount + (if (rating == 0) 1 else 0), intervalStepIndex = newStepIndex, lastReviewDateMs = now, nextReviewDateMs = newNextReview, isLearned = isLearned)
+        val isLearned = newStepIndex >= TrainingConfig.LEARNED_THRESHOLD
+        val updated = current.copy(correctCount = current.correctCount + (if (rating != SrsRating.AGAIN) 1 else 0), incorrectCount = current.incorrectCount + (if (rating == SrsRating.AGAIN) 1 else 0), intervalStepIndex = newStepIndex, lastReviewDateMs = now, nextReviewDateMs = newNextReview, isLearned = isLearned)
         store.upsertMastery(updated)
     }
 
