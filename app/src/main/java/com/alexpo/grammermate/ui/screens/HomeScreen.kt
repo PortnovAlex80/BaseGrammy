@@ -98,14 +98,14 @@ fun HomeScreen(
     onOpenMixChallenge: () -> Unit = {}
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
-        buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackLessonIds)
+        buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
     }
     var showMethod by remember { mutableStateOf(false) }
     var showLockedLessonHint by remember { mutableStateOf(false) }
     var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
     val languageCode = state.navigation.languages
         .firstOrNull { it.id == state.navigation.selectedLanguageId }
-        ?.id
+        ?.id?.value
         ?.uppercase()
         ?: "--"
     val isFirstLaunch = state.cardSession.correctCount == 0 &&
@@ -173,7 +173,7 @@ fun HomeScreen(
                 LanguageSelector(
                     label = languageCode,
                     languages = state.navigation.languages,
-                    selectedLanguageId = state.navigation.selectedLanguageId,
+                    selectedLanguageId = state.navigation.selectedLanguageId.value,
                     onSelect = onSelectLanguage
                 )
                 IconButton(onClick = onOpenSettings) {
@@ -605,7 +605,7 @@ fun LanguageSelector(
                 text = { Text(text = language.displayName) },
                 onClick = {
                     expanded = false
-                    if (language.id != selectedLanguageId) onSelect(language.id)
+                    if (language.id.value != selectedLanguageId) onSelect(language.id.value)
                 }
             )
         }
@@ -622,7 +622,7 @@ fun buildLessonTiles(
     // Filter lessons to only those in the active pack
     val packLessons = if (activePackLessonIds != null) {
         // Preserve the order from the pack's lesson list
-        activePackLessonIds.mapNotNull { id -> lessons.firstOrNull { it.id == id } }
+        activePackLessonIds.mapNotNull { id -> lessons.firstOrNull { it.id.value == id } }
     } else {
         lessons
     }
@@ -632,7 +632,7 @@ fun buildLessonTiles(
     // Find the highest lesson with any progress (masteryPercent > 0)
     var lastLessonWithProgress = -1
     for (i in packLessons.indices) {
-        val flower = lessonFlowers[packLessons[i].id]
+        val flower = lessonFlowers[packLessons[i].id.value]
         android.util.Log.d("GrammarMate", "buildLessonTiles: lesson $i (${packLessons[i].id}) -> masteryPercent=${flower?.masteryPercent}")
         if (flower != null && flower.masteryPercent > 0f) {
             lastLessonWithProgress = i
@@ -648,7 +648,7 @@ fun buildLessonTiles(
             testMode -> LessonTileState.SEED
             i == 0 -> LessonTileState.SPROUT
             else -> {
-                val currentFlower = lessonFlowers[lesson.id]
+                val currentFlower = lessonFlowers[lesson.id.value]
 
                 when {
                     // Current lesson has progress - show flower
@@ -662,7 +662,7 @@ fun buildLessonTiles(
                     // This lesson is before the last with progress - check if previous has progress
                     i < lastLessonWithProgress + 1 -> {
                         val prevLesson = packLessons.getOrNull(i - 1)
-                        val prevFlower = prevLesson?.let { lessonFlowers[it.id] }
+                        val prevFlower = prevLesson?.let { lessonFlowers[it.id.value] }
                         if (prevFlower != null && prevFlower.masteryPercent > 0f) {
                             LessonTileState.UNLOCKED
                         } else {
@@ -676,7 +676,7 @@ fun buildLessonTiles(
                 }
             }
         }
-        tiles.add(LessonTileUi(i, lesson?.id, state))
+        tiles.add(LessonTileUi(i, lesson?.id?.value, state))
     }
     return tiles
 }

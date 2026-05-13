@@ -248,7 +248,7 @@ A horizontal row split 70/30:
 
 Material `Card` with full-width layout:
 
-- Left column (weighted): "RU" label + prompt text (20sp, `SemiBold`) showing the full `promptRu` with parenthetical hints included.
+- Left column (weighted): "RU" label + prompt text (20sp, `SemiBold`) showing `promptRu` — parenthetical hints included on EASY, stripped on MEDIUM/HARD based on `HintLevel`.
 - Right: `TtsSpeakerButton` (see 12.4.9).
 
 Custom overrides: Verb Drill and Daily Practice both add SuggestionChip rows below the prompt showing verb, tense, and group info when the card is a `VerbDrillCard`.

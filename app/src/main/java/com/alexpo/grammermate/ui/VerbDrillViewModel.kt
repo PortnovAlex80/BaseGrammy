@@ -129,7 +129,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun loadCards(languageId: String? = null) {
-        val lang = languageId ?: progressStore.load().languageId
+        val lang = languageId ?: progressStore.load().languageId.value
         val files = if (currentPackId != null) {
             lessonStore.getVerbDrillFiles(currentPackId!!, lang)
         } else {

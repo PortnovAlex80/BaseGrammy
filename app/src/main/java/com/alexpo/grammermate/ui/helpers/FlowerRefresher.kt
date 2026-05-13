@@ -35,18 +35,18 @@ class FlowerRefresher(
         val nowMs = System.currentTimeMillis()
 
         val masteryMap = lessons.associate { lesson ->
-            lesson.id to masteryStore.get(lesson.id, languageId)
+            lesson.id to masteryStore.get(lesson.id.value, languageId.value)
         }
 
         val flowerStates = lessons.associate { lesson ->
             val mastery = masteryMap[lesson.id]
             val flower = FlowerCalculator.calculate(mastery, lesson.cards.size)
             Log.d(logTag, "Flower for lesson ${lesson.id}: mastery=${mastery?.uniqueCardShows ?: 0}, state=${flower.state}, scale=${flower.scaleMultiplier}")
-            lesson.id to flower
+            lesson.id.value to flower
         }
 
         val currentLessonId = state.navigation.selectedLessonId
-        val currentFlower = currentLessonId?.let { flowerStates[it] }
+        val currentFlower = currentLessonId?.let { flowerStates[it.value] }
         val currentShownCount = currentLessonId?.let { lessonId ->
             masteryMap[lessonId]?.shownCardIds?.size ?: 0
         } ?: 0

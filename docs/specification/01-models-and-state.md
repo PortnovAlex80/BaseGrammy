@@ -174,7 +174,7 @@ Sources:
 | `bossMegaRewards` | `Map<String, String>` | `emptyMap()` | Per-language mega boss rewards. |
 | `voiceActiveMs` | `Long` | `0L` | Time spent in voice input mode. |
 | `voiceWordCount` | `Int` | `0` | Words recognized via voice. |
-| `hintCount` | `Int` | `0` | Hints used in current session. |
+| `hintCount` | `Int` | `0` | Hints used in current session. See hint definition below. |
 | `eliteStepIndex` | `Int` | `0` | Current step in elite (daily practice) mode. |
 | `eliteBestSpeeds` | `List<Double>` | `emptyList()` | Best typing speeds per elite step. |
 | `currentScreen` | `String` | `"HOME"` | Screen name for state restoration. |
@@ -184,6 +184,8 @@ Sources:
 | `dailyCursor` | `DailyCursorState` | `DailyCursorState()` | Daily practice cursor state. |
 
 **Note on `bossLessonRewards` / `bossMegaRewards`:** These store `String` representations of `BossReward` enum values. The `TrainingUiState` versions use typed `Map<String, BossReward>`. The `TrainingProgress` version is the serialized form.
+
+**Definition — "Hints":** In this app, "hints" refer specifically to parenthetical target-language insertions in the Russian prompt text (e.g., `(dire)` in `я говорю (dire) правду`). These are NOT the same as UI features like Word Bank, tense labels, or the "Show Answer" eye button. The `hintCount` field tracks usage of these parenthetical hints. The `HintLevel` enum controls whether `promptRu` is displayed with parenthetical content included (EASY) or stripped (MEDIUM/HARD).
 
 ---
 
@@ -577,7 +579,7 @@ Sources:
 | `activeTimeMs` | `Long` | `0L` | Active training time. |
 | `voiceActiveMs` | `Long` | `0L` | Time in voice mode. |
 | `voiceWordCount` | `Int` | `0` | Words recognized via voice. |
-| `hintCount` | `Int` | `0` | Hints used. |
+| `hintCount` | `Int` | `0` | Hints used (parenthetical hints only, see definition in 1.1.8). |
 | `voicePromptStartMs` | `Long?` | `null` | Start time of voice prompt for speed calculation. |
 | `answerText` | `String?` | `null` | Correct answer to display after check. |
 | `lastResult` | `Boolean?` | `null` | Result of last answer check. |

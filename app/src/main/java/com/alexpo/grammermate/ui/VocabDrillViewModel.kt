@@ -90,7 +90,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         } else {
             // No active pack: scan all installed packs for vocab drill files
             lessonStore.getInstalledPacks().flatMap { installedPack ->
-                lessonStore.getVocabDrillFiles(installedPack.packId, lang)
+                lessonStore.getVocabDrillFiles(installedPack.packId.value, lang)
             }
         }
 

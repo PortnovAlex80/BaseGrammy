@@ -359,10 +359,10 @@ class SessionRunner(
         stateAccess.updateState {
             val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
             val lessonId = it.navigation.selectedLessonId
-            val mastery = lessonId?.let { id -> callbacks.getMastery(id, it.navigation.selectedLanguageId) }
-            val schedule = lessonId?.let { id -> callbacks.getSchedule(id) }
+            val mastery = lessonId?.let { id -> callbacks.getMastery(id.value, it.navigation.selectedLanguageId.value) }
+            val schedule = lessonId?.let { id -> callbacks.getSchedule(id.value) }
             val subLessons = schedule?.subLessons.orEmpty()
-            val actualCompletedCount = callbacks.calculateCompletedSubLessons(subLessons, mastery, lessonId)
+            val actualCompletedCount = callbacks.calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)
 
             val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
             val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
@@ -570,7 +570,7 @@ class SessionRunner(
     // ── Drill sub-mode ──────────────────────────────────────────────────
 
     fun showDrillStartDialog(lessonId: String) {
-        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return
+        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id.value == lessonId } ?: return
         if (lesson.drillCards.isEmpty()) return
         val hasProgress = drillProgressStore.hasProgress(lessonId)
         stateAccess.updateState {
@@ -587,7 +587,7 @@ class SessionRunner(
         pauseTimer()
 
         val startCardIndex = if (resume) {
-            drillProgressStore.getDrillProgress(lessonId).coerceIn(0, drillCards.size - 1)
+            drillProgressStore.getDrillProgress(lessonId.value).coerceIn(0, drillCards.size - 1)
         } else {
             0
         }
@@ -608,7 +608,7 @@ class SessionRunner(
         val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return
         val drillCards = lesson.drillCards
         if (cardIndex >= drillCards.size) {
-            finishDrill(lessonId)
+            finishDrill(lessonId.value)
             return
         }
 
@@ -628,10 +628,10 @@ class SessionRunner(
         val lessonId = state.navigation.selectedLessonId ?: return
 
         val nextIndex = state.drill.drillCardIndex + 1
-        drillProgressStore.saveDrillProgress(lessonId, nextIndex)
+        drillProgressStore.saveDrillProgress(lessonId.value, nextIndex)
 
         if (nextIndex >= state.drill.drillTotalCards) {
-            finishDrill(lessonId)
+            finishDrill(lessonId.value)
         } else {
             loadDrillCard(nextIndex, activate = true)
         }
@@ -653,7 +653,7 @@ class SessionRunner(
         pauseTimer()
         val lessonId = state.navigation.selectedLessonId
         if (lessonId != null && state.drill.drillCardIndex > 0) {
-            drillProgressStore.saveDrillProgress(lessonId, state.drill.drillCardIndex)
+            drillProgressStore.saveDrillProgress(lessonId.value, state.drill.drillCardIndex)
         }
         stateAccess.updateState {
             it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))

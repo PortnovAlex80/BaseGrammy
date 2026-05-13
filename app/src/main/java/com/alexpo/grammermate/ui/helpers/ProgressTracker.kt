@@ -4,10 +4,13 @@ import android.util.Log
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
@@ -46,9 +49,9 @@ class ProgressTracker(
         bossActive: Boolean,
         isDrillMode: Boolean,
         inputMode: InputMode,
-        selectedLanguageId: String,
+        selectedLanguageId: LanguageId,
         lessons: List<Lesson>,
-        selectedLessonId: String?
+        selectedLessonId: LessonId?
     ) {
         // Boss battles do not count toward mastery/flower/SRS progress
         if (bossActive) return
@@ -65,9 +68,9 @@ class ProgressTracker(
             return
         }
 
-        Log.d(logTag, "Recording card show: lessonId=$lessonId, cardId=${card.id}, mode=$inputMode")
-        masteryStore.recordCardShow(lessonId, languageId, card.id)
-        val mastery = masteryStore.get(lessonId, languageId)
+        Log.d(logTag, "Recording card show: lessonId=${lessonId.value}, cardId=${card.id}, mode=$inputMode")
+        masteryStore.recordCardShow(lessonId.value, languageId.value, card.id)
+        val mastery = masteryStore.get(lessonId.value, languageId.value)
         Log.d(logTag, "After record: uniqueCardShows=${mastery?.uniqueCardShows}, totalShows=${mastery?.totalCardShows}")
     }
 
@@ -79,8 +82,8 @@ class ProgressTracker(
     fun markSubLessonCardsShown(
         cards: List<SentenceCard>,
         inputMode: InputMode,
-        selectedLessonId: String?,
-        selectedLanguageId: String,
+        selectedLessonId: LessonId?,
+        selectedLanguageId: LanguageId,
         lessons: List<Lesson>
     ) {
         if (inputMode != InputMode.WORD_BANK || cards.isEmpty()) return
@@ -92,7 +95,7 @@ class ProgressTracker(
             ?.toSet()
             ?: return
         val cardIds = cards.map { it.id }.filter { lessonCardIds.contains(it) }
-        masteryStore.markCardsShownForProgress(lessonId, selectedLanguageId, cardIds)
+        masteryStore.markCardsShownForProgress(lessonId.value, selectedLanguageId.value, cardIds)
     }
 
     // ── Lesson completion ────────────────────────────────────────────
@@ -103,12 +106,12 @@ class ProgressTracker(
      */
     fun checkAndMarkLessonCompleted(
         completedSubLessonCount: Int,
-        selectedLessonId: String?,
-        selectedLanguageId: String
+        selectedLessonId: LessonId?,
+        selectedLanguageId: LanguageId
     ) {
         val completedFirstCycle = completedSubLessonCount >= TrainingConfig.BOSS_UNLOCK_SUB_LESSONS
         if (completedFirstCycle && selectedLessonId != null) {
-            masteryStore.markLessonCompleted(selectedLessonId, selectedLanguageId)
+            masteryStore.markLessonCompleted(selectedLessonId.value, selectedLanguageId.value)
         }
     }
 
@@ -122,7 +125,7 @@ class ProgressTracker(
     fun calculateCompletedSubLessons(
         subLessons: List<ScheduledSubLesson>,
         mastery: LessonMasteryState?,
-        lessonId: String?,
+        lessonId: LessonId?,
         lessons: List<Lesson>
     ): Int {
         if (lessonId == null || mastery == null || mastery.shownCardIds.isEmpty()) return 0
@@ -156,9 +159,9 @@ class ProgressTracker(
      */
     fun resolveCardLessonId(
         card: SentenceCard,
-        selectedLessonId: String?,
+        selectedLessonId: LessonId?,
         lessons: List<Lesson>
-    ): String {
+    ): LessonId {
         // Prefer the currently selected lesson if it contains this card
         if (selectedLessonId != null) {
             val selectedLesson = lessons.find { it.id == selectedLessonId }
@@ -170,7 +173,7 @@ class ProgressTracker(
             .find { lesson -> lesson.cards.any { it.id == card.id } }
             ?.id
             ?: selectedLessonId
-            ?: "unknown"
+            ?: LessonId("unknown")
     }
 
     // ── Progress-based lesson info ───────────────────────────────────
@@ -185,8 +188,8 @@ class ProgressTracker(
      * Returns (lessonId, lessonLevel) where lessonLevel is 1-based.
      */
     fun resolveProgressLessonInfo(
-        activePackId: String?,
-        selectedLanguageId: String,
+        activePackId: PackId?,
+        selectedLanguageId: LanguageId,
         activePackLessonIds: List<String>?,
         lessons: List<Lesson>,
         dailyCursor: DailyCursorState
@@ -196,13 +199,13 @@ class ProgressTracker(
         val packLessonIds = activePackLessonIds ?: return null
         if (packLessonIds.isEmpty()) return null
 
-        val orderedLessons = packLessonIds.mapNotNull { id -> lessons.firstOrNull { it.id == id } }
+        val orderedLessons = packLessonIds.mapNotNull { id -> lessons.firstOrNull { it.id.value == id } }
         if (orderedLessons.isEmpty()) return null
 
         // Find the highest lesson with any progress (mastery > 0)
         var lastLessonWithProgress = -1
         for (i in orderedLessons.indices) {
-            val mastery = masteryStore.get(orderedLessons[i].id, langId)
+            val mastery = masteryStore.get(orderedLessons[i].id.value, langId.value)
             val flower = FlowerCalculator.calculate(mastery, orderedLessons[i].cards.size)
             if (flower.masteryPercent > 0f) {
                 lastLessonWithProgress = i
@@ -223,7 +226,7 @@ class ProgressTracker(
 
         val lesson = orderedLessons.getOrNull(progressIndex) ?: return null
         val level = (progressIndex + 1).coerceIn(1, 12)
-        return lesson.id to level
+        return lesson.id.value to level
     }
 
     /**
@@ -231,8 +234,8 @@ class ProgressTracker(
      * Delegates to resolveProgressLessonInfo, returns level or 1.
      */
     fun getProgressLessonLevel(
-        activePackId: String?,
-        selectedLanguageId: String,
+        activePackId: PackId?,
+        selectedLanguageId: LanguageId,
         activePackLessonIds: List<String>?,
         lessons: List<Lesson>,
         dailyCursor: DailyCursorState
@@ -268,7 +271,7 @@ class ProgressTracker(
             TrainingProgress(
                 languageId = state.navigation.selectedLanguageId,
                 mode = state.navigation.mode,
-                lessonId = state.navigation.selectedLessonId,
+                lessonId = state.navigation.selectedLessonId?.value,
                 currentIndex = state.cardSession.currentIndex,
                 correctCount = state.cardSession.correctCount,
                 incorrectCount = state.cardSession.incorrectCount,
@@ -311,10 +314,10 @@ class ProgressTracker(
     fun advanceCursor(
         currentCursor: DailyCursorState,
         sentenceCount: Int,
-        selectedLanguageId: String
+        selectedLanguageId: LanguageId
     ): DailyCursorState {
         val newOffset = currentCursor.sentenceOffset + sentenceCount
-        val lessons = lessonStore.getLessons(selectedLanguageId)
+        val lessons = lessonStore.getLessons(selectedLanguageId.value)
         val currentLesson = lessons.getOrNull(currentCursor.currentLessonIndex)
         val lessonSize = currentLesson?.cards?.size ?: 0
 

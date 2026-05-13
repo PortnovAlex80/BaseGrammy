@@ -112,12 +112,12 @@ class AudioCoordinator(
         val effectiveSpeed = speed ?: stateAccess.uiState.value.audio.ttsSpeed
         coroutineScope.launch {
             if (ttsEngine.state.value != TtsState.READY
-                || ttsEngine.activeLanguageId != langId
+                || ttsEngine.activeLanguageId != langId.value
             ) {
-                ttsEngine.initialize(langId)
+                ttsEngine.initialize(langId.value)
             }
             if (ttsEngine.state.value == TtsState.READY) {
-                ttsEngine.speak(text, languageId = langId, speed = effectiveSpeed)
+                ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
             } else {
                 Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
             }
@@ -178,7 +178,7 @@ class AudioCoordinator(
                 stateAccess.updateState { current ->
                     val updatedBgStates = current.audio.bgTtsDownloadStates + (languageId to downloadState)
                     val updatedReady = current.audio.ttsModelsReady + (languageId to (downloadState is DownloadState.Done))
-                    val downloadStateOverride = if (languageId == current.navigation.selectedLanguageId
+                    val downloadStateOverride = if (languageId == current.navigation.selectedLanguageId.value
                         && downloadState !is DownloadState.Idle
                         && current.audio.ttsDownloadState !is DownloadState.Done
                     ) {
@@ -186,7 +186,7 @@ class AudioCoordinator(
                     } else {
                         current.audio.ttsDownloadState
                     }
-                    current.copy(audio = current.audio.copy(bgTtsDownloadStates = updatedBgStates, ttsModelsReady = updatedReady, ttsDownloadState = downloadStateOverride, ttsModelReady = if (languageId == current.navigation.selectedLanguageId && downloadState is DownloadState.Done) true else current.audio.ttsModelReady))
+                    current.copy(audio = current.audio.copy(bgTtsDownloadStates = updatedBgStates, ttsModelsReady = updatedReady, ttsDownloadState = downloadStateOverride, ttsModelReady = if (languageId == current.navigation.selectedLanguageId.value && downloadState is DownloadState.Done) true else current.audio.ttsModelReady))
                 }
             }
         }
@@ -200,7 +200,7 @@ class AudioCoordinator(
 
     fun checkTtsModel() {
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
-        val ready = ttsModelManager.isModelReady(langId)
+        val ready = ttsModelManager.isModelReady(langId.value)
         stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = ready)) }
     }
 
@@ -278,7 +278,7 @@ class AudioCoordinator(
         val languages = stateAccess.uiState.value.navigation.languages
         if (languages.isEmpty()) return
 
-        val missingLanguages = languages.map { it.id }
+        val missingLanguages = languages.map { it.id.value }
             .filter { !ttsModelManager.isModelReady(it) }
 
         if (missingLanguages.isEmpty()) return
@@ -292,7 +292,7 @@ class AudioCoordinator(
                 }
 
                 stateAccess.updateState { current ->
-                    val selectedBgState = stateMap[current.navigation.selectedLanguageId]
+                    val selectedBgState = stateMap[current.navigation.selectedLanguageId.value]
                     val downloadStateOverride = if (selectedBgState != null
                         && selectedBgState !is DownloadState.Idle
                         && current.audio.ttsDownloadState !is DownloadState.Done
@@ -308,7 +308,7 @@ class AudioCoordinator(
                             }
                         }
                     }
-                    current.copy(audio = current.audio.copy(bgTtsDownloadStates = stateMap, bgTtsDownloading = anyActive, ttsModelReady = ttsModelManager.isModelReady(current.navigation.selectedLanguageId), ttsDownloadState = downloadStateOverride, ttsModelsReady = updatedReady))
+                    current.copy(audio = current.audio.copy(bgTtsDownloadStates = stateMap, bgTtsDownloading = anyActive, ttsModelReady = ttsModelManager.isModelReady(current.navigation.selectedLanguageId.value), ttsDownloadState = downloadStateOverride, ttsModelsReady = updatedReady))
                 }
 
                 if (allDone) {
@@ -349,12 +349,12 @@ class AudioCoordinator(
             return
         }
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
-        if (ttsModelManager.isModelReady(langId)) {
+        if (ttsModelManager.isModelReady(langId.value)) {
             stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done)) }
             return
         }
         ttsDownloadJob = coroutineScope.launch(Dispatchers.IO) {
-            ttsModelManager.download(langId).collect { downloadState ->
+            ttsModelManager.download(langId.value).collect { downloadState ->
                 stateAccess.updateState { it.copy(audio = it.audio.copy(ttsDownloadState = downloadState)) }
                 if (downloadState is DownloadState.Done) {
                     stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = true)) }
@@ -393,7 +393,7 @@ class AudioCoordinator(
             return ""
         }
         if (!engine.isReady) {
-            engine.initialize(stateAccess.uiState.value.navigation.selectedLanguageId)
+            engine.initialize(stateAccess.uiState.value.navigation.selectedLanguageId.value)
         }
 
         // Check if initialization failed

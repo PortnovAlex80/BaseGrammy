@@ -104,7 +104,7 @@ fun GrammarMateApp() {
             if (state.audio.ttsState == TtsState.SPEAKING) {
                 vm.stopTts()
             } else if (!state.audio.ttsModelReady) {
-                val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId]
+                val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
                 if (bgState != null && bgState !is DownloadState.Idle) {
                     vm.setTtsDownloadStateFromBackground(bgState)
                 }
@@ -325,7 +325,7 @@ private fun AppScreenContent(
                 onScreenChange(AppScreen.TRAINING)
             },
             onDrillStart = {
-                state.navigation.selectedLessonId?.let { vm.showDrillStartDialog(it) }
+                state.navigation.selectedLessonId?.let { vm.showDrillStartDialog(it.value) }
             }
         )
         AppScreen.ELITE -> { onScreenChange(AppScreen.HOME) }
@@ -362,9 +362,9 @@ private fun AppScreenContent(
             val verbDrillVm = viewModel<VerbDrillViewModel>()
             val activePackId = state.navigation.activePackId
             if (activePackId != null) {
-                verbDrillVm.reloadForPack(activePackId)
+                verbDrillVm.reloadForPack(activePackId.value)
             } else {
-                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId)
+                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
             }
             VerbDrillScreen(
                 viewModel = verbDrillVm,
@@ -376,9 +376,9 @@ private fun AppScreenContent(
             val vocabDrillVm = viewModel<VocabDrillViewModel>()
             val packId = state.navigation.activePackId
             if (packId != null) {
-                vocabDrillVm.reloadForPack(packId, state.navigation.selectedLanguageId)
+                vocabDrillVm.reloadForPack(packId.value, state.navigation.selectedLanguageId.value)
             } else {
-                vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId)
+                vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
             }
             VocabDrillScreen(
                 viewModel = vocabDrillVm,
@@ -450,7 +450,7 @@ private fun DailyPracticeScreenContent(
         currentTask = dailyTask,
         onSubmitSentence = vm::submitDailySentenceAnswer,
         onSubmitVerb = vm::submitDailyVerbAnswer,
-        languageId = state.navigation.selectedLanguageId,
+        languageId = state.navigation.selectedLanguageId.value,
         onShowSentenceAnswer = vm::getDailySentenceAnswer,
         onShowVerbAnswer = vm::getDailyVerbAnswer,
         onFlipVocabCard = { /* no-op: flip tracked locally */ },
@@ -532,7 +532,7 @@ private fun AppDialogs(
         if (dialogs.showTtsDownloadDialog) {
             TtsDownloadDialog(
                 downloadState = state.audio.ttsDownloadState,
-                languageId = state.navigation.selectedLanguageId,
+                languageId = state.navigation.selectedLanguageId.value,
                 onConfirm = { vm.startTtsDownload() },
                 onDismiss = {
                     vm.dismissTtsDownloadDialog()

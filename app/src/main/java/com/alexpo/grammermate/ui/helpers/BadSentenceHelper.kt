@@ -35,15 +35,15 @@ class BadSentenceHelper(
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return
         badSentenceStore.addBadSentence(
-            packId = packId,
+            packId = packId.value,
             cardId = card.id,
-            languageId = state.navigation.selectedLanguageId,
+            languageId = state.navigation.selectedLanguageId.value,
             sentence = card.promptRu,
             translation = card.acceptedAnswers.joinToString(" / "),
             mode = "training"
         )
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId)))
+            it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId.value)))
         }
         if (state.drill.isDrillMode) {
             callbacks.advanceDrillCard()
@@ -53,21 +53,21 @@ class BadSentenceHelper(
     fun unflagBadSentence() {
         val card = stateAccess.uiState.value.cardSession.currentCard ?: return
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return
-        badSentenceStore.removeBadSentence(packId, card.id)
+        badSentenceStore.removeBadSentence(packId.value, card.id)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId)))
+            it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId.value)))
         }
     }
 
     fun isBadSentence(): Boolean {
         val card = stateAccess.uiState.value.cardSession.currentCard ?: return false
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return false
-        return badSentenceStore.isBadSentence(packId, card.id)
+        return badSentenceStore.isBadSentence(packId.value, card.id)
     }
 
     fun exportBadSentences(): String? {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return null
-        val entries = badSentenceStore.getBadSentences(packId)
+        val entries = badSentenceStore.getBadSentences(packId.value)
         if (entries.isEmpty()) return null
         val file = badSentenceStore.exportUnified()
         return file.absolutePath
@@ -78,7 +78,7 @@ class BadSentenceHelper(
     fun flagDailyBadSentence(cardId: String, languageId: String, sentence: String, translation: String, mode: String) {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return
         badSentenceStore.addBadSentence(
-            packId = packId,
+            packId = packId.value,
             cardId = cardId,
             languageId = languageId,
             sentence = sentence,
@@ -90,18 +90,18 @@ class BadSentenceHelper(
 
     fun unflagDailyBadSentence(cardId: String) {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return
-        badSentenceStore.removeBadSentence(packId, cardId)
+        badSentenceStore.removeBadSentence(packId.value, cardId)
         dailyBadCardIds.remove(cardId)
     }
 
     fun isDailyBadSentence(cardId: String): Boolean {
         return dailyBadCardIds.contains(cardId) ||
-            stateAccess.uiState.value.navigation.activePackId?.let { badSentenceStore.isBadSentence(it, cardId) } == true
+            stateAccess.uiState.value.navigation.activePackId?.let { badSentenceStore.isBadSentence(it.value, cardId) } == true
     }
 
     fun exportDailyBadSentences(): String? {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return null
-        val entries = badSentenceStore.getBadSentences(packId)
+        val entries = badSentenceStore.getBadSentences(packId.value)
         if (entries.isEmpty()) return null
         val file = badSentenceStore.exportUnified()
         return file.absolutePath
@@ -130,6 +130,6 @@ class BadSentenceHelper(
     /** Compute the bad-sentence count for the active pack (used during drill transitions). */
     fun getBadSentenceCount(): Int {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return 0
-        return badSentenceStore.getBadSentenceCount(packId)
+        return badSentenceStore.getBadSentenceCount(packId.value)
     }
 }

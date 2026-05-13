@@ -41,7 +41,7 @@ class StoryRunner(
         val state = stateAccess.uiState.value
         val lessonId = state.navigation.selectedLessonId ?: return
         val languageId = state.navigation.selectedLanguageId
-        val story = lessonStore.getStoryQuizzes(lessonId, phase, languageId).firstOrNull()
+        val story = lessonStore.getStoryQuizzes(lessonId.value, phase, languageId.value).firstOrNull()
         if (story == null) {
             stateAccess.updateState {
                 it.copy(story = it.story.copy(storyErrorMessage = "Story not found. Please import the pack again."))

@@ -120,24 +120,35 @@ Skip Assessment only for: plain conversation, questions from loaded context, 1�
 
 ### Step 1 — Choose mode based on verdict
 
-```
-SUBAGENTS                           TEAM
-─────────────────────────────       ─────────────────────────────
-Goal: WIDTH                         Goal: DEPTH + CONFLICT
-Independent parallel solutions.     Role-based argumentation.
-Each agent produces a full result.  Agents dispute and self-organize.
-Main scores and picks the winner.   Team lead assembles final result.
+**Two agent modes, each matching a decomposition strategy:**
 
-Best for:                           Best for:
-- unknown solution space            - complex execution, known direction
-- parallel alternatives needed      - cross-layer changes
-- fire-and-forget exploration       - high-stakes features
-                                    - when internal conflict = quality
 ```
+SUBAGENTS + WAVES                    TEAM + LAYERS
+─────────────────────────────       ─────────────────────────────
+Goal: WIDTH                          Goal: DEPTH + COORDINATION
+Independent parallel solutions.      Sequential layer-by-layer execution.
+Each agent produces a full result.   Agents coordinate via SendMessage.
+Main collects and picks winner.      Data agent → Helpers agent → UI agent.
+
+Best for:                            Best for:
+- unknown solution space             - cascading refactors across layers
+- parallel alternatives needed       - type migrations (20+ files)
+- read-only analysis / audits        - interface changes with implementors
+- fire-and-forget exploration        - any task where agents share files
+- new features (all new files)       - each layer adapts to previous layer's changes
+```
+
+**When Assessment identifies layer-spanning changes → default to TEAM mode.**
+Agents are assigned by layer: DATA-AGENT, HELPERS-AGENT, UI-AGENT. Each works sequentially, using SendMessage to pass summaries of what changed to the next layer's agent.
+
+**When Assessment identifies zero file overlap → use SUBAGENTS mode.**
+Fire-and-forget parallel agents. Main context collects results.
+
+**Flexibility:** The mode is a spectrum. A task might start as SUBAGENTS (analysis phase) then switch to TEAM (implementation phase). Assessment decides.
 
 **Combined pattern (highest-stakes tasks):**
 Round 1 → SUBAGENTS explore → score → pick winner
-Round 2 → TEAM implements with full role conflict
+Round 2 → TEAM implements with layer coordination
 
 ---
 
@@ -167,27 +178,56 @@ Framing IS the role. Do not assign roles top-down.
 **Role conflict (team only):** first SendMessage wins the role.
 The other picks a different role or goes idle.
 
-### Batch execution rule (MANDATORY)
+### Decomposition strategy: LAYERS + TEAM for refactoring (MANDATORY)
 
-NEVER spawn all agents for a task at once. Execute in waves of 3–5 agents maximum.
+**The key insight: layer-based decomposition pairs naturally with TEAM mode.**
+When work cascades across layers (data → helpers → UI), agents need to know what the previous layer changed. TEAM mode gives them SendMessage for coordination. SUBAGENTS leaves them blind.
 
-**Wave pattern:**
-1. Spawn Wave N (≤ 5 agents simultaneously)
-2. WAIT for all Wave N agents to complete
-3. Collect results in main context
-4. Validate: build passes, no regressions, dependencies resolved
-5. Only then spawn Wave N+1
+**LAYER-TEAM** (default for any task touching ≥2 layers):
+```
+DATA-AGENT: data/    → Models.kt, stores, parsers, calculators
+HELPERS-AGENT: ui/helpers/ → all helper files (waits for DATA-AGENT summary)
+UI-AGENT: ui/        → TrainingViewModel, GrammarMateApp, screens (waits for HELPERS-AGENT summary)
+```
+- Sequential execution with SendMessage coordination between layers
+- DATA-AGENT finishes → sends summary of changed APIs → HELPERS-AGENT adapts
+- HELPERS-AGENT finishes → sends summary → UI-AGENT adapts
+- Real build checkpoints after each agent (data compiles alone → data+helpers → full build)
+- Zero file conflicts by design
 
-**Why:** More than 5 parallel agents causes context collision (agents overwrite each other's files), undetectable mid-task failures, unmanageable merge conflicts, and loss of ability to course-correct between steps.
+**WAVE-SUBAGENTS** (only for independent tasks with zero file overlap):
+- Parallel agents, no inter-agent communication
+- Only valid when no two agents touch the same file
+- Good for: read-only analysis, adding independent features, separate bug fixes
 
-**Wave checkpoint (required between waves):**
-After each wave, main context MUST:
-1. List completed steps: ✓ / ✗ for each agent
-2. Run build check (via subagent) if any file was modified
-3. Confirm no broken imports or missing dependencies
-4. Report to user: "Wave N complete. N/N steps succeeded. Proceeding to Wave N+1: [list]"
+**When to use which:**
 
-If a wave produces errors — FIX BEFORE proceeding. Never spawn Wave N+1 when Wave N has unresolved failures.
+| Scenario | Strategy | Mode |
+|----------|----------|------|
+| Type migration (20+ files) | LAYERS | TEAM |
+| Refactoring shared interfaces | LAYERS | TEAM |
+| Adding new feature (new files) | WAVES | SUBAGENTS |
+| Architecture audit | WAVES | SUBAGENTS |
+| Bug fix in one layer | Single agent | N/A |
+| Mixed (some layers change, some don't) | LAYERS for affected only | TEAM |
+| Bug fix in one layer | Single agent |
+
+**Hard rules:**
+1. Never assign the same file to two agents
+2. Never use worktrees for write operations (changes can be silently lost on auto-cleanup)
+3. Max 3 implementation agents; 5 for read-only analysis
+4. After each layer agent: commit → build check → SendMessage summary to next layer → next agent
+5. Trivial tasks (< 3 files, < 30 lines) → single agent, no decomposition
+6. TEAM mode is for coordination, not just "quality through conflict" — layer coordination is an equally valid TEAM use case
+7. Be flexible: Assessment decides strategy, not dogma. Mix approaches if the task demands it.
+
+**Checkpoint (required after each layer agent):**
+1. List result: ✓ / ✗
+2. Commit changes
+3. Run build check (via subagent)
+4. SendMessage summary of changed APIs to next layer's agent
+5. Report to user
+6. Fix failures BEFORE spawning next agent
 
 ---
 

@@ -4,6 +4,7 @@ import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.SessionState
@@ -60,9 +61,9 @@ class BossOrchestrator(
         val lessons = state.navigation.lessons
 
         // Determine which lessons the user has started
-        val startedIds = mutableSetOf<String>()
+        val startedIds = mutableSetOf<LessonId>()
         for (lesson in lessons) {
-            val mastery = masteryStore.get(lesson.id, languageId)
+            val mastery = masteryStore.get(lesson.id.value, languageId.value)
             if (mastery != null && mastery.uniqueCardShows > 0) {
                 startedIds.add(lesson.id)
             }
@@ -125,7 +126,7 @@ class BossOrchestrator(
         val result = bossBattleRunner.startBoss(
             type = type,
             cards = cards,
-            selectedLessonId = selectedId,
+            selectedLessonId = selectedId?.value,
             completedSubLessonCount = state.cardSession.completedSubLessonCount,
             testMode = state.cardSession.testMode
         )
@@ -179,12 +180,12 @@ class BossOrchestrator(
             bossType = state.boss.bossType,
             bossProgress = state.boss.bossProgress,
             bossTotal = state.boss.bossTotal,
-            selectedLessonId = state.navigation.selectedLessonId,
+            selectedLessonId = state.navigation.selectedLessonId?.value,
             currentLessonRewards = state.boss.bossLessonRewards,
             currentMegaRewards = state.boss.bossMegaRewards
         )
         val progress = progressStore.load()
-        val restoredLessonId = progress.lessonId ?: state.navigation.selectedLessonId
+        val restoredLessonId = progress.lessonId?.let { LessonId(it) } ?: state.navigation.selectedLessonId
         sessionRunner.clearAllCards()
         stateAccess.updateState {
             it.copy(

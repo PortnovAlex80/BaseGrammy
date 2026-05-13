@@ -121,8 +121,8 @@ fun LessonRoadmapScreen(
     val currentLesson = state.navigation.lessons.firstOrNull { it.id == state.navigation.selectedLessonId }
     val totalCards = currentLesson?.allCards?.size ?: 0
     val shownCards = state.flowerDisplay.currentLessonShownCount.coerceAtMost(totalCards)
-    val bossLessonReward = state.navigation.selectedLessonId?.let { state.boss.bossLessonRewards[it] }
-    val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it] }
+    val bossLessonReward = state.navigation.selectedLessonId?.let { state.boss.bossLessonRewards[it.value] }
+    val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it.value] }
     val bossUnlocked = state.cardSession.completedSubLessonCount >= 15 || state.cardSession.testMode
     var bossLockedMessage by remember { mutableStateOf<String?>(null) }
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true

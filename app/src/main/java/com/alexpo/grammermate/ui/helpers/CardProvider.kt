@@ -1,10 +1,13 @@
 package com.alexpo.grammermate.ui.helpers
 
 import com.alexpo.grammermate.data.BossType
+import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.MixedReviewScheduler
+import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SubLessonType
@@ -43,8 +46,8 @@ class CardProvider(
      */
     fun buildSchedules(
         lessons: List<Lesson>,
-        existingSchedules: Map<String, LessonSchedule>
-    ): Map<String, LessonSchedule> {
+        existingSchedules: Map<LessonId, LessonSchedule>
+    ): Map<LessonId, LessonSchedule> {
         val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
         val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
         val key = "${lessonKey}|${blockSize}"
@@ -76,8 +79,8 @@ class CardProvider(
     fun buildSessionCards(
         lessons: List<Lesson>,
         mode: TrainingMode,
-        selectedLessonId: String?,
-        schedules: Map<String, LessonSchedule>,
+        selectedLessonId: LessonId?,
+        schedules: Map<LessonId, LessonSchedule>,
         activeSubLessonIndex: Int,
         hiddenCardIds: Set<String>,
         mastery: LessonMasteryState? = null
@@ -137,7 +140,7 @@ class CardProvider(
      */
     fun buildMixChallengeCards(
         lessons: List<Lesson>,
-        startedLessonIds: Set<String>,
+        startedLessonIds: Set<LessonId>,
         count: Int = 10
     ): List<SentenceCard> {
         // Only use lessons the user has started
@@ -212,7 +215,7 @@ class CardProvider(
     fun buildBossCards(
         lessons: List<Lesson>,
         type: BossType,
-        selectedLessonId: String?,
+        selectedLessonId: LessonId?,
         selectedIndex: Int
     ): List<SentenceCard> {
         val maxBossCards = TrainingConfig.MAX_BOSS_CARDS
@@ -241,8 +244,8 @@ class CardProvider(
 
     private fun buildLessonSessionCards(
         lessons: List<Lesson>,
-        selectedLessonId: String?,
-        schedules: Map<String, LessonSchedule>,
+        selectedLessonId: LessonId?,
+        schedules: Map<LessonId, LessonSchedule>,
         activeSubLessonIndex: Int,
         hiddenCardIds: Set<String>,
         mastery: LessonMasteryState?

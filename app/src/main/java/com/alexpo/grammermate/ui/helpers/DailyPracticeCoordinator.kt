@@ -6,8 +6,10 @@ import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DailyTask
+import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.StoreFactory
@@ -269,11 +271,11 @@ class DailyPracticeCoordinator(
         }
 
         // Fallback to synchronous build
-        val verbDrillStore = getVerbDrillStore(packId)
-        val packWordMasteryStore = getWordMasteryStore(packId)
-        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, effectiveLevel)
+        val verbDrillStore = getVerbDrillStore(packId.value)
+        val packWordMasteryStore = getWordMasteryStore(packId.value)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, effectiveLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val tasks = composer.buildSession(effectiveLevel, packId, langId, lessonId, cumulativeTenses, cursor)
+        val tasks = composer.buildSession(effectiveLevel, packId.value, langId.value, lessonId, cumulativeTenses, cursor)
         Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
         if (tasks.isEmpty()) return false
 
@@ -317,12 +319,12 @@ class DailyPracticeCoordinator(
         if (cursor.firstSessionDate == today &&
             (cursor.firstSessionSentenceCardIds.isNotEmpty() || cursor.firstSessionVerbCardIds.isNotEmpty())
         ) {
-            val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
-            val verbDrillStore = getVerbDrillStore(packId)
-            val packWordMasteryStore = getWordMasteryStore(packId)
+            val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
+            val verbDrillStore = getVerbDrillStore(packId.value)
+            val packWordMasteryStore = getWordMasteryStore(packId.value)
             val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
             val tasks = composer.buildRepeatSession(
-                lessonLevel, packId, langId, lessonId, cumulativeTenses,
+                lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses,
                 sentenceCardIds = cursor.firstSessionSentenceCardIds,
                 verbCardIds = cursor.firstSessionVerbCardIds
             )
@@ -335,11 +337,11 @@ class DailyPracticeCoordinator(
 
         // Last resort: build fresh with cursor at position 0 (start of day)
         val resetCursor = cursor.copy(sentenceOffset = 0)
-        val verbDrillStore = getVerbDrillStore(packId)
-        val packWordMasteryStore = getWordMasteryStore(packId)
-        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val verbDrillStore = getVerbDrillStore(packId.value)
+        val packWordMasteryStore = getWordMasteryStore(packId.value)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, resetCursor)
+        val tasks = composer.buildSession(lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses, resetCursor)
         if (tasks.isEmpty()) return false
 
         lastDailyTasks = tasks
@@ -372,7 +374,7 @@ class DailyPracticeCoordinator(
                 val card = task.card
                 val lessonId = resolveCardLessonId(card)
                 val languageId = stateAccess.uiState.value.navigation.selectedLanguageId
-                masteryStore.recordCardShow(lessonId, languageId, card.id)
+                masteryStore.recordCardShow(lessonId, languageId.value, card.id)
             }
         }
     }
@@ -383,7 +385,7 @@ class DailyPracticeCoordinator(
 
     fun persistDailyVerbProgress(card: VerbDrillCard) {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return
-        val store = getVerbDrillStore(packId)
+        val store = getVerbDrillStore(packId.value)
         val comboKey = "${card.group ?: ""}|${card.tense ?: ""}"
         val existing = store.loadProgress()[comboKey]
         val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
@@ -413,11 +415,11 @@ class DailyPracticeCoordinator(
         val lessonId = progressInfo?.first ?: return false
         val lessonLevel = ds.level
 
-        val verbDrillStore = getVerbDrillStore(packId)
-        val packWordMasteryStore = getWordMasteryStore(packId)
-        val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
+        val verbDrillStore = getVerbDrillStore(packId.value)
+        val packWordMasteryStore = getWordMasteryStore(packId.value)
+        val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
-        val newTasks = composer.rebuildBlock(blockType, lessonLevel, packId, langId, lessonId, cumulativeTenses)
+        val newTasks = composer.rebuildBlock(blockType, lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses)
         if (newTasks.isEmpty()) return false
 
         replaceCurrentBlock(newTasks)
@@ -457,7 +459,7 @@ class DailyPracticeCoordinator(
         val wordId = task.word.id
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return
-        val store = getWordMasteryStore(packId)
+        val store = getWordMasteryStore(packId.value)
         val current = store.getMastery(wordId) ?: WordMasteryState.new(wordId)
         val now = System.currentTimeMillis()
         val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1

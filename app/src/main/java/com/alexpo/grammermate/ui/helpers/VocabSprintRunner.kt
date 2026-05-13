@@ -52,10 +52,10 @@ class VocabSprintRunner(
         val state = stateAccess.uiState.value
         val lessonId = state.navigation.selectedLessonId ?: return
         val languageId = state.navigation.selectedLanguageId
-        val allEntries = lessonStore.getVocabEntries(lessonId, languageId)
+        val allEntries = lessonStore.getVocabEntries(lessonId.value, languageId.value)
 
         // Sort using SRS prioritization: overdue first, then new, then not due
-        val sorted = vocabProgressStore.sortEntriesForSprint(allEntries, lessonId, languageId)
+        val sorted = vocabProgressStore.sortEntriesForSprint(allEntries, lessonId.value, languageId.value)
 
         val limit = state.cardSession.vocabSprintLimit
         val limited = if (limit <= 0 || limit >= sorted.size) sorted else sorted.take(limit)
@@ -72,12 +72,12 @@ class VocabSprintRunner(
         val sessionEntries: List<VocabEntry>
 
         if (resume) {
-            val progress = vocabProgressStore.get(lessonId, languageId)
+            val progress = vocabProgressStore.get(lessonId.value, languageId.value)
             // Filter out already-completed entries
             val remaining = limited.filterIndexed { index, _ -> index !in progress.completedIndices }
             if (remaining.isEmpty()) {
                 // All completed - start fresh
-                vocabProgressStore.clearSprintProgress(lessonId, languageId)
+                vocabProgressStore.clearSprintProgress(lessonId.value, languageId.value)
                 sessionEntries = limited
                 startIndex = 0
             } else {
@@ -85,7 +85,7 @@ class VocabSprintRunner(
                 startIndex = 0
             }
         } else {
-            vocabProgressStore.clearSprintProgress(lessonId, languageId)
+            vocabProgressStore.clearSprintProgress(lessonId.value, languageId.value)
             sessionEntries = limited
             startIndex = 0
         }
@@ -190,15 +190,15 @@ class VocabSprintRunner(
             callbacks.playSuccess()
             // Save progress: record correct answer and completed index
             val lessonId = state.navigation.selectedLessonId ?: return
-            vocabProgressStore.recordCorrect(entry.id, lessonId, state.navigation.selectedLanguageId)
-            vocabProgressStore.addCompletedIndex(lessonId, state.navigation.selectedLanguageId, state.vocabSprint.vocabIndex)
+            vocabProgressStore.recordCorrect(entry.id, lessonId.value, state.navigation.selectedLanguageId.value)
+            vocabProgressStore.addCompletedIndex(lessonId.value, state.navigation.selectedLanguageId.value, state.vocabSprint.vocabIndex)
             moveToNextVocab()
             return
         }
         callbacks.playError()
         // Record incorrect answer for SRS tracking
         val lessonId = state.navigation.selectedLessonId ?: return
-        vocabProgressStore.recordIncorrect(entry.id, lessonId, state.navigation.selectedLanguageId)
+        vocabProgressStore.recordIncorrect(entry.id, lessonId.value, state.navigation.selectedLanguageId.value)
         val nextAttempts = state.vocabSprint.vocabAttempts + 1
         if (nextAttempts >= 3) {
             stateAccess.updateState {
@@ -254,7 +254,7 @@ class VocabSprintRunner(
             // All vocab entries completed - clear sprint progress
             val lessonId = state.navigation.selectedLessonId
             if (lessonId != null) {
-                vocabProgressStore.clearSprintProgress(lessonId, state.navigation.selectedLanguageId)
+                vocabProgressStore.clearSprintProgress(lessonId.value, state.navigation.selectedLanguageId.value)
             }
             stateAccess.updateState {
                 it.copy(
@@ -337,7 +337,7 @@ class VocabSprintRunner(
             val languageId = state.navigation.selectedLanguageId
             val allVocabFromLessons = state.navigation.lessons
                 .flatMap { lesson ->
-                    lessonStore.getVocabEntries(lesson.id, languageId)
+                    lessonStore.getVocabEntries(lesson.id.value, languageId.value)
                 }
                 .flatMap { it.targetText.split("+") }
                 .map { it.trim() }

@@ -155,7 +155,7 @@ class DailySessionComposer(
         val lesson = if (cursor.currentLessonIndex in lessons.indices) {
             lessons[cursor.currentLessonIndex]
         } else {
-            lessons.firstOrNull { it.id == lessonId }
+            lessons.firstOrNull { it.id.value == lessonId }
         } ?: return emptyList()
 
         val cards = lesson.cards

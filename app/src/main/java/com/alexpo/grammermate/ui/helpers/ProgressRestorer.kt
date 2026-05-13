@@ -3,10 +3,13 @@ package com.alexpo.grammermate.ui.helpers
 import android.util.Log
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.BossReward
+import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.LessonPack
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.LessonStore
+import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.StreakData
@@ -59,8 +62,8 @@ class ProgressRestorer(
         languages: List<Language>,
         packs: List<LessonPack>,
         lessons: List<Lesson>,
-        selectedLanguageId: String,
-        selectedLessonId: String?,
+        selectedLanguageId: LanguageId,
+        selectedLessonId: LessonId?,
         streak: StreakData,
         profile: UserProfile,
         bossLessonRewards: Map<String, BossReward>,
@@ -131,12 +134,12 @@ class ProgressRestorer(
         if (success) {
             val progress = progressStore.load()
             val profile = profileStore.load()
-            val selectedLanguageId = progress.languageId.ifEmpty { "en" }
-            val lessons = lessonStore.getLessons(selectedLanguageId)
+            val selectedLanguageId = if (progress.languageId.value.isNotEmpty()) progress.languageId else LanguageId("en")
+            val lessons = lessonStore.getLessons(selectedLanguageId.value)
             val selectedLessonId = progress.lessonId?.let { id ->
-                lessons.firstOrNull { it.id == id }?.id
+                lessons.firstOrNull { it.id.value == id }?.id
             } ?: lessons.firstOrNull()?.id
-            val streak = streakStore.getCurrentStreak(selectedLanguageId)
+            val streak = streakStore.getCurrentStreak(selectedLanguageId.value)
             val bossLessonRewards = callbacks.parseBossRewards(progress.bossLessonRewards)
             val bossMegaRewards = callbacks.parseBossRewards(progress.bossMegaRewards)
 
@@ -171,12 +174,12 @@ class ProgressRestorer(
         val packs = lessonStore.getInstalledPacks()
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id
             ?: languages.firstOrNull()?.id
-            ?: "en"
-        val lessons = lessonStore.getLessons(selectedLanguageId)
+            ?: LanguageId("en")
+        val lessons = lessonStore.getLessons(selectedLanguageId.value)
         val selectedLessonId = progress.lessonId?.let { id ->
-            lessons.firstOrNull { it.id == id }?.id
+            lessons.firstOrNull { it.id.value == id }?.id
         } ?: lessons.firstOrNull()?.id
-        val streak = streakStore.getCurrentStreak(selectedLanguageId)
+        val streak = streakStore.getCurrentStreak(selectedLanguageId.value)
         val bossLessonRewards = callbacks.parseBossRewards(progress.bossLessonRewards)
         val bossMegaRewards = callbacks.parseBossRewards(progress.bossMegaRewards)
 
