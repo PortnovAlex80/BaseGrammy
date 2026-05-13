@@ -120,31 +120,27 @@ Skip Assessment only for: plain conversation, questions from loaded context, 1�
 
 ### Step 1 — Choose mode based on verdict
 
-**Two agent modes, each matching a decomposition strategy:**
+**Layer split matters more than agent mode.** The key decision is HOW to decompose (by layers or by independent tasks). Agent mode (TEAM vs SUBAGENTS) is secondary.
 
 ```
-SUBAGENTS + WAVES                    TEAM + LAYERS
-─────────────────────────────       ─────────────────────────────
-Goal: WIDTH                          Goal: DEPTH + COORDINATION
-Independent parallel solutions.      Sequential layer-by-layer execution.
-Each agent produces a full result.   Agents coordinate via SendMessage.
-Main collects and picks winner.      Data agent → Helpers agent → UI agent.
+SUBAGENTS (simple, low overhead)       TEAM (structured, medium overhead)
+─────────────────────────────          ─────────────────────────────
+Goal: WIDTH + simplicity               Goal: DEPTH + task dependencies
+Independent or sequential.             Named agents + TaskList + blockedBy.
+Main spawns, waits, collects.          TeamCreate + TaskCreate + SendMessage.
 
-Best for:                            Best for:
-- unknown solution space             - cascading refactors across layers
-- parallel alternatives needed       - type migrations (20+ files)
-- read-only analysis / audits        - interface changes with implementors
-- fire-and-forget exploration        - any task where agents share files
-- new features (all new files)       - each layer adapts to previous layer's changes
+Best for:                              Best for:
+- read-only analysis / audits          - 3+ layers with real dependencies
+- new features (all new files)         - parallel agents at same layer
+- single-layer refactors               - tasks needing enforced ordering
+- sequential layer work (data→ui)      - when you want named accountability
+
+Overhead: 1 action per agent           Overhead: ~10 actions per session
 ```
 
-**When Assessment identifies layer-spanning changes → default to TEAM mode.**
-Agents are assigned by layer: DATA-AGENT, HELPERS-AGENT, UI-AGENT. Each works sequentially, using SendMessage to pass summaries of what changed to the next layer's agent.
+**Default: SUBAGENTS.** Use TEAM only when TaskList dependencies provide real value (agent B cannot start until agent A finishes).
 
-**When Assessment identifies zero file overlap → use SUBAGENTS mode.**
-Fire-and-forget parallel agents. Main context collects results.
-
-**Flexibility:** The mode is a spectrum. A task might start as SUBAGENTS (analysis phase) then switch to TEAM (implementation phase). Assessment decides.
+**TEAM experience note:** In practice, SendMessage coordination was rarely used — agents read files directly. TEAM's main value was TaskList with `blockedBy` enforcement, not inter-agent messaging. If you can enforce ordering in main context (spawn agent A → wait → spawn agent B), SUBAGENTS is simpler and equally effective.
 
 **Combined pattern (highest-stakes tasks):**
 Round 1 → SUBAGENTS explore → score → pick winner

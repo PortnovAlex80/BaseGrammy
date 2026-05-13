@@ -92,47 +92,62 @@ After all waves complete:
 
 ### The Core Insight
 
-**Layer-based decomposition maps naturally to TEAM mode.** When work is split by architecture layers (data → helpers → UI), agents have sequential dependencies — the helpers agent needs to know what the data agent changed. TEAM mode gives agents `SendMessage` for real-time coordination, while SUBAGENTS mode leaves them blind to each other's work.
+**Layer-based decomposition is the key.** Agent mode (TEAM vs SUBAGENTS) is secondary to HOW you split work.
 
-**Wave-based decomposition maps naturally to SUBAGENTS mode.** When tasks are truly independent (different files, no shared state), fire-and-forget SUBAGENTS work fine — no coordination needed.
+**The real lesson:** Splitting by layers (data → helpers → UI) avoids file conflicts and gives real build checkpoints. The agent mode choice (TEAM vs SUBAGENTS) matters less than the layer split itself.
 
-### Strategy Matrix
+### Strategy Matrix (revised with experience)
 
-| Decomposition | Agent Mode | Coordination | Best for |
-|---------------|------------|--------------|----------|
-| **LAYERS** (data → helpers → UI) | **TEAM** | SendMessage between layers | Cascading refactors, type migrations, interface changes |
-| **WAVES** (parallel independent tasks) | **SUBAGENTS** | None (main collects) | Audits, new features with new files, independent bug fixes |
-| **SINGLE** | One agent | N/A | < 3 files, < 30 lines, one-layer bug fix |
+| Decomposition | Agent Mode | When | Overhead |
+|---------------|------------|------|----------|
+| **LAYERS sequential** | **SUBAGENTS** (one at a time) | Default for refactoring | Low |
+| **LAYERS parallel** | **TEAM** (TaskList + blockedBy) | When layer agents own different files AND have dependencies | Medium (~10 extra setup actions) |
+| **WAVES parallel** | **SUBAGENTS** (all at once) | Independent tasks, zero file overlap | Low |
+| **SINGLE** | One agent | < 3 files, < 30 lines | None |
 
-### Why LAYERS + TEAM works better than WAVES + SUBAGENTS for refactoring
+### When TEAM actually adds value vs overhead
 
-**WAVES problem (learned the hard way):**
-- Wave 2 agents each touch different files but share Models.kt → file conflicts
-- Build checkpoints are fake — build fails until ALL waves complete
-- Agents can't adapt to each other's changes — they work blind
-- Main context becomes a bottleneck coordinating merges
+**TEAM is worth it when:**
+- Agents have REAL sequential dependencies (agent B needs agent A's output to compile)
+- Multiple parallel agents at the same layer (e.g., 2 screen update agents simultaneously)
+- You want TaskList with `blockedBy` to enforce ordering
 
-**LAYERS + TEAM solution:**
-- Data agent finishes Models.kt changes → sends summary to helpers agent via SendMessage
-- Helpers agent reads the summary and adapts its approach (e.g., knows new types, uses `.value` correctly)
-- Each agent sees the full picture for its layer and makes informed decisions
-- Build checkpoints are REAL — data layer compiles alone, then data+helpers, then full build
-- Zero file conflicts by design (each agent owns its layer)
+**TEAM is NOT worth it when:**
+- Agents just read files (SendMessage not used in practice — agents read code directly)
+- Only 2 layers affected (sequential SUBAGENTS is simpler)
+- Small tasks (setup overhead exceeds work time)
 
-### The LAYER-TEAM Pattern
+**TEAM overhead costs (~10 extra actions in main context):**
+TeamCreate + TaskCreate×N + TaskUpdate×2N + SendMessage shutdown×N + TeamDelete
+
+### Experience report: TEAM for UI consistency
+
+**Setup:** 3 agents (data, helpers, ui), 3 tasks with blockedBy dependencies.
+**Result:** All tasks completed in ~7 min, BUILD SUCCESSFUL.
+**What worked:** TaskList dependencies (helpers + ui waited for data). Named agents (clear ownership). Zero file conflicts.
+**What didn't work:** SendMessage coordination was unused — agents read files directly. TeamDelete failed after shutdown. Shutdown ceremony was fragile.
+
+**Honest verdict:** Same result could be achieved with sequential SUBAGENTS (spawn data agent → wait → spawn 2 parallel screen agents). TEAM's TaskList was convenient but not essential.
+
+### The LAYER Pattern (applies to both TEAM and SUBAGENTS)
 
 ```
 Phase 1: Assessment → identifies layers affected
-Phase 2: TeamCreate → spawns team with layer-based roles:
-  - DATA-AGENT: owns data/ (Models.kt, stores, parsers)
-  - HELPERS-AGENT: owns ui/helpers/ (all helpers)
-  - UI-AGENT: owns ui/ (TrainingViewModel, GrammarMateApp, screens)
-Phase 3: Sequential execution with SendMessage coordination:
-  1. DATA-AGENT works → commits → sends summary to HELPERS-AGENT
-  2. HELPERS-AGENT reads summary, adapts → commits → sends summary to UI-AGENT
-  3. UI-AGENT reads summary, adapts → commits
-  4. Build verification
-Phase 4: TeamDelete
+Phase 2: Layer 1 agent (data/) → commit → build check
+Phase 3: Layer 2 agents (ui/helpers/ or ui/) → can be parallel if different files
+Phase 4: Layer 3 agents (remaining screens) → commit → build check
+Phase 5: Full build verification
+```
+
+This works with TEAM (TaskList blockedBy) OR SUBAGENTS (main context waits). Pick based on overhead tolerance.
+
+### The WAVE Pattern (for independent work)
+
+```
+Phase 1: Assessment → confirms zero file overlap between tasks
+Phase 2: Spawn 2-5 SUBAGENTS in parallel (no team, no SendMessage)
+Phase 3: Main collects all results → commit → build check
+Phase 4: Next wave if needed
 ```
 
 ### The WAVE-SUBAGENTS Pattern (for independent work)
