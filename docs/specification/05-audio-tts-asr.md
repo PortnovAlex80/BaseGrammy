@@ -333,7 +333,9 @@ Only target-language text is ever spoken. Russian prompts are never synthesized.
 
 **TTS error handling**: TTS `speak()` calls are wrapped in try-catch at both engine level and caller level. If models are not loaded, `speak()` silently skips — no crash. This is expected behavior when a user taps the TTS button before models finish downloading.
 
-**KNOWN ISSUE — Samsung tablet crash during TTS model loading/playback**: On Samsung Galaxy Tab devices, the app crashes when TTS models are being loaded or when the user taps the speaker icon. This crash did NOT occur in older app versions — likely a regression from the TTS engine re-initialization logic or Sherpa-ONNX native layer interaction. Requires investigation: (1) check if crash is in `TtsEngine.initialize()` native call, (2) verify Sherpa-ONNX AAR compatibility with Samsung's AudioTrack implementation, (3) test on Samsung Tab S8/S9 specifically. **Tech debt — priority after current refactoring.**
+**KNOWN ISSUE — Samsung tablet crash during TTS model loading/playback**: On Samsung Galaxy Tab devices, the app crashes when TTS models are being loaded or when the user taps the speaker icon. This crash did NOT occur in older app versions — regression introduced in commit `cd31ae5` which added `ttsEngine.initialize()` calls after background download completion (3 call sites in AudioCoordinator). The root cause is likely thread safety: Sherpa-ONNX native layer may not tolerate concurrent `initialize()` from `Dispatchers.IO` on Samsung's AudioTrack implementation.
+
+**Fix plan (Phase 4 — AudioCoordinator refactoring):** `ttsEngine.initialize()` MUST execute on the main thread or under a mutex to prevent concurrent native calls. The auto-recovery logic (initialize after download) should use `withContext(Dispatchers.Main)` or a dedicated serialization lock. Verify on Samsung Tab S8/S9 after fix.
 
 #### Download Dialog
 
