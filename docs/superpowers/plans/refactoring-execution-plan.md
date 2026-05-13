@@ -1,7 +1,7 @@
 # Refactoring Execution Plan — Phase 3-4
 # Branch: fix/spec-discrepancies
 # Created: 2026-05-12
-# Updated: 2026-05-13
+# Updated: 2026-05-13 (Step 4.1 complete)
 
 ---
 
@@ -27,10 +27,11 @@ git merge feature/daily-cursors
 
 ## Current State
 
-- TrainingViewModel: ~2189 lines (reduced from ~3400)
+- TrainingViewModel: ~1900 lines (reduced after data class restructuring)
+- TrainingUiState restructured into 10 nested data classes (was 86 flat fields)
 - 8 modules wired: AnswerValidator, WordBankGenerator, StreakManager, CardProvider, ProgressTracker, BossBattleRunner, AudioCoordinator, DailyPracticeCoordinator, SessionRunner
 - 1 module deferred: FlowerProgressRenderer
-- Build: PASSES (Phase 3 complete)
+- Build: PASSES (Phase 3 complete, Step 4.1 complete)
 - 1 unmerged commit remains (earlier daily-cursors work), but Phase 3 is done
 
 ## Key Files
@@ -206,22 +207,23 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 ### Step 4.1: Group TrainingUiState into nested data classes
 
-- [ ] **Status: NOT STARTED**
-- **Commit:** —
+- [x] **Status: COMPLETE**
+- **Commit:** `930b8ed`
 - **Reference:** `arch-module-decomposition.md` Section 3
-- **Create nested data classes:** SessionState, BossState, EliteState, DrillState, FlowerDisplayState, AudioState
+- **Created 10 nested data classes:** SessionState, BossState, EliteState, DrillState, FlowerDisplayState, AudioState, DailyState, DailyVerbState, VocabSprintState, UIHintsState
 - **WARNING:** Changes ALL composable access patterns:
   - `state.bossActive` → `state.boss.active`
   - `state.currentIndex` → `state.session.currentIndex`
   - etc.
 - **Must update ALL screen files** that reference TrainingUiState fields
 - **Risk:** HIGH (massive find-replace across UI layer)
+- **Note:** 86 flat fields restructured into 10 nested groups. All screen files and helpers updated.
 - **Verification:**
-  - [ ] Nested data classes created in Models.kt
-  - [ ] TrainingUiState uses nested classes
-  - [ ] All screen files updated (GrammarMateApp, HomeScreen, TrainingScreen, DailyPracticeScreen, etc.)
-  - [ ] Build passes
-  - [ ] Commit created
+  - [x] Nested data classes created in Models.kt
+  - [x] TrainingUiState uses nested classes
+  - [x] All screen files updated (GrammarMateApp, HomeScreen, TrainingScreen, DailyPracticeScreen, etc.)
+  - [x] Build passes
+  - [x] Commit created
 
 ---
 
@@ -289,6 +291,6 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 |-------|-------|------|-----------|
 | Pre-req | Merge daily-cursors | 1/1 | 0 |
 | Phase 3 | 3.1–3.5 | 5/5 | 0 |
-| Phase 4 | 4.1–4.3 | 0/3 | 3 |
+| Phase 4 | 4.1–4.3 | 1/3 | 2 |
 | Optional | VocabSprint, FlowerRenderer | 0/2 | 2 |
-| **Total** | | **6/11** | **5** |
+| **Total** | | **7/11** | **4** |
