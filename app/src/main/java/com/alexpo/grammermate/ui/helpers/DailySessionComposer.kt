@@ -12,6 +12,8 @@ import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.data.VocabWord
 import com.alexpo.grammermate.data.WordMasteryStore
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.io.File
 
 /**
@@ -57,7 +59,7 @@ class DailySessionComposer(
      *   manifest lessons 1..lessonLevel. Caller reads from LessonPackManifest.
      * @param cursor cursor state tracking lesson index and sentence offset.
      */
-    fun buildSession(
+    suspend fun buildSession(
         lessonLevel: Int,
         packId: String,
         languageId: String,
@@ -65,20 +67,21 @@ class DailySessionComposer(
         cumulativeTenses: List<String> = emptyList(),
         cursor: DailyCursorState = DailyCursorState()
     ): List<DailyTask> {
-        val tasks = mutableListOf<DailyTask>()
-
-        // Block 1: Translation sentences (cursor-driven)
-        tasks.addAll(buildSentenceBlock(lessonLevel, packId, languageId, lessonId, cursor))
-
-        // Block 2: Vocab flashcards (pure SRS, no cursor)
-        tasks.addAll(buildVocabBlock(packId, languageId))
-
-        // Block 3: Verb drill (cursor-driven)
         val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
                      else TENSE_LADDER[lessonLevel] ?: emptyList()
-        tasks.addAll(buildVerbBlock(packId, languageId, tenses, cursor))
 
-        return tasks
+        // Build all 3 blocks in parallel — they read from independent data sources
+        return coroutineScope {
+            val translateBlock = async { buildSentenceBlock(lessonLevel, packId, languageId, lessonId, cursor) }
+            val vocabBlock = async { buildVocabBlock(packId, languageId) }
+            val verbBlock = async { buildVerbBlock(packId, languageId, tenses, cursor) }
+
+            val tasks = mutableListOf<DailyTask>()
+            tasks.addAll(translateBlock.await())
+            tasks.addAll(vocabBlock.await())
+            tasks.addAll(verbBlock.await())
+            tasks
+        }
     }
 
     fun rebuildBlock(
@@ -109,7 +112,7 @@ class DailySessionComposer(
      * @param sentenceCardIds card IDs from the first session's block 1.
      * @param verbCardIds card IDs from the first session's block 3.
      */
-    fun buildRepeatSession(
+    suspend fun buildRepeatSession(
         lessonLevel: Int,
         packId: String,
         languageId: String,
@@ -118,20 +121,17 @@ class DailySessionComposer(
         sentenceCardIds: List<String> = emptyList(),
         verbCardIds: List<String> = emptyList()
     ): List<DailyTask> {
-        val tasks = mutableListOf<DailyTask>()
+        return coroutineScope {
+            val translateBlock = async { buildSentenceBlockFromIds(lessonLevel, packId, languageId, lessonId, sentenceCardIds) }
+            val vocabBlock = async { buildVocabBlock(packId, languageId) }
+            val verbBlock = async { buildVerbBlockFromIds(packId, languageId, verbCardIds) }
 
-        // Block 1: Rebuild sentence block from stored card IDs
-        tasks.addAll(buildSentenceBlockFromIds(lessonLevel, packId, languageId, lessonId, sentenceCardIds))
-
-        // Block 2: Vocab always follows independent SRS
-        tasks.addAll(buildVocabBlock(packId, languageId))
-
-        // Block 3: Rebuild verb block from stored card IDs
-        val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
-                     else TENSE_LADDER[lessonLevel] ?: emptyList()
-        tasks.addAll(buildVerbBlockFromIds(packId, languageId, verbCardIds))
-
-        return tasks
+            val tasks = mutableListOf<DailyTask>()
+            tasks.addAll(translateBlock.await())
+            tasks.addAll(vocabBlock.await())
+            tasks.addAll(verbBlock.await())
+            tasks
+        }
     }
 
     /**
@@ -293,12 +293,16 @@ class DailySessionComposer(
     }
 
     /**
-     * Block 3: Weak-first verb drill selection.
+     * Block 3: Weak-first verb drill selection with collocation grouping.
      *
      * Cards that have been previously shown (tracked in VerbDrillStore progress)
-     * are excluded. Remaining cards are sorted by weakness (weak-first), stable
-     * within same weakness. Takes next 10 unshown cards.
-     * Returns empty if no remaining unshown cards.
+     * are excluded. Remaining cards are sorted by:
+     *   1. Weakness descending (weak-first, primary sort)
+     *   2. Verb+tense group frequency ascending (most common verb first)
+     *   3. Individual card rank ascending (most frequent collocation first)
+     * This groups all collocations of the same verb+tense together, with
+     * the most common verbs appearing first within each weakness tier.
+     * Takes next 10 unshown cards. Returns empty if no remaining unshown cards.
      */
     private fun buildVerbBlock(
         packId: String,
@@ -336,9 +340,23 @@ class DailySessionComposer(
             Triple(card, weakness, idx)  // idx preserves original order for stability
         }
 
-        // Weak-first, stable within same weakness (by original index)
+        // Pre-compute a frequency rank per verb+tense group: the minimum rank
+        // among all cards sharing the same verb+tense. This orders verb groups
+        // so the most common verb (lowest rank) comes first.
+        val verbGroupRank = scored.groupBy { "${it.first.verb}_${it.first.tense}" }
+            .mapValues { (_, group) ->
+                group.mapNotNull { it.first.rank }.minOrNull() ?: Int.MAX_VALUE
+            }
+
+        // Sort order:
+        //   1. Weakness descending (weak-first, primary sort)
+        //   2. Verb+tense group rank ascending (most common verb group first)
+        //   3. Individual card rank ascending (most frequent collocation first)
+        //   4. Original index as tiebreaker for stability
         val sorted = scored.sortedWith(
             compareByDescending<Triple<VerbDrillCard, Float, Int>> { it.second }
+                .thenBy { verbGroupRank["${it.first.verb}_${it.first.tense}"] ?: Int.MAX_VALUE }
+                .thenBy { it.first.rank ?: Int.MAX_VALUE }
                 .thenBy { it.third }
         )
 

@@ -289,6 +289,7 @@ Languages with no registered TTS model gracefully degrade: `TtsModelRegistry.spe
 - **State propagation**: `ttsEngine.state` is collected into `TrainingUiState.ttsState`
 - **Model check**: `checkTtsModel()` called on init and language switch, updates `ttsModelReady`
 - **Background download**: `startBackgroundTtsDownload()` downloads missing language models on ViewModel init
+- **Auto-initialization after download**: When a background or user-initiated download completes, `AudioCoordinator` automatically calls `ttsEngine.initialize()` if the engine is in ERROR or IDLE state. This ensures the TTS speaker icon updates from error/loading to speaker icon without requiring a user action or screen re-entry.
 - **Speak**: `onTtsSpeak(text)` initializes engine for current language if needed, then calls `speak()`
 - **Download trigger**: `startTtsDownload()` for user-initiated download with dialog progress
 - **Language switch**: `selectLanguage()` propagates language to `TtsModelManager.currentLanguageId` and rechecks model readiness
@@ -326,7 +327,9 @@ Only target-language text is ever spoken. Russian prompts are never synthesized.
 | IDLE / READY | Volume Up | Tap triggers speak |
 | SPEAKING | Stop Circle (red) | Tap stops playback |
 | INITIALIZING | Circular Progress Indicator | Loading spinner |
-| ERROR | Report Problem (red) | Error state |
+| ERROR | Report Problem (red) | Error state, auto-recovers when download completes |
+
+**Icon auto-recovery**: When TTS models finish downloading in the background, the AudioCoordinator automatically re-initializes the TTS engine. The engine transitions from ERROR -> INITIALIZING -> READY, which propagates through `ttsEngine.state` -> `startTtsStateCollection()` -> `uiState.audio.ttsState` -> composable recomposition. The speaker icon updates from red error to VolumeUp within 2 seconds of download completion, without requiring user action or screen re-entry.
 
 #### Download Dialog
 

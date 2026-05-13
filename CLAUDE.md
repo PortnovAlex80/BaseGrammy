@@ -123,24 +123,23 @@ Skip Assessment only for: plain conversation, questions from loaded context, 1�
 **Layer split matters more than agent mode.** The key decision is HOW to decompose (by layers or by independent tasks). Agent mode (TEAM vs SUBAGENTS) is secondary.
 
 ```
-SUBAGENTS (simple, low overhead)       TEAM (structured, medium overhead)
-─────────────────────────────          ─────────────────────────────
-Goal: WIDTH + simplicity               Goal: DEPTH + task dependencies
-Independent or sequential.             Named agents + TaskList + blockedBy.
-Main spawns, waits, collects.          TeamCreate + TaskCreate + SendMessage.
+SUBAGENTS                           TEAM
+─────────────────────────────       ─────────────────────────────
+Goal: WIDTH                         Goal: DEPTH + CONFLICT
+Independent parallel solutions.     Role-based argumentation.
+Each agent produces a full result.  Agents dispute and self-organize.
+Main scores and picks the winner.   Team lead assembles final result.
 
-Best for:                              Best for:
-- read-only analysis / audits          - 3+ layers with real dependencies
-- new features (all new files)         - parallel agents at same layer
-- single-layer refactors               - tasks needing enforced ordering
-- sequential layer work (data→ui)      - when you want named accountability
+Best for:                           Best for:
+- read-only analysis / audits       - complex execution, known direction
+- new features (all new files)      - 3+ layers with real dependencies
+- single-layer refactors            - high-stakes features
+- sequential layer work (data→ui)   - when internal conflict = quality
 
-Overhead: 1 action per agent           Overhead: ~10 actions per session
+Overhead: 1 action per agent        Overhead: ~10 actions per session
 ```
 
 **Default: SUBAGENTS.** Use TEAM only when TaskList dependencies provide real value (agent B cannot start until agent A finishes).
-
-**TEAM experience note:** In practice, SendMessage coordination was rarely used — agents read files directly. TEAM's main value was TaskList with `blockedBy` enforcement, not inter-agent messaging. If you can enforce ordering in main context (spawn agent A → wait → spawn agent B), SUBAGENTS is simpler and equally effective.
 
 **Combined pattern (highest-stakes tasks):**
 Round 1 → SUBAGENTS explore → score → pick winner
@@ -173,6 +172,36 @@ Framing IS the role. Do not assign roles top-down.
 
 **Role conflict (team only):** first SendMessage wins the role.
 The other picks a different role or goes idle.
+
+### Step 2.5 — Execute in waves (MANDATORY batch rule)
+
+**NEVER spawn all agents at once. Execute in waves of 3–5 maximum.**
+
+```
+Wave execution protocol:
+
+  1. Spawn Wave N   ← max 5 agents simultaneously
+  2. WAIT           ← all Wave N agents must complete
+  3. Collect        ← gather results in main context
+  4. Checkpoint     ← validate before proceeding
+  5. Spawn Wave N+1 ← only after checkpoint passes
+```
+
+**Why batches, not all at once:**
+- Agents in the same wave may edit the same files → conflicts
+- A failure in agent 3 of 10 goes undetected until the end
+- No opportunity to course-correct between steps
+- Main context becomes unmanageable with 10+ parallel results
+
+**Wave checkpoint (required between every wave):**
+After each wave, main context MUST:
+1. List ✓ / ✗ status for each completed step
+2. Run build check via subagent if any file was modified
+3. Confirm dependencies for Wave N+1 are resolved
+4. Report to user:
+   > "Wave N complete. N/N steps OK. Next: Wave N+1 — [step list]"
+
+**If a wave has failures — fix before Wave N+1. Never skip forward.**
 
 ### Decomposition strategy: LAYERS + TEAM for refactoring (MANDATORY)
 
@@ -216,14 +245,6 @@ UI-AGENT: ui/        → TrainingViewModel, GrammarMateApp, screens (waits for H
 5. Trivial tasks (< 3 files, < 30 lines) → single agent, no decomposition
 6. TEAM mode is for coordination, not just "quality through conflict" — layer coordination is an equally valid TEAM use case
 7. Be flexible: Assessment decides strategy, not dogma. Mix approaches if the task demands it.
-
-**Checkpoint (required after each layer agent):**
-1. List result: ✓ / ✗
-2. Commit changes
-3. Run build check (via subagent)
-4. SendMessage summary of changed APIs to next layer's agent
-5. Report to user
-6. Fix failures BEFORE spawning next agent
 
 ---
 
@@ -309,6 +330,7 @@ If you accidentally flood main context — acknowledge the mistake, do not attem
 | Tests failing unrelated to task | Note it. Do not block the task. Report in summary. |
 | Command returns incomplete output | Re-run with explicit flags. If still incomplete — report partial result. |
 | `gradlew` fails with NoClassDefFoundError | Use `java -cp` workaround with all 3 wrapper JARs (see Build Commands) |
+| Wave checkpoint fails | Fix failures before spawning next wave. Never skip forward. Report to user. |
 
 ---
 
@@ -498,6 +520,46 @@ Wave 3 (wiring):
 
 ---
 
+## SKILLS PIPELINE
+
+Project skills live in `.claude/skills/`. They enforce mandatory workflows that prevent regressions and missing behavioral specs. **Invoke the matching skill BEFORE writing any code.**
+
+### Skill registry
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `/add-feature` | "add X", "port Y", "implement feature", "wire up X" | Full pipeline: spec → behavioral contract → AC → implementation → regression |
+| `/swarm` | `/swarm`, "decompose", "execute through agents" | Kick-start Assessment → Decomposition → Wave execution |
+| `/regression-check` | `/regression-check`, after ≥2 file changes, before commit | Diff → affected UCs → element invariants → PASS/FAIL |
+| `/verify-user-journey` | Before committing UI/data changes, "doesn't work" reports | E2E trace: data flow → button wiring → state transitions → edge cases |
+
+### Pipeline: which skill when
+
+```
+New feature or port?     ──→  /add-feature
+  ├── Phase 1: Research       (read spec + code)
+  ├── Phase 2: Spec update    (behavioral contract + AC)
+  ├── Phase 3: Implementation (/swarm for decomposition)
+  └── Phase 4: Regression     (/regression-check)
+
+Bug fix or refactor?     ──→  /swarm → implement → /regression-check
+
+Before ANY commit
+  touching UI or data?   ──→  /verify-user-journey
+
+After ANY non-trivial
+  code change (≥2 files)? ──→  /regression-check
+```
+
+### Rules
+
+1. **`/add-feature` is mandatory for all new features and ports.** It prevents the "structural spec passes, behavioral spec fails" pattern discovered in retro.
+2. **`/regression-check` is mandatory after touching ≥2 files or ViewModel/helpers.** No exceptions.
+3. **`/verify-user-journey` is mandatory before committing UI/data changes.** Catches "works in code but broken for user" bugs.
+4. **`/swarm` replaces manual decomposition.** Use it instead of re-reading EXECUTION MODE and deciding yourself.
+
+---
+
 ## SPECIFICATION & DOCUMENTATION
 
 All project documentation is in `docs/specification/`. When working on a specific component, read the corresponding spec section first.
@@ -562,12 +624,13 @@ All project documentation is in `docs/specification/`. When working on a specifi
 - **Difficulty mode (HintLevel) not wired to parenthetical hints:** `HintLevel` enum exists (EASY/MEDIUM/HARD) and controls Word Bank / tense label visibility, but does NOT strip parenthetical target-language insertions from `promptRu` in the card body. Example: `я говорю (dire) правду (verità)` — the `(dire)` and `(verità)` are always visible regardless of difficulty. Spec updated in `21-product-roadmap.md` section 2. Implementation needed: strip `\s*\([^)]+\)` from card body `promptRu` when `hintLevel != EASY`. Boss Battle should force `HintLevel.HARD`.
 - **UC/Element cross-references incomplete:** `23-screen-elements.md` has "Related UC" column mostly as "?". Needs linking to UC-IDs from `22-use-case-registry.md`.
 
-### Roadmap docs
+### Roadmap & plans
 
 - `docs/specification/21-product-roadmap.md` — next sprint features (Card Feel Rating, Difficulty Levels)
-- `docs/superpowers/plans/arch-review-execution-plan.md` — architecture fixes (4 batches, not started)
 - `docs/specification/legacy-test-plan.md` — unit test backlog (~200 tests, all TODO)
-- `.claude/skills/regression-check.md` — regression verification skill (diff → UC/element check → PASS/FAIL)
+- `docs/superpowers/plans/feature-migration-plan.md` — active: feature-based modular migration (0/18 steps)
+- `docs/superpowers/plans/refactoring-execution-plan.md` — complete: ViewModel 3400→1500 lines (archived)
+- `docs/superpowers/specs/2026-05-13-vendor-code-audit.md` — RED verdict, 9 BLOCKERs, 33 CRITICALs
 
 ### Rule: Read spec before modifying code
 

@@ -123,12 +123,10 @@ fun DailyInputModeBar(
                 onClick = { if (canLaunchVoice) { onClearInput(); contract.setInputMode(InputMode.VOICE) } },
                 enabled = canLaunchVoice
             ) { Icon(Icons.Default.Mic, "Voice mode") }
-            if (hintLevel != HintLevel.HARD) {
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                    enabled = canSelectInputMode
-                ) { Icon(Icons.Default.Keyboard, "Keyboard mode") }
-            }
+            FilledTonalIconButton(
+                onClick = { contract.setInputMode(InputMode.KEYBOARD) },
+                enabled = canSelectInputMode
+            ) { Icon(Icons.Default.Keyboard, "Keyboard mode") }
             FilledTonalIconButton(
                 onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                 enabled = canSelectInputMode

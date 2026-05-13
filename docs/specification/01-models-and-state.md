@@ -436,7 +436,6 @@ Sources:
 | `session` | `VocabDrillSessionState?` | `null` | Active session. `null` when not drilling. |
 | `loadedLanguageId` | `String?` | `null` | Language ID of loaded data. |
 | `drillDirection` | `VocabDrillDirection` | `VocabDrillDirection.IT_TO_RU` | Default drill direction. |
-| `voiceModeEnabled` | `Boolean` | `false` | Whether voice input is enabled. |
 | `masteredCount` | `Int` | `0` | Number of words that reached `isLearned == true`. |
 | `masteredByPos` | `Map<String, Int>` | `emptyMap()` | Mastered count broken down by POS. |
 
@@ -460,7 +459,6 @@ Sources:
 | `voiceRecognizedText` | `String?` | `null` | Last recognized text from voice input. |
 | `voiceResult` | `VoiceResult?` | `null` | Result of voice recognition attempt. |
 | `voiceCompleted` | `Boolean` | `false` | `true` after correct answer, 3 wrong attempts, or skip. |
-| `voiceModeEnabled` | `Boolean` | `false` | Whether to auto-launch voice input on new cards. |
 
 ---
 

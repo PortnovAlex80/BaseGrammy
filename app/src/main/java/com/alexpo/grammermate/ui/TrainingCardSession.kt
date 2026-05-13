@@ -257,21 +257,19 @@ fun TrainingCardSession(
 @Composable
 private fun DefaultHeader(scope: TrainingCardSessionScope) {
     val card = scope.currentCard
-    // Tense label -- hidden on HARD
-    if (scope.hintLevel != HintLevel.HARD) {
-        val cardTense = card?.let {
-            // VerbDrillCard has a tense field; SentenceCard also has tense
-            if (it is com.alexpo.grammermate.data.VerbDrillCard) it.tense else null
-        }
-        if (!cardTense.isNullOrBlank()) {
-            Text(
-                text = cardTense,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+    // Tense label -- always visible (reference data, not a hint)
+    val cardTense = card?.let {
+        // VerbDrillCard has a tense field; SentenceCard also has tense
+        if (it is com.alexpo.grammermate.data.VerbDrillCard) it.tense else null
+    }
+    if (!cardTense.isNullOrBlank()) {
+        Text(
+            text = cardTense,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
     // Clean prompt (strip parenthetical hints)
     val rawPrompt = card?.promptRu ?: ""
@@ -695,8 +693,8 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                             Icon(Icons.Default.Mic, contentDescription = "Voice mode")
                         }
                     }
-                    // Keyboard button: hidden on HARD (voice only)
-                    if (InputMode.KEYBOARD in modeConfig.availableModes && scope.hintLevel != HintLevel.HARD) {
+                    // Keyboard button: always available when in availableModes
+                    if (InputMode.KEYBOARD in modeConfig.availableModes) {
                         FilledTonalIconButton(
                             onClick = { contract.setInputMode(InputMode.KEYBOARD) },
                             enabled = hasCards

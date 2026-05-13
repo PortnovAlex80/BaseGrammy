@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -67,10 +68,14 @@ import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
+import com.alexpo.grammermate.ui.TenseExample
+import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.components.DailyWordBankSection
 import com.alexpo.grammermate.ui.components.DailyInputModeBar
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
+import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.helpers.BlockProgress
 import com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider
 
@@ -276,7 +281,9 @@ private fun ColumnScope.CardSessionBlock(
         provider = provider, onExit = onExit,
         onComplete = { blockComplete = true },
         modifier = Modifier.weight(1f), hintLevel = hintLevel, textScale = textScale,
-        voiceAutoStart = voiceAutoStart
+        voiceAutoStart = voiceAutoStart,
+        onSpeakVerb = { verb -> onSpeak(verb) },
+        ttsState = ttsState
     )
 }
 
@@ -290,7 +297,9 @@ private fun DailyTrainingCardSession(
     modifier: Modifier = Modifier,
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
-    voiceAutoStart: Boolean = true
+    voiceAutoStart: Boolean = true,
+    onSpeakVerb: (String) -> Unit = {},
+    ttsState: TtsState = TtsState.IDLE
 ) {
     val latestProvider by rememberUpdatedState(provider)
     var voiceInputText by remember { mutableStateOf<String?>(null) }
@@ -304,6 +313,20 @@ private fun DailyTrainingCardSession(
                 if (submitResult == null || !submitResult.correct) voiceInputText = spoken
             }
         }
+    }
+
+    // Sheet state for verb/tense info
+    var showVerbSheet by remember { mutableStateOf(false) }
+    var sheetVerb by remember { mutableStateOf<String?>(null) }
+    var sheetTense by remember { mutableStateOf<String?>(null) }
+    var showTenseSheet by remember { mutableStateOf(false) }
+    var tenseSheetTense by remember { mutableStateOf<String?>(null) }
+
+    // Lazy-loaded tense info from assets
+    val context = LocalContext.current
+    val languageId = provider.languageId
+    val tenseInfoCache = remember(languageId) {
+        loadTenseInfoFromAssets(context, languageId)
     }
 
     // Auto-voice LaunchedEffect
@@ -361,19 +384,29 @@ private fun DailyTrainingCardSession(
                         }
                     }
 
-                    // Verb + tense + group hint chips (Block 3 only) -- hidden on HARD
-                    if (!verbText.isNullOrBlank() && hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
+                    // Verb + tense + group hint chips (Block 3 only) -- always visible (reference data, not hints)
+                    if (!verbText.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             SuggestionChip(
-                                onClick = {},
+                                onClick = {
+                                    sheetVerb = verbText
+                                    sheetTense = drillCard?.tense
+                                    showVerbSheet = true
+                                },
                                 label = { Text(if (verbRank != null) "$verbText #$verbRank" else verbText, fontSize = 14.sp, fontWeight = FontWeight.Medium) },
                                 icon = { Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp)) }
                             )
                             drillCard?.tense?.takeIf { it.isNotBlank() }?.let { tenseText ->
-                                SuggestionChip(onClick = {}, label = { Text(abbreviateTense(tenseText), fontSize = 14.sp, fontWeight = FontWeight.Medium) })
+                                SuggestionChip(
+                                    onClick = {
+                                        tenseSheetTense = tenseText
+                                        showTenseSheet = true
+                                    },
+                                    label = { Text(abbreviateTense(tenseText), fontSize = 14.sp, fontWeight = FontWeight.Medium) }
+                                )
                             }
-                            drillCard?.group?.takeIf { it.isNotBlank() && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY }?.let { groupText ->
+                            drillCard?.group?.takeIf { it.isNotBlank() }?.let { groupText ->
                                 SuggestionChip(onClick = {}, label = { Text(groupText, fontSize = 14.sp, fontWeight = FontWeight.Medium) })
                             }
                         }
@@ -392,6 +425,40 @@ private fun DailyTrainingCardSession(
         },
         onExit = onExit, onComplete = onComplete, modifier = modifier
     )
+
+    // Verb reference bottom sheet
+    if (showVerbSheet && sheetVerb != null) {
+        val conjugationCards = remember(sheetVerb, sheetTense) {
+            provider.getConjugationCards(sheetVerb!!, sheetTense ?: "")
+        }
+        VerbReferenceBottomSheet(
+            verb = sheetVerb!!,
+            tense = sheetTense,
+            conjugationCards = conjugationCards,
+            ttsState = ttsState,
+            onSpeakVerb = { onSpeakVerb(sheetVerb!!) },
+            onDismiss = {
+                showVerbSheet = false
+                sheetVerb = null
+                sheetTense = null
+            }
+        )
+    }
+
+    // Tense info bottom sheet
+    if (showTenseSheet && tenseSheetTense != null) {
+        val tenseInfo = remember(tenseSheetTense) {
+            tenseInfoCache[tenseSheetTense]
+        }
+        TenseInfoBottomSheet(
+            tenseName = tenseSheetTense!!,
+            tenseInfo = tenseInfo,
+            onDismiss = {
+                showTenseSheet = false
+                tenseSheetTense = null
+            }
+        )
+    }
 }
 
 /** Input controls: hint, text field, word bank, mode selector, check button. */
@@ -625,10 +692,9 @@ private fun ColumnScope.VocabFlashcardBlock(
                     Icon(Icons.Default.ReportProblem, "Report word", tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(answerText, fontSize = (18f * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
-            }
+            // Answer text -- always visible (reference data, not a hint)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(answerText, fontSize = (18f * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
         }
     }
 
@@ -746,4 +812,47 @@ private fun abbreviateTense(tense: String): String {
         "Congiuntivo Presente" to "Cong. Pres.", "Congiuntivo Imperfetto" to "Cong. Imp.",
         "Congiuntivo Passato" to "Cong. Pass."
     )[tense] ?: tense.take(8)
+}
+
+/**
+ * Loads tense reference info from assets YAML file.
+ * Cached per language by [remember] in the caller.
+ */
+@Suppress("UNCHECKED_CAST")
+private fun loadTenseInfoFromAssets(
+    context: android.content.Context,
+    languageId: String
+): Map<String, TenseInfo> {
+    val fileName = "grammarmate/tenses/${languageId}_tenses.yaml"
+    return try {
+        val yamlText = context.assets.open(fileName).bufferedReader().readText()
+        val yaml = org.yaml.snakeyaml.Yaml()
+        val data = yaml.load<Map<String, Any>>(yamlText)
+        val tensesList = data["tenses"] as? List<Map<String, Any>> ?: return emptyMap()
+        val result = mutableMapOf<String, TenseInfo>()
+        for (entry in tensesList) {
+            val name = entry["name"] as? String ?: continue
+            val short = entry["short"] as? String ?: name.take(8)
+            val formula = entry["formula"] as? String ?: ""
+            val usageRu = entry["usage_ru"] as? String ?: ""
+            val examplesList = entry["examples"] as? List<Map<String, String>> ?: emptyList()
+            val examples = examplesList.map { ex ->
+                TenseExample(
+                    it = ex["it"] ?: "",
+                    ru = ex["ru"] ?: "",
+                    note = ex["note"] ?: ""
+                )
+            }
+            result[name] = TenseInfo(
+                name = name,
+                short = short,
+                formula = formula,
+                usageRu = usageRu,
+                examples = examples
+            )
+        }
+        result
+    } catch (_: Exception) {
+        emptyMap()
+    }
 }

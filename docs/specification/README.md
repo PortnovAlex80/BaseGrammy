@@ -1,8 +1,6 @@
-# GrammarMate — Complete Project Specification
+# GrammarMate — Specification Index
 
-Generated: 2026-05-12
-Branch: feature/daily-cursors
-Agents: 20 specification agents + 3 architectural auditors
+Source of truth for all project specs. Numbered specs (01–23) are current; scenario traces verify spec-code alignment.
 
 ---
 
@@ -24,7 +22,7 @@ Agents: 20 specification agents + 3 architectural auditors
 | # | Document | Description |
 |---|----------|-------------|
 | 07 | [App Router](07-app-router.md) | GrammarMateApp screen routing, navigation graph, dialog orchestration |
-| 08 | [TrainingViewModel](08-training-viewmodel.md) | 3600-line ViewModel: all business logic, 70+ fields, 60+ methods |
+| 08 | [TrainingViewModel](08-training-viewmodel.md) | ViewModel business logic, session management, answer validation |
 | 09 | [Daily Practice](09-daily-practice.md) | 3-block session: translations, vocab flashcards, verb conjugations |
 | 10 | [Verb Drill](10-verb-drill.md) | Conjugation practice system with CardSessionProvider |
 | 11 | [Vocab Drill](11-vocab-drill.md) | Anki-style flashcard system with SRS scheduling |
@@ -48,126 +46,59 @@ Agents: 20 specification agents + 3 architectural auditors
 | 19 | [Screen Catalog](19-screen-catalog.md) | 31 screens/dialogs with wireframes, interactions, business rules |
 | 20 | [Non-Functional Requirements](20-non-functional-requirements.md) | Performance, offline, security, compatibility, scalability |
 
-### Architectural Audit
+### Regression & Roadmap
 
 | # | Document | Description |
 |---|----------|-------------|
-| A1 | [Dependency Map & State Duplication](arch-audit-dependencies.md) | Component inventory, dependency graph, state ownership, duplications |
-| A2 | [Spec vs Code Discrepancies](arch-audit-spec-vs-code.md) | Critical/minor discrepancies, behavioral inconsistencies |
-| A3 | [Module Decomposition Proposal](arch-module-decomposition.md) | Proposed modular architecture with interfaces and migration plan |
+| 21 | [Product Roadmap](21-product-roadmap.md) | Next sprint features: Card Feel Rating, Difficulty Levels |
+| 22 | [Use Case Registry](22-use-case-registry.md) | UC IDs with acceptance criteria — for regression checks and PR review |
+| 23 | [Screen Elements](23-screen-elements.md) | Screen element catalog with invariants — for UI regression checks |
 
----
+### Architecture
 
-## Quick Reference
-
-### Key Metrics
-- **Source files**: 51 Kotlin files
-- **Data layer**: 39 files
-- **UI layer**: 11 files (+ 3 helpers)
-- **Tests**: 18 unit + integration tests
-- **TrainingViewModel**: 3600+ lines (primary refactoring target)
-- **Lesson content**: 2 default packs (EN + IT), 13 Italian lesson CSVs, 6 vocab CSVs
-
-### Architecture Pattern
-```
-MainActivity -> AppRoot (restore check) -> GrammarMateApp (Compose UI)
-                      |
-               TrainingViewModel (all business logic + state)
-                      |
-           data/ layer (stores, parsers, calculators)
-```
-
-### Key Business Rules
-1. WORD_BANK mode never counts for mastery (only VOICE/KEYBOARD)
-2. All file writes must use AtomicFileWriter (temp -> fsync -> rename)
-3. Single ViewModel pattern — no second ViewModels (helpers only)
-4. Drill visibility is pack-scoped
-5. AppScreen.ELITE/VOCAB kept for backward compat (redirect to HOME)
+| # | Document | Description |
+|---|----------|-------------|
+| A1 | [Dependency Map](arch-audit-dependencies.md) | Component inventory, dependency graph, state duplication |
+| A2 | [Spec vs Code Discrepancies](arch-audit-spec-vs-code.md) | Critical/minor discrepancies found during audit |
+| A3 | [Module Decomposition](arch-module-decomposition.md) | Proposed modular architecture with interfaces |
+| A4 | [Phase 3 Interfaces](arch-phase3-interfaces.md) | Phase 3 store interface definitions |
 
 ---
 
 ## Scenario Verification (Code Traces)
 
-| # | Scenario | File |
-|---|----------|------|
-| S1 | Lesson training flow | [scenario-01-training-flow.md](scenario-01-training-flow.md) |
-| S2 | Answer validation | [scenario-02-answer-validation.md](scenario-02-answer-validation.md) |
-| S3 | Mastery & flower progression | [scenario-03-mastery-flower.md](scenario-03-mastery-flower.md) |
-| S4 | Spaced repetition scheduling | [scenario-04-spaced-repetition.md](scenario-04-spaced-repetition.md) |
-| S5 | Input modes (voice/keyboard/wordbank) | [scenario-05-input-modes.md](scenario-05-input-modes.md) |
-| S6 | Daily practice session | [scenario-06-daily-practice.md](scenario-06-daily-practice.md) |
-| S7 | Verb drill standalone | [scenario-07-verb-drill.md](scenario-07-verb-drill.md) |
-| S8 | Vocab drill standalone | [scenario-08-vocab-drill.md](scenario-08-vocab-drill.md) |
-| S9 | Boss battle | [scenario-09-boss-battle.md](scenario-09-boss-battle.md) |
-| S10 | Pack-scoped drills | [scenario-10-pack-drills.md](scenario-10-pack-drills.md) |
-| S11 | Navigation flow | [scenario-11-navigation.md](scenario-11-navigation.md) |
-| S12 | State persistence | [scenario-12-state-persistence.md](scenario-12-state-persistence.md) |
-| S13 | Lesson pack import | [scenario-13-pack-import.md](scenario-13-pack-import.md) |
-| S14 | Backup & restore | [scenario-14-backup-restore.md](scenario-14-backup-restore.md) |
-| S15 | First launch & onboarding | [scenario-15-onboarding.md](scenario-15-onboarding.md) |
+Point-in-time verification of spec-code alignment. Line references may be stale after code changes — check git history.
+
+| # | Scenario | Verifies specs |
+|---|----------|---------------|
+| S1 | [Training flow](scenario-01-training-flow.md) | 08, 12 |
+| S2 | [Answer validation](scenario-02-answer-validation.md) | 08, 01 |
+| S3 | [Mastery & flowers](scenario-03-mastery-flower.md) | 03, 01 |
+| S4 | [Spaced repetition](scenario-04-spaced-repetition.md) | 03 |
+| S5 | [Input modes](scenario-05-input-modes.md) | 08, 12 |
+| S6 | [Daily practice](scenario-06-daily-practice.md) | 09 |
+| S7 | [Verb drill](scenario-07-verb-drill.md) | 10 |
+| S8 | [Vocab drill](scenario-08-vocab-drill.md) | 11 |
+| S9 | [Boss battle](scenario-09-boss-battle.md) | 08, 03 |
+| S10 | [Pack drills](scenario-10-pack-drills.md) | 10, 11, 15 |
+| S11 | [Navigation](scenario-11-navigation.md) | 07, 13 |
+| S12 | [State persistence](scenario-12-state-persistence.md) | 02, 06 |
+| S13 | [Pack import](scenario-13-pack-import.md) | 15, 04 |
+| S14 | [Backup & restore](scenario-14-backup-restore.md) | 06 |
+| S15 | [Onboarding](scenario-15-onboarding.md) | 13, 07 |
 
 ---
 
-## Discrepancy Report
+## Legacy Documentation (kept with unique content)
 
-| Document | Description |
-|----------|-------------|
-| [CONSOLIDATED_DISCREPANCY_REPORT.md](CONSOLIDATED_DISCREPANCY_REPORT.md) | All spec-vs-code discrepancies found during audit |
-| [arch-audit-spec-vs-code.md](arch-audit-spec-vs-code.md) | Detailed discrepancy analysis (24 found) |
+These files contain information not yet incorporated into numbered specs:
 
----
-
-## Legacy Documentation
-
-All prior spec, design, and planning documents have been consolidated here. These are historical references — the numbered specs (01–20) above are the current source of truth.
-
-### Legacy Specs (Root Level)
-
-| File | Original Name | Description |
-|------|---------------|-------------|
-| [legacy-screen-forms-spec.md](legacy-screen-forms-spec.md) | Экранные формы.Спецификация | Screen form specifications |
-| [legacy-screen-forms-verification.md](legacy-screen-forms-verification.md) | Экранные формы.Верификация | Screen form verification |
-| [legacy-state-machine.md](legacy-state-machine.md) | Spec — State Machine | State machine specification |
-| [legacy-project-idea-v1-5.md](legacy-project-idea-v1-5.md) | GrammarMate_project_idea_v1_5 | Original project concept document |
-| [legacy-daily-practice-plan.md](legacy-daily-practice-plan.md) | DAILY_PRACTICE_PLAN | Daily practice implementation plan |
-| [legacy-team.md](legacy-team.md) | TEAM | Team coordination notes |
-| [legacy-session-report-2026-05-07.md](legacy-session-report-2026-05-07.md) | SESSION_REPORT_2026-05-07 | Session report |
-| [legacy-agents.md](legacy-agents.md) | agents | Agent workflow documentation |
-
-### Legacy Design Docs (from docs/)
-
-| File | Original Name | Description |
-|------|---------------|-------------|
-| [legacy-functional-requirements.md](legacy-functional-requirements.md) | FUNCTIONAL_REQUIREMENTS | Full functional requirements |
-| [legacy-forgetting-curve-analysis.md](legacy-forgetting-curve-analysis.md) | FORGETTING_CURVE_ANALYSIS | Ebbinghaus curve research |
-| [legacy-tts-design.md](legacy-tts-design.md) | TTS_DESIGN | TTS system design |
-| [legacy-tts-italian-design.md](legacy-tts-italian-design.md) | TTS_ITALIAN_DESIGN | Italian TTS design |
-| [legacy-tts-research.md](legacy-tts-research.md) | TTS_RESEARCH | TTS technology research |
-| [legacy-tts-italian-research.md](legacy-tts-italian-research.md) | TTS_ITALIAN_RESEARCH | Italian TTS research |
-| [legacy-tts-review.md](legacy-tts-review.md) | TTS_REVIEW | TTS implementation review |
-| [legacy-word-tap-translation-design.md](legacy-word-tap-translation-design.md) | WORD_TAP_TRANSLATION_DESIGN | Word-tap translation feature design |
-| [legacy-test-plan.md](legacy-test-plan.md) | TEST_PLAN | Comprehensive test plan |
-| [legacy-testing-summary.md](legacy-testing-summary.md) | TESTING_SUMMARY | Testing results summary |
-| [legacy-test-coverage-analysis.md](legacy-test-coverage-analysis.md) | TEST_COVERAGE_ANALYSIS | Test coverage report |
-| [legacy-ui-test-plan.md](legacy-ui-test-plan.md) | UI_TEST_PLAN | UI testing plan |
-| [legacy-offline-asr-research.md](legacy-offline-asr-research.md) | OFFLINE_ASR_RESEARCH | Offline ASR technology research |
-
-### Legacy Drill Designs (from docs/superpowers/specs/)
-
-| File | Description |
-|------|-------------|
-| [legacy-drill-designs/2026-05-07-drill-mode-design.md](legacy-drill-designs/2026-05-07-drill-mode-design.md) | Drill mode initial design |
-| [legacy-drill-designs/2026-05-08-seamless-drill-design.md](legacy-drill-designs/2026-05-08-seamless-drill-design.md) | Seamless drill integration design |
-| [legacy-drill-designs/2026-05-09-verb-drill-design.md](legacy-drill-designs/2026-05-09-verb-drill-design.md) | Verb drill system design |
-| [legacy-drill-designs/2026-05-09-verb-drill-plan.md](legacy-drill-designs/2026-05-09-verb-drill-plan.md) | Verb drill implementation plan |
-| [legacy-drill-designs/2026-05-10-card-mixing-reference.md](legacy-drill-designs/2026-05-10-card-mixing-reference.md) | Card mixing algorithm reference |
-| [legacy-drill-designs/2026-05-10-pack-scoped-drills-design.md](legacy-drill-designs/2026-05-10-pack-scoped-drills-design.md) | Pack-scoped drill design |
-| [legacy-drill-designs/2026-05-10-per-pack-bad-words-design.md](legacy-drill-designs/2026-05-10-per-pack-bad-words-design.md) | Per-pack bad words design |
-| [legacy-drill-designs/2026-05-10-training-card-session-design.md](legacy-drill-designs/2026-05-10-training-card-session-design.md) | Training card session design |
-| [legacy-drill-designs/2026-05-12-daily-session-fixes.md](legacy-drill-designs/2026-05-12-daily-session-fixes.md) | Daily session bug fixes |
-
-### Legacy Plans (from docs/superpowers/plans/)
-
-| File | Description |
-|------|-------------|
-| [legacy-plans/2026-05-12-daily-practice-3block-pipeline.md](legacy-plans/2026-05-12-daily-practice-3block-pipeline.md) | Daily practice 3-block pipeline plan |
+| File | Why kept |
+|------|----------|
+| [legacy-project-idea-v1-5.md](legacy-project-idea-v1-5.md) | Original vision, Warm-up concept, Boss medal tiers, hint rate rules |
+| [legacy-screen-forms-verification.md](legacy-screen-forms-verification.md) | 32 spec-vs-code discrepancies (not all resolved) |
+| [legacy-test-plan.md](legacy-test-plan.md) | 200+ concrete test case definitions with assertions |
+| [legacy-tts-review.md](legacy-tts-review.md) | 6 unfixed critical/major TTS code review findings |
+| [legacy-word-tap-translation-design.md](legacy-word-tap-translation-design.md) | Unbuilt feature spec with no other coverage |
+| [legacy-drill-designs/2026-05-10-per-pack-bad-words-design.md](legacy-drill-designs/2026-05-10-per-pack-bad-words-design.md) | Partially implemented migration plan |
+| [legacy-drill-designs/2026-05-12-daily-session-fixes.md](legacy-drill-designs/2026-05-12-daily-session-fixes.md) | 4 in-progress bug fixes |

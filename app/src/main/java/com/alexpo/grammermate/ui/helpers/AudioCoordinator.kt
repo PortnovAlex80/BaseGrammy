@@ -188,6 +188,18 @@ class AudioCoordinator(
                     }
                     current.copy(audio = current.audio.copy(bgTtsDownloadStates = updatedBgStates, ttsModelsReady = updatedReady, ttsDownloadState = downloadStateOverride, ttsModelReady = if (languageId == current.navigation.selectedLanguageId.value && downloadState is DownloadState.Done) true else current.audio.ttsModelReady))
                 }
+                // Recover TTS engine from ERROR/IDLE after per-language download completes.
+                if (downloadState is DownloadState.Done) {
+                    val engineState = ttsEngine.state.value
+                    if (engineState == TtsState.ERROR || engineState == TtsState.IDLE) {
+                        try {
+                            ttsEngine.initialize(languageId)
+                            Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to auto-initialize TTS for $languageId after download", e)
+                        }
+                    }
+                }
             }
         }
     }
@@ -291,6 +303,12 @@ class AudioCoordinator(
                     it is DownloadState.Downloading || it is DownloadState.Extracting
                 }
 
+                // Track newly completed downloads to trigger engine recovery
+                val currentReadyMap = stateAccess.uiState.value.audio.ttsModelsReady
+                val newlyCompleted = stateMap.filter { (langId, dlState) ->
+                    dlState is DownloadState.Done && currentReadyMap[langId] != true
+                }.keys
+
                 stateAccess.updateState { current ->
                     val selectedBgState = stateMap[current.navigation.selectedLanguageId.value]
                     val downloadStateOverride = if (selectedBgState != null
@@ -309,6 +327,25 @@ class AudioCoordinator(
                         }
                     }
                     current.copy(audio = current.audio.copy(bgTtsDownloadStates = stateMap, bgTtsDownloading = anyActive, ttsModelReady = ttsModelManager.isModelReady(current.navigation.selectedLanguageId.value), ttsDownloadState = downloadStateOverride, ttsModelsReady = updatedReady))
+                }
+
+                // Recover TTS engine from ERROR state when models become available.
+                // This handles the scenario where the user tapped TTS before download
+                // finished, putting the engine into ERROR; after download completes,
+                // we re-initialize so the icon updates from red cross to speaker.
+                if (newlyCompleted.isNotEmpty()) {
+                    val engineState = ttsEngine.state.value
+                    if (engineState == TtsState.ERROR || engineState == TtsState.IDLE) {
+                        val selectedLang = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                        val langToInit = if (newlyCompleted.contains(selectedLang)) selectedLang
+                            else newlyCompleted.first()
+                        try {
+                            ttsEngine.initialize(langToInit)
+                            Log.d(TAG, "Auto-initialized TTS engine for $langToInit after background download")
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to auto-initialize TTS for $langToInit after download", e)
+                        }
+                    }
                 }
 
                 if (allDone) {
@@ -358,6 +395,16 @@ class AudioCoordinator(
                 stateAccess.updateState { it.copy(audio = it.audio.copy(ttsDownloadState = downloadState)) }
                 if (downloadState is DownloadState.Done) {
                     stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = true)) }
+                    // Recover TTS engine from ERROR/IDLE after user-initiated download.
+                    val engineState = ttsEngine.state.value
+                    if (engineState == TtsState.ERROR || engineState == TtsState.IDLE) {
+                        try {
+                            ttsEngine.initialize(langId.value)
+                            Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
+                        }
+                    }
                 }
             }
         }

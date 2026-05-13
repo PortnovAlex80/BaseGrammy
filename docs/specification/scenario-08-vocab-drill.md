@@ -39,8 +39,8 @@ Trace of the standalone Vocab Drill flow: user opens vocab drill, selects filter
 
 - `VocabDrillScreen.kt:189-199` -- Direction FilterChips: "IT -> RU" and "RU -> IT". Calls `onSetDirection(VocabDrillDirection.IT_TO_RU)` or `RU_TO_IT`.
 - `VocabDrillViewModel.kt:335-342` -- `setDirection()` updates `drillDirection` in state AND in the active session if one exists.
-- `VocabDrillScreen.kt:203-226` -- Voice input toggle: Switch calls `onSetVoiceMode(enabled)`.
-- `VocabDrillViewModel.kt:345-352` -- `setVoiceMode()` updates `voiceModeEnabled` in state AND active session.
+- `VocabDrillScreen.kt` -- ~~Voice input toggle~~ REMOVED. Voice auto-start is now controlled by global `AudioState.voiceAutoStart`, passed as `voiceAutoStart` parameter from GrammarMateApp.
+- `VocabDrillViewModel.kt` -- `setVoiceMode()` is a no-op (kept for compatibility during migration).
 - `VocabDrillScreen.kt:229-251` -- POS FilterChips: "All" (null) + one per `availablePos`. Labels: Nouns, Verbs, Adj., Adv.
 - `VocabDrillViewModel.kt:140-143` -- `selectPos(pos)` updates `selectedPos`, calls `updateCounts()`.
 - `VocabDrillScreen.kt:253-271` -- Frequency chips: Top 100, Top 500, Top 1000, All.
@@ -154,8 +154,8 @@ The interval ladder is `[1, 2, 4, 7, 10, 14, 20, 28, 42, 56]` days (indices 0-9)
    - Uses `RecognizerIntent.ACTION_RECOGNIZE_SPEECH`.
    - On result: calls `viewModel.handleVoiceResult(spoken)`.
 
-2. **Auto-launch** (`VocabDrillScreen.kt:377-385`):
-   - `LaunchedEffect(session.currentIndex, voiceModeEnabled)`: if voice mode on + not flipped + not completed + not active, launches after 500ms delay.
+2. **Auto-launch** (`VocabDrillScreen.kt`):
+   - `LaunchedEffect(session.currentIndex, voiceAutoStart)`: if voice auto-start on + not flipped + not completed + not active, launches after 500ms delay. `voiceAutoStart` is passed as parameter from GrammarMateApp (reads `AudioState.voiceAutoStart`).
 
 3. **handleVoiceResult** (`VocabDrillViewModel.kt:370-432`):
    - Gets expected answer based on direction:
@@ -293,7 +293,7 @@ Shows "Learned" only when `step >= 9`, but `isLearned` is set at `step >= 3`. So
 - `selectedPos` -- user's filter selection persists.
 - `rankMin`/`rankMax` -- user's filter selection persists.
 - `drillDirection` -- persists.
-- `voiceModeEnabled` -- persists.
+- `voiceAutoStart` -- global setting, persisted via `AppConfigStore` in `config.yaml`. Not per-drill state.
 - Active `session` -- NOT explicitly cleared on reload. However, the idempotency check means reload is skipped if same pack+language, so this is safe for normal navigation.
 
 **Spec match:** Matches spec 11 Section 11.5.3 and US-11.14. No discrepancy.

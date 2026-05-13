@@ -45,7 +45,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
@@ -83,7 +82,8 @@ fun VerbDrillScreen(
     viewModel: VerbDrillViewModel,
     onBack: () -> Unit,
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    textScale: Float = 1.0f
+    textScale: Float = 1.0f,
+    voiceAutoStart: Boolean = true
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -112,7 +112,8 @@ fun VerbDrillScreen(
             viewModel = viewModel,
             onExit = viewModel::exitSession,
             hintLevel = hintLevel,
-            textScale = textScale
+            textScale = textScale,
+            voiceAutoStart = voiceAutoStart
         )
     } else {
         VerbDrillSelectionScreen(
@@ -120,7 +121,6 @@ fun VerbDrillScreen(
             onSelectTense = viewModel::selectTense,
             onSelectGroup = viewModel::selectGroup,
             onToggleSortByFrequency = viewModel::toggleSortByFrequency,
-            onToggleVoiceMode = viewModel::toggleVoiceAutoMode,
             onStart = viewModel::startSession,
             onBack = onBack
         )
@@ -134,7 +134,8 @@ private fun VerbDrillSessionWithCardSession(
     viewModel: VerbDrillViewModel,
     onExit: () -> Unit,
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    textScale: Float = 1.0f
+    textScale: Float = 1.0f,
+    voiceAutoStart: Boolean = true
 ) {
     var showVerbSheet by remember { mutableStateOf(false) }
     var sheetVerb by remember { mutableStateOf<String?>(null) }
@@ -179,13 +180,13 @@ private fun VerbDrillSessionWithCardSession(
         }
     }
 
-    // Auto-launch voice when voice mode is on and a new card appears
+    // Auto-launch voice when voice auto-start is on and a new card appears
     VoiceAutoLauncher(
         cardIndex = when (val c = provider.currentCard) {
             null -> -1
             else -> (c as? VerbDrillCard)?.let { uiState.session?.cards?.indexOf(it) } ?: -1
         },
-        voiceModeEnabled = uiState.voiceModeEnabled,
+        voiceModeEnabled = voiceAutoStart,
         isFlipped = provider.hintAnswer != null,
         voiceCompleted = provider.pendingAnswerResult != null,
         isVoiceActive = isVoiceActive,
@@ -251,8 +252,8 @@ private fun VerbDrillSessionWithCardSession(
                         }
                     }
 
-                    // Verb + tense hint chips -- hidden on HARD
-                    if (!verbText.isNullOrBlank() && hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
+                    // Verb + tense hint chips -- always visible (reference data, not hints)
+                    if (!verbText.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             SuggestionChip(
@@ -301,7 +302,8 @@ private fun VerbDrillSessionWithCardSession(
             DefaultVerbDrillInputControls(
                 provider = provider,
                 scope = this,
-                hintLevel = hintLevel
+                hintLevel = hintLevel,
+                voiceAutoStart = voiceAutoStart
             )
         },
         completionScreen = {
@@ -349,7 +351,8 @@ private fun VerbDrillSessionWithCardSession(
 private fun DefaultVerbDrillInputControls(
     provider: VerbDrillCardSessionProvider,
     scope: TrainingCardSessionScope,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    voiceAutoStart: Boolean = false
 ) {
     val contract = scope.contract
     val hasCards = scope.currentCard != null
@@ -392,7 +395,8 @@ private fun DefaultVerbDrillInputControls(
         contract.sessionActive,
         voiceToken
     ) {
-        if (contract.currentInputMode == InputMode.VOICE &&
+        if (voiceAutoStart &&
+            contract.currentInputMode == InputMode.VOICE &&
             contract.sessionActive &&
             scope.currentCard != null
         ) {
@@ -570,7 +574,6 @@ private fun VerbDrillSelectionScreen(
     onSelectTense: (String?) -> Unit,
     onSelectGroup: (String?) -> Unit,
     onToggleSortByFrequency: () -> Unit,
-    onToggleVoiceMode: () -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -623,34 +626,6 @@ private fun VerbDrillSelectionScreen(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(text = "По частотности")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Voice input auto-launch toggle — matches VocabDrill style
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Mic,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = if (state.voiceModeEnabled) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Voice input (auto)",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            Switch(
-                checked = state.voiceModeEnabled,
-                onCheckedChange = { onToggleVoiceMode() }
-            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))

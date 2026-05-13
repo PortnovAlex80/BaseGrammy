@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 60 |
-| Total Acceptance Criteria | 264 |
-| Domains | 16 |
+| Total Use Cases | 61 |
+| Total Acceptance Criteria | 267 |
+| Domains | 17 |
 
 ### Per-Domain Counts
 
@@ -32,6 +32,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 14 | Voice auto-start toggle (global setting for all training screens) | 1 | 8 |
 | 15 | Verb/tense info sheets (interactive chips on VerbDrillScreen and DailyPracticeScreen) | 1 | 5 |
 | 16 | Performance (IO dispatchers, caching, parallel loading) | 1 | 5 |
+| 17 | TTS icon auto-recovery (speaker icon updates after model download) | 1 | 3 |
 
 ---
 
@@ -187,7 +188,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
-| UC-57 | Voice auto-start toggle applies to all training screens | App is running; user is on Settings screen | 1. User toggles "Auto-start voice input" switch in Settings. 2. `voiceAutoStart` is persisted to `config.yaml` via `AppConfigStore.save()`. 3. User navigates to any training screen. 4. On new card entry with VOICE input mode, behavior follows toggle state. | AC1 [STRUCTURAL]: SettingsScreen has voice auto-start toggle (Switch). AC2 [BEHAVIORAL]: When toggle OFF + TrainingScreen new card in VOICE mode, no voice auto-launch occurs. AC3 [BEHAVIORAL]: When toggle OFF + DailyPracticeScreen new card in VOICE mode, no voice auto-launch occurs. AC4 [BEHAVIORAL]: When toggle ON + TrainingScreen new card in VOICE mode, voice auto-launches within 500ms. AC5 [BEHAVIORAL]: When toggle ON + DailyPracticeScreen new card in VOICE mode, voice auto-launches within 500ms. AC6 [BEHAVIORAL]: VerbDrill voiceModeEnabled respects its own per-drill toggle (independent of global toggle). AC7 [BEHAVIORAL]: VocabDrill voiceModeEnabled respects its own per-drill toggle (independent of global toggle). AC8 [BEHAVIORAL]: Auto-submit timing (keyboard exact match, voice auto-advance) is not affected by voice auto-start toggle. | TrainingScreen, DailyPracticeScreen, SettingsScreen | `data/Models.kt`, `data/AppConfigStore.kt`, `ui/TrainingViewModel.kt`, `ui/screens/TrainingScreen.kt`, `ui/DailyPracticeScreen.kt`, `ui/screens/SettingsScreen.kt`, `ui/GrammarMateApp.kt` | voice-auto-start |
+| UC-57 | Voice auto-start toggle applies to all training screens | App is running; user is on Settings screen | 1. User toggles "Auto-start voice input" switch in Settings. 2. `voiceAutoStart` is persisted to `config.yaml` via `AppConfigStore.save()`. 3. User navigates to any training screen. 4. On new card entry with VOICE input mode, behavior follows toggle state. | AC1 [STRUCTURAL]: SettingsScreen has voice auto-start toggle (Switch). AC2 [BEHAVIORAL]: When toggle OFF + TrainingScreen new card in VOICE mode, no voice auto-launch occurs but mic button still works on manual click. AC3 [BEHAVIORAL]: When toggle OFF + DailyPracticeScreen new card in VOICE mode, no voice auto-launch occurs but mic button still works on manual click. AC4 [BEHAVIORAL]: When toggle ON + TrainingScreen new card in VOICE mode, voice auto-launches within 500ms. AC5 [BEHAVIORAL]: When toggle ON + DailyPracticeScreen new card in VOICE mode, voice auto-launches within 500ms. AC6 [BEHAVIORAL]: VerbDrillScreen uses global voiceAutoStart (no per-drill toggle). AC7 [BEHAVIORAL]: VocabDrillScreen uses global voiceAutoStart (no per-drill toggle). AC8 [BEHAVIORAL]: Auto-submit timing (keyboard exact match, voice auto-advance) is not affected by voice auto-start toggle. AC9 [BEHAVIORAL]: When voice auto-start OFF, mic button on any input mode bar still works and launches speech recognition on manual click. | TrainingScreen, DailyPracticeScreen, VerbDrillScreen, VocabDrillScreen, SettingsScreen | `data/Models.kt`, `data/AppConfigStore.kt`, `ui/TrainingViewModel.kt`, `ui/screens/TrainingScreen.kt`, `ui/DailyPracticeScreen.kt`, `ui/VerbDrillScreen.kt`, `ui/VocabDrillScreen.kt`, `ui/screens/SettingsScreen.kt`, `ui/GrammarMateApp.kt` | voice-auto-start |
 
 ---
 
@@ -204,6 +205,14 @@ Structured registry of all verified use cases extracted from scenario traces and
 | UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
 | UC-60 | Performance — training screens load without UI jank | User opens VerbDrill, DailyPractice, or any screen that reads CSV/YAML data | 1. VerbDrillViewModel.loadCards() runs file I/O on Dispatchers.IO. 2. DailySessionComposer builds 3 blocks in parallel via coroutineScope + async. 3. Lesson CSV data is parsed once per pack load. 4. Regex patterns are pre-compiled in companion/top-level objects. 5. State updates flow back to main thread for Compose. | AC1 [BEHAVIORAL]: VerbDrill loadCards() file I/O (CSV reading, YAML loading, asset reads) runs inside `withContext(Dispatchers.IO)`, never on main thread. AC2 [BEHAVIORAL]: DailyPractice loads 3 blocks (Translate, Vocab, Verbs) in parallel using `coroutineScope` + `async` in DailySessionComposer.buildSession(). AC3 [BEHAVIORAL]: Lesson CSV data is parsed only when needed (no re-read on subsequent calls within same session — caching deferred to future optimization). AC4 [BEHAVIORAL]: Store data is loaded on first access (no in-memory cache yet — deferred to future optimization). AC5 [STRUCTURAL]: Regex patterns (Normalizer: WHITESPACE_REGEX, DIACRITICAL_MARKS_REGEX, TIME_MINUTES_REGEX; VerbDrillCsvParser: PARENTHETICAL_VERB_REGEX) are compiled once at class load time, not per-call. | All training screens | `ui/VerbDrillViewModel.kt`, `ui/helpers/DailySessionComposer.kt`, `data/Normalization.kt`, `data/VerbDrillCsvParser.kt` | performance |
+
+---
+
+## Domain 17: TTS Icon Auto-Recovery (Speaker Icon Updates After Model Download)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-61 | TTS speaker icon updates automatically after model download completes | App is open; TTS models are downloading in background; TTS engine is in ERROR or IDLE state (because models were not yet available) | 1. Background download starts for missing TTS models. 2. User may tap TTS button before download completes, causing engine to enter ERROR state. 3. Download completes (DownloadState.Done). 4. AudioCoordinator detects newly completed download. 5. AudioCoordinator calls ttsEngine.initialize() for the downloaded language. 6. Engine transitions ERROR -> INITIALIZING -> READY. 7. startTtsStateCollection() propagates state to uiState.audio.ttsState. 8. TtsSpeakerButton recomposes with VolumeUp icon. | AC1 [BEHAVIORAL]: Speaker icon renders as VolumeUp (speaker) when TTS model is downloaded and engine is READY. AC2 [BEHAVIORAL]: Icon transitions from error/loading state to speaker icon within 2 seconds of model download completion, without requiring user action or screen re-entry. AC3 [BEHAVIORAL]: Both English and Italian models download in background on first launch; each completed download triggers engine initialization for its language. | All screens with TTS buttons (TrainingScreen, DailyPracticeScreen, VerbDrillScreen) | `ui/helpers/AudioCoordinator.kt`, `data/TtsEngine.kt`, `ui/components/SharedComponents.kt` | tts-icon-fix |
 
 ---
 
@@ -228,3 +237,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | scenario-15 (onboarding) | UC-46 |
 | 17-user-stories | All US-01 through US-79 referenced in UCs |
 | performance | UC-60 |
+| tts-icon-fix | UC-61 |

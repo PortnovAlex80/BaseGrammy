@@ -2,6 +2,28 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v2.2 (2026-05-13) -- TTS Icon Auto-Recovery Fix
+
+### TTS Icon Bug Fix
+- `05-audio-tts-asr.md`: Updated section 5.1.7 with auto-initialization behavior after download. Updated TtsSpeakerButton states table with auto-recovery note.
+- `22-use-case-registry.md`: Added Domain 17 with UC-61 (TTS speaker icon auto-recovery). Updated summary counts (61 UCs, 267 ACs, 17 domains).
+
+## v2.1 (2026-05-13) -- Documentation Cleanup & Skills Pipeline
+
+### Documentation Cleanup
+- Deleted 27 superseded files: 24 legacy docs fully covered by specs 01-23, broken docs/README.md, stale CONSOLIDATED_DISCREPANCY_REPORT.md, completed arch-review-execution-plan.md
+- Removed empty legacy-plans/ directory
+- Kept 7 legacy files with unique content (test plan, TTS review bugs, unbuilt features)
+
+### Navigation Overhaul
+- Rewrote specification/README.md: added specs 21-23, arch-phase3, scenario-to-spec cross-references
+- Added SKILLS PIPELINE section to CLAUDE.md with trigger table and workflow diagram
+- Updated CLAUDE.md roadmap section: removed deleted arch-review plan, added active plans
+
+### Files Changed
+- Deleted: 27 files (see commit 0162395)
+- Updated: CLAUDE.md (skills pipeline + roadmap), docs/specification/README.md (full rewrite)
+
 ## v2.0 (2026-05-13) -- Architecture Review & Full Refactoring
 
 ### UI Layer Decomposition

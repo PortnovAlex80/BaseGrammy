@@ -1,6 +1,10 @@
 package com.alexpo.grammermate.data
 
 object VerbDrillCsvParser {
+
+    /** Pre-compiled regex to extract verb from parenthetical hint in promptRu. */
+    private val PARENTHETICAL_VERB_REGEX = Regex("\\(([\\w]+)")
+
     fun parse(content: String): Pair<String?, List<VerbDrillCard>> {
         val lines = content.lines()
         val cards = mutableListOf<VerbDrillCard>()
@@ -66,8 +70,7 @@ object VerbDrillCsvParser {
             // e.g. "я устал (essere stanco)" → "essere"
             // e.g. "я хочу есть (avere fame)" → "avere"
             val resolvedVerb = if (verb == null && ru.contains("(")) {
-                val match = Regex("\\(([\\w]+)").find(ru)
-                match?.groupValues?.get(1)
+                PARENTHETICAL_VERB_REGEX.find(ru)?.groupValues?.get(1)
             } else verb
 
             val id = "${group ?: ""}_${tense ?: ""}_$dataRowIndex"

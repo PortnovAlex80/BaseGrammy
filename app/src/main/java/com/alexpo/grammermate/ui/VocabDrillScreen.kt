@@ -45,7 +45,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -79,7 +78,8 @@ fun VocabDrillScreen(
     viewModel: VocabDrillViewModel,
     onBack: () -> Unit,
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    textScale: Float = 1.0f
+    textScale: Float = 1.0f,
+    voiceAutoStart: Boolean = true
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -146,7 +146,7 @@ fun VocabDrillScreen(
         } else {
             VocabDrillCardScreen(
                 session = session,
-                voiceModeEnabled = state.voiceModeEnabled,
+                voiceAutoStart = voiceAutoStart,
                 isVoiceActive = isVoiceActive,
                 ttsState = viewModel.ttsState.collectAsState().value,
                 onFlip = viewModel::flipCard,
@@ -170,7 +170,6 @@ fun VocabDrillScreen(
             onSelectPos = viewModel::selectPos,
             onSetRankRange = viewModel::setRankRange,
             onSetDirection = viewModel::setDirection,
-            onSetVoiceMode = viewModel::setVoiceMode,
             onStart = viewModel::startSession,
             onBack = onBack
         )
@@ -186,7 +185,6 @@ private fun VocabDrillSelectionScreen(
     onSelectPos: (String?) -> Unit,
     onSetRankRange: (Int, Int) -> Unit,
     onSetDirection: (VocabDrillDirection) -> Unit,
-    onSetVoiceMode: (Boolean) -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -213,32 +211,6 @@ private fun VocabDrillSelectionScreen(
                 selected = state.drillDirection == VocabDrillDirection.RU_TO_IT,
                 onClick = { onSetDirection(VocabDrillDirection.RU_TO_IT) },
                 label = { Text("RU → IT") }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        // Voice input toggle
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Mic,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = if (state.voiceModeEnabled) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Voice input (auto)",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            Switch(
-                checked = state.voiceModeEnabled,
-                onCheckedChange = onSetVoiceMode
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -370,7 +342,7 @@ private fun VocabDrillSelectionScreen(
 @Composable
 private fun VocabDrillCardScreen(
     session: VocabDrillSessionState,
-    voiceModeEnabled: Boolean,
+    voiceAutoStart: Boolean,
     isVoiceActive: Boolean,
     ttsState: TtsState,
     onFlip: () -> Unit,
@@ -408,9 +380,9 @@ private fun VocabDrillCardScreen(
         }
     }
 
-    // Auto-launch voice input when voice mode is on and a new card appears
-    LaunchedEffect(session.currentIndex, voiceModeEnabled) {
-        if (voiceModeEnabled && !session.isFlipped && !session.voiceCompleted && !isVoiceActive) {
+    // Auto-launch voice input when voice auto-start is on and a new card appears
+    LaunchedEffect(session.currentIndex, voiceAutoStart) {
+        if (voiceAutoStart && !session.isFlipped && !session.voiceCompleted && !isVoiceActive) {
             delay(500L) // Let the card animate in before launching
             // Re-check conditions after delay (state may have changed)
             if (!session.voiceCompleted && !session.isFlipped) {
@@ -734,15 +706,13 @@ private fun VocabDrillCardFront(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // POS badge + rank -- hidden on HARD
-            if (hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PosBadge(pos = card.word.pos)
-                    RankBadge(rank = card.word.rank)
-                }
+            // POS badge + rank -- always visible (reference data, not hints)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PosBadge(pos = card.word.pos)
+                RankBadge(rank = card.word.rank)
             }
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -922,9 +892,9 @@ private fun VocabDrillCardBack(
                 }
             }
 
-            // Forms -- only on EASY
+            // Forms -- always visible (reference data, not hints)
             val forms = card.word.forms
-            if (forms.isNotEmpty() && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+            if (forms.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -970,9 +940,9 @@ private fun VocabDrillCardBack(
                 }
             }
 
-            // Collocations -- only on EASY
+            // Collocations -- always visible (reference data, not hints)
             val collocations = card.word.collocations
-            if (collocations.isNotEmpty() && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+            if (collocations.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "Collocations",

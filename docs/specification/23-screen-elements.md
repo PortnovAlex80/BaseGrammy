@@ -240,7 +240,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Direction" label | VOC-04 | text | Always | labelMedium "Direction". | ? |
 | Direction filter "IT -> RU" | VOC-05 | chip | Always | FilterChip. Selected when `drillDirection == IT_TO_RU`. | ? |
 | Direction filter "RU -> IT" | VOC-06 | chip | Always | FilterChip. Selected when `drillDirection == RU_TO_IT`. | ? |
-| Voice input toggle | VOC-07 | toggle | Always | Switch + Mic icon + "Voice input (auto)" text. Mic tinted primary when enabled. | ? |
+| ~~Voice input toggle~~ | VOC-07 | (removed) | N/A | REMOVED. Voice auto-start is now controlled by the global Settings toggle (`AudioState.voiceAutoStart`). No per-drill toggle exists. | UC-57 |
 | "Part of speech" label | VOC-08 | text | Always | labelMedium "Part of speech". | ? |
 | POS "All" chip | VOC-09 | chip | Always | FilterChip. Selected when `selectedPos == null`. | ? |
 | POS chips (per category) | VOC-10 | chip | Always (one per `availablePos`) | FilterChips: Nouns, Verbs, Adj., Adv., Numbers, etc. Selected when matching `selectedPos`. | ? |
@@ -282,7 +282,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: "Word options" title + word text + flag/unflag + export + copy. | ? |
 | Export result dialog | VOC-42 | dialog | `exportMessage != null` | AlertDialog with export result. | ? |
 | Auto-flip on voice correct | VOC-43 | (system) | `voiceCompleted && voiceResult == CORRECT && !isFlipped` | Auto-flips card after 800ms delay. | ? |
-| Auto-launch voice | VOC-44 | (system) | `voiceModeEnabled && !isFlipped && !voiceCompleted && !isVoiceActive` | Auto-launches voice recognition after 500ms delay. | ? |
+| Auto-launch voice | VOC-44 | (system) | `voiceAutoStart (global) && !isFlipped && !voiceCompleted && !isVoiceActive` | Auto-launches voice recognition after 500ms delay. Uses global `voiceAutoStart` from Settings, NOT per-drill toggle. Mic button still works on manual click when voiceAutoStart is OFF. | UC-57 |
 
 ### 6c. Completion Screen
 

@@ -361,7 +361,8 @@ private fun AppScreenContent(
                 viewModel = verbDrillVm,
                 onBack = { onScreenChange(AppScreen.HOME) },
                 hintLevel = state.cardSession.hintLevel,
-                textScale = state.audio.ruTextScale
+                textScale = state.audio.ruTextScale,
+                voiceAutoStart = state.audio.voiceAutoStart
             )
         }
         AppScreen.VOCAB_DRILL -> {
@@ -379,7 +380,8 @@ private fun AppScreenContent(
                     onScreenChange(AppScreen.HOME)
                 },
                 hintLevel = state.cardSession.hintLevel,
-                textScale = state.audio.ruTextScale
+                textScale = state.audio.ruTextScale,
+                voiceAutoStart = state.audio.voiceAutoStart
             )
         }
     }

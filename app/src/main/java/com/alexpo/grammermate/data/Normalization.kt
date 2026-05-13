@@ -1,12 +1,18 @@
 package com.alexpo.grammermate.data
 
 object Normalizer {
+
+    // Pre-compiled regex patterns — avoid re-compilation on every normalize() call
+    private val WHITESPACE_REGEX = Regex("\\s+")
+    private val DIACRITICAL_MARKS_REGEX = Regex("\\p{M}")
+    private val TIME_MINUTES_REGEX = Regex("\\b(\\d{1,2}):\\d{2}\\b")
+
     fun normalize(input: String): String {
-        val trimmed = input.trim().replace(Regex("\\s+"), " ")
+        val trimmed = input.trim().replace(WHITESPACE_REGEX, " ")
         // NFD decomposition + strip combining diacritical marks (e.g. "perche" == "perché")
         val decomposed = java.text.Normalizer.normalize(trimmed, java.text.Normalizer.Form.NFD)
-        val noDiacritics = decomposed.replace(Regex("\\p{M}"), "")
-        val timeFixed = noDiacritics.replace(Regex("\\b(\\d{1,2}):\\d{2}\\b"), "$1")
+        val noDiacritics = decomposed.replace(DIACRITICAL_MARKS_REGEX, "")
+        val timeFixed = noDiacritics.replace(TIME_MINUTES_REGEX, "$1")
         val lower = timeFixed.lowercase()
         val builder = StringBuilder()
         for (ch in lower) {
@@ -20,7 +26,7 @@ object Normalizer {
                 else -> builder.append(ch)
             }
         }
-        return builder.toString().replace(Regex("\\s+"), " ").trim()
+        return builder.toString().replace(WHITESPACE_REGEX, " ").trim()
     }
 
 

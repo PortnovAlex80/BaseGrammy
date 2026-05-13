@@ -20,10 +20,12 @@ import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
 import com.alexpo.grammermate.data.StoreFactory
 import org.yaml.snakeyaml.Yaml
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class TenseInfo(
     val name: String,
@@ -118,8 +120,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     fun reloadForPack(packId: String) {
         if (currentPackId == packId && allCards.isNotEmpty()) {
             // Cards already loaded, but progress may be stale — force re-read from disk
-            progressMap = verbDrillStore.loadProgress()
-            updateProgressDisplay()
+            viewModelScope.launch {
+                progressMap = withContext(Dispatchers.IO) { verbDrillStore.loadProgress() }
+                updateProgressDisplay()
+            }
             return
         }
         currentPackId = packId
@@ -128,67 +132,96 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { loadCards() }
     }
 
-    private fun loadCards(languageId: String? = null) {
-        val lang = languageId ?: progressStore.load().languageId.value
-        val files = if (currentPackId != null) {
-            lessonStore.getVerbDrillFiles(currentPackId!!, lang)
-        } else {
-            @Suppress("DEPRECATION")
-            lessonStore.getVerbDrillFiles(lang)
-        }
-        val cards = mutableListOf<VerbDrillCard>()
-        val cardToPack = mutableMapOf<String, String>()
-        val packIds = mutableSetOf<String>()
-
-        for (file in files) {
-            val content = file.readText()
-            val (_, parsed) = VerbDrillCsvParser.parse(content)
-
-            // Use the active packId, or resolve from filename in global mode
-            val packId = currentPackId ?: run {
-                val fileName = file.nameWithoutExtension
-                val lessonId = fileName.removePrefix("${lang}_")
-                lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+    private suspend fun loadCards(languageId: String? = null) {
+        // All file I/O and parsing runs on Dispatchers.IO to avoid blocking main thread
+        val ioResult = withContext(Dispatchers.IO) {
+            val lang = languageId ?: progressStore.load().languageId.value
+            val files = if (currentPackId != null) {
+                lessonStore.getVerbDrillFiles(currentPackId!!, lang)
+            } else {
+                @Suppress("DEPRECATION")
+                lessonStore.getVerbDrillFiles(lang)
             }
-            packIds.add(packId)
+            val cards = mutableListOf<VerbDrillCard>()
+            val cardToPack = mutableMapOf<String, String>()
+            val packIds = mutableSetOf<String>()
 
-            for (card in parsed) {
-                cardToPack[card.id] = packId
+            for (file in files) {
+                val content = file.readText()
+                val (_, parsed) = VerbDrillCsvParser.parse(content)
+
+                // Use the active packId, or resolve from filename in global mode
+                val packId = currentPackId ?: run {
+                    val fileName = file.nameWithoutExtension
+                    val lessonId = fileName.removePrefix("${lang}_")
+                    lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+                }
+                packIds.add(packId)
+
+                for (card in parsed) {
+                    cardToPack[card.id] = packId
+                }
+                cards.addAll(parsed)
             }
-            cards.addAll(parsed)
+
+            val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
+            val groups = cards.mapNotNull { it.group }.distinct().sorted()
+            val progress = verbDrillStore.loadProgress()
+            val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+
+            // Load tense reference info (asset file read)
+            val tenseInfo = loadTenseInfoInternal(lang)
+
+            LoadCardsResult(cards, cardToPack, packIds, tenses, groups, progress, badCount, lang, tenseInfo)
         }
 
-        allCards = cards
-        packIdForCardId = cardToPack
-        activePackIds = packIds
-
-        val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
-        val groups = cards.mapNotNull { it.group }.distinct().sorted()
-
-        progressMap = verbDrillStore.loadProgress()
-
-        // Sum bad sentence counts across all active packs
-        val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+        // State updates on main thread (viewModelScope.launch default dispatcher)
+        allCards = ioResult.cards
+        packIdForCardId = ioResult.cardToPack
+        activePackIds = ioResult.packIds
+        progressMap = ioResult.progress
+        tenseInfoMap = ioResult.tenseInfo
 
         _uiState.update {
-            it.copy(badSentenceCount = badCount, availableTenses = tenses, availableGroups = groups, isLoading = false, loadedLanguageId = lang)
+            it.copy(
+                badSentenceCount = ioResult.badCount,
+                availableTenses = ioResult.tenses,
+                availableGroups = ioResult.groups,
+                isLoading = false,
+                loadedLanguageId = ioResult.lang
+            )
         }
 
-        Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $lang")
-
-        // Load tense reference info
-        loadTenseInfo(lang)
+        Log.d(logTag, "Loaded ${ioResult.cards.size} verb drill cards for language ${ioResult.lang}")
     }
 
-    private fun loadTenseInfo(languageId: String) {
+    /** Holds the result of I/O-heavy card loading, returned from Dispatchers.IO */
+    private data class LoadCardsResult(
+        val cards: List<VerbDrillCard>,
+        val cardToPack: Map<String, String>,
+        val packIds: Set<String>,
+        val tenses: List<String>,
+        val groups: List<String>,
+        val progress: Map<String, VerbDrillComboProgress>,
+        val badCount: Int,
+        val lang: String,
+        val tenseInfo: Map<String, TenseInfo>
+    )
+
+    /**
+     * Load tense reference info from assets. Safe to call on any thread.
+     * Returns the parsed map; caller assigns to tenseInfoMap on main thread.
+     */
+    private fun loadTenseInfoInternal(languageId: String): Map<String, TenseInfo> {
         val fileName = "grammarmate/tenses/${languageId}_tenses.yaml"
-        try {
+        return try {
             val yaml = getApplication<Application>().assets.open(fileName).bufferedReader().readText()
-            tenseInfoMap = parseTenseInfo(yaml)
-            Log.d(logTag, "Loaded tense info for $languageId: ${tenseInfoMap.size} tenses")
+            val result = parseTenseInfo(yaml)
+            Log.d(logTag, "Loaded tense info for $languageId: ${result.size} tenses")
+            result
         } catch (e: Exception) {
             Log.w(logTag, "Failed to load tense info from $fileName", e)
-            tenseInfoMap = emptyMap()
+            emptyMap()
         }
     }
 
@@ -239,10 +272,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun toggleSortByFrequency() {
         _uiState.update { it.copy(sortByFrequency = !it.sortByFrequency) }
-    }
-
-    fun toggleVoiceAutoMode() {
-        _uiState.update { it.copy(voiceModeEnabled = !it.voiceModeEnabled) }
     }
 
     private fun updateProgressDisplay() {

@@ -292,9 +292,9 @@ Global dialogs (overlay on any screen):
     - *Back (flipped)*: POS badge + word + TTS button + translation + Forms table (m sg, f sg, m pl, f pl) + Collocations list (max 5) + mastery step ("Step X/9" / "Learned") + 4 rating buttons (Again/Hard/Good/Easy with interval labels)
   - **CompletionScreen**: "Perfect!"/"Done!" title + Stats Card (correct/wrong/reviewed) + Exit + Continue buttons (fade-in after 800ms)
   - **Report ModalBottomSheet**: Same structure (flag/unflag, export, copy)
-- **State dependencies**: `VocabDrillUiState` (drillDirection, voiceModeEnabled, selectedPos, availablePos, rankMin, rankMax, dueCount, totalCount, masteredCount, masteredByPos, session with cards/currentIndex/isFlipped/voiceCompleted/voiceResult)
+- **State dependencies**: `VocabDrillUiState` (drillDirection, selectedPos, availablePos, rankMin, rankMax, dueCount, totalCount, masteredCount, masteredByPos, session with cards/currentIndex/isFlipped/voiceCompleted/voiceResult) + global `voiceAutoStart` parameter
 - **User interactions**:
-  - Selection: filter direction, POS, frequency; toggle voice; start session
+  - Selection: filter direction, POS, frequency; start session
   - Card front: tap mic for voice, tap Skip to skip voice, tap Flip to reveal
   - Card back: tap rating button (Again/Hard/Good/Easy) to advance
   - Completion: Exit to selection, Continue for new session

@@ -35,10 +35,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.VerbDrillCard
+import com.alexpo.grammermate.ui.TenseExample
+import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.VerbDrillViewModel
+
+// ── ViewModel-based overloads (VerbDrillScreen) ────────────────────────────
 
 /**
  * Bottom sheet showing verb conjugation reference for the current verb+tense.
+ * ViewModel-based overload for VerbDrillScreen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +59,58 @@ internal fun VerbReferenceBottomSheet(
     }
     val ttsState by viewModel.ttsState.collectAsState()
 
+    VerbReferenceBottomSheet(
+        verb = verb,
+        tense = tense,
+        conjugationCards = conjugation,
+        ttsState = ttsState,
+        onSpeakVerb = { viewModel.speakVerbInfinitive(verb) },
+        onDismiss = onDismiss
+    )
+}
+
+/**
+ * Bottom sheet showing tense reference info: formula, usage in Russian, examples.
+ * ViewModel-based overload for VerbDrillScreen.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun TenseInfoBottomSheet(
+    tenseName: String,
+    viewModel: VerbDrillViewModel,
+    onDismiss: () -> Unit
+) {
+    val tenseInfo = remember(tenseName) { viewModel.getTenseInfo(tenseName) }
+    TenseInfoBottomSheet(
+        tenseName = tenseName,
+        tenseInfo = tenseInfo,
+        onDismiss = onDismiss
+    )
+}
+
+// ── Parameter-based overloads (DailyPracticeScreen, etc.) ──────────────────
+
+/**
+ * Bottom sheet showing verb conjugation reference — parameter-based version.
+ * Use from screens that don't have access to VerbDrillViewModel.
+ *
+ * @param verb The verb infinitive to display.
+ * @param tense The current tense (may be null for cards without tense).
+ * @param conjugationCards All VerbDrillCards with matching verb+tense for the conjugation table.
+ * @param ttsState Current TTS playback state.
+ * @param onSpeakVerb Callback to speak the verb infinitive aloud.
+ * @param onDismiss Callback to close the sheet.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun VerbReferenceBottomSheet(
+    verb: String,
+    tense: String?,
+    conjugationCards: List<VerbDrillCard>,
+    ttsState: TtsState,
+    onSpeakVerb: () -> Unit,
+    onDismiss: () -> Unit
+) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState()
@@ -76,7 +134,7 @@ internal fun VerbReferenceBottomSheet(
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(
-                    onClick = { viewModel.speakVerbInfinitive(verb) },
+                    onClick = onSpeakVerb,
                     enabled = ttsState != TtsState.INITIALIZING
                 ) {
                     when (ttsState) {
@@ -103,7 +161,7 @@ internal fun VerbReferenceBottomSheet(
             }
 
             // Group label
-            val group = conjugation.firstOrNull()?.group
+            val group = conjugationCards.firstOrNull()?.group
             if (!group.isNullOrBlank()) {
                 Text(
                     text = "Группа: $group",
@@ -122,7 +180,7 @@ internal fun VerbReferenceBottomSheet(
             }
 
             // Conjugation table
-            if (conjugation.isNotEmpty()) {
+            if (conjugationCards.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
@@ -133,7 +191,7 @@ internal fun VerbReferenceBottomSheet(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    conjugation.forEach { card ->
+                    conjugationCards.forEach { card ->
                         Text(
                             text = card.answer,
                             style = MaterialTheme.typography.bodyLarge,
@@ -147,17 +205,20 @@ internal fun VerbReferenceBottomSheet(
 }
 
 /**
- * Bottom sheet showing tense reference info: formula, usage in Russian, examples.
+ * Bottom sheet showing tense reference info — parameter-based version.
+ * Use from screens that don't have access to VerbDrillViewModel.
+ *
+ * @param tenseName The tense name to display (used as fallback header).
+ * @param tenseInfo Pre-loaded tense info (may be null if not available).
+ * @param onDismiss Callback to close the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TenseInfoBottomSheet(
     tenseName: String,
-    viewModel: VerbDrillViewModel,
+    tenseInfo: TenseInfo?,
     onDismiss: () -> Unit
 ) {
-    val tenseInfo = remember(tenseName) { viewModel.getTenseInfo(tenseName) }
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState()

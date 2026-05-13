@@ -233,7 +233,7 @@ class DailyPracticeCoordinator(
      * @param onStoreFirstSessionCardIds callback to store first-session card IDs (delegates to ProgressTracker).
      * @return true if session was started successfully.
      */
-    fun startDailyPractice(
+    suspend fun startDailyPractice(
         resolveProgressLessonInfo: () -> Pair<String, Int>?,
         onStoreFirstSessionCardIds: (sentenceIds: List<String>, verbIds: List<String>) -> Unit
     ): Boolean {
@@ -294,7 +294,7 @@ class DailyPracticeCoordinator(
         return true
     }
 
-    fun repeatDailyPractice(
+    suspend fun repeatDailyPractice(
         lessonLevel: Int,
         resolveProgressLessonInfo: () -> Pair<String, Int>?
     ): Boolean {
@@ -511,9 +511,9 @@ class DailyPracticeCoordinator(
 
     /**
      * Build a daily practice session in the background for faster start.
-     * Called from the ViewModel's init block on a background thread.
+     * Called from the ViewModel's init block on a background thread (Dispatchers.IO).
      */
-    fun prebuildSession(
+    suspend fun prebuildSession(
         packId: String,
         langId: String,
         lessonId: String,

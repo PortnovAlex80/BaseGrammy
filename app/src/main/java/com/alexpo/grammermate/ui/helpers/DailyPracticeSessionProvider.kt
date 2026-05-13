@@ -330,6 +330,15 @@ class DailyPracticeSessionProvider(
         return (task as? DailyTask.ConjugateVerb)?.card
     }
 
+    /**
+     * Returns all VerbDrillCards from the current block that match the given verb+tense.
+     * Used to populate the conjugation table in VerbReferenceBottomSheet.
+     */
+    fun getConjugationCards(verb: String, tense: String): List<VerbDrillCard> {
+        return blockCards.mapNotNull { (it as? DailyTask.ConjugateVerb)?.card }
+            .filter { it.verb == verb && it.tense == tense }
+    }
+
     // ── Flagging ──────────────────────────────────────────────────────────
 
     override fun flagCurrentCard() {

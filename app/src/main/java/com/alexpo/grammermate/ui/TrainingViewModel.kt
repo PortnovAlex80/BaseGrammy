@@ -592,7 +592,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun startDailyPractice(lessonLevel: Int): Boolean {
+    suspend fun startDailyPractice(lessonLevel: Int): Boolean {
         return dailyPracticeCoordinator.startDailyPractice(
             resolveProgressLessonInfo = { resolveProgressLessonInfo() },
             onStoreFirstSessionCardIds = { sentenceIds, verbIds ->
@@ -630,7 +630,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(daily = it.daily.copy(dailyCursor = advanced)) }
     }
 
-    fun repeatDailyPractice(lessonLevel: Int): Boolean {
+    suspend fun repeatDailyPractice(lessonLevel: Int): Boolean {
         return dailyPracticeCoordinator.repeatDailyPractice(
             lessonLevel = lessonLevel,
             resolveProgressLessonInfo = { resolveProgressLessonInfo() }
