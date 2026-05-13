@@ -490,6 +490,8 @@ All project documentation is in `docs/specification/`. When working on a specifi
 | Learning methodology | 18-learning-methodology.md | Ebbinghaus curve, flower metaphor, scheduling |
 | All screens & dialogs | 19-screen-catalog.md | Screen layouts, wireframes, interactions |
 | Performance, offline, security | 20-non-functional-requirements.md | NFRs, scalability, compatibility |
+| Use cases & acceptance criteria | 22-use-case-registry.md | Any feature verification, regression testing, PR review |
+| Screen elements & invariants | 23-screen-elements.md | UI changes, element behavior verification, regression testing |
 
 ### Architecture docs
 
@@ -522,12 +524,14 @@ All project documentation is in `docs/specification/`. When working on a specifi
 ### Tech Debt
 
 - **Difficulty mode (HintLevel) not wired to parenthetical hints:** `HintLevel` enum exists (EASY/MEDIUM/HARD) and controls Word Bank / tense label visibility, but does NOT strip parenthetical target-language insertions from `promptRu` in the card body. Example: `я говорю (dire) правду (verità)` — the `(dire)` and `(verità)` are always visible regardless of difficulty. Spec updated in `21-product-roadmap.md` section 2. Implementation needed: strip `\s*\([^)]+\)` from card body `promptRu` when `hintLevel != EASY`. Boss Battle should force `HintLevel.HARD`.
+- **UC/Element cross-references incomplete:** `23-screen-elements.md` has "Related UC" column mostly as "?". Needs linking to UC-IDs from `22-use-case-registry.md`.
 
 ### Roadmap docs
 
 - `docs/specification/21-product-roadmap.md` — next sprint features (Card Feel Rating, Difficulty Levels)
 - `docs/superpowers/plans/arch-review-execution-plan.md` — architecture fixes (4 batches, not started)
 - `docs/specification/legacy-test-plan.md` — unit test backlog (~200 tests, all TODO)
+- `.claude/skills/regression-check.md` — regression verification skill (diff → UC/element check → PASS/FAIL)
 
 ### Rule: Read spec before modifying code
 
@@ -541,3 +545,12 @@ Whenever a specification file is created or modified, add an entry to `docs/spec
 - Which file(s) changed
 - What changed (created / updated section X / fixed discrepancy Y)
 - Commit hash
+
+### Rule: Run regression check after code changes
+
+After any non-trivial code change (touches ≥ 2 files or modifies ViewModel/helpers), run regression verification:
+1. Use `/regression-check` skill, OR
+2. Manually: read `22-use-case-registry.md` → find affected UCs → verify ACs against code
+3. Read `23-screen-elements.md` → find affected elements → verify invariants
+
+Report results as PASS/FAIL per AC and element before marking task complete.

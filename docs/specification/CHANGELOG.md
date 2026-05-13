@@ -44,6 +44,10 @@ All changes to specification documents are tracked here. Each entry references t
 - 0 files exceed line limits
 - Build: SUCCESS, 0 compilation errors
 
+### Documentation Added
+- Created `22-use-case-registry.md`: 50 use cases, 201 acceptance criteria across 11 domains, extracted from 15 scenario traces and user stories document
+- Summary table with per-domain UC/AC counts and cross-reference mapping from source files
+
 ### Branch: fix/spec-discrepancies (not merged)
 
 ## v1.5 (2026-05-12) -- Full Specification + Bug Fixes + Feature Updates
