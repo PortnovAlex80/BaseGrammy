@@ -1038,3 +1038,102 @@ This allows the daily practice "Repeat" function to replay the exact same verb c
 ### US-10.19: Navigate Between Cards
 
 **As a user**, I want to go back to previous cards in the current session, so that I can review cards I already answered or check something I missed.
+
+---
+
+## 10.9 UI Consistency Requirements [UI-CONSISTENCY-2025]
+
+This section documents the UI consistency requirements for VerbDrill, established by cross-screen audit. VerbDrill is the REFERENCE implementation for eye/show-answer mode and the ADOPTER of voice auto mode (from VocabDrill) and the 4-option report sheet (from TrainingScreen).
+
+---
+
+### 10.9.1 Voice Input (Auto) Mode [UI-CONSISTENCY-2025]
+
+VerbDrill must adopt the "Voice input (auto)" toggle pattern from VocabDrillScreen. This replaces the current VOICE input mode selection with an explicit toggle on the selection screen.
+
+**Reference implementation:** VocabDrillScreen.kt lines 218-241 (Switch toggle) and lines 409-417 (auto-launch LaunchedEffect).
+
+**Requirements:**
+
+1. **Selection screen toggle:** Add a "Voice input (auto)" Switch toggle with Mic icon to `VerbDrillSelectionScreen`, positioned below the filter dropdowns and above the start button.
+   - Class path: `ui/screens/VerbDrillScreen.kt` — `VerbDrillSelectionScreen` composable
+
+2. **Auto-launch on new card:** When `voiceModeEnabled == true`, mic auto-launches on each new card with a **500ms delay** (matching VocabDrill timing).
+   - Class path: `ui/VerbDrillCardSessionProvider.kt` — `voiceTriggerToken` field and auto-launch logic
+
+3. **Auto-advance on correct voice answer:** After a correct voice answer, auto-advance to the next card after **800ms delay** (matching VocabDrill timing, not the current 500ms).
+   - Class path: `ui/VerbDrillCardSessionProvider.kt` — `pendingAnswerResult` observer
+
+4. **Voice mode state field:** Add `voiceModeEnabled: Boolean = false` to `VerbDrillUiState`.
+   - Class path: `data/VerbDrillCard.kt` — `VerbDrillUiState` data class
+
+5. **Shared component:** Extract the voice auto-launch logic into a shared composable `ui/components/VoiceAutoLauncher.kt` used by both VerbDrill and VocabDrill.
+   - Class path: `ui/components/VoiceAutoLauncher.kt` — NEW shared component
+
+**Regression class paths:**
+- `ui/screens/VerbDrillScreen.kt` — selection screen toggle + session voice behavior
+- `ui/VerbDrillCardSessionProvider.kt` — auto-launch token and auto-advance timing
+- `ui/components/VoiceAutoLauncher.kt` — shared auto-launch composable (NEW)
+- `ui/screens/VocabDrillScreen.kt:218-241` — reference toggle implementation
+- `ui/screens/VocabDrillScreen.kt:409-417` — reference auto-launch implementation
+
+---
+
+### 10.9.2 Eye / Show Answer Mode — Reference Implementation [UI-CONSISTENCY-2025]
+
+VerbDrill's eye/show-answer mode is the **REFERENCE implementation** that all other screens (TrainingScreen, DailyPractice) must match.
+
+**Reference implementation:** VerbDrillScreen.kt lines 392-425 (hint answer card with errorContainer tint, red answer text, inline TTS replay button).
+
+**Visual specification:**
+
+1. **Hint answer card:** When `provider.hintAnswer != null`, the answer is shown in a pink `Card` with `MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)` background tint.
+   - Class path: `ui/screens/VerbDrillScreen.kt:392-400` — hint card composable
+
+2. **Red answer text:** The answer text is rendered with `MaterialTheme.colorScheme.error` color in the format "Answer: {answer}".
+   - Class path: `ui/screens/VerbDrillScreen.kt:401-405` — answer text styling
+
+3. **Inline TTS replay button:** A red-tinted `VolumeUp` icon button is placed inline next to the answer text for TTS replay. The icon uses `MaterialTheme.colorScheme.error` tint.
+   - Class path: `ui/screens/VerbDrillScreen.kt:406-415` — TTS replay button
+
+4. **Eye button disabled guard:** The eye/show-answer button is disabled while a hint is already shown, guarded by `provider.hintAnswer == null`.
+   - Class path: `ui/screens/VerbDrillScreen.kt` — eye button enabled state
+
+**Other screens adopting this pattern:**
+- `ui/screens/TrainingScreen.kt` — AnswerBox hint card
+- `ui/DailyPracticeScreen.kt` — DailyInputControls hint card
+
+**Regression class paths:**
+- `ui/screens/VerbDrillScreen.kt:392-425` — reference implementation (DO NOT DEVIATE)
+- `ui/screens/TrainingScreen.kt:681-748` — adopter (must match)
+- `ui/DailyPracticeScreen.kt` — adopter (must match)
+
+---
+
+### 10.9.3 Report Sheet — 4-Option Standard [UI-CONSISTENCY-2025]
+
+The VerbDrill report sheet must adopt the 4-option standard from TrainingScreen, adding the missing "Hide this card from lessons" option.
+
+**Current state:** `VerbDrillReportSheet` has 3 options (flag/unflag, export, copy).
+**Required state:** 4 options matching TrainingScreen (flag/unflag, HIDE CARD, export, copy).
+
+**4 standard options (in order):**
+
+| # | Option | Icon | Behavior |
+|---|--------|------|----------|
+| 1 | Flag/Unflag bad sentence | `ReportProblem` (toggles) | Calls `flagBadSentence()` or `unflagBadSentence()`. Red tint when flagged. |
+| 2 | **Hide this card from lessons** | `VisibilityOff` | Calls `hideCurrentCard()`. Closes sheet. |
+| 3 | Export bad sentences | `Download` | Calls `exportBadSentences()`. Shows file path in AlertDialog. |
+| 4 | Copy text | `ContentCopy` | Copies card ID, source, target to clipboard. Closes sheet. |
+
+**Shared component:** Extract into `ui/components/SharedReportSheet.kt` used by VerbDrill, TrainingScreen, and VocabDrill.
+
+**Implementation notes:**
+- Option 2 (Hide) is currently a no-op for VerbDrill (no hidden-card infrastructure). The option must still appear in the sheet for UI consistency. A toast or snackbar should indicate "Feature not yet available for verb drills."
+- The shared component must accept a `HideOptionConfig` parameter to control whether hide is functional or informational.
+
+**Regression class paths:**
+- `ui/screens/VerbDrillScreen.kt` — `VerbDrillReportSheet` composable (update to 4 options)
+- `ui/components/SharedReportSheet.kt` — shared report sheet (NEW)
+- `ui/screens/TrainingScreen.kt` — `AnswerBox` report sheet (reference for 4-option layout)
+- `ui/screens/VocabDrillScreen.kt` — `VocabDrillReportSheet` (adopter)

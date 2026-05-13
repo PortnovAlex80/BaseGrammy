@@ -1220,3 +1220,36 @@ After export, an inline message shows the exported file path or "No bad sentence
 - **As a user**, I want the session to gracefully handle packs without vocab or verb drill content so that I can still practice translations.
 - **As a user**, I want the session to fail gracefully (return to Home) if no cards are available so that I am not stuck on a loading screen.
 - **As a user**, I want the app to always start on the Home screen after a restart so that I am not stuck in a daily practice loading state.
+
+---
+
+## 9.11 [UI-CONSISTENCY-2025] Eye Mode in Daily Practice
+
+Daily practice blocks (TRANSLATE and VERBS) MUST show the hint answer in a pink Card matching the VerbDrill reference style:
+
+- Pink `Card(errorContainer.copy(alpha = 0.3f))` background
+- Red answer text (`MaterialTheme.colorScheme.error`)
+- Inline TTS replay button
+
+This replaces the current `errorContainer`-colored card (described in section 9.7.4, element "Hint answer card") with the unified VerbDrill-style pink Card.
+
+Class paths:
+- `ui/DailyPracticeScreen.kt` -- DailyInputControls hint card rendering
+- `ui/components/DailyPracticeComponents.kt` -- DailyInputControls composable
+
+Reference implementation: `ui/screens/VerbDrillScreen.kt:392-425`.
+
+### Report Sheet Alignment
+
+The report bottom sheet in all daily practice blocks MUST have 4 options matching the TrainingScreen reference:
+1. Flag / Unflag bad sentence
+2. Hide card
+3. Export bad sentences
+4. Copy text
+
+Class paths:
+- `ui/DailyPracticeScreen.kt` -- report sheet in TRANSLATE/VERBS and VOCAB blocks
+- `ui/components/DailyPracticeComponents.kt` -- DailyReportSheet composable
+- `ui/components/SharedReportSheet.kt` (NEW) -- shared 4-option report sheet
+
+Reference implementation: `ui/screens/TrainingScreen.kt:479-563`.

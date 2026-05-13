@@ -560,6 +560,48 @@ These elements render on every screen regardless of current AppScreen:
 
 ---
 
+## [UI-CONSISTENCY-2025] Cross-Cutting UI Consistency Rules
+
+### Eye / Show Answer Mode
+
+All training screens MUST display the hint answer in a styled pink Card matching the VerbDrill reference implementation. The card shows:
+- Pink `Card(errorContainer.copy(alpha = 0.3f))` background
+- Red answer text (`MaterialTheme.colorScheme.error`)
+- Inline TTS replay button
+
+This applies to:
+- `ui/screens/TrainingScreen.kt` -- eye button in AnswerBox
+- `ui/screens/VerbDrillScreen.kt` -- eye button in session input controls (reference: lines 392-425)
+- `ui/DailyPracticeScreen.kt` -- eye button in TRANSLATE/VERBS blocks
+- `ui/components/DailyPracticeComponents.kt` -- DailyInputControls hint card
+
+Reference implementation: `VerbDrillScreen.kt:392-425`.
+
+### Report Bottom Sheet (4 Options)
+
+All training screens MUST present a report bottom sheet with exactly 4 options:
+1. **Flag / Unflag bad sentence** (toggle)
+2. **Hide card** (removes from future sessions)
+3. **Export bad sentences** (to file)
+4. **Copy text** (to clipboard)
+
+This applies to:
+- `ui/screens/TrainingScreen.kt` -- reference implementation (lines 479-563)
+- `ui/screens/VerbDrillScreen.kt` -- report sheet to align
+- `ui/DailyPracticeScreen.kt` -- report sheets in all 3 blocks to align
+- `ui/components/SharedReportSheet.kt` (NEW) -- shared composable extracting the 4-option layout
+
+Reference implementation: `TrainingScreen.kt:479-563`.
+
+### Mix Challenge Screen -- DORMANT
+
+The Mix Challenge screen (referenced by element HS-14 in the screen element registry) is **DORMANT** as of [UI-CONSISTENCY-2025]:
+- The tile is hidden from HomeScreen. No new navigation to this screen is possible from the UI.
+- `AppScreen.MIX_CHALLENGE` enum value is retained for backward compat (users may have saved state with `currentScreen='MIX_CHALLENGE'`).
+- Routing logic is kept but unreachable from normal UI flow.
+
+---
+
 ## Cross-Reference with Russian Spec
 
 The Russian specification file ("Ekstrannye formy. Spetsifikatsiya") covers sections 1-9 with detailed element tables. Comparison results:

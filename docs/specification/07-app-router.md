@@ -85,6 +85,8 @@ private enum class AppScreen {
 | `ELITE` | *(redirects to HOME)* | **Deprecated.** Kept for backward compatibility with saved state. Redirects to `HOME` immediately. |
 | `VOCAB` | *(redirects to HOME)* | **Deprecated.** Kept for backward compatibility with saved state. Redirects to `HOME` immediately. |
 
+> **[UI-CONSISTENCY-2025]** `MIX_CHALLENGE` routing is DORMANT. The `AppScreen` enum value and routing logic are retained for backward compat (users may have saved state with `currentScreen='MIX_CHALLENGE'`). The tile is hidden from HomeScreen so no new navigation to this screen is possible.
+
 ### 7.2.2 Backward Compatibility Notes
 
 `ELITE` and `VOCAB` enum values are retained because users may have persisted `currentScreen: "ELITE"` or `currentScreen: "VOCAB"` in their saved state. The `parseScreen()` function handles unknown values by falling back to `HOME`, and the `when` block for `ELITE` / `VOCAB` immediately redirects to `HOME`:

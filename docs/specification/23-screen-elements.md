@@ -36,7 +36,7 @@
 | Verb Drill entry tile | HS-11 | card | `hasVerbDrill == true` | Card with FitnessCenter icon + "Verb Drill" label. 64dp height. Calls `onOpenVerbDrill()`. | ? |
 | Vocab Drill entry tile | HS-12 | card | `hasVocabDrill == true` | Card with MenuBook icon + "Flashcards" label + mastered count badge ("N mastered" in green). Calls `onOpenVocabDrill()`. | ? |
 | Daily Practice entry tile | HS-13 | card | Always | primaryContainer Card with "Daily Practice" title + "Practice all sub-lessons" subtitle + PlayArrow icon. Calls `onOpenElite()`. | ? |
-| Mix Challenge entry tile | HS-14 | card | Always | Blue-tinted Card (0xFFE3F2FD) with "Mix Challenge" title + "Interleaved practice across tenses" subtitle + SwapHoriz icon. Calls `onOpenMixChallenge()`. | ? |
+| Mix Challenge entry tile | HS-14 | card | **HIDDEN** [UI-CONSISTENCY-2025] | DORMANT: tile is no longer rendered on HomeScreen. Blue-tinted Card (0xFFE3F2FD) with "Mix Challenge" title + "Interleaved practice across tenses" subtitle + SwapHoriz icon. Retained in registry for backward compat. | ? |
 | Legend text | HS-15 | text | Always | Shows "Legend:" header + emoji meanings: seed, growing, bloom, wilting, wilted, forgotten. | ? |
 | "How This Training Works" button | HS-16 | button | Always | OutlinedButton, full-width. Shows HowThisTrainingWorksDialog on tap. | ? |
 | "Continue Learning" button | HS-17 | button | Always | Filled Button, full-width. Calls `onPrimaryAction()`. | ? |
@@ -427,3 +427,16 @@ These dialogs are rendered as persistent overlays and can appear on any screen.
 | LessonLockedDialog | DG-15 | dialog | Tap EMPTY lesson tile on HomeScreen | "Lesson locked" + "Please complete the previous lesson first." + "OK". | ? |
 | EarlyStartDialog (Home/Lesson) | DG-16 | dialog | Tap locked lesson or sub-lesson tile | "Start early?" + "Start this lesson/exercise early? You can always come back..." + "Yes" + "No". | ? |
 | ExportBadSentencesResultDialog | DG-17 | dialog | After exporting bad sentences from report sheet | "Export" title + file path or "No bad sentences to export" + "OK". | ? |
+
+---
+
+## 12. [UI-CONSISTENCY-2025] Shared Components (ui/components/)
+
+These shared composables enforce cross-screen UI consistency. Each is used by 2+ screens.
+
+| Element | ID | Type | Used by | Behavior / Invariant | Related UC |
+|---------|----|------|---------|----------------------|------------|
+| SharedReportSheet | SH-01 | bottom-sheet | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | ModalBottomSheet with exactly 4 options: Flag/Unflag, Hide card, Export bad sentences, Copy text. Card prompt text shown at top for context. | UC-53 |
+| VoiceAutoLauncher | SH-02 | (system) | VerbDrillScreen, VocabDrillScreen | LaunchedEffect composable that auto-launches voice recognition after configurable delay (200ms for new card, 1200ms after incorrect feedback). | UC-52 |
+| SharedInputModeBar | SH-03 | button | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | Row of FilledTonalIconButtons: Mic, Keyboard, WordBank + Eye (show answer) + Report. Active mode highlighted. Mode label displayed below. | UC-51, UC-53 |
+| HintAnswerCard | SH-04 | card | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | Pink Card with `errorContainer.copy(alpha = 0.3f)` background, red error-colored answer text, inline TTS replay button. Reference: VerbDrillScreen.kt:392-425. | UC-51 |

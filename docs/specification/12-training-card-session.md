@@ -533,3 +533,129 @@ The completion behavior varies by mode:
 | TTS error | Warning icon in red on speaker button. |
 | Speech recognition failure | No explicit error shown. User can retry or switch to keyboard. |
 | Export failure | AlertDialog showing "No bad sentences to export". |
+
+---
+
+## 12.8 UI Consistency — Shared Components [UI-CONSISTENCY-2025]
+
+This section documents the shared UI components to be extracted from existing screen-specific implementations for cross-screen consistency. The goal is to unify input mode bars, report sheets, and voice auto-launch behavior across VerbDrill, VocabDrill, TrainingScreen, and DailyPractice.
+
+---
+
+### 12.8.1 Shared InputModeBar Component [UI-CONSISTENCY-2025]
+
+A shared `SharedInputModeBar` composable must be extracted to `ui/components/SharedInputModeBar.kt`, unifying three current implementations.
+
+**Current implementations to unify:**
+
+| Screen | Component | Class path |
+|--------|-----------|------------|
+| VerbDrill | `VerbDrillInputModeBar` | `ui/screens/VerbDrillScreen.kt:867-955` |
+| DailyPractice | `DailyInputModeBar` | `ui/DailyPracticeComponents.kt:104-173` |
+| TrainingScreen | Inline in `AnswerBox` | `ui/screens/TrainingScreen.kt:681-748` |
+
+**Shared component specification:**
+
+```kotlin
+@Composable
+fun SharedInputModeBar(
+    currentMode: InputMode,
+    onModeChange: (InputMode) -> Unit,
+    hintAvailable: Boolean,          // Whether eye button is active
+    wordBankAvailable: Boolean,      // Whether word bank mode is offered
+    voiceAvailable: Boolean,         // Whether mic mode is offered
+    reportAvailable: Boolean,        // Whether report button is shown
+    onShowHint: () -> Unit,          // Eye button callback
+    onReport: () -> Unit,            // Report button callback
+    hintShown: Boolean = false,      // Disable eye when hint already shown
+    modifier: Modifier = Modifier
+)
+```
+
+**Required buttons (left-to-right order):**
+
+| Position | Button | Icon | Condition | Behavior |
+|----------|--------|------|-----------|----------|
+| 1 | Mic (VOICE) | `Mic` | `voiceAvailable` | Switches to VOICE mode, triggers `onModeChange(VOICE)` |
+| 2 | Keyboard | `Keyboard` | Always | Switches to KEYBOARD mode, triggers `onModeChange(KEYBOARD)` |
+| 3 | Word Bank | `MenuBook` | `wordBankAvailable` | Switches to WORD_BANK mode, triggers `onModeChange(WORD_BANK)` |
+| 4 | Eye (Show Answer) | `Visibility` | `hintAvailable` | Calls `onShowHint()`. Disabled when `hintShown == true` |
+| 5 | Report | `Warning` / `ChangeHistory` | `reportAvailable` | Calls `onReport()` |
+
+**Consistency requirements:**
+- All screens must position the input mode bar at the **bottom of the card area, above the Check button**.
+- Button sizing: `FilledTonalIconButton` with 40dp default size.
+- Active mode indication: the current mode's button uses `FilledTonal` style; inactive buttons use standard icon button style.
+- Current mode label text ("Voice" / "Keyboard" / "Word Bank") appears below the button row, right-aligned.
+
+**Regression class paths:**
+- `ui/components/SharedInputModeBar.kt` — NEW shared component
+- `ui/screens/VerbDrillScreen.kt:867-955` — replace `VerbDrillInputModeBar` with shared
+- `ui/DailyPracticeComponents.kt:104-173` — replace `DailyInputModeBar` with shared
+- `ui/screens/TrainingScreen.kt:681-748` — replace inline bar with shared
+
+---
+
+### 12.8.2 Shared ReportSheet Component [UI-CONSISTENCY-2025]
+
+A shared `SharedReportSheet` composable must be extracted to `ui/components/SharedReportSheet.kt`, providing a consistent 4-option report bottom sheet across all screens.
+
+**Reference implementation:** TrainingScreen AnswerBox report sheet (`ui/screens/TrainingScreen.kt`).
+
+**4 standard options (in order):**
+
+| # | Option | Icon | Behavior | Notes |
+|---|--------|------|----------|-------|
+| 1 | Flag/Unflag bad sentence | `ReportProblem` | Toggle. Red tint when card is flagged. | Text changes: "Add to bad sentences list" / "Remove from bad sentences list" |
+| 2 | Hide this card from lessons | `VisibilityOff` | Hides card from future lessons. Closes sheet. | May be a no-op for some modes (verb drill); show informational toast |
+| 3 | Export bad sentences | `Download` | Exports flagged cards to text file. Shows path in AlertDialog. | Returns file path or null |
+| 4 | Copy text | `ContentCopy` | Copies card info to clipboard. Closes sheet. | Format varies by card type |
+
+**Shared component specification:**
+
+```kotlin
+@Composable
+fun SharedReportSheet(
+    showSheet: Boolean,
+    onDismiss: () -> Unit,
+    isFlagged: Boolean,
+    onFlagToggle: () -> Unit,
+    onHideCard: () -> Unit,
+    onExport: () -> Unit,
+    onCopy: () -> Unit,
+    hideEnabled: Boolean = true,      // When false, hide option shows informational toast
+    cardSummaryText: String,           // Card info displayed at top of sheet
+    modifier: Modifier = Modifier
+)
+```
+
+**Screens adopting this component:**
+
+| Screen | Current implementation | Class path |
+|--------|----------------------|------------|
+| VerbDrill | `VerbDrillReportSheet` | `ui/screens/VerbDrillScreen.kt` |
+| VocabDrill | `VocabDrillReportSheet` | `ui/screens/VocabDrillScreen.kt` |
+| TrainingScreen | Inline in `AnswerBox` | `ui/screens/TrainingScreen.kt` |
+| DailyPractice | N/A (no report button currently) | `ui/DailyPracticeScreen.kt` |
+
+**Regression class paths:**
+- `ui/components/SharedReportSheet.kt` — NEW shared component
+- `ui/components/SharedInputModeBar.kt` — NEW shared component
+- `ui/components/TrainingCardSession.kt` — uses shared components in default slots
+- `ui/screens/VerbDrillScreen.kt` — adopter of SharedReportSheet
+- `ui/screens/TrainingScreen.kt` — reference implementation, adopter of SharedReportSheet
+- `ui/screens/VocabDrillScreen.kt` — adopter of SharedReportSheet
+- `ui/DailyPracticeScreen.kt` — adopter of SharedInputModeBar
+
+---
+
+### 12.8.3 Cross-Screen Consistency Matrix [UI-CONSISTENCY-2025]
+
+Summary of which component is the reference and which are adopters:
+
+| UI Element | Reference Screen | Adopters | Shared Component |
+|------------|-----------------|----------|------------------|
+| Eye / Show Answer hint card | VerbDrill (`VerbDrillScreen.kt:392-425`) | TrainingScreen, DailyPractice | Inline (no shared component; styling guide only) |
+| Voice auto mode toggle + launch | VocabDrill (`VocabDrillScreen.kt:218-241`, `:409-417`) | VerbDrill | `ui/components/VoiceAutoLauncher.kt` (NEW) |
+| Report sheet (4 options) | TrainingScreen (`TrainingScreen.kt`) | VerbDrill, VocabDrill | `ui/components/SharedReportSheet.kt` (NEW) |
+| Input mode bar | VerbDrill (`VerbDrillScreen.kt:867-955`) | TrainingScreen, DailyPractice | `ui/components/SharedInputModeBar.kt` (NEW) |

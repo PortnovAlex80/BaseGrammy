@@ -1055,3 +1055,67 @@ The report button is available on the vocab drill card screen header row (right 
   Word: {card.word.word}
   Meaning: {card.word.meaningRu}
   ```
+
+---
+
+## 11.11 UI Consistency — Voice Input (Auto) Reference Implementation [UI-CONSISTENCY-2025]
+
+This section documents VocabDrill's voice auto mode as the **SOURCE OF TRUTH** for adoption by VerbDrill. All other screens implementing voice auto mode must match this implementation.
+
+---
+
+### 11.11.1 Voice Auto Mode — Reference Implementation [UI-CONSISTENCY-2025]
+
+VocabDrillScreen's voice auto mode is the canonical implementation. VerbDrill must adopt this exact pattern.
+
+**Key implementation elements:**
+
+1. **Selection screen Switch toggle:** Mic icon + "Voice input (auto)" label + `Switch` composable. Bound to `VocabDrillUiState.voiceModeEnabled`.
+   - Class path: `ui/screens/VocabDrillScreen.kt:218-241` — Switch toggle composable
+
+2. **Auto-launch LaunchedEffect:** Watches `voiceModeEnabled`, `isFlipped`, `voiceCompleted`, and current card ID. When voice mode is on and card is not flipped/complete, auto-launches RecognizerIntent after **500ms delay**.
+   - Class path: `ui/screens/VocabDrillScreen.kt:409-417` — auto-launch LaunchedEffect
+
+3. **Voice mode state:** `VocabDrillUiState.voiceModeEnabled: Boolean` field in `data/VocabWord.kt:74`.
+   - Class path: `data/VocabWord.kt` — `VocabDrillUiState` data class
+
+4. **Auto-advance after correct answer:** When voice result is `CORRECT`, auto-flips the card after **800ms delay** (via `delay(800)` coroutine).
+   - Class path: `ui/screens/VocabDrillScreen.kt:401-406` — auto-flip after correct
+
+5. **Card front Mic button:** Large 72dp mic button on card front for manual voice trigger. Shows "Tap to speak" label when voice is not completed.
+   - Class path: `ui/screens/VocabDrillScreen.kt:797-800` — Mic button composable
+
+**Shared component to extract:**
+
+The voice auto-launch logic should be extracted into `ui/components/VoiceAutoLauncher.kt` — a single reusable composable that both VocabDrill and VerbDrill use.
+
+Parameters for the shared component:
+- `enabled: Boolean` — whether voice auto mode is on
+- `triggerToken: Int` — incremented to trigger launch
+- `delayMs: Long = 500` — delay before launching recognizer
+- `onLaunch: () -> Unit` — callback to launch RecognizerIntent
+- `languageTag: String` — language for recognizer (e.g. "it-IT", "ru-RU")
+
+**Regression class paths:**
+- `ui/screens/VocabDrillScreen.kt` — reference implementation (DO NOT DEVIATE from this pattern)
+- `ui/components/VoiceAutoLauncher.kt` — shared component (NEW, extract from VocabDrill)
+- `data/VocabWord.kt` — `VocabDrillUiState.voiceModeEnabled` field
+- `ui/screens/VerbDrillScreen.kt` — adopter (must match VocabDrill pattern)
+
+---
+
+### 11.11.2 Report Sheet — 4-Option Standard Adoption [UI-CONSISTENCY-2025]
+
+VocabDrill's report sheet must adopt the 4-option standard from TrainingScreen, adding the missing "Hide this card from lessons" option.
+
+**Current state:** 3 options (flag/unflag, export, copy).
+**Required state:** 4 options matching TrainingScreen (flag/unflag, HIDE CARD, export, copy).
+
+See section 10.9.3 in `docs/specification/10-verb-drill.md` for the full 4-option specification.
+
+**Shared component:** `ui/components/SharedReportSheet.kt` (NEW).
+
+**Regression class paths:**
+- `ui/screens/VocabDrillScreen.kt` — VocabDrill report sheet (update to 4 options)
+- `ui/components/SharedReportSheet.kt` — shared report sheet (NEW)
+- `ui/screens/TrainingScreen.kt` — reference 4-option layout
