@@ -4,7 +4,6 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
@@ -18,6 +17,7 @@ import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.data.VocabWord
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
+import com.alexpo.grammermate.data.StoreFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -27,8 +27,9 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
     private val logTag = "VocabDrillVM"
     private val lessonStore = LessonStore(application)
-    private var masteryStore = WordMasteryStore(application)
-    private val badSentenceStore = BadSentenceStore(application)
+    private val storeFactory = StoreFactory.getInstance(application)
+    private var masteryStore = storeFactory.getWordMasteryStore(null)
+    private val badSentenceStore = storeFactory.getBadSentenceStore()
     private val ttsEngine = TtsProvider.getInstance(application).ttsEngine
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
@@ -54,8 +55,8 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         val currentPack = activePackId
         if (currentPack == packId && currentLang == languageId && allWords.isNotEmpty()) return
         activePackId = packId
-        // Recreate mastery store scoped to the pack
-        masteryStore = WordMasteryStore(getApplication(), packId = packId)
+        // Re-scope mastery store to the pack via shared factory
+        masteryStore = storeFactory.getWordMasteryStore(packId)
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadWords(languageId) }
     }
@@ -69,7 +70,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         if (currentLang == languageId && allWords.isNotEmpty()) return
         val pack = activePackId
         if (pack != null) {
-            masteryStore = WordMasteryStore(getApplication(), packId = pack)
+            masteryStore = storeFactory.getWordMasteryStore(pack)
         }
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadWords(languageId) }

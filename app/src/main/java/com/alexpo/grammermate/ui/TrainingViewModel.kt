@@ -44,6 +44,7 @@ import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
+import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyTask
@@ -75,6 +76,7 @@ import com.alexpo.grammermate.ui.helpers.FlowerRefresher
 import com.alexpo.grammermate.ui.helpers.ProgressTracker
 import com.alexpo.grammermate.ui.helpers.SessionRunner
 import com.alexpo.grammermate.ui.helpers.TrainingStateAccess
+import com.alexpo.grammermate.ui.helpers.ProgressRestorer
 import com.alexpo.grammermate.ui.helpers.StoryRunner
 import com.alexpo.grammermate.ui.helpers.VocabSprintRunner
 
@@ -85,10 +87,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val configStore = AppConfigStore(application)
     private val masteryStore = MasteryStore(application)
     private val streakStore = StreakStore(application)
-    private val badSentenceStore = BadSentenceStore(application)
+    private val storeFactory = StoreFactory.getInstance(application)
+    private val badSentenceStore = storeFactory.getBadSentenceStore()
     private val hiddenCardStore = HiddenCardStore(application)
     private val vocabProgressStore = VocabProgressStore(application)
-    private var wordMasteryStore = WordMasteryStore(application, packId = null)
+    private var wordMasteryStore = storeFactory.getWordMasteryStore(null)
     private val backupManager = BackupManager(application)
     private val profileStore = ProfileStore(application)
     private val _uiState = MutableStateFlow(TrainingUiState())
@@ -213,7 +216,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         appContext = application,
         answerValidator = answerValidator,
         lessonStore = lessonStore,
-        masteryStore = masteryStore
+        masteryStore = masteryStore,
+        storeFactory = storeFactory
     )
 
     private val storyRunner = StoryRunner(
@@ -228,6 +232,29 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     ).also { runner ->
         runner.onForceBackup = { forceBackupOnSave = true }
         runner.onSaveProgress = { saveProgress() }
+    }
+
+    private val progressRestorer = ProgressRestorer(
+        stateAccess = object : TrainingStateAccess {
+            override val uiState: StateFlow<TrainingUiState> = _uiState
+            override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
+                _uiState.update(transform)
+            }
+            override fun saveProgress() = this@TrainingViewModel.saveProgress()
+        },
+        progressStore = progressStore,
+        profileStore = profileStore,
+        streakStore = streakStore,
+        lessonStore = lessonStore,
+        backupManager = backupManager,
+        eliteStepCount = eliteStepCount
+    ).also { restorer ->
+        restorer.onRebuildSchedules = { rebuildSchedules(it) }
+        restorer.onBuildSessionCards = { buildSessionCards() }
+        restorer.onRefreshFlowerStates = { refreshFlowerStates() }
+        restorer.onNormalizeEliteSpeeds = { normalizeEliteSpeeds(it) }
+        restorer.onResolveEliteUnlocked = { lessons, testMode -> resolveEliteUnlocked(lessons, testMode) }
+        restorer.onParseBossRewards = { rewards -> parseBossRewards(rewards) }
     }
 
     init {
@@ -1078,9 +1105,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean =
         sessionRunner.resolveEliteUnlocked(lessons, testMode)
 
-    /**
-     * Parse boss reward map from string-keyed progress store to typed BossReward map.
-     */
     private fun parseBossRewards(rewardMap: Map<String, String>): Map<String, BossReward> {
         return rewardMap.mapNotNull { (lessonId, reward) ->
             val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
@@ -1090,7 +1114,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Apply progress restoration to UI state and rebuild derived data.
-     * Shared by restoreBackup and reloadFromDisk.
+     * Delegated to ProgressRestorer helper.
      */
     private fun applyRestoredProgress(
         progress: com.alexpo.grammermate.data.TrainingProgress,
@@ -1105,18 +1129,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         bossMegaRewards: Map<String, BossReward>,
         includeLanguageData: Boolean = false
     ) {
-        val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
-        _uiState.update {
-            val base = it.copy(navigation = it.navigation.copy(selectedLanguageId = selectedLanguageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, currentStreak = streak.currentStreak, longestStreak = streak.longestStreak), boss = it.boss.copy(bossLessonRewards = bossLessonRewards, bossMegaRewards = bossMegaRewards), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds))
-            if (includeLanguageData) {
-                base.copy(navigation = base.navigation.copy(languages = languages, installedPacks = packs), elite = base.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, base.cardSession.testMode)))
-            } else {
-                base
-            }
-        }
-        rebuildSchedules(lessons)
-        buildSessionCards()
-        refreshFlowerStates()
+        progressRestorer.applyRestoredProgress(
+            progress = progress,
+            languages = languages,
+            packs = packs,
+            lessons = lessons,
+            selectedLanguageId = selectedLanguageId,
+            selectedLessonId = selectedLessonId,
+            streak = streak,
+            profile = profile,
+            bossLessonRewards = bossLessonRewards,
+            bossMegaRewards = bossMegaRewards,
+            includeLanguageData = includeLanguageData
+        )
     }
 
     private fun normalizeEliteSpeeds(speeds: List<Double>): List<Double> =
@@ -1263,7 +1288,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * go to the pack-scoped file instead of the legacy global file.
      */
     private fun rebindWordMasteryStore(packId: String?) {
-        wordMasteryStore = WordMasteryStore(getApplication(), packId = packId)
+        wordMasteryStore = storeFactory.getWordMasteryStore(packId)
     }
 
     /**
@@ -1349,76 +1374,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Restore user progress from backup folder.
      */
     fun restoreBackup(backupUri: android.net.Uri) {
-        Log.d(logTag, "=== Starting Backup Restore ===")
-        Log.d(logTag, "Backup URI: $backupUri")
-
-        val success = backupManager.restoreFromBackupUri(backupUri)
-        Log.d(logTag, "Backup restore result: $success")
-
-        if (success) {
-            val progress = progressStore.load()
-            val profile = profileStore.load()
-            val selectedLanguageId = progress.languageId ?: "en"
-            val lessons = lessonStore.getLessons(selectedLanguageId)
-            val selectedLessonId = progress.lessonId?.let { id ->
-                lessons.firstOrNull { it.id == id }?.id
-            } ?: lessons.firstOrNull()?.id
-            val streak = streakStore.getCurrentStreak(selectedLanguageId)
-            val bossLessonRewards = parseBossRewards(progress.bossLessonRewards)
-            val bossMegaRewards = parseBossRewards(progress.bossMegaRewards)
-
-            applyRestoredProgress(
-                progress = progress,
-                languages = emptyList(),
-                packs = emptyList(),
-                lessons = lessons,
-                selectedLanguageId = selectedLanguageId,
-                selectedLessonId = selectedLessonId,
-                streak = streak,
-                profile = profile,
-                bossLessonRewards = bossLessonRewards,
-                bossMegaRewards = bossMegaRewards,
-                includeLanguageData = false
-            )
-
-            Log.d(logTag, "=== Backup Restore Complete ===")
-        } else {
-            Log.e(logTag, "Failed to restore backup - check restore_log.txt in backup folder")
-        }
+        progressRestorer.restoreBackup(backupUri)
     }
 
     fun reloadFromDisk() {
         viewModelScope.launch(Dispatchers.IO) {
-            val progress = progressStore.load()
-            val profile = profileStore.load()
-            val languages = lessonStore.getLanguages()
-            val packs = lessonStore.getInstalledPacks()
-            val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id
-                ?: languages.firstOrNull()?.id
-                ?: "en"
-            val lessons = lessonStore.getLessons(selectedLanguageId)
-            val selectedLessonId = progress.lessonId?.let { id ->
-                lessons.firstOrNull { it.id == id }?.id
-            } ?: lessons.firstOrNull()?.id
-            val streak = streakStore.getCurrentStreak(selectedLanguageId)
-            val bossLessonRewards = parseBossRewards(progress.bossLessonRewards)
-            val bossMegaRewards = parseBossRewards(progress.bossMegaRewards)
-
-            withContext(Dispatchers.Main) {
-                applyRestoredProgress(
-                    progress = progress,
-                    languages = languages,
-                    packs = packs,
-                    lessons = lessons,
-                    selectedLanguageId = selectedLanguageId,
-                    selectedLessonId = selectedLessonId,
-                    streak = streak,
-                    profile = profile,
-                    bossLessonRewards = bossLessonRewards,
-                    bossMegaRewards = bossMegaRewards,
-                    includeLanguageData = true
-                )
-            }
+            progressRestorer.reloadFromDisk()
         }
     }
 

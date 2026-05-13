@@ -9,11 +9,10 @@ import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
+import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
-import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.WordMasteryState
-import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TrainingUiState
 
 /**
@@ -33,7 +32,8 @@ class DailyPracticeCoordinator(
     private val appContext: Application,
     private val answerValidator: AnswerValidator,
     private val lessonStore: LessonStore,
-    private val masteryStore: MasteryStore
+    private val masteryStore: MasteryStore,
+    private val storeFactory: StoreFactory
 ) {
 
     private val logTag = "GrammarMate"
@@ -54,33 +54,11 @@ class DailyPracticeCoordinator(
     /** Cursor state saved at session start; used to roll back on cancel. */
     private var dailyCursorAtSessionStart: DailyCursorState = DailyCursorState()
 
-    // ── Drill store factory (per-pack caching) ─────────────────────────
+    // ── Drill store access (delegated to StoreFactory) ──────────────────
 
-    private var cachedVerbDrillStore: VerbDrillStore? = null
-    private var cachedWordMasteryStore: WordMasteryStore? = null
-    private var cachedPackId: String? = null
+    fun getVerbDrillStore(packId: String) = storeFactory.getVerbDrillStore(packId)
 
-    fun getVerbDrillStore(packId: String): VerbDrillStore {
-        if (cachedPackId != packId) {
-            cachedVerbDrillStore = null
-            cachedWordMasteryStore = null
-            cachedPackId = packId
-        }
-        return cachedVerbDrillStore ?: VerbDrillStore(appContext, packId = packId).also {
-            cachedVerbDrillStore = it
-        }
-    }
-
-    fun getWordMasteryStore(packId: String): WordMasteryStore {
-        if (cachedPackId != packId) {
-            cachedVerbDrillStore = null
-            cachedWordMasteryStore = null
-            cachedPackId = packId
-        }
-        return cachedWordMasteryStore ?: WordMasteryStore(appContext, packId = packId).also {
-            cachedWordMasteryStore = it
-        }
-    }
+    fun getWordMasteryStore(packId: String) = storeFactory.getWordMasteryStore(packId)
 
     // ── Internal helpers (absorbed from DailySessionHelper) ────────────
 

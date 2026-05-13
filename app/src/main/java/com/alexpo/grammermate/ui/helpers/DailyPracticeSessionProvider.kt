@@ -19,11 +19,7 @@ import com.alexpo.grammermate.data.VerbDrillCard
  * CardSessionContract adapter for Daily Practice Blocks 1 (Translation) and 3 (Verb Drill).
  * Block 2 (Vocab Flashcard) does NOT use this — the UI switches composables at block boundaries.
  *
- * Mirrors the retry/hint flow from VerbDrillCardSessionProvider:
- * - Correct answer -> set result (pendingCard/pendingResult)
- * - Wrong answer -> show inline error, increment attempt counter, stay on card
- * - 3 wrong attempts -> auto-show answer as hint (input controls stay visible)
- * - Manual "Show Answer" -> show answer as hint (input controls stay visible)
+ * Retry/hint logic is delegated to [CardSessionStateMachine].
  *
  * Create a fresh instance when the session enters a TRANSLATE or VERBS block.
  */
@@ -55,7 +51,6 @@ class DailyPracticeSessionProvider(
     var pendingAnswerResult: AnswerResult? by mutableStateOf(null)
         private set
     private var _pendingResult: AnswerResult? by mutableStateOf(null)
-    private var _isPaused: Boolean by mutableStateOf(false)
     private var _inputMode: InputMode by mutableStateOf(InputMode.VOICE)
     private var _selectedWords: List<String> by mutableStateOf(emptyList())
 
@@ -63,24 +58,17 @@ class DailyPracticeSessionProvider(
     private var cachedWordBank: List<String> = emptyList()
     private var pendingInput: String by mutableStateOf("")
 
-    /** Consecutive incorrect attempts for the current card. */
-    private var incorrectAttempts: Int by mutableStateOf(0)
+    /** Retry/hint state machine. Answer provider returns first accepted answer. */
+    private val sm = CardSessionStateMachine(
+        maxAttempts = 3,
+        answerProvider = { card -> card.acceptedAnswers.first() }
+    )
 
-    /** When non-null, the answer is being shown as a hint (auto or manual). */
-    var hintAnswer: String? by mutableStateOf(null)
-        private set
-
-    /** Token incremented to trigger automatic voice recognition (mirrors VerbDrillCardSessionProvider). */
-    var voiceTriggerToken: Int by mutableStateOf(0)
-        private set
-
-    /** When true, shows "Incorrect" feedback inline in input controls (wrong attempt < 3). */
-    var showIncorrectFeedback: Boolean by mutableStateOf(false)
-        private set
-
-    /** Remaining attempts before hint auto-shows. */
-    var remainingAttempts: Int by mutableStateOf(3)
-        private set
+    // Delegated state from CardSessionStateMachine
+    val hintAnswer: String? get() = sm.hintAnswer
+    val showIncorrectFeedback: Boolean get() = sm.showIncorrectFeedback
+    val remainingAttempts: Int get() = sm.remainingAttempts
+    val voiceTriggerToken: Int get() = sm.voiceTriggerToken
 
     // ── Capabilities ─────────────────────────────────────────────────────
 
@@ -135,8 +123,8 @@ class DailyPracticeSessionProvider(
 
     override val sessionActive: Boolean
         get() {
-            if (_isPaused) return false
-            if (hintAnswer != null) return false
+            if (sm.isPaused) return false
+            if (sm.hintAnswer != null) return false
             return currentIndex < blockCards.size
         }
 
@@ -147,18 +135,12 @@ class DailyPracticeSessionProvider(
 
     /** Clear incorrect feedback when the user starts typing a new attempt. */
     fun clearIncorrectFeedback() {
-        showIncorrectFeedback = false
+        sm.clearIncorrectFeedback()
     }
 
     override fun onInputChanged(text: String) {
         pendingInput = text
-        // Clear hint when user starts typing after seeing the answer
-        if (text.isNotBlank() && hintAnswer != null) {
-            hintAnswer = null
-            _isPaused = false
-            incorrectAttempts = 0
-            remainingAttempts = 3
-        }
+        sm.onInputChanged(text)
     }
 
     override fun submitAnswer(): AnswerResult? {
@@ -167,7 +149,7 @@ class DailyPracticeSessionProvider(
         val card = taskToSessionCard(task) ?: return null
 
         // Already showing hint — ignore further submissions until nextCard()
-        if (hintAnswer != null) return null
+        if (sm.hintAnswer != null) return null
 
         val input = if (currentInputMode == InputMode.WORD_BANK && _selectedWords.isNotEmpty()) {
             _selectedWords.joinToString(" ")
@@ -179,31 +161,30 @@ class DailyPracticeSessionProvider(
             Normalizer.normalize(input) == Normalizer.normalize(ans)
         }
 
-        if (isCorrect) {
-            _pendingCard = card
-            _pendingResult = AnswerResult(correct = true, displayAnswer = card.acceptedAnswers.first())
-            pendingAnswerResult = _pendingResult
-            incorrectAttempts = 0
-            showIncorrectFeedback = false
-            remainingAttempts = 3
-            onAnswerChecked(input, true)
-        } else {
-            onAnswerChecked(input, false)
-            incorrectAttempts++
-            remainingAttempts = 3 - incorrectAttempts
-            if (incorrectAttempts >= 3) {
-                // Auto-show answer after 3 wrong attempts
-                hintAnswer = card.acceptedAnswers.first()
+        val result = sm.onSubmit(
+            isCorrect = isCorrect,
+            card = card,
+            inputMode = _inputMode,
+            onCorrect = {
                 _pendingCard = card
-                showIncorrectFeedback = false
-                _isPaused = true
-            } else {
-                // Show inline "Incorrect" feedback for attempts < 3
-                showIncorrectFeedback = true
-                // Auto-trigger voice recognition in VOICE mode for retry
-                if (_inputMode == InputMode.VOICE) {
-                    voiceTriggerToken++
-                }
+                _pendingResult = AnswerResult(correct = true, displayAnswer = card.acceptedAnswers.first())
+                pendingAnswerResult = _pendingResult
+                onAnswerChecked(input, true)
+            },
+            onWrong = {
+                onAnswerChecked(input, false)
+            }
+        )
+
+        when (result) {
+            is CardSessionStateMachine.OnSubmitResult.HintShown -> {
+                _pendingCard = card
+            }
+            is CardSessionStateMachine.OnSubmitResult.Correct -> {
+                pendingAnswerResult = result.result
+            }
+            is CardSessionStateMachine.OnSubmitResult.Wrong -> {
+                // State already updated by state machine
             }
         }
 
@@ -218,29 +199,19 @@ class DailyPracticeSessionProvider(
     override fun showAnswer(): String? {
         if (currentIndex >= blockCards.size) return null
         val card = taskToSessionCard(blockCards[currentIndex]) ?: return null
-        // Manual eye button — show answer as hint, keep input controls visible
-        hintAnswer = card.acceptedAnswers.first()
         _pendingCard = card
-        incorrectAttempts = 3
-        showIncorrectFeedback = false
-        remainingAttempts = 0
-        _isPaused = true
-        return card.acceptedAnswers.first()
+        return sm.showAnswer(card)
     }
 
     override fun nextCard() {
         _pendingCard = null
         _pendingResult = null
         pendingAnswerResult = null
-        _isPaused = false
+        sm.reset()
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
         pendingInput = ""
-        hintAnswer = null
-        incorrectAttempts = 0
-        showIncorrectFeedback = false
-        remainingAttempts = 3
 
         // Notify caller about the card being advanced (for progress persistence)
         // Only VOICE and KEYBOARD count as "practiced"; WORD_BANK does not.
@@ -253,7 +224,7 @@ class DailyPracticeSessionProvider(
 
         // Auto-trigger voice recognition when advancing to next card in VOICE mode
         if (_inputMode == InputMode.VOICE) {
-            voiceTriggerToken++
+            sm.triggerVoice()
         }
 
         if (currentIndex >= blockCards.size) {
@@ -267,34 +238,26 @@ class DailyPracticeSessionProvider(
             _pendingCard = null
             _pendingResult = null
             pendingAnswerResult = null
-            _isPaused = false
+            sm.reset()
             _selectedWords = emptyList()
             cachedWordBankCardId = null
             cachedWordBank = emptyList()
-            hintAnswer = null
-            incorrectAttempts = 0
-            showIncorrectFeedback = false
-            remainingAttempts = 3
         }
     }
 
     override fun togglePause() {
-        if (_isPaused) {
+        if (sm.isPaused) {
             // Play pressed — unpause and restart current card (fresh attempt)
-            _isPaused = false
+            sm.reset()
             _pendingCard = null
             _pendingResult = null
             pendingAnswerResult = null
-            hintAnswer = null
-            incorrectAttempts = 0
-            showIncorrectFeedback = false
-            remainingAttempts = 3
             _selectedWords = emptyList()
             cachedWordBankCardId = null
             cachedWordBank = emptyList()
             pendingInput = ""
         } else {
-            _isPaused = true
+            sm.pause()
         }
     }
 
@@ -302,7 +265,7 @@ class DailyPracticeSessionProvider(
         _inputMode = mode
         _selectedWords = emptyList()
         if (mode == InputMode.VOICE) {
-            voiceTriggerToken++
+            sm.triggerVoice()
         }
     }
 

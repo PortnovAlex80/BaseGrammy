@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.BadSentenceEntry
-import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
@@ -17,6 +16,7 @@ import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
+import com.alexpo.grammermate.data.StoreFactory
 import org.yaml.snakeyaml.Yaml
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,10 +41,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val logTag = "VerbDrillVM"
     private val application = application
-    private var verbDrillStore = VerbDrillStore(application)
+    private val storeFactory = StoreFactory.getInstance(application)
+    private var verbDrillStore = storeFactory.getVerbDrillStore(null)
     private val lessonStore = LessonStore(application)
     private val progressStore = ProgressStore(application)
-    private val badSentenceStore = BadSentenceStore(application)
+    private val badSentenceStore = storeFactory.getBadSentenceStore()
     private val ttsEngine = TtsProvider.getInstance(application).ttsEngine
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
@@ -120,7 +121,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
         currentPackId = packId
-        verbDrillStore = VerbDrillStore(application, packId = packId)
+        verbDrillStore = storeFactory.getVerbDrillStore(packId)
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards() }
     }

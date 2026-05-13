@@ -1,0 +1,69 @@
+package com.alexpo.grammermate.data
+
+import android.app.Application
+
+/**
+ * Thread-safe singleton that caches [WordMasteryStore] and [VerbDrillStore]
+ * instances per packId. Prevents multiple independent store instances for the
+ * same packId from causing data loss (load-modify-save races, stale caches).
+ *
+ * All consumers must go through this factory instead of creating stores directly.
+ */
+class StoreFactory private constructor(private val appContext: Application) {
+
+    private val wordMasteryCache = mutableMapOf<String?, WordMasteryStore>()
+    private val verbDrillCache = mutableMapOf<String?, VerbDrillStore>()
+    private val badSentenceCache: BadSentenceStore by lazy { BadSentenceStore(appContext) }
+
+    @Synchronized
+    fun getWordMasteryStore(packId: String?): WordMasteryStore {
+        return wordMasteryCache.getOrPut(packId) {
+            WordMasteryStore(appContext, packId = packId)
+        }
+    }
+
+    @Synchronized
+    fun getVerbDrillStore(packId: String?): VerbDrillStore {
+        return verbDrillCache.getOrPut(packId) {
+            VerbDrillStore(appContext, packId = packId)
+        }
+    }
+
+    /**
+     * Returns the singleton [BadSentenceStore] instance.
+     * All consumers share the same in-memory cache so that a bad sentence
+     * flagged from any screen (training, verb drill, vocab drill) is
+     * immediately visible to all others.
+     */
+    fun getBadSentenceStore(): BadSentenceStore = badSentenceCache
+
+    /**
+     * Remove cached entries for the given packId, forcing fresh instances
+     * on next access. Useful after progress resets.
+     */
+    @Synchronized
+    fun evict(packId: String?) {
+        wordMasteryCache.remove(packId)
+        verbDrillCache.remove(packId)
+    }
+
+    /**
+     * Clear all cached instances. Called during full progress reset.
+     */
+    @Synchronized
+    fun clearCache() {
+        wordMasteryCache.clear()
+        verbDrillCache.clear()
+    }
+
+    companion object {
+        @Volatile
+        private var instance: StoreFactory? = null
+
+        fun getInstance(application: Application): StoreFactory {
+            return instance ?: synchronized(this) {
+                instance ?: StoreFactory(application).also { instance = it }
+            }
+        }
+    }
+}

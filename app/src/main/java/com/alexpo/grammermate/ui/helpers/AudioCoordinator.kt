@@ -336,6 +336,7 @@ class AudioCoordinator(
 
     fun release() {
         bgDownloadJob?.cancel()
+        ttsEngine.release()
         asrEngine?.release()
         soundPool.release()
     }
