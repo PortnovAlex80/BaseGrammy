@@ -333,6 +333,8 @@ Only target-language text is ever spoken. Russian prompts are never synthesized.
 
 **TTS error handling**: TTS `speak()` calls are wrapped in try-catch at both engine level and caller level. If models are not loaded, `speak()` silently skips — no crash. This is expected behavior when a user taps the TTS button before models finish downloading.
 
+**KNOWN ISSUE — Samsung tablet crash during TTS model loading/playback**: On Samsung Galaxy Tab devices, the app crashes when TTS models are being loaded or when the user taps the speaker icon. This crash did NOT occur in older app versions — likely a regression from the TTS engine re-initialization logic or Sherpa-ONNX native layer interaction. Requires investigation: (1) check if crash is in `TtsEngine.initialize()` native call, (2) verify Sherpa-ONNX AAR compatibility with Samsung's AudioTrack implementation, (3) test on Samsung Tab S8/S9 specifically. **Tech debt — priority after current refactoring.**
+
 #### Download Dialog
 
 When the user taps the speaker icon for a language whose model is not downloaded, a dialog appears:
