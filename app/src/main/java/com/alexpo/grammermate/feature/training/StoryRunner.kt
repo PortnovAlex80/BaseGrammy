@@ -5,29 +5,27 @@ import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
 import com.alexpo.grammermate.data.StoryState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
-
-/**
- * Callback interface for cross-module orchestration from [StoryRunner].
- */
-interface StoryCallbacks {
-    fun forceBackup()
-    fun saveProgress()
-}
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Story quiz session logic extracted from TrainingViewModel.
  *
  * Manages the story lifecycle: loading a quiz, marking completion
  * per phase (CHECK_IN / CHECK_OUT), and clearing errors.
- * All state changes go through [TrainingStateAccess].
+ * Owns its [StateFlow] for [StoryState]; reads navigation from [TrainingStateAccess].
  *
- * Cross-module orchestration uses [StoryCallbacks].
+ * Returns [StoryResult] instead of calling callbacks.
  */
 class StoryRunner(
     private val stateAccess: TrainingStateAccess,
-    private val callbacks: StoryCallbacks,
     private val lessonStore: LessonStore,
 ) {
+
+    // ── Owned state flow ─────────────────────────────────────────────────
+    private val _state = MutableStateFlow(StoryState())
+    val stateFlow: StateFlow<StoryState> = _state
 
     // ── Public API ───────────────────────────────────────────────────────
 
@@ -38,20 +36,17 @@ class StoryRunner(
      * [LessonStore.getStoryQuizzes], and activates the first match.
      * Sets an error message if no story is found.
      */
-    fun openStory(phase: StoryPhase) {
+    fun openStory(phase: StoryPhase): StoryResult {
         val state = stateAccess.uiState.value
-        val lessonId = state.navigation.selectedLessonId ?: return
+        val lessonId = state.navigation.selectedLessonId ?: return StoryResult.None
         val languageId = state.navigation.selectedLanguageId
         val story = lessonStore.getStoryQuizzes(lessonId.value, phase, languageId.value).firstOrNull()
         if (story == null) {
-            stateAccess.updateState {
-                it.copy(story = it.story.copy(storyErrorMessage = "Story not found. Please import the pack again."))
-            }
-            return
+            _state.update { it.copy(storyErrorMessage = "Story not found. Please import the pack again.") }
+            return StoryResult.None
         }
-        stateAccess.updateState {
-            it.copy(story = it.story.copy(activeStory = story, storyErrorMessage = null))
-        }
+        _state.update { it.copy(activeStory = story, storyErrorMessage = null) }
+        return StoryResult.None
     }
 
     /**
@@ -64,31 +59,38 @@ class StoryRunner(
      * @param phase      which story phase (CHECK_IN or CHECK_OUT)
      * @param allCorrect whether the user answered all questions correctly
      */
-    fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
+    fun completeStory(phase: StoryPhase, allCorrect: Boolean): StoryResult {
         val state = stateAccess.uiState.value
         val shouldPersist = allCorrect || state.cardSession.testMode
-        stateAccess.updateState { current ->
-            if (!allCorrect && !current.cardSession.testMode) {
-                current.copy(story = current.story.copy(activeStory = null))
+        _state.update { current ->
+            if (!allCorrect && !state.cardSession.testMode) {
+                current.copy(activeStory = null)
             } else {
                 when (phase) {
-                    StoryPhase.CHECK_IN -> current.copy(story = current.story.copy(storyCheckInDone = true, activeStory = null))
-                    StoryPhase.CHECK_OUT -> current.copy(story = current.story.copy(storyCheckOutDone = true, activeStory = null))
+                    StoryPhase.CHECK_IN -> current.copy(storyCheckInDone = true, activeStory = null)
+                    StoryPhase.CHECK_OUT -> current.copy(storyCheckOutDone = true, activeStory = null)
                 }
             }
         }
         if (shouldPersist) {
-            callbacks.forceBackup()
-            callbacks.saveProgress()
+            return StoryResult.SaveAndBackup
         }
+        return StoryResult.None
     }
 
     /**
      * Clear the story error message from state.
      */
-    fun clearStoryError() {
-        stateAccess.updateState {
-            it.copy(story = it.story.copy(storyErrorMessage = null))
-        }
+    fun clearStoryError(): StoryResult {
+        _state.update { it.copy(storyErrorMessage = null) }
+        return StoryResult.None
+    }
+
+    /**
+     * Reset story state to defaults.
+     * Called during session resets.
+     */
+    fun resetState() {
+        _state.update { StoryState() }
     }
 }

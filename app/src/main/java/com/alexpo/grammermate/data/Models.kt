@@ -410,24 +410,27 @@ data class TrainingUiState(
      * Reset all session-related state to defaults.
      * Used by selectLanguage, selectLesson, selectMode, importLessonPack,
      * addLanguage, and refreshLessons to clear stale training state.
+     *
+     * NOTE: After Phase 4 extraction, boss/story/vocabSprint/daily/flowerDisplay
+     * are owned by feature flows and merged via combine(). This method only resets
+     * core-owned fields (cardSession, drill). Feature resets are called explicitly
+     * by the ViewModel.
      */
     fun resetSessionState(): TrainingUiState = copy(
         cardSession = CardSessionState(sessionState = SessionState.PAUSED),
-        boss = BossState(),
-        story = StoryState(),
-        vocabSprint = VocabSprintState(),
         drill = DrillState()
     )
 
     /**
      * Full session reset including counters and timers.
      * Used when changing language or importing packs where all progress resets.
+     *
+     * NOTE: After Phase 4 extraction, boss/story/vocabSprint/daily/flowerDisplay
+     * are owned by feature flows. Feature resets are called explicitly by the ViewModel.
      */
     fun resetAllSessionState(): TrainingUiState = resetSessionState().copy(
         cardSession = CardSessionState(correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, currentCard = null),
-        elite = EliteState(eliteActive = false),
-        boss = BossState(bossLessonRewards = emptyMap(), bossMegaRewards = emptyMap()),
-        flowerDisplay = FlowerDisplayState(lessonFlowers = emptyMap(), currentLessonFlower = null)
+        elite = EliteState(eliteActive = false)
     )
 }
 

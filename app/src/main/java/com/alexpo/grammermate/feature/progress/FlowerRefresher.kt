@@ -2,12 +2,19 @@ package com.alexpo.grammermate.feature.progress
 
 import android.util.Log
 import com.alexpo.grammermate.data.FlowerCalculator
+import com.alexpo.grammermate.data.FlowerDisplayState
 import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Stateless module that recomputes flower visuals and ladder rows for all lessons.
+ *
+ * Owns its [StateFlow] for [FlowerDisplayState]. Writes `ladderRows` to
+ * core state via [TrainingStateAccess] since ladderRows belongs to NavigationState.
  *
  * Called after any operation that may change mastery state: init, language/lesson
  * selection, boss completion, backup restore, and pack reload. The ViewModel
@@ -19,6 +26,10 @@ class FlowerRefresher(
 ) {
 
     private val logTag = "GrammarMate"
+
+    // ── Owned state flow ─────────────────────────────────────────────────
+    private val _state = MutableStateFlow(FlowerDisplayState())
+    val stateFlow: StateFlow<FlowerDisplayState> = _state
 
     /**
      * Recalculate flower states for every lesson and update UI state.
@@ -65,15 +76,17 @@ class FlowerRefresher(
             )
         }
 
-        stateAccess.updateState {
+        // Write flower display to owned flow
+        _state.update {
             it.copy(
-                flowerDisplay = it.flowerDisplay.copy(
-                    lessonFlowers = flowerStates,
-                    currentLessonFlower = currentFlower,
-                    currentLessonShownCount = currentShownCount
-                ),
-                navigation = it.navigation.copy(ladderRows = ladderRows)
+                lessonFlowers = flowerStates,
+                currentLessonFlower = currentFlower,
+                currentLessonShownCount = currentShownCount
             )
+        }
+        // Write ladder rows to core state (navigation belongs to core)
+        stateAccess.updateState {
+            it.copy(navigation = it.navigation.copy(ladderRows = ladderRows))
         }
     }
 }

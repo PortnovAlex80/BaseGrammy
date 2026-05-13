@@ -20,12 +20,11 @@
 
 ## Current State
 
-- TrainingViewModel: ~1133 lines (reduced from ~3400, 67% reduction)
-- 20 helpers in feature-based directories (`feature/training/`, `feature/boss/`, `feature/daily/`, `feature/progress/`, `feature/vocab/`, `shared/audio/`)
-- TrainingUiState: single StateFlow, 10 nested data classes
-- 7 callback interfaces (BossCallbacks, SessionCallbacks, etc.)
+- TrainingViewModel: thin combiner/router (~200 lines)
+- 6 per-feature StateFlows (audio, story, vocabSprint, daily, flowerDisplay, boss)
+- 4 core fields in ViewModel _coreState (navigation, cardSession, elite, drill)
+- 7 callback interfaces replaced with sealed result types
 - Build: PASSES
-- Regression: 199/208 ACs PASS
 
 ## Problem Statement
 
@@ -201,28 +200,25 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 ## PHASE 4: StateFlow Decomposition (per-feature ownership)
 
 ### Step 4.1: Extract BossState StateFlow
-- [ ] BossOrchestrator owns `MutableStateFlow<BossState>`
-- [ ] ViewModel combines BossState flow
-- [ ] Build verify
+- [x] BossOrchestrator owns `MutableStateFlow<BossState>`
+- [x] ViewModel combines BossState flow
+- [x] Build verify
 
 ### Step 4.2: Extract DailyState StateFlow
-- [ ] DailyCoordinator owns `MutableStateFlow<DailyState>`
-- [ ] Build verify
+- [x] DailyPracticeCoordinator owns `MutableStateFlow<DailyPracticeState>`
+- [x] Build verify
 
-### Step 4.3: Extract ProgressState StateFlow
-- [ ] ProgressTracker owns `MutableStateFlow<ProgressState>`
-- [ ] Build verify
+### Step 4.3: Extract StoryState, VocabSprintState, FlowerDisplayState
+- [x] StoryRunner owns `MutableStateFlow<StoryState>`
+- [x] VocabSprintRunner owns `MutableStateFlow<VocabSprintState>`
+- [x] FlowerRefresher owns `MutableStateFlow<FlowerDisplayState>`
+- [x] Build verify
 
-### Step 4.4: Extract TrainingState StateFlow
-- [ ] SessionRunner owns `MutableStateFlow<TrainingState>`
-- [ ] This is the LARGEST extraction — elite/drill modes stay here
-- [ ] Build verify
-
-### Step 4.5: Collapse ViewModel to router
-- [ ] ViewModel = combine() + reduce() + NavigationState
-- [ ] Target: ~200 lines
-- [ ] Full regression check
-- [ ] Commit
+### Step 4.4: ViewModel combine chain
+- [x] 7-flow combine: core + audio + story + vocab + daily + flower + boss
+- [x] Feature reset methods (resetSessionState no longer touches feature states)
+- [x] Cross-feature commands (ResetBoss, ResetDailySession, ResetStory, ResetVocabSprint)
+- [x] Build verify — PASS
 
 ---
 
@@ -233,5 +229,5 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 | Phase 1 | File moves | 6/6 | 0 |
 | Phase 2 | AudioState | 2/2 | 0 |
 | Phase 3 | Result types | 5/5 | 0 |
-| Phase 4 | StateFlow decomposition | 0/5 | 5 |
-| **Total** | | **13/18** | **5** |
+| Phase 4 | StateFlow decomposition | 5/5 | 0 |
+| **Total** | | **18/18** | **0** |

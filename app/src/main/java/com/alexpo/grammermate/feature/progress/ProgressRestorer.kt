@@ -22,33 +22,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Callback interface for cross-module orchestration from [ProgressRestorer].
- */
-interface ProgressCallbacks {
-    fun rebuildSchedules(lessons: List<Lesson>)
-    fun buildSessionCards()
-    fun refreshFlowerStates()
-    fun normalizeEliteSpeeds(speeds: List<Double>): List<Double>
-    fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean
-    fun parseBossRewards(rewardMap: Map<String, String>): Map<String, BossReward>
-}
-
-/**
  * Helper responsible for restoring progress from disk, backup, or initial load.
  *
  * Owns the restoration pipeline: load persisted data, resolve valid references,
  * apply to UI state, and trigger downstream rebuilds (schedules, cards, flowers).
- * Uses [ProgressCallbacks] for ViewModel-level operations not owned by this helper.
+ *
+ * Query-style operations (normalizeEliteSpeeds, resolveEliteUnlocked, parseBossRewards)
+ * are injected as constructor function parameters.
+ * Command-style results are returned as [List]<[ProgressResult]> for the ViewModel to execute.
  */
 class ProgressRestorer(
     private val stateAccess: TrainingStateAccess,
-    private val callbacks: ProgressCallbacks,
     private val progressStore: ProgressStore,
     private val profileStore: ProfileStore,
     private val streakStore: StreakStore,
     private val lessonStore: LessonStore,
     private val backupManager: BackupManager,
-    private val eliteStepCount: Int
+    private val eliteStepCount: Int,
+    private val normalizeEliteSpeeds: (List<Double>) -> List<Double>,
+    private val resolveEliteUnlocked: (List<Lesson>, Boolean) -> Boolean,
+    private val parseBossRewards: (Map<String, String>) -> Map<String, BossReward>
 ) {
     companion object {
         private const val logTag = "GrammarMate"
@@ -57,6 +50,8 @@ class ProgressRestorer(
     /**
      * Apply progress restoration to UI state and rebuild derived data.
      * Shared by [restoreBackup], [reloadFromDisk], and init block.
+     *
+     * Returns a list of [ProgressResult] commands for the ViewModel to execute.
      */
     fun applyRestoredProgress(
         progress: TrainingProgress,
@@ -70,8 +65,8 @@ class ProgressRestorer(
         bossLessonRewards: Map<String, BossReward>,
         bossMegaRewards: Map<String, BossReward>,
         includeLanguageData: Boolean = false
-    ) {
-        val normalizedEliteSpeeds = callbacks.normalizeEliteSpeeds(progress.eliteBestSpeeds)
+    ): List<ProgressResult> {
+        val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
         stateAccess.updateState {
             val base = it.copy(
                 navigation = it.navigation.copy(
@@ -110,22 +105,25 @@ class ProgressRestorer(
                         installedPacks = packs
                     ),
                     elite = base.elite.copy(
-                        eliteUnlocked = callbacks.resolveEliteUnlocked(lessons, base.cardSession.testMode)
+                        eliteUnlocked = resolveEliteUnlocked(lessons, base.cardSession.testMode)
                     )
                 )
             } else {
                 base
             }
         }
-        callbacks.rebuildSchedules(lessons)
-        callbacks.buildSessionCards()
-        callbacks.refreshFlowerStates()
+        return listOf(
+            ProgressResult.RebuildSchedules(lessons),
+            ProgressResult.BuildSessionCards,
+            ProgressResult.RefreshFlowerStates
+        )
     }
 
     /**
      * Restore user progress from backup folder.
+     * Returns a list of [ProgressResult] commands for the ViewModel to execute.
      */
-    fun restoreBackup(backupUri: android.net.Uri) {
+    fun restoreBackup(backupUri: android.net.Uri): List<ProgressResult> {
         Log.d(logTag, "=== Starting Backup Restore ===")
         Log.d(logTag, "Backup URI: $backupUri")
 
@@ -141,10 +139,10 @@ class ProgressRestorer(
                 lessons.firstOrNull { it.id.value == id }?.id
             } ?: lessons.firstOrNull()?.id
             val streak = streakStore.getCurrentStreak(selectedLanguageId.value)
-            val bossLessonRewards = callbacks.parseBossRewards(progress.bossLessonRewards)
-            val bossMegaRewards = callbacks.parseBossRewards(progress.bossMegaRewards)
+            val bossLessonRewards = parseBossRewards(progress.bossLessonRewards)
+            val bossMegaRewards = parseBossRewards(progress.bossMegaRewards)
 
-            applyRestoredProgress(
+            val results = applyRestoredProgress(
                 progress = progress,
                 languages = emptyList(),
                 packs = emptyList(),
@@ -159,16 +157,20 @@ class ProgressRestorer(
             )
 
             Log.d(logTag, "=== Backup Restore Complete ===")
+            return results
         } else {
             Log.e(logTag, "Failed to restore backup - check restore_log.txt in backup folder")
+            return emptyList()
         }
     }
 
     /**
      * Reload all progress from disk (async).
      * Used after external changes (e.g., pack import) to refresh state.
+     *
+     * Returns a list of [ProgressResult] commands for the ViewModel to execute.
      */
-    suspend fun reloadFromDisk() {
+    suspend fun reloadFromDisk(): List<ProgressResult> {
         val progress = progressStore.load()
         val profile = profileStore.load()
         val languages = lessonStore.getLanguages()
@@ -181,10 +183,10 @@ class ProgressRestorer(
             lessons.firstOrNull { it.id.value == id }?.id
         } ?: lessons.firstOrNull()?.id
         val streak = streakStore.getCurrentStreak(selectedLanguageId.value)
-        val bossLessonRewards = callbacks.parseBossRewards(progress.bossLessonRewards)
-        val bossMegaRewards = callbacks.parseBossRewards(progress.bossMegaRewards)
+        val bossLessonRewards = parseBossRewards(progress.bossLessonRewards)
+        val bossMegaRewards = parseBossRewards(progress.bossMegaRewards)
 
-        withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Main) {
             applyRestoredProgress(
                 progress = progress,
                 languages = languages,

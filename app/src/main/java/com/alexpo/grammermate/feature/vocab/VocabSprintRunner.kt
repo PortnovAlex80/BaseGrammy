@@ -6,19 +6,22 @@ import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.VocabProgressStore
+import com.alexpo.grammermate.data.VocabSprintState
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import com.alexpo.grammermate.feature.training.AnswerValidator
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 /**
- * Callback interface for cross-module orchestration from [VocabSprintRunner].
+ * Result of submitting a vocab sprint answer.
+ * Combines sound feedback and persistence action.
  */
-interface VocabSprintCallbacks {
-    fun playSuccess()
-    fun playError()
-    fun saveProgress()
-    fun forceBackup()
-}
+data class VocabSubmitResult(
+    val sound: VocabSoundResult,
+    val action: VocabResult
+)
 
 /**
  * Vocab sprint session logic extracted from TrainingViewModel.
@@ -27,16 +30,19 @@ interface VocabSprintCallbacks {
  * word bank generation, SRS progress recording, and session completion.
  * All state changes go through [TrainingStateAccess].
  *
- * Cross-module orchestration uses [VocabSprintCallbacks].
+ * Returns typed results instead of calling callbacks.
  */
 class VocabSprintRunner(
     private val stateAccess: TrainingStateAccess,
-    private val callbacks: VocabSprintCallbacks,
     private val lessonStore: LessonStore,
     private val vocabProgressStore: VocabProgressStore,
     private val answerValidator: AnswerValidator
 ) {
     private val logTag = "VocabSprintRunner"
+
+    // ── Owned state flow ─────────────────────────────────────────────────
+    private val _state = MutableStateFlow(VocabSprintState())
+    val vocabState: StateFlow<VocabSprintState> = _state
 
     /** Current vocab session entries. Set by [openSprint], read by [moveToNextVocab] and [updateWordBank]. */
     var vocabSession: List<VocabEntry> = emptyList()
@@ -50,9 +56,9 @@ class VocabSprintRunner(
      * optionally limits to [vocabSprintLimit], and supports resuming a
      * partially-completed sprint.
      */
-    fun openSprint(resume: Boolean = false) {
+    fun openSprint(resume: Boolean = false): VocabResult {
         val state = stateAccess.uiState.value
-        val lessonId = state.navigation.selectedLessonId ?: return
+        val lessonId = state.navigation.selectedLessonId ?: return VocabResult.None
         val languageId = state.navigation.selectedLanguageId
         val allEntries = lessonStore.getVocabEntries(lessonId.value, languageId.value)
 
@@ -64,10 +70,8 @@ class VocabSprintRunner(
 
         if (limited.isEmpty()) {
             vocabSession = emptyList()
-            stateAccess.updateState {
-                it.copy(vocabSprint = it.vocabSprint.copy(vocabErrorMessage = "Vocabulary not found. Please import the pack again."))
-            }
-            return
+            _state.update { it.copy(vocabErrorMessage = "Vocabulary not found. Please import the pack again.") }
+            return VocabResult.None
         }
 
         val startIndex: Int
@@ -96,39 +100,26 @@ class VocabSprintRunner(
         val firstEntry = sessionEntries.firstOrNull()
         val vocabWordBank = firstEntry?.let { buildWordBank(it, sessionEntries, state) }.orEmpty()
         Log.d(logTag, "openSprint: allEntries=${allEntries.size}, limited=${limited.size}, session=${sessionEntries.size}, resume=$resume, wordBank=${vocabWordBank.size}")
-        stateAccess.updateState {
+        _state.update {
             it.copy(
-                vocabSprint = it.vocabSprint.copy(
-                    currentVocab = firstEntry,
-                    vocabInputText = "",
-                    vocabAttempts = 0,
-                    vocabAnswerText = null,
-                    vocabIndex = startIndex,
-                    vocabTotal = sessionEntries.size,
-                    vocabWordBankWords = vocabWordBank,
-                    vocabErrorMessage = null,
-                    vocabInputMode = InputMode.VOICE,
-                    vocabVoiceTriggerToken = 0
-                ),
-                boss = it.boss.copy(
-                    bossActive = false,
-                    bossType = null,
-                    bossTotal = 0,
-                    bossProgress = 0,
-                    bossReward = null,
-                    bossRewardMessage = null,
-                    bossFinishedToken = 0,
-                    bossErrorMessage = null
-                )
+                currentVocab = firstEntry,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = startIndex,
+                vocabTotal = sessionEntries.size,
+                vocabWordBankWords = vocabWordBank,
+                vocabErrorMessage = null,
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = 0
             )
         }
+        return VocabResult.ResetBoss
     }
 
     /** Clear the vocab sprint error message. */
     fun clearError() {
-        stateAccess.updateState {
-            it.copy(vocabSprint = it.vocabSprint.copy(vocabErrorMessage = null))
-        }
+        _state.update { it.copy(vocabErrorMessage = null) }
     }
 
     /**
@@ -136,14 +127,12 @@ class VocabSprintRunner(
      * Resets attempts and answer text if the user starts typing after seeing the answer.
      */
     fun onInputChanged(text: String) {
-        stateAccess.updateState {
-            val resetAttempts = it.vocabSprint.vocabAnswerText != null || it.vocabSprint.vocabAttempts >= 3
+        _state.update {
+            val resetAttempts = it.vocabAnswerText != null || it.vocabAttempts >= 3
             it.copy(
-                vocabSprint = it.vocabSprint.copy(
-                    vocabInputText = text,
-                    vocabAttempts = if (resetAttempts) 0 else it.vocabSprint.vocabAttempts,
-                    vocabAnswerText = if (resetAttempts) null else it.vocabSprint.vocabAnswerText
-                )
+                vocabInputText = text,
+                vocabAttempts = if (resetAttempts) 0 else it.vocabAttempts,
+                vocabAnswerText = if (resetAttempts) null else it.vocabAnswerText
             )
         }
     }
@@ -154,23 +143,19 @@ class VocabSprintRunner(
      */
     fun setInputMode(mode: InputMode) {
         Log.d(logTag, "setInputMode: $mode")
-        stateAccess.updateState {
-            it.copy(vocabSprint = it.vocabSprint.copy(vocabInputMode = mode))
-        }
+        _state.update { it.copy(vocabInputMode = mode) }
         if (mode == InputMode.WORD_BANK) {
             updateWordBank()
-            Log.d(logTag, "Word bank updated. Words: ${stateAccess.uiState.value.vocabSprint.vocabWordBankWords.size}")
+            Log.d(logTag, "Word bank updated. Words: ${_state.value.vocabWordBankWords.size}")
         }
     }
 
     /** Trigger voice recognition for the current vocab entry. */
     fun requestVoice() {
-        stateAccess.updateState {
+        _state.update {
             it.copy(
-                vocabSprint = it.vocabSprint.copy(
-                    vocabInputMode = InputMode.VOICE,
-                    vocabVoiceTriggerToken = it.vocabSprint.vocabVoiceTriggerToken + 1
-                )
+                vocabInputMode = InputMode.VOICE,
+                vocabVoiceTriggerToken = it.vocabVoiceTriggerToken + 1
             )
         }
     }
@@ -178,68 +163,62 @@ class VocabSprintRunner(
     /**
      * Submit an answer for the current vocab entry.
      *
-     * Validates the answer, records SRS progress, plays audio feedback,
+     * Validates the answer, records SRS progress, signals sound feedback,
      * and advances to the next entry on success. After 3 failed attempts
      * the correct answer is revealed.
      */
-    fun submitAnswer(inputOverride: String? = null) {
+    fun submitAnswer(inputOverride: String? = null): VocabSubmitResult {
         val state = stateAccess.uiState.value
-        val entry = state.vocabSprint.currentVocab ?: return
-        val input = inputOverride ?: state.vocabSprint.vocabInputText
-        if (input.isBlank() && !state.cardSession.testMode) return
+        val vocabState = _state.value
+        val entry = vocabState.currentVocab ?: return VocabSubmitResult(VocabSoundResult.None, VocabResult.None)
+        val input = inputOverride ?: vocabState.vocabInputText
+        if (input.isBlank() && !state.cardSession.testMode) return VocabSubmitResult(VocabSoundResult.None, VocabResult.None)
         val accepted = answerValidator.validate(input, listOf(entry.targetText), state.cardSession.testMode).isCorrect
         if (accepted) {
-            callbacks.playSuccess()
             // Save progress: record correct answer and completed index
-            val lessonId = state.navigation.selectedLessonId ?: return
+            val lessonId = state.navigation.selectedLessonId ?: return VocabSubmitResult(VocabSoundResult.PlaySuccess, VocabResult.None)
             vocabProgressStore.recordCorrect(entry.id, lessonId.value, state.navigation.selectedLanguageId.value)
-            vocabProgressStore.addCompletedIndex(lessonId.value, state.navigation.selectedLanguageId.value, state.vocabSprint.vocabIndex)
-            moveToNextVocab()
-            return
+            vocabProgressStore.addCompletedIndex(lessonId.value, state.navigation.selectedLanguageId.value, vocabState.vocabIndex)
+            val nextResult = moveToNextVocab()
+            return VocabSubmitResult(VocabSoundResult.PlaySuccess, nextResult)
         }
-        callbacks.playError()
         // Record incorrect answer for SRS tracking
-        val lessonId = state.navigation.selectedLessonId ?: return
+        val lessonId = state.navigation.selectedLessonId ?: return VocabSubmitResult(VocabSoundResult.PlayError, VocabResult.None)
         vocabProgressStore.recordIncorrect(entry.id, lessonId.value, state.navigation.selectedLanguageId.value)
-        val nextAttempts = state.vocabSprint.vocabAttempts + 1
+        val nextAttempts = vocabState.vocabAttempts + 1
         if (nextAttempts >= 3) {
-            stateAccess.updateState {
+            _state.update {
                 it.copy(
-                    vocabSprint = it.vocabSprint.copy(
-                        vocabAttempts = nextAttempts,
-                        vocabAnswerText = entry.targetText,
-                        vocabInputText = ""
-                    )
+                    vocabAttempts = nextAttempts,
+                    vocabAnswerText = entry.targetText,
+                    vocabInputText = ""
                 )
             }
         } else {
-            stateAccess.updateState {
-                val nextToken = if (state.vocabSprint.vocabInputMode == InputMode.VOICE) {
-                    it.vocabSprint.vocabVoiceTriggerToken + 1
+            _state.update {
+                val nextToken = if (vocabState.vocabInputMode == InputMode.VOICE) {
+                    it.vocabVoiceTriggerToken + 1
                 } else {
-                    it.vocabSprint.vocabVoiceTriggerToken
+                    it.vocabVoiceTriggerToken
                 }
                 it.copy(
-                    vocabSprint = it.vocabSprint.copy(
-                        vocabAttempts = nextAttempts,
-                        vocabInputText = "",
-                        vocabVoiceTriggerToken = nextToken
-                    )
+                    vocabAttempts = nextAttempts,
+                    vocabInputText = "",
+                    vocabVoiceTriggerToken = nextToken
                 )
             }
         }
+        return VocabSubmitResult(VocabSoundResult.PlayError, VocabResult.None)
     }
 
     /** Reveal the correct answer for the current vocab entry. */
     fun showAnswer() {
-        val entry = stateAccess.uiState.value.vocabSprint.currentVocab ?: return
-        stateAccess.updateState {
+        val entry = _state.value.currentVocab ?: return
+        _state.update {
             it.copy(
-                vocabSprint = it.vocabSprint.copy(
-                    vocabAnswerText = entry.targetText,
-                    vocabInputText = "",
-                    vocabAttempts = 3
-                )
+                vocabAnswerText = entry.targetText,
+                vocabInputText = "",
+                vocabAttempts = 3
             )
         }
     }
@@ -249,48 +228,44 @@ class VocabSprintRunner(
     /**
      * Advance to the next vocab entry, or finish the sprint if all entries completed.
      */
-    private fun moveToNextVocab() {
+    private fun moveToNextVocab(): VocabResult {
         val state = stateAccess.uiState.value
-        val nextIndex = state.vocabSprint.vocabIndex + 1
+        val vocabState = _state.value
+        val nextIndex = vocabState.vocabIndex + 1
         if (nextIndex >= vocabSession.size) {
             // All vocab entries completed - clear sprint progress
             val lessonId = state.navigation.selectedLessonId
             if (lessonId != null) {
                 vocabProgressStore.clearSprintProgress(lessonId.value, state.navigation.selectedLanguageId.value)
             }
-            stateAccess.updateState {
+            _state.update {
                 it.copy(
-                    vocabSprint = it.vocabSprint.copy(
-                        currentVocab = null,
-                        vocabInputText = "",
-                        vocabAttempts = 0,
-                        vocabAnswerText = null,
-                        vocabIndex = nextIndex,
-                        vocabTotal = vocabSession.size,
-                        vocabWordBankWords = emptyList(),
-                        vocabFinishedToken = it.vocabSprint.vocabFinishedToken + 1
-                    )
-                )
-            }
-            callbacks.forceBackup()
-            callbacks.saveProgress()
-            return
-        }
-        val next = vocabSession[nextIndex]
-        val vocabWordBank = buildWordBank(next, vocabSession, state)
-        stateAccess.updateState {
-            it.copy(
-                vocabSprint = it.vocabSprint.copy(
-                    currentVocab = next,
+                    currentVocab = null,
                     vocabInputText = "",
                     vocabAttempts = 0,
                     vocabAnswerText = null,
                     vocabIndex = nextIndex,
                     vocabTotal = vocabSession.size,
-                    vocabWordBankWords = vocabWordBank
+                    vocabWordBankWords = emptyList(),
+                    vocabFinishedToken = it.vocabFinishedToken + 1
                 )
+            }
+            return VocabResult.SaveAndBackup
+        }
+        val next = vocabSession[nextIndex]
+        val vocabWordBank = buildWordBank(next, vocabSession, state)
+        _state.update {
+            it.copy(
+                currentVocab = next,
+                vocabInputText = "",
+                vocabAttempts = 0,
+                vocabAnswerText = null,
+                vocabIndex = nextIndex,
+                vocabTotal = vocabSession.size,
+                vocabWordBankWords = vocabWordBank
             )
         }
+        return VocabResult.None
     }
 
     /**
@@ -298,11 +273,9 @@ class VocabSprintRunner(
      * Called when switching to WORD_BANK input mode.
      */
     private fun updateWordBank() {
-        val entry = stateAccess.uiState.value.vocabSprint.currentVocab ?: return
+        val entry = _state.value.currentVocab ?: return
         val options = buildWordBank(entry, vocabSession, stateAccess.uiState.value)
-        stateAccess.updateState {
-            it.copy(vocabSprint = it.vocabSprint.copy(vocabWordBankWords = options))
-        }
+        _state.update { it.copy(vocabWordBankWords = options) }
     }
 
     /**
@@ -359,5 +332,23 @@ class VocabSprintRunner(
 
         Log.d(logTag, "buildWordBank: entry=${entry.nativeText}, correct=$correctOption, pool=${pool.size}, poolDistractors=${poolDistractors.size}, finalDistractors=${selectedDistractors.size}, result=${result.size}, words=$result")
         return result
+    }
+
+    // ── State management helpers ────────────────────────────────────────
+
+    /**
+     * Update the mastered count from the store.
+     * Called when returning from VocabDrill to reflect updated mastery.
+     */
+    fun updateMasteredCount(count: Int) {
+        _state.update { it.copy(vocabMasteredCount = count) }
+    }
+
+    /**
+     * Reset vocab sprint state to defaults.
+     * Called during session resets.
+     */
+    fun resetState() {
+        _state.update { VocabSprintState() }
     }
 }

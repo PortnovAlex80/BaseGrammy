@@ -27,7 +27,6 @@ import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.MasteryStoreImpl
 import com.alexpo.grammermate.data.LessonMasteryState
-import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakStoreImpl
@@ -53,34 +52,34 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 import com.alexpo.grammermate.feature.boss.BossBattleRunner
-import com.alexpo.grammermate.feature.boss.BossCallbacks
+import com.alexpo.grammermate.feature.boss.BossCommand
 import com.alexpo.grammermate.feature.boss.BossOrchestrator
 import com.alexpo.grammermate.feature.daily.BlockProgress
 import com.alexpo.grammermate.feature.daily.DailyPracticeCoordinator
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
-import com.alexpo.grammermate.feature.progress.BadSentenceCallbacks
 import com.alexpo.grammermate.feature.progress.BadSentenceHelper
+import com.alexpo.grammermate.feature.progress.BadSentenceResult
 import com.alexpo.grammermate.feature.progress.FlowerRefresher
-import com.alexpo.grammermate.feature.progress.ProgressCallbacks
+import com.alexpo.grammermate.feature.progress.ProgressResult
 import com.alexpo.grammermate.feature.progress.ProgressRestorer
 import com.alexpo.grammermate.feature.progress.ProgressTracker
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import com.alexpo.grammermate.feature.training.CardProvider
-import com.alexpo.grammermate.feature.training.SessionCallbacks
+import com.alexpo.grammermate.feature.training.SessionEvent
 import com.alexpo.grammermate.feature.training.SessionRunner
-import com.alexpo.grammermate.feature.training.StoryCallbacks
+import com.alexpo.grammermate.feature.training.StoryResult
 import com.alexpo.grammermate.feature.training.StoryRunner
 import com.alexpo.grammermate.feature.training.WordBankGenerator
-import com.alexpo.grammermate.feature.vocab.VocabSprintCallbacks
+import com.alexpo.grammermate.feature.vocab.VocabResult
+import com.alexpo.grammermate.feature.vocab.VocabSoundResult
 import com.alexpo.grammermate.feature.vocab.VocabSprintRunner
+import com.alexpo.grammermate.feature.vocab.VocabSubmitResult
 import com.alexpo.grammermate.shared.SettingsActionHandler
-import com.alexpo.grammermate.shared.SettingsCallbacks
+import com.alexpo.grammermate.shared.SettingsResult
 import com.alexpo.grammermate.shared.audio.AudioCoordinator
 
-class TrainingViewModel(application: Application) : AndroidViewModel(application),
-    SessionCallbacks, BossCallbacks, SettingsCallbacks, ProgressCallbacks,
-    VocabSprintCallbacks, StoryCallbacks, BadSentenceCallbacks {
+class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
     private val lessonStore = LessonStoreImpl(application)
     private val progressStore = ProgressStoreImpl(application)
@@ -105,24 +104,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         override fun saveProgress() = this@TrainingViewModel.saveProgress()
     }
 
-    private val audioCoordinator = AudioCoordinator(
-        stateAccess = stateAccess,
-        appContext = application,
-        coroutineScope = viewModelScope,
-        configStore = configStore
-    )
-
-    val uiState: StateFlow<TrainingUiState> = combine(
-        _coreState,
-        audioCoordinator.audioState
-    ) { core, audio ->
-        core.copy(audio = audio)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, _coreState.value)
+    // ── Feature instances (declared before uiState combine chain) ──────────
 
     private val answerValidator = AnswerValidator()
     private val vocabSprintRunner = VocabSprintRunner(
         stateAccess = stateAccess,
-        callbacks = this,
         lessonStore = lessonStore,
         vocabProgressStore = vocabProgressStore,
         answerValidator = answerValidator
@@ -162,13 +148,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private val sessionRunner = SessionRunner(
         stateAccess = stateAccess,
-        callbacks = this,
         appContext = application,
         coroutineScope = viewModelScope,
         answerValidator = answerValidator,
         wordBankGenerator = WordBankGenerator,
         cardProvider = cardProvider,
-        streakManager = streakManager
+        streakManager = streakManager,
+        getMastery = { lessonId, langId -> masteryStore.get(lessonId, langId) },
+        getSchedule = { lessonId -> lessonSchedules[com.alexpo.grammermate.data.LessonId(lessonId)] },
+        calculateCompletedSubLessons = { subLessons, mastery, lessonId ->
+            progressTracker.calculateCompletedSubLessons(
+                subLessons = subLessons,
+                mastery = mastery,
+                lessonId = lessonId?.let { com.alexpo.grammermate.data.LessonId(it) },
+                lessons = _coreState.value.navigation.lessons
+            )
+        },
+        onTimerSaveProgress = { saveProgress() }
     )
 
     private val flowerRefresher = FlowerRefresher(
@@ -187,31 +183,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private val storyRunner = StoryRunner(
         stateAccess = stateAccess,
-        callbacks = this,
         lessonStore = lessonStore,
-    )
-
-    private val progressRestorer = ProgressRestorer(
-        stateAccess = stateAccess,
-        callbacks = this,
-        progressStore = progressStore,
-        profileStore = profileStore,
-        streakStore = streakStore,
-        lessonStore = lessonStore,
-        backupManager = backupManager,
-        eliteStepCount = eliteStepCount
-    )
-
-    private val badSentenceHelper = BadSentenceHelper(
-        stateAccess = stateAccess,
-        callbacks = this,
-        badSentenceStore = badSentenceStore,
-        hiddenCardStore = hiddenCardStore
     )
 
     private val bossOrchestrator = BossOrchestrator(
         stateAccess = stateAccess,
-        callbacks = this,
         bossBattleRunner = bossBattleRunner,
         cardProvider = cardProvider,
         sessionRunner = sessionRunner,
@@ -219,13 +195,63 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         masteryStore = masteryStore
     )
 
+    private val progressRestorer = ProgressRestorer(
+        stateAccess = stateAccess,
+        progressStore = progressStore,
+        profileStore = profileStore,
+        streakStore = streakStore,
+        lessonStore = lessonStore,
+        backupManager = backupManager,
+        eliteStepCount = eliteStepCount,
+        normalizeEliteSpeeds = { speeds -> sessionRunner.normalizeEliteSpeeds(speeds) },
+        resolveEliteUnlocked = { lessons, testMode -> sessionRunner.resolveEliteUnlocked(lessons, testMode) },
+        parseBossRewards = { rewardMap -> bossOrchestrator.parseBossRewards(rewardMap) }
+    )
+
+    private val badSentenceHelper = BadSentenceHelper(
+        stateAccess = stateAccess,
+        badSentenceStore = badSentenceStore,
+        hiddenCardStore = hiddenCardStore
+    )
+
+    private val audioCoordinator = AudioCoordinator(
+        stateAccess = stateAccess,
+        appContext = application,
+        coroutineScope = viewModelScope,
+        configStore = configStore
+    )
+
+    // ── Combined state flow (all feature flows merged with core) ──────────
+    val uiState: StateFlow<TrainingUiState> = combine(
+        _coreState,
+        audioCoordinator.audioState,
+        storyRunner.stateFlow,
+        vocabSprintRunner.vocabState,
+        dailyPracticeCoordinator.dailyState
+    ) { core, audio, story, vocabSprint, daily ->
+        core.copy(
+            audio = audio,
+            story = story,
+            vocabSprint = vocabSprint,
+            daily = daily
+        )
+    }.let { partial ->
+        combine(
+            partial,
+            flowerRefresher.stateFlow,
+            bossOrchestrator.stateFlow
+        ) { state, flower, boss ->
+            state.copy(flowerDisplay = flower, boss = boss)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, _coreState.value)
+
     private val settingsActionHandler = SettingsActionHandler(
         stateAccess = stateAccess,
-        callbacks = this,
         configStore = configStore,
         profileStore = profileStore,
         backupManager = backupManager,
-        coroutineScope = viewModelScope
+        coroutineScope = viewModelScope,
+        resolveEliteUnlocked = { lessons, testMode -> sessionRunner.resolveEliteUnlocked(lessons, testMode) }
     )
 
     init {
@@ -245,7 +271,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val selectedLessonId = progress.lessonId?.let { id ->
             lessons.firstOrNull { it.id.value == id }?.id
         } ?: lessons.firstOrNull()?.id
-        val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
+        val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(progress.eliteBestSpeeds)
         val restoredScreen = "HOME"
         val streakData = streakStore.getCurrentStreak(selectedLanguageId.value)
         // Resolve activePackId: prefer saved value if pack still exists,
@@ -259,15 +285,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), boss = it.boss.copy(bossLessonRewards = bossLessonRewards, bossMegaRewards = bossMegaRewards), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier), vocabSprint = it.vocabSprint.copy(vocabMasteredCount = wordMasteryStore.getMasteredCount()), daily = it.daily.copy(dailyCursor = progress.dailyCursor))
+            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
         }
+        // Initialize feature-owned state from persisted progress
+        bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
+        vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
+        dailyPracticeCoordinator.updateCursor(progress.dailyCursor)
         refreshDrillVisibility()
         rebindWordMasteryStore(initialActivePackId?.value)
         rebuildSchedules(lessons)
         buildSessionCards()
         refreshFlowerStates()
         if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
-            resumeTimer()
+            sessionRunner.resumeTimer()
             _coreState.value.cardSession.currentCard?.let { recordCardShowForMastery(it) }
             if (_coreState.value.cardSession.inputMode == InputMode.VOICE) {
                 _coreState.update { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
@@ -302,7 +332,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                             ?: packs.firstOrNull { it.languageId == selectedLang }?.packId
                     }
                     val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it.value) }
-                    current.copy(navigation = current.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, current.cardSession.testMode)))
+                    current.copy(navigation = current.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, current.cardSession.testMode)))
                 }
                 refreshDrillVisibility()
                 val updatedLessons = lessonStore.getLessons(_coreState.value.navigation.selectedLanguageId.value)
@@ -331,7 +361,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 val lessonId = progressInfo.first
                 val lessonLevel = progressInfo.second
                 dailyPracticeCoordinator.prebuildSession(
-                    packId.value, langId.value, lessonId, lessonLevel, state.daily.dailyCursor
+                    packId.value, langId.value, lessonId, lessonLevel, dailyPracticeCoordinator.getCursor()
                 )
             }
         }
@@ -378,8 +408,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val newPackLessonIds = newPackId?.let { lessonStore.getLessonIdsForPack(it) }
         rebindWordMasteryStore(newPackId)
         _coreState.update {
-            it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = selectedLessonId, activePackId = newPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = newPackLessonIds), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)), vocabSprint = it.vocabSprint.copy(vocabMasteredCount = wordMasteryStore.getMasteredCount()))
+            it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = selectedLessonId, activePackId = newPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = newPackLessonIds), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
+        // Reset feature-owned state
+        bossOrchestrator.resetStateKeepRewards()
+        storyRunner.resetState()
+        vocabSprintRunner.resetState()
+        vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
+        dailyPracticeCoordinator.resetState()
         refreshDrillVisibility()
         rebuildSchedules(lessons)
         buildSessionCards()
@@ -412,12 +448,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val schedule = lessonSchedules[typedLessonId]
         val subLessons = schedule?.subLessons.orEmpty()
         val mastery = masteryStore.get(lessonId, _coreState.value.navigation.selectedLanguageId.value)
-        val completedCount = calculateCompletedSubLessons(subLessons, mastery, typedLessonId.value)
+        val completedCount = progressTracker.calculateCompletedSubLessons(
+            subLessons = subLessons,
+            mastery = mastery,
+            lessonId = typedLessonId,
+            lessons = _coreState.value.navigation.lessons
+        )
         val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _coreState.update {
             it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = packId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null))
         }
+        // Reset feature-owned state for session change
+        bossOrchestrator.resetState()
+        storyRunner.resetState()
+        vocabSprintRunner.resetState()
+        dailyPracticeCoordinator.resetState()
         refreshDrillVisibility()
         buildSessionCards()
         refreshFlowerStates()
@@ -447,17 +493,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update {
             it.resetSessionState().copy(navigation = it.navigation.copy(mode = mode))
         }
+        // Reset feature-owned state for session change
+        bossOrchestrator.resetState()
+        storyRunner.resetState()
+        vocabSprintRunner.resetState()
         buildSessionCards()
         saveProgress()
     }
 
     fun submitAnswer(): SubmitResult {
-        val result = sessionRunner.submitAnswer()
+        val (result, events) = sessionRunner.submitAnswer()
+        handleSessionEvents(events)
 
         // Orchestrator: handle cross-module actions based on result
         if (result.needsBossFinish) {
-            val state = _coreState.value
-            updateBossProgress(state.boss.bossTotal)
+            val bossState = bossOrchestrator.stateFlow.value
+            updateBossProgress(bossState.bossTotal)
             finishBoss()
         }
         if (result.needsSubLessonComplete) {
@@ -470,38 +521,43 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun nextCard(triggerVoice: Boolean = false) {
         val state = _coreState.value
+        val bossState = bossOrchestrator.stateFlow.value
 
         // Boss-specific progress handling
-        if (state.boss.bossActive) {
+        if (bossState.bossActive) {
             val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionRunner.getSessionCards().lastIndex)
-            val advanceResult = bossOrchestrator.advanceBossProgressOnNextCard(nextIndex, sessionRunner.getSessionCards().size)
+            val (advanceResult, bossCommands) = bossOrchestrator.advanceBossProgressOnNextCard(nextIndex, sessionRunner.getSessionCards().size)
 
-            sessionRunner.nextCard(triggerVoice)
+            val events = sessionRunner.nextCard(triggerVoice)
+            handleSessionEvents(events)
+            handleBossCommands(bossCommands)
 
             // Apply boss pause if reward threshold was crossed
             if (advanceResult.rewardMessageChanged) {
                 _coreState.update { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
             }
         } else {
-            sessionRunner.nextCard(triggerVoice)
+            val events = sessionRunner.nextCard(triggerVoice)
+            handleSessionEvents(events)
         }
     }
 
-    fun prevCard() = sessionRunner.prevCard()
+    fun prevCard() = handleSessionEvents(sessionRunner.prevCard())
 
-    fun togglePause() = sessionRunner.togglePause()
+    fun togglePause() = handleSessionEvents(sessionRunner.togglePause())
 
-    fun pauseSession() = sessionRunner.pauseSession()
+    fun pauseSession() = handleSessionEvents(sessionRunner.pauseSession())
 
     fun finishSession() {
-        if (_coreState.value.boss.bossActive) {
+        if (bossOrchestrator.stateFlow.value.bossActive) {
             finishBoss()
             return
         }
-        sessionRunner.finishSession()
+        val (_, events) = sessionRunner.finishSession()
+        handleSessionEvents(events)
     }
 
-    fun showAnswer() = sessionRunner.showAnswer()
+    fun showAnswer() = handleSessionEvents(sessionRunner.showAnswer())
 
     fun importLesson(uri: Uri) {
         val languageId = _coreState.value.navigation.selectedLanguageId
@@ -516,8 +572,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val lessons = lessonStore.getLessons(pack.languageId.value)
             val selectedLessonId = lessons.firstOrNull()?.id
             _coreState.update {
-                it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = pack.languageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+                it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = pack.languageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
             }
+            // Reset feature-owned state
+            bossOrchestrator.resetStateKeepRewards()
+            storyRunner.resetState()
+            vocabSprintRunner.resetState()
+            dailyPracticeCoordinator.resetState()
             refreshDrillVisibility()
             rebuildSchedules(lessons)
             buildSessionCards()
@@ -552,8 +613,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessons = lessonStore.getLessons(language.id.value)
         val selectedLessonId = lessons.firstOrNull()?.id
         _coreState.update {
-            it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = language.id, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+            it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = language.id, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
+        // Reset feature-owned state
+        bossOrchestrator.resetStateKeepRewards()
+        storyRunner.resetState()
+        vocabSprintRunner.resetState()
+        dailyPracticeCoordinator.resetState()
         refreshDrillVisibility()
         rebuildSchedules(lessons)
         buildSessionCards()
@@ -570,7 +636,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /**
      * Reset ALL progress: mastery, daily practice, verb drill, vocab mastery, training progress.
      */
-    fun resetAllProgress() = settingsActionHandler.resetAllProgress(getApplication())
+    fun resetAllProgress() = handleSettingsResults(settingsActionHandler.resetAllProgress(getApplication()))
 
     /**
      * Reset progress for the current language/pack only.
@@ -580,7 +646,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _coreState.value
         val languageId = state.navigation.selectedLanguageId.value
         val packId = state.navigation.activePackId?.value
-        settingsActionHandler.resetLanguageProgress(getApplication(), languageId, packId)
+        handleSettingsResults(settingsActionHandler.resetLanguageProgress(getApplication(), languageId, packId))
     }
 
     fun deletePack(packId: String) {
@@ -593,19 +659,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update { it.copy(navigation = it.navigation.copy(installedPacks = lessonStore.getInstalledPacks())) }
     }
 
-    fun toggleTestMode() = settingsActionHandler.toggleTestMode()
+    fun toggleTestMode() = handleSettingsResults(settingsActionHandler.toggleTestMode())
 
     fun updateVocabSprintLimit(limit: Int) = settingsActionHandler.updateVocabSprintLimit(limit)
 
     fun setHintLevel(level: HintLevel) = settingsActionHandler.setHintLevel(level)
 
-    fun resumeFromSettings() = sessionRunner.resumeFromSettings()
+    fun resumeFromSettings() = handleSessionEvents(sessionRunner.resumeFromSettings())
 
-    fun selectSubLesson(index: Int) = sessionRunner.selectSubLesson(index)
+    fun selectSubLesson(index: Int) = handleSessionEvents(sessionRunner.selectSubLesson(index))
 
-    fun openEliteStep(index: Int) = sessionRunner.openEliteStep(index)
+    fun openEliteStep(index: Int) = handleSessionEvents(sessionRunner.openEliteStep(index))
 
-    fun cancelEliteSession() = sessionRunner.cancelEliteSession()
+    fun cancelEliteSession() = handleSessionEvents(sessionRunner.cancelEliteSession())
 
     // ── Daily Practice ────────────────────────────────────────────────────
 
@@ -629,11 +695,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     private fun storeFirstSessionCardIds(sentenceIds: List<String>, verbIds: List<String>) {
         val updatedCursor = progressTracker.storeFirstSessionCardIds(
-            currentCursor = _coreState.value.daily.dailyCursor,
+            currentCursor = dailyPracticeCoordinator.getCursor(),
             sentenceIds = sentenceIds,
             verbIds = verbIds
         )
-        _coreState.update { it.copy(daily = it.daily.copy(dailyCursor = updatedCursor)) }
+        dailyPracticeCoordinator.updateCursor(updatedCursor)
         saveProgress()
     }
 
@@ -645,11 +711,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun advanceCursor(sentenceCount: Int) {
         val s = _coreState.value
         val advanced = progressTracker.advanceCursor(
-            currentCursor = s.daily.dailyCursor,
+            currentCursor = dailyPracticeCoordinator.getCursor(),
             sentenceCount = sentenceCount,
             selectedLanguageId = s.navigation.selectedLanguageId
         )
-        _coreState.update { it.copy(daily = it.daily.copy(dailyCursor = advanced)) }
+        dailyPracticeCoordinator.updateCursor(advanced)
     }
 
     suspend fun repeatDailyPractice(lessonLevel: Int): Boolean {
@@ -756,7 +822,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun startDrill(resume: Boolean) {
         vocabSession = emptyList()
-        sessionRunner.startDrill(resume)
+        handleSessionEvents(sessionRunner.startDrill(resume))
         _coreState.update {
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceHelper.getBadSentenceCount()))
         }
@@ -765,7 +831,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun dismissDrillDialog() = sessionRunner.dismissDrillDialog()
 
     fun exitDrillMode() {
-        sessionRunner.exitDrillMode()
+        handleSessionEvents(sessionRunner.exitDrillMode())
         _coreState.update {
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceHelper.getBadSentenceCount()))
         }
@@ -782,9 +848,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return progress.completedIndices.isNotEmpty()
     }
 
-    fun openVocabSprint(resume: Boolean = false) = vocabSprintRunner.openSprint(resume)
+    fun openVocabSprint(resume: Boolean = false) {
+        when (val result = vocabSprintRunner.openSprint(resume)) {
+            is VocabResult.ResetBoss -> bossOrchestrator.resetState()
+            is VocabResult.SaveAndBackup -> { /* handled in submitVocabAnswer */ }
+            is VocabResult.None -> {}
+        }
+    }
 
-    fun completeStory(phase: StoryPhase, allCorrect: Boolean) = storyRunner.completeStory(phase, allCorrect)
+    fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
+        when (val result = storyRunner.completeStory(phase, allCorrect)) {
+            is StoryResult.SaveAndBackup -> {
+                forceBackupOnSave = true
+                saveProgress()
+            }
+            is StoryResult.None -> {}
+        }
+    }
 
     fun clearStoryError() = storyRunner.clearStoryError()
 
@@ -796,7 +876,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun requestVocabVoice() = vocabSprintRunner.requestVoice()
 
-    fun submitVocabAnswer(inputOverride: String? = null) = vocabSprintRunner.submitAnswer(inputOverride)
+    fun submitVocabAnswer(inputOverride: String? = null) {
+        val result = vocabSprintRunner.submitAnswer(inputOverride)
+        when (result.sound) {
+            is VocabSoundResult.PlaySuccess -> audioCoordinator.playSuccessSound()
+            is VocabSoundResult.PlayError -> audioCoordinator.playErrorSound()
+            is VocabSoundResult.None -> {}
+        }
+        when (result.action) {
+            is VocabResult.SaveAndBackup -> {
+                forceBackupOnSave = true
+                saveProgress()
+            }
+            is VocabResult.ResetBoss -> bossOrchestrator.resetState()
+            is VocabResult.None -> {}
+        }
+    }
 
     fun showVocabAnswer() = vocabSprintRunner.showAnswer()
 
@@ -805,21 +900,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Start a Mix Challenge (interleaved practice) session.
      * Delegates to [BossOrchestrator].
      */
-    fun startMixChallenge(): Boolean = bossOrchestrator.startMixChallenge()
+    fun startMixChallenge(): Boolean {
+        val (success, commands) = bossOrchestrator.startMixChallenge()
+        handleBossCommands(commands)
+        return success
+    }
 
-    fun startBossLesson() = bossOrchestrator.startBossLesson()
+    fun startBossLesson() = handleBossCommands(bossOrchestrator.startBossLesson())
 
-    fun startBossMega() = bossOrchestrator.startBossMega()
+    fun startBossMega() = handleBossCommands(bossOrchestrator.startBossMega())
 
-    fun startBossElite() = bossOrchestrator.startBossElite()
+    fun startBossElite() = handleBossCommands(bossOrchestrator.startBossElite())
 
-    fun finishBoss() = bossOrchestrator.finishBoss()
+    fun finishBoss() = handleBossCommands(bossOrchestrator.finishBoss())
 
-    fun clearBossRewardMessage() = bossOrchestrator.clearBossRewardMessage()
+    fun clearBossRewardMessage() = handleBossCommands(bossOrchestrator.clearBossRewardMessage())
 
     fun clearBossError() = bossOrchestrator.clearBossError()
 
-    private fun updateBossProgress(progress: Int) = bossOrchestrator.updateBossProgress(progress)
+    private fun updateBossProgress(progress: Int) = handleBossCommands(bossOrchestrator.updateBossProgress(progress))
 
     /**
      * Resolve the user's actual progress lesson based on mastery data.
@@ -837,7 +936,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             selectedLanguageId = s.navigation.selectedLanguageId,
             activePackLessonIds = s.navigation.activePackLessonIds,
             lessons = s.navigation.lessons,
-            dailyCursor = s.daily.dailyCursor
+            dailyCursor = dailyPracticeCoordinator.getCursor()
         )
     }
 
@@ -852,7 +951,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             selectedLanguageId = s.navigation.selectedLanguageId,
             activePackLessonIds = s.navigation.activePackLessonIds,
             lessons = s.navigation.lessons,
-            dailyCursor = s.daily.dailyCursor
+            dailyCursor = dailyPracticeCoordinator.getCursor()
         )
     }
 
@@ -932,7 +1031,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val s = _coreState.value
         progressTracker.recordCardShowForMastery(
             card = card,
-            bossActive = s.boss.bossActive,
+            bossActive = bossOrchestrator.stateFlow.value.bossActive,
             isDrillMode = s.drill.isDrillMode,
             inputMode = s.cardSession.inputMode,
             selectedLanguageId = s.navigation.selectedLanguageId,
@@ -967,7 +1066,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     fun refreshVocabMasteryCount() {
         val count = wordMasteryStore.getMasteredCount()
-        _coreState.update { it.copy(vocabSprint = it.vocabSprint.copy(vocabMasteredCount = count)) }
+        vocabSprintRunner.updateMasteredCount(count)
     }
 
     /**
@@ -983,7 +1082,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun updateUserName(newName: String) = settingsActionHandler.updateUserName(newName)
 
-    fun saveProgressNow() = settingsActionHandler.saveProgressNow()
+    fun saveProgressNow() = handleSettingsResults(settingsActionHandler.saveProgressNow())
 
     fun onScreenChanged(screenName: String) = settingsActionHandler.onScreenChanged(screenName)
 
@@ -991,16 +1090,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Restore user progress from backup folder.
      */
     fun restoreBackup(backupUri: android.net.Uri) {
-        progressRestorer.restoreBackup(backupUri)
+        val results = progressRestorer.restoreBackup(backupUri)
+        handleProgressResults(results)
     }
 
     fun reloadFromDisk() {
         viewModelScope.launch(Dispatchers.IO) {
-            progressRestorer.reloadFromDisk()
+            val results = progressRestorer.reloadFromDisk()
+            handleProgressResults(results)
         }
     }
 
-    fun flagBadSentence() = badSentenceHelper.flagBadSentence()
+    fun flagBadSentence() {
+        when (val result = badSentenceHelper.flagBadSentence()) {
+            is BadSentenceResult.AdvanceDrillCard -> sessionRunner.advanceDrillCard()
+            is BadSentenceResult.SkipToNextCard -> sessionRunner.skipToNextCard()
+            is BadSentenceResult.None -> {}
+        }
+    }
 
     fun unflagBadSentence() = badSentenceHelper.unflagBadSentence()
 
@@ -1019,17 +1126,50 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun exportDailyBadSentences(): String? = badSentenceHelper.exportDailyBadSentences()
 
-    fun hideCurrentCard() = badSentenceHelper.hideCurrentCard()
+    fun hideCurrentCard() {
+        when (val result = badSentenceHelper.hideCurrentCard()) {
+            is BadSentenceResult.AdvanceDrillCard -> sessionRunner.advanceDrillCard()
+            is BadSentenceResult.SkipToNextCard -> sessionRunner.skipToNextCard()
+            is BadSentenceResult.None -> {}
+        }
+    }
 
     fun unhideCurrentCard() = badSentenceHelper.unhideCurrentCard()
 
     fun isCurrentCardHidden(): Boolean = badSentenceHelper.isCurrentCardHidden()
 
-    // ── Callback interface implementations ──────────────────────────────────
+    // ── Session event handling (private methods) ────────────────────────────
 
-    // -- SessionCallbacks --
-    override fun recordCardShow(card: SentenceCard) = recordCardShowForMastery(card)
-    override fun markSubLessonCardsShown(cards: List<SentenceCard>) {
+    private fun handleSessionEvents(events: List<SessionEvent>) {
+        for (event in events) {
+            when (event) {
+                is SessionEvent.SaveProgress -> saveProgress()
+                is SessionEvent.RefreshFlowerStates -> refreshFlowerStates()
+                is SessionEvent.UpdateStreak -> updateStreak()
+                is SessionEvent.BuildSessionCards -> buildSessionCards()
+                is SessionEvent.PlaySuccess -> audioCoordinator.playSuccessSound()
+                is SessionEvent.PlayError -> audioCoordinator.playErrorSound()
+                is SessionEvent.RecordCardShow -> recordCardShowForMastery(event.card)
+                is SessionEvent.MarkSubLessonCardsShown -> markSubLessonCardsShown(event.cards)
+                is SessionEvent.CheckAndMarkLessonCompleted -> checkAndMarkLessonCompleted()
+                is SessionEvent.CalculateCompletedSubLessons -> {
+                    val count = progressTracker.calculateCompletedSubLessons(
+                        subLessons = event.subLessons,
+                        mastery = event.mastery,
+                        lessonId = event.lessonId?.let { com.alexpo.grammermate.data.LessonId(it) },
+                        lessons = _coreState.value.navigation.lessons
+                    )
+                    event.callback(count)
+                }
+                is SessionEvent.GetMastery -> event.callback(masteryStore.get(event.lessonId, event.langId))
+                is SessionEvent.GetSchedule -> event.callback(lessonSchedules[com.alexpo.grammermate.data.LessonId(event.lessonId)])
+                is SessionEvent.RebuildSchedules -> rebuildSchedules(event.lessons)
+                is SessionEvent.Composite -> handleSessionEvents(event.events)
+            }
+        }
+    }
+
+    private fun markSubLessonCardsShown(cards: List<SentenceCard>) {
         val s = _coreState.value
         progressTracker.markSubLessonCardsShown(
             cards = cards,
@@ -1039,7 +1179,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lessons = s.navigation.lessons
         )
     }
-    override fun checkAndMarkLessonCompleted() {
+    private fun checkAndMarkLessonCompleted() {
         val s = _coreState.value
         progressTracker.checkAndMarkLessonCompleted(
             completedSubLessonCount = s.cardSession.completedSubLessonCount,
@@ -1047,16 +1187,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             selectedLanguageId = s.navigation.selectedLanguageId
         )
     }
-    override fun calculateCompletedSubLessons(subLessons: List<ScheduledSubLesson>, mastery: LessonMasteryState?, lessonId: String?): Int {
-        return progressTracker.calculateCompletedSubLessons(
-            subLessons = subLessons,
-            mastery = mastery,
-            lessonId = lessonId?.let { com.alexpo.grammermate.data.LessonId(it) },
-            lessons = _coreState.value.navigation.lessons
-        )
-    }
-    override fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
-    override fun updateStreak() {
+    private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
+    private fun updateStreak() {
         val languageId = _coreState.value.navigation.selectedLanguageId
         val (updatedStreak, isNewStreak) = streakManager.recordSubLessonCompletion(languageId.value)
         if (isNewStreak && updatedStreak.currentStreak > 0) {
@@ -1070,22 +1202,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
-    override fun saveProgress() {
-        val state = _coreState.value
+    private fun saveProgress() {
+        val state = uiState.value
         val shouldBackup = progressTracker.saveProgress(
             state = state,
             forceBackup = forceBackupOnSave,
-            normalizedEliteSpeeds = normalizeEliteSpeeds(state.elite.eliteBestSpeeds)
+            normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(state.elite.eliteBestSpeeds)
         )
         if (shouldBackup) {
             forceBackupOnSave = false
             createProgressBackup()
         }
     }
-    override fun playSuccess() = audioCoordinator.playSuccessSound()
-    override fun playError() = audioCoordinator.playErrorSound()
-    override fun buildSessionCards() {
-        if (_coreState.value.boss.bossActive || _coreState.value.elite.eliteActive || _coreState.value.drill.isDrillMode) return
+    private fun buildSessionCards() {
+        if (bossOrchestrator.stateFlow.value.bossActive || _coreState.value.elite.eliteActive || _coreState.value.drill.isDrillMode) return
         val state = _coreState.value
         val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val lessons = state.navigation.lessons
@@ -1113,20 +1243,32 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             it.copy(cardSession = it.cardSession.copy(currentIndex = safeIndex, currentCard = card, sessionState = if (card == null) SessionState.PAUSED else state.cardSession.sessionState, subLessonTotal = result.subLessonTotal, subLessonCount = result.subLessonCount, activeSubLessonIndex = result.activeSubLessonIndex, completedSubLessonCount = result.completedSubLessonCount, subLessonTypes = result.subLessonTypes))
         }
     }
-    override fun rebuildSchedules(lessons: List<Lesson>) {
+    private fun rebuildSchedules(lessons: List<Lesson>) {
         lessonSchedules = cardProvider.buildSchedules(lessons, lessonSchedules)
     }
-    override fun getMastery(lessonId: String, langId: String): LessonMasteryState? = masteryStore.get(lessonId, langId)
-    override fun getSchedule(lessonId: String): LessonSchedule? = lessonSchedules[com.alexpo.grammermate.data.LessonId(lessonId)]
 
-    // -- BossCallbacks --
-    override fun pauseTimer() = sessionRunner.pauseTimer()
-    override fun resumeTimer() = sessionRunner.resumeTimer()
+    // -- BossCommand handler --
+    private fun handleBossCommands(commands: List<BossCommand>) {
+        for (command in commands) {
+            when (command) {
+                is BossCommand.PauseTimer -> sessionRunner.pauseTimer()
+                is BossCommand.ResumeTimer -> sessionRunner.resumeTimer()
+                is BossCommand.SaveProgress -> saveProgress()
+                is BossCommand.BuildSessionCards -> buildSessionCards()
+                is BossCommand.RefreshFlowerStates -> refreshFlowerStates()
+                is BossCommand.ResetBoss -> bossOrchestrator.resetState()
+                is BossCommand.ResetDailySession -> {
+                    dailyPracticeCoordinator.resetState()
+                }
+                is BossCommand.ResetStory -> storyRunner.resetState()
+                is BossCommand.ResetVocabSprint -> vocabSprintRunner.resetState()
+                is BossCommand.Composite -> handleBossCommands(command.commands)
+            }
+        }
+    }
 
-    // -- SettingsCallbacks --
-    override fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean =
-        sessionRunner.resolveEliteUnlocked(lessons, testMode)
-    override fun refreshLessons(selectedLessonId: String?) {
+    // -- SettingsCallbacks (now private methods) --
+    private fun refreshLessons(selectedLessonId: String?) {
         sessionRunner.pauseTimer()
         vocabSession = emptyList()
         val languageId = _coreState.value.navigation.selectedLanguageId
@@ -1135,28 +1277,61 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update {
             it.resetSessionState().copy(navigation = it.navigation.copy(lessons = lessons, selectedLessonId = selected), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
+        // Reset feature-owned state for session change
+        bossOrchestrator.resetState()
+        storyRunner.resetState()
+        vocabSprintRunner.resetState()
+        dailyPracticeCoordinator.resetState()
         rebuildSchedules(lessons)
         buildSessionCards()
         saveProgress()
     }
-    override fun resetStores(app: Application) = progressTracker.resetStores(app)
-    override fun resetStoresForLanguage(app: Application, languageId: String) = progressTracker.resetStoresForLanguage(app, languageId)
-    override fun resetDrillFiles(app: Application) = progressTracker.resetDrillFiles(app)
-    override fun resetDrillFilesForPack(app: Application, packId: String) = progressTracker.resetDrillFilesForPack(app, packId)
-    override fun clearWordMastery() = wordMasteryStore.saveAll(emptyMap())
-    override fun resetDailyState() = dailyPracticeCoordinator.resetState()
-    override fun setForceBackup(value: Boolean) { forceBackupOnSave = value }
+    private fun resetStores(app: Application) = progressTracker.resetStores(app)
+    private fun resetStoresForLanguage(app: Application, languageId: String) = progressTracker.resetStoresForLanguage(app, languageId)
+    private fun resetDrillFiles(app: Application) = progressTracker.resetDrillFiles(app)
+    private fun resetDrillFilesForPack(app: Application, packId: String) = progressTracker.resetDrillFilesForPack(app, packId)
+    private fun clearWordMastery() = wordMasteryStore.saveAll(emptyMap())
+    private fun resetDailyState() = dailyPracticeCoordinator.resetState()
 
-    // -- ProgressCallbacks --
-    override fun normalizeEliteSpeeds(speeds: List<Double>): List<Double> =
-        sessionRunner.normalizeEliteSpeeds(speeds)
-    override fun parseBossRewards(rewardMap: Map<String, String>): Map<String, BossReward> =
-        bossOrchestrator.parseBossRewards(rewardMap)
+    // -- SettingsResult handler --
+    private fun handleSettingsResults(results: List<SettingsResult>) {
+        for (result in results) {
+            when (result) {
+                is SettingsResult.RefreshLessons -> refreshLessons(result.selectedLessonId)
+                is SettingsResult.ResetStores -> resetStores(result.app)
+                is SettingsResult.ResetStoresForLanguage -> resetStoresForLanguage(result.app, result.languageId)
+                is SettingsResult.ResetDrillFiles -> resetDrillFiles(result.app)
+                is SettingsResult.ResetDrillFilesForPack -> resetDrillFilesForPack(result.app, result.packId)
+                is SettingsResult.ClearWordMastery -> clearWordMastery()
+                is SettingsResult.ResetDailyState -> resetDailyState()
+                is SettingsResult.SetForceBackup -> { forceBackupOnSave = true }
+                is SettingsResult.SaveProgress -> saveProgress()
+                is SettingsResult.None -> {}
+            }
+        }
+    }
 
-    // -- VocabSprintCallbacks --
-    override fun forceBackup() { forceBackupOnSave = true }
-
-    // -- BadSentenceCallbacks --
-    override fun advanceDrillCard() = sessionRunner.advanceDrillCard()
-    override fun skipToNextCard() = sessionRunner.skipToNextCard()
+    // -- ProgressResult handler --
+    private fun handleProgressResults(results: List<ProgressResult>) {
+        for (result in results) {
+            when (result) {
+                is ProgressResult.RebuildSchedules -> rebuildSchedules(result.lessons)
+                is ProgressResult.BuildSessionCards -> buildSessionCards()
+                is ProgressResult.RefreshFlowerStates -> refreshFlowerStates()
+                is ProgressResult.NormalizeEliteSpeeds -> {
+                    val normalized = sessionRunner.normalizeEliteSpeeds(result.speeds)
+                    result.callback(normalized)
+                }
+                is ProgressResult.ResolveEliteUnlocked -> {
+                    val unlocked = sessionRunner.resolveEliteUnlocked(result.lessons, result.testMode)
+                    result.callback(unlocked)
+                }
+                is ProgressResult.ParseBossRewards -> {
+                    val parsed = bossOrchestrator.parseBossRewards(result.rewardMap)
+                    result.callback(parsed)
+                }
+                is ProgressResult.None -> {}
+            }
+        }
+    }
 }

@@ -6,47 +6,31 @@ import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.UserProfile
 import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-/**
- * Callback interface for cross-module orchestration from [SettingsActionHandler].
- */
-interface SettingsCallbacks {
-    fun resolveEliteUnlocked(lessons: List<com.alexpo.grammermate.data.Lesson>, testMode: Boolean): Boolean
-    fun refreshLessons(selectedLessonId: String?)
-    fun resetStores(app: android.app.Application)
-    fun resetStoresForLanguage(app: android.app.Application, languageId: String)
-    fun resetDrillFiles(app: android.app.Application)
-    fun resetDrillFilesForPack(app: android.app.Application, packId: String)
-    fun clearWordMastery()
-    fun resetDailyState()
-    fun setForceBackup(value: Boolean)
-    fun saveProgress()
-}
 
 /**
  * Handles settings-screen actions: config changes, profile updates,
  * progress reset, and backup creation.
  *
  * All state writes go through [TrainingStateAccess].
- * Cross-module coordination uses [SettingsCallbacks].
+ * Query-style operations (resolveEliteUnlocked) are injected as constructor function parameters.
+ * Command-style results are returned as [List]<[SettingsResult]> for the ViewModel to execute.
  */
 class SettingsActionHandler(
     private val stateAccess: TrainingStateAccess,
-    private val callbacks: SettingsCallbacks,
     private val configStore: AppConfigStore,
     private val profileStore: ProfileStore,
     private val backupManager: BackupManager,
-    private val coroutineScope: kotlinx.coroutines.CoroutineScope
+    private val coroutineScope: kotlinx.coroutines.CoroutineScope,
+    private val resolveEliteUnlocked: (List<Lesson>, Boolean) -> Boolean
 ) {
     companion object {
         private const val logTag = "GrammarMate"
@@ -54,17 +38,18 @@ class SettingsActionHandler(
 
     // ── Config changes ──────────────────────────────────────────────────
 
-    fun toggleTestMode() {
+    fun toggleTestMode(): List<SettingsResult> {
         val state = stateAccess.uiState.value
         val newTestMode = !state.cardSession.testMode
         stateAccess.updateState {
             it.copy(
                 cardSession = it.cardSession.copy(testMode = newTestMode),
-                elite = it.elite.copy(eliteUnlocked = callbacks.resolveEliteUnlocked(state.navigation.lessons, newTestMode))
+                elite = it.elite.copy(eliteUnlocked = resolveEliteUnlocked(state.navigation.lessons, newTestMode))
             )
         }
         configStore.save(configStore.load().copy(testMode = newTestMode))
         Log.d(logTag, "Test mode toggled: $newTestMode")
+        return emptyList()
     }
 
     fun updateVocabSprintLimit(limit: Int) {
@@ -92,10 +77,9 @@ class SettingsActionHandler(
 
     // ── Progress management ─────────────────────────────────────────────
 
-    fun saveProgressNow() {
+    fun saveProgressNow(): List<SettingsResult> {
         Log.d(logTag, "Manual progress save requested from settings")
-        callbacks.setForceBackup(true)
-        callbacks.saveProgress()
+        return listOf(SettingsResult.SetForceBackup, SettingsResult.SaveProgress)
     }
 
     fun createProgressBackup() {
@@ -109,12 +93,7 @@ class SettingsActionHandler(
         }
     }
 
-    fun resetAllProgress(app: android.app.Application) {
-        callbacks.resetStores(app)
-        callbacks.resetDrillFiles(app)
-        callbacks.clearWordMastery()
-        callbacks.resetDailyState()
-
+    fun resetAllProgress(app: android.app.Application): List<SettingsResult> {
         stateAccess.updateState {
             it.copy(
                 daily = it.daily.copy(dailySession = DailySessionState(), dailyCursor = DailyCursorState()),
@@ -131,8 +110,14 @@ class SettingsActionHandler(
             )
         }
 
-        callbacks.refreshLessons(null)
         Log.d(logTag, "All progress reset: mastery, daily, verb drill, vocab mastery, training progress")
+        return listOf(
+            SettingsResult.ResetStores(app),
+            SettingsResult.ResetDrillFiles(app),
+            SettingsResult.ClearWordMastery,
+            SettingsResult.ResetDailyState,
+            SettingsResult.RefreshLessons(null)
+        )
     }
 
     /**
@@ -140,16 +125,7 @@ class SettingsActionHandler(
      * Clears mastery, drill progress, daily state, and training session.
      * Other language packs are NOT affected.
      */
-    fun resetLanguageProgress(app: android.app.Application, languageId: String, packId: String?) {
-        callbacks.resetStoresForLanguage(app, languageId)
-
-        if (packId != null) {
-            callbacks.resetDrillFilesForPack(app, packId)
-        }
-
-        callbacks.clearWordMastery()
-        callbacks.resetDailyState()
-
+    fun resetLanguageProgress(app: android.app.Application, languageId: String, packId: String?): List<SettingsResult> {
         stateAccess.updateState {
             it.copy(
                 daily = it.daily.copy(dailySession = DailySessionState(), dailyCursor = DailyCursorState()),
@@ -166,8 +142,18 @@ class SettingsActionHandler(
             )
         }
 
-        callbacks.refreshLessons(null)
+        val results = mutableListOf<SettingsResult>(
+            SettingsResult.ResetStoresForLanguage(app, languageId),
+            SettingsResult.ClearWordMastery,
+            SettingsResult.ResetDailyState,
+            SettingsResult.RefreshLessons(null)
+        )
+        if (packId != null) {
+            results.add(1, SettingsResult.ResetDrillFilesForPack(app, packId))
+        }
+
         Log.d(logTag, "Language progress reset for language=$languageId, pack=$packId: mastery, daily, verb drill, vocab mastery, training progress")
+        return results
     }
 
     // ── Screen tracking ─────────────────────────────────────────────────

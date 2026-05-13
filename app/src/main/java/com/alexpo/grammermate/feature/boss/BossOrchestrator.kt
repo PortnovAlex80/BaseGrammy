@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.feature.boss
 
 import com.alexpo.grammermate.data.BossReward
+import com.alexpo.grammermate.data.BossState
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.Lesson
@@ -14,17 +15,9 @@ import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import com.alexpo.grammermate.feature.training.CardProvider
 import com.alexpo.grammermate.feature.training.SessionRunner
-
-/**
- * Callback interface for cross-module orchestration from [BossOrchestrator].
- */
-interface BossCallbacks {
-    fun saveProgress()
-    fun buildSessionCards()
-    fun refreshFlowerStates()
-    fun pauseTimer()
-    fun resumeTimer()
-}
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Boss battle and Mix Challenge orchestration helper.
@@ -32,20 +25,23 @@ interface BossCallbacks {
  * Coordinates [BossBattleRunner], [CardProvider], and [SessionRunner] for
  * boss battle lifecycle (start, progress, finish, clear) and Mix Challenge
  * session setup. Holds [TrainingStateAccess] for state reads/writes and
- * uses [BossCallbacks] for cross-module coordination.
+ * returns [BossCommand] lists for cross-module coordination.
  *
  * Does NOT duplicate [BossBattleRunner] pure logic -- this class only wires
  * the orchestration between modules.
  */
 class BossOrchestrator(
     private val stateAccess: TrainingStateAccess,
-    private val callbacks: BossCallbacks,
     private val bossBattleRunner: BossBattleRunner,
     private val cardProvider: CardProvider,
     private val sessionRunner: SessionRunner,
     private val progressStore: ProgressStore,
     private val masteryStore: MasteryStore
 ) {
+
+    // ── Owned state flow ─────────────────────────────────────────────────
+    private val _state = MutableStateFlow(BossState())
+    val stateFlow: StateFlow<BossState> = _state
 
     // ── Mix Challenge ──────────────────────────────────────────────────
 
@@ -56,9 +52,9 @@ class BossOrchestrator(
      * then sets up a regular training session with those cards. Mastery tracking
      * and SRS intervals work identically to regular training.
      *
-     * @return true if the session was started, false if not enough started lessons
+     * @return Pair of (success, commands). Commands should be executed by the ViewModel.
      */
-    fun startMixChallenge(): Boolean {
+    fun startMixChallenge(): Pair<Boolean, List<BossCommand>> {
         val state = stateAccess.uiState.value
         val languageId = state.navigation.selectedLanguageId
         val lessons = state.navigation.lessons
@@ -77,50 +73,45 @@ class BossOrchestrator(
         }
 
         val cards = cardProvider.buildMixChallengeCards(lessons, startedIds, count = 10)
-        if (cards.isEmpty()) return false
+        if (cards.isEmpty()) return false to emptyList()
 
-        callbacks.pauseTimer()
         sessionRunner.clearAllCards()
 
         sessionRunner.setSessionCards(cards)
 
         val firstCard = cards.firstOrNull()
+        // Reset boss state (owned by this orchestrator)
+        _state.update { BossState() }
+        // Write core state: navigation + cardSession
         stateAccess.updateState {
-            it.resetSessionState().copy(
-                navigation = it.navigation.copy(
-                    mode = TrainingMode.MIX_CHALLENGE,
-                    selectedLessonId = null
-                ),
+            it.copy(
                 cardSession = it.cardSession.copy(
+                    sessionState = SessionState.PAUSED,
                     currentCard = firstCard,
                     subLessonTotal = cards.size,
                     subLessonCount = 1
                 ),
-                daily = it.daily.copy(dailySession = DailySessionState())
+                drill = com.alexpo.grammermate.data.DrillState(),
+                navigation = it.navigation.copy(
+                    mode = TrainingMode.MIX_CHALLENGE,
+                    selectedLessonId = null
+                )
             )
         }
-        callbacks.saveProgress()
-        return true
+        return true to listOf(BossCommand.PauseTimer, BossCommand.SaveProgress, BossCommand.ResetStory, BossCommand.ResetVocabSprint, BossCommand.ResetDailySession)
     }
 
     // ── Boss Battle Entry Points ───────────────────────────────────────
 
-    fun startBossLesson() {
-        startBoss(BossType.LESSON)
-    }
+    fun startBossLesson(): List<BossCommand> = startBoss(BossType.LESSON)
 
-    fun startBossMega() {
-        startBoss(BossType.MEGA)
-    }
+    fun startBossMega(): List<BossCommand> = startBoss(BossType.MEGA)
 
-    fun startBossElite() {
-        startBoss(BossType.ELITE)
-    }
+    fun startBossElite(): List<BossCommand> = startBoss(BossType.ELITE)
 
     // ── Boss Battle Lifecycle ──────────────────────────────────────────
 
-    private fun startBoss(type: BossType) {
-        callbacks.pauseTimer()
+    private fun startBoss(type: BossType): List<BossCommand> {
         val state = stateAccess.uiState.value
         val lessons = state.navigation.lessons
         val selectedId = state.navigation.selectedLessonId
@@ -134,25 +125,27 @@ class BossOrchestrator(
             testMode = state.cardSession.testMode
         )
         if (!result.success) {
-            stateAccess.updateState {
-                it.copy(boss = it.boss.copy(bossErrorMessage = result.errorMessage))
-            }
-            return
+            _state.update { it.copy(bossErrorMessage = result.errorMessage) }
+            return listOf(BossCommand.PauseTimer)
         }
         sessionRunner.setBossCards(result.cards)
         val firstCard = result.cards.firstOrNull()
-        stateAccess.updateState {
+        // Update boss state (owned by this orchestrator)
+        _state.update {
             it.copy(
-                boss = it.boss.copy(
-                    bossActive = true,
-                    bossType = type,
-                    bossTotal = result.subLessonTotal,
-                    bossProgress = 0,
-                    bossReward = null,
-                    bossRewardMessage = null,
-                    bossErrorMessage = null
-                ),
-                cardSession = it.cardSession.copy(
+                bossActive = true,
+                bossType = type,
+                bossTotal = result.subLessonTotal,
+                bossProgress = 0,
+                bossReward = null,
+                bossRewardMessage = null,
+                bossErrorMessage = null
+            )
+        }
+        // Update core state: cardSession
+        stateAccess.updateState { s ->
+            s.copy(
+                cardSession = s.cardSession.copy(
                     currentIndex = 0,
                     currentCard = firstCard,
                     inputText = "",
@@ -174,42 +167,47 @@ class BossOrchestrator(
                 )
             )
         }
+        return listOf(BossCommand.PauseTimer)
     }
 
-    fun finishBoss() {
-        callbacks.pauseTimer()
+    fun finishBoss(): List<BossCommand> {
         val state = stateAccess.uiState.value
+        val bossState = _state.value
         val result = bossBattleRunner.finishBoss(
-            bossType = state.boss.bossType,
-            bossProgress = state.boss.bossProgress,
-            bossTotal = state.boss.bossTotal,
+            bossType = bossState.bossType,
+            bossProgress = bossState.bossProgress,
+            bossTotal = bossState.bossTotal,
             selectedLessonId = state.navigation.selectedLessonId?.value,
-            currentLessonRewards = state.boss.bossLessonRewards,
-            currentMegaRewards = state.boss.bossMegaRewards
+            currentLessonRewards = bossState.bossLessonRewards,
+            currentMegaRewards = bossState.bossMegaRewards
         )
         val progress = progressStore.load()
         val restoredLessonId = progress.lessonId?.let { LessonId(it) } ?: state.navigation.selectedLessonId
         sessionRunner.clearAllCards()
-        stateAccess.updateState {
+        // Update boss state (owned by this orchestrator)
+        _state.update {
             it.copy(
-                boss = it.boss.copy(
-                    bossActive = false,
-                    bossType = null,
-                    bossTotal = 0,
-                    bossProgress = 0,
-                    bossReward = result.reward ?: it.boss.bossReward,
-                    bossRewardMessage = it.boss.bossRewardMessage,
-                    bossFinishedToken = it.boss.bossFinishedToken + 1,
-                    bossLastType = state.boss.bossType,
-                    bossErrorMessage = null,
-                    bossLessonRewards = result.updatedLessonRewards,
-                    bossMegaRewards = result.updatedMegaRewards
-                ),
-                navigation = it.navigation.copy(
+                bossActive = false,
+                bossType = null,
+                bossTotal = 0,
+                bossProgress = 0,
+                bossReward = result.reward ?: it.bossReward,
+                bossRewardMessage = it.bossRewardMessage,
+                bossFinishedToken = it.bossFinishedToken + 1,
+                bossLastType = bossState.bossType,
+                bossErrorMessage = null,
+                bossLessonRewards = result.updatedLessonRewards,
+                bossMegaRewards = result.updatedMegaRewards
+            )
+        }
+        // Update core state: navigation + cardSession
+        stateAccess.updateState { s ->
+            s.copy(
+                navigation = s.navigation.copy(
                     selectedLessonId = restoredLessonId,
                     mode = progress.mode
                 ),
-                cardSession = it.cardSession.copy(
+                cardSession = s.cardSession.copy(
                     currentIndex = progress.currentIndex,
                     correctCount = progress.correctCount,
                     incorrectCount = progress.incorrectCount,
@@ -226,67 +224,71 @@ class BossOrchestrator(
                 )
             )
         }
-        callbacks.buildSessionCards()
-        callbacks.saveProgress()
-        callbacks.refreshFlowerStates()
+        return listOf(BossCommand.PauseTimer, BossCommand.BuildSessionCards, BossCommand.SaveProgress, BossCommand.RefreshFlowerStates)
     }
 
-    fun clearBossRewardMessage() {
+    fun clearBossRewardMessage(): List<BossCommand> {
         val state = stateAccess.uiState.value
         val clearResult = bossBattleRunner.clearBossRewardMessage(
-            bossActive = state.boss.bossActive,
+            bossActive = _state.value.bossActive,
             sessionState = state.cardSession.sessionState,
             currentCard = state.cardSession.currentCard,
             inputMode = state.cardSession.inputMode
         )
+        val commands = mutableListOf<BossCommand>()
         if (clearResult.shouldResumeTimer) {
-            callbacks.resumeTimer()
+            commands.add(BossCommand.ResumeTimer)
         }
-        stateAccess.updateState {
+        // Update boss state (owned by this orchestrator)
+        _state.update { it.copy(bossRewardMessage = null) }
+        // Update core state: cardSession
+        stateAccess.updateState { s ->
             val trigger = if (clearResult.shouldTriggerVoice) {
-                it.cardSession.voiceTriggerToken + 1
+                s.cardSession.voiceTriggerToken + 1
             } else {
-                it.cardSession.voiceTriggerToken
+                s.cardSession.voiceTriggerToken
             }
-            it.copy(
-                boss = it.boss.copy(bossRewardMessage = null),
-                cardSession = it.cardSession.copy(
-                    sessionState = if (clearResult.shouldResumeTimer) SessionState.ACTIVE else it.cardSession.sessionState,
+            s.copy(
+                cardSession = s.cardSession.copy(
+                    sessionState = if (clearResult.shouldResumeTimer) SessionState.ACTIVE else s.cardSession.sessionState,
                     voiceTriggerToken = trigger,
-                    inputText = if (clearResult.shouldResumeTimer) "" else it.cardSession.inputText
+                    inputText = if (clearResult.shouldResumeTimer) "" else s.cardSession.inputText
                 )
             )
         }
+        return commands
     }
 
     fun clearBossError() {
-        stateAccess.updateState {
-            it.copy(boss = it.boss.copy(bossErrorMessage = null))
-        }
+        _state.update { it.copy(bossErrorMessage = null) }
     }
 
-    fun updateBossProgress(progress: Int) {
-        val state = stateAccess.uiState.value
+    fun updateBossProgress(progress: Int): List<BossCommand> {
+        val bossState = _state.value
         val result = bossBattleRunner.updateBossProgress(
             progress = progress,
-            currentTotal = state.boss.bossTotal,
-            currentReward = state.boss.bossReward
+            currentTotal = bossState.bossTotal,
+            currentReward = bossState.bossReward
         )
+        val commands = mutableListOf<BossCommand>()
         if (result.shouldPause) {
-            callbacks.pauseTimer()
+            commands.add(BossCommand.PauseTimer)
         }
-        stateAccess.updateState {
+        // Update boss state (owned by this orchestrator)
+        _state.update {
             it.copy(
-                boss = it.boss.copy(
-                    bossProgress = result.nextProgress,
-                    bossReward = result.nextReward ?: it.boss.bossReward,
-                    bossRewardMessage = result.rewardMessage ?: state.boss.bossRewardMessage
-                ),
-                cardSession = it.cardSession.copy(
-                    sessionState = if (result.shouldPause) SessionState.PAUSED else it.cardSession.sessionState
-                )
+                bossProgress = result.nextProgress,
+                bossReward = result.nextReward ?: it.bossReward,
+                bossRewardMessage = result.rewardMessage ?: bossState.bossRewardMessage
             )
         }
+        // Update core state: cardSession sessionState
+        if (result.shouldPause) {
+            stateAccess.updateState { s ->
+                s.copy(cardSession = s.cardSession.copy(sessionState = SessionState.PAUSED))
+            }
+        }
+        return commands
     }
 
     // ── Pure helper ────────────────────────────────────────────────────
@@ -300,7 +302,7 @@ class BossOrchestrator(
      *
      * @param nextIndex     The next card index the session will advance to.
      * @param totalCards    Total cards in the session.
-     * @return Pair of (rewardMessageChanged, previousRewardMessage) so the caller
+     * @return Pair of (BossAdvanceResult, commands) so the caller
      *         can detect if the pause should be applied after sessionRunner.nextCard().
      */
     data class BossAdvanceResult(
@@ -308,33 +310,33 @@ class BossOrchestrator(
         val previousRewardMessage: String?
     )
 
-    fun advanceBossProgressOnNextCard(nextIndex: Int, totalCards: Int): BossAdvanceResult {
-        val state = stateAccess.uiState.value
-        val nextProgress = (state.boss.bossProgress.coerceAtLeast(nextIndex)).coerceAtMost(state.boss.bossTotal)
-        val nextReward = bossBattleRunner.resolveBossReward(nextProgress, state.boss.bossTotal)
-        val isNewReward = nextReward != null && nextReward != state.boss.bossReward
+    fun advanceBossProgressOnNextCard(nextIndex: Int, totalCards: Int): Pair<BossAdvanceResult, List<BossCommand>> {
+        val bossState = _state.value
+        val nextProgress = (bossState.bossProgress.coerceAtLeast(nextIndex)).coerceAtMost(bossState.bossTotal)
+        val nextReward = bossBattleRunner.resolveBossReward(nextProgress, bossState.bossTotal)
+        val isNewReward = nextReward != null && nextReward != bossState.bossReward
         val rewardMessage = if (isNewReward) {
             bossBattleRunner.bossRewardMessage(nextReward!!)
         } else {
-            state.boss.bossRewardMessage
+            bossState.bossRewardMessage
         }
-        val previousRewardMessage = state.boss.bossRewardMessage
+        val previousRewardMessage = bossState.bossRewardMessage
+        val commands = mutableListOf<BossCommand>()
         if (isNewReward) {
-            callbacks.pauseTimer()
+            commands.add(BossCommand.PauseTimer)
         }
-        stateAccess.updateState {
+        // Update boss state (owned by this orchestrator)
+        _state.update {
             it.copy(
-                boss = it.boss.copy(
-                    bossProgress = nextProgress,
-                    bossReward = nextReward ?: it.boss.bossReward,
-                    bossRewardMessage = rewardMessage
-                )
+                bossProgress = nextProgress,
+                bossReward = nextReward ?: it.bossReward,
+                bossRewardMessage = rewardMessage
             )
         }
         return BossAdvanceResult(
             rewardMessageChanged = rewardMessage != previousRewardMessage,
             previousRewardMessage = previousRewardMessage
-        )
+        ) to commands
     }
 
     /**
@@ -345,5 +347,41 @@ class BossOrchestrator(
             val parsed = runCatching { BossReward.valueOf(reward) }.getOrNull() ?: return@mapNotNull null
             lessonId to parsed
         }.toMap()
+    }
+
+    // ── State management helpers ────────────────────────────────────────
+
+    /**
+     * Initialize boss rewards from persisted progress.
+     * Called during ViewModel init.
+     */
+    fun initRewards(lessonRewards: Map<String, BossReward>, megaRewards: Map<String, BossReward>) {
+        _state.update { it.copy(bossLessonRewards = lessonRewards, bossMegaRewards = megaRewards) }
+    }
+
+    /**
+     * Reset boss state to defaults.
+     * Called during session resets.
+     */
+    fun resetState() {
+        _state.update { BossState() }
+    }
+
+    /**
+     * Full reset preserving reward maps.
+     * Called during full session resets (language change, pack import).
+     */
+    fun resetStateKeepRewards() {
+        _state.update { it.copy(
+            bossActive = false,
+            bossType = null,
+            bossTotal = 0,
+            bossProgress = 0,
+            bossReward = null,
+            bossRewardMessage = null,
+            bossFinishedToken = 0,
+            bossLastType = null,
+            bossErrorMessage = null
+        ) }
     }
 }

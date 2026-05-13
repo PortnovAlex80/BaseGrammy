@@ -7,14 +7,6 @@ import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Callback interface for cross-module orchestration from [BadSentenceHelper].
- */
-interface BadSentenceCallbacks {
-    fun advanceDrillCard()
-    fun skipToNextCard()
-}
-
-/**
  * Manages bad-sentence flagging and card hiding for both training and daily-practice sessions.
  *
  * Delegated from [com.alexpo.grammermate.ui.TrainingViewModel] to keep the ViewModel thin.
@@ -22,7 +14,6 @@ interface BadSentenceCallbacks {
  */
 class BadSentenceHelper(
     private val stateAccess: TrainingStateAccess,
-    private val callbacks: BadSentenceCallbacks,
     private val badSentenceStore: BadSentenceStore,
     private val hiddenCardStore: HiddenCardStore,
 ) {
@@ -31,10 +22,10 @@ class BadSentenceHelper(
 
     // ── Training-session bad sentences ─────────────────────────────────────
 
-    fun flagBadSentence() {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return
+    fun flagBadSentence(): BadSentenceResult {
+        val card = stateAccess.uiState.value.cardSession.currentCard ?: return BadSentenceResult.None
         val state = stateAccess.uiState.value
-        val packId = state.navigation.activePackId ?: return
+        val packId = state.navigation.activePackId ?: return BadSentenceResult.None
         badSentenceStore.addBadSentence(
             packId = packId.value,
             cardId = card.id,
@@ -47,8 +38,9 @@ class BadSentenceHelper(
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId.value)))
         }
         if (state.drill.isDrillMode) {
-            callbacks.advanceDrillCard()
+            return BadSentenceResult.AdvanceDrillCard
         }
+        return BadSentenceResult.None
     }
 
     fun unflagBadSentence() {
@@ -110,10 +102,10 @@ class BadSentenceHelper(
 
     // ── Card hiding ────────────────────────────────────────────────────────
 
-    fun hideCurrentCard() {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return
+    fun hideCurrentCard(): BadSentenceResult {
+        val card = stateAccess.uiState.value.cardSession.currentCard ?: return BadSentenceResult.None
         hiddenCardStore.hideCard(card.id)
-        callbacks.skipToNextCard()
+        return BadSentenceResult.SkipToNextCard
     }
 
     fun unhideCurrentCard() {

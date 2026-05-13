@@ -151,6 +151,235 @@ Maps code symbols (composable functions, handlers, LaunchedEffects) to specifica
 | `DefaultCompletionScreen` | 889 | Composable | 12#12.4.10 | UC-05 | AC1 |
 | "Done" button | 913 | Handler | 12#12.4.10 | UC-05 | AC1 |
 
+## Phase 3: Sealed Result Types (Callback Removal)
+
+Result type files that replace callback interfaces. Feature classes return these instead of calling callbacks. TrainingViewModel handles each result type via dedicated dispatcher methods.
+
+### SessionEvent.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/SessionEvent.kt` (37 lines)
+
+Replaces: `SessionCallbacks` interface. Methods in `SessionRunner` return `List<SessionEvent>` instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `SessionEvent` (sealed class) | 17 | Result type | 08#7 | — | — |
+| `SaveProgress` | 18 | Event variant | 08#7.3 | UC-04 | AC1 |
+| `RefreshFlowerStates` | 19 | Event variant | 03#3.3, 08#7.4 | UC-05 | AC1 |
+| `UpdateStreak` | 20 | Event variant | 08#7.5 | UC-05 | AC2 |
+| `BuildSessionCards` | 21 | Event variant | 08#7.1 | UC-01 | AC1 |
+| `PlaySuccess` | 22 | Event variant | 08#7.6 | UC-02 | AC5 |
+| `PlayError` | 23 | Event variant | 08#7.6 | UC-03 | AC2 |
+| `RecordCardShow` | 24 | Event variant | 02#2.2 | UC-05 | AC1 |
+| `MarkSubLessonCardsShown` | 25 | Event variant | 02#2.2 | UC-05 | AC1 |
+| `CheckAndMarkLessonCompleted` | 26 | Event variant | 08#7.2 | UC-05 | AC1 |
+| `CalculateCompletedSubLessons` (callback-in-result) | 27 | Event variant | 03#3.2 | UC-05 | ? |
+| `GetMastery` (callback-in-result) | 33 | Event variant | 02#2.2 | UC-05 | ? |
+| `GetSchedule` (callback-in-result) | 34 | Event variant | 02#2.3 | UC-05 | ? |
+| `RebuildSchedules` | 35 | Event variant | 03#3.4 | UC-01 | AC1 |
+| `Composite` | 36 | Event variant | — | — | — |
+
+### StoryResult.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/StoryResult.kt` (11 lines)
+
+Replaces: `StoryCallbacks` interface. `StoryRunner` methods return `StoryResult` instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `StoryResult` (sealed class) | 8 | Result type | 08#7.7 | UC-? | ? |
+| `SaveAndBackup` | 9 | Result variant | 08#7.3, 06#6.4 | UC-04 | AC1 |
+| `None` | 10 | Result variant | — | — | — |
+
+### BossCommand (BossResult.kt)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/boss/BossResult.kt` (15 lines)
+
+Replaces: `BossCallbacks` interface. `BossOrchestrator` methods return `List<BossCommand>` instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `BossCommand` (sealed class) | 8 | Result type | 08#7.8 | UC-07 | ? |
+| `PauseTimer` | 9 | Command variant | 08#7.8 | UC-07 | AC2 |
+| `ResumeTimer` | 10 | Command variant | 08#7.8 | UC-07 | AC3 |
+| `SaveProgress` | 11 | Command variant | 08#7.3 | UC-04 | AC1 |
+| `BuildSessionCards` | 12 | Command variant | 08#7.1 | UC-07 | AC4 |
+| `RefreshFlowerStates` | 13 | Command variant | 03#3.3 | UC-05 | AC1 |
+| `Composite` | 14 | Command variant | — | — | — |
+
+### ProgressResult.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/progress/ProgressResult.kt` (25 lines)
+
+Replaces: `ProgressCallbacks` interface. `ProgressRestorer` methods return `List<ProgressResult>` instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `ProgressResult` (sealed class) | 17 | Result type | 08#7.9, 13#13.3 | UC-? | ? |
+| `None` | 18 | Result variant | — | — | — |
+| `RebuildSchedules` | 19 | Result variant | 03#3.4 | UC-01 | AC1 |
+| `BuildSessionCards` | 20 | Result variant | 08#7.1 | UC-01 | AC1 |
+| `RefreshFlowerStates` | 21 | Result variant | 03#3.3 | UC-05 | AC1 |
+| `NormalizeEliteSpeeds` (callback-in-result) | 22 | Result variant | 08#7.10 | UC-? | ? |
+| `ResolveEliteUnlocked` (callback-in-result) | 23 | Result variant | 08#7.10 | UC-? | ? |
+| `ParseBossRewards` (callback-in-result) | 24 | Result variant | 08#7.8 | UC-07 | ? |
+
+### BadSentenceResult.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/progress/BadSentenceResult.kt` (12 lines)
+
+Replaces: `BadSentenceCallbacks` interface. `BadSentenceHelper.flagBadSentence()` and `hideCurrentCard()` return `BadSentenceResult` instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `BadSentenceResult` (sealed class) | 8 | Result type | 12#12.8.2 | UC-53 | ? |
+| `AdvanceDrillCard` | 9 | Result variant | 08#7.11 | UC-53 | AC7 |
+| `SkipToNextCard` | 10 | Result variant | 12#12.8.2 | UC-53 | AC7 |
+| `None` | 11 | Result variant | — | — | — |
+
+### VocabResult.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/vocab/VocabResult.kt` (17 lines)
+
+Replaces: `VocabSprintCallbacks` interface. `VocabSprintRunner.submitAnswer()` returns `VocabSubmitResult` (combining `VocabSoundResult` + `VocabResult`) instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `VocabResult` (sealed class) | 8 | Result type | 08#7.12 | UC-25 | ? |
+| `VocabResult.SaveAndBackup` | 9 | Result variant | 08#7.3, 06#6.4 | UC-04 | AC1 |
+| `VocabResult.None` | 10 | Result variant | — | — | — |
+| `VocabSoundResult` (sealed class) | 13 | Result type | 08#7.6 | UC-25 | ? |
+| `VocabSoundResult.PlaySuccess` | 14 | Result variant | 08#7.6 | UC-02 | AC5 |
+| `VocabSoundResult.PlayError` | 15 | Result variant | 08#7.6 | UC-03 | AC2 |
+| `VocabSoundResult.None` | 16 | Result variant | — | — | — |
+
+### SettingsResult.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/shared/SettingsResult.kt` (19 lines)
+
+Replaces: `SettingsCallbacks` interface. `SettingsActionHandler` methods return `List<SettingsResult>` instead of calling callbacks.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `SettingsResult` (sealed class) | 8 | Result type | 08#7.13 | UC-30 | ? |
+| `None` | 9 | Result variant | — | — | — |
+| `RefreshLessons` | 10 | Result variant | 08#7.13 | UC-30 | AC3 |
+| `ResetStores` | 11 | Result variant | 06#6.5 | UC-30 | AC4 |
+| `ResetStoresForLanguage` | 12 | Result variant | 06#6.5 | UC-30 | AC4 |
+| `ResetDrillFiles` | 13 | Result variant | 06#6.5 | UC-30 | AC4 |
+| `ResetDrillFilesForPack` | 14 | Result variant | 06#6.5 | UC-30 | AC4 |
+| `ClearWordMastery` | 15 | Result variant | 02#2.4 | UC-30 | AC4 |
+| `ResetDailyState` | 16 | Result variant | 09#9.9 | UC-30 | AC4 |
+| `SetForceBackup` | 17 | Result variant | 06#6.4 | UC-30 | ? |
+| `SaveProgress` | 18 | Result variant | 08#7.3 | UC-04 | AC1 |
+
+## Phase 3: Modified Feature Methods
+
+Feature class methods whose return types changed from `Unit` to sealed result types.
+
+### BadSentenceHelper.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/progress/BadSentenceHelper.kt` (128 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `flagBadSentence()` | 25 | Method | `BadSentenceResult` | 12#12.8.2 | UC-53 | AC6 |
+| `hideCurrentCard()` | 105 | Method | `BadSentenceResult` | 12#12.8.2 | UC-53 | AC7 |
+
+### StoryRunner.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/StoryRunner.kt` (87 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `openStory(phase)` | 32 | Method | `StoryResult` | 08#7.7 | UC-? | ? |
+| `completeStory(phase, allCorrect)` | 59 | Method | `StoryResult` | 08#7.7 | UC-? | ? |
+| `clearStoryError()` | 81 | Method | `StoryResult` | 08#7.7 | UC-? | ? |
+
+### VocabSprintRunner.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/vocab/VocabSprintRunner.kt` (360 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `VocabSubmitResult` (data class) | 17 | Result type | — | 08#7.12 | UC-25 | ? |
+| `openSprint(resume)` | 51 | Method | `VocabResult` | 08#7.12 | UC-25 | AC1 |
+| `submitAnswer(inputOverride)` | 184 | Method | `VocabSubmitResult` | 08#7.12 | UC-25 | AC3–AC5 |
+
+### BossOrchestrator.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/boss/BossOrchestrator.kt` (331 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `startMixChallenge()` | 49 | Method | `Pair<Boolean, List<BossCommand>>` | 08#7.8 | UC-07 | AC1 |
+| `startBossLesson()` | 94 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
+| `startBossMega()` | 96 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
+| `startBossElite()` | 98 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
+| `startBoss(type)` | 102 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
+| `finishBoss()` | 159 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC5 |
+| `clearBossRewardMessage()` | 211 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC6 |
+| `updateBossProgress(progress)` | 247 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC3 |
+| `advanceBossProgressOnNextCard(nextIndex, totalCards)` | 292 | Method | `Pair<BossAdvanceResult, List<BossCommand>>` | 08#7.8 | UC-07 | AC3 |
+
+### ProgressRestorer.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/progress/ProgressRestorer.kt` (205 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `applyRestoredProgress(...)` | 56 | Method | `List<ProgressResult>` | 08#7.9, 13#13.3 | UC-29 | ? |
+| `restoreBackup(backupUri)` | 126 | Method | `List<ProgressResult>` | 06#6.4, 13#13.3 | UC-29 | AC1 |
+| `reloadFromDisk()` | 173 | Method | `List<ProgressResult>` | 13#13.3 | UC-29 | ? |
+
+### SettingsActionHandler.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/shared/SettingsActionHandler.kt` (164 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `toggleTestMode()` | 41 | Method | `List<SettingsResult>` | 08#7.13 | UC-30 | AC1 |
+| `saveProgressNow()` | 80 | Method | `List<SettingsResult>` | 08#7.13 | UC-30 | AC2 |
+| `resetAllProgress(app)` | 96 | Method | `List<SettingsResult>` | 06#6.5, 08#7.13 | UC-30 | AC4 |
+| `resetLanguageProgress(app, languageId, packId)` | 128 | Method | `List<SettingsResult>` | 06#6.5, 08#7.13 | UC-30 | AC4 |
+
+### SessionRunner.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/SessionRunner.kt` (751 lines)
+
+| Symbol | Line | Type | Return type | Spec | UC | AC |
+|--------|------|------|-------------|------|----|----|
+| `SubmitResult` (data class) | 83 | Result type | — | 08#7.1 | UC-02 | ? |
+| `startSession()` | 99 | Method | `List<SessionEvent>` | 08#7.1 | UC-01 | AC1 |
+| `finishSession()` | 126 | Method | `Pair<SessionFinishResult, List<SessionEvent>>` | 08#7.1 | UC-04 | AC1 |
+| `resumeFromSettings()` | 144 | Method | `List<SessionEvent>` | 08#7.1 | UC-01 | AC1 |
+| `submitAnswer()` | 196 | Method | `Pair<SubmitResult, List<SessionEvent>>` | 08#7.1 | UC-02 | AC1–AC5 |
+| `nextCard(triggerVoice)` | 400 | Method | `List<SessionEvent>` | 08#7.1 | UC-04 | AC1 |
+| `prevCard()` | 430 | Method | `List<SessionEvent>` | 08#7.1 | UC-04 | AC1 |
+| `selectSubLesson(index)` | 442 | Method | `List<SessionEvent>` | 08#7.1 | UC-05 | AC1 |
+| `togglePause()` | 452 | Method | `List<SessionEvent>` | 08#7.1 | UC-06 | AC2 |
+| `pauseSession()` | 461 | Method | `List<SessionEvent>` | 08#7.1 | UC-06 | AC2 |
+| `showAnswer()` | 469 | Method | `List<SessionEvent>` | 12#12.7.2 | UC-50 | AC1–AC4 |
+| `openEliteStep(index)` | 521 | Method | `List<SessionEvent>` | 08#7.10 | UC-? | ? |
+| `cancelEliteSession()` | 534 | Method | `List<SessionEvent>` | 08#7.10 | UC-? | ? |
+| `startDrill(resume)` | 576 | Method | `List<SessionEvent>` | 08#7.11 | UC-05 | AC1 |
+| `finishDrill(lessonId)` | 635 | Method | `List<SessionEvent>` | 08#7.11 | UC-05 | AC1 |
+| `exitDrillMode()` | 643 | Method | `List<SessionEvent>` | 08#7.11 | UC-05 | AC1 |
+| `SessionFinishResult` (sealed class) | 746 | Result type | — | 08#7.1 | UC-04 | ? |
+
+## Phase 3: TrainingViewModel Handler Methods
+
+Dispatcher methods in `TrainingViewModel.kt` that execute side effects for each sealed result variant. These are the bridge between feature classes (which return results) and the ViewModel infrastructure (which performs the side effects).
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt`
+
+| Symbol | Line | Type | Delegates to | Spec | UC | AC |
+|--------|------|------|--------------|------|----|----|
+| `handleSessionEvents(events)` | 1087 | Handler | `saveProgress`, `refreshFlowerStates`, `updateStreak`, `buildSessionCards`, `audioCoordinator`, `recordCardShowForMastery`, `markSubLessonCardsShown`, `checkAndMarkLessonCompleted`, `rebuildSchedules` | 08#7 | UC-01–UC-05 | AC1–AC5 |
+| `handleBossCommands(commands)` | 1195 | Handler | `sessionRunner.pauseTimer`, `sessionRunner.resumeTimer`, `saveProgress`, `buildSessionCards`, `refreshFlowerStates` | 08#7.8 | UC-07 | AC1–AC6 |
+| `handleSettingsResults(results)` | 1230 | Handler | `refreshLessons`, `resetStores`, `resetStoresForLanguage`, `resetDrillFiles`, `resetDrillFilesForPack`, `clearWordMastery`, `resetDailyState`, `saveProgress` | 08#7.13 | UC-30 | AC1–AC4 |
+| `handleProgressResults(results)` | 1248 | Handler | `rebuildSchedules`, `buildSessionCards`, `refreshFlowerStates`, `sessionRunner.normalizeEliteSpeeds`, `sessionRunner.resolveEliteUnlocked`, `bossOrchestrator.parseBossRewards` | 08#7.9, 13#13.3 | UC-29 | ? |
+
 ## Cross-Reference: UC → Symbol Coverage
 
 | UC | TrainingScreen | VerbDrillScreen | DailyPracticeScreen | TrainingCardSession |
@@ -190,3 +419,4 @@ Maps code symbols (composable functions, handlers, LaunchedEffects) to specifica
 3. **When refactoring** (renaming, extracting, moving symbols), update the Symbol column and Line column.
 4. **Line numbers** are approximate (guidance only). Use symbol name as the primary identifier.
 5. **Expanding beyond pilot files:** add a new section per file following the same table format. Priority candidates: `GrammarMateApp.kt`, `HomeScreen.kt`, `VocabDrillScreen.kt`, `SettingsScreen.kt`.
+6. **Phase 3 result types:** when adding a new variant to a sealed result class (e.g. `SessionEvent`, `BossCommand`, `SettingsResult`), add a row to the corresponding result-type table AND add a `when` branch to the handler method table. When adding a new sealed result class, add a new section following the Phase 3 format.
