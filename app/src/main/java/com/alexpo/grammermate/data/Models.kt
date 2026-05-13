@@ -263,7 +263,9 @@ data class NavigationState(
     val ladderRows: List<LessonLadderRow> = emptyList(),
     val initialScreen: String = "HOME",
     val currentScreen: String = "HOME",
-    val appVersion: String = "1.5"
+    val appVersion: String = "1.5",
+    val hasVerbDrill: Boolean = false,
+    val hasVocabDrill: Boolean = false
 )
 
 data class CardSessionState(

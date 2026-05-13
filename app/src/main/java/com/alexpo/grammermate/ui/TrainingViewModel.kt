@@ -250,6 +250,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, badSentenceCount = initialActivePackId?.let { badSentenceStore.getBadSentenceCount(it) } ?: 0, hintLevel = config.hintLevel), boss = it.boss.copy(bossLessonRewards = bossLessonRewards, bossMegaRewards = bossMegaRewards), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier), audio = it.audio.copy(useOfflineAsr = config.useOfflineAsr, asrModelReady = audioCoordinator.asrModelManager.isReady()), vocabSprint = it.vocabSprint.copy(vocabMasteredCount = wordMasteryStore.getMasteredCount()), daily = it.daily.copy(dailyCursor = progress.dailyCursor))
         }
+        refreshDrillVisibility()
         rebindWordMasteryStore(initialActivePackId)
         rebuildSchedules(lessons)
         buildSessionCards()
@@ -292,6 +293,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it) }
                     current.copy(navigation = current.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, current.cardSession.testMode)))
                 }
+                refreshDrillVisibility()
                 val updatedLessons = lessonStore.getLessons(_uiState.value.navigation.selectedLanguageId)
                 rebuildSchedules(updatedLessons)
                 buildSessionCards()
@@ -324,6 +326,29 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Compute drill visibility for the current active pack.
+     * Called whenever activePackId or selectedLanguageId changes.
+     */
+    private fun computeDrillVisibility(): Pair<Boolean, Boolean> {
+        val packId = _uiState.value.navigation.activePackId
+        val langId = _uiState.value.navigation.selectedLanguageId
+        return if (packId != null) {
+            lessonStore.hasVerbDrill(packId, langId) to lessonStore.hasVocabDrill(packId, langId)
+        } else {
+            false to false
+        }
+    }
+
+    /**
+     * Apply drill visibility fields to the current navigation state.
+     * Must be called after every navigation update that may change activePackId.
+     */
+    private fun refreshDrillVisibility() {
+        val (verbDrill, vocabDrill) = computeDrillVisibility()
+        _uiState.update { it.copy(navigation = it.navigation.copy(hasVerbDrill = verbDrill, hasVocabDrill = vocabDrill)) }
+    }
+
     fun onInputChanged(text: String) = sessionRunner.onInputChanged(text)
 
     fun onVoicePromptStarted() = sessionRunner.onVoicePromptStarted()
@@ -344,6 +369,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = languageId, lessons = lessons, selectedLessonId = selectedLessonId, activePackId = newPackId, activePackLessonIds = newPackLessonIds), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)), vocabSprint = it.vocabSprint.copy(vocabMasteredCount = wordMasteryStore.getMasteredCount()))
         }
+        refreshDrillVisibility()
         rebuildSchedules(lessons)
         buildSessionCards()
         refreshFlowerStates()
@@ -380,6 +406,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = lessonId, activePackId = packId, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null))
         }
+        refreshDrillVisibility()
         buildSessionCards()
         refreshFlowerStates()
         saveProgress()
@@ -397,6 +424,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.copy(navigation = it.navigation.copy(activePackId = packId, activePackLessonIds = emptyList(), selectedLessonId = null))
             }
+            refreshDrillVisibility()
             saveProgress()
         }
     }
@@ -478,6 +506,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _uiState.update {
                 it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = pack.languageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, it.cardSession.testMode)))
             }
+            refreshDrillVisibility()
             rebuildSchedules(lessons)
             buildSessionCards()
             saveProgress()
@@ -513,6 +542,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = language.id, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
+        refreshDrillVisibility()
         rebuildSchedules(lessons)
         buildSessionCards()
         saveProgress()
