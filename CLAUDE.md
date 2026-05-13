@@ -65,6 +65,19 @@ Kotlin idioms, Compose best practices. Apply when all higher levels are satisfie
 
 ## EXECUTION MODE
 
+### Mandatory decomposition triggers
+
+Decompose into subagents when ANY of the following is true:
+- Task touches ≥ 3 files
+- Task adds ≥ 1 new class or ≥ 3 new functions
+- Task requires reading a spec doc AND modifying code
+- Task involves TrainingViewModel (high blast radius)
+- Estimated implementation > 30 lines of new code
+- Task has sequential dependencies (step B needs step A's output)
+
+Do NOT attempt these in a single agent or main context.
+The cost of decomposition is low. The cost of a failed large agent is high.
+
 ### Step 0 — Always run Assessment first
 
 Before any non-trivial task, spawn **one Assessment subagent**.
@@ -87,9 +100,21 @@ LAYERS AFFECTED: [list]
 UNKNOWNS: [list]
 RISKS: [list]
 REASONING: [brief explanation]
+
+DECOMPOSITION PLAN:
+Wave 1 (N agents, max 5):
+  - Step 1.1: [atomic action — 1 file / 1 function / 1 concept]
+  - Step 1.2: [atomic action]
+  - Step 1.3: [atomic action]
+Wave 2 (N agents, max 5):
+  - Step 2.1: [depends on Wave 1 results]
+  ...
+DEPENDENCIES: [what Wave N+1 needs from Wave N]
 ```
 
 Skip Assessment only for: plain conversation, questions from loaded context, 1–3 tool call tasks, file creation with known path.
+
+**Atomic step definition:** a task executable by one agent without needing results from other parallel agents in the same wave. Criteria: modifies ≤ 2 files, adds ≤ 1 new function or class, contains ≤ 50 lines of new code, has a single clear success check.
 
 ---
 
@@ -142,6 +167,28 @@ Framing IS the role. Do not assign roles top-down.
 **Role conflict (team only):** first SendMessage wins the role.
 The other picks a different role or goes idle.
 
+### Batch execution rule (MANDATORY)
+
+NEVER spawn all agents for a task at once. Execute in waves of 3–5 agents maximum.
+
+**Wave pattern:**
+1. Spawn Wave N (≤ 5 agents simultaneously)
+2. WAIT for all Wave N agents to complete
+3. Collect results in main context
+4. Validate: build passes, no regressions, dependencies resolved
+5. Only then spawn Wave N+1
+
+**Why:** More than 5 parallel agents causes context collision (agents overwrite each other's files), undetectable mid-task failures, unmanageable merge conflicts, and loss of ability to course-correct between steps.
+
+**Wave checkpoint (required between waves):**
+After each wave, main context MUST:
+1. List completed steps: ✓ / ✗ for each agent
+2. Run build check (via subagent) if any file was modified
+3. Confirm no broken imports or missing dependencies
+4. Report to user: "Wave N complete. N/N steps succeeded. Proceeding to Wave N+1: [list]"
+
+If a wave produces errors — FIX BEFORE proceeding. Never spawn Wave N+1 when Wave N has unresolved failures.
+
 ---
 
 ### Step 3 — Evaluate and choose
@@ -183,12 +230,19 @@ Before spawning, announce verdict and mode. User can override.
 
 ---
 
-## MANDATORY: Subagent-based workflow
+## MANDATORY: Main context is coordination only
 
-Every request that requires working with code, files, or system operations must be handled through subagents.
-NEVER perform such work directly in the main context.
+Main context NEVER performs implementation work.
+Main context ONLY:
+- Reads Assessment output
+- Announces decomposition plan to user
+- Spawns agents
+- Collects and summarizes agent results
+- Makes go/no-go decisions between waves
 
-**It is forbidden to execute 2 or more tool calls in the main context.**
+If you catch yourself writing code, editing files, or running build commands in main context — STOP. Spawn a subagent.
+
+**ONE tool call per main context action (spawn or read). Chaining tool calls in main = implementation leak = violation.**
 **It is forbidden to skip this rule to save time or because the task seems simple.**
 
 ---
@@ -379,6 +433,35 @@ Content ships as ZIP "lesson packs" imported via Settings. Each pack contains a 
 
 ---
 
+## Decomposition Example
+
+**BAD** (single large agent):
+```
+Agent: "Add boss battle scoring to TrainingViewModel"
+→ 200+ line diff, high blast radius, hard to review
+```
+
+**GOOD** (wave decomposition):
+```
+Wave 1 (research):
+  Agent 1.1: "Read 08-training-viewmodel.md + scenario-09-boss-battle.md.
+              Return: list of existing boss state fields in TrainingUiState"
+  Agent 1.2: "Read TrainingViewModel.kt lines 1–500.
+              Return: current boss battle entry point functions"
+  Agent 1.3: "Read BossHelper.kt. Return: current scoring logic gaps"
+
+Wave 2 (implementation, after Wave 1 collected):
+  Agent 2.1: "Add BossScoreState data class to Models.kt. ≤ 10 fields."
+  Agent 2.2: "Add score calculation to BossHelper.kt. No ViewModel changes."
+
+Wave 3 (wiring):
+  Agent 3.1: "Wire BossScoreState into TrainingViewModel via updateState{}.
+              Change only the boss-related section."
+  Agent 3.2: "Update TrainingScreen.kt to display score."
+```
+
+---
+
 ## SPECIFICATION & DOCUMENTATION
 
 All project documentation is in `docs/specification/`. When working on a specific component, read the corresponding spec section first.
@@ -435,6 +518,16 @@ All project documentation is in `docs/specification/`. When working on a specifi
 | Lesson pack import | scenario-13-pack-import.md |
 | Backup & restore | scenario-14-backup-restore.md |
 | First launch & onboarding | scenario-15-onboarding.md |
+
+### Tech Debt
+
+- **Difficulty mode (HintLevel) not wired to parenthetical hints:** `HintLevel` enum exists (EASY/MEDIUM/HARD) and controls Word Bank / tense label visibility, but does NOT strip parenthetical target-language insertions from `promptRu` in the card body. Example: `я говорю (dire) правду (verità)` — the `(dire)` and `(verità)` are always visible regardless of difficulty. Spec updated in `21-product-roadmap.md` section 2. Implementation needed: strip `\s*\([^)]+\)` from card body `promptRu` when `hintLevel != EASY`. Boss Battle should force `HintLevel.HARD`.
+
+### Roadmap docs
+
+- `docs/specification/21-product-roadmap.md` — next sprint features (Card Feel Rating, Difficulty Levels)
+- `docs/superpowers/plans/arch-review-execution-plan.md` — architecture fixes (4 batches, not started)
+- `docs/specification/legacy-test-plan.md` — unit test backlog (~200 tests, all TODO)
 
 ### Rule: Read spec before modifying code
 
