@@ -661,3 +661,14 @@ When porting a UI element from a reference screen to an adopter screen:
 3. Regression MUST diff the adopter's callback wiring against the reference implementation
 4. AC MUST NOT use "matches [ScreenName] pattern" without specifying the observable outcome
 5. Checklist MUST include a "Non-Default Configuration" row testing behavior at MEDIUM, HARD, non-default input modes
+
+### Rule: Code-Spec Trace Index
+
+When modifying any composable function, onClick handler, LaunchedEffect, or ViewModel method in training screens:
+1. Check `docs/specification/trace-index.md` for existing trace entries on the affected symbol
+2. If adding new behavioral code, add a trace entry: `| SymbolName | type | spec#section | UC-XX | ACn |`
+3. If renaming a function, update the trace entry
+4. If deleting code, remove the trace entry
+5. Agents MUST consult trace-index before modifying code — it maps functions to UCs and spec sections, preventing bugs where behavioral ACs are missed
+
+Trace-index priority: TrainingScreen, VerbDrillScreen, DailyPracticeScreen, TrainingCardSession first. Other screens as needed.
