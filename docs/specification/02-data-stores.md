@@ -956,3 +956,32 @@ BackupManager.restoreFromBackupUri() -> copies files back to grammarmate/
 8. **BackupManager vs. in-memory caches**: After restore, `MasteryStore`, `HiddenCardStore`, `BadSentenceStore`, and `VocabProgressStore` all hold stale in-memory caches. These stores must be re-instantiated or their caches explicitly cleared for the restored data to become visible. The current design relies on app restart after restore.
 
 9. **BackupManager non-atomic writes**: The backup operation itself uses `File.copyTo()` and `File.writeText()`, not `AtomicFileWriter`. If backup is interrupted, the backup directory may contain a partial set of files. This is acceptable because the originals in internal storage are never modified during backup.
+
+---
+
+## 2.16 Reset Progress Behavior
+
+**Reset Progress** clears ALL per-language data for the currently selected language pack. Other language packs are NOT affected.
+
+### Scoped reset (`resetLanguageProgress`)
+
+When triggered from Settings, the reset performs the following for the current language/pack only:
+
+| Store | Action | Scope |
+|-------|--------|-------|
+| `MasteryStore` | `clearLanguage(languageId)` | Removes mastery data for the selected language only; other languages preserved |
+| `ProgressStore` | `clear()` | Session state is always global (one active session), so it is always cleared |
+| `VerbDrillStore` | Delete `drills/{packId}/verb_drill_progress.yaml` | Only the active pack's verb drill progress |
+| `WordMasteryStore` | `saveAll(emptyMap())` | Vocab mastery is pack-scoped; clears via the active pack's store instance |
+| `DailyPracticeCoordinator` | `resetState()` | In-memory daily session state cleared |
+| `TrainingUiState` | Session fields reset to defaults | currentIndex=0, counts=0, PAUSED |
+
+### Confirmation dialog
+
+The reset button shows a confirmation dialog before executing. The dialog displays the language name and lists what will be cleared.
+
+### Invariants
+
+- Other language packs' mastery, drill progress, and vocab mastery remain untouched.
+- `ProgressStore.clear()` always fires because there is only one active training session at a time.
+- After reset, flower states return to LOCKED/SEED for all lessons in the pack (derived from cleared mastery data).

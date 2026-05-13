@@ -79,7 +79,8 @@ fun SettingsSheet(
     onStartAsrDownload: () -> Unit,
     onResetAllProgress: () -> Unit,
     onSetHintLevel: (HintLevel) -> Unit,
-    onSetVoiceAutoStart: (Boolean) -> Unit = {}
+    onSetVoiceAutoStart: (Boolean) -> Unit = {},
+    languageDisplayName: String = ""
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -87,6 +88,7 @@ fun SettingsSheet(
     var newLanguageName by remember { mutableStateOf("") }
     var vocabLimitText by remember(state.cardSession.vocabSprintLimit) { mutableStateOf(state.cardSession.vocabSprintLimit.toString()) }
     var userNameInput by remember(state.navigation.userName) { mutableStateOf(state.navigation.userName) }
+    var showResetConfirmDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -437,13 +439,37 @@ fun SettingsSheet(
                 Text(text = "Delete all lessons")
             }
             OutlinedButton(
-                onClick = { onResetAllProgress() },
+                onClick = { showResetConfirmDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
             ) {
                 Icon(Icons.Filled.Refresh, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Сбросить весь прогресс")
+                Text(text = "Сбросить прогресс ($languageDisplayName)")
+            }
+            if (showResetConfirmDialog) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showResetConfirmDialog = false },
+                    title = { Text(text = "Сбросить прогресс") },
+                    text = {
+                        Text(text = "Вы уверены, что хотите сбросить весь прогресс для «$languageDisplayName»?\n\nЭто действие удалит:\n• Все показатели освоения карточек\n• Интервалы повторения\n• Состояния цветков\n• Прогресс спряжения глаголов\n• Прогресс словарного запаса\n\nДругие языки не будут затронуты.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showResetConfirmDialog = false
+                                onResetAllProgress()
+                            }
+                        ) {
+                            Text(text = "Сбросить", color = Color(0xFFB00020))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showResetConfirmDialog = false }) {
+                            Text(text = "Отмена")
+                        }
+                    }
+                )
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "CSV format", style = MaterialTheme.typography.labelLarge)

@@ -23,7 +23,9 @@ interface SettingsCallbacks {
     fun resolveEliteUnlocked(lessons: List<com.alexpo.grammermate.data.Lesson>, testMode: Boolean): Boolean
     fun refreshLessons(selectedLessonId: String?)
     fun resetStores(app: android.app.Application)
+    fun resetStoresForLanguage(app: android.app.Application, languageId: String)
     fun resetDrillFiles(app: android.app.Application)
+    fun resetDrillFilesForPack(app: android.app.Application, packId: String)
     fun clearWordMastery()
     fun resetDailyState()
     fun setForceBackup(value: Boolean)
@@ -130,6 +132,41 @@ class SettingsActionHandler(
 
         callbacks.refreshLessons(null)
         Log.d(logTag, "All progress reset: mastery, daily, verb drill, vocab mastery, training progress")
+    }
+
+    /**
+     * Reset progress for the current language/pack only.
+     * Clears mastery, drill progress, daily state, and training session.
+     * Other language packs are NOT affected.
+     */
+    fun resetLanguageProgress(app: android.app.Application, languageId: String, packId: String?) {
+        callbacks.resetStoresForLanguage(app, languageId)
+
+        if (packId != null) {
+            callbacks.resetDrillFilesForPack(app, packId)
+        }
+
+        callbacks.clearWordMastery()
+        callbacks.resetDailyState()
+
+        stateAccess.updateState {
+            it.copy(
+                daily = it.daily.copy(dailySession = DailySessionState(), dailyCursor = DailyCursorState()),
+                cardSession = it.cardSession.copy(
+                    currentIndex = 0,
+                    correctCount = 0,
+                    incorrectCount = 0,
+                    sessionState = SessionState.PAUSED,
+                    inputText = "",
+                    lastResult = null,
+                    answerText = null,
+                    incorrectAttemptsForCard = 0
+                )
+            )
+        }
+
+        callbacks.refreshLessons(null)
+        Log.d(logTag, "Language progress reset for language=$languageId, pack=$packId: mastery, daily, verb drill, vocab mastery, training progress")
     }
 
     // ── Screen tracking ─────────────────────────────────────────────────

@@ -2,6 +2,19 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v2.4 (2026-05-13) -- Lesson Rename
+
+### Lesson Display Names Updated to Tense-Based Names
+- `15-lesson-content-and-packs.md`: Updated Italian lesson titles in manifest example from generic "Prima Forma" names to tense-based names: Presente, Imperfetto, Passato Prossimo, Futuro + Remoto, Condizionale + Mix, Tutti i Tempi.
+- `assets/grammarmate/packs/IT_VERB_GROUPS_ALL.zip`: Updated manifest.json lesson titles to match.
+
+## v2.3 (2026-05-13) -- Progress Reset Fix
+
+### Progress Reset Scoped to Current Language
+- `02-data-stores.md`: Added section 2.16 documenting reset behavior: scoped to current language/pack, confirmation dialog, store-by-store cleanup table, invariants.
+- `22-use-case-registry.md`: Added Domain 18 with UC-62 (Reset progress for current language with confirmation). 8 acceptance criteria. Updated cross-reference table.
+- `23-screen-elements.md`: Updated SS-32 element description (language name in button label, confirmation dialog). Added SS-32a (confirmation dialog element).
+
 ## v2.2 (2026-05-13) -- TTS Icon Auto-Recovery Fix
 
 ### TTS Icon Bug Fix

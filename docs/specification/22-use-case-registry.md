@@ -216,6 +216,14 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 18: Progress Reset
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-62 | Reset progress for current language with confirmation | User is on Settings screen; at least one language pack is installed | 1. User taps "Reset progress" button (labeled with current language name). 2. Confirmation dialog appears showing language name and listing what will be cleared. 3. User confirms. 4. `resetLanguageProgress()` clears: mastery for selected language, drill progress for active pack, word mastery, daily session state, training session state. 5. Lessons are refreshed. | AC1 [BEHAVIORAL]: Reset only affects the currently selected language/pack. AC2 [STRUCTURAL]: Confirmation dialog shown before reset with language name. AC3 [BEHAVIORAL]: After reset, mastery counts return to 0 for all lessons in the pack. AC4 [BEHAVIORAL]: After reset, spaced repetition intervals cleared. AC5 [BEHAVIORAL]: After reset, flower states return to LOCKED/SEED for all lessons. AC6 [BEHAVIORAL]: After reset, verb drill progress cleared for the pack. AC7 [BEHAVIORAL]: After reset, vocab drill mastery cleared for the pack. AC8 [BEHAVIORAL]: Other language packs are NOT affected. | SettingsScreen | `ui/screens/SettingsScreen.kt`, `ui/helpers/SettingsActionHandler.kt`, `ui/helpers/ProgressTracker.kt`, `ui/TrainingViewModel.kt` | progress-reset |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -238,3 +246,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 17-user-stories | All US-01 through US-79 referenced in UCs |
 | performance | UC-60 |
 | tts-icon-fix | UC-61 |
+| progress-reset | UC-62 |

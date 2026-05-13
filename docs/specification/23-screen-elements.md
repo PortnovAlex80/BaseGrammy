@@ -368,7 +368,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Empty lesson" text field | SS-29 | input-field | Always | OutlinedTextField "Empty lesson (title)". | ? |
 | "Create empty lesson" button | SS-30 | button | Always | OutlinedButton. Creates lesson if title non-empty. Clears field. | ? |
 | "Delete all lessons" button | SS-31 | button | Always | Red OutlinedButton with Delete icon. Calls `onDeleteAllLessons()`. | ? |
-| "Reset all progress" button | SS-32 | button | Always | Red OutlinedButton with Refresh icon. Calls `onResetAllProgress()`. | ? |
+| "Reset progress" button | SS-32 | button | Always | Red OutlinedButton with Refresh icon. Label shows current language name: "Сбросить прогресс ({languageName})". Tapping opens confirmation dialog. | UC-62 |
+| Reset progress confirmation dialog | SS-32a | dialog | User tapped SS-32 | AlertDialog with title "Сбросить прогресс", body listing what will be cleared, "Сбросить" confirm button (red), "Отмена" dismiss button. Calls `onResetAllProgress()` on confirm. | UC-62 |
 | CSV format text | SS-33 | text | Always | "CSV format" header + format explanation (UTF-8, semicolon delimiter, example). | ? |
 | Instructions text | SS-34 | text | Always | "Instructions" header + usage instructions. | ? |
 | "Packs" header | SS-35 | text | Always | labelLarge "Packs". | ? |

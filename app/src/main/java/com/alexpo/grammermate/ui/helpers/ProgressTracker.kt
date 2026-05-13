@@ -380,4 +380,32 @@ class ProgressTracker(
             if (wordMasteryFile.exists()) wordMasteryFile.delete()
         }
     }
+
+    /**
+     * Clear mastery and progress stores for a specific language only.
+     * Preserves data for other languages.
+     *
+     * @param context application context for file operations
+     * @param languageId the language to reset
+     */
+    fun resetStoresForLanguage(context: android.content.Context, languageId: String) {
+        progressStore.clear()
+        masteryStore.clearLanguage(languageId)
+    }
+
+    /**
+     * Clear drill-related files for a specific pack only.
+     * Preserves drill progress for other packs.
+     *
+     * @param context application context for file operations
+     * @param packId the pack to reset drill files for
+     */
+    fun resetDrillFilesForPack(context: android.content.Context, packId: String) {
+        val baseDir = java.io.File(context.filesDir, "grammarmate")
+        val verbDrillFile = java.io.File(baseDir, "drills/$packId/verb_drill_progress.yaml")
+        if (verbDrillFile.exists()) verbDrillFile.delete()
+
+        val wordMasteryFile = java.io.File(baseDir, "drills/$packId/word_mastery.yaml")
+        if (wordMasteryFile.exists()) wordMasteryFile.delete()
+    }
 }

@@ -169,9 +169,10 @@ fun GrammarMateApp() {
                     onSetRuTextScale = vm::setRuTextScale,
                     onSetUseOfflineAsr = vm::setUseOfflineAsr,
                     onStartAsrDownload = { vm.startAsrDownload() },
-                    onResetAllProgress = vm::resetAllProgress,
+                    onResetAllProgress = vm::resetLanguageProgress,
                     onSetHintLevel = vm::setHintLevel,
-                    onSetVoiceAutoStart = vm::setVoiceAutoStart
+                    onSetVoiceAutoStart = vm::setVoiceAutoStart,
+                    languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
                 )
 
                 AppScreenContent(

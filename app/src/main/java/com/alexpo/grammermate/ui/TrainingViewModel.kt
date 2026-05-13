@@ -561,6 +561,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     fun resetAllProgress() = settingsActionHandler.resetAllProgress(getApplication())
 
+    /**
+     * Reset progress for the current language/pack only.
+     * Other language packs are NOT affected.
+     */
+    fun resetLanguageProgress() {
+        val state = _uiState.value
+        val languageId = state.navigation.selectedLanguageId.value
+        val packId = state.navigation.activePackId?.value
+        settingsActionHandler.resetLanguageProgress(getApplication(), languageId, packId)
+    }
+
     fun deletePack(packId: String) {
         val pack = lessonStore.getInstalledPacks().firstOrNull { it.packId.value == packId } ?: return
         val languageId = pack.languageId
@@ -1121,7 +1132,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
     override fun resetStores(app: Application) = progressTracker.resetStores(app)
+    override fun resetStoresForLanguage(app: Application, languageId: String) = progressTracker.resetStoresForLanguage(app, languageId)
     override fun resetDrillFiles(app: Application) = progressTracker.resetDrillFiles(app)
+    override fun resetDrillFilesForPack(app: Application, packId: String) = progressTracker.resetDrillFilesForPack(app, packId)
     override fun clearWordMastery() = wordMasteryStore.saveAll(emptyMap())
     override fun resetDailyState() = dailyPracticeCoordinator.resetState()
     override fun setForceBackup(value: Boolean) { forceBackupOnSave = value }

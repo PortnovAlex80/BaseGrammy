@@ -164,12 +164,12 @@ The Python pack validator (`pack_validator.py`) performs additional checks. See 
   "language": "it",
   "displayName": "Verb Drill - All Groups",
   "lessons": [
-    { "lessonId": "L01_1FORM", "order": 1, "title": "Prima Forma - Base", "file": "it_lesson_01.csv" },
-    { "lessonId": "L02_1FORM", "order": 2, "title": "Prima Forma - Extended", "file": "it_lesson_02.csv" },
-    { "lessonId": "L03_1FORM", "order": 3, "title": "Prima Forma - Practice", "file": "it_lesson_03.csv" },
-    { "lessonId": "L04_1FORM", "order": 4, "title": "Prima Forma - Review", "file": "it_lesson_04.csv" },
-    { "lessonId": "L05_1FORM", "order": 5, "title": "Prima Forma - Consolidation", "file": "it_lesson_05.csv" },
-    { "lessonId": "L06_1FORM", "order": 6, "title": "Prima Forma - Depth", "file": "it_lesson_06.csv" }
+    { "lessonId": "L01_1FORM", "order": 1, "title": "Presente", "file": "it_lesson_01.csv" },
+    { "lessonId": "L02_1FORM", "order": 2, "title": "Imperfetto", "file": "it_lesson_02.csv" },
+    { "lessonId": "L03_1FORM", "order": 3, "title": "Passato Prossimo", "file": "it_lesson_03.csv" },
+    { "lessonId": "L04_1FORM", "order": 4, "title": "Futuro + Remoto", "file": "it_lesson_04.csv" },
+    { "lessonId": "L05_1FORM", "order": 5, "title": "Condizionale + Mix", "file": "it_lesson_05.csv" },
+    { "lessonId": "L06_1FORM", "order": 6, "title": "Tutti i Tempi", "file": "it_lesson_06.csv" }
   ],
   "verbDrill": { "files": ["it_verb_groups_all.csv"] },
   "vocabDrill": {
