@@ -193,7 +193,7 @@ Replaces: `StoryCallbacks` interface. `StoryRunner` methods return `StoryResult`
 
 ### BossCommand (BossResult.kt)
 
-**File:** `app/src/main/java/com/alexpo/grammermate/feature/boss/BossResult.kt` (15 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/boss/BossResult.kt` (24 lines)
 
 Replaces: `BossCallbacks` interface. `BossOrchestrator` methods return `List<BossCommand>` instead of calling callbacks.
 
@@ -205,7 +205,11 @@ Replaces: `BossCallbacks` interface. `BossOrchestrator` methods return `List<Bos
 | `SaveProgress` | 11 | Command variant | 08#7.3 | UC-04 | AC1 |
 | `BuildSessionCards` | 12 | Command variant | 08#7.1 | UC-07 | AC4 |
 | `RefreshFlowerStates` | 13 | Command variant | 03#3.3 | UC-05 | AC1 |
-| `Composite` | 14 | Command variant | — | — | — |
+| `ResetBoss` | 15 | Command variant | 08#7.8 | UC-07 | — |
+| `ResetDailySession` | 17 | Command variant | 09#9.9 | UC-21 | — |
+| `ResetStory` | 19 | Command variant | 08#7.7 | — | — |
+| `ResetVocabSprint` | 21 | Command variant | 08#7.12 | UC-25 | — |
+| `Composite` | 22 | Command variant | — | — | — |
 
 ### ProgressResult.kt
 
@@ -239,7 +243,7 @@ Replaces: `BadSentenceCallbacks` interface. `BadSentenceHelper.flagBadSentence()
 
 ### VocabResult.kt
 
-**File:** `app/src/main/java/com/alexpo/grammermate/feature/vocab/VocabResult.kt` (17 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/vocab/VocabResult.kt` (20 lines)
 
 Replaces: `VocabSprintCallbacks` interface. `VocabSprintRunner.submitAnswer()` returns `VocabSubmitResult` (combining `VocabSoundResult` + `VocabResult`) instead of calling callbacks.
 
@@ -247,11 +251,12 @@ Replaces: `VocabSprintCallbacks` interface. `VocabSprintRunner.submitAnswer()` r
 |--------|------|------|------|----|----|
 | `VocabResult` (sealed class) | 8 | Result type | 08#7.12 | UC-25 | ? |
 | `VocabResult.SaveAndBackup` | 9 | Result variant | 08#7.3, 06#6.4 | UC-04 | AC1 |
-| `VocabResult.None` | 10 | Result variant | — | — | — |
-| `VocabSoundResult` (sealed class) | 13 | Result type | 08#7.6 | UC-25 | ? |
-| `VocabSoundResult.PlaySuccess` | 14 | Result variant | 08#7.6 | UC-02 | AC5 |
-| `VocabSoundResult.PlayError` | 15 | Result variant | 08#7.6 | UC-03 | AC2 |
-| `VocabSoundResult.None` | 16 | Result variant | — | — | — |
+| `VocabResult.ResetBoss` | 11 | Result variant | 08#7.8 | UC-07 | — |
+| `VocabResult.None` | 12 | Result variant | — | — | — |
+| `VocabSoundResult` (sealed class) | 15 | Result type | 08#7.6 | UC-25 | ? |
+| `VocabSoundResult.PlaySuccess` | 16 | Result variant | 08#7.6 | UC-02 | AC5 |
+| `VocabSoundResult.PlayError` | 17 | Result variant | 08#7.6 | UC-03 | AC2 |
+| `VocabSoundResult.None` | 18 | Result variant | — | — | — |
 
 ### SettingsResult.kt
 
@@ -380,6 +385,156 @@ Dispatcher methods in `TrainingViewModel.kt` that execute side effects for each 
 | `handleSettingsResults(results)` | 1230 | Handler | `refreshLessons`, `resetStores`, `resetStoresForLanguage`, `resetDrillFiles`, `resetDrillFilesForPack`, `clearWordMastery`, `resetDailyState`, `saveProgress` | 08#7.13 | UC-30 | AC1–AC4 |
 | `handleProgressResults(results)` | 1248 | Handler | `rebuildSchedules`, `buildSessionCards`, `refreshFlowerStates`, `sessionRunner.normalizeEliteSpeeds`, `sessionRunner.resolveEliteUnlocked`, `bossOrchestrator.parseBossRewards` | 08#7.9, 13#13.3 | UC-29 | ? |
 
+## Phase 4: Feature-Owned StateFlows
+
+Feature classes now own their own `MutableStateFlow<T>` and expose `StateFlow<T>`. The ViewModel's `uiState` is assembled via a 7-flow `combine` chain that merges core state with 6 feature flows. Feature state classes (`StoryState`, `VocabSprintState`, `DailyPracticeState`, `FlowerDisplayState`, `BossState`) are defined in `Models.kt`.
+
+### StoryRunner.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/StoryRunner.kt` (96 lines)
+
+Owns `MutableStateFlow<StoryState>`. Story quiz lifecycle: load quiz, mark completion per phase, clear errors.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `_state` / `stateFlow` | 27–28 | StateFlow owner | 08#7.7 | — | — |
+| `openStory(phase)` | 39 | Method | 08#7.7 | UC-? | ? |
+| `completeStory(phase, allCorrect)` | 62 | Method | 08#7.7 | UC-? | ? |
+| `clearStoryError()` | 84 | Method | 08#7.7 | UC-? | ? |
+| `resetState()` | 93 | Method | 08#7.7 | — | — |
+
+### VocabSprintRunner.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/vocab/VocabSprintRunner.kt` (354 lines)
+
+Owns `MutableStateFlow<VocabSprintState>`. Vocab sprint session: setup, answer validation, word bank generation, SRS progress, session completion.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `_state` / `vocabState` | 44–45 | StateFlow owner | 08#7.12 | — | — |
+| `openSprint(resume)` | 59 | Method | 08#7.12 | UC-25 | AC1 |
+| `clearError()` | 121 | Method | 08#7.12 | UC-25 | ? |
+| `onInputChanged(text)` | 129 | Method | 08#7.12 | UC-25 | ? |
+| `setInputMode(mode)` | 144 | Method | 08#7.12 | UC-25 | ? |
+| `requestVoice()` | 154 | Method | 08#7.12 | UC-25 | ? |
+| `submitAnswer(inputOverride)` | 170 | Method | 08#7.12 | UC-25 | AC3–AC5 |
+| `showAnswer()` | 215 | Method | 08#7.12 | UC-25 | ? |
+| `updateMasteredCount(count)` | 343 | Method | 08#7.12 | UC-25 | ? |
+| `resetState()` | 351 | Method | 08#7.12 | — | — |
+
+### DailyPracticeCoordinator.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/daily/DailyPracticeCoordinator.kt` (574 lines)
+
+Owns `MutableStateFlow<DailyPracticeState>`. Orchestrates 3-block daily practice session (Translate, Vocab, Verbs). Absorbs `DailySessionHelper` + `DailySessionComposer` + per-call store creation.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `_state` / `dailyState` | 51–52 | StateFlow owner | 09#9.1 | — | — |
+| `prebuiltDailySession` | 57 | Mutable state | 09#9.8 | — | — |
+| `lastDailyTasks` | 61 | Mutable state | 09#9.8 | — | — |
+| `hasResumableDailySession()` | 230 | Query | 09#9.9 | UC-21 | ? |
+| `startDailyPractice(...)` | 245 | Method | 09#9.2 | UC-21 | AC1 |
+| `repeatDailyPractice(...)` | 306 | Method | 09#9.2 | UC-21 | ? |
+| `advanceDailyTask(...)` | 363 | Method | 09#9.5 | UC-22 | AC2 |
+| `recordDailyCardPracticed(...)` | 373 | Method | 09#9.5, 02#2.2 | UC-05 | AC1 |
+| `advanceDailyBlock()` | 391 | Method | 09#9.6.3 | UC-22 | AC1–AC2 |
+| `persistDailyVerbProgress(card)` | 395 | Method | 10#10.6 | UC-22 | ? |
+| `repeatDailyBlock(...)` | 413 | Method | 09#9.6 | UC-22 | ? |
+| `cancelDailySession()` | 444 | Method | 09#9.9 | UC-21 | ? |
+| `rateVocabCard(rating)` | 466 | Method | 11#11.4 | UC-25 | AC5 |
+| `submitDailySentenceAnswer(input)` | 495 | Method | 09#9.5 | UC-02 | AC1–AC5 |
+| `submitDailyVerbAnswer(input)` | 501 | Method | 09#9.5 | UC-27 | AC1–AC2 |
+| `prebuildSession(...)` | 525 | Method | 09#9.8 | UC-21 | ? |
+| `resetState()` | 544 | Method | 09#9.9 | — | — |
+| `clearPrebuiltSession()` | 555 | Method | 09#9.8 | — | — |
+| `updateCursor(cursor)` | 566 | Method | 09#9.9 | UC-21 | ? |
+| `getCursor()` | 573 | Method | 09#9.9 | UC-21 | ? |
+
+### FlowerRefresher.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/progress/FlowerRefresher.kt` (92 lines)
+
+Owns `MutableStateFlow<FlowerDisplayState>`. Recomputes flower visuals and ladder rows for all lessons. Called after mastery-changing operations.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `_state` / `stateFlow` | 31–32 | StateFlow owner | 03#3.3 | — | — |
+| `refreshFlowerStates()` | 43 | Method | 03#3.3 | UC-05 | AC1 |
+
+### BossOrchestrator.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/boss/BossOrchestrator.kt` (387 lines)
+
+Owns `MutableStateFlow<BossState>`. Boss battle and Mix Challenge orchestration. Coordinates `BossBattleRunner`, `CardProvider`, and `SessionRunner`.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `_state` / `stateFlow` | 43–44 | StateFlow owner | 08#7.8 | — | — |
+| `startMixChallenge()` | 57 | Method | 08#7.8 | UC-07 | AC1 |
+| `startBossLesson()` | 106 | Method | 08#7.8 | UC-07 | AC1 |
+| `startBossMega()` | 108 | Method | 08#7.8 | UC-07 | AC1 |
+| `startBossElite()` | 110 | Method | 08#7.8 | UC-07 | AC1 |
+| `startBoss(type)` | 114 | Method | 08#7.8 | UC-07 | AC1 |
+| `finishBoss()` | 173 | Method | 08#7.8 | UC-07 | AC5 |
+| `clearBossRewardMessage()` | 230 | Method | 08#7.8 | UC-07 | AC6 |
+| `clearBossError()` | 262 | Method | 08#7.8 | UC-07 | ? |
+| `updateBossProgress(progress)` | 266 | Method | 08#7.8 | UC-07 | AC3 |
+| `advanceBossProgressOnNextCard(nextIndex, totalCards)` | 313 | Method | 08#7.8 | UC-07 | AC3 |
+| `parseBossRewards(rewardMap)` | 345 | Method | 08#7.8 | UC-07 | ? |
+| `initRewards(lessonRewards, megaRewards)` | 358 | Method | 08#7.8 | UC-07 | ? |
+| `resetState()` | 366 | Method | 08#7.8 | — | — |
+| `resetStateKeepRewards()` | 374 | Method | 08#7.8 | — | — |
+
+## Phase 4: TrainingViewModel — 7-Flow Combine Chain
+
+The ViewModel's `uiState: StateFlow<TrainingUiState>` is assembled from 7 flows in a two-stage `combine` chain:
+
+1. **Stage 1** (5 flows): `_coreState`, `audioCoordinator.audioState`, `storyRunner.stateFlow`, `vocabSprintRunner.vocabState`, `dailyPracticeCoordinator.dailyState` — produces `TrainingUiState` with core + audio + story + vocabSprint + daily.
+2. **Stage 2** (2 flows): Stage 1 output, `flowerRefresher.stateFlow`, `bossOrchestrator.stateFlow` — produces final `TrainingUiState` with flowerDisplay + boss.
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt`
+
+| Symbol | Line | Type | Description | Spec |
+|--------|------|------|-------------|------|
+| `uiState` (combine stage 1) | 225–237 | StateFlow combine | `_coreState` + audio + story + vocabSprint + daily | 08#7 |
+| `uiState` (combine stage 2) | 238–246 | StateFlow combine | Stage 1 + flowerDisplay + boss | 08#7 |
+
+## Phase 4: Models.kt — Core Reset Methods
+
+`resetSessionState()` and `resetAllSessionState()` in `TrainingUiState` now reset only core fields (`cardSession`, `drill`, `elite`). Feature-owned state (boss, story, vocabSprint, daily, flowerDisplay) is reset by explicit calls to each feature's `resetState()` method.
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/Models.kt`
+
+| Symbol | Line | Type | Description | Spec |
+|--------|------|------|-------------|------|
+| `resetSessionState()` | 419 | Method | Resets `cardSession` and `drill` only. Feature resets are called separately. | 08#7 |
+| `resetAllSessionState()` | 431 | Method | Resets `cardSession`, `drill`, and `elite` counters. Feature resets are called separately. | 08#7 |
+
+## Phase 4: TrainingViewModel — Feature Reset Calls
+
+The ViewModel explicitly calls each feature's `resetState()` or `resetStateKeepRewards()` at specific lifecycle points. Feature reset commands (`ResetBoss`, `ResetDailySession`, `ResetStory`, `ResetVocabSprint`) are also dispatched via `BossCommand` in `handleBossCommands`.
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt`
+
+| Call site (ViewModel method) | Line(s) | Feature resets called | Context |
+|------------------------------|---------|----------------------|---------|
+| `init` block | 291–292 | `initRewards`, `updateMasteredCount`, `updateCursor` | Initialize feature state from persisted progress |
+| `selectLanguage(languageId)` | 414–418 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint, daily) | Language change |
+| `selectLesson(lessonId)` | 463–466 | `resetState` (boss, story, vocabSprint, daily) | Lesson change |
+| `selectSubLesson(index)` | 497–499 | `resetState` (boss, story, vocabSprint) | Sub-lesson change |
+| `resetProgress(app)` | 578–581 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint, daily) | Full progress reset |
+| `importLessonPack(uri)` | 619–622 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint, daily) | Pack import |
+| `openVocabSprint(resume)` | 853 | `resetState` (boss) via `VocabResult.ResetBoss` | Vocab sprint start |
+| `submitVocabAnswer(...)` | 891 | `resetState` (boss) via `VocabResult.ResetBoss` | Vocab answer submission |
+| `storeFirstSessionCardIds(...)` | 698–702 | `getCursor`, `updateCursor` | Daily session card ID storage |
+| `advanceDailyCursor(sentenceCount)` | 714–718 | `getCursor`, `updateCursor` | Daily cursor advancement |
+| `refreshVocabMasteryCount()` | 1069 | `updateMasteredCount` | Drill mastery refresh |
+| `handleBossCommands(commands)` | 1259–1264 | `resetState` via `ResetBoss`, `ResetDailySession`, `ResetStory`, `ResetVocabSprint` commands | Boss command dispatch |
+| `handleSettingsResults` — `resetAllProgress` | 1281–1284 | `resetState` (boss, story, vocabSprint, daily) | Settings: reset all |
+| `resetDailyState()` | 1294 | `resetState` (daily) | Settings: reset daily |
+| `startMixChallenge()` | ~101 | `ResetStory`, `ResetVocabSprint`, `ResetDailySession` via `BossCommand` | Mix Challenge start |
+
 ## Cross-Reference: UC → Symbol Coverage
 
 | UC | TrainingScreen | VerbDrillScreen | DailyPracticeScreen | TrainingCardSession |
@@ -420,3 +575,5 @@ Dispatcher methods in `TrainingViewModel.kt` that execute side effects for each 
 4. **Line numbers** are approximate (guidance only). Use symbol name as the primary identifier.
 5. **Expanding beyond pilot files:** add a new section per file following the same table format. Priority candidates: `GrammarMateApp.kt`, `HomeScreen.kt`, `VocabDrillScreen.kt`, `SettingsScreen.kt`.
 6. **Phase 3 result types:** when adding a new variant to a sealed result class (e.g. `SessionEvent`, `BossCommand`, `SettingsResult`), add a row to the corresponding result-type table AND add a `when` branch to the handler method table. When adding a new sealed result class, add a new section following the Phase 3 format.
+7. **Phase 4 feature StateFlows:** when a feature class gains or loses an owned `StateFlow`, update the corresponding Phase 4 table AND update the combine chain description in the "7-Flow Combine Chain" section. When a new feature class acquires its own StateFlow, add a new section following the Phase 4 format.
+8. **Phase 4 reset wiring:** when a ViewModel method adds or removes a feature `resetState()` / `resetStateKeepRewards()` call, update the "Feature Reset Calls" table. When a new `BossCommand` reset variant is added, update both the BossResult.kt table and the handler dispatch table.
