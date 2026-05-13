@@ -15,7 +15,8 @@
 | SettingsScreen (SettingsSheet) | SS | 38 |
 | StoryQuizScreen | SQ | 13 |
 | GrammarMateApp Dialogs | DG | 17 |
-| **Total** | | **264** |
+| [UI-CONSISTENCY-2025] Shared Components | SH | 6 |
+| **Total** | | **270** |
 
 ---
 
@@ -56,10 +57,10 @@
 | Settings gear (top bar) | TS-02 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()` + `onShowSettings()`. | ? |
 | Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`, green-tinted text in drill mode. | ? |
 | Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). In drill mode: green (0xFF388E3C). | ? |
-| Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), 18sp * ruTextScale, Medium weight. Green tint in drill mode. | ? |
+| Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), `(18f * ruTextScale).sp`, Medium weight. Green tint in drill mode. | UC-56 |
 | DrillProgressRow (progress bar) | TS-06 | progress-bar | Always | Rounded green bar (70% width, #4CAF50 on #C8E6C9 track). "N / Total" text overlay. Text color flips dark-green-to-white at 12% fill. | ? |
 | Speedometer (progress arc) | TS-07 | progress-bar | Always | Canvas arc (30% width, 44dp). Color: red (<=20 wpm), yellow (<=40 wpm), green (>40 wpm). Center shows numeric wpm. | ? |
-| CardPrompt card | TS-08 | card | `currentCard != null` | Material Card with "RU" label + prompt text (20sp * ruTextScale, SemiBold) + TtsSpeakerButton. | ? |
+| CardPrompt card | TS-08 | card | `currentCard != null` | Material Card with "RU" label + prompt text (`(20f * ruTextScale).sp`, SemiBold) + TtsSpeakerButton. | UC-56 |
 | CardPrompt TTS button | TS-09 | button | `currentCard != null` | TtsSpeakerButton: 4 states (SPEAKING=StopCircle red, INITIALIZING=spinner, ERROR=ReportProblem red, IDLE=VolumeUp). Calls `onTtsSpeak()`. | ? |
 | Answer text field | TS-10 | input-field | `hasCards == true` | OutlinedTextField "Your translation". Enabled only when `hasCards`. Auto-submits on exact match in KEYBOARD mode via Normalizer.isExactMatch. | ? |
 | Mic trailing icon (text field) | TS-11 | button | `canLaunchVoice` | IconButton inside trailingIcon. Switches to VOICE mode + launches speech recognition. | ? |
@@ -99,10 +100,10 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Tense label (header) | TCS-01 | text | `currentCard` is VerbDrillCard with non-blank tense; `hintLevel != HARD` | 13sp SemiBold, primary color. | ? |
-| Clean prompt text (header) | TCS-02 | text | `currentCard != null` | Stripped prompt (parentheticals removed), 18sp, Medium weight. | ? |
+| Clean prompt text (header) | TCS-02 | text | `currentCard != null` | Stripped prompt (parentheticals removed), `(18f * textScale).sp`, Medium weight. | UC-56 |
 | Progress bar | TCS-03 | progress-bar | Always | Rounded green bar (70% width). "N / Total" overlay. Text color flips at 12% fill. | ? |
 | Speedometer arc | TCS-04 | progress-bar | Always | Canvas arc (30% width, 44dp). Red/yellow/green by wpm. Center shows numeric value. | ? |
-| Card content | TCS-05 | card | `currentCard != null` | Material Card: "RU" label + prompt text (20sp SemiBold) + TtsSpeakerButton. | ? |
+| Card content | TCS-05 | card | `currentCard != null` | Material Card: "RU" label + prompt text (`(20f * textScale).sp` SemiBold) + TtsSpeakerButton. | UC-56 |
 | Card TTS button | TCS-06 | button | `currentCard != null` | TtsSpeakerButton. Calls `contract.speakTts()`. | ? |
 | Answer text field | TCS-07 | input-field | `currentCard != null` and not showing result | OutlinedTextField "Your translation". Auto-submits on exact match in KEYBOARD mode. | ? |
 | Mic trailing icon | TCS-08 | button | `contract.supportsVoiceInput && hasCards` | IconButton. Switches to VOICE mode + launches speech recognition. | ? |
@@ -141,7 +142,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Block progress bar | DP-05 | progress-bar | `totalTasks > 0` | LinearProgressIndicator (8dp height, rounded) + "N/M" label. Shows overall session position. | ? |
 | Block sparkle overlay | DP-06 | card | `showBlockTransition == true` or session complete | Semi-transparent black overlay + sparkle emoji + "Next: {BlockType}" or "Daily practice complete!". Auto-dismisses after 800ms. | ? |
 | TRANSLATE/VERBS card session | DP-07 | card | `currentTask.blockType == TRANSLATE \|\| VERBS` | Wraps TrainingCardSession via DailyPracticeSessionProvider. Includes card content, input controls, navigation. | ? |
-| Card prompt (translate/verbs) | DP-08 | card | Card session active | Card with "RU" label + prompt (20sp SemiBold) + TTS button. | ? |
+| Card prompt (translate/verbs) | DP-08 | card | Card session active | Card with "RU" label + prompt (`(20f * ruTextScale).sp` SemiBold) + TTS button. | UC-56 |
 | Verb/tense/group chips (verbs) | DP-09 | chip | `verbText` not blank and `hintLevel != HARD` | SuggestionChips for verb (with rank), tense (abbreviated), group (EASY only). Chips do NOT open bottom sheets in daily practice. | ? |
 | Card TTS button (translate/verbs) | DP-10 | button | Card session active | Inline TTS button (not TtsSpeakerButton): 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). | ? |
 | Hint answer card (translate/verbs) | DP-11 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card showing "Answer: {hint}". Includes TTS replay button. | ? |
@@ -153,10 +154,10 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Check button (translate/verbs) | DP-17 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check" button. Submits via `provider.submitAnswerWithInput()`. | ? |
 | Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | DailyReportSheet: flag/unflag + export + copy. | ? |
 | VOCAB flashcard card | DP-19 | card | `currentTask.blockType == VOCAB` | surfaceVariant Card with prompt word (28sp Bold) + translation (18sp Medium, primary) + TTS button + report button. | ? |
-| Vocab prompt text | DP-20 | text | VOCAB block active | Word text in 28sp Bold, centered. Direction-dependent: IT_TO_RU shows Italian word, RU_TO_IT shows Russian meaning. | ? |
+| Vocab prompt text | DP-20 | text | VOCAB block active | Word text in `(28f * ruTextScale).sp` Bold, centered. Direction-dependent: IT_TO_RU shows Italian word, RU_TO_IT shows Russian meaning. | UC-56 |
 | Vocab TTS button | DP-21 | button | VOCAB block active | IconButton VolumeUp. Calls `onSpeak(promptText)`. | ? |
 | Vocab report button | DP-22 | button | VOCAB block active | IconButton ReportProblem. Opens DailyReportSheet. Tinted red if word is flagged. | ? |
-| Vocab translation text | DP-23 | text | VOCAB block active and `hintLevel != HARD` | Translation text in 18sp Medium, primary color. | ? |
+| Vocab translation text | DP-23 | text | VOCAB block active and `hintLevel != HARD` | Translation text in `(18f * ruTextScale).sp` Medium, primary color. | UC-56 |
 | Vocab "You said" text | DP-24 | text | `voiceRecognizedText != null` | "You said: \"{text}\"" in muted style. | ? |
 | Vocab mic button | DP-25 | button | VOCAB block active | 64dp FilledTonalIconButton. Launches voice recognition with direction-appropriate language tag. | ? |
 | Vocab rating buttons | DP-26 | button | VOCAB block active | 4 OutlinedButtons: Again (red), Hard (orange), Good (primary), Easy (green). Auto-advances on tap. | ? |
@@ -191,7 +192,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `onExit()`. | ? |
 | "Verb Drill" title (session) | VD-12 | text | Session active | SemiBold weight. | ? |
 | Progress bar + speedometer | VD-13 | progress-bar | Session active | Reuses DefaultProgressIndicator from TrainingCardSession. | ? |
-| Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (20sp SemiBold) + TTS VolumeUp button. | ? |
+| Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS VolumeUp button. | UC-56 |
 | Verb SuggestionChip | VD-15 | chip | `verbText` not blank and `hintLevel != HARD` | Shows verb infinitive + "#rank". ChevronRight icon. Tap opens VerbReferenceBottomSheet. | ? |
 | Tense SuggestionChip | VD-16 | chip | `tense` not blank and `hintLevel != HARD` | Shows abbreviated tense name (e.g. "Pres."). Tap opens TenseInfoBottomSheet. | ? |
 | Hint answer card | VD-17 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card "Answer: {hint}" + TTS replay (red-tinted). | ? |
@@ -261,7 +262,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Card front container | VOC-21 | card | `!session.isFlipped` | RoundedCornerShape(16dp) Card. Background tint changes: green on correct voice, red on wrong, surfaceVariant default. | ? |
 | POS badge | VOC-22 | card | `hintLevel != HARD` | Small rounded Card showing "noun"/"verb"/"adj." etc. Color-coded by POS. | ? |
 | Rank badge | VOC-23 | card | `hintLevel != HARD` | Small rounded Card showing "#N" rank. | ? |
-| Word text (front) | VOC-24 | text | `!session.isFlipped` | 32sp Bold centered. Direction-dependent: IT_TO_RU shows Italian, RU_TO_IT shows Russian meaning. | ? |
+| Word text (front) | VOC-24 | text | `!session.isFlipped` | `(32f * ruTextScale).sp` Bold centered. Direction-dependent: IT_TO_RU shows Italian, RU_TO_IT shows Russian meaning. | UC-56 |
 | TTS button (front) | VOC-25 | button | `direction == IT_TO_RU` | 4-state icon (SPEAKING/INITIALIZING/ERROR/IDLE). Calls `onSpeak(word)`. | ? |
 | "Tap to speak" text | VOC-26 | text | `!voiceCompleted` | labelMedium muted text. | ? |
 | Mic button (front, 72dp) | VOC-27 | button | `!voiceCompleted` | 72dp FilledTonalIconButton with 36dp Mic icon. Launches voice recognition. | ? |
@@ -437,6 +438,23 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 | Element | ID | Type | Used by | Behavior / Invariant | Related UC |
 |---------|----|------|---------|----------------------|------------|
 | SharedReportSheet | SH-01 | bottom-sheet | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | ModalBottomSheet with exactly 4 options: Flag/Unflag, Hide card, Export bad sentences, Copy text. Card prompt text shown at top for context. | UC-53 |
+
+**Behavior:** Each option triggers its corresponding callback. Flag toggles card.isFlagged (adds/removes from BadSentenceStore). Hide removes card from session (except Daily Practice where it is a documented no-op). Export returns formatted string via BadSentenceStore.exportUnified() -- non-null when at least one card is flagged. Copy writes card text (ID, source, target) to system clipboard.
+
 | VoiceAutoLauncher | SH-02 | (system) | VerbDrillScreen, VocabDrillScreen | LaunchedEffect composable that auto-launches voice recognition after configurable delay (200ms for new card, 1200ms after incorrect feedback). | UC-52 |
+
+**Behavior:** When enabled and card changes, fires onAutoStartVoice after delay. Callback MUST call speechLauncher.launch(intent) directly -- switching InputMode alone is insufficient and causes the voice-not-launching bug. On correct voice answer, auto-advance triggers after 400-500ms.
+
 | SharedInputModeBar | SH-03 | button | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | Row of FilledTonalIconButtons: Mic, Keyboard, WordBank + Eye (show answer) + Report. Active mode highlighted. Mode label displayed below. | UC-51, UC-53 |
+
+**Behavior:** Mode buttons switch input method via onModeChange callback. Eye button calls onShowHint() which sets hintAnswer on the provider and pauses the session. Report button opens SharedReportSheet. Eye button is disabled when hintShown == true.
+
 | HintAnswerCard | SH-04 | card | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | Pink Card with `errorContainer.copy(alpha = 0.3f)` background, red error-colored answer text, inline TTS replay button. Reference: VerbDrillScreen.kt:392-425. | UC-51 |
+
+**Behavior:** Renders whenever hintAnswer != null. NOT gated by HintLevel -- eye mode shows answer at ALL difficulty levels (EASY, MEDIUM, HARD). HintLevel only controls parenthetical hints in prompt text, not the show-answer mechanism.
+
+| TextScaleProvider | SH-05 | (system) | TrainingScreen, VerbDrillScreen, VocabDrillScreen, DailyPracticeScreen, TrainingCardSession | N/A (no visual element -- scales existing text). Multiplies base font sizes by textScale value (1.0-2.0). Applied to: prompt text, word displays, answer text. NOT applied to: navigation, badges, buttons, small labels. | UC-56 |
+
+**Behavior:** Propagated via `CardSessionContract.textScale` or composable parameter. Reads `ruTextScale` from `AudioState` / `AppConfigStore`. Applied as `fontSize = (baseSize * textScale).sp`. Elements excluded from scaling: RU badge, POS badge, hint chips, attempt counter, tense labels, navigation buttons, progress bar text, rating button text, block label badges.
+
+| VoiceAutoStartToggle | SH-06 | switch | SettingsScreen | Switch with label "Auto-start voice input". When ON, shows description "Voice recognition starts automatically when a new card appears". When OFF, shows "Voice recognition starts only when you tap the microphone". Bound to `state.audio.voiceAutoStart` via `onSetVoiceAutoStart` callback. | UC-57 |

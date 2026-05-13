@@ -917,3 +917,33 @@ Each reset site then becomes:
 ```kotlin
 _uiState.update { it.resetSessionState().copy(selectedLanguageId = languageId, lessons = lessons) }
 ```
+
+### 7.6 Voice Auto-Start Behavioral Contract
+
+**Field:** `AudioState.voiceAutoStart: Boolean` (default `true`)
+
+**Persistence:** Saved to `config.yaml` via `AppConfig.voiceAutoStart`. Loaded on init.
+
+**Behavioral rules:**
+
+| Screen | When `voiceAutoStart = true` | When `voiceAutoStart = false` |
+|--------|------------------------------|-------------------------------|
+| TrainingScreen | LaunchedEffect fires on new card + VOICE mode + ACTIVE state | LaunchedEffect does NOT fire `speechLauncher.launch()` |
+| DailyPracticeScreen | LaunchedEffect fires on new card + VOICE mode + sessionActive | LaunchedEffect does NOT fire `speechLauncher.launch()` |
+| VerbDrillScreen | Per-drill `voiceModeEnabled` flag (unchanged) | Per-drill `voiceModeEnabled` flag (unchanged) |
+| VocabDrillScreen | Per-drill `voiceModeEnabled` flag (unchanged) | Per-drill `voiceModeEnabled` flag (unchanged) |
+
+**Invariant:** Auto-submit timing (keyboard exact match, voice auto-advance) is NOT affected by this flag. The flag only controls whether the speech recognition intent is launched automatically on card entry.
+
+**Guard pattern in LaunchedEffect:**
+```kotlin
+if (state.audio.voiceAutoStart &&
+    state.cardSession.inputMode == InputMode.VOICE &&
+    state.cardSession.sessionState == SessionState.ACTIVE &&
+    state.cardSession.currentCard != null
+) {
+    // auto-launch voice recognition
+}
+```
+
+**Method:** `setVoiceAutoStart(enabled: Boolean)` in TrainingViewModel updates `AudioState.voiceAutoStart` and persists to `AppConfigStore`.

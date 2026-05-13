@@ -170,7 +170,8 @@ fun GrammarMateApp() {
                     onSetUseOfflineAsr = vm::setUseOfflineAsr,
                     onStartAsrDownload = { vm.startAsrDownload() },
                     onResetAllProgress = vm::resetAllProgress,
-                    onSetHintLevel = vm::setHintLevel
+                    onSetHintLevel = vm::setHintLevel,
+                    onSetVoiceAutoStart = vm::setVoiceAutoStart
                 )
 
                 AppScreenContent(
@@ -359,7 +360,8 @@ private fun AppScreenContent(
             VerbDrillScreen(
                 viewModel = verbDrillVm,
                 onBack = { onScreenChange(AppScreen.HOME) },
-                hintLevel = state.cardSession.hintLevel
+                hintLevel = state.cardSession.hintLevel,
+                textScale = state.audio.ruTextScale
             )
         }
         AppScreen.VOCAB_DRILL -> {
@@ -376,7 +378,8 @@ private fun AppScreenContent(
                     vm.refreshVocabMasteryCount()
                     onScreenChange(AppScreen.HOME)
                 },
-                hintLevel = state.cardSession.hintLevel
+                hintLevel = state.cardSession.hintLevel,
+                textScale = state.audio.ruTextScale
             )
         }
     }
@@ -476,7 +479,9 @@ private fun DailyPracticeScreenContent(
         onExportDailyBadSentences = {
             vm.exportDailyBadSentences()
         },
-        hintLevel = state.cardSession.hintLevel
+        hintLevel = state.cardSession.hintLevel,
+        textScale = state.audio.ruTextScale,
+        voiceAutoStart = state.audio.voiceAutoStart
     )
 }
 

@@ -101,7 +101,8 @@ class TrainingCardSessionScope(
     val onPrev: () -> Unit,
     val onNext: () -> Unit,
     val onExit: () -> Unit,
-    val hintLevel: HintLevel = HintLevel.EASY
+    val hintLevel: HintLevel = HintLevel.EASY,
+    val textScale: Float = 1.0f
 )
 
 /**
@@ -180,7 +181,8 @@ fun TrainingCardSession(
                 localInputText = ""
             },
             onExit = onExit,
-            hintLevel = hintLevel
+            hintLevel = hintLevel,
+            textScale = contract.textScale
         )
     }
 
@@ -277,7 +279,7 @@ private fun DefaultHeader(scope: TrainingCardSessionScope) {
     if (cleanPrompt.isNotBlank()) {
         Text(
             text = cleanPrompt,
-            fontSize = 18.sp,
+            fontSize = (18f * scope.textScale).sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.fillMaxWidth()
         )
@@ -388,7 +390,7 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = card.promptRu,
-                    fontSize = 20.sp,
+                    fontSize = (20f * scope.textScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }

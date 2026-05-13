@@ -551,6 +551,29 @@ Layout:
 - Wrong: light red tint (`#FFEBEE` at 0.7 alpha).
 - Default: surface variant at 0.7 alpha.
 
+#### Font Size Scaling Behavioral Contract (VocabDrill)
+
+VocabDrillScreen applies `ruTextScale` (from `AudioState` / Settings) to the main word text on both card sides:
+
+| User Action | System Response | User Outcome |
+|-------------|----------------|--------------|
+| User changes text scale in Settings | VocabDrillScreen re-reads `ruTextScale` | Word text resizes on both card sides |
+| `textScale = 2.0x` | Main word on front renders at `(32f * 2.0f).sp = 64sp` | Card fits on screen without overflow |
+| `textScale = 1.5x` | Back card translation renders at `(18f-24f * 1.5f).sp` | Translation text scales proportionally |
+
+**Scaling rules:**
+- Card front main word: `(32f * ruTextScale).sp`
+- Card back word text (IT_TO_RU direction): `(20f * ruTextScale).sp` semibold
+- Card back translation text (IT_TO_RU): `(18f * ruTextScale).sp` medium
+- Card back Italian word (RU_TO_IT direction): `(24f * ruTextScale).sp` bold
+- Card back Russian meaning (RU_TO_IT): `(16f * ruTextScale).sp` medium
+- POS badge, rank badge: NOT scaled
+- Forms table, collocations: NOT scaled
+- Mastery indicator ("Step X/9"): NOT scaled
+- Correct: light green tint (`#E8F5E9` at 0.7 alpha).
+- Wrong: light red tint (`#FFEBEE` at 0.7 alpha).
+- Default: surface variant at 0.7 alpha.
+
 ### 11.6.5 Card Back (VocabDrillCardBack)
 
 Background: secondary container at 0.5 alpha.

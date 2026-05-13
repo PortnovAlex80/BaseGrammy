@@ -78,7 +78,8 @@ import kotlinx.coroutines.delay
 fun VocabDrillScreen(
     viewModel: VocabDrillViewModel,
     onBack: () -> Unit,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -159,7 +160,8 @@ fun VocabDrillScreen(
                 onUnflagBadSentence = viewModel::unflagBadSentence,
                 isBadSentence = viewModel::isBadSentence,
                 onExportBadSentences = viewModel::exportBadSentences,
-                hintLevel = hintLevel
+                hintLevel = hintLevel,
+                textScale = textScale
             )
         }
     } else {
@@ -382,7 +384,8 @@ private fun VocabDrillCardScreen(
     onUnflagBadSentence: () -> Unit = {},
     isBadSentence: () -> Boolean = { false },
     onExportBadSentences: () -> String? = { null },
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     val card = session.cards.getOrElse(session.currentIndex) { return }
     val totalCards = session.cards.size
@@ -467,7 +470,8 @@ private fun VocabDrillCardScreen(
                 direction = session.direction,
                 ttsState = ttsState,
                 onSpeak = onSpeak,
-                hintLevel = hintLevel
+                hintLevel = hintLevel,
+                textScale = textScale
             )
         } else {
             VocabDrillCardFront(
@@ -480,7 +484,8 @@ private fun VocabDrillCardScreen(
                 voiceAttempts = session.voiceAttempts,
                 onSpeak = onSpeak,
                 onStartVoice = onStartVoice,
-                hintLevel = hintLevel
+                hintLevel = hintLevel,
+                textScale = textScale
             )
         }
 
@@ -706,7 +711,8 @@ private fun VocabDrillCardFront(
     voiceAttempts: Int,
     onSpeak: (String) -> Unit,
     onStartVoice: () -> Unit,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -747,7 +753,7 @@ private fun VocabDrillCardFront(
             }
             Text(
                 text = displayText,
-                fontSize = 32.sp,
+                fontSize = (32f * textScale).sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
@@ -825,7 +831,8 @@ private fun VocabDrillCardBack(
     direction: VocabDrillDirection,
     ttsState: TtsState,
     onSpeak: (String) -> Unit,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -853,7 +860,7 @@ private fun VocabDrillCardBack(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = card.word.word,
-                            fontSize = 20.sp,
+                            fontSize = (20f * textScale).sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -871,7 +878,7 @@ private fun VocabDrillCardBack(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = meaningRu,
-                        fontSize = 18.sp,
+                        fontSize = (18f * textScale).sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -887,7 +894,7 @@ private fun VocabDrillCardBack(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = card.word.meaningRu ?: "?",
-                        fontSize = 16.sp,
+                        fontSize = (16f * textScale).sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -902,7 +909,7 @@ private fun VocabDrillCardBack(
                 ) {
                     Text(
                         text = card.word.word,
-                        fontSize = 24.sp,
+                        fontSize = (24f * textScale).sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )

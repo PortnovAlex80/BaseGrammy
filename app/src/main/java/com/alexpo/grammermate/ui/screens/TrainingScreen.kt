@@ -461,7 +461,8 @@ fun AnswerBox(
         state.cardSession.sessionState,
         state.cardSession.voiceTriggerToken
     ) {
-        if (state.cardSession.inputMode == InputMode.VOICE &&
+        if (state.audio.voiceAutoStart &&
+            state.cardSession.inputMode == InputMode.VOICE &&
             state.cardSession.sessionState == SessionState.ACTIVE &&
             state.cardSession.currentCard != null
         ) {

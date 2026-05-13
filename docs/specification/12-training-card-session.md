@@ -86,6 +86,7 @@ Full interface definition with all properties and actions:
 | `currentInputMode` | `InputMode` | Currently selected input mode (default: `inputModeConfig.defaultMode`) |
 | `languageId` | `String` | Language ID for voice recognition locale resolution (default: `"en"`) |
 | `currentSpeedWpm` | `Int` | Current typing speed in words per minute (default: `0`) |
+| `textScale` | `Float` | Font size multiplier for prompt text in default slots (default: `1.0f`). Range [1.0, 2.0]. Propagated from `ruTextScale` in Settings. |
 
 **Actions (called by the composable):**
 
@@ -252,6 +253,23 @@ Material `Card` with full-width layout:
 - Right: `TtsSpeakerButton` (see 12.4.9).
 
 Custom overrides: Verb Drill and Daily Practice both add SuggestionChip rows below the prompt showing verb, tense, and group info when the card is a `VerbDrillCard`.
+
+#### Font Size Scaling Behavioral Contract
+
+When `textScale` is set on the contract, all default slot implementations apply it to prompt and content text:
+
+| User Action | System Response | User Outcome |
+|-------------|----------------|--------------|
+| User changes text scale in Settings | `textScale` prop updates on `CardSessionContract` | All prompt text in card resizes proportionally |
+| `textScale = 1.5x` | `DefaultCardContent` applies `(20f * 1.5f).sp = 30sp` to `promptRu` | Card prompt text is 50% larger |
+| `textScale = 2.0x` | `DefaultHeader` applies `(18f * 2.0f).sp = 36sp` to `cleanPrompt` | Header text is doubled |
+
+**Scaling rules:**
+- Prompt text (`promptRu`) in `DefaultCardContent`: `(20f * textScale).sp`
+- Clean prompt text in `DefaultHeader`: `(18f * textScale).sp`
+- Tense label in `DefaultHeader`: NOT scaled (fixed 13sp)
+- "RU" badge, POS badge, attempt counter: NOT scaled
+- Navigation buttons, check button, mode labels: NOT scaled
 
 ### 12.4.6 Default Input Controls
 
@@ -598,6 +616,16 @@ fun SharedInputModeBar(
 
 ### 12.8.2 Shared ReportSheet Component [UI-CONSISTENCY-2025]
 
+#### Behavioral Contract
+
+| Action | System Response | User Outcome |
+|--------|----------------|--------------|
+| User taps "Add to bad sentences list" | `onFlagToggle()` -> `BadSentenceStore.add(packId, cardId, ...)` -> card.isFlagged = true | Sheet closes; next time sheet opens, option shows "Remove from bad sentences list" with red icon tint |
+| User taps "Remove from bad sentences list" | `onFlagToggle()` -> `BadSentenceStore.remove(packId, cardId)` -> card.isFlagged = false | Sheet closes; next time sheet opens, option reverts to "Add to bad sentences list" |
+| User taps "Hide this card" | `onHideCard()` -> `hideCurrentCard()` removes card from session (except Daily where it is a no-op) | Sheet closes; card is removed from the current session. In VerbDrill a toast says "Feature not yet available for verb drills" |
+| User taps "Export bad sentences" | `onExport()` -> `BadSentenceStore.exportUnified()` -> returns file path or null | Sheet closes; AlertDialog shows file path or "No bad sentences to export" |
+| User taps "Copy text" | `onCopy()` -> clipboardManager.setClip(cardId + source + target) | Sheet closes; card text is in system clipboard |
+
 A shared `SharedReportSheet` composable must be extracted to `ui/components/SharedReportSheet.kt`, providing a consistent 4-option report bottom sheet across all screens.
 
 **Reference implementation:** TrainingScreen AnswerBox report sheet (`ui/screens/TrainingScreen.kt`).
@@ -646,6 +674,46 @@ fun SharedReportSheet(
 - `ui/screens/TrainingScreen.kt` — reference implementation, adopter of SharedReportSheet
 - `ui/screens/VocabDrillScreen.kt` — adopter of SharedReportSheet
 - `ui/DailyPracticeScreen.kt` — adopter of SharedInputModeBar
+
+---
+
+#### Behavioral Contract -- VoiceAutoLauncher
+
+| Action | System Response | User Outcome |
+|--------|----------------|--------------|
+| New card shown + voiceMode enabled | `onAutoStartVoice` callback fires -> `speechLauncher.launch(intent)` | Speech recognition dialog appears after configurable delay (500ms for new card, 1200ms after incorrect feedback) |
+| Voice answer correct | `pendingAnswerResult.correct == true` && `currentInputMode == VOICE` -> auto-advance after 400-500ms delay | Next card shown automatically |
+| Voice answer incorrect (attempt < 3) | `showIncorrectFeedback = true` -> `voiceTriggerToken++` -> re-launch speech after 1200ms | Speech recognition re-prompts; user sees "Incorrect" with remaining attempts |
+| Callback only switches InputMode (BUG) | `setInputMode(VOICE)` called but `speechLauncher.launch()` NOT called | Speech dialog does NOT appear -- user must manually tap mic. This is the VoiceAutoLauncher bug pattern to guard against |
+
+**CRITICAL:** The `onAutoStartVoice` callback MUST call `speechLauncher.launch(intent)` directly. Switching `InputMode` alone is INSUFFICIENT and causes the voice-not-launching bug.
+
+---
+
+#### Behavioral Contract -- HintAnswerCard
+
+| Action | System Response | User Outcome |
+|--------|----------------|--------------|
+| Eye button clicked at HintLevel=EASY | `provider.showAnswer()` -> `hintAnswer = card.answer`, `isPaused = true` | Pink card with answer text appears below prompt card |
+| Eye button clicked at HintLevel=MEDIUM | `provider.showAnswer()` -> `hintAnswer = card.answer`, `isPaused = true` | Pink card with answer text appears below prompt card (same as EASY) |
+| Eye button clicked at HintLevel=HARD | `provider.showAnswer()` -> `hintAnswer = card.answer`, `isPaused = true` | Pink card with answer text appears below prompt card (same as EASY) |
+| 3 wrong attempts on same card | Auto-sets `hintAnswer = card.answer`, `incorrectAttempts = 3`, `isPaused = true` | Pink card appears automatically; eye button becomes disabled |
+| `hintAnswer != null` but HintLevel gate blocks render (BUG) | Pink card composable checks `hintLevel == EASY` before rendering | Answer NOT shown at MEDIUM/HARD -- this is the HintAnswerCard bug pattern to guard against |
+
+**CRITICAL:** HintAnswerCard MUST render whenever `hintAnswer != null`, regardless of `HintLevel` setting. HintLevel controls parenthetical hints in prompt text, NOT the eye/show-answer button or the hint card.
+
+---
+
+#### Behavioral Contract -- SharedInputModeBar
+
+| Action | System Response | User Outcome |
+|--------|----------------|--------------|
+| User taps Mic button | `onModeChange(VOICE)` -> switches input mode, triggers `voiceTriggerToken++` in adapters | Mode label shows "Voice"; auto-voice launches if VoiceAutoLauncher is active |
+| User taps Keyboard button | `onModeChange(KEYBOARD)` -> switches input mode, clears word bank selection | Mode label shows "Keyboard"; text field becomes active |
+| User taps Word Bank button | `onModeChange(WORD_BANK)` -> switches input mode, clears text input | Mode label shows "Word Bank"; word bank chips appear |
+| User taps Eye button | `onShowHint()` -> `provider.showAnswer()` -> sets `hintAnswer`, pauses session | Eye button becomes disabled; HintAnswerCard appears |
+| User taps Report button | `onReport()` -> sets `showReportSheet = true` | SharedReportSheet bottom sheet opens |
+| Eye button already shown (hint active) | `hintShown == true` -> Eye button is `enabled = false` | Tapping eye button has no effect; hint card remains visible |
 
 ---
 

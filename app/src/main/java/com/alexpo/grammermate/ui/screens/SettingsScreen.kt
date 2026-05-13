@@ -78,7 +78,8 @@ fun SettingsSheet(
     onSetUseOfflineAsr: (Boolean) -> Unit,
     onStartAsrDownload: () -> Unit,
     onResetAllProgress: () -> Unit,
-    onSetHintLevel: (HintLevel) -> Unit
+    onSetHintLevel: (HintLevel) -> Unit,
+    onSetVoiceAutoStart: (Boolean) -> Unit = {}
 ) {
     if (!show) return
     val sheetState = rememberModalBottomSheetState()
@@ -303,6 +304,30 @@ fun SettingsSheet(
                     )
                 }
             }
+
+            // Voice auto-start toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Auto-start voice input", style = MaterialTheme.typography.bodyLarge)
+                }
+                Switch(
+                    checked = state.audio.voiceAutoStart,
+                    onCheckedChange = onSetVoiceAutoStart
+                )
+            }
+            Text(
+                text = if (state.audio.voiceAutoStart) {
+                    "Voice recognition starts automatically when a new card appears"
+                } else {
+                    "Voice recognition starts only when you tap the microphone"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
 
             // Russian text size control
             Text(

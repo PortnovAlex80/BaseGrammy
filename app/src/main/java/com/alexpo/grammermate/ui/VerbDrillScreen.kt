@@ -82,7 +82,8 @@ import com.alexpo.grammermate.ui.components.HintAnswerCard
 fun VerbDrillScreen(
     viewModel: VerbDrillViewModel,
     onBack: () -> Unit,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -110,7 +111,8 @@ fun VerbDrillScreen(
             provider = provider,
             viewModel = viewModel,
             onExit = viewModel::exitSession,
-            hintLevel = hintLevel
+            hintLevel = hintLevel,
+            textScale = textScale
         )
     } else {
         VerbDrillSelectionScreen(
@@ -131,7 +133,8 @@ private fun VerbDrillSessionWithCardSession(
     provider: VerbDrillCardSessionProvider,
     viewModel: VerbDrillViewModel,
     onExit: () -> Unit,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     var showVerbSheet by remember { mutableStateOf(false) }
     var sheetVerb by remember { mutableStateOf<String?>(null) }
@@ -140,6 +143,41 @@ private fun VerbDrillSessionWithCardSession(
     var tenseSheetTense by remember { mutableStateOf<String?>(null) }
 
     val uiState by viewModel.uiState.collectAsState()
+
+    // Track whether RecognizerIntent is currently active (to prevent double-launch)
+    var isVoiceActive by remember { mutableStateOf(false) }
+
+    // Voice recognition launcher for auto-start — same pattern as VocabDrillScreen
+    val latestProvider by rememberUpdatedState(provider)
+    val autoSpeechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isVoiceActive = false
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                latestProvider.submitAnswerWithInput(spoken)
+            }
+        }
+    }
+
+    // Helper to launch voice recognition with the correct language tag
+    val onAutoStartVoice: () -> Unit = {
+        if (!isVoiceActive) {
+            isVoiceActive = true
+            val languageId = provider.languageId
+            val languageTag = when (languageId) {
+                "it" -> "it-IT"
+                else -> "en-US"
+            }
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
+            }
+            autoSpeechLauncher.launch(intent)
+        }
+    }
 
     // Auto-launch voice when voice mode is on and a new card appears
     VoiceAutoLauncher(
@@ -150,8 +188,8 @@ private fun VerbDrillSessionWithCardSession(
         voiceModeEnabled = uiState.voiceModeEnabled,
         isFlipped = provider.hintAnswer != null,
         voiceCompleted = provider.pendingAnswerResult != null,
-        isVoiceActive = false,
-        onAutoStartVoice = { provider.setInputMode(InputMode.VOICE) }
+        isVoiceActive = isVoiceActive,
+        onAutoStartVoice = onAutoStartVoice
     )
 
     // Auto-advance after correct voice answer — no manual "Next" tap needed
@@ -201,7 +239,7 @@ private fun VerbDrillSessionWithCardSession(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = card.promptRu,
-                                fontSize = 20.sp,
+                                fontSize = (20f * textScale).sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -407,9 +445,8 @@ private fun DefaultVerbDrillInputControls(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text -- only on EASY
-        // Input controls remain visible below this text
-        if (provider.hintAnswer != null && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+        // Hint answer text -- shown at all hint levels when eye button is pressed
+        if (provider.hintAnswer != null) {
             HintAnswerCard(
                 answerText = provider.hintAnswer ?: "",
                 showTtsButton = contract.supportsTts,

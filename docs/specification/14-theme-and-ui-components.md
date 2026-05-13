@@ -185,7 +185,7 @@ All dialogs use Material 3 `AlertDialog` or `ModalBottomSheet`.
 | `OutlinedTextField` (translation) | `fillMaxWidth()`, trailing mic IconButton | Main answer input on TrainingScreen. Label: "Your translation". Mic button triggers voice mode. |
 | `Slider` | Range 0.5f..1.5f, 3 steps | TTS speed control |
 | `Slider` | Range 1.0f..2.0f, 3 steps | Russian text scale control |
-| `Switch` | Material 3 | Test Mode toggle, Offline ASR toggle |
+| `Switch` | Material 3 | Test Mode toggle, Offline ASR toggle, Voice auto-start toggle |
 | `DropdownMenu` + `DropdownMenuItem` | Material 3 | Language selector, Mode selector (Lesson/All/Mixed), Settings language/pack dropdowns |
 | `FilterChip` (Word Bank) | FlowRow layout | Word bank word selection; disabled when all instances used |
 
@@ -212,7 +212,7 @@ All dialogs use Material 3 `AlertDialog` or `ModalBottomSheet`.
 
 | Sheet | Description |
 |---|---|
-| `SettingsSheet` | Full `ModalBottomSheet` with scrollable content. Sections: Service Mode (Test Mode, Ladder, Vocab limit), Pronunciation speed slider, Voice recognition toggle + download, Russian text scale slider, Language/Pack selectors, Import options, Pack management, Profile name editor, Backup & Restore. |
+| `SettingsSheet` | Full `ModalBottomSheet` with scrollable content. Sections: Service Mode (Test Mode, Ladder, Vocab limit), Pronunciation speed slider, Voice recognition toggle + download, Voice auto-start toggle, Russian text scale slider, Language/Pack selectors, Import options, Pack management, Profile name editor, Backup & Restore. |
 
 ---
 

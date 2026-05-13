@@ -690,6 +690,7 @@ Sources:
   eliteSizeMultiplier: 1.25
   vocabSprintLimit: 20
   useOfflineAsr: false
+  ruTextScale: 1.0
   ```
 
 - **AppConfig data class**:
@@ -700,6 +701,7 @@ Sources:
   | `eliteSizeMultiplier` | `Double` | `1.25` | Multiplier for elite mode card pool size |
   | `vocabSprintLimit` | `Int` | `20` | Maximum entries per vocab sprint |
   | `useOfflineAsr` | `Boolean` | `false` | Use offline ASR engine instead of online |
+  | `ruTextScale` | `Float` | `1.0f` | Text size multiplier for training screen prompts. Range [1.0, 2.0]. Persisted in `config.yaml` under key `ruTextScale`. Loaded on app start, saved on slider change. Coerced to [1.0, 2.0] range on load. |
 
 - **Public API**:
 

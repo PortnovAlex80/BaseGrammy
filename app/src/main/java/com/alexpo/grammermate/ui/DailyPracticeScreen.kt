@@ -100,7 +100,9 @@ fun DailyPracticeScreen(
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
     isDailyBadSentence: (cardId: String) -> Boolean = { false },
     onExportDailyBadSentences: () -> String? = { null },
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f,
+    voiceAutoStart: Boolean = true
 ) {
     var hasShownCompletionSparkle by remember { mutableStateOf(false) }
     val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
@@ -172,7 +174,9 @@ fun DailyPracticeScreen(
                     onUnflagDailyBadSentence = onUnflagDailyBadSentence,
                     isDailyBadSentence = isDailyBadSentence,
                     onExportDailyBadSentences = onExportDailyBadSentences,
-                    hintLevel = hintLevel
+                    hintLevel = hintLevel,
+                    textScale = textScale,
+                    voiceAutoStart = voiceAutoStart
                 )
             }
             DailyBlockType.VOCAB -> {
@@ -189,7 +193,8 @@ fun DailyPracticeScreen(
                     onUnflagDailyBadSentence = onUnflagDailyBadSentence,
                     isDailyBadSentence = isDailyBadSentence,
                     onExportDailyBadSentences = onExportDailyBadSentences,
-                    languageId = languageId
+                    languageId = languageId,
+                    textScale = textScale
                 )
             }
         }
@@ -218,7 +223,9 @@ private fun ColumnScope.CardSessionBlock(
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
     isDailyBadSentence: (cardId: String) -> Boolean = { false },
     onExportDailyBadSentences: () -> String? = { null },
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f,
+    voiceAutoStart: Boolean = true
 ) {
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
@@ -268,7 +275,8 @@ private fun ColumnScope.CardSessionBlock(
     DailyTrainingCardSession(
         provider = provider, onExit = onExit,
         onComplete = { blockComplete = true },
-        modifier = Modifier.weight(1f), hintLevel = hintLevel
+        modifier = Modifier.weight(1f), hintLevel = hintLevel, textScale = textScale,
+        voiceAutoStart = voiceAutoStart
     )
 }
 
@@ -280,7 +288,9 @@ private fun DailyTrainingCardSession(
     onExit: () -> Unit,
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f,
+    voiceAutoStart: Boolean = true
 ) {
     val latestProvider by rememberUpdatedState(provider)
     var voiceInputText by remember { mutableStateOf<String?>(null) }
@@ -298,7 +308,7 @@ private fun DailyTrainingCardSession(
 
     // Auto-voice LaunchedEffect
     LaunchedEffect(provider.currentCard?.id, provider.currentInputMode, provider.sessionActive, provider.voiceTriggerToken) {
-        if (provider.currentInputMode == InputMode.VOICE && provider.sessionActive && provider.currentCard != null) {
+        if (voiceAutoStart && provider.currentInputMode == InputMode.VOICE && provider.sessionActive && provider.currentCard != null) {
             kotlinx.coroutines.delay(if (provider.showIncorrectFeedback) 1200 else 200)
             val languageTag = if (provider.languageId == "it") "it-IT" else "en-US"
             speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -336,7 +346,7 @@ private fun DailyTrainingCardSession(
                         Column(modifier = Modifier.weight(1f)) {
                             Text("RU", style = MaterialTheme.typography.labelMedium)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(card.promptRu, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                            Text(card.promptRu, fontSize = (20f * textScale).sp, fontWeight = FontWeight.SemiBold)
                         }
                         IconButton(
                             onClick = { contract.speakTts() },
@@ -413,8 +423,8 @@ private fun DailyInputControls(
     val canSelectInputMode = hasCards && contract.sessionActive
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text -- only on EASY
-        if (provider.hintAnswer != null && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
+        // Hint answer text (eye button) -- available at all hint levels
+        if (provider.hintAnswer != null) {
             HintAnswerCard(
                 answerText = provider.hintAnswer!!,
                 showTtsButton = contract.supportsTts,
@@ -569,7 +579,8 @@ private fun ColumnScope.VocabFlashcardBlock(
     isDailyBadSentence: (cardId: String) -> Boolean = { false },
     onExportDailyBadSentences: () -> String? = { null },
     languageId: String = "en",
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
+    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
+    textScale: Float = 1.0f
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
     var isVoiceActive by remember { mutableStateOf(false) }
@@ -605,7 +616,7 @@ private fun ColumnScope.VocabFlashcardBlock(
 
     Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(promptText, fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text(promptText, fontSize = (28f * textScale).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { onSpeak(promptText) }) { Icon(Icons.Default.VolumeUp, "Listen") }
@@ -616,7 +627,7 @@ private fun ColumnScope.VocabFlashcardBlock(
             }
             if (hintLevel != com.alexpo.grammermate.data.HintLevel.HARD) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(answerText, fontSize = 18.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
+                Text(answerText, fontSize = (18f * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
             }
         }
     }

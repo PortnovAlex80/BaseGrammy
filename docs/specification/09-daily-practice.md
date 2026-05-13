@@ -881,6 +881,32 @@ Renders a `TrainingCardSession` composable with custom `cardContent` and `inputC
   - ERROR: ReportProblem icon (red).
 - Verb info chips (Block 3 only): verb + rank, tense (abbreviated), group.
 
+#### Font Size Scaling Behavioral Contract (Daily Practice)
+
+DailyPracticeScreen applies `ruTextScale` (from `AudioState` / Settings) to prompt and word text across all 3 blocks:
+
+| User Action | System Response | User Outcome |
+|-------------|----------------|--------------|
+| User changes text scale in Settings | All 3 daily blocks apply `ruTextScale` | Prompt text resizes in all blocks |
+| `textScale = 1.5x` | TRANSLATE prompt = `(20f * 1.5f).sp = 30sp`, VOCAB prompt = `(28f * 1.5f).sp = 42sp`, VERB prompt = `(20f * 1.5f).sp = 30sp` | All blocks scale uniformly |
+| `textScale = 2.0x` | TRANSLATE prompt = 40sp, VOCAB prompt = 56sp, VERB prompt = 40sp | All prompts at maximum size still fit on screen |
+
+**Scaling rules per block:**
+
+| Block | Element | Base Size | Scaled Formula |
+|-------|---------|-----------|----------------|
+| TRANSLATE (Block 1) | Card prompt (`promptRu`) | 20sp | `(20f * ruTextScale).sp` |
+| VOCAB (Block 2) | Flashcard prompt word | 28sp | `(28f * ruTextScale).sp` |
+| VOCAB (Block 2) | Translation/answer text | 18sp | `(18f * ruTextScale).sp` |
+| VERBS (Block 3) | Card prompt (`promptRu`) | 20sp | `(20f * ruTextScale).sp` |
+
+**NOT scaled in daily practice:**
+- Verb info chips (verb infinitive, tense, group)
+- Block label badge ("Translation", "Vocabulary", "Verbs")
+- Rating buttons text
+- Navigation buttons
+- Progress bar text
+
 **Input controls** (`DailyInputControls`):
 - Hint answer card: displayed when `hintAnswer` is non-null (after 3 wrong attempts or manual "Show Answer"). Shows the correct answer in an `errorContainer`-colored card with a TTS button.
 - Incorrect feedback row: "Incorrect" text (red) + remaining attempts count.
@@ -1230,6 +1256,8 @@ Daily practice blocks (TRANSLATE and VERBS) MUST show the hint answer in a pink 
 - Pink `Card(errorContainer.copy(alpha = 0.3f))` background
 - Red answer text (`MaterialTheme.colorScheme.error`)
 - Inline TTS replay button
+
+**IMPORTANT:** Eye mode works at ALL HintLevel settings. The hint card renders whenever `provider.hintAnswer != null`, regardless of whether hintLevel is EASY, MEDIUM, or HARD. HintLevel controls parenthetical hints in prompt text (e.g., stripping `(dire)` and `(verità)` from the card body), NOT the eye/show-answer button or the hint answer card visibility. Any guard that checks `hintLevel == EASY` before rendering the HintAnswerCard is a bug.
 
 This replaces the current `errorContainer`-colored card (described in section 9.7.4, element "Hint answer card") with the unified VerbDrill-style pink Card.
 

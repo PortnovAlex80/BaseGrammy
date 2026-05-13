@@ -379,6 +379,7 @@ data class AudioState(
     val ttsModelsReady: Map<String, Boolean> = emptyMap(),
     val ttsSpeed: Float = 1.0f,
     val ruTextScale: Float = 1.0f,
+    val voiceAutoStart: Boolean = true,
     val useOfflineAsr: Boolean = false,
     val asrState: AsrState = AsrState.IDLE,
     val asrModelReady: Boolean = false,

@@ -711,6 +711,23 @@ The session screen uses the shared `TrainingCardSession` composable with VerbDri
 
 - **Russian prompt**: shown in 20sp semi-bold
 - **Volume button**: TTS speaks the prompt text
+
+#### Font Size Scaling Behavioral Contract
+
+VerbDrillScreen applies `ruTextScale` (from `AudioState` / Settings) to the card prompt text:
+
+| User Action | System Response | User Outcome |
+|-------------|----------------|--------------|
+| User changes text scale in Settings | VerbDrillScreen re-reads `ruTextScale` from ViewModel state | Prompt text resizes proportionally |
+| `textScale = 1.5x` | `promptRu` renders at `(20f * 1.5f).sp = 30sp` | Card prompt is 50% larger |
+| `textScale = 2.0x` | `promptRu` renders at `(20f * 2.0f).sp = 40sp` | Card prompt is doubled in size |
+
+**Scaling rules:**
+- Card prompt text (`promptRu`): `(20f * ruTextScale).sp`
+- Hint chips (verb, tense, group): NOT scaled
+- Verb group badges: NOT scaled
+- Conjugation table text in reference sheets: NOT scaled
+- Navigation buttons, check button: NOT scaled
 - **Verb chip** (`SuggestionChip`): shows verb name (with rank if present, e.g., "essere #1"). Tappable -- opens `VerbReferenceBottomSheet`.
 - **Tense chip** (`SuggestionChip`): shows abbreviated tense name. Tappable -- opens `TenseInfoBottomSheet`.
 
@@ -1082,6 +1099,8 @@ VerbDrill must adopt the "Voice input (auto)" toggle pattern from VocabDrillScre
 ### 10.9.2 Eye / Show Answer Mode — Reference Implementation [UI-CONSISTENCY-2025]
 
 VerbDrill's eye/show-answer mode is the **REFERENCE implementation** that all other screens (TrainingScreen, DailyPractice) must match.
+
+**IMPORTANT:** Eye mode works at ALL HintLevel settings. The hint card renders whenever `provider.hintAnswer != null`, regardless of whether hintLevel is EASY, MEDIUM, or HARD. HintLevel controls parenthetical hints in prompt text (e.g., stripping `(dire)` and `(verità)` from the card body), NOT the eye/show-answer button or the hint answer card visibility. Any guard that checks `hintLevel == EASY` before rendering the HintAnswerCard is a bug.
 
 **Reference implementation:** VerbDrillScreen.kt lines 392-425 (hint answer card with errorContainer tint, red answer text, inline TTS replay button).
 

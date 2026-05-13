@@ -590,3 +590,12 @@ After any non-trivial code change (touches ≥ 2 files or modifies ViewModel/hel
 3. Read `23-screen-elements.md` → find affected elements → verify invariants
 
 Report results as PASS/FAIL per AC and element before marking task complete.
+
+### Rule: Behavioral parity for ported UI elements
+
+When porting a UI element from a reference screen to an adopter screen:
+1. Spec MUST contain a behavioral contract table (Action | System Response | User Outcome) for every configuration state
+2. AC MUST include at least 1 BEHAVIORAL criterion per ported element (not just "button visible")
+3. Regression MUST diff the adopter's callback wiring against the reference implementation
+4. AC MUST NOT use "matches [ScreenName] pattern" without specifying the observable outcome
+5. Checklist MUST include a "Non-Default Configuration" row testing behavior at MEDIUM, HARD, non-default input modes

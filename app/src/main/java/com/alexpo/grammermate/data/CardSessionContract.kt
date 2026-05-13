@@ -65,6 +65,9 @@ interface CardSessionContract : CardSessionCapabilities {
     /** Current typing speed in words per minute. */
     val currentSpeedWpm: Int get() = 0
 
+    /** Font size multiplier for prompt text. Range [1.0, 2.0]. */
+    val textScale: Float get() = 1.0f
+
     fun onInputChanged(text: String)
     fun submitAnswer(): AnswerResult?
     fun showAnswer(): String?
