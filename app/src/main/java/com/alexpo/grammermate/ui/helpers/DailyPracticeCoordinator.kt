@@ -87,22 +87,20 @@ class DailyPracticeCoordinator(
     private fun startDailySession(tasks: List<DailyTask>, lessonLevel: Int) {
         if (tasks.isEmpty()) return
         stateAccess.updateState { state ->
-            state.copy(
-                dailySession = DailySessionState(
+            state.copy(daily = state.daily.copy(dailySession = DailySessionState(
                     active = true,
                     tasks = tasks,
                     taskIndex = 0,
                     blockIndex = 0,
                     level = lessonLevel,
                     finishedToken = false
-                )
-            )
+                )))
         }
         stateAccess.saveProgress()
     }
 
     fun getCurrentTask(): DailyTask? {
-        val ds = stateAccess.uiState.value.dailySession
+        val ds = stateAccess.uiState.value.daily.dailySession
         if (!ds.active) return null
         return ds.tasks.getOrNull(ds.taskIndex)
     }
@@ -112,7 +110,7 @@ class DailyPracticeCoordinator(
     }
 
     private fun nextTask(): Boolean {
-        val ds = stateAccess.uiState.value.dailySession
+        val ds = stateAccess.uiState.value.daily.dailySession
         if (!ds.active) return false
 
         val nextIndex = ds.taskIndex + 1
@@ -126,19 +124,17 @@ class DailyPracticeCoordinator(
         val nextBlockIndex = if (nextBlock != currentBlock) ds.blockIndex + 1 else ds.blockIndex
 
         stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
+            it.copy(daily = it.daily.copy(dailySession = it.daily.dailySession.copy(
                     taskIndex = nextIndex,
                     blockIndex = nextBlockIndex
-                )
-            )
+                )))
         }
         stateAccess.saveProgress()
         return true
     }
 
     fun advanceToNextBlock(): Boolean {
-        val ds = stateAccess.uiState.value.dailySession
+        val ds = stateAccess.uiState.value.daily.dailySession
         if (!ds.active) return false
 
         val currentBlock = getCurrentBlockType() ?: return false
@@ -155,19 +151,17 @@ class DailyPracticeCoordinator(
         val nextBlockIndex = ds.blockIndex + 1
 
         stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
+            it.copy(daily = it.daily.copy(dailySession = it.daily.dailySession.copy(
                     taskIndex = idx,
                     blockIndex = nextBlockIndex
-                )
-            )
+                )))
         }
         stateAccess.saveProgress()
         return true
     }
 
     fun replaceCurrentBlock(newTasks: List<DailyTask>) {
-        val ds = stateAccess.uiState.value.dailySession
+        val ds = stateAccess.uiState.value.daily.dailySession
         if (!ds.active) return
 
         val currentBlock = getCurrentBlockType() ?: return
@@ -190,30 +184,26 @@ class DailyPracticeCoordinator(
             ds.tasks.subList(blockEnd + 1, ds.tasks.size)
 
         stateAccess.updateState {
-            it.copy(
-                dailySession = it.dailySession.copy(
+            it.copy(daily = it.daily.copy(dailySession = it.daily.dailySession.copy(
                     tasks = newTaskList,
                     taskIndex = blockStart
-                )
-            )
+                )))
         }
         stateAccess.saveProgress()
     }
 
     fun endSession() {
         stateAccess.updateState { state ->
-            state.copy(
-                dailySession = state.dailySession.copy(
+            state.copy(daily = state.daily.copy(dailySession = state.daily.dailySession.copy(
                     active = false,
                     finishedToken = true
-                )
-            )
+                )))
         }
         stateAccess.saveProgress()
     }
 
     fun getBlockProgress(): BlockProgress {
-        val ds = stateAccess.uiState.value.dailySession
+        val ds = stateAccess.uiState.value.daily.dailySession
         if (!ds.active) return BlockProgress.Empty
 
         val tasks = ds.tasks
@@ -247,7 +237,7 @@ class DailyPracticeCoordinator(
     // ── Session start / resume ─────────────────────────────────────────
 
     fun hasResumableDailySession(): Boolean {
-        val cursor = stateAccess.uiState.value.dailyCursor
+        val cursor = stateAccess.uiState.value.daily.dailyCursor
         val today = java.time.LocalDate.now().toString()
         return cursor.firstSessionDate == today &&
             (cursor.firstSessionSentenceCardIds.isNotEmpty() ||
@@ -266,19 +256,19 @@ class DailyPracticeCoordinator(
         onStoreFirstSessionCardIds: (sentenceIds: List<String>, verbIds: List<String>) -> Unit
     ): Boolean {
         // Save cursor at session start for rollback on cancel
-        dailyCursorAtSessionStart = stateAccess.uiState.value.dailyCursor
+        dailyCursorAtSessionStart = stateAccess.uiState.value.daily.dailyCursor
         // Reset per-block VOICE/KEYBOARD answered counters
         dailyPracticeAnsweredCounts = mutableMapOf()
 
         val state = stateAccess.uiState.value
-        val packId = state.activePackId ?: return false
-        val langId = state.selectedLanguageId
+        val packId = state.navigation.activePackId ?: return false
+        val langId = state.navigation.selectedLanguageId
 
         val progressInfo = resolveProgressLessonInfo()
         val lessonId = progressInfo?.first ?: return false
         val effectiveLevel = progressInfo.second
 
-        val cursor = state.dailyCursor
+        val cursor = state.daily.dailyCursor
         val today = java.time.LocalDate.now().toString()
         val isFirstSessionToday = cursor.firstSessionDate != today
 
@@ -327,13 +317,13 @@ class DailyPracticeCoordinator(
         resolveProgressLessonInfo: () -> Pair<String, Int>?
     ): Boolean {
         val state = stateAccess.uiState.value
-        val packId = state.activePackId ?: return false
-        val langId = state.selectedLanguageId
+        val packId = state.navigation.activePackId ?: return false
+        val langId = state.navigation.selectedLanguageId
 
         val progressInfo = resolveProgressLessonInfo()
         val lessonId = progressInfo?.first ?: return false
 
-        val cursor = state.dailyCursor
+        val cursor = state.daily.dailyCursor
         val today = java.time.LocalDate.now().toString()
 
         // Try in-memory cache first (fastest path, same app run)
@@ -401,7 +391,7 @@ class DailyPracticeCoordinator(
             if (task != null) {
                 val card = task.card
                 val lessonId = resolveCardLessonId(card)
-                val languageId = stateAccess.uiState.value.selectedLanguageId
+                val languageId = stateAccess.uiState.value.navigation.selectedLanguageId
                 masteryStore.recordCardShow(lessonId, languageId, card.id)
             }
         }
@@ -412,7 +402,7 @@ class DailyPracticeCoordinator(
     }
 
     fun persistDailyVerbProgress(card: VerbDrillCard) {
-        val packId = stateAccess.uiState.value.activePackId ?: return
+        val packId = stateAccess.uiState.value.navigation.activePackId ?: return
         val store = getVerbDrillStore(packId)
         val comboKey = "${card.group ?: ""}|${card.tense ?: ""}"
         val existing = store.loadProgress()[comboKey]
@@ -433,11 +423,11 @@ class DailyPracticeCoordinator(
         resolveProgressLessonInfo: () -> Pair<String, Int>?
     ): Boolean {
         val state = stateAccess.uiState.value
-        val ds = state.dailySession
+        val ds = state.daily.dailySession
         if (!ds.active) return false
         val blockType = getCurrentBlockType() ?: return false
-        val packId = state.activePackId ?: return false
-        val langId = state.selectedLanguageId
+        val packId = state.navigation.activePackId ?: return false
+        val langId = state.navigation.selectedLanguageId
 
         val progressInfo = resolveProgressLessonInfo()
         val lessonId = progressInfo?.first ?: return false
@@ -461,7 +451,7 @@ class DailyPracticeCoordinator(
      * @return the sentence count to advance cursor by, or null if no advancement needed.
      */
     fun cancelDailySession(): Int? {
-        val ds = stateAccess.uiState.value.dailySession
+        val ds = stateAccess.uiState.value.daily.dailySession
         var sentenceCountToAdvance: Int? = null
 
         if (ds.finishedToken) {
@@ -486,7 +476,7 @@ class DailyPracticeCoordinator(
         val task = getCurrentTask() as? DailyTask.VocabFlashcard ?: return
         val wordId = task.word.id
         val state = stateAccess.uiState.value
-        val packId = state.activePackId ?: return
+        val packId = state.navigation.activePackId ?: return
         val store = getWordMasteryStore(packId)
         val current = store.getMastery(wordId) ?: WordMasteryState.new(wordId)
         val now = System.currentTimeMillis()
@@ -500,14 +490,7 @@ class DailyPracticeCoordinator(
         val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
         val LEARNED_THRESHOLD = 3
         val isLearned = newStepIndex >= LEARNED_THRESHOLD
-        val updated = current.copy(
-            intervalStepIndex = newStepIndex,
-            correctCount = current.correctCount + (if (rating != 0) 1 else 0),
-            incorrectCount = current.incorrectCount + (if (rating == 0) 1 else 0),
-            lastReviewDateMs = now,
-            nextReviewDateMs = newNextReview,
-            isLearned = isLearned
-        )
+        val updated = current.copy(correctCount = current.correctCount + (if (rating != 0) 1 else 0), incorrectCount = current.incorrectCount + (if (rating == 0) 1 else 0), intervalStepIndex = newStepIndex, lastReviewDateMs = now, nextReviewDateMs = newNextReview, isLearned = isLearned)
         store.upsertMastery(updated)
     }
 

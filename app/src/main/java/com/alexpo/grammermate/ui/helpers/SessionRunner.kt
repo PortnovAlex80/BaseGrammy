@@ -133,25 +133,20 @@ class SessionRunner(
      */
     fun startSession() {
         val state = stateAccess.uiState.value
-        if (!state.bossActive && !state.eliteActive && !state.isDrillMode) {
+        if (!state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode) {
             onBuildSessionCards?.invoke()
         }
-        if (sessionCards.isEmpty() || state.currentCard == null) {
+        if (sessionCards.isEmpty() || state.cardSession.currentCard == null) {
             pauseTimer()
-            stateAccess.updateState { it.copy(sessionState = SessionState.PAUSED) }
+            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
             onSaveProgress?.invoke()
             return
         }
         pauseTimer()
         resumeTimer()
         stateAccess.updateState {
-            val trigger = if (it.inputMode == InputMode.VOICE) it.voiceTriggerToken + 1 else it.voiceTriggerToken
-            it.copy(
-                sessionState = SessionState.ACTIVE,
-                inputText = "",
-                voiceTriggerToken = trigger,
-                voicePromptStartMs = null
-            )
+            val trigger = if (it.cardSession.inputMode == InputMode.VOICE) it.cardSession.voiceTriggerToken + 1 else it.cardSession.voiceTriggerToken
+            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE, inputText = "", voiceTriggerToken = trigger, voicePromptStartMs = null))
         }
         currentCard()?.let { onRecordCardShow?.invoke(it) }
         onSaveProgress?.invoke()
@@ -164,26 +159,16 @@ class SessionRunner(
     fun finishSession(): SessionFinishResult {
         if (sessionCards.isEmpty()) return SessionFinishResult.Empty
         val state = stateAccess.uiState.value
-        if (state.eliteActive) {
+        if (state.elite.eliteActive) {
             cancelEliteSession()
             return SessionFinishResult.EliteCancelled
         }
         pauseTimer()
-        val minutes = state.activeTimeMs / 60000.0
-        val rating = if (minutes <= 0.0) 0.0 else state.correctCount / minutes
+        val minutes = state.cardSession.activeTimeMs / 60000.0
+        val rating = if (minutes <= 0.0) 0.0 else state.cardSession.correctCount / minutes
         val firstCard = sessionCards.firstOrNull()
         stateAccess.updateState {
-            it.copy(
-                sessionState = SessionState.PAUSED,
-                lastRating = rating,
-                incorrectAttemptsForCard = 0,
-                lastResult = null,
-                answerText = null,
-                currentIndex = 0,
-                currentCard = firstCard,
-                inputText = "",
-                voicePromptStartMs = null
-            )
+            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, lastRating = rating, incorrectAttemptsForCard = 0, lastResult = null, answerText = null, currentIndex = 0, currentCard = firstCard, inputText = "", voicePromptStartMs = null))
         }
         onSaveProgress?.invoke()
         onRefreshFlowerStates?.invoke()
@@ -192,7 +177,7 @@ class SessionRunner(
     }
 
     fun resumeFromSettings() {
-        if (stateAccess.uiState.value.sessionState == SessionState.ACTIVE) return
+        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) return
         startSession()
     }
 
@@ -201,7 +186,7 @@ class SessionRunner(
      */
     fun currentCard(): SentenceCard? {
         if (sessionCards.isEmpty()) return null
-        val index = stateAccess.uiState.value.currentIndex.coerceIn(0, sessionCards.lastIndex)
+        val index = stateAccess.uiState.value.cardSession.currentIndex.coerceIn(0, sessionCards.lastIndex)
         return sessionCards.getOrNull(index)
     }
 
@@ -209,34 +194,24 @@ class SessionRunner(
 
     fun onInputChanged(text: String) {
         stateAccess.updateState {
-            val resetAttempts = it.answerText != null || it.incorrectAttemptsForCard >= 3
-            it.copy(
-                inputText = text,
-                incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
-                answerText = if (resetAttempts) null else it.answerText
-            )
+            val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= 3
+            it.copy(cardSession = it.cardSession.copy(inputText = text, incorrectAttemptsForCard = if (resetAttempts) 0 else it.cardSession.incorrectAttemptsForCard, answerText = if (resetAttempts) null else it.cardSession.answerText))
         }
     }
 
     fun onVoicePromptStarted() {
         stateAccess.updateState {
-            it.copy(voicePromptStartMs = SystemClock.elapsedRealtime())
+            it.copy(cardSession = it.cardSession.copy(voicePromptStartMs = SystemClock.elapsedRealtime()))
         }
     }
 
     fun setInputMode(mode: InputMode) {
         stateAccess.updateState {
-            val resetAttempts = it.answerText != null || it.incorrectAttemptsForCard >= 3
+            val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= 3
             val shouldTriggerVoice = mode == InputMode.VOICE &&
                 resetAttempts &&
-                it.sessionState == SessionState.ACTIVE
-            it.copy(
-                inputMode = mode,
-                incorrectAttemptsForCard = if (resetAttempts) 0 else it.incorrectAttemptsForCard,
-                answerText = if (resetAttempts) null else it.answerText,
-                voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken,
-                voicePromptStartMs = if (mode == InputMode.VOICE) it.voicePromptStartMs else null
-            )
+                it.cardSession.sessionState == SessionState.ACTIVE
+            it.copy(cardSession = it.cardSession.copy(inputMode = mode, incorrectAttemptsForCard = if (resetAttempts) 0 else it.cardSession.incorrectAttemptsForCard, answerText = if (resetAttempts) null else it.cardSession.answerText, voiceTriggerToken = if (shouldTriggerVoice) it.cardSession.voiceTriggerToken + 1 else it.cardSession.voiceTriggerToken, voicePromptStartMs = if (mode == InputMode.VOICE) it.cardSession.voicePromptStartMs else null))
         }
 
         // Update word bank when switching to WORD_BANK mode
@@ -255,33 +230,33 @@ class SessionRunner(
      */
     fun submitAnswer(): SubmitResult {
         val state = stateAccess.uiState.value
-        if (state.sessionState != SessionState.ACTIVE) return SubmitResult(false, false, needsSaveProgress = false)
-        if (state.inputText.isBlank() && !state.testMode) return SubmitResult(false, false, needsSaveProgress = false)
+        if (state.cardSession.sessionState != SessionState.ACTIVE) return SubmitResult(false, false, needsSaveProgress = false)
+        if (state.cardSession.inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false)
         val card = currentCard() ?: return SubmitResult(false, false, needsSaveProgress = false)
-        val validationResult = answerValidator.validate(state.inputText, card.acceptedAnswers, state.testMode)
+        val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode)
         val accepted = validationResult.isCorrect
-        val voiceStartMs = if (state.inputMode == InputMode.VOICE) state.voicePromptStartMs else null
+        val voiceStartMs = if (state.cardSession.inputMode == InputMode.VOICE) state.cardSession.voicePromptStartMs else null
         val voiceDurationMs = voiceStartMs?.let { SystemClock.elapsedRealtime() - it }
-        val voiceWords = if (voiceStartMs != null) countMetricWords(state.inputText) else 0
+        val voiceWords = if (voiceStartMs != null) countMetricWords(state.cardSession.inputText) else 0
         val shouldAddVoiceMetrics = accepted && voiceDurationMs != null && voiceWords > 0
         var hintShown = false
 
         if (accepted) {
             onPlaySuccess?.invoke()
             onRecordCardShow?.invoke(card)
-            val isLastCard = state.currentIndex >= sessionCards.lastIndex
+            val isLastCard = state.cardSession.currentIndex >= sessionCards.lastIndex
 
             return when {
-                state.bossActive && isLastCard -> {
+                state.boss.bossActive && isLastCard -> {
                     submitBossLastCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
                 }
-                state.bossActive -> {
+                state.boss.bossActive -> {
                     submitBossMidCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
                 }
-                state.eliteActive && isLastCard -> {
+                state.elite.eliteActive && isLastCard -> {
                     submitEliteFinish(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
                 }
-                state.isDrillMode -> {
+                state.drill.isDrillMode -> {
                     submitDrillAnswer(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
                 }
                 isLastCard -> {
@@ -293,21 +268,12 @@ class SessionRunner(
             }
         } else {
             onPlayError?.invoke()
-            val nextIncorrect = state.incorrectAttemptsForCard + 1
+            val nextIncorrect = state.cardSession.incorrectAttemptsForCard + 1
             val hint = if (nextIncorrect >= 3) card.acceptedAnswers.joinToString(" / ") else null
             hintShown = hint != null
-            val shouldTriggerVoice = !hintShown && state.inputMode == InputMode.VOICE
+            val shouldTriggerVoice = !hintShown && state.cardSession.inputMode == InputMode.VOICE
             stateAccess.updateState {
-                it.copy(
-                    incorrectCount = it.incorrectCount + 1,
-                    incorrectAttemptsForCard = if (hintShown) 0 else nextIncorrect,
-                    lastResult = false,
-                    answerText = hint,
-                    inputText = if (state.inputMode == InputMode.VOICE) "" else it.inputText,
-                    sessionState = if (hint != null) SessionState.HINT_SHOWN else it.sessionState,
-                    voiceTriggerToken = if (shouldTriggerVoice) it.voiceTriggerToken + 1 else it.voiceTriggerToken,
-                    voicePromptStartMs = null
-                )
+                it.copy(cardSession = it.cardSession.copy(incorrectCount = it.cardSession.incorrectCount + 1, incorrectAttemptsForCard = if (hintShown) 0 else nextIncorrect, lastResult = false, answerText = hint, inputText = if (state.cardSession.inputMode == InputMode.VOICE) "" else it.cardSession.inputText, sessionState = if (hint != null) SessionState.HINT_SHOWN else it.cardSession.sessionState, voiceTriggerToken = if (shouldTriggerVoice) it.cardSession.voiceTriggerToken + 1 else it.cardSession.voiceTriggerToken, voicePromptStartMs = null))
             }
             if (hintShown) {
                 pauseTimer()
@@ -327,15 +293,7 @@ class SessionRunner(
         voiceWords: Int,
     ): SubmitResult {
         stateAccess.updateState {
-            it.copy(
-                correctCount = it.correctCount + 1,
-                lastResult = null,
-                incorrectAttemptsForCard = 0,
-                answerText = null,
-                voiceActiveMs = if (shouldAddVoiceMetrics) it.voiceActiveMs + (voiceDurationMs ?: 0L) else it.voiceActiveMs,
-                voiceWordCount = if (shouldAddVoiceMetrics) it.voiceWordCount + voiceWords else it.voiceWordCount,
-                voicePromptStartMs = null
-            )
+            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
         }
         onSaveProgress?.invoke()
         return SubmitResult(
@@ -356,18 +314,10 @@ class SessionRunner(
         state: com.alexpo.grammermate.ui.TrainingUiState
     ): SubmitResult {
         stateAccess.updateState {
-            it.copy(
-                correctCount = it.correctCount + 1,
-                lastResult = true,
-                incorrectAttemptsForCard = 0,
-                answerText = null,
-                voiceActiveMs = if (shouldAddVoiceMetrics) it.voiceActiveMs + (voiceDurationMs ?: 0L) else it.voiceActiveMs,
-                voiceWordCount = if (shouldAddVoiceMetrics) it.voiceWordCount + voiceWords else it.voiceWordCount,
-                voicePromptStartMs = null
-            )
+            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
         }
         // nextCard handles voice trigger, word bank, save
-        nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
+        nextCard(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
         return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true)
     }
 
@@ -381,9 +331,9 @@ class SessionRunner(
         state: com.alexpo.grammermate.ui.TrainingUiState
     ): SubmitResult {
         pauseTimer()
-        val speed = calculateSpeedPerMinute(state.voiceActiveMs, state.voiceWordCount)
-        val bestSpeeds = normalizeEliteSpeeds(state.eliteBestSpeeds)
-        val stepIndex = state.eliteStepIndex.coerceIn(0, eliteStepCount - 1)
+        val speed = calculateSpeedPerMinute(state.cardSession.voiceActiveMs, state.cardSession.voiceWordCount)
+        val bestSpeeds = normalizeEliteSpeeds(state.elite.eliteBestSpeeds)
+        val stepIndex = state.elite.eliteStepIndex.coerceIn(0, eliteStepCount - 1)
         val currentBest = bestSpeeds.getOrNull(stepIndex) ?: 0.0
         val nextSpeeds = bestSpeeds.toMutableList().apply {
             if (speed > currentBest) {
@@ -392,21 +342,7 @@ class SessionRunner(
         }
         val nextStep = (stepIndex + 1) % eliteStepCount
         stateAccess.updateState {
-            it.copy(
-                correctCount = it.correctCount + 1,
-                lastResult = null,
-                incorrectAttemptsForCard = 0,
-                answerText = null,
-                voiceActiveMs = if (shouldAddVoiceMetrics) it.voiceActiveMs + (voiceDurationMs ?: 0L) else it.voiceActiveMs,
-                voiceWordCount = if (shouldAddVoiceMetrics) it.voiceWordCount + voiceWords else it.voiceWordCount,
-                voicePromptStartMs = null,
-                sessionState = SessionState.PAUSED,
-                currentIndex = 0,
-                eliteActive = false,
-                eliteStepIndex = nextStep,
-                eliteBestSpeeds = nextSpeeds,
-                eliteFinishedToken = it.eliteFinishedToken + 1
-            )
+            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.PAUSED, currentIndex = 0), elite = it.elite.copy(eliteActive = false, eliteStepIndex = nextStep, eliteBestSpeeds = nextSpeeds, eliteFinishedToken = it.elite.eliteFinishedToken + 1))
         }
         onSaveProgress?.invoke()
         return SubmitResult(
@@ -425,17 +361,7 @@ class SessionRunner(
         voiceWords: Int
     ): SubmitResult {
         stateAccess.updateState {
-            it.copy(
-                correctCount = it.correctCount + 1,
-                lastResult = null,
-                incorrectAttemptsForCard = 0,
-                answerText = null,
-                inputText = "",
-                voiceActiveMs = if (shouldAddVoiceMetrics) it.voiceActiveMs + (voiceDurationMs ?: 0L) else it.voiceActiveMs,
-                voiceWordCount = if (shouldAddVoiceMetrics) it.voiceWordCount + voiceWords else it.voiceWordCount,
-                voicePromptStartMs = null,
-                sessionState = SessionState.ACTIVE
-            )
+            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, inputText = "", voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.ACTIVE))
         }
         advanceDrillCard()
         return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false)
@@ -452,30 +378,17 @@ class SessionRunner(
     ): SubmitResult {
         pauseTimer()
         stateAccess.updateState {
-            val nextCompleted = (it.completedSubLessonCount + 1).coerceAtMost(it.subLessonCount)
-            val lessonId = it.selectedLessonId
-            val mastery = lessonId?.let { id -> onGetMastery?.invoke(id, it.selectedLanguageId) }
+            val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
+            val lessonId = it.navigation.selectedLessonId
+            val mastery = lessonId?.let { id -> onGetMastery?.invoke(id, it.navigation.selectedLanguageId) }
             val schedule = lessonId?.let { id -> onGetSchedule?.invoke(id) }
             val subLessons = schedule?.subLessons.orEmpty()
             val actualCompletedCount = onCalculateCompletedSubLessons?.invoke(subLessons, mastery, lessonId) ?: 0
 
-            val preservedActiveIndex = maxOf(it.activeSubLessonIndex, actualCompletedCount)
-            val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.subLessonCount - 1).coerceAtLeast(0))
+            val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
+            val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
 
-            it.copy(
-                correctCount = it.correctCount + 1,
-                lastResult = null,
-                incorrectAttemptsForCard = 0,
-                answerText = null,
-                voiceActiveMs = if (shouldAddVoiceMetrics) it.voiceActiveMs + (voiceDurationMs ?: 0L) else it.voiceActiveMs,
-                voiceWordCount = if (shouldAddVoiceMetrics) it.voiceWordCount + voiceWords else it.voiceWordCount,
-                voicePromptStartMs = null,
-                sessionState = SessionState.PAUSED,
-                currentIndex = 0,
-                activeSubLessonIndex = finalActiveIndex,
-                completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount),
-                subLessonFinishedToken = it.subLessonFinishedToken + 1
-            )
+            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.PAUSED, currentIndex = 0, activeSubLessonIndex = finalActiveIndex, completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount), subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1))
         }
         onMarkSubLessonCardsShown?.invoke(sessionCards)
         onBuildSessionCards?.invoke()
@@ -502,18 +415,10 @@ class SessionRunner(
         state: com.alexpo.grammermate.ui.TrainingUiState
     ): SubmitResult {
         stateAccess.updateState {
-            it.copy(
-                correctCount = it.correctCount + 1,
-                lastResult = true,
-                incorrectAttemptsForCard = 0,
-                answerText = null,
-                voiceActiveMs = if (shouldAddVoiceMetrics) it.voiceActiveMs + (voiceDurationMs ?: 0L) else it.voiceActiveMs,
-                voiceWordCount = if (shouldAddVoiceMetrics) it.voiceWordCount + voiceWords else it.voiceWordCount,
-                voicePromptStartMs = null
-            )
+            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
         }
         // nextCard handles voice trigger, word bank, save
-        nextCard(triggerVoice = state.inputMode == InputMode.VOICE)
+        nextCard(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
         return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true)
     }
 
@@ -526,28 +431,18 @@ class SessionRunner(
      */
     fun nextCard(triggerVoice: Boolean = false) {
         val state = stateAccess.uiState.value
-        val wasHintShown = state.sessionState == SessionState.HINT_SHOWN
-        val nextIndex = (state.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
+        val wasHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN
+        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
         val nextCard = sessionCards.getOrNull(nextIndex)
 
         stateAccess.updateState {
-            val shouldTrigger = triggerVoice && it.inputMode == InputMode.VOICE
-            it.copy(
-                currentIndex = nextIndex,
-                currentCard = nextCard,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0,
-                sessionState = SessionState.ACTIVE,
-                voiceTriggerToken = if (shouldTrigger) it.voiceTriggerToken + 1 else it.voiceTriggerToken,
-                voicePromptStartMs = null
-            )
+            val shouldTrigger = triggerVoice && it.cardSession.inputMode == InputMode.VOICE
+            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.ACTIVE, voiceTriggerToken = if (shouldTrigger) it.cardSession.voiceTriggerToken + 1 else it.cardSession.voiceTriggerToken, voicePromptStartMs = null))
         }
         nextCard?.let { onRecordCardShow?.invoke(it) }
 
         // Update word bank if in WORD_BANK mode
-        if (stateAccess.uiState.value.inputMode == InputMode.WORD_BANK) {
+        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
             updateWordBank()
         }
 
@@ -558,18 +453,10 @@ class SessionRunner(
     }
 
     fun prevCard() {
-        val prevIndex = (stateAccess.uiState.value.currentIndex - 1).coerceAtLeast(0)
+        val prevIndex = (stateAccess.uiState.value.cardSession.currentIndex - 1).coerceAtLeast(0)
         val prevCard = sessionCards.getOrNull(prevIndex)
         stateAccess.updateState {
-            it.copy(
-                currentIndex = prevIndex,
-                currentCard = prevCard,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0,
-                voicePromptStartMs = null
-            )
+            it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
         }
         prevCard?.let { onRecordCardShow?.invoke(it) }
         onSaveProgress?.invoke()
@@ -578,14 +465,7 @@ class SessionRunner(
     fun selectSubLesson(index: Int) {
         pauseTimer()
         stateAccess.updateState {
-            it.copy(
-                activeSubLessonIndex = index.coerceAtLeast(0),
-                currentIndex = 0,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                sessionState = SessionState.PAUSED
-            )
+            it.copy(cardSession = it.cardSession.copy(activeSubLessonIndex = index.coerceAtLeast(0), currentIndex = 0, inputText = "", lastResult = null, answerText = null, sessionState = SessionState.PAUSED))
         }
         onBuildSessionCards?.invoke()
         onSaveProgress?.invoke()
@@ -594,9 +474,9 @@ class SessionRunner(
     // ── Pause/resume ────────────────────────────────────────────────────
 
     fun togglePause() {
-        if (stateAccess.uiState.value.sessionState == SessionState.ACTIVE) {
+        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
             pauseTimer()
-            stateAccess.updateState { it.copy(sessionState = SessionState.PAUSED, voicePromptStartMs = null) }
+            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, voicePromptStartMs = null)) }
             onSaveProgress?.invoke()
             return
         }
@@ -605,7 +485,7 @@ class SessionRunner(
 
     fun pauseSession() {
         pauseTimer()
-        stateAccess.updateState { it.copy(sessionState = SessionState.PAUSED, voicePromptStartMs = null) }
+        stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, voicePromptStartMs = null)) }
         onSaveProgress?.invoke()
     }
 
@@ -615,13 +495,7 @@ class SessionRunner(
         val card = currentCard() ?: return
         pauseTimer()
         stateAccess.updateState {
-            it.copy(
-                answerText = card.acceptedAnswers.joinToString(" / "),
-                sessionState = SessionState.HINT_SHOWN,
-                inputText = if (it.inputMode == InputMode.VOICE) "" else it.inputText,
-                hintCount = it.hintCount + 1,
-                voicePromptStartMs = null
-            )
+            it.copy(cardSession = it.cardSession.copy(answerText = card.acceptedAnswers.joinToString(" / "), sessionState = SessionState.HINT_SHOWN, inputText = if (it.cardSession.inputMode == InputMode.VOICE) "" else it.cardSession.inputText, hintCount = it.cardSession.hintCount + 1, voicePromptStartMs = null))
         }
         onSaveProgress?.invoke()
     }
@@ -629,30 +503,24 @@ class SessionRunner(
     // ── Word bank interaction ───────────────────────────────────────────
 
     fun selectWordFromBank(word: String) {
-        val currentSelected = stateAccess.uiState.value.selectedWords
+        val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
         val newSelected = currentSelected + word
         val inputText = newSelected.joinToString(" ")
 
         stateAccess.updateState {
-            it.copy(
-                selectedWords = newSelected,
-                inputText = inputText
-            )
+            it.copy(cardSession = it.cardSession.copy(selectedWords = newSelected, inputText = inputText))
         }
     }
 
     fun removeLastSelectedWord() {
-        val currentSelected = stateAccess.uiState.value.selectedWords
+        val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
         if (currentSelected.isEmpty()) return
 
         val newSelected = currentSelected.dropLast(1)
         val inputText = newSelected.joinToString(" ")
 
         stateAccess.updateState {
-            it.copy(
-                selectedWords = newSelected,
-                inputText = inputText
-            )
+            it.copy(cardSession = it.cardSession.copy(selectedWords = newSelected, inputText = inputText))
         }
     }
 
@@ -660,27 +528,15 @@ class SessionRunner(
 
     fun skipToNextCard() {
         val state = stateAccess.uiState.value
-        val nextIndex = state.currentIndex + 1
+        val nextIndex = state.cardSession.currentIndex + 1
         if (nextIndex < sessionCards.size) {
             stateAccess.updateState {
-                it.copy(
-                    currentIndex = nextIndex,
-                    currentCard = sessionCards[nextIndex],
-                    inputText = "",
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0
-                )
+                it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = sessionCards[nextIndex], inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0))
             }
         } else {
             pauseTimer()
             stateAccess.updateState {
-                it.copy(
-                    sessionState = SessionState.PAUSED,
-                    inputText = "",
-                    lastResult = null,
-                    answerText = null
-                )
+                it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, inputText = "", lastResult = null, answerText = null))
             }
         }
     }
@@ -695,46 +551,16 @@ class SessionRunner(
         sessionCards = cards
         val firstCard = cards.firstOrNull()
         stateAccess.updateState {
-            it.copy(
-                eliteActive = true,
-                eliteStepIndex = stepIndex,
-                currentIndex = 0,
-                currentCard = firstCard,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0,
-                correctCount = 0,
-                incorrectCount = 0,
-                activeTimeMs = 0L,
-                voiceActiveMs = 0L,
-                voiceWordCount = 0,
-                hintCount = 0,
-                voicePromptStartMs = null,
-                sessionState = SessionState.PAUSED,
-                subLessonTotal = cards.size,
-                subLessonCount = eliteStepCount,
-                activeSubLessonIndex = stepIndex,
-                completedSubLessonCount = 0
-            )
+            it.copy(elite = it.elite.copy(eliteActive = true, eliteStepIndex = stepIndex), cardSession = it.cardSession.copy(currentIndex = 0, currentCard = firstCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, subLessonTotal = cards.size, subLessonCount = eliteStepCount, activeSubLessonIndex = stepIndex, completedSubLessonCount = 0))
         }
         onSaveProgress?.invoke()
     }
 
     fun cancelEliteSession() {
-        if (!stateAccess.uiState.value.eliteActive) return
+        if (!stateAccess.uiState.value.elite.eliteActive) return
         pauseTimer()
         stateAccess.updateState {
-            it.copy(
-                eliteActive = false,
-                sessionState = SessionState.PAUSED,
-                currentIndex = 0,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0,
-                voicePromptStartMs = null
-            )
+            it.copy(elite = it.elite.copy(eliteActive = false), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
         }
         onSaveProgress?.invoke()
         onRefreshFlowerStates?.invoke()
@@ -765,20 +591,17 @@ class SessionRunner(
     // ── Drill sub-mode ──────────────────────────────────────────────────
 
     fun showDrillStartDialog(lessonId: String) {
-        val lesson = stateAccess.uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
+        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return
         if (lesson.drillCards.isEmpty()) return
         val hasProgress = drillProgressStore.hasProgress(lessonId)
         stateAccess.updateState {
-            it.copy(
-                drillShowStartDialog = true,
-                drillHasProgress = hasProgress
-            )
+            it.copy(drill = it.drill.copy(drillShowStartDialog = true, drillHasProgress = hasProgress))
         }
     }
 
     fun startDrill(resume: Boolean) {
-        val lessonId = stateAccess.uiState.value.selectedLessonId ?: return
-        val lesson = stateAccess.uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
+        val lessonId = stateAccess.uiState.value.navigation.selectedLessonId ?: return
+        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return
         val drillCards = lesson.drillCards
         if (drillCards.isEmpty()) return
 
@@ -791,49 +614,19 @@ class SessionRunner(
         }
 
         stateAccess.updateState {
-            it.copy(
-                isDrillMode = true,
-                drillCardIndex = startCardIndex,
-                drillTotalCards = drillCards.size,
-                drillShowStartDialog = false,
-                drillHasProgress = false,
-                currentIndex = 0,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0,
-                correctCount = 0,
-                incorrectCount = 0,
-                activeTimeMs = 0L,
-                voiceActiveMs = 0L,
-                voiceWordCount = 0,
-                hintCount = 0,
-                voicePromptStartMs = null,
-                sessionState = SessionState.PAUSED,
-                bossActive = false,
-                bossType = null,
-                bossTotal = 0,
-                bossProgress = 0,
-                bossReward = null,
-                bossRewardMessage = null,
-                bossFinishedToken = 0,
-                bossErrorMessage = null,
-                eliteActive = false,
-                wordBankWords = emptyList(),
-                selectedWords = emptyList()
-            )
+            it.copy(drill = it.drill.copy(isDrillMode = true, drillCardIndex = startCardIndex, drillTotalCards = drillCards.size, drillShowStartDialog = false, drillHasProgress = false), cardSession = it.cardSession.copy(currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, wordBankWords = emptyList(), selectedWords = emptyList()), boss = it.boss.copy(bossActive = false, bossType = null, bossTotal = 0, bossProgress = 0, bossReward = null, bossRewardMessage = null, bossFinishedToken = 0, bossErrorMessage = null), elite = it.elite.copy(eliteActive = false))
         }
         loadDrillCard(startCardIndex)
         onSaveProgress?.invoke()
     }
 
     fun dismissDrillDialog() {
-        stateAccess.updateState { it.copy(drillShowStartDialog = false) }
+        stateAccess.updateState { it.copy(drill = it.drill.copy(drillShowStartDialog = false)) }
     }
 
     fun loadDrillCard(cardIndex: Int, activate: Boolean = false) {
-        val lessonId = stateAccess.uiState.value.selectedLessonId ?: return
-        val lesson = stateAccess.uiState.value.lessons.firstOrNull { it.id == lessonId } ?: return
+        val lessonId = stateAccess.uiState.value.navigation.selectedLessonId ?: return
+        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return
         val drillCards = lesson.drillCards
         if (cardIndex >= drillCards.size) {
             finishDrill(lessonId)
@@ -843,32 +636,22 @@ class SessionRunner(
         val card = drillCards[cardIndex]
         sessionCards = listOf(card)
         stateAccess.updateState {
-            it.copy(
-                currentIndex = 0,
-                currentCard = card,
-                subLessonTotal = 1,
-                drillCardIndex = cardIndex,
-                sessionState = if (activate) SessionState.ACTIVE else SessionState.PAUSED,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0
-            )
+            it.copy(cardSession = it.cardSession.copy(currentIndex = 0, currentCard = card, subLessonTotal = 1, sessionState = if (activate) SessionState.ACTIVE else SessionState.PAUSED, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0), drill = it.drill.copy(drillCardIndex = cardIndex))
         }
-        if (stateAccess.uiState.value.inputMode == InputMode.VOICE) {
-            stateAccess.updateState { it.copy(voiceTriggerToken = it.voiceTriggerToken + 1) }
+        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
+            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
         }
     }
 
     fun advanceDrillCard() {
         val state = stateAccess.uiState.value
-        if (!state.isDrillMode) return
-        val lessonId = state.selectedLessonId ?: return
+        if (!state.drill.isDrillMode) return
+        val lessonId = state.navigation.selectedLessonId ?: return
 
-        val nextIndex = state.drillCardIndex + 1
+        val nextIndex = state.drill.drillCardIndex + 1
         drillProgressStore.saveDrillProgress(lessonId, nextIndex)
 
-        if (nextIndex >= state.drillTotalCards) {
+        if (nextIndex >= state.drill.drillTotalCards) {
             finishDrill(lessonId)
         } else {
             loadDrillCard(nextIndex, activate = true)
@@ -878,15 +661,7 @@ class SessionRunner(
     fun finishDrill(lessonId: String) {
         drillProgressStore.clearDrillProgress(lessonId)
         stateAccess.updateState {
-            it.copy(
-                isDrillMode = false,
-                drillCardIndex = 0,
-                drillTotalCards = 0,
-                sessionState = SessionState.PAUSED,
-                currentIndex = 0,
-                currentCard = null,
-                subLessonFinishedToken = it.subLessonFinishedToken + 1
-            )
+            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, currentCard = null, subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1))
         }
         onBuildSessionCards?.invoke()
         onRefreshFlowerStates?.invoke()
@@ -895,25 +670,14 @@ class SessionRunner(
 
     fun exitDrillMode() {
         val state = stateAccess.uiState.value
-        if (!state.isDrillMode) return
+        if (!state.drill.isDrillMode) return
         pauseTimer()
-        val lessonId = state.selectedLessonId
-        if (lessonId != null && state.drillCardIndex > 0) {
-            drillProgressStore.saveDrillProgress(lessonId, state.drillCardIndex)
+        val lessonId = state.navigation.selectedLessonId
+        if (lessonId != null && state.drill.drillCardIndex > 0) {
+            drillProgressStore.saveDrillProgress(lessonId, state.drill.drillCardIndex)
         }
         stateAccess.updateState {
-            it.copy(
-                isDrillMode = false,
-                drillCardIndex = 0,
-                drillTotalCards = 0,
-                sessionState = SessionState.PAUSED,
-                currentIndex = 0,
-                inputText = "",
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = 0,
-                voicePromptStartMs = null
-            )
+            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
         }
         onBuildSessionCards?.invoke()
         onRefreshFlowerStates?.invoke()
@@ -961,7 +725,7 @@ class SessionRunner(
                 delay(500)
                 val start = activeStartMs ?: continue
                 val elapsed = SystemClock.elapsedRealtime() - start
-                stateAccess.updateState { it.copy(activeTimeMs = it.activeTimeMs + elapsed) }
+                stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(activeTimeMs = it.cardSession.activeTimeMs + elapsed)) }
                 activeStartMs = SystemClock.elapsedRealtime()
                 onSaveProgress?.invoke()
             }
@@ -977,34 +741,27 @@ class SessionRunner(
     // ── Internal helpers ────────────────────────────────────────────────
 
     private fun buildEliteCards(): List<SentenceCard> {
-        val cards = stateAccess.uiState.value.lessons.flatMap { it.cards }
+        val cards = stateAccess.uiState.value.navigation.lessons.flatMap { it.cards }
         if (cards.isEmpty()) return emptyList()
         val eliteSize = kotlin.math.ceil(subLessonSize * eliteSizeMultiplier).toInt()
         return cards.shuffled().take(eliteSize)
     }
 
     private fun updateWordBank() {
-        val card = stateAccess.uiState.value.currentCard
+        val card = stateAccess.uiState.value.cardSession.currentCard
         if (card == null) {
             stateAccess.updateState {
-                it.copy(
-                    wordBankWords = emptyList(),
-                    selectedWords = emptyList()
-                )
+                it.copy(cardSession = it.cardSession.copy(wordBankWords = emptyList(), selectedWords = emptyList()))
             }
             return
         }
 
         val correctAnswer = card.acceptedAnswers.firstOrNull() ?: ""
-        val allCards = stateAccess.uiState.value.lessons.flatMap { it.cards }
+        val allCards = stateAccess.uiState.value.navigation.lessons.flatMap { it.cards }
         val wordBank = wordBankGenerator.generateForSentence(correctAnswer, allCards)
 
         stateAccess.updateState {
-            it.copy(
-                wordBankWords = wordBank,
-                selectedWords = emptyList(),
-                inputText = ""
-            )
+            it.copy(cardSession = it.cardSession.copy(wordBankWords = wordBank, selectedWords = emptyList(), inputText = ""))
         }
     }
 

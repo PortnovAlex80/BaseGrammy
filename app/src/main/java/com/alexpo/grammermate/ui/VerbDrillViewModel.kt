@@ -168,13 +168,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
 
         _uiState.update {
-            it.copy(
-                availableTenses = tenses,
-                availableGroups = groups,
-                isLoading = false,
-                loadedLanguageId = lang,
-                badSentenceCount = badCount
-            )
+            it.copy(badSentenceCount = badCount, availableTenses = tenses, availableGroups = groups, isLoading = false, loadedLanguageId = lang)
         }
 
         Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $lang")
@@ -483,10 +477,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             mode = "verb_drill"
         )
         _uiState.update {
-            it.copy(
-                badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) },
-                currentCardIsBad = true
-            )
+            it.copy(badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) }, currentCardIsBad = true)
         }
     }
 
@@ -499,10 +490,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         badSentenceStore.removeBadSentence(packId, card.id)
         _uiState.update {
-            it.copy(
-                badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) },
-                currentCardIsBad = false
-            )
+            it.copy(badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) }, currentCardIsBad = false)
         }
     }
 

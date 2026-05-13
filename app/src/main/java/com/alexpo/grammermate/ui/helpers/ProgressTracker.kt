@@ -260,33 +260,33 @@ class ProgressTracker(
         forceBackup: Boolean,
         normalizedEliteSpeeds: List<Double>
     ): Boolean {
-        if (state.bossActive && state.bossType != com.alexpo.grammermate.data.BossType.ELITE) {
+        if (state.boss.bossActive && state.boss.bossType != com.alexpo.grammermate.data.BossType.ELITE) {
             return false
         }
         progressStore.save(
             TrainingProgress(
-                languageId = state.selectedLanguageId,
-                mode = state.mode,
-                lessonId = state.selectedLessonId,
-                currentIndex = state.currentIndex,
-                correctCount = state.correctCount,
-                incorrectCount = state.incorrectCount,
-                incorrectAttemptsForCard = state.incorrectAttemptsForCard,
-                activeTimeMs = state.activeTimeMs,
-                state = state.sessionState,
-                bossLessonRewards = state.bossLessonRewards.mapValues { it.value.name },
+                languageId = state.navigation.selectedLanguageId,
+                mode = state.navigation.mode,
+                lessonId = state.navigation.selectedLessonId,
+                currentIndex = state.cardSession.currentIndex,
+                correctCount = state.cardSession.correctCount,
+                incorrectCount = state.cardSession.incorrectCount,
+                incorrectAttemptsForCard = state.cardSession.incorrectAttemptsForCard,
+                activeTimeMs = state.cardSession.activeTimeMs,
+                state = state.cardSession.sessionState,
+                bossLessonRewards = state.boss.bossLessonRewards.mapValues { it.value.name },
                 bossMegaReward = null,
-                bossMegaRewards = state.bossMegaRewards.mapValues { it.value.name },
-                voiceActiveMs = state.voiceActiveMs,
-                voiceWordCount = state.voiceWordCount,
-                hintCount = state.hintCount,
-                eliteStepIndex = state.eliteStepIndex,
+                bossMegaRewards = state.boss.bossMegaRewards.mapValues { it.value.name },
+                voiceActiveMs = state.cardSession.voiceActiveMs,
+                voiceWordCount = state.cardSession.voiceWordCount,
+                hintCount = state.cardSession.hintCount,
+                eliteStepIndex = state.elite.eliteStepIndex,
                 eliteBestSpeeds = normalizedEliteSpeeds,
-                currentScreen = state.currentScreen,
-                activePackId = state.activePackId,
-                dailyLevel = state.dailySession.level,
-                dailyTaskIndex = state.dailySession.taskIndex,
-                dailyCursor = state.dailyCursor
+                currentScreen = state.navigation.currentScreen,
+                activePackId = state.navigation.activePackId,
+                dailyLevel = state.daily.dailySession.level,
+                dailyTaskIndex = state.daily.dailySession.taskIndex,
+                dailyCursor = state.daily.dailyCursor
             )
         )
 

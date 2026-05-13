@@ -107,8 +107,8 @@ class AudioCoordinator(
 
     fun onTtsSpeak(text: String, speed: Float? = null) {
         if (text.isBlank()) return
-        val langId = stateAccess.uiState.value.selectedLanguageId
-        val effectiveSpeed = speed ?: stateAccess.uiState.value.ttsSpeed
+        val langId = stateAccess.uiState.value.navigation.selectedLanguageId
+        val effectiveSpeed = speed ?: stateAccess.uiState.value.audio.ttsSpeed
         coroutineScope.launch {
             if (ttsEngine.state.value != TtsState.READY
                 || ttsEngine.activeLanguageId != langId
@@ -128,46 +128,43 @@ class AudioCoordinator(
     }
 
     fun setTtsSpeed(speed: Float) {
-        stateAccess.updateState { it.copy(ttsSpeed = speed.coerceIn(0.5f, 1.5f)) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ttsSpeed = speed.coerceIn(0.5f, 1.5f))) }
     }
 
     fun setRuTextScale(scale: Float) {
-        stateAccess.updateState { it.copy(ruTextScale = scale.coerceIn(1.0f, 2.0f)) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ruTextScale = scale.coerceIn(1.0f, 2.0f))) }
     }
 
     // ── TTS downloads ──────────────────────────────────────────────────────
 
     fun startTtsDownload() {
         if (ttsModelManager.isNetworkMetered()) {
-            stateAccess.updateState { it.copy(ttsMeteredNetwork = true) }
+            stateAccess.updateState { it.copy(audio = it.audio.copy(ttsMeteredNetwork = true)) }
             return
         }
         beginTtsDownload()
     }
 
     fun confirmTtsDownloadOnMetered() {
-        stateAccess.updateState { it.copy(ttsMeteredNetwork = false) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ttsMeteredNetwork = false)) }
         beginTtsDownload()
     }
 
     fun dismissMeteredWarning() {
-        stateAccess.updateState { it.copy(ttsMeteredNetwork = false) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ttsMeteredNetwork = false)) }
     }
 
     fun dismissTtsDownloadDialog() {
-        val state = stateAccess.uiState.value.ttsDownloadState
+        val state = stateAccess.uiState.value.audio.ttsDownloadState
         if (state is DownloadState.Done || state is DownloadState.Error) {
-            stateAccess.updateState { it.copy(ttsDownloadState = DownloadState.Idle) }
+            stateAccess.updateState { it.copy(audio = it.audio.copy(ttsDownloadState = DownloadState.Idle)) }
         }
     }
 
     fun startTtsDownloadForLanguage(languageId: String) {
         if (ttsModelManager.isModelReady(languageId)) {
             stateAccess.updateState {
-                it.copy(
-                    ttsModelsReady = it.ttsModelsReady + (languageId to true),
-                    bgTtsDownloadStates = it.bgTtsDownloadStates + (languageId to DownloadState.Done)
-                )
+                it.copy(audio = it.audio.copy(ttsModelsReady = it.audio.ttsModelsReady + (languageId to true), bgTtsDownloadStates = it.audio.bgTtsDownloadStates + (languageId to DownloadState.Done)))
             }
             return
         }
@@ -178,44 +175,39 @@ class AudioCoordinator(
         ttsDownloadJob = coroutineScope.launch(Dispatchers.IO) {
             ttsModelManager.download(languageId).collect { downloadState ->
                 stateAccess.updateState { current ->
-                    val updatedBgStates = current.bgTtsDownloadStates + (languageId to downloadState)
-                    val updatedReady = current.ttsModelsReady + (languageId to (downloadState is DownloadState.Done))
-                    val downloadStateOverride = if (languageId == current.selectedLanguageId
+                    val updatedBgStates = current.audio.bgTtsDownloadStates + (languageId to downloadState)
+                    val updatedReady = current.audio.ttsModelsReady + (languageId to (downloadState is DownloadState.Done))
+                    val downloadStateOverride = if (languageId == current.navigation.selectedLanguageId
                         && downloadState !is DownloadState.Idle
-                        && current.ttsDownloadState !is DownloadState.Done
+                        && current.audio.ttsDownloadState !is DownloadState.Done
                     ) {
                         downloadState
                     } else {
-                        current.ttsDownloadState
+                        current.audio.ttsDownloadState
                     }
-                    current.copy(
-                        bgTtsDownloadStates = updatedBgStates,
-                        ttsModelsReady = updatedReady,
-                        ttsDownloadState = downloadStateOverride,
-                        ttsModelReady = if (languageId == current.selectedLanguageId && downloadState is DownloadState.Done) true else current.ttsModelReady
-                    )
+                    current.copy(audio = current.audio.copy(bgTtsDownloadStates = updatedBgStates, ttsModelsReady = updatedReady, ttsDownloadState = downloadStateOverride, ttsModelReady = if (languageId == current.navigation.selectedLanguageId && downloadState is DownloadState.Done) true else current.audio.ttsModelReady))
                 }
             }
         }
     }
 
     fun setTtsDownloadStateFromBackground(bgState: DownloadState) {
-        stateAccess.updateState { it.copy(ttsDownloadState = bgState) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ttsDownloadState = bgState)) }
     }
 
     // ── TTS model checks ──────────────────────────────────────────────────
 
     fun checkTtsModel() {
-        val langId = stateAccess.uiState.value.selectedLanguageId
+        val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         val ready = ttsModelManager.isModelReady(langId)
-        stateAccess.updateState { it.copy(ttsModelReady = ready) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = ready)) }
     }
 
     fun checkAllTtsModels() {
         val readyMap = TtsModelRegistry.models.keys.associateWith { langId ->
             ttsModelManager.isModelReady(langId)
         }
-        stateAccess.updateState { it.copy(ttsModelsReady = readyMap) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelsReady = readyMap)) }
     }
 
     // ── ASR ────────────────────────────────────────────────────────────────
@@ -238,7 +230,7 @@ class AudioCoordinator(
     }
 
     fun setUseOfflineAsr(enabled: Boolean) {
-        stateAccess.updateState { it.copy(useOfflineAsr = enabled) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(useOfflineAsr = enabled)) }
         val config = configStore.load()
         configStore.save(config.copy(useOfflineAsr = enabled))
         if (enabled) {
@@ -246,43 +238,43 @@ class AudioCoordinator(
         } else {
             asrEngine?.release()
             stateAccess.updateState {
-                it.copy(asrState = AsrState.IDLE, asrModelReady = false, asrErrorMessage = null)
+                it.copy(audio = it.audio.copy(asrState = AsrState.IDLE, asrModelReady = false, asrErrorMessage = null))
             }
         }
     }
 
     fun checkAsrModel() {
         val ready = asrModelManager.isReady()
-        stateAccess.updateState { it.copy(asrModelReady = ready) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(asrModelReady = ready)) }
     }
 
     fun dismissAsrDownloadDialog() {
-        stateAccess.updateState { it.copy(asrDownloadState = DownloadState.Idle) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(asrDownloadState = DownloadState.Idle)) }
     }
 
     // ── ASR downloads ──────────────────────────────────────────────────────
 
     fun startAsrDownload() {
         if (asrModelManager.isNetworkMetered()) {
-            stateAccess.updateState { it.copy(asrMeteredNetwork = true) }
+            stateAccess.updateState { it.copy(audio = it.audio.copy(asrMeteredNetwork = true)) }
             return
         }
         beginAsrDownload()
     }
 
     fun confirmAsrDownloadOnMetered() {
-        stateAccess.updateState { it.copy(asrMeteredNetwork = false) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(asrMeteredNetwork = false)) }
         beginAsrDownload()
     }
 
     fun dismissAsrMeteredWarning() {
-        stateAccess.updateState { it.copy(asrMeteredNetwork = false) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(asrMeteredNetwork = false)) }
     }
 
     // ── Background TTS download ────────────────────────────────────────────
 
     fun startBackgroundTtsDownload() {
-        val languages = stateAccess.uiState.value.languages
+        val languages = stateAccess.uiState.value.navigation.languages
         if (languages.isEmpty()) return
 
         val missingLanguages = languages.map { it.id }
@@ -299,33 +291,27 @@ class AudioCoordinator(
                 }
 
                 stateAccess.updateState { current ->
-                    val selectedBgState = stateMap[current.selectedLanguageId]
+                    val selectedBgState = stateMap[current.navigation.selectedLanguageId]
                     val downloadStateOverride = if (selectedBgState != null
                         && selectedBgState !is DownloadState.Idle
-                        && current.ttsDownloadState !is DownloadState.Done
+                        && current.audio.ttsDownloadState !is DownloadState.Done
                     ) {
                         selectedBgState
                     } else {
-                        current.ttsDownloadState
+                        current.audio.ttsDownloadState
                     }
-                    val updatedReady = current.ttsModelsReady.toMutableMap().apply {
+                    val updatedReady = current.audio.ttsModelsReady.toMutableMap().apply {
                         stateMap.forEach { (langId, dlState) ->
                             if (dlState is DownloadState.Done) {
                                 this[langId] = true
                             }
                         }
                     }
-                    current.copy(
-                        bgTtsDownloadStates = stateMap,
-                        bgTtsDownloading = anyActive,
-                        ttsModelReady = ttsModelManager.isModelReady(current.selectedLanguageId),
-                        ttsDownloadState = downloadStateOverride,
-                        ttsModelsReady = updatedReady
-                    )
+                    current.copy(audio = current.audio.copy(bgTtsDownloadStates = stateMap, bgTtsDownloading = anyActive, ttsModelReady = ttsModelManager.isModelReady(current.navigation.selectedLanguageId), ttsDownloadState = downloadStateOverride, ttsModelsReady = updatedReady))
                 }
 
                 if (allDone) {
-                    stateAccess.updateState { it.copy(bgTtsDownloading = false) }
+                    stateAccess.updateState { it.copy(audio = it.audio.copy(bgTtsDownloading = false)) }
                 }
             }
         }
@@ -340,7 +326,7 @@ class AudioCoordinator(
     fun startTtsStateCollection() {
         coroutineScope.launch {
             ttsEngine.state.collect { ttsState ->
-                stateAccess.updateState { it.copy(ttsState = ttsState) }
+                stateAccess.updateState { it.copy(audio = it.audio.copy(ttsState = ttsState)) }
             }
         }
     }
@@ -361,16 +347,16 @@ class AudioCoordinator(
             Log.d(TAG, "TTS download already in progress, ignoring duplicate request")
             return
         }
-        val langId = stateAccess.uiState.value.selectedLanguageId
+        val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         if (ttsModelManager.isModelReady(langId)) {
-            stateAccess.updateState { it.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done) }
+            stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done)) }
             return
         }
         ttsDownloadJob = coroutineScope.launch(Dispatchers.IO) {
             ttsModelManager.download(langId).collect { downloadState ->
-                stateAccess.updateState { it.copy(ttsDownloadState = downloadState) }
+                stateAccess.updateState { it.copy(audio = it.audio.copy(ttsDownloadState = downloadState)) }
                 if (downloadState is DownloadState.Done) {
-                    stateAccess.updateState { it.copy(ttsModelReady = true) }
+                    stateAccess.updateState { it.copy(audio = it.audio.copy(ttsModelReady = true)) }
                 }
             }
         }
@@ -382,15 +368,15 @@ class AudioCoordinator(
             // Download VAD first (small ~2MB)
             if (!asrModelManager.isVadReady()) {
                 asrModelManager.downloadVad().collect { state ->
-                    stateAccess.updateState { it.copy(asrDownloadState = state) }
+                    stateAccess.updateState { it.copy(audio = it.audio.copy(asrDownloadState = state)) }
                 }
             }
             // Then ASR model
             if (!asrModelManager.isAsrReady()) {
                 asrModelManager.downloadAsr().collect { state ->
-                    stateAccess.updateState { it.copy(asrDownloadState = state) }
+                    stateAccess.updateState { it.copy(audio = it.audio.copy(asrDownloadState = state)) }
                     if (state is DownloadState.Done) {
-                        stateAccess.updateState { it.copy(asrModelReady = true) }
+                        stateAccess.updateState { it.copy(audio = it.audio.copy(asrModelReady = true)) }
                     }
                 }
             }
@@ -401,34 +387,28 @@ class AudioCoordinator(
         val engine = asrEngine
         if (engine == null) {
             stateAccess.updateState {
-                it.copy(
-                    asrState = AsrState.ERROR,
-                    asrErrorMessage = "ASR engine unavailable on this device"
-                )
+                it.copy(audio = it.audio.copy(asrState = AsrState.ERROR, asrErrorMessage = "ASR engine unavailable on this device"))
             }
             return ""
         }
         if (!engine.isReady) {
-            engine.initialize(stateAccess.uiState.value.selectedLanguageId)
+            engine.initialize(stateAccess.uiState.value.navigation.selectedLanguageId)
         }
 
         // Check if initialization failed
         if (engine.state.value == AsrState.ERROR) {
             stateAccess.updateState {
-                it.copy(
-                    asrState = AsrState.ERROR,
-                    asrErrorMessage = engine.errorMessage ?: "ASR initialization failed"
-                )
+                it.copy(audio = it.audio.copy(asrState = AsrState.ERROR, asrErrorMessage = engine.errorMessage ?: "ASR initialization failed"))
             }
             return ""
         }
 
-        stateAccess.updateState { it.copy(asrState = engine.state.value, asrErrorMessage = null) }
+        stateAccess.updateState { it.copy(audio = it.audio.copy(asrState = engine.state.value, asrErrorMessage = null)) }
 
         // Collect state updates from ASR engine
         val stateJob = coroutineScope.launch {
             engine.state.collect { asrState ->
-                stateAccess.updateState { it.copy(asrState = asrState) }
+                stateAccess.updateState { it.copy(audio = it.audio.copy(asrState = asrState)) }
             }
         }
 
@@ -439,12 +419,9 @@ class AudioCoordinator(
         val finalState = engine.state.value
         val errorMsg = engine.errorMessage
         stateAccess.updateState {
-            it.copy(
-                asrState = finalState,
-                asrErrorMessage = if (result.isBlank() && errorMsg != null) errorMsg
+            it.copy(audio = it.audio.copy(asrState = finalState, asrErrorMessage = if (result.isBlank() && errorMsg != null) errorMsg
                 else if (result.isBlank() && finalState == AsrState.ERROR) "ASR recognition failed"
-                else null
-            )
+                else null))
         }
         return result
     }

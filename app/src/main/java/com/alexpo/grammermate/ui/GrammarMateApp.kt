@@ -143,7 +143,7 @@ fun GrammarMateApp() {
     Surface(modifier = Modifier.fillMaxSize()) {
         val vm: TrainingViewModel = viewModel()
         val state by vm.uiState.collectAsState()
-        var screen by remember { mutableStateOf(parseScreen(state.initialScreen)) }
+        var screen by remember { mutableStateOf(parseScreen(state.navigation.initialScreen)) }
         var previousScreen by remember { mutableStateOf(AppScreen.HOME) }
         var showSettings by remember { mutableStateOf(false) }
         var showExitDialog by remember { mutableStateOf(false) }
@@ -152,8 +152,8 @@ fun GrammarMateApp() {
         var pendingDailyLevel by remember { mutableStateOf(0) }
         var isLoadingDaily by remember { mutableStateOf(false) }
         val dailyScope = rememberCoroutineScope()
-        val lastFinishedToken = remember { mutableStateOf(state.subLessonFinishedToken) }
-        val lastBossFinishedToken = remember { mutableStateOf(state.bossFinishedToken) }
+        val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
+        val lastBossFinishedToken = remember { mutableStateOf(state.boss.bossFinishedToken) }
         var showTtsDownloadDialog by remember { mutableStateOf(false) }
     
         LaunchedEffect(screen) {
@@ -166,25 +166,25 @@ fun GrammarMateApp() {
 
         val context = androidx.compose.ui.platform.LocalContext.current
         val lessonStore = remember { com.alexpo.grammermate.data.LessonStore(context) }
-        val hasVerbDrill = remember(state.activePackId, state.selectedLanguageId) {
-            state.activePackId?.let { lessonStore.hasVerbDrill(it, state.selectedLanguageId) } ?: false
+        val hasVerbDrill = remember(state.navigation.activePackId, state.navigation.selectedLanguageId) {
+            state.navigation.activePackId?.let { lessonStore.hasVerbDrill(it, state.navigation.selectedLanguageId) } ?: false
         }
-        val hasVocabDrill = remember(state.activePackId, state.selectedLanguageId) {
-            state.activePackId?.let { lessonStore.hasVocabDrill(it, state.selectedLanguageId) } ?: false
+        val hasVocabDrill = remember(state.navigation.activePackId, state.navigation.selectedLanguageId) {
+            state.navigation.activePackId?.let { lessonStore.hasVocabDrill(it, state.navigation.selectedLanguageId) } ?: false
         }
 
         val onTtsSpeak: () -> Unit = {
-            if (state.ttsState == TtsState.SPEAKING) {
+            if (state.audio.ttsState == TtsState.SPEAKING) {
                 vm.stopTts()
-            } else if (!state.ttsModelReady) {
-                val bgState = state.bgTtsDownloadStates[state.selectedLanguageId]
+            } else if (!state.audio.ttsModelReady) {
+                val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId]
                 if (bgState != null && bgState !is DownloadState.Idle) {
                     vm.setTtsDownloadStateFromBackground(bgState)
                 }
                 showTtsDownloadDialog = true
             } else {
-                val text = state.answerText
-                    ?: state.currentCard?.acceptedAnswers?.firstOrNull()
+                val text = state.cardSession.answerText
+                    ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
                 if (text != null) {
                     vm.onTtsSpeak(text, speed = 0.67f)
                 }
@@ -193,9 +193,9 @@ fun GrammarMateApp() {
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Persistent TTS download progress bar — always visible on all screens
-            AnimatedVisibility(visible = state.bgTtsDownloading) {
+            AnimatedVisibility(visible = state.audio.bgTtsDownloading) {
                 LinearProgressIndicator(
-                    progress = { calcBgDownloadProgress(state.bgTtsDownloadStates) },
+                    progress = { calcBgDownloadProgress(state.audio.bgTtsDownloadStates) },
                     modifier = Modifier.fillMaxWidth().height(2.dp),
                 )
             }
@@ -218,7 +218,7 @@ fun GrammarMateApp() {
                 }
                 BackHandler(enabled = screen == AppScreen.LADDER && !showSettings) {
                     screen = previousScreen
-                    if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
+                    if (previousScreen == AppScreen.TRAINING && state.cardSession.currentCard != null) {
                         vm.resumeFromSettings()
                     }
                 }
@@ -235,7 +235,7 @@ fun GrammarMateApp() {
                     state = state,
                     onDismiss = {
                         showSettings = false
-                        if (screen == AppScreen.TRAINING && state.currentCard != null) {
+                        if (screen == AppScreen.TRAINING && state.cardSession.currentCard != null) {
                             vm.resumeFromSettings()
                         }
                     },
@@ -275,38 +275,38 @@ fun GrammarMateApp() {
             }
             if (showTtsDownloadDialog) {
                 // Auto-close and play when download completes
-                if (state.ttsDownloadState is DownloadState.Done) {
+                if (state.audio.ttsDownloadState is DownloadState.Done) {
                     showTtsDownloadDialog = false
                     vm.dismissTtsDownloadDialog()
                     // Auto-play TTS after download
-                    val text = state.answerText ?: state.currentCard?.acceptedAnswers?.firstOrNull()
+                    val text = state.cardSession.answerText ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
                     if (text != null) vm.onTtsSpeak(text, speed = 0.67f)
                 }
                 if (showTtsDownloadDialog) {
                     TtsDownloadDialog(
-                        downloadState = state.ttsDownloadState,
-                        languageId = state.selectedLanguageId,
+                        downloadState = state.audio.ttsDownloadState,
+                        languageId = state.navigation.selectedLanguageId,
                         onConfirm = { vm.startTtsDownload() },
                         onDismiss = { vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
                     )
                 }
             }
             // M6: Metered network warning
-            if (state.ttsMeteredNetwork) {
+            if (state.audio.ttsMeteredNetwork) {
                 MeteredNetworkDialog(
                     onConfirm = { vm.confirmTtsDownloadOnMetered() },
                     onDismiss = { vm.dismissMeteredWarning(); vm.dismissTtsDownloadDialog(); showTtsDownloadDialog = false }
                 )
             }
             // ASR metered network warning
-            if (state.asrMeteredNetwork) {
+            if (state.audio.asrMeteredNetwork) {
                 AsrMeteredNetworkDialog(
                     onConfirm = { vm.confirmAsrDownloadOnMetered() },
                     onDismiss = { vm.dismissAsrMeteredWarning(); vm.dismissAsrDownloadDialog() }
                 )
             }
-            androidx.compose.runtime.LaunchedEffect(screen, state.userName) {
-                if (state.userName == "GrammarMateUser") {
+            androidx.compose.runtime.LaunchedEffect(screen, state.navigation.userName) {
+                if (state.navigation.userName == "GrammarMateUser") {
                     showWelcomeDialog = true
                 }
             }
@@ -375,13 +375,13 @@ fun GrammarMateApp() {
                         screen = AppScreen.TRAINING
                     },
                     onDrillStart = {
-                        state.selectedLessonId?.let { vm.showDrillStartDialog(it) }
+                        state.navigation.selectedLessonId?.let { vm.showDrillStartDialog(it) }
                     }
                 )
                 AppScreen.ELITE -> { screen = AppScreen.HOME }
                 AppScreen.VOCAB -> { screen = AppScreen.HOME }
                 AppScreen.DAILY_PRACTICE -> {
-                    val dailyState = state.dailySession
+                    val dailyState = state.daily.dailySession
                     val dailyTask = vm.getDailyCurrentTask()
                     val dailyProgress = vm.getDailyBlockProgress()
                     DailyPracticeScreen(
@@ -390,7 +390,7 @@ fun GrammarMateApp() {
                         currentTask = dailyTask,
                         onSubmitSentence = vm::submitDailySentenceAnswer,
                         onSubmitVerb = vm::submitDailyVerbAnswer,
-                        languageId = state.selectedLanguageId,
+                        languageId = state.navigation.selectedLanguageId,
                         onShowSentenceAnswer = vm::getDailySentenceAnswer,
                         onShowVerbAnswer = vm::getDailyVerbAnswer,
                         onFlipVocabCard = { /* no-op: flip tracked locally */ },
@@ -401,12 +401,12 @@ fun GrammarMateApp() {
                         onAdvanceBlock = { vm.advanceDailyBlock() },
                         onRepeatBlock = { vm.repeatDailyBlock() },
                         onSpeak = { text ->
-                            if (state.ttsModelReady) {
+                            if (state.audio.ttsModelReady) {
                                 vm.onTtsSpeak(text, speed = 0.67f)
                             }
                         },
                         onStopTts = { vm.stopTts() },
-                        ttsState = state.ttsState,
+                        ttsState = state.audio.ttsState,
                         onExit = {
                             vm.cancelDailySession()
                             screen = AppScreen.HOME
@@ -429,7 +429,7 @@ fun GrammarMateApp() {
                         onExportDailyBadSentences = {
                             vm.exportDailyBadSentences()
                         },
-                        hintLevel = state.hintLevel
+                        hintLevel = state.cardSession.hintLevel
                     )
                 }
                 AppScreen.MIX_CHALLENGE -> TrainingScreen(
@@ -459,19 +459,19 @@ fun GrammarMateApp() {
                     onExportBadSentences = vm::exportBadSentences,
                     isBadSentence = vm::isBadSentence,
                     onStartOfflineRecognition = vm::startOfflineRecognition,
-                    hintLevel = state.hintLevel
+                    hintLevel = state.cardSession.hintLevel
                 )
                 AppScreen.STORY -> StoryQuizScreen(
-                    story = state.activeStory,
-                    testMode = state.testMode,
+                    story = state.story.activeStory,
+                    testMode = state.cardSession.testMode,
                     onClose = {
-                        state.activeStory?.phase?.let { phase ->
+                        state.story.activeStory?.phase?.let { phase ->
                             vm.completeStory(phase, false)
                         }
                         screen = AppScreen.LESSON
                     },
                     onComplete = { allCorrect ->
-                        state.activeStory?.phase?.let { phase ->
+                        state.story.activeStory?.phase?.let { phase ->
                             vm.completeStory(phase, allCorrect)
                         }
                         screen = AppScreen.LESSON
@@ -481,7 +481,7 @@ fun GrammarMateApp() {
                     state = state,
                     onBack = {
                         screen = previousScreen
-                        if (previousScreen == AppScreen.TRAINING && state.currentCard != null) {
+                        if (previousScreen == AppScreen.TRAINING && state.cardSession.currentCard != null) {
                             vm.resumeFromSettings()
                         }
                     }
@@ -516,25 +516,25 @@ fun GrammarMateApp() {
                 )
                 AppScreen.VERB_DRILL -> {
                     val verbDrillVm = viewModel<VerbDrillViewModel>()
-                    val activePackId = state.activePackId
+                    val activePackId = state.navigation.activePackId
                     if (activePackId != null) {
                         verbDrillVm.reloadForPack(activePackId)
                     } else {
-                        verbDrillVm.reloadForLanguage(state.selectedLanguageId)
+                        verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId)
                     }
                     VerbDrillScreen(
                         viewModel = verbDrillVm,
                         onBack = { screen = AppScreen.HOME },
-                        hintLevel = state.hintLevel
+                        hintLevel = state.cardSession.hintLevel
                     )
                 }
                 AppScreen.VOCAB_DRILL -> {
                     val vocabDrillVm = viewModel<VocabDrillViewModel>()
-                    val packId = state.activePackId
+                    val packId = state.navigation.activePackId
                     if (packId != null) {
-                        vocabDrillVm.reloadForPack(packId, state.selectedLanguageId)
+                        vocabDrillVm.reloadForPack(packId, state.navigation.selectedLanguageId)
                     } else {
-                        vocabDrillVm.reloadForLanguage(state.selectedLanguageId)
+                        vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId)
                     }
                     VocabDrillScreen(
                         viewModel = vocabDrillVm,
@@ -542,7 +542,7 @@ fun GrammarMateApp() {
                             vm.refreshVocabMasteryCount()
                             screen = AppScreen.HOME
                         },
-                        hintLevel = state.hintLevel
+                        hintLevel = state.cardSession.hintLevel
                     )
                 }
             }
@@ -570,16 +570,16 @@ fun GrammarMateApp() {
                 }
             }
 
-            if (screen == AppScreen.TRAINING && state.subLessonFinishedToken != lastFinishedToken.value) {
-                lastFinishedToken.value = state.subLessonFinishedToken
+            if (screen == AppScreen.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
+                lastFinishedToken.value = state.cardSession.subLessonFinishedToken
                 screen = AppScreen.LESSON
             }
-            if (screen == AppScreen.MIX_CHALLENGE && state.subLessonFinishedToken != lastFinishedToken.value) {
-                lastFinishedToken.value = state.subLessonFinishedToken
+            if (screen == AppScreen.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
+                lastFinishedToken.value = state.cardSession.subLessonFinishedToken
                 screen = AppScreen.HOME
             }
-            if (screen == AppScreen.TRAINING && state.bossFinishedToken != lastBossFinishedToken.value) {
-                lastBossFinishedToken.value = state.bossFinishedToken
+            if (screen == AppScreen.TRAINING && state.boss.bossFinishedToken != lastBossFinishedToken.value) {
+                lastBossFinishedToken.value = state.boss.bossFinishedToken
                 screen = AppScreen.LESSON
             }
 
@@ -594,12 +594,12 @@ fun GrammarMateApp() {
                                 screen = AppScreen.HOME
                                 return@TextButton
                             }
-                            if (state.bossActive) {
+                            if (state.boss.bossActive) {
                                 vm.finishBoss()
                                 screen = AppScreen.LESSON
                                 return@TextButton
                             }
-                            if (state.isDrillMode) {
+                            if (state.drill.isDrillMode) {
                                 vm.exitDrillMode()
                                 screen = AppScreen.LESSON
                                 return@TextButton
@@ -658,7 +658,7 @@ fun GrammarMateApp() {
                 )
             }
 
-            if (state.storyErrorMessage != null) {
+            if (state.story.storyErrorMessage != null) {
                 AlertDialog(
                     onDismissRequest = { vm.clearStoryError() },
                     confirmButton = {
@@ -667,10 +667,10 @@ fun GrammarMateApp() {
                         }
                     },
                     title = { Text(text = "Story") },
-                    text = { Text(text = state.storyErrorMessage ?: "") }
+                    text = { Text(text = state.story.storyErrorMessage ?: "") }
                 )
             }
-            if (state.bossErrorMessage != null) {
+            if (state.boss.bossErrorMessage != null) {
                 AlertDialog(
                     onDismissRequest = { vm.clearBossError() },
                     confirmButton = {
@@ -679,10 +679,10 @@ fun GrammarMateApp() {
                         }
                     },
                     title = { Text(text = "Boss") },
-                    text = { Text(text = state.bossErrorMessage ?: "") }
+                    text = { Text(text = state.boss.bossErrorMessage ?: "") }
                 )
             }
-            if (state.bossRewardMessage != null && state.bossReward != null) {
+            if (state.boss.bossRewardMessage != null && state.boss.bossReward != null) {
                 AlertDialog(
                     onDismissRequest = { vm.clearBossRewardMessage() },
                     confirmButton = {
@@ -691,7 +691,7 @@ fun GrammarMateApp() {
                         }
                     },
                     icon = {
-                        val tint = when (state.bossReward) {
+                        val tint = when (state.boss.bossReward) {
                             com.alexpo.grammermate.data.BossReward.BRONZE -> Color(0xFFCD7F32)
                             com.alexpo.grammermate.data.BossReward.SILVER -> Color(0xFFC0C0C0)
                             com.alexpo.grammermate.data.BossReward.GOLD -> Color(0xFFFFD700)
@@ -704,10 +704,10 @@ fun GrammarMateApp() {
                         )
                     },
                     title = { Text(text = "Boss Reward") },
-                    text = { Text(text = state.bossRewardMessage ?: "") }
+                    text = { Text(text = state.boss.bossRewardMessage ?: "") }
                 )
             }
-            if (state.streakMessage != null) {
+            if (state.cardSession.streakMessage != null) {
                 AlertDialog(
                     onDismissRequest = { vm.dismissStreakMessage() },
                     confirmButton = {
@@ -725,13 +725,13 @@ fun GrammarMateApp() {
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = state.streakMessage ?: "",
+                                text = state.cardSession.streakMessage ?: "",
                                 style = MaterialTheme.typography.titleMedium,
                                 textAlign = TextAlign.Center
                             )
-                            if (state.longestStreak > state.currentStreak) {
+                            if (state.cardSession.longestStreak > state.cardSession.currentStreak) {
                                 Text(
-                                    text = "Longest streak: ${state.longestStreak} days",
+                                    text = "Longest streak: ${state.cardSession.longestStreak} days",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 )
@@ -740,9 +740,9 @@ fun GrammarMateApp() {
                     }
                 )
             }
-            if (state.drillShowStartDialog) {
+            if (state.drill.drillShowStartDialog) {
                 DrillStartDialog(
-                    hasProgress = state.drillHasProgress,
+                    hasProgress = state.drill.drillHasProgress,
                     onStartFresh = {
                         vm.startDrill(resume = false)
                         screen = AppScreen.TRAINING
@@ -881,38 +881,38 @@ private fun HomeScreen(
     onOpenVocabDrill: () -> Unit = {},
     onOpenMixChallenge: () -> Unit = {}
 ) {
-    val tiles = remember(state.selectedLanguageId, state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackId, state.activePackLessonIds) {
-        buildLessonTiles(state.lessons, state.testMode, state.lessonFlowers, state.selectedLessonId, state.activePackLessonIds)
+    val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
+        buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackLessonIds)
     }
     var showMethod by remember { mutableStateOf(false) }
     var showLockedLessonHint by remember { mutableStateOf(false) }
     var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
-    val languageCode = state.languages
-        .firstOrNull { it.id == state.selectedLanguageId }
+    val languageCode = state.navigation.languages
+        .firstOrNull { it.id == state.navigation.selectedLanguageId }
         ?.id
         ?.uppercase()
         ?: "--"
-    val isFirstLaunch = state.correctCount == 0 &&
-        state.incorrectCount == 0 &&
-        state.activeTimeMs == 0L
-    val activePackDisplayName = state.installedPacks
-        .firstOrNull { it.packId == state.activePackId }
+    val isFirstLaunch = state.cardSession.correctCount == 0 &&
+        state.cardSession.incorrectCount == 0 &&
+        state.cardSession.activeTimeMs == 0L
+    val activePackDisplayName = state.navigation.installedPacks
+        .firstOrNull { it.packId == state.navigation.activePackId }
         ?.displayName
     val primaryLabel = when {
-        state.sessionState == SessionState.ACTIVE -> activePackDisplayName ?: "Continue Learning"
+        state.cardSession.sessionState == SessionState.ACTIVE -> activePackDisplayName ?: "Continue Learning"
         isFirstLaunch -> activePackDisplayName ?: "Start learning"
         else -> activePackDisplayName ?: "Start learning"
     }
     // Calculate the actual current lesson (first incomplete or first with most recent activity)
-    val currentLessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+    val currentLessonIndex = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
         .takeIf { it >= 0 }
         ?: 0
 
     // Get actual sub-lesson progress for the current lesson
-    val currentLessonProgress = if (state.lessons.isNotEmpty() && state.selectedLessonId != null) {
-        val currentLesson = state.lessons.getOrNull(currentLessonIndex)
-        if (currentLesson != null && currentLesson.id == state.selectedLessonId) {
-            "${state.completedSubLessonCount}/${state.subLessonCount}"
+    val currentLessonProgress = if (state.navigation.lessons.isNotEmpty() && state.navigation.selectedLessonId != null) {
+        val currentLesson = state.navigation.lessons.getOrNull(currentLessonIndex)
+        if (currentLesson != null && currentLesson.id == state.navigation.selectedLessonId) {
+            "${state.cardSession.completedSubLessonCount}/${state.cardSession.subLessonCount}"
         } else {
             "1/10"  // Default if lesson not loaded yet
         }
@@ -920,7 +920,7 @@ private fun HomeScreen(
         "1/10"
     }
 
-    val nextHint = if (state.lessons.isNotEmpty()) {
+    val nextHint = if (state.navigation.lessons.isNotEmpty()) {
         "Lesson ${currentLessonIndex + 1}. Exercise $currentLessonProgress"
     } else {
         null
@@ -944,20 +944,20 @@ private fun HomeScreen(
                         .background(MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
-                        text = getUserInitials(state.userName),
+                        text = getUserInitials(state.navigation.userName),
                         modifier = Modifier.align(Alignment.Center),
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = state.userName, fontWeight = FontWeight.SemiBold)
+                Text(text = state.navigation.userName, fontWeight = FontWeight.SemiBold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LanguageSelector(
                     label = languageCode,
-                    languages = state.languages,
-                    selectedLanguageId = state.selectedLanguageId,
+                    languages = state.navigation.languages,
+                    selectedLanguageId = state.navigation.selectedLanguageId,
                     onSelect = onSelectLanguage
                 )
                 IconButton(onClick = onOpenSettings) {
@@ -997,7 +997,7 @@ private fun HomeScreen(
             userScrollEnabled = false
         ) {
             itemsIndexed(tiles) { _, tile ->
-                val flower = tile.lessonId?.let { state.lessonFlowers[it] }
+                val flower = tile.lessonId?.let { state.flowerDisplay.lessonFlowers[it] }
                 LessonTile(
                     tile = tile,
                     flower = flower,
@@ -1032,7 +1032,7 @@ private fun HomeScreen(
                     VocabDrillEntryTile(
                         modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth(),
                         onClick = onOpenVocabDrill,
-                        masteredCount = state.vocabMasteredCount
+                        masteredCount = state.vocabSprint.vocabMasteredCount
                     )
                 }
             }
@@ -1281,21 +1281,21 @@ private fun LessonRoadmapScreen(
     onStartBossMega: () -> Unit,
     onDrillStart: () -> Unit = {}
 ) {
-    val lessonTitle = state.lessons
-        .firstOrNull { it.id == state.selectedLessonId }
+    val lessonTitle = state.navigation.lessons
+        .firstOrNull { it.id == state.navigation.selectedLessonId }
         ?.title
         ?: "Lesson"
-    val fallbackTotal = state.subLessonCount.coerceAtLeast(1)
+    val fallbackTotal = state.cardSession.subLessonCount.coerceAtLeast(1)
     val fallbackNewOnlyCount = fallbackTotal.coerceAtMost(3)
-    val trainingTypes = if (state.subLessonTypes.isNotEmpty()) {
-        state.subLessonTypes
+    val trainingTypes = if (state.cardSession.subLessonTypes.isNotEmpty()) {
+        state.cardSession.subLessonTypes
     } else {
         List(fallbackTotal) { index ->
             if (index < fallbackNewOnlyCount) SubLessonType.NEW_ONLY else SubLessonType.MIXED
         }
     }
     val total = trainingTypes.size.coerceAtLeast(1)
-    val completed = state.completedSubLessonCount.coerceIn(0, total)
+    val completed = state.cardSession.completedSubLessonCount.coerceIn(0, total)
     val currentIndex = completed.coerceIn(0, total - 1)
     var earlyStartSubLessonIndex by remember { mutableStateOf<Int?>(null) }
 
@@ -1312,14 +1312,14 @@ private fun LessonRoadmapScreen(
         emptyList()
     }
 
-    val lessonIndex = state.lessons.indexOfFirst { it.id == state.selectedLessonId }
+    val lessonIndex = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
     val hasMegaBoss = lessonIndex > 0
-    val currentLesson = state.lessons.firstOrNull { it.id == state.selectedLessonId }
+    val currentLesson = state.navigation.lessons.firstOrNull { it.id == state.navigation.selectedLessonId }
     val totalCards = currentLesson?.allCards?.size ?: 0
-    val shownCards = state.currentLessonShownCount.coerceAtMost(totalCards)
-    val bossLessonReward = state.selectedLessonId?.let { state.bossLessonRewards[it] }
-    val bossMegaReward = state.selectedLessonId?.let { state.bossMegaRewards[it] }
-    val bossUnlocked = state.completedSubLessonCount >= 15 || state.testMode
+    val shownCards = state.flowerDisplay.currentLessonShownCount.coerceAtMost(totalCards)
+    val bossLessonReward = state.navigation.selectedLessonId?.let { state.boss.bossLessonRewards[it] }
+    val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it] }
+    val bossUnlocked = state.cardSession.completedSubLessonCount >= 15 || state.cardSession.testMode
     var bossLockedMessage by remember { mutableStateOf<String?>(null) }
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
@@ -1374,15 +1374,15 @@ private fun LessonRoadmapScreen(
                         val index = entry.index
                         val isCompleted = index < completed
                         val isActive = index == currentIndex
-                        val canEnter = state.testMode || isCompleted || isActive
+                        val canEnter = state.cardSession.testMode || isCompleted || isActive
                         val kindLabel = when (entry.type) {
                             SubLessonType.NEW_ONLY -> "NEW"
                             SubLessonType.MIXED -> "MIX"
                         }
                         // Use lesson flower for exercise tiles (they copy lesson state)
-                        val flower = state.currentLessonFlower
+                        val flower = state.flowerDisplay.currentLessonFlower
                         val (emoji, scale) = when {
-                            !isCompleted && !state.testMode -> {
+                            !isCompleted && !state.cardSession.testMode -> {
                                 (if (isActive) "\uD83D\uDD13" else "\uD83D\uDD12") to 1.0f
                             }
                             flower == null -> "\uD83C\uDF38" to 1.0f  // 🌸
@@ -2076,8 +2076,8 @@ private fun SettingsSheet(
     val sheetState = rememberModalBottomSheetState()
     var newLessonTitle by remember { mutableStateOf("") }
     var newLanguageName by remember { mutableStateOf("") }
-    var vocabLimitText by remember(state.vocabSprintLimit) { mutableStateOf(state.vocabSprintLimit.toString()) }
-    var userNameInput by remember(state.userName) { mutableStateOf(state.userName) }
+    var vocabLimitText by remember(state.cardSession.vocabSprintLimit) { mutableStateOf(state.cardSession.vocabSprintLimit.toString()) }
+    var userNameInput by remember(state.navigation.userName) { mutableStateOf(state.navigation.userName) }
     val scrollState = rememberScrollState()
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -2124,7 +2124,7 @@ private fun SettingsSheet(
             ) {
                 Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
                 Switch(
-                    checked = state.testMode,
+                    checked = state.cardSession.testMode,
                     onCheckedChange = { onToggleTestMode() }
                 )
             }
@@ -2153,7 +2153,7 @@ private fun SettingsSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 com.alexpo.grammermate.data.HintLevel.entries.forEach { level ->
-                    val isSelected = state.hintLevel == level
+                    val isSelected = state.cardSession.hintLevel == level
                     val label = when (level) {
                         com.alexpo.grammermate.data.HintLevel.EASY -> "Easy"
                         com.alexpo.grammermate.data.HintLevel.MEDIUM -> "Medium"
@@ -2168,7 +2168,7 @@ private fun SettingsSheet(
                 }
             }
             Text(
-                text = when (state.hintLevel) {
+                text = when (state.cardSession.hintLevel) {
                     com.alexpo.grammermate.data.HintLevel.EASY ->
                         "All hints visible: verb info, word bank, first-letter hints"
                     com.alexpo.grammermate.data.HintLevel.MEDIUM ->
@@ -2213,7 +2213,7 @@ private fun SettingsSheet(
             ) {
                 Text(text = "0.5x", style = MaterialTheme.typography.bodySmall)
                 Slider(
-                    value = state.ttsSpeed,
+                    value = state.audio.ttsSpeed,
                     onValueChange = onSetTtsSpeed,
                     valueRange = 0.5f..1.5f,
                     steps = 3,
@@ -2222,7 +2222,7 @@ private fun SettingsSheet(
                 Text(text = "1.5x", style = MaterialTheme.typography.bodySmall)
             }
             Text(
-                text = String.format("%.2fx", state.ttsSpeed),
+                text = String.format("%.2fx", state.audio.ttsSpeed),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.fillMaxWidth(),
@@ -2244,16 +2244,16 @@ private fun SettingsSheet(
                     Text(text = "Offline speech recognition", style = MaterialTheme.typography.bodyLarge)
                 }
                 Switch(
-                    checked = state.useOfflineAsr,
+                    checked = state.audio.useOfflineAsr,
                     onCheckedChange = { enabled ->
                         onSetUseOfflineAsr(enabled)
-                        if (enabled && !state.asrModelReady) {
+                        if (enabled && !state.audio.asrModelReady) {
                             onStartAsrDownload()
                         }
                     }
                 )
             }
-            when (val dlState = state.asrDownloadState) {
+            when (val dlState = state.audio.asrDownloadState) {
                 is DownloadState.Downloading -> {
                     LinearProgressIndicator(
                         progress = { dlState.percent / 100f },
@@ -2285,8 +2285,8 @@ private fun SettingsSheet(
                 }
                 else -> {
                     Text(
-                        text = if (state.useOfflineAsr) {
-                            if (state.asrModelReady) "Using on-device recognition (no internet required)" else "Model not downloaded yet"
+                        text = if (state.audio.useOfflineAsr) {
+                            if (state.audio.asrModelReady) "Using on-device recognition (no internet required)" else "Model not downloaded yet"
                         } else {
                             "Using Google speech recognition (requires internet)"
                         },
@@ -2309,7 +2309,7 @@ private fun SettingsSheet(
             ) {
                 Text(text = "1x", style = MaterialTheme.typography.bodySmall)
                 Slider(
-                    value = state.ruTextScale,
+                    value = state.audio.ruTextScale,
                     onValueChange = onSetRuTextScale,
                     valueRange = 1.0f..2.0f,
                     steps = 3,
@@ -2318,7 +2318,7 @@ private fun SettingsSheet(
                 Text(text = "2x", style = MaterialTheme.typography.bodySmall)
             }
             Text(
-                text = String.format("%.1fx", state.ruTextScale),
+                text = String.format("%.1fx", state.audio.ruTextScale),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.fillMaxWidth(),
@@ -2429,13 +2429,13 @@ private fun SettingsSheet(
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "Packs", style = MaterialTheme.typography.labelLarge)
-            if (state.installedPacks.isEmpty()) {
+            if (state.navigation.installedPacks.isEmpty()) {
                 Text(
                     text = "No installed packs",
                     style = MaterialTheme.typography.bodySmall
                 )
             } else {
-                state.installedPacks.forEach { pack ->
+                state.navigation.installedPacks.forEach { pack ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -2472,12 +2472,12 @@ private fun SettingsSheet(
             Button(
                 onClick = {
                     val trimmed = userNameInput.trim()
-                    if (trimmed.isNotEmpty() && trimmed != state.userName) {
+                    if (trimmed.isNotEmpty() && trimmed != state.navigation.userName) {
                         onUpdateUserName(trimmed)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = userNameInput.trim().isNotEmpty() && userNameInput.trim() != state.userName
+                enabled = userNameInput.trim().isNotEmpty() && userNameInput.trim() != state.navigation.userName
             ) {
                 Text("Save Name")
             }
@@ -2536,7 +2536,7 @@ private fun SettingsSheet(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "v${state.appVersion}",
+                    text = "v${state.navigation.appVersion}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -2595,7 +2595,7 @@ private fun LadderScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (state.ladderRows.isEmpty()) {
+        if (state.navigation.ladderRows.isEmpty()) {
             Text(
                 text = "Нет данных по урокам.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -2609,7 +2609,7 @@ private fun LadderScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(state.ladderRows) { row ->
+            items(state.navigation.ladderRows) { row ->
                 LadderRowCard(row)
             }
         }
@@ -2754,12 +2754,12 @@ private fun TrainingScreen(
     onStartOfflineRecognition: () -> Unit = {},
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
-    val hasCards = state.currentCard != null
+    val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
     val drillGreen = Color(0xFFE8F5E9)
 
     Scaffold(
-        containerColor = if (state.isDrillMode) drillGreen else MaterialTheme.colorScheme.background,
+        containerColor = if (state.drill.isDrillMode) drillGreen else MaterialTheme.colorScheme.background,
         topBar = {
             Row(
                 modifier = Modifier
@@ -2790,13 +2790,13 @@ private fun TrainingScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (state.bossActive) {
+            if (state.boss.bossActive) {
                 Text(text = "Review Session", fontWeight = FontWeight.SemiBold)
-            } else if (state.eliteActive) {
+            } else if (state.elite.eliteActive) {
                 Text(text = "Refresh Session", fontWeight = FontWeight.SemiBold)
-            } else if (state.isDrillMode) {
+            } else if (state.drill.isDrillMode) {
                 // Drill: prompt without hints + progress bar + speedometer
-                val cardTense = state.currentCard?.tense
+                val cardTense = state.cardSession.currentCard?.tense
                 if (!cardTense.isNullOrBlank()) {
                     Text(
                         text = cardTense,
@@ -2806,26 +2806,26 @@ private fun TrainingScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                val rawPrompt = state.currentCard?.promptRu ?: ""
+                val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
                 val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
                 if (cleanPrompt.isNotBlank()) {
                     Text(
                         text = cleanPrompt,
-                        fontSize = (18f * state.ruTextScale).sp,
+                        fontSize = (18f * state.audio.ruTextScale).sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF2E7D32),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
                 DrillProgressRow(
-                    current = state.drillCardIndex + 1,
-                    total = state.drillTotalCards,
-                    speed = state.voiceActiveMs,
-                    wordCount = state.voiceWordCount
+                    current = state.drill.drillCardIndex + 1,
+                    total = state.drill.drillTotalCards,
+                    speed = state.cardSession.voiceActiveMs,
+                    wordCount = state.cardSession.voiceWordCount
                 )
             } else {
-                val cardTense = state.currentCard?.tense
-                val isMixChallenge = state.mode == TrainingMode.MIX_CHALLENGE
+                val cardTense = state.cardSession.currentCard?.tense
+                val isMixChallenge = state.navigation.mode == TrainingMode.MIX_CHALLENGE
                 if (!cardTense.isNullOrBlank()) {
                     if (isMixChallenge) {
                         Surface(
@@ -2851,23 +2851,23 @@ private fun TrainingScreen(
                         )
                     }
                 }
-                val rawPrompt = state.currentCard?.promptRu ?: ""
+                val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
                 val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
                 if (cleanPrompt.isNotBlank()) {
                     Text(
                         text = cleanPrompt,
-                        fontSize = (18f * state.ruTextScale).sp,
+                        fontSize = (18f * state.audio.ruTextScale).sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                val total = if (state.bossActive) state.bossTotal else state.subLessonTotal
-                val current = if (state.bossActive) state.bossProgress else state.currentIndex
+                val total = if (state.boss.bossActive) state.boss.bossTotal else state.cardSession.subLessonTotal
+                val current = if (state.boss.bossActive) state.boss.bossProgress else state.cardSession.currentIndex
                 DrillProgressRow(
                     current = (current + 1).coerceAtMost(total.coerceAtLeast(1)),
                     total = total.coerceAtLeast(1),
-                    speed = state.voiceActiveMs,
-                    wordCount = state.voiceWordCount
+                    speed = state.cardSession.voiceActiveMs,
+                    wordCount = state.cardSession.voiceWordCount
                 )
             }
             CardPrompt(state, onSpeak = onTtsSpeak)
@@ -2890,19 +2890,19 @@ private fun TrainingScreen(
                 hintLevel
             )
             ResultBlock(state, onSpeak = onTtsSpeak)
-            NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.sessionState, hasCards)
+            NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.cardSession.sessionState, hasCards)
         }
     }
 }
 
 @Composable
 private fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
-    val total = if (state.bossActive) state.bossTotal else state.subLessonTotal
+    val total = if (state.boss.bossActive) state.boss.bossTotal else state.cardSession.subLessonTotal
     val progressIndex = if (total > 0) {
-        if (state.bossActive) {
-            state.bossProgress.coerceIn(0, total)
+        if (state.boss.bossActive) {
+            state.boss.bossProgress.coerceIn(0, total)
         } else {
-            state.currentIndex.coerceIn(0, total)
+            state.cardSession.currentIndex.coerceIn(0, total)
         }
     } else {
         0
@@ -2912,7 +2912,7 @@ private fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
     } else {
         0
     }
-    val speed = speedPerMinute(state.voiceActiveMs, state.voiceWordCount)
+    val speed = speedPerMinute(state.cardSession.voiceActiveMs, state.cardSession.voiceWordCount)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -2920,10 +2920,10 @@ private fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
     ) {
         if (!isDrillMode) {
             Column {
-                Text(text = if (state.bossActive) "Review" else "Progress")
+                Text(text = if (state.boss.bossActive) "Review" else "Progress")
                 val progressText = when {
-                    state.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
-                    state.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
+                    state.boss.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
+                    state.navigation.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
                     else -> "${progressPercent}%"
                 }
                 Text(
@@ -2935,7 +2935,7 @@ private fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
         if (!isDrillMode) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(text = "Time")
-                Text(text = formatTime(state.activeTimeMs), fontWeight = FontWeight.SemiBold)
+                Text(text = formatTime(state.cardSession.activeTimeMs), fontWeight = FontWeight.SemiBold)
             }
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -2959,7 +2959,7 @@ private fun ModeSelector(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             ModeIconButton(
-                selected = state.mode == TrainingMode.LESSON,
+                selected = state.navigation.mode == TrainingMode.LESSON,
                 icon = Icons.Default.MenuBook,
                 contentDescription = "Lesson"
             ) {
@@ -2970,13 +2970,13 @@ private fun ModeSelector(
                 expanded = lessonExpanded,
                 onDismissRequest = { lessonExpanded = false }
             ) {
-                if (state.lessons.isEmpty()) {
+                if (state.navigation.lessons.isEmpty()) {
                     DropdownMenuItem(
                         text = { Text(text = "No lessons") },
                         onClick = { lessonExpanded = false }
                     )
                 } else {
-                    state.lessons.forEach { lesson ->
+                    state.navigation.lessons.forEach { lesson ->
                         DropdownMenuItem(
                             text = { Text(text = lesson.title) },
                             onClick = {
@@ -2989,12 +2989,12 @@ private fun ModeSelector(
             }
         }
         ModeIconButton(
-            selected = state.mode == TrainingMode.ALL_SEQUENTIAL,
+            selected = state.navigation.mode == TrainingMode.ALL_SEQUENTIAL,
             icon = Icons.Default.LibraryBooks,
             contentDescription = "All lessons"
         ) { onSelectMode(TrainingMode.ALL_SEQUENTIAL) }
         ModeIconButton(
-            selected = state.mode == TrainingMode.ALL_MIXED,
+            selected = state.navigation.mode == TrainingMode.ALL_MIXED,
             icon = Icons.Default.SwapHoriz,
             contentDescription = "Mixed"
         ) { onSelectMode(TrainingMode.ALL_MIXED) }
@@ -3025,8 +3025,8 @@ private fun LanguageLessonColumn(
     onSelectLanguage: (String) -> Unit,
     onSelectPack: (String) -> Unit
 ) {
-    val languagePacks = state.installedPacks.filter { it.languageId == state.selectedLanguageId }
-    val selectedPackLabel = state.activePackId?.let { activeId ->
+    val languagePacks = state.navigation.installedPacks.filter { it.languageId == state.navigation.selectedLanguageId }
+    val selectedPackLabel = state.navigation.activePackId?.let { activeId ->
         languagePacks.firstOrNull { it.packId == activeId }?.let { pack ->
             pack.displayName ?: "${pack.packId} (${pack.packVersion})"
         }
@@ -3034,9 +3034,9 @@ private fun LanguageLessonColumn(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DropdownSelector(
             title = "Language",
-            selected = state.languages.firstOrNull { it.id == state.selectedLanguageId }?.displayName
+            selected = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName
                 ?: "-",
-            items = state.languages.map { it.displayName to it.id },
+            items = state.navigation.languages.map { it.displayName to it.id },
             onSelect = onSelectLanguage
         )
         DropdownSelector(
@@ -3090,14 +3090,14 @@ private fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
                 Text(text = "RU", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = state.currentCard?.promptRu ?: "No cards",
-                    fontSize = (20f * state.ruTextScale).sp,
+                    text = state.cardSession.currentCard?.promptRu ?: "No cards",
+                    fontSize = (20f * state.audio.ruTextScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
             TtsSpeakerButton(
-                ttsState = state.ttsState,
-                enabled = state.currentCard != null,
+                ttsState = state.audio.ttsState,
+                enabled = state.cardSession.currentCard != null,
                 onClick = onSpeak
             )
         }
@@ -3125,11 +3125,11 @@ private fun AnswerBox(
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY
 ) {
     val latestState by rememberUpdatedState(state)
-    val canLaunchVoice = hasCards && state.sessionState == SessionState.ACTIVE
+    val canLaunchVoice = hasCards && state.cardSession.sessionState == SessionState.ACTIVE
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
-    val reportCard = state.currentCard
+    val reportCard = state.cardSession.currentCard
     val reportText = if (reportCard != null) {
         val targetText = reportCard.acceptedAnswers.joinToString(" / ")
         "ID: ${reportCard.id}\nSource: ${reportCard.promptRu}\nTarget: $targetText"
@@ -3143,28 +3143,28 @@ private fun AnswerBox(
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
-                if (latestState.sessionState == SessionState.PAUSED) return@rememberLauncherForActivityResult
+                if (latestState.cardSession.sessionState == SessionState.PAUSED) return@rememberLauncherForActivityResult
                 onInputChange(spoken)
                 onSubmit()
             }
         }
     }
     androidx.compose.runtime.LaunchedEffect(
-        state.currentCard?.id,
-        state.inputMode,
-        state.sessionState,
-        state.voiceTriggerToken
+        state.cardSession.currentCard?.id,
+        state.cardSession.inputMode,
+        state.cardSession.sessionState,
+        state.cardSession.voiceTriggerToken
     ) {
-        if (state.inputMode == InputMode.VOICE &&
-            state.sessionState == SessionState.ACTIVE &&
-            state.currentCard != null
+        if (state.cardSession.inputMode == InputMode.VOICE &&
+            state.cardSession.sessionState == SessionState.ACTIVE &&
+            state.cardSession.currentCard != null
         ) {
             kotlinx.coroutines.delay(200)
             onVoicePromptStarted()
-            if (state.useOfflineAsr && state.asrModelReady) {
+            if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
-                launchVoiceRecognition(state.selectedLanguageId, state.currentCard?.promptRu, speechLauncher)
+                launchVoiceRecognition(state.navigation.selectedLanguageId, state.cardSession.currentCard?.promptRu, speechLauncher)
             }
         }
     }
@@ -3270,16 +3270,16 @@ private fun AnswerBox(
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
-            value = state.inputText,
+            value = state.cardSession.inputText,
             onValueChange = { newText ->
                 onInputChange(newText)
                 // Auto-submit in keyboard mode when the typed text matches an accepted answer
-                if (state.inputMode == InputMode.KEYBOARD &&
-                    state.sessionState == SessionState.ACTIVE &&
-                    state.currentCard != null &&
+                if (state.cardSession.inputMode == InputMode.KEYBOARD &&
+                    state.cardSession.sessionState == SessionState.ACTIVE &&
+                    state.cardSession.currentCard != null &&
                     newText.isNotBlank()
                 ) {
-                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, state.currentCard!!.acceptedAnswers)) {
+                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, state.cardSession.currentCard!!.acceptedAnswers)) {
                         onSubmit()
                     }
                 }
@@ -3307,19 +3307,19 @@ private fun AnswerBox(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        if (state.inputMode == InputMode.VOICE && state.sessionState == SessionState.ACTIVE) {
+        if (state.cardSession.inputMode == InputMode.VOICE && state.cardSession.sessionState == SessionState.ACTIVE) {
             Text(
-                text = state.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
+                text = state.cardSession.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        if (state.useOfflineAsr) {
-            AsrStatusIndicator(state.asrState)
+        if (state.audio.useOfflineAsr) {
+            AsrStatusIndicator(state.audio.asrState)
         }
 
         // Word Bank UI
-        if (state.inputMode == InputMode.WORD_BANK && state.wordBankWords.isNotEmpty()) {
+        if (state.cardSession.inputMode == InputMode.WORD_BANK && state.cardSession.wordBankWords.isNotEmpty()) {
             Text(
                 text = "Tap words in correct order:",
                 style = MaterialTheme.typography.labelMedium,
@@ -3331,11 +3331,11 @@ private fun AnswerBox(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                state.wordBankWords.forEach { word ->
+                state.cardSession.wordBankWords.forEach { word ->
                     // Count how many times this word appears in the word bank
-                    val availableCount = state.wordBankWords.count { it == word }
+                    val availableCount = state.cardSession.wordBankWords.count { it == word }
                     // Count how many times this word has been selected
-                    val usedCount = state.selectedWords.count { it == word }
+                    val usedCount = state.cardSession.selectedWords.count { it == word }
                     // Word is fully used only when all instances are selected
                     val isFullyUsed = usedCount >= availableCount
 
@@ -3351,7 +3351,7 @@ private fun AnswerBox(
                     )
                 }
             }
-            if (state.selectedWords.isNotEmpty()) {
+            if (state.cardSession.selectedWords.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -3359,7 +3359,7 @@ private fun AnswerBox(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Selected: ${state.selectedWords.size} / ${state.wordBankWords.size}",
+                        text = "Selected: ${state.cardSession.selectedWords.size} / ${state.cardSession.wordBankWords.size}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -3376,7 +3376,7 @@ private fun AnswerBox(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val canSelectInputMode = hasCards && state.sessionState == SessionState.ACTIVE
+                val canSelectInputMode = hasCards && state.cardSession.sessionState == SessionState.ACTIVE
                 FilledTonalIconButton(
                     onClick = {
                         if (canLaunchVoice) {
@@ -3429,7 +3429,7 @@ private fun AnswerBox(
                     }
                 }
                 Text(
-                    text = when (state.inputMode) {
+                    text = when (state.cardSession.inputMode) {
                         InputMode.VOICE -> "Voice"
                         InputMode.KEYBOARD -> "Keyboard"
                         InputMode.WORD_BANK -> "Word Bank"
@@ -3442,9 +3442,9 @@ private fun AnswerBox(
             onClick = { onSubmit() },
             modifier = Modifier.fillMaxWidth(),
             enabled = hasCards &&
-                state.inputText.isNotBlank() &&
-                state.sessionState == SessionState.ACTIVE &&
-                state.currentCard != null
+                state.cardSession.inputText.isNotBlank() &&
+                state.cardSession.sessionState == SessionState.ACTIVE &&
+                state.cardSession.currentCard != null
         ) {
             Text(text = "Check")
         }
@@ -3455,22 +3455,22 @@ private fun AnswerBox(
 private fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            when (state.lastResult) {
+            when (state.cardSession.lastResult) {
                 true -> Text(text = "Correct", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
                 false -> Text(text = "Incorrect", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
                 null -> Text(text = "")
             }
-            if (!state.answerText.isNullOrBlank()) {
+            if (!state.cardSession.answerText.isNullOrBlank()) {
                 Spacer(modifier = Modifier.width(8.dp))
                 TtsSpeakerButton(
-                    ttsState = state.ttsState,
+                    ttsState = state.audio.ttsState,
                     enabled = true,
                     onClick = onSpeak
                 )
             }
         }
-        if (!state.answerText.isNullOrBlank()) {
-            Text(text = "Answer: ${state.answerText}")
+        if (!state.cardSession.answerText.isNullOrBlank()) {
+            Text(text = "Answer: ${state.cardSession.answerText}")
         }
     }
 }
