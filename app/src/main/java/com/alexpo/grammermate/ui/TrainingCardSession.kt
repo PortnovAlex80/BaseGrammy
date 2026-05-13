@@ -80,6 +80,7 @@ import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
+import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.NavIconButton
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 
@@ -802,7 +803,11 @@ private fun DefaultResultContent(scope: TrainingCardSessionScope) {
             }
         }
         if (result.displayAnswer.isNotBlank()) {
-            Text(text = "Answer: ${result.displayAnswer}")
+            HintAnswerCard(
+                answerText = result.displayAnswer,
+                showTtsButton = scope.contract.supportsTts,
+                onSpeakTts = { scope.contract.speakTts() }
+            )
         }
     }
 }

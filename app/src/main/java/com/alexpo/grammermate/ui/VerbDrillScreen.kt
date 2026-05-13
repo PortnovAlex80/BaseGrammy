@@ -381,7 +381,7 @@ private fun DefaultVerbDrillInputControls(
             isFlagged = contract.isCurrentCardFlagged(),
             onFlag = { contract.flagCurrentCard() },
             onUnflag = { contract.unflagCurrentCard() },
-            onHideCard = { /* VerbDrill hide not yet implemented */ },
+            onHideCard = { contract.hideCurrentCard() },
             onExportBadSentences = { contract.exportFlaggedCards() },
             onCopyText = {
                 if (reportText.isNotBlank()) {
@@ -848,19 +848,17 @@ private fun VerbDrillInputModeBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Show answer button -- only on EASY, disabled when hint already shown
-            if (hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
-                    state = rememberTooltipState()
+            // Show answer button -- always visible, disabled when hint already shown
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                state = rememberTooltipState()
+            ) {
+                IconButton(
+                    onClick = { if (hasCards) contract.showAnswer() },
+                    enabled = hasCards && provider.hintAnswer == null
                 ) {
-                    IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards && provider.hintAnswer == null
-                    ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
-                    }
+                    Icon(Icons.Default.Visibility, contentDescription = "Show answer")
                 }
             }
             if (contract.supportsFlagging) {
