@@ -18,14 +18,27 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
+ * Callback interface for cross-module orchestration from [ProgressRestorer].
+ */
+interface ProgressCallbacks {
+    fun rebuildSchedules(lessons: List<Lesson>)
+    fun buildSessionCards()
+    fun refreshFlowerStates()
+    fun normalizeEliteSpeeds(speeds: List<Double>): List<Double>
+    fun resolveEliteUnlocked(lessons: List<Lesson>, testMode: Boolean): Boolean
+    fun parseBossRewards(rewardMap: Map<String, String>): Map<String, BossReward>
+}
+
+/**
  * Helper responsible for restoring progress from disk, backup, or initial load.
  *
  * Owns the restoration pipeline: load persisted data, resolve valid references,
  * apply to UI state, and trigger downstream rebuilds (schedules, cards, flowers).
- * Uses callbacks for ViewModel-level operations that are not owned by this helper.
+ * Uses [ProgressCallbacks] for ViewModel-level operations not owned by this helper.
  */
 class ProgressRestorer(
     private val stateAccess: TrainingStateAccess,
+    private val callbacks: ProgressCallbacks,
     private val progressStore: ProgressStore,
     private val profileStore: ProfileStore,
     private val streakStore: StreakStore,
@@ -36,14 +49,6 @@ class ProgressRestorer(
     companion object {
         private const val logTag = "GrammarMate"
     }
-
-    // Callbacks for cross-module operations owned by TrainingViewModel
-    var onRebuildSchedules: ((List<Lesson>) -> Unit)? = null
-    var onBuildSessionCards: (() -> Unit)? = null
-    var onRefreshFlowerStates: (() -> Unit)? = null
-    var onNormalizeEliteSpeeds: ((List<Double>) -> List<Double>)? = null
-    var onResolveEliteUnlocked: ((List<Lesson>, Boolean) -> Boolean)? = null
-    var onParseBossRewards: ((Map<String, String>) -> Map<String, BossReward>)? = null
 
     /**
      * Apply progress restoration to UI state and rebuild derived data.
@@ -62,8 +67,7 @@ class ProgressRestorer(
         bossMegaRewards: Map<String, BossReward>,
         includeLanguageData: Boolean = false
     ) {
-        val normalizedEliteSpeeds = onNormalizeEliteSpeeds?.invoke(progress.eliteBestSpeeds)
-            ?: progress.eliteBestSpeeds
+        val normalizedEliteSpeeds = callbacks.normalizeEliteSpeeds(progress.eliteBestSpeeds)
         stateAccess.updateState {
             val base = it.copy(
                 navigation = it.navigation.copy(
@@ -102,16 +106,16 @@ class ProgressRestorer(
                         installedPacks = packs
                     ),
                     elite = base.elite.copy(
-                        eliteUnlocked = onResolveEliteUnlocked?.invoke(lessons, base.cardSession.testMode) ?: false
+                        eliteUnlocked = callbacks.resolveEliteUnlocked(lessons, base.cardSession.testMode)
                     )
                 )
             } else {
                 base
             }
         }
-        onRebuildSchedules?.invoke(lessons)
-        onBuildSessionCards?.invoke()
-        onRefreshFlowerStates?.invoke()
+        callbacks.rebuildSchedules(lessons)
+        callbacks.buildSessionCards()
+        callbacks.refreshFlowerStates()
     }
 
     /**
@@ -133,8 +137,8 @@ class ProgressRestorer(
                 lessons.firstOrNull { it.id == id }?.id
             } ?: lessons.firstOrNull()?.id
             val streak = streakStore.getCurrentStreak(selectedLanguageId)
-            val bossLessonRewards = onParseBossRewards?.invoke(progress.bossLessonRewards) ?: emptyMap()
-            val bossMegaRewards = onParseBossRewards?.invoke(progress.bossMegaRewards) ?: emptyMap()
+            val bossLessonRewards = callbacks.parseBossRewards(progress.bossLessonRewards)
+            val bossMegaRewards = callbacks.parseBossRewards(progress.bossMegaRewards)
 
             applyRestoredProgress(
                 progress = progress,
@@ -173,8 +177,8 @@ class ProgressRestorer(
             lessons.firstOrNull { it.id == id }?.id
         } ?: lessons.firstOrNull()?.id
         val streak = streakStore.getCurrentStreak(selectedLanguageId)
-        val bossLessonRewards = onParseBossRewards?.invoke(progress.bossLessonRewards) ?: emptyMap()
-        val bossMegaRewards = onParseBossRewards?.invoke(progress.bossMegaRewards) ?: emptyMap()
+        val bossLessonRewards = callbacks.parseBossRewards(progress.bossLessonRewards)
+        val bossMegaRewards = callbacks.parseBossRewards(progress.bossMegaRewards)
 
         withContext(Dispatchers.Main) {
             applyRestoredProgress(

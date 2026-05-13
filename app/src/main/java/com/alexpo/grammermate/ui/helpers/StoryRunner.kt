@@ -6,30 +6,27 @@ import com.alexpo.grammermate.data.StoryQuiz
 import com.alexpo.grammermate.data.StoryState
 
 /**
+ * Callback interface for cross-module orchestration from [StoryRunner].
+ */
+interface StoryCallbacks {
+    fun forceBackup()
+    fun saveProgress()
+}
+
+/**
  * Story quiz session logic extracted from TrainingViewModel.
  *
  * Manages the story lifecycle: loading a quiz, marking completion
  * per phase (CHECK_IN / CHECK_OUT), and clearing errors.
  * All state changes go through [TrainingStateAccess].
  *
- * Dependencies:
- * - [LessonStore] for loading story quizzes
- * - [TrainingStateAccess] for reading/writing UI state
- *
- * Cross-module orchestration (force backup, save progress) is handled
- * via callbacks, following the same pattern as [VocabSprintRunner].
+ * Cross-module orchestration uses [StoryCallbacks].
  */
 class StoryRunner(
     private val stateAccess: TrainingStateAccess,
+    private val callbacks: StoryCallbacks,
     private val lessonStore: LessonStore,
 ) {
-    // ── Callbacks for cross-module orchestration ─────────────────────────
-
-    /** Signal that backup should be forced on next save. */
-    var onForceBackup: (() -> Unit)? = null
-
-    /** Save progress to persistent storage (ViewModel orchestration). */
-    var onSaveProgress: (() -> Unit)? = null
 
     // ── Public API ───────────────────────────────────────────────────────
 
@@ -80,8 +77,8 @@ class StoryRunner(
             }
         }
         if (shouldPersist) {
-            onForceBackup?.invoke()
-            onSaveProgress?.invoke()
+            callbacks.forceBackup()
+            callbacks.saveProgress()
         }
     }
 

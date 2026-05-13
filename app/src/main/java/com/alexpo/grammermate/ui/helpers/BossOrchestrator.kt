@@ -12,42 +12,36 @@ import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
 
 /**
+ * Callback interface for cross-module orchestration from [BossOrchestrator].
+ */
+interface BossCallbacks {
+    fun saveProgress()
+    fun buildSessionCards()
+    fun refreshFlowerStates()
+    fun pauseTimer()
+    fun resumeTimer()
+}
+
+/**
  * Boss battle and Mix Challenge orchestration helper.
  *
  * Coordinates [BossBattleRunner], [CardProvider], and [SessionRunner] for
  * boss battle lifecycle (start, progress, finish, clear) and Mix Challenge
  * session setup. Holds [TrainingStateAccess] for state reads/writes and
- * uses callbacks for cross-module coordination (progress save, flower refresh,
- * session card rebuild).
+ * uses [BossCallbacks] for cross-module coordination.
  *
  * Does NOT duplicate [BossBattleRunner] pure logic -- this class only wires
  * the orchestration between modules.
  */
 class BossOrchestrator(
     private val stateAccess: TrainingStateAccess,
+    private val callbacks: BossCallbacks,
     private val bossBattleRunner: BossBattleRunner,
     private val cardProvider: CardProvider,
     private val sessionRunner: SessionRunner,
     private val progressStore: ProgressStore,
     private val masteryStore: MasteryStore
 ) {
-
-    // ── Callbacks for cross-module orchestration ────────────────────────
-
-    /** Save progress to persistent storage. */
-    var onSaveProgress: (() -> Unit)? = null
-
-    /** Rebuild session cards after boss finishes. */
-    var onBuildSessionCards: (() -> Unit)? = null
-
-    /** Refresh flower states after mastery changes. */
-    var onRefreshFlowerStates: (() -> Unit)? = null
-
-    /** Pause the training timer. */
-    var onPauseTimer: (() -> Unit)? = null
-
-    /** Resume the training timer. */
-    var onResumeTimer: (() -> Unit)? = null
 
     // ── Mix Challenge ──────────────────────────────────────────────────
 
@@ -81,7 +75,7 @@ class BossOrchestrator(
         val cards = cardProvider.buildMixChallengeCards(lessons, startedIds, count = 10)
         if (cards.isEmpty()) return false
 
-        onPauseTimer?.invoke()
+        callbacks.pauseTimer()
         sessionRunner.clearAllCards()
 
         sessionRunner.setSessionCards(cards)
@@ -101,7 +95,7 @@ class BossOrchestrator(
                 daily = it.daily.copy(dailySession = DailySessionState())
             )
         }
-        onSaveProgress?.invoke()
+        callbacks.saveProgress()
         return true
     }
 
@@ -122,7 +116,7 @@ class BossOrchestrator(
     // ── Boss Battle Lifecycle ──────────────────────────────────────────
 
     private fun startBoss(type: BossType) {
-        onPauseTimer?.invoke()
+        callbacks.pauseTimer()
         val state = stateAccess.uiState.value
         val lessons = state.navigation.lessons
         val selectedId = state.navigation.selectedLessonId
@@ -179,7 +173,7 @@ class BossOrchestrator(
     }
 
     fun finishBoss() {
-        onPauseTimer?.invoke()
+        callbacks.pauseTimer()
         val state = stateAccess.uiState.value
         val result = bossBattleRunner.finishBoss(
             bossType = state.boss.bossType,
@@ -228,9 +222,9 @@ class BossOrchestrator(
                 )
             )
         }
-        onBuildSessionCards?.invoke()
-        onSaveProgress?.invoke()
-        onRefreshFlowerStates?.invoke()
+        callbacks.buildSessionCards()
+        callbacks.saveProgress()
+        callbacks.refreshFlowerStates()
     }
 
     fun clearBossRewardMessage() {
@@ -242,7 +236,7 @@ class BossOrchestrator(
             inputMode = state.cardSession.inputMode
         )
         if (clearResult.shouldResumeTimer) {
-            onResumeTimer?.invoke()
+            callbacks.resumeTimer()
         }
         stateAccess.updateState {
             val trigger = if (clearResult.shouldTriggerVoice) {
@@ -275,7 +269,7 @@ class BossOrchestrator(
             currentReward = state.boss.bossReward
         )
         if (result.shouldPause) {
-            onPauseTimer?.invoke()
+            callbacks.pauseTimer()
         }
         stateAccess.updateState {
             it.copy(
@@ -322,7 +316,7 @@ class BossOrchestrator(
         }
         val previousRewardMessage = state.boss.bossRewardMessage
         if (isNewReward) {
-            onPauseTimer?.invoke()
+            callbacks.pauseTimer()
         }
         stateAccess.updateState {
             it.copy(

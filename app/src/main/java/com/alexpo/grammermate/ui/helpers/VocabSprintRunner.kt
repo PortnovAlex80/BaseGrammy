@@ -9,23 +9,27 @@ import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.TrainingUiState
 
 /**
+ * Callback interface for cross-module orchestration from [VocabSprintRunner].
+ */
+interface VocabSprintCallbacks {
+    fun playSuccess()
+    fun playError()
+    fun saveProgress()
+    fun forceBackup()
+}
+
+/**
  * Vocab sprint session logic extracted from TrainingViewModel.
  *
  * Manages the vocab sprint lifecycle: session setup, answer validation,
  * word bank generation, SRS progress recording, and session completion.
  * All state changes go through [TrainingStateAccess].
  *
- * Dependencies:
- * - [LessonStore] for loading vocab entries
- * - [VocabProgressStore] for SRS state and sprint progress
- * - [AnswerValidator] for answer checking
- * - [AudioCoordinator] (via callbacks) for sound effects
- *
- * The [vocabSession] field is held externally (in TrainingViewModel) because
- * it is also cleared by navigation methods outside this helper's scope.
+ * Cross-module orchestration uses [VocabSprintCallbacks].
  */
 class VocabSprintRunner(
     private val stateAccess: TrainingStateAccess,
+    private val callbacks: VocabSprintCallbacks,
     private val lessonStore: LessonStore,
     private val vocabProgressStore: VocabProgressStore,
     private val answerValidator: AnswerValidator
@@ -34,20 +38,6 @@ class VocabSprintRunner(
 
     /** Current vocab session entries. Set by [openSprint], read by [moveToNextVocab] and [updateWordBank]. */
     var vocabSession: List<VocabEntry> = emptyList()
-
-    // ── Callbacks for cross-module orchestration ─────────────────────────
-
-    /** Play success sound (delegates to AudioCoordinator). */
-    var onPlaySuccess: (() -> Unit)? = null
-
-    /** Play error sound (delegates to AudioCoordinator). */
-    var onPlayError: (() -> Unit)? = null
-
-    /** Save progress to persistent storage (ViewModel orchestration). */
-    var onSaveProgress: (() -> Unit)? = null
-
-    /** Signal that backup should be forced on next save. */
-    var onForceBackup: (() -> Unit)? = null
 
     // ── Public API ───────────────────────────────────────────────────────
 
@@ -197,7 +187,7 @@ class VocabSprintRunner(
         if (input.isBlank() && !state.cardSession.testMode) return
         val accepted = answerValidator.validate(input, listOf(entry.targetText), state.cardSession.testMode).isCorrect
         if (accepted) {
-            onPlaySuccess?.invoke()
+            callbacks.playSuccess()
             // Save progress: record correct answer and completed index
             val lessonId = state.navigation.selectedLessonId ?: return
             vocabProgressStore.recordCorrect(entry.id, lessonId, state.navigation.selectedLanguageId)
@@ -205,7 +195,7 @@ class VocabSprintRunner(
             moveToNextVocab()
             return
         }
-        onPlayError?.invoke()
+        callbacks.playError()
         // Record incorrect answer for SRS tracking
         val lessonId = state.navigation.selectedLessonId ?: return
         vocabProgressStore.recordIncorrect(entry.id, lessonId, state.navigation.selectedLanguageId)
@@ -280,8 +270,8 @@ class VocabSprintRunner(
                     )
                 )
             }
-            onForceBackup?.invoke()
-            onSaveProgress?.invoke()
+            callbacks.forceBackup()
+            callbacks.saveProgress()
             return
         }
         val next = vocabSession[nextIndex]

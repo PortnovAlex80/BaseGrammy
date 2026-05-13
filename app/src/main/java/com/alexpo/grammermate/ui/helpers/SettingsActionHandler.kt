@@ -17,15 +17,29 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
+ * Callback interface for cross-module orchestration from [SettingsActionHandler].
+ */
+interface SettingsCallbacks {
+    fun resolveEliteUnlocked(lessons: List<com.alexpo.grammermate.data.Lesson>, testMode: Boolean): Boolean
+    fun refreshLessons(selectedLessonId: String?)
+    fun resetStores(app: android.app.Application)
+    fun resetDrillFiles(app: android.app.Application)
+    fun clearWordMastery()
+    fun resetDailyState()
+    fun setForceBackup(value: Boolean)
+    fun saveProgress()
+}
+
+/**
  * Handles settings-screen actions: config changes, profile updates,
  * progress reset, and backup creation.
  *
  * All state writes go through [TrainingStateAccess].
- * Cross-module coordination (daily session reset, progress tracker reset)
- * uses callbacks so this helper never holds references to other helpers.
+ * Cross-module coordination uses [SettingsCallbacks].
  */
 class SettingsActionHandler(
     private val stateAccess: TrainingStateAccess,
+    private val callbacks: SettingsCallbacks,
     private val configStore: AppConfigStore,
     private val profileStore: ProfileStore,
     private val backupManager: BackupManager,
@@ -35,32 +49,6 @@ class SettingsActionHandler(
         private const val logTag = "GrammarMate"
     }
 
-    // ── Callbacks for cross-module orchestration ────────────────────────
-
-    /** Resolve elite unlocked status from lessons and test mode. */
-    var onResolveEliteUnlocked: ((List<com.alexpo.grammermate.data.Lesson>, Boolean) -> Boolean)? = null
-
-    /** Refresh lessons to reflect changes (e.g., after reset). */
-    var onRefreshLessons: ((String?) -> Unit)? = null
-
-    /** Reset progress stores (mastery, drill, etc.). */
-    var onResetStores: ((android.app.Application) -> Unit)? = null
-
-    /** Reset drill files for all installed packs. */
-    var onResetDrillFiles: ((android.app.Application) -> Unit)? = null
-
-    /** Clear legacy word mastery store. */
-    var onClearWordMastery: (() -> Unit)? = null
-
-    /** Reset daily practice coordinator state. */
-    var onResetDailyState: (() -> Unit)? = null
-
-    /** Force backup flag setter. */
-    var onSetForceBackup: ((Boolean) -> Unit)? = null
-
-    /** Save progress. */
-    var onSaveProgress: (() -> Unit)? = null
-
     // ── Config changes ──────────────────────────────────────────────────
 
     fun toggleTestMode() {
@@ -69,7 +57,7 @@ class SettingsActionHandler(
         stateAccess.updateState {
             it.copy(
                 cardSession = it.cardSession.copy(testMode = newTestMode),
-                elite = it.elite.copy(eliteUnlocked = onResolveEliteUnlocked?.invoke(state.navigation.lessons, newTestMode) ?: false)
+                elite = it.elite.copy(eliteUnlocked = callbacks.resolveEliteUnlocked(state.navigation.lessons, newTestMode))
             )
         }
         configStore.save(configStore.load().copy(testMode = newTestMode))
@@ -103,8 +91,8 @@ class SettingsActionHandler(
 
     fun saveProgressNow() {
         Log.d(logTag, "Manual progress save requested from settings")
-        onSetForceBackup?.invoke(true)
-        onSaveProgress?.invoke()
+        callbacks.setForceBackup(true)
+        callbacks.saveProgress()
     }
 
     fun createProgressBackup() {
@@ -119,10 +107,10 @@ class SettingsActionHandler(
     }
 
     fun resetAllProgress(app: android.app.Application) {
-        onResetStores?.invoke(app)
-        onResetDrillFiles?.invoke(app)
-        onClearWordMastery?.invoke()
-        onResetDailyState?.invoke()
+        callbacks.resetStores(app)
+        callbacks.resetDrillFiles(app)
+        callbacks.clearWordMastery()
+        callbacks.resetDailyState()
 
         stateAccess.updateState {
             it.copy(
@@ -140,7 +128,7 @@ class SettingsActionHandler(
             )
         }
 
-        onRefreshLessons?.invoke(null)
+        callbacks.refreshLessons(null)
         Log.d(logTag, "All progress reset: mastery, daily, verb drill, vocab mastery, training progress")
     }
 

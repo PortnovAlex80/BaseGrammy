@@ -6,6 +6,14 @@ import com.alexpo.grammermate.data.TrainingUiState
 import kotlinx.coroutines.flow.StateFlow
 
 /**
+ * Callback interface for cross-module orchestration from [BadSentenceHelper].
+ */
+interface BadSentenceCallbacks {
+    fun advanceDrillCard()
+    fun skipToNextCard()
+}
+
+/**
  * Manages bad-sentence flagging and card hiding for both training and daily-practice sessions.
  *
  * Delegated from [com.alexpo.grammermate.ui.TrainingViewModel] to keep the ViewModel thin.
@@ -13,17 +21,12 @@ import kotlinx.coroutines.flow.StateFlow
  */
 class BadSentenceHelper(
     private val stateAccess: TrainingStateAccess,
+    private val callbacks: BadSentenceCallbacks,
     private val badSentenceStore: BadSentenceStore,
     private val hiddenCardStore: HiddenCardStore,
 ) {
     /** In-memory set of card IDs flagged as bad during the current daily session. */
     private val dailyBadCardIds = mutableSetOf<String>()
-
-    /** Called by flagBadSentence when in drill mode — ViewModel wires to advanceDrillCard(). */
-    var onAdvanceDrillCard: () -> Unit = {}
-
-    /** Called by hideCurrentCard after hiding — ViewModel wires to skipToNextCard(). */
-    var onSkipToNextCard: () -> Unit = {}
 
     // ── Training-session bad sentences ─────────────────────────────────────
 
@@ -43,7 +46,7 @@ class BadSentenceHelper(
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId)))
         }
         if (state.drill.isDrillMode) {
-            onAdvanceDrillCard()
+            callbacks.advanceDrillCard()
         }
     }
 
@@ -109,7 +112,7 @@ class BadSentenceHelper(
     fun hideCurrentCard() {
         val card = stateAccess.uiState.value.cardSession.currentCard ?: return
         hiddenCardStore.hideCard(card.id)
-        onSkipToNextCard()
+        callbacks.skipToNextCard()
     }
 
     fun unhideCurrentCard() {
