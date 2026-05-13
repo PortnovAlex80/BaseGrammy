@@ -257,10 +257,8 @@ fun HomeScreen(
         DailyPracticeEntryTile(
             onClick = onOpenElite
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        MixChallengeEntryTile(
-            onClick = onOpenMixChallenge
-        )
+        // MixChallenge tile hidden — feature not yet ready
+        // MixChallengeEntryTile(onClick = onOpenMixChallenge)
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
         Text(text = "🌱 seed • 🌿 growing • 🌸 bloom")

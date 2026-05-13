@@ -27,8 +27,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.MenuBook
@@ -40,7 +38,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -53,7 +50,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
@@ -90,7 +86,9 @@ import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.components.AsrStatusIndicator
+import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -478,91 +476,23 @@ fun AnswerBox(
     }
     if (showReportSheet) {
         val cardIsBad = isBadSentence()
-        ModalBottomSheet(
-            onDismissRequest = { showReportSheet = false }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = "Card options",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (reportCard != null) {
-                    Text(
-                        text = reportCard.promptRu,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+        SharedReportSheet(
+            onDismiss = { showReportSheet = false },
+            cardPromptText = reportCard?.promptRu,
+            isFlagged = cardIsBad,
+            onFlag = onFlagBadSentence,
+            onUnflag = onUnflagBadSentence,
+            onHideCard = onHideCard,
+            onExportBadSentences = onExportBadSentences,
+            onCopyText = {
+                if (reportText.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(reportText))
                 }
-                if (cardIsBad) {
-                    TextButton(
-                        onClick = {
-                            onUnflagBadSentence()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Remove from bad sentences list")
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            onFlagBadSentence()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add to bad sentences list")
-                    }
-                }
-                TextButton(
-                    onClick = {
-                        onHideCard()
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hide this card from lessons")
-                }
-                TextButton(
-                    onClick = {
-                        val path = onExportBadSentences()
-                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Download, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export bad sentences to file")
-                }
-                TextButton(
-                    onClick = {
-                        if (reportText.isNotBlank()) {
-                            clipboardManager.setText(AnnotatedString(reportText))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Copy text")
-                }
+            },
+            exportResult = { path ->
+                exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
             }
-        }
+        )
     }
     if (exportMessage != null) {
         AlertDialog(
@@ -768,17 +698,13 @@ fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
                 false -> Text(text = "Incorrect", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
                 null -> Text(text = "")
             }
-            if (!state.cardSession.answerText.isNullOrBlank()) {
-                Spacer(modifier = Modifier.width(8.dp))
-                TtsSpeakerButton(
-                    ttsState = state.audio.ttsState,
-                    enabled = true,
-                    onClick = onSpeak
-                )
-            }
         }
         if (!state.cardSession.answerText.isNullOrBlank()) {
-            Text(text = "Answer: ${state.cardSession.answerText}")
+            HintAnswerCard(
+                answerText = state.cardSession.answerText!!,
+                showTtsButton = true,
+                onSpeakTts = onSpeak
+            )
         }
     }
 }

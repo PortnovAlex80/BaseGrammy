@@ -241,6 +241,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(sortByFrequency = !it.sortByFrequency) }
     }
 
+    fun toggleVoiceAutoMode() {
+        _uiState.update { it.copy(voiceModeEnabled = !it.voiceModeEnabled) }
+    }
+
     private fun updateProgressDisplay() {
         val state = _uiState.value
         val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"

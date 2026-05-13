@@ -43,5 +43,6 @@ data class VerbDrillUiState(
     val loadedLanguageId: String? = null,
     val badSentenceCount: Int = 0,
     val currentCardIsBad: Boolean = false,
-    val sortByFrequency: Boolean = false
+    val sortByFrequency: Boolean = false,
+    val voiceModeEnabled: Boolean = false
 )

@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -66,9 +67,10 @@ import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
-import com.alexpo.grammermate.ui.components.DailyReportSheet
 import com.alexpo.grammermate.ui.components.DailyWordBankSection
 import com.alexpo.grammermate.ui.components.DailyInputModeBar
+import com.alexpo.grammermate.ui.components.HintAnswerCard
+import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.helpers.BlockProgress
 import com.alexpo.grammermate.ui.helpers.DailyPracticeSessionProvider
 
@@ -413,20 +415,11 @@ private fun DailyInputControls(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Hint answer text -- only on EASY
         if (provider.hintAnswer != null && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
-            ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Answer: ${provider.hintAnswer}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    if (contract.supportsTts) {
-                        IconButton(onClick = { contract.speakTts() }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.VolumeUp, "Listen", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
-            }
+            HintAnswerCard(
+                answerText = provider.hintAnswer!!,
+                showTtsButton = contract.supportsTts,
+                onSpeakTts = { contract.speakTts() }
+            )
         }
 
         // Incorrect feedback
@@ -494,23 +487,33 @@ private fun DailyInputControls(
         ) { Text("Check") }
     }
 
-    DailyReportSheet(
-        visible = showReportSheet,
-        onDismiss = { showReportSheet = false },
-        title = "Card options",
-        subtitle = reportCard?.promptRu ?: "",
-        copyText = reportText,
-        isFlagged = if (reportCard != null) contract.isCurrentCardFlagged() else false,
-        onFlag = { contract.flagCurrentCard() },
-        onUnflag = { contract.unflagCurrentCard() },
-        onExport = {
-            val path = contract.exportFlaggedCards()
-            exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-        },
-        exportMessage = exportMessage,
-        onExportMessageDismiss = { exportMessage = null },
-        clipboardManager = clipboardManager
-    )
+    if (showReportSheet) {
+        SharedReportSheet(
+            onDismiss = { showReportSheet = false },
+            cardPromptText = reportCard?.promptRu,
+            isFlagged = if (reportCard != null) contract.isCurrentCardFlagged() else false,
+            onFlag = { contract.flagCurrentCard() },
+            onUnflag = { contract.unflagCurrentCard() },
+            onHideCard = { /* no-op for daily practice */ },
+            onExportBadSentences = { contract.exportFlaggedCards() },
+            onCopyText = {
+                if (reportText.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(reportText))
+                }
+            },
+            exportResult = { path ->
+                exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+            }
+        )
+    }
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
+            confirmButton = { TextButton(onClick = { exportMessage = null }) { Text("OK") } }
+        )
+    }
 }
 
 @Composable
@@ -659,23 +662,34 @@ private fun ColumnScope.VocabFlashcardBlock(
     }
 
     val word = task.word
-    DailyReportSheet(
-        visible = showReportSheet,
-        onDismiss = { showReportSheet = false },
-        title = "Word options",
-        subtitle = "${word.word} — ${word.meaningRu ?: ""}",
-        copyText = "Word: ${word.word}\nMeaning: ${word.meaningRu}",
-        isFlagged = isDailyBadSentence(word.id),
-        onFlag = { onFlagDailyBadSentence(word.id, languageId, word.meaningRu ?: word.word, word.word, "daily_vocab") },
-        onUnflag = { onUnflagDailyBadSentence(word.id) },
-        onExport = {
-            val path = onExportDailyBadSentences()
-            exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-        },
-        exportMessage = exportMessage,
-        onExportMessageDismiss = { exportMessage = null },
-        clipboardManager = clipboardManager
-    )
+    if (showReportSheet) {
+        SharedReportSheet(
+            onDismiss = { showReportSheet = false },
+            cardPromptText = "${word.word} — ${word.meaningRu ?: ""}",
+            isFlagged = isDailyBadSentence(word.id),
+            onFlag = { onFlagDailyBadSentence(word.id, languageId, word.meaningRu ?: word.word, word.word, "daily_vocab") },
+            onUnflag = { onUnflagDailyBadSentence(word.id) },
+            onHideCard = { /* no-op for vocab flashcards */ },
+            onExportBadSentences = { onExportDailyBadSentences() },
+            onCopyText = {
+                val copyText = "Word: ${word.word}\nMeaning: ${word.meaningRu}"
+                if (copyText.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(copyText))
+                }
+            },
+            exportResult = { path ->
+                exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+            }
+        )
+    }
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
+            confirmButton = { TextButton(onClick = { exportMessage = null }) { Text("OK") } }
+        )
+    }
 }
 
 @Composable

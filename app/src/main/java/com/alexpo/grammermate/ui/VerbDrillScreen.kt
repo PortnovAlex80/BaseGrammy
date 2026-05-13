@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
@@ -32,7 +30,6 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -44,16 +41,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,10 +71,12 @@ import kotlinx.coroutines.delay
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.CardSessionContract
-import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.VerbDrillUiState
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
+import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
+import com.alexpo.grammermate.ui.components.HintAnswerCard
 
 @Composable
 fun VerbDrillScreen(
@@ -120,6 +118,7 @@ fun VerbDrillScreen(
             onSelectTense = viewModel::selectTense,
             onSelectGroup = viewModel::selectGroup,
             onToggleSortByFrequency = viewModel::toggleSortByFrequency,
+            onToggleVoiceMode = viewModel::toggleVoiceAutoMode,
             onStart = viewModel::startSession,
             onBack = onBack
         )
@@ -139,6 +138,21 @@ private fun VerbDrillSessionWithCardSession(
     var sheetTense by remember { mutableStateOf<String?>(null) }
     var showTenseSheet by remember { mutableStateOf(false) }
     var tenseSheetTense by remember { mutableStateOf<String?>(null) }
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Auto-launch voice when voice mode is on and a new card appears
+    VoiceAutoLauncher(
+        cardIndex = when (val c = provider.currentCard) {
+            null -> -1
+            else -> (c as? VerbDrillCard)?.let { uiState.session?.cards?.indexOf(it) } ?: -1
+        },
+        voiceModeEnabled = uiState.voiceModeEnabled,
+        isFlipped = provider.hintAnswer != null,
+        voiceCompleted = provider.pendingAnswerResult != null,
+        isVoiceActive = false,
+        onAutoStartVoice = { provider.setInputMode(InputMode.VOICE) }
+    )
 
     // Auto-advance after correct voice answer — no manual "Next" tap needed
     LaunchedEffect(provider.pendingAnswerResult, provider.currentInputMode) {
@@ -361,15 +375,21 @@ private fun DefaultVerbDrillInputControls(
 
     // Report sheet
     if (showReportSheet) {
-        VerbDrillReportSheet(
-            contract = contract,
-            reportCard = reportCard,
-            reportText = reportText,
-            clipboardManager = clipboardManager,
+        SharedReportSheet(
             onDismiss = { showReportSheet = false },
-            onExport = { path ->
+            cardPromptText = reportCard?.promptRu,
+            isFlagged = contract.isCurrentCardFlagged(),
+            onFlag = { contract.flagCurrentCard() },
+            onUnflag = { contract.unflagCurrentCard() },
+            onHideCard = { /* VerbDrill hide not yet implemented */ },
+            onExportBadSentences = { contract.exportFlaggedCards() },
+            onCopyText = {
+                if (reportText.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(reportText))
+                }
+            },
+            exportResult = { path ->
                 exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-                showReportSheet = false
             }
         )
     }
@@ -390,38 +410,11 @@ private fun DefaultVerbDrillInputControls(
         // Hint answer text -- only on EASY
         // Input controls remain visible below this text
         if (provider.hintAnswer != null && hintLevel == com.alexpo.grammermate.data.HintLevel.EASY) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Answer: ${provider.hintAnswer}",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    if (contract.supportsTts) {
-                        IconButton(
-                            onClick = { contract.speakTts() },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.VolumeUp,
-                                contentDescription = "Listen",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            }
+            HintAnswerCard(
+                answerText = provider.hintAnswer ?: "",
+                showTtsButton = contract.supportsTts,
+                onSpeakTts = { contract.speakTts() }
+            )
         }
 
         // Incorrect feedback — red text with remaining attempts, shown above input
@@ -540,6 +533,7 @@ private fun VerbDrillSelectionScreen(
     onSelectTense: (String?) -> Unit,
     onSelectGroup: (String?) -> Unit,
     onToggleSortByFrequency: () -> Unit,
+    onToggleVoiceMode: () -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -592,6 +586,34 @@ private fun VerbDrillSelectionScreen(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(text = "По частотности")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Voice input auto-launch toggle — matches VocabDrill style
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (state.voiceModeEnabled) MaterialTheme.colorScheme.primary
+                           else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Voice input (auto)",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Switch(
+                checked = state.voiceModeEnabled,
+                onCheckedChange = { onToggleVoiceMode() }
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -720,93 +742,6 @@ private fun VerbDrillCompletionScreen(
 }
 
 // --- Extracted sub-composables for DefaultVerbDrillInputControls ---
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun VerbDrillReportSheet(
-    contract: CardSessionContract,
-    reportCard: SessionCard?,
-    reportText: String,
-    clipboardManager: androidx.compose.ui.platform.ClipboardManager,
-    onDismiss: () -> Unit,
-    onExport: (String?) -> Unit
-) {
-    val cardIsBad = contract.isCurrentCardFlagged()
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = "Card options",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            if (reportCard != null) {
-                Text(
-                    text = reportCard.promptRu,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            if (cardIsBad) {
-                TextButton(
-                    onClick = {
-                        contract.unflagCurrentCard()
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Remove from bad sentences list")
-                }
-            } else {
-                TextButton(
-                    onClick = {
-                        contract.flagCurrentCard()
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ReportProblem, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add to bad sentences list")
-                }
-            }
-            TextButton(
-                onClick = {
-                    val path = contract.exportFlaggedCards()
-                    onExport(path)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Download, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Export bad sentences to file")
-            }
-            TextButton(
-                onClick = {
-                    if (reportText.isNotBlank()) {
-                        clipboardManager.setText(AnnotatedString(reportText))
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Copy text")
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
