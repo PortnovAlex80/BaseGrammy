@@ -87,6 +87,29 @@ This section specifies the non-functional qualities, constraints, and operationa
 | ALL_MIXED mode with 500+ cards | Capped at 300 cards | Random selection of 300 cards from the full pool to prevent session overload. |
 | Roadmap with 30+ lessons and flowers | Must render within 16 ms per frame | Flower calculations are lightweight (arithmetic only). Compose lazy column handles viewport recycling. |
 
+### 20.1.7 Threading and I/O Performance
+
+| Requirement | Level | Implementation |
+|-------------|-------|----------------|
+| All file I/O MUST run on `Dispatchers.IO`, never on the main thread | MUST | `VerbDrillViewModel.loadCards()` wraps CSV reading, YAML loading, and asset reads in `withContext(Dispatchers.IO)`. State updates (`_uiState.update`) remain on the main thread. |
+| CSV parsing MUST run on `Dispatchers.IO` | MUST | All CSV parsing (lessons, verb drill, vocab drill) runs within IO-dispatched coroutines. DailyPractice `prebuildSession` already runs on `Dispatchers.IO` in the ViewModel init block. |
+| Parsed lesson data SHOULD be cached in memory, invalidated only on pack change | SHOULD | Not yet implemented. `getLessons()` re-reads CSV files on each call. Future optimization: in-memory cache with pack-version invalidation. |
+| Daily practice blocks SHOULD be loaded in parallel using `coroutineScope + async` | SHOULD | `DailySessionComposer.buildSession()` uses `coroutineScope { async { ... } }` to build all 3 blocks (Translate, Vocab, Verbs) concurrently. Blocks are independent (no shared mutable state). |
+| Store data SHOULD be cached in memory after first load | SHOULD | Not yet implemented. Stores currently read from YAML on every call. Future optimization: lazy-loading cache with write-through. |
+| Regex patterns MUST be compiled once (companion object or top-level), not per-call | MUST | `Normalizer` compiles 3 patterns (`WHITESPACE_REGEX`, `DIACRITICAL_MARKS_REGEX`, `TIME_MINUTES_REGEX`) as companion-level vals. `VerbDrillCsvParser` compiles `PARENTHETICAL_VERB_REGEX` as object-level val. |
+
+**VerbDrillViewModel threading model:**
+- `loadCards()`: `suspend fun` called from `viewModelScope.launch`. All I/O runs in `withContext(Dispatchers.IO)`, state updates on main.
+- `reloadForPack()`: progress re-read runs in `withContext(Dispatchers.IO)`.
+- `reloadForLanguage()`: delegates to `loadCards()` which handles threading internally.
+- `init {}`: calls `viewModelScope.launch { loadCards() }` — I/O on IO dispatcher.
+
+**DailySessionComposer parallelism:**
+- `buildSession()`: `suspend fun`. Uses `coroutineScope` + 3 `async` blocks for Translate/Vocab/Verbs.
+- `buildRepeatSession()`: `suspend fun`. Same parallel pattern for repeat sessions.
+- `rebuildBlock()`: non-suspend, single block rebuild (no parallelism needed).
+- `DailyPracticeCoordinator.prebuildSession()` already runs on `Dispatchers.IO` from the ViewModel, so the parallel async blocks inherit the IO dispatcher.
+
 ---
 
 ## 20.2 Offline Capability

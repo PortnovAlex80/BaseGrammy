@@ -728,8 +728,8 @@ VerbDrillScreen applies `ruTextScale` (from `AudioState` / Settings) to the card
 - Verb group badges: NOT scaled
 - Conjugation table text in reference sheets: NOT scaled
 - Navigation buttons, check button: NOT scaled
-- **Verb chip** (`SuggestionChip`): shows verb name (with rank if present, e.g., "essere #1"). Tappable -- opens `VerbReferenceBottomSheet`.
-- **Tense chip** (`SuggestionChip`): shows abbreviated tense name. Tappable -- opens `TenseInfoBottomSheet`.
+- **Verb chip** (`SuggestionChip`): shows verb name (with rank if present, e.g., "essere #1"). Tappable -- opens `VerbReferenceBottomSheet`. **Always visible regardless of HintLevel.** These are reference data about the verb form, NOT hints.
+- **Tense chip** (`SuggestionChip`): shows abbreviated tense name. Tappable -- opens `TenseInfoBottomSheet`. **Always visible regardless of HintLevel.** These are reference data about the tense, NOT hints.
 
 ### 10.6.4 Input Controls (DefaultVerbDrillInputControls)
 
@@ -1064,35 +1064,32 @@ This section documents the UI consistency requirements for VerbDrill, establishe
 
 ---
 
-### 10.9.1 Voice Input (Auto) Mode [UI-CONSISTENCY-2025]
+### 10.9.1 Voice Input Auto-Start Mode
 
-VerbDrill must adopt the "Voice input (auto)" toggle pattern from VocabDrillScreen. This replaces the current VOICE input mode selection with an explicit toggle on the selection screen.
+VerbDrill uses the global `voiceAutoStart` setting from SettingsScreen (NOT a per-drill toggle).
 
-**Reference implementation:** VocabDrillScreen.kt lines 218-241 (Switch toggle) and lines 409-417 (auto-launch LaunchedEffect).
+**IMPORTANT:** Voice auto-start controls ONLY whether speech recognition launches automatically on new cards. It does NOT disable the microphone. The mic button in the input mode bar ALWAYS works when clicked manually.
 
-**Requirements:**
+**Behavior:**
 
-1. **Selection screen toggle:** Add a "Voice input (auto)" Switch toggle with Mic icon to `VerbDrillSelectionScreen`, positioned below the filter dropdowns and above the start button.
-   - Class path: `ui/screens/VerbDrillScreen.kt` — `VerbDrillSelectionScreen` composable
+1. **Auto-launch on new card:** When global `voiceAutoStart == true`, mic auto-launches on each new card with a **500ms delay**. When `voiceAutoStart == false`, no automatic launch occurs, but the mic button still works on manual click.
+   - Class path: `ui/components/VoiceAutoLauncher.kt` — shared auto-launch composable
 
-2. **Auto-launch on new card:** When `voiceModeEnabled == true`, mic auto-launches on each new card with a **500ms delay** (matching VocabDrill timing).
-   - Class path: `ui/VerbDrillCardSessionProvider.kt` — `voiceTriggerToken` field and auto-launch logic
+2. **Auto-advance on correct voice answer:** After a correct voice answer, auto-advance to the next card after **500ms delay**.
+   - Class path: `ui/VerbDrillScreen.kt` — `LaunchedEffect` observer
 
-3. **Auto-advance on correct voice answer:** After a correct voice answer, auto-advance to the next card after **800ms delay** (matching VocabDrill timing, not the current 500ms).
-   - Class path: `ui/VerbDrillCardSessionProvider.kt` — `pendingAnswerResult` observer
+3. **No per-drill toggle:** VerbDrillSelectionScreen no longer has a "Voice input (auto)" Switch. The global Settings toggle (`AudioState.voiceAutoStart`) is the sole control.
+   - The `voiceModeEnabled` field was removed from `VerbDrillUiState`.
+   - VerbDrillViewModel.toggleVoiceAutoMode() was removed.
+   - `VerbDrillScreen` receives `voiceAutoStart: Boolean` as a parameter from GrammarMateApp.
 
-4. **Voice mode state field:** Add `voiceModeEnabled: Boolean = false` to `VerbDrillUiState`.
-   - Class path: `data/VerbDrillCard.kt` — `VerbDrillUiState` data class
-
-5. **Shared component:** Extract the voice auto-launch logic into a shared composable `ui/components/VoiceAutoLauncher.kt` used by both VerbDrill and VocabDrill.
-   - Class path: `ui/components/VoiceAutoLauncher.kt` — NEW shared component
+4. **Shared component:** Voice auto-launch logic is in `ui/components/VoiceAutoLauncher.kt`, used by VerbDrill, VocabDrill, and TrainingScreen.
 
 **Regression class paths:**
-- `ui/screens/VerbDrillScreen.kt` — selection screen toggle + session voice behavior
+- `ui/VerbDrillScreen.kt` — VoiceAutoLauncher usage + DefaultVerbDrillInputControls auto-voice
 - `ui/VerbDrillCardSessionProvider.kt` — auto-launch token and auto-advance timing
-- `ui/components/VoiceAutoLauncher.kt` — shared auto-launch composable (NEW)
-- `ui/screens/VocabDrillScreen.kt:218-241` — reference toggle implementation
-- `ui/screens/VocabDrillScreen.kt:409-417` — reference auto-launch implementation
+- `ui/components/VoiceAutoLauncher.kt` — shared auto-launch composable
+- `ui/GrammarMateApp.kt` — passes `voiceAutoStart` to VerbDrillScreen
 
 ---
 

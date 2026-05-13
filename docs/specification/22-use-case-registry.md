@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 57 |
-| Total Acceptance Criteria | 250 |
-| Domains | 13 |
+| Total Use Cases | 60 |
+| Total Acceptance Criteria | 264 |
+| Domains | 16 |
 
 ### Per-Domain Counts
 
@@ -21,7 +21,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 3 | Input modes (voice, keyboard, word bank) | 5 | 20 |
 | 4 | Boss battle | 4 | 15 |
 | 5 | Daily Practice (3 blocks, cursor) | 5 | 22 |
-| 6 | Verb Drill | 4 | 16 |
+| 6 | Verb Drill | 5 | 20 |
 | 7 | Vocab Drill | 5 | 19 |
 | 8 | Navigation & screens | 4 | 15 |
 | 9 | Lesson packs (import, manifest) | 4 | 16 |
@@ -30,6 +30,8 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 12 | [UI-CONSISTENCY-2025] UI consistency (eye mode, voice auto, report sheet, mix challenge, shared components) | 5 | 31 |
 | 13 | Font size scaling (ruTextScale across training screens) | 1 | 10 |
 | 14 | Voice auto-start toggle (global setting for all training screens) | 1 | 8 |
+| 15 | Verb/tense info sheets (interactive chips on VerbDrillScreen and DailyPracticeScreen) | 1 | 5 |
+| 16 | Performance (IO dispatchers, caching, parallel loading) | 1 | 5 |
 
 ---
 
@@ -63,7 +65,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
 | UC-12 | Voice input answer submission | Training session is ACTIVE; input mode is VOICE; mic permission granted | 1. Voice recognition auto-starts. 2. User speaks the target-language translation. 3. Recognized text populates `inputText`. 4. Answer is submitted and compared. 5. Mastery IS recorded (VOICE counts). | AC1: Voice recognition auto-triggers when `inputMode == VOICE` and session is ACTIVE. AC2: Recognized text populates the input field. AC3: `recordCardShowForMastery()` records mastery for VOICE input. AC4: Empty or null ASR result is treated as no input (no crash, no incorrect submission). | TrainingScreen (ui/screens/TrainingScreen.kt) | `ui/TrainingCardSession.kt`, `ui/TrainingViewModel.kt` | scenario-05, US-17 |
-| UC-13 | Keyboard input answer submission | Training session is ACTIVE; input mode is KEYBOARD | 1. User types target-language translation. 2. User presses submit. 3. Answer is normalized and compared. 4. Mastery IS recorded (KEYBOARD counts). | AC1: `recordCardShowForMastery()` records mastery for KEYBOARD input. AC2: Empty input is rejected before validation (early return). AC3: IME action is "Done" (single-line entry). | TrainingScreen (ui/screens/TrainingScreen.kt) | `ui/TrainingCardSession.kt`, `ui/TrainingViewModel.kt` | scenario-05, US-18 |
+| UC-13 | Keyboard input answer submission | Training session is ACTIVE; input mode is KEYBOARD | 1. User types target-language translation. 2. User presses submit. 3. Answer is normalized and compared. 4. Mastery IS recorded (KEYBOARD counts). | AC1: `recordCardShowForMastery()` records mastery for KEYBOARD input. AC2: Empty input is rejected before validation (early return). AC3: IME action is "Done" (single-line entry). AC4: Keyboard input mode button is available on ALL training screens (TrainingScreen, DailyPracticeScreen, TrainingCardSession default controls) regardless of HintLevel setting (not gated by HARD difficulty). | TrainingScreen (ui/screens/TrainingScreen.kt) | `ui/TrainingCardSession.kt`, `ui/TrainingViewModel.kt` | scenario-05, US-18 |
 | UC-14 | Word bank answer submission | Training session is ACTIVE; input mode is WORD_BANK | 1. Word chips (answer words + distractors) are displayed shuffled. 2. User taps chips sequentially to build sentence. 3. Tapping the last selected word removes it (undo). 4. User submits constructed sentence. 5. Answer is compared. 6. Mastery is NOT recorded. | AC1: Word bank contains answer words + up to 3 distractors (regular training) or up to `8-answerWords` distractors (verb drill/daily). AC2: Distractors are filtered to not match correct answer words. AC3: `recordCardShowForMastery()` returns early (WORD_BANK does NOT count for mastery). AC4: Tapping the last selected word removes it from the selection. AC5: WORD_BANK cards are tracked via `markSubLessonCardsShown()` for sub-lesson progress only (no mastery increment). | TrainingScreen (ui/screens/TrainingScreen.kt) | `ui/helpers/WordBankGenerator.kt`, `ui/TrainingCardSession.kt` | scenario-05, US-19, US-20 |
 | UC-15 | Switch input mode mid-card | Training session is ACTIVE; a card is displayed | 1. User taps keyboard, mic, or word bank icon. 2. `setInputMode()` updates the mode. 3. If switching to WORD_BANK: `updateWordBank()` regenerates chip list. 4. If switching from WORD_BANK: `inputText` from word selection is NOT cleared. 5. Mastery is determined by the mode at submission time. | AC1: Switching to KEYBOARD mid-card from WORD_BANK allows mastery recording. AC2: Word bank chips regenerate when switching to WORD_BANK. AC3: `inputText` is not cleared when switching away from WORD_BANK. AC4: Input mode is NOT persisted between sessions (always resets to VOICE). | TrainingScreen (ui/screens/TrainingScreen.kt) | `ui/helpers/WordBankGenerator.kt`, `ui/TrainingCardSession.kt`, `ui/TrainingViewModel.kt` | scenario-05 |
 | UC-16 | Input mode in daily practice blocks | Daily practice session is active | 1. Block 1 (TRANSLATE): rotates VOICE, KEYBOARD, WORD_BANK per card (index % 3). 2. Block 2 (VOCAB): flashcard mode only -- no word bank, optional voice. 3. Block 3 (VERBS): alternates KEYBOARD, WORD_BANK (no VOICE in default rotation). | AC1: TRANSLATE block assigns input modes via `index % 3` rotation. AC2: VOCAB block uses Anki-style flip+rate, not TrainingCardSession. AC3: VERB block alternates KEYBOARD and WORD_BANK. AC4: WORD_BANK cards in daily practice do NOT advance the cursor on session completion. | DailyPracticeScreen (ui/DailyPracticeScreen.kt) | `ui/helpers/DailyPracticeCoordinator.kt`, `ui/helpers/DailySessionComposer.kt` | scenario-05, scenario-06, US-39 |
@@ -101,6 +103,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | UC-27 | Submit verb conjugation answer | Verb drill session is active; a card is displayed | 1. User types conjugation and taps Check. 2. `Normalizer.normalize()` applied to both input and answer. 3. Single-answer comparison (not `acceptedAnswers.any`). 4. Correct: auto-advances after 500ms if VOICE mode. 5. Wrong: increments `incorrectAttempts`, shows feedback. 6. After 3 wrong: auto-shows hint, pauses. | AC1: Validation uses `Normalizer.normalize()` on both sides. AC2: Verb drill uses single `card.answer` comparison, not multiple accepted answers. AC3: Voice mode auto-submits immediately on ASR result. AC4: Voice mode auto-advances after 500ms on correct answer. AC5: 3 wrong attempts auto-show hint and pause. AC6: Manual "Show Answer" (eye button) also shows hint and pauses. | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillScreen.kt`, `data/Normalization.kt` | scenario-07, scenario-02 |
 | UC-28 | Persist verb drill progress per card | Verb drill session is active; a card is advanced | 1. `persistCardProgress()` builds combo key `{group}\|{tense}`. 2. Adds card ID to `everShownCardIds` and `todayShownCardIds`. 3. Calls `verbDrillStore.upsertComboProgress()`. 4. Progress is persisted immediately via AtomicFileWriter. | AC1: Progress is persisted immediately per card, not batched. AC2: `everShownCardIds` accumulates permanently (never resets). AC3: `todayShownCardIds` resets on date change. AC4: File path is `drills/{packId}/verb_drill_progress.yaml`. | VerbDrillScreen (ui/VerbDrillScreen.kt) | `data/VerbDrillStore.kt` | scenario-07, US-45 |
 | UC-29 | Reload verb drill on pack switch | User switches active pack while on Verb Drill screen | 1. `reloadForPack(newPackId)` checks idempotency guard. 2. If same pack and cards loaded: early return. 3. Otherwise: creates new `VerbDrillStore`, reloads cards and progress from new pack. | AC1: `reloadForPack()` returns early if `currentPackId == packId && allCards.isNotEmpty()`. AC2: New `VerbDrillStore` instance is created scoped to new `packId`. AC3: `allCards`, `progressMap`, `packIdForCardId` are fully rebuilt. AC4: Speed tracking state is NOT reset on pack switch (minor issue). | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillScreen.kt`, `data/VerbDrillStore.kt` | scenario-07, scenario-10 |
+| UC-59 | VerbDrill voice auto-launch respects global voiceAutoStart flag | VerbDrill session is active; global voice auto-start toggle is in Settings | 1. `voiceAutoStart` is read from `AudioState.voiceAutoStart` (global setting). 2. On card change, both `VoiceAutoLauncher` and `DefaultVerbDrillInputControls` LaunchedEffect check `voiceAutoStart` before launching ASR. 3. When `voiceAutoStart == false`, no ASR intent is launched automatically (but mic button still works on manual click). 4. When `voiceAutoStart == true`, ASR launches within 500ms. | AC1 [BEHAVIORAL]: When voiceAutoStart=false + Continue pressed, no voice auto-launch occurs. AC2 [BEHAVIORAL]: When voiceAutoStart=false + new card appears, no voice auto-launch occurs. AC3 [BEHAVIORAL]: When voiceAutoStart=false, mic button on input mode bar still works and launches speech recognition on manual click. AC4 [BEHAVIORAL]: When voiceAutoStart=true + Continue pressed, voice auto-launches within 500ms. AC5 [BEHAVIORAL]: Both `VoiceAutoLauncher` and `DefaultVerbDrillInputControls` LaunchedEffect respect the global `voiceAutoStart` flag. AC6 [STRUCTURAL]: No per-drill voice toggle exists on VerbDrillSelectionScreen. | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillScreen.kt`, `ui/components/VoiceAutoLauncher.kt`, `ui/GrammarMateApp.kt` | voice-auto-start |
 
 ---
 
@@ -188,6 +191,22 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 15: Verb/Tense Info Sheets
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-58 | Verb and tense info sheets accessible from all screens showing verb/tense chips | User is on a screen that displays verb/tense SuggestionChips (VerbDrillScreen or DailyPracticeScreen verbs block); hintLevel is not HARD | 1. User taps verb SuggestionChip. 2. VerbReferenceBottomSheet opens showing conjugation table for the current verb+tense, with TTS button to speak verb infinitive. 3. User taps tense SuggestionChip. 4. TenseInfoBottomSheet opens showing formula, usage (in Russian), and examples. 5. User taps outside sheet or presses back. 6. Sheet dismisses. | AC1 [STRUCTURAL]: VerbDrillScreen verb/tense chips are clickable (existing behavior, no regression). AC2 [BEHAVIORAL]: DailyPracticeScreen verb chip is clickable and opens VerbReferenceBottomSheet with conjugation data. AC3 [BEHAVIORAL]: DailyPracticeScreen tense chip is clickable and opens TenseInfoBottomSheet with formula/usage/examples. AC4 [BEHAVIORAL]: VerbReferenceBottomSheet shows conjugation forms for matching verb+tense cards. AC5 [BEHAVIORAL]: TenseInfoBottomSheet shows tense name, abbreviation, formula, usage in Russian, and examples when data is available; shows fallback message when data is unavailable. | VerbDrillScreen, DailyPracticeScreen | `ui/VerbDrillScreen.kt`, `ui/DailyPracticeScreen.kt`, `ui/components/VerbDrillSheets.kt`, `ui/helpers/DailyPracticeSessionProvider.kt` | verb-tense-sheets |
+
+---
+
+## Domain 16: Performance (IO Dispatchers, Caching, Parallel Loading)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-60 | Performance — training screens load without UI jank | User opens VerbDrill, DailyPractice, or any screen that reads CSV/YAML data | 1. VerbDrillViewModel.loadCards() runs file I/O on Dispatchers.IO. 2. DailySessionComposer builds 3 blocks in parallel via coroutineScope + async. 3. Lesson CSV data is parsed once per pack load. 4. Regex patterns are pre-compiled in companion/top-level objects. 5. State updates flow back to main thread for Compose. | AC1 [BEHAVIORAL]: VerbDrill loadCards() file I/O (CSV reading, YAML loading, asset reads) runs inside `withContext(Dispatchers.IO)`, never on main thread. AC2 [BEHAVIORAL]: DailyPractice loads 3 blocks (Translate, Vocab, Verbs) in parallel using `coroutineScope` + `async` in DailySessionComposer.buildSession(). AC3 [BEHAVIORAL]: Lesson CSV data is parsed only when needed (no re-read on subsequent calls within same session — caching deferred to future optimization). AC4 [BEHAVIORAL]: Store data is loaded on first access (no in-memory cache yet — deferred to future optimization). AC5 [STRUCTURAL]: Regex patterns (Normalizer: WHITESPACE_REGEX, DIACRITICAL_MARKS_REGEX, TIME_MINUTES_REGEX; VerbDrillCsvParser: PARENTHETICAL_VERB_REGEX) are compiled once at class load time, not per-call. | All training screens | `ui/VerbDrillViewModel.kt`, `ui/helpers/DailySessionComposer.kt`, `data/Normalization.kt`, `data/VerbDrillCsvParser.kt` | performance |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -198,7 +217,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | scenario-04 (spaced repetition) | UC-10, UC-11 |
 | scenario-05 (input modes) | UC-12, UC-13, UC-14, UC-15, UC-16 |
 | scenario-06 (daily practice) | UC-21, UC-22, UC-23, UC-24, UC-25 |
-| scenario-07 (verb drill) | UC-26, UC-27, UC-28, UC-29, UC-50 |
+| scenario-07 (verb drill) | UC-26, UC-27, UC-28, UC-29, UC-50, UC-58, UC-59 |
 | scenario-08 (vocab drill) | UC-30, UC-31, UC-32, UC-33, UC-34 |
 | scenario-09 (boss battle) | UC-17, UC-18, UC-19, UC-20 |
 | scenario-10 (pack drills) | UC-29, UC-34, UC-38, UC-39 |
@@ -208,3 +227,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | scenario-14 (backup/restore) | UC-43, UC-44 |
 | scenario-15 (onboarding) | UC-46 |
 | 17-user-stories | All US-01 through US-79 referenced in UCs |
+| performance | UC-60 |

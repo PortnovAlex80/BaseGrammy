@@ -233,7 +233,7 @@ The scope is recreated when any of its inputs change, ensuring composables alway
 
 When no custom `header` slot is provided:
 
-1. **Tense label** (conditional): shown only when the current card is a `VerbDrillCard` with a non-blank `tense` field. Rendered in `primary` color, 13sp, `SemiBold`.
+1. **Tense label** (conditional): shown only when the current card is a `VerbDrillCard` with a non-blank `tense` field. Rendered in `primary` color, 13sp, `SemiBold`. **Always visible regardless of HintLevel.** The tense label is reference information about the verb form, NOT a hint. HintLevel controls parenthetical hints in prompt text, not this label.
 2. **Clean prompt text**: `promptRu` with parenthetical hints stripped via regex `\s*\([^)]+\)`. Rendered at 18sp, `Medium` weight.
 
 Custom overrides: Verb Drill uses a custom header with back arrow + "Verb Drill" title (no settings gear). Daily Practice uses its own header with back arrow + "Daily Practice" title + block label chip.

@@ -924,16 +924,20 @@ _uiState.update { it.resetSessionState().copy(selectedLanguageId = languageId, l
 
 **Persistence:** Saved to `config.yaml` via `AppConfig.voiceAutoStart`. Loaded on init.
 
+**Semantics:** The flag controls ONLY automatic launch of speech recognition on new cards. It does NOT disable the microphone button. When OFF, the mic button on the input mode bar still works and launches speech recognition on manual click. When ON, speech recognition auto-launches on new cards.
+
 **Behavioral rules:**
 
 | Screen | When `voiceAutoStart = true` | When `voiceAutoStart = false` |
 |--------|------------------------------|-------------------------------|
 | TrainingScreen | LaunchedEffect fires on new card + VOICE mode + ACTIVE state | LaunchedEffect does NOT fire `speechLauncher.launch()` |
 | DailyPracticeScreen | LaunchedEffect fires on new card + VOICE mode + sessionActive | LaunchedEffect does NOT fire `speechLauncher.launch()` |
-| VerbDrillScreen | Per-drill `voiceModeEnabled` flag (unchanged) | Per-drill `voiceModeEnabled` flag (unchanged) |
-| VocabDrillScreen | Per-drill `voiceModeEnabled` flag (unchanged) | Per-drill `voiceModeEnabled` flag (unchanged) |
+| VerbDrillScreen | Uses global `voiceAutoStart` (passed as parameter) | Uses global `voiceAutoStart` (passed as parameter) |
+| VocabDrillScreen | Uses global `voiceAutoStart` (passed as parameter) | Uses global `voiceAutoStart` (passed as parameter) |
 
-**Invariant:** Auto-submit timing (keyboard exact match, voice auto-advance) is NOT affected by this flag. The flag only controls whether the speech recognition intent is launched automatically on card entry.
+**No per-drill overrides:** VerbDrillScreen and VocabDrillScreen no longer have their own `voiceModeEnabled` toggle. The global Settings toggle is the sole control.
+
+**Invariant:** Auto-submit timing (keyboard exact match, voice auto-advance) is NOT affected by this flag. The flag only controls whether the speech recognition intent is launched automatically on card entry. The mic button in the input mode bar ALWAYS works regardless of this flag.
 
 **Guard pattern in LaunchedEffect:**
 ```kotlin

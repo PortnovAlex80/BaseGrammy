@@ -164,13 +164,14 @@ data class VocabDrillUiState(
     val session: VocabDrillSessionState? = null,
     val loadedLanguageId: String? = null,
     val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
-    val voiceModeEnabled: Boolean = false,
     val masteredCount: Int = 0,
     val masteredByPos: Map<String, Int> = emptyMap()
 )
 ```
 
 Top-level state for the standalone VocabDrillScreen. `session` is non-null when a drill session is active.
+
+**Note:** `voiceModeEnabled` was removed. Voice auto-start is now controlled by the global `AudioState.voiceAutoStart` setting, passed to VocabDrillScreen as a `voiceAutoStart` parameter.
 
 ### 11.2.9 VocabDrillSessionState
 
@@ -186,10 +187,11 @@ data class VocabDrillSessionState(
     val voiceAttempts: Int = 0,                   // 0-3 per card
     val voiceRecognizedText: String? = null,
     val voiceResult: VoiceResult? = null,         // CORRECT, WRONG, SKIPPED
-    val voiceCompleted: Boolean = false,          // True after correct, 3 wrongs, or skip
-    val voiceModeEnabled: Boolean = false         // Auto-launch voice input on new cards
+    val voiceCompleted: Boolean = false          // True after correct, 3 wrongs, or skip
 )
 ```
+
+**Note:** `voiceModeEnabled` was removed from `VocabDrillSessionState`. Voice auto-start is now controlled by the global `AudioState.voiceAutoStart` setting, passed to `VocabDrillScreen` as a `voiceAutoStart` parameter.
 
 ### 11.2.10 DailyTask.VocabFlashcard (Daily Practice integration)
 
@@ -476,8 +478,7 @@ Strips leading/trailing whitespace, converts to lowercase, and removes trailing 
 - `IT_TO_RU` direction: `ru-RU` (user speaks Russian)
 - `RU_TO_IT` direction: `it-IT` (user speaks Italian)
 
-**Auto-voice check (`shouldAutoStartVoice()`):**
-Returns `true` when `voiceModeEnabled && !isFlipped && !voiceCompleted`. Used by the UI to decide whether to auto-launch RecognizerIntent on a new card.
+**Auto-voice check:** The UI checks the global `voiceAutoStart` flag (passed as parameter) together with `!isFlipped && !voiceCompleted` to decide whether to auto-launch RecognizerIntent on a new card. The mic button ALWAYS works on manual click regardless of this flag.
 
 ### 11.5.10 Session Completion
 
@@ -514,7 +515,7 @@ The screen has three states, each rendered by a separate composable:
 Layout (top to bottom):
 1. **Header:** Back arrow + "Flashcards" title.
 2. **Direction filter chips:** "IT -> RU" and "RU -> IT". Default: IT -> RU.
-3. **Voice input toggle:** Mic icon + "Voice input (auto)" label + Switch.
+3. ~~**Voice input toggle:**~~ Removed. Voice auto-start is now controlled by the global Settings toggle only (`AudioState.voiceAutoStart`).
 4. **Part of speech filter chips:** "All" + one chip per available POS. Labels: Nouns, Verbs, Adj., Adv., Numbers (with capitalize-first-char fallback for unknown POS like "pronouns").
 5. **Word frequency filter chips:** "Top 100", "Top 500", "Top 1000", "All".
 6. **Stats card** (shown when `totalCount > 0`):
@@ -536,8 +537,8 @@ Layout:
 
 ### 11.6.4 Card Front (VocabDrillCardFront)
 
-- POS badge (colored chip): nouns=`primaryContainer` (label "noun"), verbs=`secondaryContainer` (label "verb"), adjectives=`tertiaryContainer` (label "adj."), adverbs=`errorContainer` (label "adv."), numbers=`surfaceVariant` (label "num."), pronouns=`surfaceVariant` (label "pronouns" with capitalize-first-char fallback).
-- Rank badge ("#106" style).
+- POS badge (colored chip): nouns=`primaryContainer` (label "noun"), verbs=`secondaryContainer` (label "verb"), adjectives=`tertiaryContainer` (label "adj."), adverbs=`errorContainer` (label "adv."), numbers=`surfaceVariant` (label "num."), pronouns=`surfaceVariant` (label "pronouns" with capitalize-first-char fallback). **Always visible regardless of HintLevel.** POS is reference data about the word, not a hint.
+- Rank badge ("#106" style). **Always visible regardless of HintLevel.** Rank is frequency data about the word, not a hint.
 - **Main word** (32sp, bold):
   - IT_TO_RU: Italian word (e.g. "casa").
   - RU_TO_IT: Russian meaning (e.g. "дом/жилище/семья").
@@ -587,12 +588,12 @@ Background: secondary container at 0.5 alpha.
 2. Italian word (24sp, bold, primary color) + TTS button.
 
 **Both directions:**
-3. **Forms card** (if `forms` is non-empty): "Forms" label inside a tertiary-container-tinted card. The grid columns vary by POS:
+3. **Forms card** (if `forms` is non-empty): "Forms" label inside a tertiary-container-tinted card. **Always visible regardless of HintLevel.** Forms are reference data about the word, not hints. The grid columns vary by POS:
    - **Adjectives:** 4-column grid: m sg (`forms["msg"]`), f sg (`forms["fsg"]`), m pl (`forms["mpl"]`), f pl (`forms["fpl"]`).
    - **Numbers:** 2-column grid: m (`forms["form_m"]`), f (`forms["form_f"]`).
    - **Pronouns:** 4-column grid: sg m (`forms["form_sg_m"]`), sg f (`forms["form_sg_f"]`), pl m (`forms["form_pl_m"]`), pl f (`forms["form_pl_f"]`).
    - Each form item shows a label and the value (or "-" if null).
-4. **Collocations** (if non-empty): "Collocations" label + up to 5 phrases + "+N more" overflow.
+4. **Collocations** (if non-empty): "Collocations" label + up to 5 phrases + "+N more" overflow. **Always visible regardless of HintLevel.** Collocations are reference data about word usage, not hints.
 5. **Mastery indicator:** "Step {step+1}/9" or "Learned" (when step >= LEARNED_THRESHOLD = 3). Displayed in label-small text at 0.5 alpha.
 
 ### 11.6.6 Voice Result Feedback (VoiceResultFeedback)
@@ -929,9 +930,9 @@ it_drill_nouns.csv   -> "nouns"  (language prefix also stripped)
 **So that** I can practice without typing.
 
 **Acceptance criteria:**
-- Voice input toggle on the selection screen enables auto-launch of voice recognition.
-- When enabled, the mic launches automatically on each new card (after 500ms delay).
-- The mic button is also available for manual tap on the card front.
+- Voice auto-start is controlled by the global Settings toggle (`AudioState.voiceAutoStart`), NOT a per-drill toggle.
+- When voiceAutoStart is ON, the mic launches automatically on each new card (after 500ms delay).
+- When voiceAutoStart is OFF, the mic button is still available for manual tap on the card front — it always works.
 - Correct pronunciation auto-flips the card after 800ms.
 - Wrong attempts show "Try again (N/3)" and allow up to 3 attempts.
 - After 3 wrong attempts or tapping Skip, the card auto-flips.
@@ -1089,18 +1090,15 @@ This section documents VocabDrill's voice auto mode as the **SOURCE OF TRUTH** f
 
 ### 11.11.1 Voice Auto Mode — Reference Implementation [UI-CONSISTENCY-2025]
 
-VocabDrillScreen's voice auto mode is the canonical implementation. VerbDrill must adopt this exact pattern.
+VocabDrillScreen's voice auto mode uses the global `voiceAutoStart` setting. The per-drill `voiceModeEnabled` toggle has been removed.
 
 **Key implementation elements:**
 
-1. **Selection screen Switch toggle:** Mic icon + "Voice input (auto)" label + `Switch` composable. Bound to `VocabDrillUiState.voiceModeEnabled`.
-   - Class path: `ui/screens/VocabDrillScreen.kt:218-241` — Switch toggle composable
+1. **~~Selection screen Switch toggle~~ REMOVED:** Voice auto-start is controlled by the global Settings toggle (`AudioState.voiceAutoStart`) only. No per-drill toggle exists.
 
-2. **Auto-launch LaunchedEffect:** Watches `voiceModeEnabled`, `isFlipped`, `voiceCompleted`, and current card ID. When voice mode is on and card is not flipped/complete, auto-launches RecognizerIntent after **500ms delay**.
-   - Class path: `ui/screens/VocabDrillScreen.kt:409-417` — auto-launch LaunchedEffect
+2. **Auto-launch LaunchedEffect:** Watches `voiceAutoStart` (passed as parameter from GrammarMateApp), `isFlipped`, `voiceCompleted`, and current card index. When voice auto-start is on and card is not flipped/complete, auto-launches RecognizerIntent after **500ms delay**. When voice auto-start is OFF, mic button still works on manual click.
 
-3. **Voice mode state:** `VocabDrillUiState.voiceModeEnabled: Boolean` field in `data/VocabWord.kt:74`.
-   - Class path: `data/VocabWord.kt` — `VocabDrillUiState` data class
+3. **Voice mode state:** `VocabDrillUiState.voiceModeEnabled` was REMOVED. The `voiceAutoStart` flag is received as a parameter to `VocabDrillScreen` from `GrammarMateApp`, which reads it from `AudioState.voiceAutoStart`.
 
 4. **Auto-advance after correct answer:** When voice result is `CORRECT`, auto-flips the card after **800ms delay** (via `delay(800)` coroutine).
    - Class path: `ui/screens/VocabDrillScreen.kt:401-406` — auto-flip after correct
@@ -1120,10 +1118,11 @@ Parameters for the shared component:
 - `languageTag: String` — language for recognizer (e.g. "it-IT", "ru-RU")
 
 **Regression class paths:**
-- `ui/screens/VocabDrillScreen.kt` — reference implementation (DO NOT DEVIATE from this pattern)
-- `ui/components/VoiceAutoLauncher.kt` — shared component (NEW, extract from VocabDrill)
-- `data/VocabWord.kt` — `VocabDrillUiState.voiceModeEnabled` field
-- `ui/screens/VerbDrillScreen.kt` — adopter (must match VocabDrill pattern)
+- `ui/VocabDrillScreen.kt` — receives `voiceAutoStart` parameter, auto-launch LaunchedEffect
+- `ui/components/VoiceAutoLauncher.kt` — shared component
+- `ui/GrammarMateApp.kt` — passes `voiceAutoStart` to VocabDrillScreen
+- `data/VocabWord.kt` — `VocabDrillUiState` (voiceModeEnabled removed)
+- `ui/VerbDrillScreen.kt` — same pattern, uses global voiceAutoStart
 
 ---
 

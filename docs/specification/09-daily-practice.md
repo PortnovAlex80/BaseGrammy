@@ -507,7 +507,29 @@ Summarized:
 
 Each level adds one tense to the previous level's set. This ensures progressive difficulty as the user advances through lessons.
 
-### 9.5.3 Task Construction
+### 9.5.3 Verb Block Card Selection and Ordering Requirements
+
+In addition to the weak-first ordering described in section 9.5.1, the following sub-ordering and grouping requirements apply within each weakness tier:
+
+**Frequency sub-sorting:** Within each weakness tier (same weakness score), cards are sorted by `rank` ascending. Lower rank values indicate more common verbs, so the most frequent verbs are presented first. This ensures that within a given weakness level, high-frequency verb forms are practiced before rare ones.
+
+**Verb collocation grouping:** Cards are grouped by verb: all collocations (different person/number forms) of the same `verb + tense` pair are presented together before moving to the next verb. This creates a natural conjugation practice flow where the user practices "essere + Presente" across multiple persons before switching to "avere + Presente".
+
+**Tense matching:** Selected cards use tenses matching the current daily practice lesson level, as determined by `TENSE_LADDER[lessonLevel]` or `cumulativeTenses` from the manifest. No cards with tenses beyond the user's current level are included.
+
+**Behavioral contract for verb ordering:**
+
+| Condition | Expected Behavior |
+|-----------|-------------------|
+| Multiple cards share the same weakness score | Sorted by `rank` ascending (most common verbs first) |
+| Multiple cards share the same `verb + tense` pair | Presented consecutively (grouped together) |
+| All cards in a weakness tier have the same verb | Sub-sort by original CSV index (stable) |
+| Tense is beyond the user's lesson level | Card is excluded from selection entirely |
+| `sortByFrequency` is disabled | Frequency sub-sort still applies within weakness tiers (weak-first always uses frequency as secondary sort) |
+
+**Note:** These ordering requirements describe the desired target behavior. The current implementation in `DailySessionComposer.buildVerbBlock()` uses weak-first ordering with original-index stability. The frequency sub-sort and verb grouping additions are planned enhancements.
+
+### 9.5.4 Task Construction
 
 Each selected card is wrapped in `DailyTask.ConjugateVerb`:
 
@@ -537,7 +559,7 @@ data class VerbDrillCard(
 
 Progress is keyed by `comboKey = "${group ?: ""}|${tense ?: ""}"` in `VerbDrillStore`.
 
-### 9.5.4 Verb Info Display (Hint Chips)
+### 9.5.5 Verb Info Display (Hint Chips)
 
 When the current task is a `ConjugateVerb`, the card content renders three `SuggestionChip` components:
 
@@ -546,6 +568,8 @@ When the current task is a `ConjugateVerb`, the card content renders three `Sugg
 | Verb infinitive | `VerbDrillCard.verb` | `"{verb} #{rank}"` (or just verb if rank is null) | Hidden if blank |
 | Tense | `VerbDrillCard.tense` | Abbreviated (e.g., "Pres.", "Imperf.", "P. Pross.") | Hidden if blank |
 | Group | `VerbDrillCard.group` | As-is | Hidden if blank |
+
+**Verb, tense, and group chips are ALWAYS visible regardless of HintLevel.** HintLevel controls parenthetical hints in prompt text (e.g., stripping `(dire)` and `(verità)`), NOT the info chips. These chips are reference information about the verb form, tense, and conjugation group.
 
 Tense abbreviation is handled by `abbreviateTense()` which maps full Italian tense names to short forms. Full mapping:
 
@@ -566,9 +590,14 @@ Tense abbreviation is handled by `abbreviateTense()` which maps full Italian ten
 
 Unrecognized tenses are truncated to 8 characters.
 
-Chips are non-interactive in Daily Practice (no bottom sheet on tap), unlike the standalone Verb Drill screen.
+**Chip interactivity:**
+- **Verb chip** (`SuggestionChip`): Tap opens `VerbReferenceBottomSheet` showing conjugation table for matching verb+tense cards from the current block. Sheet includes a TTS button to speak the verb infinitive. Conjugation data comes from `DailyPracticeSessionProvider.getConjugationCards(verb, tense)`.
+- **Tense chip** (`SuggestionChip`): Tap opens `TenseInfoBottomSheet` showing tense name, abbreviation, formula, usage explanation (in Russian), and examples. Tense info is loaded lazily from `grammarmate/tenses/{languageId}_tenses.yaml` via `loadTenseInfoFromAssets()`.
+- **Group chip**: Display only, non-interactive (no bottom sheet).
 
-### 9.5.5 Progress Tracking
+The sheets use the parameter-based overloads of `VerbReferenceBottomSheet` and `TenseInfoBottomSheet` (from `ui/components/VerbDrillSheets.kt`), which accept data parameters instead of `VerbDrillViewModel`. Both sheets dismiss on back press or tap outside.
+
+### 9.5.6 Progress Tracking
 
 Verb drill progress is persisted per-combination in `VerbDrillStore` (pack-scoped at `grammarmate/drills/{packId}/verb_drill_progress.yaml`):
 
@@ -608,7 +637,7 @@ fun persistDailyVerbProgress(card: VerbDrillCard) {
 
 Only VOICE and KEYBOARD modes trigger `onCardAdvanced` (WORD_BANK does not), matching the mastery counting rule from Block 1.
 
-### 9.5.6 Repeat Session for Block 3
+### 9.5.7 Repeat Session for Block 3
 
 `DailySessionComposer.buildVerbBlockFromIds()` reconstructs the block from stored card IDs (from `DailyCursorState.firstSessionVerbCardIds`). Cards are looked up from verb drill files via `loadVerbDrillCards().associateBy { it.id }`, preserving original order. Input mode rotation follows the same KEYBOARD/WORD_BANK alternation.
 

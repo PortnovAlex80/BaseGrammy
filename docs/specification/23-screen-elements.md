@@ -99,7 +99,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
-| Tense label (header) | TCS-01 | text | `currentCard` is VerbDrillCard with non-blank tense; `hintLevel != HARD` | 13sp SemiBold, primary color. | ? |
+| Tense label (header) | TCS-01 | text | `currentCard` is VerbDrillCard with non-blank tense | 13sp SemiBold, primary color. Always visible regardless of HintLevel. | ? |
 | Clean prompt text (header) | TCS-02 | text | `currentCard != null` | Stripped prompt (parentheticals removed), `(18f * textScale).sp`, Medium weight. | UC-56 |
 | Progress bar | TCS-03 | progress-bar | Always | Rounded green bar (70% width). "N / Total" overlay. Text color flips at 12% fill. | ? |
 | Speedometer arc | TCS-04 | progress-bar | Always | Canvas arc (30% width, 44dp). Red/yellow/green by wpm. Center shows numeric value. | ? |
@@ -113,7 +113,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Word bank counter | TCS-12 | text | Word bank has selected words | "Selected: N / M" in primary color. | ? |
 | Word bank Undo | TCS-13 | button | Word bank has selected words | TextButton "Undo". Calls `contract.removeLastSelectedWord()`. | ? |
 | Voice mode button | TCS-14 | button | `supportsVoiceInput && hasCards` | FilledTonalIconButton Mic. Switches to VOICE mode + launches recognition. | ? |
-| Keyboard mode button | TCS-15 | button | `hintLevel != HARD && hasCards` | FilledTonalIconButton Keyboard. Switches to KEYBOARD mode. | ? |
+| Keyboard mode button | TCS-15 | button | `InputMode.KEYBOARD in availableModes && hasCards` | FilledTonalIconButton Keyboard. Switches to KEYBOARD mode. ALWAYS visible regardless of HintLevel. | ? |
 | Word bank mode button | TCS-16 | button | `supportsWordBank && hasCards` | FilledTonalIconButton LibraryBooks. Switches to WORD_BANK mode. | ? |
 | Show answer button | TCS-17 | button | `hasCards` | IconButton Visibility + "Show answer" tooltip. Calls `contract.showAnswer()`. | ? |
 | Report button | TCS-18 | button | `supportsFlagging && hasCards` | IconButton ReportProblem + "Report sentence" tooltip. Opens report sheet. | ? |
@@ -143,21 +143,21 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Block sparkle overlay | DP-06 | card | `showBlockTransition == true` or session complete | Semi-transparent black overlay + sparkle emoji + "Next: {BlockType}" or "Daily practice complete!". Auto-dismisses after 800ms. | ? |
 | TRANSLATE/VERBS card session | DP-07 | card | `currentTask.blockType == TRANSLATE \|\| VERBS` | Wraps TrainingCardSession via DailyPracticeSessionProvider. Includes card content, input controls, navigation. | ? |
 | Card prompt (translate/verbs) | DP-08 | card | Card session active | Card with "RU" label + prompt (`(20f * ruTextScale).sp` SemiBold) + TTS button. | UC-56 |
-| Verb/tense/group chips (verbs) | DP-09 | chip | `verbText` not blank and `hintLevel != HARD` | SuggestionChips for verb (with rank), tense (abbreviated), group (EASY only). Chips do NOT open bottom sheets in daily practice. | ? |
+| Verb/tense/group chips (verbs) | DP-09 | chip | `verbText` not blank | SuggestionChips for verb (with rank), tense (abbreviated), group. All chips are ALWAYS visible regardless of HintLevel -- they are reference data, not hints. Verb chip tap opens VerbReferenceBottomSheet with conjugation table. Tense chip tap opens TenseInfoBottomSheet with formula/usage/examples. Group chip is non-interactive (display only). | UC-58 |
 | Card TTS button (translate/verbs) | DP-10 | button | Card session active | Inline TTS button (not TtsSpeakerButton): 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). | ? |
 | Hint answer card (translate/verbs) | DP-11 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card showing "Answer: {hint}". Includes TTS replay button. | ? |
 | Incorrect feedback (translate/verbs) | DP-12 | text | `provider.showIncorrectFeedback` | Red "Incorrect" + "N attempts left" text. | ? |
 | Answer text field (translate/verbs) | DP-13 | input-field | Card session active | OutlinedTextField "Your translation". Auto-submits on exact match. | ? |
 | Mic trailing icon (translate/verbs) | DP-14 | button | `canLaunchVoice` | Switches to VOICE mode. | ? |
 | Word bank section (translate/verbs) | DP-15 | chip | `WORD_BANK mode` | DailyWordBankSection: chips + counter + Undo. | ? |
-| Input mode bar (translate/verbs) | DP-16 | button | Card session active | DailyInputModeBar: Voice/Keyboard/WordBank buttons + Show answer + Report. | ? |
+| Input mode bar (translate/verbs) | DP-16 | button | Card session active | DailyInputModeBar: Voice/Keyboard/WordBank buttons + Show answer + Report. Keyboard button is ALWAYS visible (not gated by HintLevel). | ? |
 | Check button (translate/verbs) | DP-17 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check" button. Submits via `provider.submitAnswerWithInput()`. | ? |
 | Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | DailyReportSheet: flag/unflag + export + copy. | ? |
 | VOCAB flashcard card | DP-19 | card | `currentTask.blockType == VOCAB` | surfaceVariant Card with prompt word (28sp Bold) + translation (18sp Medium, primary) + TTS button + report button. | ? |
 | Vocab prompt text | DP-20 | text | VOCAB block active | Word text in `(28f * ruTextScale).sp` Bold, centered. Direction-dependent: IT_TO_RU shows Italian word, RU_TO_IT shows Russian meaning. | UC-56 |
 | Vocab TTS button | DP-21 | button | VOCAB block active | IconButton VolumeUp. Calls `onSpeak(promptText)`. | ? |
 | Vocab report button | DP-22 | button | VOCAB block active | IconButton ReportProblem. Opens DailyReportSheet. Tinted red if word is flagged. | ? |
-| Vocab translation text | DP-23 | text | VOCAB block active and `hintLevel != HARD` | Translation text in `(18f * ruTextScale).sp` Medium, primary color. | UC-56 |
+| Vocab translation text | DP-23 | text | VOCAB block active | Translation text in `(18f * ruTextScale).sp` Medium, primary color. Always visible regardless of HintLevel. | UC-56 |
 | Vocab "You said" text | DP-24 | text | `voiceRecognizedText != null` | "You said: \"{text}\"" in muted style. | ? |
 | Vocab mic button | DP-25 | button | VOCAB block active | 64dp FilledTonalIconButton. Launches voice recognition with direction-appropriate language tag. | ? |
 | Vocab rating buttons | DP-26 | button | VOCAB block active | 4 OutlinedButtons: Again (red), Hard (orange), Good (primary), Easy (green). Auto-advances on tap. | ? |
@@ -193,8 +193,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Verb Drill" title (session) | VD-12 | text | Session active | SemiBold weight. | ? |
 | Progress bar + speedometer | VD-13 | progress-bar | Session active | Reuses DefaultProgressIndicator from TrainingCardSession. | ? |
 | Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS VolumeUp button. | UC-56 |
-| Verb SuggestionChip | VD-15 | chip | `verbText` not blank and `hintLevel != HARD` | Shows verb infinitive + "#rank". ChevronRight icon. Tap opens VerbReferenceBottomSheet. | ? |
-| Tense SuggestionChip | VD-16 | chip | `tense` not blank and `hintLevel != HARD` | Shows abbreviated tense name (e.g. "Pres."). Tap opens TenseInfoBottomSheet. | ? |
+| Verb SuggestionChip | VD-15 | chip | `verbText` not blank | Shows verb infinitive + "#rank". ChevronRight icon. Tap opens VerbReferenceBottomSheet. Always visible regardless of HintLevel. | UC-58 |
+| Tense SuggestionChip | VD-16 | chip | `tense` not blank | Shows abbreviated tense name (e.g. "Pres."). Tap opens TenseInfoBottomSheet. Always visible regardless of HintLevel. | UC-58 |
 | Hint answer card | VD-17 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card "Answer: {hint}" + TTS replay (red-tinted). | ? |
 | Incorrect feedback | VD-18 | text | `provider.showIncorrectFeedback` | Red "Incorrect" + "N attempts left" text. | ? |
 | Answer text field | VD-19 | input-field | `hasCards` | OutlinedTextField "Your translation". Auto-submits on exact match. Typing clears incorrect feedback. | ? |
@@ -260,8 +260,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Report button (card header) | VOC-19 | button | Session active | IconButton ReportProblem. Tinted red if word is flagged. Opens report sheet. | ? |
 | Card progress bar | VOC-20 | progress-bar | Session active | LinearProgressIndicator showing current/total. | ? |
 | Card front container | VOC-21 | card | `!session.isFlipped` | RoundedCornerShape(16dp) Card. Background tint changes: green on correct voice, red on wrong, surfaceVariant default. | ? |
-| POS badge | VOC-22 | card | `hintLevel != HARD` | Small rounded Card showing "noun"/"verb"/"adj." etc. Color-coded by POS. | ? |
-| Rank badge | VOC-23 | card | `hintLevel != HARD` | Small rounded Card showing "#N" rank. | ? |
+| POS badge | VOC-22 | card | Always (when card has POS) | Small rounded Card showing "noun"/"verb"/"adj." etc. Color-coded by POS. Always visible regardless of HintLevel. | ? |
+| Rank badge | VOC-23 | card | Always (when card has rank) | Small rounded Card showing "#N" rank. Always visible regardless of HintLevel. | ? |
 | Word text (front) | VOC-24 | text | `!session.isFlipped` | `(32f * ruTextScale).sp` Bold centered. Direction-dependent: IT_TO_RU shows Italian, RU_TO_IT shows Russian meaning. | UC-56 |
 | TTS button (front) | VOC-25 | button | `direction == IT_TO_RU` | 4-state icon (SPEAKING/INITIALIZING/ERROR/IDLE). Calls `onSpeak(word)`. | ? |
 | "Tap to speak" text | VOC-26 | text | `!voiceCompleted` | labelMedium muted text. | ? |
@@ -270,8 +270,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Card back container | VOC-29 | card | `session.isFlipped` | secondaryContainer Card with POS badge + word + meaning + forms + collocations + mastery step. | ? |
 | Word + TTS (back) | VOC-30 | button | `session.isFlipped` | Shows word text + TTS VolumeUp button. Layout differs by direction. | ? |
 | Translation text (back) | VOC-31 | text | `session.isFlipped` | Direction-dependent: shows the "answer" side of the card. | ? |
-| Forms table | VOC-32 | card | `session.isFlipped && forms.isNotEmpty() && hintLevel == EASY` | tertiaryContainer Card: "Forms" label + form items (m sg, f sg, m pl, f pl). POS-dependent form keys. | ? |
-| Collocations list | VOC-33 | text | `session.isFlipped && collocations.isNotEmpty() && hintLevel == EASY` | Max 5 collocations shown. "+N more" if overflow. | ? |
+| Forms table | VOC-32 | card | `session.isFlipped && forms.isNotEmpty()` | tertiaryContainer Card: "Forms" label + form items (m sg, f sg, m pl, f pl). POS-dependent form keys. Always visible regardless of HintLevel. | ? |
+| Collocations list | VOC-33 | text | `session.isFlipped && collocations.isNotEmpty()` | Max 5 collocations shown. "+N more" if overflow. Always visible regardless of HintLevel. | ? |
 | Mastery step indicator | VOC-34 | text | `session.isFlipped` | "Step X/9" or "Learned" (when step >= 3). Muted labelSmall. | ? |
 | Skip button | VOC-35 | button | `!session.isFlipped` | OutlinedButton with SkipNext icon. Skips voice or flips card. | ? |
 | Flip button | VOC-36 | button | `!session.isFlipped` | Filled Button with Flip icon. Calls `onFlip()`. | ? |
