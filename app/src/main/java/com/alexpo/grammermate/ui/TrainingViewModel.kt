@@ -3,6 +3,19 @@ package com.alexpo.grammermate.ui
 import android.app.Application
 import android.net.Uri
 import com.alexpo.grammermate.data.AsrState
+import com.alexpo.grammermate.data.AudioState
+import com.alexpo.grammermate.data.BossState
+import com.alexpo.grammermate.data.CardSessionState
+import com.alexpo.grammermate.data.DailyPracticeState
+import com.alexpo.grammermate.data.DrillState
+import com.alexpo.grammermate.data.EliteState
+import com.alexpo.grammermate.data.FlowerDisplayState
+import com.alexpo.grammermate.data.LessonLadderRow
+import com.alexpo.grammermate.data.NavigationState
+import com.alexpo.grammermate.data.StoryState
+import com.alexpo.grammermate.data.SubmitResult
+import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.data.VocabSprintState
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,6 +40,7 @@ import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.FlowerVisual
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.BadSentenceStore
@@ -591,7 +605,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun setHintLevel(level: com.alexpo.grammermate.data.HintLevel) {
+    fun setHintLevel(level: HintLevel) {
         _uiState.update { it.copy(cardSession = it.cardSession.copy(hintLevel = level)) }
         configStore.save(
             configStore.load().copy(hintLevel = level)
@@ -1501,190 +1515,3 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun skipToNextCard() = sessionRunner.skipToNextCard()
 }
-
-data class SubmitResult(
-    val accepted: Boolean,
-    val hintShown: Boolean
-)
-
-data class NavigationState(
-    val languages: List<com.alexpo.grammermate.data.Language> = emptyList(),
-    val installedPacks: List<com.alexpo.grammermate.data.LessonPack> = emptyList(),
-    val selectedLanguageId: String = "en",
-    val activePackId: String? = null,
-    val activePackLessonIds: List<String>? = null,
-    val lessons: List<Lesson> = emptyList(),
-    val selectedLessonId: String? = null,
-    val mode: TrainingMode = TrainingMode.LESSON,
-    val userName: String = "GrammarMateUser",
-    val ladderRows: List<LessonLadderRow> = emptyList(),
-    val initialScreen: String = "HOME",
-    val currentScreen: String = "HOME",
-    val appVersion: String = "1.5"
-)
-
-data class CardSessionState(
-    val sessionState: SessionState = SessionState.ACTIVE,
-    val currentIndex: Int = 0,
-    val currentCard: SentenceCard? = null,
-    val inputText: String = "",
-    val correctCount: Int = 0,
-    val incorrectCount: Int = 0,
-    val incorrectAttemptsForCard: Int = 0,
-    val activeTimeMs: Long = 0L,
-    val voiceActiveMs: Long = 0L,
-    val voiceWordCount: Int = 0,
-    val hintCount: Int = 0,
-    val voicePromptStartMs: Long? = null,
-    val answerText: String? = null,
-    val lastResult: Boolean? = null,
-    val lastRating: Double? = null,
-    val inputMode: InputMode = InputMode.VOICE,
-    val voiceTriggerToken: Int = 0,
-    val subLessonTotal: Int = 0,
-    val subLessonCount: Int = 0,
-    val subLessonTypes: List<SubLessonType> = emptyList(),
-    val activeSubLessonIndex: Int = 0,
-    val completedSubLessonCount: Int = 0,
-    val subLessonFinishedToken: Int = 0,
-    val wordBankWords: List<String> = emptyList(),
-    val selectedWords: List<String> = emptyList(),
-    val currentStreak: Int = 0,
-    val longestStreak: Int = 0,
-    val streakMessage: String? = null,
-    val streakCelebrationToken: Int = 0,
-    val hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    val badSentenceCount: Int = 0,
-    val testMode: Boolean = false,
-    val vocabSprintLimit: Int = 20
-)
-
-data class BossState(
-    val bossActive: Boolean = false,
-    val bossType: BossType? = null,
-    val bossTotal: Int = 0,
-    val bossProgress: Int = 0,
-    val bossReward: BossReward? = null,
-    val bossRewardMessage: String? = null,
-    val bossFinishedToken: Int = 0,
-    val bossLastType: BossType? = null,
-    val bossErrorMessage: String? = null,
-    val bossLessonRewards: Map<String, BossReward> = emptyMap(),
-    val bossMegaRewards: Map<String, BossReward> = emptyMap()
-)
-
-data class StoryState(
-    val storyCheckInDone: Boolean = false,
-    val storyCheckOutDone: Boolean = false,
-    val activeStory: StoryQuiz? = null,
-    val storyErrorMessage: String? = null
-)
-
-data class VocabSprintState(
-    val currentVocab: VocabEntry? = null,
-    val vocabInputText: String = "",
-    val vocabAttempts: Int = 0,
-    val vocabAnswerText: String? = null,
-    val vocabIndex: Int = 0,
-    val vocabTotal: Int = 0,
-    val vocabWordBankWords: List<String> = emptyList(),
-    val vocabFinishedToken: Int = 0,
-    val vocabErrorMessage: String? = null,
-    val vocabInputMode: InputMode = InputMode.VOICE,
-    val vocabVoiceTriggerToken: Int = 0,
-    val vocabMasteredCount: Int = 0
-)
-
-data class EliteState(
-    val eliteActive: Boolean = false,
-    val eliteStepIndex: Int = 0,
-    val eliteBestSpeeds: List<Double> = emptyList(),
-    val eliteFinishedToken: Int = 0,
-    val eliteUnlocked: Boolean = false,
-    val eliteSizeMultiplier: Double = 1.25
-)
-
-data class DrillState(
-    val isDrillMode: Boolean = false,
-    val drillCardIndex: Int = 0,
-    val drillTotalCards: Int = 0,
-    val drillShowStartDialog: Boolean = false,
-    val drillHasProgress: Boolean = false
-)
-
-data class FlowerDisplayState(
-    val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
-    val currentLessonFlower: FlowerVisual? = null,
-    val currentLessonShownCount: Int = 0
-)
-
-data class AudioState(
-    val ttsState: TtsState = TtsState.IDLE,
-    val ttsDownloadState: DownloadState = DownloadState.Idle,
-    val ttsModelReady: Boolean = false,
-    val ttsMeteredNetwork: Boolean = false,
-    val bgTtsDownloading: Boolean = false,
-    val bgTtsDownloadStates: Map<String, DownloadState> = emptyMap(),
-    val ttsModelsReady: Map<String, Boolean> = emptyMap(),
-    val ttsSpeed: Float = 1.0f,
-    val ruTextScale: Float = 1.0f,
-    val useOfflineAsr: Boolean = false,
-    val asrState: AsrState = AsrState.IDLE,
-    val asrModelReady: Boolean = false,
-    val asrDownloadState: DownloadState = DownloadState.Idle,
-    val asrMeteredNetwork: Boolean = false,
-    val asrErrorMessage: String? = null,
-    val audioPermissionDenied: Boolean = false
-)
-
-data class DailyPracticeState(
-    val dailySession: DailySessionState = DailySessionState(),
-    val dailyCursor: DailyCursorState = DailyCursorState()
-)
-
-data class TrainingUiState(
-    val navigation: NavigationState = NavigationState(),
-    val cardSession: CardSessionState = CardSessionState(),
-    val boss: BossState = BossState(),
-    val story: StoryState = StoryState(),
-    val vocabSprint: VocabSprintState = VocabSprintState(),
-    val elite: EliteState = EliteState(),
-    val drill: DrillState = DrillState(),
-    val flowerDisplay: FlowerDisplayState = FlowerDisplayState(),
-    val audio: AudioState = AudioState(),
-    val daily: DailyPracticeState = DailyPracticeState()
-) {
-    /**
-     * Reset all session-related state to defaults.
-     * Used by selectLanguage, selectLesson, selectMode, importLessonPack,
-     * addLanguage, and refreshLessons to clear stale training state.
-     */
-    fun resetSessionState(): TrainingUiState = copy(
-        cardSession = CardSessionState(sessionState = SessionState.PAUSED),
-        boss = BossState(),
-        story = StoryState(),
-        vocabSprint = VocabSprintState(),
-        drill = DrillState()
-    )
-
-    /**
-     * Full session reset including counters and timers.
-     * Used when changing language or importing packs where all progress resets.
-     */
-    fun resetAllSessionState(): TrainingUiState = resetSessionState().copy(
-        cardSession = CardSessionState(correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, currentCard = null),
-        elite = EliteState(eliteActive = false),
-        boss = BossState(bossLessonRewards = emptyMap(), bossMegaRewards = emptyMap()),
-        flowerDisplay = FlowerDisplayState(lessonFlowers = emptyMap(), currentLessonFlower = null)
-    )
-}
-
-
-data class LessonLadderRow(
-    val index: Int,
-    val lessonId: String,
-    val title: String,
-    val uniqueCardShows: Int?,
-    val daysSinceLastShow: Int?,
-    val intervalLabel: String?
-)

@@ -14,7 +14,7 @@ import com.alexpo.grammermate.data.VerbDrillComboProgress
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
-import com.alexpo.grammermate.ui.TrainingUiState
+import com.alexpo.grammermate.data.TrainingUiState
 
 /**
  * Stateful module that orchestrates the 3-block daily practice session

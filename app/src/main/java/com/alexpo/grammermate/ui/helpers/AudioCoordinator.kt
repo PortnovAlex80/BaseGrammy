@@ -14,7 +14,7 @@ import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
-import com.alexpo.grammermate.ui.TrainingUiState
+import com.alexpo.grammermate.data.TrainingUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

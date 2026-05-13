@@ -1,7 +1,7 @@
 package com.alexpo.grammermate.ui.helpers
 
 import com.alexpo.grammermate.data.DailyBlockType
-import com.alexpo.grammermate.ui.TrainingUiState
+import com.alexpo.grammermate.data.TrainingUiState
 import kotlinx.coroutines.flow.StateFlow
 
 /**

@@ -311,7 +311,7 @@ class SessionRunner(
         shouldAddVoiceMetrics: Boolean,
         voiceDurationMs: Long?,
         voiceWords: Int,
-        state: com.alexpo.grammermate.ui.TrainingUiState
+        state: com.alexpo.grammermate.data.TrainingUiState
     ): SubmitResult {
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
@@ -328,7 +328,7 @@ class SessionRunner(
         shouldAddVoiceMetrics: Boolean,
         voiceDurationMs: Long?,
         voiceWords: Int,
-        state: com.alexpo.grammermate.ui.TrainingUiState
+        state: com.alexpo.grammermate.data.TrainingUiState
     ): SubmitResult {
         pauseTimer()
         val speed = calculateSpeedPerMinute(state.cardSession.voiceActiveMs, state.cardSession.voiceWordCount)
@@ -412,7 +412,7 @@ class SessionRunner(
         shouldAddVoiceMetrics: Boolean,
         voiceDurationMs: Long?,
         voiceWords: Int,
-        state: com.alexpo.grammermate.ui.TrainingUiState
+        state: com.alexpo.grammermate.data.TrainingUiState
     ): SubmitResult {
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))

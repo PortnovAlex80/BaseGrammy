@@ -12,7 +12,7 @@ import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.TrainingProgress
-import com.alexpo.grammermate.ui.TrainingUiState
+import com.alexpo.grammermate.data.TrainingUiState
 
 /**
  * Stateful module that wraps MasteryStore + ProgressStore operations.

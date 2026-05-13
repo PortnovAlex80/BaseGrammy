@@ -6,7 +6,7 @@ import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.VocabProgressStore
-import com.alexpo.grammermate.ui.TrainingUiState
+import com.alexpo.grammermate.data.TrainingUiState
 
 /**
  * Vocab sprint session logic extracted from TrainingViewModel.

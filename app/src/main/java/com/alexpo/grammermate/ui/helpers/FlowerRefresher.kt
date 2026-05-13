@@ -25,8 +25,8 @@ class FlowerRefresher(
      * Iterates all lessons, queries [MasteryStore] for each, computes a
      * [FlowerVisual] via [FlowerCalculator], builds ladder rows via
      * [LessonLadderCalculator], and writes the result into
-     * [com.alexpo.grammermate.ui.FlowerDisplayState] and
-     * [com.alexpo.grammermate.ui.NavigationState.ladderRows].
+     * [com.alexpo.grammermate.data.FlowerDisplayState] and
+     * [com.alexpo.grammermate.data.NavigationState.ladderRows].
      */
     fun refreshFlowerStates() {
         val state = stateAccess.uiState.value
@@ -54,7 +54,7 @@ class FlowerRefresher(
         val ladderRows = lessons.mapIndexed { index, lesson ->
             val mastery = masteryMap[lesson.id]
             val metrics = LessonLadderCalculator.calculate(mastery, nowMs)
-            com.alexpo.grammermate.ui.LessonLadderRow(
+            com.alexpo.grammermate.data.LessonLadderRow(
                 index = index + 1,
                 lessonId = lesson.id,
                 title = lesson.title,

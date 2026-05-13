@@ -3,7 +3,7 @@ package com.alexpo.grammermate.ui.helpers
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
-import com.alexpo.grammermate.ui.StoryState
+import com.alexpo.grammermate.data.StoryState
 
 /**
  * Story quiz session logic extracted from TrainingViewModel.
