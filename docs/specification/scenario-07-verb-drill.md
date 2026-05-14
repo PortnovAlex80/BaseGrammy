@@ -413,3 +413,11 @@ Trace of the complete standalone Verb Drill flow, comparing code implementation 
 - Navigation: prev card, next card, exit session
 - Voice recognition auto-trigger and auto-advance on correct answer
 - Input mode switching (VOICE, KEYBOARD, WORD_BANK)
+
+### Exit Navigation Issue (Found Post-Audit)
+
+**Bug:** All in-app exit controls in Verb Drill (back arrow, nav exit button, completion Exit button) only clear session state (`session = null`), switching to the Verb Drill selection screen instead of navigating to HOME. Only the system back button correctly navigates to HOME.
+
+**Root cause:** `VerbDrillScreen.kt:114` passes `onExit = viewModel::exitSession` to the session screen, which only clears session state. The `onBack` lambda (which calls `onNavigate(Routes.HOME)`) is available at `VerbDrillScreen` level but is NOT passed through to the session.
+
+**Fix:** Pass `onBack` to `VerbDrillSessionWithCardSession` and combine with `exitSession` in the `onExit` callback: `{ viewModel.exitSession(); onBack() }`. See TASK-007.

@@ -389,6 +389,8 @@ User submits answer
 
 **Implementation task:** [TASK-006: Verb Drill Play Button Fix](tasks/TASK-006-verb-drill-play-button-fix.md)
 
+**Implementation task:** [TASK-007: Verb Drill Exit Navigation to HOME](tasks/TASK-007-verb-drill-exit-navigation.md)
+
 ### 10.4.4 State Fields (Compose Observable)
 
 | Field | Type | Description |
@@ -882,7 +884,22 @@ Shown when the session is complete (all 10 cards done).
 
 - **Stats**: shows `correctCount` and `incorrectCount`
 - **"Ещё" button**: calls `viewModel.nextBatch()` to start a new 10-card batch (hidden when `allDoneToday == true`)
-- **"Выход" button**: exits to selection screen
+- **"Выход" button**: exits session AND navigates to HOME screen (not just selection screen)
+
+### 10.6.11 Exit Navigation Rule
+
+All exit paths from the Verb Drill session MUST navigate to HOME, not just clear the session state:
+
+| Exit Control | Action | Navigation Target |
+|-------------|--------|-------------------|
+| Back arrow (VD-11) | `viewModel.exitSession()` + `onBack()` | HOME |
+| Nav bar Exit button (VD-36 StopCircle) | Confirmation dialog -> `viewModel.exitSession()` + `onBack()` | HOME |
+| Completion screen Exit button (VD-41) | `viewModel.exitSession()` + `onBack()` | HOME |
+| System back button | Handled by GrammarMateApp BackHandler (existing, unchanged) | HOME |
+
+**Implementation:** `VerbDrillSessionWithCardSession` receives `onBack` parameter. The `onExit` callback combines both `viewModel.exitSession()` and `onBack()` to clear session state AND navigate home.
+
+**Rationale:** Pressing an exit/back button should return to the previous screen (HOME). The old behavior of clearing session state and showing the selection screen confused users who expected to return home.
 
 ### 10.6.10 Tense Abbreviation Map
 

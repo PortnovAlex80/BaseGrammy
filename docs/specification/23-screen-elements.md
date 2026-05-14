@@ -189,7 +189,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
-| Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `onExit()`. | ? |
+| Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `viewModel.exitSession()` + `onBack()` (navigates to HOME, not selection screen). | UC-64 |
 | "Verb Drill" title (session) | VD-12 | text | Session active | SemiBold weight. | ? |
 | Progress bar + speedometer | VD-13 | progress-bar | Session active | Reuses DefaultProgressIndicator from TrainingCardSession. | ? |
 | Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS button. **NOTE:** Currently uses plain `IconButton` with static `VolumeUp` instead of `TtsSpeakerButton` with 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). TrainingScreen uses `TtsSpeakerButton` correctly. Marked as CODE PENDING -- see TASK-006. | UC-56 |
@@ -214,7 +214,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | VerbReferenceBottomSheet | VD-33 | bottom-sheet | `showVerbSheet == true` | Shows verb infinitive + TTS button + group + tense + conjugation table. | ? |
 | TenseInfoBottomSheet | VD-34 | bottom-sheet | `showTenseSheet == true` | Shows tense name + formula Card + usage explanation + example cards. | ? |
 | Export result dialog | VD-35 | dialog | `exportMessage != null` | AlertDialog with export path or "No bad sentences to export". | ? |
-| Navigation row | VD-36 | button | Session active | DefaultNavigationControls from TrainingCardSession: Prev + Pause/Play + Exit + Next. **Pause/Play behavior:** If paused with hint shown (`hintAnswer != null`) → Play advances to next card. If paused without hint (manual pause, `hintAnswer == null`) → Play resumes current card without advancing (input preserved). See 10-verb-drill.md#10.4.3 and 12-training-card-session.md#12.7.1. | UC-63 |
+| Navigation row | VD-36 | button | Session active | DefaultNavigationControls from TrainingCardSession: Prev + Pause/Play + Exit + Next. **Pause/Play behavior:** If paused with hint shown (`hintAnswer != null`) → Play advances to next card. If paused without hint (manual pause, `hintAnswer == null`) → Play resumes current card without advancing (input preserved). See 10-verb-drill.md#10.4.3 and 12-training-card-session.md#12.7.1. **Exit behavior:** Exit button (StopCircle) triggers confirmation dialog, then calls `viewModel.exitSession()` + `onBack()` → navigates to HOME. | UC-63, UC-64 |
 
 ### 5c. Completion Screen
 
@@ -224,7 +224,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Otlichno!" title | VD-38 | text | Session complete | Bold 24sp. | ? |
 | Stats text | VD-39 | text | Session complete | "Pravilnykh: X \| Oshibok: Y" in muted color. | ? |
 | "More" button | VD-40 | button | `!allDoneToday` | "Eshche" Button. Calls `viewModel.nextBatch()` to load 10 more cards. | ? |
-| "Exit" button | VD-41 | button | Session complete | OutlinedButton "Vykhod". Calls `onExit()`. | ? |
+| "Exit" button | VD-41 | button | Session complete | OutlinedButton "Vykhod". Calls `viewModel.exitSession()` + `onBack()` (navigates to HOME, not selection screen). | UC-64 |
 
 ---
 

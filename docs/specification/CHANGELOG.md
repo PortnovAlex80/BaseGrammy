@@ -4,6 +4,16 @@ All changes to specification documents are tracked here. Each entry references t
 
 ## v3.0 (2026-05-14) -- Architecture Refactoring & Quality Fixes
 
+### TASK-007: Verb Drill Exit Navigation to HOME
+
+- `10-verb-drill.md`: Added section 10.6.11 (Exit Navigation Rule) specifying all exit paths must navigate to HOME. Added TASK-007 link after TASK-006 link in section 10.4.3.
+- `23-screen-elements.md`: Updated VD-11 (back button navigates HOME), VD-36 (exit button navigates HOME), VD-41 (completion exit navigates HOME). Added UC-64 cross-references.
+- `22-use-case-registry.md`: Added UC-64 (Verb Drill exit navigates to HOME) with 6 behavioral ACs. Updated Domain 6 counts (7 UCs, 36 ACs). Updated summary counts (64 UCs, 320 ACs). Updated cross-reference table and source-to-UC mapping.
+- `scenario-07-verb-drill.md`: Added exit navigation issue section documenting the bug, root cause, and fix reference.
+- `tasks/TASK-007-verb-drill-exit-navigation.md`: Created self-contained task file.
+- `tasks/README.md`: Added TASK-007 entry.
+- Commit: `pending`
+
 ### TASK-006: Verb Drill Play Button Fix
 
 - `10-verb-drill.md`: Clarified pause/resume vs advance behavior in togglePause() (section 10.4.3). Added card advancement rules and pause reason disambiguation. Updated togglePause() method description in 10.4.7.

@@ -8,8 +8,8 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 63 |
-| Total Acceptance Criteria | 314 |
+| Total Use Cases | 64 |
+| Total Acceptance Criteria | 320 |
 | Domains | 18 |
 
 ### Per-Domain Counts
@@ -21,7 +21,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 3 | Input modes (voice, keyboard, word bank) | 5 | 21 |
 | 4 | Boss battle | 4 | 17 |
 | 5 | Daily Practice (3 blocks, cursor) | 5 | 21 |
-| 6 | Verb Drill | 6 | 30 |
+| 6 | Verb Drill | 7 | 36 |
 | 7 | Vocab Drill | 5 | 23 |
 | 8 | Navigation & screens | 4 | 14 |
 | 9 | Lesson packs (import, manifest) | 4 | 17 |
@@ -109,6 +109,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | UC-29 | Reload verb drill on pack switch | User switches active pack while on Verb Drill screen | 1. `reloadForPack(newPackId)` checks idempotency guard. 2. If same pack and cards loaded: early return. 3. Otherwise: creates new `VerbDrillStore`, reloads cards and progress from new pack. | AC1: `reloadForPack()` returns early if `currentPackId == packId && allCards.isNotEmpty()`. AC2: New `VerbDrillStore` instance is created scoped to new `packId`. AC3: `allCards`, `progressMap`, `packIdForCardId` are fully rebuilt. AC4: Speed tracking state is NOT reset on pack switch (minor issue). | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillScreen.kt`, `data/VerbDrillStore.kt` | scenario-07, scenario-10 |
 | UC-59 | VerbDrill voice auto-launch respects global voiceAutoStart flag | VerbDrill session is active; global voice auto-start toggle is in Settings | 1. `voiceAutoStart` is read from `AudioState.voiceAutoStart` (global setting). 2. On card change, both `VoiceAutoLauncher` and `DefaultVerbDrillInputControls` LaunchedEffect check `voiceAutoStart` before launching ASR. 3. When `voiceAutoStart == false`, no ASR intent is launched automatically (but mic button still works on manual click). 4. When `voiceAutoStart == true`, ASR launches within 500ms. | AC1 [BEHAVIORAL]: When voiceAutoStart=false + Continue pressed, no voice auto-launch occurs. AC2 [BEHAVIORAL]: When voiceAutoStart=false + new card appears, no voice auto-launch occurs. AC3 [BEHAVIORAL]: When voiceAutoStart=false, mic button on input mode bar still works and launches speech recognition on manual click. AC4 [BEHAVIORAL]: When voiceAutoStart=true + Continue pressed, voice auto-launches within 500ms. AC5 [BEHAVIORAL]: Both `VoiceAutoLauncher` and `DefaultVerbDrillInputControls` LaunchedEffect respect the global `voiceAutoStart` flag. AC6 [STRUCTURAL]: No per-drill voice toggle exists on VerbDrillSelectionScreen. | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillScreen.kt`, `ui/components/VoiceAutoLauncher.kt`, `ui/GrammarMateApp.kt` | voice-auto-start |
 | UC-63 | VerbDrill Play button distinguishes pause reason | VerbDrill session is active; user has paused the session | 1. User presses Pause button manually (no hint shown). 2. Session pauses (`isPaused = true`, `hintAnswer == null`). 3. User presses Play button. 4. `togglePause()` detects `hintAnswer == null`, calls `resume()` instead of `nextCard()`. 5. Session unpauses, same card displayed, input preserved. | AC1 [BEHAVIORAL]: When session is manually paused (no hint shown), pressing Play resumes the current card without advancing. AC2 [BEHAVIORAL]: Input text and attempt state are preserved after manual pause/resume. AC3 [BEHAVIORAL]: When session is paused after hint shown (`hintAnswer != null`), pressing Play advances to next card (existing correct behavior preserved). AC4 [BEHAVIORAL]: When session is paused after 3 wrong answers (auto-hint), pressing Play advances to next card. AC5 [BEHAVIORAL]: Correct answer auto-advance still works in VOICE mode (unaffected). | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillCardSessionProvider.kt`, `feature/training/CardSessionStateMachine.kt` | TASK-006 |
+| UC-64 | Verb Drill exit navigates to HOME | VerbDrill session is active or complete; user activates an exit control | 1. User activates any exit control (back arrow, nav exit button, completion exit button). 2. `viewModel.exitSession()` clears session state. 3. `onBack()` is called, navigating to HOME screen. 4. Re-entering Verb Drill from HOME shows the selection screen (no stale session). | AC1 [BEHAVIORAL]: Back arrow (VD-11) in session header navigates to HOME (not selection screen). AC2 [BEHAVIORAL]: Nav bar Exit button (StopCircle, VD-36) + confirmation dialog navigates to HOME. AC3 [BEHAVIORAL]: Completion screen Exit button (VD-41) navigates to HOME. AC4 [BEHAVIORAL]: System back button navigates to HOME (existing, unchanged). AC5 [BEHAVIORAL]: Re-entering Verb Drill after exit shows selection screen (session properly cleared). AC6 [BEHAVIORAL]: Session state is cleaned up on exit (no leaked state when returning). | VerbDrillScreen (ui/VerbDrillScreen.kt) | `ui/VerbDrillScreen.kt`, `ui/VerbDrillViewModel.kt` | TASK-007 |
 
 ---
 
@@ -238,7 +239,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | scenario-04 (spaced repetition) | UC-10, UC-11 |
 | scenario-05 (input modes) | UC-12, UC-13, UC-14, UC-15, UC-16 |
 | scenario-06 (daily practice) | UC-21, UC-22, UC-23, UC-24, UC-25 |
-| scenario-07 (verb drill) | UC-26, UC-27, UC-28, UC-29, UC-50, UC-58, UC-59, UC-63 |
+| scenario-07 (verb drill) | UC-26, UC-27, UC-28, UC-29, UC-50, UC-58, UC-59, UC-63, UC-64 |
 | scenario-08 (vocab drill) | UC-30, UC-31, UC-32, UC-33, UC-34 |
 | scenario-09 (boss battle) | UC-17, UC-18, UC-19, UC-20 |
 | scenario-10 (pack drills) | UC-29, UC-34, UC-38, UC-39 |
@@ -252,3 +253,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | tts-icon-fix | UC-61 |
 | progress-reset | UC-62 |
 | TASK-006 | UC-63 |
+| TASK-007 | UC-64 |
