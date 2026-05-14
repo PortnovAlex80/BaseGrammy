@@ -4,6 +4,31 @@ All changes to specification documents are tracked here. Each entry references t
 
 ## v3.0 (2026-05-14) -- Architecture Refactoring & Quality Fixes
 
+### TASK-006: Verb Drill Play Button Fix
+
+- `10-verb-drill.md`: Clarified pause/resume vs advance behavior in togglePause() (section 10.4.3). Added card advancement rules and pause reason disambiguation. Updated togglePause() method description in 10.4.7.
+- `12-training-card-session.md`: Updated Pause button behavior in section 12.7.1 to distinguish manual-pause-resume from hint-pause-advance.
+- `23-screen-elements.md`: Updated VD-14 (TTS button discrepancy note -- plain IconButton vs TtsSpeakerButton). Updated VD-36 (navigation row Pause/Play behavior with hint/no-hint distinction). Added UC-63 cross-reference.
+- `22-use-case-registry.md`: Added UC-63 (VerbDrill Play button distinguishes pause reason) with 5 behavioral ACs. Updated Domain 6 counts (6 UCs, 30 ACs). Updated cross-reference table. Updated summary counts (63 UCs, 314 ACs).
+- `tasks/TASK-006-verb-drill-play-button-fix.md`: Created self-contained task file.
+- `tasks/README.md`: Added TASK-006 entry.
+- Commit: `pending`
+
+### TASK-001 through TASK-005: Performance, Cursor, TTS, Welcome Dialog
+
+- `trace-index.md`: Added Phase 6 section with symbols from TASK-001 through TASK-005: TtsState sealed class variants, Mutex, init timeout, error tooltip (TASK-003/005); welcomeDialogAttempts fields (TASK-004); caching fields in LessonStore, VerbDrillStore, WordMasteryStore, DailySessionComposer (TASK-002); advanceDailyCursor, dailyCursorAtSessionStart (TASK-001).
+- `02-data-stores.md`: Caching added to LessonStore.getLessons(), VerbDrillStore.loadProgress()/loadAllCardsForPack(), WordMasteryStore.loadAll() (TASK-002).
+- `05-audio-tts-asr.md`: TtsState changed from enum to sealed class with Error(reason). Mutex serialization. 30s init timeout. Error tooltip with OOM differentiation (TASK-003/005).
+- `09-daily-practice.md`: Cursor-based level resolution in startDailyPractice(). Lesson transition in advanceDailyCursor(). Verb block cycling (TASK-001).
+- `13-app-entry-and-navigation.md`: welcomeDialogAttempts counter in profile.yaml. HOME-only guard. Skip increments counter (TASK-004).
+- `22-use-case-registry.md`: UC-60 AC3-AC4 updated (caching now implemented). UC-61 expanded (lesson transition + cursor advancement).
+- Commit: `pending`
+
+### Agent-Friendly Architecture Audit
+- Created `arch-agent-friendly-audit-2026-05-14.md` with current audit of parallel agent readiness, ownership gaps, hotspot files, boundary enforcement, and recommended roadmap.
+- Updated `README.md` architecture index with A5 audit entry.
+- Commit: `pending`
+
 ### ViewModel Thinning
 - Public methods reduced 108 -> 54 (-50%)
 - 8 feature coordinator properties exposed

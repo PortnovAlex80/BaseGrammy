@@ -471,7 +471,7 @@ Adapters are created via `remember` with a key:
 | "Copy text" | Copies card info (ID, source, target) to clipboard. |
 | "Check" button | Calls `scope.onSubmit()`. Validates the answer. Resets input text. |
 | Prev button (nav) | Calls `scope.onPrev()`. Goes to previous card. Resets input text. |
-| Pause button (nav) | Calls `contract.togglePause()`. Toggles session pause. If currently paused with hint shown, advances to next card (Verb Drill adapter behavior). |
+| Pause button (nav) | Calls `contract.togglePause()`. Toggles session pause. Behavior depends on pause reason: (1) paused with hint shown (`hintAnswer != null`) → Play advances to next card; (2) paused without hint (manual pause, `hintAnswer == null`) → Play resumes the current card without advancing, preserving input text and attempt state. This applies to all adapters using `supportsPause`. |
 | Exit button (nav) | Shows exit confirmation dialog. On confirm: calls `contract.requestExit()`. |
 | "End" (exit dialog) | Confirms exit. Calls `contract.requestExit()`. |
 | "Cancel" (exit dialog) | Dismisses exit dialog. |

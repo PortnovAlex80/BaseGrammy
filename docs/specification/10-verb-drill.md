@@ -378,7 +378,16 @@ User submits answer
 
 **Manual "Show Answer" (eye button):** Immediately shows the answer as a hint, sets `incorrectAttempts = 3`, and pauses the session. The input controls remain visible.
 
-**After hint is shown:** The user presses the Play button, which calls `togglePause()`. Since `isPaused == true`, this calls `nextCard()` to advance to the next card.
+**After hint is shown:** The user presses the Play button, which calls `togglePause()`. Since `isPaused == true` AND `hintAnswer != null`, this calls `nextCard()` to advance to the next card.
+
+**Card advancement rules:** Cards advance only via: (1) correct answer auto-advance (VOICE mode), (2) Next button (ArrowForward), (3) Play button after hint is shown (`hintAnswer != null`). Pressing Play after a manual pause (no hint shown, `hintAnswer == null`) must RESUME the current card without advancing -- the session unpauses but the card, input text, and attempt state are preserved.
+
+**Pause reason disambiguation in `togglePause()`:**
+- If `isPaused == true` AND `hintAnswer != null` → call `nextCard()` (hint was shown, user wants to advance)
+- If `isPaused == true` AND `hintAnswer == null` → call `resume()` (manual pause, user wants to resume current card)
+- If `isPaused == false` → call `pause()` (user wants to pause)
+
+**Implementation task:** [TASK-006: Verb Drill Play Button Fix](tasks/TASK-006-verb-drill-play-button-fix.md)
 
 ### 10.4.4 State Fields (Compose Observable)
 
@@ -431,7 +440,7 @@ Word bank words are generated per card and cached:
 | `nextCard()` | Clears all pending state, advances ViewModel index. Delegates to `viewModel.submitCorrectAnswer()` (correct), `viewModel.markCardCompleted()` (hint), or `viewModel.nextCardManual()` (skip). Auto-triggers voice recognition in VOICE mode. |
 | `prevCard()` | Navigates to previous card, clears all pending state. |
 | `showAnswer()` | Shows answer as hint (eye button). Sets `isPaused = true`. |
-| `togglePause()` | If paused: calls `nextCard()` to advance. If active: pauses the session. |
+| `togglePause()` | If paused with hint (`hintAnswer != null`): calls `nextCard()` to advance. If paused without hint (`hintAnswer == null`): calls `resume()` to unpause without advancing. If active: pauses the session. |
 | `clearIncorrectFeedback()` | Called when user starts typing a new attempt after incorrect feedback. |
 | `setInputMode(mode)` | Switches input mode, clears selected words, auto-triggers voice in VOICE mode. |
 

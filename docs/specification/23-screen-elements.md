@@ -192,7 +192,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `onExit()`. | ? |
 | "Verb Drill" title (session) | VD-12 | text | Session active | SemiBold weight. | ? |
 | Progress bar + speedometer | VD-13 | progress-bar | Session active | Reuses DefaultProgressIndicator from TrainingCardSession. | ? |
-| Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS VolumeUp button. | UC-56 |
+| Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS button. **NOTE:** Currently uses plain `IconButton` with static `VolumeUp` instead of `TtsSpeakerButton` with 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). TrainingScreen uses `TtsSpeakerButton` correctly. Marked as CODE PENDING -- see TASK-006. | UC-56 |
 | Verb SuggestionChip | VD-15 | chip | `verbText` not blank | Shows verb infinitive + "#rank". ChevronRight icon. Tap opens VerbReferenceBottomSheet. Always visible regardless of HintLevel. | UC-58 |
 | Tense SuggestionChip | VD-16 | chip | `tense` not blank | Shows abbreviated tense name (e.g. "Pres."). Tap opens TenseInfoBottomSheet. Always visible regardless of HintLevel. | UC-58 |
 | Hint answer card | VD-17 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card "Answer: {hint}" + TTS replay (red-tinted). | ? |
@@ -214,7 +214,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | VerbReferenceBottomSheet | VD-33 | bottom-sheet | `showVerbSheet == true` | Shows verb infinitive + TTS button + group + tense + conjugation table. | ? |
 | TenseInfoBottomSheet | VD-34 | bottom-sheet | `showTenseSheet == true` | Shows tense name + formula Card + usage explanation + example cards. | ? |
 | Export result dialog | VD-35 | dialog | `exportMessage != null` | AlertDialog with export path or "No bad sentences to export". | ? |
-| Navigation row | VD-36 | button | Session active | DefaultNavigationControls from TrainingCardSession: Prev + Pause/Play + Exit + Next. | ? |
+| Navigation row | VD-36 | button | Session active | DefaultNavigationControls from TrainingCardSession: Prev + Pause/Play + Exit + Next. **Pause/Play behavior:** If paused with hint shown (`hintAnswer != null`) → Play advances to next card. If paused without hint (manual pause, `hintAnswer == null`) → Play resumes current card without advancing (input preserved). See 10-verb-drill.md#10.4.3 and 12-training-card-session.md#12.7.1. | UC-63 |
 
 ### 5c. Completion Screen
 
