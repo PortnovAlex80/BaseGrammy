@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
         val progressFile = File(baseDir, "progress.yaml")
         val profileFile = File(baseDir, "profile.yaml")
         val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
-        val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(this as android.app.Application).getProfileStore().load()
+        val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getProfileStore().load()
         val shouldRestore = !hasFullData
 
         if (storedTreeUri != null) {
@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
             val progressFile = File(baseDir, "progress.yaml")
             val profileFile = File(baseDir, "profile.yaml")
             val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
-            val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(this as android.app.Application).getProfileStore().load()
+            val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getProfileStore().load()
             val shouldRestore = !hasFullData
             startLegacyRestore(shouldRestore)
         } else {

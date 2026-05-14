@@ -23,13 +23,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -85,6 +90,7 @@ fun NavIconButton(
  * error (warning, red), idle (VolumeUp icon).
  * Used by GrammarMateApp and TrainingCardSession.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun TtsSpeakerButton(
     ttsState: TtsState,
@@ -96,20 +102,39 @@ fun TtsSpeakerButton(
         enabled = enabled
     ) {
         when (ttsState) {
-            TtsState.SPEAKING -> Icon(
+            is TtsState.Speaking -> Icon(
                 Icons.Default.StopCircle,
                 contentDescription = stringResource(R.string.content_desc_stop),
                 tint = MaterialTheme.colorScheme.error
             )
-            TtsState.INITIALIZING -> CircularProgressIndicator(
+            is TtsState.Initializing -> CircularProgressIndicator(
                 modifier = Modifier.size(24.dp),
                 strokeWidth = 2.dp
             )
-            TtsState.ERROR -> Icon(
-                Icons.Default.ReportProblem,
-                contentDescription = stringResource(R.string.content_desc_tts_error),
-                tint = MaterialTheme.colorScheme.error
-            )
+            is TtsState.Error -> {
+                val reason = ttsState.reason
+                val isOom = reason?.contains("memory", ignoreCase = true) == true
+                val errorIcon = if (isOom) Icons.Default.Warning else Icons.Default.ReportProblem
+                if (reason != null) {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        tooltip = { PlainTooltip { Text(reason) } },
+                        state = rememberTooltipState()
+                    ) {
+                        Icon(
+                            errorIcon,
+                            contentDescription = stringResource(R.string.content_desc_tts_error),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                } else {
+                    Icon(
+                        errorIcon,
+                        contentDescription = stringResource(R.string.content_desc_tts_error),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
             else -> Icon(
                 Icons.Default.VolumeUp,
                 contentDescription = stringResource(R.string.content_desc_listen),
