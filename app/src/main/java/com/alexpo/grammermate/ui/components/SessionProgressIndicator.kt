@@ -23,6 +23,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import com.alexpo.grammermate.ui.ProgressGreen
+import com.alexpo.grammermate.ui.ProgressFastGreen
+import com.alexpo.grammermate.ui.ProgressLabelWhite
+import com.alexpo.grammermate.ui.ProgressTrackGray
+import com.alexpo.grammermate.ui.ProgressTrackGreen
+import com.alexpo.grammermate.ui.MasteryGreen
+import com.alexpo.grammermate.ui.SpeedSlowRed
+import com.alexpo.grammermate.ui.SpeedMediumYellow
 
 /**
  * Shared progress indicator used across training sessions.
@@ -40,12 +48,12 @@ fun SessionProgressIndicator(
     speedWpm: Int
 ) {
     val progressFraction = if (total > 0) current.toFloat() / total else 0f
-    val barColor = Color(0xFF4CAF50)
-    val trackColor = Color(0xFFC8E6C9)
+    val barColor = ProgressGreen
+    val trackColor = ProgressTrackGreen
     val speedColor = when {
-        speedWpm <= 20 -> Color(0xFFE53935)
-        speedWpm <= 40 -> Color(0xFFFDD835)
-        else -> Color(0xFF43A047)
+        speedWpm <= 20 -> SpeedSlowRed
+        speedWpm <= 40 -> SpeedMediumYellow
+        else -> ProgressFastGreen
     }
 
     Row(
@@ -71,7 +79,7 @@ fun SessionProgressIndicator(
                 text = "$current / $total",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (progressFraction < 0.12f) Color(0xFF2E7D32) else Color.White,
+                color = if (progressFraction < 0.12f) MasteryGreen else ProgressLabelWhite,
                 modifier = Modifier.align(Alignment.Center),
                 textAlign = TextAlign.Center
             )
@@ -90,7 +98,7 @@ fun SessionProgressIndicator(
             Canvas(modifier = sizeModifier) {
                 val strokeWidth = 4.dp.toPx()
                 drawArc(
-                    color = Color(0xFFE0E0E0),
+                    color = ProgressTrackGray,
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter = false,

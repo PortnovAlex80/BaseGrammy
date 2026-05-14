@@ -11,7 +11,9 @@ data class AppConfig(
     val useOfflineAsr: Boolean = false,
     val hintLevel: HintLevel = HintLevel.EASY,
     val ruTextScale: Float = 1.0f,
-    val voiceAutoStart: Boolean = true
+    val voiceAutoStart: Boolean = true,
+    val uiLanguage: String = "system",
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
 interface AppConfigStore {
@@ -35,7 +37,9 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "useOfflineAsr" to config.useOfflineAsr,
             "hintLevel" to config.hintLevel.name,
             "ruTextScale" to config.ruTextScale,
-            "voiceAutoStart" to config.voiceAutoStart
+            "voiceAutoStart" to config.voiceAutoStart,
+            "uiLanguage" to config.uiLanguage,
+            "themeMode" to config.themeMode.name
         )
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
@@ -67,6 +71,9 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val hintLevel = runCatching { HintLevel.valueOf(hintLevelStr) }.getOrDefault(HintLevel.EASY)
         val ruTextScale = ((data["ruTextScale"] as? Number)?.toFloat()?.coerceIn(1.0f, 2.0f)) ?: 1.0f
         val voiceAutoStart = data["voiceAutoStart"] as? Boolean ?: true
+        val uiLanguage = (data["uiLanguage"] as? String)?.takeIf { it in listOf("system", "en", "ru") } ?: "system"
+        val themeModeStr = data["themeMode"] as? String ?: "SYSTEM"
+        val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
@@ -74,7 +81,9 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             useOfflineAsr = useOfflineAsr,
             hintLevel = hintLevel,
             ruTextScale = ruTextScale,
-            voiceAutoStart = voiceAutoStart
+            voiceAutoStart = voiceAutoStart,
+            uiLanguage = uiLanguage,
+            themeMode = themeMode
         )
     }
 }

@@ -99,9 +99,17 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun GrammarMateTheme(content: @Composable () -> Unit) {
+fun GrammarMateTheme(
+    themeMode: com.alexpo.grammermate.data.ThemeMode = com.alexpo.grammermate.data.ThemeMode.SYSTEM,
+    content: @Composable () -> Unit
+) {
+    val useDarkTheme = when (themeMode) {
+        com.alexpo.grammermate.data.ThemeMode.LIGHT -> false
+        com.alexpo.grammermate.data.ThemeMode.DARK -> true
+        com.alexpo.grammermate.data.ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val colorScheme = when {
-        isSystemInDarkTheme() -> DarkColors
+        useDarkTheme -> DarkColors
         else -> LightColors
     }
     MaterialTheme(

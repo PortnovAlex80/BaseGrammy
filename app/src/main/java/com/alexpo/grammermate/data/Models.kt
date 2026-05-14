@@ -119,6 +119,16 @@ enum class InputMode {
 
 enum class SrsRating { AGAIN, HARD, GOOD, EASY }
 
+/** Theme mode controlling light/dark/system appearance. */
+enum class ThemeMode {
+    /** Always use light theme. */
+    LIGHT,
+    /** Always use dark theme. */
+    DARK,
+    /** Follow system dark/light setting (default). */
+    SYSTEM
+}
+
 /** Difficulty level controlling which hints are visible during practice. */
 enum class HintLevel {
     /** All hints visible: verb info, word bank, first-letter hints. Current default. */
@@ -272,7 +282,8 @@ data class NavigationState(
     val appVersion: String = "1.5",
     val hasVerbDrill: Boolean = false,
     val hasVocabDrill: Boolean = false,
-    val welcomeDialogAttempts: Int = 0
+    val welcomeDialogAttempts: Int = 0,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
 data class CardSessionState(

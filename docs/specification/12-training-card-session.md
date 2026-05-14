@@ -639,7 +639,7 @@ A shared `SharedReportSheet` composable must be extracted to `ui/components/Shar
 | 2 | Hide this card from lessons | `VisibilityOff` | Hides card from future lessons. Closes sheet. | May be a no-op for some modes (verb drill); show informational toast |
 | 3 | Export bad sentences | `Download` | Exports flagged cards to text file. Shows path in AlertDialog. | Returns file path or null |
 | 4 | Copy text | `ContentCopy` | Copies card info to clipboard. Closes sheet. | Format varies by card type |
-| 5 | Share translation via QR | `QrCode2` | Opens dialog with translation pair text + QR code. | Includes "Open in Google Translate" button. Only shown when `shareText != null` |
+| 5 | Share translation via QR | `QrCode2` | Opens dialog with translation pair text + QR code. | Includes "Open in Google Translate" button. Only shown when `shareText != null`. QR uses white background + black foreground (max contrast), rounded pixel corners, 240dp size. |
 
 **Shared component specification:**
 

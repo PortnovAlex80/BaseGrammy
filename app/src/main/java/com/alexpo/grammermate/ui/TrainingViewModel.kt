@@ -25,6 +25,7 @@ import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
+import com.alexpo.grammermate.data.CefrCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -258,6 +259,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     val reports: BadSentenceHelper get() = badSentenceHelper
     /** Public accessor for settings operations. */
     val settings: SettingsActionHandler get() = settingsActionHandler
+    /** Current UI language setting for the settings screen selector. */
+    val currentUiLanguage: String get() = configStore.load().uiLanguage
 
     init {
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
@@ -290,7 +293,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
+            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
         }
         // Initialize feature-owned state from persisted progress
         bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
@@ -1177,6 +1180,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SettingsResult.None -> {}
             }
         }
+    }
+
+    // -- Profile stats --
+    data class ProfileStats(
+        val cardsCompleted: Int,
+        val wordsLearned: Int,
+        val cefrLevel: String
+    )
+
+    fun getProfileStats(): ProfileStats {
+        val languageId = _coreState.value.navigation.selectedLanguageId.value
+        val packId = _coreState.value.navigation.activePackId?.value
+
+        // Cards completed: sum uniqueCardShows across all lessons for current language
+        val cardsCompleted = masteryStore.loadAll()[languageId]
+            ?.values
+            ?.sumOf { it.uniqueCardShows }
+            ?: 0
+
+        // Words learned: count of mastered words in current pack
+        val wordsLearned = wordMasteryStore.getMasteredCount()
+
+        // CEFR level: based on rank of learned vocab words
+        val cefrLevel = if (packId != null) {
+            val allWords = lessonStore.getVocabWordsByRankRange(packId, languageId, 0, Int.MAX_VALUE)
+            val learnedIds = wordMasteryStore.loadAll().filter { (_, state) -> state.isLearned }.keys
+            val learnedRanks = allWords.filter { it.id in learnedIds }.map { it.rank }
+            CefrCalculator.calculate(learnedRanks)
+        } else {
+            CefrCalculator.calculate(emptyList())
+        }
+
+        return ProfileStats(cardsCompleted, wordsLearned, cefrLevel)
     }
 
     // -- ProgressResult handler --

@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.BackupManagerImpl
 import com.alexpo.grammermate.data.RestoreNotifier
+import com.alexpo.grammermate.shared.SettingsActionHandler
 import com.alexpo.grammermate.ui.AppRoot
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Apply saved UI language before content is set
+        val configStore = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getAppConfigStore()
+        SettingsActionHandler.applyLocale(configStore.load().uiLanguage)
+
         super.onCreate(savedInstanceState)
 
         val prefs = getSharedPreferences("backup_prefs", MODE_PRIVATE)

@@ -44,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,7 +80,10 @@ fun SettingsSheet(
     onStartAsrDownload: () -> Unit,
     onResetAllProgress: () -> Unit,
     onSetHintLevel: (HintLevel) -> Unit,
+    onSetThemeMode: (com.alexpo.grammermate.data.ThemeMode) -> Unit = {},
     onSetVoiceAutoStart: (Boolean) -> Unit = {},
+    onSetUiLanguage: (String) -> Unit = {},
+    uiLanguage: String = "system",
     languageDisplayName: String = ""
 ) {
     if (!show) return
@@ -124,6 +126,31 @@ fun SettingsSheet(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Interface language selector (separate from learning content language)
+            Text(
+                text = stringResource(R.string.settings_interface_language),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val languageOptions = listOf(
+                    "system" to stringResource(R.string.settings_language_system),
+                    "en" to stringResource(R.string.settings_language_en),
+                    "ru" to stringResource(R.string.settings_language_ru)
+                )
+                languageOptions.forEach { (code, label) ->
+                    FilterChip(
+                        selected = uiLanguage == code,
+                        onClick = { onSetUiLanguage(code) },
+                        label = { Text(text = label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
             Text(
                 text = stringResource(R.string.settings_service_mode),
                 style = MaterialTheme.typography.titleMedium,
@@ -154,6 +181,37 @@ fun SettingsSheet(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = stringResource(R.string.settings_show_ladder))
             }
+
+            // Appearance / Theme selector
+            Text(
+                text = stringResource(R.string.settings_appearance),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.alexpo.grammermate.data.ThemeMode.entries.forEach { mode ->
+                    val isSelected = state.navigation.themeMode == mode
+                    val label = when (mode) {
+                        com.alexpo.grammermate.data.ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                        com.alexpo.grammermate.data.ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
+                        com.alexpo.grammermate.data.ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                    }
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onSetThemeMode(mode) },
+                        label = { Text(text = label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Text(
+                text = stringResource(R.string.settings_theme_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
 
             // Difficulty / Hint level selector
             Text(
@@ -434,7 +492,7 @@ fun SettingsSheet(
             OutlinedButton(
                 onClick = { onDeleteAllLessons() },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Icon(Icons.Default.Delete, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -443,7 +501,7 @@ fun SettingsSheet(
             OutlinedButton(
                 onClick = { showResetConfirmDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB00020))
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Icon(Icons.Filled.Refresh, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -463,7 +521,7 @@ fun SettingsSheet(
                                 onResetAllProgress()
                             }
                         ) {
-                            Text(text = stringResource(R.string.settings_reset), color = Color(0xFFB00020))
+                            Text(text = stringResource(R.string.settings_reset), color = MaterialTheme.colorScheme.error)
                         }
                     },
                     dismissButton = {

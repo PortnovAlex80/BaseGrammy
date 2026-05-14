@@ -1,8 +1,9 @@
 # TASK-011: Interface Language Switching (English/Russian)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
-**Branch:** feature/language-switch (from main)
+**Completed:** 2026-05-15
+**Branch:** feature/arch-feature-migration
 **Spec:** 14-theme-and-ui-components.md#14.8
 **UC:** UC-67
 
