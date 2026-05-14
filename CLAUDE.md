@@ -531,6 +531,7 @@ Project skills live in `.claude/skills/`. They enforce mandatory workflows that 
 | `/swarm` | `/swarm`, "decompose", "execute through agents" | Kick-start Assessment → Decomposition → Wave execution |
 | `/regression-check` | `/regression-check`, after ≥2 file changes, before commit | Diff → affected UCs → element invariants → PASS/FAIL |
 | `/verify-user-journey` | Before committing UI/data changes, "doesn't work" reports | E2E trace: data flow → button wiring → state transitions → edge cases |
+| `/create-task` | "создай задачу", "оформи требования", "запиши таску", "create task" | Full pipeline: discuss requirements → update specs → create task prompt → link |
 
 ### Pipeline: which skill when
 
@@ -542,6 +543,14 @@ New feature or port?     ──→  /add-feature
   └── Phase 4: Regression     (/regression-check)
 
 Bug fix or refactor?     ──→  /swarm → implement → /regression-check
+
+Requirements discussion? ──→  /create-task
+  ├── Phase 1: Discuss        (clarify requirements with user)
+  ├── Phase 2: Spec update    (update specs + UC + scenarios)
+  ├── Phase 3: Task creation  (self-contained implementation prompt)
+  ├── Phase 4: Link & index   (bidirectional spec ↔ task links)
+  └── Phase 5: Commit         (spec changes + task file)
+  Then: /swarm to execute task → /regression-check
 
 Before ANY commit
   touching UI or data?   ──→  /verify-user-journey
@@ -556,6 +565,7 @@ After ANY non-trivial
 2. **`/regression-check` is mandatory after touching ≥2 files or ViewModel/helpers.** No exceptions.
 3. **`/verify-user-journey` is mandatory before committing UI/data changes.** Catches "works in code but broken for user" bugs.
 4. **`/swarm` replaces manual decomposition.** Use it instead of re-reading EXECUTION MODE and deciding yourself.
+5. **`/create-task` covers the full requirements pipeline.** Use it after identifying a bug, discussing a feature, or anytime specs need updating before implementation. Output is a self-contained task prompt in `docs/specification/tasks/` linked from the spec.
 
 ---
 
