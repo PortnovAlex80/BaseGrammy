@@ -14,6 +14,7 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -239,6 +240,10 @@ class TtsModelManager(private val context: Context) {
                                 continue
                             }
                             val outputFile = File(destDir, relativePath)
+                            val canonicalDest = outputFile.canonicalPath
+                            if (!canonicalDest.startsWith(destDir.canonicalPath + File.separator)) {
+                                throw IOException("Path traversal attempt in tar entry: ${entry.name}")
+                            }
                             if (entry.isDirectory) {
                                 outputFile.mkdirs()
                             } else {

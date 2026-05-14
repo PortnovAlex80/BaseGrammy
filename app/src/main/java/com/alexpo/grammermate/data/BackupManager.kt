@@ -146,13 +146,13 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
         collector.mainBackupFileNames.forEach { name ->
             val src = File(internalDir, name)
             if (src.exists()) {
-                src.copyTo(File(backupSubDir, name), overwrite = true)
+                AtomicFileWriter.copyAtomic(src, File(backupSubDir, name))
             }
         }
 
         // Copy streak files
         collector.listStreakFiles().forEach { file ->
-            file.copyTo(File(backupSubDir, file.name), overwrite = true)
+            AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
         }
 
         // Remove old streak.yaml if present (migration)
@@ -161,7 +161,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
 
         // Copy drill-progress files
         collector.listDrillProgressFiles().forEach { file ->
-            file.copyTo(File(backupSubDir, file.name), overwrite = true)
+            AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
         }
 
         // Copy pack-scoped drill data
@@ -170,13 +170,13 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
             if (verbProgress.exists()) {
                 val targetDir = File(backupSubDir, "drills/${packDir.name}")
                 targetDir.mkdirs()
-                verbProgress.copyTo(File(targetDir, "verb_drill_progress.yaml"), overwrite = true)
+                AtomicFileWriter.copyAtomic(verbProgress, File(targetDir, "verb_drill_progress.yaml"))
             }
             val wordMastery = File(packDir, "word_mastery.yaml")
             if (wordMastery.exists()) {
                 val targetDir = File(backupSubDir, "drills/${packDir.name}")
                 targetDir.mkdirs()
-                wordMastery.copyTo(File(targetDir, "word_mastery.yaml"), overwrite = true)
+                AtomicFileWriter.copyAtomic(wordMastery, File(targetDir, "word_mastery.yaml"))
             }
         }
 

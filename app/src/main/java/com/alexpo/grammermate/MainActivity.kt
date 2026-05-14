@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.BackupManagerImpl
-import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.ui.AppRoot
 import java.io.File
@@ -59,7 +58,7 @@ class MainActivity : ComponentActivity() {
         val progressFile = File(baseDir, "progress.yaml")
         val profileFile = File(baseDir, "profile.yaml")
         val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
-        val profile = ProfileStore(this).load()
+        val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(this as android.app.Application).getProfileStore().load()
         val shouldRestore = !hasFullData
 
         if (storedTreeUri != null) {
@@ -114,7 +113,7 @@ class MainActivity : ComponentActivity() {
             val progressFile = File(baseDir, "progress.yaml")
             val profileFile = File(baseDir, "profile.yaml")
             val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
-            val profile = ProfileStore(this).load()
+            val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(this as android.app.Application).getProfileStore().load()
             val shouldRestore = !hasFullData
             startLegacyRestore(shouldRestore)
         } else {

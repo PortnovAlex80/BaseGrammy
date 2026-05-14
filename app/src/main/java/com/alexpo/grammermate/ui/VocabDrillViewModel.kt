@@ -6,7 +6,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
-import com.alexpo.grammermate.data.LessonStoreImpl
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsProvider
@@ -29,8 +28,8 @@ import kotlinx.coroutines.launch
 class VocabDrillViewModel(application: Application) : AndroidViewModel(application) {
 
     private val logTag = "VocabDrillVM"
-    private val lessonStore = LessonStoreImpl(application)
     private val storeFactory = StoreFactory.getInstance(application)
+    private val lessonStore = storeFactory.getLessonStore()
     private var masteryStore = storeFactory.getWordMasteryStore(null)
     private val badSentenceStore = storeFactory.getBadSentenceStore()
     private val ttsEngine = TtsProvider.getInstance(application).ttsEngine

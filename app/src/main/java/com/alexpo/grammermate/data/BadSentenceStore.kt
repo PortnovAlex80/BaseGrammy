@@ -2,8 +2,11 @@ package com.alexpo.grammermate.data
 
 import android.content.Context
 import android.os.Environment
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 data class BadSentenceEntry(
     val cardId: String,
@@ -48,6 +51,7 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "bad_sentences.yaml")
     private val oldDrillFile = File(baseDir, "drill_bad_sentences.yaml")
+    private val mutex = ReentrantLock()
 
     /** packId -> list of bad sentence entries */
     private var packs: MutableMap<String, MutableList<BadSentenceEntry>> = mutableMapOf()
@@ -57,6 +61,7 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
         if (loaded) return
         loaded = true
         if (!file.exists()) return
+        val previousPacks = packs
         try {
             val raw = yaml.load<Any>(file.readText()) ?: return
             val data = (raw as? Map<*, *>) ?: return
@@ -102,8 +107,9 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
                     }
                 }
             }
-        } catch (_: Exception) {
-            packs = mutableMapOf()
+        } catch (e: Exception) {
+            Log.e("BadSentenceStore", "Failed to parse ${file.name}", e)
+            packs = previousPacks
         }
     }
 
@@ -112,15 +118,15 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
      * Uses LessonStore to resolve packId from lessonId extracted from card IDs.
      * Called during init in TrainingViewModel.
      */
-    override fun migrateIfNeeded(lessonStore: LessonStore) {
+    override fun migrateIfNeeded(lessonStore: LessonStore) = mutex.withLock {
         ensureLoaded()
 
         // Merge old drill_bad_sentences.yaml entries into the legacy pack
         if (oldDrillFile.exists()) {
             try {
-                val raw = yaml.load<Any>(oldDrillFile.readText()) ?: return
-                val data = (raw as? Map<*, *>) ?: return
-                val items = (data["items"] as? List<*>) ?: return
+                val raw = yaml.load<Any>(oldDrillFile.readText()) ?: return@withLock
+                val data = (raw as? Map<*, *>) ?: return@withLock
+                val items = (data["items"] as? List<*>) ?: return@withLock
                 val drillEntries = items.mapNotNull { item ->
                     val map = item as? Map<*, *> ?: return@mapNotNull null
                     BadSentenceEntry(
@@ -146,11 +152,11 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
         val legacyEntries = packs.remove("__legacy__") ?: emptyList()
         if (legacyEntries.isEmpty() && !oldDrillFile.exists()) {
             // No legacy data and no old drill file — check if we already have v2 data
-            if (packs.isNotEmpty()) return
+            if (packs.isNotEmpty()) return@withLock
             // Check if file exists but has no data worth migrating
-            if (!file.exists()) return
+            if (!file.exists()) return@withLock
             // File exists but no legacy entries and no v2 packs — might be empty file
-            return
+            return@withLock
         }
 
         // Group legacy entries by packId using lessonId extracted from cardId
@@ -196,19 +202,24 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
         return null
     }
 
-    override fun addBadSentence(packId: String, entry: BadSentenceEntry) {
+    override fun addBadSentence(packId: String, entry: BadSentenceEntry) = mutex.withLock {
         ensureLoaded()
         val packEntries = packs.getOrPut(packId) { mutableListOf() }
-        if (packEntries.any { it.cardId == entry.cardId }) return
+        if (packEntries.any { it.cardId == entry.cardId }) return@withLock
         packEntries.add(entry)
         persist()
     }
 
-    override fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String) {
-        addBadSentence(packId, BadSentenceEntry(cardId, languageId, sentence, translation, mode))
+    override fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String) = mutex.withLock {
+        ensureLoaded()
+        val entry = BadSentenceEntry(cardId, languageId, sentence, translation, mode)
+        val packEntries = packs.getOrPut(packId) { mutableListOf() }
+        if (packEntries.any { it.cardId == entry.cardId }) return@withLock
+        packEntries.add(entry)
+        persist()
     }
 
-    override fun removeBadSentence(packId: String, cardId: String) {
+    override fun removeBadSentence(packId: String, cardId: String) = mutex.withLock {
         ensureLoaded()
         packs[packId]?.let { entries ->
             entries.removeAll { it.cardId == cardId }
@@ -327,12 +338,12 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
         return exportFile
     }
 
-    override fun clearPack(packId: String) {
+    override fun clearPack(packId: String) = mutex.withLock {
         packs.remove(packId)
         persist()
     }
 
-    override fun clearAll() {
+    override fun clearAll() = mutex.withLock {
         packs.clear()
         persist()
     }

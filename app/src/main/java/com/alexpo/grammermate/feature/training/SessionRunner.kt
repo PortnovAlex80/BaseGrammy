@@ -4,7 +4,6 @@ import android.app.Application
 import android.os.SystemClock
 import android.util.Log
 import com.alexpo.grammermate.data.BossType
-import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonMasteryState
@@ -13,6 +12,7 @@ import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
+import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
@@ -46,6 +46,7 @@ class SessionRunner(
     private val wordBankGenerator: WordBankGenerator,
     private val cardProvider: CardProvider,
     private val streakManager: StreakManager,
+    private val storeFactory: StoreFactory,
     private val getMastery: (String, String) -> LessonMasteryState?,
     private val getSchedule: (String) -> LessonSchedule?,
     private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?) -> Int,
@@ -65,7 +66,7 @@ class SessionRunner(
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER
 
-    private val drillProgressStore = DrillProgressStore(appContext)
+    private val drillProgressStore = storeFactory.getDrillProgressStore()
 
     // ── Submit result type ──────────────────────────────────────────────
 

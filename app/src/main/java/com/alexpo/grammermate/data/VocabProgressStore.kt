@@ -1,8 +1,11 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Persistence store for vocab sprint progress and spaced repetition data.
@@ -22,6 +25,7 @@ class VocabProgressStore(private val context: Context) {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "vocab_progress.yaml")
+    private val mutex = ReentrantLock()
 
     private var cache: MutableMap<String, MutableMap<String, LessonVocabProgress>> = mutableMapOf()
     private var cacheLoaded = false
@@ -42,13 +46,19 @@ class VocabProgressStore(private val context: Context) {
         val INTERVALS_DAYS = intArrayOf(1, 3, 7, 14, 30)
     }
 
-    fun loadAll(): Map<String, Map<String, LessonVocabProgress>> {
+    fun loadAll(): Map<String, Map<String, LessonVocabProgress>> = mutex.withLock {
+        loadAllInternal()
+    }
+
+    private fun loadAllInternal(): Map<String, Map<String, LessonVocabProgress>> {
         if (cacheLoaded) return cache
 
         if (!file.exists()) {
             cacheLoaded = true
             return cache
         }
+
+        val previousCache = cache
 
         try {
             val raw = yaml.load<Any>(file.readText()) ?: return cache
@@ -91,7 +101,8 @@ class VocabProgressStore(private val context: Context) {
                 }
             }
         } catch (e: Exception) {
-            cache = mutableMapOf()
+            Log.e("VocabProgressStore", "Failed to parse ${file.name}", e)
+            cache = previousCache
         }
 
         cacheLoaded = true
@@ -106,8 +117,8 @@ class VocabProgressStore(private val context: Context) {
     /**
      * Save completed entry indices for a lesson (sprint progress).
      */
-    fun saveCompletedIndices(lessonId: String, languageId: String, indices: Set<Int>) {
-        loadAll()
+    fun saveCompletedIndices(lessonId: String, languageId: String, indices: Set<Int>) = mutex.withLock {
+        loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
@@ -119,8 +130,8 @@ class VocabProgressStore(private val context: Context) {
     /**
      * Add a completed index to the current sprint progress.
      */
-    fun addCompletedIndex(lessonId: String, languageId: String, index: Int) {
-        loadAll()
+    fun addCompletedIndex(lessonId: String, languageId: String, index: Int) = mutex.withLock {
+        loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
@@ -134,8 +145,8 @@ class VocabProgressStore(private val context: Context) {
     /**
      * Clear sprint progress (all completed indices) for a lesson.
      */
-    fun clearSprintProgress(lessonId: String, languageId: String) {
-        loadAll()
+    fun clearSprintProgress(lessonId: String, languageId: String) = mutex.withLock {
+        loadAllInternal()
         val existing = cache[languageId]?.get(lessonId) ?: return
         cache[languageId]!![lessonId] = existing.copy(completedIndices = emptySet())
         persistToFile()
@@ -145,8 +156,8 @@ class VocabProgressStore(private val context: Context) {
      * Record that a vocab entry was answered correctly.
      * Updates the SRS state: moves to next interval step.
      */
-    fun recordCorrect(entryId: String, lessonId: String, languageId: String) {
-        loadAll()
+    fun recordCorrect(entryId: String, lessonId: String, languageId: String) = mutex.withLock {
+        loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
@@ -170,8 +181,8 @@ class VocabProgressStore(private val context: Context) {
      * Record that a vocab entry was answered incorrectly.
      * Resets the SRS interval step back to 0.
      */
-    fun recordIncorrect(entryId: String, lessonId: String, languageId: String) {
-        loadAll()
+    fun recordIncorrect(entryId: String, lessonId: String, languageId: String) = mutex.withLock {
+        loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }

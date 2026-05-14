@@ -8,13 +8,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.Lesson
-import com.alexpo.grammermate.data.LessonStore
-import com.alexpo.grammermate.data.LessonStoreImpl
 import com.alexpo.grammermate.data.LessonSchedule
-import com.alexpo.grammermate.data.AppConfigStore
-import com.alexpo.grammermate.data.AppConfigStoreImpl
-import com.alexpo.grammermate.data.ProgressStore
-import com.alexpo.grammermate.data.ProgressStoreImpl
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SentenceCard
@@ -24,22 +18,14 @@ import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VocabEntry
-import com.alexpo.grammermate.data.MasteryStore
-import com.alexpo.grammermate.data.MasteryStoreImpl
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.HintLevel
-import com.alexpo.grammermate.data.StreakStore
-import com.alexpo.grammermate.data.StreakStoreImpl
 import com.alexpo.grammermate.data.StreakData
-import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
-import com.alexpo.grammermate.data.HiddenCardStore
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.BackupManagerImpl
-import com.alexpo.grammermate.data.ProfileStore
-import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.DownloadState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,18 +67,18 @@ import com.alexpo.grammermate.shared.audio.AudioCoordinator
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
-    private val lessonStore = LessonStoreImpl(application)
-    private val progressStore = ProgressStoreImpl(application)
-    private val configStore = AppConfigStoreImpl(application)
-    private val masteryStore = MasteryStoreImpl(application)
-    private val streakStore = StreakStoreImpl(application)
     private val storeFactory = StoreFactory.getInstance(application)
+    private val lessonStore = storeFactory.getLessonStore()
+    private val progressStore = storeFactory.getProgressStore()
+    private val configStore = storeFactory.getAppConfigStore()
+    private val masteryStore = storeFactory.getMasteryStore()
+    private val streakStore = storeFactory.getStreakStore()
     private val badSentenceStore = storeFactory.getBadSentenceStore()
-    private val hiddenCardStore = HiddenCardStore(application)
-    private val vocabProgressStore = VocabProgressStore(application)
+    private val hiddenCardStore = storeFactory.getHiddenCardStore()
+    private val vocabProgressStore = storeFactory.getVocabProgressStore()
     private var wordMasteryStore = storeFactory.getWordMasteryStore(null)
     private val backupManager = BackupManagerImpl(application)
-    private val profileStore = ProfileStore(application)
+    private val profileStore = storeFactory.getProfileStore()
     private val _coreState = MutableStateFlow(TrainingUiState())
 
     // ── Shared stateAccess — single instance for all helpers ──────────────
@@ -154,6 +140,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         wordBankGenerator = WordBankGenerator,
         cardProvider = cardProvider,
         streakManager = streakManager,
+        storeFactory = storeFactory,
         getMastery = { lessonId, langId -> masteryStore.get(lessonId, langId) },
         getSchedule = { lessonId -> lessonSchedules[com.alexpo.grammermate.data.LessonId(lessonId)] },
         calculateCompletedSubLessons = { subLessons, mastery, lessonId ->
