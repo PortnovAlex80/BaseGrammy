@@ -577,3 +577,62 @@ The ViewModel explicitly calls each feature's `resetState()` or `resetStateKeepR
 6. **Phase 3 result types:** when adding a new variant to a sealed result class (e.g. `SessionEvent`, `BossCommand`, `SettingsResult`), add a row to the corresponding result-type table AND add a `when` branch to the handler method table. When adding a new sealed result class, add a new section following the Phase 3 format.
 7. **Phase 4 feature StateFlows:** when a feature class gains or loses an owned `StateFlow`, update the corresponding Phase 4 table AND update the combine chain description in the "7-Flow Combine Chain" section. When a new feature class acquires its own StateFlow, add a new section following the Phase 4 format.
 8. **Phase 4 reset wiring:** when a ViewModel method adds or removes a feature `resetState()` / `resetStateKeepRewards()` call, update the "Feature Reset Calls" table. When a new `BossCommand` reset variant is added, update both the BossResult.kt table and the handler dispatch table.
+
+## Phase 5: Unit Test Coverage
+
+### SessionRunnerTest
+
+**File:** `app/src/test/java/com/alexpo/grammermate/feature/training/SessionRunnerTest.kt`
+
+Tests `SessionRunner` — answer submission (6 branching paths), card navigation, session lifecycle, pause/resume, input modes, word bank, drill/elite sub-modes.
+
+| Symbol | Type | Spec | UC | AC |
+|--------|------|------|----|-----|
+| SessionRunnerTest | test | 08#7.1 | UC-01–UC-06 | AC1–AC6 |
+| submitAnswer (correct normal mid/last) | test | 08#7.1 | UC-02, UC-05 | AC1–AC5 |
+| submitAnswer (boss mid/last) | test | 08#7.1, 08#7.8 | UC-07 | AC1–AC6 |
+| submitAnswer (drill mode) | test | 08#7.11 | UC-05 | AC1 |
+| submitAnswer (elite mode) | test | 08#7.10 | UC-05, UC-06 | AC1, AC2 |
+| submitAnswer (wrong + hint threshold) | test | 08#7.1 | UC-03 | AC2–AC5 |
+| submitAnswer (wrong + voice/keyboard) | test | 08#7.1 | UC-03, UC-12 | AC1, AC4 |
+| nextCard / prevCard (boundaries) | test | 08#7.1 | UC-04 | AC1–AC3 |
+| startSession (with/without cards, boss active) | test | 08#7.1 | UC-01 | AC1, AC3–AC5 |
+| finishSession (normal/elite/rating) | test | 08#7.1 | UC-06 | AC2 |
+| setInputMode (mode switching) | test | 08#7.1 | UC-15 | AC1 |
+| togglePause / pauseSession | test | 08#7.1 | UC-06 | AC2–AC3 |
+| showAnswer (hint display) | test | 12#12.7.2 | UC-50 | AC1–AC4 |
+| selectWordFromBank / removeLastSelectedWord | test | 08#7.1 | UC-14 | AC1, AC4 |
+| skipToNextCard | test | 08#7.1 | UC-04 | AC1 |
+| selectSubLesson | test | 08#7.1 | UC-05 | AC1 |
+| drill sub-mode (start/finish/exit) | test | 08#7.11 | UC-05 | AC1 |
+| elite helpers (open/cancel/normalize/resolve) | test | 08#7.10 | UC-05 | — |
+| onInputChanged | test | 08#7.1 | UC-02 | AC1 |
+| resumeFromSettings | test | 08#7.1 | UC-01 | AC1 |
+| fullFlow integration tests | test | 08#7.1 | UC-02, UC-03 | AC1–AC5 |
+
+### DailyPracticeCoordinatorTest
+
+**File:** `app/src/test/java/com/alexpo/grammermate/feature/daily/DailyPracticeCoordinatorTest.kt`
+
+Tests `DailyPracticeCoordinator` — 3-block session lifecycle, block boundaries, cursor advancement, cancel/repeat, verb progress persistence, vocab SRS rating, edge cases.
+
+| Symbol | Type | Spec | UC | AC |
+|--------|------|------|----|-----|
+| DailyPracticeCoordinatorTest | test | 09#9.2 | UC-21–UC-25 | AC1–AC5 |
+| startDailySession (empty/with tasks/no pack) | test | 09#9.6.1 | UC-21 | AC1–AC3 |
+| advanceDailyTask (block boundaries translate→vocab→verbs) | test | 09#9.6.2, 09#9.6.3 | UC-22 | AC1–AC3 |
+| advanceToNextBlock / advanceDailyBlock | test | 09#9.6.2 | UC-22 | AC1–AC3 |
+| cancelDailySession (cursor off-by-one verification) | test | 09#9.6.4 | UC-23 | AC4 |
+| endSession | test | 09#9.6.4 | UC-22 | AC1 |
+| repeatDailyPractice (cached/fallback) | test | 09#9.6.5 | UC-23 | AC1–AC2 |
+| getBlockProgress | test | 09#9.8.3 | UC-24 | AC1 |
+| replaceCurrentBlock | test | 09#9.8.6 | UC-22 | AC1 |
+| persistDailyVerbProgress | test | 09#9.5.6 | UC-22 | — |
+| rateVocabCard (AGAIN/HARD/GOOD/EASY SRS) | test | 09#9.4.6, 11#11.4 | UC-25 | AC5 |
+| submitDailySentenceAnswer / submitDailyVerbAnswer | test | 09#9.3.4, 09#9.5 | UC-02, UC-27 | AC1–AC5 |
+| recordDailyCardPracticed | test | 09#9.3.5 | UC-05 | AC1 |
+| hasResumableDailySession | test | 09#9.8.5 | UC-23 | AC1 |
+| updateCursor / getCursor | test | 09#9.8.4 | UC-24 | AC1–AC3 |
+| resetState / clearPrebuiltSession | test | 09#9.9 | — | — |
+| edge cases (single card, interrupted, empty) | test | 09#9.6.2 | UC-22 | AC1–AC3 |
+| fullLifecycle integration | test | 09#9.6.1–09#9.6.4 | UC-21–UC-24 | AC1–AC4 |
