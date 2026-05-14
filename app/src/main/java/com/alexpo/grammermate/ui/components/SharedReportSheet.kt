@@ -2,7 +2,6 @@ package com.alexpo.grammermate.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,6 +11,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -19,12 +19,33 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
  * Shared 4-option report bottom sheet: flag/unflag bad sentence, hide card,
- * export bad sentences, copy text. Used by TrainingScreen and VerbDrillScreen.
+ * export bad sentences, copy text. Used by TrainingScreen, VerbDrillScreen,
+ * DailyPracticeScreen, and TrainingCardSession.
+ *
+ * @param onDismiss Called when the sheet should be dismissed.
+ * @param cardPromptText Optional subtitle text shown below the title (e.g. card prompt).
+ * @param isFlagged Whether the current card is already flagged as a bad sentence.
+ * @param onFlag Called when the user flags the card as a bad sentence.
+ * @param onUnflag Called when the user removes the card from bad sentences.
+ * @param onHideCard Called when the user hides the card from lessons.
+ * @param onExportBadSentences Called to export bad sentences; returns the file path or null.
+ * @param onCopyText Called when the user taps "Copy text".
+ * @param exportResult Optional callback invoked with the export path (or null). Callers can
+ *   use this to show their own export confirmation. If null and [showExportConfirmation] is
+ *   true, the sheet shows its own built-in confirmation dialog.
+ * @param title The sheet title text. Defaults to "Card options".
+ * @param showExportConfirmation When true and [exportResult] is null, shows a built-in
+ *   AlertDialog after export with the result message. Defaults to true so callers that
+ *   don't provide their own [exportResult] callback still get confirmation.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,8 +58,12 @@ fun SharedReportSheet(
     onHideCard: () -> Unit,
     onExportBadSentences: () -> String?,
     onCopyText: () -> Unit,
-    exportResult: ((String?) -> Unit)? = null
+    exportResult: ((String?) -> Unit)? = null,
+    title: String = "Card options",
+    showExportConfirmation: Boolean = true
 ) {
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss
     ) {
@@ -50,7 +75,7 @@ fun SharedReportSheet(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = "Card options",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -101,7 +126,11 @@ fun SharedReportSheet(
             TextButton(
                 onClick = {
                     val path = onExportBadSentences()
-                    exportResult?.invoke(path)
+                    if (exportResult != null) {
+                        exportResult(path)
+                    } else if (showExportConfirmation) {
+                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                    }
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -119,5 +148,18 @@ fun SharedReportSheet(
                 Text("Copy text")
             }
         }
+    }
+
+    // Built-in export confirmation dialog, shown only when no external exportResult callback
+    // is provided and showExportConfirmation is true.
+    if (exportMessage != null) {
+        AlertDialog(
+            onDismissRequest = { exportMessage = null },
+            title = { Text("Export") },
+            text = { Text(exportMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { exportMessage = null }) { Text("OK") }
+            }
+        )
     }
 }

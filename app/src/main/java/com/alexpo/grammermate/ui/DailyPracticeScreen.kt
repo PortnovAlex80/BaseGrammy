@@ -70,7 +70,7 @@ import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.ui.TenseExample
 import com.alexpo.grammermate.ui.TenseInfo
-import com.alexpo.grammermate.ui.components.DailyWordBankSection
+import com.alexpo.grammermate.ui.components.WordBankSection
 import com.alexpo.grammermate.ui.components.DailyInputModeBar
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.SharedReportSheet
@@ -550,7 +550,7 @@ private fun DailyInputControls(
 
         // Word Bank UI
         if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
-            DailyWordBankSection(contract = contract)
+            WordBankSection(contract = contract)
         }
 
         // Input mode selector + show answer + report

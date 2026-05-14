@@ -5,13 +5,11 @@ import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,8 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
@@ -36,24 +32,20 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,8 +59,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -82,7 +72,10 @@ import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.SessionProgressIndicator
+import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
+import com.alexpo.grammermate.ui.components.WordBankSection
 
 /**
  * Scope object passed to customization slots inside [TrainingCardSession].
@@ -121,7 +114,7 @@ class TrainingCardSessionScope(
  * @param resultContent Optional slot for answer feedback. Default: correct/incorrect label + answer + TTS replay.
  * @param navigationControls Optional slot for bottom navigation. Default: prev/pause/exit/next buttons.
  * @param completionScreen Optional slot for the completed state. Default: congratulations + stats.
- * @param progressIndicator Optional slot for progress display. Default: DrillProgressRow-style bar + speedometer.
+ * @param progressIndicator Optional slot for progress display. Default: [SessionProgressIndicator].
  * @param onExit Called when the user requests to exit.
  * @param onComplete Called when the session is completed.
  * @param modifier Modifier for the root layout.
@@ -214,7 +207,11 @@ fun TrainingCardSession(
         if (progressIndicator != null) {
             scope.progressIndicator()
         } else {
-            DefaultProgressIndicator(scope)
+            SessionProgressIndicator(
+                current = scope.contract.progress.current,
+                total = scope.contract.progress.total,
+                speedWpm = scope.contract.currentSpeedWpm
+            )
         }
 
         // Card content
@@ -285,92 +282,6 @@ private fun DefaultHeader(scope: TrainingCardSessionScope) {
 }
 
 /**
- * Progress indicator matching GrammarMateApp's DrillProgressRow:
- * rounded green progress bar (70%) with text overlay + circular speedometer (30%) with wpm arc.
- */
-@Composable
-private fun DefaultProgressIndicator(scope: TrainingCardSessionScope) {
-    val progress = scope.contract.progress
-    val progressFraction = if (progress.total > 0) {
-        progress.current.toFloat() / progress.total.toFloat()
-    } else 0f
-    val barColor = Color(0xFF4CAF50)
-    val trackColor = Color(0xFFC8E6C9)
-    val speedVal = scope.contract.currentSpeedWpm
-    val speedColor = when {
-        speedVal <= 20 -> Color(0xFFE53935)
-        speedVal <= 40 -> Color(0xFFFDD835)
-        else -> Color(0xFF43A047)
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Progress bar - 70% width
-        Box(
-            modifier = Modifier
-                .weight(0.7f)
-                .height(24.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(trackColor)
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .height(24.dp)
-                    .fillMaxWidth(progressFraction)
-                    .background(barColor, RoundedCornerShape(12.dp))
-            )
-            Text(
-                text = "${progress.current} / ${progress.total}",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (progressFraction < 0.12f) Color(0xFF2E7D32) else Color.White,
-                modifier = Modifier.align(Alignment.Center),
-                textAlign = TextAlign.Center
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Speedometer circle - 30% width
-        Box(
-            modifier = Modifier
-                .weight(0.3f)
-                .padding(2.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            val sizeModifier = Modifier.size(44.dp)
-            Canvas(modifier = sizeModifier) {
-                val strokeWidth = 4.dp.toPx()
-                drawArc(
-                    color = Color(0xFFE0E0E0),
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth)
-                )
-                val sweep = 360f * (speedVal.coerceAtMost(100) / 100f)
-                drawArc(
-                    color = speedColor,
-                    startAngle = -90f,
-                    sweepAngle = sweep,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
-            }
-            Text(
-                text = "$speedVal",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = speedColor
-            )
-        }
-    }
-}
-
-/**
  * Card content matching GrammarMateApp's CardPrompt:
  * Material Card with "RU" label + prompt text (20sp, semi-bold) + TtsSpeakerButton on right.
  */
@@ -408,7 +319,7 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
  * - Word bank FlowRow with FilterChips + Undo button
  * - Input mode selector row: Mic, Keyboard, Book FilledTonalIconButtons
  * - Show answer button (Eye icon with tooltip)
- * - Report/Flag button (Warning icon with tooltip) -- opens ModalBottomSheet
+ * - Report/Flag button (Warning icon with tooltip) -- opens SharedReportSheet
  * - "Check" button (full width)
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -418,7 +329,6 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
     val hasCards = scope.currentCard != null
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
-    var exportMessage by remember { mutableStateOf<String?>(null) }
     val reportCard = scope.currentCard
     val reportText = if (reportCard != null) {
         val targetText = reportCard.acceptedAnswers.joinToString(" / ")
@@ -443,102 +353,17 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
 
     // Report sheet
     if (showReportSheet) {
-        val cardIsBad = contract.isCurrentCardFlagged()
-        ModalBottomSheet(
-            onDismissRequest = { showReportSheet = false },
-            sheetState = rememberModalBottomSheetState()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = "Card options",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (reportCard != null) {
-                    Text(
-                        text = reportCard.promptRu,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                if (cardIsBad) {
-                    TextButton(
-                        onClick = {
-                            contract.unflagCurrentCard()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Remove from bad sentences list")
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            contract.flagCurrentCard()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add to bad sentences list")
-                    }
-                }
-                TextButton(
-                    onClick = {
-                        contract.hideCurrentCard()
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hide this card from lessons")
-                }
-                TextButton(
-                    onClick = {
-                        val path = contract.exportFlaggedCards()
-                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Download, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export bad sentences to file")
-                }
-                TextButton(
-                    onClick = {
-                        if (reportText.isNotBlank()) {
-                            clipboardManager.setText(AnnotatedString(reportText))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Copy text")
-                }
-            }
-        }
-    }
-    if (exportMessage != null) {
-        AlertDialog(
-            onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
-            text = { Text(exportMessage!!) },
-            confirmButton = {
-                TextButton(onClick = { exportMessage = null }) {
-                    Text("OK")
+        SharedReportSheet(
+            onDismiss = { showReportSheet = false },
+            cardPromptText = reportCard?.promptRu,
+            isFlagged = contract.isCurrentCardFlagged(),
+            onFlag = { contract.flagCurrentCard() },
+            onUnflag = { contract.unflagCurrentCard() },
+            onHideCard = { contract.hideCurrentCard() },
+            onExportBadSentences = { contract.exportFlaggedCards() },
+            onCopyText = {
+                if (reportText.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(reportText))
                 }
             }
         )
@@ -610,55 +435,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
 
         // Word Bank UI
         if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
-            val wordBankWords = contract.getWordBankWords()
-            val selectedWords = contract.getSelectedWords()
-            if (wordBankWords.isNotEmpty()) {
-                Text(
-                    text = "Tap words in correct order:",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    wordBankWords.forEach { word ->
-                        val availableCount = wordBankWords.count { it == word }
-                        val usedCount = selectedWords.count { it == word }
-                        val isFullyUsed = usedCount >= availableCount
-
-                        FilterChip(
-                            selected = usedCount > 0,
-                            onClick = {
-                                if (!isFullyUsed) {
-                                    contract.selectWordFromBank(word)
-                                }
-                            },
-                            label = { Text(text = word) },
-                            enabled = !isFullyUsed
-                        )
-                    }
-                }
-                if (selectedWords.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Selected: ${selectedWords.size} / ${wordBankWords.size}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        TextButton(onClick = { contract.removeLastSelectedWord() }) {
-                            Text(text = "Undo")
-                        }
-                    }
-                }
-            }
+            WordBankSection(contract = contract)
         }
 
         // Input mode selector row + show answer + flag buttons

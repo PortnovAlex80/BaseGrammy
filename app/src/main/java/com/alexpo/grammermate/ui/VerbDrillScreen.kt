@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +35,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -76,6 +74,7 @@ import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
 import com.alexpo.grammermate.ui.components.HintAnswerCard
+import com.alexpo.grammermate.ui.components.WordBankSection
 
 @Composable
 fun VerbDrillScreen(
@@ -545,7 +544,7 @@ private fun DefaultVerbDrillInputControls(
 
         // Word Bank UI
         if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
-            VerbDrillWordBankSection(contract = contract)
+            WordBankSection(contract = contract)
         }
 
         // Input mode selector + show answer + flag — mirrors AnswerBox exactly
@@ -778,62 +777,6 @@ private fun VerbDrillCompletionScreen(
 }
 
 // --- Extracted sub-composables for DefaultVerbDrillInputControls ---
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun VerbDrillWordBankSection(
-    contract: CardSessionContract
-) {
-    val wordBankWords = contract.getWordBankWords()
-    val selectedWords = contract.getSelectedWords()
-    if (wordBankWords.isNotEmpty()) {
-        Text(
-            text = "Tap words in correct order:",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            wordBankWords.forEach { word ->
-                val availableCount = wordBankWords.count { it == word }
-                val usedCount = selectedWords.count { it == word }
-                val isFullyUsed = usedCount >= availableCount
-
-                FilterChip(
-                    selected = usedCount > 0,
-                    onClick = {
-                        if (!isFullyUsed) {
-                            contract.selectWordFromBank(word)
-                        }
-                    },
-                    label = { Text(text = word) },
-                    enabled = !isFullyUsed
-                )
-            }
-        }
-        if (selectedWords.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Selected: ${selectedWords.size} / ${wordBankWords.size}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                TextButton(onClick = { contract.removeLastSelectedWord() }) {
-                    Text(text = "Undo")
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

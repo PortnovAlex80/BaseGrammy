@@ -6,13 +6,11 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,7 +44,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,8 +67,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -88,8 +83,10 @@ import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.components.AsrStatusIndicator
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
+import com.alexpo.grammermate.ui.components.WordBankSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,11 +179,10 @@ fun TrainingScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                DrillProgressRow(
+                SessionProgressIndicator(
                     current = state.drill.drillCardIndex + 1,
                     total = state.drill.drillTotalCards,
-                    speed = state.cardSession.voiceActiveMs,
-                    wordCount = state.cardSession.voiceWordCount
+                    speedWpm = if (state.cardSession.voiceActiveMs > 0) (state.cardSession.voiceWordCount / (state.cardSession.voiceActiveMs / 60000.0)).toInt() else 0
                 )
             } else {
                 val cardTense = state.cardSession.currentCard?.tense
@@ -228,11 +224,10 @@ fun TrainingScreen(
                 }
                 val total = if (state.boss.bossActive) state.boss.bossTotal else state.cardSession.subLessonTotal
                 val current = if (state.boss.bossActive) state.boss.bossProgress else state.cardSession.currentIndex
-                DrillProgressRow(
+                SessionProgressIndicator(
                     current = (current + 1).coerceAtMost(total.coerceAtLeast(1)),
                     total = total.coerceAtLeast(1),
-                    speed = state.cardSession.voiceActiveMs,
-                    wordCount = state.cardSession.voiceWordCount
+                    speedWpm = if (state.cardSession.voiceActiveMs > 0) (state.cardSession.voiceWordCount / (state.cardSession.voiceActiveMs / 60000.0)).toInt() else 0
                 )
             }
             CardPrompt(state, onSpeak = onTtsSpeak)
@@ -564,54 +559,12 @@ fun AnswerBox(
 
         // Word Bank UI
         if (state.cardSession.inputMode == InputMode.WORD_BANK && state.cardSession.wordBankWords.isNotEmpty()) {
-            Text(
-                text = "Tap words in correct order:",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            WordBankSection(
+                wordBankWords = state.cardSession.wordBankWords,
+                selectedWords = state.cardSession.selectedWords,
+                onSelectWord = onSelectWordFromBank,
+                onRemoveLastWord = onRemoveLastWord
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                state.cardSession.wordBankWords.forEach { word ->
-                    // Count how many times this word appears in the word bank
-                    val availableCount = state.cardSession.wordBankWords.count { it == word }
-                    // Count how many times this word has been selected
-                    val usedCount = state.cardSession.selectedWords.count { it == word }
-                    // Word is fully used only when all instances are selected
-                    val isFullyUsed = usedCount >= availableCount
-
-                    FilterChip(
-                        selected = usedCount > 0,
-                        onClick = {
-                            if (!isFullyUsed) {
-                                onSelectWordFromBank(word)
-                            }
-                        },
-                        label = { Text(text = word) },
-                        enabled = !isFullyUsed
-                    )
-                }
-            }
-            if (state.cardSession.selectedWords.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Selected: ${state.cardSession.selectedWords.size} / ${state.cardSession.wordBankWords.size}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    TextButton(onClick = onRemoveLastWord) {
-                        Text(text = "Undo")
-                    }
-                }
-            }
         }
 
         Row(
@@ -755,84 +708,6 @@ fun NavigationRow(
     }
 }
 
-@Composable
-fun DrillProgressRow(current: Int, total: Int, speed: Long, wordCount: Int) {
-    val progress = if (total > 0) current.toFloat() / total else 0f
-    val barColor = Color(0xFF4CAF50)
-    val trackColor = Color(0xFFC8E6C9)
-    val speedVal = if (speed > 0) (wordCount / (speed / 60000.0)).toInt() else 0
-    val speedColor = when {
-        speedVal <= 20 -> Color(0xFFE53935)
-        speedVal <= 40 -> Color(0xFFFDD835)
-        else -> Color(0xFF43A047)
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Progress bar — 70% width, fill grows left to right
-        Box(
-            modifier = Modifier
-                .weight(0.7f)
-                .height(24.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(trackColor)
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .height(24.dp)
-                    .fillMaxWidth(progress)
-                    .background(barColor, RoundedCornerShape(12.dp))
-            )
-            Text(
-                text = "$current / $total",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (progress < 0.12f) Color(0xFF2E7D32) else Color.White,
-                modifier = Modifier.align(Alignment.Center),
-                textAlign = TextAlign.Center
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Speedometer circle — 30% width, constrained to square
-        Box(
-            modifier = Modifier
-                .weight(0.3f)
-                .padding(2.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            val sizeModifier = Modifier.size(44.dp)
-            Canvas(modifier = sizeModifier) {
-                val strokeWidth = 4.dp.toPx()
-                drawArc(
-                    color = Color(0xFFE0E0E0),
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth)
-                )
-                val sweep = 360f * (speedVal.coerceAtMost(100) / 100f)
-                drawArc(
-                    color = speedColor,
-                    startAngle = -90f,
-                    sweepAngle = sweep,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
-            }
-            Text(
-                text = "$speedVal",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = speedColor
-            )
-        }
-    }
-}
 
 private fun formatTime(activeMs: Long): String {
     val totalSeconds = activeMs / 1000
