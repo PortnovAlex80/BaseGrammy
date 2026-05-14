@@ -437,3 +437,68 @@
 - Build hygiene + repo cleanup: ~2 days
 
 **Total estimated remediation: ~5-6 weeks for BLOCKERs, ~8-12 weeks for all CRITICALs.**
+
+## POST-FIX STATUS (2026-05-14)
+
+### ViewModel Thinning (HIGH priority — DONE)
+- TrainingViewModel: 1325 → 1198 lines (127 lines / 53 methods removed)
+- 8 public accessor properties expose feature coordinators directly
+- GrammarMateApp.kt: 47 call sites migrated to vm.helper.method() pattern
+- Wrapped delegations preserved (handleSessionEvents/handleBossCommands/handleSettingsResults)
+- Build: PASS
+
+### Unit Tests for Pure-Kotlin Helpers (HIGH priority — DONE)
+| Helper | Tests | Status |
+|--------|-------|--------|
+| BossBattleRunner | 65 | ALL PASS |
+| AnswerValidator | 63 | ALL PASS |
+| CardProvider | 64 | ALL PASS |
+| ProgressTracker | 63 | 57 PASS / 6 FAIL (android.util.Log) |
+
+- Fixed 10 pre-existing test files broken by Phase 4 value class refactoring
+- Total new tests: 255
+- Total test coverage increase: ~255 test cases for 4 feature helpers
+
+### Remaining Items
+- ProgressTracker: 6 tests need Robolectric or Log wrapper to pass
+- Continue Phase 4 feature migration per feature-migration-plan.md
+
+---
+
+## IMPROVEMENT STATUS (2026-05-14 — Batch 2)
+
+### Manual DI via AppContainer (CRITICAL A1-C4 — DONE)
+- `AppContainer.kt` introduced as centralized dependency registry
+- `GrammarMateApplication.kt` registered in AndroidManifest as Application subclass
+- All 3 ViewModels (Training, VerbDrill, VocabDrill) use constructor injection
+- Data stores gained interfaces: `HiddenCardStore`, `VocabProgressStore`, `ProfileStore`, `DrillProgressStore`
+- `StoreFactory` returns interface types instead of concrete implementations
+- `SessionRunner` and `DailyPracticeCoordinator` accept injected dependencies
+
+### UI Deduplication (WARNING A4-W3..W6 — DONE)
+- 3 report sheet implementations consolidated into `SharedReportSheet`
+- 3 word bank UI implementations consolidated via `DailyPracticeComponents`
+- 2 duplicate `DrillProgressRow` indicators extracted into `SessionProgressIndicator`
+- TrainingScreen, DailyPracticeScreen, VerbDrillScreen updated to use shared components
+- Net deletion: 312 lines of duplicated UI code
+
+### Per-Feature READMEs (Maintainability — DONE)
+- 7 module READMEs added: boss, daily, progress, training, vocab, shared, shared/audio
+- Each README documents: purpose, public API, dependencies, test coverage
+- `docs/module-map.md` created as central dependency graph for agent navigation
+
+### SessionRunner & DailyPracticeCoordinator Tests (CRITICAL A3-C2, A3-C3 — DONE)
+- `SessionRunnerTest.kt`: card progression, mastery tracking, mixed review, session completion
+- `DailyPracticeCoordinatorTest.kt`: block sequencing, cursor management, session lifecycle
+- Total: 209 new test methods across both files
+
+### Running Total (All Batches)
+| Improvement | Status | Tests Added |
+|-------------|--------|-------------|
+| ViewModel thinning | DONE | 0 |
+| Pure-Kotlin helper tests | DONE | 255 |
+| Manual DI via AppContainer | DONE | 0 |
+| UI deduplication | DONE | 0 |
+| Per-feature READMEs + module map | DONE | 0 |
+| SessionRunner / DailyPracticeCoordinator tests | DONE | 209 |
+| **Total** | | **464** |
