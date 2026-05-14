@@ -7,12 +7,18 @@ import java.io.File
 /**
  * Stores user profile information (name, preferences, etc.)
  */
-class ProfileStore(private val context: Context) {
+interface ProfileStore {
+    fun load(): UserProfile
+    fun save(profile: UserProfile)
+    fun clear()
+}
+
+class ProfileStoreImpl(private val context: Context) : ProfileStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "profile.yaml")
 
-    fun load(): UserProfile {
+    override fun load(): UserProfile {
         if (!file.exists()) {
             return UserProfile()
         }
@@ -30,7 +36,7 @@ class ProfileStore(private val context: Context) {
         }
     }
 
-    fun save(profile: UserProfile) {
+    override fun save(profile: UserProfile) {
         baseDir.mkdirs()
 
         val payload = linkedMapOf(
@@ -40,7 +46,7 @@ class ProfileStore(private val context: Context) {
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
 
-    fun clear() {
+    override fun clear() {
         if (file.exists()) {
             file.delete()
         }

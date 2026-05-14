@@ -22,22 +22,22 @@ class StoreFactory private constructor(private val appContext: Application) {
     private val streakCache: StreakStoreImpl by lazy { StreakStoreImpl(appContext) }
     private val lessonCache: LessonStoreImpl by lazy { LessonStoreImpl(appContext) }
     private val appConfigCache: AppConfigStoreImpl by lazy { AppConfigStoreImpl(appContext) }
-    private val hiddenCardCache: HiddenCardStore by lazy { HiddenCardStore(appContext) }
-    private val vocabProgressCache: VocabProgressStore by lazy { VocabProgressStore(appContext) }
-    private val profileCache: ProfileStore by lazy { ProfileStore(appContext) }
-    private val drillProgressCache: DrillProgressStore by lazy { DrillProgressStore(appContext) }
+    private val hiddenCardCache: HiddenCardStoreImpl by lazy { HiddenCardStoreImpl(appContext) }
+    private val vocabProgressCache: VocabProgressStoreImpl by lazy { VocabProgressStoreImpl(appContext) }
+    private val profileCache: ProfileStoreImpl by lazy { ProfileStoreImpl(appContext) }
+    private val drillProgressCache: DrillProgressStoreImpl by lazy { DrillProgressStoreImpl(appContext) }
 
     // ── Pack-scoped accessors ────────────────────────────────────────────
 
     @Synchronized
-    fun getWordMasteryStore(packId: String?): WordMasteryStoreImpl {
+    fun getWordMasteryStore(packId: String?): WordMasteryStore {
         return wordMasteryCache.getOrPut(packId) {
             WordMasteryStoreImpl(appContext, packId = packId)
         }
     }
 
     @Synchronized
-    fun getVerbDrillStore(packId: String?): VerbDrillStoreImpl {
+    fun getVerbDrillStore(packId: String?): VerbDrillStore {
         return verbDrillCache.getOrPut(packId) {
             VerbDrillStoreImpl(appContext, packId = packId)
         }
@@ -48,17 +48,17 @@ class StoreFactory private constructor(private val appContext: Application) {
     /** All consumers share the same in-memory cache so that a bad sentence
      *  flagged from any screen (training, verb drill, vocab drill) is
      *  immediately visible to all others. */
-    fun getBadSentenceStore(): BadSentenceStoreImpl = badSentenceCache
+    fun getBadSentenceStore(): BadSentenceStore = badSentenceCache
 
-    fun getMasteryStore(): MasteryStoreImpl = masteryCache
+    fun getMasteryStore(): MasteryStore = masteryCache
 
-    fun getProgressStore(): ProgressStoreImpl = progressCache
+    fun getProgressStore(): ProgressStore = progressCache
 
-    fun getStreakStore(): StreakStoreImpl = streakCache
+    fun getStreakStore(): StreakStore = streakCache
 
-    fun getLessonStore(): LessonStoreImpl = lessonCache
+    fun getLessonStore(): LessonStore = lessonCache
 
-    fun getAppConfigStore(): AppConfigStoreImpl = appConfigCache
+    fun getAppConfigStore(): AppConfigStore = appConfigCache
 
     fun getHiddenCardStore(): HiddenCardStore = hiddenCardCache
 

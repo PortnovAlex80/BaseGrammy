@@ -21,15 +21,7 @@ import kotlin.concurrent.withLock
  *           "lastIncorrectMs" -> timestamp
  *           "intervalStep" -> 0..4
  */
-class VocabProgressStore(private val context: Context) {
-    private val yaml = Yaml()
-    private val baseDir = File(context.filesDir, "grammarmate")
-    private val file = File(baseDir, "vocab_progress.yaml")
-    private val mutex = ReentrantLock()
-
-    private var cache: MutableMap<String, MutableMap<String, LessonVocabProgress>> = mutableMapOf()
-    private var cacheLoaded = false
-
+interface VocabProgressStore {
     data class EntrySrsState(
         val lastCorrectMs: Long = 0L,
         val lastIncorrectMs: Long = 0L,
@@ -41,16 +33,36 @@ class VocabProgressStore(private val context: Context) {
         val entryStates: Map<String, EntrySrsState> = emptyMap()
     )
 
-    // Spaced repetition intervals in days: [1, 3, 7, 14, 30]
+    fun loadAll(): Map<String, Map<String, LessonVocabProgress>>
+    fun get(lessonId: String, languageId: String): LessonVocabProgress
+    fun saveCompletedIndices(lessonId: String, languageId: String, indices: Set<Int>)
+    fun addCompletedIndex(lessonId: String, languageId: String, index: Int)
+    fun clearSprintProgress(lessonId: String, languageId: String)
+    fun recordCorrect(entryId: String, lessonId: String, languageId: String)
+    fun recordIncorrect(entryId: String, lessonId: String, languageId: String)
+    fun isDueForReview(entryId: String, lessonId: String, languageId: String): Boolean
+    fun sortEntriesForSprint(entries: List<VocabEntry>, lessonId: String, languageId: String): List<VocabEntry>
+    fun clear()
+
     companion object {
         val INTERVALS_DAYS = intArrayOf(1, 3, 7, 14, 30)
     }
+}
 
-    fun loadAll(): Map<String, Map<String, LessonVocabProgress>> = mutex.withLock {
+class VocabProgressStoreImpl(private val context: Context) : VocabProgressStore {
+    private val yaml = Yaml()
+    private val baseDir = File(context.filesDir, "grammarmate")
+    private val file = File(baseDir, "vocab_progress.yaml")
+    private val mutex = ReentrantLock()
+
+    private var cache: MutableMap<String, MutableMap<String, VocabProgressStore.LessonVocabProgress>> = mutableMapOf()
+    private var cacheLoaded = false
+
+    override fun loadAll(): Map<String, Map<String, VocabProgressStore.LessonVocabProgress>> = mutex.withLock {
         loadAllInternal()
     }
 
-    private fun loadAllInternal(): Map<String, Map<String, LessonVocabProgress>> {
+    private fun loadAllInternal(): Map<String, Map<String, VocabProgressStore.LessonVocabProgress>> {
         if (cacheLoaded) return cache
 
         if (!file.exists()) {
@@ -80,13 +92,13 @@ class VocabProgressStore(private val context: Context) {
                         ?.toSet()
                         ?: emptySet()
 
-                    val entryStates = mutableMapOf<String, EntrySrsState>()
+                    val entryStates = mutableMapOf<String, VocabProgressStore.EntrySrsState>()
                     val entriesRaw = lessonData["entries"] as? Map<*, *>
                     if (entriesRaw != null) {
                         for ((entryKey, entryValue) in entriesRaw) {
                             val entryId = entryKey as? String ?: continue
                             val entryMap = entryValue as? Map<*, *> ?: continue
-                            entryStates[entryId] = EntrySrsState(
+                            entryStates[entryId] = VocabProgressStore.EntrySrsState(
                                 lastCorrectMs = (entryMap["lastCorrectMs"] as? Number)?.toLong() ?: 0L,
                                 lastIncorrectMs = (entryMap["lastIncorrectMs"] as? Number)?.toLong() ?: 0L,
                                 intervalStep = (entryMap["intervalStep"] as? Number)?.toInt() ?: 0
@@ -94,7 +106,7 @@ class VocabProgressStore(private val context: Context) {
                         }
                     }
 
-                    cache[languageId]!![lessonId] = LessonVocabProgress(
+                    cache[languageId]!![lessonId] = VocabProgressStore.LessonVocabProgress(
                         completedIndices = completedIndices,
                         entryStates = entryStates
                     )
@@ -109,20 +121,20 @@ class VocabProgressStore(private val context: Context) {
         return cache
     }
 
-    fun get(lessonId: String, languageId: String): LessonVocabProgress {
+    override fun get(lessonId: String, languageId: String): VocabProgressStore.LessonVocabProgress {
         loadAll()
-        return cache[languageId]?.get(lessonId) ?: LessonVocabProgress()
+        return cache[languageId]?.get(lessonId) ?: VocabProgressStore.LessonVocabProgress()
     }
 
     /**
      * Save completed entry indices for a lesson (sprint progress).
      */
-    fun saveCompletedIndices(lessonId: String, languageId: String, indices: Set<Int>) = mutex.withLock {
+    override fun saveCompletedIndices(lessonId: String, languageId: String, indices: Set<Int>) = mutex.withLock {
         loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
-        val existing = cache[languageId]!![lessonId] ?: LessonVocabProgress()
+        val existing = cache[languageId]!![lessonId] ?: VocabProgressStore.LessonVocabProgress()
         cache[languageId]!![lessonId] = existing.copy(completedIndices = indices)
         persistToFile()
     }
@@ -130,12 +142,12 @@ class VocabProgressStore(private val context: Context) {
     /**
      * Add a completed index to the current sprint progress.
      */
-    fun addCompletedIndex(lessonId: String, languageId: String, index: Int) = mutex.withLock {
+    override fun addCompletedIndex(lessonId: String, languageId: String, index: Int) = mutex.withLock {
         loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
-        val existing = cache[languageId]!![lessonId] ?: LessonVocabProgress()
+        val existing = cache[languageId]!![lessonId] ?: VocabProgressStore.LessonVocabProgress()
         cache[languageId]!![lessonId] = existing.copy(
             completedIndices = existing.completedIndices + index
         )
@@ -145,7 +157,7 @@ class VocabProgressStore(private val context: Context) {
     /**
      * Clear sprint progress (all completed indices) for a lesson.
      */
-    fun clearSprintProgress(lessonId: String, languageId: String) = mutex.withLock {
+    override fun clearSprintProgress(lessonId: String, languageId: String) = mutex.withLock {
         loadAllInternal()
         val existing = cache[languageId]?.get(lessonId) ?: return
         cache[languageId]!![lessonId] = existing.copy(completedIndices = emptySet())
@@ -156,18 +168,18 @@ class VocabProgressStore(private val context: Context) {
      * Record that a vocab entry was answered correctly.
      * Updates the SRS state: moves to next interval step.
      */
-    fun recordCorrect(entryId: String, lessonId: String, languageId: String) = mutex.withLock {
+    override fun recordCorrect(entryId: String, lessonId: String, languageId: String) = mutex.withLock {
         loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
         if (!cache[languageId]!!.containsKey(lessonId)) {
-            cache[languageId]!![lessonId] = LessonVocabProgress()
+            cache[languageId]!![lessonId] = VocabProgressStore.LessonVocabProgress()
         }
         val progress = cache[languageId]!![lessonId]!!
-        val existing = progress.entryStates[entryId] ?: EntrySrsState()
+        val existing = progress.entryStates[entryId] ?: VocabProgressStore.EntrySrsState()
         val now = System.currentTimeMillis()
-        val nextStep = (existing.intervalStep + 1).coerceAtMost(INTERVALS_DAYS.lastIndex)
+        val nextStep = (existing.intervalStep + 1).coerceAtMost(VocabProgressStore.INTERVALS_DAYS.lastIndex)
         val updatedState = existing.copy(
             lastCorrectMs = now,
             intervalStep = nextStep
@@ -181,16 +193,16 @@ class VocabProgressStore(private val context: Context) {
      * Record that a vocab entry was answered incorrectly.
      * Resets the SRS interval step back to 0.
      */
-    fun recordIncorrect(entryId: String, lessonId: String, languageId: String) = mutex.withLock {
+    override fun recordIncorrect(entryId: String, lessonId: String, languageId: String) = mutex.withLock {
         loadAllInternal()
         if (!cache.containsKey(languageId)) {
             cache[languageId] = mutableMapOf()
         }
         if (!cache[languageId]!!.containsKey(lessonId)) {
-            cache[languageId]!![lessonId] = LessonVocabProgress()
+            cache[languageId]!![lessonId] = VocabProgressStore.LessonVocabProgress()
         }
         val progress = cache[languageId]!![lessonId]!!
-        val existing = progress.entryStates[entryId] ?: EntrySrsState()
+        val existing = progress.entryStates[entryId] ?: VocabProgressStore.EntrySrsState()
         val now = System.currentTimeMillis()
         val updatedState = existing.copy(
             lastIncorrectMs = now,
@@ -204,11 +216,11 @@ class VocabProgressStore(private val context: Context) {
     /**
      * Check if a vocab entry is due for review (past its review interval).
      */
-    fun isDueForReview(entryId: String, lessonId: String, languageId: String): Boolean {
+    override fun isDueForReview(entryId: String, lessonId: String, languageId: String): Boolean {
         loadAll()
         val state = cache[languageId]?.get(lessonId)?.entryStates?.get(entryId) ?: return false
         if (state.lastCorrectMs <= 0L) return false
-        val intervalDays = INTERVALS_DAYS[state.intervalStep.coerceIn(0, INTERVALS_DAYS.lastIndex)]
+        val intervalDays = VocabProgressStore.INTERVALS_DAYS[state.intervalStep.coerceIn(0, VocabProgressStore.INTERVALS_DAYS.lastIndex)]
         val dueMs = state.lastCorrectMs + (intervalDays.toLong() * 24 * 60 * 60 * 1000)
         return System.currentTimeMillis() >= dueMs
     }
@@ -219,7 +231,7 @@ class VocabProgressStore(private val context: Context) {
      * 2. New words (never answered correctly)
      * 3. Words not yet due
      */
-    fun sortEntriesForSprint(
+    override fun sortEntriesForSprint(
         entries: List<VocabEntry>,
         lessonId: String,
         languageId: String
@@ -236,7 +248,7 @@ class VocabProgressStore(private val context: Context) {
             if (state == null || state.lastCorrectMs <= 0L) {
                 newWords.add(entry)
             } else {
-                val intervalDays = INTERVALS_DAYS[state.intervalStep.coerceIn(0, INTERVALS_DAYS.lastIndex)]
+                val intervalDays = VocabProgressStore.INTERVALS_DAYS[state.intervalStep.coerceIn(0, VocabProgressStore.INTERVALS_DAYS.lastIndex)]
                 val dueMs = state.lastCorrectMs + (intervalDays.toLong() * 24 * 60 * 60 * 1000)
                 if (System.currentTimeMillis() >= dueMs) {
                     overdue.add(entry)
@@ -250,7 +262,7 @@ class VocabProgressStore(private val context: Context) {
         return overdue.shuffled() + newWords.shuffled() + notDue.shuffled()
     }
 
-    fun clear() {
+    override fun clear() {
         cache.clear()
         cacheLoaded = true
         if (file.exists()) {

@@ -2,6 +2,8 @@ package com.alexpo.grammermate.ui
 
 import android.app.Application
 import android.net.Uri
+import com.alexpo.grammermate.AppContainer
+import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingUiState
 import android.util.Log
@@ -20,11 +22,9 @@ import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.StreakData
-import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
-import com.alexpo.grammermate.data.BackupManagerImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -63,18 +63,21 @@ import com.alexpo.grammermate.shared.audio.AudioCoordinator
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
-    private val storeFactory = StoreFactory.getInstance(application)
-    private val lessonStore = storeFactory.getLessonStore()
-    private val progressStore = storeFactory.getProgressStore()
-    private val configStore = storeFactory.getAppConfigStore()
-    private val masteryStore = storeFactory.getMasteryStore()
-    private val streakStore = storeFactory.getStreakStore()
-    private val badSentenceStore = storeFactory.getBadSentenceStore()
-    private val hiddenCardStore = storeFactory.getHiddenCardStore()
-    private val vocabProgressStore = storeFactory.getVocabProgressStore()
-    private var wordMasteryStore = storeFactory.getWordMasteryStore(null)
-    private val backupManager = BackupManagerImpl(application)
-    private val profileStore = storeFactory.getProfileStore()
+    private val container: AppContainer = when (application) {
+        is GrammarMateApplication -> application.container
+        else -> AppContainer(application)
+    }
+    private val lessonStore = container.lessonStore
+    private val progressStore = container.progressStore
+    private val configStore = container.configStore
+    private val masteryStore = container.masteryStore
+    private val streakStore = container.streakStore
+    private val badSentenceStore = container.badSentenceStore
+    private val hiddenCardStore = container.hiddenCardStore
+    private val vocabProgressStore = container.vocabProgressStore
+    private var wordMasteryStore = container.wordMasteryStore(null)
+    private val backupManager = container.backupManager
+    private val profileStore = container.profileStore
     private val _coreState = MutableStateFlow(TrainingUiState())
 
     // ── Shared stateAccess — single instance for all helpers ──────────────
@@ -136,7 +139,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         wordBankGenerator = WordBankGenerator,
         cardProvider = cardProvider,
         streakManager = streakManager,
-        storeFactory = storeFactory,
+        drillProgressStore = container.drillProgressStore,
         getMastery = { lessonId, langId -> masteryStore.get(lessonId, langId) },
         getSchedule = { lessonId -> lessonSchedules[com.alexpo.grammermate.data.LessonId(lessonId)] },
         calculateCompletedSubLessons = { subLessons, mastery, lessonId ->
@@ -161,7 +164,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         answerValidator = answerValidator,
         lessonStore = lessonStore,
         masteryStore = masteryStore,
-        storeFactory = storeFactory
+        verbDrillStoreFactory = { packId -> container.verbDrillStore(packId) },
+        wordMasteryStoreFactory = { packId -> container.wordMasteryStore(packId) }
     )
 
     private val storyRunner = StoryRunner(
@@ -945,7 +949,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * go to the pack-scoped file instead of the legacy global file.
      */
     private fun rebindWordMasteryStore(packId: String?) {
-        wordMasteryStore = storeFactory.getWordMasteryStore(packId)
+        wordMasteryStore = container.wordMasteryStore(packId)
     }
 
     /**

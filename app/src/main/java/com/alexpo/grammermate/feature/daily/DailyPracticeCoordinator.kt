@@ -13,11 +13,12 @@ import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
-import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
+import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.WordMasteryState
+import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,8 @@ class DailyPracticeCoordinator(
     private val answerValidator: AnswerValidator,
     private val lessonStore: LessonStore,
     private val masteryStore: MasteryStore,
-    private val storeFactory: StoreFactory
+    private val verbDrillStoreFactory: (String?) -> VerbDrillStore,
+    private val wordMasteryStoreFactory: (String?) -> WordMasteryStore
 ) {
 
     private val logTag = "GrammarMate"
@@ -67,11 +69,11 @@ class DailyPracticeCoordinator(
     /** Cursor state saved at session start; used to roll back on cancel. */
     private var dailyCursorAtSessionStart: DailyCursorState = DailyCursorState()
 
-    // ── Drill store access (delegated to StoreFactory) ──────────────────
+    // ── Drill store access (delegated to factory functions) ──────────────────
 
-    fun getVerbDrillStore(packId: String) = storeFactory.getVerbDrillStore(packId)
+    fun getVerbDrillStore(packId: String) = verbDrillStoreFactory(packId)
 
-    fun getWordMasteryStore(packId: String) = storeFactory.getWordMasteryStore(packId)
+    fun getWordMasteryStore(packId: String) = wordMasteryStoreFactory(packId)
 
     // ── Internal helpers (absorbed from DailySessionHelper) ────────────
 

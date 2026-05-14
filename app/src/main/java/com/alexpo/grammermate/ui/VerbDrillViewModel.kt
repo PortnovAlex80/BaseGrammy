@@ -4,11 +4,12 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.alexpo.grammermate.AppContainer
+import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.BadSentenceEntry
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
-import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
@@ -16,7 +17,6 @@ import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
-import com.alexpo.grammermate.data.StoreFactory
 import org.yaml.snakeyaml.Yaml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,12 +43,15 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val logTag = "VerbDrillVM"
     private val application = application
-    private val storeFactory = StoreFactory.getInstance(application)
-    private var verbDrillStore = storeFactory.getVerbDrillStore(null)
-    private val lessonStore = storeFactory.getLessonStore()
-    private val progressStore = storeFactory.getProgressStore()
-    private val badSentenceStore = storeFactory.getBadSentenceStore()
-    private val ttsEngine = TtsProvider.getInstance(application).ttsEngine
+    private val container: AppContainer = when (application) {
+        is GrammarMateApplication -> application.container
+        else -> AppContainer(application)
+    }
+    private var verbDrillStore = container.verbDrillStore(null)
+    private val lessonStore = container.lessonStore
+    private val progressStore = container.progressStore
+    private val badSentenceStore = container.badSentenceStore
+    private val ttsEngine = container.ttsEngine
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
     val uiState: StateFlow<VerbDrillUiState> = _uiState
@@ -125,7 +128,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
         currentPackId = packId
-        verbDrillStore = storeFactory.getVerbDrillStore(packId)
+        verbDrillStore = container.verbDrillStore(packId)
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards() }
     }

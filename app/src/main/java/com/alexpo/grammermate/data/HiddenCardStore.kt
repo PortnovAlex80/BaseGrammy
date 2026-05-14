@@ -7,7 +7,15 @@ import java.io.File
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class HiddenCardStore(private val context: Context) {
+interface HiddenCardStore {
+    fun hideCard(cardId: String)
+    fun unhideCard(cardId: String)
+    fun isHidden(cardId: String): Boolean
+    fun getHiddenCardIds(): Set<String>
+    fun clearAll()
+}
+
+class HiddenCardStoreImpl(private val context: Context) : HiddenCardStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "hidden_cards.yaml")
@@ -32,29 +40,29 @@ class HiddenCardStore(private val context: Context) {
         }
     }
 
-    fun hideCard(cardId: String) = mutex.withLock {
+    override fun hideCard(cardId: String) = mutex.withLock {
         ensureLoaded()
         hiddenIds.add(cardId)
         persist()
     }
 
-    fun unhideCard(cardId: String) = mutex.withLock {
+    override fun unhideCard(cardId: String) = mutex.withLock {
         ensureLoaded()
         hiddenIds.remove(cardId)
         persist()
     }
 
-    fun isHidden(cardId: String): Boolean {
+    override fun isHidden(cardId: String): Boolean {
         ensureLoaded()
         return hiddenIds.contains(cardId)
     }
 
-    fun getHiddenCardIds(): Set<String> {
+    override fun getHiddenCardIds(): Set<String> {
         ensureLoaded()
         return hiddenIds.toSet()
     }
 
-    fun clearAll() = mutex.withLock {
+    override fun clearAll() = mutex.withLock {
         hiddenIds.clear()
         persist()
     }

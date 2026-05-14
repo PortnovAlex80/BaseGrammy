@@ -4,7 +4,14 @@ import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
-class DrillProgressStore(private val context: Context) {
+interface DrillProgressStore {
+    fun getDrillProgress(lessonId: String): Int
+    fun saveDrillProgress(lessonId: String, cardIndex: Int)
+    fun hasProgress(lessonId: String): Boolean
+    fun clearDrillProgress(lessonId: String)
+}
+
+class DrillProgressStoreImpl(private val context: Context) : DrillProgressStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
 
@@ -12,7 +19,7 @@ class DrillProgressStore(private val context: Context) {
         return File(baseDir, "drill_progress_$lessonId.yaml")
     }
 
-    fun getDrillProgress(lessonId: String): Int {
+    override fun getDrillProgress(lessonId: String): Int {
         val file = getFile(lessonId)
         if (!file.exists()) return -1
         val raw = runCatching { yaml.load<Any>(file.readText()) }.getOrNull() ?: return -1
@@ -21,7 +28,7 @@ class DrillProgressStore(private val context: Context) {
         return if (idx > 0) idx else -1
     }
 
-    fun saveDrillProgress(lessonId: String, cardIndex: Int) {
+    override fun saveDrillProgress(lessonId: String, cardIndex: Int) {
         baseDir.mkdirs()
         val file = getFile(lessonId)
         val payload = mapOf(
@@ -31,11 +38,11 @@ class DrillProgressStore(private val context: Context) {
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
 
-    fun hasProgress(lessonId: String): Boolean {
+    override fun hasProgress(lessonId: String): Boolean {
         return getDrillProgress(lessonId) > 0
     }
 
-    fun clearDrillProgress(lessonId: String) {
+    override fun clearDrillProgress(lessonId: String) {
         val file = getFile(lessonId)
         if (file.exists()) file.delete()
     }
