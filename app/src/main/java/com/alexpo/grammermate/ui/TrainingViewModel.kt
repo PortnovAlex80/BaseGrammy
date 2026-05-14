@@ -19,14 +19,12 @@ import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.LessonMasteryState
-import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.BackupManagerImpl
-import com.alexpo.grammermate.data.DownloadState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,7 +38,6 @@ import kotlinx.coroutines.withContext
 import com.alexpo.grammermate.feature.boss.BossBattleRunner
 import com.alexpo.grammermate.feature.boss.BossCommand
 import com.alexpo.grammermate.feature.boss.BossOrchestrator
-import com.alexpo.grammermate.feature.daily.BlockProgress
 import com.alexpo.grammermate.feature.daily.DailyPracticeCoordinator
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.BadSentenceHelper
@@ -60,7 +57,6 @@ import com.alexpo.grammermate.feature.training.WordBankGenerator
 import com.alexpo.grammermate.feature.vocab.VocabResult
 import com.alexpo.grammermate.feature.vocab.VocabSoundResult
 import com.alexpo.grammermate.feature.vocab.VocabSprintRunner
-import com.alexpo.grammermate.feature.vocab.VocabSubmitResult
 import com.alexpo.grammermate.shared.SettingsActionHandler
 import com.alexpo.grammermate.shared.SettingsResult
 import com.alexpo.grammermate.shared.audio.AudioCoordinator
@@ -241,6 +237,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         resolveEliteUnlocked = { lessons, testMode -> sessionRunner.resolveEliteUnlocked(lessons, testMode) }
     )
 
+    // ── Public helper accessors (UI uses vm.audio.X() instead of vm.X()) ─────
+    /** Public accessor for audio operations. UI should use vm.audio.X() instead of vm.X() */
+    val audio: AudioCoordinator get() = audioCoordinator
+    /** Public accessor for training session operations. */
+    val training: SessionRunner get() = sessionRunner
+    /** Public accessor for boss battle operations. */
+    val boss: BossOrchestrator get() = bossOrchestrator
+    /** Public accessor for daily practice operations. */
+    val daily: DailyPracticeCoordinator get() = dailyPracticeCoordinator
+    /** Public accessor for vocab sprint operations. */
+    val vocab: VocabSprintRunner get() = vocabSprintRunner
+    /** Public accessor for story operations. */
+    val story: StoryRunner get() = storyRunner
+    /** Public accessor for bad sentence reporting. */
+    val reports: BadSentenceHelper get() = badSentenceHelper
+    /** Public accessor for settings operations. */
+    val settings: SettingsActionHandler get() = settingsActionHandler
+
     init {
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
         lessonStore.ensureSeedData()
@@ -376,12 +390,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val (verbDrill, vocabDrill) = computeDrillVisibility()
         _coreState.update { it.copy(navigation = it.navigation.copy(hasVerbDrill = verbDrill, hasVocabDrill = vocabDrill)) }
     }
-
-    fun onInputChanged(text: String) = sessionRunner.onInputChanged(text)
-
-    fun onVoicePromptStarted() = sessionRunner.onVoicePromptStarted()
-
-    fun setInputMode(mode: InputMode) = sessionRunner.setInputMode(mode)
 
     fun selectLanguage(languageId: String) {
         sessionRunner.pauseTimer()
@@ -648,10 +656,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleTestMode() = handleSettingsResults(settingsActionHandler.toggleTestMode())
 
-    fun updateVocabSprintLimit(limit: Int) = settingsActionHandler.updateVocabSprintLimit(limit)
-
-    fun setHintLevel(level: HintLevel) = settingsActionHandler.setHintLevel(level)
-
     fun resumeFromSettings() = handleSessionEvents(sessionRunner.resumeFromSettings())
 
     fun selectSubLesson(index: Int) = handleSessionEvents(sessionRunner.selectSubLesson(index))
@@ -661,10 +665,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun cancelEliteSession() = handleSessionEvents(sessionRunner.cancelEliteSession())
 
     // ── Daily Practice ────────────────────────────────────────────────────
-
-    fun hasResumableDailySession(): Boolean {
-        return dailyPracticeCoordinator.hasResumableDailySession()
-    }
 
     @Suppress("UNUSED_PARAMETER")
     suspend fun startDailyPractice(lessonLevel: Int): Boolean {
@@ -730,17 +730,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun advanceDailyBlock(): Boolean {
-        // Move to the next block but do NOT advance the daily cursor yet.
-        // Cursor advancement happens only when the full session completes successfully,
-        // and only for blocks where all cards were answered via VOICE or KEYBOARD.
-        return dailyPracticeCoordinator.advanceDailyBlock()
-    }
-
-    fun persistDailyVerbProgress(card: VerbDrillCard) {
-        dailyPracticeCoordinator.persistDailyVerbProgress(card)
-    }
-
     fun repeatDailyBlock(): Boolean {
         return dailyPracticeCoordinator.repeatDailyBlock(
             resolveProgressLessonInfo = { resolveProgressLessonInfo() }
@@ -753,22 +742,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (sentenceCount != null) {
             advanceCursor(sentenceCount)
         }
-    }
-
-    /**
-     * Record an SRS rating for the current vocab flashcard in Daily Practice.
-     * Rating: 0=Again, 1=Hard, 2=Good, 3=Easy — mirrors VocabDrillViewModel.answerRating logic.
-     */
-    fun rateVocabCard(rating: com.alexpo.grammermate.data.SrsRating) {
-        dailyPracticeCoordinator.rateVocabCard(rating)
-    }
-
-    fun getDailyCurrentTask(): DailyTask? {
-        return dailyPracticeCoordinator.getDailyCurrentTask()
-    }
-
-    fun getDailyBlockProgress(): BlockProgress {
-        return dailyPracticeCoordinator.getDailyBlockProgress()
     }
 
     fun submitDailySentenceAnswer(input: String): Boolean {
@@ -793,19 +766,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return correct
     }
 
-    fun getDailySentenceAnswer(): String? {
-        return dailyPracticeCoordinator.getDailySentenceAnswer()
-    }
-
-    fun getDailyVerbAnswer(): String? {
-        return dailyPracticeCoordinator.getDailyVerbAnswer()
-    }
-
     // ── Drill Mode ───────────────────────────────────────────────────────
     // Seamless card training, no mastery/flower progress.
     // All drill cards in one continuous stream. Save position on exit.
-
-    fun showDrillStartDialog(lessonId: String) = sessionRunner.showDrillStartDialog(lessonId)
 
     fun startDrill(resume: Boolean) {
         vocabSession = emptyList()
@@ -815,8 +778,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun dismissDrillDialog() = sessionRunner.dismissDrillDialog()
-
     fun exitDrillMode() {
         handleSessionEvents(sessionRunner.exitDrillMode())
         _coreState.update {
@@ -825,8 +786,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     // ── End Drill Mode ───────────────────────────────────────────────────
-
-    fun openStory(phase: StoryPhase) = storyRunner.openStory(phase)
 
     fun hasVocabProgress(): Boolean {
         val lessonId = _coreState.value.navigation.selectedLessonId ?: return false
@@ -853,16 +812,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun clearStoryError() = storyRunner.clearStoryError()
-
-    fun clearVocabError() = vocabSprintRunner.clearError()
-
-    fun onVocabInputChanged(text: String) = vocabSprintRunner.onInputChanged(text)
-
-    fun setVocabInputMode(mode: InputMode) = vocabSprintRunner.setInputMode(mode)
-
-    fun requestVocabVoice() = vocabSprintRunner.requestVoice()
-
     fun submitVocabAnswer(inputOverride: String? = null) {
         val result = vocabSprintRunner.submitAnswer(inputOverride)
         when (result.sound) {
@@ -879,8 +828,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             is VocabResult.None -> {}
         }
     }
-
-    fun showVocabAnswer() = vocabSprintRunner.showAnswer()
 
 
     /**
@@ -902,8 +849,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun finishBoss() = handleBossCommands(bossOrchestrator.finishBoss())
 
     fun clearBossRewardMessage() = handleBossCommands(bossOrchestrator.clearBossRewardMessage())
-
-    fun clearBossError() = bossOrchestrator.clearBossError()
 
     private fun updateBossProgress(progress: Int) = handleBossCommands(bossOrchestrator.updateBossProgress(progress))
 
@@ -944,51 +889,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── Audio delegations to AudioCoordinator ─────────────────────────────
 
-    fun onTtsSpeak(text: String, speed: Float? = null) = audioCoordinator.onTtsSpeak(text, speed)
-
-    fun setTtsSpeed(speed: Float) = audioCoordinator.setTtsSpeed(speed)
-
     fun setRuTextScale(scale: Float) {
         audioCoordinator.setRuTextScale(scale)
         configStore.save(configStore.load().copy(ruTextScale = scale.coerceIn(1.0f, 2.0f)))
     }
 
-    fun startTtsDownload() = audioCoordinator.startTtsDownload()
-
-    fun confirmTtsDownloadOnMetered() = audioCoordinator.confirmTtsDownloadOnMetered()
-
-    fun dismissMeteredWarning() = audioCoordinator.dismissMeteredWarning()
-
-    fun dismissTtsDownloadDialog() = audioCoordinator.dismissTtsDownloadDialog()
-
-    fun startTtsDownloadForLanguage(languageId: String) = audioCoordinator.startTtsDownloadForLanguage(languageId)
-
-    fun stopTts() = audioCoordinator.stopTts()
-
-    fun checkAsrModel() = audioCoordinator.checkAsrModel()
-
-    fun dismissAsrDownloadDialog() = audioCoordinator.dismissAsrDownloadDialog()
-
     fun startOfflineRecognition() {
         audioCoordinator.startOfflineRecognition { result ->
-            onInputChanged(result)
+            sessionRunner.onInputChanged(result)
             // Don't auto-submit — let user review recognized text and submit manually
         }
     }
-
-    fun stopAsr() = audioCoordinator.stopAsr()
-
-    fun setUseOfflineAsr(enabled: Boolean) = audioCoordinator.setUseOfflineAsr(enabled)
-
-    fun setVoiceAutoStart(enabled: Boolean) = audioCoordinator.setVoiceAutoStart(enabled)
-
-    fun startAsrDownload() = audioCoordinator.startAsrDownload()
-
-    fun confirmAsrDownloadOnMetered() = audioCoordinator.confirmAsrDownloadOnMetered()
-
-    fun dismissAsrMeteredWarning() = audioCoordinator.dismissAsrMeteredWarning()
-
-    fun setTtsDownloadStateFromBackground(bgState: DownloadState) = audioCoordinator.setTtsDownloadStateFromBackground(bgState)
 
     override fun onCleared() {
         saveProgress()
@@ -1029,16 +940,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
 
     /**
-     * Добавляет слово в выбранные для word bank режима
-     */
-    fun selectWordFromBank(word: String) = sessionRunner.selectWordFromBank(word)
-
-    /**
-     * Удаляет последнее выбранное слово
-     */
-    fun removeLastSelectedWord() = sessionRunner.removeLastSelectedWord()
-
-    /**
      * Re-scope wordMasteryStore to the given packId.
      * Must be called whenever activePackId changes so that mastery reads/writes
      * go to the pack-scoped file instead of the legacy global file.
@@ -1065,13 +966,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun createProgressBackup() = settingsActionHandler.createProgressBackup()
-
-    fun updateUserName(newName: String) = settingsActionHandler.updateUserName(newName)
-
     fun saveProgressNow() = handleSettingsResults(settingsActionHandler.saveProgressNow())
-
-    fun onScreenChanged(screenName: String) = settingsActionHandler.onScreenChanged(screenName)
 
     /**
      * Restore user progress from backup folder.
@@ -1096,23 +991,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun unflagBadSentence() = badSentenceHelper.unflagBadSentence()
-
-    fun isBadSentence(): Boolean = badSentenceHelper.isBadSentence()
-
-    fun exportBadSentences(): String? = badSentenceHelper.exportBadSentences()
-
-    // ── Daily Practice Bad Sentence Support ────────────────────────────────
-
-    fun flagDailyBadSentence(cardId: String, languageId: String, sentence: String, translation: String, mode: String) =
-        badSentenceHelper.flagDailyBadSentence(cardId, languageId, sentence, translation, mode)
-
-    fun unflagDailyBadSentence(cardId: String) = badSentenceHelper.unflagDailyBadSentence(cardId)
-
-    fun isDailyBadSentence(cardId: String): Boolean = badSentenceHelper.isDailyBadSentence(cardId)
-
-    fun exportDailyBadSentences(): String? = badSentenceHelper.exportDailyBadSentences()
-
     fun hideCurrentCard() {
         when (val result = badSentenceHelper.hideCurrentCard()) {
             is BadSentenceResult.AdvanceDrillCard -> sessionRunner.advanceDrillCard()
@@ -1120,10 +998,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             is BadSentenceResult.None -> {}
         }
     }
-
-    fun unhideCurrentCard() = badSentenceHelper.unhideCurrentCard()
-
-    fun isCurrentCardHidden(): Boolean = badSentenceHelper.isCurrentCardHidden()
 
     // ── Session event handling (private methods) ────────────────────────────
 
@@ -1198,7 +1072,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
         if (shouldBackup) {
             forceBackupOnSave = false
-            createProgressBackup()
+            settingsActionHandler.createProgressBackup()
         }
     }
     private fun buildSessionCards() {

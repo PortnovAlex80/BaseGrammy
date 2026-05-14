@@ -93,7 +93,7 @@ fun GrammarMateApp() {
         val lastBossFinishedToken = remember { mutableStateOf(state.boss.bossFinishedToken) }
 
         LaunchedEffect(screen) {
-            vm.onScreenChanged(screen.name)
+            vm.settings.onScreenChanged(screen.name)
         }
 
         val audioPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -102,18 +102,18 @@ fun GrammarMateApp() {
 
         val onTtsSpeak: () -> Unit = {
             if (state.audio.ttsState == TtsState.SPEAKING) {
-                vm.stopTts()
+                vm.audio.stopTts()
             } else if (!state.audio.ttsModelReady) {
                 val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
                 if (bgState != null && bgState !is DownloadState.Idle) {
-                    vm.setTtsDownloadStateFromBackground(bgState)
+                    vm.audio.setTtsDownloadStateFromBackground(bgState)
                 }
                 dialogs = dialogs.copy(showTtsDownloadDialog = true)
             } else {
                 val text = state.cardSession.answerText
                     ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
                 if (text != null) {
-                    vm.onTtsSpeak(text, speed = 0.67f)
+                    vm.audio.onTtsSpeak(text, speed = 0.67f)
                 }
             }
         }
@@ -161,17 +161,17 @@ fun GrammarMateApp() {
                     onDeleteAllLessons = vm::deleteAllLessons,
                     onDeletePack = vm::deletePack,
                     onToggleTestMode = vm::toggleTestMode,
-                    onUpdateVocabLimit = vm::updateVocabSprintLimit,
-                    onUpdateUserName = vm::updateUserName,
+                    onUpdateVocabLimit = vm.settings::updateVocabSprintLimit,
+                    onUpdateUserName = vm.settings::updateUserName,
                     onSaveProgress = vm::saveProgressNow,
                     onRestoreBackup = vm::restoreBackup,
-                    onSetTtsSpeed = vm::setTtsSpeed,
+                    onSetTtsSpeed = vm.audio::setTtsSpeed,
                     onSetRuTextScale = vm::setRuTextScale,
-                    onSetUseOfflineAsr = vm::setUseOfflineAsr,
-                    onStartAsrDownload = { vm.startAsrDownload() },
+                    onSetUseOfflineAsr = vm.audio::setUseOfflineAsr,
+                    onStartAsrDownload = { vm.audio.startAsrDownload() },
                     onResetAllProgress = vm::resetLanguageProgress,
-                    onSetHintLevel = vm::setHintLevel,
-                    onSetVoiceAutoStart = vm::setVoiceAutoStart,
+                    onSetHintLevel = vm.settings::setHintLevel,
+                    onSetVoiceAutoStart = vm.audio::setVoiceAutoStart,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
                 )
 
@@ -283,7 +283,7 @@ private fun AppScreenContent(
             },
             onOpenElite = {
                 val level = vm.getProgressLessonLevel()
-                if (vm.hasResumableDailySession()) {
+                if (vm.daily.hasResumableDailySession()) {
                     onShowDailyResume(level)
                 } else {
                     onStartDailyLoading()
@@ -317,7 +317,7 @@ private fun AppScreenContent(
                 onScreenChange(AppScreen.TRAINING)
             },
             onDrillStart = {
-                state.navigation.selectedLessonId?.let { vm.showDrillStartDialog(it.value) }
+                state.navigation.selectedLessonId?.let { vm.training.showDrillStartDialog(it.value) }
             }
         )
         AppScreen.ELITE -> { onScreenChange(AppScreen.HOME) }
@@ -403,7 +403,7 @@ private fun TrainingScreenContent(
 ) {
     TrainingScreen(
         state = state,
-        onInputChange = vm::onInputChanged,
+        onInputChange = vm.training::onInputChanged,
         onSubmit = vm::submitAnswer,
         onPrev = vm::prevCard,
         onNext = vm::nextCard,
@@ -413,17 +413,17 @@ private fun TrainingScreenContent(
         onShowSettings = onShowSettings,
         onSelectLesson = vm::selectLesson,
         onSelectMode = vm::selectMode,
-        onSetInputMode = vm::setInputMode,
+        onSetInputMode = vm.training::setInputMode,
         onShowAnswer = vm::showAnswer,
-        onVoicePromptStarted = vm::onVoicePromptStarted,
-        onSelectWordFromBank = vm::selectWordFromBank,
-        onRemoveLastWord = vm::removeLastSelectedWord,
+        onVoicePromptStarted = vm.training::onVoicePromptStarted,
+        onSelectWordFromBank = vm.training::selectWordFromBank,
+        onRemoveLastWord = vm.training::removeLastSelectedWord,
         onTtsSpeak = onTtsSpeak,
         onFlagBadSentence = vm::flagBadSentence,
-        onUnflagBadSentence = vm::unflagBadSentence,
+        onUnflagBadSentence = vm.reports::unflagBadSentence,
         onHideCard = vm::hideCurrentCard,
-        onExportBadSentences = vm::exportBadSentences,
-        isBadSentence = vm::isBadSentence,
+        onExportBadSentences = vm.reports::exportBadSentences,
+        isBadSentence = vm.reports::isBadSentence,
         onStartOfflineRecognition = vm::startOfflineRecognition,
         hintLevel = hintLevel
     )
@@ -438,8 +438,8 @@ private fun DailyPracticeScreenContent(
     onScreenChange: (AppScreen) -> Unit
 ) {
     val dailyState = state.daily.dailySession
-    val dailyTask = vm.getDailyCurrentTask()
-    val dailyProgress = vm.getDailyBlockProgress()
+    val dailyTask = vm.daily.getDailyCurrentTask()
+    val dailyProgress = vm.daily.getDailyBlockProgress()
     DailyPracticeScreen(
         state = dailyState,
         blockProgress = dailyProgress,
@@ -447,21 +447,21 @@ private fun DailyPracticeScreenContent(
         onSubmitSentence = vm::submitDailySentenceAnswer,
         onSubmitVerb = vm::submitDailyVerbAnswer,
         languageId = state.navigation.selectedLanguageId.value,
-        onShowSentenceAnswer = vm::getDailySentenceAnswer,
-        onShowVerbAnswer = vm::getDailyVerbAnswer,
+        onShowSentenceAnswer = vm.daily::getDailySentenceAnswer,
+        onShowVerbAnswer = vm.daily::getDailyVerbAnswer,
         onFlipVocabCard = { /* no-op: flip tracked locally */ },
-        onRateVocabCard = { rating -> vm.rateVocabCard(rating) },
-        onPersistVerbProgress = { card -> vm.persistDailyVerbProgress(card) },
+        onRateVocabCard = { rating -> vm.daily.rateVocabCard(rating) },
+        onPersistVerbProgress = { card -> vm.daily.persistDailyVerbProgress(card) },
         onCardPracticed = { blockType -> vm.recordDailyCardPracticed(blockType) },
         onAdvance = vm::advanceDailyTask,
-        onAdvanceBlock = { vm.advanceDailyBlock() },
+        onAdvanceBlock = { vm.daily.advanceDailyBlock() },
         onRepeatBlock = { vm.repeatDailyBlock() },
         onSpeak = { text ->
             if (state.audio.ttsModelReady) {
-                vm.onTtsSpeak(text, speed = 0.67f)
+                vm.audio.onTtsSpeak(text, speed = 0.67f)
             }
         },
-        onStopTts = { vm.stopTts() },
+        onStopTts = { vm.audio.stopTts() },
         ttsState = state.audio.ttsState,
         onExit = {
             vm.cancelDailySession()
@@ -471,16 +471,16 @@ private fun DailyPracticeScreenContent(
             vm.cancelDailySession()
         },
         onFlagDailyBadSentence = { cardId, langId, sentence, translation, mode ->
-            vm.flagDailyBadSentence(cardId, langId, sentence, translation, mode)
+            vm.reports.flagDailyBadSentence(cardId, langId, sentence, translation, mode)
         },
         onUnflagDailyBadSentence = { cardId ->
-            vm.unflagDailyBadSentence(cardId)
+            vm.reports.unflagDailyBadSentence(cardId)
         },
         isDailyBadSentence = { cardId ->
-            vm.isDailyBadSentence(cardId)
+            vm.reports.isDailyBadSentence(cardId)
         },
         onExportDailyBadSentences = {
-            vm.exportDailyBadSentences()
+            vm.reports.exportDailyBadSentences()
         },
         hintLevel = state.cardSession.hintLevel,
         textScale = state.audio.ruTextScale,
@@ -513,7 +513,7 @@ private fun AppDialogs(
     if (dialogs.showWelcomeDialog) {
         WelcomeDialog(
             onNameSet = { name ->
-                vm.updateUserName(name)
+                vm.settings.updateUserName(name)
                 onDialogsChange(dialogs.copy(showWelcomeDialog = false))
             }
         )
@@ -523,17 +523,17 @@ private fun AppDialogs(
     if (dialogs.showTtsDownloadDialog) {
         if (state.audio.ttsDownloadState is DownloadState.Done) {
             onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
-            vm.dismissTtsDownloadDialog()
+            vm.audio.dismissTtsDownloadDialog()
             val text = state.cardSession.answerText ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
-            if (text != null) vm.onTtsSpeak(text, speed = 0.67f)
+            if (text != null) vm.audio.onTtsSpeak(text, speed = 0.67f)
         }
         if (dialogs.showTtsDownloadDialog) {
             TtsDownloadDialog(
                 downloadState = state.audio.ttsDownloadState,
                 languageId = state.navigation.selectedLanguageId.value,
-                onConfirm = { vm.startTtsDownload() },
+                onConfirm = { vm.audio.startTtsDownload() },
                 onDismiss = {
-                    vm.dismissTtsDownloadDialog()
+                    vm.audio.dismissTtsDownloadDialog()
                     onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
                 }
             )
@@ -543,18 +543,18 @@ private fun AppDialogs(
     // Metered network warnings
     if (state.audio.ttsMeteredNetwork) {
         MeteredNetworkDialog(
-            onConfirm = { vm.confirmTtsDownloadOnMetered() },
+            onConfirm = { vm.audio.confirmTtsDownloadOnMetered() },
             onDismiss = {
-                vm.dismissMeteredWarning()
-                vm.dismissTtsDownloadDialog()
+                vm.audio.dismissMeteredWarning()
+                vm.audio.dismissTtsDownloadDialog()
                 onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
             }
         )
     }
     if (state.audio.asrMeteredNetwork) {
         AsrMeteredNetworkDialog(
-            onConfirm = { vm.confirmAsrDownloadOnMetered() },
-            onDismiss = { vm.dismissAsrMeteredWarning(); vm.dismissAsrDownloadDialog() }
+            onConfirm = { vm.audio.confirmAsrDownloadOnMetered() },
+            onDismiss = { vm.audio.dismissAsrMeteredWarning(); vm.audio.dismissAsrDownloadDialog() }
         )
     }
 
@@ -604,9 +604,9 @@ private fun AppDialogs(
     // Story error dialog
     if (state.story.storyErrorMessage != null) {
         AlertDialog(
-            onDismissRequest = { vm.clearStoryError() },
+            onDismissRequest = { vm.story.clearStoryError() },
             confirmButton = {
-                TextButton(onClick = { vm.clearStoryError() }) {
+                TextButton(onClick = { vm.story.clearStoryError() }) {
                     Text(text = "OK")
                 }
             },
@@ -618,9 +618,9 @@ private fun AppDialogs(
     // Boss error dialog
     if (state.boss.bossErrorMessage != null) {
         AlertDialog(
-            onDismissRequest = { vm.clearBossError() },
+            onDismissRequest = { vm.boss.clearBossError() },
             confirmButton = {
-                TextButton(onClick = { vm.clearBossError() }) {
+                TextButton(onClick = { vm.boss.clearBossError() }) {
                     Text(text = "OK")
                 }
             },
@@ -703,7 +703,7 @@ private fun AppDialogs(
                 vm.startDrill(resume = true)
                 onScreenChange(AppScreen.TRAINING)
             },
-            onDismiss = { vm.dismissDrillDialog() }
+            onDismiss = { vm.training.dismissDrillDialog() }
         )
     }
 }
