@@ -2,6 +2,58 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v3.0 (2026-05-14) -- Architecture Refactoring & Quality Fixes
+
+### ViewModel Thinning
+- Public methods reduced 108 -> 54 (-50%)
+- 8 feature coordinator properties exposed
+- UI call sites migrated to vm.coordinator.method() pattern
+- Commit: `5ff1198`
+
+### Unit Tests: BossBattleRunner, AnswerValidator, CardProvider, ProgressTracker
+- +233 @Test methods added (231 -> 464)
+- New test files: BossBattleRunnerTest, AnswerValidatorTest, CardProviderTest, ProgressTrackerTest
+- Commit: `2391496`
+
+### Manual DI via AppContainer
+- AppContainer with constructor injection for ViewModels and helpers
+- GrammarMateApplication class added
+- 4 new store interfaces: DrillProgressStore, HiddenCardStore, VocabProgressStore, ProfileStore
+- Zero hardcoded *Impl(application) in ViewModels
+- Commit: `cf88e3b`
+
+### UI Deduplication
+- 3 report sheets -> 1 SharedReportSheet
+- 3 word bank implementations -> 1 shared component
+- 2 progress indicators -> 1 SessionProgressIndicator
+- Commit: `c8cbc2c`
+
+### Agent-Friendly Architecture
+- Per-feature README.md in 7 packages
+- Module dependency map (docs/module-map.md)
+- Commit: `5fb6209`
+
+### Unit Tests: SessionRunner, DailyPracticeCoordinator
+- +231 @Test methods added (464 -> 695)
+- New test files: SessionRunnerTest, DailyPracticeCoordinatorTest
+- Commit: `be0f6d2`
+
+### Vendor Code Audit Status Update
+- Updated audit spec with status for completed improvements
+- Commit: `e88242a`
+
+### Trace-Index: Test Coverage
+- Updated trace-index with Phase 5 unit test coverage for SessionRunner and DailyPracticeCoordinator
+- Commit: `2094e57`
+
+### Metrics
+- Total @Test methods: 695 (was 231, +464)
+- ViewModel public methods: 54 (was 108, -50%)
+- Manual DI: 0 hardcoded *Impl(application) in ViewModels
+- UI deduplication: 8 component files -> 3 shared components
+
+### Branch: feature/arch-feature-migration (not merged)
+
 ## v2.4 (2026-05-13) -- Lesson Rename
 
 ### Lesson Display Names Updated to Tense-Based Names
