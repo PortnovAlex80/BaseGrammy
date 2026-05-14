@@ -28,7 +28,7 @@ class MasteryIntegrationTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        store = MasteryStore(context)
+        store = MasteryStoreImpl(context)
         testDir = File(context.filesDir, "grammarmate")
     }
 
@@ -258,7 +258,7 @@ class MasteryIntegrationTest {
         val firstLastShow = mastery.lastShowDateMs
 
         // Симуляция перезапуска: создаём новый store
-        val newStore = MasteryStore(context)
+        val newStore = MasteryStoreImpl(context)
         val loadedMastery = newStore.get(lessonId, languageId)!!
 
         assertEquals("Unique shows persisted", 75, loadedMastery.uniqueCardShows)

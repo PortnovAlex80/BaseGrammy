@@ -28,7 +28,7 @@ class MasteryStoreTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        store = MasteryStore(context)
+        store = MasteryStoreImpl(context)
         testDir = File(context.filesDir, "grammarmate")
     }
 
@@ -46,8 +46,8 @@ class MasteryStoreTest {
     fun saveMastery_newState_writesToFile() {
         // FR-8.5.1: Сохранение нового состояния
         val state = LessonMasteryState(
-            lessonId = "lesson1",
-            languageId = "en",
+            lessonId = LessonId("lesson1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 10,
             totalCardShows = 20
         )
@@ -61,8 +61,8 @@ class MasteryStoreTest {
     fun loadMastery_existingFile_returnsCorrectState() {
         // FR-8.5.1: Загрузка существующих данных
         val state = LessonMasteryState(
-            lessonId = "lesson1",
-            languageId = "en",
+            lessonId = LessonId("lesson1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             totalCardShows = 100,
             lastShowDateMs = 123456789L
@@ -104,8 +104,8 @@ class MasteryStoreTest {
     fun loadMastery_calledTwice_usesCache() {
         // FR-8.5.2: Повторный вызов использует кеш
         val state = LessonMasteryState(
-            lessonId = "lesson1",
-            languageId = "en",
+            lessonId = LessonId("lesson1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50
         )
         store.save(state)
@@ -120,8 +120,8 @@ class MasteryStoreTest {
     fun saveMastery_updatesCache() {
         // FR-8.5.2: Сохранение обновляет кеш
         val state1 = LessonMasteryState(
-            lessonId = "lesson1",
-            languageId = "en",
+            lessonId = LessonId("lesson1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50
         )
         store.save(state1)
@@ -236,8 +236,8 @@ class MasteryStoreTest {
     @Test
     fun saveMastery_multipleLanguages_separatesCorrectly() {
         // FR-8.5.3: Разделение по языкам
-        val stateEn = LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 10)
-        val stateRu = LessonMasteryState(lessonId = "lesson1", languageId = "ru", uniqueCardShows = 20)
+        val stateEn = LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 10)
+        val stateRu = LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("ru"), uniqueCardShows = 20)
 
         store.save(stateEn)
         store.save(stateRu)
@@ -252,8 +252,8 @@ class MasteryStoreTest {
     @Test
     fun loadMastery_specificLesson_returnsOnlyThatLesson() {
         // FR-8.5.3: Загрузка конкретного урока
-        store.save(LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 10))
-        store.save(LessonMasteryState(lessonId = "lesson2", languageId = "en", uniqueCardShows = 20))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 10))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson2"), languageId = LanguageId("en"), uniqueCardShows = 20))
 
         val lesson1 = store.get("lesson1", "en")
         assertEquals(10, lesson1!!.uniqueCardShows)
@@ -265,11 +265,11 @@ class MasteryStoreTest {
     @Test
     fun saveMastery_preservesOtherLessons() {
         // FR-8.5.3: Сохранение одного урока не удаляет другие
-        store.save(LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 10))
-        store.save(LessonMasteryState(lessonId = "lesson2", languageId = "en", uniqueCardShows = 20))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 10))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson2"), languageId = LanguageId("en"), uniqueCardShows = 20))
 
         // Обновляем lesson1
-        store.save(LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 15))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 15))
 
         // lesson2 должен остаться нетронутым
         val lesson2 = store.get("lesson2", "en")
@@ -283,7 +283,7 @@ class MasteryStoreTest {
     @Test
     fun saveMastery_includesSchemaVersion() {
         // FR-2.2.1: Включение версии схемы
-        val state = LessonMasteryState(lessonId = "lesson1", languageId = "en")
+        val state = LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"))
         store.save(state)
 
         val file = File(testDir, "mastery.yaml")
@@ -338,7 +338,7 @@ class MasteryStoreTest {
 
     @Test
     fun getOrCreate_existingLesson_returnsExisting() {
-        val state = LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 50)
+        val state = LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 50)
         store.save(state)
 
         val loaded = store.getOrCreate("lesson1", "en")
@@ -349,14 +349,14 @@ class MasteryStoreTest {
     fun getOrCreate_newLesson_returnsDefault() {
         val loaded = store.getOrCreate("newLesson", "en")
         assertEquals(0, loaded.uniqueCardShows)
-        assertEquals("newLesson", loaded.lessonId)
-        assertEquals("en", loaded.languageId)
+        assertEquals("newLesson", loaded.lessonId.value)
+        assertEquals("en", loaded.languageId.value)
     }
 
     @Test
     fun clearLanguage_removesOnlyThatLanguage() {
-        store.save(LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 10))
-        store.save(LessonMasteryState(lessonId = "lesson1", languageId = "ru", uniqueCardShows = 20))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 10))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("ru"), uniqueCardShows = 20))
 
         store.clearLanguage("en")
 
@@ -366,8 +366,8 @@ class MasteryStoreTest {
 
     @Test
     fun clear_removesAllData() {
-        store.save(LessonMasteryState(lessonId = "lesson1", languageId = "en", uniqueCardShows = 10))
-        store.save(LessonMasteryState(lessonId = "lesson2", languageId = "en", uniqueCardShows = 20))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson1"), languageId = LanguageId("en"), uniqueCardShows = 10))
+        store.save(LessonMasteryState(lessonId = LessonId("lesson2"), languageId = LanguageId("en"), uniqueCardShows = 20))
 
         store.clear()
 

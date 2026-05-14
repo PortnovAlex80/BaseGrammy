@@ -29,7 +29,7 @@ class StreakStoreTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        store = StreakStore(context)
+        store = StreakStoreImpl(context)
         testDir = File(context.filesDir, "grammarmate")
     }
 
@@ -46,7 +46,7 @@ class StreakStoreTest {
     fun saveStreak_persists() {
         // FR-13.4.1: Сохранение streak
         val data = StreakData(
-            languageId = "en",
+            languageId = LanguageId("en"),
             currentStreak = 5,
             longestStreak = 10,
             lastCompletionDateMs = System.currentTimeMillis(),
@@ -65,7 +65,7 @@ class StreakStoreTest {
     fun loadStreak_returnsCorrectData() {
         // FR-13.4.2: Загрузка streak
         val data = StreakData(
-            languageId = "en",
+            languageId = LanguageId("en"),
             currentStreak = 7,
             longestStreak = 15
         )
@@ -73,7 +73,7 @@ class StreakStoreTest {
         store.save(data)
 
         val loaded = store.load("en")
-        assertEquals("en", loaded.languageId)
+        assertEquals(LanguageId("en"), loaded.languageId)
         assertEquals(7, loaded.currentStreak)
         assertEquals(15, loaded.longestStreak)
     }
@@ -83,7 +83,7 @@ class StreakStoreTest {
         // FR-13.4.2: Отсутствующий файл → дефолтный streak
         val loaded = store.load("en")
 
-        assertEquals("en", loaded.languageId)
+        assertEquals(LanguageId("en"), loaded.languageId)
         assertEquals(0, loaded.currentStreak)
         assertEquals(0, loaded.longestStreak)
         assertNull(loaded.lastCompletionDateMs)
@@ -211,7 +211,7 @@ class StreakStoreTest {
         val almostMidnight = calendar.timeInMillis
 
         val data = StreakData(
-            languageId = "en",
+            languageId = LanguageId("en"),
             currentStreak = 1,
             longestStreak = 1,
             lastCompletionDateMs = almostMidnight,
@@ -272,10 +272,10 @@ class StreakStoreTest {
         val enData = store.load("en")
         val ruData = store.load("ru")
 
-        assertEquals("en", enData.languageId)
+        assertEquals(LanguageId("en"), enData.languageId)
         assertEquals(1, enData.currentStreak)
 
-        assertEquals("ru", ruData.languageId)
+        assertEquals(LanguageId("ru"), ruData.languageId)
         assertEquals(1, ruData.currentStreak)
 
         // Обновляем только английский

@@ -25,7 +25,7 @@ class BackupManagerTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        backupManager = BackupManager(context)
+        backupManager = BackupManagerImpl(context)
         internalDir = File(context.filesDir, "grammarmate")
         backupRoot = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),

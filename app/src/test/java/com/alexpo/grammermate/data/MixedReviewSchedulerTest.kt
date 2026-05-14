@@ -9,7 +9,7 @@ class MixedReviewSchedulerTest {
     fun build_firstLessonHasNoMixedBlocks() {
         val scheduler = MixedReviewScheduler(subLessonSize = 4)
         val lesson = lesson("L1", 7)
-        val schedule = scheduler.build(listOf(lesson)).getValue("L1")
+        val schedule = scheduler.build(listOf(lesson)).getValue(LessonId("L1"))
         val types = schedule.subLessons.map { it.type }
         assertEquals(listOf(SubLessonType.NEW_ONLY, SubLessonType.NEW_ONLY), types)
     }
@@ -23,7 +23,7 @@ class MixedReviewSchedulerTest {
             lesson("L3", 13)
         )
         val schedules = scheduler.build(lessons)
-        val mixedL2 = schedules.getValue("L2").subLessons.filter { it.type == SubLessonType.MIXED }
+        val mixedL2 = schedules.getValue(LessonId("L2")).subLessons.filter { it.type == SubLessonType.MIXED }
         assertEquals(3, mixedL2.size)
         assertTrue(mixedL2[0].cards.any { it.id.startsWith("L1-") })
         assertTrue(mixedL2[0].cards.any { it.id.startsWith("L2-") })
@@ -31,7 +31,7 @@ class MixedReviewSchedulerTest {
         assertTrue(mixedL2[1].cards.any { it.id.startsWith("L2-") })
         assertTrue(mixedL2[2].cards.all { it.id.startsWith("L2-") })
 
-        val mixedL3 = schedules.getValue("L3").subLessons.filter { it.type == SubLessonType.MIXED }
+        val mixedL3 = schedules.getValue(LessonId("L3")).subLessons.filter { it.type == SubLessonType.MIXED }
         assertEquals(3, mixedL3.size)
         assertTrue(mixedL3[0].cards.any { it.id.startsWith("L1-") })
         assertTrue(mixedL3[0].cards.any { it.id.startsWith("L2-") })
@@ -49,7 +49,7 @@ class MixedReviewSchedulerTest {
             lesson("L2", 20)
         )
         val mixed = scheduler.build(lessons)
-            .getValue("L2")
+            .getValue(LessonId("L2"))
             .subLessons
             .filter { it.type == SubLessonType.MIXED }
         assertTrue(mixed.isNotEmpty())
@@ -81,7 +81,7 @@ class MixedReviewSchedulerTest {
         val scheduler = MixedReviewScheduler(subLessonSize = 10)
         // Create lesson with 300 cards (more than MAIN_POOL_SIZE of 150)
         val lesson = lesson("L1", 300)
-        val schedule = scheduler.build(listOf(lesson)).getValue("L1")
+        val schedule = scheduler.build(listOf(lesson)).getValue(LessonId("L1"))
 
         // Count total cards across all sublessons
         val totalCards = schedule.subLessons.flatMap { it.cards }.size
@@ -95,7 +95,7 @@ class MixedReviewSchedulerTest {
         val scheduler = MixedReviewScheduler(subLessonSize = 10)
         // Create lesson with 200 cards - should create 20 sublessons (200/10)
         val lesson = lesson("L1", 200)
-        val schedule = scheduler.build(listOf(lesson)).getValue("L1")
+        val schedule = scheduler.build(listOf(lesson)).getValue(LessonId("L1"))
 
         assertEquals(20, schedule.subLessons.size)
 
@@ -113,7 +113,7 @@ class MixedReviewSchedulerTest {
         val scheduler = MixedReviewScheduler(subLessonSize = 10)
         // Create lesson with only 80 cards - should create 8 sublessons
         val lesson = lesson("L1", 80)
-        val schedule = scheduler.build(listOf(lesson)).getValue("L1")
+        val schedule = scheduler.build(listOf(lesson)).getValue(LessonId("L1"))
 
         assertEquals(8, schedule.subLessons.size)
     }
@@ -122,6 +122,6 @@ class MixedReviewSchedulerTest {
         val cards = (1..count).map { index ->
             SentenceCard("$id-$index", "ru$index", listOf("en$index"))
         }
-        return Lesson(id = id, languageId = "en", title = id, cards = cards)
+        return Lesson(id = LessonId(id), languageId = LanguageId("en"), title = id, cards = cards)
     }
 }

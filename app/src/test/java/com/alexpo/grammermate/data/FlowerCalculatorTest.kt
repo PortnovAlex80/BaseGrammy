@@ -3,6 +3,8 @@ package com.alexpo.grammermate.data
 import org.junit.Assert.*
 import org.junit.Test
 
+@Suppress("ReplaceCallWithBinaryOperator")
+
 /**
  * Unit tests for FlowerCalculator - защита расчета состояния цветков.
  *
@@ -32,8 +34,8 @@ class FlowerCalculatorTest {
     fun calculate_zeroShows_returnsSeedState() {
         // FR-8.1.2: 0 показов → SEED
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 0,
             lastShowDateMs = 0L
         )
@@ -45,8 +47,8 @@ class FlowerCalculatorTest {
     fun calculate_moreThan90Days_returnsGoneState() {
         // FR-8.1.7: > 90 дней → GONE
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             lastShowDateMs = System.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000)
         )
@@ -63,8 +65,8 @@ class FlowerCalculatorTest {
     fun calculate_0to33PercentMastery_returnsSeed() {
         // FR-8.1.2: 0-33% мастерства → SEED
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 25, // 25/150 = 16.6%
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -77,8 +79,8 @@ class FlowerCalculatorTest {
     fun calculate_33to66PercentMastery_returnsSprout() {
         // FR-8.1.3: 33-66% мастерства → SPROUT
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 75, // 75/150 = 50%
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -91,8 +93,8 @@ class FlowerCalculatorTest {
     fun calculate_66to100PercentMastery_returnsBloom() {
         // FR-8.1.4: 66-100% мастерства → BLOOM
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 120, // 120/150 = 80%
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -109,8 +111,8 @@ class FlowerCalculatorTest {
     fun calculate_healthBelow100Percent_returnsWilting() {
         // FR-8.1.5: Здоровье < 100% → WILTING
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 120,
             lastShowDateMs = System.currentTimeMillis() - (3L * 24 * 60 * 60 * 1000), // 3 дня назад
             intervalStepIndex = 0 // ожидаемый интервал = 1 день, здоровье упало но не критично
@@ -126,8 +128,8 @@ class FlowerCalculatorTest {
         // FR-8.1.6: Здоровье ≤ 50% → WILTED
         // Нужно создать ситуацию, когда здоровье упадёт до минимума
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 120,
             lastShowDateMs = System.currentTimeMillis() - (60L * 24 * 60 * 60 * 1000), // 60 дней назад
             intervalStepIndex = 0
@@ -140,8 +142,8 @@ class FlowerCalculatorTest {
     fun calculate_wiltingOverridesBloomState() {
         // FR-8.1.5: Увядание перекрывает состояние BLOOM
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 150, // 100% мастерства
             lastShowDateMs = System.currentTimeMillis() - (3L * 24 * 60 * 60 * 1000), // 3 дня назад
             intervalStepIndex = 0 // ожидаемый интервал = 1 день
@@ -159,8 +161,8 @@ class FlowerCalculatorTest {
     fun calculate_50Shows_returns33PercentMastery() {
         // FR-8.3.1: 50 показов → 33% мастерства
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -172,8 +174,8 @@ class FlowerCalculatorTest {
     fun calculate_150Shows_returns100PercentMastery() {
         // FR-8.3.2: 150 показов → 100% мастерства
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 150,
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -185,8 +187,8 @@ class FlowerCalculatorTest {
     fun calculate_200Shows_capsAt100PercentMastery() {
         // FR-8.3.2: > 150 показов → cap на 100%
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 200,
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -204,8 +206,8 @@ class FlowerCalculatorTest {
         for (shows in 0..200 step 10) {
             for (days in 0..89) {
                 val mastery = LessonMasteryState(
-                    lessonId = "test",
-                    languageId = "en",
+                    lessonId = LessonId("test"),
+                    languageId = LanguageId("en"),
                     uniqueCardShows = shows,
                     lastShowDateMs = System.currentTimeMillis() - (days.toLong() * 24 * 60 * 60 * 1000)
                 )
@@ -222,8 +224,8 @@ class FlowerCalculatorTest {
     fun calculate_scaleMultiplier_maxIs100Percent() {
         // FR-8.3.4: Максимальный масштаб = 100%
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 150,
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -235,8 +237,8 @@ class FlowerCalculatorTest {
     fun calculate_scaleMultiplier_isMasteryTimesHealth() {
         // FR-8.3.4: scale = mastery% * health%
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 75, // 50% мастерства
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -280,8 +282,8 @@ class FlowerCalculatorTest {
     @Test
     fun calculate_exactly150Shows_returns100PercentMastery() {
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 150,
             lastShowDateMs = System.currentTimeMillis()
         )
@@ -293,8 +295,8 @@ class FlowerCalculatorTest {
     fun calculate_exactly90Days_notGoneYet() {
         // Ровно 90 дней ещё не GONE (только > 90)
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             lastShowDateMs = System.currentTimeMillis() - (90L * 24 * 60 * 60 * 1000)
         )
@@ -305,8 +307,8 @@ class FlowerCalculatorTest {
     @Test
     fun calculate_exactly91Days_isGone() {
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             lastShowDateMs = System.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000)
         )
@@ -317,8 +319,8 @@ class FlowerCalculatorTest {
     @Test
     fun calculate_negativeTimestamp_treatedAsZeroDays() {
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             lastShowDateMs = -1000L
         )
@@ -330,8 +332,8 @@ class FlowerCalculatorTest {
     @Test
     fun calculate_zeroTimestamp_treatedAsZeroDays() {
         val mastery = LessonMasteryState(
-            lessonId = "test",
-            languageId = "en",
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 50,
             lastShowDateMs = 0L
         )
@@ -345,8 +347,8 @@ class FlowerCalculatorTest {
         for (shows in 0..200 step 10) {
             for (days in 0..100) {
                 val mastery = LessonMasteryState(
-                    lessonId = "test",
-                    languageId = "en",
+                    lessonId = LessonId("test"),
+                    languageId = LanguageId("en"),
                     uniqueCardShows = shows,
                     lastShowDateMs = System.currentTimeMillis() - (days.toLong() * 24 * 60 * 60 * 1000)
                 )
