@@ -2,9 +2,9 @@
 
 ## 14.1 Theme System
 
-### 14.1.1 Material 3 Light-Only Theme
+### 14.1.1 Material 3 Dual Theme (Light + Dark)
 
-GrammarMate uses a single `GrammarMateTheme` composable wrapping `MaterialTheme` with a hardcoded `lightColorScheme`. There is **no dark theme variant**: no `darkColorScheme`, no `values-night/` resource directory, no `isSystemInDarkTheme()` check.
+GrammarMate uses a `GrammarMateTheme` composable wrapping `MaterialTheme` with both `lightColorScheme` and `darkColorScheme` defined. The theme supports three modes: SYSTEM (auto-detect via `isSystemInDarkTheme()`), LIGHT (force light), and DARK (force dark).
 
 **File:** `app/src/main/java/com/alexpo/grammermate/ui/Theme.kt`
 
@@ -19,7 +19,20 @@ private val LightColors = lightColorScheme(
     surface = Color.White,
     onSurface = Color(0xFF1F1F1F)     // Near-black
 )
+
+private val DarkColors = darkColorScheme(
+    primary = Color(0xFF4A8B92),      // Lighter teal for dark bg
+    onPrimary = Color.White,
+    secondary = Color(0xFF7EB5A5),    // Lighter sage for dark bg
+    onSecondary = Color.White,
+    background = Color(0xFF1A1A1A),   // Near-black
+    onBackground = Color(0xFFE8E8E8), // Light grey
+    surface = Color(0xFF2A2A2A),      // Dark grey
+    onSurface = Color(0xFFE8E8E8)     // Light grey
+)
 ```
+
+Theme mode selection is controlled by `ThemeMode` enum (LIGHT, DARK, SYSTEM) persisted in `AppConfigStore.themeMode`. Default is SYSTEM. See section 14.7 for details.
 
 ### 14.1.2 Color Palette
 
@@ -44,9 +57,17 @@ private val LightColors = lightColorScheme(
 
 ```kotlin
 @Composable
-fun GrammarMateTheme(content: @Composable () -> Unit) {
+fun GrammarMateTheme(
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    content: @Composable () -> Unit
+) {
+    val useDarkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
     MaterialTheme(
-        colorScheme = LightColors,
+        colorScheme = if (useDarkTheme) DarkColors else LightColors,
         content = content
     )
 }
@@ -66,7 +87,7 @@ No custom `typography` or `shapes` are passed -- Material 3 defaults are used th
 ```
 
 Key points:
-- Parent is `Theme.Material3.DayNight.NoActionBar` (DayNight parent but only light Compose theme is defined)
+- Parent is `Theme.Material3.DayNight.NoActionBar` (DayNight parent, actively used for dark theme support)
 - Status bar and navigation bar are transparent, letting the Compose Surface color show through
 - No ActionBar -- all UI is in Compose
 
@@ -281,21 +302,21 @@ TTS speed is configurable via Settings slider: range 0.5x to 1.5x, persisted in 
 
 ## 14.4 Strings & Localization
 
-### 14.4.1 strings.xml
+### 14.4.1 String Resources
 
-**File:** `app/src/main/res/values/strings.xml`
+**Files:**
+- `app/src/main/res/values/strings-app.xml` -- app-level strings (app name, general labels)
+- `app/src/main/res/values/strings-components.xml` -- shared component strings
+- `app/src/main/res/values/strings-screens.xml` -- per-screen strings
+- `app/src/main/res/values-ru/strings-app.xml` -- Russian translations (partial)
+- `app/src/main/res/values-ru/strings-components.xml` -- Russian translations (partial)
+- `app/src/main/res/values-ru/strings-screens.xml` -- Russian translations (partial)
 
-```xml
-<resources>
-    <string name="app_name">GrammarMate</string>
-</resources>
-```
-
-Only one string resource is defined: the application name. All other UI strings are hardcoded in Kotlin source.
+String resources use `stringResource()` throughout the Compose codebase. The UI language can be switched between English, Russian, and System default via Settings (see section 14.8).
 
 ### 14.4.2 Language Mix in UI Strings
 
-The app uses a **mix of English and Russian** hardcoded strings, with no localization framework:
+The app uses a **mix of English and Russian** strings. Most strings are defined in resource files and loaded via `stringResource()`:
 
 **English strings** (majority):
 - Screen titles: "GrammarMate", "Grammar Roadmap"
@@ -323,15 +344,13 @@ The app uses a **mix of English and Russian** hardcoded strings, with no localiz
 
 ### 14.4.3 Localization Strategy
 
-**Current state:** No localization strategy exists. All strings are hardcoded in GrammarMateApp.kt. There are:
-- No `values-ru/`, `values-it/`, or any locale-specific resource directories
-- No use of `stringResource()` or `Context.getString()`
-- No string identifiers beyond `app_name`
+**Current state:** String resources exist in `values/` (English) and `values-ru/` (Russian partial translations). `stringResource()` is used throughout Compose code. The UI language is user-selectable via Settings (see section 14.8).
 
-This means:
-- The app UI is always in the English/Russian mix regardless of device locale
-- Learning content (CSV data) can be in any language, but the app chrome is fixed
-- Russian strings appear primarily in developer-facing settings and internal tools
+- `values/` contains English string resources (default)
+- `values-ru/` contains Russian translations (partial -- covers some screens)
+- `stringResource()` is used for loading strings in Compose
+- `AppCompatDelegate.setApplicationLocales()` is used for per-app language switching (see section 14.8)
+- Learning content (CSV data) is independent from UI language
 
 ---
 
@@ -581,10 +600,105 @@ All other text uses fixed sizes or Material 3 typography defaults and does not s
 1. **All UI in GrammarMateApp.kt** -- no separate screen files except DailyPracticeScreen.kt, VerbDrillScreen.kt, VocabDrillScreen.kt.
 2. **All dialogs inline** -- dialog state is local `remember { mutableStateOf(...) }` variables, not in ViewModel.
 3. **No custom fonts** -- system default via Material 3.
-4. **No dark mode** -- light-only theme.
-5. **No localization** -- hardcoded English/Russian mix.
+4. **Dual theme** -- light and dark color schemes, user-selectable (Light/Dark/System). See section 14.7.
+5. **Localization framework** -- string resources in `values/` (English) and `values-ru/` (Russian). UI language selectable via Settings. See section 14.8.
 6. **SoundPool for feedback** -- not MediaPlayer, for low-latency answer sounds.
 7. **Sherpa-ONNX for TTS** -- offline text-to-speech, not Android TTS.
 8. **Emoji for flower states** -- not custom drawables or Lottie animations.
 9. **No custom animations** -- only two: TTS download bar visibility toggle and ASR recording pulse.
 10. **Stateless UI** -- GrammarMateApp is a pure renderer of `TrainingUiState`, all business logic in TrainingViewModel.
+
+---
+
+## 14.7 Theme Mode Selection
+
+**Task:** TASK-010
+**UC:** UC-66
+
+### 14.7.1 ThemeMode Enum
+
+```kotlin
+enum class ThemeMode { LIGHT, DARK, SYSTEM }
+```
+
+- `SYSTEM` (default) -- follows device dark/light setting via `isSystemInDarkTheme()`
+- `LIGHT` -- forces light theme regardless of system setting
+- `DARK` -- forces dark theme regardless of system setting
+
+### 14.7.2 Persistence
+
+`ThemeMode` is persisted in `AppConfigStore` as `themeMode` field (String, default `"SYSTEM"`). Stored in `config.yaml`.
+
+### 14.7.3 Settings UI
+
+SettingsScreen has an "Appearance" section with a 3-option selector for Light / Dark / System. Options can use segmented buttons, radio group, or similar Material 3 component. On selection: calls `settingsHandler.setThemeMode(mode)` which writes to AppConfigStore and updates ViewModel state.
+
+### 14.7.4 Theme Application
+
+`GrammarMateTheme` composable accepts a `themeMode` parameter:
+1. `GrammarMateApp` reads `themeMode` from ViewModel state
+2. Passes to `GrammarMateTheme(themeMode = ...)`
+3. Theme change applies immediately (no restart needed)
+4. Recomposition triggers across all screens
+
+### 14.7.5 Hardcoded Semantic Colors
+
+The following hardcoded colors need dark-mode equivalents (using `MaterialTheme.colorScheme` or conditional colors):
+
+| Current Hardcoded | Location | Dark Mode Equivalent |
+|---|---|---|
+| `Color(0xFFE8F5E9)` drill background | TrainingScreen | Use `surfaceVariant` or a dark green tone |
+| `Color(0xFF388E3C)` drill tense label | TrainingScreen | Use `primary` or lighter green |
+| `Color(0xFF2E7D32)` drill prompt / vocab mastered | Multiple | Use `primary` or semantic color |
+| `Color(0xFF4CAF50)` progress bar fill | DrillProgressRow | Use `primary` or theme-aware green |
+| `Color(0xFFC8E6C9)` progress bar track | DrillProgressRow | Use `surfaceVariant` or dark track |
+| `Color(0xFFB00020)` destructive buttons | Settings | Use `MaterialTheme.colorScheme.error` |
+| `Color(0xFFCD7F32)` bronze trophy | BossReward | Keep as-is (thematic, not theme-dependent) |
+| `Color(0xFFE3F2FD)` mix challenge card | TrainingScreen | Use `surfaceVariant` or conditional |
+| `Color(0xFF01565C0)` mix tense chip | TrainingScreen | Use `primary` or semantic color |
+
+Colors used for boss trophies (bronze, silver, gold) and speed indicators (red/yellow/green) are thematic and do not change with theme.
+
+---
+
+## 14.8 Interface Language
+
+**Task:** TASK-011
+**UC:** UC-67
+
+### 14.8.1 Supported Languages
+
+| Code | Language | Notes |
+|---|---|---|
+| `en` | English | Default, fully covered in `values/` |
+| `ru` | Russian | Partial coverage in `values-ru/` |
+| `system` | System default | Follows device locale (default setting) |
+
+### 14.8.2 Persistence
+
+UI language preference is persisted in `AppConfigStore` as `uiLanguage` field (String, default `"system"`). Values: `"system"`, `"en"`, `"ru"`.
+
+Additionally, `AppCompatDelegate.setApplicationLocales()` provides automatic persistence via AndroidX per-app language API. The AppConfigStore value is the source of truth for in-app display; the AndroidX API handles Activity recreation.
+
+### 14.8.3 Settings UI
+
+SettingsScreen has an "Interface language" option (distinct from learning content language selector):
+- Options: System / English / Русский
+- Positioned in a clearly labeled section separate from learning content language
+- On selection: calls `settingsHandler.setUiLanguage(code)` which applies locale via `AppCompatDelegate.setApplicationLocales(LocaleListCompat)` and saves preference to AppConfigStore
+
+### 14.8.4 Locale Switching
+
+Uses `AppCompatDelegate.setApplicationLocales()` with `LocaleListCompat`:
+- When `"system"` -- clear override, follow system locale
+- When `"en"` -- set locale to `LocaleListCompat.forLanguageTags("en")`
+- When `"ru"` -- set locale to `LocaleListCompat.forLanguageTags("ru")`
+- Change applies immediately via Activity recreation (standard Android per-app language behavior)
+
+### 14.8.5 Independence from Learning Content
+
+UI language and learning content language are fully independent:
+- Learning content language selector (SS-22) controls which lesson packs are active
+- Interface language selector controls UI strings only
+- Changing UI language does NOT change active lesson packs or learning content
+- Changing learning content language does NOT change UI language

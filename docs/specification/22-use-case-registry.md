@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 65 |
-| Total Acceptance Criteria | 325 |
-| Domains | 18 |
+| Total Use Cases | 67 |
+| Total Acceptance Criteria | 339 |
+| Domains | 20 |
 
 ### Per-Domain Counts
 
@@ -34,6 +34,8 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 16 | Performance (IO dispatchers, caching, parallel loading) | 1 | 5 |
 | 17 | TTS icon auto-recovery (speaker icon updates after model download) | 1 | 4 |
 | 18 | Progress reset | 1 | 8 |
+| 19 | Theme mode switching (Light/Dark/System) | 1 | 7 |
+| 20 | Interface language switching (English/Russian) | 1 | 7 |
 
 ---
 
@@ -230,6 +232,22 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 19: Theme Mode Switching (Light/Dark/System)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-66 | Switch app theme between Light, Dark, and System | App is running; user is on Settings screen | 1. User taps Appearance section theme selector. 2. Selector shows 3 options: Light, Dark, System. 3. User selects an option. 4. `setThemeMode(mode)` writes preference to AppConfigStore. 5. ViewModel state updates `themeMode`. 6. GrammarMateTheme recomposes with new color scheme. | AC1 [BEHAVIORAL]: Settings shows "Appearance" section with Light/Dark/System options. AC2 [BEHAVIORAL]: Selecting "Light" applies light color scheme immediately (no restart). AC3 [BEHAVIORAL]: Selecting "Dark" applies dark color scheme immediately (no restart). AC4 [BEHAVIORAL]: Selecting "System" follows device dark/light setting. AC5 [BEHAVIORAL]: Theme preference persists after app restart. AC6 [STRUCTURAL]: `ThemeMode` enum has values LIGHT, DARK, SYSTEM with SYSTEM as default. AC7 [STRUCTURAL]: `AppConfigStore.themeMode` persists to `config.yaml`. | SettingsScreen | `ui/Theme.kt`, `data/AppConfigStore.kt`, `shared/SettingsActionHandler.kt`, `ui/screens/SettingsScreen.kt` | TASK-010 |
+
+---
+
+## Domain 20: Interface Language Switching (English/Russian)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-67 | Switch UI language between English, Russian, and System | App is running; user is on Settings screen | 1. User taps "Interface language" selector in Settings. 2. Selector shows 3 options: System / English / Русский. 3. User selects an option. 4. `setUiLanguage(code)` calls `AppCompatDelegate.setApplicationLocales()` with appropriate locale. 5. Preference saved to AppConfigStore. 6. Activity recreates with new locale. | AC1 [BEHAVIORAL]: Settings shows "Interface language" option separate from learning content language. AC2 [BEHAVIORAL]: Selecting "English" switches UI to English strings immediately (Activity recreation). AC3 [BEHAVIORAL]: Selecting "Русский" switches UI to Russian strings immediately (Activity recreation). AC4 [BEHAVIORAL]: Selecting "System" follows device language setting. AC5 [BEHAVIORAL]: Language preference persists after app restart. AC6 [BEHAVIORAL]: Learning content language is NOT affected by UI language change. AC7 [STRUCTURAL]: `AppCompatDelegate.setApplicationLocales()` used for per-app language API. | SettingsScreen | `shared/SettingsActionHandler.kt`, `data/AppConfigStore.kt`, `ui/screens/SettingsScreen.kt` | TASK-011 |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -256,3 +274,5 @@ Structured registry of all verified use cases extracted from scenario traces and
 | TASK-006 | UC-63 |
 | TASK-007 | UC-64 |
 | TASK-008 | UC-65 |
+| TASK-010 | UC-66 |
+| TASK-011 | UC-67 |

@@ -12,6 +12,9 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-006](DONE-TASK-006-verb-drill-play-button-fix.md) | Verb Drill Play Button Fix (resume + TTS icons) | DONE | 10-verb-drill, 12-training-card-session | 2026-05-14 |
 | [DONE-TASK-007](DONE-TASK-007-verb-drill-exit-navigation.md) | Verb Drill Exit Navigation to HOME | DONE | 10-verb-drill | 2026-05-14 |
 | [DONE-TASK-008](DONE-TASK-008-qr-share-translation.md) | Share Translation via QR Code | DONE | 12-training-card-session | 2026-05-15 |
+| [TASK-009](TASK-009-profile-stats-popup.md) | Profile Stats Popup with CEFR Level | OPEN | custom spec | 2026-05-15 |
+| [TASK-010](TASK-010-theme-mode-switching.md) | Theme Mode Switching (Light/Dark/System) | OPEN | 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-011](TASK-011-interface-language-switching.md) | Interface Language Switching (English/Russian) | OPEN | 14-theme-and-ui-components | 2026-05-15 |
 
 ## Re-Audit CRITICAL Fix Wave (2026-05-14)
 
