@@ -708,6 +708,12 @@ private fun buildVerbBlockFromIds(
 7. Computes `effectiveLevel = cursor.currentLessonIndex + 1` (1-based level from cursor).
 8. Determines `isFirstSessionToday` by comparing `cursor.firstSessionDate` to today's ISO date.
 9. For the first session of the day, tries the pre-built session cache (`prebuiltDailySession`, built at init time for faster startup). If valid, uses it and clears the cache. **The prebuilt session must be validated:** if the cursor's `currentLessonIndex` has changed since the cache was built, discard and rebuild. This prevents serving incorrect tenses in Block 3.
+
+   **Race condition (documented, unresolved):** In `TrainingViewModel.init`, two coroutines launch concurrently on `Dispatchers.IO`:
+   1. `forceReloadDefaultPacks()` -- may delete and re-import pack CSV files from assets
+   2. `dailyPracticeCoordinator.prebuildSession()` -- reads those same CSV files to build the daily session
+
+   If `forceReloadDefaultPacks()` replaces pack data while `prebuildSession()` is reading, the prebuilt session may be based on stale or partially-replaced data. The prebuilt session validation (cursor mismatch check) partially mitigates this but does not guarantee consistency. A proper fix would sequence these: prebuild only after forceReload completes.
 10. Falls back to synchronous build via `DailySessionComposer.buildSession(effectiveLevel, packId, langId, lessonId, cumulativeTenses, cursor)`, where `cumulativeTenses = getCumulativeTenses(packId, effectiveLevel)` and `lessonId` is derived from the cursor's lesson index.
 11. `DailySessionComposer` creates all three blocks:
     - `buildSentenceBlock()` -- cursor-driven sequential selection from lesson at `cursor.currentLessonIndex`.

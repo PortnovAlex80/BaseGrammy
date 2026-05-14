@@ -329,6 +329,8 @@ Sources:
 
 - **Read semantics**: No caching. Every `loadProgress()` reads and parses the file. `todayShownCardIds` is auto-cleared if `lastDate` is not today (date rollover logic).
 
+- **Performance concern**: `upsertComboProgress()` performs a full load + full save on every call (two file I/O operations: read YAML -> modify -> write YAML + fsync). During active verb drill sessions, this is called on every card answer (every 3-5 seconds), causing I/O jank. The SHOULD-level caching requirement in `20-non-functional-requirements.md` (section 20.1.7) would address this by caching the loaded data in memory.
+
 - **Error handling**: Missing file returns empty map. Parse errors result in empty map return.
 
 - **Pack scoping**: Yes. The `packId` constructor parameter determines the file path. Each pack has independent verb drill progress. When `packId` is null, falls back to legacy global file path.
