@@ -74,7 +74,8 @@ class ProgressRestorer(
                     lessons = lessons,
                     selectedLessonId = selectedLessonId,
                     mode = progress.mode,
-                    userName = profile.userName
+                    userName = profile.userName,
+                    welcomeDialogAttempts = profile.welcomeDialogAttempts
                 ),
                 cardSession = it.cardSession.copy(
                     sessionState = progress.state,

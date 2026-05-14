@@ -196,7 +196,12 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 | SPEC RESOLVED, CODE PENDING | Spec updated, code fix not yet applied |
 | DONE | All fixes implemented and verified |
 
-Update task status in the task file header when implementation begins/compleases.
+Update task status in the task file header when implementation begins/completes.
+
+**DONE task naming convention:** When a task reaches DONE status:
+1. Rename the file: `TASK-NNN-slug.md` → `DONE-TASK-NNN-slug.md` (use `git mv`)
+2. Update `docs/specification/tasks/README.md` — change status to DONE and update the filename link
+3. This makes it easy to distinguish open vs completed tasks at a glance
 
 ---
 

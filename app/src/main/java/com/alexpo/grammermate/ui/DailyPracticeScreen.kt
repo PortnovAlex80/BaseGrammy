@@ -80,6 +80,7 @@ import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.components.WordBankSection
 import com.alexpo.grammermate.ui.components.DailyInputModeBar
 import com.alexpo.grammermate.ui.components.HintAnswerCard
+import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
@@ -496,6 +497,7 @@ private fun DailyInputControls(
 ) {
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val reportCard = scope.currentCard
     val reportText = if (reportCard != null) {
@@ -621,7 +623,17 @@ private fun DailyInputControls(
             },
             exportResult = { path ->
                 exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-            }
+            },
+            shareText = reportCard?.let { "${it.promptRu} — ${it.acceptedAnswers.joinToString(" / ")}" },
+            onShareQr = { showQrDialog = true }
+        )
+    }
+    if (showQrDialog && reportCard != null) {
+        QrShareDialog(
+            promptRu = reportCard.promptRu,
+            answerText = reportCard.acceptedAnswers.firstOrNull() ?: "",
+            targetLanguage = provider.languageId,
+            onDismiss = { showQrDialog = false }
         )
     }
     if (exportMessage != null) {
@@ -694,6 +706,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     var isVoiceActive by remember { mutableStateOf(false) }
     var voiceRecognizedText by remember { mutableStateOf<String?>(null) }
     var showReportSheet by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val clipboardManager = LocalClipboardManager.current
 
@@ -797,7 +810,17 @@ private fun ColumnScope.VocabFlashcardBlock(
             },
             exportResult = { path ->
                 exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-            }
+            },
+            shareText = "${word.meaningRu ?: word.word} — ${word.word}",
+            onShareQr = { showQrDialog = true }
+        )
+    }
+    if (showQrDialog) {
+        QrShareDialog(
+            promptRu = word.meaningRu ?: word.word,
+            answerText = word.word,
+            targetLanguage = languageId,
+            onDismiss = { showQrDialog = false }
         )
     }
     if (exportMessage != null) {

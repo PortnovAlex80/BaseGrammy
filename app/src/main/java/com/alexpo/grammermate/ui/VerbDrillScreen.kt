@@ -73,6 +73,7 @@ import com.alexpo.grammermate.data.VerbDrillUiState
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
 import com.alexpo.grammermate.ui.components.HintAnswerCard
@@ -363,6 +364,7 @@ private fun DefaultVerbDrillInputControls(
     val canSelectInputMode = hasCards && contract.sessionActive
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val reportCard = scope.currentCard
     val reportText = if (reportCard != null) {
@@ -435,7 +437,17 @@ private fun DefaultVerbDrillInputControls(
             },
             exportResult = { path ->
                 exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-            }
+            },
+            shareText = reportCard?.let { "${it.promptRu} — ${it.acceptedAnswers.joinToString(" / ")}" },
+            onShareQr = { showQrDialog = true }
+        )
+    }
+    if (showQrDialog && reportCard != null) {
+        QrShareDialog(
+            promptRu = reportCard.promptRu,
+            answerText = reportCard.acceptedAnswers.firstOrNull() ?: "",
+            targetLanguage = contract.languageId,
+            onDismiss = { showQrDialog = false }
         )
     }
     if (exportMessage != null) {

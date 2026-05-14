@@ -74,6 +74,7 @@ import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
@@ -331,6 +332,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
     val hasCards = scope.currentCard != null
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
     val reportCard = scope.currentCard
     val reportText = if (reportCard != null) {
         val targetText = reportCard.acceptedAnswers.joinToString(" / ")
@@ -367,7 +369,17 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 if (reportText.isNotBlank()) {
                     clipboardManager.setText(AnnotatedString(reportText))
                 }
-            }
+            },
+            shareText = reportCard?.let { "${it.promptRu} — ${it.acceptedAnswers.joinToString(" / ")}" },
+            onShareQr = { showQrDialog = true }
+        )
+    }
+    if (showQrDialog && reportCard != null) {
+        QrShareDialog(
+            promptRu = reportCard.promptRu,
+            answerText = reportCard.acceptedAnswers.firstOrNull() ?: "",
+            targetLanguage = contract.languageId,
+            onDismiss = { showQrDialog = false }
         )
     }
 

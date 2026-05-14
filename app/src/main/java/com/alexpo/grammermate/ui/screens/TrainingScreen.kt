@@ -86,6 +86,7 @@ import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.components.AsrStatusIndicator
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
@@ -433,6 +434,7 @@ fun AnswerBox(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var showReportSheet by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val reportCard = state.cardSession.currentCard
     val reportText = if (reportCard != null) {
@@ -491,7 +493,17 @@ fun AnswerBox(
             },
             exportResult = { path ->
                 exportMessage = if (path != null) context.getString(R.string.training_exported_to, path) else context.getString(R.string.training_no_bad_sentences)
-            }
+            },
+            shareText = reportCard?.let { "${it.promptRu} — ${it.acceptedAnswers.joinToString(" / ")}" },
+            onShareQr = { showQrDialog = true }
+        )
+    }
+    if (showQrDialog && reportCard != null) {
+        QrShareDialog(
+            promptRu = reportCard.promptRu,
+            answerText = reportCard.acceptedAnswers.firstOrNull() ?: "",
+            targetLanguage = state.navigation.selectedLanguageId.value,
+            onDismiss = { showQrDialog = false }
         )
     }
     if (exportMessage != null) {

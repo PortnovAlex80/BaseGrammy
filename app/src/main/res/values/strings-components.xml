@@ -26,6 +26,12 @@
     <string name="report_export">Export bad sentences to file</string>
     <string name="report_copy_text">Copy text</string>
     <string name="report_export_dialog_title">Export</string>
+    <string name="report_share_translation">Share translation</string>
+
+    <!-- QrShareDialog -->
+    <string name="qr_share_title">Translation</string>
+    <string name="qr_open_translate">Open in Google Translate</string>
+    <string name="qr_close">Close</string>
 
     <!-- DailyPracticeComponents -->
     <string name="word_bank_tap_order">Tap words in correct order:</string>

@@ -9,9 +9,9 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-003](DONE-TASK-003-tts-thread-safety-error-ux.md) | TTS Thread Safety and Error UX | DONE | 05-audio-tts-asr | 2026-05-14 |
 | [DONE-TASK-004](DONE-TASK-004-welcome-dialog-max-attempts.md) | WelcomeDialog Max 3 Attempts | DONE | 13-app-entry | 2026-05-14 |
 | [DONE-TASK-005](DONE-TASK-005-tts-error-icon-memory.md) | TTS Error Icon for Memory/Loading Failures | DONE | 05-audio-tts-asr | 2026-05-14 |
-| [TASK-006](TASK-006-verb-drill-play-button-fix.md) | Verb Drill Play Button Fix (resume + TTS icons) | OPEN | 10-verb-drill, 12-training-card-session | 2026-05-14 |
-| [TASK-007](TASK-007-verb-drill-exit-navigation.md) | Verb Drill Exit Navigation to HOME | OPEN | 10-verb-drill | 2026-05-14 |
-| [TASK-008](TASK-008-qr-share-translation.md) | Share Translation via QR Code | OPEN | 12-training-card-session | 2026-05-15 |
+| [DONE-TASK-006](DONE-TASK-006-verb-drill-play-button-fix.md) | Verb Drill Play Button Fix (resume + TTS icons) | DONE | 10-verb-drill, 12-training-card-session | 2026-05-14 |
+| [DONE-TASK-007](DONE-TASK-007-verb-drill-exit-navigation.md) | Verb Drill Exit Navigation to HOME | DONE | 10-verb-drill | 2026-05-14 |
+| [DONE-TASK-008](DONE-TASK-008-qr-share-translation.md) | Share Translation via QR Code | DONE | 12-training-card-session | 2026-05-15 |
 
 ## Re-Audit CRITICAL Fix Wave (2026-05-14)
 

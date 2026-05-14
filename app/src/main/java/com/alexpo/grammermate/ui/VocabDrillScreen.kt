@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Flip
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.VolumeUp
@@ -78,6 +79,7 @@ import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.data.VocabDrillSessionState
 import com.alexpo.grammermate.data.VocabDrillUiState
 import com.alexpo.grammermate.data.VoiceResult
+import com.alexpo.grammermate.ui.components.QrShareDialog
 import kotlinx.coroutines.delay
 
 @Composable
@@ -371,6 +373,7 @@ private fun VocabDrillCardScreen(
     val currentIndex = session.currentIndex + 1 // 1-based for display
 
     var showReportSheet by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val clipboardManager = LocalClipboardManager.current
     val reportText = buildString {
@@ -660,6 +663,17 @@ private fun VocabDrillCardScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.vocab_copy_text))
                 }
+                TextButton(
+                    onClick = {
+                        showReportSheet = false
+                        showQrDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.QrCode2, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.report_share_translation))
+                }
             }
         }
     }
@@ -673,6 +687,16 @@ private fun VocabDrillCardScreen(
                     Text(stringResource(R.string.vocab_ok))
                 }
             }
+        )
+    }
+    if (showQrDialog) {
+        val promptRu = card.word.meaningRu ?: card.word.word
+        val answerText = card.word.word
+        QrShareDialog(
+            promptRu = promptRu,
+            answerText = answerText,
+            targetLanguage = "it",
+            onDismiss = { showQrDialog = false }
         )
     }
 }

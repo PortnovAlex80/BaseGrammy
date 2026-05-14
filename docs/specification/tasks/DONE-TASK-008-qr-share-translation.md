@@ -1,6 +1,6 @@
 # TASK-008: Share Translation via QR Code
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/qr-share (from feature/perf-and-cursor-fixes)
 **Spec:** 12-training-card-session.md#12.8.2, 23-screen-elements.md (SH-01, SH-07)
@@ -137,7 +137,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: QR library dependency | | |
-| | Fix 2: QrShareDialog composable | | |
-| | Fix 3: 5th option in SharedReportSheet | | |
-| | Fix 4: Wire state in screens | | |
+| 2026-05-15 | Fix 1: QR library dependency | DONE | Added io.github.alexzhirkevich:qrose:1.1.2 |
+| 2026-05-15 | Fix 2: QrShareDialog composable | DONE | Created ui/components/QrShareDialog.kt |
+| 2026-05-15 | Fix 3: 5th option in SharedReportSheet | DONE | Added shareText + onShareQr params, QrCode2 icon row |
+| 2026-05-15 | Fix 4: Wire state in screens | DONE | TrainingScreen, VerbDrillScreen, VocabDrillScreen, DailyPracticeScreen (x2), TrainingCardSession |

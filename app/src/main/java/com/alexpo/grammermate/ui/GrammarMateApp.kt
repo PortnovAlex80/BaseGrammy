@@ -569,11 +569,17 @@ private fun NavDialogs(
     onDialogsChange: (DialogState) -> Unit,
     onNavigate: (String) -> Unit
 ) {
-    // Welcome dialog trigger — only on HOME screen, only if attempts < 3
-    LaunchedEffect(currentRoute, state.navigation.userName) {
+    // Welcome dialog trigger — only on HOME screen, only if attempts < 3.
+    // Guard: languages must be non-empty to ensure init block has loaded the real
+    // profile from disk. Without this, the combined uiState flow may still carry
+    // the default TrainingUiState (userName="GrammarMateUser", attempts=0) on the
+    // first composition frame, causing a false-positive dialog trigger that
+    // overwrites the name the user previously saved.
+    LaunchedEffect(currentRoute, state.navigation.userName, state.navigation.languages.size) {
         if (currentRoute == Routes.HOME
             && state.navigation.userName == "GrammarMateUser"
             && state.navigation.welcomeDialogAttempts < 3
+            && state.navigation.languages.isNotEmpty()
         ) {
             onDialogsChange(dialogs.copy(showWelcomeDialog = true))
         }

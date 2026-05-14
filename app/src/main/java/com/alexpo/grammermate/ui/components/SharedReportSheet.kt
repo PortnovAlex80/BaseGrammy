@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -62,7 +63,9 @@ fun SharedReportSheet(
     onCopyText: () -> Unit,
     exportResult: ((String?) -> Unit)? = null,
     title: String = "Card options",
-    showExportConfirmation: Boolean = true
+    showExportConfirmation: Boolean = true,
+    shareText: String? = null,
+    onShareQr: (() -> Unit)? = null
 ) {
     var exportMessage by remember { mutableStateOf<String?>(null) }
 
@@ -148,6 +151,19 @@ fun SharedReportSheet(
                 Icon(Icons.Default.ContentCopy, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.report_copy_text))
+            }
+            if (shareText != null && onShareQr != null) {
+                TextButton(
+                    onClick = {
+                        onShareQr()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.QrCode2, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.report_share_translation))
+                }
             }
         }
     }
