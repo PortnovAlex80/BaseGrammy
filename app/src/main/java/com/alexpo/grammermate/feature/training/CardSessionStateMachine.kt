@@ -177,4 +177,12 @@ class CardSessionStateMachine(
     fun pause() {
         isPaused = true
     }
+
+    /**
+     * Resume from a manual pause without resetting any other state.
+     * Unlike [reset], this keeps hint state, attempts, and other fields intact.
+     */
+    fun resume() {
+        isPaused = false
+    }
 }

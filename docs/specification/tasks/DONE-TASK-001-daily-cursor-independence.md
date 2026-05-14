@@ -1,4 +1,4 @@
-# TASK-001: Daily Practice Cursor Independence
+# TASK-001: Daily Practice Cursor Independence [DONE]
 
 **Status:** DONE
 **Created:** 2026-05-14

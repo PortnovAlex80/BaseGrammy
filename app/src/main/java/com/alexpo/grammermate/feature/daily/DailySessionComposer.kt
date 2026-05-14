@@ -476,8 +476,9 @@ class DailySessionComposer(
 
         for (file in files) {
             try {
-                val content = file.readText()
-                val (_, parsed) = VerbDrillCsvParser.parse(content)
+                val (_, parsed) = file.bufferedReader().use { reader ->
+                    VerbDrillCsvParser.parse(reader)
+                }
                 cards.addAll(parsed)
             } catch (_: Exception) {
                 // Skip unreadable files

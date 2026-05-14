@@ -1,6 +1,6 @@
 # TASK-006: Verb Drill Play Button -- Resume After Manual Pause + TTS State Icons
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-14
 **Branch:** feature/verb-drill-play-fix (from feature/perf-and-cursor-fixes)
 **Spec:** 10-verb-drill.md#10.4.3, 12-training-card-session.md#12.7.1
@@ -118,5 +118,5 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: togglePause pause reason | | |
-| | Fix 2: TTS state icons | | |
+| 2026-05-15 | Fix 1: togglePause pause reason | DONE | Added resume() to state machine; togglePause now checks hintAnswer |
+| 2026-05-15 | Fix 2: TTS state icons | DONE | Replaced plain IconButton with TtsSpeakerButton |

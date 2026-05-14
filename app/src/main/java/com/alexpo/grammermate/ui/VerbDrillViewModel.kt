@@ -148,8 +148,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             val packIds = mutableSetOf<String>()
 
             for (file in files) {
-                val content = file.readText()
-                val (_, parsed) = VerbDrillCsvParser.parse(content)
+                val (_, parsed) = file.bufferedReader().use { reader ->
+                    VerbDrillCsvParser.parse(reader)
+                }
 
                 // Use the active packId, or resolve from filename in global mode
                 val packId = currentPackId ?: run {
@@ -583,11 +584,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val langId = _uiState.value.loadedLanguageId ?: "it"
         viewModelScope.launch {
             try {
-                if (ttsEngine.state.value != TtsState.READY
+                if (ttsEngine.state.value != TtsState.Ready
                     || ttsEngine.activeLanguageId != langId) {
                     ttsEngine.initialize(langId)
                 }
-                if (ttsEngine.state.value == TtsState.READY) {
+                if (ttsEngine.state.value == TtsState.Ready) {
                     ttsEngine.speak(text, languageId = langId, speed = speed)
                 } else {
                     Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")

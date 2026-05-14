@@ -54,7 +54,7 @@ interface CardSessionContract : CardSessionCapabilities {
     val sessionActive: Boolean
 
     /** Current TTS state for speaker button rendering. */
-    val ttsState: TtsState get() = TtsState.IDLE
+    val ttsState: TtsState get() = TtsState.Idle
 
     /** Current input mode (VOICE, KEYBOARD, WORD_BANK). */
     val currentInputMode: InputMode get() = inputModeConfig.defaultMode

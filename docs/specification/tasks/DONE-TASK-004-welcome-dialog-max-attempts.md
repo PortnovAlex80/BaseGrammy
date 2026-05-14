@@ -1,6 +1,6 @@
-# TASK-004: WelcomeDialog Max 3 Attempts
+# TASK-004: WelcomeDialog Max 3 Attempts [IN PROGRESS]
 
-**Status:** OPEN
+**Status:** IN PROGRESS
 **Created:** 2026-05-14
 **Branch:** feature/welcome-dialog-fix (from feature/arch-feature-migration)
 **Spec:** 13-app-entry-and-navigation.md (section 13.4.3)
@@ -83,7 +83,9 @@ Commit footer: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
 
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: Attempt counter | | |
-| | Fix 2: HOME-only guard | | |
-| | Fix 3: Skip increments | | |
-| | Verification checklist | | |
+| Date | Fix | Status | Notes |
+|------|-----|--------|-------|
+| 2026-05-14 | Fix 1: Attempt counter | DONE | `welcomeDialogAttempts: Int` added to UserProfile (ProfileStore.kt), NavigationState (Models.kt line 275). Persisted in profile.yaml. Loaded/saved in ProfileStore. |
+| 2026-05-14 | Fix 2: HOME-only guard | DONE | LaunchedEffect in GrammarMateApp.kt line 573 checks `currentRoute == Routes.HOME` before showing dialog. Dialog never appears during TRAINING/DAILY_PRACTICE/etc. |
+| 2026-05-14 | Fix 3: Skip increments | DONE | When user enters blank/name="GrammarMateUser", `vm.settings.incrementWelcomeDialogAttempts()` is called (GrammarMateApp.kt line 587). SettingsActionHandler.kt line 78 increments and persists. |
+| 2026-05-14 | Verification checklist | DONE | Logic verified: fresh install → userName defaults to "GrammarMateUser" → dialog shows on HOME. Attempts < 3 checked. 3 skips → counter=3 → condition fails → no dialog. Settings updateUserName works independently. profile.yaml persistence confirmed. |

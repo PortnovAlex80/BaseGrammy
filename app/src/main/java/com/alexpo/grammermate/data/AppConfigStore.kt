@@ -57,7 +57,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
                 )
             }
         }
-        val raw = yaml.load<Any>(file.readText()) ?: return AppConfig()
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return AppConfig()
         val data = raw as? Map<*, *> ?: return AppConfig()
         val testMode = data["testMode"] as? Boolean ?: false
         val eliteSizeMultiplier = (data["eliteSizeMultiplier"] as? Number)?.toDouble() ?: 1.25

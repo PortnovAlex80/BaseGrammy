@@ -62,6 +62,7 @@ Source of truth for all project specs. Numbered specs (01–23) are current; sce
 | A2 | [Spec vs Code Discrepancies](arch-audit-spec-vs-code.md) | Critical/minor discrepancies found during audit |
 | A3 | [Module Decomposition](arch-module-decomposition.md) | Proposed modular architecture with interfaces |
 | A4 | [Phase 3 Interfaces](arch-phase3-interfaces.md) | Phase 3 store interface definitions |
+| A5 | [Agent-Friendly Architecture Audit](arch-agent-friendly-audit-2026-05-14.md) | Current audit for parallel agent work, ownership, context locality, and boundary enforcement |
 
 ---
 

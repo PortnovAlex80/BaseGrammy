@@ -33,7 +33,7 @@ class DailyPracticeSessionProvider(
     private val onAnswerChecked: (input: String, correct: Boolean) -> Unit = { _, _ -> },
     private val onSpeakTts: (String) -> Unit = {},
     private val onStopTts: () -> Unit = {},
-    private val ttsStateProvider: () -> TtsState = { TtsState.IDLE },
+    private val ttsStateProvider: () -> TtsState = { TtsState.Idle },
     private val onExit: () -> Unit = {},
     private val onCardAdvanced: (DailyTask) -> Unit = {},
     private val onFlagCard: ((SessionCard, DailyBlockType) -> Unit)? = null,

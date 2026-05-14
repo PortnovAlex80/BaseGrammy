@@ -28,7 +28,8 @@ class ProfileStoreImpl(private val context: Context) : ProfileStore {
             val data = (raw as? Map<*, *>) ?: return UserProfile()
 
             return UserProfile(
-                userName = data["userName"] as? String ?: "GrammarMateUser"
+                userName = data["userName"] as? String ?: "GrammarMateUser",
+                welcomeDialogAttempts = (data["welcomeDialogAttempts"] as? Number)?.toInt() ?: 0
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -40,7 +41,8 @@ class ProfileStoreImpl(private val context: Context) : ProfileStore {
         baseDir.mkdirs()
 
         val payload = linkedMapOf(
-            "userName" to profile.userName
+            "userName" to profile.userName,
+            "welcomeDialogAttempts" to profile.welcomeDialogAttempts
         )
 
         AtomicFileWriter.writeText(file, yaml.dump(payload))
@@ -54,5 +56,6 @@ class ProfileStoreImpl(private val context: Context) : ProfileStore {
 }
 
 data class UserProfile(
-    val userName: String = "GrammarMateUser"
+    val userName: String = "GrammarMateUser",
+    val welcomeDialogAttempts: Int = 0
 )

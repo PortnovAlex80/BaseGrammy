@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +48,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -675,6 +680,7 @@ private fun VocabDrillCardScreen(
 // -- Card Front --
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun VocabDrillCardFront(
     card: VocabDrillCard,
     direction: VocabDrillDirection,
@@ -735,23 +741,34 @@ private fun VocabDrillCardFront(
                 Spacer(modifier = Modifier.height(8.dp))
                 IconButton(
                     onClick = { onSpeak(card.word.word) },
-                    enabled = ttsState != TtsState.INITIALIZING
+                    enabled = ttsState != TtsState.Initializing
                 ) {
                     when (ttsState) {
-                        TtsState.SPEAKING -> Icon(
+                        is TtsState.Speaking -> Icon(
                             Icons.Default.VolumeUp,
                             contentDescription = stringResource(R.string.vocab_content_desc_speaking),
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        TtsState.INITIALIZING -> CircularProgressIndicator(
+                        is TtsState.Initializing -> CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.dp
                         )
-                        TtsState.ERROR -> Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.vocab_content_desc_tts_error),
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                        is TtsState.Error -> {
+                            val reason = ttsState.reason
+                            val isOom = reason?.contains("memory", ignoreCase = true) == true
+                            val errorIcon = if (isOom) Icons.Default.Warning else Icons.Default.ReportProblem
+                            if (reason != null) {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                    tooltip = { PlainTooltip { Text(reason) } },
+                                    state = rememberTooltipState()
+                                ) {
+                                    Icon(errorIcon, stringResource(R.string.vocab_content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
+                                }
+                            } else {
+                                Icon(errorIcon, stringResource(R.string.vocab_content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
                         else -> Icon(
                             Icons.Default.VolumeUp,
                             contentDescription = stringResource(R.string.vocab_content_desc_listen)
@@ -838,7 +855,7 @@ private fun VocabDrillCardBack(
                     }
                     IconButton(
                         onClick = { onSpeak(card.word.word) },
-                        enabled = ttsState != TtsState.INITIALIZING
+                        enabled = ttsState != TtsState.Initializing
                     ) {
                         Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.vocab_content_desc_listen))
                     }
@@ -887,7 +904,7 @@ private fun VocabDrillCardBack(
                     )
                     IconButton(
                         onClick = { onSpeak(card.word.word) },
-                        enabled = ttsState != TtsState.INITIALIZING
+                        enabled = ttsState != TtsState.Initializing
                     ) {
                         Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.vocab_content_desc_listen))
                     }

@@ -129,12 +129,12 @@ class AudioCoordinator(
         val effectiveSpeed = speed ?: _audioState.value.ttsSpeed
         coroutineScope.launch {
             try {
-                if (ttsEngine.state.value != TtsState.READY
+                if (ttsEngine.state.value != TtsState.Ready
                     || ttsEngine.activeLanguageId != langId.value
                 ) {
                     ttsEngine.initialize(langId.value)
                 }
-                if (ttsEngine.state.value == TtsState.READY) {
+                if (ttsEngine.state.value == TtsState.Ready) {
                     ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
                 } else {
                     Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
@@ -229,7 +229,7 @@ class AudioCoordinator(
                 // Recover TTS engine from ERROR/IDLE after per-language download completes.
                 if (downloadState is DownloadState.Done) {
                     val engineState = ttsEngine.state.value
-                    if (engineState == TtsState.ERROR || engineState == TtsState.IDLE) {
+                    if (engineState is TtsState.Error || engineState == TtsState.Idle) {
                         try {
                             ttsEngine.initialize(languageId)
                             Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
@@ -377,7 +377,7 @@ class AudioCoordinator(
                 // Recover TTS engine from ERROR state when models become available.
                 if (newlyCompleted.isNotEmpty()) {
                     val engineState = ttsEngine.state.value
-                    if (engineState == TtsState.ERROR || engineState == TtsState.IDLE) {
+                    if (engineState is TtsState.Error || engineState == TtsState.Idle) {
                         val selectedLang = stateAccess.uiState.value.navigation.selectedLanguageId.value
                         val langToInit = if (newlyCompleted.contains(selectedLang)) selectedLang
                             else newlyCompleted.first()
@@ -439,7 +439,7 @@ class AudioCoordinator(
                     _audioState.update { it.copy(ttsModelReady = true) }
                     // Recover TTS engine from ERROR/IDLE after user-initiated download.
                     val engineState = ttsEngine.state.value
-                    if (engineState == TtsState.ERROR || engineState == TtsState.IDLE) {
+                    if (engineState is TtsState.Error || engineState == TtsState.Idle) {
                         try {
                             ttsEngine.initialize(langId.value)
                             Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")

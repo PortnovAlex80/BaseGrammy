@@ -46,10 +46,10 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
      */
     override fun load(languageId: String): StreakData {
         val file = getFile(languageId)
-        if (!file.exists()) {
+        if (!file.exists() || file.length() == 0L) {
             return StreakData(languageId = LanguageId(languageId))
         }
-        val raw = yaml.load<Any>(file.readText()) ?: return StreakData(languageId = LanguageId(languageId))
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return StreakData(languageId = LanguageId(languageId))
         val data = raw as? Map<*, *> ?: return StreakData(languageId = LanguageId(languageId))
 
         val currentStreak = (data["currentStreak"] as? Number)?.toInt() ?: 0

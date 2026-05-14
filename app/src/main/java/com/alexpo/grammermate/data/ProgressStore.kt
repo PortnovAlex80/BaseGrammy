@@ -20,8 +20,8 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
     private val schemaVersion = 1
 
     override fun load(): TrainingProgress {
-        if (!file.exists()) return TrainingProgress()
-        val raw = yaml.load<Any>(file.readText()) ?: return TrainingProgress()
+        if (!file.exists() || file.length() == 0L) return TrainingProgress()
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return TrainingProgress()
         val data = when (raw) {
             is Map<*, *> -> raw
             else -> return TrainingProgress()

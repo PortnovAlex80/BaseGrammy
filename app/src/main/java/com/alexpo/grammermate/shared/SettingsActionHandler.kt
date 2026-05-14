@@ -68,10 +68,19 @@ class SettingsActionHandler(
     fun updateUserName(newName: String) {
         val trimmed = newName.trim().take(50)
         if (trimmed.isEmpty()) return
-        val profile = UserProfile(userName = trimmed)
-        profileStore.save(profile)
+        val current = profileStore.load()
+        profileStore.save(current.copy(userName = trimmed))
         stateAccess.updateState {
             it.copy(navigation = it.navigation.copy(userName = trimmed))
+        }
+    }
+
+    fun incrementWelcomeDialogAttempts() {
+        val current = profileStore.load()
+        val newAttempts = current.welcomeDialogAttempts + 1
+        profileStore.save(current.copy(welcomeDialogAttempts = newAttempts))
+        stateAccess.updateState {
+            it.copy(navigation = it.navigation.copy(welcomeDialogAttempts = newAttempts))
         }
     }
 

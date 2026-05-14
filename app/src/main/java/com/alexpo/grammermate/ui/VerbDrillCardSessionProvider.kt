@@ -137,8 +137,13 @@ class VerbDrillCardSessionProvider(
 
     override fun togglePause() {
         if (sm.isPaused) {
-            // Play pressed while paused — advance to next card and restart mode
-            nextCard()
+            if (sm.hintAnswer != null) {
+                // Hint was shown (3 wrong attempts or manual eye button) — advance to next card
+                nextCard()
+            } else {
+                // Manual pause — just resume the current card without advancing
+                sm.resume()
+            }
         } else {
             sm.pause()
         }

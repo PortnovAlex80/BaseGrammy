@@ -120,7 +120,7 @@ fun GrammarMateApp() {
         }
 
         val onTtsSpeak: () -> Unit = {
-            if (state.audio.ttsState == TtsState.SPEAKING) {
+            if (state.audio.ttsState == TtsState.Speaking) {
                 vm.audio.stopTts()
             } else if (!state.audio.ttsModelReady) {
                 val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
@@ -569,9 +569,12 @@ private fun NavDialogs(
     onDialogsChange: (DialogState) -> Unit,
     onNavigate: (String) -> Unit
 ) {
-    // Welcome dialog trigger
+    // Welcome dialog trigger — only on HOME screen, only if attempts < 3
     LaunchedEffect(currentRoute, state.navigation.userName) {
-        if (state.navigation.userName == "GrammarMateUser") {
+        if (currentRoute == Routes.HOME
+            && state.navigation.userName == "GrammarMateUser"
+            && state.navigation.welcomeDialogAttempts < 3
+        ) {
             onDialogsChange(dialogs.copy(showWelcomeDialog = true))
         }
     }
@@ -580,7 +583,11 @@ private fun NavDialogs(
     if (dialogs.showWelcomeDialog) {
         WelcomeDialog(
             onNameSet = { name ->
-                vm.settings.updateUserName(name)
+                if (name == "GrammarMateUser") {
+                    vm.settings.incrementWelcomeDialogAttempts()
+                } else {
+                    vm.settings.updateUserName(name)
+                }
                 onDialogsChange(dialogs.copy(showWelcomeDialog = false))
             }
         )

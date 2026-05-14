@@ -271,7 +271,8 @@ data class NavigationState(
     val currentScreen: String = "HOME",
     val appVersion: String = "1.5",
     val hasVerbDrill: Boolean = false,
-    val hasVocabDrill: Boolean = false
+    val hasVocabDrill: Boolean = false,
+    val welcomeDialogAttempts: Int = 0
 )
 
 data class CardSessionState(
@@ -370,7 +371,7 @@ data class FlowerDisplayState(
 )
 
 data class AudioState(
-    val ttsState: TtsState = TtsState.IDLE,
+    val ttsState: TtsState = TtsState.Idle,
     val ttsDownloadState: DownloadState = DownloadState.Idle,
     val ttsModelReady: Boolean = false,
     val ttsMeteredNetwork: Boolean = false,

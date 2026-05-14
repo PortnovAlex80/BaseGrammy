@@ -1,6 +1,6 @@
-# TASK-005: TTS Error Icon for Memory/Loading Failures
+# TASK-005: TTS Error Icon for Memory/Loading Failures [DONE]
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-14
 **Branch:** feature/tts-error-icon (from feature/arch-feature-migration)
 **Spec:** 05-audio-tts-asr.md (section 5.1.8)
@@ -82,6 +82,8 @@ Commit footer: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
 
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: Error reason in TtsState | | |
-| | Fix 2: Tooltip on error icon | | |
-| | Verification checklist | | |
+| Date | Fix | Status | Notes |
+|------|-----|--------|-------|
+| 2026-05-14 | Fix 1: Error reason in TtsState | DONE | TtsState is sealed class with `Error(reason: String?)`. Reasons: "Model not loaded", "Not enough memory", "Timed out", "Initialization failed", "Playback failed". |
+| 2026-05-14 | Fix 2: Tooltip on error icon | DONE | TtsSpeakerButton in SharedComponents.kt: `TtsState.Error` branch shows TooltipBox with PlainTooltip containing reason text. OOM → Warning icon (red triangle). Other errors → ReportProblem icon. No tooltip when READY/SPEAKING. |
+| 2026-05-14 | Verification checklist | DONE | Code logic verified: OOM check via `reason?.contains("memory", ignoreCase = true)`. Warning vs ReportProblem differentiation. Normal states (Idle/Initializing/Ready/Speaking) show no tooltip. |

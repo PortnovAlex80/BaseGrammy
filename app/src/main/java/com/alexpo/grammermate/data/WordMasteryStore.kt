@@ -62,8 +62,8 @@ class WordMasteryStoreImpl(
     }
 
     private fun loadAllFromDisk(): Map<String, WordMasteryState> {
-        if (!file.exists()) return emptyMap()
-        val raw = yaml.load<Any>(file.readText()) ?: return emptyMap()
+        if (!file.exists() || file.length() == 0L) return emptyMap()
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return emptyMap()
         val data = when (raw) {
             is Map<*, *> -> raw
             else -> return emptyMap()

@@ -1,7 +1,8 @@
 # TASK-007: Verb Drill Exit Navigation to HOME
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-14
+**Completed:** 2026-05-15
 **Branch:** feature/verb-drill-exit-fix (from feature/perf-and-cursor-fixes)
 **Spec:** 10-verb-drill.md#10.6.11, 12-training-card-session.md#12.7.1
 **UC:** UC-64
@@ -90,4 +91,4 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: Exit navigation to HOME | | |
+| 2026-05-15 | Fix 1: Exit navigation to HOME | DONE | Combined exitSession() + onBack() in VerbDrillScreen.kt line 114 |

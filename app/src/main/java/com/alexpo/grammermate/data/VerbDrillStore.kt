@@ -48,8 +48,8 @@ class VerbDrillStoreImpl(
     }
 
     private fun loadProgressFromDisk(): Map<String, VerbDrillComboProgress> {
-        if (!file.exists()) return emptyMap()
-        val raw = yaml.load<Any>(file.readText()) ?: return emptyMap()
+        if (!file.exists() || file.length() == 0L) return emptyMap()
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return emptyMap()
         val data = when (raw) {
             is Map<*, *> -> raw
             else -> return emptyMap()
@@ -137,8 +137,9 @@ class VerbDrillStoreImpl(
             ?: return emptyList()
         val cards = mutableListOf<VerbDrillCard>()
         for (file in files) {
-            val content = file.readText()
-            val (_, parsed) = VerbDrillCsvParser.parse(content)
+            val (_, parsed) = file.bufferedReader().use { reader ->
+                VerbDrillCsvParser.parse(reader)
+            }
             cards.addAll(parsed)
         }
         return cards

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -42,6 +43,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -301,7 +306,7 @@ private fun DailyTrainingCardSession(
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true,
     onSpeakVerb: (String) -> Unit = {},
-    ttsState: TtsState = TtsState.IDLE
+    ttsState: TtsState = TtsState.Idle
 ) {
     val latestProvider by rememberUpdatedState(provider)
     var voiceInputText by remember { mutableStateOf<String?>(null) }
@@ -377,10 +382,25 @@ private fun DailyTrainingCardSession(
                             onClick = { contract.speakTts() },
                             enabled = card.promptRu.isNotBlank()
                         ) {
-                            when (provider.ttsState) {
-                                TtsState.SPEAKING -> Icon(Icons.Default.StopCircle, stringResource(R.string.content_desc_stop), tint = MaterialTheme.colorScheme.error)
-                                TtsState.INITIALIZING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                TtsState.ERROR -> Icon(Icons.Default.ReportProblem, stringResource(R.string.content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
+                            when (val state = provider.ttsState) {
+                                is TtsState.Speaking -> Icon(Icons.Default.StopCircle, stringResource(R.string.content_desc_stop), tint = MaterialTheme.colorScheme.error)
+                                is TtsState.Initializing -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                is TtsState.Error -> {
+                                    val reason = state.reason
+                                    val isOom = reason?.contains("memory", ignoreCase = true) == true
+                                    val errorIcon = if (isOom) Icons.Default.Warning else Icons.Default.ReportProblem
+                                    if (reason != null) {
+                                        TooltipBox(
+                                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                            tooltip = { PlainTooltip { Text(reason) } },
+                                            state = rememberTooltipState()
+                                        ) {
+                                            Icon(errorIcon, stringResource(R.string.content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
+                                        }
+                                    } else {
+                                        Icon(errorIcon, stringResource(R.string.content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
                                 else -> Icon(Icons.Default.VolumeUp, stringResource(R.string.content_desc_listen))
                             }
                         }

@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -74,6 +73,7 @@ import com.alexpo.grammermate.data.VerbDrillUiState
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.WordBankSection
@@ -111,7 +111,10 @@ fun VerbDrillScreen(
         VerbDrillSessionWithCardSession(
             provider = provider,
             viewModel = viewModel,
-            onExit = viewModel::exitSession,
+            onExit = {
+                viewModel.exitSession()
+                onBack()
+            },
             hintLevel = hintLevel,
             textScale = textScale,
             voiceAutoStart = voiceAutoStart
@@ -245,12 +248,11 @@ private fun VerbDrillSessionWithCardSession(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                        IconButton(
-                            onClick = { contract.speakTts() },
-                            enabled = card.promptRu.isNotBlank()
-                        ) {
-                            Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.verb_content_desc_listen))
-                        }
+                        TtsSpeakerButton(
+                            ttsState = contract.ttsState,
+                            enabled = card.promptRu.isNotBlank(),
+                            onClick = { contract.speakTts() }
+                        )
                     }
 
                     // Verb + tense hint chips -- always visible (reference data, not hints)

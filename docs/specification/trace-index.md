@@ -450,6 +450,9 @@ Owns `MutableStateFlow<DailyPracticeState>`. Orchestrates 3-block daily practice
 | `clearPrebuiltSession()` | 555 | Method | 09#9.8 | — | — |
 | `updateCursor(cursor)` | 566 | Method | 09#9.9 | UC-21 | ? |
 | `getCursor()` | 573 | Method | 09#9.9 | UC-21 | ? |
+| `advanceDailyCursor(...)` | 631 | Method | 09#9.6.4 | UC-61 | AC1–AC5 |
+| `dailyCursorAtSessionStart` | 73 | Mutable state | 09#9.2 | UC-21 | AC1 |
+| `dailyPracticeAnsweredCounts` | 70 | Mutable state | 09#9.6.4 | UC-24 | AC1 |
 
 ### FlowerRefresher.kt
 
@@ -566,6 +569,118 @@ The ViewModel explicitly calls each feature's `resetState()` or `resetStateKeepR
 | UC-58 | — | SuggestionChip (verb/tense), VerbReferenceBottomSheet, TenseInfoBottomSheet | SuggestionChip (verb/tense), VerbReferenceBottomSheet, TenseInfoBottomSheet | — |
 | UC-59 | — | VoiceAutoLauncher, LaunchedEffect(auto-voice) | — | — |
 | UC-61 | TtsSpeakerButton | TTS icon in cardContent | TTS icon in cardContent | TtsSpeakerButton |
+
+## Phase 6: TASK-001 through TASK-005 Changes
+
+### TtsEngine.kt (TASK-003, TASK-005)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/TtsEngine.kt` (350 lines)
+
+TTS engine with Mutex-serialized native calls, init timeout, and error reason propagation.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `TtsState` (sealed class) | 31 | Sealed class | 05#5.1.8 | UC-61 | AC4 |
+| `TtsState.Idle` | 32 | State variant | 05#5.1.8 | — | — |
+| `TtsState.Initializing` | 33 | State variant | 05#5.1.8 | UC-61 | AC2 |
+| `TtsState.Ready` | 34 | State variant | 05#5.1.8 | UC-61 | AC1 |
+| `TtsState.Speaking` | 35 | State variant | 05#5.1.8 | — | — |
+| `TtsState.Error(reason: String?)` | 36 | State variant | 05#5.1.8 | UC-61 | AC4 |
+| `mutex` | 61 | Mutex | 05#5.1.8 | UC-61 | — |
+| `initFailed` | 64 | Volatile flag | 05#5.1.8 | UC-61 | AC4 |
+| `initialize(languageId)` | 71 | Method (mutex-locked) | 05#5.1.8 | UC-61 | AC2 |
+| `speak(...)` | 165 | Method (mutex-locked) | 05#5.1.8 | UC-61 | AC4 |
+| `withTimeout(30_000L)` in initialize | 107 | Timeout guard | 05#5.1.8 | UC-61 | — |
+| OOM catch → `TtsState.Error("Not enough memory")` | 114–118 | Error handler | 05#5.1.8 | UC-61 | — |
+| Timeout catch → `TtsState.Error("Timed out")` | 119–123 | Error handler | 05#5.1.8 | UC-61 | — |
+
+### SharedComponents.kt — TtsSpeakerButton (TASK-005)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/components/SharedComponents.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `TtsSpeakerButton` error branch | 114 | Composable | 05#5.1.8 | UC-61 | AC4 |
+| `isOom` check | 116 | Logic | 05#5.1.8 | UC-61 | — |
+| `errorIcon` Warning vs ReportProblem | 117 | Logic | 05#5.1.8 | UC-61 | — |
+| `TooltipBox` with `PlainTooltip` | 119–129 | Composable | 05#5.1.8 | UC-61 | — |
+
+### LessonStore.kt — Caching (TASK-002)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/LessonStore.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `lessonsCache` | 116 | Cache field | 02#2.1 | UC-60 | AC3 |
+| `getLessons(languageId)` | 270–278 | Cached method | 02#2.1 | UC-60 | AC3 |
+| `invalidateLessonsCache(languageId?)` | 284–286 | Cache invalidation | 02#2.1 | UC-60 | AC3 |
+
+### VerbDrillStore.kt — Caching (TASK-002)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `progressCache` | 37 | Cache field | 02#2.5 | UC-60 | AC4 |
+| `cardsCacheKey` / `cardsCache` | 40–41 | Cache fields | 02#2.5 | UC-60 | AC4 |
+| `loadProgress()` | 43–48 | Cached method | 02#2.5 | UC-60 | AC4 |
+| `loadAllCardsForPack(...)` | 123–130 | Cached method | 02#2.5 | UC-60 | AC4 |
+| `invalidateCache()` | 157–161 | Cache invalidation | 02#2.5 | UC-60 | AC4 |
+
+### WordMasteryStore.kt — Caching (TASK-002)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `cache` / `cacheLoaded` | 50–51 | Cache fields | 02#2.6 | UC-60 | AC4 |
+| `loadAll()` | 56–62 | Cached method | 02#2.6 | UC-60 | AC4 |
+| `invalidateCache()` | 181–184 | Cache invalidation | 02#2.6 | UC-60 | AC4 |
+
+### DailySessionComposer.kt — Caching (TASK-002)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/daily/DailySessionComposer.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `cachedVocabWords` | 36 | Cache field | 09#9.4.1 | UC-60 | AC3 |
+| `cachedVerbDrillCards` | 37 | Cache field | 09#9.5.1 | UC-60 | AC3 |
+| `invalidateCache(packId?, languageId?)` | 418–427 | Cache invalidation | 09#9.4.1 | UC-60 | AC3 |
+
+### GrammarMateApp.kt — Welcome Dialog (TASK-004)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `showWelcomeDialog` in DialogState | 91 | State field | 13#13.4.3 | UC-46 | AC3 |
+| `LaunchedEffect(welcomeDialogAttempts)` | 573 | LaunchedEffect | 13#13.4.3 | UC-46 | AC3 |
+| `WelcomeDialog` composable | 900 | Composable | 13#13.4.3 | UC-46 | AC3 |
+| `vm.settings.incrementWelcomeDialogAttempts()` | 587 | Handler | 13#13.4.3 | UC-46 | AC3 |
+
+### SettingsActionHandler.kt — Welcome Dialog (TASK-004)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/shared/SettingsActionHandler.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `incrementWelcomeDialogAttempts()` | 78 | Method | 13#13.4.3 | UC-46 | AC3 |
+
+### ProfileStore.kt — Welcome Dialog (TASK-004)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/ProfileStore.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `welcomeDialogAttempts` in load/save | 32, 45 | Field | 13#13.4.3 | UC-46 | AC3 |
+
+### Models.kt — Welcome Dialog (TASK-004)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/data/Models.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `welcomeDialogAttempts` in NavigationState | 275 | Field | 13#13.4.3 | UC-46 | AC3 |
 
 ## Trace Index Maintenance Rules
 

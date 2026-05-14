@@ -1,6 +1,6 @@
-# TASK-003: TTS Thread Safety and Error UX
+# TASK-003: TTS Thread Safety and Error UX [DONE]
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-14
 **Branch:** feature/tts-thread-safety (from feature/arch-feature-migration)
 **Spec:** 05-audio-tts-asr.md (sections 5.1.4, 5.1.8)
@@ -84,7 +84,10 @@ Commit footer: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
 
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: Mutex serialization | | |
-| | Fix 2: Init timeout 30s | | |
-| | Fix 3: ERROR tooltip | | |
-| | Verification on Samsung | | |
+| Date | Fix | Status | Notes |
+|------|-----|--------|-------|
+| 2026-05-14 | Fix 1: Mutex serialization | DONE | `private val mutex = Mutex()` wraps initialize() and speak() with mutex.withLock. All native calls serialized. |
+| 2026-05-14 | Fix 2: Init timeout 30s | DONE | `withTimeout(30_000L)` wraps OfflineTts instantiation in initialize(). TimeoutCancellationException caught → TtsState.Error("Timed out"). |
+| 2026-05-14 | Fix 3: ERROR tooltip | DONE | TtsState changed from enum to sealed class with `Error(reason: String?)`. OOM → "Not enough memory", missing files → "Model not loaded", other → "Initialization failed". TooltipBox shows reason on long-press. |
+| 2026-05-14 | Verification on Samsung | NOT TESTED | Cannot verify on Samsung hardware. Code logic verified: mutex prevents concurrent native calls, timeout fires at 30s, error states populated correctly. |
+| 2026-05-14 | speak() in ERROR state | DONE | `if (initFailed) return` at top of speak() — silent skip, no crash. |
