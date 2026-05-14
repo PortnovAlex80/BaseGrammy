@@ -58,6 +58,11 @@
     <string name="settings_test_mode">Test Mode</string>
     <string name="settings_test_mode_description">Enables all lessons, accepts all answers, unlocks Elite mode</string>
     <string name="settings_show_ladder">Show ladder</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_description">Choose how the app looks</string>
     <string name="settings_difficulty">Difficulty</string>
     <string name="settings_easy">Easy</string>
     <string name="settings_medium">Medium</string>
@@ -111,6 +116,10 @@
     <string name="settings_grammarmate">GrammarMate</string>
     <string name="settings_tagline">Your language starter.\nSpeak first — fluency follows.</string>
     <string name="settings_description">Automatize grammar patterns through\ndrill repetition. Then read, listen, and live\nthe language on a prepared skeleton.</string>
+    <string name="settings_interface_language">Interface language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ru">Русский</string>
 
     <!-- StoryQuizScreen -->
     <string name="story_check_in">Story Check-in</string>

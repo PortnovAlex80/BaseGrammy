@@ -2,6 +2,19 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v3.2 (2026-05-15) -- Theme Switching + Interface Language Specs
+
+### TASK-010: Theme Mode Switching (Light/Dark/System)
+### TASK-011: Interface Language Switching (English/Russian)
+
+- `14-theme-and-ui-components.md`: Updated section 14.1.1 from "light-only" to dual theme with LightColors + DarkColors. Updated theme entry point to accept ThemeMode parameter. Updated section 14.4 (Strings & Localization) to reflect existing string resources. Updated conventions summary. Added section 14.7 (Theme Mode Selection) with ThemeMode enum, persistence, settings UI, theme application, hardcoded color audit. Added section 14.8 (Interface Language) with supported languages, persistence, settings UI, locale switching, independence from learning content.
+- `22-use-case-registry.md`: Added Domain 19 with UC-66 (Theme mode switching, 7 ACs). Added Domain 20 with UC-67 (Interface language switching, 7 ACs). Updated summary counts (67 UCs, 339 ACs, 20 domains). Added cross-reference entries for TASK-010 and TASK-011.
+- `23-screen-elements.md`: Added SS-46 (Appearance section header), SS-47 (theme mode selector), SS-48 (interface language selector). Updated counts (48 SS elements, 316 total).
+- `tasks/TASK-010-theme-mode-switching.md`: Created self-contained task file.
+- `tasks/TASK-011-interface-language-switching.md`: Created self-contained task file.
+- `tasks/README.md`: Added TASK-010 and TASK-011 entries.
+- Commit: `pending`
+
 ## v3.1 (2026-05-15) -- QR Share Translation Feature
 
 ### TASK-008: Share Translation via QR Code

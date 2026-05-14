@@ -95,7 +95,8 @@ fun HomeScreen(
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
-    onOpenVocabDrill: () -> Unit = {}
+    onOpenVocabDrill: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -156,19 +157,11 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                ) {
-                    Text(
-                        text = getUserInitials(state.navigation.userName),
-                        modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                com.alexpo.grammermate.ui.components.InitialsAvatar(
+                    name = state.navigation.userName,
+                    size = 40.dp,
+                    onClick = onProfileClick
+                )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = state.navigation.userName, fontWeight = FontWeight.SemiBold)
             }

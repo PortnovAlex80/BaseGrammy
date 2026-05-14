@@ -77,6 +77,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.ui.CorrectGreen
+import com.alexpo.grammermate.ui.DrillBackgroundGreen
+import com.alexpo.grammermate.ui.DrillPromptGreen
+import com.alexpo.grammermate.ui.DrillTenseLabelGreen
+import com.alexpo.grammermate.ui.IncorrectRed
+import com.alexpo.grammermate.ui.MixChallengeSurface
+import com.alexpo.grammermate.ui.MixChallengeText
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.SessionState
@@ -122,7 +129,7 @@ fun TrainingScreen(
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
-    val drillGreen = Color(0xFFE8F5E9)
+    val drillGreen = DrillBackgroundGreen
 
     Scaffold(
         containerColor = if (state.drill.isDrillMode) drillGreen else MaterialTheme.colorScheme.background,
@@ -167,7 +174,7 @@ fun TrainingScreen(
                     Text(
                         text = cardTense,
                         fontSize = 13.sp,
-                        color = Color(0xFF388E3C),
+                        color = DrillTenseLabelGreen,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -179,7 +186,7 @@ fun TrainingScreen(
                         text = cleanPrompt,
                         fontSize = (18f * state.audio.ruTextScale).sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF2E7D32),
+                        color = DrillPromptGreen,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -196,12 +203,12 @@ fun TrainingScreen(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = MaterialTheme.shapes.small,
-                            color = Color(0xFFE3F2FD)
+                            color = MixChallengeSurface
                         ) {
                             Text(
                                 text = cardTense,
                                 fontSize = 14.sp,
-                                color = Color(0xFF1565C0),
+                                color = MixChallengeText,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
@@ -674,8 +681,8 @@ fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             when (state.cardSession.lastResult) {
-                true -> Text(text = stringResource(R.string.training_correct), color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                false -> Text(text = stringResource(R.string.training_incorrect), color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                true -> Text(text = stringResource(R.string.training_correct), color = CorrectGreen, fontWeight = FontWeight.Bold)
+                false -> Text(text = stringResource(R.string.training_incorrect), color = IncorrectRed, fontWeight = FontWeight.Bold)
                 null -> Text(text = "")
             }
         }

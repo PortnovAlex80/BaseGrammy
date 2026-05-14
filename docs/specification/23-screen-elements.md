@@ -12,11 +12,11 @@
 | VocabDrillScreen | VOC | 48 |
 | LessonRoadmapScreen | LR | 13 |
 | LadderScreen | LS | 11 |
-| SettingsScreen (SettingsSheet) | SS | 46 |
+| SettingsScreen (SettingsSheet) | SS | 48 |
 | StoryQuizScreen | SQ | 13 |
 | GrammarMateApp Dialogs | DG | 17 |
 | [UI-CONSISTENCY-2025] Shared Components | SH | 7 |
-| **Total** | | **314** |
+| **Total** | | **316** |
 
 ---
 
@@ -383,6 +383,9 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Save progress now" button | SS-43 | button | Always | OutlinedButton with Upload icon. Calls `onSaveProgress()`. | ? |
 | "Restore from backup" button | SS-44 | button | Always | OutlinedButton with Download icon. Opens folder picker. | ? |
 | App info footer | SS-45 | text | Always | "GrammarMate" + version + tagline + description. Centered. | ? |
+| "Appearance" section header | SS-46 | text | Always | titleMedium SemiBold. New section for theme settings. | UC-66 |
+| Theme mode selector | SS-47 | chip | Always | 3-option selector (Light / Dark / System) using segmented buttons or FilterChips. Calls `onSetThemeMode(mode)` on selection. Current selection highlighted. | UC-66 |
+| "Interface language" selector | SS-48 | button | Always | DropdownSelector "Interface language". Options: System / English / Русский. Calls `onSetUiLanguage(code)` on selection. Positioned separately from learning content language selector (SS-22). | UC-67 |
 
 ---
 

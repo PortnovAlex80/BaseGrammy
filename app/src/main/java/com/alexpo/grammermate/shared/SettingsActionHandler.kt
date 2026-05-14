@@ -1,11 +1,14 @@
 package com.alexpo.grammermate.shared
 
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.data.ThemeMode
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.SessionState
@@ -34,6 +37,16 @@ class SettingsActionHandler(
 ) {
     companion object {
         private const val logTag = "GrammarMate"
+
+        /** Apply locale via AndroidX per-app language API. */
+        fun applyLocale(code: String) {
+            val localeList = when (code) {
+                "en" -> LocaleListCompat.forLanguageTags("en")
+                "ru" -> LocaleListCompat.forLanguageTags("ru")
+                else -> LocaleListCompat.getEmptyLocaleList() // system default
+            }
+            AppCompatDelegate.setApplicationLocales(localeList)
+        }
     }
 
     // ── Config changes ──────────────────────────────────────────────────
@@ -61,6 +74,24 @@ class SettingsActionHandler(
     fun setHintLevel(level: HintLevel) {
         stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(hintLevel = level)) }
         configStore.save(configStore.load().copy(hintLevel = level))
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        stateAccess.updateState { it.copy(navigation = it.navigation.copy(themeMode = mode)) }
+        configStore.save(configStore.load().copy(themeMode = mode))
+        Log.d(logTag, "Theme mode set: $mode")
+    }
+
+    /**
+     * Sets the UI interface language. Values: "system", "en", "ru".
+     * Persists to config and applies locale via AppCompatDelegate.
+     * The activity will be recreated automatically by the per-app language API.
+     */
+    fun setUiLanguage(code: String) {
+        val safeCode = code.takeIf { it in listOf("system", "en", "ru") } ?: "system"
+        configStore.save(configStore.load().copy(uiLanguage = safeCode))
+        applyLocale(safeCode)
+        Log.d(logTag, "UI language set to: $safeCode")
     }
 
     // ── Profile ─────────────────────────────────────────────────────────

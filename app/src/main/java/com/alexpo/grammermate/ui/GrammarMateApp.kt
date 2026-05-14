@@ -66,6 +66,7 @@ import com.alexpo.grammermate.ui.screens.LadderScreen
 import com.alexpo.grammermate.ui.components.TtsDownloadDialog
 import com.alexpo.grammermate.ui.components.MeteredNetworkDialog
 import com.alexpo.grammermate.ui.components.AsrMeteredNetworkDialog
+import com.alexpo.grammermate.ui.components.ProfileStatsPopup
 
 // ── Route constants ──────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ private data class DialogState(
     val showWelcomeDialog: Boolean = false,
     val showDailyResumeDialog: Boolean = false,
     val showTtsDownloadDialog: Boolean = false,
+    val showProfileStats: Boolean = false,
     val pendingDailyLevel: Int = 0,
     val isLoadingDaily: Boolean = false
 )
@@ -98,9 +100,8 @@ private data class DialogState(
 // ── Main composable ──────────────────────────────────────────────────────────
 
 @Composable
-fun GrammarMateApp() {
+fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
     Surface(modifier = Modifier.fillMaxSize()) {
-        val vm: TrainingViewModel = viewModel()
         val state by vm.uiState.collectAsState()
         val navController = rememberNavController()
         val currentRoute = navController.currentBackStackEntry?.destination?.route ?: Routes.HOME
@@ -206,7 +207,10 @@ fun GrammarMateApp() {
                     onStartAsrDownload = { vm.audio.startAsrDownload() },
                     onResetAllProgress = vm::resetLanguageProgress,
                     onSetHintLevel = vm.settings::setHintLevel,
+                    onSetThemeMode = vm.settings::setThemeMode,
                     onSetVoiceAutoStart = vm.audio::setVoiceAutoStart,
+                    onSetUiLanguage = vm.settings::setUiLanguage,
+                    uiLanguage = vm.currentUiLanguage,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
                 )
 
@@ -246,7 +250,8 @@ fun GrammarMateApp() {
                             hasVerbDrill = state.navigation.hasVerbDrill,
                             hasVocabDrill = state.navigation.hasVocabDrill,
                             onOpenVerbDrill = { onNavigate(Routes.VERB_DRILL) },
-                            onOpenVocabDrill = { onNavigate(Routes.VOCAB_DRILL) }
+                            onOpenVocabDrill = { onNavigate(Routes.VOCAB_DRILL) },
+                            onProfileClick = { dialogs = dialogs.copy(showProfileStats = true) }
                         )
                     }
 
@@ -596,6 +601,18 @@ private fun NavDialogs(
                 }
                 onDialogsChange(dialogs.copy(showWelcomeDialog = false))
             }
+        )
+    }
+
+    // Profile stats popup
+    if (dialogs.showProfileStats) {
+        val profileStats = remember { vm.getProfileStats() }
+        ProfileStatsPopup(
+            userName = state.navigation.userName,
+            cardsCompleted = profileStats.cardsCompleted,
+            wordsLearned = profileStats.wordsLearned,
+            cefrLevel = profileStats.cefrLevel,
+            onDismiss = { onDialogsChange(dialogs.copy(showProfileStats = false)) }
         )
     }
 

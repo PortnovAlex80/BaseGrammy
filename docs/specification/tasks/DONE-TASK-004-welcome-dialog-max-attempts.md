@@ -1,6 +1,6 @@
-# TASK-004: WelcomeDialog Max 3 Attempts [IN PROGRESS]
+# TASK-004: WelcomeDialog Max 3 Attempts [DONE]
 
-**Status:** IN PROGRESS
+**Status:** DONE
 **Created:** 2026-05-14
 **Branch:** feature/welcome-dialog-fix (from feature/arch-feature-migration)
 **Spec:** 13-app-entry-and-navigation.md (section 13.4.3)
