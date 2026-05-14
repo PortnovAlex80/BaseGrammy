@@ -3,9 +3,11 @@ package com.alexpo.grammermate.ui.components
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -13,10 +15,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import io.github.alexzhirkevich.qrose.options.QrOptions
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 
 @Composable
@@ -65,18 +68,13 @@ fun QrShareDialog(
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Image(
-                    painter = rememberQrCodePainter(qrText) {
-                        colors {
-                            dark = io.github.alexzhirkevich.qrose.options.QrBrush.solid(androidx.compose.ui.graphics.Color.Black)
-                            light = io.github.alexzhirkevich.qrose.options.QrBrush.solid(androidx.compose.ui.graphics.Color.White)
-                        }
-                        shapes {
-                            ball = io.github.alexzhirkevich.qrose.options.QrBallShape.roundCorners(radius = .25f)
-                            darkPixel = io.github.alexzhirkevich.qrose.options.QrPixelShape.roundCorners(radius = .25f)
-                        }
-                    },
+                    painter = rememberQrCodePainter(qrText),
                     contentDescription = "QR code with translation pair",
-                    modifier = Modifier.size(240.dp)
+                    modifier = Modifier
+                        .size(240.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .padding(8.dp)
                 )
             }
         }

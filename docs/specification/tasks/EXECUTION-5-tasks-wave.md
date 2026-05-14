@@ -15,7 +15,7 @@ This project (GrammarMate — Android language learning app, Kotlin + Compose) h
 | TASK-003 | `docs/specification/tasks/TASK-003-tts-thread-safety-error-ux.md` | TTS Thread Safety and Error UX [DONE] | 05-audio-tts-asr.md | — |
 | TASK-004 | `docs/specification/tasks/TASK-004-welcome-dialog-max-attempts.md` | WelcomeDialog Max 3 Attempts [DONE] | 13-app-entry-and-navigation.md | — |
 | TASK-005 | `docs/specification/tasks/TASK-005-tts-error-icon-memory.md` | TTS Error Icon for Memory Failures [DONE] | 05-audio-tts-asr.md | TASK-003 |
-| TASK-009 | `docs/specification/tasks/TASK-009-profile-stats-popup.md` | Profile Stats Popup with CEFR Level [DONE] | 20-NFR | — |
+| TASK-009 | `docs/specification/tasks/DONE-TASK-009-profile-stats-popup.md` | Profile Stats Popup with CEFR Level [DONE] | 20-NFR | — |
 
 ## Build Commands
 

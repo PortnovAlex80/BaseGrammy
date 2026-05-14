@@ -1,7 +1,8 @@
 # TASK-010: Theme Mode Switching (Light/Dark/System)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
+**Completed:** 2026-05-15
 **Branch:** feature/theme-switch (from main)
 **Spec:** 14-theme-and-ui-components.md#14.7
 **UC:** UC-66
