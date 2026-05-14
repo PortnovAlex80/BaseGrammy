@@ -33,7 +33,21 @@ class VerbDrillStoreImpl(
     }
     private val schemaVersion = 1
 
+    // In-memory cache for progress data — invalidated on progress save
+    private var progressCache: Map<String, VerbDrillComboProgress>? = null
+
+    // In-memory cache for parsed verb drill cards — keyed by "packId:languageId", never invalidated (files don't change at runtime)
+    private var cardsCacheKey: String? = null
+    private var cardsCache: List<VerbDrillCard>? = null
+
     override fun loadProgress(): Map<String, VerbDrillComboProgress> {
+        progressCache?.let { return it }
+        val loaded = loadProgressFromDisk()
+        progressCache = loaded
+        return loaded
+    }
+
+    private fun loadProgressFromDisk(): Map<String, VerbDrillComboProgress> {
         if (!file.exists()) return emptyMap()
         val raw = yaml.load<Any>(file.readText()) ?: return emptyMap()
         val data = when (raw) {
@@ -76,6 +90,7 @@ class VerbDrillStoreImpl(
     }
 
     override fun saveProgress(progress: Map<String, VerbDrillComboProgress>) {
+        progressCache = progress
         val comboPayload = linkedMapOf<String, Any>()
         for ((key, value) in progress) {
             comboPayload[key] = linkedMapOf(
@@ -101,10 +116,20 @@ class VerbDrillStoreImpl(
     override fun upsertComboProgress(key: String, progress: VerbDrillComboProgress) {
         val all = loadProgress().toMutableMap()
         all[key] = progress
-        saveProgress(all)
+        progressCache = all  // update cache immediately
+        saveProgress(all)    // write-through to disk
     }
 
     override fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
+        val cacheKey = "$targetPackId:$languageId"
+        cardsCacheKey?.let { if (it == cacheKey) return cardsCache ?: emptyList() }
+        val cards = loadAllCardsForPackFromDisk(targetPackId, languageId)
+        cardsCacheKey = cacheKey
+        cardsCache = cards
+        return cards
+    }
+
+    private fun loadAllCardsForPackFromDisk(targetPackId: String, languageId: String): List<VerbDrillCard> {
         val verbDrillDir = File(baseDir, "drills/$targetPackId/verb_drill")
         if (!verbDrillDir.exists()) return emptyList()
         val files = verbDrillDir.listFiles()
@@ -124,5 +149,14 @@ class VerbDrillStoreImpl(
         val allCards = loadAllCardsForPack(packId, languageId)
         val tenseSet = tenses.toSet()
         return allCards.filter { it.tense != null && it.tense in tenseSet }
+    }
+
+    /**
+     * Invalidate all caches. Called when progress data is externally reset.
+     */
+    fun invalidateCache() {
+        progressCache = null
+        cardsCacheKey = null
+        cardsCache = null
     }
 }

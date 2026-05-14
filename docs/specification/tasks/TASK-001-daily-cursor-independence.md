@@ -1,6 +1,6 @@
 # TASK-001: Daily Practice Cursor Independence
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-14
 **Branch:** feature/daily-cursor-independence (from feature/arch-feature-migration)
 **Spec:** 09-daily-practice.md (sections 9.1, 9.5.1, 9.6.1, 9.6.4, 9.8.7)
@@ -104,7 +104,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: Cursor-based level | | |
-| | Fix 2: Lesson transition | | |
-| | Fix 3: Verb cycling | | |
-| | Verification checklist | | |
+| 2026-05-14 | Fix 1: Cursor-based level | DONE | DailyPracticeCoordinator.startDailyPractice() derives effectiveLevel from cursor.currentLessonIndex+1 |
+| 2026-05-14 | Fix 2: Lesson transition | DONE | DailyPracticeCoordinator.advanceDailyCursor() wraps lessons within pack |
+| 2026-05-14 | Fix 3: Verb cycling | DONE | DailySessionComposer.buildVerbBlock() cycles when all cards shown |
+| 2026-05-14 | Verification checklist | DONE | UC-60 PASS, UC-21 AC5-AC6 PASS, UC-24 PASS, UC-61 PASS. Build clean. |

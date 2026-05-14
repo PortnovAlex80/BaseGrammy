@@ -112,6 +112,9 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     private val vocabIndexFile = File(vocabDir, "vocab.yaml")
     private val vocabStore = YamlListStore(yaml, vocabIndexFile)
 
+    // In-memory cache for getLessons() — invalidated on pack import/delete/reload
+    private var lessonsCache: Map<String, List<Lesson>> = emptyMap()
+
     private val defaultPacks = listOf(
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
         LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip")
@@ -158,13 +161,17 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         readManifestFromAssets = { path -> packImporter.readPackManifestFromAssets(path) }
     )
 
-    override fun forceReloadDefaultPacks(): Boolean = languageManager.forceReloadDefaultPacks(
-        removeInstalledPackData = { packId -> removeInstalledPackData(packId) },
-        importFromAssets = { path ->
-            packImporter.importPackFromAssets(path)
-            true
-        }
-    )
+    override fun forceReloadDefaultPacks(): Boolean {
+        val result = languageManager.forceReloadDefaultPacks(
+            removeInstalledPackData = { packId -> removeInstalledPackData(packId) },
+            importFromAssets = { path ->
+                packImporter.importPackFromAssets(path)
+                true
+            }
+        )
+        if (result) invalidateLessonsCache()
+        return result
+    }
 
     // ── Language & pack queries ──────────────────────────────────────────
 
@@ -206,19 +213,23 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
         ensureSeedData()
-        return packImporter.importPackFromUri(uri, resolver)
+        val pack = packImporter.importPackFromUri(uri, resolver)
+        invalidateLessonsCache()
+        return pack
     }
 
     override fun importPackFromAssets(assetPath: String): LessonPack {
         ensureSeedData()
-        return packImporter.importPackFromAssets(assetPath)
+        val pack = packImporter.importPackFromAssets(assetPath)
+        invalidateLessonsCache()
+        return pack
     }
 
     // ── Pack removal ─────────────────────────────────────────────────────
 
     override fun removeInstalledPackData(packId: String): Boolean {
         val manifest = languageManager.readInstalledPackManifest(packId)
-        if (manifest != null) {
+        val result = if (manifest != null) {
             val languageId = manifest.language.lowercase().trim()
             if (languageId.isNotBlank()) {
                 manifest.lessons.forEach { lesson ->
@@ -226,31 +237,55 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                 }
                 languageManager.removePacksForLanguage(packId, languageId)
                 languageManager.deletePackDrills(packId)
-                return true
+                true
+            } else {
+                false
             }
+        } else {
+            val removedEntry = languageManager.removePackEntry(packId)
+            val packDir = File(packsDir, packId)
+            val removedDir = if (packDir.exists()) packDir.deleteRecursively() else false
+            languageManager.deletePackDrills(packId)
+            removedEntry || removedDir
         }
-        val removedEntry = languageManager.removePackEntry(packId)
-        val packDir = File(packsDir, packId)
-        val removedDir = if (packDir.exists()) packDir.deleteRecursively() else false
-        languageManager.deletePackDrills(packId)
-        return removedEntry || removedDir
+        invalidateLessonsCache()
+        return result
     }
 
     // ── CSV lesson import ────────────────────────────────────────────────
 
     override fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson {
-        return packImporter.importLessonFromUri(
+        val lesson = packImporter.importLessonFromUri(
             languageId, uri, resolver,
             ensureSeedData = { ensureSeedData() },
             loadIndex = { loadIndex(it) },
             writeIndex = { langId, entries -> writeIndex(langId, entries) }
         )
+        invalidateLessonsCache(languageId)
+        return lesson
     }
 
     // ── Lesson CRUD ──────────────────────────────────────────────────────
 
     override fun getLessons(languageId: String): List<Lesson> {
         ensureSeedData()
+        // Return cached result if available
+        lessonsCache[languageId]?.let { return it }
+        // Cache miss: read from disk
+        val lessons = loadLessonsFromDisk(languageId)
+        lessonsCache = lessonsCache + (languageId to lessons)
+        return lessons
+    }
+
+    /**
+     * Invalidate the lessons cache. Call with a specific languageId to evict one entry,
+     * or null to clear the entire cache.
+     */
+    fun invalidateLessonsCache(languageId: String? = null) {
+        lessonsCache = if (languageId != null) lessonsCache - languageId else emptyMap()
+    }
+
+    private fun loadLessonsFromDisk(languageId: String): List<Lesson> {
         val entries = loadIndex(languageId)
         return entries.mapNotNull { entry ->
             val id = entry["id"] as? String ?: return@mapNotNull null
@@ -283,6 +318,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         drillFileManager.removeVocabEntries(languageId, null)
         drillFileManager.removeStoriesForLanguage(languageId)
         languageManager.removePacksForLanguage(languageId)
+        invalidateLessonsCache(languageId)
     }
 
     override fun deleteLesson(languageId: String, lessonId: String) {
@@ -309,6 +345,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         }
         writeIndex(languageId, entries)
         drillFileManager.removeVocabEntries(languageId, lessonId)
+        invalidateLessonsCache(languageId)
     }
 
     override fun createEmptyLesson(languageId: String, title: String): Lesson {
@@ -322,6 +359,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         val csvFile = File(dir, fileName)
         AtomicFileWriter.writeText(csvFile, normalizedTitle)
         saveIndex(languageId, LessonIndexEntry(id, normalizedTitle, fileName))
+        invalidateLessonsCache(languageId)
         return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = normalizedTitle, cards = emptyList())
     }
 

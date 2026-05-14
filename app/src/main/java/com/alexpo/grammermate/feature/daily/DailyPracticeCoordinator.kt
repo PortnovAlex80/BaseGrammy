@@ -59,6 +59,9 @@ class DailyPracticeCoordinator(
     var prebuiltDailySession: List<DailyTask>? = null
         private set
 
+    /** Level the prebuilt session was built for; used to validate cache match. */
+    private var prebuiltSessionLevel: Int = 0
+
     /** In-memory cache for repeat. */
     var lastDailyTasks: List<DailyTask>? = null
         private set
@@ -240,7 +243,12 @@ class DailyPracticeCoordinator(
     /**
      * Start a new daily practice session.
      *
-     * @param resolveProgressLessonInfo returns (lessonId, level) based on mastery progress.
+     * Level and lesson are derived from the cursor (currentLessonIndex), NOT from
+     * mastery-based progress. This ensures Block 1 and Block 3 stay in sync:
+     *   effectiveLevel = cursor.currentLessonIndex + 1
+     *   lessonId = lesson at cursor.currentLessonIndex
+     *
+     * @param resolveProgressLessonInfo fallback for lesson ID when cursor index is invalid (unused for level).
      * @param onStoreFirstSessionCardIds callback to store first-session card IDs (delegates to ProgressTracker).
      * @return true if session was started successfully.
      */
@@ -257,28 +265,59 @@ class DailyPracticeCoordinator(
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId
 
-        val progressInfo = resolveProgressLessonInfo()
-        val lessonId = progressInfo?.first ?: return false
-        val effectiveLevel = progressInfo.second
-
         val cursor = _state.value.dailyCursor
+
+        // FIX 1: Cursor-based level resolution.
+        // effectiveLevel = cursor.currentLessonIndex + 1
+        // lessonId = lesson at cursor.currentLessonIndex
+        val packLessons = lessonStore.getLessons(langId.value)
+        val effectiveLevel: Int
+        val lessonId: String
+        val levelFromCursor: Boolean
+
+        if (cursor.currentLessonIndex in packLessons.indices) {
+            // Cursor points to a valid lesson — derive level from it
+            lessonId = packLessons[cursor.currentLessonIndex].id.value
+            effectiveLevel = cursor.currentLessonIndex + 1
+            levelFromCursor = true
+        } else {
+            // Cursor index out of range — fall back to mastery-based resolution
+            val progressInfo = resolveProgressLessonInfo()
+            lessonId = progressInfo?.first ?: return false
+            effectiveLevel = progressInfo.second
+            levelFromCursor = false
+        }
+
         val today = java.time.LocalDate.now().toString()
         val isFirstSessionToday = cursor.firstSessionDate != today
 
         // Try pre-built session first (only valid for first session of the day)
         val cached = prebuiltDailySession
         if (isFirstSessionToday && cached != null && cached.isNotEmpty()) {
-            lastDailyTasks = cached
-            startDailySession(cached, effectiveLevel)
-            prebuiltDailySession = null
-            val sentenceIds = cached
-                .filterIsInstance<DailyTask.TranslateSentence>()
-                .map { it.card.id }
-            val verbIds = cached
-                .filterIsInstance<DailyTask.ConjugateVerb>()
-                .map { it.card.id }
-            onStoreFirstSessionCardIds(sentenceIds, verbIds)
-            return true
+            // Validate prebuilt cache level matches; discard if mismatch.
+            // Only validate when level was derived from cursor (levelFromCursor=true).
+            // When falling back to resolveProgressLessonInfo, the level may differ
+            // from what prebuildSession used (which also used cursor), so skip validation.
+            val levelMismatch = levelFromCursor && prebuiltSessionLevel != effectiveLevel
+            if (levelMismatch) {
+                val cachedLevelValue = prebuiltSessionLevel
+                prebuiltDailySession = null
+                prebuiltSessionLevel = 0
+                Log.d(logTag, "DailyPractice: discarded prebuilt session (level mismatch: cached=$cachedLevelValue cursor=$effectiveLevel)")
+            } else {
+                lastDailyTasks = cached
+                startDailySession(cached, effectiveLevel)
+                prebuiltDailySession = null
+                prebuiltSessionLevel = 0
+                val sentenceIds = cached
+                    .filterIsInstance<DailyTask.TranslateSentence>()
+                    .map { it.card.id }
+                val verbIds = cached
+                    .filterIsInstance<DailyTask.ConjugateVerb>()
+                    .map { it.card.id }
+                onStoreFirstSessionCardIds(sentenceIds, verbIds)
+                return true
+            }
         }
 
         // Fallback to synchronous build
@@ -538,6 +577,7 @@ class DailyPracticeCoordinator(
         val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
         if (tasks.isNotEmpty()) {
             prebuiltDailySession = tasks
+            prebuiltSessionLevel = lessonLevel
         }
     }
 
@@ -546,6 +586,7 @@ class DailyPracticeCoordinator(
     fun resetState() {
         lastDailyTasks = null
         prebuiltDailySession = null
+        prebuiltSessionLevel = 0
         dailyPracticeAnsweredCounts.clear()
         _state.update { DailyPracticeState() }
     }
@@ -556,6 +597,7 @@ class DailyPracticeCoordinator(
      */
     fun clearPrebuiltSession() {
         prebuiltDailySession = null
+        prebuiltSessionLevel = 0
     }
 
     // ── Cursor management (called by ViewModel) ──────────────────────────
@@ -573,4 +615,44 @@ class DailyPracticeCoordinator(
      * Get the current daily cursor state.
      */
     fun getCursor(): DailyCursorState = _state.value.dailyCursor
+
+    /**
+     * FIX 2: Advance the daily cursor with lesson transition and pack wrapping.
+     *
+     * Increases sentenceOffset by [sentenceCount]. If the offset exceeds the
+     * current lesson's card count, advances currentLessonIndex and resets
+     * sentenceOffset. When currentLessonIndex goes past the last lesson in
+     * the pack, it wraps back to 0 (pack wrap).
+     *
+     * @param sentenceCount number of VOICE/KEYBOARD sentence cards completed.
+     * @param languageId the active language (for looking up lesson card counts).
+     * @return the updated cursor state (caller must apply via updateCursor).
+     */
+    fun advanceDailyCursor(
+        sentenceCount: Int,
+        languageId: String
+    ): DailyCursorState {
+        val cursor = _state.value.dailyCursor
+        val lessons = lessonStore.getLessons(languageId)
+        if (lessons.isEmpty()) return cursor
+
+        var sentenceOffset = cursor.sentenceOffset + sentenceCount
+        var currentLessonIndex = cursor.currentLessonIndex
+
+        val currentLesson = lessons.getOrNull(currentLessonIndex)
+        if (currentLesson != null && sentenceOffset >= currentLesson.cards.size) {
+            // Current lesson exhausted — advance to next lesson, reset offset
+            currentLessonIndex++
+            sentenceOffset = 0
+            if (currentLessonIndex >= lessons.size) {
+                // Pack wrap: start over from the first lesson
+                currentLessonIndex = 0
+            }
+        }
+
+        return cursor.copy(
+            currentLessonIndex = currentLessonIndex,
+            sentenceOffset = sentenceOffset
+        )
+    }
 }

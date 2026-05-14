@@ -46,11 +46,22 @@ class WordMasteryStoreImpl(
     }
     private val schemaVersion = 1
 
+    // In-memory cache — follows MasteryStore pattern
+    private var cache: Map<String, WordMasteryState> = emptyMap()
+    private var cacheLoaded = false
+
     /**
-     * Load all mastery records from the YAML file.
-     * Returns an empty map if the file does not exist or is empty.
+     * Load all mastery records. Returns cached result if available.
      */
     override fun loadAll(): Map<String, WordMasteryState> {
+        if (cacheLoaded) return cache
+        val loaded = loadAllFromDisk()
+        cache = loaded
+        cacheLoaded = true
+        return loaded
+    }
+
+    private fun loadAllFromDisk(): Map<String, WordMasteryState> {
         if (!file.exists()) return emptyMap()
         val raw = yaml.load<Any>(file.readText()) ?: return emptyMap()
         val data = when (raw) {
@@ -77,8 +88,11 @@ class WordMasteryStoreImpl(
 
     /**
      * Save all mastery records to the YAML file via AtomicFileWriter.
+     * Also updates the in-memory cache.
      */
     override fun saveAll(mastery: Map<String, WordMasteryState>) {
+        cache = mastery
+        cacheLoaded = true
         val payload = linkedMapOf<String, Any>()
         for ((wordId, state) in mastery) {
             payload[wordId] = linkedMapOf(
@@ -106,11 +120,13 @@ class WordMasteryStoreImpl(
 
     /**
      * Insert or update the mastery state for a single word.
-     * Performs load-modify-save (same pattern as VerbDrillStore.upsertComboProgress).
+     * Performs load-modify-save with cache update.
      */
     override fun upsertMastery(state: WordMasteryState) {
         val all = loadAll().toMutableMap()
         all[state.wordId] = state
+        cache = all
+        cacheLoaded = true
         saveAll(all)
     }
 
@@ -157,5 +173,13 @@ class WordMasteryStoreImpl(
             result[pos] = (result[pos] ?: 0) + 1
         }
         return result
+    }
+
+    /**
+     * Invalidate the in-memory cache. Called when data is externally reset.
+     */
+    fun invalidateCache() {
+        cache = emptyMap()
+        cacheLoaded = false
     }
 }

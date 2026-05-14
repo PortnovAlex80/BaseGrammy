@@ -312,7 +312,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // NOTE: We read _coreState.value INSIDE the update lambda to avoid a TOCTOU race
         // where the user changes language/lesson on the main thread while we captured
         // stale values on the IO thread.
-        viewModelScope.launch(Dispatchers.IO) {
+        val reloadJob = viewModelScope.launch(Dispatchers.IO) {
             val reloaded = lessonStore.forceReloadDefaultPacks()
             if (!reloaded) return@launch
             val languages = lessonStore.getLanguages()
@@ -354,20 +354,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         audioCoordinator.startBackgroundTtsDownload()
         audioCoordinator.startTtsStateCollection()
 
-        // Pre-build daily practice session in background for faster start.
+        // Pre-build daily practice session AFTER forceReload completes.
         // Uses progress-based lesson, NOT selectedLessonId, so that browsing
         // locked lessons does not affect the daily practice session.
-        viewModelScope.launch(Dispatchers.IO) {
-            val state = _coreState.value
-            val packId = state.navigation.activePackId
-            val langId = state.navigation.selectedLanguageId
-            val progressInfo = resolveProgressLessonInfo()
-            if (packId != null && progressInfo != null) {
-                val lessonId = progressInfo.first
-                val lessonLevel = progressInfo.second
-                dailyPracticeCoordinator.prebuildSession(
-                    packId.value, langId.value, lessonId, lessonLevel, dailyPracticeCoordinator.getCursor()
-                )
+        // Sequencing prevents race where prebuild reads files that forceReload is replacing.
+        reloadJob.invokeOnCompletion {
+            viewModelScope.launch(Dispatchers.IO) {
+                val state = _coreState.value
+                val packId = state.navigation.activePackId
+                val langId = state.navigation.selectedLanguageId
+                val progressInfo = resolveProgressLessonInfo()
+                if (packId != null && progressInfo != null) {
+                    val lessonId = progressInfo.first
+                    val lessonLevel = progressInfo.second
+                    dailyPracticeCoordinator.prebuildSession(
+                        packId.value, langId.value, lessonId, lessonLevel, dailyPracticeCoordinator.getCursor()
+                    )
+                }
             }
         }
     }

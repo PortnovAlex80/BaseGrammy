@@ -1,6 +1,6 @@
 # TASK-002: In-Memory Data Caching for Performance
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-14
 **Branch:** feature/perf-caching (from feature/arch-feature-migration)
 **Spec:** 20-non-functional-requirements.md (lines 96-98, SHOULD-level), 02-data-stores.md (sections 2.1, 2.5, 2.6), 09-daily-practice.md (sections 9.4.1, 9.5.1)
@@ -260,9 +260,9 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: LessonStore cache | | |
-| | Fix 2: VerbDrillStore cache | | |
-| | Fix 3: WordMasteryStore cache | | |
-| | Fix 4: DailySessionComposer cache | | |
-| | Fix 5: Prebuild sequencing | | |
-| | Verification checklist | | |
+| 2026-05-14 | Fix 1: LessonStore cache | DONE | lessonsCache map, invalidated on import/delete/reload |
+| 2026-05-14 | Fix 2: VerbDrillStore cache | DONE | progressCache + cardsCache by packId:languageId |
+| 2026-05-14 | Fix 3: WordMasteryStore cache | DONE | cache + cacheLoaded flags, MasteryStore pattern |
+| 2026-05-14 | Fix 4: DailySessionComposer cache | DONE | cachedVocabWords + cachedVerbDrillCards by packId:languageId |
+| 2026-05-14 | Fix 5: Prebuild sequencing | DONE | reloadJob.invokeOnCompletion chains prebuild after forceReload |
+| 2026-05-14 | Verification checklist | DONE | All caches verified. UC-60/21/24/61 PASS. UC-01-06 untouched PASS. Build clean. |

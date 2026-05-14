@@ -167,7 +167,6 @@ Read `docs/specification/22-use-case-registry.md` — verify UC-21 AC5-AC6, UC-2
 
 ## Git
 
-Branch: work in the CURRENT branch (`feature/arch-feature-migration`). Do NOT create a new branch.
+Branch: work in the CURRENT branch ). Do NOT create a new branch.
 One commit per task, or one combined commit per wave.
-Footer: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
 NEVER push without explicit user approval.

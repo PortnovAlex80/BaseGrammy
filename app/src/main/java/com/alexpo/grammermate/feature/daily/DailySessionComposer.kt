@@ -32,6 +32,10 @@ class DailySessionComposer(
     private val wordMasteryStore: WordMasteryStore
 ) {
 
+    // Cached parsed data keyed by "$packId:$languageId". Files never change at runtime.
+    private var cachedVocabWords: Pair<String, List<VocabWord>>? = null
+    private var cachedVerbDrillCards: Pair<String, List<VerbDrillCard>>? = null
+
     companion object {
         const val CARDS_PER_BLOCK = 10
         const val SENTENCE_COUNT = CARDS_PER_BLOCK
@@ -296,13 +300,18 @@ class DailySessionComposer(
      * Block 3: Weak-first verb drill selection with collocation grouping.
      *
      * Cards that have been previously shown (tracked in VerbDrillStore progress)
-     * are excluded. Remaining cards are sorted by:
+     * are excluded. When ALL cards for active tenses have been shown, the
+     * selection cycles: previously shown cards are included again so the block
+     * never returns empty as long as active tenses have cards. Weakness scores
+     * still apply — least-practiced forms appear first.
+     *
+     * Remaining/cycled cards are sorted by:
      *   1. Weakness descending (weak-first, primary sort)
      *   2. Verb+tense group frequency ascending (most common verb first)
      *   3. Individual card rank ascending (most frequent collocation first)
      * This groups all collocations of the same verb+tense together, with
      * the most common verbs appearing first within each weakness tier.
-     * Takes next 10 unshown cards. Returns empty if no remaining unshown cards.
+     * Takes next 10 cards. Returns empty only if active tenses have no cards at all.
      */
     private fun buildVerbBlock(
         packId: String,
@@ -327,11 +336,12 @@ class DailySessionComposer(
             shownCardIds.addAll(progress.everShownCardIds)
         }
 
-        // Exclude previously shown cards
+        // Exclude previously shown cards; if all shown, cycle (reuse all filtered cards)
         val unshown = filtered.filter { it.id !in shownCardIds }
+        val candidateCards = if (unshown.isEmpty()) filtered else unshown
 
-        // Score unshown cards by weakness: more unshown in that tense = weaker
-        val scored = unshown.mapIndexed { idx, card ->
+        // Score candidate cards by weakness: more unshown in that tense = weaker
+        val scored = candidateCards.mapIndexed { idx, card ->
             val shownInCombo = progressMap.values
                 .filter { it.tense == card.tense }
                 .sumOf { it.everShownCardIds.size }
@@ -360,7 +370,7 @@ class DailySessionComposer(
                 .thenBy { it.third }
         )
 
-        // Take next batch of unshown cards (already excludes previously shown)
+        // Take next batch of candidate cards (unshown, or cycled all filtered)
         if (sorted.isEmpty()) return emptyList()
 
         val selected = sorted.take(VERB_COUNT)
@@ -401,7 +411,25 @@ class DailySessionComposer(
         }
     }
 
+    /**
+     * Invalidate cached drill data. Call when the active pack changes.
+     * If both params are null, clears all caches.
+     */
+    fun invalidateCache(packId: String? = null, languageId: String? = null) {
+        if (packId != null && languageId != null) {
+            val key = "$packId:$languageId"
+            if (cachedVocabWords?.first == key) cachedVocabWords = null
+            if (cachedVerbDrillCards?.first == key) cachedVerbDrillCards = null
+        } else {
+            cachedVocabWords = null
+            cachedVerbDrillCards = null
+        }
+    }
+
     private fun loadVocabWords(packId: String, languageId: String): List<VocabWord> {
+        val key = "$packId:$languageId"
+        cachedVocabWords?.let { if (it.first == key) return it.second }
+
         val files = lessonStore.getVocabDrillFiles(packId, languageId)
         val words = mutableListOf<VocabWord>()
 
@@ -434,10 +462,15 @@ class DailySessionComposer(
 
         // Exclude numbers from daily practice vocab block — they should only
         // appear when the user explicitly selects the Numbers filter in Vocab Drill.
-        return words.filter { it.pos != "numbers" }.sortedBy { it.rank }
+        val result = words.filter { it.pos != "numbers" }.sortedBy { it.rank }
+        cachedVocabWords = key to result
+        return result
     }
 
     private fun loadVerbDrillCards(packId: String, languageId: String): List<VerbDrillCard> {
+        val key = "$packId:$languageId"
+        cachedVerbDrillCards?.let { if (it.first == key) return it.second }
+
         val files = lessonStore.getVerbDrillFiles(packId, languageId)
         val cards = mutableListOf<VerbDrillCard>()
 
@@ -451,6 +484,7 @@ class DailySessionComposer(
             }
         }
 
+        cachedVerbDrillCards = key to cards
         return cards
     }
 }
