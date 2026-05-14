@@ -625,12 +625,13 @@ fun SharedInputModeBar(
 | User taps "Hide this card" | `onHideCard()` -> `hideCurrentCard()` removes card from session (except Daily where it is a no-op) | Sheet closes; card is removed from the current session. In VerbDrill a toast says "Feature not yet available for verb drills" |
 | User taps "Export bad sentences" | `onExport()` -> `BadSentenceStore.exportUnified()` -> returns file path or null | Sheet closes; AlertDialog shows file path or "No bad sentences to export" |
 | User taps "Copy text" | `onCopy()` -> clipboardManager.setClip(cardId + source + target) | Sheet closes; card text is in system clipboard |
+| User taps "Share translation" | `onShareQr()` -> opens QrShareDialog with translation pair text + QR code + Google Translate button | User can photograph QR to check translation on another device |
 
-A shared `SharedReportSheet` composable must be extracted to `ui/components/SharedReportSheet.kt`, providing a consistent 4-option report bottom sheet across all screens.
+A shared `SharedReportSheet` composable must be extracted to `ui/components/SharedReportSheet.kt`, providing a consistent 5-option report bottom sheet across all screens.
 
 **Reference implementation:** TrainingScreen AnswerBox report sheet (`ui/screens/TrainingScreen.kt`).
 
-**4 standard options (in order):**
+**5 standard options (in order):**
 
 | # | Option | Icon | Behavior | Notes |
 |---|--------|------|----------|-------|
@@ -638,6 +639,7 @@ A shared `SharedReportSheet` composable must be extracted to `ui/components/Shar
 | 2 | Hide this card from lessons | `VisibilityOff` | Hides card from future lessons. Closes sheet. | May be a no-op for some modes (verb drill); show informational toast |
 | 3 | Export bad sentences | `Download` | Exports flagged cards to text file. Shows path in AlertDialog. | Returns file path or null |
 | 4 | Copy text | `ContentCopy` | Copies card info to clipboard. Closes sheet. | Format varies by card type |
+| 5 | Share translation via QR | `QrCode2` | Opens dialog with translation pair text + QR code. | Includes "Open in Google Translate" button. Only shown when `shareText != null` |
 
 **Shared component specification:**
 
@@ -653,6 +655,8 @@ fun SharedReportSheet(
     onCopy: () -> Unit,
     hideEnabled: Boolean = true,      // When false, hide option shows informational toast
     cardSummaryText: String,           // Card info displayed at top of sheet
+    shareText: String? = null,         // When non-null, shows "Share translation" option
+    onShareQr: () -> Unit = {},        // Opens QR share dialog
     modifier: Modifier = Modifier
 )
 ```
@@ -675,7 +679,7 @@ fun SharedReportSheet(
 - `ui/screens/VocabDrillScreen.kt` — adopter of SharedReportSheet
 - `ui/DailyPracticeScreen.kt` — adopter of SharedInputModeBar
 
----
+**Task:** [TASK-008: Share Translation via QR Code](tasks/TASK-008-qr-share-translation.md) -- adds 5th option to SharedReportSheet.
 
 #### Behavioral Contract -- VoiceAutoLauncher
 
@@ -725,5 +729,5 @@ Summary of which component is the reference and which are adopters:
 |------------|-----------------|----------|------------------|
 | Eye / Show Answer hint card | VerbDrill (`VerbDrillScreen.kt:392-425`) | TrainingScreen, DailyPractice | Inline (no shared component; styling guide only) |
 | Voice auto mode toggle + launch | VocabDrill (`VocabDrillScreen.kt:218-241`, `:409-417`) | VerbDrill | `ui/components/VoiceAutoLauncher.kt` (NEW) |
-| Report sheet (4 options) | TrainingScreen (`TrainingScreen.kt`) | VerbDrill, VocabDrill | `ui/components/SharedReportSheet.kt` (NEW) |
+| Report sheet (5 options) | TrainingScreen (`TrainingScreen.kt`) | VerbDrill, VocabDrill | `ui/components/SharedReportSheet.kt` (NEW) |
 | Input mode bar | VerbDrill (`VerbDrillScreen.kt:867-955`) | TrainingScreen, DailyPractice | `ui/components/SharedInputModeBar.kt` (NEW) |

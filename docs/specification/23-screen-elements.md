@@ -15,8 +15,8 @@
 | SettingsScreen (SettingsSheet) | SS | 46 |
 | StoryQuizScreen | SQ | 13 |
 | GrammarMateApp Dialogs | DG | 17 |
-| [UI-CONSISTENCY-2025] Shared Components | SH | 6 |
-| **Total** | | **313** |
+| [UI-CONSISTENCY-2025] Shared Components | SH | 7 |
+| **Total** | | **314** |
 
 ---
 
@@ -85,7 +85,7 @@
 | Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. | ? |
 | Navigation Exit button | TS-31 | button | `hasCards` | NavIconButton with StopCircle icon. Calls `onRequestExit()` (triggers exit dialog). | ? |
 | Navigation Next button | TS-32 | button | `hasCards` | NavIconButton with ArrowForward. Calls `onNext(false)`. | ? |
-| Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text. | ? |
+| Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
 | Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). | ? |
@@ -120,7 +120,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Current mode label | TCS-19 | text | Always | "Voice" / "Keyboard" / "Word Bank" label. | ? |
 | Check button | TCS-20 | button | `inputText.isNotBlank() && hasCards` | Full-width "Check" button. Calls `scope.onSubmit()`. | ? |
 | Correct/Incorrect result | TCS-21 | text | `isShowingResult` | "Correct" (green) or "Incorrect" (red) Bold text + TTS replay + "Answer: {displayAnswer}". | ? |
-| Report bottom sheet | TCS-22 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt + flag/unflag + hide card + export + copy text. | ? |
+| Report bottom sheet | TCS-22 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt + flag/unflag + hide card + export + copy text + share translation via QR (when shareText != null). | ? |
 | Navigation row | TCS-23 | button | `supportsNavigation` | Prev + Pause/Play (if `supportsPause`) + Exit + Next NavIconButtons. | ? |
 | Exit confirmation dialog | TCS-24 | dialog | Exit button tapped | "End session? Your progress will be saved." with "End"/"Cancel". | ? |
 | Completion screen | TCS-25 | card | `isComplete && !isShowingResult` | Party popper emoji (48sp) + "Well done!" (24sp Bold) + progress text + "Done" button. | ? |
@@ -152,7 +152,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Word bank section (translate/verbs) | DP-15 | chip | `WORD_BANK mode` | DailyWordBankSection: chips + counter + Undo. | ? |
 | Input mode bar (translate/verbs) | DP-16 | button | Card session active | DailyInputModeBar: Voice/Keyboard/WordBank buttons + Show answer + Report. Keyboard button is ALWAYS visible (not gated by HintLevel). | ? |
 | Check button (translate/verbs) | DP-17 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check" button. Submits via `provider.submitAnswerWithInput()`. | ? |
-| Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | DailyReportSheet: flag/unflag + export + copy. | ? |
+| Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | DailyReportSheet: flag/unflag + export + copy + share translation via QR (when shareText != null). | ? |
 | VOCAB flashcard card | DP-19 | card | `currentTask.blockType == VOCAB` | surfaceVariant Card with prompt word (28sp Bold) + translation (18sp Medium, primary) + TTS button + report button. | ? |
 | Vocab prompt text | DP-20 | text | VOCAB block active | Word text in `(28f * ruTextScale).sp` Bold, centered. Direction-dependent: IT_TO_RU shows Italian word, RU_TO_IT shows Russian meaning. | UC-56 |
 | Vocab TTS button | DP-21 | button | VOCAB block active | IconButton VolumeUp. Calls `onSpeak(promptText)`. | ? |
@@ -210,7 +210,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Check button | VD-29 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check". Uses `provider.submitAnswerWithInput()` for retry/hint flow. | ? |
 | Auto-voice effect | VD-30 | (system) | `inputMode == VOICE && sessionActive && currentCard != null` | LaunchedEffect triggers speech recognition after 200ms. | ? |
 | Auto-advance after voice correct | VD-31 | (system) | `pendingAnswerResult.correct && inputMode == VOICE` | Auto-advances after 500ms. | ? |
-| Report bottom sheet | VD-32 | bottom-sheet | `showReportSheet == true` | VerbDrillReportSheet: flag/unflag + export + copy (no hide card option). | ? |
+| Report bottom sheet | VD-32 | bottom-sheet | `showReportSheet == true` | VerbDrillReportSheet: flag/unflag + export + copy (no hide card option) + share translation via QR (when shareText != null). | ? |
 | VerbReferenceBottomSheet | VD-33 | bottom-sheet | `showVerbSheet == true` | Shows verb infinitive + TTS button + group + tense + conjugation table. | ? |
 | TenseInfoBottomSheet | VD-34 | bottom-sheet | `showTenseSheet == true` | Shows tense name + formula Card + usage explanation + example cards. | ? |
 | Export result dialog | VD-35 | dialog | `exportMessage != null` | AlertDialog with export path or "No bad sentences to export". | ? |
@@ -279,7 +279,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Hard" rating button | VOC-38 | button | `session.isFlipped` | Orange-colored OutlinedButton. Shows "Hard" + current step interval. Stays at same step. | ? |
 | "Good" rating button | VOC-39 | button | `session.isFlipped` | Primary-colored Filled Button. Shows "Good" + next step interval. Advances +1 step. | ? |
 | "Easy" rating button | VOC-40 | button | `session.isFlipped` | Green-colored Filled Button. Shows "Easy" + +2 step interval. Advances +2 steps. | ? |
-| Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: "Word options" title + word text + flag/unflag + export + copy. | ? |
+| Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: "Word options" title + word text + flag/unflag + export + copy + share translation via QR (when shareText != null). | ? |
 | Export result dialog | VOC-42 | dialog | `exportMessage != null` | AlertDialog with export result. | ? |
 | Auto-flip on voice correct | VOC-43 | (system) | `voiceCompleted && voiceResult == CORRECT && !isFlipped` | Auto-flips card after 800ms delay. | ? |
 | Auto-launch voice | VOC-44 | (system) | `voiceAutoStart (global) && !isFlipped && !voiceCompleted && !isVoiceActive` | Auto-launches voice recognition after 500ms delay. Uses global `voiceAutoStart` from Settings, NOT per-drill toggle. Mic button still works on manual click when voiceAutoStart is OFF. | UC-57 |
@@ -438,9 +438,9 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 | Element | ID | Type | Used by | Behavior / Invariant | Related UC |
 |---------|----|------|---------|----------------------|------------|
-| SharedReportSheet | SH-01 | bottom-sheet | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | ModalBottomSheet with exactly 4 options: Flag/Unflag, Hide card, Export bad sentences, Copy text. Card prompt text shown at top for context. | UC-53 |
+| SharedReportSheet | SH-01 | bottom-sheet | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | ModalBottomSheet with exactly 5 options: Flag/Unflag, Hide card, Export bad sentences, Copy text, Share translation via QR (shown when `shareText != null`). Card prompt text shown at top for context. | UC-53, UC-65 |
 
-**Behavior:** Each option triggers its corresponding callback. Flag toggles card.isFlagged (adds/removes from BadSentenceStore). Hide removes card from session (except Daily Practice where it is a documented no-op). Export returns formatted string via BadSentenceStore.exportUnified() -- non-null when at least one card is flagged. Copy writes card text (ID, source, target) to system clipboard.
+**Behavior:** Each option triggers its corresponding callback. Flag toggles card.isFlagged (adds/removes from BadSentenceStore). Hide removes card from session (except Daily Practice where it is a documented no-op). Export returns formatted string via BadSentenceStore.exportUnified() -- non-null when at least one card is flagged. Copy writes card text (ID, source, target) to system clipboard. Share translation opens QrShareDialog (SH-07) with translation pair text + QR code + Google Translate button.
 
 | VoiceAutoLauncher | SH-02 | (system) | VerbDrillScreen, VocabDrillScreen | LaunchedEffect composable that auto-launches voice recognition after configurable delay (200ms for new card, 1200ms after incorrect feedback). | UC-52 |
 
@@ -459,3 +459,7 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 **Behavior:** Propagated via `CardSessionContract.textScale` or composable parameter. Reads `ruTextScale` from `AudioState` / `AppConfigStore`. Applied as `fontSize = (baseSize * textScale).sp`. Elements excluded from scaling: RU badge, POS badge, hint chips, attempt counter, tense labels, navigation buttons, progress bar text, rating button text, block label badges.
 
 | VoiceAutoStartToggle | SH-06 | switch | SettingsScreen | Switch with label "Auto-start voice input". When ON, shows description "Voice recognition starts automatically when a new card appears". When OFF, shows "Voice recognition starts only when you tap the microphone". Bound to `state.audio.voiceAutoStart` via `onSetVoiceAutoStart` callback. | UC-57 |
+
+| QrShareDialog | SH-07 | dialog | TrainingScreen, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen | AlertDialog showing translation pair text ("RU: {prompt}" / "{LANG}: {answer}") at top + QR code encoding the same text + "Open in Google Translate" button opening `https://translate.google.com/?sl=ru&tl={targetLang}&text={prompt}`. Close button dismisses dialog, returns to report sheet. | UC-65 |
+
+**Behavior:** Dialog is opened from SharedReportSheet option 5 (Share translation). Text pair shown at top for immediate readability. QR code encodes format "RU: {promptRu}\n{TARGET_LANG}: {answerText}". Google Translate button opens URL in system browser via Intent.ACTION_VIEW.

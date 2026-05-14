@@ -2,6 +2,17 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v3.1 (2026-05-15) -- QR Share Translation Feature
+
+### TASK-008: Share Translation via QR Code
+
+- `12-training-card-session.md`: Updated section 12.8.2 SharedReportSheet from 4 to 5 options. Added 5th option "Share translation via QR" with QrCode2 icon. Updated behavioral contract with QR share row. Updated SharedReportSheet function signature with `shareText` and `onShareQr` parameters. Added TASK-008 link after regression paths. Updated cross-screen consistency matrix.
+- `23-screen-elements.md`: Updated SH-01 (5 options, UC-65 ref). Added SH-07 (QrShareDialog element). Updated TS-33, TCS-22, VD-32, DP-18, VOC-41 with 5th option note. Updated summary counts (7 shared components, 314 total).
+- `22-use-case-registry.md`: Added UC-65 (Share translation via QR code) with 5 behavioral ACs. Updated UC-53 to reference 5 options. Updated Domain 12 counts (6 UCs, 35 ACs). Updated summary counts (65 UCs, 325 ACs). Updated cross-reference table.
+- `tasks/TASK-008-qr-share-translation.md`: Created self-contained task file with 4 fixes.
+- `tasks/README.md`: Added TASK-008 entry.
+- Commit: `pending`
+
 ## v3.0 (2026-05-14) -- Architecture Refactoring & Quality Fixes
 
 ### TASK-007: Verb Drill Exit Navigation to HOME
