@@ -6,7 +6,18 @@ import java.io.File
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
-class StreakStore(private val context: Context) {
+interface StreakStore {
+
+    fun save(data: StreakData)
+
+    fun load(languageId: String): StreakData
+
+    fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean>
+
+    fun getCurrentStreak(languageId: String): StreakData
+}
+
+class StreakStoreImpl(private val context: Context) : StreakStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
 
@@ -17,11 +28,11 @@ class StreakStore(private val context: Context) {
     /**
      * Сохраняет данные о streak
      */
-    fun save(data: StreakData) {
+    override fun save(data: StreakData) {
         baseDir.mkdirs()
-        val file = getFile(data.languageId)
+        val file = getFile(data.languageId.value)
         val payload = mapOf(
-            "languageId" to data.languageId,
+            "languageId" to data.languageId.value,
             "currentStreak" to data.currentStreak,
             "longestStreak" to data.longestStreak,
             "lastCompletionDateMs" to data.lastCompletionDateMs,
@@ -33,13 +44,13 @@ class StreakStore(private val context: Context) {
     /**
      * Загружает данные о streak для языка
      */
-    fun load(languageId: String): StreakData {
+    override fun load(languageId: String): StreakData {
         val file = getFile(languageId)
-        if (!file.exists()) {
-            return StreakData(languageId = languageId)
+        if (!file.exists() || file.length() == 0L) {
+            return StreakData(languageId = LanguageId(languageId))
         }
-        val raw = yaml.load<Any>(file.readText()) ?: return StreakData(languageId = languageId)
-        val data = raw as? Map<*, *> ?: return StreakData(languageId = languageId)
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return StreakData(languageId = LanguageId(languageId))
+        val data = raw as? Map<*, *> ?: return StreakData(languageId = LanguageId(languageId))
 
         val currentStreak = (data["currentStreak"] as? Number)?.toInt() ?: 0
         val longestStreak = (data["longestStreak"] as? Number)?.toInt() ?: 0
@@ -47,7 +58,7 @@ class StreakStore(private val context: Context) {
         val totalSubLessonsCompleted = (data["totalSubLessonsCompleted"] as? Number)?.toInt() ?: 0
 
         return StreakData(
-            languageId = languageId,
+            languageId = LanguageId(languageId),
             currentStreak = currentStreak,
             longestStreak = longestStreak,
             lastCompletionDateMs = lastCompletionDateMs,
@@ -59,7 +70,7 @@ class StreakStore(private val context: Context) {
      * Обновляет streak после завершения подурока
      * @return обновлённый StreakData и флаг, является ли это новым достижением
      */
-    fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> {
+    override fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> {
         val current = load(languageId)
         val now = System.currentTimeMillis()
         val streakStatus = checkAndUpdateStreak(current, now)
@@ -133,7 +144,7 @@ class StreakStore(private val context: Context) {
     /**
      * Получает текущий streak с учётом пропущенных дней
      */
-    fun getCurrentStreak(languageId: String): StreakData {
+    override fun getCurrentStreak(languageId: String): StreakData {
         val current = load(languageId)
         val lastCompletionMs = current.lastCompletionDateMs ?: return current
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- VerbDrillSheets Russian strings -->
+    <!-- Note: Interpolated strings (Группа: $group, Время: $tense) are NOT extracted per task rules.
+         They remain hardcoded in VerbDrillSheets.kt. Only non-interpolated Russian strings are extracted. -->
+    <string name="drill_conjugation_label">Спряжение:</string>
+    <string name="drill_tense_info_unavailable">Справочная информация для этого времени недоступна.</string>
+    <string name="drill_formula_label">Формула</string>
+    <string name="drill_when_to_use_label">Когда использовать</string>
+    <string name="drill_examples_label">Примеры</string>
+</resources>

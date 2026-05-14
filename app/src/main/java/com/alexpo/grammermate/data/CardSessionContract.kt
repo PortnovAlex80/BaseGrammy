@@ -54,7 +54,7 @@ interface CardSessionContract : CardSessionCapabilities {
     val sessionActive: Boolean
 
     /** Current TTS state for speaker button rendering. */
-    val ttsState: TtsState get() = TtsState.IDLE
+    val ttsState: TtsState get() = TtsState.Idle
 
     /** Current input mode (VOICE, KEYBOARD, WORD_BANK). */
     val currentInputMode: InputMode get() = inputModeConfig.defaultMode
@@ -64,6 +64,9 @@ interface CardSessionContract : CardSessionCapabilities {
 
     /** Current typing speed in words per minute. */
     val currentSpeedWpm: Int get() = 0
+
+    /** Font size multiplier for prompt text. Range [1.0, 2.0]. */
+    val textScale: Float get() = 1.0f
 
     fun onInputChanged(text: String)
     fun submitAnswer(): AnswerResult?

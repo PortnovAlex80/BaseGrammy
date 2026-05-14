@@ -18,8 +18,8 @@ class LessonLadderCalculatorTest {
     @Test
     fun calculate_missingLastShow_returnsEmptyMetrics() {
         val mastery = LessonMasteryState(
-            lessonId = "l1",
-            languageId = "en",
+            lessonId = LessonId("l1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 3,
             lastShowDateMs = 0L,
             intervalStepIndex = 1
@@ -33,8 +33,8 @@ class LessonLadderCalculatorTest {
     @Test
     fun calculate_daysSinceStartsAtOne() {
         val mastery = LessonMasteryState(
-            lessonId = "l1",
-            languageId = "en",
+            lessonId = LessonId("l1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 5,
             lastShowDateMs = nowMs,
             intervalStepIndex = 0
@@ -47,8 +47,8 @@ class LessonLadderCalculatorTest {
     @Test
     fun calculate_intervalBetweenSteps() {
         val mastery = LessonMasteryState(
-            lessonId = "l1",
-            languageId = "en",
+            lessonId = LessonId("l1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 12,
             lastShowDateMs = nowMs - 4L * 24 * 60 * 60 * 1000L,
             intervalStepIndex = 3
@@ -61,8 +61,8 @@ class LessonLadderCalculatorTest {
     @Test
     fun calculate_overdueUsesExpectedStep() {
         val mastery = LessonMasteryState(
-            lessonId = "l1",
-            languageId = "en",
+            lessonId = LessonId("l1"),
+            languageId = LanguageId("en"),
             uniqueCardShows = 20,
             lastShowDateMs = nowMs - 4L * 24 * 60 * 60 * 1000L,
             intervalStepIndex = 1

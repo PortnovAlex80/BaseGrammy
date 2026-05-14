@@ -4,11 +4,14 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.alexpo.grammermate.AppContainer
+import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
+import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
-import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.VocabDrillCard
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.data.VocabDrillSessionState
@@ -25,9 +28,14 @@ import kotlinx.coroutines.launch
 class VocabDrillViewModel(application: Application) : AndroidViewModel(application) {
 
     private val logTag = "VocabDrillVM"
-    private val lessonStore = LessonStore(application)
-    private var masteryStore = WordMasteryStore(application)
-    private val ttsEngine = TtsEngine(application)
+    private val container: AppContainer = when (application) {
+        is GrammarMateApplication -> application.container
+        else -> AppContainer(application)
+    }
+    private val lessonStore = container.lessonStore
+    private var masteryStore = container.wordMasteryStore(null)
+    private val badSentenceStore = container.badSentenceStore
+    private val ttsEngine = container.ttsEngine
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
     val uiState: StateFlow<VocabDrillUiState> = _uiState
@@ -58,8 +66,8 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             return
         }
         activePackId = packId
-        // Recreate mastery store scoped to the pack
-        masteryStore = WordMasteryStore(getApplication(), packId = packId)
+        // Re-scope mastery store to the pack via shared container
+        masteryStore = container.wordMasteryStore(packId)
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadWords(languageId) }
     }
@@ -79,7 +87,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         }
         val pack = activePackId
         if (pack != null) {
-            masteryStore = WordMasteryStore(getApplication(), packId = pack)
+            masteryStore = container.wordMasteryStore(pack)
         }
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadWords(languageId) }
@@ -96,7 +104,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         } else {
             // No active pack: scan all installed packs for vocab drill files
             lessonStore.getInstalledPacks().flatMap { installedPack ->
-                lessonStore.getVocabDrillFiles(installedPack.packId, lang)
+                lessonStore.getVocabDrillFiles(installedPack.packId.value, lang)
             }
         }
 
@@ -197,7 +205,9 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         return allWords.filter { word ->
             (state.selectedPos == null || word.pos == state.selectedPos) &&
             word.rank >= state.rankMin &&
-            word.rank <= state.rankMax
+            word.rank <= state.rankMax &&
+            // Numbers only appear when explicitly selected via filter
+            (state.selectedPos != null || word.pos != "numbers")
         }
     }
 
@@ -223,8 +233,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update {
             it.copy(session = VocabDrillSessionState(
                 cards = dueCards,
-                direction = it.drillDirection,
-                voiceModeEnabled = it.voiceModeEnabled
+                direction = it.drillDirection
             ))
         }
     }
@@ -242,16 +251,14 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     /**
      * User knew the word. Advance interval step, update mastery, move to next card.
      */
-    enum class AnswerRating { AGAIN, HARD, GOOD, EASY }
-
     private val ratingIntervalDelta = mapOf(
-        AnswerRating.AGAIN to -100,  // reset to step 0
-        AnswerRating.HARD to 0,      // stay same step (review again sooner)
-        AnswerRating.GOOD to 1,      // advance 1 step
-        AnswerRating.EASY to 2       // advance 2 steps
+        SrsRating.AGAIN to -100,  // reset to step 0
+        SrsRating.HARD to 0,      // stay same step (review again sooner)
+        SrsRating.GOOD to 1,      // advance 1 step
+        SrsRating.EASY to 2       // advance 2 steps
     )
 
-    fun answerRating(rating: AnswerRating) {
+    fun answerRating(rating: SrsRating) {
         val session = _uiState.value.session ?: return
         val index = session.currentIndex
         if (index >= session.cards.size) return
@@ -263,17 +270,16 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
         val delta = ratingIntervalDelta[rating] ?: 0
         val newStepIndex = when {
-            rating == AnswerRating.AGAIN -> 0
+            rating == SrsRating.AGAIN -> 0
             else -> (currentStep + delta).coerceIn(0, maxStep)
         }
         val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
-        val LEARNED_THRESHOLD = 3  // words at step 3+ are considered learned
-        val isLearned = newStepIndex >= LEARNED_THRESHOLD
+        val isLearned = newStepIndex >= TrainingConfig.LEARNED_THRESHOLD
 
         val updatedMastery = card.mastery.copy(
             intervalStepIndex = newStepIndex,
-            correctCount = card.mastery.correctCount + (if (rating != AnswerRating.AGAIN) 1 else 0),
-            incorrectCount = card.mastery.incorrectCount + (if (rating == AnswerRating.AGAIN) 1 else 0),
+            correctCount = card.mastery.correctCount + (if (rating != SrsRating.AGAIN) 1 else 0),
+            incorrectCount = card.mastery.incorrectCount + (if (rating == SrsRating.AGAIN) 1 else 0),
             lastReviewDateMs = now,
             nextReviewDateMs = newNextReview,
             isLearned = isLearned
@@ -282,7 +288,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         masteryMap = masteryMap.toMutableMap().apply { this[card.word.id] = updatedMastery }
         masteryStore.upsertMastery(updatedMastery)
 
-        advanceCard(session, correct = rating != AnswerRating.AGAIN)
+        advanceCard(session, correct = rating != SrsRating.AGAIN)
     }
 
     private fun advanceCard(session: VocabDrillSessionState, correct: Boolean) {
@@ -327,14 +333,18 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         if (text.isBlank()) return
         val langId = _uiState.value.loadedLanguageId ?: "it"
         viewModelScope.launch {
-            if (ttsEngine.state.value != TtsState.READY
-                || ttsEngine.activeLanguageId != langId) {
-                ttsEngine.initialize(langId)
-            }
-            if (ttsEngine.state.value == TtsState.READY) {
-                ttsEngine.speak(text, languageId = langId, speed = speed)
-            } else {
-                Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+            try {
+                if (ttsEngine.state.value != TtsState.Ready
+                    || ttsEngine.activeLanguageId != langId) {
+                    ttsEngine.initialize(langId)
+                }
+                if (ttsEngine.state.value == TtsState.Ready) {
+                    ttsEngine.speak(text, languageId = langId, speed = speed)
+                } else {
+                    Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "speakTts failed", e)
             }
         }
     }
@@ -355,24 +365,10 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    /** Enable or disable voice mode (auto-launch mic on new cards). */
+    /** Enable or disable voice mode — DEPRECATED, now reads global voiceAutoStart setting. */
     fun setVoiceMode(enabled: Boolean) {
-        _uiState.update { it.copy(voiceModeEnabled = enabled) }
-        // Also update active session if one exists
-        _uiState.update { state ->
-            val session = state.session ?: return@update state
-            state.copy(session = session.copy(voiceModeEnabled = enabled))
-        }
-    }
-
-    /**
-     * Returns true if voice mode is on, card is not flipped, and voice is not completed.
-     * Used by the UI to decide whether to auto-launch RecognizerIntent.
-     */
-    fun shouldAutoStartVoice(): Boolean {
-        val state = _uiState.value
-        val session = state.session ?: return false
-        return session.voiceModeEnabled && !session.isFlipped && !session.voiceCompleted
+        // No-op: voice auto-start is controlled by global Settings toggle only.
+        // Kept to avoid breaking callers during migration.
     }
 
     /**
@@ -462,8 +458,58 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         return text.trim().lowercase().replace(Regex("[.!?,;:]$"), "")
     }
 
+    // ── Bad Sentence Support ──────────────────────────────────────────────
+
+    /**
+     * Flag the current vocab card as a bad sentence.
+     * Uses activePackId if available, otherwise falls back to "__vocab_drill__".
+     */
+    fun flagBadSentence() {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+        val card = session.cards[index]
+        val packId = activePackId ?: "__vocab_drill__"
+        val languageId = _uiState.value.loadedLanguageId ?: ""
+
+        val word = card.word
+        badSentenceStore.addBadSentence(
+            packId = packId,
+            cardId = word.id,
+            languageId = languageId,
+            sentence = word.meaningRu ?: word.word,
+            translation = word.word,
+            mode = "vocab_drill"
+        )
+    }
+
+    fun unflagBadSentence() {
+        val session = _uiState.value.session ?: return
+        val index = session.currentIndex
+        if (index >= session.cards.size) return
+        val card = session.cards[index]
+        val packId = activePackId ?: "__vocab_drill__"
+        badSentenceStore.removeBadSentence(packId, card.word.id)
+    }
+
+    fun isBadSentence(): Boolean {
+        val session = _uiState.value.session ?: return false
+        val index = session.currentIndex
+        if (index >= session.cards.size) return false
+        val card = session.cards[index]
+        val packId = activePackId ?: "__vocab_drill__"
+        return badSentenceStore.isBadSentence(packId, card.word.id)
+    }
+
+    fun exportBadSentences(): String? {
+        val packId = activePackId ?: "__vocab_drill__"
+        val entries = badSentenceStore.getBadSentences(packId)
+        if (entries.isEmpty()) return null
+        val file = badSentenceStore.exportToTextFile(packId)
+        return file.absolutePath
+    }
+
     override fun onCleared() {
         super.onCleared()
-        ttsEngine.release()
     }
 }

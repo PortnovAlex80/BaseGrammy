@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LadderScreen (Russian UI) -->
+    <string name="ladder_title">Лестница интервалов</string>
+    <string name="ladder_subtitle">Все уроки текущего пакета</string>
+    <string name="ladder_no_data">Нет данных по урокам.</string>
+    <string name="ladder_header_number">#</string>
+    <string name="ladder_header_lesson">Урок</string>
+    <string name="ladder_header_cards">Карты</string>
+    <string name="ladder_header_days">Дней</string>
+    <string name="ladder_header_interval">Интервал</string>
+
+    <!-- SettingsScreen (Russian UI strings) -->
+    <string name="settings_show_ladder">Показать лестницу</string>
+    <string name="settings_translation_text_size">Размер текста перевода</string>
+    <string name="settings_reset_progress">Сбросить прогресс (%s)</string>
+    <string name="settings_reset_progress_title">Сбросить прогресс</string>
+    <string name="settings_reset_progress_confirm">Вы уверены, что хотите сбросить весь прогресс для \"%s\"?\n\nЭто действие удалит:\n• Все показатели освоения карточек\n• Интервалы повторения\n• Состояния цветков\n• Прогресс спряжения глаголов\n• Прогресс словарного запаса\n\nДругие языки не будут затронуты.</string>
+    <string name="settings_reset">Сбросить</string>
+    <string name="settings_cancel">Отмена</string>
+</resources>

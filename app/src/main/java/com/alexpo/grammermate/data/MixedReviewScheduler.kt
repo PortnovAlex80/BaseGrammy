@@ -13,7 +13,7 @@ data class ScheduledSubLesson(
 )
 
 data class LessonSchedule(
-    val lessonId: String,
+    val lessonId: LessonId,
     val subLessons: List<ScheduledSubLesson>
 )
 
@@ -21,16 +21,13 @@ class MixedReviewScheduler(
     private val subLessonSize: Int,
     private val intervals: List<Int> = listOf(1, 2, 4, 7, 10, 14, 20, 28, 42, 56)
 ) {
-    companion object {
-        private const val MAX_REVIEW_CARDS = 300
-    }
 
-    fun build(lessons: List<Lesson>): Map<String, LessonSchedule> {
+    fun build(lessons: List<Lesson>): Map<LessonId, LessonSchedule> {
         if (lessons.isEmpty()) return emptyMap()
-        val schedules = linkedMapOf<String, LessonSchedule>()
-        val reviewQueues = mutableMapOf<String, ArrayDeque<SentenceCard>>()
-        val reserveQueues = mutableMapOf<String, ArrayDeque<SentenceCard>>()
-        val reviewStartMixedIndex = mutableMapOf<String, Int>()
+        val schedules = linkedMapOf<LessonId, LessonSchedule>()
+        val reviewQueues = mutableMapOf<LessonId, ArrayDeque<SentenceCard>>()
+        val reserveQueues = mutableMapOf<LessonId, ArrayDeque<SentenceCard>>()
+        val reviewStartMixedIndex = mutableMapOf<LessonId, Int>()
         val lessonIndexById = lessons.mapIndexed { index, lesson -> lesson.id to index }.toMap()
         var globalMixedIndex = 0
 
@@ -40,10 +37,10 @@ class MixedReviewScheduler(
                 reviewStartMixedIndex.putIfAbsent(previousLessonId, globalMixedIndex)
             }
 
-            // Limit total review cards to MAX_REVIEW_CARDS (300)
+            // Limit total review cards to TrainingConfig.REVIEW_LIMIT
             val allReviewCards = (lesson.mainPoolCards + lesson.reservePoolCards)
                 .shuffled()
-                .take(MAX_REVIEW_CARDS)
+                .take(TrainingConfig.REVIEW_LIMIT)
 
             // Split into main and reserve pools (50/50 split up to max)
             val mainCount = (allReviewCards.size / 2).coerceAtLeast(lesson.mainPoolCards.size.coerceAtMost(150))
@@ -111,12 +108,12 @@ class MixedReviewScheduler(
     }
 
     private fun dueLessonIds(
-        reviewStartMixedIndex: Map<String, Int>,
-        lessonIndexById: Map<String, Int>,
+        reviewStartMixedIndex: Map<LessonId, Int>,
+        lessonIndexById: Map<LessonId, Int>,
         globalMixedIndex: Int
-    ): List<String> {
+    ): List<LessonId> {
         if (globalMixedIndex <= 0) return emptyList()
-        val due = mutableListOf<String>()
+        val due = mutableListOf<LessonId>()
         for ((lessonId, startIndex) in reviewStartMixedIndex) {
             val step = globalMixedIndex - startIndex
             if (intervals.contains(step)) {
@@ -127,9 +124,9 @@ class MixedReviewScheduler(
     }
 
     private fun fillReviewSlots(
-        dueLessons: List<String>,
-        reviewQueues: Map<String, ArrayDeque<SentenceCard>>,
-        reserveQueues: Map<String, ArrayDeque<SentenceCard>>,
+        dueLessons: List<LessonId>,
+        reviewQueues: Map<LessonId, ArrayDeque<SentenceCard>>,
+        reserveQueues: Map<LessonId, ArrayDeque<SentenceCard>>,
         slots: Int,
         fallbackQueue: ArrayDeque<SentenceCard>
     ): List<SentenceCard> {

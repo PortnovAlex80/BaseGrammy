@@ -28,6 +28,9 @@ Thumbs.db
 # ML models (too large for git)
 /models/
 
+# Claude Code plans
+.claude/plans/
+
 # Temp/generated files
 SESSION_REPORT_*.md
 TEAM.md

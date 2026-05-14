@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- GrammarMateApp dialogs -->
+    <string name="dialog_welcome_title">Welcome to GrammarMate!</string>
+    <string name="dialog_welcome_body">What\'s your name?</string>
+    <string name="dialog_welcome_label">Enter your name</string>
+    <string name="dialog_welcome_placeholder">e.g., John Smith</string>
+    <string name="dialog_welcome_continue">Continue</string>
+    <string name="dialog_welcome_skip">Skip</string>
+
+    <string name="dialog_story_title">Story</string>
+    <string name="dialog_boss_title">Boss</string>
+    <string name="dialog_ok">OK</string>
+
+    <string name="dialog_boss_reward_title">Boss Reward</string>
+    <string name="dialog_streak_title">Streak!</string>
+    <string name="dialog_streak_continue">Continue</string>
+    <string name="dialog_streak_longest">Longest streak: %1$d days</string>
+
+    <string name="dialog_drill_title">Drill Mode</string>
+    <string name="dialog_drill_resume_prompt">Continue where you left off or start over?</string>
+    <string name="dialog_drill_start_prompt">Start drill training?</string>
+    <string name="dialog_drill_continue">Continue</string>
+    <string name="dialog_drill_start">Start</string>
+    <string name="dialog_drill_start_fresh">Start Fresh</string>
+    <string name="dialog_cancel">Cancel</string>
+
+    <string name="dialog_exit_title_training">End session?</string>
+    <string name="dialog_exit_title_daily">Exit practice?</string>
+    <string name="dialog_exit_text_training">Current session will be completed.</string>
+    <string name="dialog_exit_text_daily">Your progress in this session will be lost.</string>
+    <string name="dialog_exit_confirm">Exit</string>
+
+    <string name="dialog_daily_loading">Loading session…</string>
+
+    <string name="dialog_daily_resume_title">Daily Practice</string>
+    <string name="dialog_daily_resume_text">Repeat — same cards from the start\nContinue — new set of cards</string>
+    <string name="dialog_daily_resume_continue">Continue</string>
+    <string name="dialog_daily_resume_repeat">Repeat</string>
+
+    <!-- VerbDrillScreen -->
+    <string name="verb_loading">Loading…</string>
+    <string name="verb_drill_title">Verb Drill</string>
+    <string name="verb_content_desc_back">Back</string>
+    <string name="verb_label_ru">RU</string>
+    <string name="verb_content_desc_listen">Listen</string>
+    <string name="verb_voice_prompt">Say the translation</string>
+    <string name="verb_export_title">Export</string>
+    <string name="verb_incorrect">Incorrect</string>
+    <string name="verb_attempts_left">%1$d attempts left</string>
+    <string name="verb_your_translation">Your translation</string>
+    <string name="verb_content_desc_voice_input">Voice input</string>
+    <string name="verb_no_cards">No cards</string>
+    <string name="verb_check">Check</string>
+    <string name="verb_content_desc_voice_mode">Voice mode</string>
+    <string name="verb_content_desc_keyboard_mode">Keyboard mode</string>
+    <string name="verb_content_desc_word_bank_mode">Word bank mode</string>
+    <string name="verb_show_answer">Show answer</string>
+    <string name="verb_content_desc_show_answer">Show answer</string>
+    <string name="verb_report_sentence">Report sentence</string>
+    <string name="verb_content_desc_report">Report sentence</string>
+    <string name="verb_mode_voice">Voice</string>
+    <string name="verb_mode_keyboard">Keyboard</string>
+    <string name="verb_mode_word_bank">Word Bank</string>
+
+    <!-- VerbDrillSelectionScreen (Russian UI strings) -->
+    <string name="verb_select_tense">Время</string>
+    <string name="verb_all_tenses">Все времена</string>
+    <string name="verb_select_group">Группа</string>
+    <string name="verb_all_groups">Все группы</string>
+    <string name="verb_sort_by_frequency">По частотности</string>
+    <string name="verb_progress">Прогресс: %1$d / %2$d</string>
+    <string name="verb_today">Сегодня: %1$d</string>
+    <string name="verb_all_done_today">На сегодня всё!</string>
+    <string name="verb_continue">Продолжить</string>
+    <string name="verb_start">Старт</string>
+
+    <!-- VerbDrillCompletionScreen (Russian UI strings) -->
+    <string name="verb_completion_excellent">Отлично!</string>
+    <string name="verb_completion_stats">Правильных: %1$d  |  Ошибок: %2$d</string>
+    <string name="verb_more">Ещё</string>
+    <string name="verb_exit">Выход</string>
+
+    <string name="verb_say_translation">Say translation: %1$s</string>
+    <string name="verb_exported_to">Exported to %1$s</string>
+    <string name="verb_no_bad_sentences">No bad sentences to export</string>
+
+    <!-- VocabDrillScreen -->
+    <string name="vocab_loading">Loading…</string>
+    <string name="vocab_title">Flashcards</string>
+    <string name="vocab_direction">Direction</string>
+    <string name="vocab_direction_it_ru">IT → RU</string>
+    <string name="vocab_direction_ru_it">RU → IT</string>
+    <string name="vocab_part_of_speech">Part of speech</string>
+    <string name="vocab_filter_all">All</string>
+    <string name="vocab_pos_nouns">Nouns</string>
+    <string name="vocab_pos_verbs">Verbs</string>
+    <string name="vocab_pos_adjectives">Adj.</string>
+    <string name="vocab_pos_adverbs">Adv.</string>
+    <string name="vocab_pos_numbers">Numbers</string>
+    <string name="vocab_word_frequency">Word frequency</string>
+    <string name="vocab_rank_top100">Top 100</string>
+    <string name="vocab_rank_top500">Top 500</string>
+    <string name="vocab_rank_top1000">Top 1000</string>
+    <string name="vocab_rank_all">All</string>
+    <string name="vocab_due_count">Due: %1$d / %2$d</string>
+    <string name="vocab_mastered_count">Mastered: %1$d words</string>
+    <string name="vocab_no_words_loaded">No words loaded</string>
+    <string name="vocab_start">Start (%1$d due)</string>
+    <string name="vocab_no_due_words">No due words</string>
+
+    <string name="vocab_content_desc_back">Back</string>
+    <string name="vocab_content_desc_report_word">Report word</string>
+
+    <string name="vocab_rating_again">Again</string>
+    <string name="vocab_rating_again_interval">&lt;1m</string>
+    <string name="vocab_rating_hard">Hard</string>
+    <string name="vocab_rating_good">Good</string>
+    <string name="vocab_rating_easy">Easy</string>
+
+    <string name="vocab_skip">Skip</string>
+    <string name="vocab_flip">Flip</string>
+
+    <string name="vocab_word_options">Word options</string>
+    <string name="vocab_remove_bad">Remove from bad sentences list</string>
+    <string name="vocab_add_bad">Add to bad sentences list</string>
+    <string name="vocab_export_bad">Export bad sentences to file</string>
+    <string name="vocab_copy_text">Copy text</string>
+    <string name="vocab_export_title">Export</string>
+    <string name="vocab_exported_to">Exported to %1$s</string>
+    <string name="vocab_no_bad_sentences">No bad sentences to export</string>
+    <string name="vocab_ok">OK</string>
+
+    <string name="vocab_content_desc_speaking">Speaking</string>
+    <string name="vocab_content_desc_tts_error">TTS error</string>
+    <string name="vocab_content_desc_listen">Listen</string>
+    <string name="vocab_content_desc_voice_input">Voice input</string>
+    <string name="vocab_tap_to_speak">Tap to speak</string>
+
+    <string name="vocab_voice_correct">Correct!</string>
+    <string name="vocab_voice_moving_on">Moving on…</string>
+    <string name="vocab_voice_try_again">Try again (%1$d/3)</string>
+    <string name="vocab_voice_skipped">Skipped</string>
+
+    <string name="vocab_forms">Forms</string>
+    <string name="vocab_collocations">Collocations</string>
+    <string name="vocab_more_count">… +%1$d more</string>
+    <string name="vocab_learned">Learned</string>
+    <string name="vocab_step">Step %1$d/%2$d</string>
+
+    <string name="vocab_completion_perfect">Perfect!</string>
+    <string name="vocab_completion_done">Done!</string>
+    <string name="vocab_completion_correct">Correct</string>
+    <string name="vocab_completion_wrong">Wrong</string>
+    <string name="vocab_completion_words_reviewed">%1$d words reviewed</string>
+    <string name="vocab_completion_exit">Exit</string>
+    <string name="vocab_completion_continue">Continue</string>
+
+    <string name="vocab_badge_noun">noun</string>
+    <string name="vocab_badge_verb">verb</string>
+    <string name="vocab_badge_adj">adj.</string>
+    <string name="vocab_badge_adv">adv.</string>
+    <string name="vocab_badge_num">num.</string>
+
+    <!-- AppRoot -->
+    <string name="app_restoring_backup">Restoring backup…</string>
+    <string name="app_waiting_backup">Waiting for backup folder…</string>
+    <string name="app_preparing">Preparing…</string>
+</resources>

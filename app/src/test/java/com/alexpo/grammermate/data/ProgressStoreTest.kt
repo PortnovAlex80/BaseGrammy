@@ -30,7 +30,7 @@ class ProgressStoreTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        store = ProgressStore(context)
+        store = ProgressStoreImpl(context)
         testDir = File(context.filesDir, "grammarmate")
     }
 
@@ -47,11 +47,11 @@ class ProgressStoreTest {
     @Test
     fun saveProgress_languageId_persists() {
         // FR-7.1.1: Сохранение languageId
-        val progress = TrainingProgress(languageId = "ru")
+        val progress = TrainingProgress(languageId = LanguageId("ru"))
         store.save(progress)
 
         val loaded = store.load()
-        assertEquals("ru", loaded.languageId)
+        assertEquals(LanguageId("ru"), loaded.languageId)
     }
 
     @Test
@@ -170,7 +170,7 @@ class ProgressStoreTest {
     fun loadProgress_existingFile_returnsCorrectProgress() {
         // FR-7.2.1: Загрузка существующего прогресса
         val progress = TrainingProgress(
-            languageId = "en",
+            languageId = LanguageId("en"),
             mode = TrainingMode.LESSON,
             lessonId = "lesson1",
             currentIndex = 5,
@@ -179,7 +179,7 @@ class ProgressStoreTest {
         store.save(progress)
 
         val loaded = store.load()
-        assertEquals("en", loaded.languageId)
+        assertEquals(LanguageId("en"), loaded.languageId)
         assertEquals(TrainingMode.LESSON, loaded.mode)
         assertEquals("lesson1", loaded.lessonId)
         assertEquals(5, loaded.currentIndex)
@@ -192,7 +192,7 @@ class ProgressStoreTest {
         store.clear()
 
         val loaded = store.load()
-        assertEquals("en", loaded.languageId)
+        assertEquals(LanguageId("en"), loaded.languageId)
         assertEquals(TrainingMode.LESSON, loaded.mode)
         assertEquals(0, loaded.currentIndex)
         assertEquals(SessionState.PAUSED, loaded.state)
@@ -206,7 +206,7 @@ class ProgressStoreTest {
         file.writeText("invalid yaml content")
 
         val loaded = store.load()
-        assertEquals("en", loaded.languageId)
+        assertEquals(LanguageId("en"), loaded.languageId)
     }
 
     // ========================================

@@ -1,18 +1,43 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
+
+interface MasteryStore {
+
+    fun loadAll(): Map<String, Map<String, LessonMasteryState>>
+
+    fun get(lessonId: String, languageId: String): LessonMasteryState?
+
+    fun save(state: LessonMasteryState)
+
+    fun recordCardShow(lessonId: String, languageId: String, cardId: String)
+
+    fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>)
+
+    fun markLessonCompleted(lessonId: String, languageId: String)
+
+    fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState
+
+    fun clear()
+
+    fun clearLanguage(languageId: String)
+}
 
 /**
  * Хранилище состояний освоения уроков (mastery).
  * Сохраняет данные о показах карточек для каждого урока.
  */
-class MasteryStore(private val context: Context) {
+class MasteryStoreImpl(private val context: Context) : MasteryStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "mastery.yaml")
     private val schemaVersion = 1
+    private val mutex = ReentrantLock()
 
     // Кеш для быстрого доступа
     private var cache: MutableMap<String, MutableMap<String, LessonMasteryState>> = mutableMapOf()
@@ -22,13 +47,19 @@ class MasteryStore(private val context: Context) {
      * Загрузить все состояния освоения.
      * @return Map<languageId, Map<lessonId, LessonMasteryState>>
      */
-    fun loadAll(): Map<String, Map<String, LessonMasteryState>> {
+    override fun loadAll(): Map<String, Map<String, LessonMasteryState>> = mutex.withLock {
+        loadAllInternal()
+    }
+
+    private fun loadAllInternal(): Map<String, Map<String, LessonMasteryState>> {
         if (cacheLoaded) return cache
 
         if (!file.exists()) {
             cacheLoaded = true
             return cache
         }
+
+        val previousCache = cache
 
         try {
             val raw = yaml.load<Any>(file.readText()) ?: return cache
@@ -51,8 +82,8 @@ class MasteryStore(private val context: Context) {
                         ?: emptySet()
 
                     val mastery = LessonMasteryState(
-                        lessonId = lessonId,
-                        languageId = languageId,
+                        lessonId = LessonId(lessonId),
+                        languageId = LanguageId(languageId),
                         uniqueCardShows = (lessonData["uniqueCardShows"] as? Number)?.toInt() ?: 0,
                         totalCardShows = (lessonData["totalCardShows"] as? Number)?.toInt() ?: 0,
                         lastShowDateMs = (lessonData["lastShowDateMs"] as? Number)?.toLong() ?: 0L,
@@ -65,8 +96,8 @@ class MasteryStore(private val context: Context) {
                 }
             }
         } catch (e: Exception) {
-            // При ошибке чтения начинаем с чистого состояния
-            cache = mutableMapOf()
+            Log.e("MasteryStore", "Failed to parse ${file.name}", e)
+            cache = previousCache
         }
 
         cacheLoaded = true
@@ -76,7 +107,7 @@ class MasteryStore(private val context: Context) {
     /**
      * Получить состояние освоения для конкретного урока.
      */
-    fun get(lessonId: String, languageId: String): LessonMasteryState? {
+    override fun get(lessonId: String, languageId: String): LessonMasteryState? {
         loadAll()
         return cache[languageId]?.get(lessonId)
     }
@@ -84,13 +115,13 @@ class MasteryStore(private val context: Context) {
     /**
      * Сохранить состояние освоения урока.
      */
-    fun save(state: LessonMasteryState) {
-        loadAll()
+    override fun save(state: LessonMasteryState) = mutex.withLock {
+        loadAllInternal()
 
-        if (!cache.containsKey(state.languageId)) {
-            cache[state.languageId] = mutableMapOf()
+        if (!cache.containsKey(state.languageId.value)) {
+            cache[state.languageId.value] = mutableMapOf()
         }
-        cache[state.languageId]!![state.lessonId] = state
+        cache[state.languageId.value]!![state.lessonId.value] = state
 
         persistToFile()
     }
@@ -102,8 +133,8 @@ class MasteryStore(private val context: Context) {
      * @param languageId ID языка
      * @param cardId ID показанной карточки
      */
-    fun recordCardShow(lessonId: String, languageId: String, cardId: String) {
-        loadAll()
+    override fun recordCardShow(lessonId: String, languageId: String, cardId: String) = mutex.withLock {
+        loadAllInternal()
 
         val existing = cache[languageId]?.get(lessonId)
         val now = System.currentTimeMillis()
@@ -127,8 +158,8 @@ class MasteryStore(private val context: Context) {
         }
 
         val updated = LessonMasteryState(
-            lessonId = lessonId,
-            languageId = languageId,
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId),
             uniqueCardShows = if (isNewCard) {
                 (existing?.uniqueCardShows ?: 0) + 1
             } else {
@@ -141,50 +172,65 @@ class MasteryStore(private val context: Context) {
             shownCardIds = newShownCardIds
         )
 
-        save(updated)
+        if (!cache.containsKey(updated.languageId.value)) {
+            cache[updated.languageId.value] = mutableMapOf()
+        }
+        cache[updated.languageId.value]!![updated.lessonId.value] = updated
+        persistToFile()
     }
 
     /**
      * Mark cards as shown for progress tracking without affecting mastery metrics.
      */
-    fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>) {
-        loadAll()
+    override fun markCardsShownForProgress(lessonId: String, languageId: String, cardIds: Collection<String>) = mutex.withLock {
+        loadAllInternal()
         if (cardIds.isEmpty()) return
 
-        val existing = get(lessonId, languageId) ?: LessonMasteryState(
-            lessonId = lessonId,
-            languageId = languageId
+        val existing = cache[languageId]?.get(lessonId) ?: LessonMasteryState(
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId)
         )
         val updated = existing.copy(shownCardIds = existing.shownCardIds + cardIds)
-        save(updated)
+
+        if (!cache.containsKey(updated.languageId.value)) {
+            cache[updated.languageId.value] = mutableMapOf()
+        }
+        cache[updated.languageId.value]!![updated.lessonId.value] = updated
+        persistToFile()
     }
 
     /**
      * Отметить урок как завершённый (все карточки урока пройдены хотя бы раз).
      */
-    fun markLessonCompleted(lessonId: String, languageId: String) {
-        val existing = get(lessonId, languageId) ?: return
+    override fun markLessonCompleted(lessonId: String, languageId: String) = mutex.withLock {
+        loadAllInternal()
+        val existing = cache[languageId]?.get(lessonId) ?: return
 
         if (existing.completedAtMs != null) return // Уже завершён
 
         val updated = existing.copy(completedAtMs = System.currentTimeMillis())
-        save(updated)
+
+        if (!cache.containsKey(updated.languageId.value)) {
+            cache[updated.languageId.value] = mutableMapOf()
+        }
+        cache[updated.languageId.value]!![updated.lessonId.value] = updated
+        persistToFile()
     }
 
     /**
      * Получить или создать состояние для урока.
      */
-    fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState {
+    override fun getOrCreate(lessonId: String, languageId: String): LessonMasteryState {
         return get(lessonId, languageId) ?: LessonMasteryState(
-            lessonId = lessonId,
-            languageId = languageId
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId)
         )
     }
 
     /**
      * Очистить все данные.
      */
-    fun clear() {
+    override fun clear() {
         cache.clear()
         cacheLoaded = true
         if (file.exists()) {
@@ -195,8 +241,8 @@ class MasteryStore(private val context: Context) {
     /**
      * Очистить данные для конкретного языка.
      */
-    fun clearLanguage(languageId: String) {
-        loadAll()
+    override fun clearLanguage(languageId: String) = mutex.withLock {
+        loadAllInternal()
         cache.remove(languageId)
         persistToFile()
     }

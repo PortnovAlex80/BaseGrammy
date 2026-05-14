@@ -11,8 +11,8 @@ android {
         applicationId = "com.alexpo.grammermate"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.4"
+        versionCode = 5
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -22,7 +22,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -83,6 +83,8 @@ dependencies {
     implementation(files("libs/sherpa-onnx-static-link-onnxruntime-1.12.40.aar"))
     // tar.bz2 extraction for TTS model download
     implementation("org.apache.commons:commons-compress:1.26.1")
+    // QR code generation
+    implementation("io.github.alexzhirkevich:qrose:1.0.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

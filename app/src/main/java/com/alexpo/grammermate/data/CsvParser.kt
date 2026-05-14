@@ -21,7 +21,7 @@ object CsvParser {
                     titleConsumed = true
                     return@forEach
                 }
-                val columns = parseLine(line)
+                val columns = CsvLineParser.parseLine(line)
                 if (columns.size < 2) {
                     return@forEach
                 }
@@ -52,34 +52,6 @@ object CsvParser {
             }
         }
         return title to cards
-    }
-
-    private fun parseLine(line: String): List<String> {
-        val result = mutableListOf<String>()
-        val current = StringBuilder()
-        var inQuotes = false
-        var i = 0
-        while (i < line.length) {
-            val ch = line[i]
-            when (ch) {
-                '"' -> {
-                    inQuotes = !inQuotes
-                    current.append(ch)
-                }
-                ';' -> {
-                    if (inQuotes) {
-                        current.append(ch)
-                    } else {
-                        result.add(current.toString())
-                        current.clear()
-                    }
-                }
-                else -> current.append(ch)
-            }
-            i += 1
-        }
-        result.add(current.toString())
-        return result
     }
 
     private fun extractTitle(raw: String): String? {

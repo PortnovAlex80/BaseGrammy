@@ -13,6 +13,8 @@ import com.alexpo.grammermate.data.SessionProgress
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillSessionState
+import com.alexpo.grammermate.feature.training.CardSessionStateMachine
+import com.alexpo.grammermate.feature.training.WordBankGenerator
 
 /**
  * Adapter that wraps [VerbDrillViewModel] to implement [CardSessionContract].
@@ -23,8 +25,7 @@ import com.alexpo.grammermate.data.VerbDrillSessionState
  * UI can show the result. The ViewModel index is advanced in nextCard(),
  * matching the normal training flow (submit -> result -> next -> advance).
  *
- * State is stored in Compose-observable [mutableStateOf] fields so the
- * composable recomposes when the result changes.
+ * Retry/hint logic is delegated to [CardSessionStateMachine].
  *
  * Usage: create a fresh instance each time the session starts via `remember`.
  */
@@ -40,30 +41,20 @@ class VerbDrillCardSessionProvider(
     var pendingAnswerResult: AnswerResult? by mutableStateOf(null)
         private set
 
-    /** Whether the session is paused (answer shown, waiting for user to continue). */
-    private var isPaused: Boolean by mutableStateOf(false)
+    /** Retry/hint state machine. Answer provider returns [VerbDrillCard.answer]. */
+    private val sm = CardSessionStateMachine(
+        maxAttempts = 3,
+        answerProvider = { card -> (card as VerbDrillCard).answer }
+    )
 
-    /** Consecutive incorrect attempts for the current card. */
-    private var incorrectAttempts: Int by mutableStateOf(0)
-
-    /** When non-null, the answer is being shown as a hint (auto or manual). */
-    var hintAnswer: String? by mutableStateOf(null)
-        private set
-
-    /** When true, shows "Incorrect" feedback inline in input controls (wrong attempt < 3). */
-    var showIncorrectFeedback: Boolean by mutableStateOf(false)
-        private set
-
-    /** Remaining attempts before hint auto-shows. */
-    var remainingAttempts: Int by mutableStateOf(3)
-        private set
+    // Delegated state from CardSessionStateMachine
+    val hintAnswer: String? get() = sm.hintAnswer
+    val showIncorrectFeedback: Boolean get() = sm.showIncorrectFeedback
+    val remainingAttempts: Int get() = sm.remainingAttempts
+    val voiceTriggerToken: Int get() = sm.voiceTriggerToken
 
     /** Current input mode. */
     private var _inputMode: InputMode by mutableStateOf(InputMode.VOICE)
-
-    /** Token incremented to trigger automatic voice recognition. */
-    var voiceTriggerToken: Int by mutableStateOf(0)
-        private set
 
     /** Words currently selected in word bank mode. */
     private var _selectedWords: List<String> by mutableStateOf(emptyList())
@@ -97,9 +88,6 @@ class VerbDrillCardSessionProvider(
     override val progress: SessionProgress
         get() {
             val s = session ?: return SessionProgress(0, 0)
-            // Both cases use currentIndex + 1 for 1-based display.
-            // The index is advanced by nextCard(), not by submitAnswer,
-            // so currentIndex always reflects the card currently being shown or answered.
             val displayIndex = s.currentIndex + 1
             return SessionProgress(current = displayIndex, total = s.cards.size)
         }
@@ -122,8 +110,8 @@ class VerbDrillCardSessionProvider(
 
     override val sessionActive: Boolean
         get() {
-            if (isPaused) return false
-            if (hintAnswer != null) return false
+            if (sm.isPaused) return false
+            if (sm.hintAnswer != null) return false
             val s = session ?: return false
             return !s.isComplete || pendingCard != null
         }
@@ -144,26 +132,25 @@ class VerbDrillCardSessionProvider(
 
     /** Clear incorrect feedback when the user starts typing a new attempt. */
     fun clearIncorrectFeedback() {
-        showIncorrectFeedback = false
+        sm.clearIncorrectFeedback()
     }
 
     override fun togglePause() {
-        if (isPaused) {
-            // Play pressed while paused — advance to next card and restart mode
-            nextCard()
+        if (sm.isPaused) {
+            if (sm.hintAnswer != null) {
+                // Hint was shown (3 wrong attempts or manual eye button) — advance to next card
+                nextCard()
+            } else {
+                // Manual pause — just resume the current card without advancing
+                sm.resume()
+            }
         } else {
-            isPaused = true
+            sm.pause()
         }
     }
 
     override fun onInputChanged(text: String) {
-        // Clear hint when user starts typing after seeing the answer
-        if (text.isNotBlank() && hintAnswer != null) {
-            hintAnswer = null
-            isPaused = false
-            incorrectAttempts = 0
-            remainingAttempts = 3
-        }
+        sm.onInputChanged(text)
     }
 
     override fun submitAnswer(): AnswerResult? {
@@ -175,51 +162,37 @@ class VerbDrillCardSessionProvider(
      * Submit an answer with the given input text. This is the primary method
      * called by the VerbDrill integration.
      *
-     * Retry/hint flow:
-     * - Correct answer -> set result (pendingCard/pendingAnswerResult)
-     * - Wrong answer -> show error, increment attempt counter, stay on card
-     * - 3 wrong attempts -> auto-show answer as hint (input controls stay visible)
-     * - Manual "Show Answer" (eye button) -> show answer as hint (input controls stay visible)
-     * The ViewModel index is NOT advanced here — nextCard() handles advancement.
+     * Retry/hint flow is delegated to [CardSessionStateMachine].
      */
     fun submitAnswerWithInput(input: String): AnswerResult? {
         val s = session ?: return null
         if (s.isComplete) return null
         if (s.currentIndex >= s.cards.size) return null
 
-        // Already showing hint — ignore further submissions until nextCard()
-        if (hintAnswer != null) return null
-
         val card = s.cards[s.currentIndex]
         val isCorrect = Normalizer.normalize(input) == Normalizer.normalize(card.answer)
 
-        if (isCorrect) {
-            pendingCard = card
-            pendingAnswerResult = AnswerResult(correct = true, displayAnswer = card.answer)
-            incorrectAttempts = 0
-            showIncorrectFeedback = false
-            remainingAttempts = 3
-            // Record time but don't advance ViewModel index here.
-            // Advancement happens in nextCard() to match normal training flow.
-            viewModel.recordAnswerTime()
-        } else {
-            incorrectAttempts++
-            remainingAttempts = 3 - incorrectAttempts
-            if (incorrectAttempts >= 3) {
-                // Auto-show answer after 3 wrong attempts.
-                // Only set hintAnswer — do NOT set pendingAnswerResult so input controls stay visible.
-                hintAnswer = card.answer
+        val result = sm.onSubmit(
+            isCorrect = isCorrect,
+            card = card,
+            inputMode = _inputMode,
+            onCorrect = {
                 pendingCard = card
-                showIncorrectFeedback = false
-                isPaused = true
-            } else {
-                // For attempts < 3: show inline "Incorrect" feedback.
-                // The input stays visible so the user can retry.
-                showIncorrectFeedback = true
-                // Auto-trigger voice recognition in VOICE mode for retry.
-                if (_inputMode == InputMode.VOICE) {
-                    voiceTriggerToken++
-                }
+                pendingAnswerResult = AnswerResult(correct = true, displayAnswer = card.answer)
+                viewModel.recordAnswerTime()
+            },
+            onWrong = {}
+        )
+
+        when (result) {
+            is CardSessionStateMachine.OnSubmitResult.HintShown -> {
+                pendingCard = card
+            }
+            is CardSessionStateMachine.OnSubmitResult.Correct -> {
+                pendingAnswerResult = result.result
+            }
+            is CardSessionStateMachine.OnSubmitResult.Wrong -> {
+                // State already updated by state machine
             }
         }
 
@@ -229,35 +202,24 @@ class VerbDrillCardSessionProvider(
     override fun showAnswer(): String? {
         val s = session ?: return null
         val card = s.cards.getOrElse(s.currentIndex) { return null }
-        // Manual eye button — show answer as hint, keep input controls visible.
-        // Do NOT set pendingAnswerResult so isShowingResult stays false.
-        hintAnswer = card.answer
         pendingCard = card
-        incorrectAttempts = 3
-        showIncorrectFeedback = false
-        remainingAttempts = 0
-        isPaused = true
-        return card.answer
+        return sm.showAnswer(card)
     }
 
     override fun nextCard() {
         val hadPending = pendingCard != null
-        val hadHint = hintAnswer != null
+        val hadHint = sm.hintAnswer != null
 
         pendingCard = null
         pendingAnswerResult = null
-        hintAnswer = null
-        incorrectAttempts = 0
-        showIncorrectFeedback = false
-        isPaused = false
-        remainingAttempts = 3
+        sm.reset()
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
 
         // Auto-trigger voice recognition when advancing to next card in VOICE mode
         if (_inputMode == InputMode.VOICE) {
-            voiceTriggerToken++
+            sm.triggerVoice()
         }
 
         if (hadHint) {
@@ -276,11 +238,7 @@ class VerbDrillCardSessionProvider(
         viewModel.prevCard()
         pendingCard = null
         pendingAnswerResult = null
-        hintAnswer = null
-        incorrectAttempts = 0
-        showIncorrectFeedback = false
-        isPaused = false
-        remainingAttempts = 3
+        sm.reset()
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
@@ -297,7 +255,7 @@ class VerbDrillCardSessionProvider(
         _inputMode = mode
         _selectedWords = emptyList()
         if (mode == InputMode.VOICE) {
-            voiceTriggerToken++
+            sm.triggerVoice()
         }
     }
 
@@ -310,15 +268,12 @@ class VerbDrillCardSessionProvider(
         // Cache word bank per card to avoid re-generating on every recomposition
         if (cachedWordBankCardId == card.id) return cachedWordBank
 
-        val answerWords = card.answer.split(Regex("\\s+")).filter { it.isNotBlank() }
-        val distractorWords = s.cards
-            .filter { it.id != card.id }
-            .flatMap { it.answer.split(Regex("\\s+")).filter { w -> w.isNotBlank() && w !in answerWords } }
-            .distinct()
-            .shuffled()
-            .take(maxOf(0, 8 - answerWords.size))
-
-        val bank = (answerWords + distractorWords).shuffled()
+        val allAnswers = s.cards.map { it.answer }
+        val bank = WordBankGenerator.generateForVerb(
+            answer = card.answer,
+            allAnswers = allAnswers,
+            maxDistractors = 8
+        )
         cachedWordBankCardId = card.id
         cachedWordBank = bank
         return bank

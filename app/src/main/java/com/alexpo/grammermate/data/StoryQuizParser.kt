@@ -43,7 +43,7 @@ object StoryQuizParser {
         }
         return StoryQuiz(
             storyId = storyId,
-            lessonId = lessonId,
+            lessonId = LessonId(lessonId),
             phase = phase,
             text = textBody,
             questions = questions

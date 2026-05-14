@@ -9,8 +9,8 @@ class YamlListStore(
     private val schemaVersion: Int = 1
 ) {
     fun read(): List<Map<String, Any>> {
-        if (!file.exists()) return emptyList()
-        val root = yaml.load<Any>(file.readText()) ?: return emptyList()
+        if (!file.exists() || file.length() == 0L) return emptyList()
+        val root = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return emptyList()
         return when (root) {
             is Map<*, *> -> {
                 val items = root["items"] as? List<*>

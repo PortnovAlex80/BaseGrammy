@@ -28,7 +28,7 @@ class ProgressIntegrationTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        store = ProgressStore(context)
+        store = ProgressStoreImpl(context)
         testDir = File(context.filesDir, "grammarmate")
     }
 
@@ -46,7 +46,7 @@ class ProgressIntegrationTest {
     fun userStartsLesson_progressSaves() {
         // Симуляция: пользователь начинает урок
         val progress = TrainingProgress(
-            languageId = "en",
+            languageId = LanguageId("en"),
             mode = TrainingMode.LESSON,
             lessonId = "lesson1",
             currentIndex = 0,
@@ -65,7 +65,7 @@ class ProgressIntegrationTest {
     fun userPausesLesson_stateSaves() {
         // Симуляция: пользователь ставит на паузу
         var progress = TrainingProgress(
-            languageId = "en",
+            languageId = LanguageId("en"),
             mode = TrainingMode.LESSON,
             lessonId = "lesson1",
             currentIndex = 5,
@@ -86,7 +86,7 @@ class ProgressIntegrationTest {
     fun userCompletesLesson_statisticsSave() {
         // Симуляция: пользователь завершает урок со статистикой
         val progress = TrainingProgress(
-            languageId = "en",
+            languageId = LanguageId("en"),
             mode = TrainingMode.LESSON,
             lessonId = "lesson1",
             currentIndex = 30,
@@ -291,7 +291,7 @@ class ProgressIntegrationTest {
         store.save(progress)
 
         // Симуляция перезапуска
-        val newStore = ProgressStore(context)
+        val newStore = ProgressStoreImpl(context)
         val loaded = newStore.load()
 
         assertEquals(TrainingMode.ALL_MIXED, loaded.mode)

@@ -29,7 +29,7 @@ class ProfileStoreTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        store = ProfileStore(context)
+        store = ProfileStoreImpl(context)
         testDir = File(context.filesDir, "grammarmate")
     }
 

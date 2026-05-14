@@ -17,30 +17,32 @@ import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-enum class TtsState {
-    IDLE,
-    INITIALIZING,
-    READY,
-    SPEAKING,
-    ERROR
+sealed class TtsState {
+    object Idle : TtsState()
+    object Initializing : TtsState()
+    object Ready : TtsState()
+    object Speaking : TtsState()
+    data class Error(val reason: String? = null) : TtsState()
 }
 
 class TtsEngine(private val context: Context) {
 
-    private val _state = MutableStateFlow(TtsState.IDLE)
+    private val _state = MutableStateFlow<TtsState>(TtsState.Idle)
     val state: StateFlow<TtsState> = _state
 
     val isReady: Boolean
-        get() = _state.value == TtsState.READY
+        get() = _state.value == TtsState.Ready
 
     private var offlineTts: OfflineTts? = null
     var activeLanguageId: String? = null
@@ -56,44 +58,39 @@ class TtsEngine(private val context: Context) {
 
     private val ttsScope = CoroutineScope(Dispatchers.Default)
 
+    private val mutex = Mutex()
+
+    @Volatile
+    private var initFailed = false
+
     private val audioManager: AudioManager by lazy {
         context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
     private var focusRequest: AudioFocusRequest? = null
 
-    suspend fun initialize(languageId: String = "en") {
+    suspend fun initialize(languageId: String = "en"): Unit = mutex.withLock {
         // Fast path: already initialized for this language
-        if (_state.value == TtsState.READY && activeLanguageId == languageId) return
+        if (_state.value == TtsState.Ready && activeLanguageId == languageId) return
 
         // If another language is loaded, release it first and await cleanup
         if (activeLanguageId != null && activeLanguageId != languageId) {
             val oldJob = speakJob
-            release()
-            oldJob?.join()  // Await the speakJob to prevent state races
+            doRelease()
+            oldJob?.join()
         }
 
         // Wait if currently speaking — stop first, then proceed
-        if (_state.value == TtsState.SPEAKING) {
-            stop()
+        if (_state.value == TtsState.Speaking) {
+            doStop()
             speakJob?.join()
         }
 
-        // Wait if another coroutine is already initializing for the same language
-        if (_state.value == TtsState.INITIALIZING) {
-            // Spin-wait until initialization completes
-            while (_state.value == TtsState.INITIALIZING) {
-                delay(50)
-            }
-            // After waiting, check if it succeeded
-            return
-        }
-
-        if (!_state.compareAndSet(TtsState.IDLE, TtsState.INITIALIZING)
-            && !_state.compareAndSet(TtsState.ERROR, TtsState.INITIALIZING)
-        ) return
+        val current = _state.value
+        if (current != TtsState.Idle && current !is TtsState.Error) return
+        _state.value = TtsState.Initializing
 
         val spec = TtsModelRegistry.specFor(languageId) ?: run {
-            _state.value = TtsState.ERROR
+            _state.value = TtsState.Error("Model not loaded")
             Log.e(TAG, "No TTS model for language: $languageId")
             return
         }
@@ -101,18 +98,33 @@ class TtsEngine(private val context: Context) {
         withContext(Dispatchers.Default) {
             try {
                 val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
-                // Validate model files before loading into native code
                 val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
                 if (missingFiles.isNotEmpty()) {
                     throw IllegalStateException("Missing or empty model files: $missingFiles")
                 }
                 val config = buildConfig(spec, modelDir)
-                offlineTts = OfflineTts(config = config)
+                initFailed = true
+                withTimeout(30_000L) {
+                    offlineTts = OfflineTts(config = config)
+                }
+                initFailed = false
                 activeLanguageId = languageId
-                _state.value = TtsState.READY
+                _state.value = TtsState.Ready
                 Log.d(TAG, "TTS engine initialized for $languageId (${spec.modelType})")
+            } catch (e: OutOfMemoryError) {
+                initFailed = true
+                offlineTts = null
+                _state.value = TtsState.Error("Not enough memory")
+                Log.e(TAG, "OOM during TTS initialization for $languageId", e)
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                initFailed = true
+                offlineTts = null
+                _state.value = TtsState.Error("Timed out")
+                Log.e(TAG, "TTS initialization timed out for $languageId")
             } catch (e: Exception) {
-                _state.value = TtsState.ERROR
+                initFailed = true
+                offlineTts = null
+                _state.value = TtsState.Error("Initialization failed")
                 Log.e(TAG, "Initialization failed for $languageId", e)
             }
         }
@@ -152,94 +164,104 @@ class TtsEngine(private val context: Context) {
 
     suspend fun speak(text: String, languageId: String = "en", speakerId: Int = 0, speed: Float = 1.0f) {
         if (text.isBlank()) return
+        if (initFailed) return
         val safeSpeed = speed.coerceIn(0.3f, 3.0f)
 
-        // Ensure engine is initialized for the requested language
-        if (activeLanguageId != languageId || _state.value != TtsState.READY) {
-            initialize(languageId)
-        }
+        try {
+            // Ensure engine is initialized for the requested language
+            if (activeLanguageId != languageId || _state.value !is TtsState.Ready) {
+                initialize(languageId)
+            }
 
-        val tts = offlineTts
-        if (tts == null) {
-            Log.e(TAG, "speak() called but offlineTts is null, state=${_state.value}, lang=$activeLanguageId")
-            return
-        }
+            val tts = offlineTts
+            if (tts == null) {
+                Log.w(TAG, "speak() skipped: engine not ready, state=${_state.value}, lang=$activeLanguageId")
+                return
+            }
 
-        val oldJob = speakJob
-        if (oldJob != null) {
-            oldJob.cancel()
-            oldJob.join()
-        }
-
-        val myGeneration = generation.incrementAndGet()
-        isStopped.set(false)
-
-        speakJob = ttsScope.launch {
-            _state.value = TtsState.SPEAKING
-
-            requestAudioFocus()
-
-            val sampleRate = tts.sampleRate()
-            val minBufferSize = AudioTrack.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_FLOAT
-            )
-
-            val audioTrack = AudioTrack.Builder()
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build()
-                )
-                .setAudioFormat(
-                    AudioFormat.Builder()
-                        .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                        .setSampleRate(sampleRate)
-                        .build()
-                )
-                .setBufferSizeInBytes(minBufferSize)
-                .setTransferMode(AudioTrack.MODE_STREAM)
-                .build()
-
-            currentTrack = audioTrack
-            audioTrack.play()
-
-            try {
-                tts.generateWithConfigAndCallback(
-                    text = text,
-                    config = GenerationConfig(sid = speakerId, speed = safeSpeed),
-                    callback = { samples ->
-                        if (!isStopped.get()) {
-                            audioTrack.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
-                            1
-                        } else {
-                            0
-                        }
-                    }
-                )
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Log.e(TAG, "Playback failed", e)
-            } finally {
-                if (generation.get() == myGeneration) {
-                    try {
-                        audioTrack.stop()
-                    } catch (_: IllegalStateException) {}
-                    audioTrack.release()
-                    currentTrack = null
-                    if (_state.value == TtsState.SPEAKING) {
-                        _state.value = TtsState.READY
-                    }
-                } else {
-                    try {
-                        audioTrack.stop()
-                    } catch (_: IllegalStateException) {}
-                    audioTrack.release()
+            mutex.withLock {
+                val oldJob = speakJob
+                if (oldJob != null) {
+                    oldJob.cancel()
+                    oldJob.join()
                 }
-                abandonAudioFocus()
+
+                val myGeneration = generation.incrementAndGet()
+                isStopped.set(false)
+
+                speakJob = ttsScope.launch {
+                    _state.value = TtsState.Speaking
+
+                    requestAudioFocus()
+
+                    val sampleRate = tts.sampleRate()
+                    val minBufferSize = AudioTrack.getMinBufferSize(
+                        sampleRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_FLOAT
+                    )
+
+                    val audioTrack = AudioTrack.Builder()
+                        .setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .build()
+                        )
+                        .setAudioFormat(
+                            AudioFormat.Builder()
+                                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                                .setSampleRate(sampleRate)
+                                .build()
+                        )
+                        .setBufferSizeInBytes(minBufferSize)
+                        .setTransferMode(AudioTrack.MODE_STREAM)
+                        .build()
+
+                    currentTrack = audioTrack
+                    audioTrack.play()
+
+                    try {
+                        tts.generateWithConfigAndCallback(
+                            text = text,
+                            config = GenerationConfig(sid = speakerId, speed = safeSpeed),
+                            callback = { samples ->
+                                if (!isStopped.get()) {
+                                    audioTrack.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
+                                    1
+                                } else {
+                                    0
+                                }
+                            }
+                        )
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        Log.e(TAG, "Playback failed", e)
+                    } finally {
+                        if (generation.get() == myGeneration) {
+                            try {
+                                audioTrack.stop()
+                            } catch (_: IllegalStateException) {}
+                            audioTrack.release()
+                            currentTrack = null
+                            if (_state.value == TtsState.Speaking) {
+                                _state.value = TtsState.Ready
+                            }
+                        } else {
+                            try {
+                                audioTrack.stop()
+                            } catch (_: IllegalStateException) {}
+                            audioTrack.release()
+                        }
+                        abandonAudioFocus()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "speak() failed, models may not be loaded", e)
+            if (_state.value == TtsState.Speaking) {
+                _state.value = if (offlineTts != null) TtsState.Ready else TtsState.Error("Playback failed")
             }
         }
     }
@@ -254,21 +276,30 @@ class TtsEngine(private val context: Context) {
         }
     }
 
-    /**
-     * Release TTS engine resources. Safe to call from any context.
-     * When called from a suspend function (e.g., initialize()), the caller
-     * should use the suspend overload `releaseAndAwait()` instead.
-     */
     fun release() {
-        stop()
+        doStop()
         speakJob?.cancel()
+        doRelease()
+    }
+
+    private fun doRelease() {
         val ttsToFree = offlineTts
         offlineTts = null
         activeLanguageId = null
-        _state.value = TtsState.IDLE
+        initFailed = false
+        _state.value = TtsState.Idle
         ttsScope.launch {
             speakJob?.join()
             ttsToFree?.free()
+        }
+    }
+
+    private fun doStop() {
+        isStopped.set(true)
+        currentTrack?.let {
+            try {
+                it.stop()
+            } catch (_: IllegalStateException) {}
         }
     }
 

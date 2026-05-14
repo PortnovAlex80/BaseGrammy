@@ -275,7 +275,7 @@ class AsrEngine(private val context: Context) {
                 val text = result.text.trim()
                 stream.release()
 
-                Log.d(TAG, "ASR result (lang=$currentLanguage): '$text'")
+                Log.d(TAG, "ASR result received (lang=$currentLanguage)")
                 _state.value = AsrState.READY
                 text
             } catch (e: Exception) {

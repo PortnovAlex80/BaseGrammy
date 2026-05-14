@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HomeScreen -->
+    <string name="home_settings">Settings</string>
+    <string name="home_continue_learning">Continue Learning</string>
+    <string name="home_start_learning">Start learning</string>
+    <string name="home_grammar_roadmap">Grammar Roadmap</string>
+    <string name="home_legend">Legend:</string>
+    <string name="home_legend_seed_growing_bloom">seed • growing • bloom</string>
+    <string name="home_legend_wilting_wilted_forgotten">wilting • wilted • forgotten</string>
+    <string name="home_how_training_works">How This Training Works</string>
+    <string name="home_ok">OK</string>
+    <string name="home_method_description">GrammarMate builds automatic grammar patterns with repeated retrieval. States show how stable each pattern is and when it needs refresh.</string>
+    <string name="home_lesson_locked">Lesson locked</string>
+    <string name="home_complete_previous_lesson">Please complete the previous lesson first.</string>
+    <string name="home_start_early_title">Start early?</string>
+    <string name="home_start_early_message">Start this lesson early? You can always come back to review previous lessons.</string>
+    <string name="home_yes">Yes</string>
+    <string name="home_no">No</string>
+    <string name="home_verb_drill">Verb Drill</string>
+    <string name="home_verb">Verb</string>
+    <string name="home_flashcards">Flashcards</string>
+    <string name="home_daily_practice">Daily Practice</string>
+    <string name="home_practice_all_sublessons">Practice all sub-lessons</string>
+    <string name="home_start">Start</string>
+
+    <!-- LessonRoadmapScreen -->
+    <string name="roadmap_back">Back</string>
+    <string name="roadmap_lesson_fallback">Lesson</string>
+    <string name="roadmap_exercise_of">Exercise %1$d of %2$d</string>
+    <string name="roadmap_cards_of">Cards: %1$d of %2$d</string>
+    <string name="roadmap_new">NEW</string>
+    <string name="roadmap_mix">MIX</string>
+    <string name="roadmap_review">Review</string>
+    <string name="roadmap_mega">Mega</string>
+    <string name="roadmap_complete_15_exercises">Complete at least 15 exercises first</string>
+    <string name="roadmap_start_lesson">Start Lesson</string>
+    <string name="roadmap_continue_lesson">Continue Lesson</string>
+    <string name="roadmap_start_early_title">Start early?</string>
+    <string name="roadmap_start_early_message">Start exercise %1$d early? You can always come back to review.</string>
+    <string name="roadmap_locked">Locked</string>
+    <string name="roadmap_locked_message">Complete at least 15 exercises first.</string>
+    <string name="roadmap_drill">Drill</string>
+
+    <!-- LadderScreen -->
+    <string name="ladder_back">Back</string>
+    <string name="ladder_title">Interval Ladder</string>
+    <string name="ladder_subtitle">All lessons in current pack</string>
+    <string name="ladder_no_data">No lesson data available.</string>
+    <string name="ladder_header_number">#</string>
+    <string name="ladder_header_lesson">Lesson</string>
+    <string name="ladder_header_cards">Cards</string>
+    <string name="ladder_header_days">Days</string>
+    <string name="ladder_header_interval">Interval</string>
+
+    <!-- SettingsScreen -->
+    <string name="settings_service_mode">Service Mode</string>
+    <string name="settings_test_mode">Test Mode</string>
+    <string name="settings_test_mode_description">Enables all lessons, accepts all answers, unlocks Elite mode</string>
+    <string name="settings_show_ladder">Show ladder</string>
+    <string name="settings_difficulty">Difficulty</string>
+    <string name="settings_easy">Easy</string>
+    <string name="settings_medium">Medium</string>
+    <string name="settings_hard">Hard</string>
+    <string name="settings_easy_description">All hints visible: verb info, word bank, first-letter hints</string>
+    <string name="settings_medium_description">Partial hints: infinitive + tense only, no word bank</string>
+    <string name="settings_hard_description">No hints: voice only, produce from Russian prompt alone</string>
+    <string name="settings_vocab_sprint_limit">Vocabulary Sprint limit</string>
+    <string name="settings_vocab_limit_hint">Set how many words to show (0 = all words)</string>
+    <string name="settings_pronunciation_speed">Pronunciation speed</string>
+    <string name="settings_voice_recognition">Voice recognition</string>
+    <string name="settings_offline_speech_recognition">Offline speech recognition</string>
+    <string name="settings_downloading_model">Downloading model… %1$d%%</string>
+    <string name="settings_extracting_model">Extracting model… %1$d%%</string>
+    <string name="settings_using_on_device">Using on-device recognition (no internet required)</string>
+    <string name="settings_model_not_downloaded">Model not downloaded yet</string>
+    <string name="settings_using_google_recognition">Using Google speech recognition (requires internet)</string>
+    <string name="settings_auto_start_voice">Auto-start voice input</string>
+    <string name="settings_voice_auto_start_on">Voice recognition starts automatically when a new card appears</string>
+    <string name="settings_voice_auto_start_off">Voice recognition starts only when you tap the microphone</string>
+    <string name="settings_translation_text_size">Translation text size</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_pack">Pack</string>
+    <string name="settings_new_language">New language</string>
+    <string name="settings_add_language">Add language</string>
+    <string name="settings_import_lesson_pack">Import lesson pack (ZIP)</string>
+    <string name="settings_import_lesson_csv">Import lesson (CSV)</string>
+    <string name="settings_reset_reload">Reset/Reload (clear + import)</string>
+    <string name="settings_empty_lesson_title">Empty lesson (title)</string>
+    <string name="settings_create_empty_lesson">Create empty lesson</string>
+    <string name="settings_delete_all_lessons">Delete all lessons</string>
+    <string name="settings_reset_progress">Reset progress (%s)</string>
+    <string name="settings_reset_progress_title">Reset progress</string>
+    <string name="settings_reset_progress_confirm">Are you sure you want to reset all progress for \"%s\"?\n\nThis will delete:\n• All card mastery data\n• Spaced repetition intervals\n• Flower states\n• Verb conjugation progress\n• Vocabulary progress\n\nOther languages will not be affected.</string>
+    <string name="settings_reset">Reset</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_csv_format">CSV format</string>
+    <string name="settings_csv_format_description">UTF-8, delimiter \';\'.\nColumn 1: Native sentence.\nColumn 2: Translation(s), variants via \'+\'.\nExample: He doesn\'t work from home;Он не работает из дома</string>
+    <string name="settings_instructions">Instructions</string>
+    <string name="settings_instructions_description">Play - start/continue, Pause - pause, Stop - reset progress without updating rating.</string>
+    <string name="settings_packs">Packs</string>
+    <string name="settings_no_installed_packs">No installed packs</string>
+    <string name="settings_delete_pack">Delete pack</string>
+    <string name="settings_profile">Profile</string>
+    <string name="settings_your_name">Your Name</string>
+    <string name="settings_save_name">Save Name</string>
+    <string name="settings_backup_restore">Backup &amp; Restore</string>
+    <string name="settings_restore_description">Restore progress from backup folder (Downloads/BaseGrammy)</string>
+    <string name="settings_save_progress_now">Save progress now</string>
+    <string name="settings_restore_from_backup">Restore from backup</string>
+    <string name="settings_grammarmate">GrammarMate</string>
+    <string name="settings_tagline">Your language starter.\nSpeak first — fluency follows.</string>
+    <string name="settings_description">Automatize grammar patterns through\ndrill repetition. Then read, listen, and live\nthe language on a prepared skeleton.</string>
+
+    <!-- StoryQuizScreen -->
+    <string name="story_check_in">Story Check-in</string>
+    <string name="story_check_out">Story Check-out</string>
+    <string name="story_question_of">Question %1$d / %2$d</string>
+    <string name="story_correct_suffix"> (correct)</string>
+    <string name="story_your_choice_suffix"> (your choice)</string>
+    <string name="story_correct_label">Correct: %s</string>
+    <string name="story_prev">Prev</string>
+    <string name="story_select_an_answer">Select an answer</string>
+    <string name="story_incorrect">Incorrect</string>
+    <string name="story_check">Check</string>
+    <string name="story_finish">Finish</string>
+    <string name="story_next">Next</string>
+    <string name="story_scroll_to_continue">Scroll to continue</string>
+
+    <!-- TrainingScreen -->
+    <string name="training_grammarmate">GrammarMate</string>
+    <string name="training_settings">Settings</string>
+    <string name="training_review_session">Review Session</string>
+    <string name="training_refresh_session">Refresh Session</string>
+    <string name="training_ru">RU</string>
+    <string name="training_no_cards">No cards</string>
+    <string name="training_say_translation">Say translation: %s</string>
+    <string name="training_your_translation">Your translation</string>
+    <string name="training_voice_input">Voice input</string>
+    <string name="training_voice_mode">Voice mode</string>
+    <string name="training_keyboard_mode">Keyboard mode</string>
+    <string name="training_word_bank_mode">Word bank mode</string>
+    <string name="training_show_answer">Show answer</string>
+    <string name="training_report_sentence">Report sentence</string>
+    <string name="training_voice">Voice</string>
+    <string name="training_keyboard">Keyboard</string>
+    <string name="training_word_bank">Word Bank</string>
+    <string name="training_check">Check</string>
+    <string name="training_correct">Correct</string>
+    <string name="training_incorrect">Incorrect</string>
+    <string name="training_prev">Prev</string>
+    <string name="training_pause">Pause</string>
+    <string name="training_play">Play</string>
+    <string name="training_exit_session">Exit session</string>
+    <string name="training_next">Next</string>
+    <string name="training_review">Review</string>
+    <string name="training_progress">Progress</string>
+    <string name="training_time">Time</string>
+    <string name="training_speed">Speed</string>
+    <string name="training_lesson">Lesson</string>
+    <string name="training_no_lessons">No lessons</string>
+    <string name="training_all_lessons">All lessons</string>
+    <string name="training_mixed">Mixed</string>
+    <string name="training_export">Export</string>
+    <string name="training_exported_to">Exported to %s</string>
+    <string name="training_no_bad_sentences">No bad sentences to export</string>
+    <string name="training_say_the_translation">Say the translation</string>
+
+    <!-- Shared format strings -->
+    <string name="format_mastered">%d mastered</string>
+    <string name="format_lesson_exercise">Lesson %1$d. Exercise %2$s</string>
+</resources>

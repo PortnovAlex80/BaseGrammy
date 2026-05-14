@@ -4,22 +4,31 @@ import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
-class ProgressStore(private val context: Context) {
+interface ProgressStore {
+
+    fun load(): TrainingProgress
+
+    fun save(progress: TrainingProgress)
+
+    fun clear()
+}
+
+class ProgressStoreImpl(private val context: Context) : ProgressStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "progress.yaml")
     private val schemaVersion = 1
 
-    fun load(): TrainingProgress {
-        if (!file.exists()) return TrainingProgress()
-        val raw = yaml.load<Any>(file.readText()) ?: return TrainingProgress()
+    override fun load(): TrainingProgress {
+        if (!file.exists() || file.length() == 0L) return TrainingProgress()
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return TrainingProgress()
         val data = when (raw) {
             is Map<*, *> -> raw
             else -> return TrainingProgress()
         }
         val payload = (data["data"] as? Map<*, *>) ?: data
         return TrainingProgress(
-            languageId = payload["languageId"] as? String ?: "en",
+            languageId = LanguageId(payload["languageId"] as? String ?: "en"),
             mode = TrainingMode.valueOf(payload["mode"] as? String ?: TrainingMode.LESSON.name),
             lessonId = payload["lessonId"] as? String,
             currentIndex = (payload["currentIndex"] as? Number)?.toInt() ?: 0,
@@ -47,7 +56,22 @@ class ProgressStore(private val context: Context) {
                 ?.map { it.toDouble() }
                 ?: emptyList(),
             currentScreen = payload["currentScreen"] as? String ?: "HOME",
-            activePackId = payload["activePackId"] as? String
+            activePackId = (payload["activePackId"] as? String)?.let { PackId(it) },
+            dailyLevel = (payload["dailyLevel"] as? Number)?.toInt() ?: 0,
+            dailyTaskIndex = (payload["dailyTaskIndex"] as? Number)?.toInt() ?: 0,
+            dailyCursor = run {
+                val cursorPayload = payload["dailyCursor"] as? Map<*, *>
+                DailyCursorState(
+                    sentenceOffset = (cursorPayload?.get("sentenceOffset") as? Number)?.toInt() ?: 0,
+                    currentLessonIndex = (cursorPayload?.get("currentLessonIndex") as? Number)?.toInt() ?: 0,
+                    lastSessionHash = (cursorPayload?.get("lastSessionHash") as? Number)?.toInt() ?: 0,
+                    firstSessionDate = cursorPayload?.get("firstSessionDate") as? String ?: "",
+                    firstSessionSentenceCardIds = (cursorPayload?.get("firstSessionSentenceCardIds") as? List<*>)
+                        ?.mapNotNull { it as? String } ?: emptyList(),
+                    firstSessionVerbCardIds = (cursorPayload?.get("firstSessionVerbCardIds") as? List<*>)
+                        ?.mapNotNull { it as? String } ?: emptyList()
+                )
+            }
         ).let { progress ->
             // Migration: if old single bossMegaReward exists but bossMegaRewards is empty,
             // migrate it using the current lessonId as the key
@@ -60,9 +84,9 @@ class ProgressStore(private val context: Context) {
         }
     }
 
-    fun save(progress: TrainingProgress) {
+    override fun save(progress: TrainingProgress) {
         val payload = linkedMapOf(
-            "languageId" to progress.languageId,
+            "languageId" to progress.languageId.value,
             "mode" to progress.mode.name,
             "lessonId" to progress.lessonId,
             "currentIndex" to progress.currentIndex,
@@ -80,7 +104,17 @@ class ProgressStore(private val context: Context) {
             "eliteStepIndex" to progress.eliteStepIndex,
             "eliteBestSpeeds" to progress.eliteBestSpeeds,
             "currentScreen" to progress.currentScreen,
-            "activePackId" to progress.activePackId
+            "activePackId" to progress.activePackId?.value,
+            "dailyLevel" to progress.dailyLevel,
+            "dailyTaskIndex" to progress.dailyTaskIndex,
+            "dailyCursor" to linkedMapOf(
+                "sentenceOffset" to progress.dailyCursor.sentenceOffset,
+                "currentLessonIndex" to progress.dailyCursor.currentLessonIndex,
+                "lastSessionHash" to progress.dailyCursor.lastSessionHash,
+                "firstSessionDate" to progress.dailyCursor.firstSessionDate,
+                "firstSessionSentenceCardIds" to progress.dailyCursor.firstSessionSentenceCardIds,
+                "firstSessionVerbCardIds" to progress.dailyCursor.firstSessionVerbCardIds
+            )
         )
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,
@@ -89,7 +123,7 @@ class ProgressStore(private val context: Context) {
         AtomicFileWriter.writeText(file, yaml.dump(data))
     }
 
-    fun clear() {
+    override fun clear() {
         if (file.exists()) file.delete()
     }
 }

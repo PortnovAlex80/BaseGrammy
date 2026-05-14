@@ -25,7 +25,7 @@ data class WordMasteryState(
     val incorrectCount: Int = 0,            // total wrong answers
     val lastReviewDateMs: Long = 0L,        // epoch millis of last review
     val nextReviewDateMs: Long = 0L,        // computed: lastReviewDate + ladder[step] * DAY_MS
-    val isLearned: Boolean = false           // reached the last interval step (9)
+    val isLearned: Boolean = false           // reached LEARNED_THRESHOLD (step 3)
 ) {
     companion object {
         const val DAY_MS = 86_400_000L
@@ -71,7 +71,6 @@ data class VocabDrillUiState(
     val session: VocabDrillSessionState? = null,
     val loadedLanguageId: String? = null,
     val drillDirection: VocabDrillDirection = VocabDrillDirection.IT_TO_RU,
-    val voiceModeEnabled: Boolean = false,
     val masteredCount: Int = 0,
     val masteredByPos: Map<String, Int> = emptyMap()
 )
@@ -88,6 +87,5 @@ data class VocabDrillSessionState(
     val voiceAttempts: Int = 0,           // 0-3
     val voiceRecognizedText: String? = null,
     val voiceResult: VoiceResult? = null, // CORRECT, WRONG, SKIPPED
-    val voiceCompleted: Boolean = false,  // true after correct or 3 wrong or skip
-    val voiceModeEnabled: Boolean = false // auto-launch voice input on new cards
+    val voiceCompleted: Boolean = false   // true after correct or 3 wrong or skip
 )

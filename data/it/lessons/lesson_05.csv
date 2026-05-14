@@ -1,0 +1,285 @@
+RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
+мы должны были бы выплатить (somma dovuta);Noi dovremmo pagare la somma dovuta.;Condizionale Presente;126;;;dovere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он ведет (condurre) прекрасную (bella) жизнь.;Lui conduce una bella vita.;Presente;137;vita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+прошлый (scorso) год (anno) мы жили (vivere) в Риме (Roma).;L'anno scorso noi vivevamo a Roma.;Imperfetto;143;anno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы взяли кусок пиццы.;Noi abbiamo preso un pezzo di pizza.;Passato Prossimo;147;pezzo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я гулял (uscire) с друзьями (amici).;Io uscivo con gli amici.;Imperfetto;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они кладут конец обсуждению (porre fine);Loro pongono fine alla discussione.;Presente;166;;;porre;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+они делали акцент на деталях (porre l'accento);Loro ponevano l'accento sui dettagli.;Imperfetto;166;;;porre;loro;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+ты поставил решение под сомнение (porre in dubbio);Tu hai posto in dubbio la decisione.;Passato Prossimo;166;;;porre;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+она проявляла мужество (dare prova);Lei dava prova di coraggio.;Imperfetto;174;;;dare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+вы бы доставляли беспокойство (dare fastidio);Voi dareste fastidio.;Condizionale Presente;174;;;dare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+они бы провели обычный день (trascorrere).;Loro trascorrerebbero un giorno qualunque.;Condizionale Presente;178;giorno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они говорят громко (a voce alta);Loro parlano a voce alta.;Presente;189;;;parlare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы с тревогой ждали (aspettare con ansia);Noi aspettavamo con ansia.;Imperfetto;211;;;aspettare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы (noi) пережили (passare) трудные (difficile) моменты (momenti).;Noi abbiamo passato dei momenti difficili.;Passato Prossimo;218;momento;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты выбросишь (buttare via) деньги (soldi).;Tu butterai via i soldi.;Futuro Semplice;232;soldo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он имел одну гениальную идею (avere, geniale).;Lui ha avuto un'idea geniale.;Passato Prossimo;239;idea;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они заключили (stringere) соглашение (accordo).;Loro hanno stretto un accordo.;Passato Prossimo;244;accordo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я нахожу смелость (trovare il coraggio);Io trovo il coraggio.;Presente;251;;;trovare;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+ему было хорошо (trovarsi bene);Lui si trovava bene.;Imperfetto;251;;;trovare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+это был изолированный (isolato) случай (caso).;Era un caso isolato.;Imperfetto;253;caso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она использовала (usare) грубую (bruta) силу (forza).;Lei ha usato la forza bruta.;Passato Prossimo;254;forza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она решила проблему (risolvere, problema).;Lei ha risolto un problema.;Passato Prossimo;262;problema;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы изучали (studiare) мир (mondo) животных (animale).;Noi studiavamo il mondo animale.;Imperfetto;266;mondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я приму к сведению (prendere atto);Io prenderò atto.;Futuro Semplice;268;;;prendere;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он основал (fondare) семью (famiglia).;Lui ha fondato una famiglia.;Passato Prossimo;278;famiglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я бы дал право (dare, ragione);Io darei ragione.;Condizionale Presente;285;ragione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он провел бессонную ночь (passare, notte bianca).;Lui ha passato una notte bianca.;Passato Prossimo;289;notte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он имеет горячую голову (caldo).;Lui ha una testa calda.;Presente;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она теряла голову (perdere).;Lei perdeva la testa.;Imperfetto;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она продвинула (portare avanti) дело;Lei ha portato avanti il lavoro.;Passato Prossimo;308;;;portare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы умирали от голода (morire di fame);Noi morivamo di fame.;Imperfetto;314;;;morire;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+она умерла от скуки (morire di noia);Lei è morta di noia.;Passato Prossimo;314;;;morire;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+я звоню (chiamare) в полицию (polizia).;Io chiamo la polizia.;Presente;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы читали вслух (leggere ad alta voce);Voi leggevate ad alta voce.;Imperfetto;330;;;leggere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+вы прочитали между строк (leggere tra le righe);Voi avete letto tra le righe.;Passato Prossimo;330;;;leggere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы поставил (mettere) конец (fine) этому (questo) делу (affare).;Io metterei fine a questo affare.;Condizionale Presente;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у меня есть брат (avere, fratello).;Io ho un fratello.;Presente;337;fratello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы захотел взаимную (corrisposto) любовь (amore).;Io vorrei un amore corrisposto.;Condizionale Presente;345;amore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он давал (dare) помощь (una mano).;Lui dava una mano.;Imperfetto;356;mano;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы возвращались здоровыми и невредимыми (tornare sani e salvi);Noi tornavamo sani e salvi.;Imperfetto;365;;;tornare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы провели (passare) вечер (sera) дома (casa).;Noi abbiamo passato la sera a casa.;Passato Prossimo;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я делаю прогулку (fare, giro);Io faccio un giro.;Presente;372;giro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он — настоящий дьявол (persona).;Lui è un diavolo in persona.;Presente;380;diavolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ребенок устроил (fare) настоящий переполох (fare il diavolo a quattro).;Il bambino ha fatto il diavolo a quattro.;Passato Prossimo;380;diavolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты взял (assumersi) на себя вину (colpa).;Tu ti sei assunto la colpa.;Passato Prossimo;389;colpa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы найдем отправную точку (trovare, punto di partenza).;Noi troveremo un punto di partenza.;Futuro Semplice;390;punto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы работали (lavorare) допоздна (fare le ore piccole).;Noi abbiamo fatto le ore piccole.;Passato Prossimo;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я передал слово (passare la parola);Io ho passato la parola.;Passato Prossimo;409;;;passare;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+она бы хотела минуту молчания (silenzio).;Lei vorrebbe un minuto di silenzio.;Condizionale Presente;411;minuto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты теряешь равновесие (perdere l'equilibrio);Tu perdi l'equilibrio.;Presente;421;;;perdere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+она теряла нить (perdere il filo);Lei perdeva il filo.;Imperfetto;421;;;perdere;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+она сошла с ума (impazzire);Lei è impazzita.;Passato Prossimo;422;;;impazzire;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я посмотрю (dare un'occhiata) на это.;Io darò un'occhiata a questo.;Futuro Semplice;428;occhio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы делали (fare) забор (prelievo) крови.;Noi facevamo un prelievo di sangue.;Imperfetto;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она привлекает директора к ответственности (chiamare in causa);Lei chiama in causa il direttore.;Presente;444;;;chiamare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы заводим (mettere in moto) мотор (motore);Noi mettiamo in moto il motore.;Presente;445;;;mettere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+она поставила спектакль (mettere in scena);Lei ha messo in scena uno spettacolo.;Passato Prossimo;445;;;mettere;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+у него золотое сердце (oro).;Lui ha un cuore d'oro.;Presente;449;cuore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты разбил ему сердце (spezzare).;Tu hai spezzato il suo cuore.;Passato Prossimo;449;cuore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он искренне надеялся (sperare di cuore);Lui sperava di cuore.;Imperfetto;454;;;sperare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я бросаю это (lasciare perdere);Io lascio perdere.;Presente;458;;;lasciare;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+он даст понять свою позицию (lasciare intendere);Lui lascerà intendere la sua opinione.;Futuro Semplice;458;;;lasciare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он впадал в кризис (entrare in crisi);Lui entrava in crisi.;Imperfetto;477;;;entrare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+вы вступите в игру (entrare in gioco);Voi entrarete in gioco.;Futuro Semplice;477;;;entrare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+ты любишь до безумия (amare alla follia);Tu ami alla follia.;Presente;489;;;amare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+она была секретным агентом (segreto).;Lei era un'agente segreta.;Imperfetto;491;agente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он видел (vedere) небесное (celeste) тело (corpo).;Lui vedeva un corpo celeste.;Imperfetto;493;corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы сделали (fare) памятное (ricordo) фото (foto).;Noi abbiamo fatto una foto ricordo.;Passato Prossimo;496;foto;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он имел (avere) спальный мешок (sacco a pelo).;Lui aveva un sacco a pelo.;Imperfetto;504;sacco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он имел (avere) чувство (senso) вины (colpa).;Lui aveva un senso di colpa.;Imperfetto;517;senso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы будем иметь (avere) чувство юмора (umorismo).;Noi avremo un senso dell'umorismo.;Futuro Semplice;517;senso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я жду (aspettare) мгновение (attimo).;Io aspetto un attimo.;Presente;521;attimo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы встретили сестер-близнецов (incontrare, gemelle).;Noi abbiamo incontrato delle sorelle gemelle.;Passato Prossimo;522;sorella;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они бы посмотрели (vedere) фильм в оригинале (lingua originale).;Loro vedrebbero un film in lingua originale.;Condizionale Presente;525;film;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я бы пошел (andare) на войну (guerra).;Io andrei in guerra.;Condizionale Presente;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они бы знали его по имени (conoscere per nome);Loro lo conoscerebbero per nome.;Condizionale Presente;539;;;conoscere;loro;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он проживал сон (vivere un sogno);Lui viveva un sogno.;Imperfetto;541;;;vivere;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+ты откроешь (aprire) банковский счет (conto bancario).;Tu aprirai un conto bancario.;Futuro Semplice;550;conto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я работаю на самого себя (lavorare per conto proprio);Io lavoro per conto proprio.;Presente;556;;;lavorare;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+он включает (accendere) маяк (faro).;Lui accende il faro.;Presente;563;faro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы хотел (volere) мощный (potente) маяк (faro).;Io vorrei un faro potente.;Condizionale Presente;563;faro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она бы дала (dare) кодовое (ordine) слово (parola).;Lei darebbe una parola d'ordine.;Condizionale Presente;566;parola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты будешь капитаном флота (fregata).;Tu sarai il capitano di fregata.;Futuro Semplice;572;capitano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты ел досыта (mangiare a sazietà);Tu mangiavi a sazietà.;Imperfetto;581;;;mangiare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он дает сдачу (dare, resto);Lui dà il resto.;Presente;582;resto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы делаем выводы (trarre conclusioni);Noi traiamo conclusioni.;Presente;585;;;trarre;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+вы получите вдохновение (trarre ispirazione);Voi trarrete ispirazione.;Futuro Semplice;585;;;trarre;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы прошли (superare) проверки (controllo).;Noi abbiamo superato i controlli.;Passato Prossimo;595;controllo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он делает (fare) хороший (buono) бизнес (affare).;Lui fa un buon affare.;Presente;596;affare;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он знал (conoscere) какого-то парня (un certo tizio).;Lui conosceva un certo tizio.;Imperfetto;603;tizio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты сыграешь свадьбу в церкви (celebrare, chiesa, matrimonio).;Tu celebrerai il matrimonio in chiesa.;Futuro Semplice;609;matrimonio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она бы потушила (spegnere) огонь (fuoco).;Lei spegnerebbe il fuoco.;Condizionale Presente;614;fuoco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я хочу (avere voglia) есть пиццу (pizza).;Io ho voglia di mangiare la pizza.;Presente;626;voglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты стал (diventare) родителем (genitore).;Tu sei diventato un genitore.;Passato Prossimo;633;genitore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они получали приз (ricevere un premio);Loro ricevevano un premio.;Imperfetto;636;;;ricevere;loro;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я хотел бы быть председателем совета (presidente del consiglio).;Io vorrei essere il presidente del consiglio.;Condizionale Presente;638;presidente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы бы хотели увидеть город искусства (città d'arte).;Voi vorreste vedere una città d'arte.;Condizionale Presente;639;città;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы пошли (andare) в центральную (centrale) больницу (ospedale).;Noi siamo andati all'ospedale centrale.;Passato Prossimo;642;ospedale;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы написали от руки (scrivere a mano);Noi abbiamo scritto a mano.;Passato Prossimo;645;;;scrivere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я проявляю (prestare) внимание (attenzione).;Io presto attenzione.;Presente;648;attenzione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты встретишь (affrontare) сложную (complicata) ситуацию (situazione).;Tu affronterai una situazione complicata.;Futuro Semplice;651;situazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он совершает убийство (commettere, omicidio).;Lui commette un omicidio.;Presente;652;omicidio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы придете с опозданием (arrivare in ritardo);Voi arriverete in ritardo.;Futuro Semplice;665;;;arrivare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+они бы слушали (ascoltare) джазовую (jazz) музыку.;Loro ascolterebbero la musica jazz.;Condizionale Presente;673;musica;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы бы прочитали (leggere) книгу (libro) по кулинарии (cucina).;Voi leggereste un libro di cucina.;Condizionale Presente;677;libro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я решаю судьбу (decidere la sorte);Io decido la sorte.;Presente;710;;;decidere;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+он спит стоя (dormire in piedi);Lui dorme in piedi.;Presente;713;;;dormire;lui;verb;gemma-4-26b-a4b-it@q4_k_xl
+он включал (accendere) кондиционер (aria condizionata).;Lui accendeva l'aria condizionata.;Imperfetto;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он говорит (parlare) тихим (basso) голосом (voce).;Lui parla a bassa voce.;Presente;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она потеряла (perdere) голос (voce).;Lei ha perso la voce.;Passato Prossimo;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы поднимем (alzare) голос (voce).;Noi alzeremo la voce.;Futuro Semplice;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я гуляю с собакой (portare a spasso, cane).;Io porto a spasso il cane.;Presente;730;cane;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он остался в подвешенном состоянии (restare in sospeso);Lui è restato in sospeso.;Passato Prossimo;731;;;restare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+ты встретил суровую реальность (incontrare, cruda, realtà).;Tu hai incontrato la cruda realtà.;Passato Prossimo;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я бы хотел знать факты (volere, realtà dei fatti).;Io vorrei conoscere la realtà dei fatti.;Condizionale Presente;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты задала (porre) прямой (diretta) вопрос (domanda).;Tu hai posto una domanda diretta.;Passato Prossimo;752;domanda;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+у него есть один (un) выбившийся (fuori posto) волос (capello).;Lui ha un capello fuori posto.;Presente;756;capello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это большая честь (grande, onore).;È un grande onore.;Presente;758;onore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она помогала ближнему (aiutare il prossimo);Lei aiutava il prossimo.;Imperfetto;759;;;aiutare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+она бы помогла понять (aiutare a capire);Lei aiuterebbe a capire.;Condizionale Presente;759;;;aiutare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы заставил работать машину (far funzionare la macchina);Io farei funzionare la macchina.;Condizionale Presente;763;;;funzionare;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы искали еду для детей (cercare, cibo).;Noi cercavamo il cibo per i bambini.;Imperfetto;770;cibo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я имею большую спешку (avere, grande).;Io ho una grande fretta.;Presente;771;fretta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она будет ненавидеть лицемерие (odiare l'ipocrisia);Lei odierà l'ipocrisia.;Futuro Semplice;775;;;odiare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+произошла (verificarsi) мелкая (banale) авария (incidente).;Si è verificato un incidente banale.;Passato Prossimo;779;incidente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы меняете жизнь (cambiare vita);Voi cambiate vita.;Presente;784;;;cambiare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+она бы изменила отношение (cambiare atteggiamento);Lei cambierebbe atteggiamento.;Condizionale Presente;784;;;cambiare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я делаю (fare) путешествие (viaggio).;Io faccio un viaggio.;Presente;793;viaggio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы будем иметь (avere) сухой (asciutto) рот.;Noi avremo la bocca asciutta.;Futuro Semplice;796;bocca;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты положишь вещи в алфавитном порядке (mettere, in, ordine, alfabetico).;Tu metterai le cose in ordine alfabetico.;Futuro Semplice;801;ordine;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы (noi) изучали (studiare) солнечную (solare) систему (sistema);Noi studiavamo il sistema solare.;Imperfetto;816;sistema;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы видели (vedere) дно (fondo) моря (mare).;Noi abbiamo visto il fondo del mare.;Passato Prossimo;818;fondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он имеет огнестрельное оружие (avere, arma da fuoco);Lui ha un'arma da fuoco.;Presente;828;arma;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы смог (essere in grado di) это сделать.;Io sarei in grado di farlo.;Condizionale Presente;844;grado;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты купил (comprare) запчасти (pezzi di ricambio).;Tu hai comprato dei pezzi di ricambio.;Passato Prossimo;853;pezzo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она видела (vedere) внезапный порыв (colpo) ветра (vento).;Lei ha visto un colpo di vento.;Passato Prossimo;855;colpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы хотел (volere) удачу (colpo di fortuna).;Io vorrei un colpo di fortuna.;Condizionale Presente;855;colpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы помните (tenere a mente);Voi tenete a mente.;Presente;873;;;tenere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+я буду держать ребёнка за руку (tenere per mano);Io terrò per mano il bambino.;Futuro Semplice;873;;;tenere;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он изображает жертву (fare la vittima).;Lui fa la vittima.;Presente;875;vittima;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он лжет (giurare il falso);Lui giura il falso.;Presente;876;;;giurare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы поклянемся в верности (giurare fedeltà);Noi giureremo fedeltà.;Futuro Semplice;876;;;giurare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я загораю (prendere il sole).;Io prendo il sole.;Presente;893;sole;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он делает (fare) сцену (scena).;Lui fa una scena.;Presente;899;scena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы видели (vedere) место (luogo) преступления (crimine).;Noi abbiamo visto la scena del crimine.;Passato Prossimo;899;scena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы провели деловую встречу (tenere, incontro di lavoro).;Noi abbiamo tenuto un incontro di lavoro.;Passato Prossimo;908;incontro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты совершал (commettere) ошибки (errore).;Tu commettevi degli errori.;Imperfetto;912;errore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы хотел (volere) клиентский (clienti) сервис (servizio).;Io vorrei il servizio clienti.;Condizionale Presente;920;servizio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я чувствую (sentire) сильную (forte) боль (dolore).;Io sento un forte dolore.;Presente;927;dolore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она бы выстрелила в кого-то (sparare addosso a qualcuno);Lei sparerebbe addosso a qualcuno.;Condizionale Presente;940;;;sparare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он получил плохую новость (ricevere, brutta, notizia).;Lui ha ricevuto una brutta notizia.;Passato Prossimo;951;notizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы слушали последние новости (ascoltare, ultime, notizie).;Noi ascoltavamo le ultime notizie.;Imperfetto;951;notizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты бы молчал (rimanere in silenzio);Tu rimarresti in silenzio.;Condizionale Presente;956;;;rimanere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+ты сделаешь (fare) компанию (compagnia) маме (madre).;Tu farai compagnia a tua madre.;Futuro Semplice;957;compagnia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я больше не помню (non ricordare più);Io non ricordo più.;Presente;961;;;ricordare;io;verb;gemma-4-26b-a4b-it@q4_k_xl
+ты закрывал счёт (chiudere il conto);Tu chiudevi il conto.;Imperfetto;967;;;chiudere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы позавтракали (fare colazione) в баре (bar).;Noi abbiamo fatto colazione al bar.;Passato Prossimo;971;bar;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+арбитр свистел (fischiare) фол (fallo).;L'arbitro fischiava un fallo.;Imperfetto;973;fallo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты забываешь прошлое (il passato);Tu dimentichi il passato.;Presente;974;;;dimenticare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+я делаю (fare) исследование (studio).;Io faccio uno studio.;Presente;978;studio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы искали проблемы (cercare, guai).;Noi cercavamo dei guai.;Imperfetto;989;guaio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они попадут в проблемы (finire, nei guai).;Loro finiranno nei guai.;Futuro Semplice;989;guaio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы создал проблему (combinare, un guaio).;Io combinerei un guaio.;Condizionale Presente;989;guaio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она найдет (trovare) смелость (coraggio).;Lei troverà il coraggio.;Futuro Semplice;999;coraggio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это очень жаль (vero, peccato).;È un vero peccato.;Presente;1001;peccato;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он поднимал этот политический вопрос (sollevare, questione politica).;Lui sollevava una questione politica.;Imperfetto;1002;questione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я беру (prendere) самолет (aereo).;Io prendo l'aereo.;Presente;1004;aereo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы крали идею (rubare l'idea);Voi rubavate l'idea.;Imperfetto;1006;;;rubare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я заложил (gettare) основы (gettare le basi) для проекта (progetto).;Io ho gettato le basi per il progetto.;Passato Prossimo;1008;base;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они будут развивать (sviluppare) международные отношения (relazioni internazionali).;Loro svilupperanno le relazioni internazionali.;Futuro Semplice;1015;relazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она бы хотела (volere) обслуживать (servire) постоянного (abituale) клиента (cliente).;Lei vorrebbe servire un cliente abituale.;Condizionale Presente;1016;cliente;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они будут уважать (rispettare) права (diritti) человека (umano).;Loro rispetteranno i diritti umani.;Futuro Semplice;1022;diritto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы хорошо оделись (vestirsi bene);Voi vi siete vestiti bene.;Passato Prossimo;1032;;;vestirsi;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я буду находиться в промышленной зоне (trovarsi, zona industriale);Io mi troverò in una zona industriale.;Futuro Semplice;1042;zona;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы отстаиваете свои интересы (difendere, propri interessi);Voi difendete i vostri interessi.;Presente;1044;;;difendere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+он управляет (gestire) маленьким (piccolo) магазином (negozio).;Lui gestisce un piccolo negozio.;Presente;1045;negozio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы закрыл (chiudere) магазин (negozio) сейчас (ora).;Io chiuderei il negozio ora.;Condizionale Presente;1045;negozio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы искали (cercare) открытое (aperto) пространство (spazio).;Noi cercavamo uno spazio aperto.;Imperfetto;1050;spazio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они убегут со всех ног (scappare a gambe levate);Loro scapperanno a gambe levate.;Futuro Semplice;1061;;;scappare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+они столкнулись (incontrare) с холодным (freddo) фронтом (fronte).;Loro hanno incontrato un fronte freddo.;Passato Prossimo;1062;fronte;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он нарушил тишину (rompere, silenzio).;Lui ha rotto il silenzio.;Passato Prossimo;1066;silenzio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы сохранял тишину (mantenere, silenzio).;Io manterrei il silenzio.;Condizionale Presente;1066;silenzio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы обрели (ritrovare) спокойствие (calma).;Noi abbiamo ritrovato la calma.;Passato Prossimo;1071;calma;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она проводила (condurre) научное (scientifico) исследование (ricerca).;Lei conduceva una ricerca scientifica.;Imperfetto;1073;ricerca;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+судья назначил суровое наказание (infliggere, severa, pena).;Il giudice ha inflitto una pena severa.;Passato Prossimo;1074;pena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он получил (ricevere) заказное (raccomandata) письмо (lettera).;Lui ha ricevuto una lettera raccomandata.;Passato Prossimo;1082;lettera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+вы бы спели (cantare) песню о любви (canzone d'amore).;Voi cantereste una canzone d'amore.;Condizionale Presente;1085;canzone;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы бежите на помощь (correre ai soccorsi);Voi correte ai soccorsi.;Presente;1089;;;correre;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы рисковали (correre un rischio);Noi correvamo un rischio.;Imperfetto;1089;;;correre;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы выполняли (svolgere) гуманитарную (umanitaria) миссию.;Noi svolgevamo una missione umanitaria.;Imperfetto;1098;missione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты выбираешь судьбу (il destino);Tu scegli il destino.;Presente;1102;;;scegliere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы теряли (perdere) связь (contatto) с (con) ними (loro);Noi perdevamo il contatto con loro.;Imperfetto;1108;contatto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я буду поддерживать (mantenere) связь (contatti) с (con) друзьями (amici);Io manterrò i contatti con gli amici.;Futuro Semplice;1108;contatto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она была (essere) охранником (guardia di sicurezza).;Lei era una guardia di sicurezza.;Imperfetto;1121;guardia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы вызвали (chiamare) береговую охрану (guardia costiera).;Noi abbiamo chiamato la guardia costiera.;Passato Prossimo;1121;guardia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он делает большой беспорядок (fare, pasticcio).;Lui fa un grande pasticcio.;Presente;1127;casino;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он соблюдает (rispettare) правила (regole) игры (gioco).;Lui rispetta le regole del gioco.;Presente;1135;regola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты установил (stabilire) золотое (oro) правило (regola).;Tu hai stabilito la regola d'oro.;Passato Prossimo;1135;regola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он заказывал разливное пиво (ordinare, alla spina).;Lui ordinava una birra alla spina.;Imperfetto;1141;birra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он принимает (prendere) решение (decisione).;Lui prende una decisione.;Presente;1151;decisione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы принял (prendere) осознанное (consapevole) решение (decisione).;Io prenderei una decisione consapevole.;Condizionale Presente;1151;decisione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он ищет свою родственную душу (cercare, anima gemella).;Lui cerca la sua anima gemella.;Presente;1152;anima;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы столкнулись с трудностями (incontrare difficoltà);Voi avete incontrato difficoltà.;Passato Prossimo;1156;;;incontrare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он упустил (perdere) отличную возможность (occasione d'oro).;Lui ha perso un'occasione d'oro.;Passato Prossimo;1157;occasione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты поймаешь (cogliere) правильную возможность (occasione giusta).;Tu coglierai l'occasione giusta.;Futuro Semplice;1157;occasione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты дал мне одну возможность (dare, una, possibilità);Tu mi hai dato una possibilità.;Passato Prossimo;1161;possibilità;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они задерживают дыхание (fermare il respiro);Loro fermano il respiro.;Presente;1165;;;fermare;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+она будет нести (portare) сумку через плечо (a tracolla).;Lei porterà una borsa a tracolla.;Futuro Semplice;1166;borsa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он переживает приступ паники (panico);Lui subisce un attacco di panico.;Presente;1171;attacco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+я бы пережил сердечный приступ (cardiaco);Io subirei un attacco cardiaco.;Condizionale Presente;1171;attacco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы попали в цель (colpire nel segno);Noi abbiamo colpito nel segno.;Passato Prossimo;1174;;;colpire;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+город был адом из-за пробок (traffico).;La città era un inferno di traffico.;Imperfetto;1179;inferno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты бы открыл счёт (aprire un conto);Tu apriresti un conto.;Condizionale Presente;1184;;;aprire;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы достигли нового уровня (raggiungere, nuovo, livello).;Abbiamo raggiunto un nuovo livello.;Passato Prossimo;1200;livello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они бы продолжали лгать (continuare a mentire);Loro continuerebbero a mentire.;Condizionale Presente;1204;;;mentire;loro;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы посетили прекрасное представление (assistere a, spettacolo).;Noi abbiamo assistito a un bellissimo spettacolo.;Passato Prossimo;1206;spettacolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы делали экскурсии (fare, guida);Noi facevamo delle visite guidate.;Imperfetto;1208;visita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+они сделают контрольный осмотр (fare, controllo);Loro faranno una visita di controllo.;Futuro Semplice;1208;visita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она бы выбрала левую партию (scegliere, partito).;Lei sceglierebbe il partito di sinistra.;Condizionale Presente;1214;sinistra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он начнет (avviare) судебный процесс (processo civile).;Lui avvierà un processo civile.;Futuro Semplice;1216;processo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она была (essere) художественным директором (direttore artistico).;Lei era la direttrice artistica.;Imperfetto;1218;direttore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они вершат справедливость (rendere giustizia);Loro rendono giustizia.;Presente;1221;;;rendere;loro;verb;gemma-4-26b-a4b-it@q4_k_xl
+мы планировали смену курса (rotta).;Noi pianificavamo un cambio di rotta.;Imperfetto;1225;cambio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он едет на лошади (montare, cavallo).;Lui monta a cavallo.;Presente;1234;cavallo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы нарушали тишину (rompere il silenzio);Noi rompevamo il silenzio.;Imperfetto;1237;;;rompere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы возьмем (prendere) обратный (ritorno) рейс (volo).;Noi prenderemo il volo di ritorno.;Futuro Semplice;1244;volo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+это сделало (fare) бы разницу (differenza).;Farebbe la differenza.;Condizionale Presente;1247;differenza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы боитесь осуждения (temere il giudizio);Voi temete il giudizio.;Presente;1275;;;temere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl
+она была командиром (comandante) флота (flotta).;Lei era la comandante della flotta.;Imperfetto;1277;comandante;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы победили легендарного монстра (sconfiggere, leggendario);Noi abbiamo sconfitto un mostro leggendario.;Passato Prossimo;1284;mostro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы публично благодарим (ringraziare pubblicamente);Noi ringraziamo pubblicamente.;Presente;1287;;;ringraziare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+мать обняла (abbracciare) своего любимого сына (prediletto).;La madre ha abbracciato il suo figliolo prediletto.;Passato Prossimo;1292;figliolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он купил молотый кофе (comprare, macinato).;Lui ha comprato del caffè macinato.;Passato Prossimo;1299;caffè;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты использовал парусную лодку (usare, vela).;Tu usavi una barca a vela.;Imperfetto;1300;barca;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы провели (fare) урок (lezione) пения (canto).;Noi abbiamo fatto una lezione di canto.;Passato Prossimo;1304;lezione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты начнешь с нуля (partire da zero);Tu partirai da zero.;Futuro Semplice;1307;;;partire;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он опоздал на поезд (perdere).;Lui ha perso il treno.;Passato Prossimo;1322;treno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы больше не справляемся (non farcela più);Noi non ce la facciamo più.;Presente;1336;;;farcela;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+она была бомбой замедленного действия (essere, bomba a orologeria);Lei era una bomba a orologeria.;Imperfetto;1337;bomba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты пережил (attraversare) темный период (periodo buio).;Tu hai attraversato un periodo buio.;Passato Prossimo;1344;periodo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты успокоил настроения (calmare gli animi);Tu hai calmato gli animi.;Passato Prossimo;1348;;;calmare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+она потеряла надежду (perdere, speranza);Lei ha perso la speranza.;Passato Prossimo;1356;speranza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+мы боремся с травлей (combattere il bullismo);Noi combattiamo il bullismo.;Presente;1361;;;combattere;noi;verb;gemma-4-26b-a4b-it@q4_k_xl
+он достигал дна (toccare fondo);Lui toccava il fondo.;Imperfetto;1362;;;toccare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+вы будете глубоко тронуты (essere profondamente toccato);Voi sarete profondamente toccati.;Futuro Semplice;1362;;;toccare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я сломал ногу (rompere);Io mi sono rotto una gamba.;Passato Prossimo;1366;gamba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он купил (comprare) билет (biglietto) в один конец (di sola andata).;Lui ha comprato un biglietto di sola andata.;Passato Prossimo;1367;biglietto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я бы хотел (volere) измерить (misurare) кровяное (sanguigna) давление (pressione).;Io vorrei misurare la pressione sanguigna.;Condizionale Presente;1373;pressione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты спрятал следы (nascondere le tracce);Tu hai nascosto le tracce.;Passato Prossimo;1376;;;nascondere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+я приняла предложение о работе (accettare, offerta).;Io ho accettato l'offerta di lavoro.;Passato Prossimo;1382;offerta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты получал диплом (ottenere la laurea);Tu ottenevi la laurea.;Imperfetto;1396;;;ottenere;tu;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+вы плакали от радости (piangere di gioia);Voi piangevate di gioia.;Imperfetto;1403;;;piangere;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+он вел группу (guidare il gruppo);Lui ha guidato il gruppo.;Passato Prossimo;1423;;;guidare;lui;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+они бы хотели (volere) возвращения (ritorno) к истокам (origini).;Loro vorrebbero un ritorno alle origini.;Condizionale Presente;1431;ritorno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+ты увидел (vedere) железнодорожный переезд (passaggio a livello).;Tu hai visto un passaggio a livello.;Passato Prossimo;1437;passaggio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они завершат (portare a termine) этот (questo) проект (progetto).;Loro porteranno a termine questo progetto.;Futuro Semplice;1439;progetto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она бы открыла окно (aprire, finestra);Lei aprirebbe la finestra.;Condizionale Presente;1448;finestra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она предположила, что есть проблема (supporre).;Lei ha supposto che ci fosse un problema.;Passato Prossimo;1449;;;supporre;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+мы взлетали в воздух (saltare in aria);Noi saltavamo in aria.;Imperfetto;1452;;;saltare;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
+ты обманываешь клиента (ingannare).;Tu inganni un cliente.;Presente;1454;;;ingannare;tu;verb;gemma-4-26b-a4b-it@q4_k_xl
+я сломал горлышко бутылки (rompere, bottiglia).;Io ho rotto il collo della bottiglia.;Passato Prossimo;1457;collo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+мы заслужили их доверие (guadagnarsi).;Noi ci siamo guadagnati la loro fiducia.;Passato Prossimo;1461;fiducia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+она бы имела (avere) слепое (cieca) доверие (fiducia).;Lei avrebbe una cieca fiducia.;Condizionale Presente;1461;fiducia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+он открыл типичный ресторан (aprire, tipico, ristorante).;Lui ha aperto un ristorante tipico.;Passato Prossimo;1467;ristorante;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+она произносила (tenere) вступительную (apertura) речь (discorso);Lei teneva un discorso d'apertura.;Imperfetto;1475;discorso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+вы начали (intraprendere) спортивную (sportiva) карьеру.;Voi avete intrapreso una carriera sportiva.;Passato Prossimo;1482;carriera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+я бы перелез через стену (scavalcare).;Io scavalcherei il muro.;Condizionale Presente;1485;muro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
+он имел сильные сомнения (avere, forte, dubbio).;Lui aveva forti dubbi.;Imperfetto;1491;dubbio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+они объявили чрезвычайное положение (dichiarare, stato di emergenza).;Loro hanno dichiarato lo stato di emergenza.;Passato Prossimo;1494;emergenza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+ты почувствовал (sentire) запах гари (bruciato).;Tu hai sentito un odore di bruciato.;Passato Prossimo;1497;odore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
+открой окно!;Apri la finestra!;Imperativo;1448;finestra;f;;tu;noun;enriched
+закрой дверь!;Chiudi la porta!;Imperativo;999;porta;f;;tu;noun;enriched
+помой руки!;Lavati le mani!;Imperativo;999;mano;f;;tu;noun;enriched
+помоги ей сейчас!;Aiutala ora!;Imperativo;999;;;aiutare;tu;pronoun;enriched
+скажи ему правду!;Digli la verità!;Imperativo;760;verità;f;;tu;noun;enriched
+давай начнём с нуля!;Partiamo da zero!;Imperativo;1307;;;partire;noi;verb;enriched
+давай выпьем кофе!;Beviamo un caffè!;Imperativo;999;caffè;m;;noi;noun;enriched
+давай приготовим ужин!;Prepariamo la cena!;Imperativo;999;cena;f;;noi;noun;enriched
+я его знаю.;Io lo conosco.;Presente;539;;;;;pronoun;enriched
+она откроет его.;Lei lo aprirà.;Futuro Semplice;1448;;;;;pronoun;enriched
+мы их купили.;Noi li abbiamo comprati.;Passato Prossimo;853;;;;;pronoun;enriched
+я скажу ему завтра.;Gli dirò domani.;Futuro Semplice;999;;;;;pronoun;enriched
+она написала бы ему.;Lei gli scriverebbe.;Condizionale Presente;999;;;;;pronoun;enriched
+мы дали ей возможность.;Noi le abbiamo dato una possibilità.;Passato Prossimo;1161;possibilità;f;;;noun;enriched

@@ -4,6 +4,23 @@ import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
+interface WordMasteryStore {
+
+    fun loadAll(): Map<String, WordMasteryState>
+
+    fun saveAll(mastery: Map<String, WordMasteryState>)
+
+    fun getMastery(wordId: String): WordMasteryState?
+
+    fun upsertMastery(state: WordMasteryState)
+
+    fun getDueWords(): Set<String>
+
+    fun getMasteredCount(pos: String? = null): Int
+
+    fun getMasteredByPos(): Map<String, Int>
+}
+
 /**
  * YAML-backed store for per-word mastery state in the Anki-like vocab drill.
  *
@@ -15,10 +32,10 @@ import java.io.File
  * File location: grammarmate/drills/{packId}/word_mastery.yaml (pack-scoped)
  *                or grammarmate/word_mastery.yaml (legacy, when packId is null)
  */
-class WordMasteryStore(
+class WordMasteryStoreImpl(
     context: Context,
     private val packId: String? = null
-) {
+) : WordMasteryStore {
 
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
@@ -29,13 +46,24 @@ class WordMasteryStore(
     }
     private val schemaVersion = 1
 
+    // In-memory cache — follows MasteryStore pattern
+    private var cache: Map<String, WordMasteryState> = emptyMap()
+    private var cacheLoaded = false
+
     /**
-     * Load all mastery records from the YAML file.
-     * Returns an empty map if the file does not exist or is empty.
+     * Load all mastery records. Returns cached result if available.
      */
-    fun loadAll(): Map<String, WordMasteryState> {
-        if (!file.exists()) return emptyMap()
-        val raw = yaml.load<Any>(file.readText()) ?: return emptyMap()
+    override fun loadAll(): Map<String, WordMasteryState> {
+        if (cacheLoaded) return cache
+        val loaded = loadAllFromDisk()
+        cache = loaded
+        cacheLoaded = true
+        return loaded
+    }
+
+    private fun loadAllFromDisk(): Map<String, WordMasteryState> {
+        if (!file.exists() || file.length() == 0L) return emptyMap()
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return emptyMap()
         val data = when (raw) {
             is Map<*, *> -> raw
             else -> return emptyMap()
@@ -60,8 +88,11 @@ class WordMasteryStore(
 
     /**
      * Save all mastery records to the YAML file via AtomicFileWriter.
+     * Also updates the in-memory cache.
      */
-    fun saveAll(mastery: Map<String, WordMasteryState>) {
+    override fun saveAll(mastery: Map<String, WordMasteryState>) {
+        cache = mastery
+        cacheLoaded = true
         val payload = linkedMapOf<String, Any>()
         for ((wordId, state) in mastery) {
             payload[wordId] = linkedMapOf(
@@ -83,17 +114,19 @@ class WordMasteryStore(
     /**
      * Get the mastery state for a single word, or null if never reviewed.
      */
-    fun getMastery(wordId: String): WordMasteryState? {
+    override fun getMastery(wordId: String): WordMasteryState? {
         return loadAll()[wordId]
     }
 
     /**
      * Insert or update the mastery state for a single word.
-     * Performs load-modify-save (same pattern as VerbDrillStore.upsertComboProgress).
+     * Performs load-modify-save with cache update.
      */
-    fun upsertMastery(state: WordMasteryState) {
+    override fun upsertMastery(state: WordMasteryState) {
         val all = loadAll().toMutableMap()
         all[state.wordId] = state
+        cache = all
+        cacheLoaded = true
         saveAll(all)
     }
 
@@ -103,7 +136,7 @@ class WordMasteryStore(
      *   - nextReviewDateMs <= now (scheduled review time has passed), OR
      *   - lastReviewDateMs == 0 (never reviewed, so due immediately)
      */
-    fun getDueWords(): Set<String> {
+    override fun getDueWords(): Set<String> {
         val now = System.currentTimeMillis()
         return loadAll().filter { (_, state) ->
             state.nextReviewDateMs <= now || state.lastReviewDateMs == 0L
@@ -115,7 +148,7 @@ class WordMasteryStore(
      * Optionally filter by part of speech extracted from the word ID prefix
      * (e.g. "nouns_casa" -> "nouns").
      */
-    fun getMasteredCount(pos: String? = null): Int {
+    override fun getMasteredCount(pos: String?): Int {
         val all = loadAll()
         val learned = all.filter { (_, state) -> state.isLearned }
         return if (pos != null) {
@@ -129,7 +162,7 @@ class WordMasteryStore(
      * Return a map of POS -> count of mastered words.
      * POS is extracted from the word ID prefix (e.g. "nouns_casa" -> "nouns").
      */
-    fun getMasteredByPos(): Map<String, Int> {
+    override fun getMasteredByPos(): Map<String, Int> {
         val all = loadAll()
         val result = mutableMapOf<String, Int>()
         for ((wordId, state) in all) {
@@ -140,5 +173,13 @@ class WordMasteryStore(
             result[pos] = (result[pos] ?: 0) + 1
         }
         return result
+    }
+
+    /**
+     * Invalidate the in-memory cache. Called when data is externally reset.
+     */
+    fun invalidateCache() {
+        cache = emptyMap()
+        cacheLoaded = false
     }
 }

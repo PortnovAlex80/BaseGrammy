@@ -2,22 +2,56 @@ package com.alexpo.grammermate.data
 
 import android.content.Context
 import android.os.Environment
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 data class BadSentenceEntry(
     val cardId: String,
     val languageId: String,
     val sentence: String,
     val translation: String,
+    val mode: String = "training",
     val addedAtMs: Long = System.currentTimeMillis()
 )
 
-class BadSentenceStore(private val context: Context) {
+interface BadSentenceStore {
+
+    fun migrateIfNeeded(lessonStore: LessonStore)
+
+    fun addBadSentence(packId: String, entry: BadSentenceEntry)
+
+    fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String = "training")
+
+    fun removeBadSentence(packId: String, cardId: String)
+
+    fun getBadSentences(packId: String): List<BadSentenceEntry>
+
+    fun isBadSentence(packId: String, cardId: String): Boolean
+
+    fun isBadSentence(cardId: String): Boolean
+
+    fun getBadSentenceCount(packId: String): Int
+
+    fun getTotalBadSentenceCount(): Int
+
+    fun exportToTextFile(packId: String): File
+
+    fun exportUnified(): File
+
+    fun clearPack(packId: String)
+
+    fun clearAll()
+}
+
+class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "bad_sentences.yaml")
     private val oldDrillFile = File(baseDir, "drill_bad_sentences.yaml")
+    private val mutex = ReentrantLock()
 
     /** packId -> list of bad sentence entries */
     private var packs: MutableMap<String, MutableList<BadSentenceEntry>> = mutableMapOf()
@@ -27,6 +61,7 @@ class BadSentenceStore(private val context: Context) {
         if (loaded) return
         loaded = true
         if (!file.exists()) return
+        val previousPacks = packs
         try {
             val raw = yaml.load<Any>(file.readText()) ?: return
             val data = (raw as? Map<*, *>) ?: return
@@ -42,6 +77,7 @@ class BadSentenceStore(private val context: Context) {
                         languageId = map["languageId"] as? String ?: "",
                         sentence = map["sentence"] as? String ?: "",
                         translation = map["translation"] as? String ?: "",
+                        mode = map["mode"] as? String ?: "training",
                         addedAtMs = (map["addedAtMs"] as? Number)?.toLong() ?: 0L
                     )
                 }.toMutableList()
@@ -62,6 +98,7 @@ class BadSentenceStore(private val context: Context) {
                             languageId = map["languageId"] as? String ?: "",
                             sentence = map["sentence"] as? String ?: "",
                             translation = map["translation"] as? String ?: "",
+                            mode = map["mode"] as? String ?: "training",
                             addedAtMs = (map["addedAtMs"] as? Number)?.toLong() ?: 0L
                         )
                     }.toMutableList()
@@ -70,8 +107,9 @@ class BadSentenceStore(private val context: Context) {
                     }
                 }
             }
-        } catch (_: Exception) {
-            packs = mutableMapOf()
+        } catch (e: Exception) {
+            Log.e("BadSentenceStore", "Failed to parse ${file.name}", e)
+            packs = previousPacks
         }
     }
 
@@ -80,15 +118,15 @@ class BadSentenceStore(private val context: Context) {
      * Uses LessonStore to resolve packId from lessonId extracted from card IDs.
      * Called during init in TrainingViewModel.
      */
-    fun migrateIfNeeded(lessonStore: LessonStore) {
+    override fun migrateIfNeeded(lessonStore: LessonStore) = mutex.withLock {
         ensureLoaded()
 
         // Merge old drill_bad_sentences.yaml entries into the legacy pack
         if (oldDrillFile.exists()) {
             try {
-                val raw = yaml.load<Any>(oldDrillFile.readText()) ?: return
-                val data = (raw as? Map<*, *>) ?: return
-                val items = (data["items"] as? List<*>) ?: return
+                val raw = yaml.load<Any>(oldDrillFile.readText()) ?: return@withLock
+                val data = (raw as? Map<*, *>) ?: return@withLock
+                val items = (data["items"] as? List<*>) ?: return@withLock
                 val drillEntries = items.mapNotNull { item ->
                     val map = item as? Map<*, *> ?: return@mapNotNull null
                     BadSentenceEntry(
@@ -96,6 +134,7 @@ class BadSentenceStore(private val context: Context) {
                         languageId = map["languageId"] as? String ?: "",
                         sentence = map["sentence"] as? String ?: "",
                         translation = map["translation"] as? String ?: "",
+                        mode = map["mode"] as? String ?: "verb_drill",
                         addedAtMs = (map["addedAtMs"] as? Number)?.toLong() ?: 0L
                     )
                 }
@@ -113,11 +152,11 @@ class BadSentenceStore(private val context: Context) {
         val legacyEntries = packs.remove("__legacy__") ?: emptyList()
         if (legacyEntries.isEmpty() && !oldDrillFile.exists()) {
             // No legacy data and no old drill file — check if we already have v2 data
-            if (packs.isNotEmpty()) return
+            if (packs.isNotEmpty()) return@withLock
             // Check if file exists but has no data worth migrating
-            if (!file.exists()) return
+            if (!file.exists()) return@withLock
             // File exists but no legacy entries and no v2 packs — might be empty file
-            return
+            return@withLock
         }
 
         // Group legacy entries by packId using lessonId extracted from cardId
@@ -163,19 +202,24 @@ class BadSentenceStore(private val context: Context) {
         return null
     }
 
-    fun addBadSentence(packId: String, entry: BadSentenceEntry) {
+    override fun addBadSentence(packId: String, entry: BadSentenceEntry) = mutex.withLock {
         ensureLoaded()
         val packEntries = packs.getOrPut(packId) { mutableListOf() }
-        if (packEntries.any { it.cardId == entry.cardId }) return
+        if (packEntries.any { it.cardId == entry.cardId }) return@withLock
         packEntries.add(entry)
         persist()
     }
 
-    fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String) {
-        addBadSentence(packId, BadSentenceEntry(cardId, languageId, sentence, translation))
+    override fun addBadSentence(packId: String, cardId: String, languageId: String, sentence: String, translation: String, mode: String) = mutex.withLock {
+        ensureLoaded()
+        val entry = BadSentenceEntry(cardId, languageId, sentence, translation, mode)
+        val packEntries = packs.getOrPut(packId) { mutableListOf() }
+        if (packEntries.any { it.cardId == entry.cardId }) return@withLock
+        packEntries.add(entry)
+        persist()
     }
 
-    fun removeBadSentence(packId: String, cardId: String) {
+    override fun removeBadSentence(packId: String, cardId: String) = mutex.withLock {
         ensureLoaded()
         packs[packId]?.let { entries ->
             entries.removeAll { it.cardId == cardId }
@@ -184,12 +228,12 @@ class BadSentenceStore(private val context: Context) {
         persist()
     }
 
-    fun getBadSentences(packId: String): List<BadSentenceEntry> {
+    override fun getBadSentences(packId: String): List<BadSentenceEntry> {
         ensureLoaded()
         return packs[packId]?.toList() ?: emptyList()
     }
 
-    fun isBadSentence(packId: String, cardId: String): Boolean {
+    override fun isBadSentence(packId: String, cardId: String): Boolean {
         ensureLoaded()
         return packs[packId]?.any { it.cardId == cardId } == true
     }
@@ -198,12 +242,12 @@ class BadSentenceStore(private val context: Context) {
      * Backward-compatible: checks all packs for the given cardId.
      * Used during migration period.
      */
-    fun isBadSentence(cardId: String): Boolean {
+    override fun isBadSentence(cardId: String): Boolean {
         ensureLoaded()
         return packs.values.any { entries -> entries.any { it.cardId == cardId } }
     }
 
-    fun getBadSentenceCount(packId: String): Int {
+    override fun getBadSentenceCount(packId: String): Int {
         ensureLoaded()
         return packs[packId]?.size ?: 0
     }
@@ -211,12 +255,12 @@ class BadSentenceStore(private val context: Context) {
     /**
      * Total bad sentence count across all packs.
      */
-    fun getTotalBadSentenceCount(): Int {
+    override fun getTotalBadSentenceCount(): Int {
         ensureLoaded()
         return packs.values.sumOf { it.size }
     }
 
-    fun exportToTextFile(packId: String): File {
+    override fun exportToTextFile(packId: String): File {
         ensureLoaded()
         val entries = packs[packId] ?: emptyList()
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -224,18 +268,82 @@ class BadSentenceStore(private val context: Context) {
         exportDir.mkdirs()
         val exportFile = File(exportDir, "bad_sentences_$packId.txt")
         val lines = entries.map { entry ->
-            "ID: ${entry.cardId}\nSource: ${entry.sentence}\nTarget: ${entry.translation}\nLanguage: ${entry.languageId}\n---"
+            "ID: ${entry.cardId}\nSource: ${entry.sentence}\nTarget: ${entry.translation}\nLanguage: ${entry.languageId}\nMode: ${entry.mode}\n---"
         }
         AtomicFileWriter.writeText(exportFile, lines.joinToString("\n"))
         return exportFile
     }
 
-    fun clearPack(packId: String) {
+    /**
+     * Unified export: produces one file with all bad sentences grouped by
+     * language, then pack, then mode. Returns the exported file.
+     */
+    override fun exportUnified(): File {
+        ensureLoaded()
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val exportDir = File(downloadsDir, "BaseGrammy")
+        exportDir.mkdirs()
+        val exportFile = File(exportDir, "bad_sentences_all.txt")
+
+        // Collect all entries with their packId
+        val allEntries = mutableListOf<Triple<String, BadSentenceEntry, String>>() // packId, entry, languageId
+        for ((packId, entries) in packs) {
+            for (entry in entries) {
+                allEntries.add(Triple(packId, entry, entry.languageId))
+            }
+        }
+
+        if (allEntries.isEmpty()) {
+            AtomicFileWriter.writeText(exportFile, "No bad sentences reported.")
+            return exportFile
+        }
+
+        val sb = StringBuilder()
+        sb.appendLine("=== Bad Sentences Report ===")
+        sb.appendLine("Generated: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).format(System.currentTimeMillis())}")
+        sb.appendLine("Total entries: ${allEntries.size}")
+        sb.appendLine()
+
+        // Group by language
+        val byLanguage = allEntries.groupBy { it.third }
+        for ((languageId, langEntries) in byLanguage.toSortedMap()) {
+            sb.appendLine("## Language: ${languageId.ifBlank { "(unknown)" }}")
+            sb.appendLine()
+
+            // Group by pack
+            val byPack = langEntries.groupBy { it.first }
+            for ((packId, packEntries) in byPack.toSortedMap()) {
+                sb.appendLine("  ### Pack: $packId")
+                sb.appendLine()
+
+                // Group by mode
+                val byMode = packEntries.groupBy { it.second.mode }
+                for ((mode, modeEntries) in byMode.toSortedMap()) {
+                    sb.appendLine("    #### Mode: $mode (${modeEntries.size} entries)")
+                    sb.appendLine()
+                    for ((_, entry, _) in modeEntries) {
+                        val date = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).format(entry.addedAtMs)
+                        sb.appendLine("    - ID: ${entry.cardId}")
+                        sb.appendLine("      Source: ${entry.sentence}")
+                        sb.appendLine("      Target: ${entry.translation}")
+                        sb.appendLine("      Reported: $date")
+                        sb.appendLine()
+                    }
+                }
+            }
+            sb.appendLine()
+        }
+
+        AtomicFileWriter.writeText(exportFile, sb.toString())
+        return exportFile
+    }
+
+    override fun clearPack(packId: String) = mutex.withLock {
         packs.remove(packId)
         persist()
     }
 
-    fun clearAll() {
+    override fun clearAll() = mutex.withLock {
         packs.clear()
         persist()
     }
@@ -249,6 +357,7 @@ class BadSentenceStore(private val context: Context) {
                     "languageId" to entry.languageId,
                     "sentence" to entry.sentence,
                     "translation" to entry.translation,
+                    "mode" to entry.mode,
                     "addedAtMs" to entry.addedAtMs
                 )
             }

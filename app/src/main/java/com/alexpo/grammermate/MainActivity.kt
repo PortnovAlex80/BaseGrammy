@@ -11,7 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.alexpo.grammermate.data.BackupManager
-import com.alexpo.grammermate.data.ProfileStore
+import com.alexpo.grammermate.data.BackupManagerImpl
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.ui.AppRoot
 import java.io.File
@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private val storagePermissionsRequestCode = 101
     private val backupTreeUriKey = "backup_tree_uri"
-    private val backupManager by lazy { BackupManager(this) }
+    private val backupManager by lazy { BackupManagerImpl(this) }
 
     private val openBackupTreeLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -58,8 +58,8 @@ class MainActivity : ComponentActivity() {
         val progressFile = File(baseDir, "progress.yaml")
         val profileFile = File(baseDir, "profile.yaml")
         val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
-        val profile = ProfileStore(this).load()
-        val shouldRestore = !hasFullData || profile.userName == "GrammarMateUser"
+        val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getProfileStore().load()
+        val shouldRestore = !hasFullData
 
         if (storedTreeUri != null) {
             // We have a stored URI - use it for restore if needed
@@ -69,8 +69,11 @@ class MainActivity : ComponentActivity() {
                 RestoreNotifier.markComplete(false)
             }
         } else if (android.os.Build.VERSION.SDK_INT >= 29) {
-            // Android 10+: request SAF access for restore when needed
-            if (shouldRestore) {
+            // Android 10+: request SAF access for restore when needed.
+            // Only prompt the SAF picker if a backup is known to exist (check legacy path).
+            // On a fresh install with no backup data, skip straight to the app.
+            val hasBackupAvailable = backupManager.hasBackup()
+            if (shouldRestore && hasBackupAvailable) {
                 Toast.makeText(
                     this,
                     "Select BaseGrammy or backup_latest folder to restore",
@@ -110,8 +113,8 @@ class MainActivity : ComponentActivity() {
             val progressFile = File(baseDir, "progress.yaml")
             val profileFile = File(baseDir, "profile.yaml")
             val hasFullData = masteryFile.exists() && progressFile.exists() && profileFile.exists()
-            val profile = ProfileStore(this).load()
-            val shouldRestore = !hasFullData || profile.userName == "GrammarMateUser"
+            val profile = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getProfileStore().load()
+            val shouldRestore = !hasFullData
             startLegacyRestore(shouldRestore)
         } else {
             Toast.makeText(
@@ -155,10 +158,14 @@ class MainActivity : ComponentActivity() {
     private fun startRestoreFromUri(uri: Uri) {
         RestoreNotifier.start()
         lifecycleScope.launch {
-            val restored = withContext(Dispatchers.IO) {
-                backupManager.restoreFromBackupUri(uri)
+            try {
+                val restored = withContext(Dispatchers.IO) {
+                    backupManager.restoreFromBackupUri(uri)
+                }
+                RestoreNotifier.markComplete(restored)
+            } catch (e: Exception) {
+                RestoreNotifier.markComplete(false)
             }
-            RestoreNotifier.markComplete(restored)
         }
     }
 
@@ -169,16 +176,20 @@ class MainActivity : ComponentActivity() {
         }
         RestoreNotifier.start()
         lifecycleScope.launch {
-            val restored = withContext(Dispatchers.IO) {
-                if (!backupManager.hasBackup()) {
-                    false
-                } else {
-                    val backups = backupManager.getAvailableBackups()
-                    val latest = backups.firstOrNull() ?: return@withContext false
-                    backupManager.restoreFromBackup(latest.path)
+            try {
+                val restored = withContext(Dispatchers.IO) {
+                    if (!backupManager.hasBackup()) {
+                        false
+                    } else {
+                        val backups = backupManager.getAvailableBackups()
+                        val latest = backups.firstOrNull() ?: return@withContext false
+                        backupManager.restoreFromBackup(latest.path)
+                    }
                 }
+                RestoreNotifier.markComplete(restored)
+            } catch (e: Exception) {
+                RestoreNotifier.markComplete(false)
             }
-            RestoreNotifier.markComplete(restored)
         }
     }
 }

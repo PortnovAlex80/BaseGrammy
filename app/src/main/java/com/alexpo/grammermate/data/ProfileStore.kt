@@ -7,12 +7,18 @@ import java.io.File
 /**
  * Stores user profile information (name, preferences, etc.)
  */
-class ProfileStore(private val context: Context) {
+interface ProfileStore {
+    fun load(): UserProfile
+    fun save(profile: UserProfile)
+    fun clear()
+}
+
+class ProfileStoreImpl(private val context: Context) : ProfileStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "profile.yaml")
 
-    fun load(): UserProfile {
+    override fun load(): UserProfile {
         if (!file.exists()) {
             return UserProfile()
         }
@@ -22,7 +28,8 @@ class ProfileStore(private val context: Context) {
             val data = (raw as? Map<*, *>) ?: return UserProfile()
 
             return UserProfile(
-                userName = data["userName"] as? String ?: "GrammarMateUser"
+                userName = data["userName"] as? String ?: "GrammarMateUser",
+                welcomeDialogAttempts = (data["welcomeDialogAttempts"] as? Number)?.toInt() ?: 0
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -30,17 +37,18 @@ class ProfileStore(private val context: Context) {
         }
     }
 
-    fun save(profile: UserProfile) {
+    override fun save(profile: UserProfile) {
         baseDir.mkdirs()
 
         val payload = linkedMapOf(
-            "userName" to profile.userName
+            "userName" to profile.userName,
+            "welcomeDialogAttempts" to profile.welcomeDialogAttempts
         )
 
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
 
-    fun clear() {
+    override fun clear() {
         if (file.exists()) {
             file.delete()
         }
@@ -48,5 +56,6 @@ class ProfileStore(private val context: Context) {
 }
 
 data class UserProfile(
-    val userName: String = "GrammarMateUser"
+    val userName: String = "GrammarMateUser",
+    val welcomeDialogAttempts: Int = 0
 )

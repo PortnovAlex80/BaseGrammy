@@ -10,12 +10,14 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".GrammarMateApplication"
         android:allowBackup="true"
         android:label="GrammarMate"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GrammarMate">
+        android:theme="@style/Theme.GrammarMate"
+        android:networkSecurityConfig="@xml/network_security_config">
 
         <activity
             android:name=".MainActivity"

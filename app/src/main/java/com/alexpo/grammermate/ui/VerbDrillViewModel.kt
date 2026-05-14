@@ -4,12 +4,12 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.alexpo.grammermate.AppContainer
+import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.BadSentenceEntry
-import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ProgressStore
-import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
@@ -18,10 +18,12 @@ import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
 import org.yaml.snakeyaml.Yaml
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class TenseInfo(
     val name: String,
@@ -41,11 +43,15 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val logTag = "VerbDrillVM"
     private val application = application
-    private var verbDrillStore = VerbDrillStore(application)
-    private val lessonStore = LessonStore(application)
-    private val progressStore = ProgressStore(application)
-    private val badSentenceStore = BadSentenceStore(application)
-    private val ttsEngine = TtsEngine(application)
+    private val container: AppContainer = when (application) {
+        is GrammarMateApplication -> application.container
+        else -> AppContainer(application)
+    }
+    private var verbDrillStore = container.verbDrillStore(null)
+    private val lessonStore = container.lessonStore
+    private val progressStore = container.progressStore
+    private val badSentenceStore = container.badSentenceStore
+    private val ttsEngine = container.ttsEngine
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
     val uiState: StateFlow<VerbDrillUiState> = _uiState
@@ -113,80 +119,111 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * then loads cards from [LessonStore.getVerbDrillFiles] with the pack parameter.
      */
     fun reloadForPack(packId: String) {
-        if (currentPackId == packId && allCards.isNotEmpty()) return
+        if (currentPackId == packId && allCards.isNotEmpty()) {
+            // Cards already loaded, but progress may be stale — force re-read from disk
+            viewModelScope.launch {
+                progressMap = withContext(Dispatchers.IO) { verbDrillStore.loadProgress() }
+                updateProgressDisplay()
+            }
+            return
+        }
         currentPackId = packId
-        verbDrillStore = VerbDrillStore(application, packId = packId)
+        verbDrillStore = container.verbDrillStore(packId)
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards() }
     }
 
-    private fun loadCards(languageId: String? = null) {
-        val lang = languageId ?: progressStore.load().languageId
-        val files = if (currentPackId != null) {
-            lessonStore.getVerbDrillFiles(currentPackId!!, lang)
-        } else {
-            @Suppress("DEPRECATION")
-            lessonStore.getVerbDrillFiles(lang)
-        }
-        val cards = mutableListOf<VerbDrillCard>()
-        val cardToPack = mutableMapOf<String, String>()
-        val packIds = mutableSetOf<String>()
-
-        for (file in files) {
-            val content = file.readText()
-            val (_, parsed) = VerbDrillCsvParser.parse(content)
-
-            // Use the active packId, or resolve from filename in global mode
-            val packId = currentPackId ?: run {
-                val fileName = file.nameWithoutExtension
-                val lessonId = fileName.removePrefix("${lang}_")
-                lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+    private suspend fun loadCards(languageId: String? = null) {
+        // All file I/O and parsing runs on Dispatchers.IO to avoid blocking main thread
+        val ioResult = withContext(Dispatchers.IO) {
+            val lang = languageId ?: progressStore.load().languageId.value
+            val files = if (currentPackId != null) {
+                lessonStore.getVerbDrillFiles(currentPackId!!, lang)
+            } else {
+                @Suppress("DEPRECATION")
+                lessonStore.getVerbDrillFiles(lang)
             }
-            packIds.add(packId)
+            val cards = mutableListOf<VerbDrillCard>()
+            val cardToPack = mutableMapOf<String, String>()
+            val packIds = mutableSetOf<String>()
 
-            for (card in parsed) {
-                cardToPack[card.id] = packId
+            for (file in files) {
+                val (_, parsed) = file.bufferedReader().use { reader ->
+                    VerbDrillCsvParser.parse(reader)
+                }
+
+                // Use the active packId, or resolve from filename in global mode
+                val packId = currentPackId ?: run {
+                    val fileName = file.nameWithoutExtension
+                    val lessonId = fileName.removePrefix("${lang}_")
+                    lessonStore.getPackIdForLesson(lessonId) ?: lessonId
+                }
+                packIds.add(packId)
+
+                for (card in parsed) {
+                    cardToPack[card.id] = packId
+                }
+                cards.addAll(parsed)
             }
-            cards.addAll(parsed)
+
+            val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
+            val groups = cards.mapNotNull { it.group }.distinct().sorted()
+            val progress = verbDrillStore.loadProgress()
+            val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+
+            // Load tense reference info (asset file read)
+            val tenseInfo = loadTenseInfoInternal(lang)
+
+            LoadCardsResult(cards, cardToPack, packIds, tenses, groups, progress, badCount, lang, tenseInfo)
         }
 
-        allCards = cards
-        packIdForCardId = cardToPack
-        activePackIds = packIds
-
-        val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
-        val groups = cards.mapNotNull { it.group }.distinct().sorted()
-
-        progressMap = verbDrillStore.loadProgress()
-
-        // Sum bad sentence counts across all active packs
-        val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+        // State updates on main thread (viewModelScope.launch default dispatcher)
+        allCards = ioResult.cards
+        packIdForCardId = ioResult.cardToPack
+        activePackIds = ioResult.packIds
+        progressMap = ioResult.progress
+        tenseInfoMap = ioResult.tenseInfo
 
         _uiState.update {
             it.copy(
-                availableTenses = tenses,
-                availableGroups = groups,
+                badSentenceCount = ioResult.badCount,
+                availableTenses = ioResult.tenses,
+                availableGroups = ioResult.groups,
                 isLoading = false,
-                loadedLanguageId = lang,
-                badSentenceCount = badCount
+                loadedLanguageId = ioResult.lang
             )
         }
 
-        Log.d(logTag, "Loaded ${cards.size} verb drill cards for language $lang")
-
-        // Load tense reference info
-        loadTenseInfo(lang)
+        Log.d(logTag, "Loaded ${ioResult.cards.size} verb drill cards for language ${ioResult.lang}")
     }
 
-    private fun loadTenseInfo(languageId: String) {
+    /** Holds the result of I/O-heavy card loading, returned from Dispatchers.IO */
+    private data class LoadCardsResult(
+        val cards: List<VerbDrillCard>,
+        val cardToPack: Map<String, String>,
+        val packIds: Set<String>,
+        val tenses: List<String>,
+        val groups: List<String>,
+        val progress: Map<String, VerbDrillComboProgress>,
+        val badCount: Int,
+        val lang: String,
+        val tenseInfo: Map<String, TenseInfo>
+    )
+
+    /**
+     * Load tense reference info from assets. Safe to call on any thread.
+     * Returns the parsed map; caller assigns to tenseInfoMap on main thread.
+     */
+    private fun loadTenseInfoInternal(languageId: String): Map<String, TenseInfo> {
         val fileName = "grammarmate/tenses/${languageId}_tenses.yaml"
-        try {
+        return try {
             val yaml = getApplication<Application>().assets.open(fileName).bufferedReader().readText()
-            tenseInfoMap = parseTenseInfo(yaml)
-            Log.d(logTag, "Loaded tense info for $languageId: ${tenseInfoMap.size} tenses")
+            val result = parseTenseInfo(yaml)
+            Log.d(logTag, "Loaded tense info for $languageId: ${result.size} tenses")
+            result
         } catch (e: Exception) {
             Log.w(logTag, "Failed to load tense info from $fileName", e)
-            tenseInfoMap = emptyMap()
+            emptyMap()
         }
     }
 
@@ -421,12 +458,15 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val session = _uiState.value.session ?: return
         if (session.currentIndex > 0) {
             val prevIndex = session.currentIndex - 1
+            val prevCard = session.cards.getOrElse(prevIndex) { null }
+            val prevCardIsBad = prevCard?.let { isCardBad(it) } ?: false
             _uiState.update { state ->
                 state.copy(
                     session = session.copy(
                         currentIndex = prevIndex,
                         isComplete = false
-                    )
+                    ),
+                    currentCardIsBad = prevCardIsBad
                 )
             }
         }
@@ -436,6 +476,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val session = _uiState.value.session ?: return
         val nextIndex = session.currentIndex + 1
         if (nextIndex < session.cards.size) {
+            // Persist current card as shown even when skipped
+            val card = session.cards[session.currentIndex]
+            persistCardProgress(card)
             _uiState.update { state ->
                 state.copy(
                     session = session.copy(currentIndex = nextIndex)
@@ -443,6 +486,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             }
             cardShownTimestamp = System.currentTimeMillis()
         } else {
+            // Persist last card and start new batch
+            val card = session.cards[session.currentIndex]
+            persistCardProgress(card)
             startSession()
         }
     }
@@ -465,13 +511,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             cardId = card.id,
             languageId = _uiState.value.loadedLanguageId ?: "",
             sentence = card.promptRu,
-            translation = card.answer
+            translation = card.answer,
+            mode = "verb_drill"
         )
         _uiState.update {
-            it.copy(
-                badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) },
-                currentCardIsBad = true
-            )
+            it.copy(badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) }, currentCardIsBad = true)
         }
     }
 
@@ -484,10 +528,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         badSentenceStore.removeBadSentence(packId, card.id)
         _uiState.update {
-            it.copy(
-                badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) },
-                currentCardIsBad = false
-            )
+            it.copy(badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) }, currentCardIsBad = false)
         }
     }
 
@@ -497,11 +538,11 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun exportBadSentences(): String? {
         if (activePackIds.isEmpty()) return null
-        // Export all packs' bad sentences; use the first non-empty pack's file
+        // Use unified export for all packs
         for (packId in activePackIds) {
             val entries = badSentenceStore.getBadSentences(packId)
             if (entries.isNotEmpty()) {
-                val file = badSentenceStore.exportToTextFile(packId)
+                val file = badSentenceStore.exportUnified()
                 return file.absolutePath
             }
         }
@@ -542,14 +583,18 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         if (text.isBlank()) return
         val langId = _uiState.value.loadedLanguageId ?: "it"
         viewModelScope.launch {
-            if (ttsEngine.state.value != TtsState.READY
-                || ttsEngine.activeLanguageId != langId) {
-                ttsEngine.initialize(langId)
-            }
-            if (ttsEngine.state.value == TtsState.READY) {
-                ttsEngine.speak(text, languageId = langId, speed = speed)
-            } else {
-                Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+            try {
+                if (ttsEngine.state.value != TtsState.Ready
+                    || ttsEngine.activeLanguageId != langId) {
+                    ttsEngine.initialize(langId)
+                }
+                if (ttsEngine.state.value == TtsState.Ready) {
+                    ttsEngine.speak(text, languageId = langId, speed = speed)
+                } else {
+                    Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "speakTts failed", e)
             }
         }
     }
@@ -560,6 +605,5 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         super.onCleared()
-        ttsEngine.release()
     }
 }
