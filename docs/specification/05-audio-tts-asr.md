@@ -327,7 +327,7 @@ Only target-language text is ever spoken. Russian prompts are never synthesized.
 | IDLE / READY | Volume Up | Tap triggers speak |
 | SPEAKING | Stop Circle (red) | Tap stops playback |
 | INITIALIZING | Circular Progress Indicator | Loading spinner |
-| ERROR | Report Problem (red) | Error state, auto-recovers when download completes |
+| ERROR | Report Problem (red) | Error state. Shows tooltip/hint with cause: "Model not loaded", "Out of memory", or "Initialization failed". Auto-recovers when download completes. |
 
 **Icon auto-recovery**: When TTS models finish downloading in the background, the AudioCoordinator automatically re-initializes the TTS engine. The engine transitions from ERROR -> INITIALIZING -> READY, which propagates through `ttsEngine.state` -> `startTtsStateCollection()` -> `uiState.audio.ttsState` -> composable recomposition. The speaker icon updates from red error to VolumeUp within 2 seconds of download completion, without requiring user action or screen re-entry.
 
@@ -336,6 +336,21 @@ Only target-language text is ever spoken. Russian prompts are never synthesized.
 **KNOWN ISSUE — Samsung tablet crash during TTS model loading/playback**: On Samsung Galaxy Tab devices, the app crashes when TTS models are being loaded or when the user taps the speaker icon. This crash did NOT occur in older app versions — regression introduced in commit `cd31ae5` which added `ttsEngine.initialize()` calls after background download completion (3 call sites in AudioCoordinator). The root cause is likely thread safety: Sherpa-ONNX native layer may not tolerate concurrent `initialize()` from `Dispatchers.IO` on Samsung's AudioTrack implementation.
 
 **Fix plan (Phase 4 — AudioCoordinator refactoring):** `ttsEngine.initialize()` MUST execute on the main thread or under a mutex to prevent concurrent native calls. The auto-recovery logic (initialize after download) should use `withContext(Dispatchers.Main)` or a dedicated serialization lock. Verify on Samsung Tab S8/S9 after fix.
+
+**Thread safety requirement (CRITICAL):** All `TtsEngine.initialize()` calls MUST be serialized. Options:
+1. Mutex-based: wrap all initialize/speak/release calls in a `Mutex()` with `withLock`.
+2. Main-thread dispatch: all initialize() calls go through `withContext(Dispatchers.Main)`.
+The native Sherpa-ONNX `OfflineTts` instance is NOT thread-safe. Concurrent calls to initialize from different coroutines cause native crashes on Samsung devices.
+
+**Initialization timeout:** `TtsEngine.initialize()` MUST have a timeout (30 seconds). If initialization hangs (native code stalls), the engine transitions to ERROR state. Without a timeout, the engine can remain stuck in INITIALIZING permanently, blocking all future TTS operations.
+
+**ERROR state tooltip requirement:** When `TtsState == ERROR`, the TTS icon (ReportProblem red) MUST show a tooltip or snackbar on long-press or tap explaining the error cause:
+- "TTS model not loaded" — when model files are missing
+- "Not enough memory to load TTS model" — when OutOfMemoryError or insufficient storage
+- "TTS initialization failed" — for other native errors
+The tooltip helps users understand WHY audio isn't working instead of showing a cryptic red icon.
+
+**Implementation task:** [TASK-003: TTS Thread Safety and Error UX](tasks/TASK-003-tts-thread-safety-error-ux.md)
 
 #### Download Dialog
 

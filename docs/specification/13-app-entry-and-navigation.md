@@ -447,8 +447,14 @@ This is a Level A (safety) constraint per CLAUDE.md — removing these enum valu
 3. `LessonStore.ensureSeedData()` copies default lesson packs from `assets/grammarmate/packs/` to internal storage.
 4. `ProgressStore.load()` returns `TrainingProgress()` with all defaults.
 5. `ProfileStore.load()` returns `UserProfile()` with `userName = "GrammarMateUser"`.
-6. `GrammarMateApp` detects `userName == "GrammarMateUser"` on any non-HOME screen and triggers the `WelcomeDialog` for name entry.
+6. `GrammarMateApp` detects `userName == "GrammarMateUser"` and triggers the `WelcomeDialog` for name entry. **WelcomeDialog behavior rules:**
+   - **Max 3 attempts:** The dialog is shown a maximum of 3 times across app launches. A counter (`welcomeDialogAttempts: Int` in `UserProfile`) is incremented each time the dialog is shown. After 3 attempts, the dialog is permanently dismissed and the user keeps the default name "GrammarMateUser".
+   - **Only on HOME screen:** The dialog MUST only appear when the user is on `AppScreen.HOME`. It MUST NOT appear during active training (TRAINING, DAILY_PRACTICE, VERB_DRILL, VOCAB_DRILL), lesson roadmap (LESSON), or boss battles. Interrupting a training session with a name dialog is a UX violation.
+   - **Skip = dismiss:** Tapping "Skip" counts as an attempt and increments the counter. On the 3rd skip, the dialog stops appearing.
+   - **Name entered = permanent dismiss:** Entering any non-blank name saves it and the dialog never appears again.
 7. All counters (mastery, streak, progress) start at zero.
+
+**Implementation task:** [TASK-004: WelcomeDialog Max 3 Attempts](tasks/TASK-004-welcome-dialog-max-attempts.md)
 
 #### Subsequent launches (data files exist)
 
