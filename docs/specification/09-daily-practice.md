@@ -24,6 +24,28 @@ Daily Practice is GrammarMate's unified daily training session, combining three 
 
 Total session size: up to 30 cards across 3 blocks. Blocks are served sequentially; the session ends when all blocks are complete or the user exits.
 
+### Independence Principle
+
+Daily Practice has its **own lifecycle and cursor**, fully independent of the lesson roadmap:
+
+- **Daily Practice cursor** (`DailyCursorState`): drives Block 1 card selection and Block 3 tense level. Advances ONLY when the user completes a daily session with VOICE/KEYBOARD answers.
+- **Lesson roadmap** (`selectedLessonId`): drives regular lesson training. User can browse any unlocked lesson on the roadmap -- this does NOT affect Daily Practice.
+- **Mastery/Flower**: shared across both paths. `MasteryStore.recordCardShow()` counts card shows regardless of source (daily practice or regular training). Flowers grow from total unique card shows.
+
+```
+Lesson Roadmap                    Daily Practice (own cursor)
+──────────────                    ────────────────────────────
+selectedLessonId                  DailyCursorState {
+→ Regular Training                    currentLessonIndex: 0, 1, 2, ...
+→ Lesson training flow                sentenceOffset: 0, 10, 20, ...
+                                  }
+                                          │
+        ↕ independent of each other ↕     │
+                                  │
+          Mastery/Flower — common │
+   (card shows from ANY source count) ────┘
+```
+
 **Constants** (all in `DailySessionComposer.Companion`):
 ```kotlin
 const val CARDS_PER_BLOCK = 10
@@ -161,9 +183,9 @@ Persistence: `DailyCursorState` is nested inside `TrainingProgress.dailyCursor` 
 Block 1 uses **cursor-driven sequential selection** -- no shuffling. The algorithm is in `DailySessionComposer.buildSentenceBlock()`:
 
 1. Load all lessons for the target language via `LessonStore.getLessons(languageId)`.
-2. Select the lesson at `cursor.currentLessonIndex`. If the index is out of range, fall back to matching by `lessonId`.
+2. Select the lesson at `cursor.currentLessonIndex`. If the index is out of range, wrap to 0 (cycle through pack) or fall back to matching by `lessonId`.
 3. Take cards starting at `cursor.sentenceOffset`, in order, up to `SENTENCE_COUNT` (10).
-4. If the lesson is exhausted (offset >= cards.size), return an empty list, signaling the caller to advance the lesson index.
+4. If the lesson is exhausted (offset >= cards.size), return an empty list, signaling the caller to advance the lesson index (see Section 9.6.4).
 
 Cards per block: `CARDS_PER_BLOCK = 10` (constant in `DailySessionComposer`).
 
@@ -431,20 +453,38 @@ Block 2 vocab selection is completely independent of Blocks 1 and 3:
 
 ### 9.5.1 Verb Card Selection
 
-Block 3 uses **weak-first ordering**, excluding previously shown cards. The algorithm is in `DailySessionComposer.buildVerbBlock()`:
+Block 3 uses **weak-first ordering with collocation grouping**. The algorithm is in `DailySessionComposer.buildVerbBlock()`.
 
-1. Load all verb drill cards from the pack's verb drill files via `LessonStore.getVerbDrillFiles()` and `VerbDrillCsvParser`.
-2. Filter cards by **active tenses**:
-   - If `cumulativeTenses` is provided (from manifest lessons 1..lessonLevel), use those.
-   - Otherwise, fall back to `TENSE_LADDER[lessonLevel]`.
-   - If no tenses are active, return an empty block.
-3. Load progress from `VerbDrillStore.loadProgress()`.
-4. Collect IDs of all previously shown cards across all combos (`everShownCardIds`).
-5. **Exclude** previously shown cards to produce the `unshown` set.
-6. Score unshown cards by **weakness**:
+**Tense source -- Daily Practice cursor (CRITICAL INVARIANT):**
+
+Block 3 tense level is derived from `DailyCursorState.currentLessonIndex`, NOT from `resolveProgressLessonInfo()` or `selectedLessonId`. This ensures Block 1 and Block 3 are always synchronized on the same lesson level within a single Daily Practice session:
+
+```
+DailyCursorState.currentLessonIndex (= 0-based index)
+  → effectiveLevel = currentLessonIndex + 1 (= 1-based level)
+  → activeTenses = getCumulativeTenses(packId, effectiveLevel)
+                   or TENSE_LADDER[effectiveLevel] (fallback)
+```
+
+When the daily cursor advances to the next lesson (Section 9.6.4), Block 3 automatically adds the new lesson's tenses. Example: cursor at lesson index 1 (level 2) → Presente + Imperfetto.
+
+**Verb cycling (cards run out → repeat):**
+
+When all verb cards for the active tenses have been previously shown (`unshown` set is empty), the algorithm **cycles**: it resets the exclusion filter and selects from the full set of cards matching the active tenses. This prevents Block 3 from returning empty when the user has practiced all available verbs. Cycled cards retain their weakness scores (weakest-first still applies), so the least-practiced forms are still prioritized.
+
+**Full selection algorithm:**
+
+1. Compute `effectiveLevel = cursor.currentLessonIndex + 1` (1-based).
+2. Load all verb drill cards from the pack's verb drill files via `LessonStore.getVerbDrillFiles()` and `VerbDrillCsvParser`.
+3. Filter cards by **active tenses** for `effectiveLevel` (see above).
+4. If no tenses are active, return an empty block.
+5. Load progress from `VerbDrillStore.loadProgress()`.
+6. Collect IDs of all previously shown cards across all combos (`everShownCardIds`).
+7. **Try** to exclude previously shown cards → `unshown` set.
+8. **If `unshown` is empty** (all cards already shown for these tenses): **cycle** -- use the full filtered set (step 3 result) as the candidate pool. Weakness scores still apply based on progress data.
+9. Score candidate cards by **weakness**:
 
 ```kotlin
-// For each unshown card:
 val shownInCombo = progressMap.values
     .filter { it.tense == card.tense }
     .sumOf { it.everShownCardIds.size }
@@ -454,16 +494,9 @@ val weakness = if (comboTotal == 0) 0f else 1f - (shownInCombo.toFloat() / combo
 
    Weakness = 1.0 means no cards in that tense have been shown (weakest). Weakness = 0.0 means all cards shown (strongest).
 
-7. Sort by weakness descending, stable by original index (preserves CSV order for ties):
-
-```kotlin
-scored.sortedWith(
-    compareByDescending<Triple<VerbDrillCard, Float, Int>> { it.second }  // weakness descending
-        .thenBy { it.third }                                                // original index ascending
-)
-```
-
-8. Take the top `VERB_COUNT` (10) cards.
+10. Compute `verbGroupRank` -- group cards by `verb + tense`, take minimum `rank` per group. This groups all collocations (person/number forms) of the same verb+tense together.
+11. Sort by 4-level ordering (see Section 9.5.3 for details).
+12. Take the top `VERB_COUNT` (10) cards. Note: the 10-card limit may split a collocation group -- the last group may be incomplete. This is acceptable; the user will see the remaining forms in a subsequent session.
 
 ### 9.5.2 Tense Ladder
 
@@ -507,27 +540,39 @@ Summarized:
 
 Each level adds one tense to the previous level's set. This ensures progressive difficulty as the user advances through lessons.
 
-### 9.5.3 Verb Block Card Selection and Ordering Requirements
+### 9.5.3 Verb Block Card Ordering (IMPLEMENTED)
 
-In addition to the weak-first ordering described in section 9.5.1, the following sub-ordering and grouping requirements apply within each weakness tier:
+Cards are sorted by a 4-level comparator in `DailySessionComposer.buildVerbBlock()`:
 
-**Frequency sub-sorting:** Within each weakness tier (same weakness score), cards are sorted by `rank` ascending. Lower rank values indicate more common verbs, so the most frequent verbs are presented first. This ensures that within a given weakness level, high-frequency verb forms are practiced before rare ones.
+```kotlin
+sorted = scored.sortedWith(
+    compareByDescending<Triple<VerbDrillCard, Float, Int>> { it.second }           // 1. Weakness DESC
+        .thenBy { verbGroupRank["${it.first.verb}_${it.first.tense}"] ?: Int.MAX_VALUE }  // 2. Verb+tense group rank ASC
+        .thenBy { it.first.rank ?: Int.MAX_VALUE }                                  // 3. Individual card rank ASC
+        .thenBy { it.third }                                                         // 4. Original CSV index (stability)
+)
+```
 
-**Verb collocation grouping:** Cards are grouped by verb: all collocations (different person/number forms) of the same `verb + tense` pair are presented together before moving to the next verb. This creates a natural conjugation practice flow where the user practices "essere + Presente" across multiple persons before switching to "avere + Presente".
+**Sort levels explained:**
 
-**Tense matching:** Selected cards use tenses matching the current daily practice lesson level, as determined by `TENSE_LADDER[lessonLevel]` or `cumulativeTenses` from the manifest. No cards with tenses beyond the user's current level are included.
+| Level | Key | Effect |
+|-------|-----|--------|
+| 1 (primary) | Weakness DESC | Weakest tenses come first (least practiced) |
+| 2 | `verbGroupRank` ASC | Cards of the same `verb+tense` group are clustered together. The group with the lowest rank (most common verb) comes first |
+| 3 | `rank` ASC | Within a verb+tense group, individual collocations are ordered by frequency (most common form first) |
+| 4 | Original CSV index | Stable tiebreaker for cards with identical weakness, verb, tense, and rank |
+
+**Collocation grouping behavior:** All person/number forms of the same `verb + tense` pair (e.g., "essere + Presente": io sono, tu sei, lui e, noi siamo, etc.) appear consecutively because they share the same `verbGroupRank`. The 10-card limit may truncate the last group -- the remaining forms appear in a subsequent session.
 
 **Behavioral contract for verb ordering:**
 
 | Condition | Expected Behavior |
 |-----------|-------------------|
-| Multiple cards share the same weakness score | Sorted by `rank` ascending (most common verbs first) |
+| Multiple cards share the same weakness score | Sorted by verb+tense group rank (most common verb first) |
 | Multiple cards share the same `verb + tense` pair | Presented consecutively (grouped together) |
-| All cards in a weakness tier have the same verb | Sub-sort by original CSV index (stable) |
+| Within a collocation group | Sorted by individual card rank (most frequent form first) |
 | Tense is beyond the user's lesson level | Card is excluded from selection entirely |
-| `sortByFrequency` is disabled | Frequency sub-sort still applies within weakness tiers (weak-first always uses frequency as secondary sort) |
-
-**Note:** These ordering requirements describe the desired target behavior. The current implementation in `DailySessionComposer.buildVerbBlock()` uses weak-first ordering with original-index stability. The frequency sub-sort and verb grouping additions are planned enhancements.
+| Tense is at the user's exact level but no cards shown yet | Weakness = 1.0, these cards appear first |
 
 ### 9.5.4 Task Construction
 
@@ -659,15 +704,15 @@ private fun buildVerbBlockFromIds(
 3. The ViewModel saves `dailyCursorAtSessionStart` for rollback on cancel.
 4. `dailyPracticeAnsweredCounts` is reset to an empty map.
 5. The ViewModel reads `activePackId` and `selectedLanguageId` from current UI state.
-6. **IMPORTANT**: The ViewModel uses `resolveProgressLessonInfo()` (NOT `selectedLessonId`) to determine the current lesson. `selectedLessonId` can change when the user browses locked lessons, but daily practice always follows the main learning path. `resolveProgressLessonInfo()` returns `(lessonId, effectiveLevel)`.
-7. Reads current `dailyCursor` from state.
+6. Reads current `dailyCursor` from state. **The cursor is the sole source of truth** for Daily Practice -- `resolveProgressLessonInfo()` and `selectedLessonId` are NOT used.
+7. Computes `effectiveLevel = cursor.currentLessonIndex + 1` (1-based level from cursor).
 8. Determines `isFirstSessionToday` by comparing `cursor.firstSessionDate` to today's ISO date.
-9. For the first session of the day, tries the pre-built session cache (`prebuiltDailySession`, built at init time for faster startup). If valid, uses it and clears the cache.
-10. Falls back to synchronous build via `DailySessionComposer.buildSession(effectiveLevel, packId, langId, lessonId, cumulativeTenses, cursor)`.
+9. For the first session of the day, tries the pre-built session cache (`prebuiltDailySession`, built at init time for faster startup). If valid, uses it and clears the cache. **The prebuilt session must be validated:** if the cursor's `currentLessonIndex` has changed since the cache was built, discard and rebuild. This prevents serving incorrect tenses in Block 3.
+10. Falls back to synchronous build via `DailySessionComposer.buildSession(effectiveLevel, packId, langId, lessonId, cumulativeTenses, cursor)`, where `cumulativeTenses = getCumulativeTenses(packId, effectiveLevel)` and `lessonId` is derived from the cursor's lesson index.
 11. `DailySessionComposer` creates all three blocks:
-    - `buildSentenceBlock()` -- cursor-driven sequential selection from lesson cards.
-    - `buildVocabBlock()` -- pure SRS selection from pack vocab drill files.
-    - `buildVerbBlock()` -- weak-first selection from pack verb drill files, filtered by cumulative tenses.
+    - `buildSentenceBlock()` -- cursor-driven sequential selection from lesson at `cursor.currentLessonIndex`.
+    - `buildVocabBlock()` -- pure SRS selection from pack vocab drill files (independent of cursor level).
+    - `buildVerbBlock()` -- weak-first selection filtered by tenses for `effectiveLevel`, with cycling when all verbs have been shown (see Section 9.5.1).
 12. If all blocks return empty, session start fails (returns `false`).
 13. `DailySessionHelper.startDailySession(tasks, effectiveLevel)` initializes the `DailySessionState` with `active=true, tasks=..., taskIndex=0, blockIndex=0`.
 14. If first session today, stores first-session card IDs via `storeFirstSessionCardIds(sentenceIds, verbIds)`. This updates `DailyCursorState.firstSessionDate`, `firstSessionSentenceCardIds`, and `firstSessionVerbCardIds`.
@@ -738,7 +783,9 @@ After all blocks are complete:
    - Compares against expected counts from the task list.
    - Only advances cursor if ALL TRANSLATE cards were practiced via VOICE/KEYBOARD AND ALL VERB cards were practiced via VOICE/KEYBOARD.
    - If conditions met, calls `advanceCursor(sentenceCount)`.
-   - `advanceCursor()` increments `sentenceOffset` by `sentenceCount`. If the new offset >= lesson card count, advances `currentLessonIndex` and resets `sentenceOffset` to 0.
+   - `advanceCursor()` increments `sentenceOffset` by `sentenceCount`.
+   - **Lesson transition:** If the new `sentenceOffset >= lesson.cards.size`, advances `currentLessonIndex` by 1 and resets `sentenceOffset` to 0. This triggers the next lesson's cards in Block 1 and adds the next tense in Block 3 on the subsequent session.
+   - **Pack wrap:** If `currentLessonIndex` exceeds the last lesson in the pack, wrap to index 0 (cycle through the pack). The user continues from lesson 1 with all accumulated tenses.
    - Clears `dailyPracticeAnsweredCounts`.
    - Calls `dailySessionHelper.endSession()` (idempotent).
 
@@ -1136,6 +1183,45 @@ It:
 4. Resets `taskIndex` to `blockStart`.
 5. Calls `saveProgress()`.
 
+### 9.8.7 Daily Practice Cursor Invariant
+
+**Rule:** Daily Practice follows its own cursor (`DailyCursorState`), fully independent of the lesson roadmap. The cursor is the sole source of truth for Block 1 lesson selection and Block 3 tense level.
+
+**Level resolution chain (cursor-based):**
+```
+DailyCursorState {
+    currentLessonIndex: Int   // 0-based
+    sentenceOffset: Int       // cards completed in current lesson
+}
+  → effectiveLevel = currentLessonIndex + 1
+  → Block 1: lesson at currentLessonIndex, cards from sentenceOffset
+  → Block 3: tenses for effectiveLevel (getCumulativeTenses or TENSE_LADDER)
+```
+
+**What MUST NOT affect daily practice:**
+- User browsing to a different lesson on the roadmap (`selectedLessonId`)
+- Mastery/flower state changes (these grow flowers but don't move the daily cursor)
+- Regular lesson training completion
+
+**What DOES move the daily cursor:**
+- Completing a daily session with all VOICE/KEYBOARD cards → `advanceCursor(sentenceCount)`
+- `sentenceOffset` += practiced sentence count
+- If `sentenceOffset >= lesson.cards.size` → `currentLessonIndex++`, `sentenceOffset = 0`
+- If `currentLessonIndex >= pack.lessons.size` → wrap to 0 (cycle through pack)
+
+**Verb cycling:** When all verb cards for the current tenses have been shown, Block 3 cycles them (re-selects from full pool with weakness ordering). Block 3 never returns empty while active tenses exist.
+
+**Mastery/Flower independence:** Card shows from Daily Practice AND regular training both call `MasteryStore.recordCardShow()`. Flowers grow regardless of source. The daily cursor and mastery state are decoupled -- one can be ahead of the other without inconsistency.
+
+**Verification check:** After any change to session building:
+1. At `currentLessonIndex = 0` (level 1), Block 3 contains ONLY Presente verbs.
+2. At `currentLessonIndex = 1` (level 2), Block 3 contains Presente + Imperfetto verbs.
+3. The `currentLessonIndex` used for Block 3 matches the lesson from which Block 1 draws cards.
+4. Block 3 never returns empty when active tenses have cards (cycling kicks in).
+5. Browsing a different lesson on the roadmap does NOT change the daily cursor.
+
+**Implementation task:** [TASK-001: Daily Practice Cursor Independence](tasks/TASK-001-daily-cursor-independence.md) — 3 code fixes with acceptance criteria and verification checklist.
+
 ---
 
 ## 9.9 User Stories
@@ -1143,8 +1229,11 @@ It:
 ### Session Initiation
 
 - **As a user**, I want to start a daily practice session from the Home screen so that I can practice all three exercise types in one flow.
-- **As a user**, I want the session to automatically select appropriate cards based on my current lesson level so that I practice relevant content.
+- **As a user**, I want the session to automatically select appropriate cards based on my daily practice cursor position so that I always see fresh content.
 - **As a user**, I want the session to resume where I left off if I start a new session later in the day so that I see new cards.
+- **As a user**, I want daily practice to follow its own progression independent of which lesson I'm browsing on the roadmap so that daily practice is predictable and consistent.
+- **As a user**, I want the cursor to advance to the next lesson when I've completed all cards in the current lesson so that daily practice never gets stuck.
+- **As a user**, I want verb cards to cycle (repeat) when I've practiced all available forms so that Block 3 never becomes empty.
 
 ### Block 1: Sentence Translations
 
@@ -1172,8 +1261,9 @@ It:
 - **As a user**, I want to conjugate verbs in context so that I build grammatical accuracy.
 - **As a user**, I want to see the verb infinitive, tense, and group as hint chips so that I know which form is expected.
 - **As a user**, I want verb cards to be ordered by weakness (weakest tenses first) so that I focus on my weakest areas.
-- **As a user**, I want previously shown verb cards to be excluded from future sessions so that I see new conjugation challenges.
-- **As a user**, I want tenses to be introduced progressively (matching my lesson level) so that I am not overwhelmed with advanced conjugations too early.
+- **As a user**, I want previously shown verb cards to be excluded from future sessions so that I see new conjugation challenges (until all are shown, then they cycle).
+- **As a user**, I want tenses to be introduced progressively as my daily cursor advances through lessons so that I am not overwhelmed with advanced conjugations too early.
+- **As a user**, I want new tenses to appear in Block 3 only when my daily cursor has advanced to the corresponding lesson so that verb difficulty matches the sentences I'm translating.
 
 ### Navigation and Flow
 

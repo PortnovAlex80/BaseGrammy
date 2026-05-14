@@ -410,14 +410,16 @@ The block transition sparkle message uses the NEXT block's label (line 1003: "Ne
 
 ### Discrepancies Found
 
-| # | Severity | Description | Location |
-|---|----------|-------------|----------|
-| 1 | **Significant** | Session completion sparkle/completion screen likely never visible. `onComplete` navigates to HOME immediately after `endSession()`, removing the DailyPracticeScreen before the sparkle renders. | `DailyPracticeScreen.kt:281-288`, `GrammarMateApp.kt:396-399` |
-| 2 | **Moderate** | `currentLessonIndex` in DailyCursorState is never advanced. When all cards in a lesson are exhausted (sentenceOffset exceeds lesson size), `buildSentenceBlock()` returns empty, resulting in an empty Block 1 for all subsequent sessions. | `TrainingViewModel.kt:1530-1536`, `DailySessionComposer.kt:165-166` |
-| 3 | **Minor** | `dailyPracticeAnsweredCounts` not reset in `repeatDailyPractice()`. Counts from previous session accumulate, potentially causing premature cursor advancement on repeat+complete cycles. | `TrainingViewModel.kt:1538-1587` |
-| 4 | **Minor** | `lastSessionHash` field in `DailyCursorState` is defined but never written or read -- dead code. | `Models.kt:231` |
-| 5 | **Minor** | `_inputMode` in DailyPracticeSessionProvider initializes to `VOICE` unconditionally (line 54), not from the task's designated mode. Works correctly for TRANSLATE block (card 0 = VOICE) but would be incorrect if blocks were reordered. | `DailyPracticeSessionProvider.kt:54` |
-| 6 | **Trivial** | Spec says Hard rating may "move down" step, but code only stays the same. Acceptable interpretation but not exactly matching spec wording. | `TrainingViewModel.kt:1703`, Spec 9.4.6 |
+| # | Severity | Description | Location | Status |
+|---|----------|-------------|----------|--------|
+| 1 | **Significant** | Session completion sparkle/completion screen likely never visible. `onComplete` navigates to HOME immediately after `endSession()`, removing the DailyPracticeScreen before the sparkle renders. | `DailyPracticeScreen.kt:281-288`, `GrammarMateApp.kt:396-399` | OPEN |
+| 2 | **Moderate** | ~~`currentLessonIndex` in DailyCursorState is never advanced.~~ **RESOLVED in spec 09#9.6.4**: `advanceCursor()` now advances `currentLessonIndex` when `sentenceOffset >= lesson.cards.size`, resets offset to 0, and wraps to 0 at end of pack. UC-24 AC2 and UC-61 added. **Code fix pending.** | `TrainingViewModel.kt:1530-1536`, `DailySessionComposer.kt:165-166` | SPEC RESOLVED, CODE PENDING |
+| 3 | **Minor** | `dailyPracticeAnsweredCounts` not reset in `repeatDailyPractice()`. Counts from previous session accumulate, potentially causing premature cursor advancement on repeat+complete cycles. | `TrainingViewModel.kt:1538-1587` | OPEN |
+| 4 | **Minor** | `lastSessionHash` field in `DailyCursorState` is defined but never written or read -- dead code. | `Models.kt:231` | OPEN |
+| 5 | **Minor** | `_inputMode` in DailyPracticeSessionProvider initializes to `VOICE` unconditionally (line 54), not from the task's designated mode. Works correctly for TRANSLATE block (card 0 = VOICE) but would be incorrect if blocks were reordered. | `DailyPracticeSessionProvider.kt:54` | OPEN |
+| 6 | **Trivial** | Spec says Hard rating may "move down" step, but code only stays the same. Acceptable interpretation but not exactly matching spec wording. | `TrainingViewModel.kt:1703`, Spec 9.4.6 | OPEN |
+| 7 | **Moderate** | `resolveProgressLessonInfo()` used for daily practice level resolution instead of `DailyCursorState`. This caused Imperfetto verbs at level 1. **RESOLVED in spec 09#9.1 (Independence Principle) and 09#9.5.1**: daily practice now uses `cursor.currentLessonIndex + 1` as sole level source. **Code fix pending.** | `DailyPracticeCoordinator.kt`, `ProgressTracker.kt` | SPEC RESOLVED, CODE PENDING |
+| 8 | **Moderate** | Block 3 returns empty when all verb cards for active tenses have been shown. **RESOLVED in spec 09#9.5.1 (Verb cycling)**: when unshown set is empty, algorithm cycles through full filtered pool with weakness ordering. UC-60 added. **Code fix pending.** | `DailySessionComposer.kt:327` | SPEC RESOLVED, CODE PENDING |
 
 ### Spec Compliance: Overall Assessment
 
@@ -431,5 +433,17 @@ The implementation closely follows the spec (09-daily-practice.md) for the core 
 - Repeat/Continue navigation: CORRECT
 - State persistence and resume: CORRECT
 - Verb info chips display: CORRECT
+- Collocation grouping (4-level sort): CORRECT (spec updated 09#9.5.3 to match code)
 
-The main issue is the completion flow (Discrepancy #1), where the user experience is likely an abrupt return to Home instead of the designed completion sparkle + completion screen.
+**Spec changes applied (2026-05-14):**
+- 09#9.1: Independence Principle -- daily practice has its own cursor, independent of lesson roadmap
+- 09#9.5.1: Tense source changed from `resolveProgressLessonInfo()` to `DailyCursorState.currentLessonIndex`
+- 09#9.5.1: Verb cycling added -- Block 3 never empty when active tenses have cards
+- 09#9.6.4: Cursor advancement now includes lesson transition and pack wrap
+- 09#9.8.7: Cursor Invariant replaces Tense Consistency Invariant
+- UC-21: Added AC5-AC6 (cursor-based level, roadmap independence)
+- UC-24: AC2 reversed -- `currentLessonIndex` NOW advances on lesson exhaustion
+- UC-60: New -- verb block cycling
+- UC-61: New -- daily practice lesson transition
+
+**Remaining open issues:** Discrepancies #1 (completion screen), #3 (answeredCounts leak), #4 (dead field), #5 (inputMode init). All spec-resolved discrepancies (#2, #7, #8) need code implementation.
