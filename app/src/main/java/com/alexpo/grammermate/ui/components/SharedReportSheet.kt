@@ -24,7 +24,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 
 /**
  * Shared 4-option report bottom sheet: flag/unflag bad sentence, hide card,
@@ -97,7 +99,7 @@ fun SharedReportSheet(
                 ) {
                     Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Remove from bad sentences list")
+                    Text(stringResource(R.string.report_unflag))
                 }
             } else {
                 TextButton(
@@ -109,7 +111,7 @@ fun SharedReportSheet(
                 ) {
                     Icon(Icons.Default.ReportProblem, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add to bad sentences list")
+                    Text(stringResource(R.string.report_flag))
                 }
             }
             TextButton(
@@ -121,7 +123,7 @@ fun SharedReportSheet(
             ) {
                 Icon(Icons.Default.VisibilityOff, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Hide this card from lessons")
+                Text(stringResource(R.string.report_hide_card))
             }
             TextButton(
                 onClick = {
@@ -137,7 +139,7 @@ fun SharedReportSheet(
             ) {
                 Icon(Icons.Default.Download, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Export bad sentences to file")
+                Text(stringResource(R.string.report_export))
             }
             TextButton(
                 onClick = onCopyText,
@@ -145,7 +147,7 @@ fun SharedReportSheet(
             ) {
                 Icon(Icons.Default.ContentCopy, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Copy text")
+                Text(stringResource(R.string.report_copy_text))
             }
         }
     }
@@ -155,10 +157,10 @@ fun SharedReportSheet(
     if (exportMessage != null) {
         AlertDialog(
             onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
+            title = { Text(stringResource(R.string.report_export_dialog_title)) },
             text = { Text(exportMessage!!) },
             confirmButton = {
-                TextButton(onClick = { exportMessage = null }) { Text("OK") }
+                TextButton(onClick = { exportMessage = null }) { Text(stringResource(R.string.button_ok)) }
             }
         )
     }

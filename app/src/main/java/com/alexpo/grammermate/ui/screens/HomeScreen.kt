@@ -46,6 +46,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.Language
@@ -112,10 +114,12 @@ fun HomeScreen(
     val activePackDisplayName = state.navigation.installedPacks
         .firstOrNull { it.packId == state.navigation.activePackId }
         ?.displayName
+    val continueLearningText = stringResource(R.string.home_continue_learning)
+    val startLearningText = stringResource(R.string.home_start_learning)
     val primaryLabel = when {
-        state.cardSession.sessionState == SessionState.ACTIVE -> activePackDisplayName ?: "Continue Learning"
-        isFirstLaunch -> activePackDisplayName ?: "Start learning"
-        else -> activePackDisplayName ?: "Start learning"
+        state.cardSession.sessionState == SessionState.ACTIVE -> activePackDisplayName ?: continueLearningText
+        isFirstLaunch -> activePackDisplayName ?: startLearningText
+        else -> activePackDisplayName ?: startLearningText
     }
     // Calculate the actual current lesson (first incomplete or first with most recent activity)
     val currentLessonIndex = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
@@ -134,8 +138,9 @@ fun HomeScreen(
         "1/10"
     }
 
+    val lessonExerciseFormat = stringResource(R.string.format_lesson_exercise)
     val nextHint = if (state.navigation.lessons.isNotEmpty()) {
-        "Lesson ${currentLessonIndex + 1}. Exercise $currentLessonProgress"
+        lessonExerciseFormat.format(currentLessonIndex + 1, currentLessonProgress)
     } else {
         null
     }
@@ -175,7 +180,7 @@ fun HomeScreen(
                     onSelect = onSelectLanguage
                 )
                 IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.home_settings))
                 }
             }
         }
@@ -201,7 +206,7 @@ fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Grammar Roadmap", fontWeight = FontWeight.SemiBold)
+        Text(text = stringResource(R.string.home_grammar_roadmap), fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(8.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -256,22 +261,22 @@ fun HomeScreen(
             onClick = onOpenElite
         )
         Spacer(modifier = Modifier.height(12.dp))
-        Text(text = "Legend:", fontWeight = FontWeight.SemiBold)
-        Text(text = "🌱 seed • 🌿 growing • 🌸 bloom")
-        Text(text = "🥀 wilting • 🍂 wilted • ⚫ forgotten")
+        Text(text = stringResource(R.string.home_legend), fontWeight = FontWeight.SemiBold)
+        Text(text = "🌱 ${stringResource(R.string.home_legend_seed_growing_bloom)}")
+        Text(text = "🥀 ${stringResource(R.string.home_legend_wilting_wilted_forgotten)}")
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
             onClick = { showMethod = true },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "How This Training Works")
+            Text(text = stringResource(R.string.home_how_training_works))
         }
         Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = onPrimaryAction,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Continue Learning")
+            Text(text = stringResource(R.string.home_continue_learning))
         }
     }
 
@@ -280,14 +285,13 @@ fun HomeScreen(
             onDismissRequest = { showMethod = false },
             confirmButton = {
                 TextButton(onClick = { showMethod = false }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.home_ok))
                 }
             },
-            title = { Text(text = "How This Training Works") },
+            title = { Text(text = stringResource(R.string.home_how_training_works)) },
             text = {
                 Text(
-                    text = "GrammarMate builds automatic grammar patterns with repeated retrieval. " +
-                        "States show how stable each pattern is and when it needs refresh."
+                    text = stringResource(R.string.home_method_description)
                 )
             }
         )
@@ -297,11 +301,11 @@ fun HomeScreen(
             onDismissRequest = { showLockedLessonHint = false },
             confirmButton = {
                 TextButton(onClick = { showLockedLessonHint = false }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.home_ok))
                 }
             },
-            title = { Text(text = "Lesson locked") },
-            text = { Text(text = "Please complete the previous lesson first.") }
+            title = { Text(text = stringResource(R.string.home_lesson_locked)) },
+            text = { Text(text = stringResource(R.string.home_complete_previous_lesson)) }
         )
     }
     if (earlyStartLessonId != null) {
@@ -315,16 +319,16 @@ fun HomeScreen(
                         onSelectLesson(lessonId)
                     }
                 }) {
-                    Text(text = "Yes")
+                    Text(text = stringResource(R.string.home_yes))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { earlyStartLessonId = null }) {
-                    Text(text = "No")
+                    Text(text = stringResource(R.string.home_no))
                 }
             },
-            title = { Text(text = "Start early?") },
-            text = { Text(text = "Start this lesson early? You can always come back to review previous lessons.") }
+            title = { Text(text = stringResource(R.string.home_start_early_title)) },
+            text = { Text(text = stringResource(R.string.home_start_early_message)) }
         )
     }
 }
@@ -353,7 +357,7 @@ fun VerbDrillEntryTile(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.home_verb_drill), fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -387,11 +391,11 @@ fun VocabDrillEntryTile(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.home_flashcards), fontWeight = FontWeight.SemiBold)
             }
             if (masteredCount > 0) {
                 Text(
-                    text = "$masteredCount mastered",
+                    text = stringResource(R.string.format_mastered, masteredCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF2E7D32)
                 )
@@ -422,19 +426,19 @@ fun DailyPracticeEntryTile(
         ) {
             Column {
                 Text(
-                    text = "Daily Practice",
+                    text = stringResource(R.string.home_daily_practice),
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = "Practice all sub-lessons",
+                    text = stringResource(R.string.home_practice_all_sublessons),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
             Icon(
                 Icons.Default.PlayArrow,
-                contentDescription = "Start",
+                contentDescription = stringResource(R.string.home_start),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
@@ -464,10 +468,10 @@ fun LessonTile(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(text = "Verb", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Text(text = stringResource(R.string.home_verb), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                 Icon(
                     imageVector = Icons.Default.FitnessCenter,
-                    contentDescription = "Verb Drill",
+                    contentDescription = stringResource(R.string.home_verb_drill),
                     modifier = Modifier.size(18.dp)
                 )
             }

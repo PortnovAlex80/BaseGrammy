@@ -37,7 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.TtsModelRegistry
@@ -96,7 +98,7 @@ fun TtsSpeakerButton(
         when (ttsState) {
             TtsState.SPEAKING -> Icon(
                 Icons.Default.StopCircle,
-                contentDescription = "Stop",
+                contentDescription = stringResource(R.string.content_desc_stop),
                 tint = MaterialTheme.colorScheme.error
             )
             TtsState.INITIALIZING -> CircularProgressIndicator(
@@ -105,12 +107,12 @@ fun TtsSpeakerButton(
             )
             TtsState.ERROR -> Icon(
                 Icons.Default.ReportProblem,
-                contentDescription = "TTS error",
+                contentDescription = stringResource(R.string.content_desc_tts_error),
                 tint = MaterialTheme.colorScheme.error
             )
             else -> Icon(
                 Icons.Default.VolumeUp,
-                contentDescription = "Listen",
+                contentDescription = stringResource(R.string.content_desc_listen),
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -134,7 +136,7 @@ fun TtsDownloadDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Download pronunciation model?") },
+        title = { Text(stringResource(R.string.tts_download_title)) },
         text = {
             when (downloadState) {
                 is DownloadState.Idle -> {
@@ -161,7 +163,7 @@ fun TtsDownloadDialog(
                     }
                 }
                 is DownloadState.Done -> {
-                    Text("Pronunciation model ready!")
+                    Text(stringResource(R.string.tts_download_ready))
                 }
                 is DownloadState.Error -> {
                     Text("Download failed: ${downloadState.message}")
@@ -170,16 +172,16 @@ fun TtsDownloadDialog(
         },
         confirmButton = {
             when (downloadState) {
-                is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text("Download") }
-                is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text("OK") }
+                is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text(stringResource(R.string.tts_download_button)) }
+                is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_ok)) }
                 is DownloadState.Downloading, is DownloadState.Extracting -> {
-                    TextButton(onClick = onDismiss) { Text("Continue in background") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.tts_download_background)) }
                 }
             }
         },
         dismissButton = {
             if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
             }
         }
     )
@@ -195,13 +197,13 @@ fun MeteredNetworkDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Metered network detected") },
-        text = { Text("You appear to be on a cellular or metered connection. The pronunciation model is ~346 MB. Continue downloading?") },
+        title = { Text(stringResource(R.string.metered_network_title)) },
+        text = { Text(stringResource(R.string.metered_tts_message)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Download anyway") }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.metered_download_anyway)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
         }
     )
 }
@@ -216,13 +218,13 @@ fun AsrMeteredNetworkDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Metered network detected") },
-        text = { Text("You appear to be on a cellular or metered connection. The speech recognition model is ~375 MB. Continue downloading?") },
+        title = { Text(stringResource(R.string.metered_network_title)) },
+        text = { Text(stringResource(R.string.metered_asr_message)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Download anyway") }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.metered_download_anyway)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
         }
     )
 }
@@ -256,7 +258,7 @@ fun AsrStatusIndicator(asrState: AsrState) {
                         .background(Color.Red.copy(alpha = pulseAlpha), CircleShape)
                 )
                 Text(
-                    text = "Listening...",
+                    text = stringResource(R.string.asr_listening),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -272,7 +274,7 @@ fun AsrStatusIndicator(asrState: AsrState) {
                     strokeWidth = 2.dp
                 )
                 Text(
-                    text = "Processing...",
+                    text = stringResource(R.string.asr_processing),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -280,7 +282,7 @@ fun AsrStatusIndicator(asrState: AsrState) {
         }
         AsrState.ERROR -> {
             Text(
-                text = "Recognition error",
+                text = stringResource(R.string.asr_recognition_error),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error
             )

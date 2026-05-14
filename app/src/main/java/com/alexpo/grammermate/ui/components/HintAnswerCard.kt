@@ -18,7 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 
 /**
  * Pink card showing the answer text in red with an optional TTS button.
@@ -45,7 +47,7 @@ fun HintAnswerCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Answer: $answerText",
+                text = stringResource(R.string.hint_answer_prefix) + answerText,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold
@@ -58,7 +60,7 @@ fun HintAnswerCard(
                 ) {
                     Icon(
                         Icons.Default.VolumeUp,
-                        contentDescription = "Listen",
+                        contentDescription = stringResource(R.string.content_desc_listen),
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.error
                     )

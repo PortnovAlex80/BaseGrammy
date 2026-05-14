@@ -31,6 +31,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
@@ -66,7 +68,7 @@ fun WordBankSection(
     if (wordBankWords.isEmpty()) return
 
     Text(
-        text = "Tap words in correct order:",
+        text = stringResource(R.string.word_bank_tap_order),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
     )
@@ -100,7 +102,7 @@ fun WordBankSection(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
-            TextButton(onClick = onRemoveLastWord) { Text("Undo") }
+            TextButton(onClick = onRemoveLastWord) { Text(stringResource(R.string.word_bank_undo)) }
         }
     }
 }
@@ -143,44 +145,44 @@ fun DailyInputModeBar(
                     }
                 },
                 enabled = canLaunchVoice
-            ) { Icon(Icons.Default.Mic, "Voice mode") }
+            ) { Icon(Icons.Default.Mic, stringResource(R.string.content_desc_voice_mode)) }
             FilledTonalIconButton(
                 onClick = { contract.setInputMode(InputMode.KEYBOARD) },
                 enabled = canSelectInputMode
-            ) { Icon(Icons.Default.Keyboard, "Keyboard mode") }
+            ) { Icon(Icons.Default.Keyboard, stringResource(R.string.content_desc_keyboard_mode)) }
             FilledTonalIconButton(
                 onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                 enabled = canSelectInputMode
-            ) { Icon(Icons.Default.LibraryBooks, "Word bank mode") }
+            ) { Icon(Icons.Default.LibraryBooks, stringResource(R.string.content_desc_word_bank_mode)) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text("Show answer") } },
+                tooltip = { PlainTooltip { Text(stringResource(R.string.tooltip_show_answer)) } },
                 state = rememberTooltipState()
             ) {
                 IconButton(
                     onClick = { if (hasCards) contract.showAnswer() },
                     enabled = hasCards && provider.hintAnswer == null
-                ) { Icon(Icons.Default.Visibility, "Show answer") }
+                ) { Icon(Icons.Default.Visibility, stringResource(R.string.tooltip_show_answer)) }
             }
             if (contract.supportsFlagging) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text("Report sentence") } },
+                    tooltip = { PlainTooltip { Text(stringResource(R.string.tooltip_report_sentence)) } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
                         onClick = { if (hasCards) onShowReport() },
                         enabled = hasCards
-                    ) { Icon(Icons.Default.ReportProblem, "Report sentence") }
+                    ) { Icon(Icons.Default.ReportProblem, stringResource(R.string.tooltip_report_sentence)) }
                 }
             }
             Text(
                 text = when (contract.currentInputMode) {
-                    InputMode.VOICE -> "Voice"
-                    InputMode.KEYBOARD -> "Keyboard"
-                    InputMode.WORD_BANK -> "Word Bank"
+                    InputMode.VOICE -> stringResource(R.string.input_mode_voice)
+                    InputMode.KEYBOARD -> stringResource(R.string.input_mode_keyboard)
+                    InputMode.WORD_BANK -> stringResource(R.string.input_mode_word_bank)
                 },
                 style = MaterialTheme.typography.labelMedium
             )

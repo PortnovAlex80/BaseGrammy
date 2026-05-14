@@ -68,11 +68,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Normalizer
@@ -131,7 +134,7 @@ fun TrainingScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "GrammarMate",
+                    text = stringResource(R.string.training_grammarmate),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -139,7 +142,7 @@ fun TrainingScreen(
                     onOpenSettings()
                     onShowSettings()
                 }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.training_settings))
                 }
             }
         }
@@ -153,9 +156,9 @@ fun TrainingScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (state.boss.bossActive) {
-                Text(text = "Review Session", fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.training_review_session), fontWeight = FontWeight.SemiBold)
             } else if (state.elite.eliteActive) {
-                Text(text = "Refresh Session", fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.training_refresh_session), fontWeight = FontWeight.SemiBold)
             } else if (state.drill.isDrillMode) {
                 // Drill: prompt without hints + progress bar + speedometer
                 val cardTense = state.cardSession.currentCard?.tense
@@ -280,7 +283,7 @@ fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
     ) {
         if (!isDrillMode) {
             Column {
-                Text(text = if (state.boss.bossActive) "Review" else "Progress")
+                Text(text = if (state.boss.bossActive) stringResource(R.string.training_review) else stringResource(R.string.training_progress))
                 val progressText = when {
                     state.boss.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
                     state.navigation.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
@@ -294,12 +297,12 @@ fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
         }
         if (!isDrillMode) {
             Column(horizontalAlignment = Alignment.End) {
-                Text(text = "Time")
+                Text(text = stringResource(R.string.training_time))
                 Text(text = formatTime(state.cardSession.activeTimeMs), fontWeight = FontWeight.SemiBold)
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(text = "Speed")
+            Text(text = stringResource(R.string.training_speed))
             Text(text = speed, fontWeight = FontWeight.SemiBold)
         }
     }
@@ -321,7 +324,7 @@ fun ModeSelector(
             ModeIconButton(
                 selected = state.navigation.mode == TrainingMode.LESSON,
                 icon = Icons.Default.MenuBook,
-                contentDescription = "Lesson"
+                contentDescription = stringResource(R.string.training_lesson)
             ) {
                 onSelectMode(TrainingMode.LESSON)
                 lessonExpanded = true
@@ -332,7 +335,7 @@ fun ModeSelector(
             ) {
                 if (state.navigation.lessons.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text(text = "No lessons") },
+                        text = { Text(text = stringResource(R.string.training_no_lessons)) },
                         onClick = { lessonExpanded = false }
                     )
                 } else {
@@ -351,12 +354,12 @@ fun ModeSelector(
         ModeIconButton(
             selected = state.navigation.mode == TrainingMode.ALL_SEQUENTIAL,
             icon = Icons.Default.LibraryBooks,
-            contentDescription = "All lessons"
+            contentDescription = stringResource(R.string.training_all_lessons)
         ) { onSelectMode(TrainingMode.ALL_SEQUENTIAL) }
         ModeIconButton(
             selected = state.navigation.mode == TrainingMode.ALL_MIXED,
             icon = Icons.Default.SwapHoriz,
-            contentDescription = "Mixed"
+            contentDescription = stringResource(R.string.training_mixed)
         ) { onSelectMode(TrainingMode.ALL_MIXED) }
     }
 }
@@ -388,10 +391,10 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "RU", style = MaterialTheme.typography.labelMedium)
+                Text(text = stringResource(R.string.training_ru), style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = state.cardSession.currentCard?.promptRu ?: "No cards",
+                    text = state.cardSession.currentCard?.promptRu ?: stringResource(R.string.training_no_cards),
                     fontSize = (20f * state.audio.ruTextScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -428,6 +431,7 @@ fun AnswerBox(
     val latestState by rememberUpdatedState(state)
     val canLaunchVoice = hasCards && state.cardSession.sessionState == SessionState.ACTIVE
     val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
     var showReportSheet by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val reportCard = state.cardSession.currentCard
@@ -466,7 +470,7 @@ fun AnswerBox(
             if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
-                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher)
+                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher, context)
             }
         }
     }
@@ -486,18 +490,18 @@ fun AnswerBox(
                 }
             },
             exportResult = { path ->
-                exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
+                exportMessage = if (path != null) context.getString(R.string.training_exported_to, path) else context.getString(R.string.training_no_bad_sentences)
             }
         )
     }
     if (exportMessage != null) {
         AlertDialog(
             onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
+            title = { Text(stringResource(R.string.training_export)) },
             text = { Text(exportMessage!!) },
             confirmButton = {
                 TextButton(onClick = { exportMessage = null }) {
-                    Text("OK")
+                    Text(stringResource(R.string.home_ok))
                 }
             }
         )
@@ -519,7 +523,7 @@ fun AnswerBox(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = "Your translation") },
+            label = { Text(text = stringResource(R.string.training_your_translation)) },
             enabled = hasCards,
             trailingIcon = {
                 IconButton(
@@ -527,7 +531,7 @@ fun AnswerBox(
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
                             if (!state.audio.useOfflineAsr || !state.audio.asrModelReady) {
-                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher)
+                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher, context)
                             } else {
                                 onStartOfflineRecognition()
                             }
@@ -535,20 +539,20 @@ fun AnswerBox(
                     },
                     enabled = canLaunchVoice
                 ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.training_voice_input))
                 }
             }
         )
         if (!hasCards) {
             Text(
-                text = "No cards",
+                text = stringResource(R.string.training_no_cards),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
         }
         if (state.cardSession.inputMode == InputMode.VOICE && state.cardSession.sessionState == SessionState.ACTIVE) {
             Text(
-                text = state.cardSession.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
+                text = state.cardSession.currentCard?.promptRu?.let { stringResource(R.string.training_say_translation, it) } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 style = MaterialTheme.typography.bodySmall
             )
@@ -579,7 +583,7 @@ fun AnswerBox(
                         if (canLaunchVoice) {
                             onSetInputMode(InputMode.VOICE)
                             if (!state.audio.useOfflineAsr || !state.audio.asrModelReady) {
-                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher)
+                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher, context)
                             } else {
                                 onStartOfflineRecognition()
                             }
@@ -587,19 +591,19 @@ fun AnswerBox(
                     },
                     enabled = canLaunchVoice
                 ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.training_voice_mode))
                 }
                 FilledTonalIconButton(
                     onClick = { onSetInputMode(InputMode.KEYBOARD) },
                     enabled = canSelectInputMode
                 ) {
-                    Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+                    Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.training_keyboard_mode))
                 }
                 FilledTonalIconButton(
                     onClick = { onSetInputMode(InputMode.WORD_BANK) },
                     enabled = canSelectInputMode
                 ) {
-                    Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                    Icon(Icons.Default.LibraryBooks, contentDescription = stringResource(R.string.training_word_bank_mode))
                 }
             }
             Row(
@@ -608,33 +612,33 @@ fun AnswerBox(
             ) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.training_show_answer)) } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
                         onClick = { if (hasCards) onShowAnswer() },
                         enabled = hasCards
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        Icon(Icons.Default.Visibility, contentDescription = stringResource(R.string.training_show_answer))
                     }
                 }
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Report sentence") } },
+                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.training_report_sentence)) } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
                         onClick = { if (hasCards) showReportSheet = true },
                         enabled = hasCards
                     ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
+                        Icon(Icons.Default.ReportProblem, contentDescription = stringResource(R.string.training_report_sentence))
                     }
                 }
                 Text(
                     text = when (state.cardSession.inputMode) {
-                        InputMode.VOICE -> "Voice"
-                        InputMode.KEYBOARD -> "Keyboard"
-                        InputMode.WORD_BANK -> "Word Bank"
+                        InputMode.VOICE -> stringResource(R.string.training_voice)
+                        InputMode.KEYBOARD -> stringResource(R.string.training_keyboard)
+                        InputMode.WORD_BANK -> stringResource(R.string.training_word_bank)
                     },
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -648,7 +652,7 @@ fun AnswerBox(
                 state.cardSession.sessionState == SessionState.ACTIVE &&
                 state.cardSession.currentCard != null
         ) {
-            Text(text = "Check")
+            Text(text = stringResource(R.string.training_check))
         }
     }
 }
@@ -658,8 +662,8 @@ fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             when (state.cardSession.lastResult) {
-                true -> Text(text = "Correct", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                false -> Text(text = "Incorrect", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                true -> Text(text = stringResource(R.string.training_correct), color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                false -> Text(text = stringResource(R.string.training_incorrect), color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
                 null -> Text(text = "")
             }
         }
@@ -688,21 +692,21 @@ fun NavigationRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavIconButton(onClick = onPrev, enabled = hasCards) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Prev")
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.training_prev))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NavIconButton(onClick = onTogglePause, enabled = hasCards) {
                 if (state == SessionState.ACTIVE) {
-                    Icon(Icons.Default.Pause, contentDescription = "Pause")
+                    Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.training_pause))
                 } else {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                    Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.training_play))
                 }
             }
             NavIconButton(onClick = onRequestExit, enabled = hasCards) {
-                Icon(Icons.Default.StopCircle, contentDescription = "Exit session")
+                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.training_exit_session))
             }
             NavIconButton(onClick = { onNext(false) }, enabled = hasCards) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.training_next))
             }
         }
     }
@@ -725,7 +729,8 @@ private fun speedPerMinute(activeMs: Long, correct: Int): String {
 private fun launchVoiceRecognition(
     languageId: String,
     prompt: String?,
-    launcher: ActivityResultLauncher<Intent>
+    launcher: ActivityResultLauncher<Intent>,
+    context: android.content.Context
 ) {
     val languageTag = when (languageId) {
         "it" -> "it-IT"
@@ -734,7 +739,7 @@ private fun launchVoiceRecognition(
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-        putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: "Say the translation")
+        putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: context.getString(R.string.training_say_the_translation))
     }
     launcher.launch(intent)
 }

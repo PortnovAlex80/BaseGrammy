@@ -65,6 +65,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
@@ -295,7 +297,7 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "RU", style = MaterialTheme.typography.labelMedium)
+                Text(text = stringResource(R.string.card_label_ru), style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = card.promptRu,
@@ -386,7 +388,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = "Your translation") },
+            label = { Text(text = stringResource(R.string.card_label_your_translation)) },
             singleLine = true,
             enabled = hasCards,
             trailingIcon = {
@@ -410,7 +412,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                         },
                         enabled = hasCards
                     ) {
-                        Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                        Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.content_desc_voice_input))
                     }
                 }
             }
@@ -418,7 +420,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
 
         if (!hasCards) {
             Text(
-                text = "No cards",
+                text = stringResource(R.string.card_no_cards),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -467,7 +469,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                             },
                             enabled = hasCards
                         ) {
-                            Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+                            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.content_desc_voice_mode))
                         }
                     }
                     // Keyboard button: always available when in availableModes
@@ -476,7 +478,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                             onClick = { contract.setInputMode(InputMode.KEYBOARD) },
                             enabled = hasCards
                         ) {
-                            Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+                            Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.content_desc_keyboard_mode))
                         }
                     }
                     // Word bank button: only on EASY
@@ -485,7 +487,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                             onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                             enabled = hasCards
                         ) {
-                            Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                            Icon(Icons.Default.LibraryBooks, contentDescription = stringResource(R.string.content_desc_word_bank_mode))
                         }
                     }
                 }
@@ -497,37 +499,37 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 // Show answer button
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.tooltip_show_answer)) } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
                         onClick = { if (hasCards) contract.showAnswer() },
                         enabled = hasCards
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                        Icon(Icons.Default.Visibility, contentDescription = stringResource(R.string.tooltip_show_answer))
                     }
                 }
                 // Flag/Report button
                 if (contract.supportsFlagging) {
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(text = "Report sentence") } },
+                        tooltip = { PlainTooltip { Text(text = stringResource(R.string.tooltip_report_sentence)) } },
                         state = rememberTooltipState()
                     ) {
                         IconButton(
                             onClick = { if (hasCards) showReportSheet = true },
                             enabled = hasCards
                         ) {
-                            Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
+                            Icon(Icons.Default.ReportProblem, contentDescription = stringResource(R.string.tooltip_report_sentence))
                         }
                     }
                 }
                 // Current mode label
                 Text(
                     text = when (contract.currentInputMode) {
-                        InputMode.VOICE -> "Voice"
-                        InputMode.KEYBOARD -> "Keyboard"
-                        InputMode.WORD_BANK -> "Word Bank"
+                        InputMode.VOICE -> stringResource(R.string.input_mode_voice)
+                        InputMode.KEYBOARD -> stringResource(R.string.input_mode_keyboard)
+                        InputMode.WORD_BANK -> stringResource(R.string.input_mode_word_bank)
                     },
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -540,7 +542,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
             modifier = Modifier.fillMaxWidth(),
             enabled = scope.inputText.isNotBlank() && hasCards
         ) {
-            Text(text = "Check")
+            Text(text = stringResource(R.string.button_check))
         }
     }
 }
@@ -557,13 +559,13 @@ private fun DefaultResultContent(scope: TrainingCardSessionScope) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (result.correct) {
                 Text(
-                    text = "Correct",
+                    text = stringResource(R.string.result_correct),
                     color = Color(0xFF2E7D32),
                     fontWeight = FontWeight.Bold
                 )
             } else {
                 Text(
-                    text = "Incorrect",
+                    text = stringResource(R.string.result_incorrect),
                     color = Color(0xFFC62828),
                     fontWeight = FontWeight.Bold
                 )
@@ -601,19 +603,19 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
-            title = { Text("End session?") },
-            text = { Text("Your progress will be saved.") },
+            title = { Text(stringResource(R.string.session_end_title)) },
+            text = { Text(stringResource(R.string.session_end_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showExitDialog = false
                     scope.contract.requestExit()
                 }) {
-                    Text("End")
+                    Text(stringResource(R.string.button_end))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showExitDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.button_cancel))
                 }
             }
         )
@@ -628,7 +630,7 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
             onClick = scope.onPrev,
             enabled = scope.currentCard != null
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Prev")
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -640,9 +642,9 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
                     enabled = scope.currentCard != null
                 ) {
                     if (scope.contract.sessionActive) {
-                        Icon(Icons.Default.Pause, contentDescription = "Pause")
+                        Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
                     } else {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                        Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
                     }
                 }
             }
@@ -650,13 +652,13 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
                 onClick = { showExitDialog = true },
                 enabled = scope.currentCard != null
             ) {
-                Icon(Icons.Default.StopCircle, contentDescription = "Exit session")
+                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
             }
             NavIconButton(
                 onClick = scope.onNext,
                 enabled = scope.currentCard != null
             ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Next")
+                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.content_desc_next))
             }
         }
     }
@@ -677,7 +679,7 @@ private fun DefaultCompletionScreen(scope: TrainingCardSessionScope) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Well done!",
+            text = stringResource(R.string.completion_well_done),
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp
         )
@@ -691,7 +693,7 @@ private fun DefaultCompletionScreen(scope: TrainingCardSessionScope) {
             onClick = scope.onExit,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Done")
+            Text(text = stringResource(R.string.button_done))
         }
     }
 }

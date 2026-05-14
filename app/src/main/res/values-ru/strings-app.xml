@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- GrammarMateApp dialogs (Russian) -->
+    <string name="dialog_welcome_title">Добро пожаловать в GrammarMate!</string>
+    <string name="dialog_welcome_body">Как вас зовут?</string>
+    <string name="dialog_welcome_label">Введите имя</string>
+    <string name="dialog_welcome_placeholder">например, Иван Иванов</string>
+    <string name="dialog_welcome_continue">Продолжить</string>
+    <string name="dialog_welcome_skip">Пропустить</string>
+
+    <string name="dialog_story_title">История</string>
+    <string name="dialog_boss_title">Босс</string>
+    <string name="dialog_ok">ОК</string>
+
+    <string name="dialog_boss_reward_title">Награда за босса</string>
+    <string name="dialog_streak_title">Серия!</string>
+    <string name="dialog_streak_continue">Продолжить</string>
+    <string name="dialog_streak_longest">Самая длинная серия: %1$d дней</string>
+
+    <string name="dialog_drill_title">Режим тренировки</string>
+    <string name="dialog_drill_resume_prompt">Продолжить с того места или начать заново?</string>
+    <string name="dialog_drill_start_prompt">Начать тренировку?</string>
+    <string name="dialog_drill_continue">Продолжить</string>
+    <string name="dialog_drill_start">Начать</string>
+    <string name="dialog_drill_start_fresh">Начать заново</string>
+    <string name="dialog_cancel">Отмена</string>
+
+    <string name="dialog_exit_title_training">Завершить сессию?</string>
+    <string name="dialog_exit_title_daily">Выйти из практики?</string>
+    <string name="dialog_exit_text_training">Текущая сессия будет завершена.</string>
+    <string name="dialog_exit_text_daily">Ваш прогресс в этой сессии будет потерян.</string>
+    <string name="dialog_exit_confirm">Выход</string>
+
+    <string name="dialog_daily_loading">Загрузка сессии…</string>
+
+    <string name="dialog_daily_resume_title">Ежедневная практика</string>
+    <string name="dialog_daily_resume_text">Повторить — те же карточки сначала\nПродолжить — новый набор карточек</string>
+    <string name="dialog_daily_resume_continue">Продолжить</string>
+    <string name="dialog_daily_resume_repeat">Повторить</string>
+
+    <!-- VerbDrillScreen (Russian) -->
+    <string name="verb_loading">Загрузка…</string>
+    <string name="verb_drill_title">Тренировка глаголов</string>
+    <string name="verb_content_desc_back">Назад</string>
+    <string name="verb_label_ru">РУ</string>
+    <string name="verb_content_desc_listen">Прослушать</string>
+    <string name="verb_voice_prompt">Произнесите перевод</string>
+    <string name="verb_export_title">Экспорт</string>
+    <string name="verb_incorrect">Неправильно</string>
+    <string name="verb_attempts_left">Осталось %1$d попыток</string>
+    <string name="verb_your_translation">Ваш перевод</string>
+    <string name="verb_content_desc_voice_input">Голосовой ввод</string>
+    <string name="verb_no_cards">Нет карточек</string>
+    <string name="verb_check">Проверить</string>
+    <string name="verb_content_desc_voice_mode">Голосовой режим</string>
+    <string name="verb_content_desc_keyboard_mode">Режим клавиатуры</string>
+    <string name="verb_content_desc_word_bank_mode">Режим банка слов</string>
+    <string name="verb_show_answer">Показать ответ</string>
+    <string name="verb_content_desc_show_answer">Показать ответ</string>
+    <string name="verb_report_sentence">Пожаловаться на предложение</string>
+    <string name="verb_content_desc_report">Пожаловаться на предложение</string>
+    <string name="verb_mode_voice">Голос</string>
+    <string name="verb_mode_keyboard">Клавиатура</string>
+    <string name="verb_mode_word_bank">Банк слов</string>
+
+    <!-- VerbDrillSelectionScreen -->
+    <string name="verb_select_tense">Время</string>
+    <string name="verb_all_tenses">Все времена</string>
+    <string name="verb_select_group">Группа</string>
+    <string name="verb_all_groups">Все группы</string>
+    <string name="verb_sort_by_frequency">По частотности</string>
+    <string name="verb_progress">Прогресс: %1$d / %2$d</string>
+    <string name="verb_today">Сегодня: %1$d</string>
+    <string name="verb_all_done_today">На сегодня всё!</string>
+    <string name="verb_continue">Продолжить</string>
+    <string name="verb_start">Старт</string>
+
+    <!-- VerbDrillCompletionScreen -->
+    <string name="verb_completion_excellent">Отлично!</string>
+    <string name="verb_completion_stats">Правильных: %1$d  |  Ошибок: %2$d</string>
+    <string name="verb_more">Ещё</string>
+    <string name="verb_exit">Выход</string>
+
+    <string name="verb_say_translation">Произнесите перевод: %1$s</string>
+    <string name="verb_exported_to">Экспортировано в %1$s</string>
+    <string name="verb_no_bad_sentences">Нет плохих предложений для экспорта</string>
+
+    <!-- VocabDrillScreen (Russian) -->
+    <string name="vocab_loading">Загрузка…</string>
+    <string name="vocab_title">Флешкарточки</string>
+    <string name="vocab_direction">Направление</string>
+    <string name="vocab_direction_it_ru">ИТ → РУ</string>
+    <string name="vocab_direction_ru_it">РУ → ИТ</string>
+    <string name="vocab_part_of_speech">Часть речи</string>
+    <string name="vocab_filter_all">Все</string>
+    <string name="vocab_pos_nouns">Существительные</string>
+    <string name="vocab_pos_verbs">Глаголы</string>
+    <string name="vocab_pos_adjectives">Прил.</string>
+    <string name="vocab_pos_adverbs">Нареч.</string>
+    <string name="vocab_pos_numbers">Числительные</string>
+    <string name="vocab_word_frequency">Частотность слов</string>
+    <string name="vocab_rank_top100">Топ 100</string>
+    <string name="vocab_rank_top500">Топ 500</string>
+    <string name="vocab_rank_top1000">Топ 1000</string>
+    <string name="vocab_rank_all">Все</string>
+    <string name="vocab_due_count">К повторению: %1$d / %2$d</string>
+    <string name="vocab_mastered_count">Изучено: %1$d слов</string>
+    <string name="vocab_no_words_loaded">Слова не загружены</string>
+    <string name="vocab_start">Начать (%1$d к повторению)</string>
+    <string name="vocab_no_due_words">Нет слов для повторения</string>
+
+    <string name="vocab_content_desc_back">Назад</string>
+    <string name="vocab_content_desc_report_word">Пожаловаться на слово</string>
+
+    <string name="vocab_rating_again">Снова</string>
+    <string name="vocab_rating_again_interval">&lt;1м</string>
+    <string name="vocab_rating_hard">Сложно</string>
+    <string name="vocab_rating_good">Нормально</string>
+    <string name="vocab_rating_easy">Легко</string>
+
+    <string name="vocab_skip">Пропустить</string>
+    <string name="vocab_flip">Перевернуть</string>
+
+    <string name="vocab_word_options">Параметры слова</string>
+    <string name="vocab_remove_bad">Убрать из списка плохих</string>
+    <string name="vocab_add_bad">Добавить в список плохих</string>
+    <string name="vocab_export_bad">Экспортировать плохие в файл</string>
+    <string name="vocab_copy_text">Копировать текст</string>
+    <string name="vocab_export_title">Экспорт</string>
+    <string name="vocab_exported_to">Экспортировано в %1$s</string>
+    <string name="vocab_no_bad_sentences">Нет плохих предложений для экспорта</string>
+    <string name="vocab_ok">ОК</string>
+
+    <string name="vocab_content_desc_speaking">Воспроизведение</string>
+    <string name="vocab_content_desc_tts_error">Ошибка TTS</string>
+    <string name="vocab_content_desc_listen">Прослушать</string>
+    <string name="vocab_content_desc_voice_input">Голосовой ввод</string>
+    <string name="vocab_tap_to_speak">Нажмите для озвучки</string>
+
+    <string name="vocab_voice_correct">Правильно!</string>
+    <string name="vocab_voice_moving_on">Переходим дальше…</string>
+    <string name="vocab_voice_try_again">Попробуйте ещё (%1$d/3)</string>
+    <string name="vocab_voice_skipped">Пропущено</string>
+
+    <string name="vocab_forms">Формы</string>
+    <string name="vocab_collocations">Словосочетания</string>
+    <string name="vocab_more_count">… ещё %1$d</string>
+    <string name="vocab_learned">Изучено</string>
+    <string name="vocab_step">Шаг %1$d/%2$d</string>
+
+    <string name="vocab_completion_perfect">Идеально!</string>
+    <string name="vocab_completion_done">Готово!</string>
+    <string name="vocab_completion_correct">Правильных</string>
+    <string name="vocab_completion_wrong">Неправильных</string>
+    <string name="vocab_completion_words_reviewed">Повторено слов: %1$d</string>
+    <string name="vocab_completion_exit">Выход</string>
+    <string name="vocab_completion_continue">Продолжить</string>
+
+    <string name="vocab_badge_noun">сущ.</string>
+    <string name="vocab_badge_verb">гл.</string>
+    <string name="vocab_badge_adj">прил.</string>
+    <string name="vocab_badge_adv">нареч.</string>
+    <string name="vocab_badge_num">числ.</string>
+
+    <!-- AppRoot (Russian) -->
+    <string name="app_restoring_backup">Восстановление резервной копии…</string>
+    <string name="app_waiting_backup">Ожидание папки резервной копии…</string>
+    <string name="app_preparing">Подготовка…</string>
+</resources>

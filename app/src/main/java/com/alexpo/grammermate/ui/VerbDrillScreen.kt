@@ -59,12 +59,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.CardSessionContract
@@ -95,7 +97,7 @@ fun VerbDrillScreen(
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Loading...",
+                    text = stringResource(R.string.verb_loading),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -215,10 +217,10 @@ private fun VerbDrillSessionWithCardSession(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onExit) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.verb_content_desc_back))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.verb_drill_title), fontWeight = FontWeight.SemiBold)
             }
         },
         cardContent = {
@@ -235,7 +237,7 @@ private fun VerbDrillSessionWithCardSession(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "RU", style = MaterialTheme.typography.labelMedium)
+                            Text(text = stringResource(R.string.verb_label_ru), style = MaterialTheme.typography.labelMedium)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = card.promptRu,
@@ -247,7 +249,7 @@ private fun VerbDrillSessionWithCardSession(
                             onClick = { contract.speakTts() },
                             enabled = card.promptRu.isNotBlank()
                         ) {
-                            Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                            Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.verb_content_desc_listen))
                         }
                     }
 
@@ -437,11 +439,11 @@ private fun DefaultVerbDrillInputControls(
     if (exportMessage != null) {
         AlertDialog(
             onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
+            title = { Text(stringResource(R.string.verb_export_title)) },
             text = { Text(exportMessage!!) },
             confirmButton = {
                 TextButton(onClick = { exportMessage = null }) {
-                    Text("OK")
+                    Text(stringResource(R.string.dialog_ok))
                 }
             }
         )
@@ -464,14 +466,14 @@ private fun DefaultVerbDrillInputControls(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Incorrect",
+                    text = stringResource(R.string.verb_incorrect),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${provider.remainingAttempts} attempts left",
+                    text = stringResource(R.string.verb_attempts_left, provider.remainingAttempts),
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -498,7 +500,7 @@ private fun DefaultVerbDrillInputControls(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = "Your translation") },
+            label = { Text(text = stringResource(R.string.verb_your_translation)) },
             enabled = hasCards,
             trailingIcon = {
                 IconButton(
@@ -520,14 +522,14 @@ private fun DefaultVerbDrillInputControls(
                     },
                     enabled = canLaunchVoice
                 ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.verb_content_desc_voice_input))
                 }
             }
         )
 
         if (!hasCards) {
             Text(
-                text = "No cards",
+                text = stringResource(R.string.verb_no_cards),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -536,7 +538,7 @@ private fun DefaultVerbDrillInputControls(
         // Voice mode hint — same guard as AnswerBox
         if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
             Text(
-                text = scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
+                text = scope.currentCard?.promptRu?.let { stringResource(R.string.verb_say_translation, it) } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 style = MaterialTheme.typography.bodySmall
             )
@@ -586,7 +588,7 @@ private fun DefaultVerbDrillInputControls(
                 contract.sessionActive &&
                 scope.currentCard != null
         ) {
-            Text(text = "Check")
+            Text(text = stringResource(R.string.verb_check))
         }
     }
 }
@@ -610,17 +612,17 @@ private fun VerbDrillSelectionScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.verb_content_desc_back))
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Verb Drill", fontWeight = FontWeight.SemiBold)
+            Text(text = stringResource(R.string.verb_drill_title), fontWeight = FontWeight.SemiBold)
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         if (state.availableTenses.isNotEmpty()) {
             VerbDrillDropdown(
-                label = "Время",
-                allLabel = "Все времена",
+                label = stringResource(R.string.verb_select_tense),
+                allLabel = stringResource(R.string.verb_all_tenses),
                 selected = state.selectedTense,
                 items = state.availableTenses,
                 onSelect = onSelectTense
@@ -630,8 +632,8 @@ private fun VerbDrillSelectionScreen(
 
         if (state.availableGroups.isNotEmpty()) {
             VerbDrillDropdown(
-                label = "Группа",
-                allLabel = "Все группы",
+                label = stringResource(R.string.verb_select_group),
+                allLabel = stringResource(R.string.verb_all_groups),
                 selected = state.selectedGroup,
                 items = state.availableGroups,
                 onSelect = onSelectGroup
@@ -648,18 +650,18 @@ private fun VerbDrillSelectionScreen(
                 onCheckedChange = { onToggleSortByFrequency() }
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text(text = "По частотности")
+            Text(text = stringResource(R.string.verb_sort_by_frequency))
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         if (state.totalCards > 0) {
             Text(
-                text = "Прогресс: ${state.everShownCount} / ${state.totalCards}"
+                text = stringResource(R.string.verb_progress, state.everShownCount, state.totalCards)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Сегодня: ${state.todayShownCount}",
+                text = stringResource(R.string.verb_today, state.todayShownCount),
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
@@ -676,7 +678,7 @@ private fun VerbDrillSelectionScreen(
 
         if (state.allDoneToday) {
             Text(
-                text = "На сегодня всё!",
+                text = stringResource(R.string.verb_all_done_today),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
                 modifier = Modifier.fillMaxWidth(),
@@ -688,7 +690,7 @@ private fun VerbDrillSelectionScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if (state.todayShownCount > 0) "Продолжить" else "Старт"
+                    text = if (state.todayShownCount > 0) stringResource(R.string.verb_continue) else stringResource(R.string.verb_start)
                 )
             }
         }
@@ -748,13 +750,13 @@ private fun VerbDrillCompletionScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Отлично!",
+            text = stringResource(R.string.verb_completion_excellent),
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Правильных: ${session.correctCount}  |  Ошибок: ${session.incorrectCount}",
+            text = stringResource(R.string.verb_completion_stats, session.correctCount, session.incorrectCount),
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Spacer(modifier = Modifier.height(24.dp))
@@ -763,7 +765,7 @@ private fun VerbDrillCompletionScreen(
                 onClick = { viewModel.nextBatch() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Ещё")
+                Text(text = stringResource(R.string.verb_more))
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -771,7 +773,7 @@ private fun VerbDrillCompletionScreen(
             onClick = onExit,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Выход")
+            Text(text = stringResource(R.string.verb_exit))
         }
     }
 }
@@ -806,21 +808,21 @@ private fun VerbDrillInputModeBar(
                 },
                 enabled = canLaunchVoice
             ) {
-                Icon(Icons.Default.Mic, contentDescription = "Voice mode")
+                Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.verb_content_desc_voice_mode))
             }
             // Keyboard mode button
             FilledTonalIconButton(
                 onClick = { contract.setInputMode(InputMode.KEYBOARD) },
                 enabled = canSelectInputMode
             ) {
-                Icon(Icons.Default.Keyboard, contentDescription = "Keyboard mode")
+                Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.verb_content_desc_keyboard_mode))
             }
             // Word bank mode button
             FilledTonalIconButton(
                 onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                 enabled = canSelectInputMode
             ) {
-                Icon(Icons.Default.LibraryBooks, contentDescription = "Word bank mode")
+                Icon(Icons.Default.LibraryBooks, contentDescription = stringResource(R.string.verb_content_desc_word_bank_mode))
             }
         }
         Row(
@@ -830,35 +832,35 @@ private fun VerbDrillInputModeBar(
             // Show answer button -- always visible, disabled when hint already shown
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text(text = "Show answer") } },
+                tooltip = { PlainTooltip { Text(text = stringResource(R.string.verb_show_answer)) } },
                 state = rememberTooltipState()
             ) {
                 IconButton(
                     onClick = { if (hasCards) contract.showAnswer() },
                     enabled = hasCards && provider.hintAnswer == null
                 ) {
-                    Icon(Icons.Default.Visibility, contentDescription = "Show answer")
+                    Icon(Icons.Default.Visibility, contentDescription = stringResource(R.string.verb_content_desc_show_answer))
                 }
             }
             if (contract.supportsFlagging) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = "Report sentence") } },
+                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.verb_report_sentence)) } },
                     state = rememberTooltipState()
                 ) {
                     IconButton(
                         onClick = { if (hasCards) onReport() },
                         enabled = hasCards
                     ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = "Report sentence")
+                        Icon(Icons.Default.ReportProblem, contentDescription = stringResource(R.string.verb_content_desc_report))
                     }
                 }
             }
             Text(
                 text = when (contract.currentInputMode) {
-                    InputMode.VOICE -> "Voice"
-                    InputMode.KEYBOARD -> "Keyboard"
-                    InputMode.WORD_BANK -> "Word Bank"
+                    InputMode.VOICE -> stringResource(R.string.verb_mode_voice)
+                    InputMode.KEYBOARD -> stringResource(R.string.verb_mode_keyboard)
+                    InputMode.WORD_BANK -> stringResource(R.string.verb_mode_word_bank)
                 },
                 style = MaterialTheme.typography.labelMedium
             )

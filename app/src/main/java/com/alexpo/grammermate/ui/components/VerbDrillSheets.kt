@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.ui.TenseExample
@@ -140,7 +142,7 @@ internal fun VerbReferenceBottomSheet(
                     when (ttsState) {
                         TtsState.SPEAKING -> Icon(
                             Icons.Default.VolumeUp,
-                            contentDescription = "Speaking",
+                            contentDescription = stringResource(R.string.content_desc_speaking),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         TtsState.INITIALIZING -> CircularProgressIndicator(
@@ -149,12 +151,12 @@ internal fun VerbReferenceBottomSheet(
                         )
                         TtsState.ERROR -> Icon(
                             Icons.Default.ReportProblem,
-                            contentDescription = "TTS error",
+                            contentDescription = stringResource(R.string.content_desc_tts_error),
                             tint = MaterialTheme.colorScheme.error
                         )
                         else -> Icon(
                             Icons.Default.VolumeUp,
-                            contentDescription = "Listen"
+                            contentDescription = stringResource(R.string.content_desc_listen)
                         )
                     }
                 }
@@ -185,7 +187,7 @@ internal fun VerbReferenceBottomSheet(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Спряжение:",
+                    text = stringResource(R.string.drill_conjugation_label),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -249,7 +251,7 @@ internal fun TenseInfoBottomSheet(
                     )
                 }
                 Text(
-                    text = "Справочная информация для этого времени недоступна.",
+                    text = stringResource(R.string.drill_tense_info_unavailable),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -288,7 +290,7 @@ internal fun TenseInfoBottomSheet(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "Формула",
+                            text = stringResource(R.string.drill_formula_label),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -303,7 +305,7 @@ internal fun TenseInfoBottomSheet(
 
                 // Usage explanation
                 Text(
-                    text = "Когда использовать",
+                    text = stringResource(R.string.drill_when_to_use_label),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
@@ -319,7 +321,7 @@ internal fun TenseInfoBottomSheet(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Примеры",
+                        text = stringResource(R.string.drill_examples_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold

@@ -25,8 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.LessonLadderRow
 import com.alexpo.grammermate.data.TrainingUiState
 
@@ -45,17 +47,17 @@ fun LadderScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.ladder_back))
             }
             Spacer(modifier = Modifier.width(4.dp))
             Column {
                 Text(
-                    text = "Лестница интервалов",
+                    text = stringResource(R.string.ladder_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Все уроки текущего пакета",
+                    text = stringResource(R.string.ladder_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                 )
@@ -66,7 +68,7 @@ fun LadderScreen(
 
         if (state.navigation.ladderRows.isEmpty()) {
             Text(
-                text = "Нет данных по урокам.",
+                text = stringResource(R.string.ladder_no_data),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
@@ -92,33 +94,33 @@ fun LadderHeaderRow() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "#",
+            text = stringResource(R.string.ladder_header_number),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.width(28.dp),
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Text(
-            text = "Урок",
+            text = stringResource(R.string.ladder_header_lesson),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Text(
-            text = "Карты",
+            text = stringResource(R.string.ladder_header_cards),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.width(56.dp),
             textAlign = TextAlign.End,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Text(
-            text = "Дней",
+            text = stringResource(R.string.ladder_header_days),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.width(48.dp),
             textAlign = TextAlign.End,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
         Text(
-            text = "Интервал",
+            text = stringResource(R.string.ladder_header_interval),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.width(92.dp),
             textAlign = TextAlign.End,

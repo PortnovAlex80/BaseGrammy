@@ -40,7 +40,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.SubLessonType
@@ -88,7 +90,7 @@ fun LessonRoadmapScreen(
     val lessonTitle = state.navigation.lessons
         .firstOrNull { it.id == state.navigation.selectedLessonId }
         ?.title
-        ?: "Lesson"
+        ?: stringResource(R.string.roadmap_lesson_fallback)
     val fallbackTotal = state.cardSession.subLessonCount.coerceAtLeast(1)
     val fallbackNewOnlyCount = fallbackTotal.coerceAtMost(3)
     val trainingTypes = if (state.cardSession.subLessonTypes.isNotEmpty()) {
@@ -125,6 +127,7 @@ fun LessonRoadmapScreen(
     val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it.value] }
     val bossUnlocked = state.cardSession.completedSubLessonCount >= 15 || state.cardSession.testMode
     var bossLockedMessage by remember { mutableStateOf<String?>(null) }
+    val lockedMessage = stringResource(R.string.roadmap_complete_15_exercises)
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
     Column(
@@ -138,7 +141,7 @@ fun LessonRoadmapScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.roadmap_back))
             }
             Text(text = lessonTitle, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.width(40.dp))
@@ -156,9 +159,9 @@ fun LessonRoadmapScreen(
             // Show progress within current block of 15
             val displayIndex = (completed % 15) + 1
             val displayTotal = minOf(15, total - (completed / 15) * 15)
-            Text(text = "Exercise $displayIndex of $displayTotal", textAlign = TextAlign.Center)
+            Text(text = stringResource(R.string.roadmap_exercise_of, displayIndex, displayTotal), textAlign = TextAlign.Center)
             Text(
-                text = "Cards: $shownCards of $totalCards",
+                text = stringResource(R.string.roadmap_cards_of, shownCards, totalCards),
                 textAlign = TextAlign.Center,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
@@ -180,8 +183,8 @@ fun LessonRoadmapScreen(
                         val isActive = index == currentIndex
                         val canEnter = state.cardSession.testMode || isCompleted || isActive
                         val kindLabel = when (entry.type) {
-                            SubLessonType.NEW_ONLY -> "NEW"
-                            SubLessonType.MIXED -> "MIX"
+                            SubLessonType.NEW_ONLY -> stringResource(R.string.roadmap_new)
+                            SubLessonType.MIXED -> stringResource(R.string.roadmap_mix)
                         }
                         // Use lesson flower for exercise tiles (they copy lesson state)
                         val flower = state.flowerDisplay.currentLessonFlower
@@ -222,23 +225,23 @@ fun LessonRoadmapScreen(
                     }
                     is RoadmapEntry.BossLesson -> {
                         BossTile(
-                            label = "Review",
+                            label = stringResource(R.string.roadmap_review),
                             enabled = bossUnlocked,
                             reward = if (bossUnlocked) bossLessonReward else null,
                             locked = !bossUnlocked,
                             onClick = if (bossUnlocked) onStartBossLesson else {
-                                { bossLockedMessage = "Complete at least 15 exercises first" }
+                                { bossLockedMessage = lockedMessage }
                             }
                         )
                     }
                     is RoadmapEntry.BossMega -> {
                         BossTile(
-                            label = "Mega",
+                            label = stringResource(R.string.roadmap_mega),
                             enabled = bossUnlocked,
                             reward = if (bossUnlocked) bossMegaReward else null,
                             locked = !bossUnlocked,
                             onClick = if (bossUnlocked) onStartBossMega else {
-                                { bossLockedMessage = "Complete at least 15 exercises first" }
+                                { bossLockedMessage = lockedMessage }
                             }
                         )
                     }
@@ -253,7 +256,7 @@ fun LessonRoadmapScreen(
             onClick = { onStartSubLesson(currentIndex) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = if (completed == 0) "Start Lesson" else "Continue Lesson")
+            Text(text = if (completed == 0) stringResource(R.string.roadmap_start_lesson) else stringResource(R.string.roadmap_continue_lesson))
         }
     }
 
@@ -266,16 +269,16 @@ fun LessonRoadmapScreen(
                     earlyStartSubLessonIndex = null
                     onStartSubLesson(idx)
                 }) {
-                    Text(text = "Yes")
+                    Text(text = stringResource(R.string.home_yes))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { earlyStartSubLessonIndex = null }) {
-                    Text(text = "No")
+                    Text(text = stringResource(R.string.home_no))
                 }
             },
-            title = { Text(text = "Start early?") },
-            text = { Text(text = "Start exercise ${idx + 1} early? You can always come back to review.") }
+            title = { Text(text = stringResource(R.string.roadmap_start_early_title)) },
+            text = { Text(text = stringResource(R.string.roadmap_start_early_message, idx + 1)) }
         )
     }
 
@@ -284,11 +287,11 @@ fun LessonRoadmapScreen(
             onDismissRequest = { bossLockedMessage = null },
             confirmButton = {
                 TextButton(onClick = { bossLockedMessage = null }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.home_ok))
                 }
             },
-            title = { Text(text = "Locked") },
-            text = { Text(text = "Complete at least 15 exercises first.") }
+            title = { Text(text = stringResource(R.string.roadmap_locked)) },
+            text = { Text(text = stringResource(R.string.roadmap_locked_message)) }
         )
     }
 }
@@ -354,12 +357,12 @@ fun DrillTile(
         ) {
             Icon(
                 imageVector = Icons.Default.FitnessCenter,
-                contentDescription = "Drill",
+                contentDescription = stringResource(R.string.roadmap_drill),
                 tint = if (enabled) MaterialTheme.colorScheme.primary
                        else MaterialTheme.colorScheme.outline
             )
             Spacer(Modifier.height(4.dp))
-            Text("Drill", fontSize = 12.sp)
+            Text(stringResource(R.string.roadmap_drill), fontSize = 12.sp)
         }
     }
 }

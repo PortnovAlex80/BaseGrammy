@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SharedComponents -->
+    <string name="content_desc_stop">Stop</string>
+    <string name="content_desc_tts_error">TTS error</string>
+    <string name="content_desc_listen">Listen</string>
+    <string name="tts_download_title">Download pronunciation model?</string>
+    <string name="tts_download_ready">Pronunciation model ready!</string>
+    <string name="tts_download_button">Download</string>
+    <string name="button_ok">OK</string>
+    <string name="tts_download_background">Continue in background</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="metered_network_title">Metered network detected</string>
+    <string name="metered_tts_message">You appear to be on a cellular or metered connection. The pronunciation model is ~346 MB. Continue downloading?</string>
+    <string name="metered_asr_message">You appear to be on a cellular or metered connection. The speech recognition model is ~375 MB. Continue downloading?</string>
+    <string name="metered_download_anyway">Download anyway</string>
+    <string name="asr_listening">Listening…</string>
+    <string name="asr_processing">Processing…</string>
+    <string name="asr_recognition_error">Recognition error</string>
+
+    <!-- SharedReportSheet -->
+    <string name="report_title">Card options</string>
+    <string name="report_unflag">Remove from bad sentences list</string>
+    <string name="report_flag">Add to bad sentences list</string>
+    <string name="report_hide_card">Hide this card from lessons</string>
+    <string name="report_export">Export bad sentences to file</string>
+    <string name="report_copy_text">Copy text</string>
+    <string name="report_export_dialog_title">Export</string>
+
+    <!-- DailyPracticeComponents -->
+    <string name="word_bank_tap_order">Tap words in correct order:</string>
+    <string name="word_bank_undo">Undo</string>
+    <string name="content_desc_voice_mode">Voice mode</string>
+    <string name="content_desc_keyboard_mode">Keyboard mode</string>
+    <string name="content_desc_word_bank_mode">Word bank mode</string>
+    <string name="tooltip_show_answer">Show answer</string>
+    <string name="tooltip_report_sentence">Report sentence</string>
+    <string name="input_mode_voice">Voice</string>
+    <string name="input_mode_keyboard">Keyboard</string>
+    <string name="input_mode_word_bank">Word Bank</string>
+
+    <!-- DailyPracticeScreen -->
+    <string name="daily_loading_session">Loading session…</string>
+    <string name="card_label_ru">RU</string>
+    <string name="speech_prompt_say_translation">Say the translation</string>
+    <string name="content_desc_voice_input">Voice input</string>
+    <string name="card_label_your_translation">Your translation</string>
+    <string name="result_incorrect">Incorrect</string>
+    <string name="card_no_cards">No cards</string>
+    <string name="button_check">Check</string>
+    <string name="block_translate">Translation</string>
+    <string name="block_vocab">Vocabulary</string>
+    <string name="block_verbs">Verbs</string>
+    <string name="daily_exit_title">Exit practice?</string>
+    <string name="daily_exit_message">Your progress in this session will be lost.</string>
+    <string name="button_exit">Exit</string>
+    <string name="button_stay">Stay</string>
+    <string name="content_desc_back">Back</string>
+    <string name="daily_header">Daily Practice</string>
+    <string name="content_desc_report_word">Report word</string>
+    <string name="daily_session_complete">Session Complete!</string>
+    <string name="daily_complete_message">Great job! You practiced translations, vocabulary, and verb conjugations.</string>
+    <string name="daily_back_to_home">Back to Home</string>
+    <string name="daily_practice_complete">Daily practice complete!</string>
+    <string name="daily_great_job_today">Great job today!</string>
+    <string name="srs_again">Again</string>
+    <string name="srs_hard">Hard</string>
+    <string name="srs_good">Good</string>
+    <string name="srs_easy">Easy</string>
+
+    <!-- TrainingCardSession -->
+    <string name="result_correct">Correct</string>
+    <string name="session_end_title">End session?</string>
+    <string name="session_end_message">Your progress will be saved.</string>
+    <string name="button_end">End</string>
+    <string name="content_desc_prev">Prev</string>
+    <string name="content_desc_pause">Pause</string>
+    <string name="content_desc_play">Play</string>
+    <string name="content_desc_exit_session">Exit session</string>
+    <string name="content_desc_next">Next</string>
+    <string name="completion_well_done">Well done!</string>
+    <string name="button_done">Done</string>
+
+    <!-- HintAnswerCard -->
+    <string name="hint_answer_prefix">Answer: </string>
+
+    <!-- VerbDrillSheets -->
+    <string name="content_desc_speaking">Speaking</string>
+    <string name="content_desc_report_word_drill">Report word</string>
+    <string name="drill_conjugation_label">Conjugation:</string>
+    <string name="drill_tense_info_unavailable">Tense reference info is not available for this tense.</string>
+    <string name="drill_formula_label">Formula</string>
+    <string name="drill_when_to_use_label">When to use</string>
+    <string name="drill_examples_label">Examples</string>
+</resources>

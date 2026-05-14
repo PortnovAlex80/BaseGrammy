@@ -45,9 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.TrainingUiState
@@ -123,7 +125,7 @@ fun SettingsSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Service Mode",
+                text = stringResource(R.string.settings_service_mode),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -133,14 +135,14 @@ fun SettingsSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
+                Text(text = stringResource(R.string.settings_test_mode), style = MaterialTheme.typography.bodyLarge)
                 Switch(
                     checked = state.cardSession.testMode,
                     onCheckedChange = { onToggleTestMode() }
                 )
             }
             Text(
-                text = "Enables all lessons, accepts all answers, unlocks Elite mode",
+                text = stringResource(R.string.settings_test_mode_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -150,12 +152,12 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Insights, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Показать лестницу")
+                Text(text = stringResource(R.string.settings_show_ladder))
             }
 
             // Difficulty / Hint level selector
             Text(
-                text = "Difficulty",
+                text = stringResource(R.string.settings_difficulty),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -166,9 +168,9 @@ fun SettingsSheet(
                 HintLevel.entries.forEach { level ->
                     val isSelected = state.cardSession.hintLevel == level
                     val label = when (level) {
-                        HintLevel.EASY -> "Easy"
-                        HintLevel.MEDIUM -> "Medium"
-                        HintLevel.HARD -> "Hard"
+                        HintLevel.EASY -> stringResource(R.string.settings_easy)
+                        HintLevel.MEDIUM -> stringResource(R.string.settings_medium)
+                        HintLevel.HARD -> stringResource(R.string.settings_hard)
                     }
                     FilterChip(
                         selected = isSelected,
@@ -181,11 +183,11 @@ fun SettingsSheet(
             Text(
                 text = when (state.cardSession.hintLevel) {
                     HintLevel.EASY ->
-                        "All hints visible: verb info, word bank, first-letter hints"
+                        stringResource(R.string.settings_easy_description)
                     HintLevel.MEDIUM ->
-                        "Partial hints: infinitive + tense only, no word bank"
+                        stringResource(R.string.settings_medium_description)
                     HintLevel.HARD ->
-                        "No hints: voice only, produce from Russian prompt alone"
+                        stringResource(R.string.settings_hard_description)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -203,17 +205,17 @@ fun SettingsSheet(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Vocabulary Sprint limit") }
+                label = { Text(text = stringResource(R.string.settings_vocab_sprint_limit)) }
             )
             Text(
-                text = "Set how many words to show (0 = all words)",
+                text = stringResource(R.string.settings_vocab_limit_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
 
             // TTS speed control
             Text(
-                text = "Pronunciation speed",
+                text = stringResource(R.string.settings_pronunciation_speed),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -242,7 +244,7 @@ fun SettingsSheet(
 
             // Offline ASR toggle
             Text(
-                text = "Voice recognition",
+                text = stringResource(R.string.settings_voice_recognition),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -252,7 +254,7 @@ fun SettingsSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Offline speech recognition", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = stringResource(R.string.settings_offline_speech_recognition), style = MaterialTheme.typography.bodyLarge)
                 }
                 Switch(
                     checked = state.audio.useOfflineAsr,
@@ -271,7 +273,7 @@ fun SettingsSheet(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Downloading model... ${dlState.percent}%",
+                        text = stringResource(R.string.settings_downloading_model, dlState.percent),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -282,7 +284,7 @@ fun SettingsSheet(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Extracting model... ${dlState.percent}%",
+                        text = stringResource(R.string.settings_extracting_model, dlState.percent),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -297,9 +299,9 @@ fun SettingsSheet(
                 else -> {
                     Text(
                         text = if (state.audio.useOfflineAsr) {
-                            if (state.audio.asrModelReady) "Using on-device recognition (no internet required)" else "Model not downloaded yet"
+                            if (state.audio.asrModelReady) stringResource(R.string.settings_using_on_device) else stringResource(R.string.settings_model_not_downloaded)
                         } else {
-                            "Using Google speech recognition (requires internet)"
+                            stringResource(R.string.settings_using_google_recognition)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -314,7 +316,7 @@ fun SettingsSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Auto-start voice input", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = stringResource(R.string.settings_auto_start_voice), style = MaterialTheme.typography.bodyLarge)
                 }
                 Switch(
                     checked = state.audio.voiceAutoStart,
@@ -323,9 +325,9 @@ fun SettingsSheet(
             }
             Text(
                 text = if (state.audio.voiceAutoStart) {
-                    "Voice recognition starts automatically when a new card appears"
+                    stringResource(R.string.settings_voice_auto_start_on)
                 } else {
-                    "Voice recognition starts only when you tap the microphone"
+                    stringResource(R.string.settings_voice_auto_start_off)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -333,7 +335,7 @@ fun SettingsSheet(
 
             // Russian text size control
             Text(
-                text = "Размер текста перевода",
+                text = stringResource(R.string.settings_translation_text_size),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -365,7 +367,7 @@ fun SettingsSheet(
                 value = newLanguageName,
                 onValueChange = { newLanguageName = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "New language") }
+                label = { Text(text = stringResource(R.string.settings_new_language)) }
             )
             OutlinedButton(
                 onClick = {
@@ -377,7 +379,7 @@ fun SettingsSheet(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Add language")
+                Text(text = stringResource(R.string.settings_add_language))
             }
             OutlinedButton(
                 onClick = {
@@ -393,7 +395,7 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Import lesson pack (ZIP)")
+                Text(text = stringResource(R.string.settings_import_lesson_pack))
             }
             OutlinedButton(
                 onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
@@ -401,7 +403,7 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Import lesson (CSV)")
+                Text(text = stringResource(R.string.settings_import_lesson_csv))
             }
             OutlinedButton(
                 onClick = { resetLauncher.launch(arrayOf("text/*", "text/csv")) },
@@ -409,13 +411,13 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Reset/Reload (clear + import)")
+                Text(text = stringResource(R.string.settings_reset_reload))
             }
             OutlinedTextField(
                 value = newLessonTitle,
                 onValueChange = { newLessonTitle = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Empty lesson (title)") }
+                label = { Text(text = stringResource(R.string.settings_empty_lesson_title)) }
             )
             OutlinedButton(
                 onClick = {
@@ -427,7 +429,7 @@ fun SettingsSheet(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Create empty lesson")
+                Text(text = stringResource(R.string.settings_create_empty_lesson))
             }
             OutlinedButton(
                 onClick = { onDeleteAllLessons() },
@@ -436,7 +438,7 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Delete, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Delete all lessons")
+                Text(text = stringResource(R.string.settings_delete_all_lessons))
             }
             OutlinedButton(
                 onClick = { showResetConfirmDialog = true },
@@ -445,14 +447,14 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Filled.Refresh, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Сбросить прогресс ($languageDisplayName)")
+                Text(text = stringResource(R.string.settings_reset_progress, languageDisplayName))
             }
             if (showResetConfirmDialog) {
                 androidx.compose.material3.AlertDialog(
                     onDismissRequest = { showResetConfirmDialog = false },
-                    title = { Text(text = "Сбросить прогресс") },
+                    title = { Text(text = stringResource(R.string.settings_reset_progress_title)) },
                     text = {
-                        Text(text = "Вы уверены, что хотите сбросить весь прогресс для «$languageDisplayName»?\n\nЭто действие удалит:\n• Все показатели освоения карточек\n• Интервалы повторения\n• Состояния цветков\n• Прогресс спряжения глаголов\n• Прогресс словарного запаса\n\nДругие языки не будут затронуты.")
+                        Text(text = stringResource(R.string.settings_reset_progress_confirm, languageDisplayName))
                     },
                     confirmButton = {
                         TextButton(
@@ -461,36 +463,33 @@ fun SettingsSheet(
                                 onResetAllProgress()
                             }
                         ) {
-                            Text(text = "Сбросить", color = Color(0xFFB00020))
+                            Text(text = stringResource(R.string.settings_reset), color = Color(0xFFB00020))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showResetConfirmDialog = false }) {
-                            Text(text = "Отмена")
+                            Text(text = stringResource(R.string.settings_cancel))
                         }
                     }
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "CSV format", style = MaterialTheme.typography.labelLarge)
+            Text(text = stringResource(R.string.settings_csv_format), style = MaterialTheme.typography.labelLarge)
             Text(
-                text = "UTF-8, delimiter ';'.\n" +
-                    "Column 1: Native sentence.\n" +
-                    "Column 2: Translation(s), variants via '+'.\n" +
-                    "Example: He doesn't work from home;Он не работает из дома",
+                text = stringResource(R.string.settings_csv_format_description),
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Instructions", style = MaterialTheme.typography.labelLarge)
+            Text(text = stringResource(R.string.settings_instructions), style = MaterialTheme.typography.labelLarge)
             Text(
-                text = "Play - start/continue, Pause - pause, Stop - reset progress without updating rating.",
+                text = stringResource(R.string.settings_instructions_description),
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Packs", style = MaterialTheme.typography.labelLarge)
+            Text(text = stringResource(R.string.settings_packs), style = MaterialTheme.typography.labelLarge)
             if (state.navigation.installedPacks.isEmpty()) {
                 Text(
-                    text = "No installed packs",
+                    text = stringResource(R.string.settings_no_installed_packs),
                     style = MaterialTheme.typography.bodySmall
                 )
             } else {
@@ -505,7 +504,7 @@ fun SettingsSheet(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { onDeletePack(pack.packId.value) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete pack")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.settings_delete_pack))
                         }
                     }
                 }
@@ -513,7 +512,7 @@ fun SettingsSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Profile",
+                text = stringResource(R.string.settings_profile),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -521,7 +520,7 @@ fun SettingsSheet(
             OutlinedTextField(
                 value = userNameInput,
                 onValueChange = { userNameInput = it.take(50) },
-                label = { Text("Your Name") },
+                label = { Text(stringResource(R.string.settings_your_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -538,19 +537,19 @@ fun SettingsSheet(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = userNameInput.trim().isNotEmpty() && userNameInput.trim() != state.navigation.userName
             ) {
-                Text("Save Name")
+                Text(stringResource(R.string.settings_save_name))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Backup & Restore",
+                text = stringResource(R.string.settings_backup_restore),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
 
             Text(
-                text = "Restore progress from backup folder (Downloads/BaseGrammy)",
+                text = stringResource(R.string.settings_restore_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -561,7 +560,7 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Save progress now")
+                Text(text = stringResource(R.string.settings_save_progress_now))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -572,7 +571,7 @@ fun SettingsSheet(
             ) {
                 Icon(Icons.Default.Download, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Restore from backup")
+                Text(text = stringResource(R.string.settings_restore_from_backup))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -589,7 +588,7 @@ fun SettingsSheet(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "GrammarMate",
+                    text = stringResource(R.string.settings_grammarmate),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -601,14 +600,14 @@ fun SettingsSheet(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Your language starter.\nSpeak first — fluency follows.",
+                    text = stringResource(R.string.settings_tagline),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Automatize grammar patterns through\ndrill repetition. Then read, listen, and live\nthe language on a prepared skeleton.",
+                    text = stringResource(R.string.settings_description),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
@@ -634,14 +633,14 @@ fun LanguageLessonColumn(
     } ?: "-"
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DropdownSelector(
-            title = "Language",
+            title = stringResource(R.string.settings_language),
             selected = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName
                 ?: "-",
             items = state.navigation.languages.map { it.displayName to it.id.value },
             onSelect = onSelectLanguage
         )
         DropdownSelector(
-            title = "Pack",
+            title = stringResource(R.string.settings_pack),
             selected = selectedPackLabel,
             items = languagePacks.map { pack ->
                 (pack.displayName ?: "${pack.packId.value} (${pack.packVersion})") to pack.packId.value

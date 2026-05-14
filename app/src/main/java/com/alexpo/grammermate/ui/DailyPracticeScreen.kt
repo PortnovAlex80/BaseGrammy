@@ -60,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailySessionState
@@ -133,7 +135,7 @@ fun DailyPracticeScreen(
             ) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading session...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text(stringResource(R.string.daily_loading_session), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
         }
         return
@@ -367,7 +369,7 @@ private fun DailyTrainingCardSession(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("RU", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.card_label_ru), style = MaterialTheme.typography.labelMedium)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(card.promptRu, fontSize = (20f * textScale).sp, fontWeight = FontWeight.SemiBold)
                         }
@@ -376,10 +378,10 @@ private fun DailyTrainingCardSession(
                             enabled = card.promptRu.isNotBlank()
                         ) {
                             when (provider.ttsState) {
-                                TtsState.SPEAKING -> Icon(Icons.Default.StopCircle, "Stop", tint = MaterialTheme.colorScheme.error)
+                                TtsState.SPEAKING -> Icon(Icons.Default.StopCircle, stringResource(R.string.content_desc_stop), tint = MaterialTheme.colorScheme.error)
                                 TtsState.INITIALIZING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                TtsState.ERROR -> Icon(Icons.Default.ReportProblem, "TTS error", tint = MaterialTheme.colorScheme.error)
-                                else -> Icon(Icons.Default.VolumeUp, "Listen")
+                                TtsState.ERROR -> Icon(Icons.Default.ReportProblem, stringResource(R.string.content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
+                                else -> Icon(Icons.Default.VolumeUp, stringResource(R.string.content_desc_listen))
                             }
                         }
                     }
@@ -502,7 +504,7 @@ private fun DailyInputControls(
         // Incorrect feedback
         if (provider.showIncorrectFeedback) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Incorrect", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.result_incorrect), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("${provider.remainingAttempts} ${if (provider.remainingAttempts == 1) "attempt" else "attempts"} left", color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall)
             }
@@ -521,7 +523,7 @@ private fun DailyInputControls(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Your translation") },
+            label = { Text(stringResource(R.string.card_label_your_translation)) },
             enabled = hasCards,
             trailingIcon = {
                 IconButton(
@@ -538,11 +540,11 @@ private fun DailyInputControls(
                         }
                     },
                     enabled = canLaunchVoice
-                ) { Icon(Icons.Default.Mic, "Voice input") }
+                ) { Icon(Icons.Default.Mic, stringResource(R.string.content_desc_voice_input)) }
             }
         )
 
-        if (!hasCards) Text("No cards", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        if (!hasCards) Text(stringResource(R.string.card_no_cards), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
 
         if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
             Text(scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), style = MaterialTheme.typography.bodySmall)
@@ -580,7 +582,7 @@ private fun DailyInputControls(
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = hasCards && scope.inputText.isNotBlank() && contract.sessionActive && scope.currentCard != null
-        ) { Text("Check") }
+        ) { Text(stringResource(R.string.button_check)) }
     }
 
     if (showReportSheet) {
@@ -605,9 +607,9 @@ private fun DailyInputControls(
     if (exportMessage != null) {
         AlertDialog(
             onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
+            title = { Text(stringResource(R.string.report_export_dialog_title)) },
             text = { Text(exportMessage!!) },
-            confirmButton = { TextButton(onClick = { exportMessage = null }) { Text("OK") } }
+            confirmButton = { TextButton(onClick = { exportMessage = null }) { Text(stringResource(R.string.button_ok)) } }
         )
     }
 }
@@ -616,23 +618,23 @@ private fun DailyInputControls(
 private fun DailyPracticeHeader(blockProgress: BlockProgress, onExit: () -> Unit) {
     var showExitDialog by remember { mutableStateOf(false) }
     val blockLabel = when (blockProgress.blockType) {
-        DailyBlockType.TRANSLATE -> "Translation"
-        DailyBlockType.VOCAB -> "Vocabulary"
-        DailyBlockType.VERBS -> "Verbs"
+        DailyBlockType.TRANSLATE -> stringResource(R.string.block_translate)
+        DailyBlockType.VOCAB -> stringResource(R.string.block_vocab)
+        DailyBlockType.VERBS -> stringResource(R.string.block_verbs)
     }
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
-            title = { Text("Exit practice?") },
-            text = { Text("Your progress in this session will be lost.") },
-            confirmButton = { TextButton(onClick = { showExitDialog = false; onExit() }) { Text("Exit") } },
-            dismissButton = { TextButton(onClick = { showExitDialog = false }) { Text("Stay") } }
+            title = { Text(stringResource(R.string.daily_exit_title)) },
+            text = { Text(stringResource(R.string.daily_exit_message)) },
+            confirmButton = { TextButton(onClick = { showExitDialog = false; onExit() }) { Text(stringResource(R.string.button_exit)) } },
+            dismissButton = { TextButton(onClick = { showExitDialog = false }) { Text(stringResource(R.string.button_stay)) } }
         )
     }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { showExitDialog = true }) { Icon(Icons.Default.ArrowBack, "Back") }
+        IconButton(onClick = { showExitDialog = true }) { Icon(Icons.Default.ArrowBack, stringResource(R.string.content_desc_back)) }
         Spacer(modifier = Modifier.width(8.dp))
-        Text("Daily Practice", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+        Text(stringResource(R.string.daily_header), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
         Spacer(modifier = Modifier.weight(1f))
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Text(blockLabel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -705,10 +707,10 @@ private fun ColumnScope.VocabFlashcardBlock(
             Text(promptText, fontSize = (28f * textScale).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { onSpeak(promptText) }) { Icon(Icons.Default.VolumeUp, "Listen") }
+                IconButton(onClick = { onSpeak(promptText) }) { Icon(Icons.Default.VolumeUp, stringResource(R.string.content_desc_listen)) }
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = { showReportSheet = true }) {
-                    Icon(Icons.Default.ReportProblem, "Report word", tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Default.ReportProblem, stringResource(R.string.content_desc_report_word), tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             // Answer text -- always visible (reference data, not a hint)
@@ -738,11 +740,11 @@ private fun ColumnScope.VocabFlashcardBlock(
             }
         },
         modifier = Modifier.align(Alignment.CenterHorizontally).size(64.dp)
-    ) { Icon(Icons.Default.Mic, "Voice input", modifier = Modifier.size(32.dp)) }
+    ) { Icon(Icons.Default.Mic, stringResource(R.string.content_desc_voice_input), modifier = Modifier.size(32.dp)) }
 
     Spacer(modifier = Modifier.height(12.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("Again" to SrsRating.AGAIN, "Hard" to SrsRating.HARD, "Good" to SrsRating.GOOD, "Easy" to SrsRating.EASY).forEach { (label, rating) ->
+        listOf(stringResource(R.string.srs_again) to SrsRating.AGAIN, stringResource(R.string.srs_hard) to SrsRating.HARD, stringResource(R.string.srs_good) to SrsRating.GOOD, stringResource(R.string.srs_easy) to SrsRating.EASY).forEach { (label, rating) ->
             val colors = when (rating) {
                 SrsRating.AGAIN -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
                 SrsRating.HARD -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
@@ -781,9 +783,9 @@ private fun ColumnScope.VocabFlashcardBlock(
     if (exportMessage != null) {
         AlertDialog(
             onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
+            title = { Text(stringResource(R.string.report_export_dialog_title)) },
             text = { Text(exportMessage!!) },
-            confirmButton = { TextButton(onClick = { exportMessage = null }) { Text("OK") } }
+            confirmButton = { TextButton(onClick = { exportMessage = null }) { Text(stringResource(R.string.button_ok)) } }
         )
     }
 }
@@ -791,9 +793,9 @@ private fun ColumnScope.VocabFlashcardBlock(
 @Composable
 private fun BlockSparkleOverlay(blockType: DailyBlockType, isLastBlock: Boolean, onDismiss: () -> Unit) {
     val blockLabel = when (blockType) {
-        DailyBlockType.TRANSLATE -> "Translation"
-        DailyBlockType.VOCAB -> "Vocabulary"
-        DailyBlockType.VERBS -> "Verbs"
+        DailyBlockType.TRANSLATE -> stringResource(R.string.block_translate)
+        DailyBlockType.VOCAB -> stringResource(R.string.block_vocab)
+        DailyBlockType.VERBS -> stringResource(R.string.block_verbs)
     }
     LaunchedEffect(Unit) { kotlinx.coroutines.delay(800); onDismiss() }
     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
@@ -801,10 +803,10 @@ private fun BlockSparkleOverlay(blockType: DailyBlockType, isLastBlock: Boolean,
             Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("✨", fontSize = 48.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(if (isLastBlock) "Daily practice complete!" else "Next: $blockLabel", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(if (isLastBlock) stringResource(R.string.daily_practice_complete) else "Next: $blockLabel", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 if (isLastBlock) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Great job today!", color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                    Text(stringResource(R.string.daily_great_job_today), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                 }
             }
         }
@@ -814,11 +816,11 @@ private fun BlockSparkleOverlay(blockType: DailyBlockType, isLastBlock: Boolean,
 @Composable
 private fun DailyPracticeCompletionScreen(onExit: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text("Session Complete!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(stringResource(R.string.daily_session_complete), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Great job! You practiced translations, vocabulary, and verb conjugations.", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+        Text(stringResource(R.string.daily_complete_message), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
         Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("Back to Home") }
+        Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.daily_back_to_home)) }
     }
 }
 

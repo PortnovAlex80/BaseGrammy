@@ -37,11 +37,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AppScreen
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.DownloadState
@@ -607,10 +609,10 @@ private fun AppDialogs(
             onDismissRequest = { vm.story.clearStoryError() },
             confirmButton = {
                 TextButton(onClick = { vm.story.clearStoryError() }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.dialog_ok))
                 }
             },
-            title = { Text(text = "Story") },
+            title = { Text(text = stringResource(R.string.dialog_story_title)) },
             text = { Text(text = state.story.storyErrorMessage ?: "") }
         )
     }
@@ -621,10 +623,10 @@ private fun AppDialogs(
             onDismissRequest = { vm.boss.clearBossError() },
             confirmButton = {
                 TextButton(onClick = { vm.boss.clearBossError() }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.dialog_ok))
                 }
             },
-            title = { Text(text = "Boss") },
+            title = { Text(text = stringResource(R.string.dialog_boss_title)) },
             text = { Text(text = state.boss.bossErrorMessage ?: "") }
         )
     }
@@ -635,7 +637,7 @@ private fun AppDialogs(
             onDismissRequest = { vm.clearBossRewardMessage() },
             confirmButton = {
                 TextButton(onClick = { vm.clearBossRewardMessage() }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.dialog_ok))
                 }
             },
             icon = {
@@ -651,7 +653,7 @@ private fun AppDialogs(
                     tint = tint
                 )
             },
-            title = { Text(text = "Boss Reward") },
+            title = { Text(text = stringResource(R.string.dialog_boss_reward_title)) },
             text = { Text(text = state.boss.bossRewardMessage ?: "") }
         )
     }
@@ -662,13 +664,13 @@ private fun AppDialogs(
             onDismissRequest = { vm.dismissStreakMessage() },
             confirmButton = {
                 TextButton(onClick = { vm.dismissStreakMessage() }) {
-                    Text(text = "Continue")
+                    Text(text = stringResource(R.string.dialog_streak_continue))
                 }
             },
             icon = {
                 Text(text = "??", fontSize = 48.sp)
             },
-            title = { Text(text = "Streak!") },
+            title = { Text(text = stringResource(R.string.dialog_streak_title)) },
             text = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -681,7 +683,7 @@ private fun AppDialogs(
                     )
                     if (state.cardSession.longestStreak > state.cardSession.currentStreak) {
                         Text(
-                            text = "Longest streak: ${state.cardSession.longestStreak} days",
+                            text = stringResource(R.string.dialog_streak_longest, state.cardSession.longestStreak),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -725,7 +727,7 @@ private fun DailyLoadingOverlay() {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Loading session...",
+                    text = stringResource(R.string.dialog_daily_loading),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -764,16 +766,16 @@ private fun ExitConfirmDialog(
                 vm.finishSession()
                 onScreenChange(AppScreen.LESSON)
             }) {
-                Text(text = "Exit")
+                Text(text = stringResource(R.string.dialog_exit_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.dialog_cancel))
             }
         },
-        title = { Text(text = if (screen == AppScreen.DAILY_PRACTICE) "Exit practice?" else "End session?") },
-        text = { Text(text = if (screen == AppScreen.DAILY_PRACTICE) "Your progress in this session will be lost." else "Current session will be completed.") }
+        title = { Text(text = if (screen == AppScreen.DAILY_PRACTICE) stringResource(R.string.dialog_exit_title_daily) else stringResource(R.string.dialog_exit_title_training)) },
+        text = { Text(text = if (screen == AppScreen.DAILY_PRACTICE) stringResource(R.string.dialog_exit_text_daily) else stringResource(R.string.dialog_exit_text_training)) }
     )
 }
 
@@ -798,7 +800,7 @@ private fun DailyResumeDialog(
                     if (started) onScreenChange(AppScreen.DAILY_PRACTICE)
                 }
             }) {
-                Text(text = "Продолжить")
+                Text(text = stringResource(R.string.dialog_daily_resume_continue))
             }
         },
         dismissButton = {
@@ -812,11 +814,11 @@ private fun DailyResumeDialog(
                     if (started) onScreenChange(AppScreen.DAILY_PRACTICE)
                 }
             }) {
-                Text(text = "Повторить")
+                Text(text = stringResource(R.string.dialog_daily_resume_repeat))
             }
         },
-        title = { Text(text = "Ежедневная практика") },
-        text = { Text(text = "Повторить — те же карточки сначала\nПродолжить — новый набор карточек") }
+        title = { Text(text = stringResource(R.string.dialog_daily_resume_title)) },
+        text = { Text(text = stringResource(R.string.dialog_daily_resume_text)) }
     )
 }
 
@@ -832,7 +834,7 @@ private fun WelcomeDialog(
         onDismissRequest = { },
         title = {
             Text(
-                text = "Welcome to GrammarMate!",
+                text = stringResource(R.string.dialog_welcome_title),
                 style = MaterialTheme.typography.headlineSmall
             )
         },
@@ -842,14 +844,14 @@ private fun WelcomeDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "What's your name?",
+                    text = stringResource(R.string.dialog_welcome_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 OutlinedTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it.take(50) },
-                    label = { Text("Enter your name") },
-                    placeholder = { Text("e.g., John Smith") },
+                    label = { Text(stringResource(R.string.dialog_welcome_label)) },
+                    placeholder = { Text(stringResource(R.string.dialog_welcome_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -867,7 +869,7 @@ private fun WelcomeDialog(
                     onNameSet(if (nameInput.isBlank()) "GrammarMateUser" else nameInput.trim())
                 }
             ) {
-                Text("Continue")
+                Text(stringResource(R.string.dialog_welcome_continue))
             }
         },
         dismissButton = {
@@ -876,7 +878,7 @@ private fun WelcomeDialog(
                     onNameSet("GrammarMateUser")
                 }
             ) {
-                Text("Skip")
+                Text(stringResource(R.string.dialog_welcome_skip))
             }
         }
     )
@@ -891,18 +893,18 @@ private fun DrillStartDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Drill Mode") },
-        text = { Text(if (hasProgress) "Continue where you left off or start over?" else "Start drill training?") },
+        title = { Text(stringResource(R.string.dialog_drill_title)) },
+        text = { Text(if (hasProgress) stringResource(R.string.dialog_drill_resume_prompt) else stringResource(R.string.dialog_drill_start_prompt)) },
         confirmButton = {
             TextButton(onClick = if (hasProgress) onResume else onStartFresh) {
-                Text(if (hasProgress) "Continue" else "Start")
+                Text(if (hasProgress) stringResource(R.string.dialog_drill_continue) else stringResource(R.string.dialog_drill_start))
             }
         },
         dismissButton = {
             if (hasProgress) {
-                TextButton(onClick = onStartFresh) { Text("Start Fresh") }
+                TextButton(onClick = onStartFresh) { Text(stringResource(R.string.dialog_drill_start_fresh)) }
             }
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
         }
     )
 }

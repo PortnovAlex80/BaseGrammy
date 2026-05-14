@@ -59,11 +59,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
@@ -126,7 +128,7 @@ fun VocabDrillScreen(
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Loading...",
+                    text = stringResource(R.string.vocab_loading),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -193,43 +195,43 @@ private fun VocabDrillSelectionScreen(
     ) {
         // Header
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.vocab_content_desc_back)) }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
+            Text(text = stringResource(R.string.vocab_title), fontWeight = FontWeight.SemiBold)
         }
         Spacer(modifier = Modifier.height(16.dp))
         // Direction filter chips
-        Text(text = "Direction", style = MaterialTheme.typography.labelMedium)
+        Text(text = stringResource(R.string.vocab_direction), style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             FilterChip(
                 selected = state.drillDirection == VocabDrillDirection.IT_TO_RU,
                 onClick = { onSetDirection(VocabDrillDirection.IT_TO_RU) },
-                label = { Text("IT → RU") }
+                label = { Text(stringResource(R.string.vocab_direction_it_ru)) }
             )
             FilterChip(
                 selected = state.drillDirection == VocabDrillDirection.RU_TO_IT,
                 onClick = { onSetDirection(VocabDrillDirection.RU_TO_IT) },
-                label = { Text("RU → IT") }
+                label = { Text(stringResource(R.string.vocab_direction_ru_it)) }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
         // POS filter chips
-        Text(text = "Part of speech", style = MaterialTheme.typography.labelMedium)
+        Text(text = stringResource(R.string.vocab_part_of_speech), style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             FilterChip(
                 selected = state.selectedPos == null,
                 onClick = { onSelectPos(null) },
-                label = { Text("All") }
+                label = { Text(stringResource(R.string.vocab_filter_all)) }
             )
             state.availablePos.forEach { pos ->
                 val label = when (pos) {
-                    "nouns" -> "Nouns"
-                    "verbs" -> "Verbs"
-                    "adjectives" -> "Adj."
-                    "adverbs" -> "Adv."
-                    "numbers" -> "Numbers"
+                    "nouns" -> stringResource(R.string.vocab_pos_nouns)
+                    "verbs" -> stringResource(R.string.vocab_pos_verbs)
+                    "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
+                    "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
+                    "numbers" -> stringResource(R.string.vocab_pos_numbers)
                     else -> pos.replaceFirstChar { it.uppercase() }
                 }
                 FilterChip(
@@ -241,14 +243,14 @@ private fun VocabDrillSelectionScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         // Rank range filter
-        Text(text = "Word frequency", style = MaterialTheme.typography.labelMedium)
+        Text(text = stringResource(R.string.vocab_word_frequency), style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             val rankOptions = listOf(
-                "Top 100" to (0 to 100),
-                "Top 500" to (0 to 500),
-                "Top 1000" to (0 to 1000),
-                "All" to (0 to Int.MAX_VALUE)
+                stringResource(R.string.vocab_rank_top100) to (0 to 100),
+                stringResource(R.string.vocab_rank_top500) to (0 to 500),
+                stringResource(R.string.vocab_rank_top1000) to (0 to 1000),
+                stringResource(R.string.vocab_rank_all) to (0 to Int.MAX_VALUE)
             )
             rankOptions.forEach { (label, range) ->
                 val isSelected = state.rankMin == range.first && state.rankMax == range.second
@@ -271,14 +273,14 @@ private fun VocabDrillSelectionScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Due: ${state.dueCount} / ${state.totalCount}",
+                        text = stringResource(R.string.vocab_due_count, state.dueCount, state.totalCount),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
                     )
                     if (state.masteredCount > 0) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Mastered: ${state.masteredCount} words",
+                            text = stringResource(R.string.vocab_mastered_count, state.masteredCount),
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF2E7D32)
                         )
@@ -287,11 +289,11 @@ private fun VocabDrillSelectionScreen(
                             .sortedByDescending { it.value }
                             .map { (pos, count) ->
                                 val label = when (pos) {
-                                    "nouns" -> "Nouns"
-                                    "verbs" -> "Verbs"
-                                    "adjectives" -> "Adj."
-                                    "adverbs" -> "Adv."
-                                    "numbers" -> "Numbers"
+                                    "nouns" -> stringResource(R.string.vocab_pos_nouns)
+                                    "verbs" -> stringResource(R.string.vocab_pos_verbs)
+                                    "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
+                                    "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
+                                    "numbers" -> stringResource(R.string.vocab_pos_numbers)
                                     else -> pos.replaceFirstChar { it.uppercase() }
                                 }
                                 "$label: $count"
@@ -317,7 +319,7 @@ private fun VocabDrillSelectionScreen(
             }
         } else {
             Text(
-                text = "No words loaded",
+                text = stringResource(R.string.vocab_no_words_loaded),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -331,7 +333,7 @@ private fun VocabDrillSelectionScreen(
             modifier = Modifier.fillMaxWidth(),
             enabled = state.dueCount > 0
         ) {
-            Text(text = if (state.dueCount > 0) "Start (${state.dueCount} due)" else "No due words")
+            Text(text = if (state.dueCount > 0) stringResource(R.string.vocab_start, state.dueCount) else stringResource(R.string.vocab_no_due_words))
         }
     }
 }
@@ -404,10 +406,10 @@ private fun VocabDrillCardScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onExit) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.vocab_content_desc_back))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Flashcards", fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.vocab_title), fontWeight = FontWeight.SemiBold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -419,7 +421,7 @@ private fun VocabDrillCardScreen(
                 IconButton(onClick = { showReportSheet = true }) {
                     Icon(
                         Icons.Default.ReportProblem,
-                        contentDescription = "Report word",
+                        contentDescription = stringResource(R.string.vocab_content_desc_report_word),
                         tint = if (isBadSentence()) MaterialTheme.colorScheme.error
                                else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -484,8 +486,8 @@ private fun VocabDrillCardScreen(
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Again", fontWeight = FontWeight.Bold)
-                            Text("<1m", fontSize = 11.sp, color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                            Text(stringResource(R.string.vocab_rating_again), fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.vocab_rating_again_interval), fontSize = 11.sp, color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
                         }
                     }
                     // Hard
@@ -497,7 +499,7 @@ private fun VocabDrillCardScreen(
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Hard", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.vocab_rating_hard), fontWeight = FontWeight.Bold)
                             Text("${ladder[currentStep]}d", fontSize = 11.sp, color = Color(0xFFE65100).copy(alpha = 0.7f))
                         }
                     }
@@ -515,7 +517,7 @@ private fun VocabDrillCardScreen(
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Good", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.vocab_rating_good), fontWeight = FontWeight.Bold)
                             val goodStep = (currentStep + 1).coerceAtMost(ladder.size - 1)
                             Text("${ladder[goodStep]}d", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
                         }
@@ -529,7 +531,7 @@ private fun VocabDrillCardScreen(
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Easy", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.vocab_rating_easy), fontWeight = FontWeight.Bold)
                             val easyStep = (currentStep + 2).coerceAtMost(ladder.size - 1)
                             Text("${ladder[easyStep]}d", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
                         }
@@ -559,7 +561,7 @@ private fun VocabDrillCardScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Skip")
+                    Text(stringResource(R.string.vocab_skip))
                 }
 
                 // Flip button — always active, user can flip at any time
@@ -573,7 +575,7 @@ private fun VocabDrillCardScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Flip")
+                    Text(stringResource(R.string.vocab_flip))
                 }
             }
         }
@@ -594,7 +596,7 @@ private fun VocabDrillCardScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Word options",
+                    text = stringResource(R.string.vocab_word_options),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -614,7 +616,7 @@ private fun VocabDrillCardScreen(
                     ) {
                         Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Remove from bad sentences list")
+                        Text(stringResource(R.string.vocab_remove_bad))
                     }
                 } else {
                     TextButton(
@@ -626,7 +628,7 @@ private fun VocabDrillCardScreen(
                     ) {
                         Icon(Icons.Default.ReportProblem, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add to bad sentences list")
+                        Text(stringResource(R.string.vocab_add_bad))
                     }
                 }
                 TextButton(
@@ -639,7 +641,7 @@ private fun VocabDrillCardScreen(
                 ) {
                     Icon(Icons.Default.Download, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export bad sentences to file")
+                    Text(stringResource(R.string.vocab_export_bad))
                 }
                 TextButton(
                     onClick = {
@@ -651,7 +653,7 @@ private fun VocabDrillCardScreen(
                 ) {
                     Icon(Icons.Default.ContentCopy, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Copy text")
+                    Text(stringResource(R.string.vocab_copy_text))
                 }
             }
         }
@@ -659,11 +661,11 @@ private fun VocabDrillCardScreen(
     if (exportMessage != null) {
         AlertDialog(
             onDismissRequest = { exportMessage = null },
-            title = { Text("Export") },
+            title = { Text(stringResource(R.string.vocab_export_title)) },
             text = { Text(exportMessage!!) },
             confirmButton = {
                 TextButton(onClick = { exportMessage = null }) {
-                    Text("OK")
+                    Text(stringResource(R.string.vocab_ok))
                 }
             }
         )
@@ -738,7 +740,7 @@ private fun VocabDrillCardFront(
                     when (ttsState) {
                         TtsState.SPEAKING -> Icon(
                             Icons.Default.VolumeUp,
-                            contentDescription = "Speaking",
+                            contentDescription = stringResource(R.string.vocab_content_desc_speaking),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         TtsState.INITIALIZING -> CircularProgressIndicator(
@@ -747,12 +749,12 @@ private fun VocabDrillCardFront(
                         )
                         TtsState.ERROR -> Icon(
                             Icons.Default.Close,
-                            contentDescription = "TTS error",
+                            contentDescription = stringResource(R.string.vocab_content_desc_tts_error),
                             tint = MaterialTheme.colorScheme.error
                         )
                         else -> Icon(
                             Icons.Default.VolumeUp,
-                            contentDescription = "Listen"
+                            contentDescription = stringResource(R.string.vocab_content_desc_listen)
                         )
                     }
                 }
@@ -764,7 +766,7 @@ private fun VocabDrillCardFront(
             if (!voiceCompleted) {
                 // Prompt text
                 Text(
-                    text = "Tap to speak",
+                    text = stringResource(R.string.vocab_tap_to_speak),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -776,7 +778,7 @@ private fun VocabDrillCardFront(
                 ) {
                     Icon(
                         Icons.Default.Mic,
-                        contentDescription = "Voice input",
+                        contentDescription = stringResource(R.string.vocab_content_desc_voice_input),
                         modifier = Modifier.size(36.dp)
                     )
                 }
@@ -838,7 +840,7 @@ private fun VocabDrillCardBack(
                         onClick = { onSpeak(card.word.word) },
                         enabled = ttsState != TtsState.INITIALIZING
                     ) {
-                        Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                        Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.vocab_content_desc_listen))
                     }
                 }
 
@@ -887,7 +889,7 @@ private fun VocabDrillCardBack(
                         onClick = { onSpeak(card.word.word) },
                         enabled = ttsState != TtsState.INITIALIZING
                     ) {
-                        Icon(Icons.Default.VolumeUp, contentDescription = "Listen")
+                        Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.vocab_content_desc_listen))
                     }
                 }
             }
@@ -905,7 +907,7 @@ private fun VocabDrillCardBack(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "Forms",
+                            text = stringResource(R.string.vocab_forms),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.tertiary
                         )
@@ -945,7 +947,7 @@ private fun VocabDrillCardBack(
             if (collocations.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Collocations",
+                    text = stringResource(R.string.vocab_collocations),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -960,7 +962,7 @@ private fun VocabDrillCardBack(
                     }
                     if (collocations.size > 5) {
                         Text(
-                            text = "... +${collocations.size - 5} more",
+                            text = stringResource(R.string.vocab_more_count, collocations.size - 5),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
@@ -973,7 +975,7 @@ private fun VocabDrillCardBack(
             val step = card.mastery.intervalStepIndex
             val learnedThreshold = 3
             val maxStep = 9
-            val stepLabel = if (step >= learnedThreshold) "Learned" else "Step ${step + 1}/$maxStep"
+            val stepLabel = if (step >= learnedThreshold) stringResource(R.string.vocab_learned) else stringResource(R.string.vocab_step, step + 1, maxStep)
             Text(
                 text = stepLabel,
                 style = MaterialTheme.typography.labelSmall,
@@ -1035,7 +1037,7 @@ private fun VoiceResultFeedback(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Correct!",
+                            text = stringResource(R.string.vocab_voice_correct),
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF2E7D32)
                         )
@@ -1054,13 +1056,13 @@ private fun VoiceResultFeedback(
                         )
                         if (voiceCompleted) {
                             Text(
-                                text = "Moving on...",
+                                text = stringResource(R.string.vocab_voice_moving_on),
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.error
                             )
                         } else {
                             Text(
-                                text = "Try again (${voiceAttempts}/3)",
+                                text = stringResource(R.string.vocab_voice_try_again, voiceAttempts),
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -1069,7 +1071,7 @@ private fun VoiceResultFeedback(
                 }
                 VoiceResult.SKIPPED -> {
                     Text(
-                        text = "Skipped",
+                        text = stringResource(R.string.vocab_voice_skipped),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
@@ -1085,11 +1087,11 @@ private fun VoiceResultFeedback(
 @Composable
 private fun PosBadge(pos: String) {
     val (label, color) = when (pos) {
-        "nouns" -> "noun" to MaterialTheme.colorScheme.primaryContainer
-        "verbs" -> "verb" to MaterialTheme.colorScheme.secondaryContainer
-        "adjectives" -> "adj." to MaterialTheme.colorScheme.tertiaryContainer
-        "adverbs" -> "adv." to MaterialTheme.colorScheme.errorContainer
-        "numbers" -> "num." to MaterialTheme.colorScheme.surfaceVariant
+        "nouns" -> stringResource(R.string.vocab_badge_noun) to MaterialTheme.colorScheme.primaryContainer
+        "verbs" -> stringResource(R.string.vocab_badge_verb) to MaterialTheme.colorScheme.secondaryContainer
+        "adjectives" -> stringResource(R.string.vocab_badge_adj) to MaterialTheme.colorScheme.tertiaryContainer
+        "adverbs" -> stringResource(R.string.vocab_badge_adv) to MaterialTheme.colorScheme.errorContainer
+        "numbers" -> stringResource(R.string.vocab_badge_num) to MaterialTheme.colorScheme.surfaceVariant
         else -> pos to MaterialTheme.colorScheme.surfaceVariant
     }
     Card(
@@ -1161,7 +1163,7 @@ private fun VocabDrillCompletionScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (session.correctCount == session.cards.size) "Perfect!" else "Done!",
+            text = if (session.correctCount == session.cards.size) stringResource(R.string.vocab_completion_perfect) else stringResource(R.string.vocab_completion_done),
             fontWeight = FontWeight.Bold,
             fontSize = 28.sp,
             color = MaterialTheme.colorScheme.primary
@@ -1190,7 +1192,7 @@ private fun VocabDrillCompletionScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Correct",
+                                text = stringResource(R.string.vocab_completion_correct),
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
@@ -1202,14 +1204,14 @@ private fun VocabDrillCompletionScreen(
                                 color = MaterialTheme.colorScheme.error
                             )
                             Text(
-                                text = "Wrong",
+                                text = stringResource(R.string.vocab_completion_wrong),
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "${session.cards.size} words reviewed",
+                        text = stringResource(R.string.vocab_completion_words_reviewed, session.cards.size),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -1224,13 +1226,13 @@ private fun VocabDrillCompletionScreen(
                     onClick = onExit,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Exit")
+                    Text(stringResource(R.string.vocab_completion_exit))
                 }
                 Button(
                     onClick = onContinue,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Continue")
+                    Text(stringResource(R.string.vocab_completion_continue))
                 }
             }
         }

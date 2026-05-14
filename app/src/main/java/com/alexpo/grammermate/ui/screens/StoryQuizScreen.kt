@@ -23,9 +23,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.StoryPhase
 import com.alexpo.grammermate.data.StoryQuiz
 
@@ -45,6 +47,8 @@ fun StoryQuizScreen(
     var questionIndex by remember(story.storyId) { mutableStateOf(0) }
     var showResult by remember(story.storyId) { mutableStateOf(false) }
     var errorMessage by remember(story.storyId) { mutableStateOf<String?>(null) }
+    val selectAnAnswerText = stringResource(R.string.story_select_an_answer)
+    val incorrectText = stringResource(R.string.story_incorrect)
     if (story.questions.isEmpty()) {
         onComplete(true)
         return
@@ -64,24 +68,26 @@ fun StoryQuizScreen(
     ) {
         Text(
             text = if (story.phase == StoryPhase.CHECK_IN) {
-                "Story Check-in"
+                stringResource(R.string.story_check_in)
             } else {
-                "Story Check-out"
+                stringResource(R.string.story_check_out)
             },
             fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = story.text, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Question ${questionIndex + 1} / ${story.questions.size}")
+        Text(text = stringResource(R.string.story_question_of, questionIndex + 1, story.questions.size))
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = question.prompt, fontWeight = FontWeight.SemiBold)
         question.options.forEachIndexed { index, option ->
             val selected = selections.value[question.qId] == index
             val isCorrectOption = index == question.correctIndex
+            val correctSuffix = stringResource(R.string.story_correct_suffix)
+            val yourChoiceSuffix = stringResource(R.string.story_your_choice_suffix)
             val optionSuffix = when {
-                showResult && isCorrectOption -> " (correct)"
-                showResult && selected && !isCorrectOption -> " (your choice)"
+                showResult && isCorrectOption -> correctSuffix
+                showResult && selected && !isCorrectOption -> yourChoiceSuffix
                 else -> ""
             }
             Row(
@@ -106,7 +112,7 @@ fun StoryQuizScreen(
         if (showResult) {
             Spacer(modifier = Modifier.height(8.dp))
             val correctText = question.options.getOrNull(question.correctIndex).orEmpty()
-            Text(text = "Correct: $correctText", color = MaterialTheme.colorScheme.primary)
+            Text(text = stringResource(R.string.story_correct_label, correctText), color = MaterialTheme.colorScheme.primary)
         }
         Spacer(modifier = Modifier.height(8.dp))
         errorMessage?.let {
@@ -130,29 +136,29 @@ fun StoryQuizScreen(
                 enabled = questionIndex > 0,
                 modifier = Modifier.weight(1f)
             ) {
-                Text(text = "Prev")
+                Text(text = stringResource(R.string.story_prev))
             }
             Button(
                 onClick = {
                     val selected = selections.value[question.qId]
                     if (selected == null) {
-                        errorMessage = "Select an answer"
+                        errorMessage = selectAnAnswerText
                         return@Button
                     }
                     val correct = selected == question.correctIndex
                     results.value = results.value + (question.qId to correct)
                     showResult = true
-                    errorMessage = if (correct) null else "Incorrect"
+                    errorMessage = if (correct) null else incorrectText
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text(text = "Check")
+                Text(text = stringResource(R.string.story_check))
             }
             Button(
                 onClick = {
                     val selected = selections.value[question.qId]
                     if (selected == null) {
-                        errorMessage = "Select an answer"
+                        errorMessage = selectAnAnswerText
                         return@Button
                     }
                     val correct = selected == question.correctIndex
@@ -172,13 +178,13 @@ fun StoryQuizScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 val isLast = questionIndex >= story.questions.lastIndex
-                Text(text = if (isLast) "Finish" else "Next")
+                Text(text = if (isLast) stringResource(R.string.story_finish) else stringResource(R.string.story_next))
             }
         }
         if (scrollState.maxValue > 0) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Scroll to continue",
+                text = stringResource(R.string.story_scroll_to_continue),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center,

@@ -13,7 +13,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.data.RestoreStatus
 
@@ -32,9 +34,9 @@ fun AppRoot() {
 @Composable
 private fun StartupScreen(status: RestoreStatus) {
     val message = when (status) {
-        RestoreStatus.IN_PROGRESS -> "Restoring backup..."
-        RestoreStatus.NEEDS_USER -> "Waiting for backup folder..."
-        else -> "Preparing..."
+        RestoreStatus.IN_PROGRESS -> stringResource(R.string.app_restoring_backup)
+        RestoreStatus.NEEDS_USER -> stringResource(R.string.app_waiting_backup)
+        else -> stringResource(R.string.app_preparing)
     }
     Box(
         modifier = Modifier.fillMaxSize(),
