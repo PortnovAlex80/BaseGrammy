@@ -141,3 +141,4 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 | 2026-05-15 | Fix 2: QrShareDialog composable | DONE | Created ui/components/QrShareDialog.kt |
 | 2026-05-15 | Fix 3: 5th option in SharedReportSheet | DONE | Added shareText + onShareQr params, QrCode2 icon row |
 | 2026-05-15 | Fix 4: Wire state in screens | DONE | TrainingScreen, VerbDrillScreen, VocabDrillScreen, DailyPracticeScreen (x2), TrainingCardSession |
+| 2026-05-15 | Hotfix: QR brightness | DONE | White background + black foreground, rounded corners, 240dp size |

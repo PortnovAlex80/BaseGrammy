@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import io.github.alexzhirkevich.qrose.options.QrOptions
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 
 @Composable
@@ -64,9 +65,18 @@ fun QrShareDialog(
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Image(
-                    painter = rememberQrCodePainter(qrText),
+                    painter = rememberQrCodePainter(qrText) {
+                        colors {
+                            dark = io.github.alexzhirkevich.qrose.options.QrBrush.solid(androidx.compose.ui.graphics.Color.Black)
+                            light = io.github.alexzhirkevich.qrose.options.QrBrush.solid(androidx.compose.ui.graphics.Color.White)
+                        }
+                        shapes {
+                            ball = io.github.alexzhirkevich.qrose.options.QrBallShape.roundCorners(radius = .25f)
+                            darkPixel = io.github.alexzhirkevich.qrose.options.QrPixelShape.roundCorners(radius = .25f)
+                        }
+                    },
                     contentDescription = "QR code with translation pair",
-                    modifier = Modifier.size(220.dp)
+                    modifier = Modifier.size(240.dp)
                 )
             }
         }
