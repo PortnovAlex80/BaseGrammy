@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +40,7 @@ fun StoryQuizScreen(
     onComplete: (Boolean) -> Unit
 ) {
     if (story == null) {
-        onClose()
+        LaunchedEffect(Unit) { onClose() }
         return
     }
     val selections = remember(story.storyId) { mutableStateOf<Map<String, Int>>(emptyMap()) }
@@ -50,13 +51,13 @@ fun StoryQuizScreen(
     val selectAnAnswerText = stringResource(R.string.story_select_an_answer)
     val incorrectText = stringResource(R.string.story_incorrect)
     if (story.questions.isEmpty()) {
-        onComplete(true)
+        LaunchedEffect(Unit) { onComplete(true) }
         return
     }
     val question = story.questions.getOrNull(questionIndex) ?: run {
         val allCorrect = results.value.size == story.questions.size &&
             results.value.values.all { it }
-        onComplete(allCorrect)
+        LaunchedEffect(allCorrect) { onComplete(allCorrect) }
         return
     }
     val scrollState = rememberScrollState()

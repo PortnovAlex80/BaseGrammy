@@ -21,6 +21,26 @@ internal class BackupRestorer(private val context: Context) {
     private val logTag = "BackupRestorer"
     private val internalDir = File(context.filesDir, "grammarmate")
 
+    private fun validateBackupContent(content: String, fileName: String): Boolean {
+        if (content.isBlank()) return false
+        if (fileName.endsWith(".csv", ignoreCase = true)) return content.isNotBlank()
+        return try {
+            val data = yaml.load<Any>(content)
+            when (data) {
+                is Map<*, *> -> {
+                    val version = data["schemaVersion"]
+                    if (version != null && version !is Number) return false
+                    true
+                }
+                is List<*> -> true
+                else -> true
+            }
+        } catch (e: Exception) {
+            Log.w(logTag, "Backup validation failed for $fileName", e)
+            false
+        }
+    }
+
     // region -- Legacy file-path restore --
 
     /**
@@ -32,19 +52,32 @@ internal class BackupRestorer(private val context: Context) {
         if (!backupSubDir.exists()) return false
         ensureInternalDir()
 
-        // Top-level YAML files
-        copyIfExists(backupSubDir, internalDir, "mastery.yaml")
-        copyIfExists(backupSubDir, internalDir, "progress.yaml")
-        copyIfExists(backupSubDir, internalDir, "profile.yaml")
-        copyIfExists(backupSubDir, internalDir, "hidden_cards.yaml")
-        copyIfExists(backupSubDir, internalDir, "bad_sentences.yaml")
-        copyIfExists(backupSubDir, internalDir, "vocab_progress.yaml")
+        listOf(
+            "mastery.yaml", "progress.yaml", "profile.yaml",
+            "hidden_cards.yaml", "bad_sentences.yaml", "vocab_progress.yaml"
+        ).forEach { name ->
+            copyIfExists(backupSubDir, internalDir, name)
+            val dest = File(internalDir, name)
+            if (dest.exists()) {
+                val restored = dest.readText(Charsets.UTF_8)
+                if (!validateBackupContent(restored, dest.name)) {
+                    dest.delete()
+                    Log.w(logTag, "Deleted invalid restored file: ${dest.name}")
+                }
+            }
+        }
 
         // Streak files
         backupSubDir.listFiles { file ->
             file.name.startsWith("streak_") && file.name.endsWith(".yaml")
         }?.forEach { file ->
-            AtomicFileWriter.copyAtomic(file, File(internalDir, file.name))
+            val destFile = File(internalDir, file.name)
+            AtomicFileWriter.copyAtomic(file, destFile)
+            val restored = destFile.readText(Charsets.UTF_8)
+            if (!validateBackupContent(restored, destFile.name)) {
+                destFile.delete()
+                Log.w(logTag, "Deleted invalid restored file: ${destFile.name}")
+            }
         }
 
         // Migrate old single streak.yaml to streak_<languageId>.yaml
@@ -54,7 +87,13 @@ internal class BackupRestorer(private val context: Context) {
         backupSubDir.listFiles { file ->
             file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
         }?.forEach { file ->
-            AtomicFileWriter.copyAtomic(file, File(internalDir, file.name))
+            val destFile = File(internalDir, file.name)
+            AtomicFileWriter.copyAtomic(file, destFile)
+            val restored = destFile.readText(Charsets.UTF_8)
+            if (!validateBackupContent(restored, destFile.name)) {
+                destFile.delete()
+                Log.w(logTag, "Deleted invalid restored file: ${destFile.name}")
+            }
         }
 
         // Pack-scoped drill data (drills/{packId}/)
@@ -148,13 +187,17 @@ internal class BackupRestorer(private val context: Context) {
                 val content = context.contentResolver
                     .openInputStream(oldStreakFile.uri)?.bufferedReader()?.use { it.readText() }
                 if (content != null) {
-                    val data = yaml.load<Any>(content) as? Map<*, *>
-                    val languageId = data?.get("languageId") as? String ?: "en"
-                    val target = File(internalDir, "streak_$languageId.yaml")
-                    AtomicFileWriter.writeText(target, content)
-                    logBuilder.appendLine("OK: Migrated streak.yaml -> streak_$languageId.yaml")
-                    restoredFiles.add("streak_$languageId.yaml (migrated)")
-                    copied = true
+                    if (!validateBackupContent(content, "streak.yaml")) {
+                        logBuilder.appendLine("SKIPPED: streak.yaml - failed validation")
+                    } else {
+                        val data = yaml.load<Any>(content) as? Map<*, *>
+                        val languageId = data?.get("languageId") as? String ?: "en"
+                        val target = File(internalDir, "streak_$languageId.yaml")
+                        AtomicFileWriter.writeText(target, content)
+                        logBuilder.appendLine("OK: Migrated streak.yaml -> streak_$languageId.yaml")
+                        restoredFiles.add("streak_$languageId.yaml (migrated)")
+                        copied = true
+                    }
                 }
             } catch (e: Exception) {
                 logBuilder.appendLine("ERROR: Failed to migrate streak.yaml - ${e.message}")
@@ -233,6 +276,10 @@ internal class BackupRestorer(private val context: Context) {
             val content = context.contentResolver
                 .openInputStream(source.uri)?.bufferedReader()?.use { it.readText() }
             if (content != null) {
+                if (!validateBackupContent(content, label)) {
+                    log.appendLine("SKIPPED: $label - failed validation")
+                    return false
+                }
                 AtomicFileWriter.writeText(target, content)
                 log.appendLine("OK: $label (${content.length} chars)")
                 restoredFiles.add(label)
@@ -281,6 +328,10 @@ internal class BackupRestorer(private val context: Context) {
             val content = context.contentResolver
                 .openInputStream(file.uri)?.bufferedReader()?.use { it.readText() }
             if (content != null) {
+                if (!validateBackupContent(content, name)) {
+                    log.appendLine("SKIPPED: $name - failed validation")
+                    return false
+                }
                 AtomicFileWriter.writeText(target, content)
                 log.appendLine("OK: $name -> drills/$packId/$targetName (${content.length} chars)")
                 restoredFiles.add(name)
@@ -298,6 +349,10 @@ internal class BackupRestorer(private val context: Context) {
         if (!oldStreakFile.exists()) return
         try {
             val content = oldStreakFile.readText()
+            if (!validateBackupContent(content, oldStreakFile.name)) {
+                Log.w(logTag, "Skipping invalid backup file: ${oldStreakFile.name}")
+                return
+            }
             val data = yaml.load<Any>(content) as? Map<*, *>
             val languageId = data?.get("languageId") as? String ?: "en"
             val target = File(internalDir, "streak_$languageId.yaml")
@@ -317,17 +372,27 @@ internal class BackupRestorer(private val context: Context) {
 
             val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
             if (verbProgress.exists()) {
-                AtomicFileWriter.writeText(
-                    File(targetPackDir, "verb_drill_progress.yaml"),
-                    verbProgress.readText()
-                )
+                val content = verbProgress.readText(Charsets.UTF_8)
+                if (validateBackupContent(content, verbProgress.name)) {
+                    AtomicFileWriter.writeText(
+                        File(targetPackDir, "verb_drill_progress.yaml"),
+                        content
+                    )
+                } else {
+                    Log.w(logTag, "Skipping invalid backup file: ${verbProgress.name}")
+                }
             }
             val wordMastery = File(packBackupDir, "word_mastery.yaml")
             if (wordMastery.exists()) {
-                AtomicFileWriter.writeText(
-                    File(targetPackDir, "word_mastery.yaml"),
-                    wordMastery.readText()
-                )
+                val content = wordMastery.readText(Charsets.UTF_8)
+                if (validateBackupContent(content, wordMastery.name)) {
+                    AtomicFileWriter.writeText(
+                        File(targetPackDir, "word_mastery.yaml"),
+                        content
+                    )
+                } else {
+                    Log.w(logTag, "Skipping invalid backup file: ${wordMastery.name}")
+                }
             }
         }
     }
