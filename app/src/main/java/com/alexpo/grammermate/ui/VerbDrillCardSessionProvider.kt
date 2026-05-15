@@ -48,7 +48,7 @@ class VerbDrillCardSessionProvider(
     )
 
     /** Compose-observable mirror of [CardSessionStateMachine.isPaused]. */
-    var isPaused by mutableStateOf(false)
+    override var isPaused by mutableStateOf(false)
         private set
 
     // Delegated state from CardSessionStateMachine
@@ -119,6 +119,28 @@ class VerbDrillCardSessionProvider(
             val s = session ?: return false
             return !s.isComplete || pendingCard != null
         }
+
+    // ── CardSessionStateModel overrides ─────────────────────────────────
+    // CardSessionContract extends CardSessionStateModel with defaults.
+    // VerbDrill overrides these for accurate state from CardSessionStateMachine.
+
+    /** Session is active: timer running, input accepted. */
+    override val isActive: Boolean
+        get() = sessionActive
+
+    /** Answer hint is visible via [CardSessionStateMachine]. */
+    override val isHintShown: Boolean
+        get() = sm.hintAnswer != null
+
+    /** User can submit: session active with a current card. */
+    override val canSubmit: Boolean
+        get() = sessionActive
+
+    /** Current card is available for display. */
+    override val hasCurrentCard: Boolean
+        get() = currentCard != null
+
+    // ── End CardSessionStateModel overrides ─────────────────────────────
 
     override val ttsState: TtsState
         get() = viewModel.ttsState.value

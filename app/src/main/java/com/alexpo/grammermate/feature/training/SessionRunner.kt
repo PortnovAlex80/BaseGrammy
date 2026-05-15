@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.SystemClock
 import android.util.Log
 import com.alexpo.grammermate.data.BossType
+import com.alexpo.grammermate.data.CardSessionStateModel
 import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Lesson
@@ -12,6 +13,7 @@ import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.SessionProgress
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingUiState
@@ -37,6 +39,9 @@ import kotlinx.coroutines.launch
  * Timer-triggered saveProgress is injected as a constructor function parameter.
  *
  * Uses [TrainingStateAccess] for state reads/writes.
+ *
+ * Implements [CardSessionStateModel] for unified state queries across all
+ * card session types (training, verb drill, daily practice).
  */
 class SessionRunner(
     private val stateAccess: TrainingStateAccess,
@@ -51,7 +56,7 @@ class SessionRunner(
     private val getSchedule: (String) -> LessonSchedule?,
     private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?) -> Int,
     private val onTimerSaveProgress: () -> Unit
-) {
+) : CardSessionStateModel {
     private val logTag = "SessionRunner"
 
     // ── Private mutable state ───────────────────────────────────────────
@@ -65,6 +70,37 @@ class SessionRunner(
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER
+
+    // ── CardSessionStateModel implementation ─────────────────────────────
+    // Maps internal SessionState enum to the unified state model interface.
+
+    override val isActive: Boolean
+        get() = stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE
+
+    override val isPaused: Boolean
+        get() = stateAccess.uiState.value.cardSession.sessionState == SessionState.PAUSED
+
+    override val isHintShown: Boolean
+        get() = stateAccess.uiState.value.cardSession.sessionState == SessionState.HINT_SHOWN
+
+    override val canSubmit: Boolean
+        get() = stateAccess.uiState.value.cardSession.canSubmit
+
+    override val hasCurrentCard: Boolean
+        get() = currentCard() != null
+
+    override val isComplete: Boolean
+        get() = sessionCards.isEmpty() ||
+            (stateAccess.uiState.value.cardSession.sessionState == SessionState.PAUSED &&
+             currentCard() == null)
+
+    override val progress: SessionProgress
+        get() {
+            val state = stateAccess.uiState.value
+            val total = sessionCards.size.coerceAtLeast(state.cardSession.subLessonTotal)
+            val current = (state.cardSession.currentIndex + 1).coerceAtMost(total)
+            return SessionProgress(current = current, total = total)
+        }
 
     // ── Submit result type ──────────────────────────────────────────────
 
