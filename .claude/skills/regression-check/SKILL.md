@@ -62,7 +62,26 @@ Format per element:
 [ELEM-ID] "element name" behavior -> FAIL (invariant broken: details)
 ```
 
-### Step 4: Summary Report
+### Step 4: User Journey Verification
+
+Read `docs/specification/user-journey-models.md`.
+
+1. Find which journeys are affected by the changed files (see "Quick reference — which journeys to check per file" table in the Regression Verification Protocol section)
+2. For each affected journey step, trace the code path and verify:
+   - State transitions match the documented behavior
+   - Button visibility/enabled state matches
+   - Navigation targets match
+   - Design principles (DP-01, DP-02, DP-03) hold
+3. Report PASS/FAIL per journey step
+
+Format per journey:
+```
+[Journey N] Step N.X "description" -> PASS (state transition verified at file.kt:line)
+[Journey N] Step N.X "description" -> FAIL (expected state X but found Y at file.kt:line)
+[Journey N] BUG-NAV-XXX -> FIXED | OPEN (explanation)
+```
+
+### Step 5: Summary Report
 
 Present to user:
 ```
@@ -72,12 +91,14 @@ Files changed: N
 Screens affected: N
 Elements checked: N (PASS: X, FAIL: Y)
 UCs checked: N (ACs PASS: X, FAIL: Y)
+Journey steps checked: N (PASS: X, FAIL: Y)
 
 FAILURES:
 - [UC-ID] AC[N]: description -> what's wrong
 - [ELEM-ID]: description -> what's wrong
+- [Journey N] Step N.X: description -> what's wrong
 
-If no failures: "All affected acceptance criteria and element invariants pass."
+If no failures: "All affected acceptance criteria, element invariants, and user journey steps pass."
 ```
 
 ## Rules

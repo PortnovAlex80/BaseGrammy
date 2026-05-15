@@ -616,3 +616,48 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 | STRUCT-004 | LOW | `inputText` clearing: VOICE clears on error, KEYBOARD keeps it. Inconsistent UX |
 | STRUCT-005 | MEDIUM | No unified feedback mechanism (toast/snackbar) for Settings operations. Each operation (import, backup, restore) is silent on success and error (BUG-SET-002, 006, 009) |
 | STRUCT-006 | MEDIUM | BUG-SET-008 is not a code bug but an architectural gap: backup does not include custom packs. On app reinstall, user loses imported content |
+
+---
+
+## Regression Verification Protocol
+
+User journeys MUST be verified after any code change that touches:
+- Navigation (GrammarMateApp.kt, routes, BackHandlers)
+- Card session state (SessionRunner, CardSessionStateMachine, any provider)
+- Buttons (Play/Pause, Next/Prev, Check, Show Answer, Report)
+- Input modes (Mic/Keyboard/WordBank)
+- Daily Practice coordinator
+- VerbDrill or VocabDrill ViewModels
+
+### How to verify:
+
+1. **Identify affected journeys** — from the change, determine which journeys (1-8) are affected
+2. **Trace each step** — for each step in the affected journey:
+   a. Read the code at the referenced file/line
+   b. Verify the state transition matches the table
+   c. Verify the button visibility/enabled state matches
+   d. Verify the navigation target matches
+3. **Check discrepancies** — verify all BUG-NAV-xxx listed in the journey are either:
+   - FIXED (code matches expected behavior)
+   - OPEN (discrepancy still exists, check if intentional)
+4. **Check design principles** — DP-01, DP-02, DP-03 must hold across all affected modes
+5. **Report** — PASS/FAIL per journey step, with evidence
+
+### Quick reference — which journeys to check per file:
+
+| File changed | Journeys to verify |
+|---|---|
+| GrammarMateApp.kt | 2, 6, 7, 8 |
+| TrainingScreen.kt | 4, 5 |
+| SessionRunner.kt | 4, 5 |
+| TrainingViewModel.kt | 4, 5, 6 |
+| BossOrchestrator.kt | 5 |
+| DailyPracticeCoordinator.kt | 6 |
+| DailyPracticeScreen.kt | 6 |
+| DailyPracticeSessionProvider.kt | 6 |
+| VerbDrillScreen.kt | 7 |
+| VerbDrillCardSessionProvider.kt | 7 |
+| VocabDrillScreen.kt | 8 |
+| VocabDrillViewModel.kt | 8 |
+| Models.kt | 4, 5, 6, 7, 8 |
+| TrainingCardSession.kt | 4, 6, 7 |
