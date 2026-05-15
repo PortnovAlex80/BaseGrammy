@@ -5,60 +5,220 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-// --- Semantic color constants used across screens ---
-// Extracted from hardcoded Color(0xFF...) literals found in UI files.
-// Screens should import these from Theme.kt instead of using raw Color literals.
-// Replacement in screen files is a separate task.
+// =====================================================================
+// GrammarMateColors — semantic color palette with light/dark variants
+// =====================================================================
+
+/**
+ * Semantic color tokens for GrammarMate screens.
+ * Light and dark variants are provided via [LocalGrammarMateColors].
+ * Screen files should migrate to `LocalGrammarMateColors.current.xxx`
+ * (TASK-013/014). Top-level vals below remain for backward compat.
+ */
+@Stable
+data class GrammarMateColors(
+    // Correctness feedback
+    val correctGreen: Color,
+    val incorrectRed: Color,
+    // Drill mode (TrainingScreen)
+    val drillBackgroundGreen: Color,
+    val drillTenseLabelGreen: Color,
+    val drillPromptGreen: Color,
+    // Mix challenge (TrainingScreen)
+    val mixChallengeSurface: Color,
+    val mixChallengeText: Color,
+    // Mastery / progress (HomeScreen, SessionProgressIndicator)
+    val masteryGreen: Color,
+    val progressGreen: Color,
+    val progressTrackGreen: Color,
+    val progressFastGreen: Color,
+    // Speed indicator (SessionProgressIndicator)
+    val speedSlowRed: Color,
+    val speedMediumYellow: Color,
+    val progressLabelWhite: Color,
+    val progressTrackGray: Color,
+    // SRS rating backgrounds and text (DailyPracticeScreen, VocabDrillScreen)
+    val srsAgainBackground: Color,
+    val srsAgainText: Color,
+    val srsHardBackground: Color,
+    val srsHardText: Color,
+    val srsGoodBackground: Color,
+    val srsGoodText: Color,
+    val srsEasyBackground: Color,
+    val srsEasyText: Color,
+    // Vocab drill (VocabDrillScreen)
+    val vocabIntervalOrange: Color,
+    val vocabCorrectBackground: Color,
+    val vocabIncorrectBackground: Color,
+    // Boss rewards (GrammarMateApp, LessonRoadmapScreen)
+    val bossBronze: Color,
+    val bossSilver: Color,
+    val bossGold: Color,
+    // Destructive actions (SettingsScreen)
+    val destructiveRed: Color
+)
+
+/** Light-mode semantic colors (matches original hardcoded vals). */
+val LightGrammarMateColors = GrammarMateColors(
+    correctGreen = Color(0xFF2E7D32),
+    incorrectRed = Color(0xFFC62828),
+    drillBackgroundGreen = Color(0xFFE8F5E9),
+    drillTenseLabelGreen = Color(0xFF388E3C),
+    drillPromptGreen = Color(0xFF2E7D32),
+    mixChallengeSurface = Color(0xFFE3F2FD),
+    mixChallengeText = Color(0xFF1565C0),
+    masteryGreen = Color(0xFF2E7D32),
+    progressGreen = Color(0xFF4CAF50),
+    progressTrackGreen = Color(0xFFC8E6C9),
+    progressFastGreen = Color(0xFF43A047),
+    speedSlowRed = Color(0xFFE53935),
+    speedMediumYellow = Color(0xFFFDD835),
+    progressLabelWhite = Color.White,
+    progressTrackGray = Color(0xFFE0E0E0),
+    srsAgainBackground = Color(0xFFFFEBEE),
+    srsAgainText = Color(0xFFE53935),
+    srsHardBackground = Color(0xFFFFF3E0),
+    srsHardText = Color(0xFFFF9800),
+    srsGoodBackground = Color(0xFFE8F5E9),
+    srsGoodText = Color(0xFF4CAF50),
+    srsEasyBackground = Color(0xFFE3F2FD),
+    srsEasyText = Color(0xFF2196F3),
+    vocabIntervalOrange = Color(0xFFE65100),
+    vocabCorrectBackground = Color(0xFFE8F5E9),
+    vocabIncorrectBackground = Color(0xFFFFEBEE),
+    bossBronze = Color(0xFFCD7F32),
+    bossSilver = Color(0xFFC0C0C0),
+    bossGold = Color(0xFFFFD700),
+    destructiveRed = Color(0xFFB00020)
+)
+
+/** Dark-mode semantic colors — muted backgrounds, brighter foregrounds. */
+val DarkGrammarMateColors = GrammarMateColors(
+    correctGreen = Color(0xFF66BB6A),
+    incorrectRed = Color(0xFFEF5350),
+    drillBackgroundGreen = Color(0xFF1B3A1D),
+    drillTenseLabelGreen = Color(0xFF81C784),
+    drillPromptGreen = Color(0xFF66BB6A),
+    mixChallengeSurface = Color(0xFF1A2E3A),
+    mixChallengeText = Color(0xFF64B5F6),
+    masteryGreen = Color(0xFF66BB6A),
+    progressGreen = Color(0xFF66BB6A),
+    progressTrackGreen = Color(0xFF2E4A2F),
+    progressFastGreen = Color(0xFF66BB6A),
+    speedSlowRed = Color(0xFFEF5350),
+    speedMediumYellow = Color(0xFFFFEE58),
+    progressLabelWhite = Color.White,
+    progressTrackGray = Color(0xFF3A3A3A),
+    srsAgainBackground = Color(0xFF3A1B1B),
+    srsAgainText = Color(0xFFEF5350),
+    srsHardBackground = Color(0xFF3A2E1B),
+    srsHardText = Color(0xFFFF8A65),
+    srsGoodBackground = Color(0xFF1B3A1D),
+    srsGoodText = Color(0xFF66BB6A),
+    srsEasyBackground = Color(0xFF1A2E3A),
+    srsEasyText = Color(0xFF64B5F6),
+    vocabIntervalOrange = Color(0xFFFF8A65),
+    vocabCorrectBackground = Color(0xFF1B3A1D),
+    vocabIncorrectBackground = Color(0xFF3A1B1B),
+    bossBronze = Color(0xFFCD7F32),
+    bossSilver = Color(0xFFC0C0C0),
+    bossGold = Color(0xFFFFD700),
+    destructiveRed = Color(0xFFCF6679)
+)
+
+/** CompositionLocal that provides the current [GrammarMateColors]. */
+val LocalGrammarMateColors = staticCompositionLocalOf { LightGrammarMateColors }
+
+// =====================================================================
+// Top-level color constants — backward compat (light-mode defaults)
+// =====================================================================
+// These remain so that existing imports in screen files still compile.
+// Screen files will migrate to LocalGrammarMateColors.current.xxx
+// in TASK-013/014. At that point these vals can be deprecated/removed.
 
 // Correctness feedback
-val CorrectGreen = Color(0xFF2E7D32)
-val IncorrectRed = Color(0xFFC62828)
+val CorrectGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.correctGreen
+val IncorrectRed: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.incorrectRed
 
 // Drill mode (TrainingScreen)
-val DrillBackgroundGreen = Color(0xFFE8F5E9)
-val DrillTenseLabelGreen = Color(0xFF388E3C)
-val DrillPromptGreen = Color(0xFF2E7D32)
+val DrillBackgroundGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillBackgroundGreen
+val DrillTenseLabelGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillTenseLabelGreen
+val DrillPromptGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillPromptGreen
 
 // Mix challenge (TrainingScreen)
-val MixChallengeSurface = Color(0xFFE3F2FD)
-val MixChallengeText = Color(0xFF1565C0)
+val MixChallengeSurface: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.mixChallengeSurface
+val MixChallengeText: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.mixChallengeText
 
 // Mastery / progress (HomeScreen, SessionProgressIndicator)
-val MasteryGreen = Color(0xFF2E7D32)
-val ProgressGreen = Color(0xFF4CAF50)
-val ProgressTrackGreen = Color(0xFFC8E6C9)
-val ProgressFastGreen = Color(0xFF43A047)
+val MasteryGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.masteryGreen
+val ProgressGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.progressGreen
+val ProgressTrackGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.progressTrackGreen
+val ProgressFastGreen: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.progressFastGreen
 
 // Speed indicator (SessionProgressIndicator)
-val SpeedSlowRed = Color(0xFFE53935)
-val SpeedMediumYellow = Color(0xFFFDD835)
-val ProgressLabelWhite = Color.White
-val ProgressTrackGray = Color(0xFFE0E0E0)
+val SpeedSlowRed: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.speedSlowRed
+val SpeedMediumYellow: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.speedMediumYellow
+val ProgressLabelWhite: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.progressLabelWhite
+val ProgressTrackGray: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.progressTrackGray
 
 // SRS rating backgrounds and text (DailyPracticeScreen, VocabDrillScreen)
-val SrsAgainBackground = Color(0xFFFFEBEE)
-val SrsAgainText = Color(0xFFE53935)
-val SrsHardBackground = Color(0xFFFFF3E0)
-val SrsHardText = Color(0xFFFF9800)
-val SrsGoodBackground = Color(0xFFE8F5E9)
-val SrsGoodText = Color(0xFF4CAF50)
-val SrsEasyBackground = Color(0xFFE3F2FD)
-val SrsEasyText = Color(0xFF2196F3)
+val SrsAgainBackground: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsAgainBackground
+val SrsAgainText: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsAgainText
+val SrsHardBackground: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsHardBackground
+val SrsHardText: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsHardText
+val SrsGoodBackground: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsGoodBackground
+val SrsGoodText: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsGoodText
+val SrsEasyBackground: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsEasyBackground
+val SrsEasyText: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.srsEasyText
 
 // Vocab drill (VocabDrillScreen)
-val VocabIntervalOrange = Color(0xFFE65100)
-val VocabCorrectBackground = Color(0xFFE8F5E9)
-val VocabIncorrectBackground = Color(0xFFFFEBEE)
+val VocabIntervalOrange: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.vocabIntervalOrange
+val VocabCorrectBackground: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.vocabCorrectBackground
+val VocabIncorrectBackground: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.vocabIncorrectBackground
 
 // Boss rewards (GrammarMateApp, LessonRoadmapScreen)
-val BossBronze = Color(0xFFCD7F32)
-val BossSilver = Color(0xFFC0C0C0)
-val BossGold = Color(0xFFFFD700)
+val BossBronze: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.bossBronze
+val BossSilver: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.bossSilver
+val BossGold: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.bossGold
 
 // Destructive actions (SettingsScreen)
-val DestructiveRed = Color(0xFFB00020)
+val DestructiveRed: Color
+    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.destructiveRed
 
 // --- Light color scheme (unchanged from original) ---
 
@@ -112,8 +272,14 @@ fun GrammarMateTheme(
         useDarkTheme -> DarkColors
         else -> LightColors
     }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
+    val grammarMateColors = when {
+        useDarkTheme -> DarkGrammarMateColors
+        else -> LightGrammarMateColors
+    }
+    CompositionLocalProvider(LocalGrammarMateColors provides grammarMateColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            content = content
+        )
+    }
 }

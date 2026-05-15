@@ -95,10 +95,11 @@ fun SessionProgressIndicator(
             contentAlignment = Alignment.Center
         ) {
             val sizeModifier = Modifier.size(44.dp)
+            val arcTrackColor = ProgressTrackGray
             Canvas(modifier = sizeModifier) {
                 val strokeWidth = 4.dp.toPx()
                 drawArc(
-                    color = ProgressTrackGray,
+                    color = arcTrackColor,
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter = false,
