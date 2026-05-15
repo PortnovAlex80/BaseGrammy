@@ -559,6 +559,7 @@ Project skills live in `.claude/skills/`. They enforce mandatory workflows that 
 | `/regression-check` | `/regression-check`, after ≥2 file changes, before commit | Diff → affected UCs → element invariants → PASS/FAIL |
 | `/verify-user-journey` | Before committing UI/data changes, "doesn't work" reports | E2E trace: data flow → button wiring → state transitions → edge cases |
 | `/create-task` | "создай задачу", "оформи требования", "запиши таску", "create task" | Full pipeline: discuss requirements → update specs → create task prompt → link |
+| `/run-backlog` | `/run-backlog`, "run backlog", "process tasks", "execute task pool" | Analyze backlog → cluster by area → batch execution with regression gates |
 
 ### Pipeline: which skill when
 
@@ -578,6 +579,12 @@ Requirements discussion? ──→  /create-task
   ├── Phase 4: Link & index   (bidirectional spec ↔ task links)
   └── Phase 5: Commit         (spec changes + task file)
   Then: /swarm to execute task → /regression-check
+
+Task backlog to process?  ──→  /run-backlog
+  ├── Phase 1: Analyze       (dependency matrix + area clusters)
+  ├── Phase 2: Plan          (batches + waves + user approval)
+  ├── Phase 3: Execute       (wave-by-wave, max 5 agents, isolate failures)
+  └── Phase 4: Finalize      (regression + CHANGELOG + DONE-rename)
 
 Before ANY commit
   touching UI or data?   ──→  /verify-user-journey
