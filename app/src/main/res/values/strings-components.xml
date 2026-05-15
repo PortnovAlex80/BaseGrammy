@@ -52,6 +52,7 @@
     <string name="content_desc_voice_input">Voice input</string>
     <string name="card_label_your_translation">Your translation</string>
     <string name="result_incorrect">Incorrect</string>
+    <string name="voice_say_translation_hint">Say translation: %s</string>
     <string name="card_no_cards">No cards</string>
     <string name="button_check">Check</string>
     <string name="block_translate">Translation</string>

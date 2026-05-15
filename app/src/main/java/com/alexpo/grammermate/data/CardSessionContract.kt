@@ -1,6 +1,49 @@
 package com.alexpo.grammermate.data
 
 /**
+ * Unified state model for card session lifecycle.
+ *
+ * All card-based drill modes (training via SessionRunner, verb drill via
+ * VerbDrillCardSessionProvider, daily practice via DailyPracticeSessionProvider)
+ * implement this interface so the UI layer can query session state uniformly.
+ *
+ * This is a read-only state interface. Actions (submit, nextCard, etc.) remain
+ * on [CardSessionContract] because they have mode-specific signatures.
+ *
+ * The three core state dimensions:
+ * - **isActive**: session is running, timer is ticking, input is accepted
+ * - **isPaused**: session is paused (user-initiated or between cards)
+ * - **isHintShown**: answer is revealed, session paused awaiting advance
+ *
+ * These three are mutually exclusive in normal operation:
+ *   isActive = true  => isPaused = false, isHintShown = false
+ *   isPaused  = true  => isActive = false, isHintShown = false
+ *   isHintShown = true => isActive = false, isPaused = true (hint implies pause)
+ */
+interface CardSessionStateModel {
+    /** Session is active: timer running, input accepted, card displayed. */
+    val isActive: Boolean
+
+    /** Session is paused: timer stopped, awaiting user action to resume. */
+    val isPaused: Boolean
+
+    /** Answer hint is shown: correct answer visible, session paused until advance. */
+    val isHintShown: Boolean
+
+    /** Session can accept an answer submission right now. */
+    val canSubmit: Boolean
+
+    /** Current card is available for display. */
+    val hasCurrentCard: Boolean
+
+    /** All cards have been processed. */
+    val isComplete: Boolean
+
+    /** Current position within the card deck. */
+    val progress: SessionProgress
+}
+
+/**
  * A card that can be presented in a training session.
  * Both [SentenceCard] and [VerbDrillCard] implement this interface.
  */
@@ -43,15 +86,26 @@ interface CardSessionCapabilities {
 /**
  * Contract that a card session provider must implement.
  * Adapters wrap existing ViewModels to satisfy this interface.
+ *
+ * Extends [CardSessionStateModel] for unified state queries across all session types.
  */
-interface CardSessionContract : CardSessionCapabilities {
+interface CardSessionContract : CardSessionCapabilities, CardSessionStateModel {
     val currentCard: SessionCard?
-    val progress: SessionProgress
-    val isComplete: Boolean
     val inputText: String
     val inputModeConfig: InputModeConfig
     val lastResult: AnswerResult?
     val sessionActive: Boolean
+
+    // ── CardSessionStateModel defaults ──────────────────────────────────
+    // Mapped from existing CardSessionContract properties so that existing
+    // implementations (VerbDrillCardSessionProvider, DailyPracticeSessionProvider)
+    // work without changes. SessionRunnerAdapter overrides these explicitly.
+
+    override val isActive: Boolean get() = sessionActive && !isHintShown
+    override val isPaused: Boolean get() = !sessionActive && !isComplete
+    override val isHintShown: Boolean get() = lastResult?.hintShown == true
+    override val canSubmit: Boolean get() = sessionActive && currentCard != null
+    override val hasCurrentCard: Boolean get() = currentCard != null
 
     /** Current TTS state for speaker button rendering. */
     val ttsState: TtsState get() = TtsState.Idle

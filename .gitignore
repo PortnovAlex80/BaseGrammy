@@ -31,6 +31,9 @@ Thumbs.db
 # Claude Code plans
 .claude/plans/
 
+# Unpacked lesson content (mirror of packs/*.zip for browsing)
+/lesson-content/
+
 # Temp/generated files
 SESSION_REPORT_*.md
 TEAM.md

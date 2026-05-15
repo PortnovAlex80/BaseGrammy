@@ -8,7 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,17 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.StopCircle
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -38,13 +27,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -81,9 +68,8 @@ import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
-import com.alexpo.grammermate.ui.components.HintAnswerCard
-import com.alexpo.grammermate.ui.components.NavIconButton
-import com.alexpo.grammermate.ui.components.WordBankSection
+import com.alexpo.grammermate.ui.components.UnifiedInputControlsBar
+import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 
 @Composable
 fun VerbDrillScreen(
@@ -226,14 +212,25 @@ private fun VerbDrillSessionWithCardSession(
         autoAdvanceCancelled = false
     }
 
-    // Fix 2: Custom navigation controls that show SkipNext when Play will advance
-    // (hint shown state) vs PlayArrow when it will resume (manual pause).
+    // Fix 2: Custom navigation controls — use UnifiedNavigationRow for consistency
+    // across all modes (Training, VerbDrill, DailyPractice).
     val navigationControlsSlot: @Composable TrainingCardSessionScope.() -> Unit = {
-        VerbDrillNavigationControls(
-            scope = this,
-            provider = provider,
-            onManualNext = {
+        UnifiedNavigationRow(
+            stateModel = provider,
+            supportsPause = contract.supportsPause,
+            supportsNavigation = contract.supportsNavigation,
+            onPrev = { provider.navigatePrev() },
+            onTogglePause = {
+                // If hint is shown, Play will advance — cancel auto-advance if pending
+                if (!contract.sessionActive && provider.hintAnswer != null) {
+                    autoAdvanceCancelled = true
+                }
+                contract.togglePause()
+            },
+            onStop = { contract.requestExit() },
+            onNext = {
                 autoAdvanceCancelled = true
+                provider.navigateNext()
             }
         )
     }
@@ -375,104 +372,9 @@ private fun VerbDrillSessionWithCardSession(
 }
 
 /**
- * Navigation controls for VerbDrill — mirrors DefaultNavigationControls but adds
- * visual differentiation for the Play/SkipNext button:
- * - When paused with hint shown (hintAnswer != null): shows SkipNext icon (will advance)
- * - When paused without hint (manual pause): shows PlayArrow icon (will resume)
+ * Input controls for VerbDrill that delegates to UnifiedInputControlsBar.
+ * Keeps report sheet handling and drill-specific submit logic locally.
  */
-@Composable
-private fun VerbDrillNavigationControls(
-    scope: TrainingCardSessionScope,
-    provider: VerbDrillCardSessionProvider,
-    onManualNext: () -> Unit
-) {
-    if (!scope.contract.supportsNavigation) return
-
-    var showExitDialog by remember { mutableStateOf(false) }
-
-    if (showExitDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text(stringResource(R.string.session_end_title)) },
-            text = { Text(stringResource(R.string.session_end_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showExitDialog = false
-                    scope.contract.requestExit()
-                }) {
-                    Text(stringResource(R.string.button_end))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitDialog = false }) {
-                    Text(stringResource(R.string.button_cancel))
-                }
-            }
-        )
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        NavIconButton(
-            onClick = scope.onPrev,
-            enabled = scope.currentCard != null
-        ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (scope.contract.supportsPause) {
-                NavIconButton(
-                    onClick = {
-                        // If hint is shown, Play will advance — cancel auto-advance if pending
-                        if (!scope.contract.sessionActive && provider.hintAnswer != null) {
-                            onManualNext()
-                        }
-                        scope.contract.togglePause()
-                    },
-                    enabled = scope.currentCard != null
-                ) {
-                    if (scope.contract.sessionActive) {
-                        Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
-                    } else {
-                        // Fix 2: Show SkipNext when hint shown (will advance), PlayArrow for manual pause (will resume)
-                        if (provider.hintAnswer != null) {
-                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.content_desc_next))
-                        } else {
-                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
-                        }
-                    }
-                }
-            }
-            NavIconButton(
-                onClick = { showExitDialog = true },
-                enabled = scope.currentCard != null
-            ) {
-                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
-            }
-            NavIconButton(
-                onClick = {
-                    onManualNext()
-                    scope.onNext()
-                },
-                enabled = scope.currentCard != null
-            ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.content_desc_next))
-            }
-        }
-    }
-}
-
-/**
- * Input controls for VerbDrill that mirrors AnswerBox logic exactly.
- * Delegates submit to provider.submitAnswerWithInput for drill-specific retry/hint flow.
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun DefaultVerbDrillInputControls(
     provider: VerbDrillCardSessionProvider,
@@ -482,8 +384,6 @@ private fun DefaultVerbDrillInputControls(
 ) {
     val contract = scope.contract
     val hasCards = scope.currentCard != null
-    val canLaunchVoice = hasCards && contract.sessionActive
-    val canSelectInputMode = hasCards && contract.sessionActive
     val clipboardManager = LocalClipboardManager.current
     var showReportSheet by remember { mutableStateOf(false) }
     var showQrDialog by remember { mutableStateOf(false) }
@@ -494,52 +394,6 @@ private fun DefaultVerbDrillInputControls(
         "ID: ${reportCard.id}\nSource: ${reportCard.promptRu}\nTarget: $targetText"
     } else {
         ""
-    }
-
-    // Voice recognition launcher — same pattern as AnswerBox
-    val latestProvider by rememberUpdatedState(provider)
-    val latestOnInputChanged by rememberUpdatedState(scope.onInputChanged)
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull()
-            if (!spoken.isNullOrBlank()) {
-                latestOnInputChanged(spoken)
-                latestProvider.submitAnswerWithInput(spoken)
-                latestOnInputChanged("")
-            }
-        }
-    }
-
-    // Auto-voice LaunchedEffect — mirrors AnswerBox exactly:
-    // triggers when voiceTriggerToken changes, inputMode is VOICE, card exists, session is active
-    val voiceToken = provider.voiceTriggerToken
-    LaunchedEffect(
-        scope.currentCard?.id,
-        contract.currentInputMode,
-        contract.sessionActive,
-        voiceToken
-    ) {
-        if (voiceAutoStart &&
-            contract.currentInputMode == InputMode.VOICE &&
-            contract.sessionActive &&
-            scope.currentCard != null
-        ) {
-            kotlinx.coroutines.delay(200)
-            val languageId = contract.languageId
-            val languageTag = when (languageId) {
-                "it" -> "it-IT"
-                else -> "en-US"
-            }
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-            }
-            speechLauncher.launch(intent)
-        }
     }
 
     // Report sheet
@@ -585,146 +439,25 @@ private fun DefaultVerbDrillInputControls(
         )
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text -- shown at all hint levels when eye button is pressed
-        if (provider.hintAnswer != null) {
-            HintAnswerCard(
-                answerText = provider.hintAnswer ?: ""
-            )
-        }
-
-        // Incorrect feedback — red text with remaining attempts, shown above input
-        if (provider.showIncorrectFeedback) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.verb_incorrect),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.verb_attempts_left, provider.remainingAttempts),
-                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                    style = MaterialTheme.typography.bodySmall
-                )
+    UnifiedInputControlsBar(
+        contract = contract,
+        inputText = scope.inputText,
+        onInputChanged = scope.onInputChanged,
+        onSubmit = {
+            val input = scope.inputText
+            if (input.isNotBlank()) {
+                provider.submitAnswerWithInput(input)
+                scope.onInputChanged("")
             }
-        }
-
-        OutlinedTextField(
-            value = scope.inputText,
-            onValueChange = { newText ->
-                if (provider.showIncorrectFeedback) {
-                    provider.clearIncorrectFeedback()
-                }
-                scope.onInputChanged(newText)
-                // Auto-submit in keyboard mode when the typed text matches an accepted answer
-                if (contract.currentInputMode == InputMode.KEYBOARD &&
-                    contract.sessionActive &&
-                    scope.currentCard != null &&
-                    newText.isNotBlank()
-                ) {
-                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, scope.currentCard!!.acceptedAnswers)) {
-                        provider.submitAnswerWithInput(newText)
-                        scope.onInputChanged("")
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = stringResource(R.string.verb_your_translation)) },
-            enabled = hasCards,
-            trailingIcon = {
-                IconButton(
-                    onClick = {
-                        if (canLaunchVoice) {
-                            contract.setInputMode(InputMode.VOICE)
-                            val languageId = contract.languageId
-                            val languageTag = when (languageId) {
-                                "it" -> "it-IT"
-                                else -> "en-US"
-                            }
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                            }
-                            speechLauncher.launch(intent)
-                        }
-                    },
-                    enabled = canLaunchVoice
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.verb_content_desc_voice_input))
-                }
-            }
-        )
-
-        if (!hasCards) {
-            Text(
-                text = stringResource(R.string.verb_no_cards),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        // Voice mode hint — same guard as AnswerBox
-        if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
-            Text(
-                text = scope.currentCard?.promptRu?.let { stringResource(R.string.verb_say_translation, it) } ?: "",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        // Word Bank UI
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
-            WordBankSection(contract = contract)
-        }
-
-        // Input mode selector + show answer + flag — mirrors AnswerBox exactly
-        VerbDrillInputModeBar(
-            contract = contract,
-            provider = provider,
-            hintLevel = hintLevel,
-            hasCards = hasCards,
-            canLaunchVoice = canLaunchVoice,
-            canSelectInputMode = canSelectInputMode,
-            onReport = { showReportSheet = true },
-            onLaunchVoice = {
-                val languageId = contract.languageId
-                val languageTag = when (languageId) {
-                    "it" -> "it-IT"
-                    else -> "en-US"
-                }
-                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                }
-                speechLauncher.launch(intent)
-            }
-        )
-
-        // Check button — uses provider.submitAnswerWithInput for drill-specific flow
-        Button(
-            onClick = {
-                val input = scope.inputText
-                if (input.isNotBlank()) {
-                    provider.submitAnswerWithInput(input)
-                    scope.onInputChanged("")
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = hasCards &&
-                scope.inputText.isNotBlank() &&
-                contract.sessionActive &&
-                scope.currentCard != null
-        ) {
-            Text(text = stringResource(R.string.verb_check))
-        }
-    }
+        },
+        hasCards = hasCards,
+        hintAnswer = provider.hintAnswer,
+        showIncorrectFeedback = provider.showIncorrectFeedback,
+        incorrectMessage = if (provider.showIncorrectFeedback) stringResource(R.string.verb_attempts_left, provider.remainingAttempts) else null,
+        onClearIncorrectFeedback = { provider.clearIncorrectFeedback() },
+        onShowReport = { showReportSheet = true },
+        reportCard = scope.currentCard
+    )
 }
 
 @Composable
@@ -912,95 +645,7 @@ private fun VerbDrillCompletionScreen(
     }
 }
 
-// --- Extracted sub-composables for DefaultVerbDrillInputControls ---
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun VerbDrillInputModeBar(
-    contract: CardSessionContract,
-    provider: VerbDrillCardSessionProvider,
-    hintLevel: com.alexpo.grammermate.data.HintLevel,
-    hasCards: Boolean,
-    canLaunchVoice: Boolean,
-    canSelectInputMode: Boolean,
-    onReport: () -> Unit,
-    onLaunchVoice: () -> Unit = {}
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Voice mode button — sets input mode AND launches speech directly
-            FilledTonalIconButton(
-                onClick = {
-                    if (canLaunchVoice) {
-                        contract.setInputMode(InputMode.VOICE)
-                        onLaunchVoice()
-                    }
-                },
-                enabled = canLaunchVoice
-            ) {
-                Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.verb_content_desc_voice_mode))
-            }
-            // Keyboard mode button
-            FilledTonalIconButton(
-                onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                enabled = canSelectInputMode
-            ) {
-                Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.verb_content_desc_keyboard_mode))
-            }
-            // Word bank mode button
-            FilledTonalIconButton(
-                onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                enabled = canSelectInputMode
-            ) {
-                Icon(Icons.Default.LibraryBooks, contentDescription = stringResource(R.string.verb_content_desc_word_bank_mode))
-            }
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Show answer button -- always visible, disabled when hint already shown
-            TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text(text = stringResource(R.string.verb_show_answer)) } },
-                state = rememberTooltipState()
-            ) {
-                IconButton(
-                    onClick = { if (hasCards) contract.showAnswer() },
-                    enabled = hasCards && provider.hintAnswer == null
-                ) {
-                    Icon(Icons.Default.Visibility, contentDescription = stringResource(R.string.verb_content_desc_show_answer))
-                }
-            }
-            if (contract.supportsFlagging) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.verb_report_sentence)) } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) onReport() },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = stringResource(R.string.verb_content_desc_report))
-                    }
-                }
-            }
-            Text(
-                text = when (contract.currentInputMode) {
-                    InputMode.VOICE -> stringResource(R.string.verb_mode_voice)
-                    InputMode.KEYBOARD -> stringResource(R.string.verb_mode_keyboard)
-                    InputMode.WORD_BANK -> stringResource(R.string.verb_mode_word_bank)
-                },
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-    }
-}
+// --- VerbDrill-specific extracted sub-composables ---
 
 private fun abbreviateTense(tense: String): String {
     val abbreviations = mapOf(

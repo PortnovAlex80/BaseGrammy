@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.SystemClock
 import android.util.Log
 import com.alexpo.grammermate.data.BossType
+import com.alexpo.grammermate.data.CardSessionStateModel
 import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Lesson
@@ -12,6 +13,7 @@ import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.SessionProgress
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingUiState
@@ -37,6 +39,9 @@ import kotlinx.coroutines.launch
  * Timer-triggered saveProgress is injected as a constructor function parameter.
  *
  * Uses [TrainingStateAccess] for state reads/writes.
+ *
+ * Implements [CardSessionStateModel] for unified state queries across all
+ * card session types (training, verb drill, daily practice).
  */
 class SessionRunner(
     private val stateAccess: TrainingStateAccess,
@@ -51,7 +56,7 @@ class SessionRunner(
     private val getSchedule: (String) -> LessonSchedule?,
     private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?) -> Int,
     private val onTimerSaveProgress: () -> Unit
-) {
+) : CardSessionStateModel {
     private val logTag = "SessionRunner"
 
     // ── Private mutable state ───────────────────────────────────────────
@@ -65,6 +70,37 @@ class SessionRunner(
     private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER
+
+    // ── CardSessionStateModel implementation ─────────────────────────────
+    // Maps internal SessionState enum to the unified state model interface.
+
+    override val isActive: Boolean
+        get() = stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE
+
+    override val isPaused: Boolean
+        get() = stateAccess.uiState.value.cardSession.sessionState == SessionState.PAUSED
+
+    override val isHintShown: Boolean
+        get() = stateAccess.uiState.value.cardSession.sessionState == SessionState.HINT_SHOWN
+
+    override val canSubmit: Boolean
+        get() = stateAccess.uiState.value.cardSession.canSubmit
+
+    override val hasCurrentCard: Boolean
+        get() = currentCard() != null
+
+    override val isComplete: Boolean
+        get() = sessionCards.isEmpty() ||
+            (stateAccess.uiState.value.cardSession.sessionState == SessionState.PAUSED &&
+             currentCard() == null)
+
+    override val progress: SessionProgress
+        get() {
+            val state = stateAccess.uiState.value
+            val total = sessionCards.size.coerceAtLeast(state.cardSession.subLessonTotal)
+            val current = (state.cardSession.currentIndex + 1).coerceAtMost(total)
+            return SessionProgress(current = current, total = total)
+        }
 
     // ── Submit result type ──────────────────────────────────────────────
 
@@ -472,6 +508,57 @@ class SessionRunner(
             it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
         }
         val events = mutableListOf<SessionEvent>()
+        prevCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
+        events.add(SessionEvent.SaveProgress)
+        return events
+    }
+
+    /**
+     * Navigate to the next card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state
+     * so the user can browse cards without timer pressure.
+     * Pressing Play resumes the session.
+     */
+    fun navigateNext(): List<SessionEvent> {
+        val events = mutableListOf<SessionEvent>()
+        // Pause first if ACTIVE
+        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
+            events.addAll(pauseSession())
+        }
+        // Advance card but leave PAUSED
+        val state = stateAccess.uiState.value
+        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
+        val nextCard = sessionCards.getOrNull(nextIndex)
+        stateAccess.updateState {
+            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
+        }
+        nextCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
+
+        // Update word bank if in WORD_BANK mode
+        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
+            updateWordBank()
+        }
+
+        events.add(SessionEvent.SaveProgress)
+        return events
+    }
+
+    /**
+     * Navigate to the previous card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigatePrev(): List<SessionEvent> {
+        val events = mutableListOf<SessionEvent>()
+        // Pause first if ACTIVE
+        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
+            events.addAll(pauseSession())
+        }
+        // Go back but leave PAUSED
+        val prevIndex = (stateAccess.uiState.value.cardSession.currentIndex - 1).coerceAtLeast(0)
+        val prevCard = sessionCards.getOrNull(prevIndex)
+        stateAccess.updateState {
+            it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
+        }
         prevCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
         events.add(SessionEvent.SaveProgress)
         return events

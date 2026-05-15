@@ -549,6 +549,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun prevCard() = handleSessionEvents(sessionRunner.prevCard())
 
+    /** Navigate forward via arrow button: pause-first, then advance. Leaves PAUSED. */
+    fun navigateNext() = handleSessionEvents(sessionRunner.navigateNext())
+
+    /** Navigate backward via arrow button: pause-first, then go back. Leaves PAUSED. */
+    fun navigatePrev() = handleSessionEvents(sessionRunner.navigatePrev())
+
     fun togglePause() = handleSessionEvents(sessionRunner.togglePause())
 
     fun pauseSession() = handleSessionEvents(sessionRunner.pauseSession())
@@ -1060,6 +1066,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
     private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
     private fun updateStreak() {
+        // TASK-046: Streak only counts when at least one card was answered correctly.
+        // Navigation-only sessions (arrows, no submit) must NOT inflate the streak.
+        if (_coreState.value.cardSession.correctCount == 0) return
+
         val languageId = _coreState.value.navigation.selectedLanguageId
         val (updatedStreak, isNewStreak) = streakManager.recordSubLessonCompletion(languageId.value)
         if (isNewStreak && updatedStreak.currentStreak > 0) {

@@ -852,6 +852,23 @@ Every method in TrainingViewModel.kt is listed below with its target module assi
 | ViewModel (stays) | 39 | ~400 |
 | **Total** | **156** | **~2840** |
 
+### Navigation State Behavior (updated 2026-05-16)
+
+Navigation arrows (Next/Prev) operate in PAUSE state:
+- Pressing Next/Prev during ACTIVE -> triggers PAUSE first, then advances/retreats
+- Session stays PAUSED until user presses Play
+- This applies to ALL card modes per DP-02 (see user-journey-models.md)
+
+**Implementation note:** `nextCard()` and `prevCard()` in SessionRunner must check `sessionState == ACTIVE` and call `pauseTimer()` + set `sessionState = PAUSED` before advancing the card index. This replaces the current behavior where Next/Prev advance without pausing.
+
+### Streak counting (updated 2026-05-16)
+
+- Daily streak increments ONLY when at least one card was answered correctly via submit (not navigation)
+- Navigation-only progression does NOT count as practice
+- Bad sentence cards excluded from completion check
+
+**Implementation note:** `updateStreak()` in StreakManager must verify that `correctCount > 0` for the session before incrementing the streak. A session where the user only navigated (Next/Prev) without submitting any correct answers must NOT extend the streak.
+
 ---
 
 ## 7. Cross-Cutting Concerns for Migration

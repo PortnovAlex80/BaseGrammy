@@ -734,3 +734,24 @@ Summary of which component is the reference and which are adopters:
 | Voice auto mode toggle + launch | VocabDrill (`VocabDrillScreen.kt:218-241`, `:409-417`) | VerbDrill | `ui/components/VoiceAutoLauncher.kt` (NEW) |
 | Report sheet (5 options) | TrainingScreen (`TrainingScreen.kt`) | VerbDrill, VocabDrill | `ui/components/SharedReportSheet.kt` (NEW) |
 | Input mode bar | VerbDrill (`VerbDrillScreen.kt:867-955`) | TrainingScreen, DailyPractice | `ui/components/SharedInputModeBar.kt` (NEW) |
+
+---
+
+### 12.8.4 Shared Components (updated 2026-05-16)
+
+Per DP-03 (see user-journey-models.md), the following must be single shared components used by ALL card-based modes. No mode may duplicate these with its own version:
+
+**NavigationRow** (see TASK-048):
+- Layout: `< Prev | Play/Pause | Stop/Exit | Next >`
+- All card modes (Standard Training, VerbDrill, DailyPractice) must use the same `NavigationRow` composable
+- Per DP-02: Next/Prev buttons always enabled; pressing during ACTIVE triggers PAUSE first, then advances/retreats
+- Play button resumes work mode (timer, voice recognition, answer acceptance)
+- This component accepts `CardSessionStateModel` as its state interface
+
+**InputControlsBar** (see TASK-049):
+- Layout: `[Mic] [Keyboard] [WordBank] ... [Eye] [Report]` + Check button
+- All card modes must use the same `InputControlsBar` composable (renamed from `SharedInputModeBar`)
+- Unified voice auto-launch behavior across all modes
+- This component accepts `CardSessionStateModel` as its state interface
+
+**Exclusion:** VocabDrill uses a flashcard flip paradigm and does NOT use NavigationRow or InputControlsBar. It is the sole permitted exception per DP-03.

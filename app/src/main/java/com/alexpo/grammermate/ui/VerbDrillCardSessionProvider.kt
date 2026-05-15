@@ -48,7 +48,7 @@ class VerbDrillCardSessionProvider(
     )
 
     /** Compose-observable mirror of [CardSessionStateMachine.isPaused]. */
-    var isPaused by mutableStateOf(false)
+    override var isPaused by mutableStateOf(false)
         private set
 
     // Delegated state from CardSessionStateMachine
@@ -119,6 +119,28 @@ class VerbDrillCardSessionProvider(
             val s = session ?: return false
             return !s.isComplete || pendingCard != null
         }
+
+    // ── CardSessionStateModel overrides ─────────────────────────────────
+    // CardSessionContract extends CardSessionStateModel with defaults.
+    // VerbDrill overrides these for accurate state from CardSessionStateMachine.
+
+    /** Session is active: timer running, input accepted. */
+    override val isActive: Boolean
+        get() = sessionActive
+
+    /** Answer hint is visible via [CardSessionStateMachine]. */
+    override val isHintShown: Boolean
+        get() = sm.hintAnswer != null
+
+    /** User can submit: session active with a current card. */
+    override val canSubmit: Boolean
+        get() = sessionActive
+
+    /** Current card is available for display. */
+    override val hasCurrentCard: Boolean
+        get() = currentCard != null
+
+    // ── End CardSessionStateModel overrides ─────────────────────────────
 
     override val ttsState: TtsState
         get() = viewModel.ttsState.value
@@ -246,6 +268,51 @@ class VerbDrillCardSessionProvider(
         pendingAnswerResult = null
         sm.reset()
         isPaused = sm.isPaused
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+    }
+
+    /**
+     * Navigate to the next card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigateNext() {
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+            isPaused = sm.isPaused
+        }
+        // Advance card but leave paused
+        pendingCard = null
+        pendingAnswerResult = null
+        sm.reset()
+        isPaused = sm.isPaused  // stay paused (reset sets isPaused=false, so force it)
+        sm.pause()
+        isPaused = true
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+        viewModel.nextCardManual()
+    }
+
+    /**
+     * Navigate to the previous card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigatePrev() {
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+            isPaused = sm.isPaused
+        }
+        // Go back but leave paused
+        viewModel.prevCard()
+        pendingCard = null
+        pendingAnswerResult = null
+        sm.reset()
+        sm.pause()
+        isPaused = true
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()

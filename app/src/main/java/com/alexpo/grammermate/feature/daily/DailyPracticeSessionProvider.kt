@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.CardSessionContract
+import com.alexpo.grammermate.data.CardSessionStateModel
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
@@ -130,6 +131,26 @@ class DailyPracticeSessionProvider(
             return currentIndex < blockCards.size
         }
 
+    // ── CardSessionStateModel overrides ──────────────────────────────────
+    // Explicit mappings from internal CardSessionStateMachine state.
+    // These override the default implementations in CardSessionContract
+    // which don't account for the state machine's isPaused/hintAnswer.
+
+    override val isActive: Boolean
+        get() = sessionActive
+
+    override val isPaused: Boolean
+        get() = sm.isPaused && sm.hintAnswer == null && !isComplete
+
+    override val isHintShown: Boolean
+        get() = sm.hintAnswer != null
+
+    override val canSubmit: Boolean
+        get() = sessionActive && currentCard != null
+
+    override val hasCurrentCard: Boolean
+        get() = currentCard != null
+
     override val currentInputMode: InputMode
         get() = _inputMode
 
@@ -245,6 +266,62 @@ class DailyPracticeSessionProvider(
             cachedWordBankCardId = null
             cachedWordBank = emptyList()
         }
+    }
+
+    /**
+     * Navigate to the next card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigateNext() {
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+        }
+        // Reset card state and advance
+        _pendingCard = null
+        _pendingResult = null
+        pendingAnswerResult = null
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+        pendingInput = ""
+
+        // Notify caller about the card being advanced
+        if (currentIndex < blockCards.size && _inputMode != InputMode.WORD_BANK) {
+            onCardAdvanced(blockCards[currentIndex])
+        }
+
+        currentIndex++
+        // Force paused state after navigation
+        sm.reset()
+        sm.pause()
+
+        if (currentIndex >= blockCards.size) {
+            onBlockComplete()
+        }
+    }
+
+    /**
+     * Navigate to the previous card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigatePrev() {
+        if (currentIndex <= 0) return
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+        }
+        currentIndex--
+        _pendingCard = null
+        _pendingResult = null
+        pendingAnswerResult = null
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+        pendingInput = ""
+        // Force paused state after navigation
+        sm.reset()
+        sm.pause()
     }
 
     override fun togglePause() {
