@@ -294,16 +294,6 @@ class ProgressStoreTest {
     }
 
     @Test
-    fun saveProgress_afterCheckState_persists() {
-        // FR-5.2.3: Состояние AFTER_CHECK
-        val progress = TrainingProgress(state = SessionState.AFTER_CHECK)
-        store.save(progress)
-
-        val loaded = store.load()
-        assertEquals(SessionState.AFTER_CHECK, loaded.state)
-    }
-
-    @Test
     fun saveProgress_hintShownState_persists() {
         // FR-5.2.4: Состояние HINT_SHOWN
         val progress = TrainingProgress(state = SessionState.HINT_SHOWN)

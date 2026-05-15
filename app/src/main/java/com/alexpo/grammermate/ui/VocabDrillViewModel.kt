@@ -43,6 +43,10 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private var allWords: List<VocabWord> = emptyList()
     private var masteryMap: Map<String, WordMasteryState> = emptyMap()
 
+    /** Tracks whether any rating was submitted during the current session. */
+    private var _hasRatedCards = false
+    val hasRatedCards: Boolean get() = _hasRatedCards
+
     /** Currently active pack ID, null means no pack scoping (legacy mode). */
     private var activePackId: String? = null
 
@@ -262,6 +266,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         val session = _uiState.value.session ?: return
         val index = session.currentIndex
         if (index >= session.cards.size) return
+        _hasRatedCards = true
 
         val card = session.cards[index]
         val now = System.currentTimeMillis()
@@ -321,6 +326,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
      * Refreshes counts to reflect any mastery changes made during the session.
      */
     fun exitSession() {
+        _hasRatedCards = false
         _uiState.update { it.copy(session = null) }
         updateCounts()
     }

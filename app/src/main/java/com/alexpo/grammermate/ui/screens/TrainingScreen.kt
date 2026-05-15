@@ -666,10 +666,8 @@ fun AnswerBox(
         Button(
             onClick = { onSubmit() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = hasCards &&
-                state.cardSession.inputText.isNotBlank() &&
-                state.cardSession.sessionState == SessionState.ACTIVE &&
-                state.cardSession.currentCard != null
+            enabled = state.cardSession.canSubmit &&
+                state.cardSession.inputText.isNotBlank()
         ) {
             Text(text = stringResource(R.string.training_check))
         }
@@ -722,7 +720,7 @@ fun NavigationRow(
             NavIconButton(onClick = onRequestExit, enabled = hasCards) {
                 Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.training_exit_session))
             }
-            NavIconButton(onClick = { onNext(false) }, enabled = hasCards) {
+            NavIconButton(onClick = { onNext(false) }, enabled = hasCards && state != SessionState.ACTIVE) {
                 Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.training_next))
             }
         }

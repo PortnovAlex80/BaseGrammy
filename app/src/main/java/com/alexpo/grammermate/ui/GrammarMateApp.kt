@@ -52,6 +52,8 @@ import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.TtsState
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -105,6 +107,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         val state by vm.uiState.collectAsState()
         val navController = rememberNavController()
         val currentRoute = navController.currentBackStackEntry?.destination?.route ?: Routes.HOME
+        val context = LocalContext.current
 
         // Track previous screen for LADDER back navigation
         var previousRoute by remember { mutableStateOf(Routes.HOME) }
@@ -239,11 +242,20 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 } else {
                                     dialogs = dialogs.copy(isLoadingDaily = true)
                                     dailyScope.launch {
-                                        val started = withContext(Dispatchers.IO) {
-                                            vm.startDailyPractice(level)
+                                        try {
+                                            val started = withContext(Dispatchers.IO) {
+                                                vm.startDailyPractice(level)
+                                            }
+                                            dialogs = dialogs.copy(isLoadingDaily = false)
+                                            if (started) {
+                                                onNavigate(Routes.DAILY_PRACTICE)
+                                            } else {
+                                                Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            dialogs = dialogs.copy(isLoadingDaily = false)
+                                            Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                                         }
-                                        dialogs = dialogs.copy(isLoadingDaily = false)
-                                        if (started) onNavigate(Routes.DAILY_PRACTICE)
                                     }
                                 }
                             },
@@ -357,12 +369,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         } else {
                             vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
                         }
+                        val vocabExit = {
+                            if (vocabDrillVm.hasRatedCards) {
+                                vm.refreshVocabMasteryCount()
+                            }
+                            onNavigate(Routes.HOME)
+                        }
+                        BackHandler { vocabExit() }
                         VocabDrillScreen(
                             viewModel = vocabDrillVm,
-                            onBack = {
-                                vm.refreshVocabMasteryCount()
-                                onNavigate(Routes.HOME)
-                            },
+                            onBack = vocabExit,
                             hintLevel = state.cardSession.hintLevel,
                             textScale = state.audio.ruTextScale,
                             voiceAutoStart = state.audio.voiceAutoStart
@@ -451,13 +467,6 @@ private fun NavBackHandlers(
             launchSingleTop = true
         }
     }
-    BackHandler(enabled = currentRoute == Routes.VOCAB_DRILL && !showSettings) {
-        vm.refreshVocabMasteryCount()
-        navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
-    }
 }
 
 // ── Shared TrainingScreen helper ─────────────────────────────────────────────
@@ -540,7 +549,9 @@ private fun DailyPracticeScreenContent(
             onNavigate(Routes.HOME)
         },
         onComplete = {
-            vm.cancelDailySession()
+            // Session already ended by coordinator's endSession().
+            // Do NOT navigate here — let the sparkle + completion screen show.
+            // Navigation happens when user taps "Done" on the completion screen (onExit).
         },
         onFlagDailyBadSentence = { cardId, langId, sentence, translation, mode ->
             vm.reports.flagDailyBadSentence(cardId, langId, sentence, translation, mode)
@@ -882,17 +893,23 @@ private fun DailyResumeDialog(
     onDialogsChange: (DialogState) -> Unit,
     onNavigate: (String) -> Unit
 ) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = { onDialogsChange(DialogState()) },
         confirmButton = {
             TextButton(onClick = {
                 onDialogsChange(DialogState(isLoadingDaily = true))
                 dailyScope.launch {
-                    val started = withContext(Dispatchers.IO) {
-                        vm.startDailyPractice(pendingDailyLevel)
+                    try {
+                        val started = withContext(Dispatchers.IO) {
+                            vm.startDailyPractice(pendingDailyLevel)
+                        }
+                        onDialogsChange(DialogState())
+                        if (started) onNavigate(Routes.DAILY_PRACTICE)
+                    } catch (e: Exception) {
+                        onDialogsChange(DialogState())
+                        Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                     }
-                    onDialogsChange(DialogState())
-                    if (started) onNavigate(Routes.DAILY_PRACTICE)
                 }
             }) {
                 Text(text = stringResource(R.string.dialog_daily_resume_continue))
@@ -902,11 +919,16 @@ private fun DailyResumeDialog(
             TextButton(onClick = {
                 onDialogsChange(DialogState(isLoadingDaily = true))
                 dailyScope.launch {
-                    val started = withContext(Dispatchers.IO) {
-                        vm.repeatDailyPractice(pendingDailyLevel)
+                    try {
+                        val started = withContext(Dispatchers.IO) {
+                            vm.repeatDailyPractice(pendingDailyLevel)
+                        }
+                        onDialogsChange(DialogState())
+                        if (started) onNavigate(Routes.DAILY_PRACTICE)
+                    } catch (e: Exception) {
+                        onDialogsChange(DialogState())
+                        Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                     }
-                    onDialogsChange(DialogState())
-                    if (started) onNavigate(Routes.DAILY_PRACTICE)
                 }
             }) {
                 Text(text = stringResource(R.string.dialog_daily_resume_repeat))
