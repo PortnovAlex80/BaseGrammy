@@ -58,7 +58,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.alexpo.grammermate.ui.CorrectGreen
+import com.alexpo.grammermate.ui.IncorrectRed
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -572,13 +573,13 @@ private fun DefaultResultContent(scope: TrainingCardSessionScope) {
             if (result.correct) {
                 Text(
                     text = stringResource(R.string.result_correct),
-                    color = Color(0xFF2E7D32),
+                    color = CorrectGreen,
                     fontWeight = FontWeight.Bold
                 )
             } else {
                 Text(
                     text = stringResource(R.string.result_incorrect),
-                    color = Color(0xFFC62828),
+                    color = IncorrectRed,
                     fontWeight = FontWeight.Bold
                 )
             }
