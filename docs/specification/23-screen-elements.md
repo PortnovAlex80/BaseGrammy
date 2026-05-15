@@ -201,7 +201,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Mic trailing icon | VD-20 | button | `canLaunchVoice` | Switches to VOICE mode. | ? |
 | Voice mode hint | VD-21 | text | `inputMode == VOICE && sessionActive` | "Say translation: {prompt}" muted text. | ? |
 | Word bank section | VD-22 | chip | `WORD_BANK mode` | VerbDrillWordBankSection: chips + counter + Undo. | ? |
-| Voice mode button | VD-23 | button | `canLaunchVoice` | Sets input mode to VOICE (does NOT directly launch speech). | ? |
+| Voice mode button | VD-23 | button | `canLaunchVoice` | Sets input mode to VOICE and immediately launches speech recognition. **Note:** Behavioral difference from TrainingScreen: VerbDrill launches speech on tap, TrainingScreen separates mode switching from speech launch. | ? |
 | Keyboard mode button | VD-24 | button | `canSelectInputMode` | Sets input mode to KEYBOARD. | ? |
 | Word bank mode button | VD-25 | button | `canSelectInputMode` | Sets input mode to WORD_BANK. | ? |
 | Show answer button | VD-26 | button | `hasCards && hintAnswer == null` | Visibility icon. Calls `contract.showAnswer()`. Disabled when hint already shown. Always visible regardless of HintLevel. | ? |
@@ -446,7 +446,7 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 **Behavior:** Each option triggers its corresponding callback. Flag toggles card.isFlagged (adds/removes from BadSentenceStore). Hide removes card from session (except Daily Practice where it is a documented no-op). Export returns formatted string via BadSentenceStore.exportUnified() -- non-null when at least one card is flagged. Copy writes card text (ID, source, target) to system clipboard. Share translation opens QrShareDialog (SH-07) with translation pair text + QR code + Google Translate button.
 
-| VoiceAutoLauncher | SH-02 | (system) | VerbDrillScreen, VocabDrillScreen | LaunchedEffect composable that auto-launches voice recognition after configurable delay (200ms for new card, 1200ms after incorrect feedback). | UC-52 |
+| VoiceAutoLauncher | SH-02 | (system) | VerbDrillScreen, VocabDrillScreen | LaunchedEffect composable that auto-launches voice recognition after 500ms fixed delay for all cases (new card, post-incorrect, etc.). | UC-52 |
 
 **Behavior:** When enabled and card changes, fires onAutoStartVoice after delay. Callback MUST call speechLauncher.launch(intent) directly -- switching InputMode alone is insufficient and causes the voice-not-launching bug. On correct voice answer, auto-advance triggers after 400-500ms.
 
