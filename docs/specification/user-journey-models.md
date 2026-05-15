@@ -5,6 +5,23 @@
 
 ---
 
+## Design Principles
+
+### DP-01: Uniform Card Drill Mechanics
+
+**Rule:** All card-based drill modes MUST use identical play/pause/submit/retry/navigation behavior. This includes:
+- Regular training (LessonRoadmap → TrainingScreen)
+- Daily Practice Block 1 (Translate) and Block 3 (Verbs)
+- Verb Drill (standalone)
+
+The only exception is Vocab Drill (flashcard flip + SRS rating) which uses a fundamentally different interaction model.
+
+**Why:** Daily Practice is a container that guides the user through blocks, equivalent to a Duolingo lesson path. Blocks 1 and 3 present cards with the same mechanics as regular training — only the content differs. Users should never need to learn different button behavior for the same type of interaction.
+
+**How to apply:** When modifying card-level behavior (play/pause/submit/retry/hint), the change applies to ALL card drill modes simultaneously. Use SessionRunner or a shared CardSessionStateModel as the single source of truth. Mode-specific differences (card source, scoring, session length) are managed at the coordinator level, not the card level.
+
+---
+
 ## Journey 1: First Launch (Cold Start)
 
 ### Step 1.1: User taps app icon
@@ -332,7 +349,7 @@
 | **Hint behavior** | 3 wrong attempts → shows answer. Press Play → advances to next card (same as TrainingScreen bug BUG-NAV-003) |
 | **Auto-advance** | Correct voice answer → 400ms delay → auto-advance to next card |
 | **Spec source** | scenario-06 §3 |
-| **Discrepancy** | **BUG-NAV-009**: Daily practice has NO retry mechanism after wrong answer display. Single wrong answer cycle → hint shown → must advance. Inconsistent with regular training which allows 3 retries per card. **BUG-NAV-017**: Daily Practice translate block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. |
+| **Discrepancy** | **BUG-NAV-009**: Daily practice has NO retry mechanism after wrong answer display. Single wrong answer cycle → hint shown → must advance. Inconsistent with regular training which allows 3 retries per card. **BUG-NAV-017**: Daily Practice translate block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. (See Design Principle DP-01) |
 
 ### Step 6.3: Block 2 — Vocab Flashcards (5 cards)
 
@@ -352,7 +369,7 @@
 | **What user sees** | Sentence card with verb conjugation prompt, KEYBOARD/WORD_BANK input |
 | **Session behavior** | Same as Block 1 but no VOICE mode for verbs |
 | **Spec source** | scenario-06 §5 |
-| **Discrepancy** | **BUG-NAV-017**: Daily Practice verb block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. |
+| **Discrepancy** | **BUG-NAV-017**: Daily Practice verb block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. (See Design Principle DP-01) |
 
 ### Step 6.5: Daily session completes
 
