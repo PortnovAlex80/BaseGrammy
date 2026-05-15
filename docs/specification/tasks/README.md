@@ -12,9 +12,43 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-006](DONE-TASK-006-verb-drill-play-button-fix.md) | Verb Drill Play Button Fix (resume + TTS icons) | DONE | 10-verb-drill, 12-training-card-session | 2026-05-14 |
 | [DONE-TASK-007](DONE-TASK-007-verb-drill-exit-navigation.md) | Verb Drill Exit Navigation to HOME | DONE | 10-verb-drill | 2026-05-14 |
 | [DONE-TASK-008](DONE-TASK-008-qr-share-translation.md) | Share Translation via QR Code | DONE | 12-training-card-session | 2026-05-15 |
-| [TASK-009](TASK-009-profile-stats-popup.md) | Profile Stats Popup with CEFR Level | OPEN | custom spec | 2026-05-15 |
+| [DONE-TASK-009](DONE-TASK-009-profile-stats-popup.md) | Profile Stats Popup with CEFR Level | DONE | custom spec | 2026-05-15 |
 | [DONE-TASK-010](DONE-TASK-010-theme-mode-switching.md) | Theme Mode Switching (Light/Dark/System) | DONE | 14-theme-and-ui-components | 2026-05-15 |
 | [DONE-TASK-011](DONE-TASK-011-interface-language-switching.md) | Interface Language Switching (English/Russian) | DONE | 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-012](TASK-012-theme-color-constants-dark-mode.md) | Theme.kt Color Constants — Dark-Mode Adaptation | OPEN | 14-theme | 2026-05-15 |
+| [TASK-013](TASK-013-training-screen-dark-mode.md) | TrainingScreen Dark-Mode Fix (Drill + Mix + Progress) | OPEN | 14-theme | 2026-05-15 |
+| [TASK-014](TASK-014-vocab-daily-dark-mode.md) | VocabDrillScreen + DailyPracticeScreen Dark-Mode Fix | OPEN | 14-theme | 2026-05-15 |
+| [TASK-020](TASK-020-vd14-stale-code-pending-note.md) | VD-14 Stale CODE PENDING Note | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-021](TASK-021-vd23-voice-mode-launches-speech.md) | VD-23 Voice Button Launches Speech Directly | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-022](TASK-022-voc41-vocabdrill-report-sheet.md) | VOC-41 Custom Report Sheet + Missing Hide Card | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-023](TASK-023-sh03-shared-input-mode-bar.md) | SH-03 SharedInputModeBar Not Extracted | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-024](TASK-024-sh05-text-scale-provider.md) | SH-05 TextScaleProvider Not Implemented | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-025](TASK-025-sh02-voice-auto-launcher-delay.md) | SH-02 VoiceAutoLauncher Fixed vs Variable Delay | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-026](TASK-026-ss48-filterchips-settings-ordering.md) | SS-48 FilterChips + Settings Ordering | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-027](TASK-027-dg14-17-dialog-locations.md) | DG-14/15/16/17 Dialog Location References | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-028](TASK-028-icon-inventory-update.md) | Icon Inventory Update (8 extra + LocalFlorist) | OPEN | 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-029](TASK-029-minor-spec-corrections.md) | Minor Spec Corrections (TS-37, SS-12, SS-20, SS-31) | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-030](TASK-030-spec-vs-code-screen-audit.md) | Spec-vs-Code Screen Audit — Discrepancy Registry | OPEN | 23-screen-elements, 19-screen-catalog, 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-031](TASK-031-dark-theme-palette-mismatch.md) | Dark Theme Color Palette Mismatch | OPEN | 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-032](TASK-032-avatar-discrepancies.md) | HS-01 Avatar Discrepancies (3 Sub-issues) | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-033](TASK-033-profile-stats-initials-avatar-spec.md) | ProfileStatsPopup + InitialsAvatar Missing from Spec | OPEN | 23-screen-elements, 19-screen-catalog | 2026-05-15 |
+| [TASK-034](TASK-034-legend-text-structure.md) | HS-15 Legend Text Structure Mismatch | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-035](TASK-035-tts-warning-icon-oom.md) | TS-09 TTS Warning Icon for OOM Undocumented | OPEN | 23-screen-elements, 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-036](TASK-036-duplicate-tts-buttons.md) | TS-27 + TCS-21 Duplicate TTS Buttons in Result Area | OPEN | 23-screen-elements | 2026-05-15 |
+| [TASK-037](TASK-037-hint-answer-card-visibility.md) | DP-11 HintAnswerCard Visibility Condition (Spec Error) | OPEN | 23-screen-elements, 09-daily-practice | 2026-05-15 |
+
+## Spec-vs-Code Screen Audit (2026-05-15)
+
+Source: [TASK-030](TASK-030-spec-vs-code-screen-audit.md) — 17 discrepancies found across 316 UI elements. Parent task with child tasks TASK-020 through TASK-029 (D-08 to D-17) and TASK-031 through TASK-037 (D-01 to D-07).
+
+| Severity | Count | Tasks |
+|----------|-------|-------|
+| CRITICAL | 1 | TASK-031 (dark theme palette) |
+| HIGH | 3 | TASK-032 (avatar), TASK-033 (missing spec), TASK-022 (vocab report sheet) |
+| MEDIUM | 3 | TASK-034 (legend), TASK-035 (TTS icon), TASK-036 (duplicate TTS) |
+| MEDIUM | 3 | TASK-037 (DP-11 spec error), TASK-021 (voice button), TASK-025 (voice delay) |
+| MEDIUM | 2 | TASK-024 (text scale), TASK-026 (settings ordering), TASK-028 (icon inventory) |
+| LOW | 3 | TASK-020 (VD-14), TASK-027 (dialog locations), TASK-029 (minor corrections) |
 
 ## Re-Audit CRITICAL Fix Wave (2026-05-14)
 
@@ -22,7 +56,7 @@ Source: [EXECUTION-re-audit-11-criticals.md](EXECUTION-re-audit-11-criticals.md)
 
 | Wave | CRITICALs | Agents | Status |
 |------|-----------|--------|--------|
-| Wave 1: Data mutex | DATA-1, DATA-2, W-DATA-1 | 3 parallel | pending |
-| Wave 2: UI + Build | UI-1, UI-2, XC-2, TEST-1, XC-3 | 3 parallel | pending |
-| Wave 3: Testability | TEST-3, TEST-2 | 2 parallel | pending |
-| Wave 4: Research | ARCH-1, XC-1 | 2 parallel (read-only) | pending |
+| Wave 1: Data mutex | DATA-1, DATA-2, W-DATA-1 | 3 parallel | DONE |
+| Wave 2: UI + Build | UI-1, UI-2, XC-2, TEST-1, XC-3 | 3 parallel | DONE |
+| Wave 3: Testability | TEST-3, TEST-2 | 2 parallel | DONE |
+| Wave 4: Research | ARCH-1, XC-1 | 2 parallel (read-only) | DONE |
