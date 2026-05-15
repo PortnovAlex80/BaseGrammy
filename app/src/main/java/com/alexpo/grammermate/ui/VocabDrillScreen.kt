@@ -288,7 +288,7 @@ private fun VocabDrillSelectionScreen(
                         Text(
                             text = stringResource(R.string.vocab_mastered_count, state.masteredCount),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF2E7D32)
+                            color = MasteryGreen
                         )
                         // Per-POS breakdown
                         val posBreakdown = state.masteredByPos.entries
@@ -502,12 +502,12 @@ private fun VocabDrillCardScreen(
                         onClick = { onAnswer(SrsRating.HARD) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFE65100)
+                            contentColor = VocabIntervalOrange
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(stringResource(R.string.vocab_rating_hard), fontWeight = FontWeight.Bold)
-                            Text("${ladder[currentStep]}d", fontSize = 11.sp, color = Color(0xFFE65100).copy(alpha = 0.7f))
+                            Text("${ladder[currentStep]}d", fontSize = 11.sp, color = VocabIntervalOrange.copy(alpha = 0.7f))
                         }
                     }
                 }
@@ -534,7 +534,7 @@ private fun VocabDrillCardScreen(
                         onClick = { onAnswer(SrsRating.EASY) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32)
+                            containerColor = MasteryGreen
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -661,9 +661,9 @@ private fun VocabDrillCardFront(
         colors = CardDefaults.cardColors(
             containerColor = when {
                 voiceCompleted && voiceResult == VoiceResult.CORRECT ->
-                    Color(0xFFE8F5E9).copy(alpha = 0.7f) // light green tint
+                    VocabCorrectBackground.copy(alpha = 0.7f) // light green tint
                 voiceCompleted && voiceResult == VoiceResult.WRONG ->
-                    Color(0xFFFFEBEE).copy(alpha = 0.7f) // light red tint
+                    VocabIncorrectBackground.copy(alpha = 0.7f) // light red tint
                 else ->
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
             }
@@ -977,8 +977,8 @@ private fun VoiceResultFeedback(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = when (voiceResult) {
-                VoiceResult.CORRECT -> Color(0xFFE8F5E9) // light green
-                VoiceResult.WRONG -> Color(0xFFFFEBEE)   // light red
+                VoiceResult.CORRECT -> VocabCorrectBackground // light green
+                VoiceResult.WRONG -> VocabIncorrectBackground   // light red
                 VoiceResult.SKIPPED -> MaterialTheme.colorScheme.surfaceVariant
                 null -> MaterialTheme.colorScheme.surfaceVariant
             }
@@ -1011,13 +1011,13 @@ private fun VoiceResultFeedback(
                         Icon(
                             Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color(0xFF2E7D32),
+                            tint = MasteryGreen,
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
                             text = stringResource(R.string.vocab_voice_correct),
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF2E7D32)
+                            color = MasteryGreen
                         )
                     }
                 }

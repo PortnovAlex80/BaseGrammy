@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.alexpo.grammermate.ui.MasteryGreen
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -390,7 +391,7 @@ fun VocabDrillEntryTile(
                 Text(
                     text = stringResource(R.string.format_mastered, masteredCount),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF2E7D32)
+                    color = MasteryGreen
                 )
             }
         }

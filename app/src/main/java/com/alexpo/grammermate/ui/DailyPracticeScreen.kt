@@ -779,10 +779,10 @@ private fun ColumnScope.VocabFlashcardBlock(
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(stringResource(R.string.srs_again) to SrsRating.AGAIN, stringResource(R.string.srs_hard) to SrsRating.HARD, stringResource(R.string.srs_good) to SrsRating.GOOD, stringResource(R.string.srs_easy) to SrsRating.EASY).forEach { (label, rating) ->
             val colors = when (rating) {
-                SrsRating.AGAIN -> Pair(Color(0xFFFFEBEE), Color(0xFFE53935))
-                SrsRating.HARD -> Pair(Color(0xFFFFF3E0), Color(0xFFFF9800))
-                SrsRating.GOOD -> Pair(Color(0xFFE8F5E9), Color(0xFF4CAF50))
-                SrsRating.EASY -> Pair(Color(0xFFE3F2FD), Color(0xFF2196F3))
+                SrsRating.AGAIN -> Pair(SrsAgainBackground, SrsAgainText)
+                SrsRating.HARD -> Pair(SrsHardBackground, SrsHardText)
+                SrsRating.GOOD -> Pair(SrsGoodBackground, SrsGoodText)
+                SrsRating.EASY -> Pair(SrsEasyBackground, SrsEasyText)
             }
             OutlinedButton(
                 onClick = { onRate(rating); if (!onAdvance()) onComplete() },
