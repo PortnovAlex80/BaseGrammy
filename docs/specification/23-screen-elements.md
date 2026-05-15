@@ -35,7 +35,7 @@
 | Lesson tile emoji | HS-09 | text | Per tile | Shows flower emoji based on state: LOCKED = lock, UNLOCKED = open lock, SEED/SPROUT/BLOOM = FlowerCalculator emoji, EMPTY = gray dot. | ? |
 | Lesson tile mastery percent | HS-10 | text | `masteryPercent > 0` and not LOCKED/UNLOCKED/EMPTY | Shows "N%" in 10sp, 60% alpha. | ? |
 | Verb Drill entry tile | HS-11 | card | `hasVerbDrill == true` | Card with FitnessCenter icon + "Verb Drill" label. 64dp height. Calls `onOpenVerbDrill()`. | ? |
-| Vocab Drill entry tile | HS-12 | card | `hasVocabDrill == true` | Card with MenuBook icon + "Flashcards" label + mastered count badge ("N mastered" in green). Calls `onOpenVocabDrill()`. | ? |
+| Vocab Drill entry tile | HS-12 | card | `hasVocabDrill == true` | Card with MenuBook icon + "Flashcards" label + mastered count badge ("N mastered" in green). Calls `onOpenVocabDrill()`. **Dark Mode:** Mastered count text must use lighter green 0xFF66BB6A for readability (>=4.5:1 contrast against dark background). [UC-68 AC9] | UC-68 |
 | Daily Practice entry tile | HS-13 | card | Always | primaryContainer Card with "Daily Practice" title + "Practice all sub-lessons" subtitle + PlayArrow icon. Calls `onOpenElite()`. | ? |
 | Mix Challenge entry tile | HS-14 | card | **HIDDEN** [UI-CONSISTENCY-2025] | DORMANT: tile is no longer rendered on HomeScreen. Blue-tinted Card (0xFFE3F2FD) with "Mix Challenge" title + "Interleaved practice across tenses" subtitle + SwapHoriz icon. Retained in registry for backward compat. | ? |
 | Legend text | HS-15 | text | Always | Shows "Legend:" header + emoji meanings: seed, growing, bloom, wilting, wilted, forgotten. | ? |
@@ -58,7 +58,7 @@
 | Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`, green-tinted text in drill mode. | ? |
 | Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). In drill mode: green (0xFF388E3C). | ? |
 | Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), `(18f * ruTextScale).sp`, Medium weight. Green tint in drill mode. | UC-56 |
-| DrillProgressRow (progress bar) | TS-06 | progress-bar | Always | Rounded green bar (70% width, #4CAF50 on #C8E6C9 track). "N / Total" text overlay. Text color flips dark-green-to-white at 12% fill. | ? |
+| DrillProgressRow (progress bar) | TS-06 | progress-bar | Always | Rounded green bar (70% width, #4CAF50 on #C8E6C9 track). "N / Total" text overlay. Text color flips dark-green-to-white at 12% fill. **Dark Mode:** Track must use dark colors: filled = 0xFF2E4A2F, unfilled = 0xFF3A3A3A. [UC-68 AC5] | UC-68 |
 | Speedometer (progress arc) | TS-07 | progress-bar | Always | Canvas arc (30% width, 44dp). Color: red (<=20 wpm), yellow (<=40 wpm), green (>40 wpm). Center shows numeric wpm. | ? |
 | CardPrompt card | TS-08 | card | `currentCard != null` | Material Card with "RU" label + prompt text (`(20f * ruTextScale).sp`, SemiBold) + TtsSpeakerButton. | UC-56 |
 | CardPrompt TTS button | TS-09 | button | `currentCard != null` | TtsSpeakerButton: 4 states (SPEAKING=StopCircle red, INITIALIZING=spinner, ERROR=ReportProblem red, IDLE=VolumeUp). Calls `onTtsSpeak()`. | ? |
@@ -78,7 +78,7 @@
 | Report button | TS-23 | button | `hasCards` | IconButton with ReportProblem icon + "Report sentence" tooltip. Opens report ModalBottomSheet. | ? |
 | Current mode label | TS-24 | text | Always | "Voice" / "Keyboard" / "Word Bank" label text. | ? |
 | Check button | TS-25 | button | `hasCards && inputText.isNotBlank() && sessionState == ACTIVE && currentCard != null` | Full-width Button "Check". Calls `onSubmit()`. | ? |
-| Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. | ? |
+| Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
 | Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | TtsSpeakerButton. Replays answer TTS. | ? |
 | Answer text | TS-28 | text | `answerText` not blank | "Answer: {answerText}" text. | ? |
 | Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. | ? |
@@ -88,8 +88,8 @@
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
-| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). | ? |
-| Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #01565C0). | ? |
+| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). **Dark Mode:** Must use theme-aware color. Light = 0xFFE8F5E9, Dark = 0xFF1B3A1D. Currently hardcoded `DrillBackgroundGreen` — needs conditional in Theme.kt or `isSystemInDarkTheme()` check. [UC-68 AC1] | UC-68 |
+| Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #01565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
 
 ---
 
@@ -119,7 +119,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Report button | TCS-18 | button | `supportsFlagging && hasCards` | IconButton ReportProblem + "Report sentence" tooltip. Opens report sheet. | ? |
 | Current mode label | TCS-19 | text | Always | "Voice" / "Keyboard" / "Word Bank" label. | ? |
 | Check button | TCS-20 | button | `inputText.isNotBlank() && hasCards` | Full-width "Check" button. Calls `scope.onSubmit()`. | ? |
-| Correct/Incorrect result | TCS-21 | text | `isShowingResult` | "Correct" (green) or "Incorrect" (red) Bold text + TTS replay + "Answer: {displayAnswer}". | ? |
+| Correct/Incorrect result | TCS-21 | text | `isShowingResult` | "Correct" (green) or "Incorrect" (red) Bold text + TTS replay + "Answer: {displayAnswer}". **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
 | Report bottom sheet | TCS-22 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt + flag/unflag + hide card + export + copy text + share translation via QR (when shareText != null). | ? |
 | Navigation row | TCS-23 | button | `supportsNavigation` | Prev + Pause/Play (if `supportsPause`) + Exit + Next NavIconButtons. | ? |
 | Exit confirmation dialog | TCS-24 | dialog | Exit button tapped | "End session? Your progress will be saved." with "End"/"Cancel". | ? |
@@ -160,7 +160,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Vocab translation text | DP-23 | text | VOCAB block active | Translation text in `(18f * ruTextScale).sp` Medium, primary color. Always visible regardless of HintLevel. | UC-56 |
 | Vocab "You said" text | DP-24 | text | `voiceRecognizedText != null` | "You said: \"{text}\"" in muted style. | ? |
 | Vocab mic button | DP-25 | button | VOCAB block active | 64dp FilledTonalIconButton. Launches voice recognition with direction-appropriate language tag. | ? |
-| Vocab rating buttons | DP-26 | button | VOCAB block active | 4 OutlinedButtons: Again (red), Hard (orange), Good (primary), Easy (green). Auto-advances on tap. | ? |
+| Vocab rating buttons | DP-26 | button | VOCAB block active | 4 OutlinedButtons: Again (red), Hard (orange), Good (primary), Easy (green). Auto-advances on tap. **Dark Mode:** Backgrounds must NOT be pastel: Again dark = 0xFF3A1B1B, Hard dark = 0xFF3A2E1B, Good dark = 0xFF1B3A1D, Easy dark = 0xFF1A2E3A. [UC-68 AC4] | UC-68 |
 | Auto-voice effect (translate/verbs) | DP-27 | (system) | `inputMode == VOICE && sessionActive && currentCard != null` | LaunchedEffect triggers speech recognition after 200ms (1200ms after incorrect feedback). | ? |
 | Auto-advance effect | DP-28 | (system) | `pendingAnswerResult.correct && inputMode == VOICE` | Auto-advances to next card after 400ms on correct voice answer. | ? |
 | Completion screen | DP-29 | card | `state.finishedToken && !hasShownCompletionSparkle` | "Session Complete!" heading + description text + "Back to Home" button. | ? |
@@ -259,7 +259,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Card progress counter | VOC-18 | text | Session active | "N/M" in labelLarge, primary color. | ? |
 | Report button (card header) | VOC-19 | button | Session active | IconButton ReportProblem. Tinted red if word is flagged. Opens report sheet. | ? |
 | Card progress bar | VOC-20 | progress-bar | Session active | LinearProgressIndicator showing current/total. | ? |
-| Card front container | VOC-21 | card | `!session.isFlipped` | RoundedCornerShape(16dp) Card. Background tint changes: green on correct voice, red on wrong, surfaceVariant default. | ? |
+| Card front container | VOC-21 | card | `!session.isFlipped` | RoundedCornerShape(16dp) Card. Background tint changes: green on correct voice, red on wrong, surfaceVariant default. **Dark Mode:** Correct background must NOT be pastel 0xFFE8F5E9 — use dark green 0xFF1B3A1D. Incorrect background must NOT be pastel 0xFFFFEBEE — use dark red 0xFF3A1B1B. [UC-68 AC3] | UC-68 |
 | POS badge | VOC-22 | card | Always (when card has POS) | Small rounded Card showing "noun"/"verb"/"adj." etc. Color-coded by POS. Always visible regardless of HintLevel. | ? |
 | Rank badge | VOC-23 | card | Always (when card has rank) | Small rounded Card showing "#N" rank. Always visible regardless of HintLevel. | ? |
 | Word text (front) | VOC-24 | text | `!session.isFlipped` | `(32f * ruTextScale).sp` Bold centered. Direction-dependent: IT_TO_RU shows Italian, RU_TO_IT shows Russian meaning. | UC-56 |
@@ -275,10 +275,10 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Mastery step indicator | VOC-34 | text | `session.isFlipped` | "Step X/9" or "Learned" (when step >= 3). Muted labelSmall. | ? |
 | Skip button | VOC-35 | button | `!session.isFlipped` | OutlinedButton with SkipNext icon. Skips voice or flips card. | ? |
 | Flip button | VOC-36 | button | `!session.isFlipped` | Filled Button with Flip icon. Calls `onFlip()`. | ? |
-| "Again" rating button | VOC-37 | button | `session.isFlipped` | Error-colored OutlinedButton. Shows "Again" + "<1m" interval. Resets to step 0. | ? |
-| "Hard" rating button | VOC-38 | button | `session.isFlipped` | Orange-colored OutlinedButton. Shows "Hard" + current step interval. Stays at same step. | ? |
-| "Good" rating button | VOC-39 | button | `session.isFlipped` | Primary-colored Filled Button. Shows "Good" + next step interval. Advances +1 step. | ? |
-| "Easy" rating button | VOC-40 | button | `session.isFlipped` | Green-colored Filled Button. Shows "Easy" + +2 step interval. Advances +2 steps. | ? |
+| "Again" rating button | VOC-37 | button | `session.isFlipped` | Error-colored OutlinedButton. Shows "Again" + "<1m" interval. Resets to step 0. **Dark Mode:** Background must NOT be pastel 0xFFFFEBEE — use dark red 0xFF3A1B1B. [UC-68 AC4] | UC-68 |
+| "Hard" rating button | VOC-38 | button | `session.isFlipped` | Orange-colored OutlinedButton. Shows "Hard" + current step interval. Stays at same step. **Dark Mode:** Background must NOT be pastel 0xFFFFF3E0 — use dark orange 0xFF3A2E1B. [UC-68 AC4] | UC-68 |
+| "Good" rating button | VOC-39 | button | `session.isFlipped` | Primary-colored Filled Button. Shows "Good" + next step interval. Advances +1 step. **Dark Mode:** Background must NOT be pastel 0xFFE8F5E9 — use dark green 0xFF1B3A1D. [UC-68 AC4] | UC-68 |
+| "Easy" rating button | VOC-40 | button | `session.isFlipped` | Green-colored Filled Button. Shows "Easy" + +2 step interval. Advances +2 steps. **Dark Mode:** Background must NOT be pastel 0xFFE3F2FD — use dark blue 0xFF1A2E3A. [UC-68 AC4] | UC-68 |
 | Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: "Word options" title + word text + flag/unflag + export + copy + share translation via QR (when shareText != null). | ? |
 | Export result dialog | VOC-42 | dialog | `exportMessage != null` | AlertDialog with export result. | ? |
 | Auto-flip on voice correct | VOC-43 | (system) | `voiceCompleted && voiceResult == CORRECT && !isFlipped` | Auto-flips card after 800ms delay. | ? |

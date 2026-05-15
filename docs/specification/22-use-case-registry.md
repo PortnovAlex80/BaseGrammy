@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 67 |
-| Total Acceptance Criteria | 339 |
-| Domains | 20 |
+| Total Use Cases | 68 |
+| Total Acceptance Criteria | 348 |
+| Domains | 21 |
 
 ### Per-Domain Counts
 
@@ -36,6 +36,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 18 | Progress reset | 1 | 8 |
 | 19 | Theme mode switching (Light/Dark/System) | 1 | 7 |
 | 20 | Interface language switching (English/Russian) | 1 | 7 |
+| 21 | Dark-mode color compliance (hardcoded color audit) | 1 | 9 |
 
 ---
 
@@ -248,6 +249,14 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 21: Dark-Mode Color Compliance (Hardcoded Color Audit)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-68 | Dark-mode color compliance across all screens | User has set theme to DARK or SYSTEM (and device is in dark mode) | 1. User opens any screen while dark theme is active. 2. All background surfaces use dark-appropriate colors. 3. All text has sufficient contrast (WCAG AA minimum 4.5:1). 4. All feedback colors (correct/incorrect, SRS ratings) remain distinguishable. 5. Drill mode background is dark green, not light pastel green. 6. SRS rating buttons use dark-mode appropriate container colors. 7. Vocab card correct/incorrect backgrounds are dark-muted, not pastel. | AC1 [BEHAVIORAL]: TrainingScreen drill mode Scaffold background is NOT Color(0xFFE8F5E9) in dark mode. AC2 [BEHAVIORAL]: TrainingScreen mix challenge surface is NOT Color(0xFFE3F2FD) in dark mode. AC3 [BEHAVIORAL]: VocabDrillScreen correct/incorrect card backgrounds are NOT pastel in dark mode. AC4 [BEHAVIORAL]: DailyPracticeScreen SRS rating buttons (Again/Hard/Good/Easy) backgrounds are NOT pastel in dark mode. AC5 [BEHAVIORAL]: SessionProgressIndicator progress bar track is visible in dark mode. AC6 [STRUCTURAL]: All hardcoded color constants in Theme.kt return dark-mode values when dark theme is active. AC7 [STRUCTURAL]: No inline Color(0xFF...) literals remain in VocabDrillScreen, DailyPracticeScreen, TrainingCardSession. AC8 [BEHAVIORAL]: Correct/incorrect text colors maintain >=4.5:1 contrast ratio against dark backgrounds. AC9 [BEHAVIORAL]: HomeScreen mastered count text is readable in dark mode. | TrainingScreen, VocabDrillScreen, DailyPracticeScreen, HomeScreen | `ui/Theme.kt`, `ui/screens/TrainingScreen.kt`, `ui/VocabDrillScreen.kt`, `ui/DailyPracticeScreen.kt`, `ui/TrainingCardSession.kt`, `ui/components/SharedComponents.kt` | TASK-012, TASK-013, TASK-014 |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -276,3 +285,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | TASK-008 | UC-65 |
 | TASK-010 | UC-66 |
 | TASK-011 | UC-67 |
+| TASK-012, TASK-013, TASK-014 | UC-68 |

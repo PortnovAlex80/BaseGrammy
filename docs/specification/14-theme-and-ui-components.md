@@ -643,21 +643,91 @@ SettingsScreen has an "Appearance" section with a 3-option selector for Light / 
 
 ### 14.7.5 Hardcoded Semantic Colors
 
-The following hardcoded colors need dark-mode equivalents (using `MaterialTheme.colorScheme` or conditional colors):
+The following hardcoded colors need dark-mode equivalents. Each color has an exact dark-mode hex value defined below.
 
-| Current Hardcoded | Location | Dark Mode Equivalent |
-|---|---|---|
-| `Color(0xFFE8F5E9)` drill background | TrainingScreen | Use `surfaceVariant` or a dark green tone |
-| `Color(0xFF388E3C)` drill tense label | TrainingScreen | Use `primary` or lighter green |
-| `Color(0xFF2E7D32)` drill prompt / vocab mastered | Multiple | Use `primary` or semantic color |
-| `Color(0xFF4CAF50)` progress bar fill | DrillProgressRow | Use `primary` or theme-aware green |
-| `Color(0xFFC8E6C9)` progress bar track | DrillProgressRow | Use `surfaceVariant` or dark track |
-| `Color(0xFFB00020)` destructive buttons | Settings | Use `MaterialTheme.colorScheme.error` |
-| `Color(0xFFCD7F32)` bronze trophy | BossReward | Keep as-is (thematic, not theme-dependent) |
-| `Color(0xFFE3F2FD)` mix challenge card | TrainingScreen | Use `surfaceVariant` or conditional |
-| `Color(0xFF01565C0)` mix tense chip | TrainingScreen | Use `primary` or semantic color |
+| Current Hardcoded | Location | Dark Mode Value | Rationale |
+|---|---|---|---|
+| `Color(0xFFE8F5E9)` drill background | TrainingScreen | `Color(0xFF1B3A1D)` | Dark muted green |
+| `Color(0xFF388E3C)` drill tense label | TrainingScreen | `Color(0xFF81C784)` | Light green for readability on dark |
+| `Color(0xFF2E7D32)` drill prompt / vocab mastered | Multiple | `Color(0xFF66BB6A)` | Medium green for dark bg |
+| `Color(0xFF4CAF50)` progress bar fill | DrillProgressRow | `Color(0xFF66BB6A)` | Same medium green |
+| `Color(0xFFC8E6C9)` progress bar track | DrillProgressRow | `Color(0xFF2E4A2F)` | Dark green track |
+| `Color(0xFFE0E0E0)` speedometer track | DrillProgressRow | `Color(0xFF3A3A3A)` | Dark grey track |
+| `Color(0xFFE53935)` speed slow / SRS again text | DrillProgressRow, DailyPracticeScreen | `Color(0xFFEF5350)` | Lighter red for dark bg |
+| `Color(0xFFFDD835)` speed medium | DrillProgressRow | `Color(0xFFFFEE58)` | Lighter yellow for dark bg |
+| `Color(0xFF43A047)` speed fast | DrillProgressRow | `Color(0xFF66BB6A)` | Same medium green |
+| `Color(0xFFB00020)` destructive buttons | Settings | `Color(0xFFCF6679)` | M3 dark error color |
+| `Color(0xFFCD7F32)` bronze trophy | BossReward | Keep as-is | Thematic |
+| `Color(0xFFC0C0C0)` silver trophy | BossReward | Keep as-is | Thematic |
+| `Color(0xFFFFD700)` gold trophy | BossReward | Keep as-is | Thematic |
+| `Color(0xFFE3F2FD)` mix challenge card / SRS easy bg | TrainingScreen, DailyPracticeScreen | `Color(0xFF1A2E3A)` | Dark blue-grey |
+| `Color(0xFF1565C0)` mix tense chip / SRS easy text | TrainingScreen, DailyPracticeScreen | `Color(0xFF64B5F6)` | Light blue for dark bg |
+| `Color(0xFFFFEBEE)` SRS again bg / vocab incorrect bg | DailyPracticeScreen, VocabDrillScreen | `Color(0xFF3A1B1B)` | Dark muted red |
+| `Color(0xFFFFF3E0)` SRS hard bg | DailyPracticeScreen | `Color(0xFF3A2E1B)` | Dark muted orange |
+| `Color(0xFFE65100)` vocab interval orange | VocabDrillScreen | `Color(0xFFFF8A65)` | Lighter orange for dark bg |
+| `Color(0xFF2E7D32)` correct text (TrainingCardSession) | TrainingCardSession | `Color(0xFF66BB6A)` | Same medium green |
+| `Color(0xFFC62828)` incorrect text | TrainingCardSession | `Color(0xFFEF5350)` | Lighter red for dark bg |
+| `Color.White` progress label | DrillProgressRow | `Color.White` | OK in both modes |
 
-Colors used for boss trophies (bronze, silver, gold) and speed indicators (red/yellow/green) are thematic and do not change with theme.
+Colors used for boss trophies (bronze, silver, gold) are thematic and do not change with theme.
+
+### 14.7.6 Dark-Mode Color Adaptation Strategy
+
+All 25+ color constants in `Theme.kt` (lines 16-61) must be converted from static `val` to theme-aware lookups. The comment in Theme.kt lines 10-13 already acknowledges this as a separate task.
+
+**Recommended approach:** Create a `GrammarMateColors` data class and a `@Composable localGrammarMateColors()` provider, similar to how `MaterialTheme` works:
+
+```kotlin
+data class GrammarMateColors(
+    val drillBackground: Color,
+    val drillTenseLabel: Color,
+    val drillPrompt: Color,
+    val progressBarFill: Color,
+    val progressBarTrack: Color,
+    // ... all semantic colors from 14.7.5
+)
+
+val LocalGrammarMateColors = compositionLocalOf { lightGrammarMateColors() }
+
+@Composable
+fun localGrammarMateColors() = LocalGrammarMateColors.current
+```
+
+**Alternative approach:** Define composable extension properties on `ColorScheme`:
+
+```kotlin
+@Composable
+val ColorScheme.drillBackground: Color
+    get() = if (isSystemInDarkTheme()) Color(0xFF1B3A1D) else Color(0xFFE8F5E9)
+```
+
+**Migration steps:**
+1. All inline `Color(0xFF...)` literals in screen files (VocabDrillScreen, DailyPracticeScreen, TrainingCardSession) must be replaced with Theme.kt constants
+2. Those constants must then be made theme-aware using one of the approaches above
+3. The `GrammarMateTheme` composable must provide both light and dark `GrammarMateColors` instances
+4. Each screen file is updated to use the theme-aware color lookup instead of the hardcoded literal
+
+### 14.7.7 Screen-by-Screen Dark-Mode Status
+
+| Screen | Status | Issues |
+|--------|--------|--------|
+| TrainingScreen | BROKEN | Drill background, mix challenge, tense labels, result text all hardcoded light-mode |
+| VocabDrillScreen | BROKEN | Card backgrounds (correct/incorrect), interval labels, mastery text all hardcoded |
+| DailyPracticeScreen | BROKEN | All 4 SRS rating button backgrounds hardcoded pastel |
+| SessionProgressIndicator | BROKEN | Progress track and speedometer track hardcoded light colors |
+| TrainingCardSession | PARTIAL | Correct/incorrect result text hardcoded but survives in dark mode (borderline) |
+| HomeScreen | PARTIAL | Mastered count text hardcoded dark green (low contrast in dark) |
+| GrammarMateApp | OK | Boss reward colors are thematic, dialogs use MaterialTheme |
+| SettingsScreen | OK | Fully theme-compliant |
+| LessonRoadmapScreen | OK | Boss tiles use hardcoded but thematic colors, rest uses theme |
+| LadderScreen | OK | Fully theme-compliant |
+| StoryQuizScreen | OK | Fully theme-compliant |
+| VerbDrillScreen | OK | Delegates to TrainingCardSession, no own hardcoded colors |
+| QrShareDialog | OK | White QR background is intentional |
+| InitialsAvatar | OK | Uses MaterialTheme |
+| ProfileStatsPopup | OK | Uses MaterialTheme |
+| DailyPracticeComponents | OK | Uses MaterialTheme |
+| HintAnswerCard | OK | Uses MaterialTheme |
 
 ---
 
