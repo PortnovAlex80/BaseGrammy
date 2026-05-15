@@ -6,13 +6,13 @@
 **Spec:** 09-daily-practice.md §5, scenario-06 §3-6, 07-app-router.md §4
 **UC:** UC-20 (AC2, AC5), UC-21 (AC1)
 **Scenario:** scenario-06-daily-practice.md
-**User Journey:** user-journey-models.md Steps 6.1-6.6, Discrepancies BUG-NAV-008, BUG-NAV-009, BUG-NAV-010, BUG-NAV-011
+**User Journey:** user-journey-models.md Steps 6.1-6.6, Discrepancies BUG-NAV-008, BUG-NAV-009, BUG-NAV-010, BUG-NAV-011, BUG-NAV-017
 
 ---
 
 ## Problem
 
-Daily Practice has four navigation and retry issues:
+Daily Practice has five navigation and retry issues:
 
 1. **Silent failure on daily start (BUG-NAV-008):** When user taps Daily Practice, `vm.startDailyPractice(level)` runs on IO dispatcher. If the coroutine fails silently (exception swallowed), the loading dialog clears but no navigation occurs. User is stuck on HOME with no error feedback.
 
@@ -22,7 +22,9 @@ Daily Practice has four navigation and retry issues:
 
 4. **System back exits without confirmation (BUG-NAV-011):** The BackHandler for DAILY_PRACTICE route in GrammarMateApp.kt navigates directly to HOME. Spec 19.5 and 23-screen-elements.md DP-30 say an exit confirmation dialog should appear. The in-screen back arrow correctly shows the dialog, but the system back button bypasses it entirely.
 
-Root cause: Daily Practice was built with its own state management (DailyPracticeCoordinator) that diverged from the training flow's retry conventions. The BackHandler was written as a simple navigate without matching the in-screen behavior.
+5. **Card behavior divergence from regular training (BUG-NAV-017):** Daily Practice card blocks (Translate and Verbs) use DailyPracticeSessionProvider which has diverged from SessionRunner. Play/pause/submit/retry/navigation behavior is NOT identical to regular training. Key design principle: ALL card-based modes must have IDENTICAL behavior — only VocabDrill (flashcard flip) is different.
+
+Root cause: Daily Practice was built with its own state management (DailyPracticeCoordinator) that diverged from the training flow's retry conventions. The BackHandler was written as a simple navigate without matching the in-screen behavior. Additionally, DailyPracticeSessionProvider evolved independently from SessionRunner, causing card-level behavior drift across play/pause/submit/retry/navigation.
 
 ## Changes
 
@@ -69,6 +71,27 @@ Change the BackHandler for `Routes.DAILY_PRACTICE` in GrammarMateApp.kt from dir
 
 **Verification:** Press system back during daily practice → exit confirmation dialog appears (not direct HOME navigation)
 
+### Fix 5: Align Daily Practice card behavior with regular training
+**Discrepancy:** BUG-NAV-017 | **UC:** UC-20 (AC3, AC4) | **Spec:** 09-daily-practice.md §5, scenario-06 §3, §5
+
+Daily Practice card blocks (Translate and Verbs) MUST behave identically to regular training (SessionRunner). This means:
+- Same Play/Pause toggle: PAUSED → ACTIVE → PAUSED
+- Same 3-attempt retry before hint: wrong answers 1-2 → retry, attempt 3 → show hint
+- Same Play from HINT_SHOWN: clears hint, resumes ACTIVE (fixed in TASK-039)
+- Same Next button behavior: disabled during ACTIVE, enabled during PAUSED/HINT_SHOWN
+- Same auto-voice launch: 200ms after card change in VOICE mode
+- Same auto-advance after correct voice answer: matching timing
+
+The DailyPracticeSessionProvider should either:
+- **A:** Delegate to SessionRunner for card-level operations (preferred — reuse proven logic)
+- **B:** Carefully replicate SessionRunner behavior in DailyPracticeSessionProvider
+
+Preferred: Approach A — if architecturally feasible, use SessionRunner for daily practice card operations too.
+
+**Files:** `feature/daily/DailyPracticeSessionProvider.kt`, `feature/daily/DailyPracticeCoordinator.kt`, possibly `ui/screens/DailyPracticeScreen.kt`
+
+**Verification:** Complete a daily practice session — play/pause/submit/retry should feel identical to regular training.
+
 ---
 
 ## Verification Checklist
@@ -79,13 +102,20 @@ Change the BackHandler for `Routes.DAILY_PRACTICE` in GrammarMateApp.kt from dir
 5. System back during daily practice shows exit confirmation dialog
 6. In-screen back arrow during daily practice shows exit confirmation dialog (unchanged)
 7. All 3 blocks (Translate → Vocab → Verbs) complete successfully end-to-end
+8. Daily Practice Play/Pause toggle matches regular training (PAUSED ↔ ACTIVE)
+9. Daily Practice 3-attempt retry matches regular training (wrong 1-2 → retry, attempt 3 → hint)
+10. Daily Practice Play from HINT_SHOWN clears hint and resumes ACTIVE (matches TASK-039 fix)
+11. Daily Practice Next button is disabled during ACTIVE, enabled during PAUSED/HINT_SHOWN
+12. Daily Practice auto-voice launch timing matches regular training (200ms after card change)
+13. Daily Practice auto-advance after correct voice answer matches regular training timing
 
 ## Scope Boundaries
 **Do NOT touch:**
 - TrainingViewModel (not involved in daily practice)
-- SessionRunner (not used by daily practice)
 - VerbDrillScreen, VocabDrillScreen
 - Boss battle flow
+
+**Fix 5 exception:** SessionRunner may be modified or extended if Approach A (delegation) is chosen. The goal is to reuse SessionRunner's proven card-level logic for daily practice card blocks rather than duplicating it in DailyPracticeSessionProvider.
 
 ## Regression Plan
 After all fixes are implemented, run:
@@ -109,3 +139,4 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 | | Fix 2: Retry in daily practice (pending decision) | | |
 | | Fix 3: Delay navigation for completion sparkle | | |
 | | Fix 4: Exit confirmation for system back | | |
+| | Fix 5: Align card behavior with regular training (BUG-NAV-017) | | |

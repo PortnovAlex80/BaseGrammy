@@ -319,7 +319,11 @@ data class CardSessionState(
     val badSentenceCount: Int = 0,
     val testMode: Boolean = false,
     val vocabSprintLimit: Int = 20
-)
+) {
+    /** Whether the session can accept an answer submission. */
+    val canSubmit: Boolean
+        get() = sessionState == SessionState.ACTIVE && currentCard != null
+}
 
 data class BossState(
     val bossActive: Boolean = false,

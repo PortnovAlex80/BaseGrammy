@@ -332,7 +332,7 @@
 | **Hint behavior** | 3 wrong attempts → shows answer. Press Play → advances to next card (same as TrainingScreen bug BUG-NAV-003) |
 | **Auto-advance** | Correct voice answer → 400ms delay → auto-advance to next card |
 | **Spec source** | scenario-06 §3 |
-| **Discrepancy** | **BUG-NAV-009**: Daily practice has NO retry mechanism after wrong answer display. Single wrong answer cycle → hint shown → must advance. Inconsistent with regular training which allows 3 retries per card. |
+| **Discrepancy** | **BUG-NAV-009**: Daily practice has NO retry mechanism after wrong answer display. Single wrong answer cycle → hint shown → must advance. Inconsistent with regular training which allows 3 retries per card. **BUG-NAV-017**: Daily Practice translate block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. |
 
 ### Step 6.3: Block 2 — Vocab Flashcards (5 cards)
 
@@ -352,7 +352,7 @@
 | **What user sees** | Sentence card with verb conjugation prompt, KEYBOARD/WORD_BANK input |
 | **Session behavior** | Same as Block 1 but no VOICE mode for verbs |
 | **Spec source** | scenario-06 §5 |
-| **Discrepancy** | None |
+| **Discrepancy** | **BUG-NAV-017**: Daily Practice verb block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. |
 
 ### Step 6.5: Daily session completes
 
@@ -484,6 +484,7 @@
 | BUG-NAV-014 | LOW | VerbDrillScreen exit | In-app exit → selection screen, system back → HOME. Inconsistent |
 | BUG-NAV-015 | MEDIUM | VocabDrill mastery indicator | isLearned threshold: data says step>=3, UI shows "Learned" at step>=9 |
 | BUG-NAV-016 | LOW | GrammarMateApp.kt VOCAB_DRILL back | Unnecessary refreshVocabMasteryCount on every exit |
+| BUG-NAV-017 | HIGH | DailyPracticeSessionProvider | Daily practice card blocks (Translate + Verbs) do not match regular training behavior. Play/pause/submit/retry/navigation must be identical to TrainingScreen Journey 4 |
 
 ---
 

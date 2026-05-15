@@ -249,15 +249,26 @@ class DailyPracticeSessionProvider(
 
     override fun togglePause() {
         if (sm.isPaused) {
-            // Play pressed — unpause and restart current card (fresh attempt)
-            sm.reset()
-            _pendingCard = null
-            _pendingResult = null
-            pendingAnswerResult = null
-            _selectedWords = emptyList()
-            cachedWordBankCardId = null
-            cachedWordBank = emptyList()
-            pendingInput = ""
+            // Play pressed — resume session, clearing hint if shown
+            // Matches SessionRunner behavior: Play from HINT_SHOWN clears hint and resumes ACTIVE
+            if (sm.hintAnswer != null) {
+                // Hint was shown — clear hint, reset attempts, resume ACTIVE
+                sm.reset()
+                _pendingCard = null
+                _pendingResult = null
+                pendingAnswerResult = null
+                _selectedWords = emptyList()
+                cachedWordBankCardId = null
+                cachedWordBank = emptyList()
+                pendingInput = ""
+                // Trigger voice recognition if in VOICE mode (matches SessionRunner startSession)
+                if (_inputMode == InputMode.VOICE) {
+                    sm.triggerVoice()
+                }
+            } else {
+                // Simple pause resume — just unpause without resetting card state
+                sm.resume()
+            }
         } else {
             sm.pause()
         }

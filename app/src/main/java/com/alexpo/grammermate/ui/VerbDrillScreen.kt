@@ -19,11 +19,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -77,6 +82,7 @@ import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
 import com.alexpo.grammermate.ui.components.HintAnswerCard
+import com.alexpo.grammermate.ui.components.NavIconButton
 import com.alexpo.grammermate.ui.components.WordBankSection
 
 @Composable
@@ -198,18 +204,39 @@ private fun VerbDrillSessionWithCardSession(
         onAutoStartVoice = onAutoStartVoice
     )
 
+    // Fix 1: Cancel auto-advance on manual Next.
+    // Track whether auto-advance is still eligible so a manual Next during the
+    // 500ms window cancels it instead of causing a double-advance.
+    var autoAdvanceCancelled by remember { mutableStateOf(false) }
+
     // Auto-advance after correct voice answer — no manual "Next" tap needed
     LaunchedEffect(provider.pendingAnswerResult, provider.currentInputMode) {
         val result = provider.pendingAnswerResult
         if (result != null && result.correct && provider.currentInputMode == InputMode.VOICE) {
             delay(500)
-            provider.nextCard()
+            if (!autoAdvanceCancelled) {
+                provider.nextCard()
+            }
         }
     }
 
-    // Auto-advance after hint shown in voice mode — Play button behavior
-    // (When hint is shown via eye or 3 wrong attempts, user presses Play to advance)
-    // This is handled by togglePause() calling nextCard() directly
+    // Reset cancellation flag when the card changes (new card = fresh auto-advance cycle)
+    val currentCardId = provider.currentCard?.id
+    LaunchedEffect(currentCardId) {
+        autoAdvanceCancelled = false
+    }
+
+    // Fix 2: Custom navigation controls that show SkipNext when Play will advance
+    // (hint shown state) vs PlayArrow when it will resume (manual pause).
+    val navigationControlsSlot: @Composable TrainingCardSessionScope.() -> Unit = {
+        VerbDrillNavigationControls(
+            scope = this,
+            provider = provider,
+            onManualNext = {
+                autoAdvanceCancelled = true
+            }
+        )
+    }
 
     TrainingCardSession(
         contract = provider,
@@ -310,6 +337,7 @@ private fun VerbDrillSessionWithCardSession(
                 voiceAutoStart = voiceAutoStart
             )
         },
+        navigationControls = navigationControlsSlot,
         completionScreen = {
             VerbDrillCompletionScreen(
                 viewModel = viewModel,
@@ -343,6 +371,100 @@ private fun VerbDrillSessionWithCardSession(
                 tenseSheetTense = null
             }
         )
+    }
+}
+
+/**
+ * Navigation controls for VerbDrill — mirrors DefaultNavigationControls but adds
+ * visual differentiation for the Play/SkipNext button:
+ * - When paused with hint shown (hintAnswer != null): shows SkipNext icon (will advance)
+ * - When paused without hint (manual pause): shows PlayArrow icon (will resume)
+ */
+@Composable
+private fun VerbDrillNavigationControls(
+    scope: TrainingCardSessionScope,
+    provider: VerbDrillCardSessionProvider,
+    onManualNext: () -> Unit
+) {
+    if (!scope.contract.supportsNavigation) return
+
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text(stringResource(R.string.session_end_title)) },
+            text = { Text(stringResource(R.string.session_end_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitDialog = false
+                    scope.contract.requestExit()
+                }) {
+                    Text(stringResource(R.string.button_end))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text(stringResource(R.string.button_cancel))
+                }
+            }
+        )
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        NavIconButton(
+            onClick = scope.onPrev,
+            enabled = scope.currentCard != null
+        ) {
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (scope.contract.supportsPause) {
+                NavIconButton(
+                    onClick = {
+                        // If hint is shown, Play will advance — cancel auto-advance if pending
+                        if (!scope.contract.sessionActive && provider.hintAnswer != null) {
+                            onManualNext()
+                        }
+                        scope.contract.togglePause()
+                    },
+                    enabled = scope.currentCard != null
+                ) {
+                    if (scope.contract.sessionActive) {
+                        Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
+                    } else {
+                        // Fix 2: Show SkipNext when hint shown (will advance), PlayArrow for manual pause (will resume)
+                        if (provider.hintAnswer != null) {
+                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.content_desc_next))
+                        } else {
+                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
+                        }
+                    }
+                }
+            }
+            NavIconButton(
+                onClick = { showExitDialog = true },
+                enabled = scope.currentCard != null
+            ) {
+                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
+            }
+            NavIconButton(
+                onClick = {
+                    onManualNext()
+                    scope.onNext()
+                },
+                enabled = scope.currentCard != null
+            ) {
+                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.content_desc_next))
+            }
+        }
     }
 }
 
