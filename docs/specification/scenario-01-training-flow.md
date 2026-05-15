@@ -223,6 +223,8 @@ All 8 steps are present. Order differs slightly (flower refresh at end of method
 
 ### Discrepancy: NO
 
+**Pending change (TASK-047):** Per DP-02, `nextCard()` and `prevCard()` will be updated to trigger PAUSE first if the session is ACTIVE, then advance/retreat the card index. The session will remain PAUSED until the user presses Play. This converts navigation from a work-mode action to a preview-mode action. See user-journey-models.md DP-02.
+
 ---
 
 ## Step 6: Incorrect Answer -- 3-Attempt Flow / Hint Reveal
@@ -568,6 +570,8 @@ The code implementation matches the specification with high fidelity across all 
 6. **`saveProgress()` skips during boss battles** (`TrainingViewModel.kt:2454-2455`) except ELITE type. Boss sessions are intentionally not persisted mid-battle.
 
 7. **The `onInputChanged()` method resets attempts and clears `answerText`** when the previous answer was shown or 3+ attempts were made (`TrainingViewModel.kt:351`). This creates a clean state for re-entry after hint display.
+
+8. **Navigation during ACTIVE session will change (TASK-047):** Currently `nextCard()` and `prevCard()` advance without pausing. Per DP-02, pressing Next/Prev during ACTIVE will first trigger PAUSE, then advance. The user must press Play to resume work mode on the new card. This prevents accidental card skipping and separates browsing from practicing.
 
 ### Code-File Reference Map
 

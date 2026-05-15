@@ -5,6 +5,26 @@
 
 ---
 
+## Design Principles
+
+### DP-01: Browsing vs Practicing (existing)
+
+The app separates card browsing from active practice. PAUSED = browsing mode, ACTIVE = work mode.
+
+### DP-02: Navigation = Preview Mode, Play = Work Mode
+
+**Rule:** Navigation arrows (forward/back) are always enabled and operate in PAUSE state. Pressing any arrow during ACTIVE session immediately triggers PAUSE. The user browses cards in preview mode (no timer, no voice). Pressing Play activates work mode (timer, voice recognition, answer acceptance).
+
+**Why:** Separates browsing from practicing. User can preview upcoming cards without timer pressure, then engage with Play when ready.
+
+### DP-03: One Shared Component Per UI Element
+
+**Rule:** Each shared UI element (NavigationRow, InputControlsBar, AnswerBox) exists as ONE component used by ALL card-based modes. No mode may have its own version of a shared element. The only exception is VocabDrill (flashcard flip paradigm).
+
+**Why:** Prevents behavioral drift between modes. A bug fix or UX improvement in one component applies everywhere automatically.
+
+---
+
 ## Common Behavior Patterns
 
 Many screens share the same foundational mechanics. Patterns are extracted to eliminate duplication and ensure consistent bug fixes.
@@ -222,7 +242,7 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 |----|------|-------------|
 | BUG-NAV-002 | A.4a | No visual feedback after auto-advance on correct answer. Card changes instantly without animation, easy to miss |
 | BUG-NAV-003 | A.4c | Play from HINT_SHOWN does not clear `answerText`. Hint persists while session is ACTIVE, Check is active |
-| BUG-NAV-004 | A.5 | Next button always active — can skip cards during ACTIVE session |
+| BUG-NAV-004 | A.5 | Next button always active — can skip cards during ACTIVE session. **Behavior will change per DP-02 / TASK-047**: Next/Prev during ACTIVE will trigger PAUSE first, then advance. Navigation becomes preview-mode only. |
 | BUG-NAV-005 | A.5 | Next on last card stays on it with no completion feedback |
 
 ---
@@ -554,7 +574,7 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 | BUG-NAV-001 | HIGH | BossOrchestrator, SessionRunner | Boss records mastery without `bossActive` check. 3 locations in code |
 | BUG-NAV-002 | MEDIUM | TrainingScreen | No visual feedback after auto-advance on correct answer |
 | BUG-NAV-003 | HIGH | SessionRunner.togglePause() | Play from HINT_SHOWN does not clear `answerText`. Hint visible during ACTIVE |
-| BUG-NAV-004 | MEDIUM | TrainingScreen NavigationRow | Next button always active — card skipping |
+| BUG-NAV-004 | MEDIUM | TrainingScreen NavigationRow | Next button always active — card skipping. Will change per DP-02 / TASK-047 |
 | BUG-NAV-005 | LOW | SessionRunner.nextCardInternal() | Next on last card — no completion feedback |
 | BUG-NAV-006 | MEDIUM | BossOrchestrator.clearBossRewardMessage() | Stale state read in shouldResumeTimer |
 | BUG-NAV-007 | LOW | BossOrchestrator | Reward overwrite on repeat (last, not best) |
