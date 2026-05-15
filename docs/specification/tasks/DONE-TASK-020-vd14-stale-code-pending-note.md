@@ -1,6 +1,6 @@
 # TASK-020: VD-14 Stale CODE PENDING Note
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** scenario-07-verb-drill.md

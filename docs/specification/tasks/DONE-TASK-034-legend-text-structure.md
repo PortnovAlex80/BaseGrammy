@@ -1,6 +1,6 @@
 # TASK-034: HS-15 Legend Text Structure Mismatch
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** —

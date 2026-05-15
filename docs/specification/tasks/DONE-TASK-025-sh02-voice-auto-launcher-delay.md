@@ -1,6 +1,6 @@
 # TASK-025: SH-02 VoiceAutoLauncher Fixed vs Variable Delay
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/voice-auto-launcher-delay (from main)
 **Scenario:** scenario-07-verb-drill.md

@@ -1,6 +1,6 @@
 # TASK-032: HS-01 Avatar Discrepancies (3 Sub-issues)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/avatar-fixes (from main)
 **Scenario:** scenario-11-navigation.md

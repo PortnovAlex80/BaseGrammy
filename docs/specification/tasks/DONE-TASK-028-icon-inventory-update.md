@@ -1,6 +1,6 @@
 # TASK-028: Icon Inventory Update (8 Extra Icons + LocalFlorist)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** —

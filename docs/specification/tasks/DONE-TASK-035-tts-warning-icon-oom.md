@@ -1,6 +1,6 @@
 # TASK-035: TS-09 TTS Warning Icon for OOM Undocumented
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** scenario-01-training-flow.md

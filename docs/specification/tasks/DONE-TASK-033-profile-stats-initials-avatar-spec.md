@@ -1,6 +1,6 @@
 # TASK-033: ProfileStatsPopup + InitialsAvatar Missing from Spec
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** scenario-11-navigation.md

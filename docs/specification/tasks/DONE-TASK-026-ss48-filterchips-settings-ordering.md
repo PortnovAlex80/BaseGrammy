@@ -1,6 +1,6 @@
 # TASK-026: SS-48 FilterChips + Settings Section Ordering
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** —

@@ -1,6 +1,6 @@
 # TASK-024: SH-05 TextScaleProvider Not Implemented
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** —

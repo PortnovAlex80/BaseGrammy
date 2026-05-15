@@ -1,6 +1,6 @@
 # TASK-027: DG-14/15/16/17 Dialog Location References Stale
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** scenario-11-navigation.md

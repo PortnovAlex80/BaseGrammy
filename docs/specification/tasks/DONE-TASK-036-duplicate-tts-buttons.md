@@ -1,6 +1,6 @@
 # TASK-036: TS-27 + TCS-21 Duplicate TTS Buttons in Result Area
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/tts-button-dedup (from main)
 **Scenario:** scenario-01-training-flow.md

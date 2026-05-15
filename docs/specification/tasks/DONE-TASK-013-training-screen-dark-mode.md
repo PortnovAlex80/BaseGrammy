@@ -1,6 +1,6 @@
 # TASK-013: TrainingScreen Dark-Mode Fix (Drill + Mix + Progress)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/training-screen-dark-mode (from main)
 **Spec:** 14-theme-and-ui-components.md#14.7.5, 14.7.7

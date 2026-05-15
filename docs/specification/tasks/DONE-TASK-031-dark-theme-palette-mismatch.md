@@ -1,6 +1,6 @@
 # TASK-031: Dark Theme Color Palette Mismatch
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/dark-theme-palette (from main)
 **Scenario:** —

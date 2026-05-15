@@ -1,6 +1,6 @@
 # TASK-021: VD-23 Voice Mode Button Launches Speech Directly
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/verb-drill-voice-button (from main)
 **Scenario:** scenario-07-verb-drill.md

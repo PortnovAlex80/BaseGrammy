@@ -1,6 +1,6 @@
 # TASK-022: VOC-41 VocabDrill Custom Report Sheet (Not SharedReportSheet)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/vocab-report-sheet (from main)
 **Scenario:** scenario-08-vocab-drill.md

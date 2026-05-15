@@ -1,6 +1,6 @@
 # TASK-012: Theme.kt Color Constants — Dark-Mode Adaptation
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/theme-dark-mode-constants (from main)
 **Spec:** 14-theme-and-ui-components.md#14.7.5, 14.7.6, 14.7.7

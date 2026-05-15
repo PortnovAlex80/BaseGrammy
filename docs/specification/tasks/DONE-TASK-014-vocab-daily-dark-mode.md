@@ -1,6 +1,6 @@
 # TASK-014: VocabDrillScreen + DailyPracticeScreen Dark-Mode Fix
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** feature/vocab-daily-dark-mode (from main)
 **Spec:** 14-theme-and-ui-components.md#14.7.5, 14.7.7

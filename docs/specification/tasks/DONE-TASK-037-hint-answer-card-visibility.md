@@ -1,6 +1,6 @@
 # TASK-037: DP-11 HintAnswerCard Visibility Condition (Spec Error)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** scenario-06-daily-practice.md

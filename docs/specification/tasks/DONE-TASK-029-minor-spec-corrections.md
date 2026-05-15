@@ -1,6 +1,6 @@
 # TASK-029: Minor Spec Corrections (TS-37, SS-12, SS-20, SS-31)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-15
 **Branch:** N/A (spec-only fix)
 **Scenario:** —
