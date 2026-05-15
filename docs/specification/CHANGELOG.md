@@ -2,6 +2,27 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v3.4 (2026-05-15) -- Re-Audit 11 CRITICAL Fixes
+
+### Re-audit CRITICAL resolution (11/11 fixed)
+
+- `tasks/EXECUTION-re-audit-11-criticals.md`: Marked DONE (11/11 CRITICALs fixed).
+- `tasks/README.md`: Updated with 11 CRITICAL fix entries (DATA-1, DATA-2, W-DATA-1, W-DATA-2, UI-1, UI-2, XC-2, TEST-1, XC-3, TEST-2, TEST-3, ARCH-1, XC-1).
+- `CLAUDE.md`: Updated project version context.
+- Code changes (22 files, +352 / -358 lines):
+  - Wave 1 (`ff45fd6`): Add ReentrantLock mutex to 7 data stores (MasteryStore, ProgressStore, StreakStore, VerbDrillStore, WordMasteryStore, DrillProgressStore, VocabProgressStore). Prevents concurrent write corruption (DATA-1, DATA-2, W-DATA-1, W-DATA-2).
+  - Wave 2 (`f7eaf38`): UI crash fixes — VocabDrillScreen null-safety, StoryQuizScreen lifecycle fix (UI-1, UI-2). Signing config in build.gradle.kts (XC-2). CI pipeline via .github/workflows/ci.yml (TEST-1). Backup validation in BackupRestorer + backup_rules.xml (XC-3). CardSessionStateMachine state guards.
+  - Wave 3 (`35fea87`): Testability improvements — AudioCoordinator testability, StreakStore test-friendly constructor (TEST-2, TEST-3).
+  - Wave 4 (`75dbc8f`): Implement research findings — architecture improvements, cross-cutting concerns (ARCH-1, XC-1). BackupFileCollector/BackupManager refactored.
+- Commit: `2065557`
+
+## v3.3 (2026-05-15) -- Dark-Mode Color Values + Compliance Spec
+
+- `14-theme-and-ui-components.md`: Added dark-mode color values for all hardcoded semantic colors (section 14.7.5 expanded with exact hex values). Added Dark-Mode Color Adaptation Strategy (section 14.7.6). Added Screen-by-Screen Dark-Mode Status (section 14.7.7).
+- `22-use-case-registry.md`: Added Domain 21 with UC-68 (Dark-Mode Color Compliance, 9 ACs). Updated summary counts (68 UCs, 348 ACs, 21 domains). Added cross-reference entry for TASK-012, TASK-013, TASK-014.
+- `23-screen-elements.md`: Added dark-mode compliance notes to TS-06 (progress bar track), TS-26 (result label), TS-36 (drill background), TS-37 (mix challenge surface), TCS-21 (correct/incorrect result), HS-12 (vocab mastered count), VOC-21 (card front container), VOC-37 through VOC-40 (rating buttons), DP-26 (daily vocab rating buttons). Each note specifies exact dark-mode color values and references UC-68 ACs.
+- Commit: (pending)
+
 ## v3.2 (2026-05-15) -- Theme Switching + Interface Language Specs
 
 ### TASK-010: Theme Mode Switching (Light/Dark/System)
