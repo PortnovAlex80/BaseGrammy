@@ -3,6 +3,8 @@ package com.alexpo.grammermate.data
 import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 interface DrillProgressStore {
     fun getDrillProgress(lessonId: String): Int
@@ -14,12 +16,13 @@ interface DrillProgressStore {
 class DrillProgressStoreImpl(private val context: Context) : DrillProgressStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
+    private val mutex = ReentrantLock()
 
     private fun getFile(lessonId: String): File {
         return File(baseDir, "drill_progress_$lessonId.yaml")
     }
 
-    override fun getDrillProgress(lessonId: String): Int {
+    override fun getDrillProgress(lessonId: String): Int = mutex.withLock {
         val file = getFile(lessonId)
         if (!file.exists()) return -1
         val raw = runCatching { yaml.load<Any>(file.readText()) }.getOrNull() ?: return -1
@@ -28,7 +31,7 @@ class DrillProgressStoreImpl(private val context: Context) : DrillProgressStore 
         return if (idx > 0) idx else -1
     }
 
-    override fun saveDrillProgress(lessonId: String, cardIndex: Int) {
+    override fun saveDrillProgress(lessonId: String, cardIndex: Int) = mutex.withLock {
         baseDir.mkdirs()
         val file = getFile(lessonId)
         val payload = mapOf(
@@ -42,7 +45,7 @@ class DrillProgressStoreImpl(private val context: Context) : DrillProgressStore 
         return getDrillProgress(lessonId) > 0
     }
 
-    override fun clearDrillProgress(lessonId: String) {
+    override fun clearDrillProgress(lessonId: String) = mutex.withLock {
         val file = getFile(lessonId)
         if (file.exists()) file.delete()
     }

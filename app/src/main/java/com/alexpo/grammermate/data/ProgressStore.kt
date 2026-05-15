@@ -3,6 +3,8 @@
 import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 interface ProgressStore {
 
@@ -18,8 +20,9 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "progress.yaml")
     private val schemaVersion = 1
+    private val mutex = ReentrantLock()
 
-    override fun load(): TrainingProgress {
+    override fun load(): TrainingProgress = mutex.withLock {
         if (!file.exists() || file.length() == 0L) return TrainingProgress()
         val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return TrainingProgress()
         val data = when (raw) {
@@ -84,7 +87,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         }
     }
 
-    override fun save(progress: TrainingProgress) {
+    override fun save(progress: TrainingProgress) = mutex.withLock {
         val payload = linkedMapOf(
             "languageId" to progress.languageId.value,
             "mode" to progress.mode.name,
@@ -123,7 +126,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         AtomicFileWriter.writeText(file, yaml.dump(data))
     }
 
-    override fun clear() {
+    override fun clear() = mutex.withLock {
         if (file.exists()) file.delete()
     }
 }

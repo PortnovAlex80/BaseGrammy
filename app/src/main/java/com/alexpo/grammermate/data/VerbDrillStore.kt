@@ -4,6 +4,8 @@ import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.time.LocalDate
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 interface VerbDrillStore {
 
@@ -32,6 +34,7 @@ class VerbDrillStoreImpl(
         File(baseDir, "verb_drill_progress.yaml")
     }
     private val schemaVersion = 1
+    private val mutex = ReentrantLock()
 
     // In-memory cache for progress data — invalidated on progress save
     private var progressCache: Map<String, VerbDrillComboProgress>? = null
@@ -113,7 +116,7 @@ class VerbDrillStoreImpl(
         return loadProgress()[key]
     }
 
-    override fun upsertComboProgress(key: String, progress: VerbDrillComboProgress) {
+    override fun upsertComboProgress(key: String, progress: VerbDrillComboProgress) = mutex.withLock {
         val all = loadProgress().toMutableMap()
         all[key] = progress
         progressCache = all  // update cache immediately
@@ -155,7 +158,7 @@ class VerbDrillStoreImpl(
     /**
      * Invalidate all caches. Called when progress data is externally reset.
      */
-    fun invalidateCache() {
+    fun invalidateCache() = mutex.withLock {
         progressCache = null
         cardsCacheKey = null
         cardsCache = null

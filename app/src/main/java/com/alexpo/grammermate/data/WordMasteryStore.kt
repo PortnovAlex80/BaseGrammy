@@ -3,6 +3,8 @@ package com.alexpo.grammermate.data
 import android.content.Context
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 interface WordMasteryStore {
 
@@ -45,6 +47,7 @@ class WordMasteryStoreImpl(
         File(baseDir, "word_mastery.yaml")
     }
     private val schemaVersion = 1
+    private val mutex = ReentrantLock()
 
     // In-memory cache — follows MasteryStore pattern
     private var cache: Map<String, WordMasteryState> = emptyMap()
@@ -122,7 +125,7 @@ class WordMasteryStoreImpl(
      * Insert or update the mastery state for a single word.
      * Performs load-modify-save with cache update.
      */
-    override fun upsertMastery(state: WordMasteryState) {
+    override fun upsertMastery(state: WordMasteryState) = mutex.withLock {
         val all = loadAll().toMutableMap()
         all[state.wordId] = state
         cache = all
@@ -178,7 +181,7 @@ class WordMasteryStoreImpl(
     /**
      * Invalidate the in-memory cache. Called when data is externally reset.
      */
-    fun invalidateCache() {
+    fun invalidateCache() = mutex.withLock {
         cache = emptyMap()
         cacheLoaded = false
     }

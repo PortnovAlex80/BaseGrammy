@@ -230,7 +230,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     /**
      * Очистить все данные.
      */
-    override fun clear() {
+    override fun clear() = mutex.withLock {
         cache.clear()
         cacheLoaded = true
         if (file.exists()) {
