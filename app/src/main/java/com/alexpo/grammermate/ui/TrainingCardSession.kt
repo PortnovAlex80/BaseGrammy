@@ -615,6 +615,9 @@ private fun DefaultResultContent(scope: TrainingCardSessionScope) {
  * Navigation controls matching GrammarMateApp's NavigationRow:
  * styled NavIconButtons (44dp, surfaceVariant background, 3dp primary accent bar)
  * for Prev, Pause/Play (when supportsPause), Exit (with confirmation), Next.
+ *
+ * TASK-047: Navigation arrows always enabled. Pressing an arrow during ACTIVE
+ * triggers PAUSE first, then advances. Session stays PAUSED until Play is pressed.
  */
 @Composable
 private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
@@ -643,13 +646,39 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
         )
     }
 
+    // TASK-047: Use navigateNext/navigatePrev when available (pause-before-advance).
+    // Fall back to pause-then-nextCard for other providers.
+    val provider = scope.contract
+    val onNavigateNext: () -> Unit = when (provider) {
+        is com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider -> {
+            { provider.navigateNext() }
+        }
+        else -> {
+            {
+                if (scope.contract.isActive) scope.contract.togglePause()
+                scope.onNext()
+            }
+        }
+    }
+    val onNavigatePrev: () -> Unit = when (provider) {
+        is com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider -> {
+            { provider.navigatePrev() }
+        }
+        else -> {
+            {
+                if (scope.contract.isActive) scope.contract.togglePause()
+                scope.onPrev()
+            }
+        }
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavIconButton(
-            onClick = scope.onPrev,
+            onClick = onNavigatePrev,
             enabled = scope.currentCard != null
         ) {
             Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
@@ -677,7 +706,7 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
                 Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
             }
             NavIconButton(
-                onClick = scope.onNext,
+                onClick = onNavigateNext,
                 enabled = scope.currentCard != null
             ) {
                 Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.content_desc_next))

@@ -549,6 +549,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun prevCard() = handleSessionEvents(sessionRunner.prevCard())
 
+    /** Navigate forward via arrow button: pause-first, then advance. Leaves PAUSED. */
+    fun navigateNext() = handleSessionEvents(sessionRunner.navigateNext())
+
+    /** Navigate backward via arrow button: pause-first, then go back. Leaves PAUSED. */
+    fun navigatePrev() = handleSessionEvents(sessionRunner.navigatePrev())
+
     fun togglePause() = handleSessionEvents(sessionRunner.togglePause())
 
     fun pauseSession() = handleSessionEvents(sessionRunner.pauseSession())

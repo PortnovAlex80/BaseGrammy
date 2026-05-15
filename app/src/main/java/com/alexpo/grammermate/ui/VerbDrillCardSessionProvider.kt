@@ -273,6 +273,51 @@ class VerbDrillCardSessionProvider(
         cachedWordBank = emptyList()
     }
 
+    /**
+     * Navigate to the next card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigateNext() {
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+            isPaused = sm.isPaused
+        }
+        // Advance card but leave paused
+        pendingCard = null
+        pendingAnswerResult = null
+        sm.reset()
+        isPaused = sm.isPaused  // stay paused (reset sets isPaused=false, so force it)
+        sm.pause()
+        isPaused = true
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+        viewModel.nextCardManual()
+    }
+
+    /**
+     * Navigate to the previous card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigatePrev() {
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+            isPaused = sm.isPaused
+        }
+        // Go back but leave paused
+        viewModel.prevCard()
+        pendingCard = null
+        pendingAnswerResult = null
+        sm.reset()
+        sm.pause()
+        isPaused = true
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+    }
+
     // ── Voice Input ───────────────────────────────────────────────────────
 
     override fun onVoiceInputResult(text: String) {

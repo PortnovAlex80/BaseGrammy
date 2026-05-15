@@ -513,6 +513,57 @@ class SessionRunner(
         return events
     }
 
+    /**
+     * Navigate to the next card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state
+     * so the user can browse cards without timer pressure.
+     * Pressing Play resumes the session.
+     */
+    fun navigateNext(): List<SessionEvent> {
+        val events = mutableListOf<SessionEvent>()
+        // Pause first if ACTIVE
+        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
+            events.addAll(pauseSession())
+        }
+        // Advance card but leave PAUSED
+        val state = stateAccess.uiState.value
+        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
+        val nextCard = sessionCards.getOrNull(nextIndex)
+        stateAccess.updateState {
+            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
+        }
+        nextCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
+
+        // Update word bank if in WORD_BANK mode
+        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
+            updateWordBank()
+        }
+
+        events.add(SessionEvent.SaveProgress)
+        return events
+    }
+
+    /**
+     * Navigate to the previous card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigatePrev(): List<SessionEvent> {
+        val events = mutableListOf<SessionEvent>()
+        // Pause first if ACTIVE
+        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
+            events.addAll(pauseSession())
+        }
+        // Go back but leave PAUSED
+        val prevIndex = (stateAccess.uiState.value.cardSession.currentIndex - 1).coerceAtLeast(0)
+        val prevCard = sessionCards.getOrNull(prevIndex)
+        stateAccess.updateState {
+            it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
+        }
+        prevCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
+        events.add(SessionEvent.SaveProgress)
+        return events
+    }
+
     fun selectSubLesson(index: Int): List<SessionEvent> {
         pauseTimer()
         stateAccess.updateState {

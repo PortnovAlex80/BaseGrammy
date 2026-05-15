@@ -417,7 +417,7 @@ private fun VerbDrillNavigationControls(
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavIconButton(
-            onClick = scope.onPrev,
+            onClick = { provider.navigatePrev() },
             enabled = scope.currentCard != null
         ) {
             Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
@@ -458,7 +458,7 @@ private fun VerbDrillNavigationControls(
             NavIconButton(
                 onClick = {
                     onManualNext()
-                    scope.onNext()
+                    provider.navigateNext()
                 },
                 enabled = scope.currentCard != null
             ) {

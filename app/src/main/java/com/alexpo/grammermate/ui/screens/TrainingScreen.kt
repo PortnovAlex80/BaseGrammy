@@ -106,7 +106,7 @@ fun TrainingScreen(
     onInputChange: (String) -> Unit,
     onSubmit: () -> SubmitResult,
     onPrev: () -> Unit,
-    onNext: (Boolean) -> Unit,
+    onNext: () -> Unit,
     onTogglePause: () -> Unit,
     onRequestExit: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -695,7 +695,7 @@ fun ResultBlock(state: TrainingUiState) {
 @Composable
 fun NavigationRow(
     onPrev: () -> Unit,
-    onNext: (Boolean) -> Unit,
+    onNext: () -> Unit,
     onTogglePause: () -> Unit,
     onRequestExit: () -> Unit,
     state: SessionState,
@@ -720,7 +720,7 @@ fun NavigationRow(
             NavIconButton(onClick = onRequestExit, enabled = hasCards) {
                 Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.training_exit_session))
             }
-            NavIconButton(onClick = { onNext(false) }, enabled = hasCards && state != SessionState.ACTIVE) {
+            NavIconButton(onClick = onNext, enabled = hasCards) {
                 Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.training_next))
             }
         }

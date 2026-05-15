@@ -268,6 +268,62 @@ class DailyPracticeSessionProvider(
         }
     }
 
+    /**
+     * Navigate to the next card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigateNext() {
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+        }
+        // Reset card state and advance
+        _pendingCard = null
+        _pendingResult = null
+        pendingAnswerResult = null
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+        pendingInput = ""
+
+        // Notify caller about the card being advanced
+        if (currentIndex < blockCards.size && _inputMode != InputMode.WORD_BANK) {
+            onCardAdvanced(blockCards[currentIndex])
+        }
+
+        currentIndex++
+        // Force paused state after navigation
+        sm.reset()
+        sm.pause()
+
+        if (currentIndex >= blockCards.size) {
+            onBlockComplete()
+        }
+    }
+
+    /**
+     * Navigate to the previous card, pausing first if the session is ACTIVE.
+     * Used by UI navigation arrows — always leaves the session in PAUSED state.
+     */
+    fun navigatePrev() {
+        if (currentIndex <= 0) return
+        // Pause first if active
+        if (!sm.isPaused && sm.hintAnswer == null) {
+            sm.pause()
+        }
+        currentIndex--
+        _pendingCard = null
+        _pendingResult = null
+        pendingAnswerResult = null
+        _selectedWords = emptyList()
+        cachedWordBankCardId = null
+        cachedWordBank = emptyList()
+        pendingInput = ""
+        // Force paused state after navigation
+        sm.reset()
+        sm.pause()
+    }
+
     override fun togglePause() {
         if (sm.isPaused) {
             // Play pressed — resume session, clearing hint if shown
