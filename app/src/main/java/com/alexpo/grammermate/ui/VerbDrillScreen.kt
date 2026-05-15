@@ -467,9 +467,7 @@ private fun DefaultVerbDrillInputControls(
         // Hint answer text -- shown at all hint levels when eye button is pressed
         if (provider.hintAnswer != null) {
             HintAnswerCard(
-                answerText = provider.hintAnswer ?: "",
-                showTtsButton = contract.supportsTts,
-                onSpeakTts = { contract.speakTts() }
+                answerText = provider.hintAnswer ?: ""
             )
         }
 

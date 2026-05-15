@@ -260,7 +260,7 @@ fun TrainingScreen(
                 onStartOfflineRecognition,
                 hintLevel
             )
-            ResultBlock(state, onSpeak = onTtsSpeak)
+            ResultBlock(state)
             NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.cardSession.sessionState, hasCards)
         }
     }
@@ -677,7 +677,7 @@ fun AnswerBox(
 }
 
 @Composable
-fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
+fun ResultBlock(state: TrainingUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             when (state.cardSession.lastResult) {
@@ -688,9 +688,7 @@ fun ResultBlock(state: TrainingUiState, onSpeak: () -> Unit) {
         }
         if (!state.cardSession.answerText.isNullOrBlank()) {
             HintAnswerCard(
-                answerText = state.cardSession.answerText!!,
-                showTtsButton = true,
-                onSpeakTts = onSpeak
+                answerText = state.cardSession.answerText!!
             )
         }
     }

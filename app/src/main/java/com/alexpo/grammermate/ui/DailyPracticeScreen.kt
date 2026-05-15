@@ -517,9 +517,7 @@ private fun DailyInputControls(
         // Hint answer text (eye button) -- available at all hint levels
         if (provider.hintAnswer != null) {
             HintAnswerCard(
-                answerText = provider.hintAnswer!!,
-                showTtsButton = contract.supportsTts,
-                onSpeakTts = { contract.speakTts() }
+                answerText = provider.hintAnswer!!
             )
         }
 

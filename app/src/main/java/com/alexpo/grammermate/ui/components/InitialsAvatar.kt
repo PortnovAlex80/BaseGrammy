@@ -41,7 +41,7 @@ fun InitialsAvatar(
 }
 
 private fun buildInitials(name: String): String {
-    if (name.isBlank()) return "?"
+    if (name.isBlank()) return "GM"
     val words = name.trim().split("\\s+".toRegex())
     return if (words.size >= 2) {
         "${words[0].first()}${words[1].first()}".uppercase()

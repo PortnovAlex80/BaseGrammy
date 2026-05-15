@@ -594,9 +594,7 @@ private fun DefaultResultContent(scope: TrainingCardSessionScope) {
         }
         if (result.displayAnswer.isNotBlank()) {
             HintAnswerCard(
-                answerText = result.displayAnswer,
-                showTtsButton = scope.contract.supportsTts,
-                onSpeakTts = { scope.contract.speakTts() }
+                answerText = result.displayAnswer
             )
         }
     }
