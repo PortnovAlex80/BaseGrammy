@@ -2,9 +2,9 @@
 
 ## Overview
 
-GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` enum values, 3 sub-screens), **1 modal bottom sheet** (SettingsSheet), and **16 dialogs**. Navigation is managed via a private `AppScreen` enum inside `GrammarMateApp.kt` -- there is no Jetpack Navigation component. Screen state is held in `remember { mutableStateOf(parseScreen(state.initialScreen)) }` and transitions occur by reassigning this variable.
+GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` enum values, 3 sub-screens), **1 modal bottom sheet** (SettingsSheet), and **17 dialogs**. Navigation is managed via a private `AppScreen` enum inside `GrammarMateApp.kt` -- there is no Jetpack Navigation component. Screen state is held in `remember { mutableStateOf(parseScreen(state.initialScreen)) }` and transitions occur by reassigning this variable.
 
-**Total screen count**: 10 screens + 1 modal sheet + 16 dialogs = 27 UI surfaces.
+**Total screen count**: 10 screens + 1 modal sheet + 17 dialogs = 28 UI surfaces.
 
 **Navigation pattern**: Single-activity, no Navigation Component. `GrammarMateApp()` is the root composable that routes between screens via `when (screen)` on `AppScreen`. Dialogs and sheets are conditionally rendered overlays. Back navigation is handled per-screen via `BackHandler` composables.
 
@@ -85,11 +85,12 @@ Global dialogs (overlay on any screen):
 | D9 | MeteredNetworkDialog (TTS) | TTS download on metered connection | GrammarMateApp.kt:3478 |
 | D10 | AsrMeteredNetworkDialog | ASR download on metered connection | GrammarMateApp.kt:3496 |
 | D11 | DailyResumeDialog | Tap Daily Practice with resumable session | GrammarMateApp.kt:572 |
-| D12 | LessonLockedDialog | Tap EMPTY lesson tile | GrammarMateApp.kt:1028 |
-| D13 | EarlyStartDialog | Tap locked lesson or sub-lesson | GrammarMateApp.kt:1040, 1358 |
-| D14 | HowThisTrainingWorksDialog | Tap "How This Training Works" button | GrammarMateApp.kt:1011 |
+| D12 | LessonLockedDialog | Tap EMPTY lesson tile | HomeScreen.kt |
+| D13 | EarlyStartDialog | Tap locked lesson or sub-lesson | HomeScreen.kt, LessonRoadmapScreen.kt |
+| D14 | HowThisTrainingWorksDialog | Tap "How This Training Works" button | HomeScreen.kt |
 | D15 | DailyPracticeLoadingOverlay | During session initialization | GrammarMateApp.kt:504 |
-| D16 | ExportBadSentencesResultDialog | After exporting bad sentences | GrammarMateApp.kt:3062 |
+| D16 | ExportBadSentencesResultDialog | After exporting bad sentences | SharedReportSheet.kt |
+| D17 | ProfileStatsPopup | Avatar tap on HomeScreen | ui/components/ProfileStatsPopup.kt |
 
 ---
 
@@ -487,7 +488,7 @@ Global dialogs (overlay on any screen):
 ### D12. LessonLockedDialog
 
 - **AppScreen enum**: N/A (AlertDialog)
-- **Source file**: `GrammarMateApp.kt` (line 1028, inside HomeScreen)
+- **Source file**: `HomeScreen.kt`
 - **Trigger**: Tap EMPTY lesson tile on Home Screen
 - **Key UI elements**: "Lesson locked" title + "Please complete the previous lesson first." text + "OK" button
 - **Cross-reference**: Russian spec section 2 (block 8, "Lesson locked" dialog) matches. No discrepancies.
@@ -495,7 +496,7 @@ Global dialogs (overlay on any screen):
 ### D13. EarlyStartDialog
 
 - **AppScreen enum**: N/A (AlertDialog)
-- **Source file**: `GrammarMateApp.kt` (line 1040 in HomeScreen, line 1358 in LessonRoadmapScreen)
+- **Source file**: `HomeScreen.kt`, `LessonRoadmapScreen.kt`
 - **Trigger**: Tap locked lesson tile (HomeScreen) or locked sub-lesson tile (LessonRoadmapScreen)
 - **Key UI elements**: "Start early?" title + "Start this lesson early? You can always come back..." text + "No" + "Yes" buttons
 - **Business rules**: "Yes" unlocks and proceeds. Does not affect other lessons' unlock state.
@@ -504,7 +505,7 @@ Global dialogs (overlay on any screen):
 ### D14. HowThisTrainingWorksDialog
 
 - **AppScreen enum**: N/A (AlertDialog)
-- **Source file**: `GrammarMateApp.kt` (line 1011, inside HomeScreen)
+- **Source file**: `HomeScreen.kt`
 - **Trigger**: Tap "How This Training Works" button on Home Screen
 - **Key UI elements**: Title + "GrammarMate builds automatic grammar patterns with repeated retrieval..." text + "OK" button
 - **Cross-reference**: Russian spec section 2 (block 8, "How This Training Works" dialog) matches. No discrepancies.
@@ -520,9 +521,17 @@ Global dialogs (overlay on any screen):
 ### D16. ExportBadSentencesResultDialog
 
 - **AppScreen enum**: N/A (AlertDialog)
-- **Source file**: `GrammarMateApp.kt` (line 3062, inside AnswerBox)
+- **Source file**: `SharedReportSheet.kt`
 - **Trigger**: After exporting bad sentences from report sheet
 - **Key UI elements**: "Export" title + file path or "No bad sentences to export" + "OK" button
+
+### D17. ProfileStatsPopup
+
+- **AppScreen enum**: N/A (Dialog, modal overlay)
+- **Source file**: `ui/components/ProfileStatsPopup.kt`
+- **Trigger**: Avatar tap on HomeScreen
+- **Key UI elements**: User avatar (`InitialsAvatar`, 56dp) + user name + stats grid (cards completed, words learned) + CEFR level badge
+- **Business rules**: Dismiss by tapping outside the dialog. Stats reflect cumulative progress across all packs and sessions.
 
 ---
 
