@@ -107,7 +107,6 @@ enum class BossReward {
 enum class SessionState {
     ACTIVE,
     PAUSED,
-    AFTER_CHECK,
     HINT_SHOWN
 }
 

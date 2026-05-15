@@ -146,6 +146,8 @@
     <string name="vocab_collocations">Collocations</string>
     <string name="vocab_more_count">… +%1$d more</string>
     <string name="vocab_learned">Learned</string>
+    <string name="vocab_mastered">Mastered</string>
+    <string name="vocab_learning">Learning</string>
     <string name="vocab_step">Step %1$d/%2$d</string>
 
     <string name="vocab_completion_perfect">Perfect!</string>

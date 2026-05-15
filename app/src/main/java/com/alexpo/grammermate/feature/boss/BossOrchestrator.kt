@@ -228,12 +228,17 @@ class BossOrchestrator(
     }
 
     fun clearBossRewardMessage(): List<BossCommand> {
+        // Snapshot all state atomically to prevent TOCTOU bugs
         val state = stateAccess.uiState.value
+        val bossActive = _state.value.bossActive
+        val sessionState = state.cardSession.sessionState
+        val currentCard = state.cardSession.currentCard
+        val inputMode = state.cardSession.inputMode
         val clearResult = bossBattleRunner.clearBossRewardMessage(
-            bossActive = _state.value.bossActive,
-            sessionState = state.cardSession.sessionState,
-            currentCard = state.cardSession.currentCard,
-            inputMode = state.cardSession.inputMode
+            bossActive = bossActive,
+            sessionState = sessionState,
+            currentCard = currentCard,
+            inputMode = inputMode
         )
         val commands = mutableListOf<BossCommand>()
         if (clearResult.shouldResumeTimer) {

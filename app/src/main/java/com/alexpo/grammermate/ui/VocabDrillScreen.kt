@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.SrsRating
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
 import com.alexpo.grammermate.data.VocabDrillDirection
@@ -951,14 +952,35 @@ private fun VocabDrillCardBack(
             // Mastery indicator
             Spacer(modifier = Modifier.height(12.dp))
             val step = card.mastery.intervalStepIndex
-            val learnedThreshold = 3
             val maxStep = 9
-            val stepLabel = if (step >= learnedThreshold) stringResource(R.string.vocab_learned) else stringResource(R.string.vocab_step, step + 1, maxStep)
-            Text(
-                text = stepLabel,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
+            when {
+                step >= maxStep -> {
+                    // Mastered — gold accent
+                    Text(
+                        text = stringResource(R.string.vocab_mastered),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFB8860B) // dark goldenrod
+                    )
+                }
+                step >= TrainingConfig.LEARNED_THRESHOLD -> {
+                    // Learned — green accent
+                    Text(
+                        text = stringResource(R.string.vocab_learned),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MasteryGreen
+                    )
+                }
+                else -> {
+                    // Learning — neutral with step counter
+                    Text(
+                        text = "${stringResource(R.string.vocab_learning)} — ${stringResource(R.string.vocab_step, step + 1, maxStep)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+            }
         }
     }
 }

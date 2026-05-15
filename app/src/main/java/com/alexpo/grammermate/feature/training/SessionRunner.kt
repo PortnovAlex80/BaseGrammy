@@ -111,7 +111,7 @@ class SessionRunner(
         resumeTimer()
         stateAccess.updateState {
             val trigger = if (it.cardSession.inputMode == InputMode.VOICE) it.cardSession.voiceTriggerToken + 1 else it.cardSession.voiceTriggerToken
-            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE, inputText = "", voiceTriggerToken = trigger, voicePromptStartMs = null))
+            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE, inputText = "", answerText = null, incorrectAttemptsForCard = 0, voiceTriggerToken = trigger, voicePromptStartMs = null))
         }
         currentCard()?.let { events.add(SessionEvent.RecordCardShow(it)) }
         events.add(SessionEvent.SaveProgress)
@@ -404,7 +404,46 @@ class SessionRunner(
     private fun nextCardInternal(triggerVoice: Boolean): List<SessionEvent> {
         val state = stateAccess.uiState.value
         val wasHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN
-        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
+        val lastIndex = sessionCards.lastIndex
+        val isOnLastCard = state.cardSession.currentIndex >= lastIndex && lastIndex >= 0
+
+        // Fix 3: If already on the last card, trigger sub-lesson completion instead of staying put
+        if (isOnLastCard && !state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode) {
+            pauseTimer()
+            stateAccess.updateState {
+                val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
+                val lessonId = it.navigation.selectedLessonId
+                val mastery = lessonId?.let { id -> getMastery(id.value, it.navigation.selectedLanguageId.value) }
+                val schedule = lessonId?.let { id -> getSchedule(id.value) }
+                val subLessons = schedule?.subLessons.orEmpty()
+                val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)
+                val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
+                val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
+
+                it.copy(cardSession = it.cardSession.copy(
+                    lastResult = null,
+                    incorrectAttemptsForCard = 0,
+                    answerText = null,
+                    voicePromptStartMs = null,
+                    sessionState = SessionState.PAUSED,
+                    currentIndex = 0,
+                    activeSubLessonIndex = finalActiveIndex,
+                    completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount),
+                    subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1
+                ))
+            }
+            Log.d(logTag, "Next pressed on last card — triggering sub-lesson completion")
+            return listOf(
+                SessionEvent.MarkSubLessonCardsShown(sessionCards),
+                SessionEvent.BuildSessionCards,
+                SessionEvent.CheckAndMarkLessonCompleted,
+                SessionEvent.RefreshFlowerStates,
+                SessionEvent.UpdateStreak,
+                SessionEvent.SaveProgress
+            )
+        }
+
+        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(lastIndex)
         val nextCard = sessionCards.getOrNull(nextIndex)
 
         stateAccess.updateState {

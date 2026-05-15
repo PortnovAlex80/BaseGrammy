@@ -191,7 +191,9 @@ class BossBattleRunner {
 
         val updatedLessonRewards = if (bossType == BossType.LESSON) {
             if (selectedLessonId != null && reward != null) {
-                currentLessonRewards + (selectedLessonId to reward)
+                val existing = currentLessonRewards[selectedLessonId]
+                val bestReward = if (existing != null && existing.ordinal >= reward.ordinal) existing else reward
+                currentLessonRewards + (selectedLessonId to bestReward)
             } else {
                 currentLessonRewards
             }
@@ -201,7 +203,9 @@ class BossBattleRunner {
 
         val updatedMegaRewards = if (bossType == BossType.MEGA && reward != null) {
             if (selectedLessonId != null) {
-                currentMegaRewards + (selectedLessonId to reward)
+                val existing = currentMegaRewards[selectedLessonId]
+                val bestReward = if (existing != null && existing.ordinal >= reward.ordinal) existing else reward
+                currentMegaRewards + (selectedLessonId to bestReward)
             } else {
                 currentMegaRewards
             }

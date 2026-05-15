@@ -146,6 +146,8 @@
     <string name="vocab_collocations">Словосочетания</string>
     <string name="vocab_more_count">… ещё %1$d</string>
     <string name="vocab_learned">Изучено</string>
+    <string name="vocab_mastered">Освоено</string>
+    <string name="vocab_learning">Изучается</string>
     <string name="vocab_step">Шаг %1$d/%2$d</string>
 
     <string name="vocab_completion_perfect">Идеально!</string>
