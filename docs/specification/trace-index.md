@@ -118,7 +118,8 @@ Maps code symbols (composable functions, handlers, LaunchedEffects) to specifica
 | `TrainingCardSessionScope` | 92 | @Stable class | 12#12.4.2 | UC-55 | AC1–AC5 |
 | `TrainingCardSession` | 131 | Composable | 12#12.4.1, 12#12.5 | UC-55 | AC1–AC5 |
 | `localInputText` state | 146 | State | 12#12.6 | — | — |
-| `scope` creation | 155 | Factory | 12#12.4.2 | UC-55 | AC1–AC3 |
+| `effectiveInputText` derivation | 149 | Derived state | 12#12.6.1 | UC-14 | AC1, AC4 |
+| `scope` creation | 158 | Factory | 12#12.4.2 | UC-55 | AC1–AC3 |
 | Completion screen dispatch (`contract.isComplete`) | 190 | Branch | 12#12.3 | UC-05 | AC1 |
 | Slot dispatch (header/cardContent/inputControls/resultContent/navigationControls) | 207–248 | Branch | 12#12.4.1 | UC-55 | AC1–AC5 |
 | `DefaultHeader` | 258 | Composable | 12#12.4.3 | UC-56 | AC3, AC7 |

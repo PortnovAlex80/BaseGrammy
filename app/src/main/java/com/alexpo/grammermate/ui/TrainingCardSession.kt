@@ -142,6 +142,13 @@ fun TrainingCardSession(
     // Local input text state managed by the composable
     var localInputText by remember { mutableStateOf("") }
 
+    // In WORD_BANK mode, input text is derived from selected words, not manual typing
+    val effectiveInputText = if (contract.currentInputMode == InputMode.WORD_BANK) {
+        contract.getSelectedWords().joinToString(" ")
+    } else {
+        localInputText
+    }
+
     // Read result state from the contract/adapter
     val lastResult = contract.lastResult
     val isShowingResult = lastResult != null
@@ -149,20 +156,24 @@ fun TrainingCardSession(
     val progress = contract.progress
 
     // Create scope for customization slots
-    val scope = remember(contract, currentCard, isShowingResult, lastResult, localInputText, hintLevel) {
+    val scope = remember(contract, currentCard, isShowingResult, lastResult, effectiveInputText, hintLevel) {
         TrainingCardSessionScope(
             contract = contract,
             currentCard = currentCard,
             isShowingResult = isShowingResult,
             lastResult = lastResult,
             progressText = "${progress.current} / ${progress.total}",
-            inputText = localInputText,
+            inputText = effectiveInputText,
             onInputChanged = { localInputText = it },
             onSubmit = {
-                if (localInputText.isNotBlank()) {
-                    contract.onInputChanged(localInputText)
+                val text = if (contract.currentInputMode == InputMode.WORD_BANK) {
+                    contract.getSelectedWords().joinToString(" ")
+                } else {
+                    localInputText
+                }
+                if (text.isNotBlank()) {
+                    contract.onInputChanged(text)
                     contract.submitAnswer()
-                    // If submitAnswer returned null, the adapter manages its own result state
                     localInputText = ""
                 }
             },

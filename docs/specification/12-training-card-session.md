@@ -391,6 +391,7 @@ The `TrainingCardSession` composable manages these local state variables:
 | State | Type | Purpose |
 |-------|------|---------|
 | `localInputText` | `String` | Current text in the input field. Reset to "" on submit and on card advance. |
+| `effectiveInputText` | `String` | Derived: in WORD_BANK mode returns `contract.getSelectedWords().joinToString(" ")`, otherwise returns `localInputText`. Used for the scope's `inputText` to keep the text field in sync with word bank selections. |
 | `showExitDialog` | `Boolean` | Controls exit confirmation dialog visibility. |
 | `showReportSheet` | `Boolean` | Controls report bottom sheet visibility. |
 | `exportMessage` | `String?` | Shows export result in an AlertDialog. |
@@ -398,6 +399,8 @@ The `TrainingCardSession` composable manages these local state variables:
 ### 12.6.2 Adapter State (Compose-observable)
 
 Adapters store their state in `mutableStateOf` fields for direct Compose recomposition:
+
+**Compose observability invariant:** Any state that drives UI rendering through `TrainingCardSession` must be either (a) a `mutableStateOf` field in the adapter, or (b) derived from `contract` methods that read `mutableStateOf` during composition. StateFlow.value reads are NOT tracked by Compose recomposition and must be bridged via `mutableStateOf` mirrors (see BUG-TASK-006 `isPaused` and BUG-TASK-008 `effectiveInputText`).
 
 **VerbDrillCardSessionProvider state:**
 
@@ -457,8 +460,8 @@ Adapters are created via `remember` with a key:
 | TTS speaker button (result) | Calls `contract.speakTts()`. Speaks the display answer. |
 | Input text field | Standard text editing. Updates `localInputText` via `scope.onInputChanged`. |
 | Mic trailing icon (text field) | Switches to VOICE mode and launches system speech recognition intent. |
-| Word bank FilterChip | Calls `contract.selectWordFromBank(word)`. Adds word to selection if not fully used. |
-| "Undo" text button | Calls `contract.removeLastSelectedWord()`. Removes last selected word. |
+| Word bank FilterChip | Calls `contract.selectWordFromBank(word)`. Adds word to selection if not fully used. The input text field immediately reflects the assembled selected words via `effectiveInputText`. |
+| "Undo" text button | Calls `contract.removeLastSelectedWord()`. Removes last selected word. The input text field immediately updates to reflect the remaining selection. |
 | Voice mode button (selector) | Sets input mode to VOICE. In Verb Drill and Daily Practice, this also triggers `voiceTriggerToken++` which auto-launches speech recognition. |
 | Keyboard mode button | Sets input mode to KEYBOARD. Clears word bank selection. |
 | Word bank mode button | Sets input mode to WORD_BANK. Clears any text input. |
