@@ -1,15 +1,16 @@
 package com.alexpo.grammermate.feature.training
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Reusable Compose-state holder for the retry/hint state machine used by
+ * Reusable state holder for the retry/hint state machine used by
  * card session providers (VerbDrill, DailyPractice, etc.).
+ * Uses Kotlin StateFlow instead of Compose mutableStateOf for JUnit testability.
  *
  * Encapsulates the common pattern:
  * - Correct answer -> reset state, return result
@@ -25,29 +26,47 @@ class CardSessionStateMachine(
     private val answerProvider: (SessionCard) -> String
 ) {
 
+    private val _incorrectAttempts = MutableStateFlow(0)
     /** Consecutive incorrect attempts for the current card. */
-    var incorrectAttempts: Int by mutableStateOf(0)
-        private set
+    var incorrectAttempts: Int
+        get() = _incorrectAttempts.value
+        private set(value) { _incorrectAttempts.value = value }
+    val incorrectAttemptsFlow: StateFlow<Int> = _incorrectAttempts.asStateFlow()
 
+    private val _hintAnswer = MutableStateFlow<String?>(null)
     /** When non-null, the answer is being shown as a hint (auto or manual). */
-    var hintAnswer: String? by mutableStateOf(null)
-        private set
+    var hintAnswer: String?
+        get() = _hintAnswer.value
+        private set(value) { _hintAnswer.value = value }
+    val hintAnswerFlow: StateFlow<String?> = _hintAnswer.asStateFlow()
 
+    private val _showIncorrectFeedback = MutableStateFlow(false)
     /** When true, shows "Incorrect" feedback inline in input controls (wrong attempt < max). */
-    var showIncorrectFeedback: Boolean by mutableStateOf(false)
-        private set
+    var showIncorrectFeedback: Boolean
+        get() = _showIncorrectFeedback.value
+        private set(value) { _showIncorrectFeedback.value = value }
+    val showIncorrectFeedbackFlow: StateFlow<Boolean> = _showIncorrectFeedback.asStateFlow()
 
+    private val _remainingAttempts = MutableStateFlow(maxAttempts)
     /** Remaining attempts before hint auto-shows. */
-    var remainingAttempts: Int by mutableStateOf(maxAttempts)
-        private set
+    var remainingAttempts: Int
+        get() = _remainingAttempts.value
+        private set(value) { _remainingAttempts.value = value }
+    val remainingAttemptsFlow: StateFlow<Int> = _remainingAttempts.asStateFlow()
 
+    private val _isPaused = MutableStateFlow(false)
     /** Whether the session is paused (answer shown, waiting for user to continue). */
-    var isPaused: Boolean by mutableStateOf(false)
-        private set
+    var isPaused: Boolean
+        get() = _isPaused.value
+        private set(value) { _isPaused.value = value }
+    val isPausedFlow: StateFlow<Boolean> = _isPaused.asStateFlow()
 
+    private val _voiceTriggerToken = MutableStateFlow(0)
     /** Token incremented to trigger automatic voice recognition. */
-    var voiceTriggerToken: Int by mutableStateOf(0)
-        private set
+    var voiceTriggerToken: Int
+        get() = _voiceTriggerToken.value
+        private set(value) { _voiceTriggerToken.value = value }
+    val voiceTriggerTokenFlow: StateFlow<Int> = _voiceTriggerToken.asStateFlow()
 
     // ── Result of onSubmit ────────────────────────────────────────────────
 

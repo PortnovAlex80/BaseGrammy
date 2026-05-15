@@ -682,6 +682,47 @@ TTS engine with Mutex-serialized native calls, init timeout, and error reason pr
 |--------|------|------|------|----|----|
 | `welcomeDialogAttempts` in NavigationState | 275 | Field | 13#13.4.3 | UC-46 | AC3 |
 
+## Phase 7: Spec-vs-Code Audit Discrepancies (TASK-030)
+
+Cross-references between trace-index entries and audit discrepancies found in TASK-030 (2026-05-15).
+17 discrepancies across 316 UI elements. Parent task: TASK-030. Child tasks: TASK-020 through TASK-029, TASK-031 through TASK-037.
+
+### Affected Existing Traces
+
+| Trace Entry | Discrepancy | Task | Element ID |
+|-------------|-------------|------|------------|
+| `HintAnswerCard` in TrainingScreen | TS-27: spec says TtsSpeakerButton but code uses plain VolumeUp IconButton | TASK-036 | TS-27, TCS-21 |
+| `TtsSpeakerButton` (SharedComponents.kt) | TS-09: OOM variant uses Warning icon, undocumented in spec | TASK-035 | TS-09 |
+| `VoiceAutoLauncher` (VerbDrillScreen) | SH-02: code uses fixed 500ms delay, spec says variable 200/1200ms | TASK-025 | SH-02, VD-30 |
+| `VerbDrillInputModeBar` | VD-23: voice button launches speech directly, spec says mode-only | TASK-021 | VD-23 |
+| `VerbDrillSelectionScreen` TTS button | VD-14: spec says CODE PENDING, code now uses TtsSpeakerButton | TASK-020 | VD-14 |
+| `HintAnswerCard` in DailyPracticeScreen | DP-11: spec says hintLevel==EASY guard, code shows at all levels (code is correct) | TASK-037 | DP-11 |
+
+### Untracked Components (Not in Trace Index)
+
+These components exist in code but have no trace-index entries. They should be added when the corresponding audit tasks are resolved.
+
+| Component | File | Task | Issue |
+|-----------|------|------|-------|
+| `ProfileStatsPopup` | ui/components/ProfileStatsPopup.kt | TASK-033 | Not in spec (DG section), not in trace-index |
+| `InitialsAvatar` | ui/components/InitialsAvatar.kt | TASK-033 | Not in spec (SH section), not in trace-index. Background/fallback differs from spec. |
+| `HomeScreen` avatar section | ui/screens/HomeScreen.kt | TASK-032 | HS-01: 3 sub-discrepancies (bg color, fallback text, click action) |
+| `HomeScreen` legend section | ui/screens/HomeScreen.kt | TASK-034 | HS-15: 2-line combined structure vs spec's 6-state breakdown |
+| `VocabDrillScreen` report sheet | ui/VocabDrillScreen.kt | TASK-022 | VOC-41: custom ModalBottomSheet instead of SharedReportSheet, missing Hide Card |
+| `SettingsScreen` interface language | ui/screens/SettingsScreen.kt | TASK-026 | SS-48: FilterChips vs spec's DropdownSelector, section ordering differs |
+| `SharedReportSheet` export dialog | ui/components/SharedReportSheet.kt | TASK-027 | DG-17: location reference stale (spec says GrammarMateApp.kt) |
+| `HomeScreen` HowThisTrainingWorksDialog | ui/screens/HomeScreen.kt | TASK-027 | DG-14: location reference stale (extracted from GrammarMateApp.kt) |
+| `HomeScreen` LessonLockedDialog | ui/screens/HomeScreen.kt | TASK-027 | DG-15: location reference stale |
+| `HomeScreen` EarlyStartDialog | ui/screens/HomeScreen.kt | TASK-027 | DG-16: location reference stale |
+| `LessonRoadmapScreen` EarlyStartDialog | ui/screens/LessonRoadmapScreen.kt | TASK-027 | DG-16: location reference stale |
+
+### Theme Discrepancies
+
+| Component | File | Task | Issue |
+|-----------|------|------|-------|
+| `DarkColors` palette | ui/Theme.kt | TASK-031 | 0/8 dark theme colors match spec (code uses M3 defaults) |
+| Icon imports (ChevronRight, Warning, Info, etc.) | multiple files | TASK-028 | 8 icons in code not in spec inventory; LocalFlorist in spec but absent from code |
+
 ## Trace Index Maintenance Rules
 
 1. **When adding a new composable or handler** to any of the 4 pilot files, add a row to the corresponding table with spec reference and UC mapping.
@@ -692,6 +733,7 @@ TTS engine with Mutex-serialized native calls, init timeout, and error reason pr
 6. **Phase 3 result types:** when adding a new variant to a sealed result class (e.g. `SessionEvent`, `BossCommand`, `SettingsResult`), add a row to the corresponding result-type table AND add a `when` branch to the handler method table. When adding a new sealed result class, add a new section following the Phase 3 format.
 7. **Phase 4 feature StateFlows:** when a feature class gains or loses an owned `StateFlow`, update the corresponding Phase 4 table AND update the combine chain description in the "7-Flow Combine Chain" section. When a new feature class acquires its own StateFlow, add a new section following the Phase 4 format.
 8. **Phase 4 reset wiring:** when a ViewModel method adds or removes a feature `resetState()` / `resetStateKeepRewards()` call, update the "Feature Reset Calls" table. When a new `BossCommand` reset variant is added, update both the BossResult.kt table and the handler dispatch table.
+9. **Phase 7 audit discrepancies:** when resolving an audit task (TASK-020 through TASK-037), update the corresponding row in the "Affected Existing Traces" table to reflect the fix. Move resolved entries to a "Resolved Discrepancies" subsection. When adding trace entries for previously-untracked components (from the "Untracked Components" table), remove them from the untracked table and add proper trace rows to the appropriate pilot section.
 
 ## Phase 5: Unit Test Coverage
 

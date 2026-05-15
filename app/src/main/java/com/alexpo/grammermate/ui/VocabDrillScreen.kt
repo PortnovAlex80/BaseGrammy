@@ -45,7 +45,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,7 +52,6 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -80,6 +78,7 @@ import com.alexpo.grammermate.data.VocabDrillSessionState
 import com.alexpo.grammermate.data.VocabDrillUiState
 import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.ui.components.QrShareDialog
+import com.alexpo.grammermate.ui.components.SharedReportSheet
 import kotlinx.coroutines.delay
 
 @Composable
@@ -591,91 +590,29 @@ private fun VocabDrillCardScreen(
 
     // Report sheet
     if (showReportSheet) {
-        val cardIsBad = isBadSentence()
-        ModalBottomSheet(
-            onDismissRequest = { showReportSheet = false },
-            sheetState = rememberModalBottomSheetState()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.vocab_word_options),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "${card.word.word} — ${card.word.meaningRu ?: ""}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (cardIsBad) {
-                    TextButton(
-                        onClick = {
-                            onUnflagBadSentence()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.vocab_remove_bad))
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            onFlagBadSentence()
-                            showReportSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.vocab_add_bad))
-                    }
+        SharedReportSheet(
+            onDismiss = { showReportSheet = false },
+            cardPromptText = "${card.word.word} — ${card.word.meaningRu ?: ""}",
+            isFlagged = isBadSentence(),
+            onFlag = onFlagBadSentence,
+            onUnflag = onUnflagBadSentence,
+            onHideCard = { showReportSheet = false },
+            onExportBadSentences = onExportBadSentences,
+            onCopyText = {
+                if (reportText.isNotBlank()) {
+                    clipboardManager.setText(AnnotatedString(reportText))
                 }
-                TextButton(
-                    onClick = {
-                        val path = onExportBadSentences()
-                        exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
-                        showReportSheet = false
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Download, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.vocab_export_bad))
-                }
-                TextButton(
-                    onClick = {
-                        if (reportText.isNotBlank()) {
-                            clipboardManager.setText(AnnotatedString(reportText))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.vocab_copy_text))
-                }
-                TextButton(
-                    onClick = {
-                        showReportSheet = false
-                        showQrDialog = true
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.QrCode2, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.report_share_translation))
-                }
-            }
-        }
+            },
+            exportResult = { path ->
+                exportMessage = if (path != null)
+                    "Exported to $path"
+                else
+                    "No bad sentences to export"
+            },
+            title = stringResource(R.string.vocab_word_options),
+            shareText = reportText,
+            onShareQr = { showQrDialog = true }
+        )
     }
     if (exportMessage != null) {
         AlertDialog(

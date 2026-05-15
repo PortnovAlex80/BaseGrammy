@@ -707,11 +707,6 @@ val ColorScheme.drillBackground: Color
 3. The `GrammarMateTheme` composable must provide both light and dark `GrammarMateColors` instances
 4. Each screen file is updated to use the theme-aware color lookup instead of the hardcoded literal
 
-**Implementation tasks:**
-- [TASK-012: Theme.kt Color Constants — Dark-Mode Adaptation](tasks/TASK-012-theme-color-constants-dark-mode.md)
-- [TASK-013: TrainingScreen Dark-Mode Fix](tasks/TASK-013-training-screen-dark-mode.md)
-- [TASK-014: VocabDrillScreen + DailyPracticeScreen Dark-Mode Fix](tasks/TASK-014-vocab-daily-dark-mode.md)
-
 ### 14.7.7 Screen-by-Screen Dark-Mode Status
 
 | Screen | Status | Issues |

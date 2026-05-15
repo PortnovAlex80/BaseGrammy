@@ -11,6 +11,7 @@ import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.AudioState
 import com.alexpo.grammermate.data.DownloadState
+import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
@@ -35,7 +36,33 @@ class AudioCoordinator(
     private val stateAccess: TrainingStateAccess,
     private val appContext: Application,
     private val coroutineScope: CoroutineScope,
-    private val configStore: AppConfigStore
+    private val configStore: AppConfigStore,
+    private val soundPoolProvider: (android.content.Context) -> SoundPool = { ctx ->
+        SoundPool.Builder()
+            .setMaxStreams(2)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .build()
+    },
+    private val ttsEngineProvider: (Application) -> TtsEngine = { app ->
+        TtsProvider.getInstance(app).ttsEngine
+    },
+    private val ttsModelManagerProvider: (android.content.Context) -> TtsModelManager = { ctx ->
+        TtsModelManager(ctx)
+    },
+    private val asrModelManagerProvider: (android.content.Context) -> AsrModelManager = { ctx ->
+        AsrModelManager(ctx)
+    },
+    private val asrEngineProvider: (android.content.Context) -> AsrEngine? = { ctx ->
+        try { AsrEngine(ctx) } catch (e: Exception) {
+            Log.e(TAG, "ASR engine creation failed", e)
+            null
+        }
+    }
 ) {
     companion object {
         private const val TAG = "AudioCoordinator"
@@ -48,15 +75,7 @@ class AudioCoordinator(
 
     // ── SoundPool ──────────────────────────────────────────────────────────
 
-    private val soundPool = SoundPool.Builder()
-        .setMaxStreams(2)
-        .setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build()
-        )
-        .build()
+    private val soundPool = soundPoolProvider(appContext)
 
     private val successSoundId = soundPool.load(appContext, R.raw.voicy_correct_answer, 1)
     private val errorSoundId = soundPool.load(appContext, R.raw.voicy_bad_answer, 1)
@@ -64,15 +83,10 @@ class AudioCoordinator(
 
     // ── Engines ────────────────────────────────────────────────────────────
 
-    val ttsEngine = TtsProvider.getInstance(appContext).ttsEngine
-    val ttsModelManager = TtsModelManager(appContext)
-    val asrModelManager = AsrModelManager(appContext)
-    val asrEngine: AsrEngine? = try {
-        AsrEngine(appContext)
-    } catch (e: Exception) {
-        Log.e(TAG, "ASR engine creation failed", e)
-        null
-    }
+    val ttsEngine = ttsEngineProvider(appContext)
+    val ttsModelManager = ttsModelManagerProvider(appContext)
+    val asrModelManager = asrModelManagerProvider(appContext)
+    val asrEngine: AsrEngine? = asrEngineProvider(appContext)
 
     // ── Download jobs ──────────────────────────────────────────────────────
 

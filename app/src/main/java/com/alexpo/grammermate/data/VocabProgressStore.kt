@@ -262,7 +262,7 @@ class VocabProgressStoreImpl(private val context: Context) : VocabProgressStore 
         return overdue.shuffled() + newWords.shuffled() + notDue.shuffled()
     }
 
-    override fun clear() {
+    override fun clear() = mutex.withLock {
         cache.clear()
         cacheLoaded = true
         if (file.exists()) {

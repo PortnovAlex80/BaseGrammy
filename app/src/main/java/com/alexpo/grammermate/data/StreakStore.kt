@@ -5,6 +5,8 @@ import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 interface StreakStore {
 
@@ -20,15 +22,13 @@ interface StreakStore {
 class StreakStoreImpl(private val context: Context) : StreakStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
+    private val mutex = ReentrantLock()
 
     private fun getFile(languageId: String): File {
         return File(baseDir, "streak_$languageId.yaml")
     }
 
-    /**
-     * Сохраняет данные о streak
-     */
-    override fun save(data: StreakData) {
+    private fun saveInternal(data: StreakData) {
         baseDir.mkdirs()
         val file = getFile(data.languageId.value)
         val payload = mapOf(
@@ -41,10 +41,7 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
 
-    /**
-     * Загружает данные о streak для языка
-     */
-    override fun load(languageId: String): StreakData {
+    private fun loadInternal(languageId: String): StreakData {
         val file = getFile(languageId)
         if (!file.exists() || file.length() == 0L) {
             return StreakData(languageId = LanguageId(languageId))
@@ -66,12 +63,20 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         )
     }
 
+    override fun save(data: StreakData) = mutex.withLock {
+        saveInternal(data)
+    }
+
+    override fun load(languageId: String): StreakData = mutex.withLock {
+        loadInternal(languageId)
+    }
+
     /**
      * Обновляет streak после завершения подурока
      * @return обновлённый StreakData и флаг, является ли это новым достижением
      */
-    override fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> {
-        val current = load(languageId)
+    override fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> = mutex.withLock {
+        val current = loadInternal(languageId)
         val now = System.currentTimeMillis()
         val streakStatus = checkAndUpdateStreak(current, now)
 
@@ -79,7 +84,7 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
             streakStatus.isFirstTime -> 1
             streakStatus.isSameDay -> current.currentStreak
             streakStatus.isConsecutive -> current.currentStreak + 1
-            else -> 1 // Пропущен день - сброс на 1
+            else -> 1
         }
 
         val updated = current.copy(
@@ -89,7 +94,7 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
             totalSubLessonsCompleted = current.totalSubLessonsCompleted + 1
         )
 
-        save(updated)
+        saveInternal(updated)
         return Pair(updated, streakStatus.isNewStreak)
     }
 
@@ -144,19 +149,17 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
     /**
      * Получает текущий streak с учётом пропущенных дней
      */
-    override fun getCurrentStreak(languageId: String): StreakData {
-        val current = load(languageId)
+    override fun getCurrentStreak(languageId: String): StreakData = mutex.withLock {
+        val current = loadInternal(languageId)
         val lastCompletionMs = current.lastCompletionDateMs ?: return current
 
         val now = System.currentTimeMillis()
 
-        // Проверяем, не пропущен ли день
         val daysSinceLastCompletion = TimeUnit.MILLISECONDS.toDays(now - lastCompletionMs)
 
         if (daysSinceLastCompletion > 1) {
-            // Пропустили больше 1 дня - сбрасываем streak
             val reset = current.copy(currentStreak = 0)
-            save(reset)
+            saveInternal(reset)
             return reset
         }
 
