@@ -19,16 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -82,7 +77,7 @@ import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.VoiceAutoLauncher
 import com.alexpo.grammermate.ui.components.HintAnswerCard
-import com.alexpo.grammermate.ui.components.NavIconButton
+import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.WordBankSection
 
 @Composable
@@ -226,14 +221,25 @@ private fun VerbDrillSessionWithCardSession(
         autoAdvanceCancelled = false
     }
 
-    // Fix 2: Custom navigation controls that show SkipNext when Play will advance
-    // (hint shown state) vs PlayArrow when it will resume (manual pause).
+    // Fix 2: Custom navigation controls — use UnifiedNavigationRow for consistency
+    // across all modes (Training, VerbDrill, DailyPractice).
     val navigationControlsSlot: @Composable TrainingCardSessionScope.() -> Unit = {
-        VerbDrillNavigationControls(
-            scope = this,
-            provider = provider,
-            onManualNext = {
+        UnifiedNavigationRow(
+            stateModel = provider,
+            supportsPause = contract.supportsPause,
+            supportsNavigation = contract.supportsNavigation,
+            onPrev = { provider.navigatePrev() },
+            onTogglePause = {
+                // If hint is shown, Play will advance — cancel auto-advance if pending
+                if (!contract.sessionActive && provider.hintAnswer != null) {
+                    autoAdvanceCancelled = true
+                }
+                contract.togglePause()
+            },
+            onStop = { contract.requestExit() },
+            onNext = {
                 autoAdvanceCancelled = true
+                provider.navigateNext()
             }
         )
     }
@@ -371,100 +377,6 @@ private fun VerbDrillSessionWithCardSession(
                 tenseSheetTense = null
             }
         )
-    }
-}
-
-/**
- * Navigation controls for VerbDrill — mirrors DefaultNavigationControls but adds
- * visual differentiation for the Play/SkipNext button:
- * - When paused with hint shown (hintAnswer != null): shows SkipNext icon (will advance)
- * - When paused without hint (manual pause): shows PlayArrow icon (will resume)
- */
-@Composable
-private fun VerbDrillNavigationControls(
-    scope: TrainingCardSessionScope,
-    provider: VerbDrillCardSessionProvider,
-    onManualNext: () -> Unit
-) {
-    if (!scope.contract.supportsNavigation) return
-
-    var showExitDialog by remember { mutableStateOf(false) }
-
-    if (showExitDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text(stringResource(R.string.session_end_title)) },
-            text = { Text(stringResource(R.string.session_end_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showExitDialog = false
-                    scope.contract.requestExit()
-                }) {
-                    Text(stringResource(R.string.button_end))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitDialog = false }) {
-                    Text(stringResource(R.string.button_cancel))
-                }
-            }
-        )
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        NavIconButton(
-            onClick = { provider.navigatePrev() },
-            enabled = scope.currentCard != null
-        ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (scope.contract.supportsPause) {
-                NavIconButton(
-                    onClick = {
-                        // If hint is shown, Play will advance — cancel auto-advance if pending
-                        if (!scope.contract.sessionActive && provider.hintAnswer != null) {
-                            onManualNext()
-                        }
-                        scope.contract.togglePause()
-                    },
-                    enabled = scope.currentCard != null
-                ) {
-                    if (scope.contract.sessionActive) {
-                        Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
-                    } else {
-                        // Fix 2: Show SkipNext when hint shown (will advance), PlayArrow for manual pause (will resume)
-                        if (provider.hintAnswer != null) {
-                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.content_desc_next))
-                        } else {
-                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
-                        }
-                    }
-                }
-            }
-            NavIconButton(
-                onClick = { showExitDialog = true },
-                enabled = scope.currentCard != null
-            ) {
-                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
-            }
-            NavIconButton(
-                onClick = {
-                    onManualNext()
-                    provider.navigateNext()
-                },
-                enabled = scope.currentCard != null
-            ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.content_desc_next))
-            }
-        }
     }
 }
 

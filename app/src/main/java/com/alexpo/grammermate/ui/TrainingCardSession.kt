@@ -22,17 +22,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,7 +37,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -74,11 +67,11 @@ import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.ui.components.HintAnswerCard
-import com.alexpo.grammermate.ui.components.NavIconButton
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
+import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.WordBankSection
 
 /**
@@ -251,11 +244,19 @@ fun TrainingCardSession(
             }
         }
 
-        // Navigation controls
+        // Navigation controls — use UnifiedNavigationRow for consistent behavior
         if (navigationControls != null) {
             scope.navigationControls()
         } else {
-            DefaultNavigationControls(scope)
+            UnifiedNavigationRow(
+                stateModel = contract,
+                supportsPause = contract.supportsPause,
+                supportsNavigation = contract.supportsNavigation,
+                onPrev = { scope.onPrev() },
+                onTogglePause = { contract.togglePause() },
+                onStop = { contract.requestExit() },
+                onNext = { scope.onNext() }
+            )
         }
     }
 }
@@ -611,109 +612,6 @@ private fun DefaultResultContent(scope: TrainingCardSessionScope) {
     }
 }
 
-/**
- * Navigation controls matching GrammarMateApp's NavigationRow:
- * styled NavIconButtons (44dp, surfaceVariant background, 3dp primary accent bar)
- * for Prev, Pause/Play (when supportsPause), Exit (with confirmation), Next.
- *
- * TASK-047: Navigation arrows always enabled. Pressing an arrow during ACTIVE
- * triggers PAUSE first, then advances. Session stays PAUSED until Play is pressed.
- */
-@Composable
-private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
-    if (!scope.contract.supportsNavigation) return
-
-    var showExitDialog by remember { mutableStateOf(false) }
-
-    if (showExitDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text(stringResource(R.string.session_end_title)) },
-            text = { Text(stringResource(R.string.session_end_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showExitDialog = false
-                    scope.contract.requestExit()
-                }) {
-                    Text(stringResource(R.string.button_end))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitDialog = false }) {
-                    Text(stringResource(R.string.button_cancel))
-                }
-            }
-        )
-    }
-
-    // TASK-047: Use navigateNext/navigatePrev when available (pause-before-advance).
-    // Fall back to pause-then-nextCard for other providers.
-    val provider = scope.contract
-    val onNavigateNext: () -> Unit = when (provider) {
-        is com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider -> {
-            { provider.navigateNext() }
-        }
-        else -> {
-            {
-                if (scope.contract.isActive) scope.contract.togglePause()
-                scope.onNext()
-            }
-        }
-    }
-    val onNavigatePrev: () -> Unit = when (provider) {
-        is com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider -> {
-            { provider.navigatePrev() }
-        }
-        else -> {
-            {
-                if (scope.contract.isActive) scope.contract.togglePause()
-                scope.onPrev()
-            }
-        }
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        NavIconButton(
-            onClick = onNavigatePrev,
-            enabled = scope.currentCard != null
-        ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.content_desc_prev))
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (scope.contract.supportsPause) {
-                NavIconButton(
-                    onClick = { scope.contract.togglePause() },
-                    enabled = scope.currentCard != null
-                ) {
-                    if (scope.contract.isActive) {
-                        Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
-                    } else {
-                        Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
-                    }
-                }
-            }
-            NavIconButton(
-                onClick = { showExitDialog = true },
-                enabled = scope.currentCard != null
-            ) {
-                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
-            }
-            NavIconButton(
-                onClick = onNavigateNext,
-                enabled = scope.currentCard != null
-            ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.content_desc_next))
-            }
-        }
-    }
-}
 
 @Composable
 private fun DefaultCompletionScreen(scope: TrainingCardSessionScope) {

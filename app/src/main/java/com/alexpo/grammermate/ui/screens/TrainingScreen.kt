@@ -23,17 +23,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
@@ -92,8 +87,8 @@ import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.components.AsrStatusIndicator
 import com.alexpo.grammermate.ui.components.HintAnswerCard
-import com.alexpo.grammermate.ui.components.NavIconButton
 import com.alexpo.grammermate.ui.components.QrShareDialog
+import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
@@ -261,7 +256,26 @@ fun TrainingScreen(
                 hintLevel
             )
             ResultBlock(state)
-            NavigationRow(onPrev, onNext, onTogglePause, onRequestExit, state.cardSession.sessionState, hasCards)
+            UnifiedNavigationRow(
+                stateModel = object : com.alexpo.grammermate.data.CardSessionStateModel {
+                    override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
+                    override val isPaused = state.cardSession.sessionState == SessionState.PAUSED
+                    override val isHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN
+                    override val canSubmit = state.cardSession.canSubmit
+                    override val hasCurrentCard = hasCards
+                    override val isComplete = state.cardSession.sessionState == SessionState.PAUSED && state.cardSession.currentCard == null
+                    override val progress = com.alexpo.grammermate.data.SessionProgress(
+                        current = (state.cardSession.currentIndex + 1).coerceAtMost(state.cardSession.subLessonTotal.coerceAtLeast(1)),
+                        total = state.cardSession.subLessonTotal.coerceAtLeast(1)
+                    )
+                },
+                supportsPause = true,
+                supportsNavigation = true,
+                onPrev = onPrev,
+                onTogglePause = onTogglePause,
+                onStop = onRequestExit,
+                onNext = onNext
+            )
         }
     }
 }
@@ -688,41 +702,6 @@ fun ResultBlock(state: TrainingUiState) {
             HintAnswerCard(
                 answerText = state.cardSession.answerText!!
             )
-        }
-    }
-}
-
-@Composable
-fun NavigationRow(
-    onPrev: () -> Unit,
-    onNext: () -> Unit,
-    onTogglePause: () -> Unit,
-    onRequestExit: () -> Unit,
-    state: SessionState,
-    hasCards: Boolean
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        NavIconButton(onClick = onPrev, enabled = hasCards) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.training_prev))
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NavIconButton(onClick = onTogglePause, enabled = hasCards) {
-                if (state == SessionState.ACTIVE) {
-                    Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.training_pause))
-                } else {
-                    Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.training_play))
-                }
-            }
-            NavIconButton(onClick = onRequestExit, enabled = hasCards) {
-                Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.training_exit_session))
-            }
-            NavIconButton(onClick = onNext, enabled = hasCards) {
-                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.training_next))
-            }
         }
     }
 }

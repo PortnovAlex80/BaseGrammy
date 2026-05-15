@@ -82,6 +82,7 @@ import com.alexpo.grammermate.ui.components.DailyInputModeBar
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.feature.daily.BlockProgress
@@ -444,6 +445,17 @@ private fun DailyTrainingCardSession(
                 voiceInputText = voiceInputText,
                 onVoiceInputConsumed = { voiceInputText = null },
                 hintLevel = hintLevel
+            )
+        },
+        navigationControls = {
+            UnifiedNavigationRow(
+                stateModel = provider,
+                supportsPause = contract.supportsPause,
+                supportsNavigation = contract.supportsNavigation,
+                onPrev = { provider.navigatePrev() },
+                onTogglePause = { contract.togglePause() },
+                onStop = { contract.requestExit() },
+                onNext = { provider.navigateNext() }
             )
         },
         onExit = onExit, onComplete = onComplete, modifier = modifier
