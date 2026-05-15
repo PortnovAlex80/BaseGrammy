@@ -15,6 +15,7 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-009](TASK-009-profile-stats-popup.md) | Profile Stats Popup with CEFR Level | OPEN | custom spec | 2026-05-15 |
 | [DONE-TASK-010](DONE-TASK-010-theme-mode-switching.md) | Theme Mode Switching (Light/Dark/System) | DONE | 14-theme-and-ui-components | 2026-05-15 |
 | [DONE-TASK-011](DONE-TASK-011-interface-language-switching.md) | Interface Language Switching (English/Russian) | DONE | 14-theme-and-ui-components | 2026-05-15 |
+| [TASK-038](TASK-038-word-bank-input-sync.md) | Word Bank Input Text Sync | BUG | 12-training-card-session | 2026-05-15 |
 
 ## Re-Audit CRITICAL Fix Wave (2026-05-14)
 
