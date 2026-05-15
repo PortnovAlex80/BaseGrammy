@@ -22,4 +22,8 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-042](DONE-TASK-042-verb-drill-play-pause-race.md) | Fix VerbDrill Play/Pause & Auto-Advance Race | DONE | 10-verb-drill, scenario-07 | 2026-05-16 |
 | [DONE-TASK-043](DONE-TASK-043-vocab-drill-mastery-indicator.md) | Fix VocabDrill Mastery Indicator & Exit Cleanup | DONE | 11-vocab-drill, scenario-08 | 2026-05-16 |
 | [DONE-TASK-044](DONE-TASK-044-training-next-button-guard.md) | Fix Training Next Button State Guard | DONE | 08-training-viewmodel, scenario-01 | 2026-05-16 |
-| [TASK-045](TASK-045-unify-card-session-state.md) | Unify Card Session State Management | OPEN | 08, 10, 12-training-card-session | 2026-05-16 | |
+| [TASK-045](TASK-045-unify-card-session-state.md) | Unify Card Session State Management | OPEN | 08, 10, 12-training-card-session | 2026-05-16 |
+| [TASK-046](TASK-046-daily-streak-navigation-rule.md) | Daily Streak Only Counts on Correct Answer Completion | OPEN | 03-algorithms, 08-training-viewmodel | 2026-05-16 |
+| [TASK-047](TASK-047-pause-mode-navigation.md) | Navigation Arrows Always Work, Trigger PAUSE | OPEN | 08-training-viewmodel, 12-training-card-session | 2026-05-16 |
+| [TASK-048](TASK-048-unified-navigation-row.md) | Unified NavigationRow for All Card Modes | OPEN | 12-training-card-session, 08, 10 | 2026-05-16 |
+| [TASK-049](TASK-049-unified-input-controls-bar.md) | Unified Input Controls Bar for All Card Modes | OPEN | 12-training-card-session, 05-audio | 2026-05-16 | |

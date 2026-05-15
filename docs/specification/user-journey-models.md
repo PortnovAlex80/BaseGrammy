@@ -1,24 +1,71 @@
-# User Journey Models — Step-by-Step Behavioral Trace
+# User Journey Models — Step-by-Step Behavior Tracing
 
-> Version: 1.0 | Date: 2026-05-16 | Branch: main
-> Purpose: Model every user path from app launch to feature completion, comparing spec expectations vs actual code behavior. Discrepancies are flagged for fix.
+> Version: 1.1 | Date: 2026-05-16 | Branch: main
+> Purpose: Model each user journey from app launch to feature completion. Compare spec expectations with actual code behavior. Discrepancies are flagged for correction.
 
 ---
 
-## Design Principles
+## Common Behavior Patterns
 
-### DP-01: Uniform Card Drill Mechanics
+Many screens share the same foundational mechanics. Patterns are extracted to eliminate duplication and ensure consistent bug fixes.
 
-**Rule:** All card-based drill modes MUST use identical play/pause/submit/retry/navigation behavior. This includes:
-- Regular training (LessonRoadmap → TrainingScreen)
-- Daily Practice Block 1 (Translate) and Block 3 (Verbs)
-- Verb Drill (standalone)
+### Pattern A: Sentence Training
 
-The only exception is Vocab Drill (flashcard flip + SRS rating) which uses a fundamentally different interaction model.
+**Base flow:** card with prompt → input mode selection → Play (timer start) → answer input → Check → normalization → comparison → result → next card.
 
-**Why:** Daily Practice is a container that guides the user through blocks, equivalent to a Duolingo lesson path. Blocks 1 and 3 present cards with the same mechanics as regular training — only the content differs. Users should never need to learn different button behavior for the same type of interaction.
+**Detailed steps of the base flow:**
 
-**How to apply:** When modifying card-level behavior (play/pause/submit/retry/hint), the change applies to ALL card drill modes simultaneously. Use SessionRunner or a shared CardSessionStateModel as the single source of truth. Mode-specific differences (card source, scoring, session length) are managed at the coordinator level, not the card level.
+| Step | Action | System Response |
+|------|--------|-----------------|
+| A.1 | User sees a card | PAUSED: prompt, input area, Play / Check / Next / Show Answer / Exit buttons |
+| A.2 | Presses Play | `togglePause()` → `startSession()`: sessionState=ACTIVE, timer started, inputText cleared |
+| A.3 | Enters answer, presses Check | `submitAnswer()` → normalization → comparison against accepted answers |
+| A.4a | Answer correct | correctCount++, green badge, auto-calls `nextCardInternal()` or pauses if last card |
+| A.4b | Answer incorrect (attempts 1-2) | incorrectCount++, red badge, retry (VOICE: auto-restart) |
+| A.4c | Answer incorrect (attempt 3) | sessionState=HINT_SHOWN, timer paused, all answers shown |
+| A.5 | Presses Next | `nextCard()`: index++, new card, sessionState=ACTIVE |
+| A.6 | Presses Show Answer | `showAnswer()`: pause, show answers, sessionState=HINT_SHOWN |
+| A.7 | Presses Exit | Confirmation dialog → `finishSession()` → navigate back |
+
+**Used in:**
+
+| Journey | Implementation | Differences from base flow |
+|---------|---------------|---------------------------|
+| Journey 4: Sub-lesson | SessionState enum | Base implementation. All 3 input modes (VOICE/KEYBOARD/WORD_BANK). Mastery is recorded |
+| Journey 5: Boss | SessionState enum | No time limit (timing only). BRONZE/SILVER/GOLD rewards. Unlimited attempts. BUG: records mastery |
+| Journey 6 Block 1: Daily Translate | DailyPracticeSessionProvider | 10 cards. Auto-advance 400ms. VOICE/KEYBOARD/WORD_BANK modes rotate |
+| Journey 6 Block 3: Daily Verbs | DailyPracticeSessionProvider | 10 cards. No VOICE (KEYBOARD/WORD_BANK only). Otherwise same as Block 1 |
+| Journey 7: Verb Drill | CardSessionStateMachine | No VOICE. Shows verb infinitive, rank, tense on card. Auto-advance 500ms (race BUG-NAV-012) |
+
+### Pattern B: Flashcard Rating
+
+**Base flow:** front side (word) → optional voice input → flip → back side (translation + forms + collocations) → rating (Again/Hard/Good/Easy) → SRS step updated → next card.
+
+**Detailed steps of the base flow:**
+
+| Step | Action | System Response |
+|------|--------|-----------------|
+| B.1 | User sees front side | POS badge, rank, word (32sp bold). Buttons: TTS, Mic, Skip, Flip |
+| B.2 | (Optional) Voice input | Up to 3 attempts. Comparison with synonyms ("/" separator). Auto-flip on correct or max attempts |
+| B.3 | Card flip | Back side: word + translation + forms + collocations |
+| B.4 | Rating selection | AGAIN → step=0, HARD → step unchanged, GOOD → step+1, EASY → step+2 |
+| B.5 | Auto-advance to next card | Index++, load next word |
+
+**Used in:**
+
+| Journey | Differences from base flow |
+|---------|---------------------------|
+| Journey 6 Block 2: Daily Vocab | 5 cards. No filters (auto-selected). No voice input on front side |
+| Journey 8: Vocab Drill | Full version. Filters: direction (IT→RU / RU→IT), POS, frequency. TTS button. Skip button. Voice input |
+
+### Pattern C: Async Operation
+
+**Base flow:** user action → background task launched → progress indicator → completion → state update.
+
+**Used in:**
+- Journey 9: Pack import (synchronous on main thread — BUG)
+- Journey 10: TTS download (async with progress)
+- Journey 11: Backup/Restore (synchronous without progress — BUG)
 
 ---
 
@@ -26,8 +73,8 @@ The only exception is Vocab Drill (flashcard flip + SRS rating) which uses a fun
 
 ### Step 1.1: User taps app icon
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **User action** | Taps GrammarMate icon on home screen |
 | **System response** | MainActivity.onCreate() → setContentView → AppRoot composable |
 | **What user sees** | Splash screen / loading indicator |
@@ -37,32 +84,32 @@ The only exception is Vocab Drill (flashcard flip + SRS rating) which uses a fun
 
 ### Step 1.2: App initialization
 
-| Aspect | Detail |
-|--------|--------|
-| **System response** | AppRoot checks backup restore status. If first launch: no backup exists, proceeds directly. If returning user: checks `restoreState` |
+| Aspect | Details |
+|--------|---------|
+| **System response** | AppRoot checks backup restore status. First launch: no backup, continues immediately. Returning user: checks `restoreState` |
 | **What user sees** | Loading spinner on StartupScreen |
-| **Navigation** | Remains on StartupScreen until `restoreState.status == DONE` |
+| **Navigation** | Stays on StartupScreen until `restoreState.status == DONE` |
 | **Spec source** | 13-app-entry-and-navigation.md §2 |
 | **Discrepancy** | None |
 
 ### Step 1.3: First launch — no lessons
 
-| Aspect | Detail |
-|--------|--------|
-| **System response** | `forceReloadDefaultPacks()` seeds default lesson packs from assets. HomeScreen loads with lesson data |
-| **What user sees** | HomeScreen with: language selector, lesson grid (1+ lessons), "Continue Learning" card, Daily Practice tile, Verb Drill tile (if pack has verb drill), Flashcards tile (if pack has vocab drill) |
+| Aspect | Details |
+|--------|---------|
+| **System response** | `forceReloadDefaultPacks()` loads default lesson packs from assets. HomeScreen loads with lesson data |
+| **What user sees** | HomeScreen: language selector, lesson grid (1+), "Continue learning" card, Daily Practice tile, Verb Drill tile (if pack contains verbs), Flashcards tile (if pack contains vocabulary) |
 | **Navigation** | StartupScreen → HOME |
-| **Elements visible** | HS-01 (app title), HS-02 (language selector), HS-03 (lesson grid), HS-04 (Continue Learning card), HS-05 (Daily Practice tile), HS-06 (Verb Drill tile if hasVerbDrill), HS-07 (Flashcards tile if hasVocabDrill), HS-08 (Settings gear), HS-09 (streak counter) |
+| **Visible elements** | HS-01 (title), HS-02 (language selector), HS-03 (lesson grid), HS-04 ("Continue" card), HS-05 (Daily Practice), HS-06 (Verb Drill if hasVerbDrill), HS-07 (Flashcards if hasVocabDrill), HS-08 (settings gear), HS-09 (streak counter) |
 | **Spec source** | 19-screen-catalog.md §1, 23-screen-elements.md |
-| **Discrepancy** | None — first launch flow is well-defined |
+| **Discrepancy** | None — first launch is well-defined |
 
-### Step 1.3b: Returning user — restore from backup
+### Step 1.3b: Returning user — backup restore
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **System response** | If backup file found in Downloads/BaseGrammy/: shows restore prompt |
 | **What user sees** | Restore dialog: "Backup found. Restore?" with Yes/No buttons |
-| **Navigation** | Remains on StartupScreen until user decides |
+| **Navigation** | Stays on StartupScreen until user decides |
 | **Spec source** | 13-app-entry-and-navigation.md §2.3 |
 | **Discrepancy** | None |
 
@@ -72,74 +119,74 @@ The only exception is Vocab Drill (flashcard flip + SRS rating) which uses a fun
 
 ### Step 2.1: User sees Home Screen
 
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | Full HomeScreen layout: title bar with language name, streak counter, settings gear, lesson grid, daily practice tile, drill tiles |
+| Aspect | Details |
+|--------|---------|
+| **What user sees** | Full HomeScreen layout: title with language name, streak counter, settings gear, lesson grid, Daily Practice tile, drill tiles |
 | **Available actions** | Tap lesson card → go to Lesson Roadmap (Journey 3) |
 | | Tap "Daily Practice" → start daily session (Journey 6) |
-| | Tap "Verb Drill" → go to Verb Drill (Journey 7) |
-| | Tap "Flashcards" → go to Vocab Drill (Journey 8) |
-| | Tap settings gear → open Settings sheet |
-| | Tap language selector → change active language/pack |
-| **Elements** | HS-01 through HS-14 (14 elements total) |
+| | Tap "Verb Drill" → go to verbs (Journey 7) |
+| | Tap "Flashcards" → go to vocabulary (Journey 8) |
+| | Tap settings gear → open settings panel (Journey 9) |
+| | Tap language selector → switch active language/pack |
+| **Elements** | HS-01 through HS-14 (14 elements) |
 | **Spec source** | 19-screen-catalog.md §1 |
 | **Discrepancy** | None |
 
 ### Step 2.2: User taps lesson card
 
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps a lesson card in the grid |
-| **System response** | `vm.selectLesson(lessonId)` loads lesson data, computes sub-lesson states, flower states |
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps lesson card in the grid |
+| **System response** | `vm.selectLesson(lessonId)` loads lesson data, computes sub-lesson states and flowers |
 | **Navigation** | HOME → LESSON (LessonRoadmapScreen) |
-| **What user sees next** | LessonRoadmapScreen with sub-lesson grid, flower states, boss tile (if unlocked) |
+| **What user sees next** | LessonRoadmapScreen: sub-lesson grid, flowers, boss tile (if unlocked) |
 | **Spec source** | 07-app-router.md §3.2 |
 | **Discrepancy** | None |
 
-### Step 2.3: User taps "Continue Learning" (primary action)
+### Step 2.3: User taps "Continue learning" (primary action)
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **User action** | Taps primary action card on HomeScreen |
-| **System response** | Same as tapping the next uncompleted lesson card |
+| **System response** | Same as tapping the next incomplete lesson |
 | **Navigation** | HOME → LESSON |
 | **Spec source** | 19-screen-catalog.md §1.4 |
 | **Discrepancy** | None |
 
 ### Step 2.4: User opens Settings
 
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps settings gear icon |
-| **System response** | ModalBottomSheet opens with settings content |
-| **What user sees** | Settings sheet: language management, lesson pack import, TTS download, ladder access, theme toggle, about section |
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps gear icon |
+| **System response** | `vm.pauseSession()` + ModalBottomSheet with settings content |
+| **What user sees** | Settings panel: language management, pack import, ASR download, ladder access, theme toggle, backup/restore, "About" section |
 | **Navigation** | No navigation — modal overlay on current screen |
-| **Back behavior** | Back press closes settings sheet. On TRAINING: also calls `vm.resumeFromSettings()` if card exists |
+| **Back button behavior** | Pressing Back closes the panel. On TRAINING: also calls `vm.resumeFromSettings()` if a card exists |
 | **Spec source** | 19-screen-catalog.md §11 |
 | **Discrepancy** | None |
 
 ---
 
-## Journey 3: Lesson Roadmap — Select Sub-Lesson
+## Journey 3: Lesson Roadmap — Sub-lesson Selection
 
 ### Step 3.1: User sees LessonRoadmapScreen
 
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | Lesson title, back arrow, grid of sub-lesson tiles with flower states (LOCKED/SEED/SPROUT/BLOOM), boss tile (if unlocked: completedSubLessonCount >= 15) |
-| **Available actions** | Tap sub-lesson tile → start training (Journey 4) |
+| Aspect | Details |
+|--------|---------|
+| **What user sees** | Lesson name, back arrow, grid of sub-lesson tiles with flowers (LOCKED/SEED/SPROUT/BLOOM), boss tile (if unlocked: completedSubLessonCount >= 15) |
+| **Available actions** | Tap sub-lesson → start training (Journey 4) |
 | | Tap boss tile → start boss battle (Journey 5) |
 | | Tap back arrow → return to HOME |
 | **Elements** | LR-01 through LR-12 |
 | **Spec source** | 19-screen-catalog.md §2 |
 | **Discrepancy** | None |
 
-### Step 3.2: User taps sub-lesson tile
+### Step 3.2: User taps sub-lesson
 
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps a sub-lesson tile |
-| **System response** | `vm.selectSubLesson(index)` builds session cards, initializes state |
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps sub-lesson tile |
+| **System response** | `vm.selectSubLesson(index)` creates session cards, initializes state |
 | **Navigation** | LESSON → TRAINING |
 | **What user sees next** | TrainingScreen with first card, PAUSED state (Play button visible) |
 | **Spec source** | 07-app-router.md §3.3, scenario-01 §2 |
@@ -147,369 +194,405 @@ The only exception is Vocab Drill (flashcard flip + SRS rating) which uses a fun
 
 ### Step 3.3: User taps boss tile
 
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps boss tile (only visible when unlocked) |
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps boss tile (visible only when unlocked) |
 | **System response** | `vm.startBossLesson()` or `vm.startBossMega()` — shuffles boss cards, resets counters |
 | **Navigation** | LESSON → TRAINING (boss mode) |
 | **What user sees next** | TrainingScreen with "Boss Battle" header, PAUSED state |
 | **Spec source** | scenario-09 §2 |
-| **Discrepancy** | **BUG-NAV-001**: Boss battle records mastery via `recordCardShowForMastery()` at 3 code sites WITHOUT checking `bossActive`. Spec 18.8.4 says boss battles should be separate from mastery/flower system. This inflates `uniqueCardShows` and advances SRS intervals during boss battles. |
+| **Discrepancy** | **BUG-NAV-001**: Boss battle records mastery via `recordCardShowForMastery()` in 3 code locations WITHOUT checking `bossActive`. Spec states that boss battles should be isolated from the mastery/flower system. This inflates `uniqueCardShows` and advances SRS intervals. |
 
 ---
 
-## Journey 4: Training Session — Card-by-Card
+## Journey 4: Sentence Training (Sub-lesson)
 
-### Step 4.1: User sees first card (PAUSED state)
+> **Based on: Pattern A — Sentence Training.** Base implementation. All 3 input modes. Mastery is recorded. See Pattern A for full base flow description.
 
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | Card with Russian prompt, input area, Play button, input mode buttons (Mic/Keyboard/Book), Next arrow, Show Answer eye icon |
-| **Session state** | PAUSED — timer not running, Check button disabled |
-| **Available actions** | Press Play → start session (Step 4.2) |
-| | Switch input mode → change to VOICE/KEYBOARD/WORD_BANK |
-| | Press Next → advance to next card without starting timer |
-| | Press Show Answer → reveal answer |
-| | Press exit (StopCircle) → show exit dialog |
-| **Elements** | TS-01 through TS-37 |
-| **Spec source** | 19-screen-catalog.md §3, scenario-01 §3 |
-| **Discrepancy** | None |
+### Differences from base flow
 
-### Step 4.2: User presses Play (PAUSED → ACTIVE)
+- Full Pattern A implementation — all steps A.1–A.7 work as described
+- All 3 input modes: VOICE, KEYBOARD, WORD_BANK
+- Mastery: `recordCardShowForMastery()` called when each card is shown
+- Completion: `subLessonFinishedToken` → auto-navigate to LESSON
 
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps Play button |
-| **System response** | `togglePause()` → `startSession()`: sets sessionState=ACTIVE, starts timer, clears inputText |
-| **What changes visually** | Play icon → Pause icon. Timer starts ticking. Check button becomes enabled (when input entered). If VOICE mode: speech recognition auto-launches after 200ms |
-| **State transition** | `PAUSED → ACTIVE` |
-| **Spec source** | scenario-01 §3.1 |
-| **Discrepancy** | None |
+### Identified discrepancies
 
-### Step 4.3: User types answer and presses Check
-
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Types answer in KEYBOARD mode, taps Check button |
-| **Preconditions** | `sessionState == ACTIVE && inputText.isNotBlank() && currentCard != null` |
-| **System response** | `submitAnswer()` → normalizes input → compares against accepted answers |
-
-#### 4.3a: Correct answer
-
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | Green "Correct" label (TS-26). Success sound plays |
-| **State change** | `correctCount++`, `lastResult = true` |
-| **If mid-card**: | Auto-advances to next card via `nextCardInternal()`: clears input, resets attempt counter, new card loads, timer continues |
-| **If last card**: | Timer pauses, `subLessonFinishedToken` incremented, auto-navigates to LESSON |
-| **Spec source** | scenario-02 §3 |
-| **Discrepancy** | **BUG-NAV-002**: After correct answer on mid-card, session stays ACTIVE. There is no visual cue (pulsing Next, auto-advance) telling the user the answer was accepted and they're on the next card. The card content changes but the transition is instant and easy to miss, especially in VOICE mode where auto-submit fires. |
-
-#### 4.3b: Incorrect answer (attempts 1-2)
-
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | Red "Incorrect" label. Error sound plays. Input field clears (VOICE mode) or stays (KEYBOARD mode) |
-| **State change** | `incorrectCount++`, `incorrectAttemptsForCard++` |
-| **User can** | Type new answer and retry. In VOICE mode: speech recognition auto-re-triggers |
-| **Spec source** | scenario-02 §4 |
-| **Discrepancy** | None |
-
-#### 4.3c: Incorrect answer (attempt 3)
-
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | Answer hint card appears showing all accepted answers joined with " / " |
-| **State change** | `sessionState = HINT_SHOWN`, timer pauses, `incorrectAttemptsForCard` resets to 0 |
-| **User can** | Press Next to advance (→ Step 4.5) or Press Play (→ Step 4.2b) |
-| **Spec source** | scenario-02 §5 |
-| **Discrepancy** | **BUG-NAV-003**: Play button from HINT_SHOWN calls `startSession()` which sets `sessionState = ACTIVE` and clears `inputText`, but does NOT clear `answerText` (hint text). The hint card stays visible while the session is ACTIVE and the Check button re-enables. The user can submit again with the hint text still showing. |
-
-### Step 4.4: User presses Pause (ACTIVE → PAUSED)
-
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps Pause button (icon is Pause when ACTIVE) |
-| **System response** | `togglePause()`: timer pauses, `sessionState = PAUSED` |
-| **What changes visually** | Pause icon → Play icon. Timer stops |
-| **State transition** | `ACTIVE → PAUSED` |
-| **Spec source** | scenario-01 §3.2 |
-| **Discrepancy** | None |
-
-### Step 4.5: User presses Next (any state)
-
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps right arrow (Next) button |
-| **System response** | `nextCard()`: advances index, loads new card, clears all card-local state, sets `sessionState = ACTIVE` |
-| **Enabled when** | `hasCards` (currentCard != null) — **always enabled, no sessionState guard** |
-| **If was HINT_SHOWN**: | Resumes timer |
-| **If last card**: | `coerceAtMost(lastIndex)` — stays on last card, no completion signal |
-| **Spec source** | scenario-01 §3.3 |
-| **Discrepancy** | **BUG-NAV-004**: Next button is always enabled, even during ACTIVE session. After auto-advance from correct answer, user can press Next and skip the next card without answering. **BUG-NAV-005**: Pressing Next on the last card stays on last card with no visual feedback that the session is complete. Only the Stop/Exit button provides the exit path. |
-
-### Step 4.6: User presses Show Answer (eye icon)
-
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps eye icon |
-| **System response** | `showAnswer()`: pauses timer, reveals all accepted answers, sets `sessionState = HINT_SHOWN` |
-| **What user sees** | Hint card with correct answer(s). Check button disabled |
-| **State transition** | `any → HINT_SHOWN` |
-| **Spec source** | scenario-05 §4 |
-| **Discrepancy** | None — behavior matches spec |
-
-### Step 4.7: User presses Exit (StopCircle)
-
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Taps exit/stop button |
-| **System response** | Exit confirmation dialog appears |
-| **Dialog options** | "End session? Your progress will be saved." with "End" / "Cancel" |
-| **On confirm**: | If boss active → `finishBoss()` → LESSON. If drill mode → `exitDrillMode()` → LESSON. If normal → `finishSession()` → LESSON |
-| **On cancel**: | Dialog dismissed, session resumes |
-| **Spec source** | 23-screen-elements.md TCS-24 |
-| **Discrepancy** | None |
-
-### Step 4.8: Sub-lesson finishes (auto-navigation)
-
-| Aspect | Detail |
-|--------|--------|
-| **Trigger** | Last card answered correctly. `subLessonFinishedToken` incremented |
-| **System response** | GrammarMateApp.kt detects token change via `LaunchedEffect`, calls `onNavigate(LESSON)` |
-| **What user sees** | Brief flash of TrainingScreen → LessonRoadmapScreen |
-| **Navigation** | TRAINING → LESSON (automatic) |
-| **Spec source** | 07-app-router.md §3.5 |
-| **Discrepancy** | None — token-based auto-navigation works as spec'd |
+| ID | Step | Description |
+|----|------|-------------|
+| BUG-NAV-002 | A.4a | No visual feedback after auto-advance on correct answer. Card changes instantly without animation, easy to miss |
+| BUG-NAV-003 | A.4c | Play from HINT_SHOWN does not clear `answerText`. Hint persists while session is ACTIVE, Check is active |
+| BUG-NAV-004 | A.5 | Next button always active — can skip cards during ACTIVE session |
+| BUG-NAV-005 | A.5 | Next on last card stays on it with no completion feedback |
 
 ---
 
 ## Journey 5: Boss Battle
 
-### Step 5.1: Boss session starts (PAUSED)
+> **Based on: Pattern A — Sentence Training.** Variation: rewards, no time limit, unlimited attempts.
 
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | TrainingScreen with "Boss Battle" / "Review Session" header, first card loaded, PAUSED state |
-| **Available actions** | Press Play to begin |
-| **Differences from normal training** | No time limit (measures elapsed time only). Progress bar shows boss completion %. Unlimited retries |
-| **Spec source** | scenario-09 §2 |
-| **Discrepancy** | **BUG-NAV-001** (same as Step 3.3) |
+### Differences from base flow
 
-### Step 5.2: Boss card-by-card
+- No time limit — only elapsed time measurement
+- Progress bar shows boss completion %
+- Reward thresholds: BRONZE >50%, SILVER >75%, GOLD 100%
+- Unlimited attempts (no penalty for errors)
+- On reward threshold crossing: pause, reward overlay, resume after dismiss
+- Completion: `finishBoss()` → computes reward → writes to ProgressStore → `bossFinishedToken` → LESSON
 
-| Aspect | Detail |
-|--------|--------|
-| **Same as Journey 4** | Play/Pause/Check/Retry work identically to normal training |
-| **Additional**: | Boss progress bar advances with each card. Reward thresholds: BRONZE >50%, SILVER >75%, GOLD 100% |
+### Identified discrepancies
 
-### Step 5.3: Boss reward pause
-
-| Aspect | Detail |
-|--------|--------|
-| **Trigger** | Boss progress crosses reward threshold (33/66/100% for BRONZE/SILVER/GOLD) |
-| **System response** | Session pauses, reward message displayed |
-| **What user sees** | Reward overlay with tier name |
-| **User action** | Dismiss reward → session resumes |
-| **Spec source** | scenario-09 §4 |
-| **Discrepancy** | **BUG-NAV-006**: `clearBossRewardMessage()` has complex conditional for `shouldResumeTimer` reading `bossActive`, `sessionState`, `currentCard`, `inputMode` at different points. If state changes between read and write, resume decision may be stale. |
-
-### Step 5.4: Boss finishes
-
-| Aspect | Detail |
-|--------|--------|
-| **Trigger** | All boss cards answered (last card correct) |
-| **System response** | `finishBoss()`: calculates reward, records in ProgressStore, restores previous lesson state, rebuilds cards |
-| **Navigation** | TRAINING → LESSON (via `bossFinishedToken`) |
-| **What user sees** | Brief flash → LessonRoadmapScreen → Reward dialog with trophy |
-| **Spec source** | scenario-09 §5 |
-| **Discrepancy** | **BUG-NAV-007**: Reward overwrite — replaying boss overwrites previous reward with latest result (not best). A GOLD can be replaced by BRONZE on replay. |
+| ID | Step | Description |
+|----|------|-------------|
+| BUG-NAV-001 | Entire boss | Records mastery despite spec. 3 calls to `recordCardShowForMastery()` without `bossActive` check |
+| BUG-NAV-006 | Reward pause | `clearBossRewardMessage()` — stale state read in `shouldResumeTimer` condition |
+| BUG-NAV-007 | Completion | Reward overwrite on repeat — GOLD can be replaced by BRONZE |
 
 ---
 
 ## Journey 6: Daily Practice
 
+> **Blocks 1 and 3: Pattern A — Sentence Training.** Block 2: Pattern B — Flashcard Rating.
+
 ### Step 6.1: User taps Daily Practice tile
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **User action** | Taps "Daily Practice" tile on HomeScreen |
-| **System response** | Checks `hasResumableDailySession()`. If resumable → shows DailyResumeDialog. If not → starts new session |
-| **What user sees** | Loading dialog (non-cancelable) while session builds on IO dispatcher |
+| **System response** | Checks `hasResumableDailySession()`. If resumable → DailyResumeDialog. If not → new session |
+| **What user sees** | Loading dialog (non-dismissible) while session is assembled on IO dispatcher |
 | **Navigation** | HOME → DAILY_PRACTICE (after loading completes) |
 | **Spec source** | 19-screen-catalog.md §1.5 |
-| **Discrepancy** | **BUG-NAV-008**: If coroutine fails silently, user stays on HOME with loading cleared but no navigation and no error message. |
+| **Discrepancy** | **BUG-NAV-008**: Silent failure on coroutine error — user stays on HOME with no navigation and no error message |
 
-### Step 6.2: Block 1 — Translate (10 cards)
+### Step 6.2: Block 1 — Translation (10 cards)
 
-| Aspect | Detail |
-|--------|--------|
-| **What user sees** | DailyPracticeScreen with sentence card, input controls (VOICE/KEYBOARD/WORD_BANK rotating), progress indicator "1/10" |
-| **Session behavior** | Same Check/Retry as normal training but with DailyPracticeSessionProvider |
-| **Hint behavior** | 3 wrong attempts → shows answer. Press Play → advances to next card (same as TrainingScreen bug BUG-NAV-003) |
-| **Auto-advance** | Correct voice answer → 400ms delay → auto-advance to next card |
-| **Spec source** | scenario-06 §3 |
-| **Discrepancy** | **BUG-NAV-009**: Daily practice has NO retry mechanism after wrong answer display. Single wrong answer cycle → hint shown → must advance. Inconsistent with regular training which allows 3 retries per card. **BUG-NAV-017**: Daily Practice translate block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. (See Design Principle DP-01) |
+> Pattern A with variation: DailyPracticeSessionProvider, auto-selected input mode (VOICE/KEYBOARD/WORD_BANK rotation), auto-advance 400ms.
 
-### Step 6.3: Block 2 — Vocab Flashcards (5 cards)
+| Difference from base Pattern A | Details |
+|-------------------------------|---------|
+| Card source | DailyPracticeSessionProvider |
+| Input modes | Rotation between VOICE/KEYBOARD/WORD_BANK |
+| Auto-advance on correct voice | 400ms delay |
+| Hint behavior | 3 incorrect → shows answer. Play → advance to next (BUG-NAV-003) |
+| **Discrepancy** | **BUG-NAV-009**: No retry after showing wrong answer. One cycle → hint → must advance. Inconsistent with regular training (3 attempts) |
 
-| Aspect | Detail |
-|--------|--------|
-| **Transition** | BlockSparkleOverlay shows "Next: Vocabulary" for ~800ms |
-| **What user sees** | Flashcard with word, translation, forms, collocations. Rating buttons: Again/Hard/Good/Easy |
-| **User action** | Read card → tap rating button → auto-advance to next |
-| **Spec source** | scenario-06 §4 |
+### Step 6.3: Block 2 — Vocabulary Cards (5 cards)
+
+> Pattern B with variation: 5 cards, no filters, no voice input.
+
+| Difference from base Pattern B | Details |
+|-------------------------------|---------|
+| Card count | 5 |
+| Block transition | BlockSparkleOverlay "Next: Vocabulary" ~800ms |
+| Filters | None (cards auto-selected) |
+| Voice input | None |
 | **Discrepancy** | None |
 
 ### Step 6.4: Block 3 — Verbs (10 cards)
 
-| Aspect | Detail |
-|--------|--------|
-| **Transition** | BlockSparkleOverlay shows "Next: Verbs" for ~800ms |
-| **What user sees** | Sentence card with verb conjugation prompt, KEYBOARD/WORD_BANK input |
-| **Session behavior** | Same as Block 1 but no VOICE mode for verbs |
-| **Spec source** | scenario-06 §5 |
-| **Discrepancy** | **BUG-NAV-017**: Daily Practice verb block does NOT match regular training behavior. Play/pause/submit/retry/navigation should be IDENTICAL to Journey 4 (Steps 4.2-4.7). Currently DailyPracticeSessionProvider has diverged from SessionRunner behavior — different retry logic, different state management, different auto-advance timing. (See Design Principle DP-01) |
+> Pattern A with variation: no VOICE (KEYBOARD/WORD_BANK only), otherwise same as Block 1.
+
+| Difference from base Pattern A | Details |
+|-------------------------------|---------|
+| Input modes | KEYBOARD + WORD_BANK only (no VOICE) |
+| Block transition | BlockSparkleOverlay "Next: Verbs" ~800ms |
+| **Discrepancy** | None |
 
 ### Step 6.5: Daily session completes
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **Trigger** | Last task in Block 3 completed |
-| **System response** | `endSession()`: sets `active=false`, `finishedToken=true` |
+| **System response** | `endSession()`: `active=false`, `finishedToken=true` |
 | **What user sees** | CompletionScreen with "Daily practice complete!" message |
-| **User action** | Tap "Exit" → `cancelDailySession()` → navigate HOME |
-| **Navigation** | DAILY_PRACTICE → HOME |
-| **Spec source** | scenario-06 §6 |
-| **Discrepancy** | **BUG-NAV-010**: Completion sparkle may not be visible. `onComplete` callback calls `cancelDailySession()` which may trigger navigation before the sparkle animation renders. |
+| **User action** | Tap "Exit" → `cancelDailySession()` → HOME |
+| **Discrepancy** | **BUG-NAV-010**: Completion sparkle may be skipped — `onComplete` calls `cancelDailySession()` before animation renders |
 
-### Step 6.6: User presses back during Daily Practice
+### Step 6.6: User presses Back during Daily Practice
 
-| Aspect | Detail |
-|--------|--------|
-| **In-screen back arrow** | Shows exit confirmation dialog: "Exit practice? Progress lost." |
-| **System back button** | **Navigates directly to HOME without confirmation** |
-| **Spec source** | 19-screen-catalog.md §5, 23-screen-elements.md DP-30 |
-| **Discrepancy** | **BUG-NAV-011**: System BackHandler on DAILY_PRACTICE navigates HOME directly (GrammarMateApp.kt line 427-429). Spec says exit confirmation dialog should appear for system back too. In-screen back arrow works correctly. |
+| Aspect | Details |
+|--------|---------|
+| **Internal back arrow** | Shows dialog: "Exit practice? Progress will be lost." |
+| **System Back button** | **Navigates directly to HOME without confirmation** |
+| **Discrepancy** | **BUG-NAV-011**: BackHandler on DAILY_PRACTICE navigates to HOME directly (GrammarMateApp.kt). Spec requires confirmation dialog |
 
 ---
 
 ## Journey 7: Verb Drill
 
+> **Based on: Pattern A — Sentence Training.** Variation: no VOICE, verb infinitive/rank/tense display, CardSessionStateMachine instead of SessionState.
+
+### Differences from base Pattern A
+
+- **No VOICE mode** — KEYBOARD and WORD_BANK only
+- **Extra card info:** verb infinitive, rank, tense
+- **State machine:** `CardSessionStateMachine` with `isPaused` + `hintAnswer` instead of `SessionState` enum
+- **Auto-advance:** 500ms on correct voice (but VOICE unavailable — bug or dead code?)
+- **Exit:** returns to selection screen (not HOME), system Back → HOME
+
 ### Step 7.1: User taps Verb Drill tile
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **User action** | Taps "Verb Drill" tile on HomeScreen |
 | **Navigation** | HOME → VERB_DRILL |
-| **What user sees** | VerbDrillScreen: Selection sub-screen with Tense dropdown, Group dropdown, Start button |
+| **What user sees** | VerbDrillScreen: Tense/Group dropdowns, "Start" button |
 | **Spec source** | scenario-07 §1 |
 | **Discrepancy** | None |
 
-### Step 7.2: User starts drill session
+### Step 7.2: User starts drill
 
-| Aspect | Detail |
-|--------|--------|
-| **User action** | Selects tense/group, taps Start |
-| **System response** | VerbDrillViewModel filters cards, loads 10-card batch |
-| **What user sees** | Card session with prompt, input field, Check button |
-| **Spec source** | scenario-07 §2 |
+| Aspect | Details |
+|--------|---------|
+| **User action** | Selects tense/group, taps "Start" |
+| **System response** | VerbDrillViewModel filters cards, loads batch of 10 |
+| **What user sees** | Session with prompt, input field, Check button |
 | **Discrepancy** | None |
 
-### Step 7.3: Check answer (VerbDrill)
+### Identified discrepancies
 
-| Aspect | Detail |
-|--------|--------|
-| **Correct**: | Sets pendingCard, records answer time |
-| **Wrong (attempts < 3)**: | Shows "Incorrect" feedback, auto-triggers voice if VOICE mode |
-| **Wrong (attempts >= 3)**: | Shows hint (pink card), pauses session |
-| **Spec source** | scenario-07 §3 |
-| **Discrepancy** | **BUG-NAV-012**: Auto-advance race condition. `LaunchedEffect` auto-advances after 500ms on correct voice answer. Manual Next press during 500ms window causes double `nextCard()` call, potentially skipping a card. |
-
-### Step 7.4: Play/Pause in VerbDrill
-
-| Aspect | Detail |
-|--------|--------|
-| **If paused with hint shown**: | Play advances to NEXT card (calls `nextCard()`) |
-| **If paused without hint**: | Play resumes CURRENT card (calls `sm.resume()`) |
-| **Spec source** | 23-screen-elements.md VD-36 |
-| **Discrepancy** | **BUG-NAV-013**: Play button has overloaded semantics — "advance" vs "resume" with no visual differentiation. User cannot tell which behavior will occur. |
-
-### Step 7.5: VerbDrill completion and exit
-
-| Aspect | Detail |
-|--------|--------|
-| **Completion**: | Stats screen with correct/incorrect counts. "More" button or "Exit" button |
-| **Exit**: | Returns to selection screen (NOT HomeScreen) |
-| **System back**: | Navigates to HOME |
-| **Spec source** | scenario-07 §5 |
-| **Discrepancy** | **BUG-NAV-014**: In-app exit controls (back arrow, completion Exit) return to selection screen, not HOME. Only system back goes HOME. Inconsistent navigation. |
+| ID | Step | Description |
+|----|------|-------------|
+| BUG-NAV-012 | Auto-advance | Race condition: `LaunchedEffect` auto-advance after 500ms + manual Next = double `nextCard()`, card skipped |
+| BUG-NAV-013 | Play from HINT_SHOWN | Overloaded semantics: "advance" vs "resume" with no visual distinction |
+| BUG-NAV-014 | Exit | Internal exit → selection screen, system Back → HOME. Inconsistent |
 
 ---
 
 ## Journey 8: Vocab Drill
 
+> **Based on: Pattern B — Flashcard Rating.** Full version with filters, TTS, voice input.
+
+### Differences from base Pattern B
+
+- **Full selection UI:** direction chips (IT→RU / RU→IT), POS, frequency
+- **TTS button** (IT→RU direction only)
+- **Voice input** on front side (up to 3 attempts, comparison with synonyms)
+- **Skip button** to skip a card
+- **Mastery:** stored in `drills/{packId}/word_mastery.yaml`, scoped per pack
+
 ### Step 8.1: User taps Flashcards tile
 
-| Aspect | Detail |
-|--------|--------|
+| Aspect | Details |
+|--------|---------|
 | **User action** | Taps "Flashcards" tile on HomeScreen |
 | **Navigation** | HOME → VOCAB_DRILL |
-| **What user sees** | VocabDrillScreen: Selection with direction chips, POS chips, frequency chips, Start button |
-| **Spec source** | scenario-08 §1 |
+| **What user sees** | VocabDrillScreen: direction chips, POS, frequency, "Start" button |
 | **Discrepancy** | None |
 
-### Step 8.2: Vocab card flow
+### Identified discrepancies
 
-| Aspect | Detail |
-|--------|--------|
-| **Card front**: | POS badge, rank badge, word (32sp bold). TTS button (IT→RU only). Mic button for voice input. Skip/Flip buttons |
-| **Voice input**: | Up to 3 attempts. Match against synonyms (split by "/"). Auto-flip on correct or max attempts |
-| **Card back**: | Word + translation + forms + collocations. 4 rating buttons: Again/Hard/Good/Easy |
-| **Rating → advance**: | Auto-advance to next card |
-| **Spec source** | scenario-08 §3-4 |
-| **Discrepancy** | **BUG-NAV-015**: `isLearned` threshold mismatch. Code uses `LEARNED_THRESHOLD = 3` (step >= 3). Card back mastery indicator shows "Learned" at step >= 9. Data says learned at step 3, UI says step 9. |
+| ID | Step | Description |
+|----|------|-------------|
+| BUG-NAV-015 | Card back side | isLearned threshold: data uses step>=3, UI shows "Learned" at step>=9 |
+| BUG-NAV-016 | Exit | Redundant `refreshVocabMasteryCount()` on every Back press |
 
-### Step 8.3: Vocab drill exit
+---
 
-| Aspect | Detail |
-|--------|--------|
-| **System back**: | Calls `vm.refreshVocabMasteryCount()` then navigates HOME |
-| **In-screen back**: | Same |
-| **Spec source** | scenario-08 §6 |
-| **Discrepancy** | **BUG-NAV-016**: `refreshVocabMasteryCount()` is called on EVERY back press, even if no cards were practiced. Unnecessary I/O but not harmful. |
+## Journey 9: Settings — Lesson Pack Import
+
+### Step 9.1: Opening Settings
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps gear icon on any screen |
+| **System response** | `vm.pauseSession()`, ModalBottomSheet with settings |
+| **What user sees** | Settings panel with content management section |
+| **Discrepancy** | None |
+
+### Step 9.2: Tapping "Import Lesson Pack"
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps "Import lesson pack" button (Upload icon) |
+| **System response** | `packImportLauncher.launch(arrayOf("application/zip", ...))` — system file picker |
+| **What user sees** | System file selection dialog, filtered to ZIP files |
+| **Discrepancy** | None |
+
+### Step 9.3: Selecting ZIP file
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Selects lesson pack ZIP file |
+| **System response** | URI → `vm.importLessonPack(uri)` → `PackImporter.importPackFromUri()` |
+| **Processing** | 1) Extract ZIP to temp directory (with path traversal protection) |
+| | 2) Parse `manifest.json` (packId, language, lessons, verbDrill, vocabDrill) |
+| | 3) Register language via `languageEnsurer()` |
+| | 4) Delete old pack on re-import |
+| | 5) Copy temp → `packs/{packId}/` |
+| | 6) Import lesson CSV files via `AtomicFileWriter` |
+| | 7) Copy drill files to `drills/{packId}/verb_drill/` and `vocab_drill/` |
+| | 8) Import story/vocab files |
+| | 9) Register pack in `packs.yaml` |
+| | 10) Reset session state, update UI |
+| **What user sees** | Settings panel stays open. No progress indicator |
+| **Discrepancy** | **BUG-SET-001**: Import runs synchronously on the main thread. UI may freeze on large packs. **BUG-SET-002**: On error (missing manifest, invalid JSON, no CSV) — no user feedback. Error is logged, but Settings stays open with no message. **BUG-SET-003**: Between deleting the old pack and writing the new one — data loss window on crash. |
+
+### Step 9.4: Import completion
+
+| Aspect | Details |
+|--------|---------|
+| **System response** | ViewModel resets boss/story/vocab/daily state, updates `selectedLanguageId`, `installedPacks`, `lessons` |
+| **What user sees** | On closing settings — HomeScreen with new lesson pack. Language selector updated |
+| **Discrepancy** | None (if import succeeds) |
+
+---
+
+## Journey 10: Settings — TTS Model Download
+
+> **Note:** TTS download is NOT triggered from the settings panel, but by tapping the speaker icon on TrainingScreen. Settings contains an ASR toggle, but no TTS button.
+
+### Step 10.1: Tapping speaker icon without model
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps speaker icon (TtsSpeakerButton) on TrainingScreen when `ttsModelReady == false` |
+| **System response** | Checks background download. If already downloading — copies state. Shows `TtsDownloadDialog` |
+| **What user sees** | Speaker icon is red (ReportProblem). After tapping — "Download pronunciation model?" dialog |
+| **Discrepancy** | None |
+
+### Step 10.2: TTS download dialog
+
+| Aspect | Details |
+|--------|---------|
+| **Dialog states** | Idle: "Will download ~350 MB" + "Download" button |
+| | Downloading: progress bar + % + "Background" button |
+| | Extracting: progress bar + % |
+| | Done: "Model ready!" (auto-dismiss) |
+| | Error: "Download error: {message}" + "OK" |
+| **Discrepancy** | None |
+
+### Step 10.3: Download confirmation
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps "Download" |
+| **System response** | `AudioCoordinator.startTtsDownload()`: checks `isNetworkMetered()`. If mobile → MeteredNetworkDialog. If WiFi → `beginTtsDownload()` |
+| **What user sees** | Either download starts, or "Mobile network detected. ~346 MB. Download?" dialog |
+| **Discrepancy** | None |
+
+### Step 10.4: Download and extraction
+
+| Aspect | Details |
+|--------|---------|
+| **System response** | `TtsModelManager.download()`: HTTP download with 3 retries, 60s connect / 120s read timeout. Up to 5 redirects (GitHub URLs). Progress via Flow. Then `extractTarBz2()` with path traversal check |
+| **Models** | English (Kokoro): ~350 MB download, ~700 MB disk. Italian (VITS Piper): ~65 MB download, ~150 MB disk |
+| **What user sees** | Progress bar updates in real-time. Can press "Background" — thin progress bar at top of all screens |
+| **Discrepancy** | **BUG-SET-004**: No way to cancel an active download. Only "Background" (hide dialog). **BUG-SET-005**: Background download for all languages (`downloadMultiple`) — sequential, not parallel. If 2 languages, second waits for first. |
+
+### Step 10.5: Download completion
+
+| Aspect | Details |
+|--------|---------|
+| **System response** | `Done` → `ttsModelReady = true` → `ttsEngine.initialize(languageId)` → Sherpa-ONNX `OfflineTts` created |
+| **What user sees** | Dialog: "Model ready!" → auto-dismiss. Speaker icon: red → green over ~2s |
+| **Discrepancy** | None |
+
+### Step 10.6: Background download (automatic)
+
+| Aspect | Details |
+|--------|---------|
+| **Trigger** | App launch / ViewModel creation |
+| **System response** | `AudioCoordinator.startBackgroundTtsDownload()`: finds languages without model → `downloadMultiple()` sequentially |
+| **What user sees** | Thin 2dp progress bar at top of all screens. Disappears on completion |
+| **Discrepancy** | **BUG-SET-005** (same): sequential download, not parallel |
+
+---
+
+## Journey 11: Settings — Backup and Restore
+
+### Creating a backup
+
+#### Step 11.B1: Tapping "Save progress now"
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps "Save progress now" button (Upload icon) in Backup & Restore section |
+| **System response** | `vm.saveProgressNow()` → `BackupManager.createBackup()` → `createBackupToInternal()` |
+| **Processing** | Creates `grammarmate/backups/backup_latest/`. Copies via `AtomicFileWriter.copyAtomic()`: mastery.yaml, progress.yaml, profile.yaml, hidden_cards.yaml, bad_sentences.yaml, vocab_progress.yaml, streak_*.yaml, drill_progress_*.yaml, drills/{packId}/verb_drill_progress.yaml, drills/{packId}/word_mastery.yaml, metadata.txt |
+| **What user sees** | Nothing. Settings panel stays open without confirmation |
+| **Discrepancy** | **BUG-SET-006**: No user feedback on backup success or failure. `createBackup()` returns false on error, but ViewModel shows no toast/snackbar. **BUG-SET-007**: Backup overwrites previous one (always "backup_latest"). No backup history. **BUG-SET-008**: NOT backed up: config.yaml, languages.yaml, packs.yaml, lesson CSVs, TTS/ASR models, stories JSON. On app reinstall, custom packs are lost. |
+
+### Restoring a backup
+
+#### Step 11.R1: Tapping "Restore from backup"
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Taps "Restore from backup" button (Download icon) |
+| **System response** | `ActivityResultContracts.OpenDocumentTree` — system folder picker |
+| **What user sees** | System directory selection dialog |
+| **Discrepancy** | None |
+
+#### Step 11.R2: Selecting backup folder
+
+| Aspect | Details |
+|--------|---------|
+| **User action** | Selects folder with backup data |
+| **System response** | `vm.restoreBackup(uri)` → `BackupRestorer.restoreFromUri()`: looks for `backup_latest` inside selected folder, then: 1) Validate each file (YAML parsing) 2) Copy via `AtomicFileWriter` 3) Migrate old streak.yaml → streak_{languageId}.yaml format 4) Write restore_log.txt |
+| **What user sees** | Settings panel stays open. No progress indicator |
+| **Discrepancy** | **BUG-SET-009**: No feedback on restore completion. User does not know if it succeeded. **BUG-SET-010**: After restore, app does NOT reload automatically. Data takes effect on next store read from disk. User may see stale data until restart. |
+
+#### Step 11.R3: App launch restore path (AppRoot)
+
+| Aspect | Details |
+|--------|---------|
+| **Trigger** | Detecting incomplete restore on launch |
+| **System response** | AppRoot checks `RestoreNotifier.restoreState`. If not DONE → StartupScreen with blocking |
+| **What user sees** | White screen with spinner and status text. Blocks all interaction |
+| **Discrepancy** | **BUG-SET-011**: No Cancel/Skip/Timeout button on StartupScreen during restore. If RestoreNotifier hangs, user cannot use the app. |
 
 ---
 
 ## Discrepancy Summary
 
+### Navigation Bugs (Training Flow)
+
 | ID | Severity | Location | Description |
 |----|----------|----------|-------------|
-| BUG-NAV-001 | HIGH | BossOrchestrator, SessionRunner | Boss records mastery despite spec saying it shouldn't. 3 code sites call `recordCardShowForMastery()` without `bossActive` guard |
-| BUG-NAV-002 | MEDIUM | TrainingScreen | No visual cue after correct answer auto-advance. Card changes instantly with no transition feedback |
-| BUG-NAV-003 | HIGH | SessionRunner.togglePause() | Play from HINT_SHOWN doesn't clear `answerText`. Hint persists while session is ACTIVE |
-| BUG-NAV-004 | MEDIUM | TrainingScreen NavigationRow | Next button always enabled — can skip cards during ACTIVE session |
-| BUG-NAV-005 | LOW | SessionRunner.nextCardInternal() | Next on last card stays on last card with no completion feedback |
-| BUG-NAV-006 | MEDIUM | BossOrchestrator.clearBossRewardMessage() | Stale state read in shouldResumeTimer conditional |
-| BUG-NAV-007 | LOW | BossOrchestrator | Reward overwrite on replay (latest, not best) |
-| BUG-NAV-008 | LOW | GrammarMateApp.kt Daily start | Silent failure if coroutine fails — no error feedback |
-| BUG-NAV-009 | MEDIUM | DailyPracticeCoordinator | No retry after wrong answer display — inconsistent with training |
-| BUG-NAV-010 | LOW | DailyPracticeScreen | Completion sparkle may be skipped by navigation race |
-| BUG-NAV-011 | HIGH | GrammarMateApp.kt BackHandler | System back on DAILY_PRACTICE exits without confirmation (spec requires dialog) |
-| BUG-NAV-012 | HIGH | VerbDrillScreen LaunchedEffect | Auto-advance race with manual Next — card skip possible |
-| BUG-NAV-013 | MEDIUM | VerbDrillCardSessionProvider | Play button overloaded: "advance" vs "resume" with no visual difference |
-| BUG-NAV-014 | LOW | VerbDrillScreen exit | In-app exit → selection screen, system back → HOME. Inconsistent |
-| BUG-NAV-015 | MEDIUM | VocabDrill mastery indicator | isLearned threshold: data says step>=3, UI shows "Learned" at step>=9 |
-| BUG-NAV-016 | LOW | GrammarMateApp.kt VOCAB_DRILL back | Unnecessary refreshVocabMasteryCount on every exit |
-| BUG-NAV-017 | HIGH | DailyPracticeSessionProvider | Daily practice card blocks (Translate + Verbs) do not match regular training behavior. Play/pause/submit/retry/navigation must be identical to TrainingScreen Journey 4 |
+| BUG-NAV-001 | HIGH | BossOrchestrator, SessionRunner | Boss records mastery without `bossActive` check. 3 locations in code |
+| BUG-NAV-002 | MEDIUM | TrainingScreen | No visual feedback after auto-advance on correct answer |
+| BUG-NAV-003 | HIGH | SessionRunner.togglePause() | Play from HINT_SHOWN does not clear `answerText`. Hint visible during ACTIVE |
+| BUG-NAV-004 | MEDIUM | TrainingScreen NavigationRow | Next button always active — card skipping |
+| BUG-NAV-005 | LOW | SessionRunner.nextCardInternal() | Next on last card — no completion feedback |
+| BUG-NAV-006 | MEDIUM | BossOrchestrator.clearBossRewardMessage() | Stale state read in shouldResumeTimer |
+| BUG-NAV-007 | LOW | BossOrchestrator | Reward overwrite on repeat (last, not best) |
+| BUG-NAV-008 | LOW | GrammarMateApp.kt Daily launch | Silent coroutine failure |
+| BUG-NAV-009 | MEDIUM | DailyPracticeCoordinator | No retry after hint — inconsistent with training |
+| BUG-NAV-010 | LOW | DailyPracticeScreen | Completion sparkle — navigation race |
+| BUG-NAV-011 | HIGH | GrammarMateApp.kt BackHandler | System Back on DAILY_PRACTICE without dialog |
+| BUG-NAV-012 | HIGH | VerbDrillScreen LaunchedEffect | Auto-advance race + manual Next — card skipped |
+| BUG-NAV-013 | MEDIUM | VerbDrillCardSessionProvider | Play overloaded: "advance" vs "resume" |
+| BUG-NAV-014 | LOW | VerbDrillScreen exit | Inconsistent navigation (selection vs HOME) |
+| BUG-NAV-015 | MEDIUM | VocabDrill mastery indicator | isLearned: data step>=3, UI step>=9 |
+| BUG-NAV-016 | LOW | GrammarMateApp.kt VOCAB_DRILL Back | Redundant refreshVocabMasteryCount |
+
+### Settings and Infrastructure Bugs
+
+| ID | Severity | Location | Description |
+|----|----------|----------|-------------|
+| BUG-SET-001 | MEDIUM | PackImporter | Pack import synchronous on main thread — UI freezes |
+| BUG-SET-002 | MEDIUM | PackImporter / ViewModel | No user feedback on import error |
+| BUG-SET-003 | LOW | PackImporter | Data loss window between old pack deletion and new pack write |
+| BUG-SET-004 | LOW | TtsModelManager | No TTS download cancellation (only "Background") |
+| BUG-SET-005 | LOW | AudioCoordinator | Background language download sequential, not parallel |
+| BUG-SET-006 | MEDIUM | BackupManager / ViewModel | No feedback on backup success/failure |
+| BUG-SET-007 | LOW | BackupManager | Backup overwrites previous — no history |
+| BUG-SET-008 | MEDIUM | BackupManager | Custom lesson packs NOT included in backup — lost on reinstall |
+| BUG-SET-009 | MEDIUM | BackupRestorer / ViewModel | No feedback on restore completion |
+| BUG-SET-010 | MEDIUM | ViewModel | After restore data not reloaded — stale state |
+| BUG-SET-011 | LOW | AppRoot StartupScreen | No Cancel/Skip/Timeout on restore hang |
 
 ---
 
-## Structural Issues (Cross-Cutting)
+## Structural Issues (Cross-cutting)
 
 | ID | Severity | Description |
 |----|----------|-------------|
-| STRUCT-001 | HIGH | Three different state mechanisms: TrainingScreen uses `SessionState` enum, VerbDrill uses `CardSessionStateMachine` with `isPaused` + `hintAnswer`, DailyPractice uses its own `DailyPracticeSessionProvider`. No unified model. |
-| STRUCT-002 | MEDIUM | `AFTER_CHECK` SessionState defined but never used — dead code adding confusion about valid transitions |
-| STRUCT-003 | MEDIUM | No single source of truth for button enabled state. Check button enabled condition is computed inline in composable rather than derived from a shared state property |
-| STRUCT-004 | LOW | `inputText` clearing strategy inconsistent: VOICE mode clears on wrong, KEYBOARD keeps text on wrong. Not a bug but inconsistent UX |
+| STRUCT-001 | HIGH | Three different state mechanisms for Pattern A: TrainingScreen → `SessionState` enum, VerbDrill → `CardSessionStateMachine` (`isPaused` + `hintAnswer`), DailyPractice → `DailyPracticeSessionProvider`. No unified model. Each has its own bugs (BUG-NAV-003, 012, 013) |
+| STRUCT-002 | MEDIUM | `AFTER_CHECK` SessionState defined but unused — dead code |
+| STRUCT-003 | MEDIUM | No single source of truth for button enabled-state. Check condition computed inline in composable |
+| STRUCT-004 | LOW | `inputText` clearing: VOICE clears on error, KEYBOARD keeps it. Inconsistent UX |
+| STRUCT-005 | MEDIUM | No unified feedback mechanism (toast/snackbar) for Settings operations. Each operation (import, backup, restore) is silent on success and error (BUG-SET-002, 006, 009) |
+| STRUCT-006 | MEDIUM | BUG-SET-008 is not a code bug but an architectural gap: backup does not include custom packs. On app reinstall, user loses imported content |
