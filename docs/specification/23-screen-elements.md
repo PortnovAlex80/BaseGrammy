@@ -14,9 +14,9 @@
 | LadderScreen | LS | 11 |
 | SettingsScreen (SettingsSheet) | SS | 48 |
 | StoryQuizScreen | SQ | 13 |
-| GrammarMateApp Dialogs | DG | 17 |
-| [UI-CONSISTENCY-2025] Shared Components | SH | 7 |
-| **Total** | | **316** |
+| GrammarMateApp Dialogs | DG | 18 |
+| [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
+| **Total** | | **318** |
 
 ---
 
@@ -38,7 +38,7 @@
 | Vocab Drill entry tile | HS-12 | card | `hasVocabDrill == true` | Card with MenuBook icon + "Flashcards" label + mastered count badge ("N mastered" in green). Calls `onOpenVocabDrill()`. **Dark Mode:** Mastered count text must use lighter green 0xFF66BB6A for readability (>=4.5:1 contrast against dark background). [UC-68 AC9] | UC-68 |
 | Daily Practice entry tile | HS-13 | card | Always | primaryContainer Card with "Daily Practice" title + "Practice all sub-lessons" subtitle + PlayArrow icon. Calls `onOpenElite()`. | ? |
 | Mix Challenge entry tile | HS-14 | card | **HIDDEN** [UI-CONSISTENCY-2025] | DORMANT: tile is no longer rendered on HomeScreen. Blue-tinted Card (0xFFE3F2FD) with "Mix Challenge" title + "Interleaved practice across tenses" subtitle + SwapHoriz icon. Retained in registry for backward compat. | ? |
-| Legend text | HS-15 | text | Always | Shows "Legend:" header + emoji meanings: seed, growing, bloom, wilting, wilted, forgotten. | ? |
+| Legend text | HS-15 | text | Always | 2-line structure: Line 1 = seedling emoji + "seed/growing/bloom" (combined string resource); Line 2 = wilted flower emoji + "wilting/wilted/forgotten" (combined string resource). | ? |
 | "How This Training Works" button | HS-16 | button | Always | OutlinedButton, full-width. Shows HowThisTrainingWorksDialog on tap. | ? |
 | "Continue Learning" button | HS-17 | button | Always | Filled Button, full-width. Calls `onPrimaryAction()`. | ? |
 | HowThisTrainingWorksDialog | HS-18 | dialog | `showMethod == true` | AlertDialog with title "How This Training Works", explanation text, "OK" button. | ? |
@@ -89,7 +89,7 @@
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
 | Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). **Dark Mode:** Must use theme-aware color. Light = 0xFFE8F5E9, Dark = 0xFF1B3A1D. Currently hardcoded `DrillBackgroundGreen` — needs conditional in Theme.kt or `isSystemInDarkTheme()` check. [UC-68 AC1] | UC-68 |
-| Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #01565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
+| Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #1565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
 
 ---
 
@@ -145,7 +145,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Card prompt (translate/verbs) | DP-08 | card | Card session active | Card with "RU" label + prompt (`(20f * ruTextScale).sp` SemiBold) + TTS button. | UC-56 |
 | Verb/tense/group chips (verbs) | DP-09 | chip | `verbText` not blank | SuggestionChips for verb (with rank), tense (abbreviated), group. All chips are ALWAYS visible regardless of HintLevel -- they are reference data, not hints. Verb chip tap opens VerbReferenceBottomSheet with conjugation table. Tense chip tap opens TenseInfoBottomSheet with formula/usage/examples. Group chip is non-interactive (display only). | UC-58 |
 | Card TTS button (translate/verbs) | DP-10 | button | Card session active | Inline TTS button (not TtsSpeakerButton): 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). | ? |
-| Hint answer card (translate/verbs) | DP-11 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card showing "Answer: {hint}". Includes TTS replay button. | ? |
+| Hint answer card (translate/verbs) | DP-11 | card | `provider.hintAnswer != null` | Error-tinted Card showing "Answer: {hint}". Includes TTS replay button. Available at all HintLevel settings, per 09-daily-practice.md#9.11. | ? |
 | Incorrect feedback (translate/verbs) | DP-12 | text | `provider.showIncorrectFeedback` | Red "Incorrect" + "N attempts left" text. | ? |
 | Answer text field (translate/verbs) | DP-13 | input-field | Card session active | OutlinedTextField "Your translation". Auto-submits on exact match. | ? |
 | Mic trailing icon (translate/verbs) | DP-14 | button | `canLaunchVoice` | Switches to VOICE mode. | ? |
@@ -192,7 +192,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `viewModel.exitSession()` + `onBack()` (navigates to HOME, not selection screen). | UC-64 |
 | "Verb Drill" title (session) | VD-12 | text | Session active | SemiBold weight. | ? |
 | Progress bar + speedometer | VD-13 | progress-bar | Session active | Reuses DefaultProgressIndicator from TrainingCardSession. | ? |
-| Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS button. **NOTE:** Currently uses plain `IconButton` with static `VolumeUp` instead of `TtsSpeakerButton` with 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). TrainingScreen uses `TtsSpeakerButton` correctly. Marked as CODE PENDING -- see TASK-006. | UC-56 |
+| Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS button. Uses TtsSpeakerButton with 4 states: SPEAKING (StopCircle red), INITIALIZING (spinner), ERROR (ReportProblem/Warning), IDLE (VolumeUp). | UC-56 |
 | Verb SuggestionChip | VD-15 | chip | `verbText` not blank | Shows verb infinitive + "#rank". ChevronRight icon. Tap opens VerbReferenceBottomSheet. Always visible regardless of HintLevel. | UC-58 |
 | Tense SuggestionChip | VD-16 | chip | `tense` not blank | Shows abbreviated tense name (e.g. "Pres."). Tap opens TenseInfoBottomSheet. Always visible regardless of HintLevel. | UC-58 |
 | Hint answer card | VD-17 | card | `provider.hintAnswer != null && hintLevel == EASY` | Error-tinted Card "Answer: {hint}" + TTS replay (red-tinted). | ? |
@@ -348,7 +348,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Vocab Sprint limit field | SS-09 | input-field | Always | OutlinedTextField "Vocabulary Sprint limit". Digits only. "0 = all words". | ? |
 | Vocab limit description | SS-10 | text | Always | "Set how many words to show (0 = all words)" bodySmall, 60% alpha. | ? |
 | "Pronunciation speed" header | SS-11 | text | Always | titleMedium SemiBold. | ? |
-| TTS speed slider | SS-12 | toggle | Always | Slider 0.5x-1.5x, 3 steps. Calls `onSetTtsSpeed`. | ? |
+| TTS speed slider | SS-12 | toggle | Always | Slider 0.5x-1.5x, 4 discrete positions (steps=3 in Slider API, values: 0.5/0.75/1.0/1.25/1.5). Calls `onSetTtsSpeed`. | ? |
 | TTS speed value display | SS-13 | text | Always | "0.XXx" formatted, centered. | ? |
 | "Voice recognition" header | SS-14 | text | Always | titleMedium SemiBold. | ? |
 | Offline ASR switch | SS-15 | toggle | Always | Switch. When enabled without model, triggers ASR download. | ? |
@@ -356,7 +356,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | ASR download error text | SS-17 | text | `asrDownloadState == Error` | Error message in error color. | ? |
 | ASR status text | SS-18 | text | `asrDownloadState == Idle/Ready/Done` | "Using on-device recognition" / "Model not downloaded" / "Using Google speech recognition". | ? |
 | "Translation text size" header | SS-19 | text | Always | titleMedium SemiBold. | ? |
-| Text scale slider | SS-20 | toggle | Always | Slider 1.0x-2.0x, 3 steps. Calls `onSetRuTextScale`. | ? |
+| Text scale slider | SS-20 | toggle | Always | Slider 1.0x-2.0x, 4 discrete positions (steps=3 in Slider API, values: 1.0/1.25/1.5/1.75/2.0). Calls `onSetRuTextScale`. | ? |
 | Text scale value display | SS-21 | text | Always | "0.0x" formatted, centered. | ? |
 | Language dropdown | SS-22 | button | Always | DropdownSelector "Language". Shows current language. Changing reloads lessons and resets active pack. | ? |
 | Pack dropdown | SS-23 | button | Always | DropdownSelector "Pack". Shows current pack. Filters packs by selected language. | ? |
@@ -367,7 +367,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Reset/Reload" button | SS-28 | button | Always | OutlinedButton with Upload icon. Opens file picker, clears + imports. | ? |
 | "Empty lesson" text field | SS-29 | input-field | Always | OutlinedTextField "Empty lesson (title)". | ? |
 | "Create empty lesson" button | SS-30 | button | Always | OutlinedButton. Creates lesson if title non-empty. Clears field. | ? |
-| "Delete all lessons" button | SS-31 | button | Always | Red OutlinedButton with Delete icon. Calls `onDeleteAllLessons()`. | ? |
+| "Delete all lessons" button | SS-31 | button | Always | OutlinedButton with Delete icon, uses `MaterialTheme.colorScheme.error` for red tint. Calls `onDeleteAllLessons()`. | ? |
 | "Reset progress" button | SS-32 | button | Always | Red OutlinedButton with Refresh icon. Label shows current language name: "Сбросить прогресс ({languageName})". Tapping opens confirmation dialog. | UC-62 |
 | Reset progress confirmation dialog | SS-32a | dialog | User tapped SS-32 | AlertDialog with title "Сбросить прогресс", body listing what will be cleared, "Сбросить" confirm button (red), "Отмена" dismiss button. Calls `onResetAllProgress()` on confirm. | UC-62 |
 | CSV format text | SS-33 | text | Always | "CSV format" header + format explanation (UTF-8, semicolon delimiter, example). | ? |
@@ -385,7 +385,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | App info footer | SS-45 | text | Always | "GrammarMate" + version + tagline + description. Centered. | ? |
 | "Appearance" section header | SS-46 | text | Always | titleMedium SemiBold. New section for theme settings. | UC-66 |
 | Theme mode selector | SS-47 | chip | Always | 3-option selector (Light / Dark / System) using segmented buttons or FilterChips. Calls `onSetThemeMode(mode)` on selection. Current selection highlighted. | UC-66 |
-| "Interface language" selector | SS-48 | button | Always | DropdownSelector "Interface language". Options: System / English / Русский. Calls `onSetUiLanguage(code)` on selection. Positioned separately from learning content language selector (SS-22). | UC-67 |
+| "Interface language" selector | SS-48 | chip | Always | 3 FilterChips (System / English / Русский). Calls `onSetUiLanguage(code)` on selection. Positioned separately from learning content language selector (SS-22). | UC-67 |
 
 ---
 
@@ -432,6 +432,7 @@ These dialogs are rendered as persistent overlays and can appear on any screen.
 | LessonLockedDialog | DG-15 | dialog | Tap EMPTY lesson tile on HomeScreen | "Lesson locked" + "Please complete the previous lesson first." + "OK". | ? |
 | EarlyStartDialog (Home/Lesson) | DG-16 | dialog | Tap locked lesson or sub-lesson tile | "Start early?" + "Start this lesson/exercise early? You can always come back..." + "Yes" + "No". | ? |
 | ExportBadSentencesResultDialog | DG-17 | dialog | After exporting bad sentences from report sheet | "Export" title + file path or "No bad sentences to export" + "OK". | ? |
+| ProfileStatsPopup | DG-18 | dialog | Avatar tap on HomeScreen | Dialog showing user avatar (InitialsAvatar, 56dp), user name, cards completed count, words learned count, CEFR level badge. Dismiss on tap outside. Source: `ui/components/ProfileStatsPopup.kt`. | ? |
 
 ---
 
@@ -449,7 +450,7 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 **Behavior:** When enabled and card changes, fires onAutoStartVoice after delay. Callback MUST call speechLauncher.launch(intent) directly -- switching InputMode alone is insufficient and causes the voice-not-launching bug. On correct voice answer, auto-advance triggers after 400-500ms.
 
-| SharedInputModeBar | SH-03 | button | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | Row of FilledTonalIconButtons: Mic, Keyboard, WordBank + Eye (show answer) + Report. Active mode highlighted. Mode label displayed below. | UC-51, UC-53 |
+| SharedInputModeBar | SH-03 | button | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | **DEFERRED** — per-screen inline implementations have intentional behavioral differences. TrainingScreen, VerbDrillScreen, DailyPracticeScreen, TrainingCardSession each have their own variant. Row of FilledTonalIconButtons: Mic, Keyboard, WordBank + Eye (show answer) + Report. Active mode highlighted. Mode label displayed below. | UC-51, UC-53 |
 
 **Behavior:** Mode buttons switch input method via onModeChange callback. Eye button calls onShowHint() which sets hintAnswer on the provider and pauses the session. Report button opens SharedReportSheet. Eye button is disabled when hintShown == true.
 
@@ -457,7 +458,7 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 **Behavior:** Renders whenever hintAnswer != null. NOT gated by HintLevel -- eye mode shows answer at ALL difficulty levels (EASY, MEDIUM, HARD). HintLevel only controls parenthetical hints in prompt text, not the show-answer mechanism.
 
-| TextScaleProvider | SH-05 | (system) | TrainingScreen, VerbDrillScreen, VocabDrillScreen, DailyPracticeScreen, TrainingCardSession | N/A (no visual element -- scales existing text). Multiplies base font sizes by textScale value (1.0-2.0). Applied to: prompt text, word displays, answer text. NOT applied to: navigation, badges, buttons, small labels. | UC-56 |
+| TextScaleProvider | SH-05 | (system) | TrainingScreen, VerbDrillScreen, VocabDrillScreen, DailyPracticeScreen, TrainingCardSession | **DEFERRED** — inline scaling via `(baseSize * textScale).sp` is used at each site. No shared composable exists. Multiplies base font sizes by textScale value (1.0-2.0). Applied to: prompt text, word displays, answer text. NOT applied to: navigation, badges, buttons, small labels. | UC-56 |
 
 **Behavior:** Propagated via `CardSessionContract.textScale` or composable parameter. Reads `ruTextScale` from `AudioState` / `AppConfigStore`. Applied as `fontSize = (baseSize * textScale).sp`. Elements excluded from scaling: RU badge, POS badge, hint chips, attempt counter, tense labels, navigation buttons, progress bar text, rating button text, block label badges.
 
@@ -466,3 +467,5 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 | QrShareDialog | SH-07 | dialog | TrainingScreen, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen | AlertDialog showing translation pair text ("RU: {prompt}" / "{LANG}: {answer}") at top + QR code encoding the same text + "Open in Google Translate" button opening `https://translate.google.com/?sl=ru&tl={targetLang}&text={prompt}`. Close button dismisses dialog, returns to report sheet. | UC-65 |
 
 **Behavior:** Dialog is opened from SharedReportSheet option 5 (Share translation). Text pair shown at top for immediate readability. QR code encodes format "RU: {promptRu}\n{TARGET_LANG}: {answerText}". Google Translate button opens URL in system browser via Intent.ACTION_VIEW.
+
+| InitialsAvatar | SH-08 | image | HomeScreen, ProfileStatsPopup | CircleShape Box with primaryContainer background, shows 1-2 char initials from user name. Parameters: size (40dp for HomeScreen, 56dp for popup), onClick callback. Fallback: "?" when no user name set (or "GM"). Source: `ui/components/InitialsAvatar.kt`. | ? |
