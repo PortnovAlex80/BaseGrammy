@@ -24,7 +24,7 @@
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
-| Avatar circle | HS-01 | image | Always | 40dp CircleShape, primary background, shows user initials (max 2 chars, fallback "GM"). Clickable has no action (decorative). | ? |
+| Avatar circle | HS-01 | image | Always | 40dp CircleShape, primaryContainer background, shows user initials (max 2 chars, fallback "GM"). Opens ProfileStatsPopup (see DG-18). | ? |
 | User name text | HS-02 | text | Always | SemiBold weight. Displays `state.navigation.userName`. | ? |
 | Language selector | HS-03 | button | Always | TextButton showing uppercase language code (e.g. "IT"). Opens DropdownMenu with all available languages. Selecting a different language calls `onSelectLanguage(id)`. | ? |
 | Settings gear icon | HS-04 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()`. | ? |
@@ -79,7 +79,7 @@
 | Current mode label | TS-24 | text | Always | "Voice" / "Keyboard" / "Word Bank" label text. | ? |
 | Check button | TS-25 | button | `hasCards && inputText.isNotBlank() && sessionState == ACTIVE && currentCard != null` | Full-width Button "Check". Calls `onSubmit()`. | ? |
 | Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
-| Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | TtsSpeakerButton. Replays answer TTS. | ? |
+| Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | REMOVED from HintAnswerCard. TTS replay is now handled solely by the result row TcsSpeakerButton (TCS-28). | ? |
 | Answer text | TS-28 | text | `answerText` not blank | "Answer: {answerText}" text. | ? |
 | Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. | ? |
 | Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. | ? |
@@ -279,7 +279,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Hard" rating button | VOC-38 | button | `session.isFlipped` | Orange-colored OutlinedButton. Shows "Hard" + current step interval. Stays at same step. **Dark Mode:** Background must NOT be pastel 0xFFFFF3E0 — use dark orange 0xFF3A2E1B. [UC-68 AC4] | UC-68 |
 | "Good" rating button | VOC-39 | button | `session.isFlipped` | Primary-colored Filled Button. Shows "Good" + next step interval. Advances +1 step. **Dark Mode:** Background must NOT be pastel 0xFFE8F5E9 — use dark green 0xFF1B3A1D. [UC-68 AC4] | UC-68 |
 | "Easy" rating button | VOC-40 | button | `session.isFlipped` | Green-colored Filled Button. Shows "Easy" + +2 step interval. Advances +2 steps. **Dark Mode:** Background must NOT be pastel 0xFFE3F2FD — use dark blue 0xFF1A2E3A. [UC-68 AC4] | UC-68 |
-| Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: "Word options" title + word text + flag/unflag + export + copy + share translation via QR (when shareText != null). | ? |
+| Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | Uses SharedReportSheet (SH-01): flag/unflag, hide card, export bad sentences, copy text, share translation via QR (when shareText != null). | ? |
 | Export result dialog | VOC-42 | dialog | `exportMessage != null` | AlertDialog with export result. | ? |
 | Auto-flip on voice correct | VOC-43 | (system) | `voiceCompleted && voiceResult == CORRECT && !isFlipped` | Auto-flips card after 800ms delay. | ? |
 | Auto-launch voice | VOC-44 | (system) | `voiceAutoStart (global) && !isFlipped && !voiceCompleted && !isVoiceActive` | Auto-launches voice recognition after 500ms delay. Uses global `voiceAutoStart` from Settings, NOT per-drill toggle. Mic button still works on manual click when voiceAutoStart is OFF. | UC-57 |
