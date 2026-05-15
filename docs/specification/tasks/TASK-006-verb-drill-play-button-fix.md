@@ -1,6 +1,6 @@
 # TASK-006: Verb Drill Play Button -- Resume After Manual Pause + TTS State Icons
 
-**Status:** DONE
+**Status:** BUG (regression — pause/play state not Compose-observable)
 **Created:** 2026-05-14
 **Branch:** feature/verb-drill-play-fix (from feature/perf-and-cursor-fixes)
 **Spec:** 10-verb-drill.md#10.4.3, 12-training-card-session.md#12.7.1
@@ -120,3 +120,4 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 |------|-----|--------|-------|
 | 2026-05-15 | Fix 1: togglePause pause reason | DONE | Added resume() to state machine; togglePause now checks hintAnswer |
 | 2026-05-15 | Fix 2: TTS state icons | DONE | Replaced plain IconButton with TtsSpeakerButton |
+| 2026-05-15 | **BUG: isPaused not Compose-observable** | FIXED | Added `var isPaused by mutableStateOf(false)` to VerbDrillCardSessionProvider; synced in togglePause/nextCard/prevCard |

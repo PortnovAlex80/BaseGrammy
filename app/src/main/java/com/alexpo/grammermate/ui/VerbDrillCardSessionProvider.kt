@@ -47,6 +47,10 @@ class VerbDrillCardSessionProvider(
         answerProvider = { card -> (card as VerbDrillCard).answer }
     )
 
+    /** Compose-observable mirror of [CardSessionStateMachine.isPaused]. */
+    var isPaused by mutableStateOf(false)
+        private set
+
     // Delegated state from CardSessionStateMachine
     val hintAnswer: String? get() = sm.hintAnswer
     val showIncorrectFeedback: Boolean get() = sm.showIncorrectFeedback
@@ -110,7 +114,7 @@ class VerbDrillCardSessionProvider(
 
     override val sessionActive: Boolean
         get() {
-            if (sm.isPaused) return false
+            if (isPaused) return false
             if (sm.hintAnswer != null) return false
             val s = session ?: return false
             return !s.isComplete || pendingCard != null
@@ -147,6 +151,7 @@ class VerbDrillCardSessionProvider(
         } else {
             sm.pause()
         }
+        isPaused = sm.isPaused
     }
 
     override fun onInputChanged(text: String) {
@@ -213,6 +218,7 @@ class VerbDrillCardSessionProvider(
         pendingCard = null
         pendingAnswerResult = null
         sm.reset()
+        isPaused = sm.isPaused
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
@@ -239,6 +245,7 @@ class VerbDrillCardSessionProvider(
         pendingCard = null
         pendingAnswerResult = null
         sm.reset()
+        isPaused = sm.isPaused
         _selectedWords = emptyList()
         cachedWordBankCardId = null
         cachedWordBank = emptyList()
