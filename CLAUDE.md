@@ -635,14 +635,6 @@ All project documentation is in `docs/specification/`. When working on a specifi
 | Use cases & acceptance criteria | 22-use-case-registry.md | Any feature verification, regression testing, PR review |
 | Screen elements & invariants | 23-screen-elements.md | UI changes, element behavior verification, regression testing |
 
-### Architecture docs
-
-| Document | Purpose |
-|----------|---------|
-| arch-audit-dependencies.md | Component dependency map, state duplication analysis |
-| arch-audit-spec-vs-code.md | Spec vs code discrepancies (24 found) |
-| arch-module-decomposition.md | Proposed modular architecture (11 modules) |
-
 ### Scenario verification (code traces)
 
 | Scenario | File |
@@ -672,9 +664,6 @@ All project documentation is in `docs/specification/`. When working on a specifi
 
 - `docs/specification/21-product-roadmap.md` — next sprint features (Card Feel Rating, Difficulty Levels)
 - `docs/specification/legacy-test-plan.md` — unit test backlog (~200 tests, all TODO)
-- `docs/superpowers/plans/feature-migration-plan.md` — active: feature-based modular migration (0/18 steps)
-- `docs/superpowers/plans/refactoring-execution-plan.md` — complete: ViewModel 3400→1500 lines (archived)
-- `docs/superpowers/specs/2026-05-13-vendor-code-audit.md` — RED verdict, 9 BLOCKERs, 33 CRITICALs
 
 ### Rule: Read spec before modifying code
 

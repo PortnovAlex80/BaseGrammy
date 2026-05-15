@@ -16,14 +16,3 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-010](DONE-TASK-010-theme-mode-switching.md) | Theme Mode Switching (Light/Dark/System) | DONE | 14-theme-and-ui-components | 2026-05-15 |
 | [DONE-TASK-011](DONE-TASK-011-interface-language-switching.md) | Interface Language Switching (English/Russian) | DONE | 14-theme-and-ui-components | 2026-05-15 |
 | [TASK-038](TASK-038-word-bank-input-sync.md) | Word Bank Input Text Sync | BUG | 12-training-card-session | 2026-05-15 |
-
-## Re-Audit CRITICAL Fix Wave (2026-05-14)
-
-Source: [EXECUTION-re-audit-11-criticals.md](EXECUTION-re-audit-11-criticals.md) — 4-wave plan fixing 11 CRITICALs from re-audit (YELLOW verdict)
-
-| Wave | CRITICALs | Agents | Status |
-|------|-----------|--------|--------|
-| Wave 1: Data mutex | DATA-1, DATA-2, W-DATA-1 | 3 parallel | pending |
-| Wave 2: UI + Build | UI-1, UI-2, XC-2, TEST-1, XC-3 | 3 parallel | pending |
-| Wave 3: Testability | TEST-3, TEST-2 | 2 parallel | pending |
-| Wave 4: Research | ARCH-1, XC-1 | 2 parallel (read-only) | pending |
