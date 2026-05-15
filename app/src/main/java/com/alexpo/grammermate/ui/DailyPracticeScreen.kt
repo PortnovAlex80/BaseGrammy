@@ -39,7 +39,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,9 +76,6 @@ import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.ui.TenseExample
 import com.alexpo.grammermate.ui.TenseInfo
-import com.alexpo.grammermate.ui.components.WordBankSection
-import com.alexpo.grammermate.ui.components.DailyInputModeBar
-import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
@@ -496,8 +492,7 @@ private fun DailyTrainingCardSession(
     }
 }
 
-/** Input controls: hint, text field, word bank, mode selector, check button. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Input controls: hint, text field, word bank, mode selector, check button. Delegates to UnifiedInputControlsBar. */
 @Composable
 private fun DailyInputControls(
     provider: DailyPracticeSessionProvider,
@@ -522,100 +517,26 @@ private fun DailyInputControls(
 
     val contract = scope.contract
     val hasCards = scope.currentCard != null
-    val canLaunchVoice = hasCards && contract.sessionActive
-    val canSelectInputMode = hasCards && contract.sessionActive
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text (eye button) -- available at all hint levels
-        if (provider.hintAnswer != null) {
-            HintAnswerCard(
-                answerText = provider.hintAnswer!!
-            )
-        }
-
-        // Incorrect feedback
-        if (provider.showIncorrectFeedback) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.result_incorrect), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("${provider.remainingAttempts} ${if (provider.remainingAttempts == 1) "attempt" else "attempts"} left", color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall)
+    com.alexpo.grammermate.ui.components.UnifiedInputControlsBar(
+        contract = contract,
+        inputText = scope.inputText,
+        onInputChanged = scope.onInputChanged,
+        onSubmit = {
+            val input = scope.inputText
+            if (input.isNotBlank()) {
+                val result = provider.submitAnswerWithInput(input)
+                if (result != null && result.correct) scope.onInputChanged("")
             }
-        }
-
-        OutlinedTextField(
-            value = scope.inputText,
-            onValueChange = { newText ->
-                if (provider.showIncorrectFeedback) provider.clearIncorrectFeedback()
-                scope.onInputChanged(newText)
-                if (contract.currentInputMode == InputMode.KEYBOARD && contract.sessionActive && scope.currentCard != null && newText.isNotBlank()) {
-                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, scope.currentCard!!.acceptedAnswers)) {
-                        val result = provider.submitAnswerWithInput(newText)
-                        if (result != null && result.correct) scope.onInputChanged("")
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.card_label_your_translation)) },
-            enabled = hasCards,
-            trailingIcon = {
-                IconButton(
-                    onClick = {
-                        if (canLaunchVoice) {
-                            scope.onInputChanged("")
-                            contract.setInputMode(InputMode.VOICE)
-                            val languageTag = if (provider.languageId == "it") "it-IT" else "en-US"
-                            speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                            })
-                        }
-                    },
-                    enabled = canLaunchVoice
-                ) { Icon(Icons.Default.Mic, stringResource(R.string.content_desc_voice_input)) }
-            }
-        )
-
-        if (!hasCards) Text(stringResource(R.string.card_no_cards), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-
-        if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
-            Text(scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), style = MaterialTheme.typography.bodySmall)
-        }
-
-        // Word Bank UI
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
-            WordBankSection(contract = contract)
-        }
-
-        // Input mode selector + show answer + report
-        DailyInputModeBar(
-            contract = contract, provider = provider,
-            canLaunchVoice = canLaunchVoice, canSelectInputMode = canSelectInputMode, hasCards = hasCards,
-            onClearInput = { scope.onInputChanged("") },
-            onShowReport = { showReportSheet = true },
-            hintLevel = hintLevel,
-            onLaunchVoice = {
-                val languageTag = if (provider.languageId == "it") "it-IT" else "en-US"
-                speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                })
-            }
-        )
-
-        Button(
-            onClick = {
-                val input = scope.inputText
-                if (input.isNotBlank()) {
-                    val result = provider.submitAnswerWithInput(input)
-                    if (result != null && result.correct) scope.onInputChanged("")
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = hasCards && scope.inputText.isNotBlank() && contract.sessionActive && scope.currentCard != null
-        ) { Text(stringResource(R.string.button_check)) }
-    }
+        },
+        hasCards = hasCards,
+        hintAnswer = provider.hintAnswer,
+        showIncorrectFeedback = provider.showIncorrectFeedback,
+        incorrectMessage = if (provider.showIncorrectFeedback) "${provider.remainingAttempts} ${if (provider.remainingAttempts == 1) "attempt" else "attempts"} left" else null,
+        onClearIncorrectFeedback = { provider.clearIncorrectFeedback() },
+        onShowReport = { showReportSheet = true },
+        reportCard = scope.currentCard
+    )
 
     if (showReportSheet) {
         SharedReportSheet(

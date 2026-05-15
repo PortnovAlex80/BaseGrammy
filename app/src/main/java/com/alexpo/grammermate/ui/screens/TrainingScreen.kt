@@ -23,16 +23,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -42,7 +37,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -80,7 +74,6 @@ import com.alexpo.grammermate.ui.IncorrectRed
 import com.alexpo.grammermate.ui.MixChallengeSurface
 import com.alexpo.grammermate.ui.MixChallengeText
 import com.alexpo.grammermate.data.InputMode
-import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingMode
@@ -92,7 +85,6 @@ import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
-import com.alexpo.grammermate.ui.components.WordBankSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -451,7 +443,6 @@ fun AnswerBox(
     hintLevel: HintLevel = HintLevel.EASY
 ) {
     val latestState by rememberUpdatedState(state)
-    val canLaunchVoice = hasCards && state.cardSession.sessionState == SessionState.ACTIVE
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var showReportSheet by remember { mutableStateOf(false) }
@@ -539,152 +530,79 @@ fun AnswerBox(
             }
         )
     }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            value = state.cardSession.inputText,
-            onValueChange = { newText ->
-                onInputChange(newText)
-                // Auto-submit in keyboard mode when the typed text matches an accepted answer
-                if (state.cardSession.inputMode == InputMode.KEYBOARD &&
-                    state.cardSession.sessionState == SessionState.ACTIVE &&
-                    state.cardSession.currentCard != null &&
-                    newText.isNotBlank()
-                ) {
-                    if (Normalizer.isExactMatch(newText, state.cardSession.currentCard!!.acceptedAnswers)) {
-                        onSubmit()
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = stringResource(R.string.training_your_translation)) },
-            enabled = hasCards,
-            trailingIcon = {
-                IconButton(
-                    onClick = {
-                        if (canLaunchVoice) {
-                            onSetInputMode(InputMode.VOICE)
-                            if (!state.audio.useOfflineAsr || !state.audio.asrModelReady) {
-                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher, context)
-                            } else {
-                                onStartOfflineRecognition()
-                            }
-                        }
-                    },
-                    enabled = canLaunchVoice
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.training_voice_input))
-                }
-            }
-        )
-        if (!hasCards) {
-            Text(
-                text = stringResource(R.string.training_no_cards),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        if (state.cardSession.inputMode == InputMode.VOICE && state.cardSession.sessionState == SessionState.ACTIVE) {
-            Text(
-                text = state.cardSession.currentCard?.promptRu?.let { stringResource(R.string.training_say_translation, it) } ?: "",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        if (state.audio.useOfflineAsr) {
-            AsrStatusIndicator(state.audio.asrState)
-        }
 
-        // Word Bank UI
-        if (state.cardSession.inputMode == InputMode.WORD_BANK && state.cardSession.wordBankWords.isNotEmpty()) {
-            WordBankSection(
-                wordBankWords = state.cardSession.wordBankWords,
-                selectedWords = state.cardSession.selectedWords,
-                onSelectWord = onSelectWordFromBank,
-                onRemoveLastWord = onRemoveLastWord
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val canSelectInputMode = hasCards && state.cardSession.sessionState == SessionState.ACTIVE
-                FilledTonalIconButton(
-                    onClick = {
-                        if (canLaunchVoice) {
-                            onSetInputMode(InputMode.VOICE)
-                            if (!state.audio.useOfflineAsr || !state.audio.asrModelReady) {
-                                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher, context)
-                            } else {
-                                onStartOfflineRecognition()
-                            }
-                        }
-                    },
-                    enabled = canLaunchVoice
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.training_voice_mode))
-                }
-                FilledTonalIconButton(
-                    onClick = { onSetInputMode(InputMode.KEYBOARD) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.training_keyboard_mode))
-                }
-                FilledTonalIconButton(
-                    onClick = { onSetInputMode(InputMode.WORD_BANK) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(Icons.Default.LibraryBooks, contentDescription = stringResource(R.string.training_word_bank_mode))
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.training_show_answer)) } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) onShowAnswer() },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Visibility, contentDescription = stringResource(R.string.training_show_answer))
-                    }
-                }
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.training_report_sentence)) } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) showReportSheet = true },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.ReportProblem, contentDescription = stringResource(R.string.training_report_sentence))
-                    }
-                }
-                Text(
-                    text = when (state.cardSession.inputMode) {
-                        InputMode.VOICE -> stringResource(R.string.training_voice)
-                        InputMode.KEYBOARD -> stringResource(R.string.training_keyboard)
-                        InputMode.WORD_BANK -> stringResource(R.string.training_word_bank)
-                    },
-                    style = MaterialTheme.typography.labelMedium
+    // Thin CardSessionContract adapter for TrainingScreen's TrainingUiState
+    val contractAdapter = remember(state, onSetInputMode, onInputChange, onSelectWordFromBank, onRemoveLastWord) {
+        object : com.alexpo.grammermate.data.CardSessionContract {
+            override val currentCard: com.alexpo.grammermate.data.SessionCard?
+                get() = state.cardSession.currentCard
+            override val inputText: String
+                get() = state.cardSession.inputText
+            override val lastResult: com.alexpo.grammermate.data.AnswerResult?
+                get() = state.cardSession.lastResult?.let { com.alexpo.grammermate.data.AnswerResult(it, state.cardSession.answerText ?: "", it == null) }
+            override val sessionActive: Boolean
+                get() = state.cardSession.sessionState == SessionState.ACTIVE
+            override val currentInputMode: InputMode
+                get() = state.cardSession.inputMode
+            override val languageId: String
+                get() = state.navigation.selectedLanguageId.value
+            override val inputModeConfig: com.alexpo.grammermate.data.InputModeConfig
+                get() = com.alexpo.grammermate.data.InputModeConfig(
+                    availableModes = setOf(InputMode.VOICE, InputMode.KEYBOARD, InputMode.WORD_BANK),
+                    defaultMode = state.cardSession.inputMode,
+                    showInputModeButtons = true
                 )
+            override val supportsVoiceInput: Boolean get() = true
+            override val supportsWordBank: Boolean get() = state.cardSession.wordBankWords.isNotEmpty()
+            override val supportsFlagging: Boolean get() = true
+            override val supportsNavigation: Boolean get() = true
+            override val supportsPause: Boolean get() = true
+            override val isComplete: Boolean
+                get() = state.cardSession.sessionState == SessionState.PAUSED && state.cardSession.currentCard == null
+            override val progress: com.alexpo.grammermate.data.SessionProgress
+                get() = com.alexpo.grammermate.data.SessionProgress(
+                    current = (state.cardSession.currentIndex + 1).coerceAtMost(state.cardSession.subLessonTotal.coerceAtLeast(1)),
+                    total = state.cardSession.subLessonTotal.coerceAtLeast(1)
+                )
+
+            override fun onInputChanged(text: String) = onInputChange(text)
+            override fun submitAnswer(): com.alexpo.grammermate.data.AnswerResult? {
+                onSubmit()
+                return null
             }
+            override fun showAnswer(): String? { onShowAnswer(); return null }
+            override fun nextCard() {}
+            override fun prevCard() {}
+            override fun onVoiceInputResult(text: String) { onInputChange(text); onSubmit() }
+            override fun setInputMode(mode: InputMode) = onSetInputMode(mode)
+            override fun getSelectedWords(): List<String> = state.cardSession.selectedWords
+            override fun getWordBankWords(): List<String> = state.cardSession.wordBankWords
+            override fun selectWordFromBank(word: String) = onSelectWordFromBank(word)
+            override fun removeLastSelectedWord() = onRemoveLastWord()
+            override fun flagCurrentCard() = onFlagBadSentence()
+            override fun unflagCurrentCard() = onUnflagBadSentence()
+            override fun isCurrentCardFlagged(): Boolean = isBadSentence()
+            override fun hideCurrentCard() = onHideCard()
+            override fun exportFlaggedCards(): String? = onExportBadSentences()
+            override fun togglePause() {}
+            override fun requestExit() {}
         }
-        Button(
-            onClick = { onSubmit() },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state.cardSession.canSubmit &&
-                state.cardSession.inputText.isNotBlank()
-        ) {
-            Text(text = stringResource(R.string.training_check))
-        }
+    }
+
+    com.alexpo.grammermate.ui.components.UnifiedInputControlsBar(
+        contract = contractAdapter,
+        inputText = state.cardSession.inputText,
+        onInputChanged = onInputChange,
+        onSubmit = { onSubmit() },
+        hasCards = hasCards,
+        hintAnswer = if (state.cardSession.answerText != null && state.cardSession.lastResult != null) state.cardSession.answerText else null,
+        onShowReport = { showReportSheet = true },
+        reportCard = state.cardSession.currentCard
+    )
+
+    // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)
+    if (state.audio.useOfflineAsr) {
+        AsrStatusIndicator(state.audio.asrState)
     }
 }
 

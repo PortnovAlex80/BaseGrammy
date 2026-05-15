@@ -1,62 +1,32 @@
 package com.alexpo.grammermate.ui
 
-import android.app.Activity
-import android.content.Intent
-import android.speech.RecognizerIntent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import com.alexpo.grammermate.ui.CorrectGreen
-import com.alexpo.grammermate.ui.IncorrectRed
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -66,13 +36,15 @@ import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
+import com.alexpo.grammermate.ui.CorrectGreen
+import com.alexpo.grammermate.ui.IncorrectRed
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
+import com.alexpo.grammermate.ui.components.UnifiedInputControlsBar
 import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
-import com.alexpo.grammermate.ui.components.WordBankSection
 
 /**
  * Scope object passed to customization slots inside [TrainingCardSession].
@@ -329,16 +301,9 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
 }
 
 /**
- * Input controls matching GrammarMateApp's AnswerBox:
- * - OutlinedTextField with "Your translation" label + Mic trailing icon
- * - Voice mode hint text
- * - Word bank FlowRow with FilterChips + Undo button
- * - Input mode selector row: Mic, Keyboard, Book FilledTonalIconButtons
- * - Show answer button (Eye icon with tooltip)
- * - Report/Flag button (Warning icon with tooltip) -- opens SharedReportSheet
- * - "Check" button (full width)
+ * Input controls delegating to [UnifiedInputControlsBar] for identical rendering
+ * across all card session modes (Training, VerbDrill, DailyPractice).
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun DefaultInputControls(scope: TrainingCardSessionScope) {
     val contract = scope.contract
@@ -352,20 +317,6 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         "ID: ${reportCard.id}\nSource: ${reportCard.promptRu}\nTarget: $targetText"
     } else {
         ""
-    }
-
-    // Voice recognition launcher
-    val latestContract by rememberUpdatedState(contract)
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull()
-            if (!spoken.isNullOrBlank()) {
-                latestContract.onVoiceInputResult(spoken)
-            }
-        }
     }
 
     // Report sheet
@@ -396,180 +347,16 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         )
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            value = scope.inputText,
-            onValueChange = { newText ->
-                scope.onInputChanged(newText)
-                // Auto-submit in keyboard mode when the typed text matches an accepted answer
-                if (contract.currentInputMode == InputMode.KEYBOARD &&
-                    contract.isActive &&
-                    scope.currentCard != null &&
-                    newText.isNotBlank()
-                ) {
-                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(newText, scope.currentCard!!.acceptedAnswers)) {
-                        scope.onSubmit()
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(text = stringResource(R.string.card_label_your_translation)) },
-            singleLine = true,
-            enabled = hasCards,
-            trailingIcon = {
-                if (contract.supportsVoiceInput) {
-                    IconButton(
-                        onClick = {
-                            if (hasCards) {
-                                contract.setInputMode(InputMode.VOICE)
-                                val languageId = contract.languageId
-                                val languageTag = when (languageId) {
-                                    "it" -> "it-IT"
-                                    else -> "en-US"
-                                }
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                                }
-                                speechLauncher.launch(intent)
-                            }
-                        },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.content_desc_voice_input))
-                    }
-                }
-            }
-        )
-
-        if (!hasCards) {
-            Text(
-                text = stringResource(R.string.card_no_cards),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        // Voice mode hint
-        if (contract.currentInputMode == InputMode.VOICE) {
-            Text(
-                text = scope.currentCard?.promptRu?.let { "Say translation: $it" } ?: "",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        // Word Bank UI
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
-            WordBankSection(contract = contract)
-        }
-
-        // Input mode selector row + show answer + flag buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val modeConfig = contract.inputModeConfig
-            val showModeButtons = modeConfig.showInputModeButtons || modeConfig.availableModes.size > 1
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (showModeButtons) {
-                    if (InputMode.VOICE in modeConfig.availableModes && contract.supportsVoiceInput) {
-                        FilledTonalIconButton(
-                            onClick = {
-                                contract.setInputMode(InputMode.VOICE)
-                                val languageId = contract.languageId
-                                val languageTag = when (languageId) {
-                                    "it" -> "it-IT"
-                                    else -> "en-US"
-                                }
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                                }
-                                speechLauncher.launch(intent)
-                            },
-                            enabled = hasCards
-                        ) {
-                            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.content_desc_voice_mode))
-                        }
-                    }
-                    // Keyboard button: always available when in availableModes
-                    if (InputMode.KEYBOARD in modeConfig.availableModes) {
-                        FilledTonalIconButton(
-                            onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                            enabled = hasCards
-                        ) {
-                            Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.content_desc_keyboard_mode))
-                        }
-                    }
-                    // Word bank button: only on EASY
-                    if (InputMode.WORD_BANK in modeConfig.availableModes && contract.supportsWordBank) {
-                        FilledTonalIconButton(
-                            onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                            enabled = hasCards
-                        ) {
-                            Icon(Icons.Default.LibraryBooks, contentDescription = stringResource(R.string.content_desc_word_bank_mode))
-                        }
-                    }
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Show answer button
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = { PlainTooltip { Text(text = stringResource(R.string.tooltip_show_answer)) } },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards
-                    ) {
-                        Icon(Icons.Default.Visibility, contentDescription = stringResource(R.string.tooltip_show_answer))
-                    }
-                }
-                // Flag/Report button
-                if (contract.supportsFlagging) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(text = stringResource(R.string.tooltip_report_sentence)) } },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(
-                            onClick = { if (hasCards) showReportSheet = true },
-                            enabled = hasCards
-                        ) {
-                            Icon(Icons.Default.ReportProblem, contentDescription = stringResource(R.string.tooltip_report_sentence))
-                        }
-                    }
-                }
-                // Current mode label
-                Text(
-                    text = when (contract.currentInputMode) {
-                        InputMode.VOICE -> stringResource(R.string.input_mode_voice)
-                        InputMode.KEYBOARD -> stringResource(R.string.input_mode_keyboard)
-                        InputMode.WORD_BANK -> stringResource(R.string.input_mode_word_bank)
-                    },
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
-
-        // Check button
-        Button(
-            onClick = scope.onSubmit,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = scope.inputText.isNotBlank() && hasCards && scope.contract.canSubmit
-        ) {
-            Text(text = stringResource(R.string.button_check))
-        }
-    }
+    UnifiedInputControlsBar(
+        contract = contract,
+        inputText = scope.inputText,
+        onInputChanged = scope.onInputChanged,
+        onSubmit = scope.onSubmit,
+        hasCards = hasCards,
+        hintAnswer = contract.lastResult?.displayAnswer?.takeIf { contract.lastResult?.hintShown == true },
+        onShowReport = { showReportSheet = true },
+        reportCard = scope.currentCard
+    )
 }
 
 /**
