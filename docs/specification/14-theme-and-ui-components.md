@@ -218,7 +218,7 @@ All dialogs use Material 3 `AlertDialog` or `ModalBottomSheet`.
 
 | Component | Description |
 |---|---|
-| `TtsSpeakerButton` | IconButton that switches icon based on `TtsState`: SPEAKING -> StopCircle (error tint), INITIALIZING -> CircularProgressIndicator, ERROR -> ReportProblem (error tint), default -> VolumeUp |
+| `TtsSpeakerButton` | IconButton that switches icon based on `TtsState`: SPEAKING -> StopCircle (error tint), INITIALIZING -> CircularProgressIndicator, ERROR -> ReportProblem or Warning (error tint), default -> VolumeUp. ERROR state has two icon variants: `ReportProblem` for general TTS errors (file not found, decode error) and `Warning` for OOM errors (model too large for device memory). The variant is selected based on the error type. |
 | `NavIconButton` | 44dp box with RoundedCornerShape(12dp), surfaceVariant background, 3dp accent bottom bar. Used for Prev/Next/Pause/Exit navigation. |
 | `ModeIconButton` | FilledTonalIconButton when selected, plain IconButton when not. Used in ModeSelector and input mode toggles. |
 | `LanguageSelector` | TextButton that opens DropdownMenu with language list. |
@@ -393,29 +393,37 @@ The app uses Material Icons (`androidx.compose.material.icons.Icons.Default`) ex
 |---|---|
 | `ArrowBack` | Back navigation (Ladder, Lesson Roadmap), Previous card, Sub-lesson back |
 | `ArrowForward` | Next card navigation |
+| `Check` | Correct voice result indicator in VocabDrill |
+| `ChevronRight` | Verb chip navigation in TrainingScreen, tense chip navigation in DailyPractice |
+| `Close` | Incorrect voice result indicator in VocabDrill |
 | `ContentCopy` | Copy card text in Card Options sheet |
 | `Delete` | Delete all lessons, Delete pack |
 | `Download` | Export bad sentences, Restore from backup |
 | `EmojiEvents` | Boss reward trophy, BossTile icon |
 | `FitnessCenter` | Verb Drill entry tile, Drill tile, LessonTile for VERB_DRILL state |
+| `Flip` | Vocab drill flip card button |
+| `Info` | Tense info section in TrainingScreen (VerbDrillSheets) |
 | `Insights` | Show ladder button in Settings |
 | `Keyboard` | Keyboard input mode toggle |
 | `LibraryBooks` | All lessons mode, Word Bank input mode |
-| `LocalFlorist` | Not used in current code (imported but unused) |
 | `Lock` | Locked lesson/sub-lesson tiles |
 | `MenuBook` | Flashcards entry tile, Lesson mode button |
 | `Mic` | Voice input mode toggle, Voice input field trailing icon |
 | `Pause` | Pause session |
 | `PlayArrow` | Play/resume session, Daily Practice entry icon |
+| `QrCode2` | QR share dialog icon (SharedReportSheet) |
 | `Refresh` | Reset all progress button |
-| `ReportProblem` | Report sentence, TTS error state |
+| `ReportProblem` | Report sentence, TTS error state (general errors: file not found, decode error) |
 | `Settings` | Settings button on Home and Training screens |
+| `SkipNext` | Vocab drill skip button |
 | `StopCircle` | Stop TTS playback, Exit session |
 | `SwapHoriz` | Mixed training mode |
 | `Upload` | Import lesson pack, Import lesson CSV, Save progress |
 | `Visibility` | Show answer button |
 | `VisibilityOff` | Hide card from lessons (Card Options) |
 | `VolumeUp` | TTS speaker button (default state) |
+| `Warning` | TTS OOM error state (model too large for memory), various error states |
+| ~~`LocalFlorist`~~ | *Removed* — absent from code, candidate for removal |
 
 ### 14.5.4 Other Assets
 
