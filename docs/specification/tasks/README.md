@@ -52,7 +52,7 @@ Source: [TASK-030](TASK-030-spec-vs-code-screen-audit.md) — 17 discrepancies f
 
 ## Re-Audit CRITICAL Fix Wave (2026-05-14)
 
-Source: [EXECUTION-re-audit-11-criticals.md](EXECUTION-re-audit-11-criticals.md) — 4-wave plan fixing 11 CRITICALs from re-audit (YELLOW verdict)
+Source: [DONE-EXECUTION-re-audit-11-criticals.md](DONE-EXECUTION-re-audit-11-criticals.md) — 4-wave plan fixing 11 CRITICALs from re-audit (YELLOW verdict)
 
 | Wave | CRITICALs | Agents | Status |
 |------|-----------|--------|--------|
