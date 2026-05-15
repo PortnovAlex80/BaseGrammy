@@ -2,6 +2,11 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v3.5 (2026-05-15) -- TASK-031: Dark Theme Palette Spec Update
+
+- `14-theme-and-ui-components.md`: Updated DarkColors in section 14.1.1 to match actual Material 3 dynamic defaults from code. All 8 explicitly-specified dark theme colors corrected: primary (#4A8B92 -> #80CBC4), onPrimary (#FFFFFF -> #003731), secondary (#7EB5A5 -> #80B5A9), onSecondary (#FFFFFF -> #00332B), background (#1A1A1A -> #1A1C1E), onBackground (#E8E8E8 -> #E2E1DF), surface (#2A2A2A -> #1A1C1E), onSurface (#E8E8E8 -> #E2E1DF). Added note that dark theme follows M3 dynamic defaults. Light theme unchanged. No code changes.
+- Commit: (pending)
+
 ## v3.4 (2026-05-15) -- Re-Audit 11 CRITICAL Fixes
 
 ### Re-audit CRITICAL resolution (11/11 fixed)

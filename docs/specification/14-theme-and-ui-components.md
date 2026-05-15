@@ -21,15 +21,19 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF4A8B92),      // Lighter teal for dark bg
-    onPrimary = Color.White,
-    secondary = Color(0xFF7EB5A5),    // Lighter sage for dark bg
-    onSecondary = Color.White,
-    background = Color(0xFF1A1A1A),   // Near-black
-    onBackground = Color(0xFFE8E8E8), // Light grey
-    surface = Color(0xFF2A2A2A),      // Dark grey
-    onSurface = Color(0xFFE8E8E8)     // Light grey
+    primary = Color(0xFF80CBC4),      // M3 dynamic default — light teal
+    onPrimary = Color(0xFF003731),    // M3 dynamic default — dark teal
+    secondary = Color(0xFF80B5A9),    // M3 dynamic default — light sage
+    onSecondary = Color(0xFF00332B),  // M3 dynamic default — dark sage
+    background = Color(0xFF1A1C1E),   // M3 dynamic default — near-black
+    onBackground = Color(0xFFE2E1DF), // M3 dynamic default — warm light grey
+    surface = Color(0xFF1A1C1E),      // M3 dynamic default — near-black (same as background)
+    onSurface = Color(0xFFE2E1DF)     // M3 dynamic default — warm light grey (same as onBackground)
 )
+
+// Note: Dark theme colors follow Material 3 dynamic defaults generated from the
+// primary seed color (#2F5D62). The code relies on darkColorScheme() defaults
+// rather than manually specified values. See TASK-031 for the spec alignment.
 ```
 
 Theme mode selection is controlled by `ThemeMode` enum (LIGHT, DARK, SYSTEM) persisted in `AppConfigStore.themeMode`. Default is SYSTEM. See section 14.7 for details.
