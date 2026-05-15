@@ -110,7 +110,7 @@
     <string name="settings_your_name">Your Name</string>
     <string name="settings_save_name">Save Name</string>
     <string name="settings_backup_restore">Backup &amp; Restore</string>
-    <string name="settings_restore_description">Restore progress from backup folder (Downloads/BaseGrammy)</string>
+    <string name="settings_restore_description">Restore progress from backup folder</string>
     <string name="settings_save_progress_now">Save progress now</string>
     <string name="settings_restore_from_backup">Restore from backup</string>
     <string name="settings_grammarmate">GrammarMate</string>

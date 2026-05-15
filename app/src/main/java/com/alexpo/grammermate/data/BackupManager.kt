@@ -1,11 +1,7 @@
 package com.alexpo.grammermate.data
 
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
@@ -29,8 +25,8 @@ interface BackupManager {
 
 /**
  * Manages backup and restore of user progress data.
- * Saves mastery and progress data to external storage (Downloads/BaseGrammy).
- * Allows recovery after app reinstallation.
+ * Saves mastery and progress data to internal app-private storage.
+ * Export via SAF for user-controlled sharing.
  *
  * File enumeration is delegated to [BackupFileCollector].
  * Restore logic is delegated to [BackupRestorer].
@@ -43,10 +39,10 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
     private val collector = BackupFileCollector(context)
     private val restorer = BackupRestorer(context)
 
-    // Expose backupDir for callers that need it (e.g. getAvailableBackups legacy).
+    // Expose backupDir for callers that need it (e.g. getAvailableBackups).
     private val backupDir: File? get() = collector.backupDir
 
-    // Internal data directory (kept here for legacy createBackup path).
+    // Internal data directory.
     private val internalDir = File(context.filesDir, "grammarmate")
 
     // region -- Public API --
@@ -57,15 +53,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
      */
     override fun createBackup(): Boolean {
         return try {
-            val success = if (Build.VERSION.SDK_INT >= 29) {
-                if (Environment.isExternalStorageLegacy()) {
-                    createBackupLegacy()
-                } else {
-                    createBackupScoped()
-                }
-            } else {
-                createBackupLegacy()
-            }
+            val success = createBackupToInternal()
             Log.d(logTag, "createBackup: success=$success")
             success
         } catch (e: Exception) {
@@ -133,9 +121,9 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
 
     // endregion
 
-    // region -- Legacy backup (file-system) --
+    // region -- Internal backup --
 
-    private fun createBackupLegacy(): Boolean {
+    private fun createBackupToInternal(): Boolean {
         val dir = backupDir ?: return false
         val backupSubDir = File(dir, "backup_latest")
         if (!backupSubDir.exists() && !backupSubDir.mkdirs()) return false
@@ -184,143 +172,6 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
         writeBackupMetadata(backupSubDir, timestamp)
 
         return true
-    }
-
-    // endregion
-
-    // region -- Scoped backup (MediaStore, Android 10+) --
-
-    private fun createBackupScoped(): Boolean {
-        val resolver = context.contentResolver
-        val relativePath = "${Environment.DIRECTORY_DOWNLOADS}/BaseGrammy/backup_latest/"
-        val timestamp = collector.currentTimestamp()
-        var wroteAny = false
-
-        val pathLike = "%BaseGrammy/backup_latest%"
-
-        fun deleteDuplicateEntries(name: String) {
-            val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
-            val deleted = resolver.delete(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                selection,
-                arrayOf(pathLike, "$name (%")
-            )
-            if (deleted > 0) {
-                Log.d(logTag, "Removed $deleted duplicate entries for $name in backup_latest")
-            }
-        }
-
-        fun deleteLegacyDuplicateFiles(name: String) {
-            val legacyDir = backupDir?.let { File(it, "backup_latest") } ?: return
-            legacyDir.listFiles()
-                ?.filter { it.name.startsWith("$name (") }
-                ?.forEach { file ->
-                    if (file.delete()) {
-                        Log.d(logTag, "Deleted legacy duplicate file ${file.name}")
-                    }
-                }
-        }
-
-        fun findExistingEntry(name: String): Uri? {
-            val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? AND ${MediaStore.MediaColumns.DISPLAY_NAME}=?"
-            resolver.query(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                arrayOf(MediaStore.MediaColumns._ID),
-                selection,
-                arrayOf(pathLike, name),
-                "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val id = cursor.getLong(0)
-                    return Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString())
-                }
-            }
-            return null
-        }
-
-        fun writeFile(name: String, mimeType: String, source: File): Boolean {
-            if (!source.exists()) return false
-            deleteDuplicateEntries(name)
-            deleteLegacyDuplicateFiles(name)
-            val existingUri = findExistingEntry(name)
-            if (existingUri != null) {
-                Log.d(logTag, "Overwriting existing $name in backup_latest")
-            }
-            val targetUri = existingUri ?: run {
-                val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
-                if (legacyFile?.exists() == true && legacyFile.delete()) {
-                    Log.d(logTag, "Deleted legacy $name before MediaStore insert")
-                }
-                val values = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
-                }
-                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            } ?: return false
-            resolver.openOutputStream(targetUri, "wt")?.use { output ->
-                source.inputStream().use { input -> input.copyTo(output) }
-            } ?: return false
-            return true
-        }
-
-        fun writeText(name: String, text: String): Boolean {
-            deleteDuplicateEntries(name)
-            deleteLegacyDuplicateFiles(name)
-            val existingUri = findExistingEntry(name)
-            if (existingUri != null) {
-                Log.d(logTag, "Overwriting existing $name in backup_latest")
-            }
-            val targetUri = existingUri ?: run {
-                val legacyFile = backupDir?.let { File(it, "backup_latest/$name") }
-                if (legacyFile?.exists() == true && legacyFile.delete()) {
-                    Log.d(logTag, "Deleted legacy $name before MediaStore insert")
-                }
-                val values = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
-                }
-                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            } ?: return false
-            resolver.openOutputStream(targetUri, "wt")?.use { output ->
-                output.write(text.toByteArray())
-            } ?: return false
-            return true
-        }
-
-        // Write main files
-        collector.mainBackupFileNames.forEach { name ->
-            wroteAny = writeFile(name, "text/yaml", File(internalDir, name)) || wroteAny
-        }
-
-        // Write streak files
-        collector.listStreakFiles().forEach { file ->
-            wroteAny = writeFile(file.name, "text/yaml", file) || wroteAny
-        }
-
-        // Write drill-progress files
-        collector.listDrillProgressFiles().forEach { file ->
-            wroteAny = writeFile(file.name, "text/yaml", file) || wroteAny
-        }
-
-        // Write pack-scoped drill data (flat names for MediaStore)
-        collector.listPackDrillDirs().forEach { packDir ->
-            val verbProgress = File(packDir, "verb_drill_progress.yaml")
-            if (verbProgress.exists()) {
-                wroteAny = writeFile("drills_${packDir.name}_verb_drill_progress.yaml", "text/yaml", verbProgress) || wroteAny
-            }
-            val wordMastery = File(packDir, "word_mastery.yaml")
-            if (wordMastery.exists()) {
-                wroteAny = writeFile("drills_${packDir.name}_word_mastery.yaml", "text/yaml", wordMastery) || wroteAny
-            }
-        }
-
-        // Write metadata
-        val metadata = collector.buildMetadataContent(timestamp)
-        wroteAny = writeText("metadata.txt", metadata) || wroteAny
-
-        return wroteAny
     }
 
     // endregion

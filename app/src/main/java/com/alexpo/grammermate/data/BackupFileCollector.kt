@@ -1,7 +1,6 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
-import android.os.Environment
 import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
@@ -20,10 +19,8 @@ internal class BackupFileCollector(private val context: Context) {
     // Internal data directory
     private val internalDir = File(context.filesDir, "grammarmate")
 
-    // Backup directory: Downloads/BaseGrammy
     val backupDir: File? by lazy {
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        File(downloadsDir, "BaseGrammy").apply {
+        File(context.filesDir, "grammarmate/backups").apply {
             if (!exists()) mkdirs()
         }
     }

@@ -58,7 +58,7 @@ Correctness beats speed. Transparency beats silence.
 Any deviation from Level B–D rules must be acknowledged explicitly in the response to the user, not only in thinking.
 
 **Level B — Architecture integrity**
-Never violate the single-ViewModel pattern (VocabDrillViewModel is the sole permitted exception). UI (`GrammarMateApp.kt`) must remain a stateless renderer.
+Never violate the single-ViewModel pattern (VocabDrillViewModel and VerbDrillViewModel are the sole permitted exceptions). UI (`GrammarMateApp.kt`) must remain a stateless renderer.
 Data layer stores must use atomic file writes. A working but architecturally wrong solution is not acceptable.
 
 **Level C — Process rules**
@@ -382,11 +382,11 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 
 ## Architecture
 
-### MVVM — Single ViewModel (with one exception)
+### MVVM — Single ViewModel (with two exceptions)
 
 `TrainingViewModel` (AndroidViewModel) is the primary ViewModel for ALL training/lesson business logic.
 
-**Exception:** `VocabDrillViewModel` is a separate ViewModel for the Anki-style vocab drill screen. It manages its own state flow (`VocabDrillUiState`), mastery store, and session lifecycle independently. This exception exists because VocabDrill has isolated state with no shared dependencies with the main training flow.
+**Exceptions:** `VocabDrillViewModel` and `VerbDrillViewModel` are separate ViewModels for the Anki-style vocab drill and verb conjugation drill screens respectively. Each manages its own state flow, mastery/progress stores, and session lifecycle independently. These exceptions exist because both drills have **zero state overlap** with TrainingViewModel (completely different data models and UI state types), are NavBackStackEntry-scoped (ephemeral, created/destroyed on navigation) rather than Activity-scoped, and merging them would add 900+ lines to TVM — pushing it well past the 1200-line decomposition threshold. Cross-VM communication is minimal and one-directional (a single `refreshVocabMasteryCount()` call on VocabDrill exit). Shared stores (LessonStore, BadSentenceStore, WordMasteryStore) are safe: all reads, pack-scoped keys, mutex-protected writes.
 
 All other rules still apply — do NOT create additional ViewModels.
 
@@ -496,7 +496,7 @@ Parser (`ItalianDrillVocabParser`) auto-detects format from header row and reads
 1. **Screen files go in `ui/screens/`** — one file per major screen (Home, Lesson, Training, DailyPractice, Story, Ladder, Settings). Helper composables used only by that screen stay in the same file. Dialog composables triggered from navigation stay in GrammarMateApp.kt.
 2. **Shared components go in `ui/components/`** — composables used by 2+ screens (TTS/ASR download dialogs, welcome dialog).
 3. **ViewModel helpers go in `feature/`** — plain Kotlin classes organized by domain (training, boss, daily, progress, vocab in `feature/`, audio in `shared/audio/`). They implement domain logic and receive a `TrainingStateAccess` interface (NOT ViewModels — no lifecycle). Helpers never call other helpers directly; all coordination flows through TrainingViewModel.
-4. **NEVER create a second ViewModel.** Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint.
+4. **NEVER create a ViewModel beyond the two permitted drill exceptions** (VocabDrillViewModel, VerbDrillViewModel). Helpers are owned by TrainingViewModel. The single-ViewModel pattern is a Level B constraint.
 5. **GrammarMateApp.kt is a router.** It contains only `GrammarMateApp()` (screen routing, dialog state, BackHandlers), `AppScreen` enum, and dialog orchestration. All screen rendering is delegated to `ui/screens/`.
 6. **Helper dependency pattern:** helpers take `TrainingStateAccess` as a constructor parameter (defined in `DailySessionHelper.kt`):
    ```kotlin
