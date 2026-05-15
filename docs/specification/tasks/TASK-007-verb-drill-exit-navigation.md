@@ -1,6 +1,6 @@
 # TASK-007: Verb Drill Exit Navigation to HOME
 
-**Status:** DONE
+**Status:** BUG (needs device retest — user reports back still broken)
 **Created:** 2026-05-14
 **Completed:** 2026-05-15
 **Branch:** feature/verb-drill-exit-fix (from feature/perf-and-cursor-fixes)
