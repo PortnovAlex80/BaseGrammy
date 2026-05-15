@@ -2,6 +2,13 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## v3.3 (2026-05-15) -- Dark-Mode Color Values + Compliance Spec
+
+- `14-theme-and-ui-components.md`: Added dark-mode color values for all hardcoded semantic colors (section 14.7.5 expanded with exact hex values). Added Dark-Mode Color Adaptation Strategy (section 14.7.6). Added Screen-by-Screen Dark-Mode Status (section 14.7.7).
+- `22-use-case-registry.md`: Added Domain 21 with UC-68 (Dark-Mode Color Compliance, 9 ACs). Updated summary counts (68 UCs, 348 ACs, 21 domains). Added cross-reference entry for TASK-012, TASK-013, TASK-014.
+- `23-screen-elements.md`: Added dark-mode compliance notes to TS-06 (progress bar track), TS-26 (result label), TS-36 (drill background), TS-37 (mix challenge surface), TCS-21 (correct/incorrect result), HS-12 (vocab mastered count), VOC-21 (card front container), VOC-37 through VOC-40 (rating buttons), DP-26 (daily vocab rating buttons). Each note specifies exact dark-mode color values and references UC-68 ACs.
+- Commit: (pending)
+
 ## v3.2 (2026-05-15) -- Theme Switching + Interface Language Specs
 
 ### TASK-010: Theme Mode Switching (Light/Dark/System)
