@@ -593,6 +593,7 @@ After ANY non-trivial
 3. **`/verify-user-journey` is mandatory before committing UI/data changes.** Catches "works in code but broken for user" bugs.
 4. **`/swarm` replaces manual decomposition.** Use it instead of re-reading EXECUTION MODE and deciding yourself.
 5. **`/create-task` covers the full requirements pipeline.** Use it after identifying a bug, discussing a feature, or anytime specs need updating before implementation. Output is a self-contained task prompt in `docs/specification/tasks/` linked from the spec.
+6. **Completed tasks get a `DONE-` filename prefix.** When marking a task as DONE, rename the file from `TASK-xxx-title.md`/`EXECUTION-xxx.md` to `DONE-TASK-xxx-title.md`/`DONE-EXECUTION-xxx.md`. Update the link in `tasks/README.md`. This allows identifying completed tasks at a glance without opening files.
 
 ---
 
