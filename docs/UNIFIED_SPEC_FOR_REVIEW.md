@@ -725,7 +725,7 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 # 8. TrainingViewModel -- Migration Playbook & Complete Inventory
 
-> **Purpose:** This document is the authoritative migration playbook for decomposing the 3625-line TrainingViewModel into 11 modules as defined in `arch-module-decomposition.md`. Every method, field, private var, and store access is inventoried here. If anything is missed, the migration will introduce bugs. **Completeness is everything.**
+> **Purpose:** This document is the authoritative migration playbook for decomposing the 3625-line TrainingViewModel into 11 modules. Every method, field, private var, and store access is inventoried here. If anything is missed, the migration will introduce bugs. **Completeness is everything.**
 
 ---
 
@@ -812,7 +812,7 @@ All initialized as private vals/vars at the top of the class body (lines 81-136)
 
 - **Visibility:** `pub` = public, `pri` = private
 - **Category:** Domain grouping
-- **Target Module:** Where this method should live after decomposition (per `arch-module-decomposition.md`)
+- **Target Module:** Where this method should live after decomposition
 - **Reads Fields:** Which `TrainingUiState` fields the method reads (non-exhaustive for trivial reads)
 - **Writes Fields:** Which `TrainingUiState` fields the method writes via `_uiState.update`
 - **Stores Touched:** Which data stores are accessed

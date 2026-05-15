@@ -234,7 +234,7 @@ val isLearned: Boolean = false  // reached the last interval step (9)
 - `02-data-stores.md` line 341: "isLearned is set to true when the word reaches the last interval step (step 9)."
 - `11-vocab-drill.md` line 95: "reached step >= 3 (LEARNED_THRESHOLD)."
 - `18-learning-methodology.md` line 451: "isLearned is true when intervalStepIndex reaches 9."
-- `arch-audit-spec-vs-code.md`: Already documented this discrepancy as CRITICAL-2.
+- Note: This discrepancy was originally identified during an architecture audit.
 
 **Verdict:** The actual code uses threshold 3 in both ViewModels. The `VocabWord.kt` comment is stale (says step 9). Specs 01, 02, and 18 are incorrect. Only spec 11 correctly documents the threshold. The mastery indicator on the card back shows "Learned" when `step >= 9`, which contradicts the actual `isLearned` check at step >= 3 -- see Step 10 for details.
 
@@ -417,7 +417,7 @@ Forms are stored in `VocabWord.forms: Map<String, String>`.
 
 | # | Step | Severity | Description |
 |---|------|----------|-------------|
-| D1 | 9 | **High** | `isLearned` threshold: Code uses `LEARNED_THRESHOLD = 3` in both ViewModels. `VocabWord.kt` comment says "reached the last interval step (9)". Specs 01, 02, 18 say step 9. Only spec 11 correctly documents threshold 3. Already identified in `arch-audit-spec-vs-code.md` as CRITICAL-2. |
+| D1 | 9 | **High** | `isLearned` threshold: Code uses `LEARNED_THRESHOLD = 3` in both ViewModels. `VocabWord.kt` comment says "reached the last interval step (9)". Specs 01, 02, 18 say step 9. Only spec 11 correctly documents threshold 3. |
 | D2 | 10 | **Medium** | Card back mastery indicator shows "Learned" only at `step >= 9`, but `isLearned` is `true` at `step >= 3`. The label and the data field represent different thresholds. A word at step 5 is `isLearned = true` in the data model but displays "Step 6/9" on the card back. |
 | D3 | 13 | **Medium** | Form display hardcodes adjective keys (`msg`, `fsg`, `mpl`, `fpl`). Numbers (keys `form_m`, `form_f`) and pronouns (keys `form_sg_m`, `form_sg_f`, `form_pl_m`, `form_pl_f`) will show dashes instead of actual form values. |
 

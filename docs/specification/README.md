@@ -54,16 +54,6 @@ Source of truth for all project specs. Numbered specs (01–23) are current; sce
 | 22 | [Use Case Registry](22-use-case-registry.md) | UC IDs with acceptance criteria — for regression checks and PR review |
 | 23 | [Screen Elements](23-screen-elements.md) | Screen element catalog with invariants — for UI regression checks |
 
-### Architecture
-
-| # | Document | Description |
-|---|----------|-------------|
-| A1 | [Dependency Map](arch-audit-dependencies.md) | Component inventory, dependency graph, state duplication |
-| A2 | [Spec vs Code Discrepancies](arch-audit-spec-vs-code.md) | Critical/minor discrepancies found during audit |
-| A3 | [Module Decomposition](arch-module-decomposition.md) | Proposed modular architecture with interfaces |
-| A4 | [Phase 3 Interfaces](arch-phase3-interfaces.md) | Phase 3 store interface definitions |
-| A5 | [Agent-Friendly Architecture Audit](arch-agent-friendly-audit-2026-05-14.md) | Current audit for parallel agent work, ownership, context locality, and boundary enforcement |
-
 ---
 
 ## Scenario Verification (Code Traces)

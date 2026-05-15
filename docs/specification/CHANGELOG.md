@@ -11,7 +11,6 @@ All changes to specification documents are tracked here. Each entry references t
 
 ### Re-audit CRITICAL resolution (11/11 fixed)
 
-- `tasks/EXECUTION-re-audit-11-criticals.md`: Marked DONE (11/11 CRITICALs fixed).
 - `tasks/README.md`: Updated with 11 CRITICAL fix entries (DATA-1, DATA-2, W-DATA-1, W-DATA-2, UI-1, UI-2, XC-2, TEST-1, XC-3, TEST-2, TEST-3, ARCH-1, XC-1).
 - `CLAUDE.md`: Updated project version context.
 - Code changes (22 files, +352 / -358 lines):
@@ -82,11 +81,6 @@ All changes to specification documents are tracked here. Each entry references t
 - `09-daily-practice.md`: Cursor-based level resolution in startDailyPractice(). Lesson transition in advanceDailyCursor(). Verb block cycling (TASK-001).
 - `13-app-entry-and-navigation.md`: welcomeDialogAttempts counter in profile.yaml. HOME-only guard. Skip increments counter (TASK-004).
 - `22-use-case-registry.md`: UC-60 AC3-AC4 updated (caching now implemented). UC-61 expanded (lesson transition + cursor advancement).
-- Commit: `pending`
-
-### Agent-Friendly Architecture Audit
-- Created `arch-agent-friendly-audit-2026-05-14.md` with current audit of parallel agent readiness, ownership gaps, hotspot files, boundary enforcement, and recommended roadmap.
-- Updated `README.md` architecture index with A5 audit entry.
 - Commit: `pending`
 
 ### ViewModel Thinning
@@ -166,7 +160,7 @@ All changes to specification documents are tracked here. Each entry references t
 - Kept 7 legacy files with unique content (test plan, TTS review bugs, unbuilt features)
 
 ### Navigation Overhaul
-- Rewrote specification/README.md: added specs 21-23, arch-phase3, scenario-to-spec cross-references
+- Rewrote specification/README.md: added specs 21-23, scenario-to-spec cross-references
 - Added SKILLS PIPELINE section to CLAUDE.md with trigger table and workflow diagram
 - Updated CLAUDE.md roadmap section: removed deleted arch-review plan, added active plans
 
