@@ -402,7 +402,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 scope.onInputChanged(newText)
                 // Auto-submit in keyboard mode when the typed text matches an accepted answer
                 if (contract.currentInputMode == InputMode.KEYBOARD &&
-                    contract.sessionActive &&
+                    contract.isActive &&
                     scope.currentCard != null &&
                     newText.isNotBlank()
                 ) {
@@ -564,7 +564,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         Button(
             onClick = scope.onSubmit,
             modifier = Modifier.fillMaxWidth(),
-            enabled = scope.inputText.isNotBlank() && hasCards
+            enabled = scope.inputText.isNotBlank() && hasCards && scope.contract.canSubmit
         ) {
             Text(text = stringResource(R.string.button_check))
         }
@@ -663,7 +663,7 @@ private fun DefaultNavigationControls(scope: TrainingCardSessionScope) {
                     onClick = { scope.contract.togglePause() },
                     enabled = scope.currentCard != null
                 ) {
-                    if (scope.contract.sessionActive) {
+                    if (scope.contract.isActive) {
                         Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
                     } else {
                         Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))

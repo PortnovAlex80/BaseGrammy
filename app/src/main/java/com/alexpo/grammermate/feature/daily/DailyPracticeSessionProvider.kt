@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.alexpo.grammermate.data.AnswerResult
 import com.alexpo.grammermate.data.CardSessionContract
+import com.alexpo.grammermate.data.CardSessionStateModel
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
@@ -129,6 +130,26 @@ class DailyPracticeSessionProvider(
             if (sm.hintAnswer != null) return false
             return currentIndex < blockCards.size
         }
+
+    // ── CardSessionStateModel overrides ──────────────────────────────────
+    // Explicit mappings from internal CardSessionStateMachine state.
+    // These override the default implementations in CardSessionContract
+    // which don't account for the state machine's isPaused/hintAnswer.
+
+    override val isActive: Boolean
+        get() = sessionActive
+
+    override val isPaused: Boolean
+        get() = sm.isPaused && sm.hintAnswer == null && !isComplete
+
+    override val isHintShown: Boolean
+        get() = sm.hintAnswer != null
+
+    override val canSubmit: Boolean
+        get() = sessionActive && currentCard != null
+
+    override val hasCurrentCard: Boolean
+        get() = currentCard != null
 
     override val currentInputMode: InputMode
         get() = _inputMode
