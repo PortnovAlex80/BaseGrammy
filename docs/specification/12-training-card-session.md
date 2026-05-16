@@ -7,40 +7,26 @@ TrainingCardSession is a reusable Compose composable that provides the entire ca
 > **Design Principle — Universal Card Engine:** TrainingScreen (via TrainingCardSession + SessionRunner) is the universal card training engine. All card-based training uses the same UI, navigation, input controls, and feedback. Modes differ ONLY in:
 > 1. Card source (which cards are loaded into `sessionCards`)
 > 2. Scoring logic (mastery tracking, boss rewards)
-> 3. Visual theme (normal background vs green drill theme)
-> 4. Exit destination (HOME vs LESSON)
+> 3. Exit destination (HOME vs LESSON)
 >
-> **Modes using TrainingScreen:**
+> **All 7 modes are Tier 1 sub-modes of TrainingScreen:**
 > 1. **TRAINING_NORMAL** — standard sub-lessons (cards from MixedReviewScheduler)
 > 2. **TRAINING_BOSS** — boss battle review (cards from lesson pool)
 > 3. **TRAINING_BOSS_MEGA** — mega boss battle
 > 4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once)
 > 5. **TRAINING_ELITE** — elite/daily step
+> 6. **VERB_DRILL** — verb conjugation (VerbDrillScreen contains only SelectionScreen; card session runs through TrainingScreen)
+> 7. **DAILY_PRACTICE** — Daily Practice blocks 1 and 3 (translation and verb conjugation) run through TrainingScreen
 >
-> **Modes using separate screens with TrainingCardSession component:**
-> 6. **VERB_DRILL** — VerbDrillScreen
-> 7. **DAILY_PRACTICE** — DailyPracticeScreen (blocks 1 & 3)
+> **Daily Block 3 (Verbs) = VerbDrill:** Same chips, same logic, same session behavior as VerbDrill mode.
 >
 > **Excluded (different mechanic):** VOCAB_DRILL — Anki flashcard flip, no card session.
 >
+> **Header:** All training modes use title "Тренажер предложений" (localized ru/en/it) with back arrow [<-]. Settings gear removed from training headers — settings only from HomeScreen.
+>
 > **Drill sub-mode key change:** Instead of loading 1 card at a time via `advanceDrillCard()`, drill loads ALL `lesson.drillCards` into `sessionCards` and uses standard `navigateNext()`/`navigatePrev()` navigation. Progress tracked via `drillProgressStore` with `drillCardIndex`. Mastery NOT counted.
 
-The component is consumed by two tiers of training modes:
-
-**Tier 1 — Sub-modes within TrainingScreen (5 modes):**
-1. **TRAINING_NORMAL** — standard sub-lessons (via MixedReviewScheduler).
-2. **TRAINING_BOSS** — boss battle review (cards from lesson pool).
-3. **TRAINING_BOSS_MEGA** — mega boss battle.
-4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once, green theme, mastery NOT counted).
-5. **TRAINING_ELITE** — elite/daily step.
-
-**Tier 2 — Separate screens using TrainingCardSession component (2 modes):**
-6. **Verb Drill** (via `VerbDrillCardSessionProvider` wrapping `VerbDrillViewModel`).
-7. **Daily Practice Blocks 1 and 3** — translation and verb conjugation (via `DailyPracticeSessionProvider`).
-
-**Excluded:** VocabDrill (Block 2 / standalone) uses an Anki-style flashcard flip UI — fundamentally different interaction pattern, does NOT use TrainingCardSession.
-
-The key design principle: the only difference between training modes is **card selection and scoring logic**, not the card training UI. All modes share the same visual layout, input methods, feedback animations, and navigation pattern. This principle applies across all 7 modes listed above.
+All 7 modes share the same visual layout, input methods, feedback animations, navigation pattern, and unified header with back arrow. The only difference between training modes is **card selection and scoring logic**, not the card training UI. One theme for all modes — no green drill theme or other custom themes.
 
 > **Note:** Drill sub-mode (TRAINING_DRILL) was added to the unified model in spec update 2026-05-16. Previously it used a separate `advanceDrillCard()` mechanism.
 
@@ -88,7 +74,6 @@ Optional capability flags that adapters declare. All default to `false`:
 | `supportsFlagging` | Shows report/flag button that opens bottom sheet |
 | `supportsNavigation` | Shows bottom navigation row (prev/pause/exit/next) |
 | `supportsPause` | Shows pause/play toggle button in navigation |
-| `supportsDrillTheme` | Shows green background, green prompt text, green tense labels when `isDrillMode == true` |
 
 ### 12.2.3 Supporting Data Classes
 
@@ -265,9 +250,9 @@ The scope is recreated when any of its inputs change, ensuring composables alway
 When no custom `header` slot is provided:
 
 1. **Tense label** (conditional): shown only when the current card is a `VerbDrillCard` with a non-blank `tense` field. Rendered in `primary` color, 13sp, `SemiBold`. **Always visible regardless of HintLevel.** The tense label is reference information about the verb form, NOT a hint. HintLevel controls parenthetical hints in prompt text, not this label.
-2. **Clean prompt text**: `promptRu` with parenthetical hints stripped via regex `\s*\([^)]+\)`. Rendered at 18sp, `Medium` weight.
+2. **Clean prompt text**: `promptRu` with parenthetical hints filtered by two-layer hint calculation (see 03-algorithms#3.7). Regex `\s*\([^)]+\)` applied based on effective fraction from `min(scheduler encounter count, user HintLevel)`. Rendered at 18sp, `Medium` weight.
 
-Custom overrides: Verb Drill uses a custom header with back arrow + "Verb Drill" title (no settings gear). Daily Practice uses its own header with back arrow + "Daily Practice" title + block label chip.
+Custom overrides: All training modes use a unified header with back arrow [<-] + title "Тренажер предложений" (localized ru/en/it). Settings gear is NOT shown in training headers — settings is only accessible from HomeScreen. Mode-specific subtitles (e.g., "Daily Practice — Block 1", "Verb Drill") appear below the title.
 
 ### 12.4.4 Default Progress Indicator
 
@@ -280,7 +265,7 @@ A horizontal row split 70/30:
 
 Material `Card` with full-width layout:
 
-- Left column (weighted): "RU" label + prompt text (20sp, `SemiBold`) showing `promptRu` — parenthetical hints included on EASY, stripped on MEDIUM/HARD based on `HintLevel`.
+- Left column (weighted): "RU" label + prompt text (20sp, `SemiBold`) showing `promptRu` — parenthetical hints filtered by two-layer calculation: `min(scheduler encounter count, user HintLevel)`. EASY=all, MEDIUM=50%, HARD=none. Word Bank available only at EASY.
 - Right: `TtsSpeakerButton` (see 12.4.9).
 
 Custom overrides: Verb Drill and Daily Practice both add SuggestionChip rows below the prompt showing verb, tense, and group info when the card is a `VerbDrillCard`.
@@ -369,7 +354,7 @@ Verb Drill uses `TrainingCardSession` with four custom slots:
 
 | Slot | Custom Behavior |
 |------|----------------|
-| `header` | Back arrow + "Verb Drill" title (no settings gear) |
+| `header` | Back arrow + "Verb Drill" title (unified header, no settings gear) |
 | `cardContent` | Default card + SuggestionChip row (verb with rank, tense abbreviated, group). Chips open `VerbReferenceBottomSheet` or `TenseInfoBottomSheet`. |
 | `inputControls` | `DefaultVerbDrillInputControls`: adds hint answer card (error-colored), incorrect feedback with attempt count, auto-voice LaunchedEffect, word bank, report sheet, uses `submitAnswerWithInput()` for retry/hint flow. |
 | `completionScreen` | Stats (correct/incorrect), "More" button (`requestNextBatch()`), "Exit" outlined button. |
@@ -384,7 +369,9 @@ Verb Drill uses `TrainingCardSession` with four custom slots:
 
 **File:** `ui/DailyPracticeScreen.kt`
 
-Daily Practice uses `TrainingCardSession` for blocks 1 (Translation) and 3 (Verb Conjugation). Block 2 (Vocab Flashcard) uses a completely separate composable (`VocabFlashcardBlock`).
+Daily Practice uses `TrainingCardSession` for blocks 1 (Translation) and 3 (Verb Conjugation). Block 2 (Vocab Flashcard) uses a completely separate composable (`VocabFlashcardBlock`). Blocks 1 and 3 delegate to TrainingScreen as sub-modes, sharing the same session engine as all other card modes.
+
+**Daily Block 3 (Verbs) = VerbDrill:** Same chips (verb infinitive, rank, tense), same logic, same session behavior as VerbDrill mode. No separate implementation.
 
 **Session flow:**
 
@@ -394,7 +381,7 @@ Daily Practice uses `TrainingCardSession` for blocks 1 (Translation) and 3 (Verb
 4. On block completion, `onAdvanceBlock()` moves to the next block. A `BlockSparkleOverlay` shows the transition animation.
 
 **Customizations:**
-- Custom header with back arrow, "Daily Practice" title, and block label chip (primaryContainer card).
+- Unified header with back arrow, "Daily Practice" subtitle, and block label chip (primaryContainer card). No settings gear.
 - `BlockProgressBar` (separate from TrainingCardSession's progress indicator) shows overall session progress.
 - Block transition sparkle overlay between blocks.
 - `DailyPracticeCompletionScreen` at the end of all 3 blocks.
@@ -411,12 +398,12 @@ Standard lesson training in TrainingScreen will use `TrainingCardSession` via a 
 - Wraps `SessionRunner` and reads from `TrainingUiState`
 - Capabilities: all true (TTS, voice, word bank, flagging, navigation, pause)
 - Handles sub-mode switching transparently — no conditional logic in the composable
-- Drill sub-mode visual differences (green theme) handled via `supportsDrillTheme` capability
+- One theme for all modes — no green drill theme or other custom themes
 
 **Sub-mode handling in adapter:**
 - All 5 sub-modes share the same card presentation, input, and navigation slots
 - BOSS mode: custom progress display (boss progress bar instead of sub-lesson progress)
-- DRILL mode: green theme via `supportsDrillTheme`, no mastery tracking
+- DRILL mode: no mastery tracking, standard theme
 - ELITE mode: standard flow, different card source
 
 **Custom slots:**
@@ -453,10 +440,8 @@ Drill is a sub-mode of TrainingScreen, triggered by the DrillTile on LessonRoadm
 **Navigation:** Standard `navigateNext()` / `navigatePrev()` — identical to normal training. No special drill navigation functions.
 
 **Visual theme:**
-- Background: green tint (`0xFFE8F5E9`) when `isDrillMode == true`.
-- Tense labels: green color instead of primary.
-- Prompt text tint: green instead of default.
-- All other UI elements (input controls, navigation row, check button) remain standard.
+- One theme for all modes — no custom green background or green text tint.
+- All UI elements (input controls, navigation row, check button) remain standard across modes.
 
 **Progress tracking:**
 - `drillProgressStore` tracks `drillCardIndex` per lesson.
@@ -848,3 +833,14 @@ Per DP-03 (see user-journey-models.md), the following must be single shared comp
 - This component accepts `CardSessionStateModel` as its state interface
 
 **Exclusion:** VocabDrill uses a flashcard flip paradigm and does NOT use NavigationRow or InputControlsBar. It is the sole permitted exception per DP-03.
+
+**SessionRunner — shared UI + behavior logic:**
+All card modes share one submit/retry/voice/wordbank/pause/nav logic in SessionRunner. There is no mode-specific duplication of:
+- Answer submission and validation
+- Retry/hint flow (3 attempts → hint shown)
+- Voice auto-launch and auto-advance
+- Word bank selection and assembly
+- Pause/play state management
+- Navigation (next/prev) and card advancement
+
+Different modes provide different card sources via adapters, but the session behavior is identical.

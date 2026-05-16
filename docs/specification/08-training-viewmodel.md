@@ -322,7 +322,26 @@ All initialized as private vals/vars at the top of the class body (lines 81-136)
 | 133 | `updateStreak()` | pri | 3269-3303 | Streak | StreakManager | selectedLanguageId, currentStreak, longestStreak, streakMessage, streakCelebrationToken | currentStreak, longestStreak, streakMessage, streakCelebrationToken | streakStore |
 | 134 | `dismissStreakMessage()` | pub | 3308-3312 | Streak | StreakManager | streakMessage | streakMessage | none |
 
-### 2.18 Configuration & Profile Methods
+### 2.18 Two-Layer Hint Calculation
+
+The ViewModel delegates hint calculation to the algorithm layer (see 03-algorithms#3.7) but is responsible for providing the correct inputs:
+
+- **Encounter count per card:** read from session state (persisted across sessions). Incremented each time a card is shown.
+- **User HintLevel:** read from `AppConfigStore` (stored in `config.yaml`).
+- **Boss battle flag:** determined from current session mode.
+
+The ViewModel calls `calculateEffectiveHints(encounterCount, userHintLevel, isBossBattle)` and passes the result to the UI layer for prompt text rendering and Word Bank visibility control.
+
+**Behavior:**
+- When effective fraction = 1.0 → show full prompt with all parenthetical hints + Word Bank (if EASY)
+- When effective fraction = 0.5 → apply `stripHalfOfParentheticals(text, sessionOffset)` to prompt + hide Word Bank
+- When effective fraction = 0.0 → strip all parenthetical hints + hide Word Bank
+- Boss battle → unconditional NO_HINTS regardless of layers
+- Keyboard input always available at all levels
+
+**Session offset:** generated once per session start (`Random.nextInt(0, 2)`) and stored in session state for consistent 50% stripping within a session.
+
+### 2.19 Configuration & Profile Methods
 
 | # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
 |---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|

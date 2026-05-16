@@ -8,8 +8,8 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 83 |
-| Total Acceptance Criteria | 448 |
+| Total Use Cases | 86 |
+| Total Acceptance Criteria | 461 |
 | Domains | 26 |
 
 ### Per-Domain Counts
@@ -26,7 +26,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 8 | Navigation & screens | 4 | 14 |
 | 9 | Lesson packs (import, manifest) | 4 | 17 |
 | 10 | State persistence (backup, restore, onboarding) | 5 | 26 |
-| 11 | Difficulty & hints (HintLevel, parenthetical stripping) | 3 | 16 |
+| 11 | Difficulty & hints (two-layer: scheduler + user setting) | 6 | 29 |
 | 12 | [UI-CONSISTENCY-2025] UI consistency (eye mode, voice auto, report sheet, mix challenge, shared components) | 6 | 35 |
 | 13 | Font size scaling (ruTextScale across training screens) | 1 | 10 |
 | 14 | Voice auto-start toggle (global setting for all training screens) | 1 | 10 |
@@ -167,13 +167,16 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
-## Domain 11: Difficulty & Hints (HintLevel, Parenthetical Stripping)
+## Domain 11: Difficulty & Hints (Two-Layer System: Scheduler + User Setting)
 
 | UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
 | UC-48 | Answer normalization pipeline | User submits an answer in any training context | 1. Trim and collapse whitespace to single spaces. 2. Remove minutes from time expressions (`"8:30"` -> `"8"`). 3. Lowercase. 4. Iterate characters, strip `.,?!"<>;:()[]{}` but keep hyphens and apostrophes. 5. Collapse whitespace again and trim. | AC1: Apostrophes within words are preserved (e.g. `l'albero` stays `l'albero`). AC2: Accented/diacritic characters are kept as-is (no NFD stripping). AC3: Hyphens are preserved. AC4: Time normalization strips minutes only (`"3:15"` -> `"3"`). AC5: Empty/whitespace-only input normalizes to `""`. AC6: Partial string matches do NOT count (exact equality required). | TrainingScreen (ui/screens/TrainingScreen.kt) | `data/Normalization.kt`, `feature/training/AnswerValidator.kt` | scenario-02 |
 | UC-49 | 3-attempt retry with automatic hint reveal | User submits wrong answers on the same card | 1. Attempt 1: `incorrectAttemptsForCard` = 1, retry allowed, voice re-triggered. 2. Attempt 2: `incorrectAttemptsForCard` = 2, retry allowed. 3. Attempt 3: hint auto-shown (all accepted answers), timer paused, `incorrectAttemptsForCard` reset to 0. 4. After hint: user must press Next/Play to advance. | AC1: Error tone plays on each incorrect answer. AC2: After 3 wrong attempts, `answerText` shows all accepted answers joined by " / ". AC3: `sessionState` transitions to `HINT_SHOWN` after 3 attempts. AC4: Timer is paused when hint is shown. AC5: `incorrectAttemptsForCard` resets to 0 on hint display. AC6: User cannot submit further answers while `HINT_SHOWN`. | TrainingScreen (ui/screens/TrainingScreen.kt) | `shared/SettingsActionHandler.kt`, `data/AppConfigStore.kt`, `ui/TrainingViewModel.kt` | scenario-01, scenario-02, US-13 |
 | UC-50 | Manual "Show Answer" (eye button) | User is on a card in any training context | 1. User taps the eye/show-answer button. 2. Answer is revealed immediately. 3. Session enters hint/paused state. 4. User can advance to next card. | AC1: Eye button is always available during a card. AC2: Tapping it reveals the accepted answer(s) without counting as an incorrect attempt. AC3: In verb drill, manual show sets `incorrectAttempts = 3` and `hintAnswer = card.answer`. AC4: TTS auto-plays the answer when revealed (if TTS is available). | TrainingScreen (ui/screens/TrainingScreen.kt) | `ui/TrainingCardSession.kt`, `shared/SettingsActionHandler.kt` | scenario-01, scenario-07, US-14 |
+| UC-84 | Scheduler-based progressive hint removal | User practices a card in any training context | 1. Card shown for 1st encounter: scheduler fraction = 1.0, all parenthetical hints visible. 2. Card shown for 2nd encounter: scheduler fraction = 0.5, 50% of parenthetical hints visible (stripHalfOfParentheticals algorithm). 3. Card shown for 3rd+ encounter: scheduler fraction = 0.0, no parenthetical hints visible. 4. Encounter count persisted per card across sessions. | AC1: 1st encounter of a card shows all parenthetical hints (scheduler fraction 1.0). AC2: 2nd encounter shows exactly 50% of parenthetical groups (rounded down if odd count). AC3: 3rd+ encounter shows zero parenthetical hints (scheduler fraction 0.0). AC4: Encounter count persists across app restarts (stored per card ID). AC5: 50% stripping uses random session offset so different hints are shown in different sessions. | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | `ui/TrainingViewModel.kt`, algorithm layer (03-algorithms#3.7) | 21-product-roadmap#2.1 |
+| UC-85 | User difficulty setting controls hint level | User selects difficulty level in Settings bottom sheet | 1. User taps one of 3 FilterChips: Easy/Medium/Hard. 2. HintLevel saved to AppConfigStore (config.yaml). 3. EASY: all parenthetical hints + Word Bank available. 4. MEDIUM: 50% of parenthetical hints + Word Bank removed. 5. HARD: no parenthetical hints + Word Bank removed. 6. Keyboard always available at all levels. 7. Effective hints = min(scheduler fraction, user fraction). | AC1: EASY shows all parenthetical hints and enables Word Bank button. AC2: MEDIUM shows 50% of parenthetical hints (stripHalfOfParentheticals) and hides Word Bank. AC3: HARD strips all parenthetical hints and hides Word Bank. AC4: Keyboard input is available at EASY, MEDIUM, and HARD levels. AC5: HintLevel persists across app restarts via AppConfigStore. AC6: Effective hint fraction is min(scheduler, user) — more restrictive layer wins. AC7: Tense labels, verb info chips, and POS badges remain visible at all levels. | SettingsBottomSheet (ui/components/SettingsBottomSheet.kt) | `data/AppConfigStore.kt`, algorithm layer (03-algorithms#3.7) | 21-product-roadmap#2.2 |
+| UC-86 | Boss battle forces HARD hint level | User is in a boss battle session | 1. Boss battle session starts. 2. calculateEffectiveHints called with isBossBattle = true. 3. Returns NO_HINTS unconditionally (fraction = 0.0). 4. No parenthetical hints shown. 5. No Word Bank available. 6. Voice + Keyboard only. | AC1: Boss battle always returns NO_HINTS regardless of user HintLevel setting. AC2: Boss battle always returns NO_HINTS regardless of card encounter count. AC3: No parenthetical hints are visible during boss battle. AC4: Word Bank is not available during boss battle. AC5: Keyboard input IS available during boss battle (keyboard always available). AC6: Boss battle override takes precedence over both scheduler and user layers. | TrainingScreen (boss mode) | `ui/TrainingViewModel.kt`, algorithm layer (03-algorithms#3.7) | 21-product-roadmap#2.5 |
 
 ---
 

@@ -843,7 +843,70 @@ Fire streak is per-language (`streak_{languageId}.yaml`), not per-pack. Completi
 
 ---
 
-## 3.7 Cross-Module Interactions
+## 3.7 Two-Layer Hint Calculation
+
+This algorithm determines how many parenthetical hints to show on a given card by combining two independent layers: the scheduler (based on encounter count) and the user difficulty setting (HintLevel).
+
+### Pseudocode
+
+```
+calculateEffectiveHints(encounterCount, userHintLevel, isBossBattle):
+    // Boss battle override — forces no hints regardless of layers
+    if isBossBattle:
+        return NO_HINTS (fraction = 0.0)
+
+    // Layer 1: Scheduler — based on card encounter count
+    schedulerFraction = when(encounterCount):
+        1 -> 1.0    // 1st encounter: all hints
+        2 -> 0.5    // 2nd encounter: half hints
+        else -> 0.0 // 3rd+: no hints
+
+    // Layer 2: User difficulty setting
+    userFraction = when(userHintLevel):
+        EASY -> 1.0   // all hints + Word Bank
+        MEDIUM -> 0.5 // 50% hints, no Word Bank
+        HARD -> 0.0   // no hints, no Word Bank
+
+    // Combine: always take the MORE restrictive result
+    effectiveFraction = min(schedulerFraction, userFraction)
+
+    return when(effectiveFraction):
+        1.0 -> FULL_HINTS    // all parenthetical hints visible
+        0.5 -> REDUCED_HINTS // 50% of hints visible
+        else -> NO_HINTS     // no hints visible
+```
+
+### 50% hint stripping algorithm
+
+```
+stripHalfOfParentheticals(text, sessionOffset):
+    Find all parenthetical groups in text via regex \s*\([^)]+\)
+    Assign sequential index to each group (0-based)
+    sessionOffset = Random.nextInt(0, 2) — generated once per session start
+    For each group:
+        if (index + sessionOffset) % 2 == 0 → keep the hint
+        else → strip the hint (including leading whitespace)
+```
+
+The random session offset ensures different subsets of hints are shown across sessions, preventing memorization of which hints appear.
+
+### Key properties
+
+1. **Encounter count is persisted** per card across sessions (not reset on app restart).
+2. **Word Bank availability** is determined solely by the user HintLevel: available at EASY, removed at MEDIUM and HARD.
+3. **Keyboard is always available** regardless of difficulty level or encounter count.
+4. **Boss battle overrides both layers** — always returns NO_HINTS (fraction 0.0).
+5. **Tense labels, verb info chips, POS badges** are reference data and never affected by this calculation.
+
+### Dependencies
+
+`AppConfigStore` (reads user HintLevel), session state (reads encounter count per card), `Random` (session offset generation).
+
+**Implementation task:** [TASK-058: Two-Layer Hint System](tasks/TASK-058-two-layer-hint-system.md)
+
+---
+
+## 3.8 Cross-Module Interactions
 
 This section describes how the algorithm modules interact with each other and with the rest of the application.
 

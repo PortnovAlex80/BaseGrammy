@@ -14,7 +14,7 @@ GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` en
 - `app/src/main/java/com/alexpo/grammermate/ui/DailyPracticeScreen.kt` -- DailyPracticeScreen
 - `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillScreen.kt` -- VerbDrillScreen (Selection, Session, Completion)
 - `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillScreen.kt` -- VocabDrillScreen (Selection, CardScreen, Completion)
-- `app/src/main/java/com/alexpo/grammermate/ui/TrainingCardSession.kt` -- Reusable card session component used by VerbDrill and DailyPractice
+- `app/src/main/java/com/alexpo/grammermate/ui/TrainingCardSession.kt` -- Reusable card session component used by all training sub-modes
 
 ---
 
@@ -32,8 +32,8 @@ GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` en
                                   |
                                   +-- DailyPracticeEntryTile --> [DAILY_PRACTICE] --(exit)--> [HOME]
                                   |
-                                  +-- VerbDrillEntryTile --> [VERB_DRILL] --(exit/back)--> [HOME]
-                                  |       (Selection --> Session --> Completion)
+                                  +-- VerbDrillEntryTile --> [VERB_DRILL] --(start session)--> [TRAINING] (verb drill sub-mode)
+                                  |       (Selection screen only; card session via TrainingScreen)
                                   |
                                   +-- VocabDrillEntryTile --> [VOCAB_DRILL] --(exit/back)--> [HOME]
                                   |       (Selection --> CardScreen --> Completion)
@@ -64,7 +64,7 @@ Global dialogs (overlay on any screen):
 | 3 | LessonRoadmapScreen | LESSON | GrammarMateApp.kt:1178 | Sub-lesson grid with boss/drill tiles | HOME (tap lesson), TRAINING (session end) | HOME (back), TRAINING (start sub-lesson/boss/drill) |
 | 4 | TrainingScreen | TRAINING | GrammarMateApp.kt:2554 | Card-by-card translation practice | LESSON (start sub-lesson/boss/drill) | LESSON (exit/session end) |
 | 5 | DailyPracticeScreen | DAILY_PRACTICE | DailyPracticeScreen.kt | 3-block daily session (translate, vocab, verbs) | HOME (tap Daily Practice) | HOME (exit/complete) |
-| 6 | VerbDrillScreen | VERB_DRILL | VerbDrillScreen.kt | Verb conjugation drill (selection + session + completion) | HOME (tap Verb Drill) | HOME (back/exit) |
+| 6 | VerbDrillScreen | VERB_DRILL | VerbDrillScreen.kt | Verb conjugation drill (selection screen only; card session runs through TrainingScreen) | HOME (tap Verb Drill) | HOME (back/exit) |
 | 7 | VocabDrillScreen | VOCAB_DRILL | VocabDrillScreen.kt | Flashcard vocab drill (selection + cards + completion) | HOME (tap Flashcards) | HOME (back/exit) |
 | 8 | LadderScreen | LADDER | GrammarMateApp.kt:2388 | Interval ladder overview | SettingsSheet (Show Ladder) | caller (back) |
 | 9 | StoryQuizScreen | STORY | GrammarMateApp.kt:1599 | Reading comprehension quiz | LESSON (story phase) | LESSON (close/complete) |
@@ -187,8 +187,8 @@ Global dialogs (overlay on any screen):
 - **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 2554)
 - **Parent**: LessonRoadmapScreen (start sub-lesson, boss, or drill)
 - **Key UI elements**:
-  - **Scaffold TopBar**: "GrammarMate" title + Settings gear IconButton
-  - **Session header**: "Review Session" (boss), "Refresh Session" (elite), or drill-specific green header
+  - **Scaffold TopBar**: "Тренажер предложений" title (localized ru/en/it) + Back arrow [<-]. No settings gear in training headers — settings only from HomeScreen.
+  - **Session header**: "Review Session" (boss), "Refresh Session" (elite), or mode-specific subtitle
   - **Tense label**: Optional (13sp, SemiBold) when card has tense
   - **Prompt text**: Russian prompt with parenthetical hints stripped (18sp * ruTextScale)
   - **DrillProgressRow**: Progress bar (70% width, green fill, "X/Y" overlay) + Speedometer (30% width, Canvas arc, color by WPM: red <=20, yellow <=40, green >40)
@@ -214,7 +214,7 @@ Global dialogs (overlay on any screen):
   - Voice mode auto-triggers on new card (200ms delay), auto-submits on result
   - Check disabled when input blank, no cards, or session paused
   - Boss mode uses `bossProgress`/`bossTotal`; Drill mode uses standard `navigateNext()`/`navigatePrev()` through `sessionCards` (all drill cards loaded at once). Progress tracked via `drillProgressStore`
-  - Drill mode: green background (Color(0xFFE8F5E9))
+  - Drill mode: standard theme (no custom green background)
   - TTS requires model download (~346 MB)
   - Report sheet: flag/unflag persisted immediately; export to `Downloads/BaseGrammy/bad_sentences_all.txt`
 - **Cross-reference**: Russian spec section 4 matches closely. Note: Russian spec says TrainingScreen "does NOT use TrainingCardSession" which matches code (it has its own inline implementation). The report sheet in Training is a `ModalBottomSheet`, not a Dialog, matching both specs. No discrepancies.
@@ -230,7 +230,7 @@ Global dialogs (overlay on any screen):
   - **DailyPracticeHeader**: Back button + "Daily Practice" title + block type badge (Translation/Vocabulary/Verbs in colored Card)
   - **BlockProgressBar**: LinearProgressIndicator + "X/Y" label
   - **BlockSparkleOverlay**: Semi-transparent overlay with sparkle + "Next: [BlockType]" or "Daily practice complete!". Auto-dismisses after ~800ms
-  - **TRANSLATE/VERBS block**: Wraps `TrainingCardSession` via `DailyPracticeSessionProvider`. Shows Russian prompt card with optional verb/tense hint SuggestionChips, input controls (text field, word bank, voice), navigation, result display
+  - **TRANSLATE/VERBS block**: Blocks 1 and 3 delegate to TrainingScreen as sub-modes. Uses `TrainingCardSession` via `DailyPracticeSessionProvider`. Shows Russian prompt card with optional verb/tense hint SuggestionChips, input controls (text field, word bank, voice), navigation, result display. Block 3 (Verbs) uses the same chips and logic as VerbDrill mode.
   - **VOCAB block (VocabFlashcardBlock)**: Word display (28sp, bold) + TTS button + translation + Mic button (64dp) + voice recognition feedback + 4 rating buttons (Again=red, Hard=orange, Good=primary, Easy=green)
   - **CompletionScreen**: "Session Complete!" heading + description + "Back to Home" button
   - **Exit dialog**: "Exit practice?" with "Stay"/"Exit"
@@ -260,7 +260,7 @@ Global dialogs (overlay on any screen):
 - **Parent**: HomeScreen (tap Verb Drill tile)
 - **Key UI elements**:
   - **SelectionScreen**: Back button + "Verb Drill" title + Tense dropdown + Group dropdown + "Sort by frequency" Checkbox + Progress stats ("Progress: X/Y", "Today: N") + LinearProgressIndicator + "All done today!" text or Start/Continue button
-  - **Active Session (VerbDrillSessionWithCardSession)**: Custom header (back + "Verb Drill") + progress bar/speedometer + Card with "RU" label + prompt + TTS button + verb SuggestionChip (infinitive + #rank) + tense SuggestionChip (abbreviated) + input controls (text field, word bank, voice, show answer, report) + result display + navigation
+  - **Card session**: Once started, the card session portion runs through TrainingScreen as a VERB_DRILL sub-mode (not a separate screen). VerbDrillScreen only contains the SelectionScreen UI.
   - **VerbReferenceBottomSheet**: Verb infinitive + TTS button + group + tense + conjugation table (triggered by verb chip tap)
   - **TenseInfoBottomSheet**: Tense name + formula Card + usage explanation (Russian) + example cards (Italian + Russian + notes) (triggered by tense chip tap)
   - **Report ModalBottomSheet**: Same structure as Training report sheet (flag/unflag, hide, export, copy)
@@ -268,15 +268,12 @@ Global dialogs (overlay on any screen):
 - **State dependencies**: `VerbDrillUiState` (isLoading, session, selectedTense, availableTenses, selectedGroup, availableGroups, sortByFrequency, everShownCount, totalCards, todayShownCount, allDoneToday, correctCount, incorrectCount)
 - **User interactions**:
   - Selection: filter by tense/group, toggle frequency sort, start session
-  - Session: same input modes as Training (keyboard/voice/word bank), tap verb chip -> reference sheet, tap tense chip -> tense info, report
-  - Completion: "Eshche" for next batch, "Vykhod" to exit
+  - Starting a session navigates to TrainingScreen (VERB_DRILL sub-mode) for the card session
 - **Business rules**:
-  - 3 attempts per card in session. After 3 wrong, hint answer shown.
-  - Show answer reveals hint immediately (no attempts consumed)
   - Session is batch-based (10 cards per batch)
-  - "Eshche" hidden when `allDoneToday`
   - Tense names abbreviated in chips (Presente -> Pres., etc.)
   - Uses `VerbDrillViewModel` (separate ViewModel scoped to pack via `reloadForPack()`)
+  - Daily Practice Block 3 (Verbs) uses the same chips, logic, and session behavior as VerbDrill mode
 - **Cross-reference**: Russian spec section 6 matches. Russian spec describes TrainingCardSession slots reused by VerbDrill which matches code. VerbReferenceBottomSheet and TenseInfoBottomSheet are described accurately. No discrepancies.
 
 ---
@@ -621,7 +618,7 @@ The Russian specification file ("Ekstrannye formy. Spetsifikatsiya") covers sect
 | 2. HomeScreen | Exact match | None |
 | 3. LessonRoadmapScreen | Exact match | None |
 | 4. TrainingScreen | Exact match | Note: Russian spec says "TrainingScreen has its own implementation and does NOT use TrainingCardSession" which matches code |
-| 4a. TrainingCardSession | Exact match | Component is defined in `TrainingCardSession.kt`, used by VerbDrill and DailyPractice |
+| 4a. TrainingCardSession | Exact match | Component is defined in `TrainingCardSession.kt`. VerbDrill and DailyPractice card sessions run through TrainingScreen as sub-modes |
 | 5. DailyPracticeScreen | Exact match | None |
 | 6. VerbDrillScreen | Exact match | None |
 | 7. VocabDrillScreen | Exact match | None |

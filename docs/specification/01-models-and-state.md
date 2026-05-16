@@ -197,7 +197,7 @@ Sources:
 
 **Note on `bossLessonRewards` / `bossMegaRewards`:** These store `String` representations of `BossReward` enum values. The `TrainingUiState` versions use typed `Map<String, BossReward>`. The `TrainingProgress` version is the serialized form.
 
-**Definition — "Hints":** In this app, "hints" refer specifically to parenthetical target-language insertions in the Russian prompt text (e.g., `(dire)` in `я говорю (dire) правду`). These are NOT the same as UI features like Word Bank, tense labels, or the "Show Answer" eye button. The `hintCount` field tracks usage of these parenthetical hints. The `HintLevel` enum controls whether `promptRu` is displayed with parenthetical content included (EASY) or stripped (MEDIUM/HARD).
+**Definition — "Hints":** In this app, "hints" refer specifically to parenthetical target-language insertions in the Russian prompt text (e.g., `(dire)` in `я говорю (dire) правду`). These are NOT the same as UI features like Word Bank, tense labels, POS badges, or the "Show Answer" eye button. The `hintCount` field tracks usage of these parenthetical hints. `HintLevel` enum controls parenthetical hint visibility via two-layer system: user setting (EASY=all, MEDIUM=50%, HARD=none) combined with scheduler encounter count (1st=all, 2nd=50%, 3rd+=none). More restrictive wins (`min(scheduler, user)`). Also gates Word Bank (removed at MEDIUM+). Keyboard always available at all levels.
 
 ---
 

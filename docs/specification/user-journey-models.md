@@ -25,18 +25,27 @@ The app separates card browsing from active practice. PAUSED = browsing mode, AC
 
 ### DP-04: Universal Card Engine
 
-All card-based training modes share the same TrainingScreen UI engine. The only differences between modes are:
+All card-based training modes are sub-modes of TrainingScreen. The only differences between modes are:
 1. **Card source** — which cards populate `sessionCards` (schedule, boss pool, drill cards, etc.)
 2. **Scoring** — whether mastery is counted, whether boss rewards apply
-3. **Theme** — normal vs drill green background
-4. **Exit** — destination screen after completion
+3. **Exit** — destination screen after completion
 
-This applies to 5 sub-modes within TrainingScreen: NORMAL, BOSS, BOSS_MEGA, ELITE, DRILL.
-It also applies to 2 separate screens that use TrainingCardSession: VerbDrillScreen, DailyPracticeScreen.
+All 7 modes (NORMAL, BOSS, BOSS_MEGA, ELITE, DRILL, VERB_DRILL, DAILY_PRACTICE) are Tier 1 sub-modes of TrainingScreen. Different modes = different card sources fed into SessionRunner. There are no Tier 2 separate screens — VerbDrillScreen's card session portion and DailyPracticeScreen's card blocks (1 and 3) run through TrainingScreen.
+
+Daily Block 3 (Verbs) uses the same chips, same logic, and same session behavior as VerbDrill mode.
 
 Excluded: VocabDrillScreen (Anki flashcard mechanic — fundamentally different interaction pattern).
 
 Navigation (Next/Prev/Pause/Play/Exit) MUST be identical across all modes. No mode-specific navigation functions.
+
+### DP-05: Training Header and Navigation
+
+**Rule:** All training modes share a unified header with:
+1. **Back arrow [<-]** — present in all training mode headers for consistent navigation back
+2. **Title "Тренажер предложений"** — localized (ru/en/it) via string resources, replaces "GrammarMate" in training headers
+3. **No settings gear** — settings are only accessible from HomeScreen. The gear icon does not appear in any training mode header.
+
+**Why:** Removes mode-specific header differences. Settings during training disrupts the session flow. Back arrow provides a consistent escape hatch.
 
 ---
 
@@ -69,7 +78,7 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 | Journey 4: Sub-lesson | SessionState enum | Base implementation. All 3 input modes (VOICE/KEYBOARD/WORD_BANK). Mastery is recorded |
 | Journey 5: Boss | SessionState enum | No time limit (timing only). BRONZE/SILVER/GOLD rewards. Unlimited attempts. BUG: records mastery |
 | Journey 6 Block 1: Daily Translate | DailyPracticeSessionProvider | 10 cards. Auto-advance 400ms. VOICE/KEYBOARD/WORD_BANK modes rotate |
-| Journey 6 Block 3: Daily Verbs | DailyPracticeSessionProvider | 10 cards. No VOICE (KEYBOARD/WORD_BANK only). Otherwise same as Block 1 |
+| Journey 6 Block 3: Daily Verbs | DailyPracticeSessionProvider | 10 cards. No VOICE (KEYBOARD/WORD_BANK only). Same chips and logic as VerbDrill mode |
 | Journey 7: Verb Drill | CardSessionStateMachine | No VOICE. Shows verb infinitive, rank, tense on card. Auto-advance 500ms (race BUG-NAV-012) |
 
 ### Pattern B: Flashcard Rating
@@ -655,7 +664,7 @@ User journeys MUST be verified after any code change that touches:
 3. **Check discrepancies** — verify all BUG-NAV-xxx listed in the journey are either:
    - FIXED (code matches expected behavior)
    - OPEN (discrepancy still exists, check if intentional)
-4. **Check design principles** — DP-01, DP-02, DP-03, DP-04 must hold across all affected modes
+4. **Check design principles** — DP-01, DP-02, DP-03, DP-04, DP-05 must hold across all affected modes
 5. **Report** — PASS/FAIL per journey step, with evidence
 
 ### Quick reference — which journeys to check per file:

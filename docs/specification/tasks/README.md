@@ -38,3 +38,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-057](DONE-TASK-057-inline-streak-indicator.md) | Inline Streak Indicator in HomeScreen Header | DONE | 23, 19, 22 | 2026-05-17 |
 | [TASK-058](TASK-058-unify-auto-advance-timing.md) | Unify Auto-Advance Timing After Correct Voice Answer | OPEN | 10, 12-training-card-session | 2026-05-17 |
 | [TASK-059](TASK-059-unify-voice-auto-launch.md) | Unify Voice Auto-Launch Mechanism | OPEN | 12, 10 | 2026-05-17 |
+| [TASK-058](TASK-058-two-layer-hint-system.md) | Two-Layer Hint System — Difficulty + Scheduler | OPEN | 03, 21, 01, 12, 08, 22, 23 | 2026-05-17 |

@@ -54,22 +54,23 @@
 
 ## 2. TrainingScreen (ui/screens/TrainingScreen.kt)
 
-**Migrated to TrainingCardSession (TASK-054).** TrainingScreen now delegates to `TrainingCardSession` via `TrainingCardSessionProvider`. Elements TS-01 through TS-37 are now provided by:
-- TS-01, TS-02: Kept in TrainingScreen Scaffold topBar
+**Unified Training Architecture (TASK-055).** All 7 training modes (normal, boss, daily, drill, vocab, verb-drill-in-daily, mix challenge) now use ONE TrainingScreen with shared SessionRunner logic. Behavior is IDENTICAL across modes — not just shared UI components, but shared behavior logic via `UnifiedInputControlsBar` and `UnifiedNavigationRow`. TrainingScreen delegates rendering to `TrainingCardSession` via `TrainingCardSessionProvider`. Elements TS-01 through TS-37 are provided by:
+- TS-01: Kept in TrainingScreen Scaffold topBar (back arrow replaces settings gear)
+- TS-02: REMOVED — settings gear no longer present on training screens
 - TS-03 through TS-07: Custom `header` slot (TrainingHeaderSlot)
 - TS-08, TS-09: Custom `cardContent` slot (TrainingCardContentSlot)
 - TS-10 through TS-25, TS-33, TS-34, TS-35: Custom `inputControls` slot (TrainingInputControlsSlot) delegating to UnifiedInputControlsBar
 - TS-26 through TS-28: Custom `resultContent` slot (TrainingResultContentSlot)
-- TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements)
+- TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements). Navigation behavior is IDENTICAL across all 7 modes — same `SessionRunner` logic drives prev/next/pause/exit for every mode.
 - TS-36, TS-37: Kept in TrainingScreen Scaffold containerColor and header slot
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
-| Scaffold TopBar title | TS-01 | text | Always | "GrammarMate" in titleLarge, Bold. | ? |
-| Settings gear (top bar) | TS-02 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()` + `onShowSettings()`. | ? |
-| Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`, green-tinted text in drill mode. | ? |
-| Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). In drill mode: green (0xFF388E3C). | ? |
-| Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), `(18f * ruTextScale).sp`, Medium weight. Green tint in drill mode. | UC-56 |
+| Scaffold TopBar title | TS-01 | text | Always | "Тренажер предложений" (l18n key) in titleLarge, Bold. All training modes share this title. | ? |
+| ~~Settings gear (top bar)~~ | TS-02 | button | REMOVED | Settings gear removed from all training screens. Back arrow [←] is now the sole top-bar navigation element, navigating back / triggering exit confirmation. | ? |
+| Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`. No color tinting — green drill theme removed. | ? |
+| Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). No drill-mode green tinting. | ? |
+| Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), `(18f * ruTextScale).sp`, Medium weight. No drill-mode green tinting. | UC-56 |
 | DrillProgressRow (progress bar) | TS-06 | progress-bar | Always | Rounded green bar (70% width, #4CAF50 on #C8E6C9 track). "N / Total" text overlay. Text color flips dark-green-to-white at 12% fill. **Dark Mode:** Track must use dark colors: filled = 0xFF2E4A2F, unfilled = 0xFF3A3A3A. [UC-68 AC5] | UC-68 |
 | Speedometer (progress arc) | TS-07 | progress-bar | Always | Canvas arc (30% width, 44dp). Color: red (<=20 wpm), yellow (<=40 wpm), green (>40 wpm). Center shows numeric wpm. | ? |
 | CardPrompt card | TS-08 | card | `currentCard != null` | Material Card with "RU" label + prompt text (`(20f * ruTextScale).sp`, SemiBold) + TtsSpeakerButton. | UC-56 |
@@ -93,14 +94,14 @@
 | Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
 | Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | REMOVED from HintAnswerCard. TTS replay is now handled solely by the result row TcsSpeakerButton (TCS-28). | ? |
 | Answer text | TS-28 | text | `answerText` not blank | "Answer: {answerText}" text. | ? |
-| Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. In drill mode: standard navigatePrev() through sessionCards. | UC-69, UC-70 |
-| Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. Behavior identical in all sub-modes including drill. | UC-69, UC-70 |
-| Navigation Exit button | TS-31 | button | `hasCards` | NavIconButton with StopCircle icon. Calls `onRequestExit()` (triggers exit dialog). In drill mode: exitDrillMode() saves drillCardIndex to drillProgressStore. | UC-69 |
-| Navigation Next button | TS-32 | button | `hasCards` | NavIconButton with ArrowForward. Calls `onNext(false)`. In drill mode: standard navigateNext() through sessionCards. On last card: triggers finishDrill(). | UC-69, UC-70 |
+| Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
+| Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
+| Navigation Exit button | TS-31 | button | `hasCards` | NavIconButton with StopCircle icon. Calls `onRequestExit()` (triggers exit dialog). **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69 |
+| Navigation Next button | TS-32 | button | `hasCards` | NavIconButton with ArrowForward. Calls `onNext(false)`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
-| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). **Dark Mode:** Must use theme-aware color. Light = 0xFFE8F5E9, Dark = 0xFF1B3A1D. Currently hardcoded `DrillBackgroundGreen` — needs conditional in Theme.kt or `isSystemInDarkTheme()` check. [UC-68 AC1] | UC-68, UC-69 |
+| ~~Drill mode background~~ | TS-36 | (visual) | REMOVED | Green drill theme removed. All training modes use standard scaffold containerColor — no mode-specific background tinting. | UC-68, UC-69 |
 | Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #1565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
 
 ---
@@ -109,10 +110,12 @@
 
 These elements are the default slot implementations. Screens that use TrainingCardSession with custom slots override specific elements.
 
+**Note (TASK-055):** `UnifiedInputControlsBar` and `UnifiedNavigationRow` provide shared behavior logic (not just shared UI) across all 7 training modes. The `SessionRunner` drives identical input, navigation, and validation behavior regardless of mode.
+
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Tense label (header) | TCS-01 | text | `currentCard` is VerbDrillCard with non-blank tense | 13sp SemiBold, primary color. Always visible regardless of HintLevel. | ? |
-| Clean prompt text (header) | TCS-02 | text | `currentCard != null` | Stripped prompt (parentheticals removed), `(18f * textScale).sp`, Medium weight. | UC-56 |
+| Clean prompt text (header) | TCS-02 | text | `currentCard != null` | Clean prompt text for MEDIUM/HARD or scheduler-filtered display. Parenthetical hints stripped based on two-layer calculation: min(scheduler encounter count, user HintLevel). See 03-algorithms#3.7. `(18f * textScale).sp`, Medium weight. | UC-56 |
 | Progress bar | TCS-03 | progress-bar | Always | Rounded green bar (70% width). "N / Total" overlay. Text color flips at 12% fill. | ? |
 | Speedometer arc | TCS-04 | progress-bar | Always | Canvas arc (30% width, 44dp). Red/yellow/green by wpm. Center shows numeric value. | ? |
 | Card content | TCS-05 | card | `currentCard != null` | Material Card: "RU" label + prompt text (`(20f * textScale).sp` SemiBold) + TtsSpeakerButton. | UC-56 |
@@ -153,7 +156,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Block type badge chip | DP-04 | card | Always | primaryContainer Card showing "Translation" / "Vocabulary" / "Verbs". | ? |
 | Block progress bar | DP-05 | progress-bar | `totalTasks > 0` | LinearProgressIndicator (8dp height, rounded) + "N/M" label. Shows overall session position. | ? |
 | Block sparkle overlay | DP-06 | card | `showBlockTransition == true` or session complete | Semi-transparent black overlay + sparkle emoji + "Next: {BlockType}" or "Daily practice complete!". Auto-dismisses after 800ms. | ? |
-| TRANSLATE/VERBS card session | DP-07 | card | `currentTask.blockType == TRANSLATE \|\| VERBS` | Wraps TrainingCardSession via DailyPracticeSessionProvider. Includes card content, input controls, navigation. | ? |
+| TRANSLATE/VERBS card session | DP-07 | card | `currentTask.blockType == TRANSLATE \|\| VERBS` | Wraps TrainingCardSession via DailyPracticeSessionProvider. Includes card content, input controls, navigation. **Daily Block 3 = VerbDrill:** uses the same verb/tense/group chips as VerbDrillScreen (VD-15, VD-16). Card session behavior is IDENTICAL across all blocks — unified via `SessionRunner`. | ? |
 | Card prompt (translate/verbs) | DP-08 | card | Card session active | Card with "RU" label + prompt (`(20f * ruTextScale).sp` SemiBold) + TTS button. | UC-56 |
 | Verb/tense/group chips (verbs) | DP-09 | chip | `verbText` not blank | SuggestionChips for verb (with rank), tense (abbreviated), group. All chips are ALWAYS visible regardless of HintLevel -- they are reference data, not hints. Verb chip tap opens VerbReferenceBottomSheet with conjugation table. Tense chip tap opens TenseInfoBottomSheet with formula/usage/examples. Group chip is non-interactive (display only). | UC-58 |
 | Card TTS button (translate/verbs) | DP-10 | button | Card session active | Inline TTS button (not TtsSpeakerButton): 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). | ? |
@@ -199,6 +202,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 
 ### 5b. Active Session
 
+**Note (TASK-055):** VerbDrill card session now goes through TrainingScreen with shared `SessionRunner` logic. The card-level behavior (input, navigation, validation) is identical to all other training modes. Elements VD-11 through VD-35 describe VerbDrill-specific visual elements and VerbDrillViewModel state; the card session itself reuses the unified TrainingCardSession architecture.
+
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `viewModel.exitSession()` + `onBack()` (navigates to HOME, not selection screen). | UC-64 |
@@ -226,7 +231,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | VerbReferenceBottomSheet | VD-33 | bottom-sheet | `showVerbSheet == true` | Shows verb infinitive + TTS button + group + tense + conjugation table. | ? |
 | TenseInfoBottomSheet | VD-34 | bottom-sheet | `showTenseSheet == true` | Shows tense name + formula Card + usage explanation + example cards. | ? |
 | Export result dialog | VD-35 | dialog | `exportMessage != null` | AlertDialog with export path or "No bad sentences to export". | ? |
-| Navigation row | VD-36 | button | Session active | DefaultNavigationControls from TrainingCardSession: Prev + Pause/Play + Exit + Next. **Pause/Play behavior:** If paused with hint shown (`hintAnswer != null`) → Play advances to next card. If paused without hint (manual pause, `hintAnswer == null`) → Play resumes current card without advancing (input preserved). See 10-verb-drill.md#10.4.3 and 12-training-card-session.md#12.7.1. **Exit behavior:** Exit button (StopCircle) triggers confirmation dialog, then calls `viewModel.exitSession()` + `onBack()` → navigates to HOME. | UC-63, UC-64 |
+| Navigation row | VD-36 | button | Session active | DefaultNavigationControls from TrainingCardSession: Prev + Pause/Play + Exit + Next. **Play = resume only** (no dual behavior). Play always resumes the current card (input preserved); it never auto-advances. Navigation behavior is IDENTICAL to all other training modes — unified via `SessionRunner`. **Exit behavior:** Exit button (StopCircle) triggers confirmation dialog, then calls `viewModel.exitSession()` + `onBack()` → navigates to HOME. | UC-63, UC-64 |
 
 ### 5c. Completion Screen
 
@@ -355,7 +360,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Test Mode description | SS-04 | text | Always | "Enables all lessons, accepts all answers, unlocks Elite mode" in bodySmall, 60% alpha. | ? |
 | "Show Ladder" button | SS-05 | button | Always | OutlinedButton with Insights icon. Closes sheet + navigates to LADDER. | ? |
 | "Difficulty" section header | SS-06 | text | Always | titleMedium SemiBold. | ? |
-| Hint level chips (Easy/Medium/Hard) | SS-07 | chip | Always | 3 FilterChips. EASY: "All hints visible", MEDIUM: "Partial hints", HARD: "No hints". Each weighted 1f. | ? |
+| Hint level chips (Easy/Medium/Hard) | SS-07 | chip | Always | Hint level chips (Easy/Medium/Hard) — 3 FilterChips with labels 'All hints', 'Partial hints', 'No hints'. EASY = all parenthetical hints + Word Bank. MEDIUM = 50% hints + no Word Bank. HARD = no hints + no Word Bank. Each weighted 1f. | ? |
 | Hint level description | SS-08 | text | Always | Dynamic description based on current hintLevel. bodySmall, 60% alpha. | ? |
 | Vocab Sprint limit field | SS-09 | input-field | Always | OutlinedTextField "Vocabulary Sprint limit". Digits only. "0 = all words". | ? |
 | Vocab limit description | SS-10 | text | Always | "Set how many words to show (0 = all words)" bodySmall, 60% alpha. | ? |
@@ -462,9 +467,9 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 **Behavior:** When enabled and card changes, fires onAutoStartVoice after delay. Callback MUST call speechLauncher.launch(intent) directly -- switching InputMode alone is insufficient and causes the voice-not-launching bug. On correct voice answer, auto-advance triggers after 400-500ms.
 
-| SharedInputModeBar | SH-03 | button | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | **DEFERRED** — per-screen inline implementations have intentional behavioral differences. TrainingScreen, VerbDrillScreen, DailyPracticeScreen, TrainingCardSession each have their own variant. Row of FilledTonalIconButtons: Mic, Keyboard, WordBank + Eye (show answer) + Report. Active mode highlighted. Mode label displayed below. | UC-51, UC-53 |
+| SharedInputModeBar | SH-03 | button | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | **Unified via `UnifiedInputControlsBar` (TASK-055).** Behavior logic is shared, not just UI components — all screens use the same input mode switching, hint, and report logic via `SessionRunner`. Row of FilledTonalIconButtons: Mic, Keyboard, WordBank + Eye (show answer) + Report. Active mode highlighted. Mode label displayed below. | UC-51, UC-53 |
 
-**Behavior:** Mode buttons switch input method via onModeChange callback. Eye button calls onShowHint() which sets hintAnswer on the provider and pauses the session. Report button opens SharedReportSheet. Eye button is disabled when hintShown == true.
+**Behavior:** Mode buttons switch input method via onModeChange callback. Eye button calls onShowHint() which sets hintAnswer on the provider and pauses the session. Report button opens SharedReportSheet. Eye button is disabled when hintShown == true. **Note:** The former "DEFERRED" status is superseded — `UnifiedInputControlsBar` now provides one shared implementation for all training modes.
 
 | HintAnswerCard | SH-04 | card | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | Pink Card with `errorContainer.copy(alpha = 0.3f)` background, red error-colored answer text, inline TTS replay button. Reference: VerbDrillScreen.kt:392-425. | UC-51 |
 

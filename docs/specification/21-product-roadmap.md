@@ -69,25 +69,81 @@ Send batch to AI model and ask for patterns:
 
 ---
 
-### 2. Three Difficulty Levels (Progressive Hint Hiding)
+### 2. Two-Layer Hint System (Difficulty + Scheduler)
 
 **Status:** Design complete, ready to implement
 
-**Definition:** "Hints" in this app refer exclusively to **parenthetical target-language insertions** embedded in the Russian prompt text. For example, in `я говорю (dire) правду (verità)`, the fragments `(dire)` and `(verità)` are hints. Nothing else is a "hint" — Word Bank, tense labels, verb info chips, and the "Show Answer" eye button are separate UI features, not hints.
+**Definition:** "Hints" in this app refer exclusively to **parenthetical target-language insertions** embedded in the Russian prompt text. For example, in `я говорю (dire) правду (verità)`, the fragments `(dire)` and `(verità)` are hints. Nothing else is a "hint" — Word Bank, tense labels, verb info chips, POS badges, and the "Show Answer" eye button are separate UI features, not hints.
 
-Same cards, same SRS, same mastery. Only the visibility of parenthetical hints changes.
+Same cards, same SRS, same mastery. Only the visibility of parenthetical hints and Word Bank availability change.
 
-| Level | Parenthetical hints | Input mode | Use case |
-|-------|---------------------|------------|----------|
-| EASY | Visible in card body — `promptRu` displayed with parenthetical content intact | Voice/Keyboard/Word Bank | Beginner, learning new patterns |
-| MEDIUM | Hidden — parenthetical content stripped from both header AND card body | Voice/Keyboard | Practicing recall |
-| HARD | Hidden (same as MEDIUM) — parenthetical content stripped | Voice only | Testing automatic production |
+The system combines two independent layers:
+
+#### 2.1 Layer 1 — Scheduler (encounter count)
+
+The scheduler determines hint availability based on how many times the user has practiced a specific card. Encounter count is persisted across sessions per card.
+
+| Encounter count | Scheduler fraction | Hints shown |
+|-----------------|-------------------|-------------|
+| 1st encounter | 1.0 (all) | All parenthetical hints visible |
+| 2nd encounter | 0.5 (half) | 50% of parenthetical hints visible |
+| 3rd+ encounter | 0.0 (none) | No parenthetical hints visible |
+
+#### 2.2 Layer 2 — User Difficulty Setting
+
+The user chooses a difficulty level from Settings. Stored as `HintLevel` enum in `AppConfigStore` (`config.yaml`).
+
+| Level | User fraction | Parenthetical hints | Word Bank | Keyboard |
+|-------|--------------|---------------------|-----------|----------|
+| EASY | 1.0 (all) | All visible | Available | Available |
+| MEDIUM | 0.5 (half) | 50% visible | Removed | Available |
+| HARD | 0.0 (none) | None visible | Removed | Available |
 
 **Key principle:** difficulty level does NOT change what's measured. Only changes support level. A correct answer on HARD counts the same as EASY for mastery/SRS.
 
-**Implementation:** `HintLevel` enum stored in AppConfigStore. The enum controls whether `promptRu` is displayed with or without parenthetical content. Thread through TrainingCardSession, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen.
+#### 2.3 Combination rule
 
-**Boss Battle = HARD mode:** Boss battle always runs without hints (voice only, no word bank, no verb info). This is the same as HARD difficulty — the lesson final exam is "show what you know without support." No separate boss mechanics needed, just force HintLevel.HARD for the boss session.
+The effective hint level is always the **more restrictive** of the two layers:
+
+```
+effectiveFraction = min(schedulerFraction, userFraction)
+```
+
+Result mapping:
+- `1.0` → `FULL_HINTS` (all parenthetical hints + Word Bank if EASY)
+- `0.5` → `REDUCED_HINTS` (50% of parenthetical hints, no Word Bank)
+- `0.0` → `NO_HINTS` (no parenthetical hints, no Word Bank)
+
+**Examples:**
+- User EASY + 1st encounter = min(1.0, 1.0) = 1.0 → FULL_HINTS
+- User MEDIUM + 1st encounter = min(0.5, 1.0) = 0.5 → REDUCED_HINTS
+- User EASY + 3rd encounter = min(0.0, 1.0) = 0.0 → NO_HINTS
+- User HARD + any encounter = min(0.0, any) = 0.0 → NO_HINTS
+
+#### 2.4 MEDIUM 50% algorithm
+
+When the effective fraction is 0.5, exactly half of parenthetical groups are shown:
+
+```
+stripHalfOfParentheticals(text, sessionOffset):
+    Find all parenthetical groups in text via regex
+    Assign sequential index to each group (0-based)
+    sessionOffset = Random.nextInt(0, 2) — generated once per session start
+    For each group:
+        if (index + sessionOffset) % 2 == 0 → keep the hint
+        else → strip the hint (and leading space)
+```
+
+The random offset ensures different hints are shown/hidden across sessions, preventing users from learning which hints appear rather than the actual content.
+
+#### 2.5 Boss Battle override
+
+Boss battle **forces HARD** regardless of both layers:
+- `effectiveFraction` is set to 0.0 unconditionally
+- No parenthetical hints, no Word Bank
+- Voice + Keyboard only (keyboard always available at all levels)
+
+This is the lesson final exam: "show what you know without support."
 
 **Boss Battle design (v2):**
 - 30 sentences from the lesson — no hints, voice only
@@ -95,20 +151,27 @@ Same cards, same SRS, same mastery. Only the visibility of parenthetical hints c
 - Purpose: test PATTERN TRANSFER, not phrase memorization. Can the student apply the grammar to unseen sentences?
 - If they pass reserve sentences → the pattern is truly automatized, not just memorized
 
-**Progressive hint removal for review cards:**
-- When spaced repetition brings back cards from earlier lessons (review), remove hints automatically
-- Logic: if the student is on lesson L5 and gets a review card from L1, that pattern should already be automatized — no word bank, no verb info
-- Implementation: compare card's lesson index with current lesson progress. Review cards from completed lessons → force HintLevel.HARD (or at least MEDIUM)
-- This creates natural progressive difficulty: new cards get full support, old cards demand clean production
+#### 2.6 Reference data (NOT hints — always visible)
 
-**Intra-lesson progressive hints (per-card repetition):**
-- First lesson: 100 unique sentences, but each sentence appears 3 times with different hint levels:
-  - 1st encounter: EASY (full hints)
-  - 2nd encounter: MEDIUM (partial hints)
-  - 3rd encounter: HARD (no hints)
-- Scheduler distributes encounters so that HARD versions cluster toward the end of the lesson
-- Result: 300 card interactions per lesson, naturally progressing from supported to unsupported production
-- Same principle applies to all lessons: repeat cards with decreasing hints within the lesson itself
+The following UI elements are **reference information**, not hints. They remain visible at all difficulty levels and encounter counts:
+
+- **Tense labels** (e.g., "Presente", "Passato Prossimo") — always shown
+- **Verb info chips** (infinitive, group) — always shown
+- **POS badges** (part-of-speech indicators) — always shown
+- **"Show Answer" eye button** — always available
+
+#### 2.7 Telemetry integration
+
+`CardPracticeEvent` includes `difficultyMode: String` field with values:
+- `"FULL_HINTS"` — effective fraction was 1.0
+- `"REDUCED_HINTS"` — effective fraction was 0.5
+- `"NO_HINTS"` — effective fraction was 0.0
+
+This allows correlating difficulty level with user self-ratings and answer accuracy.
+
+**Implementation:** `HintLevel` enum stored in `AppConfigStore`. Encounter count tracked per card in session state. Calculation function `calculateEffectiveHints()` in algorithm layer (see 03-algorithms#3.7). Thread through TrainingCardSession, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen.
+
+**Implementation task:** [TASK-058: Two-Layer Hint System](tasks/TASK-058-two-layer-hint-system.md)
 
 ---
 
@@ -164,21 +227,9 @@ Same cards, same SRS, same mastery. Only the visibility of parenthetical hints c
 
 ---
 
-### 5. Progressive Hint Removal (Per-Card)
+### 5. Progressive Hint Removal (Per-Card) — Superseded
 
-**Concept:** Instead of a global difficulty level, each card independently reduces hints as the user masters it.
-
-| Level | Hints shown |
-|-------|------------|
-| 0 (new) | Full: infinitive + tense + group + word bank + first word |
-| 1 | Partial: infinitive + tense + group |
-| 2 | Minimal: infinitive only |
-| 3 | Topic: just the grammar topic name |
-| 4 | Clean: only Russian prompt |
-
-**Progression:** card advances one level after 2-3 successful productions at current level.
-
-**Status:** Deferred in favor of global 3-level system. May add per-card tracking on top later.
+**Status:** Superseded by the two-layer hint system (see Section 2 above). The scheduler layer in the two-layer system provides per-card progressive hint removal via encounter count tracking, replacing this older concept. The user difficulty setting layer adds global control on top of it.
 
 ---
 
