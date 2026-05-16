@@ -24,6 +24,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,6 +42,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -121,6 +125,20 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
         LaunchedEffect(currentRoute) {
             vm.settings.onScreenChanged(currentScreen.name)
+        }
+
+        // Observe Activity lifecycle to pause/resume Pomodoro timer
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> vm.onAppBackgrounded()
+                    Lifecycle.Event.ON_START -> vm.onAppForegrounded()
+                    else -> {}
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
         }
 
         val onTtsSpeak: () -> Unit = {
@@ -860,11 +878,28 @@ private fun ExitConfirmDialog(
     onDismiss: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
+    val isPomodoroActive = state.pomodoro.isActive
+    val dialogTitle = when {
+        isPomodoroActive -> stringResource(R.string.dialog_exit_title_pomodoro)
+        currentRoute == Routes.DAILY_PRACTICE -> stringResource(R.string.dialog_exit_title_daily)
+        else -> stringResource(R.string.dialog_exit_title_training)
+    }
+    val dialogText = when {
+        isPomodoroActive -> stringResource(R.string.dialog_exit_text_pomodoro)
+        currentRoute == Routes.DAILY_PRACTICE -> stringResource(R.string.dialog_exit_text_daily)
+        else -> stringResource(R.string.dialog_exit_text_training)
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 onDismiss()
+                if (isPomodoroActive) {
+                    vm.confirmPomodoroExit()
+                    onNavigate(Routes.HOME)
+                    return@TextButton
+                }
                 if (currentRoute == Routes.DAILY_PRACTICE) {
                     vm.cancelDailySession()
                     onNavigate(Routes.HOME)
@@ -891,8 +926,8 @@ private fun ExitConfirmDialog(
                 Text(text = stringResource(R.string.dialog_cancel))
             }
         },
-        title = { Text(text = if (currentRoute == Routes.DAILY_PRACTICE) stringResource(R.string.dialog_exit_title_daily) else stringResource(R.string.dialog_exit_title_training)) },
-        text = { Text(text = if (currentRoute == Routes.DAILY_PRACTICE) stringResource(R.string.dialog_exit_text_daily) else stringResource(R.string.dialog_exit_text_training)) }
+        title = { Text(text = dialogTitle) },
+        text = { Text(text = dialogText) }
     )
 }
 

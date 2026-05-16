@@ -318,6 +318,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         pomodoroHelper.setShowExitConfirm(false)
     }
 
+    fun onAppBackgrounded() {
+        pomodoroHelper.onLifecycleStop()
+    }
+
+    fun onAppForegrounded() {
+        pomodoroHelper.onLifecycleStart()
+    }
+
     fun getPomodoroLastDuration(): Int {
         return pomodoroSettingsStore.load()
     }

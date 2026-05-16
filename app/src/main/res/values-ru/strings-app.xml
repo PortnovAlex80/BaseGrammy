@@ -27,8 +27,10 @@
 
     <string name="dialog_exit_title_training">Завершить сессию?</string>
     <string name="dialog_exit_title_daily">Выйти из практики?</string>
+    <string name="dialog_exit_title_pomodoro">Завершить сессию Помодоро?</string>
     <string name="dialog_exit_text_training">Текущая сессия будет завершена.</string>
     <string name="dialog_exit_text_daily">Ваш прогресс в этой сессии будет потерян.</string>
+    <string name="dialog_exit_text_pomodoro">Таймер остановится, прогресс сессии будет сохранён.</string>
     <string name="dialog_exit_confirm">Выход</string>
 
     <string name="dialog_daily_loading">Загрузка сессии…</string>

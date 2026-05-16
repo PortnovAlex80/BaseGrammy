@@ -27,8 +27,10 @@
 
     <string name="dialog_exit_title_training">End session?</string>
     <string name="dialog_exit_title_daily">Exit practice?</string>
+    <string name="dialog_exit_title_pomodoro">End Pomodoro session?</string>
     <string name="dialog_exit_text_training">Current session will be completed.</string>
     <string name="dialog_exit_text_daily">Your progress in this session will be lost.</string>
+    <string name="dialog_exit_text_pomodoro">Timer will stop and session progress will be saved.</string>
     <string name="dialog_exit_confirm">Exit</string>
 
     <string name="dialog_daily_loading">Loading session…</string>
