@@ -75,11 +75,20 @@ class PomodoroHelper(
             it.copy(
                 isComplete = true,
                 isActive = false,
-                remainingSeconds = 0,
                 stats = stats
             )
         }
         onPlayCompletionSound()
+    }
+
+    /**
+     * Called when the training session completes (cards finished before timer).
+     * Triggers Pomodoro completion to show the summary with remaining time.
+     */
+    fun onTrainingSessionCompleted() {
+        if (stateProvider().pomodoro.isActive && !stateProvider().pomodoro.isComplete) {
+            completePomodoro()
+        }
     }
 
     fun recordDifficultyRating(rating: CardDifficultyRating) {

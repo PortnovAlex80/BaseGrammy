@@ -302,6 +302,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         pomodoroHelper.cancelPomodoro()
     }
 
+    fun onTrainingSessionCompleted() {
+        pomodoroHelper.onTrainingSessionCompleted()
+    }
+
     fun rateCardDifficulty(rating: CardDifficultyRating) {
         pomodoroHelper.recordDifficultyRating(rating)
     }

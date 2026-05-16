@@ -678,10 +678,12 @@ private fun NavDialogs(
     // Token-based navigation: sub-lesson finished
     if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
+        vm.onTrainingSessionCompleted()
         onNavigate(Routes.LESSON)
     }
     if (currentRoute == Routes.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
+        vm.onTrainingSessionCompleted()
         onNavigate(Routes.HOME)
     }
 
