@@ -4,30 +4,44 @@ Maps code symbols (composable functions, handlers, LaunchedEffects) to specifica
 
 ## Pilot: TrainingScreen.kt
 
-**File:** `app/src/main/java/com/alexpo/grammermate/ui/screens/TrainingScreen.kt` (866 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/screens/TrainingScreen.kt`
+
+**Migrated to TrainingCardSession (TASK-054).** Inline UI replaced with `TrainingCardSession` + `TrainingCardSessionProvider`. Old inline composables (CardPrompt, AnswerBox, ResultBlock, etc.) removed. New slot composables below.
 
 | Symbol | Line | Type | Spec | UC | AC |
 |--------|------|------|------|----|----|
-| `TrainingScreen` | 96 | Composable | 08#2.1, 12#12.5 | UC-01 | AC1–AC5 |
-| `HeaderStats` | 264 | Composable | 08#2.3 | UC-05 | AC1 |
-| `ModeSelector` | 313 | Composable | 08#2.1 | UC-01 | AC3 |
-| `CardPrompt` | 388 | Composable | 12#12.4.5, 08#2.1 | UC-56 | AC3 |
-| `AnswerBox` | 415 | Composable | 08#2.2, 12#12.4.6 | UC-12, UC-13, UC-14, UC-15, UC-50 | AC1–AC4, AC1–AC4, AC1–AC5, AC1–AC4, AC1–AC4 |
-| `speechLauncher` (voice result handler) | 445 | Handler | 08#7.6, 12#12.7.1 | UC-12 | AC2–AC4 |
-| `LaunchedEffect(voiceAutoStart)` | 458 | LaunchedEffect | 08#7.6, 12#12.7.1 | UC-57 | AC2, AC4 |
-| `SharedReportSheet` | 478 | Composable | 12#12.8.2 | UC-53 | AC1–AC5 |
-| `OutlinedTextField` + auto-submit `isExactMatch` | 516 | Handler | 08#2.2 | UC-13 | AC1–AC4 |
-| `FlowRow` (word bank) | 573 | Composable | 08#2.2, 12#12.4.6 | UC-14 | AC1–AC5 |
-| `onRemoveLastWord` (Undo) | 610 | Handler | 08#2.2 | UC-14 | AC4 |
-| Input mode buttons (Mic/Keyboard/Book) | 622 | Composable | 08#2.4 | UC-15 | AC1–AC4 |
-| Show answer (eye) `IconButton` | 662 | Handler | 08#2.2, 12#12.7.2 | UC-50 | AC1–AC4 |
-| Report (triangle) `IconButton` | 674 | Handler | 12#12.8.2 | UC-53 | AC6–AC9 |
-| `ResultBlock` | 704 | Composable | 08#2.2, 12#12.4.7 | UC-02, UC-03 | AC5, AC2 |
-| `HintAnswerCard` in ResultBlock | 714 | Composable | 12#12.8.1 | UC-51 | AC1–AC7 |
-| `NavigationRow` | 724 | Composable | 08#2.3, 12#12.4.9 | UC-06 | AC1–AC4 |
-| `DrillProgressRow` | 759 | Composable | 08#2.3, 12#12.4.8 | UC-05 | AC1 |
-| `launchVoiceRecognition` | 850 | Helper fn | 08#7.6 | UC-12 | AC1 |
-| Prompt `fontSize = (18f * state.audio.ruTextScale).sp` | 179, 224 | Scaling | 14#13 | UC-56 | AC3 |
+| `TrainingScreen` | 89 | Composable | 08#2.1, 12#12.5.3 | UC-01 | AC1–AC5 |
+| `TrainingHeaderSlot` | 142 | Composable (slot) | 08#2.1, 08#2.3 | UC-05 | AC1 |
+| `TrainingCardContentSlot` | 228 | Composable (slot) | 12#12.4.5, 08#2.1 | UC-56 | AC3 |
+| `TrainingInputControlsSlot` | 256 | Composable (slot) | 08#2.2, 12#12.4.6 | UC-12, UC-13, UC-14, UC-15, UC-50 | AC1–AC4 |
+| `SharedReportSheet` | 277 | Composable | 12#12.8.2 | UC-53 | AC1–AC5 |
+| `UnifiedInputControlsBar` | 298 | Composable | 12#12.4.6 | UC-12, UC-13, UC-14, UC-15 | AC1–AC4 |
+| `AsrStatusIndicator` | 308 | Composable | 08#2.2 | — | — |
+| `TrainingResultContentSlot` | 317 | Composable (slot) | 08#2.2, 12#12.4.7 | UC-02, UC-03 | AC5, AC2 |
+| `HintAnswerCard` in TrainingResultContentSlot | 342 | Composable | 12#12.8.1 | UC-51 | AC1–AC7 |
+
+## TrainingCardSessionProvider (ui/TrainingCardSessionProvider.kt)
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingCardSessionProvider.kt`
+
+Adapter wrapping TrainingViewModel's SessionRunner to implement CardSessionContract. Created in GrammarMateApp's TrainingScreenContent.
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `TrainingCardSessionProvider` | 61 | Class | 12#12.5.3 | UC-01 | AC1–AC5 |
+| `currentCard` | 137 | Property | 12#12.4.1 | UC-01 | AC1 |
+| `progress` | 140 | Property | 12#12.4.8 | UC-05 | AC1 |
+| `isComplete` | 157 | Property | 12#12.3 | UC-05 | AC1 |
+| `lastResult` | 166 | Property | 12#12.4.7 | UC-02, UC-03 | AC5, AC2 |
+| `submitAnswer()` | 199 | Method | 08#7.1 | UC-02 | AC1–AC5 |
+| `nextCard()` | 207 | Method | 08#7.1 | UC-04 | AC1 |
+| `prevCard()` | 211 | Method | 08#7.1 | UC-04 | AC1 |
+| `togglePause()` | 247 | Method | 08#7.1 | UC-06 | AC2 |
+| `showAnswer()` | 203 | Method | 12#12.7.2 | UC-50 | AC1–AC4 |
+| `getWordBankWords()` | 227 | Method | 08#2.2 | UC-14 | AC1, AC4 |
+| `speakTts()` | 239 | Method | 12#12.4.5 | UC-61 | AC1–AC4 |
+| `flagCurrentCard()` | 243 | Method | 12#12.8.2 | UC-53 | AC6 |
+| `requestExit()` | 251 | Method | 12#12.4.9 | UC-06 | AC1 |
 
 ## Pilot: VerbDrillScreen.kt
 

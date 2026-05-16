@@ -2,6 +2,12 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [TASK-054: TrainingScreen TCS Migration] - 2026-05-16
+
+### Changed
+- `23-screen-elements.md`: Added migration note to TrainingScreen section (TS-* elements now provided by TrainingCardSession slots)
+- `trace-index.md`: Updated TrainingScreen pilot section to reflect new slot composables (TrainingHeaderSlot, TrainingCardContentSlot, TrainingInputControlsSlot, TrainingResultContentSlot). Added TrainingCardSessionProvider adapter section.
+
 ## [Spec Update] - 2026-05-16
 
 ### Added

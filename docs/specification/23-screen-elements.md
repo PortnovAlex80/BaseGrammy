@@ -52,6 +52,15 @@
 
 ## 2. TrainingScreen (ui/screens/TrainingScreen.kt)
 
+**Migrated to TrainingCardSession (TASK-054).** TrainingScreen now delegates to `TrainingCardSession` via `TrainingCardSessionProvider`. Elements TS-01 through TS-37 are now provided by:
+- TS-01, TS-02: Kept in TrainingScreen Scaffold topBar
+- TS-03 through TS-07: Custom `header` slot (TrainingHeaderSlot)
+- TS-08, TS-09: Custom `cardContent` slot (TrainingCardContentSlot)
+- TS-10 through TS-25, TS-33, TS-34, TS-35: Custom `inputControls` slot (TrainingInputControlsSlot) delegating to UnifiedInputControlsBar
+- TS-26 through TS-28: Custom `resultContent` slot (TrainingResultContentSlot)
+- TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements)
+- TS-36, TS-37: Kept in TrainingScreen Scaffold containerColor and header slot
+
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Scaffold TopBar title | TS-01 | text | Always | "GrammarMate" in titleLarge, Bold. | ? |
