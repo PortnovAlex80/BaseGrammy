@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -45,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import com.alexpo.grammermate.ui.MasteryGreen
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -169,7 +171,40 @@ fun HomeScreen(
                     onClick = onProfileClick
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = state.navigation.userName, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = state.navigation.userName.take(6),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 48.dp)
+                )
+                // Inline streak indicator (HS-23)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    val todayFires = state.cardSession.todayFireCount.coerceIn(0, 3)
+                    val streakDays = state.cardSession.currentStreak
+                    val isActive = todayFires > 0 || streakDays > 0
+                    val fireColor = when {
+                        streakDays >= 7 -> Color(0xFFFF8F00)
+                        isActive -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    }
+
+                    Text(
+                        text = if (isActive) "🔥".repeat(todayFires.coerceIn(1, 3)) else "🔥",
+                        fontSize = 14.sp,
+                        color = fireColor
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${streakDays}d",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = fireColor
+                    )
+                }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LanguageSelector(
@@ -192,13 +227,6 @@ fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        // Fire streak indicator (HS-23)
-        val fireCount = state.cardSession.todayFireCount
-        val streakDays = state.cardSession.currentStreak
-        if (fireCount > 0 || streakDays > 0) {
-            FireStreakIndicator(fireCount = fireCount, streakDays = streakDays)
-            Spacer(modifier = Modifier.height(12.dp))
-        }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -355,46 +383,6 @@ fun HomeScreen(
         },
         lastDuration = pomodoroLastDuration
     )
-}
-
-@Composable
-fun FireStreakIndicator(fireCount: Int, streakDays: Int) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (streakDays >= 7) {
-                Color(0xFFFFF3E0) // warm gold tint
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "🔥".repeat(fireCount.coerceIn(1, 4)),
-                    fontSize = 18.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (fireCount >= 3) stringResource(R.string.home_perfect_day) else if (fireCount == 2) stringResource(R.string.home_great_variety) else stringResource(R.string.home_keep_practicing),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-            Text(
-                text = "${streakDays}d",
-                fontWeight = FontWeight.Bold,
-                color = if (streakDays >= 7) Color(0xFFFF8F00) else MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
 }
 
 @Composable

@@ -23,9 +23,6 @@
     <string name="home_daily_practice">Daily Practice</string>
     <string name="home_practice_all_sublessons">Practice all sub-lessons</string>
     <string name="home_start">Start</string>
-    <string name="home_perfect_day">Perfect day!</string>
-    <string name="home_great_variety">Great variety!</string>
-    <string name="home_keep_practicing">Keep practicing!</string>
 
     <!-- LessonRoadmapScreen -->
     <string name="roadmap_back">Back</string>
