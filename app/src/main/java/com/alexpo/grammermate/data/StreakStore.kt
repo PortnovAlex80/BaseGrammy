@@ -19,6 +19,10 @@ interface StreakStore {
     fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean>
 
     fun getCurrentStreak(languageId: String): StreakData
+
+    fun resetAll()
+
+    fun resetForLanguage(languageId: String)
 }
 
 class StreakStoreImpl(private val context: Context) : StreakStore {
@@ -265,5 +269,17 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         }
 
         return current
+    }
+
+    override fun resetAll() = mutex.withLock {
+        val dir = baseDir
+        if (dir.exists()) {
+            dir.listFiles()?.filter { it.name.startsWith("streak_") && it.name.endsWith(".yaml") }?.forEach { it.delete() }
+        }
+    }
+
+    override fun resetForLanguage(languageId: String) = mutex.withLock {
+        val file = getFile(languageId)
+        if (file.exists()) file.delete()
     }
 }

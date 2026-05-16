@@ -16,4 +16,6 @@ sealed class SettingsResult {
     object ResetDailyState : SettingsResult()
     object SetForceBackup : SettingsResult()
     object SaveProgress : SettingsResult()
+    data class ResetStreak(val app: android.app.Application) : SettingsResult()
+    data class ResetStreakForLanguage(val app: android.app.Application, val languageId: String) : SettingsResult()
 }

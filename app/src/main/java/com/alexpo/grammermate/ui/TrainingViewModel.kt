@@ -1207,6 +1207,35 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun clearWordMastery() = wordMasteryStore.saveAll(emptyMap())
     private fun resetDailyState() = dailyPracticeCoordinator.resetState()
 
+    private fun resetStreak() {
+        streakStore.resetAll()
+        _coreState.update {
+            it.copy(cardSession = it.cardSession.copy(
+                currentStreak = 0,
+                longestStreak = 0,
+                streakMessage = null,
+                streakCelebrationToken = 0,
+                todayFireCount = 0
+            ))
+        }
+    }
+
+    private fun resetStreakForLanguage(languageId: String) {
+        streakStore.resetForLanguage(languageId)
+        val currentLang = _coreState.value.navigation.selectedLanguageId
+        if (currentLang.value == languageId) {
+            _coreState.update {
+                it.copy(cardSession = it.cardSession.copy(
+                    currentStreak = 0,
+                    longestStreak = 0,
+                    streakMessage = null,
+                    streakCelebrationToken = 0,
+                    todayFireCount = 0
+                ))
+            }
+        }
+    }
+
     // -- SettingsResult handler --
     private fun handleSettingsResults(results: List<SettingsResult>) {
         for (result in results) {
@@ -1220,6 +1249,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SettingsResult.ResetDailyState -> resetDailyState()
                 is SettingsResult.SetForceBackup -> { forceBackupOnSave = true }
                 is SettingsResult.SaveProgress -> saveProgress()
+                is SettingsResult.ResetStreak -> resetStreak()
+                is SettingsResult.ResetStreakForLanguage -> resetStreakForLanguage(result.languageId)
                 is SettingsResult.None -> {}
             }
         }

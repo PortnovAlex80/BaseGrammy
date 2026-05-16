@@ -156,6 +156,7 @@ class SettingsActionHandler(
             SettingsResult.ResetDrillFiles(app),
             SettingsResult.ClearWordMastery,
             SettingsResult.ResetDailyState,
+            SettingsResult.ResetStreak(app),
             SettingsResult.RefreshLessons(null)
         )
     }
@@ -186,6 +187,7 @@ class SettingsActionHandler(
             SettingsResult.ResetStoresForLanguage(app, languageId),
             SettingsResult.ClearWordMastery,
             SettingsResult.ResetDailyState,
+            SettingsResult.ResetStreakForLanguage(app, languageId),
             SettingsResult.RefreshLessons(null)
         )
         if (packId != null) {
