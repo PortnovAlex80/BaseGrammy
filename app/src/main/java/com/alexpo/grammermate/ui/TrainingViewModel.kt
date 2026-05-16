@@ -109,7 +109,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var forceBackupOnSave: Boolean = false
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
-    private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
+    private var sessionSize: Int = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = 1.25
 
@@ -124,7 +124,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     )
 
     private val cardProvider = CardProvider(
-        subLessonSize = subLessonSize,
+        subLessonSize = sessionSize,
         subLessonSizeMin = subLessonSizeMin,
         subLessonSizeMax = subLessonSizeMax,
         eliteSizeMultiplier = eliteSizeMultiplier,
@@ -270,6 +270,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val config = configStore.load()
         val profile = profileStore.load()
         eliteSizeMultiplier = config.eliteSizeMultiplier
+        sessionSize = config.sessionSize
+        cardProvider.setSubLessonSize(sessionSize)
+        sessionRunner.setEliteSizeMultiplier(eliteSizeMultiplier)
+        sessionRunner.setSubLessonSize(sessionSize)
+        dailyPracticeCoordinator.setSessionSize(sessionSize)
         val bossLessonRewards = bossOrchestrator.parseBossRewards(progress.bossLessonRewards)
         val bossMegaRewards = bossOrchestrator.parseBossRewards(progress.bossMegaRewards)
         val languages = lessonStore.getLanguages()

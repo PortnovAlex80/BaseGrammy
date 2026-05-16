@@ -50,6 +50,9 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     /** Currently active pack ID, null means no pack scoping (legacy mode). */
     private var activePackId: String? = null
 
+    /** Session size from config, replaces hardcoded take(10). */
+    private var sessionSize: Int = 10
+
     init {
         // Do not auto-load; wait for reloadForPack() or reloadForLanguage() call.
         _uiState.update { it.copy(isLoading = false) }
@@ -61,6 +64,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
      * Always refreshes mastery from disk to reflect any external changes.
      */
     fun reloadForPack(packId: String, languageId: String) {
+        sessionSize = container.configStore.load().sessionSize
         val currentLang = _uiState.value.loadedLanguageId
         val currentPack = activePackId
         if (currentPack == packId && currentLang == languageId && allWords.isNotEmpty()) {
@@ -82,6 +86,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
      * Always refreshes mastery from disk to reflect any external changes.
      */
     fun reloadForLanguage(languageId: String) {
+        sessionSize = container.configStore.load().sessionSize
         val currentLang = _uiState.value.loadedLanguageId
         if (currentLang == languageId && allWords.isNotEmpty()) {
             // Same language — just refresh mastery from disk and update counts.
@@ -227,7 +232,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             val isDue = mastery.nextReviewDateMs <= now || mastery.lastReviewDateMs == 0L
             if (isDue) VocabDrillCard(word = word, mastery = mastery) else null
         }.sortedBy { it.word.rank }
-            .take(10)
+            .take(sessionSize)
 
         if (dueCards.isEmpty()) {
             _uiState.update { it.copy(session = null) }

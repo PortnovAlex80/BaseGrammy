@@ -13,7 +13,8 @@ data class AppConfig(
     val ruTextScale: Float = 1.0f,
     val voiceAutoStart: Boolean = true,
     val uiLanguage: String = "system",
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val sessionSize: Int = 10
 )
 
 interface AppConfigStore {
@@ -39,7 +40,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "ruTextScale" to config.ruTextScale,
             "voiceAutoStart" to config.voiceAutoStart,
             "uiLanguage" to config.uiLanguage,
-            "themeMode" to config.themeMode.name
+            "themeMode" to config.themeMode.name,
+            "sessionSize" to config.sessionSize
         )
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
@@ -74,6 +76,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val uiLanguage = (data["uiLanguage"] as? String)?.takeIf { it in listOf("system", "en", "ru") } ?: "system"
         val themeModeStr = data["themeMode"] as? String ?: "SYSTEM"
         val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
+        val rawSessionSize = (data["sessionSize"] as? Number)?.toInt() ?: 10
+        val sessionSize = rawSessionSize.coerceIn(6, 12)
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
@@ -83,7 +87,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             ruTextScale = ruTextScale,
             voiceAutoStart = voiceAutoStart,
             uiLanguage = uiLanguage,
-            themeMode = themeMode
+            themeMode = themeMode,
+            sessionSize = sessionSize
         )
     }
 }

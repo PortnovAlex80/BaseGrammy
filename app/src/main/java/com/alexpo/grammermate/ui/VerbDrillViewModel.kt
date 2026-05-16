@@ -65,6 +65,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /** Maps card ID to pack ID for bad sentence scoping */
     private var packIdForCardId: Map<String, String> = emptyMap()
 
+    /** Session size from config, replaces hardcoded take(10). */
+    private var sessionSize: Int = 10
+
     // ── Speed tracking ──────────────────────────────────────────────────
     private var cardShownTimestamp: Long = 0L
     private var totalAnswerTimeMs: Long = 0L
@@ -97,6 +100,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private var tenseInfoMap: Map<String, TenseInfo> = emptyMap()
 
     init {
+        sessionSize = container.configStore.load().sessionSize
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards() }
     }
@@ -119,6 +123,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * then loads cards from [LessonStore.getVerbDrillFiles] with the pack parameter.
      */
     fun reloadForPack(packId: String) {
+        sessionSize = container.configStore.load().sessionSize
         if (currentPackId == packId && allCards.isNotEmpty()) {
             // Cards already loaded, but progress may be stale — force re-read from disk
             viewModelScope.launch {
@@ -323,9 +328,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         val selected = if (state.sortByFrequency) {
-            remaining.sortedBy { it.rank ?: Int.MAX_VALUE }.take(10)
+            remaining.sortedBy { it.rank ?: Int.MAX_VALUE }.take(sessionSize)
         } else {
-            remaining.shuffled().take(10)
+            remaining.shuffled().take(sessionSize)
         }
 
         val session = VerbDrillSessionState(cards = selected)

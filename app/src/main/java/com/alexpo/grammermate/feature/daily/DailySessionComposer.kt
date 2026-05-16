@@ -29,7 +29,8 @@ import java.io.File
 class DailySessionComposer(
     private val lessonStore: LessonStore,
     private val verbDrillStore: VerbDrillStore,
-    private val wordMasteryStore: WordMasteryStore
+    private val wordMasteryStore: WordMasteryStore,
+    private val sessionSize: Int = 10
 ) {
 
     // Cached parsed data keyed by "$packId:$languageId". Files never change at runtime.
@@ -37,10 +38,6 @@ class DailySessionComposer(
     private var cachedVerbDrillCards: Pair<String, List<VerbDrillCard>>? = null
 
     companion object {
-        const val CARDS_PER_BLOCK = 10
-        const val SENTENCE_COUNT = CARDS_PER_BLOCK
-        const val VOCAB_COUNT = CARDS_PER_BLOCK
-        const val VERB_COUNT = CARDS_PER_BLOCK
 
         val TENSE_LADDER: Map<Int, List<String>> = mapOf(
             1  to listOf("Presente"),
@@ -169,7 +166,7 @@ class DailySessionComposer(
         val remaining = cards.drop(cursor.sentenceOffset)
         if (remaining.isEmpty()) return emptyList()
 
-        val selected = remaining.take(SENTENCE_COUNT)
+        val selected = remaining.take(sessionSize)
 
         return selected.mapIndexed { index, card ->
             val mode = when (index % 3) {
@@ -204,7 +201,7 @@ class DailySessionComposer(
 
         return cardIds.mapNotNull { id ->
             cardMap[id]
-        }.take(SENTENCE_COUNT).mapIndexed { index, card ->
+        }.take(sessionSize).mapIndexed { index, card ->
             val mode = when (index % 3) {
                 0 -> InputMode.VOICE
                 1 -> InputMode.KEYBOARD
@@ -262,17 +259,17 @@ class DailySessionComposer(
         val selected = mutableListOf<VocabWord>()
 
         // Take due words, most overdue first
-        selected.addAll(dueWords.take(VOCAB_COUNT).map { it.first })
+        selected.addAll(dueWords.take(sessionSize).map { it.first })
 
         // Fill with new words (never reviewed), sorted by rank
-        if (selected.size < VOCAB_COUNT) {
-            val remaining = VOCAB_COUNT - selected.size
+        if (selected.size < sessionSize) {
+            val remaining = sessionSize - selected.size
             selected.addAll(newWords.sortedBy { it.rank }.take(remaining))
         }
 
         // Fallback: least recently reviewed
-        if (selected.size < VOCAB_COUNT) {
-            val remaining = VOCAB_COUNT - selected.size
+        if (selected.size < sessionSize) {
+            val remaining = sessionSize - selected.size
             val alreadySelectedIds = selected.map { it.id }.toSet()
             val fallbackCandidates = scheduledWords
                 .filter { it.first.id !in alreadySelectedIds }
@@ -373,7 +370,7 @@ class DailySessionComposer(
         // Take next batch of candidate cards (unshown, or cycled all filtered)
         if (sorted.isEmpty()) return emptyList()
 
-        val selected = sorted.take(VERB_COUNT)
+        val selected = sorted.take(sessionSize)
 
         return selected.mapIndexed { index, (card, _, _) ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
@@ -401,7 +398,7 @@ class DailySessionComposer(
 
         return cardIds.mapNotNull { id ->
             cardMap[id]
-        }.take(VERB_COUNT).mapIndexed { index, card ->
+        }.take(sessionSize).mapIndexed { index, card ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
             DailyTask.ConjugateVerb(
                 id = "verb_${card.id}",

@@ -26,10 +26,10 @@ import com.alexpo.grammermate.feature.progress.ProgressTracker
  * No Android dependencies — suitable for unit testing without Robolectric.
  */
 class CardProvider(
-    private val subLessonSize: Int = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+    private var subLessonSize: Int = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
     private val subLessonSizeMin: Int = TrainingConfig.SUB_LESSON_SIZE_MIN,
     private val subLessonSizeMax: Int = TrainingConfig.SUB_LESSON_SIZE_MAX,
-    private val eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER,
+    private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER,
     private val eliteStepCount: Int = TrainingConfig.ELITE_STEP_COUNT,
     private val progressTracker: ProgressTracker? = null
 ) {
@@ -37,6 +37,17 @@ class CardProvider(
     private var cachedScheduleKey: String = ""
 
     // ── Schedules ──────────────────────────────────────────────────────
+
+    /**
+     * Update the sub-lesson size at runtime (e.g. from AppConfig).
+     * Invalidates the schedule cache so schedules are rebuilt with the new size.
+     */
+    fun setSubLessonSize(size: Int) {
+        if (subLessonSize != size) {
+            subLessonSize = size
+            cachedScheduleKey = ""
+        }
+    }
 
     /**
      * Build sub-lesson schedules for all lessons using [MixedReviewScheduler].

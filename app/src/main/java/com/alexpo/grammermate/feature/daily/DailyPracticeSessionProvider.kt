@@ -43,11 +43,9 @@ class DailyPracticeSessionProvider(
     private val onExportFlagged: (() -> String?)? = null
 ) : CardSessionContract {
 
-    /** All tasks matching the requested block type, capped by the global per-block limit. */
+    /** All tasks matching the requested block type. Sizing is handled by DailySessionComposer. */
     private val blockType: DailyBlockType = blockType
-    private val blockCards: List<DailyTask> = tasks
-        .filter { it.blockType == blockType }
-        .take(DailySessionComposer.CARDS_PER_BLOCK)
+    private val blockCards: List<DailyTask> = tasks.filter { it.blockType == blockType }
 
     private var currentIndex: Int by mutableStateOf(0)
     private var _pendingCard: SessionCard? by mutableStateOf(null)

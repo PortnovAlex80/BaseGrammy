@@ -67,7 +67,7 @@ class SessionRunner(
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
 
-    private val subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
+    private var subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER
 
@@ -808,6 +808,10 @@ class SessionRunner(
 
     fun setEliteSizeMultiplier(multiplier: Double) {
         eliteSizeMultiplier = multiplier
+    }
+
+    fun setSubLessonSize(size: Int) {
+        subLessonSize = size
     }
 
     // ── Timer (private) ─────────────────────────────────────────────────

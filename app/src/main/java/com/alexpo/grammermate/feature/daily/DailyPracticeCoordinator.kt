@@ -44,7 +44,8 @@ class DailyPracticeCoordinator(
     private val lessonStore: LessonStore,
     private val masteryStore: MasteryStore,
     private val verbDrillStoreFactory: (String?) -> VerbDrillStore,
-    private val wordMasteryStoreFactory: (String?) -> WordMasteryStore
+    private val wordMasteryStoreFactory: (String?) -> WordMasteryStore,
+    private var sessionSize: Int = 10
 ) {
 
     private val logTag = "GrammarMate"
@@ -324,7 +325,7 @@ class DailyPracticeCoordinator(
         val verbDrillStore = getVerbDrillStore(packId.value)
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, effectiveLevel)
-        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
         val tasks = composer.buildSession(effectiveLevel, packId.value, langId.value, lessonId, cumulativeTenses, cursor)
         Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
         if (tasks.isEmpty()) return false
@@ -372,7 +373,7 @@ class DailyPracticeCoordinator(
             val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
             val verbDrillStore = getVerbDrillStore(packId.value)
             val packWordMasteryStore = getWordMasteryStore(packId.value)
-            val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+            val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
             val tasks = composer.buildRepeatSession(
                 lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses,
                 sentenceCardIds = cursor.firstSessionSentenceCardIds,
@@ -390,7 +391,7 @@ class DailyPracticeCoordinator(
         val verbDrillStore = getVerbDrillStore(packId.value)
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
-        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
         val tasks = composer.buildSession(lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses, resetCursor)
         if (tasks.isEmpty()) return false
 
@@ -468,7 +469,7 @@ class DailyPracticeCoordinator(
         val verbDrillStore = getVerbDrillStore(packId.value)
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
-        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
         val newTasks = composer.rebuildBlock(blockType, lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses)
         if (newTasks.isEmpty()) return false
 
@@ -573,7 +574,7 @@ class DailyPracticeCoordinator(
         val verbDrillStore = getVerbDrillStore(packId)
         val packWordMasteryStore = getWordMasteryStore(packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
-        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore)
+        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
         val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
         if (tasks.isNotEmpty()) {
             prebuiltDailySession = tasks
@@ -582,6 +583,10 @@ class DailyPracticeCoordinator(
     }
 
     // ── Reset (for resetAllProgress) ───────────────────────────────────
+
+    fun setSessionSize(size: Int) {
+        sessionSize = size
+    }
 
     fun resetState() {
         lastDailyTasks = null
