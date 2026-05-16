@@ -100,7 +100,8 @@ fun HomeScreen(
     onOpenVerbDrill: () -> Unit = {},
     onOpenVocabDrill: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onStartPomodoro: (Int) -> Unit = {}
+    onStartPomodoro: (Int) -> Unit = {},
+    pomodoroLastDuration: Int = 20
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -352,7 +353,7 @@ fun HomeScreen(
             showPomodoroSheet = false
             onStartPomodoro(duration)
         },
-        lastDuration = 20
+        lastDuration = pomodoroLastDuration
     )
 }
 

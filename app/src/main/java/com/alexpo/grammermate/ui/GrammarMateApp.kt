@@ -267,7 +267,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onStartPomodoro = { duration ->
                                 vm.startPomodoro(duration)
                                 onNavigate(Routes.LESSON)
-                            }
+                            },
+                            pomodoroLastDuration = vm.getPomodoroLastDuration()
                         )
                     }
 
