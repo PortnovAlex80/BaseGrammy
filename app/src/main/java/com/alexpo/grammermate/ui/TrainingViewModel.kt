@@ -62,6 +62,9 @@ import com.alexpo.grammermate.feature.vocab.VocabSprintRunner
 import com.alexpo.grammermate.shared.SettingsActionHandler
 import com.alexpo.grammermate.shared.SettingsResult
 import com.alexpo.grammermate.shared.audio.AudioCoordinator
+import com.alexpo.grammermate.feature.pomodoro.PomodoroHelper
+import com.alexpo.grammermate.data.PomodoroSettingsStore
+import com.alexpo.grammermate.data.CardDifficultyRating
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -211,6 +214,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         configStore = configStore
     )
 
+    private val pomodoroSettingsStore = PomodoroSettingsStore(getApplication<Application>())
+    private val pomodoroHelper = PomodoroHelper(
+        stateProvider = { _coreState.value },
+        onUpdateState = { newState -> _coreState.value = newState },
+        scope = viewModelScope
+    )
+
     // ── Combined state flow (all feature flows merged with core) ──────────
     val uiState: StateFlow<TrainingUiState> = combine(
         _coreState,
@@ -263,6 +273,41 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     val settings: SettingsActionHandler get() = settingsActionHandler
     /** Current UI language setting for the settings screen selector. */
     val currentUiLanguage: String get() = configStore.load().uiLanguage
+
+    // ── Pomodoro operations ─────────────────────────────────────────────────
+
+    fun startPomodoro(durationMinutes: Int) {
+        pomodoroSettingsStore.save(durationMinutes)
+        pomodoroHelper.startPomodoro(durationMinutes)
+    }
+
+    fun pausePomodoro() {
+        pomodoroHelper.pausePomodoro()
+    }
+
+    fun resumePomodoro() {
+        pomodoroHelper.resumePomodoro()
+    }
+
+    fun cancelPomodoro() {
+        pomodoroHelper.cancelPomodoro()
+    }
+
+    fun rateCardDifficulty(rating: CardDifficultyRating) {
+        pomodoroHelper.recordDifficultyRating(rating)
+    }
+
+    fun confirmPomodoroExit() {
+        pomodoroHelper.cancelPomodoro()
+    }
+
+    fun dismissPomodoroExit() {
+        pomodoroHelper.setShowExitConfirm(false)
+    }
+
+    fun getPomodoroLastDuration(): Int {
+        return pomodoroSettingsStore.load()
+    }
 
     init {
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
@@ -525,6 +570,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         if (result.needsSubLessonComplete) {
             forceBackupOnSave = true
+        }
+
+        // Pomodoro: show difficulty rating prompt after each answer
+        if (_coreState.value.pomodoro.isActive) {
+            pomodoroHelper.setShowRatingPrompt(true)
         }
 
         Log.d(logTag, "Answer submitted: accepted=${result.accepted}")
