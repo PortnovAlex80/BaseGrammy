@@ -67,7 +67,7 @@ fun PomodoroSummaryScreen(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        StatsGrid(stats)
+        StatsGrid(stats, todayFireCount)
         Spacer(modifier = Modifier.height(16.dp))
 
         if (stats.difficultyRatings.isNotEmpty()) {
@@ -151,7 +151,7 @@ private fun CircularTimeRing(
 }
 
 @Composable
-private fun StatsGrid(stats: PomodoroSessionStats) {
+private fun StatsGrid(stats: PomodoroSessionStats, todayFireCount: Int) {
     val successRate = if (stats.cardsShown > 0)
         (stats.cardsCorrect * 100 / stats.cardsShown) else 0
 
@@ -168,7 +168,7 @@ private fun StatsGrid(stats: PomodoroSessionStats) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         StatCard("🗣️", String.format("%.0f", stats.wordsPerMinute), "WPM", Modifier.weight(1f))
-        StatCard("🔥", "${stats.cardsCorrect}", "correct", Modifier.weight(1f))
+        StatCard("🔥", "$todayFireCount", "fires", Modifier.weight(1f))
     }
 }
 
