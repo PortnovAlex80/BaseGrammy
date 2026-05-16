@@ -1,6 +1,6 @@
 # TASK-056: Pomodoro Timer — Focused Training Sessions
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/pomodoro-timer (from main)
 **Spec:** 2026-05-16-pomodoro-timer-design, 08-training-viewmodel, 19-screen-catalog, 22-use-case-registry#Domain26, 23-screen-elements#PM
