@@ -23,6 +23,21 @@ The app separates card browsing from active practice. PAUSED = browsing mode, AC
 
 **Why:** Prevents behavioral drift between modes. A bug fix or UX improvement in one component applies everywhere automatically.
 
+### DP-04: Universal Card Engine
+
+All card-based training modes share the same TrainingScreen UI engine. The only differences between modes are:
+1. **Card source** — which cards populate `sessionCards` (schedule, boss pool, drill cards, etc.)
+2. **Scoring** — whether mastery is counted, whether boss rewards apply
+3. **Theme** — normal vs drill green background
+4. **Exit** — destination screen after completion
+
+This applies to 5 sub-modes within TrainingScreen: NORMAL, BOSS, BOSS_MEGA, ELITE, DRILL.
+It also applies to 2 separate screens that use TrainingCardSession: VerbDrillScreen, DailyPracticeScreen.
+
+Excluded: VocabDrillScreen (Anki flashcard mechanic — fundamentally different interaction pattern).
+
+Navigation (Next/Prev/Pause/Play/Exit) MUST be identical across all modes. No mode-specific navigation functions.
+
 ---
 
 ## Common Behavior Patterns
@@ -75,7 +90,7 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 
 | Journey | Differences from base flow |
 |---------|---------------------------|
-| Journey 6 Block 2: Daily Vocab | 5 cards. No filters (auto-selected). No voice input on front side |
+| Journey 6 Block 2: Daily Vocab | SESSION_SIZE cards. No filters (auto-selected). No voice input on front side |
 | Journey 8: Vocab Drill | Full version. Filters: direction (IT→RU / RU→IT), POS, frequency. TTS button. Skip button. Voice input |
 
 ### Pattern C: Async Operation
@@ -119,7 +134,7 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 | **System response** | `forceReloadDefaultPacks()` loads default lesson packs from assets. HomeScreen loads with lesson data |
 | **What user sees** | HomeScreen: language selector, lesson grid (1+), "Continue learning" card, Daily Practice tile, Verb Drill tile (if pack contains verbs), Flashcards tile (if pack contains vocabulary) |
 | **Navigation** | StartupScreen → HOME |
-| **Visible elements** | HS-01 (title), HS-02 (language selector), HS-03 (lesson grid), HS-04 ("Continue" card), HS-05 (Daily Practice), HS-06 (Verb Drill if hasVerbDrill), HS-07 (Flashcards if hasVocabDrill), HS-08 (settings gear), HS-09 (streak counter) |
+| **Visible elements** | HS-01 (title), HS-02 (language selector), HS-03 (lesson grid), HS-04 ("Continue" card), HS-05 (Daily Practice), HS-06 (Verb Drill if hasVerbDrill), HS-07 (Flashcards if hasVocabDrill), HS-08 (settings gear), HS-23 (fire streak indicator) |
 | **Spec source** | 19-screen-catalog.md §1, 23-screen-elements.md |
 | **Discrepancy** | None — first launch is well-defined |
 
@@ -141,7 +156,7 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 
 | Aspect | Details |
 |--------|---------|
-| **What user sees** | Full HomeScreen layout: title with language name, streak counter, settings gear, lesson grid, Daily Practice tile, drill tiles |
+| **What user sees** | Full HomeScreen layout: title with language name, fire streak indicator (HS-23), settings gear, lesson grid, Daily Practice tile, drill tiles |
 | **Available actions** | Tap lesson card → go to Lesson Roadmap (Journey 3) |
 | | Tap "Daily Practice" → start daily session (Journey 6) |
 | | Tap "Verb Drill" → go to verbs (Journey 7) |
@@ -297,13 +312,13 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 | Hint behavior | 3 incorrect → shows answer. Play → advance to next (BUG-NAV-003) |
 | **Discrepancy** | **BUG-NAV-009**: No retry after showing wrong answer. One cycle → hint → must advance. Inconsistent with regular training (3 attempts) |
 
-### Step 6.3: Block 2 — Vocabulary Cards (5 cards)
+### Step 6.3: Block 2 — Vocabulary Cards (SESSION_SIZE cards)
 
-> Pattern B with variation: 5 cards, no filters, no voice input.
+> Pattern B with variation: SESSION_SIZE cards, no filters, no voice input.
 
 | Difference from base Pattern B | Details |
 |-------------------------------|---------|
-| Card count | 5 |
+| Card count | SESSION_SIZE |
 | Block transition | BlockSparkleOverlay "Next: Vocabulary" ~800ms |
 | Filters | None (cards auto-selected) |
 | Voice input | None |
@@ -640,7 +655,7 @@ User journeys MUST be verified after any code change that touches:
 3. **Check discrepancies** — verify all BUG-NAV-xxx listed in the journey are either:
    - FIXED (code matches expected behavior)
    - OPEN (discrepancy still exists, check if intentional)
-4. **Check design principles** — DP-01, DP-02, DP-03 must hold across all affected modes
+4. **Check design principles** — DP-01, DP-02, DP-03, DP-04 must hold across all affected modes
 5. **Report** — PASS/FAIL per journey step, with evidence
 
 ### Quick reference — which journeys to check per file:

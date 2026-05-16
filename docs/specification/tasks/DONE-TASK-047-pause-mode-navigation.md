@@ -1,6 +1,6 @@
 # TASK-047: Navigation Arrows Always Work, But Trigger PAUSE Mode
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/pause-mode-navigation (from main)
 **Spec:** 08-training-viewmodel.md §5, scenario-01 §3, 12-training-card-session.md

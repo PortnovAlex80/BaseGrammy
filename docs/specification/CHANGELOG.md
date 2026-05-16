@@ -2,6 +2,32 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [Spec Update] - 2026-05-16
+
+### Added
+- Fire streak system: per-day tracking of unique practice types (TRANSLATION, VOCAB, VERB, SUB_DRILL)
+- "Засчитанная учебная единица" definition in glossary
+- PracticeType enum for activity classification
+- UC-71: Record fire streak on session completion (was UC-62 in draft; UC-62 already used by progress reset)
+- UC-72: Display fire streak on HomeScreen (was UC-63 in draft; UC-63 already used by VerbDrill play button)
+- HS-23: Fire streak indicator element
+- Fire streak algorithm in 03-algorithms
+- Fire streak integration in daily practice, verb drill, vocab drill specs
+
+### Changed
+- Streak counting rule: from binary (completed/not) to fire-based (unique types per day)
+- StreakData model: added completedTypesToday, todayFireCount, lastFireDateMs
+- Fixed HS-09 labeling error in user journey models (it is flower emoji, not streak counter)
+- Updated motivation section (18-learning-methodology) with fire streak design
+
+## [Spec Update] - 2026-05-16
+
+### Changed
+- Unified session size parameter: introduced "учебная единица" (Learning Unit) with configurable `SESSION_SIZE` (default: 10)
+- Removed stale "5 cards" references from daily practice vocab block across 8 spec files
+- Added `sessionSize` to AppConfig parameter table (06-infrastructure.md)
+- Added task TASK-050: Unify Session Size Parameter
+
 ## v3.5 (2026-05-15) -- TASK-031: Dark Theme Palette Spec Update
 
 - `14-theme-and-ui-components.md`: Updated DarkColors in section 14.1.1 to match actual Material 3 dynamic defaults from code. All 8 explicitly-specified dark theme colors corrected: primary (#4A8B92 -> #80CBC4), onPrimary (#FFFFFF -> #003731), secondary (#7EB5A5 -> #80B5A9), onSecondary (#FFFFFF -> #00332B), background (#1A1A1A -> #1A1C1E), onBackground (#E8E8E8 -> #E2E1DF), surface (#2A2A2A -> #1A1C1E), onSurface (#E8E8E8 -> #E2E1DF). Added note that dark theme follows M3 dynamic defaults. Light theme unchanged. No code changes.

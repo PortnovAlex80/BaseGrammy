@@ -12,7 +12,7 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-006](DONE-TASK-006-verb-drill-play-button-fix.md) | Verb Drill Play Button Fix (resume + TTS icons) | DONE | 10-verb-drill, 12-training-card-session | 2026-05-14 |
 | [DONE-TASK-007](DONE-TASK-007-verb-drill-exit-navigation.md) | Verb Drill Exit Navigation to HOME | DONE | 10-verb-drill | 2026-05-14 |
 | [DONE-TASK-008](DONE-TASK-008-qr-share-translation.md) | Share Translation via QR Code | DONE | 12-training-card-session | 2026-05-15 |
-| [TASK-009](TASK-009-profile-stats-popup.md) | Profile Stats Popup with CEFR Level | OPEN | custom spec | 2026-05-15 |
+| [DONE-TASK-009](DONE-TASK-009-profile-stats-popup.md) | Profile Stats Popup with CEFR Level | DONE | custom spec | 2026-05-15 |
 | [DONE-TASK-010](DONE-TASK-010-theme-mode-switching.md) | Theme Mode Switching (Light/Dark/System) | DONE | 14-theme-and-ui-components | 2026-05-15 |
 | [DONE-TASK-011](DONE-TASK-011-interface-language-switching.md) | Interface Language Switching (English/Russian) | DONE | 14-theme-and-ui-components | 2026-05-15 |
 | [DONE-TASK-038](DONE-TASK-038-word-bank-input-sync.md) | Word Bank Input Text Sync | DONE | 12-training-card-session | 2026-05-15 |
@@ -22,8 +22,10 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-042](DONE-TASK-042-verb-drill-play-pause-race.md) | Fix VerbDrill Play/Pause & Auto-Advance Race | DONE | 10-verb-drill, scenario-07 | 2026-05-16 |
 | [DONE-TASK-043](DONE-TASK-043-vocab-drill-mastery-indicator.md) | Fix VocabDrill Mastery Indicator & Exit Cleanup | DONE | 11-vocab-drill, scenario-08 | 2026-05-16 |
 | [DONE-TASK-044](DONE-TASK-044-training-next-button-guard.md) | Fix Training Next Button State Guard | DONE | 08-training-viewmodel, scenario-01 | 2026-05-16 |
-| [TASK-045](TASK-045-unify-card-session-state.md) | Unify Card Session State Management | OPEN | 08, 10, 12-training-card-session | 2026-05-16 |
-| [TASK-046](TASK-046-daily-streak-navigation-rule.md) | Daily Streak Only Counts on Correct Answer Completion | OPEN | 03-algorithms, 08-training-viewmodel | 2026-05-16 |
-| [TASK-047](TASK-047-pause-mode-navigation.md) | Navigation Arrows Always Work, Trigger PAUSE | OPEN | 08-training-viewmodel, 12-training-card-session | 2026-05-16 |
-| [TASK-048](TASK-048-unified-navigation-row.md) | Unified NavigationRow for All Card Modes | OPEN | 12-training-card-session, 08, 10 | 2026-05-16 |
-| [TASK-049](TASK-049-unified-input-controls-bar.md) | Unified Input Controls Bar for All Card Modes | OPEN | 12-training-card-session, 05-audio | 2026-05-16 | |
+| [DONE-TASK-045](DONE-TASK-045-unify-card-session-state.md) | Unify Card Session State Management | DONE | 08, 10, 12-training-card-session | 2026-05-16 |
+| [DONE-TASK-046](DONE-TASK-046-daily-streak-navigation-rule.md) | Daily Streak Only Counts on Correct Answer Completion | DONE | 03-algorithms, 08-training-viewmodel | 2026-05-16 |
+| [DONE-TASK-047](DONE-TASK-047-pause-mode-navigation.md) | Navigation Arrows Always Work, Trigger PAUSE | DONE | 08-training-viewmodel, 12-training-card-session | 2026-05-16 |
+| [DONE-TASK-048](DONE-TASK-048-unified-navigation-row.md) | Unified NavigationRow for All Card Modes | DONE | 12-training-card-session, 08, 10 | 2026-05-16 |
+| [DONE-TASK-049](DONE-TASK-049-unified-input-controls-bar.md) | Unified Input Controls Bar for All Card Modes | DONE | 12-training-card-session, 05-audio | 2026-05-16 | |
+| [TASK-050](TASK-050-unify-session-size.md) | Unify Session Size Parameter (Учебная единица) | OPEN | 01, 03, 06, 09, 10, 11 | 2026-05-16 |
+| [TASK-051](TASK-051-fire-streak-activity-types.md) | Fire Streak by Activity Types | OPEN | 01, 02, 03, 08, 09, 10, 11, 22, 23 | 2026-05-16 |

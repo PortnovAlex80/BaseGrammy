@@ -1084,6 +1084,19 @@ This allows the daily practice "Repeat" function to replay the exact same verb c
 
 ---
 
+### Fire Streak Integration
+
+Standalone verb drill completion maps to PracticeType.VERB.
+
+**Trigger:** When the 10-card batch is completed (user sees completion screen):
+1. Check if session qualifies as "засчитанная УЕ" (at least 1 correct answer via VOICE/KEYBOARD, navigation-only does not count)
+2. Call `streakStore.recordPracticeTypeCompletion(languageId, PracticeType.VERB)`
+3. If type already recorded today → no additional fire (duplicate prevention)
+
+Note: "Ещё" (next batch) does NOT trigger additional fires for the same type on the same day.
+
+---
+
 ## 10.9 UI Consistency Requirements [UI-CONSISTENCY-2025]
 
 This section documents the UI consistency requirements for VerbDrill, established by cross-screen audit. VerbDrill is the REFERENCE implementation for eye/show-answer mode and the ADOPTER of voice auto mode (from VocabDrill) and the 4-option report sheet (from TrainingScreen).

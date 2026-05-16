@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 68 |
-| Total Acceptance Criteria | 348 |
-| Domains | 21 |
+| Total Use Cases | 72 |
+| Total Acceptance Criteria | 396 |
+| Domains | 23 |
 
 ### Per-Domain Counts
 
@@ -37,6 +37,8 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 19 | Theme mode switching (Light/Dark/System) | 1 | 7 |
 | 20 | Interface language switching (English/Russian) | 1 | 7 |
 | 21 | Dark-mode color compliance (hardcoded color audit) | 1 | 9 |
+| 22 | Drill sub-mode (lesson drill training within TrainingScreen) | 2 | 21 |
+| 23 | Fire streak (per-day unique practice type tracking) | 2 | 27 |
 
 ---
 
@@ -257,6 +259,24 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 22: Drill Sub-mode (Lesson Drill Training within TrainingScreen)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-69 | Drill Sub-mode Session Lifecycle | User is on LessonRoadmapScreen. Lesson has drill content (drillFile in manifest, lesson.drillCards non-empty). | **Context:** Drill sub-mode is a lesson-scoped card practice session. The lesson pack author curates `lesson.drillCards` for this lesson's theme and tense. Unlike standalone VerbDrill (which has SelectionScreen for verb/tense/group selection), drill sub-mode skips selection and goes directly into practice. 1. User taps Drill tile (LR-08). 2. System checks drillProgressStore for existing progress. 3. If progress exists: show DrillStartDialog with Continue/Start Fresh/Cancel. 4. If no progress: show DrillStartDialog with Start/Cancel. 5. User selects Start/Continue. 6. System loads ALL lesson.drillCards into sessionCards. 7. System sets isDrillMode=true, drillCardIndex, drillTotalCards. 8. System displays TrainingScreen in drill mode (green theme). 9. User practices cards using standard navigation (Next/Prev/Pause/Play). 10. On last card advance: system calls finishDrill, clears progress, returns to LESSON. | AC1: DrillStartDialog shown on Drill tile tap. AC2: If prior progress exists, dialog offers Continue and Start Fresh options. AC3: All drill cards loaded into sessionCards at session start. AC4: isDrillMode flag set to true during session. AC5: Green visual theme applied (background 0xFFE8F5E9, green prompt/tense labels). AC6: Mastery NOT counted for drill cards (recordCardShowForMastery returns early). AC7: Drill progress persisted to drillProgressStore on exit. AC8: Drill progress cleared from drillProgressStore on completion. AC9: On completion, user returned to LESSON screen (not HOME). AC10: subLessonFinishedToken incremented on completion. AC11: Standard navigation (navigateNext/navigatePrev) used — no separate advanceDrillCard. | LessonRoadmapScreen, TrainingScreen | `ui/TrainingViewModel.kt`, `data/DrillProgressStore.kt` | scenario-16 |
+| UC-70 | Drill Sub-mode Card Navigation | Drill session active (isDrillMode=true). Cards loaded in sessionCards. | 1. User answers card (VOICE/KEYBOARD/WORD_BANK). 2. System validates answer. 3. User taps Next → navigateNext() advances to next card in sessionCards. 4. drillProgressStore updated with new currentIndex. 5. If VOICE mode: auto-advance after correct answer. | AC1: Next button advances through sessionCards using standard navigateNext(). AC2: Prev button goes back through sessionCards using standard navigatePrev(). AC3: navigateNext pauses session before advancing (same as normal training). AC4: On last card, Next triggers finishDrill (completion). AC5: On first card, Prev stays on first card (coerceAtLeast(0)). AC6: drillProgressStore.saveDrillProgress called on each card advance. AC7: Pause/Play works identically to normal training mode. AC8: Exit button shows confirmation dialog, on confirm calls exitDrillMode. AC9: Word bank regenerated on card change when in WORD_BANK mode. AC10: Voice auto-trigger works identically to normal training (200ms delay). | TrainingScreen | `ui/TrainingViewModel.kt`, `data/DrillProgressStore.kt` | scenario-16 |
+
+---
+
+## Domain 23: Fire Streak (Per-Day Unique Practice Type Tracking)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-71 | Record fire streak on session completion | A practice session is completed as "засчитанная УЕ" | 1. Session completes. 2. System checks if session qualifies as "засчитанная УЕ" (all non-bad cards answered via VOICE/KEYBOARD). 3. System maps session mode to PracticeType. 4. System checks if type already recorded today. 5. If new type: adds to completedTypesToday, increments todayFireCount, updates streak (consecutive days). 6. If duplicate type: skips. 7. Celebration message generated if milestone reached. | AC1: Training sub-lesson completion records PracticeType.TRANSLATION. AC2: Verb drill completion records PracticeType.VERB. AC3: Vocab drill completion records PracticeType.VOCAB. AC4: Daily practice block completion records the block's PracticeType. AC5: Drill sub-mode in English packs records PracticeType.SUB_DRILL. AC6: Navigation-only session (0 correct answers) does NOT record any type. AC7: Same type twice in one day records only once (no duplicate fires). AC8: Streak increments when at least 1 fire earned on a consecutive day. AC9: Streak resets to 0 when a day passes with 0 fires. AC10: todayFireCount never exceeds 4. | HomeScreen (ui/screens/HomeScreen.kt) | `feature/progress/StreakManager.kt`, `data/StreakStore.kt` | TASK-051 |
+| UC-72 | Display fire streak on HomeScreen | User is on HomeScreen; at least one fire earned today | 1. Fire streak indicator renders at top of HomeScreen. 2. Shows fire icons equal to todayFireCount (up to 4). 3. Shows currentStreak number. 4. Streak > 0 shows flame animation or highlight. | AC1: Fire indicator shows 0-4 fire icons based on todayFireCount. AC2: Streak number is displayed next to fires. AC3: Indicator updates immediately after session completion. AC4: Indicator resets at midnight (new calendar day). AC5: Italian pack shows max 3 fires. AC6: English pack with sub-drill shows max 4 fires. AC7: Streak > 7 shows special milestone styling. | HomeScreen (ui/screens/HomeScreen.kt) | `feature/progress/StreakManager.kt` | TASK-051 |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -276,6 +296,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | scenario-13 (pack import) | UC-39, UC-40, UC-41, UC-42 |
 | scenario-14 (backup/restore) | UC-43, UC-44 |
 | scenario-15 (onboarding) | UC-46 |
+| scenario-16 (drill sub-mode) | UC-69, UC-70 |
 | 17-user-stories | All US-01 through US-79 referenced in UCs |
 | performance | UC-60 |
 | tts-icon-fix | UC-61 |
@@ -286,3 +307,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | TASK-010 | UC-66 |
 | TASK-011 | UC-67 |
 | TASK-012, TASK-013, TASK-014 | UC-68 |
+| TASK-051 | UC-71, UC-72 |

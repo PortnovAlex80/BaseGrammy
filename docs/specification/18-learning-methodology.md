@@ -369,6 +369,19 @@ The `StreakStore` tracks daily engagement:
 
 The streak counter updates only when a sub-lesson is completed -- the learner must actually finish a block, not just open the app. This ensures the streak reflects genuine practice, not passive engagement.
 
+**Fire streak motivation design:**
+
+The fire streak system rewards practice diversity. Instead of counting raw session completions, it tracks how many different types of practice the learner engages with each day.
+
+- **1 fire:** Completed a training sub-lesson. The minimum daily commitment.
+- **2 fires:** Also completed a vocab or verb drill. Cross-training improves retention.
+- **3 fires:** Completed all three practice types (lesson + vocab + verb). Maximum for Italian packs.
+- **4 fires:** Completed lesson + vocab + verb + sub-drill. Maximum for English packs with drill sub-mode.
+
+Daily Practice is the "shortcut" -- it covers all 3 types (TRANSLATION + VOCAB + VERB) in one session, earning 3 fires automatically.
+
+**Loss aversion:** The streak counter resets if a day passes with 0 fires. Even 1 fire (a single sub-lesson) preserves the streak.
+
 ---
 
 ## 18.6 Verb Conjugation Drill Methodology

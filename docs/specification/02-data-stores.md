@@ -447,6 +447,9 @@ Sources:
   longestStreak: 12
   lastCompletionDateMs: 1715500800000
   totalSubLessonsCompleted: 47
+  completedTypesToday: [TRANSLATION, VOCAB]  # types completed today
+  todayFireCount: 2                            # fire count today
+  lastFireDateMs: 1747392000000                # timestamp of last fire day
   ```
 
 - **Public API**:
@@ -456,6 +459,7 @@ Sources:
   | `save` | `fun save(data: StreakData)` | Unit | Writes streak data to the language-specific file via `AtomicFileWriter`. Creates `baseDir` if needed. |
   | `load` | `fun load(languageId: String): StreakData` | `StreakData` | Reads from file. Returns default `StreakData(languageId)` if missing or corrupt. |
   | `recordSubLessonCompletion` | `fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean>` | Pair of (updated data, isNewStreak flag) | Core streak logic. Loads current data, checks if this is same-day (no change), consecutive day (increment), or gap (reset to 1). Updates `longestStreak` if new record. Increments `totalSubLessonsCompleted`. Saves and returns. |
+  | `recordPracticeTypeCompletion` | `fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean>` | Pair of (updated data, isNewFire flag) | Records completion of a practice type. If the session qualifies as "засчитанная УЕ", adds the type to `completedTypesToday`. Updates `todayFireCount` and fire streak. Returns updated StreakData and whether a new fire was earned. |
   | `getCurrentStreak` | `fun getCurrentStreak(languageId: String): StreakData` | `StreakData` | Loads current data and checks if more than 1 day has passed since last completion. If so, resets `currentStreak` to 0 and saves. Returns updated data. |
 
 - **Write semantics**: Full rewrite via `AtomicFileWriter`.
@@ -471,6 +475,8 @@ Sources:
   - `longestStreak` >= `currentStreak`.
   - `totalSubLessonsCompleted` >= 0.
   - Same-day completions do not increment the streak counter but do increment `totalSubLessonsCompleted`.
+  - `todayFireCount == completedTypesToday.size` (invariant).
+  - `todayFireCount <= 4` (maximum 4 practice types).
   - A gap of more than 1 day resets `currentStreak` to 0 (via `getCurrentStreak`) or 1 (via `recordSubLessonCompletion`).
   - Date comparison uses `Calendar.get(YEAR)` and `Calendar.get(DAY_OF_YEAR)` for same-day and consecutive-day checks.
 

@@ -4,7 +4,7 @@
 
 | Screen | Prefix | Element Count |
 |--------|--------|---------------|
-| HomeScreen | HS | 22 |
+| HomeScreen | HS | 23 |
 | TrainingScreen | TS | 37 |
 | TrainingCardSession | TCS | 29 |
 | DailyPracticeScreen | DP | 30 |
@@ -16,7 +16,7 @@
 | StoryQuizScreen | SQ | 13 |
 | GrammarMateApp Dialogs | DG | 18 |
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
-| **Total** | | **318** |
+| **Total** | | **319** |
 
 ---
 
@@ -46,6 +46,7 @@
 | EarlyStartDialog (lesson) | HS-20 | dialog | `earlyStartLessonId != null` (tap LOCKED tile with lessonId) | AlertDialog: "Start early?" title, "Yes"/"No" buttons. "Yes" calls `onSelectLesson(lessonId)`. | ? |
 | Drill tiles row container | HS-21 | card | `hasVerbDrill \|\| hasVocabDrill` | Row containing VerbDrillEntryTile and VocabDrillEntryTile side by side (each weighted 1f). | ? |
 | Locked tile clickable | HS-22 | button | `tile.state == LOCKED` and `tile.lessonId != null` | Opens EarlyStartDialog (HS-20). If `lessonId == null`, opens LessonLockedDialog (HS-19). | ? |
+| Fire streak indicator | HS-23 | row | HomeScreen top | Shows fire icons (todayFireCount, max 4) + streak count number. Updates after each session completion. 0 fires = dimmed/hidden. Streak > 7 = gold highlight. | UC-71, UC-72 |
 
 ---
 
@@ -81,14 +82,14 @@
 | Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
 | Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | REMOVED from HintAnswerCard. TTS replay is now handled solely by the result row TcsSpeakerButton (TCS-28). | ? |
 | Answer text | TS-28 | text | `answerText` not blank | "Answer: {answerText}" text. | ? |
-| Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. | ? |
-| Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. | ? |
-| Navigation Exit button | TS-31 | button | `hasCards` | NavIconButton with StopCircle icon. Calls `onRequestExit()` (triggers exit dialog). | ? |
-| Navigation Next button | TS-32 | button | `hasCards` | NavIconButton with ArrowForward. Calls `onNext(false)`. | ? |
+| Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. In drill mode: standard navigatePrev() through sessionCards. | UC-69, UC-70 |
+| Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. Behavior identical in all sub-modes including drill. | UC-69, UC-70 |
+| Navigation Exit button | TS-31 | button | `hasCards` | NavIconButton with StopCircle icon. Calls `onRequestExit()` (triggers exit dialog). In drill mode: exitDrillMode() saves drillCardIndex to drillProgressStore. | UC-69 |
+| Navigation Next button | TS-32 | button | `hasCards` | NavIconButton with ArrowForward. Calls `onNext(false)`. In drill mode: standard navigateNext() through sessionCards. On last card: triggers finishDrill(). | UC-69, UC-70 |
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
-| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). **Dark Mode:** Must use theme-aware color. Light = 0xFFE8F5E9, Dark = 0xFF1B3A1D. Currently hardcoded `DrillBackgroundGreen` — needs conditional in Theme.kt or `isSystemInDarkTheme()` check. [UC-68 AC1] | UC-68 |
+| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). **Dark Mode:** Must use theme-aware color. Light = 0xFFE8F5E9, Dark = 0xFF1B3A1D. Currently hardcoded `DrillBackgroundGreen` — needs conditional in Theme.kt or `isSystemInDarkTheme()` check. [UC-68 AC1] | UC-68, UC-69 |
 | Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #1565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
 
 ---
@@ -306,7 +307,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Cards: X of Y" text | LR-05 | text | Always | 12sp, 70% alpha. Shows shownCards/totalCards for current lesson. | ? |
 | Sub-lesson grid | LR-06 | card | Always | 4-column LazyVerticalGrid with entries from `buildRoadmapEntries()`. userScrollEnabled=false. | ? |
 | Training tile (exercise) | LR-07 | card | Per entry | Card (72dp) showing: index number, flower emoji (LOCKED/UNLOCKED/completed flower), type label ("NEW"/"MIX"). Clickable when `canEnter`. | ? |
-| Drill tile | LR-08 | card | `hasDrill == true` | Card with FitnessCenter icon + "Drill" label (12sp). primaryContainer when enabled. Calls `onDrillStart()`. | ? |
+| Drill tile | LR-08 | card | `hasDrill == true` | Card with FitnessCenter icon + "Drill" label (12sp). primaryContainer when enabled. Calls `onDrillStart()`. See UC-69 for drill session lifecycle. | UC-69 |
 | Boss "Review" tile | LR-09 | card | Always (per cycle) | Card showing "Review" label + trophy icon (colored by reward) or lock icon. Clickable when `bossUnlocked`. | ? |
 | Boss "Mega" tile | LR-10 | card | `lessonIndex > 0` (per cycle) | Card showing "Mega" label + trophy icon (colored by reward) or lock icon. Clickable when `bossUnlocked`. | ? |
 | "Start Lesson" / "Continue Lesson" button | LR-11 | button | Always | Full-width Button. "Start Lesson" when completed==0, "Continue Lesson" otherwise. Calls `onStartSubLesson(currentIndex)`. | ? |
@@ -417,11 +418,11 @@ These dialogs are rendered as persistent overlays and can appear on any screen.
 |---------|----|------|-------------|----------------------|------------|
 | TTS background progress bar | DG-01 | progress-bar | `bgTtsDownloading == true` | 2dp LinearProgressIndicator at top of all content. Aggregates progress from all language downloads. Persists across screen changes. | ? |
 | WelcomeDialog | DG-02 | dialog | `userName == "GrammarMateUser"` (first launch) | "Welcome to GrammarMate!" + "What's your name?" + OutlinedTextField (50 char, single line, Done IME) + "Skip" + "Continue". Cannot dismiss by tapping outside. Blank input treated as "GrammarMateUser". | ? |
-| StreakDialog | DG-03 | dialog | `streakMessage != null` | "??" icon text (48sp) + "Streak!" title + streakMessage (titleMedium, centered) + "Longest streak: N days" (only when longestStreak > currentStreak) + "Continue" button. | ? |
+| StreakDialog | DG-03 | dialog | `streakMessage != null` | "??" icon text (48sp) + "Streak!" title + streakMessage (titleMedium, centered) + fire count for today (up to 4 fire icons) + current streak count + "Longest streak: N days" (only when longestStreak > currentStreak) + "Continue" button. | UC-71, UC-72 |
 | BossRewardDialog | DG-04 | dialog | `bossRewardMessage != null && bossReward != null` | Trophy icon (EmojiEvents) colored by reward type (bronze #CD7F32, silver #C0C0C0, gold #FFD700) + "Boss Reward" title + rewardMessage + "OK" button. | ? |
 | BossErrorDialog | DG-05 | dialog | `bossErrorMessage != null` | "Boss" title + error message text + "OK" button. | ? |
 | StoryErrorDialog | DG-06 | dialog | `storyErrorMessage != null` | "Story" title + error message text + "OK" button. | ? |
-| DrillStartDialog | DG-07 | dialog | `drillShowStartDialog == true` (tap DrillTile) | "Drill Mode" title + resume/fresh message. If progress exists: "Continue" (resume) + "Start Fresh". If no progress: "Start" only. Always has "Cancel". | ? |
+| DrillStartDialog | DG-07 | dialog | `drillShowStartDialog == true` (tap DrillTile) | "Drill Mode" title + resume/fresh message. If progress exists: "Continue" (resume) + "Start Fresh". If no progress: "Start" only. Always has "Cancel". See UC-69 for full drill session lifecycle. | UC-69 |
 | ExitConfirmationDialog | DG-08 | dialog | Back gesture or Stop during TRAINING/DAILY_PRACTICE | Title "End session?" / "Exit practice?". DAILY_PRACTICE: calls `cancelDailySession()`, navigates HOME. Boss: calls `finishBoss()`, navigates LESSON. Drill: calls `exitDrillMode()`, navigates LESSON. Normal: calls `finishSession()`, navigates LESSON. | ? |
 | TtsDownloadDialog | DG-09 | dialog | `showTtsDownloadDialog == true` (TTS tap without model) | "Download pronunciation model?" title. Dynamic content: Idle shows size, Downloading/Extracting shows progress bar + %, Done shows "ready!", Error shows failure. "Download"/"OK"/"Cancel" buttons. Auto-closes on completion and auto-plays TTS. | ? |
 | MeteredNetworkDialog (TTS) | DG-10 | dialog | `ttsMeteredNetwork == true` (TTS download on metered connection) | "Metered network detected" title + "~346 MB" warning + "Download anyway" + "Cancel". | ? |

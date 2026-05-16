@@ -154,6 +154,9 @@ All initialized as private vals/vars at the top of the class body (lines 81-136)
 |---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
 | 32 | `rebuildSchedules(lessons)` | pri | 1294-1301 | Scheduling | CardProvider | (uses private vars) | (updates lessonSchedules, scheduleKey) | none (delegates to MixedReviewScheduler) |
 | 33 | `buildSessionCards()` | pri | 1303-1375 | Scheduling | CardProvider | bossActive, eliteActive, isDrillMode, mode, selectedLessonId, activeSubLessonIndex, lessons, currentIndex | currentIndex, currentCard, sessionState, subLessonTotal, subLessonCount, activeSubLessonIndex, completedSubLessonCount, subLessonTypes | masteryStore, hiddenCardStore |
+
+> **[SPEC UPDATE 2026-05-16]** When `isDrillMode == true`, `buildSessionCards()` should skip re-building because `sessionCards` already contains all drill cards from `startDrill()`. Returning early prevents overwriting the drill card set.
+
 | 34 | `buildEliteCards()` | pri | 2604-2608 | Scheduling | CardProvider | lessons | (returns List<SentenceCard>) | none |
 
 ### 2.7 Boss Battle Methods
@@ -210,10 +213,16 @@ All initialized as private vals/vars at the top of the class body (lines 81-136)
 | # | Method | Vis | Lines | Category | Target Module | Reads Fields | Writes Fields | Stores Touched |
 |---|--------|-----|-------|----------|---------------|-------------|---------------|----------------|
 | 69 | `showDrillStartDialog(lessonId)` | pub | 1817-1827 | Drill | SessionRunner (drill sub-mode) | lessons, selectedLessonId | drillShowStartDialog, drillHasProgress | drillProgressStore |
-| 70 | `startDrill(resume)` | pub | 1829-1880 | Drill | SessionRunner (drill sub-mode) | selectedLessonId, lessons, drillCardIndex, activePackId | isDrillMode, drillCardIndex, drillTotalCards, drillShowStartDialog, drillHasProgress + all session + boss + elite reset | drillProgressStore, badSentenceStore, progressStore (via saveProgress) |
+| 70 | `startDrill(resume)` | pub | 1829-1880 | Drill | SessionRunner (drill sub-mode) | selectedLessonId, lessons, drillCardIndex, activePackId | isDrillMode, drillCardIndex, drillTotalCards, drillShowStartDialog, drillHasProgress + all session + boss + elite reset. **Sets sessionCards = lesson.drillCards (all cards loaded at once), subLessonTotal = drillCards.size** | drillProgressStore, badSentenceStore, progressStore (via saveProgress) |
 | 71 | `dismissDrillDialog()` | pub | 1882-1884 | Drill | SessionRunner (drill sub-mode) | drillShowStartDialog | drillShowStartDialog | none |
 | 72 | `loadDrillCard(cardIndex, activate)` | pri | 1886-1914 | Drill | SessionRunner (drill sub-mode) | selectedLessonId, lessons, inputMode | currentIndex, currentCard, subLessonTotal, drillCardIndex, sessionState, inputText, lastResult, answerText, incorrectAttemptsForCard, voiceTriggerToken | none |
+
+> **[SPEC UPDATE 2026-05-16]** Method #72 `loadDrillCard` is superseded by loading all drillCards into sessionCards at session start. Drill navigation uses standard navigateNext()/navigatePrev().
+
 | 73 | `advanceDrillCard()` | pub | 1916-1929 | Drill | SessionRunner (drill sub-mode) | isDrillMode, selectedLessonId, drillCardIndex, drillTotalCards | (delegates to loadDrillCard or finishDrill) | drillProgressStore |
+
+> **[SPEC UPDATE 2026-05-16]** Method #73 `advanceDrillCard` is DEPRECATED. Drill navigation now uses standard navigateNext() through sessionCards. advanceDrillCard() should be removed once migration is complete.
+
 | 74 | `finishDrill(lessonId)` | pri | 1931-1947 | Drill | SessionRunner (drill sub-mode) | isDrillMode | isDrillMode, drillCardIndex, drillTotalCards, sessionState, currentIndex, currentCard, subLessonFinishedToken | drillProgressStore, masteryStore (via helpers), progressStore (via saveProgress) |
 | 75 | `exitDrillMode()` | pub | 1949-1975 | Drill | SessionRunner (drill sub-mode) | isDrillMode, selectedLessonId, drillCardIndex, activePackId | isDrillMode, drillCardIndex, drillTotalCards, sessionState, currentIndex, inputText, lastResult, answerText, incorrectAttemptsForCard, voicePromptStartMs, badSentenceCount | drillProgressStore, badSentenceStore, masteryStore (via helpers), progressStore (via saveProgress) |
 
@@ -460,6 +469,9 @@ All fields from `TrainingUiState` data class (lines 3631-3746):
 | 89 | `drillTotalCards` | `Int` | `0` | Drill | SessionRunner (drill sub-mode) |
 | 90 | `drillShowStartDialog` | `Boolean` | `false` | Drill | SessionRunner (drill sub-mode) |
 | 91 | `drillHasProgress` | `Boolean` | `false` | Drill | SessionRunner (drill sub-mode) |
+
+> **Note [SPEC UPDATE 2026-05-16]:** Drill sub-mode now loads all cards into sessionCards at session start. drillCardIndex is synchronized with currentIndex via drillProgressStore. Navigation uses standard navigateNext/navigatePrev. See UC-69, UC-70.
+
 | 92 | `useOfflineAsr` | `Boolean` | `false` | ASR | AudioCoordinator |
 | 93 | `asrState` | `AsrState` | `AsrState.IDLE` | ASR | AudioCoordinator |
 | 94 | `asrModelReady` | `Boolean` | `false` | ASR | AudioCoordinator |
@@ -586,6 +598,9 @@ Six methods contain large `copy()` reset blocks that reset nearly all session st
 | `drillTotalCards` | - | `0` | `0` | - | - | - |
 | `drillShowStartDialog` | - | `false` | `false` | - | - | - |
 | `drillHasProgress` | - | `false` | `false` | - | - | - |
+
+> **Drill state reset (SPEC UPDATE 2026-05-16):** In addition to the methods listed above, drill state fields (`isDrillMode`, `drillCardIndex`, `drillTotalCards`) are also reset by: `startDrill` (sets new drill session values), `finishDrill` (resets all drill fields to defaults), `exitDrillMode` (resets all drill fields to defaults and saves drillCardIndex to drillProgressStore before clearing). `drillShowStartDialog` and `drillHasProgress` are reset by `dismissDrillDialog()` and `startDrill()` respectively. See UC-69.
+
 | `currentCard` | - | `null` | - | - | - | - |
 | `activeTimeMs` | - | - | - | `0L` | `0L` | - |
 | `voiceActiveMs` | - | - | - | `0L` | `0L` | - |
@@ -863,11 +878,27 @@ Navigation arrows (Next/Prev) operate in PAUSE state:
 
 ### Streak counting (updated 2026-05-16)
 
-- Daily streak increments ONLY when at least one card was answered correctly via submit (not navigation)
-- Navigation-only progression does NOT count as practice
-- Bad sentence cards excluded from completion check
+- Fire streak uses the "засчитанная учебная единица" model
+- A session counts as completed (засчитанная УE) when ALL non-bad-sentence cards were answered correctly via VOICE/KEYBOARD
+- Navigation-only sessions do NOT count
+- Each completed session maps to a PracticeType:
+  - Training sub-lesson -> TRANSLATION
+  - Boss battle -> TRANSLATION
+  - Drill sub-mode (non-English) -> TRANSLATION
+  - Drill sub-mode (English, isDrillMode) -> SUB_DRILL
+  - Verb drill (standalone) -> VERB
+  - Vocab drill (standalone) -> VOCAB
+  - Daily Practice Block 1 -> TRANSLATION
+  - Daily Practice Block 2 -> VOCAB
+  - Daily Practice Block 3 -> VERB
+- Fire count = unique PracticeType values completed today
+- Streak = consecutive days with at least 1 fire
 
-**Implementation note:** `updateStreak()` in StreakManager must verify that `correctCount > 0` for the session before incrementing the streak. A session where the user only navigated (Next/Prev) without submitting any correct answers must NOT extend the streak.
+**Implementation note:** `updateStreak()` must:
+1. Verify the session qualifies as "засчитанная УE" (check correctCount >= totalCards - badSentenceCount)
+2. Map the session mode to PracticeType
+3. Call `streakStore.recordPracticeTypeCompletion(languageId, type)`
+4. Update UI state with fire count and streak data
 
 ---
 

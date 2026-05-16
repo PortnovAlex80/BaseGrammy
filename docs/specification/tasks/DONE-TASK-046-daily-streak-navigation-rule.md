@@ -1,6 +1,6 @@
 # TASK-046: Daily Streak Only Counts When Lesson Completed Via Correct Answers
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/streak-navigation-rule (from main)
 **Spec:** 08-training-viewmodel.md §6, 03-algorithms-and-calculators.md

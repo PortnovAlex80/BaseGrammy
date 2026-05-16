@@ -1392,6 +1392,23 @@ Class paths:
 
 Reference implementation: `ui/screens/VerbDrillScreen.kt:392-425`.
 
+### Fire Streak Integration
+
+Each daily practice block completion triggers a fire streak update:
+
+| Block | PracticeType | Fire earned when |
+|-------|-------------|-----------------|
+| Block 1 (TRANSLATE) | TRANSLATION | Block completed as "засчитанная УЕ" (all non-bad cards answered via VOICE/KEYBOARD) |
+| Block 2 (VOCAB) | VOCAB | Block completed (all cards rated, at least non-AGAIN ratings via VOICE/KEYBOARD) |
+| Block 3 (VERBS) | VERB | Block completed as "засчитанная УЕ" |
+
+Daily practice as a whole can earn up to 3 fires (one per block type). Each type is tracked independently — completing daily practice after a standalone lesson does NOT double-count TRANSLATION.
+
+**Implementation:** Each block's `onBlockComplete()` callback must:
+1. Determine if the block qualifies as "засчитанная УЕ"
+2. Map to PracticeType
+3. Call `streakStore.recordPracticeTypeCompletion(languageId, type)`
+
 ### Report Sheet Alignment
 
 The report bottom sheet in all daily practice blocks MUST have 4 options matching the TrainingScreen reference:

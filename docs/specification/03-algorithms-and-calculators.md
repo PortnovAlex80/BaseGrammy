@@ -758,7 +758,92 @@ The normalizer does NOT handle:
 
 ---
 
-## 3.6 Cross-Module Interactions
+## 3.6 Fire Streak Algorithm
+
+### Purpose
+
+Tracks daily practice diversity and computes fire streaks. Each "fire" represents a unique practice type completed via a "засчитанная учебная единица" on a given day. The streak counts consecutive days with at least one fire.
+
+### Input
+
+| Parameter | Type | Semantics |
+|---|---|---|
+| `type` | `PracticeType` | The type of practice just completed |
+| `isQualifiedSession` | `Boolean` | Whether the session qualifies as "засчитанная УЕ" |
+
+### Output
+
+Updated `StreakData` with `completedTypesToday`, `todayFireCount`, `lastFireDateMs`, `currentStreak`, `longestStreak`.
+
+### Algorithm
+
+```
+recordPracticeTypeCompletion(languageId, type):
+    data = load(languageId)
+
+    // Step 1: Daily reset check
+    if data.lastFireDateMs is not null:
+        fireDate = toLocalDate(data.lastFireDateMs)
+        today = toLocalDate(now())
+        if fireDate != today:
+            // New day — reset daily counters
+            data.completedTypesToday = emptySet()
+            data.todayFireCount = 0
+
+    // Step 2: Check if type already recorded today
+    if type in data.completedTypesToday:
+        return (data, false)  // no new fire
+
+    // Step 3: Add type and update fire count
+    data.completedTypesToday = data.completedTypesToday + type
+    data.todayFireCount = data.completedTypesToday.size
+
+    // Step 4: Update fire streak
+    if data.lastFireDateMs is null or >1 day ago:
+        data.currentStreak = 1
+    else if data.lastFireDateMs is yesterday:
+        data.currentStreak = data.currentStreak + 1
+    // else: same day — streak unchanged
+
+    data.lastFireDateMs = now()
+
+    // Step 5: Update longest streak
+    data.longestStreak = max(data.longestStreak, data.currentStreak)
+
+    save(data)
+    return (data, true)  // new fire earned
+```
+
+### Day boundary
+
+Calendar-based (device local time), same as existing streak logic. Uses `Calendar.get(YEAR)` and `Calendar.get(DAY_OF_YEAR)` for same-day and consecutive-day checks.
+
+### Daily reset
+
+`completedTypesToday` and `todayFireCount` reset at the start of each new day (detected by comparing `lastFireDateMs` date with current date).
+
+### Pack scope
+
+Fire streak is per-language (`streak_{languageId}.yaml`), not per-pack. Completing a type in any pack for the language counts.
+
+### Edge cases
+
+| Condition | Behavior |
+|---|---|
+| First ever fire | `lastFireDateMs` is null; `currentStreak` set to 1 |
+| Same day, new type | `todayFireCount` increments, streak unchanged |
+| Same day, duplicate type | No change, returns `false` |
+| Yesterday was last fire | `currentStreak` increments |
+| Gap of 2+ days | `currentStreak` resets to 1 |
+| 4 types already recorded | No further fires possible today |
+
+### Dependency
+
+`StreakStore` (persistence), `Calendar` (day boundary).
+
+---
+
+## 3.7 Cross-Module Interactions
 
 This section describes how the algorithm modules interact with each other and with the rest of the application.
 

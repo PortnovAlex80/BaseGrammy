@@ -22,7 +22,7 @@ All CSV files are located in the pack's vocab drill directory (e.g. `grammarmate
 **Two access points:**
 
 1. **Standalone drill** — user navigates to the VocabDrillScreen from HomeScreen, configures filters, and starts a session. Managed by `VocabDrillViewModel`.
-2. **Daily Practice block 2** — 5 vocab flashcards automatically selected by SRS priority, interleaved into the daily practice session. Managed by `DailySessionComposer` + `TrainingViewModel`.
+2. **Daily Practice block 2** — SESSION_SIZE vocab flashcards automatically selected by SRS priority, interleaved into the daily practice session. Managed by `DailySessionComposer` + `TrainingViewModel`.
 
 ---
 
@@ -632,7 +632,7 @@ Shown on the card back after flipping. Four buttons in a 2x2 grid:
 
 The `DailySessionComposer` builds block 2 of the daily practice session as vocab flashcards. This block produces `DailyTask.VocabFlashcard` tasks, which are rendered in `DailyPracticeScreen.kt` alongside translation and verb drill blocks.
 
-**Block size:** 10 cards (`VOCAB_COUNT = 10`), though the daily practice UI may show only 5 depending on session configuration.
+**Block size:** SESSION_SIZE cards (`VOCAB_COUNT = 10`, configurable via `AppConfig.sessionSize`).
 
 ### 11.7.2 Card Selection Algorithm (Daily Practice)
 
@@ -673,7 +673,7 @@ When the user selects "Repeat" in daily practice:
 | Direction assignment      | User-chosen                   | Alternating even/odd              |
 | Answer rating             | 4-button Anki (Again/Hard/Good/Easy) | Simple correct/incorrect     |
 | Voice input               | Optional, with mic button     | Follows daily practice voice mode |
-| Session size              | Up to 10 cards                | 10 cards (may be truncated to 5)  |
+| Session size              | Up to 10 cards                | SESSION_SIZE cards                 |
 
 **Key point:** Both contexts share the same `WordMasteryStore` persistence file, so progress made in standalone drill affects daily practice card selection and vice versa.
 
@@ -851,6 +851,17 @@ drill_numbers.csv    -> "numbers"
 drill_pronouns.csv   -> "pronouns"
 it_drill_nouns.csv   -> "nouns"  (language prefix also stripped)
 ```
+
+---
+
+### Fire Streak Integration
+
+Standalone vocab drill completion maps to PracticeType.VOCAB.
+
+**Trigger:** When the vocab drill session is completed (all cards rated):
+1. Check if at least one card was rated GOOD or EASY (not only AGAIN)
+2. Call `streakStore.recordPracticeTypeCompletion(languageId, PracticeType.VOCAB)`
+3. If type already recorded today → no additional fire (duplicate prevention)
 
 ---
 

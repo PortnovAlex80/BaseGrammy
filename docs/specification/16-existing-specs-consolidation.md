@@ -121,9 +121,9 @@ Vocab Sprint was implemented and later replaced by the Vocab Drill (Anki-style f
 
 **Daily Practice v1 -- Three Random Blocks**
 The initial Daily Practice had 3 blocks:
-1. 5 random SentenceCards from one lesson
-2. 5 VocabWords from drill files
-3. 5 VerbDrillCards from drill files
+1. SESSION_SIZE random SentenceCards from one lesson
+2. SESSION_SIZE VocabWords from drill files
+3. SESSION_SIZE VerbDrillCards from drill files
 
 This was superseded.
 

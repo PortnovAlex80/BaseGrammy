@@ -1,6 +1,6 @@
 # TASK-048: Unified NavigationRow Component for All Card Modes
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/unified-navigation-row (from main)
 **Spec:** 12-training-card-session.md, 08-training-viewmodel.md §5, 10-verb-drill.md §5

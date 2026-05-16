@@ -1,6 +1,6 @@
 # TASK-049: Unified Input Controls Bar for All Card Modes
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/unified-input-bar (from main)
 **Spec:** 12-training-card-session.md, 05-audio-tts-asr.md, scenario-05-input-modes.md

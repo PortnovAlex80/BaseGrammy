@@ -1,6 +1,6 @@
 # TASK-045: Unify Card Session State Management (Architectural)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/unify-card-session-state (from main)
 **Spec:** 08-training-viewmodel.md §5, 10-verb-drill.md §5, 12-training-card-session.md

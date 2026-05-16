@@ -100,7 +100,7 @@
 
 ### Daily Practice (3 Blocks)
 
-**US-35** As an **Intermediate Learner**, I want a unified Daily Practice session with 3 blocks (10 sentence translations, 5 vocab flashcards, 10 verb conjugations) so that I can practice all skills in one sitting.
+**US-35** As an **Intermediate Learner**, I want a unified Daily Practice session with 3 blocks (10 sentence translations, SESSION_SIZE vocab flashcards, 10 verb conjugations) so that I can practice all skills in one sitting.
 
 **US-36** As an **Intermediate Learner**, I want Daily Practice to use a cursor that tracks my position across lessons so that each session presents fresh cards rather than repeating the same sentences.
 
@@ -405,7 +405,7 @@
   2. App checks for resumable daily session (same day, same level).
   3. If no resumable session: app composes a new session using DailySessionComposer.
      a. Block 1: 10 sentence translations drawn from current lesson using cursor offset.
-     b. Block 2: 5 vocab flashcards selected by SRS priority (overdue first, then new, then fallback).
+     b. Block 2: SESSION_SIZE vocab flashcards selected by SRS priority (overdue first, then new, then fallback).
      c. Block 3: 10 verb conjugation cards filtered by cumulative tenses for the current level, weak-first ordering.
   4. Loading dialog appears while session is composed.
   5. Screen transitions to DailyPracticeScreen.

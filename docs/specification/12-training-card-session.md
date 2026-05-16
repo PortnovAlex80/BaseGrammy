@@ -4,15 +4,45 @@
 
 TrainingCardSession is a reusable Compose composable that provides the entire card-based training UI for GrammarMate. It abstracts card presentation, answer input, validation, feedback display, navigation, and session completion into a single parameterized component driven by the `CardSessionContract` interface.
 
-The component is used by three distinct training modes:
+> **Design Principle — Universal Card Engine:** TrainingScreen (via TrainingCardSession + SessionRunner) is the universal card training engine. All card-based training uses the same UI, navigation, input controls, and feedback. Modes differ ONLY in:
+> 1. Card source (which cards are loaded into `sessionCards`)
+> 2. Scoring logic (mastery tracking, boss rewards)
+> 3. Visual theme (normal background vs green drill theme)
+> 4. Exit destination (HOME vs LESSON)
+>
+> **Modes using TrainingScreen:**
+> 1. **TRAINING_NORMAL** — standard sub-lessons (cards from MixedReviewScheduler)
+> 2. **TRAINING_BOSS** — boss battle review (cards from lesson pool)
+> 3. **TRAINING_BOSS_MEGA** — mega boss battle
+> 4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once)
+> 5. **TRAINING_ELITE** — elite/daily step
+>
+> **Modes using separate screens with TrainingCardSession component:**
+> 6. **VERB_DRILL** — VerbDrillScreen
+> 7. **DAILY_PRACTICE** — DailyPracticeScreen (blocks 1 & 3)
+>
+> **Excluded (different mechanic):** VOCAB_DRILL — Anki flashcard flip, no card session.
+>
+> **Drill sub-mode key change:** Instead of loading 1 card at a time via `advanceDrillCard()`, drill loads ALL `lesson.drillCards` into `sessionCards` and uses standard `navigateNext()`/`navigatePrev()` navigation. Progress tracked via `drillProgressStore` with `drillCardIndex`. Mastery NOT counted.
 
-1. **Standard lesson training** (via `TrainingCardSessionProvider` -- not yet migrated, uses the default slots in GrammarMateApp.kt).
-2. **Verb Drill** (via `VerbDrillCardSessionProvider` wrapping `VerbDrillViewModel`).
-3. **Daily Practice Blocks 1 and 3** -- translation and verb conjugation (via `DailyPracticeSessionProvider`).
+The component is consumed by two tiers of training modes:
 
-Block 2 (Vocab Flashcard) does **not** use TrainingCardSession -- it renders an Anki-style flashcard UI instead.
+**Tier 1 — Sub-modes within TrainingScreen (5 modes):**
+1. **TRAINING_NORMAL** — standard sub-lessons (via MixedReviewScheduler).
+2. **TRAINING_BOSS** — boss battle review (cards from lesson pool).
+3. **TRAINING_BOSS_MEGA** — mega boss battle.
+4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once, green theme, mastery NOT counted).
+5. **TRAINING_ELITE** — elite/daily step.
 
-The key design principle: the only difference between training modes is **card selection and scoring logic**, not the card training UI. All modes share the same visual layout, input methods, feedback animations, and navigation pattern.
+**Tier 2 — Separate screens using TrainingCardSession component (2 modes):**
+6. **Verb Drill** (via `VerbDrillCardSessionProvider` wrapping `VerbDrillViewModel`).
+7. **Daily Practice Blocks 1 and 3** — translation and verb conjugation (via `DailyPracticeSessionProvider`).
+
+**Excluded:** VocabDrill (Block 2 / standalone) uses an Anki-style flashcard flip UI — fundamentally different interaction pattern, does NOT use TrainingCardSession.
+
+The key design principle: the only difference between training modes is **card selection and scoring logic**, not the card training UI. All modes share the same visual layout, input methods, feedback animations, and navigation pattern. This principle applies across all 7 modes listed above.
+
+> **Note:** Drill sub-mode (TRAINING_DRILL) was added to the unified model in spec update 2026-05-16. Previously it used a separate `advanceDrillCard()` mechanism.
 
 ### Files
 
@@ -58,6 +88,7 @@ Optional capability flags that adapters declare. All default to `false`:
 | `supportsFlagging` | Shows report/flag button that opens bottom sheet |
 | `supportsNavigation` | Shows bottom navigation row (prev/pause/exit/next) |
 | `supportsPause` | Shows pause/play toggle button in navigation |
+| `supportsDrillTheme` | Shows green background, green prompt text, green tense labels when `isDrillMode == true` |
 
 ### 12.2.3 Supporting Data Classes
 
@@ -379,6 +410,42 @@ Standard training in `GrammarMateApp.kt` does NOT currently use the `TrainingCar
 ### 12.5.4 Boss Battle
 
 Boss Battle does NOT use `TrainingCardSession`. It has its own dedicated UI with timer, pressure mechanics, and scoring that do not fit the card session pattern.
+
+### 12.5.5 Drill Sub-mode Integration
+
+Drill sub-mode is a simplified, lesson-scoped variant of VerbDrill. The lesson pack author pre-curates drill cards for this lesson's theme and tense. Unlike standalone VerbDrill which provides a SelectionScreen (verb, tense, group selection), drill sub-mode skips selection entirely — the lesson defines the scope. The training UI is identical to normal sub-lesson training.
+
+Drill is a sub-mode of TrainingScreen, triggered by the DrillTile on LessonRoadmap. It was unified into the standard TrainingScreen engine in spec update 2026-05-16, replacing the legacy `advanceDrillCard()` single-card mechanism.
+
+**Entry flow:**
+- User taps DrillTile on LessonRoadmap → DrillStartDialog shown.
+- If `drillHasProgress` (existing `drillCardIndex > 0` in `drillProgressStore`): dialog offers "Continue" / "Start Fresh" / "Cancel".
+- If no progress: dialog offers "Start" / "Cancel".
+- "Start" or "Start Fresh" → `startDrill()` → loads ALL `lesson.drillCards` into `sessionCards`, resets `drillCardIndex` to 0.
+- "Continue" → `startDrill()` → loads ALL `lesson.drillCards` into `sessionCards`, restores `drillCardIndex` from `drillProgressStore`.
+
+**Navigation:** Standard `navigateNext()` / `navigatePrev()` — identical to normal training. No special drill navigation functions.
+
+**Visual theme:**
+- Background: green tint (`0xFFE8F5E9`) when `isDrillMode == true`.
+- Tense labels: green color instead of primary.
+- Prompt text tint: green instead of default.
+- All other UI elements (input controls, navigation row, check button) remain standard.
+
+**Progress tracking:**
+- `drillProgressStore` tracks `drillCardIndex` per lesson.
+- Saved on exit (via `saveProgress()`).
+- Restored on "Continue" entry.
+
+**Mastery:**
+- NOT counted. `recordCardShowForMastery()` returns early when `isDrillMode == true`.
+- Drill practice does not inflate `uniqueCardShows` or advance SRS intervals.
+
+**Exit:** Returns to LESSON screen (not HOME), so user can continue with other sub-lessons.
+
+**Completion:**
+- `finishDrill()` → increments `subLessonFinishedToken` → builds session cards → refreshes flowers on LessonRoadmap.
+- No reward overlay (unlike boss battle).
 
 ---
 

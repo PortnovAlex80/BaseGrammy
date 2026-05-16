@@ -2,6 +2,18 @@
 
 This document exhaustively catalogs every data class, enum, sealed class, interface, and object in the data-model layer of GrammarMate. It is intended as a reference for refactoring: all fields, types, defaults, validation rules, relationships, state transitions, invariants, and business rules are captured here.
 
+**Учебная единица (Learning Unit)** — одна учебная сессия из `SESSION_SIZE` карточек. Размер настраивается через `AppConfig.sessionSize` (default: 10). Применяется ко всем режимам: training sub-lesson, daily practice blocks, verb drill batch, vocab drill batch.
+
+**Засчитанная учебная единица (Completed Learning Unit)** — учебная единица, в которой все карточки (минус bad sentences) получили правильный ответ через VOICE или KEYBOARD. Navigation-only прохождение не считается. Bad sentences исключаются из общего числа: если УЕ содержит N карточек и K помечены как bad, достаточно (N-K) правильных ответов через submit.
+
+**PracticeType** — enum classifying the type of practice activity:
+- `TRANSLATION` — training sub-lesson, daily practice block 1, boss battle, drill sub-mode (non-English)
+- `VOCAB` — vocab drill standalone, daily practice block 2
+- `VERB` — verb drill standalone, daily practice block 3
+- `SUB_DRILL` — drill sub-mode (isDrillMode) within English pack lessons
+
+**Fire streak** — система мотивации, где "огонь" начисляется за каждый уникальный тип практики (PracticeType), завершённый засчитанной УЕ за день. Максимум огней за день: 3 (Italian pack) или 4 (English pack с SUB_DRILL). Streak = количество последовательных дней хотя бы с 1 огнём.
+
 Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/Models.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt`
@@ -244,6 +256,9 @@ Sources:
 | `longestStreak` | `Int` | `0` | All-time longest streak. `>= 0`, `>= currentStreak`. |
 | `lastCompletionDateMs` | `Long?` | `null` | Epoch millis of the last day a sub-lesson was completed. `null` if never. |
 | `totalSubLessonsCompleted` | `Int` | `0` | Lifetime count of completed sub-lessons. `>= 0`. |
+| `completedTypesToday` | `Set<PracticeType>` | `emptySet()` | Practice types completed today via засчитанная УЕ. Reset at day boundary. |
+| `todayFireCount` | `Int` | `0` | Number of fires earned today. Invariant: `== completedTypesToday.size`. Max: 4. |
+| `lastFireDateMs` | `Long?` | `null` | Epoch millis of the last day a fire was earned. `null` if never. |
 
 ---
 
@@ -854,7 +869,7 @@ Special cases:
 | `VOCAB` | Anki-style vocabulary flashcards. | 1 |
 | `VERBS` | Verb conjugation exercises. | 2 |
 
-**Fixed order in daily practice:** TRANSLATE (10 cards) --> VOCAB (5 cards) --> VERBS (10 cards).
+**Fixed order in daily practice:** TRANSLATE (10 cards) --> VOCAB (SESSION_SIZE cards) --> VERBS (10 cards).
 
 ---
 
@@ -1236,7 +1251,7 @@ Special cases:
 
 3. **Atomic file writes:** All persisted state must be written through `AtomicFileWriter` (temp -> fsync -> rename). Direct `File.writeText` is prohibited (Level B constraint).
 
-4. **Session card counts:** Daily practice sessions have fixed sizes: 10 translate cards + 5 vocab flashcards + 10 verb cards = 25 total tasks.
+4. **Session card counts:** Daily practice sessions have fixed sizes: 10 translate cards + SESSION_SIZE vocab flashcards + 10 verb cards = 30 total tasks.
 
 5. **Sub-lesson size bounds:** `SUB_LESSON_SIZE_MIN` (6) <= actual size <= `SUB_LESSON_SIZE_MAX` (12). Default is 10.
 

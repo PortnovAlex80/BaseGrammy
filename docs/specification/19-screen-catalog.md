@@ -207,13 +207,13 @@ Global dialogs (overlay on any screen):
   - Show answer (eye) -> reveal correct answer
   - Report (flag) -> open report bottom sheet
   - TTS speaker -> play/stop pronunciation
-  - Prev/Next -> navigate cards; Pause/Play -> toggle; Exit/Stop -> exit dialog
+  - Prev/Next -> navigate cards (standard navigation for all sub-modes including drill); Pause/Play -> toggle; Exit/Stop -> exit dialog
   - Back gesture -> exit dialog
 - **Business rules**:
   - WORD_BANK input mode does NOT count for mastery (only VOICE and KEYBOARD)
   - Voice mode auto-triggers on new card (200ms delay), auto-submits on result
   - Check disabled when input blank, no cards, or session paused
-  - Boss mode uses `bossProgress`/`bossTotal`; Drill mode uses `drillCardIndex`/`drillTotalCards`
+  - Boss mode uses `bossProgress`/`bossTotal`; Drill mode uses standard `navigateNext()`/`navigatePrev()` through `sessionCards` (all drill cards loaded at once). Progress tracked via `drillProgressStore`
   - Drill mode: green background (Color(0xFFE8F5E9))
   - TTS requires model download (~346 MB)
   - Report sheet: flag/unflag persisted immediately; export to `Downloads/BaseGrammy/bad_sentences_all.txt`
@@ -242,7 +242,7 @@ Global dialogs (overlay on any screen):
   - Back -> exit confirmation
   - Rating auto-advances to next card
 - **Business rules**:
-  - 3-block structure: TRANSLATE (10 cards) -> VOCAB (5 cards) -> VERBS (10 cards)
+  - 3-block structure: TRANSLATE (10 cards) -> VOCAB (SESSION_SIZE cards) -> VERBS (10 cards)
   - Block transitions show sparkle overlay (~800ms)
   - Verb hint chips in daily practice do NOT open bottom sheets (unlike standalone Verb Drill)
   - Voice auto-trigger on new card (200ms delay; 1200ms after incorrect feedback)
@@ -435,7 +435,7 @@ Global dialogs (overlay on any screen):
 - **Source file**: `GrammarMateApp.kt` (line 1495)
 - **Trigger**: Tap DrillTile in Lesson Roadmap (`drillShowStartDialog`)
 - **Key UI elements**: "Drill Mode" title + message (resume or fresh) + "Start"/"Continue" (confirm) + "Start Fresh" (dismiss, only if hasProgress) + "Cancel" buttons
-- **Business rules**: If progress exists: "Continue" (resume) + "Start Fresh". If no progress: "Start" only.
+- **Business rules**: If progress exists: "Continue" (resume) + "Start Fresh". If no progress: "Start" only. See UC-69 for full lifecycle specification.
 - **Cross-reference**: Russian spec section 5-7 (DrillStartDialog in Lesson Roadmap) matches. No discrepancies.
 
 ### D7. ExitConfirmationDialog
@@ -447,7 +447,7 @@ Global dialogs (overlay on any screen):
 - **Business rules**:
   - DAILY_PRACTICE: calls `cancelDailySession()`, navigates HOME
   - Boss mode: calls `finishBoss()`, navigates LESSON
-  - Drill mode: calls `exitDrillMode()`, navigates LESSON
+  - Drill mode: calls `exitDrillMode()` (saves drillCardIndex to drillProgressStore), navigates LESSON. See UC-69.
   - Normal training: calls `finishSession()`, navigates LESSON
 - **Cross-reference**: Russian spec mentions exit dialogs in TrainingScreen (section 4, block 13) and DailyPracticeScreen (section 5, block 6). Both match. No discrepancies.
 

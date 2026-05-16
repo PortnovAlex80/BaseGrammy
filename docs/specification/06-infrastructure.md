@@ -322,6 +322,7 @@ data class AppConfig(
 | `testMode` | Boolean | `false` | `true` / `false` | Enables test/debug mode. When true, typically reduces card counts and relaxes constraints for faster testing cycles. |
 | `eliteSizeMultiplier` | Double | `1.25` | Positive number | Multiplier for elite/daily practice session size. A value of 1.0 means standard size; higher values increase the number of cards per session. |
 | `vocabSprintLimit` | Int | `20` | Positive integer | Maximum number of vocab flashcards in a daily practice session's vocab block. |
+| `sessionSize` | `Int` | `10` | Positive integer (6-12) | Number of cards per learning unit (учебная единица). Applied to all modes: training sub-lessons, daily practice blocks, drill batches. |
 | `useOfflineAsr` | Boolean | `false` | `true` / `false` | When true, uses Sherpa-ONNX offline ASR instead of Android's built-in speech recognizer. |
 
 ### 6.4.4 config.yaml format
