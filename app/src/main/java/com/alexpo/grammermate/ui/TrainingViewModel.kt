@@ -488,6 +488,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update {
             it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = selectedLessonId, activePackId = newPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = newPackLessonIds), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
+        // Load streak for the new language (resetAllSessionState zeroes streak data)
+        val streakData = streakStore.getCurrentStreak(languageId)
+        _coreState.update {
+            it.copy(cardSession = it.cardSession.copy(
+                currentStreak = streakData.currentStreak,
+                longestStreak = streakData.longestStreak,
+                todayFireCount = streakData.todayFireCount
+            ))
+        }
         // Reset feature-owned state
         bossOrchestrator.resetStateKeepRewards()
         storyRunner.resetState()
