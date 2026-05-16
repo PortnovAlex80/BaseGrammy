@@ -55,6 +55,8 @@ import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.ui.components.PomodoroSelectorSheet
+import androidx.compose.ui.res.painterResource
 
 enum class LessonTileState {
     SEED,
@@ -97,7 +99,8 @@ fun HomeScreen(
     hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
     onOpenVocabDrill: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onStartPomodoro: (Int) -> Unit = {}
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -105,6 +108,7 @@ fun HomeScreen(
     var showMethod by remember { mutableStateOf(false) }
     var showLockedLessonHint by remember { mutableStateOf(false) }
     var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
+    var showPomodoroSheet by remember { mutableStateOf(false) }
     val languageCode = state.navigation.languages
         .firstOrNull { it.id == state.navigation.selectedLanguageId }
         ?.id?.value
@@ -173,6 +177,14 @@ fun HomeScreen(
                     selectedLanguageId = state.navigation.selectedLanguageId.value,
                     onSelect = onSelectLanguage
                 )
+                IconButton(onClick = { showPomodoroSheet = true }) {
+                    Icon(
+                        painter = painterResource(com.alexpo.grammermate.R.drawable.ic_tomato),
+                        contentDescription = "Pomodoro Timer",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.home_settings))
                 }
@@ -332,6 +344,16 @@ fun HomeScreen(
             text = { Text(text = stringResource(R.string.home_start_early_message)) }
         )
     }
+
+    PomodoroSelectorSheet(
+        showSheet = showPomodoroSheet,
+        onDismiss = { showPomodoroSheet = false },
+        onStart = { duration ->
+            showPomodoroSheet = false
+            onStartPomodoro(duration)
+        },
+        lastDuration = 20
+    )
 }
 
 @Composable
