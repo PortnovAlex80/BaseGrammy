@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.feature.progress
 
+import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
 
@@ -30,19 +31,32 @@ class StreakManager(
     }
 
     /**
-     * Generate a celebration message for the given streak count, or null if
-     * no special milestone is reached.
+     * Records completion of a specific practice type for fire streak tracking.
+     *
+     * @return updated [StreakData] and a flag indicating whether a new fire was earned.
      */
-    fun getCelebrationMessage(streakCount: Int): String? {
+    fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean> {
+        return streakStore.recordPracticeTypeCompletion(languageId, type)
+    }
+
+    /**
+     * Generate a celebration message for the given streak count and fire count, or null if
+     * no special milestone is reached.
+     *
+     * @param streakCount current streak in days
+     * @param fireCount number of fires earned today
+     */
+    fun getCelebrationMessage(streakCount: Int, fireCount: Int = 1): String? {
+        val fireEmoji = "🔥".repeat(fireCount.coerceIn(1, 4))
         return when {
-            streakCount == 1 -> "🔥 Great start! Day 1 streak!"
-            streakCount == 3 -> "🔥 3 days streak! You're on fire!"
-            streakCount == 7 -> "🔥 7 days streak! One week! Amazing!"
-            streakCount == 14 -> "🔥 14 days streak! Two weeks! Incredible!"
-            streakCount == 30 -> "🔥 30 days streak! One month! Outstanding!"
-            streakCount == 100 -> "🔥 100 days streak! You're a legend!"
-            streakCount % 10 == 0 -> "🔥 $streakCount days streak! Keep it up!"
-            else -> "🔥 $streakCount days streak!"
+            fireCount >= 3 -> "$fireEmoji Perfect day! All practice types completed! $streakCount day streak!"
+            fireCount == 2 -> "$fireEmoji Great variety! $streakCount day streak!"
+            streakCount == 1 -> "$fireEmoji Great start! Day 1!"
+            streakCount == 7 -> "$fireEmoji One week streak! Amazing!"
+            streakCount == 30 -> "$fireEmoji One month streak! Outstanding!"
+            streakCount == 100 -> "$fireEmoji 100 days! Legend!"
+            streakCount % 10 == 0 && streakCount > 0 -> "$fireEmoji $streakCount day streak! Keep it up!"
+            else -> "$fireEmoji $streakCount day streak!"
         }
     }
 }

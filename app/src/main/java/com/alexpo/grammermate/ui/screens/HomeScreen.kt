@@ -179,6 +179,13 @@ fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        // Fire streak indicator (HS-23)
+        val fireCount = state.cardSession.todayFireCount
+        val streakDays = state.cardSession.currentStreak
+        if (fireCount > 0 || streakDays > 0) {
+            FireStreakIndicator(fireCount = fireCount, streakDays = streakDays)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -324,6 +331,46 @@ fun HomeScreen(
             title = { Text(text = stringResource(R.string.home_start_early_title)) },
             text = { Text(text = stringResource(R.string.home_start_early_message)) }
         )
+    }
+}
+
+@Composable
+fun FireStreakIndicator(fireCount: Int, streakDays: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (streakDays >= 7) {
+                Color(0xFFFFF3E0) // warm gold tint
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "🔥".repeat(fireCount.coerceIn(1, 4)),
+                    fontSize = 18.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (fireCount >= 3) stringResource(R.string.home_perfect_day) else if (fireCount == 2) stringResource(R.string.home_great_variety) else stringResource(R.string.home_keep_practicing),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+            Text(
+                text = "${streakDays}d",
+                fontWeight = FontWeight.Bold,
+                color = if (streakDays >= 7) Color(0xFFFF8F00) else MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 

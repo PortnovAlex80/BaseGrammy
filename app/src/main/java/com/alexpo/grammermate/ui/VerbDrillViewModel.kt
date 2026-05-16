@@ -9,6 +9,7 @@ import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.BadSentenceEntry
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.Normalizer
+import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -17,6 +18,7 @@ import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.data.VerbDrillSessionState
 import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
+import com.alexpo.grammermate.data.StreakStore
 import org.yaml.snakeyaml.Yaml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +54,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private val progressStore = container.progressStore
     private val badSentenceStore = container.badSentenceStore
     private val ttsEngine = container.ttsEngine
+    private val streakStore = container.streakStore
 
     private val _uiState = MutableStateFlow(VerbDrillUiState())
     val uiState: StateFlow<VerbDrillUiState> = _uiState
@@ -382,7 +385,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         persistCardProgress(card)
 
-        if (!isComplete) {
+        if (isComplete) {
+            recordFireStreakIfCompleted(updatedCorrect)
+        } else {
             cardShownTimestamp = System.currentTimeMillis()
         }
 
@@ -453,6 +458,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         progressMap = progressMap.toMutableMap().apply { this[comboKey] = updatedProgress }
         verbDrillStore.upsertComboProgress(comboKey, updatedProgress)
+    }
+
+    /**
+     * Record fire streak for verb drill session completion.
+     * A session counts when correctCount >= (sessionSize - badSentenceCount).
+     */
+    private fun recordFireStreakIfCompleted(correctCount: Int) {
+        val badCount = activePackIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+        val required = (sessionSize - badCount).coerceAtLeast(1)
+        if (correctCount >= required) {
+            val languageId = _uiState.value.loadedLanguageId ?: return
+            streakStore.recordPracticeTypeCompletion(languageId, PracticeType.VERB)
+        }
     }
 
     fun nextBatch() {

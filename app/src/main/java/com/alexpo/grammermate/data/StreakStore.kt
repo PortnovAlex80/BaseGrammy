@@ -16,6 +16,8 @@ interface StreakStore {
 
     fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean>
 
+    fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean>
+
     fun getCurrentStreak(languageId: String): StreakData
 }
 
@@ -31,13 +33,22 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
     private fun saveInternal(data: StreakData) {
         baseDir.mkdirs()
         val file = getFile(data.languageId.value)
-        val payload = mapOf(
+        val payload = mutableMapOf<String, Any?>(
             "languageId" to data.languageId.value,
             "currentStreak" to data.currentStreak,
             "longestStreak" to data.longestStreak,
             "lastCompletionDateMs" to data.lastCompletionDateMs,
             "totalSubLessonsCompleted" to data.totalSubLessonsCompleted
         )
+        if (data.completedTypesToday.isNotEmpty()) {
+            payload["completedTypesToday"] = data.completedTypesToday.map { it.name }
+        }
+        if (data.todayFireCount > 0) {
+            payload["todayFireCount"] = data.todayFireCount
+        }
+        if (data.lastFireDateMs != null) {
+            payload["lastFireDateMs"] = data.lastFireDateMs
+        }
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
 
@@ -54,12 +65,24 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         val lastCompletionDateMs = (data["lastCompletionDateMs"] as? Number)?.toLong()
         val totalSubLessonsCompleted = (data["totalSubLessonsCompleted"] as? Number)?.toInt() ?: 0
 
+        // Fire streak fields (migration-safe: defaults for old files)
+        @Suppress("UNCHECKED_CAST")
+        val completedTypesToday = (data["completedTypesToday"] as? List<String>)
+            ?.mapNotNull { name -> PracticeType.entries.find { it.name == name } }
+            ?.toSet()
+            ?: emptySet()
+        val todayFireCount = (data["todayFireCount"] as? Number)?.toInt() ?: 0
+        val lastFireDateMs = (data["lastFireDateMs"] as? Number)?.toLong()
+
         return StreakData(
             languageId = LanguageId(languageId),
             currentStreak = currentStreak,
             longestStreak = longestStreak,
             lastCompletionDateMs = lastCompletionDateMs,
-            totalSubLessonsCompleted = totalSubLessonsCompleted
+            totalSubLessonsCompleted = totalSubLessonsCompleted,
+            completedTypesToday = completedTypesToday,
+            todayFireCount = todayFireCount,
+            lastFireDateMs = lastFireDateMs
         )
     }
 
@@ -96,6 +119,84 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
 
         saveInternal(updated)
         return Pair(updated, streakStatus.isNewStreak)
+    }
+
+    /**
+     * Records completion of a specific practice type for fire streak tracking.
+     *
+     * Fire streak logic:
+     * - Day boundary check: reset completedTypesToday if a new day
+     * - Duplicate type: no-op (return unchanged)
+     * - New type: add to completedTypesToday, increment todayFireCount, update streak
+     *
+     * @return updated StreakData and flag indicating whether a new fire was earned.
+     */
+    override fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean> = mutex.withLock {
+        val current = loadInternal(languageId)
+        val now = System.currentTimeMillis()
+
+        // Day boundary: reset fire tracking if last fire was on a different calendar day
+        var completedTypesToday = current.completedTypesToday
+        var todayFireCount = current.todayFireCount
+
+        val lastFireMs = current.lastFireDateMs
+        if (lastFireMs != null) {
+            val lastFireCal = Calendar.getInstance().apply { timeInMillis = lastFireMs }
+            val todayCal = Calendar.getInstance().apply { timeInMillis = now }
+            val isSameDay = lastFireCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                    lastFireCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
+            if (!isSameDay) {
+                // New day: reset fire tracking
+                completedTypesToday = emptySet()
+                todayFireCount = 0
+            }
+        }
+
+        // Duplicate type check: if this type was already recorded today, no new fire
+        if (type in completedTypesToday) {
+            // Still update streak if needed (streak logic uses lastCompletionDateMs)
+            val streakStatus = checkAndUpdateStreak(current, now)
+            val newCurrentStreak = when {
+                streakStatus.isFirstTime -> 1
+                streakStatus.isSameDay -> current.currentStreak
+                streakStatus.isConsecutive -> current.currentStreak + 1
+                else -> 1
+            }
+            val updated = current.copy(
+                currentStreak = newCurrentStreak,
+                longestStreak = maxOf(current.longestStreak, newCurrentStreak),
+                lastCompletionDateMs = now,
+                totalSubLessonsCompleted = current.totalSubLessonsCompleted + 1
+            )
+            saveInternal(updated)
+            return Pair(updated, false) // no new fire
+        }
+
+        // New type: add fire
+        val newCompletedTypes = completedTypesToday + type
+        val newFireCount = todayFireCount + 1
+
+        // Update streak based on day boundary
+        val streakStatus = checkAndUpdateStreak(current, now)
+        val newCurrentStreak = when {
+            streakStatus.isFirstTime -> 1
+            streakStatus.isSameDay -> current.currentStreak
+            streakStatus.isConsecutive -> current.currentStreak + 1
+            else -> 1
+        }
+
+        val updated = current.copy(
+            currentStreak = newCurrentStreak,
+            longestStreak = maxOf(current.longestStreak, newCurrentStreak),
+            lastCompletionDateMs = now,
+            totalSubLessonsCompleted = current.totalSubLessonsCompleted + 1,
+            completedTypesToday = newCompletedTypes,
+            todayFireCount = newFireCount,
+            lastFireDateMs = now
+        )
+
+        saveInternal(updated)
+        return Pair(updated, true) // new fire earned
     }
 
     private data class StreakStatus(

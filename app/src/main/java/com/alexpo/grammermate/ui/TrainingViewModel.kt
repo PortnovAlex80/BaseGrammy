@@ -26,6 +26,7 @@ import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.CefrCalculator
+import com.alexpo.grammermate.data.PracticeType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -166,7 +167,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonStore = lessonStore,
         masteryStore = masteryStore,
         verbDrillStoreFactory = { packId -> container.verbDrillStore(packId) },
-        wordMasteryStoreFactory = { packId -> container.wordMasteryStore(packId) }
+        wordMasteryStoreFactory = { packId -> container.wordMasteryStore(packId) },
+        streakStore = streakStore
     )
 
     private val storyRunner = StoryRunner(
@@ -298,7 +300,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
+            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
         }
         // Initialize feature-owned state from persisted progress
         bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
@@ -1071,21 +1073,47 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
     private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
     private fun updateStreak() {
-        // TASK-046: Streak only counts when at least one card was answered correctly.
-        // Navigation-only sessions (arrows, no submit) must NOT inflate the streak.
-        if (_coreState.value.cardSession.correctCount == 0) return
+        // TASK-051: Streak only counts when session is "completed" (засчитанная УЕ).
+        // Must have enough correct answers to cover non-bad cards.
+        if (!isSessionCompleted()) return
 
         val languageId = _coreState.value.navigation.selectedLanguageId
-        val (updatedStreak, isNewStreak) = streakManager.recordSubLessonCompletion(languageId.value)
-        if (isNewStreak && updatedStreak.currentStreak > 0) {
-            val message = streakManager.getCelebrationMessage(updatedStreak.currentStreak)
+        val practiceType = determinePracticeType()
+        val (updatedStreak, isNewFire) = streakManager.recordPracticeTypeCompletion(languageId.value, practiceType)
+        val fireCount = updatedStreak.todayFireCount
+        if (isNewFire && updatedStreak.currentStreak > 0) {
+            val message = streakManager.getCelebrationMessage(updatedStreak.currentStreak, fireCount)
             _coreState.update {
-                it.copy(cardSession = it.cardSession.copy(currentStreak = updatedStreak.currentStreak, longestStreak = updatedStreak.longestStreak, streakMessage = message, streakCelebrationToken = it.cardSession.streakCelebrationToken + 1))
+                it.copy(cardSession = it.cardSession.copy(currentStreak = updatedStreak.currentStreak, longestStreak = updatedStreak.longestStreak, streakMessage = message, streakCelebrationToken = it.cardSession.streakCelebrationToken + 1, todayFireCount = fireCount))
             }
         } else {
             _coreState.update {
-                it.copy(cardSession = it.cardSession.copy(currentStreak = updatedStreak.currentStreak, longestStreak = updatedStreak.longestStreak))
+                it.copy(cardSession = it.cardSession.copy(currentStreak = updatedStreak.currentStreak, longestStreak = updatedStreak.longestStreak, todayFireCount = fireCount))
             }
+        }
+    }
+
+    /**
+     * Check if the current session is "completed" (засчитанная УЕ).
+     * A session counts when correctCount >= (sessionSize - badSentenceCount),
+     * i.e. all non-bad cards were answered correctly.
+     */
+    private fun isSessionCompleted(): Boolean {
+        val state = _coreState.value.cardSession
+        val badCount = _coreState.value.cardSession.badSentenceCount
+        val totalRequired = (sessionSize - badCount).coerceAtLeast(1)
+        return state.correctCount >= totalRequired
+    }
+
+    /**
+     * Determine the PracticeType for the current session mode.
+     */
+    private fun determinePracticeType(): PracticeType {
+        val state = _coreState.value
+        return when {
+            state.boss.bossActive -> PracticeType.TRANSLATION
+            state.drill.isDrillMode -> PracticeType.TRANSLATION
+            else -> PracticeType.TRANSLATION
         }
     }
     private fun saveProgress() {

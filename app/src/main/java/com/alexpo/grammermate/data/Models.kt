@@ -203,12 +203,23 @@ data class FlowerVisual(
 /**
  * Данные о streak (ежедневных занятиях)
  */
+/** Practice type for fire streak tracking. Each unique type per day earns one fire. */
+enum class PracticeType {
+    TRANSLATION,  // training sub-lesson, boss battle, daily block 1, drill sub-mode
+    VOCAB,        // vocab drill standalone, daily block 2
+    VERB,         // verb drill standalone, daily block 3
+    SUB_DRILL     // drill sub-mode in English packs only
+}
+
 data class StreakData(
     val languageId: LanguageId,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val lastCompletionDateMs: Long? = null,
-    val totalSubLessonsCompleted: Int = 0
+    val totalSubLessonsCompleted: Int = 0,
+    val completedTypesToday: Set<PracticeType> = emptySet(),
+    val todayFireCount: Int = 0,
+    val lastFireDateMs: Long? = null
 )
 
 enum class DailyBlockType { TRANSLATE, VOCAB, VERBS }
@@ -318,7 +329,8 @@ data class CardSessionState(
     val hintLevel: HintLevel = HintLevel.EASY,
     val badSentenceCount: Int = 0,
     val testMode: Boolean = false,
-    val vocabSprintLimit: Int = 20
+    val vocabSprintLimit: Int = 20,
+    val todayFireCount: Int = 0
 ) {
     /** Whether the session can accept an answer submission. */
     val canSubmit: Boolean

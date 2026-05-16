@@ -20,6 +20,8 @@ import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.data.PracticeType
+import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +47,7 @@ class DailyPracticeCoordinator(
     private val masteryStore: MasteryStore,
     private val verbDrillStoreFactory: (String?) -> VerbDrillStore,
     private val wordMasteryStoreFactory: (String?) -> WordMasteryStore,
+    private val streakStore: StreakStore,
     private var sessionSize: Int = 10
 ) {
 
@@ -190,6 +193,20 @@ class DailyPracticeCoordinator(
     }
 
     fun endSession() {
+        // Record fire streaks for each completed block type in the daily session
+        val ds = _state.value.dailySession
+        val languageId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+        val blockTypes = ds.tasks.map { it.blockType }.toSet()
+        val blockTypeToPracticeType = mapOf(
+            DailyBlockType.TRANSLATE to PracticeType.TRANSLATION,
+            DailyBlockType.VOCAB to PracticeType.VOCAB,
+            DailyBlockType.VERBS to PracticeType.VERB
+        )
+        for (blockType in blockTypes) {
+            val practiceType = blockTypeToPracticeType[blockType] ?: continue
+            streakStore.recordPracticeTypeCompletion(languageId, practiceType)
+        }
+
         _state.update { state ->
             state.copy(dailySession = state.dailySession.copy(
                     active = false,

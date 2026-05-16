@@ -86,7 +86,18 @@ class DailyPracticeCoordinatorTest {
             lessonStore = mockLessonStore,
             masteryStore = mockMasteryStore,
             verbDrillStoreFactory = { _ -> mockVerbDrillStore },
-            wordMasteryStoreFactory = { _ -> mockWordMasteryStore }
+            wordMasteryStoreFactory = { _ -> mockWordMasteryStore },
+            streakStore = object : StreakStore {
+                override fun save(data: StreakData) {}
+                override fun load(languageId: String): StreakData =
+                    StreakData(languageId = LanguageId(languageId))
+                override fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> =
+                    StreakData(languageId = LanguageId(languageId)) to false
+                override fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean> =
+                    StreakData(languageId = LanguageId(languageId)) to false
+                override fun getCurrentStreak(languageId: String): StreakData =
+                    StreakData(languageId = LanguageId(languageId))
+            }
         )
     }
 

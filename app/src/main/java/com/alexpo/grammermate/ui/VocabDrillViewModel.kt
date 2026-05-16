@@ -8,6 +8,7 @@ import com.alexpo.grammermate.AppContainer
 import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
 import com.alexpo.grammermate.data.LessonStore
+import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.data.TtsState
@@ -20,6 +21,7 @@ import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.data.VocabWord
 import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
+import com.alexpo.grammermate.data.StreakStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -36,6 +38,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private var masteryStore = container.wordMasteryStore(null)
     private val badSentenceStore = container.badSentenceStore
     private val ttsEngine = container.ttsEngine
+    private val streakStore = container.streakStore
 
     private val _uiState = MutableStateFlow(VocabDrillUiState())
     val uiState: StateFlow<VocabDrillUiState> = _uiState
@@ -328,9 +331,23 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
 
     /**
      * Exit the current session.
-     * Refreshes counts to reflect any mastery changes made during the session.
+     * Records fire streak if session had at least one non-AGAIN rating,
+     * then refreshes counts to reflect any mastery changes.
      */
     fun exitSession() {
+        // Record fire streak: session counts if any card was rated GOOD/EASY/HARD (not just AGAIN)
+        val session = _uiState.value.session
+        if (session != null && _hasRatedCards) {
+            val hasNonAgainRating = session.cards.any { card ->
+                card.mastery.lastReviewDateMs > 0L
+            }
+            if (hasNonAgainRating) {
+                val languageId = _uiState.value.loadedLanguageId
+                if (languageId != null) {
+                    streakStore.recordPracticeTypeCompletion(languageId, PracticeType.VOCAB)
+                }
+            }
+        }
         _hasRatedCards = false
         _uiState.update { it.copy(session = null) }
         updateCounts()
