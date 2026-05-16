@@ -282,7 +282,10 @@ fun TrainingScreen(
                 // Pomodoro difficulty rating prompt
                 if (state.pomodoro.isActive && state.pomodoro.showRatingPrompt) {
                     DifficultyRatingRow(
-                        onRatingSelected = { rating -> onRateCardDifficulty(rating) }
+                        onRatingSelected = { rating ->
+                            onRateCardDifficulty(rating)
+                            onNext()
+                        }
                     )
                 }
                 UnifiedNavigationRow(
