@@ -21,6 +21,7 @@ class PomodoroHelper(
     private var timerJob: Job? = null
 
     fun startPomodoro(durationMinutes: Int) {
+        val current = stateProvider()
         val totalSeconds = durationMinutes * 60
         val state = PomodoroState(
             isActive = true,
@@ -28,7 +29,9 @@ class PomodoroHelper(
             isComplete = false,
             selectedDurationMinutes = durationMinutes,
             remainingSeconds = totalSeconds,
-            totalSeconds = totalSeconds
+            totalSeconds = totalSeconds,
+            baselineCorrect = current.cardSession.correctCount,
+            baselineIncorrect = current.cardSession.incorrectCount
         )
         updatePomodoroState(state)
         startTimer()
@@ -59,11 +62,15 @@ class PomodoroHelper(
         onPauseTraining()
         val current = stateProvider()
         val cardSession = current.cardSession
+        val pomodoro = current.pomodoro
+
+        val sessionCorrect = (cardSession.correctCount - pomodoro.baselineCorrect).coerceAtLeast(0)
+        val sessionIncorrect = (cardSession.incorrectCount - pomodoro.baselineIncorrect).coerceAtLeast(0)
 
         val stats = PomodoroSessionStats(
-            cardsShown = cardSession.correctCount + cardSession.incorrectCount,
-            cardsCorrect = cardSession.correctCount,
-            cardsIncorrect = cardSession.incorrectCount,
+            cardsShown = sessionCorrect + sessionIncorrect,
+            cardsCorrect = sessionCorrect,
+            cardsIncorrect = sessionIncorrect,
             difficultyRatings = current.pomodoro.stats.difficultyRatings,
             wordsPerMinute = if (cardSession.voiceActiveMs > 0)
                 cardSession.voiceWordCount / (cardSession.voiceActiveMs / 60000.0) else 0.0,

@@ -243,7 +243,9 @@ data class PomodoroState(
     val totalSeconds: Int = 0,
     val stats: PomodoroSessionStats = PomodoroSessionStats(),
     val showRatingPrompt: Boolean = false,
-    val showExitConfirm: Boolean = false
+    val showExitConfirm: Boolean = false,
+    val baselineCorrect: Int = 0,
+    val baselineIncorrect: Int = 0
 )
 
 data class StreakData(

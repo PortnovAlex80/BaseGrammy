@@ -159,8 +159,10 @@ fun TrainingScreen(
         ) {
             // Pomodoro timer banner
             if (state.pomodoro.isActive && !state.pomodoro.isComplete) {
-                val totalCards = state.cardSession.correctCount + state.cardSession.incorrectCount
-                val successRate = if (totalCards > 0) state.cardSession.correctCount * 100 / totalCards else 0
+                val sessionCorrect = (state.cardSession.correctCount - state.pomodoro.baselineCorrect).coerceAtLeast(0)
+                val sessionIncorrect = (state.cardSession.incorrectCount - state.pomodoro.baselineIncorrect).coerceAtLeast(0)
+                val totalCards = sessionCorrect + sessionIncorrect
+                val successRate = if (totalCards > 0) sessionCorrect * 100 / totalCards else 0
                 PomodoroTimerBanner(
                     remainingSeconds = state.pomodoro.remainingSeconds,
                     totalSeconds = state.pomodoro.totalSeconds,
