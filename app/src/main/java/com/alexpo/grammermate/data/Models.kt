@@ -211,6 +211,41 @@ enum class PracticeType {
     SUB_DRILL     // drill sub-mode in English packs only
 }
 
+enum class PomodoroPreset(val minutes: Int, val label: String) {
+    QUICK(5, "Quick"),
+    FOCUS(15, "Focus"),
+    CLASSIC(20, "Classic")
+}
+
+enum class CardDifficultyRating {
+    AGAIN,
+    HARD,
+    GOOD,
+    EASY
+}
+
+data class PomodoroSessionStats(
+    val cardsShown: Int = 0,
+    val cardsCorrect: Int = 0,
+    val cardsIncorrect: Int = 0,
+    val difficultyRatings: Map<CardDifficultyRating, Int> = emptyMap(),
+    val wordsPerMinute: Double = 0.0,
+    val durationMinutes: Int = 0,
+    val completedAtMs: Long = 0
+)
+
+data class PomodoroState(
+    val isActive: Boolean = false,
+    val isPaused: Boolean = false,
+    val isComplete: Boolean = false,
+    val selectedDurationMinutes: Int = 20,
+    val remainingSeconds: Int = 0,
+    val totalSeconds: Int = 0,
+    val stats: PomodoroSessionStats = PomodoroSessionStats(),
+    val showRatingPrompt: Boolean = false,
+    val showExitConfirm: Boolean = false
+)
+
 data class StreakData(
     val languageId: LanguageId,
     val currentStreak: Int = 0,
@@ -431,7 +466,8 @@ data class TrainingUiState(
     val drill: DrillState = DrillState(),
     val flowerDisplay: FlowerDisplayState = FlowerDisplayState(),
     val audio: AudioState = AudioState(),
-    val daily: DailyPracticeState = DailyPracticeState()
+    val daily: DailyPracticeState = DailyPracticeState(),
+    val pomodoro: PomodoroState = PomodoroState()
 ) {
     /**
      * Reset all session-related state to defaults.
