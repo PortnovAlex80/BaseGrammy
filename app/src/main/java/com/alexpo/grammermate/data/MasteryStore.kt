@@ -26,6 +26,10 @@ interface MasteryStore {
     fun clear()
 
     fun clearLanguage(languageId: String)
+
+    fun recordCardEncounter(lessonId: String, languageId: String, cardId: String): Int
+
+    fun getCardEncounterCount(lessonId: String, languageId: String, cardId: String): Int
 }
 
 /**
@@ -81,6 +85,15 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                         ?.toSet()
                         ?: emptySet()
 
+                    val cardEncounterCounts = (lessonData["cardEncounterCounts"] as? Map<*, *>)
+                        ?.mapNotNull { (k, v) ->
+                            val key = k as? String ?: return@mapNotNull null
+                            val value = (v as? Number)?.toInt() ?: return@mapNotNull null
+                            key to value
+                        }
+                        ?.toMap()
+                        ?: emptyMap()
+
                     val mastery = LessonMasteryState(
                         lessonId = LessonId(lessonId),
                         languageId = LanguageId(languageId),
@@ -89,7 +102,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                         lastShowDateMs = (lessonData["lastShowDateMs"] as? Number)?.toLong() ?: 0L,
                         intervalStepIndex = (lessonData["intervalStepIndex"] as? Number)?.toInt() ?: 0,
                         completedAtMs = (lessonData["completedAtMs"] as? Number)?.toLong(),
-                        shownCardIds = shownCardIds
+                        shownCardIds = shownCardIds,
+                        cardEncounterCounts = cardEncounterCounts
                     )
 
                     cache[languageId]!![lessonId] = mastery
@@ -228,6 +242,36 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     }
 
     /**
+     * Record an encounter for a specific card and return the new count.
+     */
+    override fun recordCardEncounter(lessonId: String, languageId: String, cardId: String): Int = mutex.withLock {
+        loadAllInternal()
+        val existing = cache[languageId]?.get(lessonId) ?: LessonMasteryState(
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId(languageId)
+        )
+        val currentCount = existing.cardEncounterCounts[cardId] ?: 0
+        val newCount = currentCount + 1
+        val updated = existing.copy(
+            cardEncounterCounts = existing.cardEncounterCounts + (cardId to newCount)
+        )
+        if (!cache.containsKey(updated.languageId.value)) {
+            cache[updated.languageId.value] = mutableMapOf()
+        }
+        cache[updated.languageId.value]!![updated.lessonId.value] = updated
+        persistToFile()
+        newCount
+    }
+
+    /**
+     * Get the encounter count for a specific card.
+     */
+    override fun getCardEncounterCount(lessonId: String, languageId: String, cardId: String): Int {
+        loadAll()
+        return cache[languageId]?.get(lessonId)?.cardEncounterCounts?.get(cardId) ?: 0
+    }
+
+    /**
      * Очистить все данные.
      */
     override fun clear() = mutex.withLock {
@@ -260,7 +304,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                     "lastShowDateMs" to mastery.lastShowDateMs,
                     "intervalStepIndex" to mastery.intervalStepIndex,
                     "completedAtMs" to (mastery.completedAtMs ?: 0L),
-                    "shownCardIds" to mastery.shownCardIds.toList()
+                    "shownCardIds" to mastery.shownCardIds.toList(),
+                    "cardEncounterCounts" to mastery.cardEncounterCounts
                 )
             }
 

@@ -62,6 +62,7 @@ import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.VerbDrillUiState
+import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.SharedReportSheet
@@ -268,7 +269,13 @@ private fun VerbDrillSessionWithCardSession(
                             Text(text = stringResource(R.string.verb_label_ru), style = MaterialTheme.typography.labelMedium)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = card.promptRu,
+                                text = HintCalculator.calculateEffectiveHints(
+                                    promptRu = card.promptRu,
+                                    encounterCount = encounterCount,
+                                    hintLevel = hintLevel,
+                                    sessionOffset = sessionOffset,
+                                    isBossBattle = isBossBattle
+                                ),
                                 fontSize = (20f * textScale).sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -456,7 +463,8 @@ private fun DefaultVerbDrillInputControls(
         incorrectMessage = if (provider.showIncorrectFeedback) stringResource(R.string.verb_attempts_left, provider.remainingAttempts) else null,
         onClearIncorrectFeedback = { provider.clearIncorrectFeedback() },
         onShowReport = { showReportSheet = true },
-        reportCard = scope.currentCard
+        reportCard = scope.currentCard,
+        hintLevel = hintLevel
     )
 }
 

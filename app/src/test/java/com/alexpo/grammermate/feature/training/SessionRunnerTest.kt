@@ -69,6 +69,8 @@ class SessionRunnerTest {
                 StreakData(languageId = LanguageId(languageId)) to false
             override fun getCurrentStreak(languageId: String): StreakData =
                 StreakData(languageId = LanguageId(languageId))
+            override fun resetAll() {}
+            override fun resetForLanguage(languageId: String) {}
         })
         timerSaveCalls = 0
         stubMastery = null

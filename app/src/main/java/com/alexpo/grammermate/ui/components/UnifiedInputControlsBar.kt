@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.CardSessionContract
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 
 /**
@@ -90,7 +91,8 @@ fun UnifiedInputControlsBar(
     incorrectMessage: String? = null,
     onClearIncorrectFeedback: () -> Unit = {},
     onShowReport: () -> Unit = {},
-    reportCard: com.alexpo.grammermate.data.SessionCard? = null
+    reportCard: com.alexpo.grammermate.data.SessionCard? = null,
+    hintLevel: HintLevel = HintLevel.EASY
 ) {
     val canLaunchVoice = hasCards && contract.sessionActive
     val canSelectInputMode = hasCards && contract.sessionActive
@@ -220,7 +222,7 @@ fun UnifiedInputControlsBar(
         }
 
         // Word Bank UI -- rendered as CONTENT below the bar, not inside it
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank) {
+        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == HintLevel.EASY) {
             WordBankSection(contract = contract)
         }
 
@@ -259,7 +261,7 @@ fun UnifiedInputControlsBar(
                     )
                 }
                 // Word bank mode button
-                if (contract.supportsWordBank) {
+                if (contract.supportsWordBank && hintLevel == HintLevel.EASY) {
                     FilledTonalIconButton(
                         onClick = { contract.setInputMode(InputMode.WORD_BANK) },
                         enabled = canSelectInputMode

@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.ui.CorrectGreen
 import com.alexpo.grammermate.ui.DrillBackgroundGreen
 import com.alexpo.grammermate.ui.DrillPromptGreen
@@ -199,7 +200,13 @@ fun TrainingScreen(
                     )
                 }
                 val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
-                val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+                val cleanPrompt = HintCalculator.calculateEffectiveHints(
+                    promptRu = rawPrompt,
+                    encounterCount = state.cardSession.encounterCount,
+                    hintLevel = hintLevel,
+                    sessionOffset = state.cardSession.hintSessionOffset,
+                    isBossBattle = false
+                )
                 if (cleanPrompt.isNotBlank()) {
                     Text(
                         text = cleanPrompt,
@@ -243,7 +250,13 @@ fun TrainingScreen(
                     }
                 }
                 val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
-                val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+                val cleanPrompt = HintCalculator.calculateEffectiveHints(
+                    promptRu = rawPrompt,
+                    encounterCount = state.cardSession.encounterCount,
+                    hintLevel = hintLevel,
+                    sessionOffset = state.cardSession.hintSessionOffset,
+                    isBossBattle = state.boss.bossActive
+                )
                 if (cleanPrompt.isNotBlank()) {
                     Text(
                         text = cleanPrompt,
@@ -640,7 +653,8 @@ fun AnswerBox(
         hasCards = hasCards,
         hintAnswer = if (state.cardSession.answerText != null && state.cardSession.lastResult != null) state.cardSession.answerText else null,
         onShowReport = { showReportSheet = true },
-        reportCard = state.cardSession.currentCard
+        reportCard = state.cardSession.currentCard,
+        hintLevel = hintLevel
     )
 
     // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)

@@ -36,6 +36,7 @@ import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
+import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.ui.CorrectGreen
 import com.alexpo.grammermate.ui.IncorrectRed
 import com.alexpo.grammermate.ui.components.HintAnswerCard
@@ -64,7 +65,10 @@ class TrainingCardSessionScope(
     val onNext: () -> Unit,
     val onExit: () -> Unit,
     val hintLevel: HintLevel = HintLevel.EASY,
-    val textScale: Float = 1.0f
+    val textScale: Float = 1.0f,
+    val encounterCount: Int = 0,
+    val sessionOffset: Int = 0,
+    val isBossBattle: Boolean = false
 )
 
 /**
@@ -256,9 +260,15 @@ private fun DefaultHeader(scope: TrainingCardSessionScope) {
             modifier = Modifier.fillMaxWidth()
         )
     }
-    // Clean prompt (strip parenthetical hints)
+    // Clean prompt (strip parenthetical hints based on encounter count + hint level)
     val rawPrompt = card?.promptRu ?: ""
-    val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+    val cleanPrompt = HintCalculator.calculateEffectiveHints(
+        promptRu = rawPrompt,
+        encounterCount = scope.encounterCount,
+        hintLevel = scope.hintLevel,
+        sessionOffset = scope.sessionOffset,
+        isBossBattle = scope.isBossBattle
+    )
     if (cleanPrompt.isNotBlank()) {
         Text(
             text = cleanPrompt,
@@ -355,7 +365,8 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         hasCards = hasCards,
         hintAnswer = contract.lastResult?.displayAnswer?.takeIf { contract.lastResult?.hintShown == true },
         onShowReport = { showReportSheet = true },
-        reportCard = scope.currentCard
+        reportCard = scope.currentCard,
+        hintLevel = scope.hintLevel
     )
 }
 

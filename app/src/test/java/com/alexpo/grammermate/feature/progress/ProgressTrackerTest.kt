@@ -108,6 +108,19 @@ class FakeMasteryStore : MasteryStore {
         clearLanguageCalls.add(languageId)
         store.keys.removeIf { it.second == languageId }
     }
+
+    private val encounterCounts = mutableMapOf<String, Int>()
+
+    override fun recordCardEncounter(lessonId: String, languageId: String, cardId: String): Int {
+        val key = "$lessonId:$languageId:$cardId"
+        val count = (encounterCounts[key] ?: 0) + 1
+        encounterCounts[key] = count
+        return count
+    }
+
+    override fun getCardEncounterCount(lessonId: String, languageId: String, cardId: String): Int {
+        return encounterCounts["$lessonId:$languageId:$cardId"] ?: 0
+    }
 }
 
 class FakeProgressStore : ProgressStore {

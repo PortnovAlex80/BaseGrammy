@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.random.Random
 
 import com.alexpo.grammermate.feature.boss.BossBattleRunner
 import com.alexpo.grammermate.feature.boss.BossCommand
@@ -366,7 +367,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
+            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
         }
         // Initialize feature-owned state from persisted progress
         bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
@@ -379,7 +380,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshFlowerStates()
         if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
             sessionRunner.resumeTimer()
-            _coreState.value.cardSession.currentCard?.let { recordCardShowForMastery(it) }
+            _coreState.value.cardSession.currentCard?.let {
+                recordCardShowForMastery(it)
+                recordCardEncounter(it)
+            }
             if (_coreState.value.cardSession.inputMode == InputMode.VOICE) {
                 _coreState.update { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
             }
@@ -494,7 +498,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             it.copy(cardSession = it.cardSession.copy(
                 currentStreak = streakData.currentStreak,
                 longestStreak = streakData.longestStreak,
-                todayFireCount = streakData.todayFireCount
+                todayFireCount = streakData.todayFireCount,
+                hintSessionOffset = Random.nextInt(0, 100)
             ))
         }
         // Reset feature-owned state
@@ -544,7 +549,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = packId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null))
+            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = packId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null, hintSessionOffset = Random.nextInt(0, 100)))
         }
         // Reset feature-owned state for session change
         bossOrchestrator.resetState()
@@ -1041,6 +1046,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
+    /**
+     * Record a card encounter in MasteryStore and update encounterCount in state.
+     * Called each time a card is shown to the user (navigated to or session started).
+     */
+    private fun recordCardEncounter(card: SentenceCard) {
+        val s = _coreState.value
+        val lessonId = resolveCardLessonId(card)
+        val languageId = s.navigation.selectedLanguageId.value
+        val count = masteryStore.recordCardEncounter(lessonId, languageId, card.id)
+        _coreState.update {
+            it.copy(cardSession = it.cardSession.copy(encounterCount = count))
+        }
+    }
+
 
     /**
      * Re-scope wordMasteryStore to the given packId.
@@ -1113,7 +1132,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SessionEvent.BuildSessionCards -> buildSessionCards()
                 is SessionEvent.PlaySuccess -> audioCoordinator.playSuccessSound()
                 is SessionEvent.PlayError -> audioCoordinator.playErrorSound()
-                is SessionEvent.RecordCardShow -> recordCardShowForMastery(event.card)
+                is SessionEvent.RecordCardShow -> {
+                    recordCardShowForMastery(event.card)
+                    recordCardEncounter(event.card)
+                }
                 is SessionEvent.MarkSubLessonCardsShown -> markSubLessonCardsShown(event.cards)
                 is SessionEvent.CheckAndMarkLessonCompleted -> checkAndMarkLessonCompleted()
                 is SessionEvent.CalculateCompletedSubLessons -> {

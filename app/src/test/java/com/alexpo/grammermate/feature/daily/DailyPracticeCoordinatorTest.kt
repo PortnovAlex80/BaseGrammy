@@ -97,6 +97,8 @@ class DailyPracticeCoordinatorTest {
                     StreakData(languageId = LanguageId(languageId)) to false
                 override fun getCurrentStreak(languageId: String): StreakData =
                     StreakData(languageId = LanguageId(languageId))
+                override fun resetAll() {}
+                override fun resetForLanguage(languageId: String) {}
             }
         )
     }
@@ -1619,6 +1621,7 @@ class DailyPracticeCoordinatorTest {
     private class MockMasteryStore : MasteryStore {
         val recordedShows = mutableListOf<String>()
         var lastLessonId: String? = null
+        private val encounterCounts = mutableMapOf<String, Int>()
 
         override fun recordCardShow(lessonId: String, languageId: String, cardId: String) {
             recordedShows.add(cardId)
@@ -1634,6 +1637,15 @@ class DailyPracticeCoordinatorTest {
             LessonMasteryState(lessonId = LessonId(lessonId), languageId = LanguageId(languageId))
         override fun clear() {}
         override fun clearLanguage(languageId: String) {}
+        override fun recordCardEncounter(lessonId: String, languageId: String, cardId: String): Int {
+            val key = "$lessonId:$languageId:$cardId"
+            val count = (encounterCounts[key] ?: 0) + 1
+            encounterCounts[key] = count
+            return count
+        }
+        override fun getCardEncounterCount(lessonId: String, languageId: String, cardId: String): Int {
+            return encounterCounts["$lessonId:$languageId:$cardId"] ?: 0
+        }
     }
 
     /**

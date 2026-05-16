@@ -6,6 +6,7 @@ import android.util.Log
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.CardSessionStateModel
 import com.alexpo.grammermate.data.DrillProgressStore
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonMasteryState
@@ -206,6 +207,11 @@ class SessionRunner(
     }
 
     fun setInputMode(mode: InputMode) {
+        if (mode == InputMode.WORD_BANK && stateAccess.uiState.value.cardSession.hintLevel != HintLevel.EASY) {
+            // Auto-switch to VOICE when Word Bank is unavailable
+            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(inputMode = InputMode.VOICE)) }
+            return
+        }
         stateAccess.updateState {
             val resetAttempts = it.cardSession.answerText != null || it.cardSession.incorrectAttemptsForCard >= AnswerValidator.HINT_THRESHOLD
             val shouldTriggerVoice = mode == InputMode.VOICE &&
@@ -847,6 +853,7 @@ class SessionRunner(
     }
 
     private fun updateWordBank() {
+        if (stateAccess.uiState.value.cardSession.hintLevel != HintLevel.EASY) return
         val card = stateAccess.uiState.value.cardSession.currentCard
         if (card == null) {
             stateAccess.updateState {

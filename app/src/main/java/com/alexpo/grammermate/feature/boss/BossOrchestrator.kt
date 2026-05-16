@@ -4,6 +4,7 @@ import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossState
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.DailySessionState
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.MasteryStore
@@ -130,6 +131,8 @@ class BossOrchestrator(
         }
         sessionRunner.setBossCards(result.cards)
         val firstCard = result.cards.firstOrNull()
+        // Save pre-boss hint level and force HARD for the boss session
+        val previousHintLevel = state.cardSession.hintLevel
         // Update boss state (owned by this orchestrator)
         _state.update {
             it.copy(
@@ -139,7 +142,8 @@ class BossOrchestrator(
                 bossProgress = 0,
                 bossReward = null,
                 bossRewardMessage = null,
-                bossErrorMessage = null
+                bossErrorMessage = null,
+                savedHintLevel = previousHintLevel
             )
         }
         // Update core state: cardSession
@@ -163,7 +167,8 @@ class BossOrchestrator(
                     subLessonTotal = result.subLessonTotal,
                     subLessonCount = 1,
                     activeSubLessonIndex = 0,
-                    completedSubLessonCount = 0
+                    completedSubLessonCount = 0,
+                    hintLevel = HintLevel.HARD
                 )
             )
         }
@@ -183,6 +188,7 @@ class BossOrchestrator(
         )
         val progress = progressStore.load()
         val restoredLessonId = progress.lessonId?.let { LessonId(it) } ?: state.navigation.selectedLessonId
+        val restoredHintLevel = _state.value.savedHintLevel
         sessionRunner.clearAllCards()
         // Update boss state (owned by this orchestrator)
         _state.update {
@@ -220,7 +226,8 @@ class BossOrchestrator(
                     inputText = "",
                     lastResult = null,
                     answerText = null,
-                    sessionState = SessionState.PAUSED
+                    sessionState = SessionState.PAUSED,
+                    hintLevel = restoredHintLevel
                 )
             )
         }

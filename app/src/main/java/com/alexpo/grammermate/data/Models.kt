@@ -174,7 +174,8 @@ data class LessonMasteryState(
     val lastShowDateMs: Long = 0L,
     val intervalStepIndex: Int = 0,
     val completedAtMs: Long? = null,
-    val shownCardIds: Set<String> = emptySet()
+    val shownCardIds: Set<String> = emptySet(),
+    val cardEncounterCounts: Map<String, Int> = emptyMap()
 )
 
 /**
@@ -364,6 +365,8 @@ data class CardSessionState(
     val streakMessage: String? = null,
     val streakCelebrationToken: Int = 0,
     val hintLevel: HintLevel = HintLevel.EASY,
+    val hintSessionOffset: Int = 0,
+    val encounterCount: Int = 0,
     val badSentenceCount: Int = 0,
     val testMode: Boolean = false,
     val vocabSprintLimit: Int = 20,
@@ -385,7 +388,9 @@ data class BossState(
     val bossLastType: BossType? = null,
     val bossErrorMessage: String? = null,
     val bossLessonRewards: Map<String, BossReward> = emptyMap(),
-    val bossMegaRewards: Map<String, BossReward> = emptyMap()
+    val bossMegaRewards: Map<String, BossReward> = emptyMap(),
+    /** Hint level before boss started; restored on boss exit. */
+    val savedHintLevel: HintLevel = HintLevel.EASY
 )
 
 data class StoryState(

@@ -74,6 +74,7 @@ import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
+import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.ui.TenseExample
 import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.components.QrShareDialog
@@ -374,7 +375,16 @@ private fun DailyTrainingCardSession(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(stringResource(R.string.card_label_ru), style = MaterialTheme.typography.labelMedium)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(card.promptRu, fontSize = (20f * textScale).sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                HintCalculator.calculateEffectiveHints(
+                                    promptRu = card.promptRu,
+                                    encounterCount = encounterCount,
+                                    hintLevel = hintLevel,
+                                    sessionOffset = sessionOffset,
+                                    isBossBattle = isBossBattle
+                                ),
+                                fontSize = (20f * textScale).sp, fontWeight = FontWeight.SemiBold
+                            )
                         }
                         IconButton(
                             onClick = { contract.speakTts() },
@@ -535,7 +545,8 @@ private fun DailyInputControls(
         incorrectMessage = if (provider.showIncorrectFeedback) "${provider.remainingAttempts} ${if (provider.remainingAttempts == 1) "attempt" else "attempts"} left" else null,
         onClearIncorrectFeedback = { provider.clearIncorrectFeedback() },
         onShowReport = { showReportSheet = true },
-        reportCard = scope.currentCard
+        reportCard = scope.currentCard,
+        hintLevel = hintLevel
     )
 
     if (showReportSheet) {
