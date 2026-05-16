@@ -403,9 +403,35 @@ Daily Practice uses `TrainingCardSession` for blocks 1 (Translation) and 3 (Verb
 
 **Progress persistence:** `onCardAdvanced` callback is called for each card advanced (only for non-WORD_BANK modes). For `ConjugateVerb` tasks, it calls `onPersistVerbProgress`. For all tasks, it calls `onCardPracticed` for cursor advancement tracking.
 
-### 12.5.3 Standard Lesson Training
+### 12.5.3 Standard Lesson Training (Migration Target)
 
-Standard training in `GrammarMateApp.kt` does NOT currently use the `TrainingCardSession` composable. It renders its own inline UI with equivalent functionality. The design spec envisions a `TrainingCardSessionProvider` adapter that would wrap `TrainingViewModel` to satisfy the contract, but this migration has not yet been performed.
+Standard lesson training in TrainingScreen will use `TrainingCardSession` via a `TrainingCardSessionProvider` adapter. The adapter wraps `TrainingViewModel`/`SessionRunner` and implements `CardSessionContract` for all 5 sub-modes: NORMAL, BOSS, BOSS_MEGA, DRILL, ELITE.
+
+**Adapter:** `TrainingCardSessionProvider`
+- Wraps `SessionRunner` and reads from `TrainingUiState`
+- Capabilities: all true (TTS, voice, word bank, flagging, navigation, pause)
+- Handles sub-mode switching transparently — no conditional logic in the composable
+- Drill sub-mode visual differences (green theme) handled via `supportsDrillTheme` capability
+
+**Sub-mode handling in adapter:**
+- All 5 sub-modes share the same card presentation, input, and navigation slots
+- BOSS mode: custom progress display (boss progress bar instead of sub-lesson progress)
+- DRILL mode: green theme via `supportsDrillTheme`, no mastery tracking
+- ELITE mode: standard flow, different card source
+
+**Custom slots:**
+- `header`: Default header (no verb/tense chips, unlike VerbDrill)
+- `cardContent`: Default card (RU label + prompt + TTS)
+- `inputControls`: Standard input (text field + word bank + mode selector + show answer + report)
+- `resultContent`: Default result (correct/incorrect + TTS replay)
+- `navigationControls`: UnifiedNavigationRow (shared)
+- `completionScreen`: Sub-lesson completion or drill completion
+
+**Migration notes:**
+- TrainingScreen composable becomes a thin wrapper around TrainingCardSession
+- All inline card rendering, input controls, and result display code removed from TrainingScreen.kt
+- GrammarMateApp.kt wiring updated to pass TrainingCardSessionProvider
+- SessionRunner remains the business logic layer (no changes to SessionRunner itself)
 
 ### 12.5.4 Boss Battle
 

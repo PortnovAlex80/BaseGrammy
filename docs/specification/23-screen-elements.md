@@ -153,7 +153,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Word bank section (translate/verbs) | DP-15 | chip | `WORD_BANK mode` | DailyWordBankSection: chips + counter + Undo. | ? |
 | Input mode bar (translate/verbs) | DP-16 | button | Card session active | DailyInputModeBar: Voice/Keyboard/WordBank buttons + Show answer + Report. Keyboard button is ALWAYS visible (not gated by HintLevel). | ? |
 | Check button (translate/verbs) | DP-17 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check" button. Submits via `provider.submitAnswerWithInput()`. | ? |
-| Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | DailyReportSheet: flag/unflag + export + copy + share translation via QR (when shareText != null). | ? |
+| Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | Uses SharedReportSheet (SH-01): flag/unflag + hide card (calls HiddenCardStore.hideCard) + export (unified) + copy + share via QR (when shareText != null). | UC-73 |
 | VOCAB flashcard card | DP-19 | card | `currentTask.blockType == VOCAB` | surfaceVariant Card with prompt word (28sp Bold) + translation (18sp Medium, primary) + TTS button + report button. | ? |
 | Vocab prompt text | DP-20 | text | VOCAB block active | Word text in `(28f * ruTextScale).sp` Bold, centered. Direction-dependent: IT_TO_RU shows Italian word, RU_TO_IT shows Russian meaning. | UC-56 |
 | Vocab TTS button | DP-21 | button | VOCAB block active | IconButton VolumeUp. Calls `onSpeak(promptText)`. | ? |
@@ -211,7 +211,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Check button | VD-29 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check". Uses `provider.submitAnswerWithInput()` for retry/hint flow. | ? |
 | Auto-voice effect | VD-30 | (system) | `inputMode == VOICE && sessionActive && currentCard != null` | LaunchedEffect triggers speech recognition after 200ms. | ? |
 | Auto-advance after voice correct | VD-31 | (system) | `pendingAnswerResult.correct && inputMode == VOICE` | Auto-advances after 500ms. | ? |
-| Report bottom sheet | VD-32 | bottom-sheet | `showReportSheet == true` | VerbDrillReportSheet: flag/unflag + export + copy (no hide card option) + share translation via QR (when shareText != null). | ? |
+| Report bottom sheet | VD-32 | bottom-sheet | `showReportSheet == true` | Uses SharedReportSheet (SH-01): flag/unflag + hide card (calls HiddenCardStore.hideCard) + export (unified) + copy + share via QR (when shareText != null). | UC-73 |
 | VerbReferenceBottomSheet | VD-33 | bottom-sheet | `showVerbSheet == true` | Shows verb infinitive + TTS button + group + tense + conjugation table. | ? |
 | TenseInfoBottomSheet | VD-34 | bottom-sheet | `showTenseSheet == true` | Shows tense name + formula Card + usage explanation + example cards. | ? |
 | Export result dialog | VD-35 | dialog | `exportMessage != null` | AlertDialog with export path or "No bad sentences to export". | ? |
@@ -280,7 +280,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | "Hard" rating button | VOC-38 | button | `session.isFlipped` | Orange-colored OutlinedButton. Shows "Hard" + current step interval. Stays at same step. **Dark Mode:** Background must NOT be pastel 0xFFFFF3E0 — use dark orange 0xFF3A2E1B. [UC-68 AC4] | UC-68 |
 | "Good" rating button | VOC-39 | button | `session.isFlipped` | Primary-colored Filled Button. Shows "Good" + next step interval. Advances +1 step. **Dark Mode:** Background must NOT be pastel 0xFFE8F5E9 — use dark green 0xFF1B3A1D. [UC-68 AC4] | UC-68 |
 | "Easy" rating button | VOC-40 | button | `session.isFlipped` | Green-colored Filled Button. Shows "Easy" + +2 step interval. Advances +2 steps. **Dark Mode:** Background must NOT be pastel 0xFFE3F2FD — use dark blue 0xFF1A2E3A. [UC-68 AC4] | UC-68 |
-| Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | Uses SharedReportSheet (SH-01): flag/unflag, hide card, export bad sentences, copy text, share translation via QR (when shareText != null). | ? |
+| Report bottom sheet | VOC-41 | bottom-sheet | `showReportSheet == true` | Uses SharedReportSheet (SH-01): flag/unflag + hide card (calls HiddenCardStore.hideCard, card excluded from future sessions) + export (unified) + copy + share via QR (when shareText != null). | UC-73 |
 | Export result dialog | VOC-42 | dialog | `exportMessage != null` | AlertDialog with export result. | ? |
 | Auto-flip on voice correct | VOC-43 | (system) | `voiceCompleted && voiceResult == CORRECT && !isFlipped` | Auto-flips card after 800ms delay. | ? |
 | Auto-launch voice | VOC-44 | (system) | `voiceAutoStart (global) && !isFlipped && !voiceCompleted && !isVoiceActive` | Auto-launches voice recognition after 500ms delay. Uses global `voiceAutoStart` from Settings, NOT per-drill toggle. Mic button still works on manual click when voiceAutoStart is OFF. | UC-57 |
@@ -443,9 +443,9 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 
 | Element | ID | Type | Used by | Behavior / Invariant | Related UC |
 |---------|----|------|---------|----------------------|------------|
-| SharedReportSheet | SH-01 | bottom-sheet | TrainingScreen, VerbDrillScreen, DailyPracticeScreen | ModalBottomSheet with exactly 5 options: Flag/Unflag, Hide card, Export bad sentences, Copy text, Share translation via QR (shown when `shareText != null`). Card prompt text shown at top for context. | UC-53, UC-65 |
+| SharedReportSheet | SH-01 | bottom-sheet | TrainingScreen, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen | ModalBottomSheet with exactly 5 options: Flag/Unflag, Hide card, Export bad sentences, Copy text, Share translation via QR (shown when `shareText != null`). Card prompt text shown at top for context. | UC-53, UC-65, UC-73 |
 
-**Behavior:** Each option triggers its corresponding callback. Flag toggles card.isFlagged (adds/removes from BadSentenceStore). Hide removes card from session (except Daily Practice where it is a documented no-op). Export returns formatted string via BadSentenceStore.exportUnified() -- non-null when at least one card is flagged. Copy writes card text (ID, source, target) to system clipboard. Share translation opens QrShareDialog (SH-07) with translation pair text + QR code + Google Translate button.
+**Behavior:** All 5 options available in ALL modes: Flag/Unflag (toggles card.isFlagged, adds/removes from BadSentenceStore), Hide card (calls HiddenCardStore.hideCard, card excluded from all future sessions), Export bad sentences (always calls exportUnified, all packs grouped by language/mode), Copy text (writes card ID, source, target to system clipboard), Share via QR (opens QrShareDialog SH-07 with translation pair text + QR code + Google Translate button). No mode-specific variants exist — all modes use this single shared sheet.
 
 | VoiceAutoLauncher | SH-02 | (system) | VerbDrillScreen, VocabDrillScreen | LaunchedEffect composable that auto-launches voice recognition after 500ms fixed delay for all cases (new card, post-incorrect, etc.). | UC-52 |
 

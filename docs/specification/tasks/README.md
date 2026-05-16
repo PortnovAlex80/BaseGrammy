@@ -29,3 +29,6 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-049](DONE-TASK-049-unified-input-controls-bar.md) | Unified Input Controls Bar for All Card Modes | DONE | 12-training-card-session, 05-audio | 2026-05-16 | |
 | [TASK-050](TASK-050-unify-session-size.md) | Unify Session Size Parameter (Учебная единица) | OPEN | 01, 03, 06, 09, 10, 11 | 2026-05-16 |
 | [TASK-051](TASK-051-fire-streak-activity-types.md) | Fire Streak by Activity Types | OPEN | 01, 02, 03, 08, 09, 10, 11, 22, 23 | 2026-05-16 |
+| [TASK-052](TASK-052-unified-bad-reporting.md) | Unified Bad Sentence Reporting Across All Modes | OPEN | 23, 08 | 2026-05-16 |
+| [TASK-053](TASK-053-drill-standard-navigation.md) | Drill Sub-mode Standard Navigation | OPEN | 12, 08 | 2026-05-16 |
+| [TASK-054](TASK-054-training-screen-tcs-migration.md) | Migrate TrainingScreen to TrainingCardSession | OPEN | 12, 07, 23 | 2026-05-16 |

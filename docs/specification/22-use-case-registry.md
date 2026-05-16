@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 72 |
-| Total Acceptance Criteria | 396 |
-| Domains | 23 |
+| Total Use Cases | 73 |
+| Total Acceptance Criteria | 404 |
+| Domains | 24 |
 
 ### Per-Domain Counts
 
@@ -39,6 +39,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 21 | Dark-mode color compliance (hardcoded color audit) | 1 | 9 |
 | 22 | Drill sub-mode (lesson drill training within TrainingScreen) | 2 | 21 |
 | 23 | Fire streak (per-day unique practice type tracking) | 2 | 27 |
+| 24 | Unified bad sentence reporting | 1 | 8 |
 
 ---
 
@@ -277,6 +278,14 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 24: Unified Bad Sentence Reporting
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-73 | Unified Bad Sentence Reporting | User is in any card-based training mode (Training, VerbDrill, DailyPractice, VocabDrill, or Drill sub-mode) | 1. User taps Report button on current card. 2. System opens SharedReportSheet (SH-01). 3. User can: Flag as bad sentence, Hide card, Export bad sentences, Copy text, Share via QR. 4. Flag: adds BadSentenceEntry to badSentenceStore (pack-scoped). 5. Hide: calls HiddenCardStore.hideCard(cardId) — card excluded from all future sessions. 6. Export: calls badSentenceStore.exportUnified() — all packs grouped by language/mode. | AC1: SharedReportSheet used in ALL modes (Training, VerbDrill, DailyPractice, VocabDrill, Drill). AC2: Hide card works in ALL modes — calls HiddenCardStore.hideCard(cardId). AC3: Hidden cards excluded during card loading in ALL modes (not just Training). AC4: Export uses exportUnified() in ALL modes (not single-pack). AC5: BadSentenceHelper used by all ViewModels (no direct badSentenceStore calls). AC6: Flagged bad sentences stored pack-scoped in badSentenceStore. AC7: Bad sentences subtracted from counted Learning Units for streak calculation (see TASK-051). AC8: No mode-specific report sheet variants — all use SharedReportSheet. | TrainingScreen, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen | `ui/components/SharedReportSheet.kt`, `feature/progress/BadSentenceHelper.kt`, `data/BadSentenceStore.kt`, `data/HiddenCardStore.kt` | TASK-052 |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -308,3 +317,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | TASK-011 | UC-67 |
 | TASK-012, TASK-013, TASK-014 | UC-68 |
 | TASK-051 | UC-71, UC-72 |
+| TASK-052 | UC-73 |
