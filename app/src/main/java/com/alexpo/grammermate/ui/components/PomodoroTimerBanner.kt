@@ -14,7 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 
-private val TomatoTint = Color(0xFFFFEBEE)
+private val TomatoRed = Color(0xFFE53935)
+private val SuccessGreen = Color(0xFF66BB6A)
 
 @Composable
 fun PomodoroTimerBanner(
@@ -34,7 +35,9 @@ fun PomodoroTimerBanner(
             .fillMaxWidth()
             .height(48.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = TomatoTint),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -49,7 +52,7 @@ fun PomodoroTimerBanner(
                     painter = painterResource(R.drawable.ic_tomato),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = Color(0xFFE53935)
+                    tint = TomatoRed
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
@@ -70,7 +73,7 @@ fun PomodoroTimerBanner(
                 Text(
                     text = "$successRate%",
                     fontWeight = FontWeight.Medium,
-                    color = if (successRate >= 80) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
+                    color = if (successRate >= 80) SuccessGreen else MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 IconButton(

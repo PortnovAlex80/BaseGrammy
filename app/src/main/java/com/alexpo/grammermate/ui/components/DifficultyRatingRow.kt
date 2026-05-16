@@ -14,10 +14,10 @@ import kotlinx.coroutines.delay
 private data class RatingStyle(val label: String, val color: Color)
 
 private val ratingStyles = mapOf(
-    CardDifficultyRating.AGAIN to RatingStyle("Again", Color(0xFFFFCDD2)),
-    CardDifficultyRating.HARD to RatingStyle("Hard", Color(0xFFFFE0B2)),
-    CardDifficultyRating.GOOD to RatingStyle("Good", Color(0xFFC8E6C9)),
-    CardDifficultyRating.EASY to RatingStyle("Easy", Color(0xFFBBDEFB))
+    CardDifficultyRating.AGAIN to RatingStyle("Again", Color(0xFFEF9A9A)),
+    CardDifficultyRating.HARD to RatingStyle("Hard", Color(0xFFFFCC80)),
+    CardDifficultyRating.GOOD to RatingStyle("Good", Color(0xFFA5D6A7)),
+    CardDifficultyRating.EASY to RatingStyle("Easy", Color(0xFF90CAF9))
 )
 
 @Composable
@@ -61,8 +61,8 @@ fun DifficultyRatingRow(
                     },
                     label = { Text(style.label) },
                     colors = FilterChipDefaults.filterChipColors(
-                        containerColor = style.color,
-                        labelColor = Color.Black
+                        containerColor = style.color.copy(alpha = 0.3f),
+                        labelColor = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = RoundedCornerShape(8.dp)
                 )

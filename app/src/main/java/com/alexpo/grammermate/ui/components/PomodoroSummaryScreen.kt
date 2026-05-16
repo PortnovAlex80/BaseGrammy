@@ -21,8 +21,13 @@ import com.alexpo.grammermate.data.CardDifficultyRating
 import com.alexpo.grammermate.data.PomodoroSessionStats
 import com.alexpo.grammermate.data.PomodoroState
 
-private val RingTrackColor = Color(0xFFE0E0E0)
-private val RingFillColor = Color(0xFF4CAF50)
+private val RingFillColor = Color(0xFF66BB6A)
+private val DifficultyColors = mapOf(
+    CardDifficultyRating.AGAIN to Color(0xFFEF9A9A),
+    CardDifficultyRating.HARD to Color(0xFFFFCC80),
+    CardDifficultyRating.GOOD to Color(0xFFA5D6A7),
+    CardDifficultyRating.EASY to Color(0xFF90CAF9)
+)
 
 @Composable
 fun PomodoroSummaryScreen(
@@ -78,7 +83,8 @@ fun PomodoroSummaryScreen(
         if (currentStreak > 0 || todayFireCount > 0) {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = if (currentStreak >= 7) Color(0xFFFFF3E0)
+                    containerColor = if (currentStreak >= 7)
+                        MaterialTheme.colorScheme.tertiaryContainer
                     else MaterialTheme.colorScheme.primaryContainer
                 ),
                 shape = RoundedCornerShape(12.dp)
@@ -95,7 +101,7 @@ fun PomodoroSummaryScreen(
                     Text(
                         text = "$currentStreak day streak!",
                         fontWeight = FontWeight.Bold,
-                        color = if (currentStreak >= 7) Color(0xFFFF8F00)
+                        color = if (currentStreak >= 7) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -118,6 +124,7 @@ private fun CircularTimeRing(
     remainingText: String,
     modifier: Modifier = Modifier
 ) {
+    val trackColor = MaterialTheme.colorScheme.outline
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokeWidth = 8.dp.toPx()
@@ -125,7 +132,7 @@ private fun CircularTimeRing(
             val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
 
             drawArc(
-                color = RingTrackColor,
+                color = trackColor,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -145,7 +152,7 @@ private fun CircularTimeRing(
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = remainingText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = "$percent%", fontSize = 14.sp, color = Color.Gray)
+            Text(text = "$percent%", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -185,7 +192,7 @@ private fun StatCard(emoji: String, value: String, label: String, modifier: Modi
         ) {
             Text(text = emoji, fontSize = 20.sp)
             Text(text = value, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -193,12 +200,6 @@ private fun StatCard(emoji: String, value: String, label: String, modifier: Modi
 @Composable
 private fun DifficultyBreakdown(ratings: Map<CardDifficultyRating, Int>) {
     val total = ratings.values.sum().coerceAtLeast(1)
-    val colors = mapOf(
-        CardDifficultyRating.AGAIN to Color(0xFFFFCDD2),
-        CardDifficultyRating.HARD to Color(0xFFFFE0B2),
-        CardDifficultyRating.GOOD to Color(0xFFC8E6C9),
-        CardDifficultyRating.EASY to Color(0xFFBBDEFB)
-    )
 
     Column {
         Text("Difficulty breakdown:", fontWeight = FontWeight.Medium)
@@ -220,8 +221,8 @@ private fun DifficultyBreakdown(ratings: Map<CardDifficultyRating, Int>) {
                         modifier = Modifier
                             .weight(1f)
                             .height(8.dp),
-                        color = colors[rating]!!,
-                        trackColor = Color(0xFFEEEEEE)
+                        color = DifficultyColors[rating]!!,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant
                     )
                     Text(
                         text = " $count",
