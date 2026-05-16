@@ -1,6 +1,6 @@
 # TASK-051: Fire Streak by Activity Types
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/fire-streak-activity-types (from main)
 **Spec:** 01-models-and-state.md §glossary, 02-data-stores.md §2.8, 03-algorithms-and-calculators.md §fire-streak, 08-training-viewmodel.md §6, 09-daily-practice.md §fire-streak, 10-verb-drill.md §fire-streak, 11-vocab-drill.md §fire-streak
