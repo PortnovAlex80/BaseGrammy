@@ -33,3 +33,5 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-053](TASK-053-drill-standard-navigation.md) | Drill Sub-mode Standard Navigation | OPEN | 12, 08 | 2026-05-16 |
 | [TASK-054](TASK-054-training-screen-tcs-migration.md) | Migrate TrainingScreen to TrainingCardSession | OPEN | 12, 07, 23 | 2026-05-16 |
 | [DONE-TASK-055](DONE-TASK-055-streak-reset-on-progress-clear.md) | Streak Reset on Progress Clear | DONE | 02-data-stores, 08-training-viewmodel | 2026-05-16 |
+| [TASK-055](TASK-055-lesson-unlock-threshold.md) | Lesson Unlock Threshold (50% Mastery) | OPEN | 19, 06, 03 | 2026-05-16 |
+| [TASK-056](TASK-056-pomodoro-timer.md) | Pomodoro Timer — Focused Training Sessions | OPEN | pomodoro-design, 08, 19, 22, 23 | 2026-05-16 |

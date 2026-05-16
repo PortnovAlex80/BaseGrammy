@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 73 |
-| Total Acceptance Criteria | 404 |
-| Domains | 24 |
+| Total Use Cases | 83 |
+| Total Acceptance Criteria | 448 |
+| Domains | 26 |
 
 ### Per-Domain Counts
 
@@ -40,6 +40,8 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 22 | Drill sub-mode (lesson drill training within TrainingScreen) | 2 | 21 |
 | 23 | Fire streak (per-day unique practice type tracking) | 2 | 27 |
 | 24 | Unified bad sentence reporting | 1 | 8 |
+| 25 | Lesson unlock by mastery threshold | 1 | 8 |
+| 26 | Pomodoro Timer | 9 | 36 |
 
 ---
 
@@ -283,6 +285,122 @@ Structured registry of all verified use cases extracted from scenario traces and
 | UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
 | UC-73 | Unified Bad Sentence Reporting | User is in any card-based training mode (Training, VerbDrill, DailyPractice, VocabDrill, or Drill sub-mode) | 1. User taps Report button on current card. 2. System opens SharedReportSheet (SH-01). 3. User can: Flag as bad sentence, Hide card, Export bad sentences, Copy text, Share via QR. 4. Flag: adds BadSentenceEntry to badSentenceStore (pack-scoped). 5. Hide: calls HiddenCardStore.hideCard(cardId) — card excluded from all future sessions. 6. Export: calls badSentenceStore.exportUnified() — all packs grouped by language/mode. | AC1: SharedReportSheet used in ALL modes (Training, VerbDrill, DailyPractice, VocabDrill, Drill). AC2: Hide card works in ALL modes — calls HiddenCardStore.hideCard(cardId). AC3: Hidden cards excluded during card loading in ALL modes (not just Training). AC4: Export uses exportUnified() in ALL modes (not single-pack). AC5: BadSentenceHelper used by all ViewModels (no direct badSentenceStore calls). AC6: Flagged bad sentences stored pack-scoped in badSentenceStore. AC7: Bad sentences subtracted from counted Learning Units for streak calculation (see TASK-051). AC8: No mode-specific report sheet variants — all use SharedReportSheet. | TrainingScreen, VerbDrillScreen, DailyPracticeScreen, VocabDrillScreen | `ui/components/SharedReportSheet.kt`, `feature/progress/BadSentenceHelper.kt`, `data/BadSentenceStore.kt`, `data/HiddenCardStore.kt` | TASK-052 |
+
+---
+
+## Domain 26: Pomodoro Timer
+
+### UC-75: Start Pomodoro Session
+**Precondition:** User is on HomeScreen.
+**Trigger:** User taps tomato icon.
+**Main flow:**
+1. System opens Pomodoro selector bottom sheet with 3 presets (5/15/20 min) + custom stepper
+2. Last selected duration is pre-selected
+3. User selects a duration and taps "Start"
+4. System starts Pomodoro timer, navigates to training screen
+5. Timer banner appears at top of training screen with countdown running
+**AC1:** Tapping tomato icon on HomeScreen opens Pomodoro selector bottom sheet
+**AC2:** Bottom sheet shows 3 preset durations (Quick=5, Focus=15, Classic=20 min) and custom stepper (range 1-60 min)
+**AC3:** Last selected duration is pre-selected in the bottom sheet
+**AC4:** Tapping "Start" with selected duration starts Pomodoro and navigates to training screen
+**AC5:** Timer banner is visible at top of training screen with countdown running from selected duration
+
+### UC-76: Timer Countdown During Training
+**Precondition:** Pomodoro session is active and not paused.
+**Trigger:** Each 1-second tick.
+**Main flow:**
+1. System decrements remaining time by 1 second
+2. Timer banner updates MM:SS display
+3. Stats counters update after each card
+**AC1:** Remaining time decreases by 1 second per second when Pomodoro is active and not paused
+**AC2:** Timer banner updates display every second (MM:SS format, tabular/monospace digits)
+**AC3:** Cards shown counter updates after each card
+**AC4:** Success rate percentage updates after each answer
+
+### UC-77: Rate Card Difficulty (Anki-style)
+**Precondition:** Pomodoro is active and user just answered a card.
+**Trigger:** Card result is shown.
+**Main flow:**
+1. System displays difficulty rating chips (Again/Hard/Good/Easy) below answer result
+2. User taps a rating OR 3 seconds elapse without input
+3. System records the rating, advances to next card
+**AC1:** After each card result during Pomodoro, difficulty rating chips appear (Again/Hard/Good/Easy)
+**AC2:** Each chip has distinct color (Again=red, Hard=amber, Good=green, Easy=blue)
+**AC3:** Tapping a rating records it and advances to next card
+**AC4:** If no rating after 3 seconds, "Good" is auto-selected
+**AC5:** Ratings are aggregated in PomodoroSessionStats.difficultyRatings
+
+### UC-78: Complete Pomodoro Session (Timer Expires)
+**Precondition:** Pomodoro session is active, remaining time approaches 0.
+**Trigger:** Timer reaches 0:00.
+**Main flow:**
+1. System plays notification sound
+2. System finalizes current card result
+3. System pauses training session
+4. System displays session summary screen
+**AC1:** When timer reaches 0:00, training pauses
+**AC2:** System notification sound plays via RingtoneManager
+**AC3:** Current card result is finalized (correct/incorrect counted)
+**AC4:** Summary screen replaces training content
+**AC5:** Summary shows: circular time ring, cards shown, correct count, incorrect count, success rate, WPM, difficulty breakdown bars
+
+### UC-79: Pause/Resume Pomodoro
+**Precondition:** Pomodoro is active.
+**Trigger:** User taps pause/play on timer banner.
+**Main flow:**
+1. User taps pause button
+2. System pauses both Pomodoro timer and training session
+3. Pause icon changes to play icon
+4. User taps play to resume both
+**AC1:** Tapping pause button on timer banner pauses both timer and training
+**AC2:** Pause button icon changes to play icon when paused
+**AC3:** Tapping play resumes both timer and training
+
+### UC-80: Exit Pomodoro Early
+**Precondition:** Pomodoro is active.
+**Trigger:** User presses system back or navigates away.
+**Main flow:**
+1. System shows confirmation dialog "End Pomodoro session?"
+2. User confirms — session stats discarded, navigate to HomeScreen
+3. User cancels — dialog dismissed, Pomodoro continues
+**AC1:** Pressing system back during Pomodoro shows confirmation dialog
+**AC2:** Dialog text: "End Pomodoro session?"
+**AC3:** Confirming discards session stats and navigates to HomeScreen
+**AC4:** Cancelling dismisses dialog and continues Pomodoro
+
+### UC-81: App Backgrounded During Pomodoro
+**Precondition:** Pomodoro is active and counting down.
+**Trigger:** App goes to background (onStop).
+**Main flow:**
+1. System pauses Pomodoro timer on onStop lifecycle event
+2. User returns to app (onStart)
+3. System resumes timer from where it left off
+**AC1:** When app goes to background (onStop), timer pauses automatically
+**AC2:** When app returns to foreground (onStart), timer resumes from paused state
+**AC3:** Remaining time is preserved — no time lost while backgrounded
+
+### UC-82: Session Completes Before Timer
+**Precondition:** Pomodoro is active, user finishes all sub-lesson cards.
+**Trigger:** Last card answered.
+**Main flow:**
+1. Session completes normally
+2. System shows summary with "Early completion!" message
+3. Remaining time shown as unused
+**AC1:** When all sub-lesson cards are completed before timer expires, summary screen appears
+**AC2:** Summary shows "Early completion!" message
+**AC3:** Remaining time is shown as unused in the summary
+
+### UC-83: Fire Streak from Pomodoro Session
+**Precondition:** Pomodoro session completed.
+**Trigger:** Summary screen displayed.
+**Main flow:**
+1. System checks if session qualifies (correctCount >= sessionSize - badSentences)
+2. If qualified, records TRANSLATION fire via existing recordPracticeTypeCompletion
+3. Summary shows fire earned indicator
+**AC1:** When Pomodoro session qualifies, TRANSLATION fire is recorded via existing streak mechanism
+**AC2:** Existing streak qualification rules apply unchanged
+**AC3:** Summary screen shows fire earned indicator when fire was earned
+**AC4:** HomeScreen FireStreakIndicator reflects the updated streak after returning
 
 ---
 

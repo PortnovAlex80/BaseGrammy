@@ -16,7 +16,8 @@
 | StoryQuizScreen | SQ | 13 |
 | GrammarMateApp Dialogs | DG | 18 |
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
-| **Total** | | **319** |
+| Pomodoro | PM | 9 |
+| **Total** | | **328** |
 
 ---
 
@@ -479,3 +480,19 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 **Behavior:** Dialog is opened from SharedReportSheet option 5 (Share translation). Text pair shown at top for immediate readability. QR code encodes format "RU: {promptRu}\n{TARGET_LANG}: {answerText}". Google Translate button opens URL in system browser via Intent.ACTION_VIEW.
 
 | InitialsAvatar | SH-08 | image | HomeScreen, ProfileStatsPopup | CircleShape Box with primaryContainer background, shows 1-2 char initials from user name. Parameters: size (40dp for HomeScreen, 56dp for popup), onClick callback. Fallback: "?" when no user name set (or "GM"). Source: `ui/components/InitialsAvatar.kt`. | ? |
+
+---
+
+## 13. Pomodoro (PM)
+
+| Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
+|---------|-----|------|-------------|---------------------|------------|
+| Tomato icon button | PM-01 | button | Always (HomeScreen header) | Opens PomodoroSelectorSheet. 24dp icon, primary tint. Positioned between language selector and settings gear. | UC-75 |
+| Pomodoro selector sheet | PM-02 | dialog | PM-01 tapped | ModalBottomSheet with 3 time presets + custom stepper. "Start" button. Last duration pre-selected. | UC-75 AC1-3 |
+| Timer banner | PM-03 | card | Pomodoro active + not complete | 48dp banner at top of training screen. Shows: tomato icon + countdown MM:SS + cards shown + success rate + pause button. Warm tomato-tinted background. | UC-76 AC1-2 |
+| Difficulty rating chips | PM-04 | button | Pomodoro active + card result shown | Row of 4 FilterChips (Again/Hard/Good/Easy). Distinct colors per rating. Auto-selects Good after 3 seconds. Advances to next card on selection. | UC-77 AC1-5 |
+| Circular progress ring | PM-05 | canvas | Pomodoro complete | 120dp Canvas-based ring showing time completed vs selected duration. Center: MM:SS + percentage. | UC-78 AC5 |
+| Stats grid | PM-06 | card | Pomodoro complete | 2x2 grid: cards shown, correct rate, WPM, fires earned. Updated from PomodoroSessionStats. | UC-78 AC5, UC-83 AC3 |
+| Difficulty breakdown bars | PM-07 | progress | Pomodoro complete | Horizontal bars per rating (Again/Hard/Good/Easy), proportional to total ratings. | UC-78 AC5 |
+| Session summary screen | PM-08 | card | Pomodoro complete | Full-screen overlay with PM-05 + PM-06 + PM-07 + streak indicator + "Done" button. Shows "Early completion!" if session ended before timer. | UC-78, UC-82 |
+| Exit confirmation dialog | PM-09 | dialog | Pomodoro active + back pressed | AlertDialog: "End Pomodoro session?" with Confirm/Cancel. | UC-80 AC1-4 |
