@@ -85,6 +85,9 @@ import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
+import com.alexpo.grammermate.ui.components.PomodoroTimerBanner
+import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
+import com.alexpo.grammermate.ui.components.DifficultyRatingRow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +115,11 @@ fun TrainingScreen(
     onExportBadSentences: () -> String? = { null },
     isBadSentence: () -> Boolean = { false },
     onStartOfflineRecognition: () -> Unit = {},
-    hintLevel: HintLevel = HintLevel.EASY
+    hintLevel: HintLevel = HintLevel.EASY,
+    onPausePomodoro: () -> Unit = {},
+    onResumePomodoro: () -> Unit = {},
+    onCancelPomodoro: () -> Unit = {},
+    onRateCardDifficulty: (com.alexpo.grammermate.data.CardDifficultyRating) -> Unit = {}
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -150,7 +157,30 @@ fun TrainingScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (state.boss.bossActive) {
+            // Pomodoro timer banner
+            if (state.pomodoro.isActive && !state.pomodoro.isComplete) {
+                val totalCards = state.cardSession.correctCount + state.cardSession.incorrectCount
+                val successRate = if (totalCards > 0) state.cardSession.correctCount * 100 / totalCards else 0
+                PomodoroTimerBanner(
+                    remainingSeconds = state.pomodoro.remainingSeconds,
+                    totalSeconds = state.pomodoro.totalSeconds,
+                    cardsShown = totalCards,
+                    successRate = successRate,
+                    isPaused = state.pomodoro.isPaused,
+                    onPauseResume = {
+                        if (state.pomodoro.isPaused) onResumePomodoro() else onPausePomodoro()
+                    }
+                )
+            }
+
+            if (state.pomodoro.isComplete) {
+                PomodoroSummaryScreen(
+                    pomodoro = state.pomodoro,
+                    currentStreak = state.cardSession.currentStreak,
+                    todayFireCount = state.cardSession.todayFireCount,
+                    onDone = { onCancelPomodoro() }
+                )
+            } else if (state.boss.bossActive) {
                 Text(text = stringResource(R.string.training_review_session), fontWeight = FontWeight.SemiBold)
             } else if (state.elite.eliteActive) {
                 Text(text = stringResource(R.string.training_refresh_session), fontWeight = FontWeight.SemiBold)
@@ -228,27 +258,34 @@ fun TrainingScreen(
                     speedWpm = if (state.cardSession.voiceActiveMs > 0) (state.cardSession.voiceWordCount / (state.cardSession.voiceActiveMs / 60000.0)).toInt() else 0
                 )
             }
-            CardPrompt(state, onSpeak = onTtsSpeak)
-            AnswerBox(
-                state,
-                onInputChange,
-                onSubmit,
-                onSetInputMode,
-                onShowAnswer,
-                onVoicePromptStarted,
-                onSelectWordFromBank,
-                onRemoveLastWord,
-                hasCards,
-                onFlagBadSentence,
-                onUnflagBadSentence,
-                onHideCard,
-                onExportBadSentences,
-                isBadSentence,
-                onStartOfflineRecognition,
-                hintLevel
-            )
-            ResultBlock(state)
-            UnifiedNavigationRow(
+            if (!state.pomodoro.isComplete) {
+                CardPrompt(state, onSpeak = onTtsSpeak)
+                AnswerBox(
+                    state,
+                    onInputChange,
+                    onSubmit,
+                    onSetInputMode,
+                    onShowAnswer,
+                    onVoicePromptStarted,
+                    onSelectWordFromBank,
+                    onRemoveLastWord,
+                    hasCards,
+                    onFlagBadSentence,
+                    onUnflagBadSentence,
+                    onHideCard,
+                    onExportBadSentences,
+                    isBadSentence,
+                    onStartOfflineRecognition,
+                    hintLevel
+                )
+                ResultBlock(state)
+                // Pomodoro difficulty rating prompt
+                if (state.pomodoro.isActive && state.pomodoro.showRatingPrompt) {
+                    DifficultyRatingRow(
+                        onRatingSelected = { rating -> onRateCardDifficulty(rating) }
+                    )
+                }
+                UnifiedNavigationRow(
                 stateModel = object : com.alexpo.grammermate.data.CardSessionStateModel {
                     override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
                     override val isPaused = state.cardSession.sessionState == SessionState.PAUSED
@@ -268,6 +305,7 @@ fun TrainingScreen(
                 onStop = onRequestExit,
                 onNext = onNext
             )
+            } // end if (!pomodoro.isComplete)
         }
     }
 }
