@@ -1,6 +1,6 @@
 # TASK-050: Unify Session Size Parameter (Учебная единица)
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-16
 **Branch:** feature/unify-session-size (from main)
 **Spec:** 01-models-and-state.md §glossary, 06-infrastructure.md §AppConfig, 09-daily-practice.md §9.1-9.5, 10-verb-drill.md §5, 11-vocab-drill.md §11.5
