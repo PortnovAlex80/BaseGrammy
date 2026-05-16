@@ -263,7 +263,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             hasVocabDrill = state.navigation.hasVocabDrill,
                             onOpenVerbDrill = { onNavigate(Routes.VERB_DRILL) },
                             onOpenVocabDrill = { onNavigate(Routes.VOCAB_DRILL) },
-                            onProfileClick = { dialogs = dialogs.copy(showProfileStats = true) }
+                            onProfileClick = { dialogs = dialogs.copy(showProfileStats = true) },
+                            onStartPomodoro = { duration ->
+                                vm.startPomodoro(duration)
+                                onNavigate(Routes.LESSON)
+                            }
                         )
                     }
 
@@ -506,7 +510,11 @@ private fun TrainingScreenContent(
         onExportBadSentences = vm.reports::exportBadSentences,
         isBadSentence = vm.reports::isBadSentence,
         onStartOfflineRecognition = vm::startOfflineRecognition,
-        hintLevel = hintLevel
+        hintLevel = hintLevel,
+        onPausePomodoro = vm::pausePomodoro,
+        onResumePomodoro = vm::resumePomodoro,
+        onCancelPomodoro = vm::cancelPomodoro,
+        onRateCardDifficulty = vm::rateCardDifficulty
     )
 }
 
