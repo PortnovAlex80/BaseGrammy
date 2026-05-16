@@ -1,6 +1,6 @@
 # TASK-058: Two-Layer Hint System — Difficulty + Scheduler
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-17
 **Branch:** feature/two-layer-hints (from feature/pomodoro-timer)
 **Spec:** 21-product-roadmap.md#2, 03-algorithms-and-calculators.md#3.7, 01-models-and-state.md#HintLevel, 12-training-card-session.md#TCS-02, 08-training-viewmodel.md#2.17
@@ -151,8 +151,8 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: HintCalculator algorithm | | |
-| | Fix 2: Wire into display pipeline | | |
-| | Fix 3: Gate Word Bank by HintLevel | | |
-| | Fix 4: Boss battle forces HARD | | |
-| | Fix 5: Card encounter count tracking | | |
+| 2026-05-17 | Fix 1: HintCalculator algorithm | DONE | |
+| 2026-05-17 | Fix 2: Wire into display pipeline | DONE | |
+| 2026-05-17 | Fix 3: Gate Word Bank by HintLevel | DONE | |
+| 2026-05-17 | Fix 4: Boss battle forces HARD | DONE | |
+| 2026-05-17 | Fix 5: Card encounter count tracking | DONE | |
