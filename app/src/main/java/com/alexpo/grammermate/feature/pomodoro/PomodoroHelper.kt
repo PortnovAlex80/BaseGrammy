@@ -15,7 +15,8 @@ class PomodoroHelper(
     private val onUpdateState: (TrainingUiState) -> Unit,
     private val scope: CoroutineScope,
     private val onPauseTraining: () -> Unit = {},
-    private val onResumeTraining: () -> Unit = {}
+    private val onResumeTraining: () -> Unit = {},
+    private val onPlayCompletionSound: () -> Unit = {}
 ) {
     private var timerJob: Job? = null
 
@@ -78,6 +79,7 @@ class PomodoroHelper(
                 stats = stats
             )
         }
+        onPlayCompletionSound()
     }
 
     fun recordDifficultyRating(rating: CardDifficultyRating) {

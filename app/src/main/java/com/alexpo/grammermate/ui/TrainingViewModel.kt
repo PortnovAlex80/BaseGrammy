@@ -220,7 +220,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         onUpdateState = { newState -> _coreState.value = newState },
         scope = viewModelScope,
         onPauseTraining = { handleSessionEvents(sessionRunner.pauseSession()) },
-        onResumeTraining = { handleSessionEvents(sessionRunner.resumeFromSettings()) }
+        onResumeTraining = { handleSessionEvents(sessionRunner.resumeFromSettings()) },
+        onPlayCompletionSound = {
+            try {
+                val uri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                val ringtone = android.media.RingtoneManager.getRingtone(getApplication<Application>(), uri)
+                ringtone?.play()
+            } catch (_: Exception) {}
+        }
     )
 
     // ── Combined state flow (all feature flows merged with core) ──────────
