@@ -32,3 +32,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-052](TASK-052-unified-bad-reporting.md) | Unified Bad Sentence Reporting Across All Modes | OPEN | 23, 08 | 2026-05-16 |
 | [TASK-053](TASK-053-drill-standard-navigation.md) | Drill Sub-mode Standard Navigation | OPEN | 12, 08 | 2026-05-16 |
 | [TASK-054](TASK-054-training-screen-tcs-migration.md) | Migrate TrainingScreen to TrainingCardSession | OPEN | 12, 07, 23 | 2026-05-16 |
+| [DONE-TASK-055](DONE-TASK-055-streak-reset-on-progress-clear.md) | Streak Reset on Progress Clear | DONE | 02-data-stores, 08-training-viewmodel | 2026-05-16 |
