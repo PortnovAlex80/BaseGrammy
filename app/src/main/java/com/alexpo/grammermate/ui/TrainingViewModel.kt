@@ -218,7 +218,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val pomodoroHelper = PomodoroHelper(
         stateProvider = { _coreState.value },
         onUpdateState = { newState -> _coreState.value = newState },
-        scope = viewModelScope
+        scope = viewModelScope,
+        onPauseTraining = { handleSessionEvents(sessionRunner.pauseSession()) },
+        onResumeTraining = { handleSessionEvents(sessionRunner.resumeFromSettings()) }
     )
 
     // ── Combined state flow (all feature flows merged with core) ──────────

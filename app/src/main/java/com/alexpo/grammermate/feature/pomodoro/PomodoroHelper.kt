@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 class PomodoroHelper(
     private val stateProvider: () -> TrainingUiState,
     private val onUpdateState: (TrainingUiState) -> Unit,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val onPauseTraining: () -> Unit = {},
+    private val onResumeTraining: () -> Unit = {}
 ) {
     private var timerJob: Job? = null
 
@@ -34,10 +36,12 @@ class PomodoroHelper(
     fun pausePomodoro() {
         timerJob?.cancel()
         timerJob = null
+        onPauseTraining()
         updatePomodoro { it.copy(isPaused = true) }
     }
 
     fun resumePomodoro() {
+        onResumeTraining()
         updatePomodoro { it.copy(isPaused = false) }
         startTimer()
     }
@@ -51,6 +55,7 @@ class PomodoroHelper(
     fun completePomodoro() {
         timerJob?.cancel()
         timerJob = null
+        onPauseTraining()
         val current = stateProvider()
         val cardSession = current.cardSession
 
