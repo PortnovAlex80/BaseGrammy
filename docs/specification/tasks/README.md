@@ -35,3 +35,6 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-055](DONE-TASK-055-streak-reset-on-progress-clear.md) | Streak Reset on Progress Clear | DONE | 02-data-stores, 08-training-viewmodel | 2026-05-16 |
 | [TASK-055](TASK-055-lesson-unlock-threshold.md) | Lesson Unlock Threshold (50% Mastery) | OPEN | 19, 06, 03 | 2026-05-16 |
 | [TASK-056](TASK-056-pomodoro-timer.md) | Pomodoro Timer — Focused Training Sessions | OPEN | pomodoro-design, 08, 19, 22, 23 | 2026-05-16 |
+| [TASK-057](TASK-057-inline-streak-indicator.md) | Inline Streak Indicator in HomeScreen Header | OPEN | 23, 19, 22 | 2026-05-17 |
+| [TASK-058](TASK-058-unify-auto-advance-timing.md) | Unify Auto-Advance Timing After Correct Voice Answer | OPEN | 10, 12-training-card-session | 2026-05-17 |
+| [TASK-059](TASK-059-unify-voice-auto-launch.md) | Unify Voice Auto-Launch Mechanism | OPEN | 12, 10 | 2026-05-17 |

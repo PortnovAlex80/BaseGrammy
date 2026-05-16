@@ -120,7 +120,7 @@ Global dialogs (overlay on any screen):
 - **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 819)
 - **Parent**: Default landing screen after startup
 - **Key UI elements**:
-  - **Profile header**: Avatar circle (40dp, primary background, initials) + userName (SemiBold) + LanguageSelector dropdown + Settings gear IconButton
+  - **Profile header**: Avatar circle (40dp, primary background, initials) + userName (SemiBold, truncated to 6 chars) + Fire streak indicator (1-3 fire emojis + streak days "Nd", always visible, grey when zero) + spacer + LanguageSelector dropdown + PomodoroSelector trigger + Settings gear IconButton
   - **Primary action Card**: Clickable card showing activePackDisplayName ("Continue Learning" / "Start learning") + lesson progress hint ("Lesson N. Exercise X/Y")
   - **Grammar Roadmap**: "Grammar Roadmap" header + 4-column `LazyVerticalGrid` of LessonTile cards (72dp). Each shows: lesson number, flower emoji (LOCKED/UNLOCKED/SEED/SPROUT/FLOWER/EMPTY), mastery percentage
   - **Drill tiles row**: VerbDrillEntryTile (FitnessCenter icon) + VocabDrillEntryTile (MenuBook icon + mastered count). Row visible when `hasVerbDrill || hasVocabDrill`

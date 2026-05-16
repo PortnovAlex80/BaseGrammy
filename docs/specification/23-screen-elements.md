@@ -26,7 +26,7 @@
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Avatar circle | HS-01 | image | Always | 40dp CircleShape, primaryContainer background, shows user initials (max 2 chars, fallback "GM"). Opens ProfileStatsPopup (see DG-18). | ? |
-| User name text | HS-02 | text | Always | SemiBold weight. Displays `state.navigation.userName`. | ? |
+| User name text | HS-02 | text | Always | SemiBold weight. Displays `state.navigation.userName` truncated to 6 characters with ellipsis (…). | ? |
 | Language selector | HS-03 | button | Always | TextButton showing uppercase language code (e.g. "IT"). Opens DropdownMenu with all available languages. Selecting a different language calls `onSelectLanguage(id)`. | ? |
 | Settings gear icon | HS-04 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()`. | ? |
 | Primary action card | HS-05 | card | Always | Clickable Card showing active pack display name ("Continue Learning" / "Start learning") and lesson progress hint ("Lesson N. Exercise X/Y"). Calls `onPrimaryAction()`. | ? |
@@ -47,7 +47,8 @@
 | EarlyStartDialog (lesson) | HS-20 | dialog | `earlyStartLessonId != null` (tap LOCKED tile with lessonId) | AlertDialog: "Start early?" title, "Yes"/"No" buttons. "Yes" calls `onSelectLesson(lessonId)`. | ? |
 | Drill tiles row container | HS-21 | card | `hasVerbDrill \|\| hasVocabDrill` | Row containing VerbDrillEntryTile and VocabDrillEntryTile side by side (each weighted 1f). | ? |
 | Locked tile clickable | HS-22 | button | `tile.state == LOCKED` and `tile.lessonId != null` | Opens EarlyStartDialog (HS-20). If `lessonId == null`, opens LessonLockedDialog (HS-19). | ? |
-| Fire streak indicator | HS-23 | row | HomeScreen top | Shows fire icons (todayFireCount, max 4) + streak count number. Updates after each session completion. 0 fires = dimmed/hidden. Streak > 7 = gold highlight. | UC-71, UC-72 |
+| Fire streak indicator | HS-23 | text | HomeScreen header Row 1, after username | Inline indicator: 1-3 fire emojis (todayFireCount, max 3) + streak days ("Nd"). Always visible — grey when streak=0 and todayFireCount=0, colored when streak>0. Positioned after HS-02 username, before spacer. Updates after each session completion. | UC-71, UC-72 |
+**Implementation task:** [TASK-057: Inline Streak Indicator](tasks/TASK-057-inline-streak-indicator.md)
 
 ---
 
