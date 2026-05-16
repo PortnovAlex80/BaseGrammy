@@ -1,6 +1,6 @@
 # TASK-057: Inline Streak Indicator in HomeScreen Header
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-17
 **Branch:** feature/inline-streak-indicator (from feature/pomodoro-timer)
 **Spec:** 23-screen-elements.md#HS-02, 23-screen-elements.md#HS-23, 19-screen-catalog.md#HomeScreen, 22-use-case-registry.md#UC-72
@@ -107,6 +107,6 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Fix 1: Username truncation | | |
-| | Fix 2: Inline streak indicator | | |
-| | Fix 3: Remove unused strings | | |
+| 2026-05-17 | Fix 1: Username truncation | DONE | |
+| 2026-05-17 | Fix 2: Inline streak indicator | DONE | |
+| 2026-05-17 | Fix 3: Remove unused strings | DONE | |
