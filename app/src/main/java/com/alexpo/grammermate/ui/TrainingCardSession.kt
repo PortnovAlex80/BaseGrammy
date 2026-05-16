@@ -296,7 +296,13 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
                 Text(text = stringResource(R.string.card_label_ru), style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = card.promptRu,
+                    text = HintCalculator.calculateEffectiveHints(
+                        promptRu = card.promptRu,
+                        encounterCount = scope.encounterCount,
+                        hintLevel = scope.hintLevel,
+                        sessionOffset = scope.sessionOffset,
+                        isBossBattle = scope.isBossBattle
+                    ),
                     fontSize = (20f * scope.textScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )

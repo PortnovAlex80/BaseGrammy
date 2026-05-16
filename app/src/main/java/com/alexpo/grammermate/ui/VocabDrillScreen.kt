@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.SrsRating
+import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillCard
@@ -689,7 +690,12 @@ private fun VocabDrillCardFront(
             // Main word display based on direction
             val displayText = when (direction) {
                 VocabDrillDirection.IT_TO_RU -> card.word.word
-                VocabDrillDirection.RU_TO_IT -> card.word.meaningRu ?: "?"
+                VocabDrillDirection.RU_TO_IT -> HintCalculator.calculateEffectiveHints(
+                    promptRu = card.word.meaningRu ?: "",
+                    encounterCount = 0,
+                    hintLevel = hintLevel,
+                    sessionOffset = 0
+                )
             }
             Text(
                 text = displayText,

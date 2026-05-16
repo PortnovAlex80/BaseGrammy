@@ -464,7 +464,15 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
                 Text(text = stringResource(R.string.training_ru), style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = state.cardSession.currentCard?.promptRu ?: stringResource(R.string.training_no_cards),
+                    text = state.cardSession.currentCard?.promptRu?.let {
+                        HintCalculator.calculateEffectiveHints(
+                            promptRu = it,
+                            encounterCount = state.cardSession.encounterCount,
+                            hintLevel = state.cardSession.hintLevel,
+                            sessionOffset = state.cardSession.hintSessionOffset,
+                            isBossBattle = state.boss?.bossActive == true
+                        )
+                    } ?: stringResource(R.string.training_no_cards),
                     fontSize = (20f * state.audio.ruTextScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )

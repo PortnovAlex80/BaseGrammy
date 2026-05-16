@@ -49,6 +49,7 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.feature.training.HintCalculator
 
 /**
  * Unified input controls bar for all card session modes (Training, VerbDrill, DailyPractice).
@@ -214,7 +215,13 @@ fun UnifiedInputControlsBar(
         if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
             Text(
                 text = contract.currentCard?.promptRu?.let {
-                    stringResource(R.string.voice_say_translation_hint, it)
+                    val cleanPrompt = HintCalculator.calculateEffectiveHints(
+                        promptRu = it,
+                        encounterCount = 0,
+                        hintLevel = hintLevel,
+                        sessionOffset = 0
+                    )
+                    stringResource(R.string.voice_say_translation_hint, cleanPrompt)
                 } ?: "",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 style = MaterialTheme.typography.bodySmall
