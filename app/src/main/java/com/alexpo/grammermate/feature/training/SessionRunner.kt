@@ -1179,7 +1179,7 @@ class SessionRunner(
         return cards.shuffled().take(eliteSize)
     }
 
-    private fun updateWordBank() {
+    fun updateWordBank() {
         val state = stateAccess.uiState.value
         // Pomodoro hint level guard: Word Bank only available at EASY level
         if (state.cardSession.hintLevel != HintLevel.EASY) return

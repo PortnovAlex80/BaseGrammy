@@ -1329,7 +1329,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update {
             it.copy(cardSession = it.cardSession.copy(currentIndex = safeIndex, currentCard = card, sessionState = if (card == null) SessionState.PAUSED else state.cardSession.sessionState, subLessonTotal = result.subLessonTotal, subLessonCount = result.subLessonCount, activeSubLessonIndex = result.activeSubLessonIndex, completedSubLessonCount = result.completedSubLessonCount, subLessonTypes = result.subLessonTypes))
         }
+        // Sync word bank with the newly built card so the toggle button appears immediately.
+        // Without this, sessions started via selectLesson() are ACTIVE with currentCard set
+        // but wordBankWords stays empty — the user never sees the word bank toggle until
+        // they manually pause and resume (which triggers updateWordBank via startSession).
+        sessionRunner.updateWordBank()
     }
+
     private fun rebuildSchedules(lessons: List<Lesson>) {
         lessonSchedules = cardProvider.buildSchedules(lessons, lessonSchedules)
     }
