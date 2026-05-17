@@ -380,8 +380,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         onNavigate(Routes.VERB_DRILL)
                                     }
                                     returnTo == Routes.DAILY_PRACTICE -> {
-                                        vm.exitDailySession()
-                                        onNavigate(Routes.DAILY_PRACTICE)
+                                        vm.cancelDailySession()
+                                        onNavigate(Routes.HOME)
                                     }
                                     else -> {
                                         dialogs = dialogs.copy(showExitDialog = true)
@@ -525,8 +525,8 @@ private fun NavBackHandlers(
         }
     }
     BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.DAILY_PRACTICE && !showSettings) {
-        vm.exitDailySession()
-        navController.navigate(Routes.DAILY_PRACTICE) {
+        vm.cancelDailySession()
+        navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = false }
             launchSingleTop = true
         }

@@ -1,12 +1,48 @@
-# TASK-061: Training Consolidation — One Engine, One Screen
+# TASK-061: Training Consolidation — Checklist
 
-## Principle
-Every screen that renders sentence card sessions MUST use TrainingScreen.
-No screen renders sentence/verb card sessions independently.
+## Принцип
+TrainingScreen — единственный экземпляр экрана для карточных сессий.
+Любой элемент принадлежит TrainingScreen и переиспользуется через конфигурацию.
 
-## Checklist
+---
 
-### TrainingScreen modes (the ONE screen)
+## 1. Mode — конфигурация, не логика
+
+### Mode определяет ТОЛЬКО визуал:
+- [ ] Subtitle текст (tense label / "Review Session" / "Refresh Session")
+- [ ] Фон (белый / зелёный drill)
+- [ ] Verb chips (показаны только для VERB_DRILL / DAILY_VERBS)
+- [ ] Completion экран (урок завершён / verb drill stats / daily block done)
+
+### Mode ПРОЗРАЧЕН для:
+- [ ] SessionRunner.submitAnswer() — единый алгоритм, без when(mode)
+- [ ] SessionRunner.updateWordBank() — единая генерация, без when(mode)
+- [ ] SessionRunner.nextCard() — единая навигация
+- [ ] SessionRunner.startSession() — один метод вместо startXxxSession()
+- [ ] Answer validation — единая логика
+
+### Запрещено:
+- [ ] when(mode) ветки внутри SessionRunner
+- [ ] Отдельные startVerbDrillSession / startDailyTranslateSession / startDailyVerbsSession
+- [ ] Разная логика word bank по mode
+- [ ] Режим-специфичная навигация внутри TrainingScreen
+
+---
+
+## 2. Навигация — returnTo токен
+
+- [ ] TrainingScreen получает returnTo: String
+- [ ] Урок → returnTo = HOME
+- [ ] Daily Practice → returnTo = DAILY_PRACTICE
+- [ ] Verb Drill → returnTo = VERB_DRILL
+- [ ] Mix Challenge → returnTo = HOME
+- [ ] Сессия завершена → navigate(returnTo), TrainingScreen не знает контекст
+
+---
+
+## 3. TrainingScreen modes (9 режимов)
+
+### Уже работают:
 - [ ] NORMAL — lesson cards from LessonRoadmap
 - [ ] BOSS — boss battle review
 - [ ] BOSS_MEGA — mega boss battle
@@ -14,28 +50,88 @@ No screen renders sentence/verb card sessions independently.
 - [ ] ELITE — refresh session
 - [ ] MIX_CHALLENGE — mixed challenge from HomeScreen
 - [ ] VERB_DRILL — after VerbDrill selection
-- [ ] DAILY_TRANSLATE — Daily Practice block 1
-- [ ] DAILY_VERBS — Daily Practice block 3
 
-### Delegation screens (selection/setup only, no card rendering)
-- [ ] VerbDrillScreen — selection only, navigates to TrainingScreen(VERB_DRILL)
-- [ ] DailyPracticeScreen — coordinator only, navigates to TrainingScreen for blocks 1 & 3
-- [ ] DailyPracticeScreen keeps VOCAB block (Anki flip) internally — different paradigm
+### Добавлены в TASK-061:
+- [ ] DAILY_TRANSLATE — Daily Practice block 1 через TrainingScreen
+- [ ] DAILY_VERBS — Daily Practice block 3 через TrainingScreen
 
-### Anti-checklist — these must NOT exist
-- [ ] NO screen renders sentence cards inline outside TrainingScreen
-- [ ] NO separate composable creates its own TrainingCardSession for sentence/verb cards
-- [ ] NO DailyPracticeSessionProvider wrapping card sessions (blocks 1 & 3)
+---
 
-### Excluded by design
-- VocabDrillScreen — flip-card + SRS rating paradigm, NOT a sentence card session
-- StoryQuizScreen — quiz, not a card session
-- HomeScreen, LessonRoadmapScreen, LadderScreen — no card rendering
+## 4. Daily Practice — block-config архитектура
 
-### Verification
-- [ ] Build passes
-- [ ] APK installed and tested
-- [ ] All TrainingScreen modes show "GrammarMate" header
-- [ ] Daily Practice blocks 1 & 3 show "GrammarMate" header (not "Daily Practice")
-- [ ] VerbDrill session shows "GrammarMate" header
-- [ ] No regressions in existing modes (NORMAL, BOSS, DRILL, VERB_DRILL)
+### Структура:
+- [ ] DailySessionState.blocks: List<DailyBlock> (не плоский List<DailyTask>)
+- [ ] DailyBlock: type, tasks, renderVia (TRAINING_SCREEN / INLINE), isComplete
+- [ ] BlockRenderVia enum: TRAINING_SCREEN для TRANSLATE/VERBS, INLINE для VOCAB
+
+### Оркестрация:
+- [ ] Единый onBlockComplete() → blockIndex++ → startNextBlock
+- [ ] TRANSLATE/VERBS: TrainingScreen done → navigate(DAILY_PRACTICE) → coordinator.onBlockComplete()
+- [ ] VOCAB: inline → onComplete → coordinator.onBlockComplete()
+- [ ] Все блоки готовы → navigate(HOME) → страйк
+- [ ] Нет advanceToNextBlock() / advanceDailyBlock() сканирования
+
+### TENSE_LADDER:
+- [ ] Логика не тронута — уровень 1-12 → активные времена
+- [ ] VERBS блок фильтрует карты по активным временам
+
+---
+
+## 5. Экраны — роли
+
+| Экран | Роль | Карточки |
+|-------|------|----------|
+| TrainingScreen | Единый рендерер | Всё через один composable |
+| VerbDrillScreen | Выбор только | → TrainingScreen(VERB_DRILL) |
+| DailyPracticeScreen | Координатор | TRANSLATE/VERBS → TrainingScreen, VOCAB inline |
+| VocabDrillScreen | Отдельная парадигма | Flip-card + SRS, НЕ TrainingScreen |
+| HomeScreen | Точка входа | Запуск + страйки |
+
+---
+
+## 6. Прогрессы — независимы
+
+- [ ] recordDailyCardPracticed() — mastery + answered count
+- [ ] persistDailyVerbProgress() — everShown + todayShown
+- [ ] rateVocabCard() — SRS step
+- [ ] endSession() → страйк
+- [ ] cancelDailySession() → cursor advancement
+- [ ] Прогрессы НЕ зависят от returnTo
+
+---
+
+## 7. Верификация на устройстве
+
+### Общие:
+- [ ] Build проходит
+- [ ] Все режимы TrainingScreen показывают заголовок "GrammarMate"
+- [ ] Word bank работает во всех режимах (NORMAL, VERB_DRILL, DAILY_TRANSLATE, DAILY_VERBS)
+- [ ] No регрессий в NORMAL, BOSS, DRILL, VERB_DRILL
+
+### Урок:
+- [ ] Выбрать урок → TrainingScreen → пройти карточки → HOME → страйк
+
+### Verb Drill:
+- [ ] Verb Drill → выбор → TrainingScreen → пройти → VERB_DRILL или HOME
+
+### Daily Practice:
+- [ ] Daily Practice → TRANSLATE блок рендерится через TrainingScreen
+- [ ] TRANSLATE done → sparkle → VOCAB inline с SRS кнопками
+- [ ] VOCAB done → sparkle → VERBS блок через TrainingScreen
+- [ ] VERBS done → completion → HOME → страйк
+- [ ] Отмена daily → cursor advancement сохранён
+
+### Anti-check:
+- [ ] Нигде кроме TrainingScreen нет рендера sentence/verb карточек
+- [ ] Нет отдельных TrainingCardSession вне TrainingScreen
+- [ ] Нет when(mode) в SessionRunner бизнес-логике
+
+---
+
+## 8. Рефакторинг (TODO после верификации)
+
+- [ ] SessionRunner: единый startSession(cards, mode, returnTo)
+- [ ] SessionRunner: убрать when(mode) из submitAnswer, updateWordBank
+- [ ] SessionRunner: убрать отдельные startXxxSession методы
+- [ ] GrammarMateApp: убрать mode-специфичные token listeners
+- [ ] DailyPracticeScreen: убрать мёртвый код (CardSessionBlock, DailyTrainingCardSession)

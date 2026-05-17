@@ -187,6 +187,10 @@ class SessionRunner(
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE, inputText = "", answerText = null, incorrectAttemptsForCard = 0, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null))
         }
+        // Populate word bank so the UI toggle is visible from the start.
+        // Without this, regular lesson sessions start with wordBankWords=empty,
+        // hiding the word bank toggle button (supportsWordBank checks isNotEmpty).
+        updateWordBank()
         currentCard()?.let { events.add(SessionEvent.RecordCardShow(it)) }
         events.add(SessionEvent.SaveProgress)
         return events
