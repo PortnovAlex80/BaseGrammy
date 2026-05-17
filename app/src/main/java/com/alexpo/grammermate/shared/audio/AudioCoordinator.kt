@@ -20,6 +20,7 @@ import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -245,6 +246,7 @@ class AudioCoordinator(
                     val engineState = ttsEngine.state.value
                     if (engineState is TtsState.Error || engineState == TtsState.Idle) {
                         try {
+                            delay(500) // Let filesystem buffers flush after extraction
                             ttsEngine.initialize(languageId)
                             Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
                         } catch (e: Exception) {
@@ -349,6 +351,7 @@ class AudioCoordinator(
         if (bgDownloadJob?.isActive == true) return
 
         bgDownloadJob = coroutineScope.launch(Dispatchers.IO) {
+            if (ttsDownloadJob?.isActive == true) return@launch // Manual download takes priority
             ttsModelManager.downloadMultiple(missingLanguages).collect { stateMap ->
                 val allDone = stateMap.values.all { it is DownloadState.Done }
                 val anyActive = stateMap.values.any {
@@ -396,6 +399,7 @@ class AudioCoordinator(
                         val langToInit = if (newlyCompleted.contains(selectedLang)) selectedLang
                             else newlyCompleted.first()
                         try {
+                            delay(500) // Let filesystem buffers flush after extraction
                             ttsEngine.initialize(langToInit)
                             Log.d(TAG, "Auto-initialized TTS engine for $langToInit after background download")
                         } catch (e: Exception) {
@@ -441,6 +445,7 @@ class AudioCoordinator(
             Log.d(TAG, "TTS download already in progress, ignoring duplicate request")
             return
         }
+        bgDownloadJob?.cancel() // Cancel any competing background download
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         if (ttsModelManager.isModelReady(langId.value)) {
             _audioState.update { it.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done) }
@@ -455,6 +460,7 @@ class AudioCoordinator(
                     val engineState = ttsEngine.state.value
                     if (engineState is TtsState.Error || engineState == TtsState.Idle) {
                         try {
+                            delay(500) // Let filesystem buffers flush after extraction
                             ttsEngine.initialize(langId.value)
                             Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
                         } catch (e: Exception) {

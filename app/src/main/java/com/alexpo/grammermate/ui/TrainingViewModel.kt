@@ -85,7 +85,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var wordMasteryStore = container.wordMasteryStore(null)
     private val backupManager = container.backupManager
     private val profileStore = container.profileStore
-    private val _coreState = MutableStateFlow(TrainingUiState())
+    private val _coreState = MutableStateFlow(TrainingUiState(isLoading = true))
 
     // ── High-frequency timer flows (separate from main state for performance) ──
     private val _sessionTimerMs = MutableStateFlow(0L)
@@ -346,124 +346,128 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     init {
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
-        lessonStore.ensureSeedData()
-        badSentenceStore.migrateIfNeeded(lessonStore)
-        val progress = progressStore.load()
-        val config = configStore.load()
-        val profile = profileStore.load()
-        eliteSizeMultiplier = config.eliteSizeMultiplier
-        sessionSize = config.sessionSize
-        cardProvider.setSubLessonSize(sessionSize)
-        sessionRunner.setEliteSizeMultiplier(eliteSizeMultiplier)
-        sessionRunner.setSubLessonSize(sessionSize)
-        dailyPracticeCoordinator.setSessionSize(sessionSize)
-        val bossLessonRewards = bossOrchestrator.parseBossRewards(progress.bossLessonRewards)
-        val bossMegaRewards = bossOrchestrator.parseBossRewards(progress.bossMegaRewards)
-        val languages = lessonStore.getLanguages()
-        val packs = lessonStore.getInstalledPacks()
-        val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: com.alexpo.grammermate.data.LanguageId("en")
-        val lessons = lessonStore.getLessons(selectedLanguageId.value)
-        val selectedLessonId = progress.lessonId?.let { id ->
-            lessons.firstOrNull { it.id.value == id }?.id
-        } ?: lessons.firstOrNull()?.id
-        val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(progress.eliteBestSpeeds)
-        val restoredScreen = "HOME"
-        val streakData = streakStore.getCurrentStreak(selectedLanguageId.value)
-        // Resolve activePackId: prefer saved value if pack still exists,
-        // then derive from lessonId, then fall back to first pack for language.
-        val savedPackId = progress.activePackId
-        val allPackIds = packs.map { it.packId }.toSet()
-        val initialActivePackId = if (savedPackId != null && savedPackId in allPackIds) {
-            savedPackId
-        } else {
-            selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
-        }
-        val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
-        _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
-        }
-        // Initialize feature-owned state from persisted progress
-        bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
-        vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
-        dailyPracticeCoordinator.updateCursor(progress.dailyCursor)
-        refreshDrillVisibility()
-        rebindWordMasteryStore(initialActivePackId?.value)
-        rebuildSchedules(lessons)
-        buildSessionCards()
-        refreshFlowerStates()
-        if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
-            sessionRunner.resumeTimer()
-            (_coreState.value.cardSession.currentCard as? SentenceCard)?.let {
-                recordCardShowForMastery(it)
-                recordCardEncounter(it)
-            }
-            if (_coreState.value.cardSession.inputMode == InputMode.VOICE) {
-                _coreState.update { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
-            }
-        }
-        // Force reload default packs on every app start to ensure latest lesson content.
-        // NOTE: We read _coreState.value INSIDE the update lambda to avoid a TOCTOU race
-        // where the user changes language/lesson on the main thread while we captured
-        // stale values on the IO thread.
-        val reloadJob = viewModelScope.launch(Dispatchers.IO) {
-            val reloaded = lessonStore.forceReloadDefaultPacks()
-            if (!reloaded) return@launch
+
+        // All file I/O moved to a background thread to avoid blocking the main thread
+        // on app startup (was 500ms–2s on weak tablets). UI shows a loading spinner
+        // via TrainingUiState.isLoading until this coroutine completes.
+        viewModelScope.launch(Dispatchers.IO) {
+            lessonStore.ensureSeedData()
+            badSentenceStore.migrateIfNeeded(lessonStore)
+            val progress = progressStore.load()
+            val config = configStore.load()
+            val profile = profileStore.load()
+            eliteSizeMultiplier = config.eliteSizeMultiplier
+            sessionSize = config.sessionSize
+            cardProvider.setSubLessonSize(sessionSize)
+            sessionRunner.setEliteSizeMultiplier(eliteSizeMultiplier)
+            sessionRunner.setSubLessonSize(sessionSize)
+            dailyPracticeCoordinator.setSessionSize(sessionSize)
+            val bossLessonRewards = bossOrchestrator.parseBossRewards(progress.bossLessonRewards)
+            val bossMegaRewards = bossOrchestrator.parseBossRewards(progress.bossMegaRewards)
             val languages = lessonStore.getLanguages()
             val packs = lessonStore.getInstalledPacks()
+            val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: com.alexpo.grammermate.data.LanguageId("en")
+            val lessons = lessonStore.getLessons(selectedLanguageId.value)
+            val selectedLessonId = progress.lessonId?.let { id ->
+                lessons.firstOrNull { it.id.value == id }?.id
+            } ?: lessons.firstOrNull()?.id
+            val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(progress.eliteBestSpeeds)
+            val restoredScreen = "HOME"
+            val streakData = streakStore.getCurrentStreak(selectedLanguageId.value)
+            // Resolve activePackId: prefer saved value if pack still exists,
+            // then derive from lessonId, then fall back to first pack for language.
+            val savedPackId = progress.activePackId
+            val allPackIds = packs.map { it.packId }.toSet()
+            val initialActivePackId = if (savedPackId != null && savedPackId in allPackIds) {
+                savedPackId
+            } else {
+                selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
+            }
+            val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
+
             withContext(Dispatchers.Main) {
-                _coreState.update { current ->
-                    val currentLang = current.navigation.selectedLanguageId
-                    val selectedLang = languages.firstOrNull { it.id == currentLang }?.id
-                        ?: languages.firstOrNull()?.id
-                        ?: com.alexpo.grammermate.data.LanguageId("en")
-                    val lessons = lessonStore.getLessons(selectedLang.value)
-                    val currentLessonId = current.navigation.selectedLessonId
-                    val selectedLessonId = lessons.firstOrNull { it.id == currentLessonId }?.id
-                        ?: lessons.firstOrNull()?.id
-                    val reloadedPackIds = packs.map { it.packId }.toSet()
-                    // Keep current activePackId if it still exists after reload,
-                    // otherwise derive from lessonId, otherwise fall back to first pack.
-                    val updatedPackId = if (current.navigation.activePackId != null && current.navigation.activePackId in reloadedPackIds) {
-                        current.navigation.activePackId
-                    } else {
-                        selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
-                            ?: packs.firstOrNull { it.languageId == selectedLang }?.packId
-                    }
-                    val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it.value) }
-                    current.copy(navigation = current.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, current.cardSession.testMode)))
+                _coreState.update {
+                    it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
                 }
+                // Initialize feature-owned state from persisted progress
+                bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
+                vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
+                dailyPracticeCoordinator.updateCursor(progress.dailyCursor)
                 refreshDrillVisibility()
-                val updatedLessons = lessonStore.getLessons(_coreState.value.navigation.selectedLanguageId.value)
-                rebuildSchedules(updatedLessons)
+                rebindWordMasteryStore(initialActivePackId?.value)
+                rebuildSchedules(lessons)
                 buildSessionCards()
                 refreshFlowerStates()
-            }
-        }
-
-        // TTS state collection
-        audioCoordinator.checkTtsModel()
-        audioCoordinator.checkAllTtsModels()
-        audioCoordinator.checkAsrModel()
-        audioCoordinator.startBackgroundTtsDownload()
-        audioCoordinator.startTtsStateCollection()
-
-        // Pre-build daily practice session AFTER forceReload completes.
-        // Uses progress-based lesson, NOT selectedLessonId, so that browsing
-        // locked lessons does not affect the daily practice session.
-        // Sequencing prevents race where prebuild reads files that forceReload is replacing.
-        reloadJob.invokeOnCompletion {
-            viewModelScope.launch(Dispatchers.IO) {
-                val state = _coreState.value
-                val packId = state.navigation.activePackId
-                val langId = state.navigation.selectedLanguageId
-                val progressInfo = resolveProgressLessonInfo()
-                if (packId != null && progressInfo != null) {
-                    val lessonId = progressInfo.first
-                    val lessonLevel = progressInfo.second
-                    dailyPracticeCoordinator.prebuildSession(
-                        packId.value, langId.value, lessonId, lessonLevel, dailyPracticeCoordinator.getCursor()
-                    )
+                if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
+                    sessionRunner.resumeTimer()
+                    (_coreState.value.cardSession.currentCard as? SentenceCard)?.let {
+                        recordCardShowForMastery(it)
+                        recordCardEncounter(it)
+                    }
+                    if (_coreState.value.cardSession.inputMode == InputMode.VOICE) {
+                        _coreState.update { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
+                    }
                 }
+
+                // TTS state collection (must run on main thread — checks model state)
+                audioCoordinator.checkTtsModel()
+                audioCoordinator.checkAllTtsModels()
+                audioCoordinator.checkAsrModel()
+                audioCoordinator.startBackgroundTtsDownload()
+                audioCoordinator.startTtsStateCollection()
+            }
+
+            // Force reload default packs on every app start to ensure latest lesson content.
+            // NOTE: We read _coreState.value INSIDE the update lambda to avoid a TOCTOU race
+            // where the user changes language/lesson on the main thread while we captured
+            // stale values on the IO thread.
+            val reloaded = lessonStore.forceReloadDefaultPacks()
+            if (reloaded) {
+                val reloadLanguages = lessonStore.getLanguages()
+                val reloadPacks = lessonStore.getInstalledPacks()
+                withContext(Dispatchers.Main) {
+                    _coreState.update { current ->
+                        val currentLang = current.navigation.selectedLanguageId
+                        val selectedLang = reloadLanguages.firstOrNull { it.id == currentLang }?.id
+                            ?: reloadLanguages.firstOrNull()?.id
+                            ?: com.alexpo.grammermate.data.LanguageId("en")
+                        val reloadLessons = lessonStore.getLessons(selectedLang.value)
+                        val currentLessonId = current.navigation.selectedLessonId
+                        val selectedLessonId = reloadLessons.firstOrNull { it.id == currentLessonId }?.id
+                            ?: reloadLessons.firstOrNull()?.id
+                        val reloadedPackIds = reloadPacks.map { it.packId }.toSet()
+                        // Keep current activePackId if it still exists after reload,
+                        // otherwise derive from lessonId, otherwise fall back to first pack.
+                        val updatedPackId = if (current.navigation.activePackId != null && current.navigation.activePackId in reloadedPackIds) {
+                            current.navigation.activePackId
+                        } else {
+                            selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
+                                ?: reloadPacks.firstOrNull { it.languageId == selectedLang }?.packId
+                        }
+                        val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it.value) }
+                        current.copy(navigation = current.navigation.copy(languages = reloadLanguages, installedPacks = reloadPacks, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = reloadLessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(reloadLessons, current.cardSession.testMode)))
+                    }
+                    refreshDrillVisibility()
+                    val updatedLessons = lessonStore.getLessons(_coreState.value.navigation.selectedLanguageId.value)
+                    rebuildSchedules(updatedLessons)
+                    buildSessionCards()
+                    refreshFlowerStates()
+                }
+            }
+
+            // Pre-build daily practice session AFTER forceReload completes.
+            // Uses progress-based lesson, NOT selectedLessonId, so that browsing
+            // locked lessons does not affect the daily practice session.
+            val state = _coreState.value
+            val packId = state.navigation.activePackId
+            val langId = state.navigation.selectedLanguageId
+            val progressInfo = resolveProgressLessonInfo()
+            if (packId != null && progressInfo != null) {
+                val lessonId = progressInfo.first
+                val lessonLevel = progressInfo.second
+                dailyPracticeCoordinator.prebuildSession(
+                    packId.value, langId.value, lessonId, lessonLevel, dailyPracticeCoordinator.getCursor()
+                )
             }
         }
     }

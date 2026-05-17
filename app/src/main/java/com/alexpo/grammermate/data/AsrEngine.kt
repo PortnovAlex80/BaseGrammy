@@ -66,6 +66,7 @@ class AsrEngine(private val context: Context) {
 
         withContext(Dispatchers.Default) {
             try {
+                System.gc() // Free memory before heavy native ONNX allocation
                 val spec = AsrModelRegistry.defaultModel
                 val modelDir = File(context.filesDir, "asr/${spec.modelDirName}")
 
@@ -113,10 +114,19 @@ class AsrEngine(private val context: Context) {
 
                 _state.value = AsrState.READY
                 Log.d(TAG, "ASR engine initialized (Whisper Small, language=$currentLanguage)")
-            } catch (e: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
                 _state.value = AsrState.ERROR
-                errorMessage = "ASR initialization failed: ${e.message}"
-                Log.e(TAG, "ASR initialization failed", e)
+                errorMessage = "ASR initialization cancelled"
+                throw e
+            } catch (e: Throwable) {
+                _state.value = AsrState.ERROR
+                val reason = when (e) {
+                    is OutOfMemoryError -> "Not enough memory"
+                    is UnsatisfiedLinkError -> "Native library error"
+                    else -> e.message ?: "Unknown error"
+                }
+                errorMessage = "ASR initialization failed: $reason"
+                Log.e(TAG, "ASR initialization failed: $reason", e)
             }
         }
     }
@@ -278,7 +288,8 @@ class AsrEngine(private val context: Context) {
                 Log.d(TAG, "ASR result received (lang=$currentLanguage)")
                 _state.value = AsrState.READY
                 text
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Log.e(TAG, "Recording/transcription failed", e)
                 errorMessage = "Recording/transcription failed: ${e.message}"
                 try {

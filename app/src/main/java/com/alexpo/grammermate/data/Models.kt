@@ -528,7 +528,9 @@ data class TrainingUiState(
     val flowerDisplay: FlowerDisplayState = FlowerDisplayState(),
     val audio: AudioState = AudioState(),
     val daily: DailyPracticeState = DailyPracticeState(),
-    val pomodoro: PomodoroState = PomodoroState()
+    val pomodoro: PomodoroState = PomodoroState(),
+    /** True while background init (file I/O) is in progress. UI shows a spinner. */
+    val isLoading: Boolean = false
 ) {
     /**
      * Reset all session-related state to defaults.

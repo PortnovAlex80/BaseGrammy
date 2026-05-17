@@ -97,6 +97,7 @@ class TtsEngine(private val context: Context) {
 
         withContext(Dispatchers.Default) {
             try {
+                System.gc() // Free memory before heavy native ONNX allocation
                 val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
                 val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
                 if (missingFiles.isNotEmpty()) {
@@ -111,21 +112,22 @@ class TtsEngine(private val context: Context) {
                 activeLanguageId = languageId
                 _state.value = TtsState.Ready
                 Log.d(TAG, "TTS engine initialized for $languageId (${spec.modelType})")
-            } catch (e: OutOfMemoryError) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
                 initFailed = true
                 offlineTts = null
-                _state.value = TtsState.Error("Not enough memory")
-                Log.e(TAG, "OOM during TTS initialization for $languageId", e)
-            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                _state.value = TtsState.Error("Cancelled")
+                throw e
+            } catch (e: Throwable) {
                 initFailed = true
                 offlineTts = null
-                _state.value = TtsState.Error("Timed out")
-                Log.e(TAG, "TTS initialization timed out for $languageId")
-            } catch (e: Exception) {
-                initFailed = true
-                offlineTts = null
-                _state.value = TtsState.Error("Initialization failed")
-                Log.e(TAG, "Initialization failed for $languageId", e)
+                val reason = when (e) {
+                    is OutOfMemoryError -> "Not enough memory"
+                    is kotlinx.coroutines.TimeoutCancellationException -> "Timed out"
+                    is UnsatisfiedLinkError -> "Native library error"
+                    else -> "Initialization failed"
+                }
+                _state.value = TtsState.Error(reason)
+                Log.e(TAG, "TTS initialization failed for $languageId: $reason", e)
             }
         }
     }
@@ -235,7 +237,7 @@ class TtsEngine(private val context: Context) {
                                 }
                             }
                         )
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         if (e is kotlinx.coroutines.CancellationException) throw e
                         Log.e(TAG, "Playback failed", e)
                     } finally {
@@ -258,7 +260,8 @@ class TtsEngine(private val context: Context) {
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "speak() failed, models may not be loaded", e)
             if (_state.value == TtsState.Speaking) {
                 _state.value = if (offlineTts != null) TtsState.Ready else TtsState.Error("Playback failed")

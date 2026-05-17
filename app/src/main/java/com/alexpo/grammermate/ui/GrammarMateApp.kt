@@ -114,6 +114,17 @@ private data class DialogState(
 fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
     Surface(modifier = Modifier.fillMaxSize()) {
         val state by vm.uiState.collectAsStateWithLifecycle()
+
+        // Show loading spinner while background init (file I/O) is running
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+
         val navController = rememberNavController()
         val currentRoute = navController.currentBackStackEntry?.destination?.route ?: Routes.HOME
         val context = LocalContext.current
@@ -510,6 +521,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 )
             } // Box
         } // Column
+        } // else (not loading)
     } // Surface
 } // GrammarMateApp
 
