@@ -2,6 +2,7 @@ package com.alexpo.grammermate.feature.daily
 
 import android.app.Application
 import com.alexpo.grammermate.data.*
+import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +44,7 @@ class DailyPracticeCoordinatorTest {
     private lateinit var mockMasteryStore: MockMasteryStore
     private lateinit var mockVerbDrillStore: MockVerbDrillStore
     private lateinit var mockWordMasteryStore: MockWordMasteryStore
+    private lateinit var mockStreakStore: StreakStore
 
     // ── Test fixtures ──────────────────────────────────────────────────
 
@@ -78,6 +80,19 @@ class DailyPracticeCoordinatorTest {
         mockMasteryStore = MockMasteryStore()
         mockVerbDrillStore = MockVerbDrillStore()
         mockWordMasteryStore = MockWordMasteryStore()
+        mockStreakStore = object : StreakStore {
+            override fun save(data: StreakData) {}
+            override fun load(languageId: String): StreakData =
+                StreakData(languageId = LanguageId(languageId))
+            override fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> =
+                StreakData(languageId = LanguageId(languageId)) to false
+            override fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean> =
+                StreakData(languageId = LanguageId(languageId)) to false
+            override fun getCurrentStreak(languageId: String): StreakData =
+                StreakData(languageId = LanguageId(languageId))
+            override fun resetAll() {}
+            override fun resetForLanguage(languageId: String) {}
+        }
 
         coordinator = DailyPracticeCoordinator(
             stateAccess = stateAccess,
@@ -87,19 +102,8 @@ class DailyPracticeCoordinatorTest {
             masteryStore = mockMasteryStore,
             verbDrillStoreFactory = { _ -> mockVerbDrillStore },
             wordMasteryStoreFactory = { _ -> mockWordMasteryStore },
-            streakStore = object : StreakStore {
-                override fun save(data: StreakData) {}
-                override fun load(languageId: String): StreakData =
-                    StreakData(languageId = LanguageId(languageId))
-                override fun recordSubLessonCompletion(languageId: String): Pair<StreakData, Boolean> =
-                    StreakData(languageId = LanguageId(languageId)) to false
-                override fun recordPracticeTypeCompletion(languageId: String, type: PracticeType): Pair<StreakData, Boolean> =
-                    StreakData(languageId = LanguageId(languageId)) to false
-                override fun getCurrentStreak(languageId: String): StreakData =
-                    StreakData(languageId = LanguageId(languageId))
-                override fun resetAll() {}
-                override fun resetForLanguage(languageId: String) {}
-            }
+            streakStore = mockStreakStore,
+            streakManager = StreakManager(mockStreakStore)
         )
     }
 

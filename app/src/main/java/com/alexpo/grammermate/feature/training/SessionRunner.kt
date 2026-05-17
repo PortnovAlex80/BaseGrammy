@@ -780,9 +780,25 @@ class SessionRunner(
         }
         // Paused/hint → resume or advance
         if (stateMachine.hintAnswer != null) {
-            // Hint was shown → play button = advance to next card
+            // Hint was shown → play button clears hint, resumes ACTIVE on same card.
+            // User must press explicit Next button (ArrowForward) to advance.
+            // This prevents auto-advance after 3 incorrect retries.
             stateMachine.reset()
-            return nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
+            if (state.cardSession.inputMode == InputMode.VOICE) {
+                stateMachine.triggerVoice()
+            }
+            stateAccess.updateState {
+                it.copy(cardSession = it.cardSession.copy(
+                    sessionState = SessionState.ACTIVE,
+                    incorrectAttemptsForCard = 0,
+                    answerText = null,
+                    inputText = "",
+                    voiceTriggerToken = stateMachine.voiceTriggerToken,
+                    voicePromptStartMs = null
+                ))
+            }
+            resumeTimer()
+            return listOf(SessionEvent.SaveProgress)
         }
         // Manual pause → resume
         stateMachine.resume()
