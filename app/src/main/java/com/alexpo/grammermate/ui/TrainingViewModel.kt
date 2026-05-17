@@ -1205,7 +1205,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SessionEvent.PlayError -> audioCoordinator.playErrorSound()
                 is SessionEvent.RecordCardShow -> {
                     recordCardShowForMastery(event.card)
-                    recordCardEncounter(event.card)
+                    (event.card as? SentenceCard)?.let { recordCardEncounter(it) }
                 }
                 is SessionEvent.MarkSubLessonCardsShown -> markSubLessonCardsShown(event.cards)
                 is SessionEvent.CheckAndMarkLessonCompleted -> checkAndMarkLessonCompleted()
