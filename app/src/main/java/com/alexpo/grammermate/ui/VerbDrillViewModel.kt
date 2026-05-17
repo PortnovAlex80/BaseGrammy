@@ -517,6 +517,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun exitSession() {
+        verbDrillStore.flush()
         _uiState.update { it.copy(session = null, currentCardIsBad = false) }
     }
 
@@ -627,6 +628,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onCleared() {
+        verbDrillStore.flush()
         super.onCleared()
     }
 }

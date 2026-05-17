@@ -334,6 +334,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun onAppBackgrounded() {
         pomodoroHelper.onLifecycleStop()
+        masteryStore.flush()
     }
 
     fun onAppForegrounded() {
@@ -1093,6 +1094,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     override fun onCleared() {
         saveProgress()
+        masteryStore.flush()
         audioCoordinator.release()
         super.onCleared()
     }
@@ -1327,6 +1329,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             forceBackup = forceBackupOnSave,
             normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(state.elite.eliteBestSpeeds)
         )
+        masteryStore.flush()
         if (shouldBackup) {
             forceBackupOnSave = false
             settingsActionHandler.createProgressBackup()

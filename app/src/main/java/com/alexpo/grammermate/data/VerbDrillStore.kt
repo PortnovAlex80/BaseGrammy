@@ -1,6 +1,12 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.time.LocalDate
@@ -20,6 +26,9 @@ interface VerbDrillStore {
     fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard>
 
     fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard>
+
+    /** Flush any pending writes to disk immediately. Call at session end, app background, etc. */
+    fun flush()
 }
 
 class VerbDrillStoreImpl(
@@ -35,6 +44,11 @@ class VerbDrillStoreImpl(
     }
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
+
+    // Write-behind batching: defer disk writes by up to 3 seconds
+    private val debounceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var dirty = false
+    private var persistJob: Job? = null
 
     // In-memory cache for progress data — invalidated on progress save
     private var progressCache: Map<String, VerbDrillComboProgress>? = null
@@ -94,22 +108,7 @@ class VerbDrillStoreImpl(
 
     override fun saveProgress(progress: Map<String, VerbDrillComboProgress>) {
         progressCache = progress
-        val comboPayload = linkedMapOf<String, Any>()
-        for ((key, value) in progress) {
-            comboPayload[key] = linkedMapOf(
-                "group" to value.group,
-                "tense" to value.tense,
-                "totalCards" to value.totalCards,
-                "everShownCardIds" to value.everShownCardIds.toList(),
-                "todayShownCardIds" to value.todayShownCardIds.toList(),
-                "lastDate" to value.lastDate
-            )
-        }
-        val data = linkedMapOf(
-            "schemaVersion" to schemaVersion,
-            "data" to comboPayload
-        )
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+        schedulePersist()
     }
 
     override fun getComboProgress(key: String): VerbDrillComboProgress? {
@@ -120,7 +119,7 @@ class VerbDrillStoreImpl(
         val all = loadProgress().toMutableMap()
         all[key] = progress
         progressCache = all  // update cache immediately
-        saveProgress(all)    // write-through to disk
+        schedulePersist()    // deferred disk write
     }
 
     override fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
@@ -153,6 +152,61 @@ class VerbDrillStoreImpl(
         val allCards = loadAllCardsForPack(packId, languageId)
         val tenseSet = tenses.toSet()
         return allCards.filter { it.tense != null && it.tense in tenseSet }
+    }
+
+    /**
+     * Flush any pending dirty data to disk immediately.
+     * Call at session end, app background, screen transitions.
+     */
+    override fun flush() = mutex.withLock {
+        persistJob?.cancel()
+        persistJob = null
+        if (dirty) {
+            persistCacheToDisk()
+            dirty = false
+        }
+    }
+
+    /**
+     * Schedule a deferred persist to disk. Cancels any previous pending write.
+     * The in-memory cache is already up-to-date; reads will see fresh data.
+     */
+    private fun schedulePersist() {
+        dirty = true
+        persistJob?.cancel()
+        persistJob = debounceScope.launch {
+            delay(3000L)
+            mutex.withLock {
+                if (dirty) {
+                    persistCacheToDisk()
+                    dirty = false
+                }
+            }
+        }
+    }
+
+    /**
+     * Write the current progressCache to disk via AtomicFileWriter.
+     * Must be called under mutex.
+     */
+    private fun persistCacheToDisk() {
+        val progress = progressCache ?: return
+        val comboPayload = linkedMapOf<String, Any>()
+        for ((key, value) in progress) {
+            comboPayload[key] = linkedMapOf(
+                "group" to value.group,
+                "tense" to value.tense,
+                "totalCards" to value.totalCards,
+                "everShownCardIds" to value.everShownCardIds.toList(),
+                "todayShownCardIds" to value.todayShownCardIds.toList(),
+                "lastDate" to value.lastDate
+            )
+        }
+        val data = linkedMapOf(
+            "schemaVersion" to schemaVersion,
+            "data" to comboPayload
+        )
+        AtomicFileWriter.writeText(file, yaml.dump(data))
     }
 
     /**

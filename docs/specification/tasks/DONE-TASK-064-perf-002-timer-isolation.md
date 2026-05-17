@@ -1,6 +1,6 @@
 # TASK-064: PERF-002 Timer Isolation
 
-**Status:** READY — Implementation in progress.
+**Status:** DONE — Completed 2026-05-17.
 **Created:** 2026-05-17
 **Branch:** feature/perf-002-timer-isolation (from develop)
 **Spec:** 20-non-functional-requirements.md §20.1.8 (PERF-04, PERF-05, PERF-06)
@@ -65,12 +65,12 @@ Session timer (`SessionRunner.resumeTimer`) emits full `TrainingUiState` every 5
 
 | Date | Step | Status | Notes |
 |------|------|--------|-------|
-| | AC-1: sessionTimerMs StateFlow | | |
-| | AC-2: pomodoroRemainingSeconds StateFlow | | |
-| | AC-3: activeTimeMs only on card transitions | | |
-| | AC-4: remainingSeconds only on state changes | | |
-| | AC-5: saveProgress debounce | | |
-| | AC-6: PomodoroHelper atomic update | | |
-| | AC-7: UI collects new flows | | |
-| | AC-8: timer parity | | |
-| | AC-9: build passes | | |
+| 2026-05-17 | AC-1: sessionTimerMs StateFlow | PASS | Dedicated timer StateFlow added |
+| 2026-05-17 | AC-2: pomodoroRemainingSeconds StateFlow | PASS | Dedicated pomodoro StateFlow added |
+| 2026-05-17 | AC-3: activeTimeMs only on card transitions | PASS | No longer emitted on timer ticks |
+| 2026-05-17 | AC-4: remainingSeconds only on state changes | PASS | No longer emitted on timer ticks |
+| 2026-05-17 | AC-5: saveProgress debounce | PASS | Max once per 10 seconds |
+| 2026-05-17 | AC-6: PomodoroHelper atomic update | PASS | Changed to .update {} |
+| 2026-05-17 | AC-7: UI collects new flows | PASS | Timer UI uses dedicated flows |
+| 2026-05-17 | AC-8: timer parity | PASS | All timer functionality preserved |
+| 2026-05-17 | AC-9: build passes | PASS | assembleDebug succeeds |

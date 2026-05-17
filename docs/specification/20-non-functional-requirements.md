@@ -118,18 +118,18 @@ This section specifies the non-functional qualities, constraints, and operationa
 
 | ID | Requirement | Level | Status |
 |----|-------------|-------|--------|
-| PERF-01 | Combined `TrainingUiState` flow MUST use `distinctUntilChanged()` to prevent structurally identical emissions from triggering recomposition | MUST | Pending |
-| PERF-02 | All StateFlow collection in composables MUST use `collectAsStateWithLifecycle()` instead of `collectAsState()` to prevent background recomposition | MUST | Pending |
-| PERF-03 | Shared `uiState` flow MUST use `SharingStarted.WhileSubscribed(5000)` instead of `Eagerly` to stop upstream flow collection when no subscribers exist | MUST | Pending |
-| PERF-04 | Timer-driven state updates (session timer at 500ms, pomodoro at 1s) MUST NOT trigger full `TrainingUiState` recomposition. Separate `StateFlow` instances MUST be used for high-frequency timer values, collected only where the timer UI is displayed | MUST | Pending |
-| PERF-05 | `saveProgress()` MUST be debounced (max once per 10 seconds) during active timer ticks, not called on every 500ms tick | MUST | Pending |
-| PERF-06 | `PomodoroHelper` state updates MUST use atomic `MutableStateFlow.update {}` instead of non-atomic `.value =` setter | MUST | Pending |
+| PERF-01 | Combined `TrainingUiState` flow MUST use `distinctUntilChanged()` to prevent structurally identical emissions from triggering recomposition | MUST | Done |
+| PERF-02 | All StateFlow collection in composables MUST use `collectAsStateWithLifecycle()` instead of `collectAsState()` to prevent background recomposition | MUST | Done |
+| PERF-03 | Shared `uiState` flow MUST use `SharingStarted.WhileSubscribed(5000)` instead of `Eagerly` to stop upstream flow collection when no subscribers exist | MUST | Done |
+| PERF-04 | Timer-driven state updates (session timer at 500ms, pomodoro at 1s) MUST NOT trigger full `TrainingUiState` recomposition. Separate `StateFlow` instances MUST be used for high-frequency timer values, collected only where the timer UI is displayed | MUST | Done |
+| PERF-05 | `saveProgress()` MUST be debounced (max once per 10 seconds) during active timer ticks, not called on every 500ms tick | MUST | Done |
+| PERF-06 | `PomodoroHelper` state updates MUST use atomic `MutableStateFlow.update {}` instead of non-atomic `.value =` setter | MUST | Done |
 
 #### Compose Recomposition Requirements
 
 | ID | Requirement | Level | Status |
 |----|-------------|-------|--------|
-| PERF-07 | Lambda parameters passed to screen composables in `GrammarMateApp` MUST be stable — wrapped in `remember` with minimal keys, or using `rememberUpdatedState` for callbacks that read current state | MUST | Pending |
+| PERF-07 | Lambda parameters passed to screen composables in `GrammarMateApp` MUST be stable — wrapped in `remember` with minimal keys, or using `rememberUpdatedState` for callbacks that read current state | MUST | Done |
 | PERF-08 | Derived values in composables (computed from state fields) SHOULD use `derivedStateOf` to prevent unnecessary recomputation on unrelated state changes | SHOULD | Pending |
 | PERF-09 | Anonymous object allocations in composable body (e.g., `CardSessionStateModel`, `CardSessionContract`) MUST be wrapped in `remember` with specific field keys, not the entire state object | MUST | Pending |
 | PERF-10 | `LazyVerticalGrid` and `LazyColumn` items MUST provide `key` parameter for efficient item recycling. `contentType` SHOULD be provided for pool reuse | MUST / SHOULD | Pending |

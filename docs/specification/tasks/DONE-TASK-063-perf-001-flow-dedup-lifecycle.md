@@ -1,6 +1,6 @@
 # TASK-063: PERF-001 Flow Deduplication & Lifecycle
 
-**Status:** READY — Implementation in progress.
+**Status:** DONE — Completed 2026-05-17.
 **Created:** 2026-05-17
 **Branch:** feature/perf-001-flow-dedup-lifecycle (from develop)
 **Spec:** 20-non-functional-requirements.md §20.1.8 (PERF-01, PERF-02, PERF-03)
@@ -65,9 +65,9 @@ Combined TrainingUiState flow emits on every upstream change without structural 
 
 | Date | Step | Status | Notes |
 |------|------|--------|-------|
-| | AC-1: distinctUntilChanged | | |
-| | AC-2: collectAsStateWithLifecycle | | |
-| | AC-3: WhileSubscribed | | |
-| | AC-4: dependency check | | |
-| | AC-5: visual parity | | |
-| | AC-6: build passes | | |
+| 2026-05-17 | AC-1: distinctUntilChanged | PASS | distinctUntilChanged() added to combined flow |
+| 2026-05-17 | AC-2: collectAsStateWithLifecycle | PASS | All collectAsState() replaced |
+| 2026-05-17 | AC-3: WhileSubscribed | PASS | SharingStarted.WhileSubscribed(5000) applied |
+| 2026-05-17 | AC-4: dependency check | PASS | lifecycle-runtime-compose already present |
+| 2026-05-17 | AC-5: visual parity | PASS | No visual/behavioral changes |
+| 2026-05-17 | AC-6: build passes | PASS | assembleDebug succeeds |

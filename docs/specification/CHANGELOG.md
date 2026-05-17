@@ -7,6 +7,20 @@ All changes to specification documents are tracked here. Each entry references t
 ### Added
 - `20-non-functional-requirements.md`: Added section 20.1.8 (Compose Rendering Performance) with state flow consumption requirements (PERF-01 through PERF-06), compose recomposition requirements (PERF-07 through PERF-12), performance budget table with current measurements vs targets, and architectural constraint note preserving single-ViewModel/single-state patterns.
 
+## [Performance Tasks Completion] - 2026-05-17
+
+### Changed
+- Task files renamed to DONE- prefix: TASK-063, TASK-064, TASK-065, TASK-069
+- `20-non-functional-requirements.md` §20.1.8: Updated PERF-01 through PERF-07 status from "Pending" to "Done"
+- `tasks/README.md`: Updated tasks 063, 064, 065, 069 status to DONE
+
+### Completed tasks
+- DONE-TASK-063: PERF-001 Flow Deduplication & Lifecycle (distinctUntilChanged, collectAsStateWithLifecycle, WhileSubscribed)
+- DONE-TASK-064: PERF-002 Timer Isolation (dedicated timer StateFlows, saveProgress debounce, PomodoroHelper atomic update)
+- DONE-TASK-065: PERF-003 Lambda Stabilization (remember-wrapped callbacks, specific field keys)
+- DONE-TASK-069: PERF-007 Background ViewModel Init (Dispatchers.IO init, loading state, no main-thread I/O)
+- TTS/ASR crash fix applied (preventive null-safety for engine lifecycle)
+
 ## [Bug Fix: No auto-advance after 3 incorrect retries] - 2026-05-17
 
 ### Changed

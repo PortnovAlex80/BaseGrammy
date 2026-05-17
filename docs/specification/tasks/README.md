@@ -41,10 +41,10 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-058](DONE-TASK-058-two-layer-hint-system.md) | Two-Layer Hint System — Difficulty + Scheduler | DONE | 03, 21, 01, 12, 08, 22, 23 | 2026-05-17 |
 | [TASK-061](TASK-061-training-consolidation.md) | Training Consolidation — One Engine, One Screen | OPEN | 12, DP-04, 10, 09 | 2026-05-17 |
 | [DONE-TASK-062](DONE-TASK-062-pause-input-cascade.md) | Pause → Input → Check → Play Cascade | DONE | 12, 08, 22, 23 | 2026-05-17 |
-| [TASK-063](TASK-063-perf-001-flow-dedup-lifecycle.md) | PERF-001 Flow Deduplication & Lifecycle | READY | 20-NFR §20.1.8 (PERF-01..03) | 2026-05-17 |
-| [TASK-064](TASK-064-perf-002-timer-isolation.md) | PERF-002 Timer Isolation | READY | 20-NFR §20.1.8 (PERF-04..06) | 2026-05-17 |
-| [TASK-065](TASK-065-perf-003-lambda-stabilization.md) | PERF-003 Lambda Stabilization | READY | 20-NFR §20.1.8 (PERF-07, PERF-09) | 2026-05-17 |
+| [DONE-TASK-063](DONE-TASK-063-perf-001-flow-dedup-lifecycle.md) | PERF-001 Flow Deduplication & Lifecycle | DONE | 20-NFR §20.1.8 (PERF-01..03) | 2026-05-17 |
+| [DONE-TASK-064](DONE-TASK-064-perf-002-timer-isolation.md) | PERF-002 Timer Isolation | DONE | 20-NFR §20.1.8 (PERF-04..06) | 2026-05-17 |
+| [DONE-TASK-065](DONE-TASK-065-perf-003-lambda-stabilization.md) | PERF-003 Lambda Stabilization | DONE | 20-NFR §20.1.8 (PERF-07, PERF-09) | 2026-05-17 |
 | [TASK-066](TASK-066-perf-004-derived-state.md) | PERF-004 DerivedStateOf Adoption | BACKLOG | 20-NFR §20.1.8 (PERF-08) | 2026-05-17 |
 | [TASK-067](TASK-067-perf-005-yaml-cache.md) | PERF-005 YamlListStore Caching | BACKLOG | 20-NFR §20.1.3, §20.1.7 | 2026-05-17 |
 | [TASK-068](TASK-068-perf-006-batch-write.md) | PERF-006 Batch Write I/O | BACKLOG | 20-NFR §20.1.3 | 2026-05-17 |
-| [TASK-069](TASK-069-perf-007-background-init.md) | PERF-007 Background ViewModel Init | BACKLOG | 20-NFR §20.1.1, §20.1.7 | 2026-05-17 |
+| [DONE-TASK-069](DONE-TASK-069-perf-007-background-init.md) | PERF-007 Background ViewModel Init | DONE | 20-NFR §20.1.1, §20.1.7 | 2026-05-17 |

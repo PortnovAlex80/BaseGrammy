@@ -1,6 +1,6 @@
 # TASK-069: PERF-007 Background ViewModel Init
 
-**Status:** BACKLOG — Task created for tracking. Not scheduled for current sprint.
+**Status:** DONE — Completed 2026-05-17.
 **Created:** 2026-05-17
 **Spec:** 20-non-functional-requirements.md §20.1.1 (app startup), §20.1.7 (threading)
 **UC:** UC-01 (first launch), UC-06 (training flow)
@@ -60,4 +60,11 @@ TrainingViewModel init block performs 12+ synchronous file I/O operations on mai
 
 | Date | Step | Status | Notes |
 |------|------|--------|-------|
-| | | | Not started — backlog |
+| 2026-05-17 | AC-1: init on Dispatchers.IO | PASS | Init body moved to viewModelScope.launch(Dispatchers.IO) |
+| 2026-05-17 | AC-2: LOADING state | PASS | Loading indicator shown during init |
+| 2026-05-17 | AC-3: loading indicator | PASS | Skeleton/spinner in GrammarMateApp |
+| 2026-05-17 | AC-4: real state emitted | PASS | State loaded after background init |
+| 2026-05-17 | AC-5: no main-thread I/O | PASS | Only StateFlow init on main thread |
+| 2026-05-17 | AC-6: loading < 2s | PASS | Mid-range device target met |
+| 2026-05-17 | AC-7: functional parity | PASS | All screens work after loading |
+| 2026-05-17 | AC-8: build passes | PASS | assembleDebug succeeds |

@@ -1,6 +1,6 @@
 # TASK-065: PERF-003 Lambda Stabilization
 
-**Status:** READY — Implementation in progress.
+**Status:** DONE — Completed 2026-05-17.
 **Created:** 2026-05-17
 **Branch:** feature/perf-003-lambda-stabilization (from develop)
 **Spec:** 20-non-functional-requirements.md §20.1.8 (PERF-07, PERF-09)
@@ -62,10 +62,10 @@
 
 | Date | Step | Status | Notes |
 |------|------|--------|-------|
-| | AC-1: stable callbacks remember(Unit) | | |
-| | AC-2: state-field callbacks remember(field) | | |
-| | AC-3: dialogs callbacks remember(dialogs) | | |
-| | AC-4: CardSessionStateModel remember | | |
-| | AC-5: CardSessionContract keys | | |
-| | AC-6: functional parity | | |
-| | AC-7: build passes | | |
+| 2026-05-17 | AC-1: stable callbacks remember(Unit) | PASS | Stable callbacks wrapped |
+| 2026-05-17 | AC-2: state-field callbacks remember(field) | PASS | Specific fields as keys |
+| 2026-05-17 | AC-3: dialogs callbacks remember(dialogs) | PASS | Dialogs key used |
+| 2026-05-17 | AC-4: CardSessionStateModel remember | PASS | Wrapped with specific keys |
+| 2026-05-17 | AC-5: CardSessionContract keys | PASS | Specific fields as keys |
+| 2026-05-17 | AC-6: functional parity | PASS | All buttons and navigation work |
+| 2026-05-17 | AC-7: build passes | PASS | assembleDebug succeeds |
