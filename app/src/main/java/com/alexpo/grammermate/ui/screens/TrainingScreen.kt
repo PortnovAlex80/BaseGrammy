@@ -8,6 +8,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -143,6 +144,23 @@ fun TrainingScreen(
         return
     }
 
+    // Pomodoro completion: render summary OUTSIDE the scrolling Column to avoid nested verticalScroll crash
+    if (state.pomodoro.isComplete) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                PomodoroSummaryScreen(
+                    pomodoro = state.pomodoro,
+                    currentStreak = state.cardSession.currentStreak,
+                    todayFireCount = state.cardSession.todayFireCount,
+                    onDone = { onCancelPomodoro() }
+                )
+            }
+        }
+        return
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -193,14 +211,6 @@ fun TrainingScreen(
                 )
             }
 
-            if (state.pomodoro.isComplete) {
-                PomodoroSummaryScreen(
-                    pomodoro = state.pomodoro,
-                    currentStreak = state.cardSession.currentStreak,
-                    todayFireCount = state.cardSession.todayFireCount,
-                    onDone = { onCancelPomodoro() }
-                )
-            } else {
             // ── Header subtitle: varies by mode ────────────────────────
             when (mode) {
                 TrainingScreenMode.BOSS, TrainingScreenMode.BOSS_MEGA -> {
@@ -332,7 +342,6 @@ fun TrainingScreen(
                 onStop = onRequestExit,
                 onNext = onNext
             )
-            } // end if (!pomodoro.isComplete)
         }
     }
 }
@@ -667,7 +676,7 @@ fun AnswerBox(
         onInputChanged = onInputChange,
         onSubmit = { onSubmit() },
         hasCards = hasCards,
-        hintAnswer = if (state.cardSession.answerText != null && state.cardSession.lastResult != null) state.cardSession.answerText else null,
+        hintAnswer = state.cardSession.answerText,
         onShowReport = { showReportSheet = true },
         reportCard = state.cardSession.currentCard,
         hintLevel = hintLevel
