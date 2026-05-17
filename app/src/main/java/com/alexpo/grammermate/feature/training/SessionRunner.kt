@@ -79,6 +79,30 @@ class SessionRunner(
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
     private var eliteSizeMultiplier: Double = TrainingConfig.ELITE_SIZE_MULTIPLIER
 
+    // ── Session classification properties ──────────────────────────────────
+
+    /**
+     * Linear sessions have no sub-lessons, boss battles, or elite rounds.
+     * They share a single answer-handling and completion path.
+     */
+    private val isLinearSession: Boolean
+        get() = stateAccess.uiState.value.cardSession.screenMode in listOf(
+            TrainingScreenMode.VERB_DRILL,
+            TrainingScreenMode.DAILY_TRANSLATE,
+            TrainingScreenMode.DAILY_VERBS
+        )
+
+    /**
+     * Verb-style word banks use all session card answers as distractors.
+     * Sentence-style word banks use lesson cards as distractors.
+     * This is a session configuration, not business logic branching.
+     */
+    private val usesVerbWordBank: Boolean
+        get() = stateAccess.uiState.value.cardSession.screenMode in listOf(
+            TrainingScreenMode.VERB_DRILL,
+            TrainingScreenMode.DAILY_VERBS
+        )
+
     // ── CardSessionStateModel implementation ─────────────────────────────
     // Maps internal SessionState enum + stateMachine to the unified state model.
 
@@ -144,7 +168,7 @@ class SessionRunner(
     fun startSession(): List<SessionEvent> {
         val events = mutableListOf<SessionEvent>()
         val state = stateAccess.uiState.value
-        if (!state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode && state.cardSession.screenMode != TrainingScreenMode.VERB_DRILL && state.cardSession.screenMode != TrainingScreenMode.DAILY_TRANSLATE && state.cardSession.screenMode != TrainingScreenMode.DAILY_VERBS) {
+        if (!state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode && !isLinearSession) {
             events.add(SessionEvent.BuildSessionCards)
         }
         if (sessionCards.isEmpty() || state.cardSession.currentCard == null) {
@@ -266,10 +290,8 @@ class SessionRunner(
             val isLastCard = state.cardSession.currentIndex >= sessionCards.lastIndex
 
             val result = when {
-                state.cardSession.screenMode == TrainingScreenMode.VERB_DRILL
-                    || state.cardSession.screenMode == TrainingScreenMode.DAILY_TRANSLATE
-                    || state.cardSession.screenMode == TrainingScreenMode.DAILY_VERBS -> {
-                    submitVerbDrillAnswer(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, isLastCard)
+                isLinearSession -> {
+                    submitLinearSessionAnswer(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, isLastCard)
                 }
                 state.boss.bossActive && isLastCard -> {
                     submitBossLastCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
@@ -490,10 +512,10 @@ class SessionRunner(
     }
 
     /**
-     * Verb drill mode: correct answer. Advance to next card or signal completion.
-     * Uses the same seamless advance as drill mode but preserves VERB_DRILL screenMode.
+     * Linear session (VERB_DRILL / DAILY_TRANSLATE / DAILY_VERBS): correct answer.
+     * Advance to next card or signal completion without lesson-level mechanics.
      */
-    private fun submitVerbDrillAnswer(
+    private fun submitLinearSessionAnswer(
         shouldAddVoiceMetrics: Boolean,
         voiceDurationMs: Long?,
         voiceWords: Int,
@@ -531,16 +553,16 @@ class SessionRunner(
                     sessionState = SessionState.ACTIVE
                 ))
             }
-            advanceVerbDrillCard()
+            advanceLinearCard()
             return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false)
         }
     }
 
     /**
-     * Advance to the next verb drill card. Similar to [advanceDrillCard] but
-     * does not use lesson-based drill progress store.
+     * Advance to the next card in a linear session (VERB_DRILL / DAILY_TRANSLATE / DAILY_VERBS).
+     * Similar to [advanceDrillCard] but does not use lesson-based drill progress store.
      */
-    private fun advanceVerbDrillCard() {
+    private fun advanceLinearCard() {
         val state = stateAccess.uiState.value
         val nextIndex = state.cardSession.currentIndex + 1
         val nextCard = sessionCards.getOrNull(nextIndex)
@@ -582,10 +604,8 @@ class SessionRunner(
         val lastIndex = sessionCards.lastIndex
         val isOnLastCard = state.cardSession.currentIndex >= lastIndex && lastIndex >= 0
 
-        // VERB_DRILL / DAILY modes: on last card, signal completion without lesson-level mechanics
-        if (isOnLastCard && (state.cardSession.screenMode == TrainingScreenMode.VERB_DRILL
-                || state.cardSession.screenMode == TrainingScreenMode.DAILY_TRANSLATE
-                || state.cardSession.screenMode == TrainingScreenMode.DAILY_VERBS)) {
+        // Linear sessions: on last card, signal completion without lesson-level mechanics
+        if (isOnLastCard && isLinearSession) {
             pauseTimer()
             stateAccess.updateState {
                 it.copy(cardSession = it.cardSession.copy(
@@ -598,7 +618,7 @@ class SessionRunner(
                     subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1
                 ))
             }
-            Log.d(logTag, "VerbDrill: Next pressed on last card — signaling completion")
+            Log.d(logTag, "LinearSession: Next pressed on last card — signaling completion")
             return listOf(SessionEvent.SaveProgress)
         }
 
@@ -963,17 +983,19 @@ class SessionRunner(
         return listOf(SessionEvent.BuildSessionCards, SessionEvent.RefreshFlowerStates, SessionEvent.SaveProgress)
     }
 
-    // ── Verb Drill mode ─────────────────────────────────────────────────
+    // ── Unified card session start/exit ────────────────────────────────────
 
     /**
-     * Start a verb drill session with the given cards.
-     * Sets screenMode to [TrainingScreenMode.VERB_DRILL], loads cards into
-     * [sessionCards], resets session state, and activates the session.
+     * Start a card session with the given cards and screen mode.
+     * Unified implementation for verb drill, daily translate, and daily verbs sessions.
+     * Loads cards into [sessionCards], resets all session state, activates the session,
+     * and sets [screenMode] to the given mode.
      *
-     * @param cards The verb drill cards to practice.
+     * @param cards The cards to practice.
+     * @param mode  The [TrainingScreenMode] to set (VERB_DRILL, DAILY_TRANSLATE, DAILY_VERBS).
      * @return List of [SessionEvent] to process.
      */
-    fun startVerbDrillSession(cards: List<SessionCard>): List<SessionEvent> {
+    fun startCardSession(cards: List<SessionCard>, mode: TrainingScreenMode): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
         sessionCards = cards
@@ -1005,7 +1027,7 @@ class SessionRunner(
                     subLessonFinishedToken = 0,
                     wordBankWords = emptyList(),
                     selectedWords = emptyList(),
-                    screenMode = TrainingScreenMode.VERB_DRILL,
+                    screenMode = mode,
                     voiceTriggerToken = stateMachine.voiceTriggerToken
                 ),
                 drill = it.drill.copy(isDrillMode = false),
@@ -1020,9 +1042,12 @@ class SessionRunner(
     }
 
     /**
-     * Exit verb drill mode: reset session state and clear VERB_DRILL screenMode.
+     * Exit a card session: reset session state, clear cards, and reset screenMode to NORMAL.
+     * Unified implementation for verb drill and daily practice exit.
+     *
+     * @return List of [SessionEvent] to process.
      */
-    fun exitVerbDrillSession(): List<SessionEvent> {
+    fun exitCardSession(): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
         sessionCards = emptyList()
@@ -1051,147 +1076,22 @@ class SessionRunner(
         return listOf(SessionEvent.SaveProgress)
     }
 
-    // ── Daily Practice mode ──────────────────────────────────────────────
+    // ── Card session wrappers (delegate to unified methods) ──────────────
 
-    /**
-     * Start a daily practice translation session (block 1: sentence translation).
-     * Sets screenMode to [TrainingScreenMode.DAILY_TRANSLATE], loads cards into
-     * [sessionCards], resets session state, and activates the session.
-     *
-     * @param cards The sentence translation cards for daily practice.
-     * @return List of [SessionEvent] to process.
-     */
-    fun startDailyTranslateSession(cards: List<SessionCard>): List<SessionEvent> {
-        pauseTimer()
-        stateMachine.reset()
-        sessionCards = cards
-        val firstCard = cards.firstOrNull()
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
-            stateMachine.triggerVoice()
-        }
-        stateAccess.updateState {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
-                    currentCard = firstCard,
-                    currentIndex = 0,
-                    inputText = "",
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = cards.size,
-                    subLessonCount = 1,
-                    activeSubLessonIndex = 0,
-                    completedSubLessonCount = 0,
-                    subLessonFinishedToken = 0,
-                    wordBankWords = emptyList(),
-                    selectedWords = emptyList(),
-                    screenMode = TrainingScreenMode.DAILY_TRANSLATE,
-                    voiceTriggerToken = stateMachine.voiceTriggerToken
-                ),
-                drill = it.drill.copy(isDrillMode = false),
-                boss = it.boss.copy(bossActive = false),
-                elite = it.elite.copy(eliteActive = false)
-            )
-        }
-        if (firstCard != null) {
-            resumeTimer()
-        }
-        return listOf(SessionEvent.SaveProgress)
-    }
+    /** Start a verb drill session. Delegates to [startCardSession]. */
+    fun startVerbDrillSession(cards: List<SessionCard>) = startCardSession(cards, TrainingScreenMode.VERB_DRILL)
 
-    /**
-     * Start a daily practice verb conjugation session (block 3: verb drill).
-     * Sets screenMode to [TrainingScreenMode.DAILY_VERBS], loads cards into
-     * [sessionCards], resets session state, and activates the session.
-     *
-     * @param cards The verb conjugation cards for daily practice.
-     * @return List of [SessionEvent] to process.
-     */
-    fun startDailyVerbsSession(cards: List<SessionCard>): List<SessionEvent> {
-        pauseTimer()
-        stateMachine.reset()
-        sessionCards = cards
-        val firstCard = cards.firstOrNull()
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
-            stateMachine.triggerVoice()
-        }
-        stateAccess.updateState {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
-                    currentCard = firstCard,
-                    currentIndex = 0,
-                    inputText = "",
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = cards.size,
-                    subLessonCount = 1,
-                    activeSubLessonIndex = 0,
-                    completedSubLessonCount = 0,
-                    subLessonFinishedToken = 0,
-                    wordBankWords = emptyList(),
-                    selectedWords = emptyList(),
-                    screenMode = TrainingScreenMode.DAILY_VERBS,
-                    voiceTriggerToken = stateMachine.voiceTriggerToken
-                ),
-                drill = it.drill.copy(isDrillMode = false),
-                boss = it.boss.copy(bossActive = false),
-                elite = it.elite.copy(eliteActive = false)
-            )
-        }
-        if (firstCard != null) {
-            resumeTimer()
-        }
-        return listOf(SessionEvent.SaveProgress)
-    }
+    /** Start a daily practice translation session (block 1). Delegates to [startCardSession]. */
+    fun startDailyTranslateSession(cards: List<SessionCard>) = startCardSession(cards, TrainingScreenMode.DAILY_TRANSLATE)
 
-    /**
-     * Exit daily practice session: reset session state and clear DAILY screenMode.
-     */
-    fun exitDailySession(): List<SessionEvent> {
-        pauseTimer()
-        stateMachine.reset()
-        sessionCards = emptyList()
-        stateAccess.updateState {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = SessionState.PAUSED,
-                    currentCard = null,
-                    currentIndex = 0,
-                    inputText = "",
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = 0,
-                    screenMode = TrainingScreenMode.NORMAL
-                )
-            )
-        }
-        return listOf(SessionEvent.SaveProgress)
-    }
+    /** Start a daily practice verb conjugation session (block 3). Delegates to [startCardSession]. */
+    fun startDailyVerbsSession(cards: List<SessionCard>) = startCardSession(cards, TrainingScreenMode.DAILY_VERBS)
+
+    /** Exit verb drill mode. Delegates to [exitCardSession]. */
+    fun exitVerbDrillSession() = exitCardSession()
+
+    /** Exit daily practice session. Delegates to [exitCardSession]. */
+    fun exitDailySession() = exitCardSession()
 
     // ── Card list management (called by ViewModel) ─────────────────────
 
@@ -1275,9 +1175,8 @@ class SessionRunner(
         }
 
         val correctAnswer = card.acceptedAnswers.firstOrNull() ?: ""
-        val wordBank = if (state.cardSession.screenMode == TrainingScreenMode.VERB_DRILL
-            || state.cardSession.screenMode == TrainingScreenMode.DAILY_VERBS) {
-            // For VerbDrill / Daily Verbs, use all session card answers as distractor pool
+        val wordBank = if (usesVerbWordBank) {
+            // Verb-style word bank: use all session card answers as distractor pool
             val allAnswers = sessionCards.mapNotNull { it.acceptedAnswers.firstOrNull() }
             wordBankGenerator.generateForVerb(correctAnswer, allAnswers)
         } else {

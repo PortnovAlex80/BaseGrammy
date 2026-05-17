@@ -290,7 +290,7 @@ class ProgressTracker(
                 currentScreen = state.navigation.currentScreen,
                 activePackId = state.navigation.activePackId,
                 dailyLevel = state.daily.dailySession.level,
-                dailyTaskIndex = state.daily.dailySession.taskIndex,
+                dailyTaskIndex = state.daily.dailySession.blockIndex,
                 dailyCursor = state.daily.dailyCursor
             )
         )

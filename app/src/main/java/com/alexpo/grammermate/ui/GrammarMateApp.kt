@@ -275,14 +275,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onBack = { onNavigate(Routes.HOME) },
                             onStartSubLesson = { index ->
                                 vm.selectSubLesson(index)
+                                vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
                             },
                             onStartBossLesson = {
                                 vm.startBossLesson()
+                                vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
                             },
                             onStartBossMega = {
                                 vm.startBossMega()
+                                vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
                             },
                             onDrillStart = {
@@ -308,6 +311,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.MIX_CHALLENGE) {
+                        LaunchedEffect(Unit) { vm.setReturnTo(Routes.HOME) }
                         TrainingScreenContent(state, vm, { dialogs = dialogs.copy(showExitDialog = true) }, { previousRoute = Routes.MIX_CHALLENGE; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) }, onTtsSpeak, hintLevel = state.cardSession.hintLevel)
                     }
 
@@ -343,17 +347,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.TRAINING) {
-                        val isVerbDrill = vm.isVerbDrillSession()
-                        val isDaily = vm.isDailySession()
                         TrainingScreenContent(
                             state, vm,
                             onShowExitDialog = {
+                                val returnTo = state.cardSession.returnTo
                                 when {
-                                    isVerbDrill -> {
+                                    returnTo == Routes.VERB_DRILL -> {
                                         vm.exitVerbDrillSession()
                                         onNavigate(Routes.VERB_DRILL)
                                     }
-                                    isDaily -> {
+                                    returnTo == Routes.DAILY_PRACTICE -> {
                                         vm.exitDailySession()
                                         onNavigate(Routes.DAILY_PRACTICE)
                                     }
@@ -364,8 +367,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             onShowSettings = { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) },
                             onTtsSpeak = onTtsSpeak,
-                            isVerbDrillMode = isVerbDrill,
-                            isDailySession = isDaily,
                             onVerbDrillMore = {
                                 // Stay on VERB_DRILL selection screen for next batch
                                 vm.exitVerbDrillSession()
@@ -387,6 +388,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onBack = { onNavigate(Routes.HOME) },
                             onStartSession = { cards ->
                                 vm.startVerbDrillSession(cards)
+                                vm.setReturnTo(Routes.VERB_DRILL)
                                 onNavigate(Routes.TRAINING)
                             }
                         )
@@ -492,14 +494,14 @@ private fun NavBackHandlers(
             vm.resumeFromSettings()
         }
     }
-    BackHandler(enabled = currentRoute == Routes.TRAINING && vm.isVerbDrillSession() && !showSettings) {
+    BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.VERB_DRILL && !showSettings) {
         vm.exitVerbDrillSession()
         navController.navigate(Routes.VERB_DRILL) {
             popUpTo(Routes.HOME) { inclusive = false }
             launchSingleTop = true
         }
     }
-    BackHandler(enabled = currentRoute == Routes.TRAINING && vm.isDailySession() && !showSettings) {
+    BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.DAILY_PRACTICE && !showSettings) {
         vm.exitDailySession()
         navController.navigate(Routes.DAILY_PRACTICE) {
             popUpTo(Routes.HOME) { inclusive = false }
@@ -526,8 +528,6 @@ private fun TrainingScreenContent(
     onShowSettings: () -> Unit,
     onTtsSpeak: () -> Unit,
     hintLevel: HintLevel = HintLevel.EASY,
-    isVerbDrillMode: Boolean = false,
-    isDailySession: Boolean = false,
     onVerbDrillMore: () -> Unit = {}
 ) {
     TrainingScreen(
@@ -555,8 +555,6 @@ private fun TrainingScreenContent(
         isBadSentence = vm.reports::isBadSentence,
         onStartOfflineRecognition = vm::startOfflineRecognition,
         hintLevel = hintLevel,
-        isVerbDrillMode = isVerbDrillMode,
-        isDailySession = isDailySession,
         onVerbDrillMore = onVerbDrillMore
     )
 }
@@ -570,30 +568,25 @@ private fun DailyPracticeScreenContent(
     onNavigate: (String) -> Unit
 ) {
     val dailyState = state.daily.dailySession
+    val currentBlock = vm.daily.getCurrentBlock()
     val dailyTask = vm.daily.getDailyCurrentTask()
     val dailyProgress = vm.daily.getDailyBlockProgress()
     DailyPracticeScreen(
         state = dailyState,
         blockProgress = dailyProgress,
+        currentBlock = currentBlock,
         currentTask = dailyTask,
-        onSubmitSentence = vm::submitDailySentenceAnswer,
-        onSubmitVerb = vm::submitDailyVerbAnswer,
         languageId = state.navigation.selectedLanguageId.value,
         onShowSentenceAnswer = vm.daily::getDailySentenceAnswer,
         onShowVerbAnswer = vm.daily::getDailyVerbAnswer,
-        onFlipVocabCard = { /* no-op: flip tracked locally */ },
         onRateVocabCard = { rating -> vm.daily.rateVocabCard(rating) },
-        onPersistVerbProgress = { card -> vm.daily.persistDailyVerbProgress(card) },
-        onCardPracticed = { blockType -> vm.recordDailyCardPracticed(blockType) },
-        onAdvance = vm::advanceDailyTask,
-        onAdvanceBlock = { vm.daily.advanceDailyBlock() },
-        onRepeatBlock = { vm.repeatDailyBlock() },
         onStartCardBlock = { blockType, cards ->
             when (blockType) {
                 DailyBlockType.TRANSLATE -> vm.startDailyTranslateSession(cards)
                 DailyBlockType.VERBS -> vm.startDailyVerbsSession(cards)
                 else -> {}
             }
+            vm.setReturnTo(Routes.DAILY_PRACTICE)
             onNavigate(Routes.TRAINING)
         },
         onSpeak = { text ->
@@ -608,9 +601,13 @@ private fun DailyPracticeScreenContent(
             onNavigate(Routes.HOME)
         },
         onComplete = {
-            // Session already ended by coordinator's endSession().
-            // Do NOT navigate here — let the sparkle + completion screen show.
-            // Navigation happens when user taps "Done" on the completion screen (onExit).
+            // VOCAB block completed — signal coordinator to advance to next block
+            val nextBlock = vm.daily.onBlockComplete()
+            if (nextBlock == null) {
+                // All blocks done — coordinator already called endSession()
+                // The finishedToken will be set and DailyPracticeScreen shows completion
+            }
+            // If nextBlock is non-null, the UI will re-render with the new block
         },
         onFlagDailyBadSentence = { cardId, langId, sentence, translation, mode ->
             vm.reports.flagDailyBadSentence(cardId, langId, sentence, translation, mode)
@@ -725,16 +722,19 @@ private fun NavDialogs(
         )
     }
 
-    // Token-based navigation: sub-lesson finished
-    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value && !vm.isVerbDrillSession() && !vm.isDailySession()) {
+    // Token-based navigation: sub-lesson finished — unified via returnTo
+    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
-        onNavigate(Routes.LESSON)
-    }
-    // Token-based navigation: daily session block finished — advance coordinator and return to DAILY_PRACTICE
-    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value && vm.isDailySession()) {
-        lastFinishedToken.value = state.cardSession.subLessonFinishedToken
-        vm.daily.advanceDailyBlock()
-        onNavigate(Routes.DAILY_PRACTICE)
+        val returnTo = state.cardSession.returnTo
+        if (returnTo.isNotEmpty()) {
+            if (returnTo == Routes.DAILY_PRACTICE) {
+                vm.daily.onBlockComplete()
+            }
+            onNavigate(returnTo)
+        } else {
+            // Default: sub-lesson from LESSON screen
+            onNavigate(Routes.LESSON)
+        }
     }
     if (currentRoute == Routes.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
@@ -870,10 +870,12 @@ private fun NavDialogs(
             hasProgress = state.drill.drillHasProgress,
             onStartFresh = {
                 vm.startDrill(resume = false)
+                vm.setReturnTo(Routes.LESSON)
                 onNavigate(Routes.TRAINING)
             },
             onResume = {
                 vm.startDrill(resume = true)
+                vm.setReturnTo(Routes.LESSON)
                 onNavigate(Routes.TRAINING)
             },
             onDismiss = { vm.training.dismissDrillDialog() }

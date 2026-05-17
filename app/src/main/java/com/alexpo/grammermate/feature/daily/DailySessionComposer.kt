@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.feature.daily
 
+import com.alexpo.grammermate.data.DailyBlock
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyTask
@@ -85,6 +86,61 @@ class DailySessionComposer(
         }
     }
 
+    /**
+     * Build a structured list of [DailyBlock] for the daily practice session.
+     * Returns 3 blocks in order: TRANSLATE, VOCAB, VERBS.
+     * Empty blocks (no tasks) are omitted.
+     */
+    suspend fun buildBlocks(
+        lessonLevel: Int,
+        packId: String,
+        languageId: String,
+        lessonId: String,
+        cumulativeTenses: List<String> = emptyList(),
+        cursor: DailyCursorState = DailyCursorState()
+    ): List<DailyBlock> {
+        val tenses = if (cumulativeTenses.isNotEmpty()) cumulativeTenses
+                     else TENSE_LADDER[lessonLevel] ?: emptyList()
+
+        return coroutineScope {
+            val translateTasks = async { buildSentenceBlock(lessonLevel, packId, languageId, lessonId, cursor) }
+            val vocabTasks = async { buildVocabBlock(packId, languageId) }
+            val verbTasks = async { buildVerbBlock(packId, languageId, tenses, cursor) }
+
+            val blocks = mutableListOf<DailyBlock>()
+            val translate = translateTasks.await()
+            if (translate.isNotEmpty()) {
+                blocks.add(DailyBlock(type = DailyBlockType.TRANSLATE, tasks = translate))
+            }
+            val vocab = vocabTasks.await()
+            if (vocab.isNotEmpty()) {
+                blocks.add(DailyBlock(type = DailyBlockType.VOCAB, tasks = vocab))
+            }
+            val verbs = verbTasks.await()
+            if (verbs.isNotEmpty()) {
+                blocks.add(DailyBlock(type = DailyBlockType.VERBS, tasks = verbs))
+            }
+            blocks
+        }
+    }
+
+    /**
+     * Rebuild a single block by type.
+     * Returns a [DailyBlock] with fresh tasks.
+     */
+    fun rebuildBlockAsBlock(
+        blockType: DailyBlockType,
+        lessonLevel: Int,
+        packId: String,
+        languageId: String,
+        lessonId: String,
+        cumulativeTenses: List<String> = emptyList(),
+        cursor: DailyCursorState = DailyCursorState()
+    ): DailyBlock {
+        val tasks = rebuildBlock(blockType, lessonLevel, packId, languageId, lessonId, cumulativeTenses, cursor)
+        return DailyBlock(type = blockType, tasks = tasks)
+    }
+
     fun rebuildBlock(
         blockType: DailyBlockType,
         lessonLevel: Int,
@@ -133,6 +189,65 @@ class DailySessionComposer(
             tasks.addAll(verbBlock.await())
             tasks
         }
+    }
+
+    /**
+     * Build a Repeat session as structured blocks.
+     * Same logic as [buildRepeatSession] but returns [List<DailyBlock>].
+     * Empty blocks are omitted.
+     */
+    suspend fun buildRepeatBlocks(
+        lessonLevel: Int,
+        packId: String,
+        languageId: String,
+        lessonId: String,
+        cumulativeTenses: List<String> = emptyList(),
+        sentenceCardIds: List<String> = emptyList(),
+        verbCardIds: List<String> = emptyList()
+    ): List<DailyBlock> {
+        return coroutineScope {
+            val translateTasks = async { buildSentenceBlockFromIds(lessonLevel, packId, languageId, lessonId, sentenceCardIds) }
+            val vocabTasks = async { buildVocabBlock(packId, languageId) }
+            val verbTasks = async { buildVerbBlockFromIds(packId, languageId, verbCardIds) }
+
+            val blocks = mutableListOf<DailyBlock>()
+            val translate = translateTasks.await()
+            if (translate.isNotEmpty()) {
+                blocks.add(DailyBlock(type = DailyBlockType.TRANSLATE, tasks = translate))
+            }
+            val vocab = vocabTasks.await()
+            if (vocab.isNotEmpty()) {
+                blocks.add(DailyBlock(type = DailyBlockType.VOCAB, tasks = vocab))
+            }
+            val verbs = verbTasks.await()
+            if (verbs.isNotEmpty()) {
+                blocks.add(DailyBlock(type = DailyBlockType.VERBS, tasks = verbs))
+            }
+            blocks
+        }
+    }
+
+    /**
+     * Convert a flat task list to structured blocks.
+     * Groups tasks by block type in order of appearance.
+     */
+    fun tasksToBlocks(tasks: List<DailyTask>): List<DailyBlock> {
+        if (tasks.isEmpty()) return emptyList()
+        val blocks = mutableListOf<DailyBlock>()
+        var currentType = tasks.first().blockType
+        var currentTasks = mutableListOf<DailyTask>()
+        for (task in tasks) {
+            if (task.blockType != currentType) {
+                blocks.add(DailyBlock(type = currentType, tasks = currentTasks.toList()))
+                currentType = task.blockType
+                currentTasks = mutableListOf()
+            }
+            currentTasks.add(task)
+        }
+        if (currentTasks.isNotEmpty()) {
+            blocks.add(DailyBlock(type = currentType, tasks = currentTasks.toList()))
+        }
+        return blocks
     }
 
     /**

@@ -2,6 +2,8 @@ package com.alexpo.grammermate.feature.daily
 
 import android.app.Application
 import android.util.Log
+import com.alexpo.grammermate.data.BlockRenderVia
+import com.alexpo.grammermate.data.DailyBlock
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyPracticeState
@@ -29,15 +31,28 @@ import kotlinx.coroutines.flow.update
 
 /**
  * Stateful module that orchestrates the 3-block daily practice session
- * (Translate, Vocab, Verbs).
+ * (Translate, Vocab, Verbs) using a clean block-config model.
  *
- * Absorbs [DailySessionHelper] + [DailySessionComposer] + per-call store creation
- * into a single coherent module. The ViewModel delegates all daily-practice
- * methods here and applies results back to state.
+ * ## Architecture
  *
- * Cross-module calls (advanceCursor -> ProgressTracker, playSuccessSound ->
- * AudioCoordinator) are NOT called directly. The ViewModel orchestrates these
- * by inspecting results returned from this coordinator.
+ * The session is an ordered list of [DailyBlock]s. The coordinator:
+ * 1. Builds blocks via [DailySessionComposer]
+ * 2. Tracks [DailySessionState.blockIndex] to know which block is current
+ * 3. Provides block-type-specific rendering hints ([BlockRenderVia])
+ * 4. Signals block completion through a single [onBlockComplete] path
+ *
+ * ## Block rendering
+ * - TRANSLATE / VERBS: render via TrainingScreen (navigate away)
+ * - VOCAB: render inline within DailyPracticeScreen
+ *
+ * ## Completion flow
+ * - TRANSLATE/VERBS: TrainingScreen finishes -> GrammarMateApp detects daily mode
+ *   -> coordinator.onBlockComplete() -> startNextBlock()
+ * - VOCAB: DailyPracticeScreen calls coordinator.onBlockComplete() -> startNextBlock()
+ *
+ * ## Progress tracking
+ * All progress tracking (streaks, daily answered counts, verb progress, mastery)
+ * is session-scoped and independent of where training was invoked from.
  */
 class DailyPracticeCoordinator(
     private val stateAccess: TrainingStateAccess,
@@ -60,14 +75,14 @@ class DailyPracticeCoordinator(
     // ── Owned private mutable state ────────────────────────────────────
 
     /** Pre-computed daily session from background init. */
-    var prebuiltDailySession: List<DailyTask>? = null
+    var prebuiltDailyBlocks: List<DailyBlock>? = null
         private set
 
     /** Level the prebuilt session was built for; used to validate cache match. */
     private var prebuiltSessionLevel: Int = 0
 
-    /** In-memory cache for repeat. */
-    var lastDailyTasks: List<DailyTask>? = null
+    /** In-memory cache for repeat (structured blocks). */
+    var lastDailyBlocks: List<DailyBlock>? = null
         private set
 
     /** Per-block VOICE/KEYBOARD answered card counts for cursor advancement. */
@@ -82,121 +97,26 @@ class DailyPracticeCoordinator(
 
     fun getWordMasteryStore(packId: String) = wordMasteryStoreFactory(packId)
 
-    // ── Internal helpers (absorbed from DailySessionHelper) ────────────
+    // ── Session lifecycle ────────────────────────────────────────────────
 
-    private fun startDailySession(tasks: List<DailyTask>, lessonLevel: Int) {
-        if (tasks.isEmpty()) return
+    private fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int) {
+        if (blocks.isEmpty()) return
         _state.update { state ->
             state.copy(dailySession = DailySessionState(
-                    active = true,
-                    tasks = tasks,
-                    taskIndex = 0,
-                    blockIndex = 0,
-                    level = lessonLevel,
-                    finishedToken = false
-                ))
-        }
-        stateAccess.saveProgress()
-    }
-
-    fun getCurrentTask(): DailyTask? {
-        val ds = _state.value.dailySession
-        if (!ds.active) return null
-        return ds.tasks.getOrNull(ds.taskIndex)
-    }
-
-    fun getCurrentBlockType(): DailyBlockType? {
-        return getCurrentTask()?.blockType
-    }
-
-    private fun nextTask(): Boolean {
-        val ds = _state.value.dailySession
-        if (!ds.active) return false
-
-        val nextIndex = ds.taskIndex + 1
-        if (nextIndex >= ds.tasks.size) {
-            endSession()
-            return false
-        }
-
-        val currentBlock = getCurrentBlockType()
-        val nextBlock = ds.tasks.getOrNull(nextIndex)?.blockType
-        val nextBlockIndex = if (nextBlock != currentBlock) ds.blockIndex + 1 else ds.blockIndex
-
-        _state.update {
-            it.copy(dailySession = it.dailySession.copy(
-                    taskIndex = nextIndex,
-                    blockIndex = nextBlockIndex
-                ))
-        }
-        stateAccess.saveProgress()
-        return true
-    }
-
-    fun advanceToNextBlock(): Boolean {
-        val ds = _state.value.dailySession
-        if (!ds.active) return false
-
-        val currentBlock = getCurrentBlockType() ?: return false
-        var idx = ds.taskIndex
-        while (idx < ds.tasks.size && ds.tasks[idx].blockType == currentBlock) {
-            idx++
-        }
-
-        if (idx >= ds.tasks.size) {
-            endSession()
-            return false
-        }
-
-        val nextBlockIndex = ds.blockIndex + 1
-
-        _state.update {
-            it.copy(dailySession = it.dailySession.copy(
-                    taskIndex = idx,
-                    blockIndex = nextBlockIndex
-                ))
-        }
-        stateAccess.saveProgress()
-        return true
-    }
-
-    fun replaceCurrentBlock(newTasks: List<DailyTask>) {
-        val ds = _state.value.dailySession
-        if (!ds.active) return
-
-        val currentBlock = getCurrentBlockType() ?: return
-
-        var blockStart = ds.taskIndex
-        for (i in ds.tasks.indices) {
-            if (ds.tasks[i].blockType == currentBlock) {
-                blockStart = i
-                break
-            }
-        }
-        var blockEnd = blockStart
-        for (i in blockStart until ds.tasks.size) {
-            if (ds.tasks[i].blockType != currentBlock) break
-            blockEnd = i
-        }
-
-        val newTaskList = ds.tasks.subList(0, blockStart) +
-            newTasks +
-            ds.tasks.subList(blockEnd + 1, ds.tasks.size)
-
-        _state.update {
-            it.copy(dailySession = it.dailySession.copy(
-                    tasks = newTaskList,
-                    taskIndex = blockStart
-                ))
+                active = true,
+                blocks = blocks,
+                blockIndex = 0,
+                level = lessonLevel,
+                finishedToken = false
+            ))
         }
         stateAccess.saveProgress()
     }
 
     fun endSession() {
-        // Record fire streaks for each completed block type in the daily session
         val ds = _state.value.dailySession
         val languageId = stateAccess.uiState.value.navigation.selectedLanguageId.value
-        val blockTypes = ds.tasks.map { it.blockType }.toSet()
+        val blockTypes = ds.blocks.map { it.type }.toSet()
         val blockTypeToPracticeType = mapOf(
             DailyBlockType.TRANSLATE to PracticeType.TRANSLATION,
             DailyBlockType.VOCAB to PracticeType.VOCAB,
@@ -209,43 +129,87 @@ class DailyPracticeCoordinator(
 
         _state.update { state ->
             state.copy(dailySession = state.dailySession.copy(
-                    active = false,
-                    finishedToken = true
-                ))
+                active = false,
+                finishedToken = true
+            ))
         }
         stateAccess.saveProgress()
     }
 
-    fun getBlockProgress(): BlockProgress {
+    // ── Block navigation (single completion path) ───────────────────────
+
+    /**
+     * Signal that the current block has been completed.
+     * Advances blockIndex and returns the next block to render, or null
+     * if all blocks are done (session ends).
+     *
+     * This is the ONE completion mechanism for ALL blocks:
+     * - TRANSLATE/VERBS: called by GrammarMateApp when TrainingScreen finishes
+     * - VOCAB: called by DailyPracticeScreen when the flashcard block ends
+     */
+    fun onBlockComplete(): DailyBlock? {
         val ds = _state.value.dailySession
-        if (!ds.active) return BlockProgress.Empty
+        if (!ds.active) return null
 
-        val tasks = ds.tasks
-        val currentBlock = getCurrentBlockType() ?: return BlockProgress.Empty
+        // Mark current block as complete
+        val updatedBlocks = ds.blocks.mapIndexed { index, block ->
+            if (index == ds.blockIndex) block.copy(isComplete = true) else block
+        }
 
-        var blockStart = 0
-        for (i in tasks.indices) {
-            if (tasks[i].blockType == currentBlock) {
-                blockStart = i
-                break
+        val nextIndex = ds.blockIndex + 1
+        if (nextIndex >= updatedBlocks.size) {
+            // All blocks done — update state and end session
+            _state.update {
+                it.copy(dailySession = it.dailySession.copy(
+                    blocks = updatedBlocks,
+                    blockIndex = nextIndex
+                ))
             }
+            stateAccess.saveProgress()
+            endSession()
+            return null
         }
 
-        var blockEnd = blockStart
-        for (i in blockStart until tasks.size) {
-            if (tasks[i].blockType != currentBlock) break
-            blockEnd = i
+        _state.update {
+            it.copy(dailySession = it.dailySession.copy(
+                blocks = updatedBlocks,
+                blockIndex = nextIndex
+            ))
         }
-        val blockSize = blockEnd - blockStart + 1
-        val positionInBlock = ds.taskIndex - blockStart + 1
+        stateAccess.saveProgress()
+        return updatedBlocks[nextIndex]
+    }
 
-        return BlockProgress(
-            blockType = currentBlock,
-            positionInBlock = positionInBlock.coerceIn(1, blockSize),
-            blockSize = blockSize,
-            totalTasks = tasks.size,
-            globalPosition = ds.taskIndex + 1
-        )
+    /**
+     * Get the current block to render.
+     * Returns null if session is not active or all blocks are done.
+     */
+    fun getCurrentBlock(): DailyBlock? {
+        val ds = _state.value.dailySession
+        if (!ds.active) return null
+        return ds.currentBlock
+    }
+
+    /**
+     * Get the current block type.
+     */
+    fun getCurrentBlockType(): DailyBlockType? {
+        return getCurrentBlock()?.type
+    }
+
+    /**
+     * Get the current task within the current block.
+     * Used for VOCAB blocks rendered inline.
+     */
+    fun getCurrentTask(): DailyTask? {
+        return getCurrentBlock()?.tasks?.firstOrNull()
+    }
+
+    /**
+     * Get the render method for the current block.
+     */
+    fun getCurrentRenderVia(): BlockRenderVia? {
+        return getCurrentBlock()?.renderVia
     }
 
     // ── Session start / resume ─────────────────────────────────────────
@@ -266,17 +230,15 @@ class DailyPracticeCoordinator(
      *   effectiveLevel = cursor.currentLessonIndex + 1
      *   lessonId = lesson at cursor.currentLessonIndex
      *
-     * @param resolveProgressLessonInfo fallback for lesson ID when cursor index is invalid (unused for level).
-     * @param onStoreFirstSessionCardIds callback to store first-session card IDs (delegates to ProgressTracker).
+     * @param resolveProgressLessonInfo fallback for lesson ID when cursor index is invalid.
+     * @param onStoreFirstSessionCardIds callback to store first-session card IDs.
      * @return true if session was started successfully.
      */
     suspend fun startDailyPractice(
         resolveProgressLessonInfo: () -> Pair<String, Int>?,
         onStoreFirstSessionCardIds: (sentenceIds: List<String>, verbIds: List<String>) -> Unit
     ): Boolean {
-        // Save cursor at session start for rollback on cancel
         dailyCursorAtSessionStart = _state.value.dailyCursor
-        // Reset per-block VOICE/KEYBOARD answered counters
         dailyPracticeAnsweredCounts = mutableMapOf()
 
         val state = stateAccess.uiState.value
@@ -285,21 +247,16 @@ class DailyPracticeCoordinator(
 
         val cursor = _state.value.dailyCursor
 
-        // FIX 1: Cursor-based level resolution.
-        // effectiveLevel = cursor.currentLessonIndex + 1
-        // lessonId = lesson at cursor.currentLessonIndex
         val packLessons = lessonStore.getLessons(langId.value)
         val effectiveLevel: Int
         val lessonId: String
         val levelFromCursor: Boolean
 
         if (cursor.currentLessonIndex in packLessons.indices) {
-            // Cursor points to a valid lesson — derive level from it
             lessonId = packLessons[cursor.currentLessonIndex].id.value
             effectiveLevel = cursor.currentLessonIndex + 1
             levelFromCursor = true
         } else {
-            // Cursor index out of range — fall back to mastery-based resolution
             val progressInfo = resolveProgressLessonInfo()
             lessonId = progressInfo?.first ?: return false
             effectiveLevel = progressInfo.second
@@ -309,28 +266,25 @@ class DailyPracticeCoordinator(
         val today = java.time.LocalDate.now().toString()
         val isFirstSessionToday = cursor.firstSessionDate != today
 
-        // Try pre-built session first (only valid for first session of the day)
-        val cached = prebuiltDailySession
+        // Try pre-built blocks first (only valid for first session of the day)
+        val cached = prebuiltDailyBlocks
         if (isFirstSessionToday && cached != null && cached.isNotEmpty()) {
-            // Validate prebuilt cache level matches; discard if mismatch.
-            // Only validate when level was derived from cursor (levelFromCursor=true).
-            // When falling back to resolveProgressLessonInfo, the level may differ
-            // from what prebuildSession used (which also used cursor), so skip validation.
             val levelMismatch = levelFromCursor && prebuiltSessionLevel != effectiveLevel
             if (levelMismatch) {
                 val cachedLevelValue = prebuiltSessionLevel
-                prebuiltDailySession = null
+                prebuiltDailyBlocks = null
                 prebuiltSessionLevel = 0
                 Log.d(logTag, "DailyPractice: discarded prebuilt session (level mismatch: cached=$cachedLevelValue cursor=$effectiveLevel)")
             } else {
-                lastDailyTasks = cached
+                lastDailyBlocks = cached
                 startDailySession(cached, effectiveLevel)
-                prebuiltDailySession = null
+                prebuiltDailyBlocks = null
                 prebuiltSessionLevel = 0
-                val sentenceIds = cached
+                val allTasks = cached.flatMap { it.tasks }
+                val sentenceIds = allTasks
                     .filterIsInstance<DailyTask.TranslateSentence>()
                     .map { it.card.id }
-                val verbIds = cached
+                val verbIds = allTasks
                     .filterIsInstance<DailyTask.ConjugateVerb>()
                     .map { it.card.id }
                 onStoreFirstSessionCardIds(sentenceIds, verbIds)
@@ -338,23 +292,24 @@ class DailyPracticeCoordinator(
             }
         }
 
-        // Fallback to synchronous build
+        // Build fresh blocks
         val verbDrillStore = getVerbDrillStore(packId.value)
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, effectiveLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
-        val tasks = composer.buildSession(effectiveLevel, packId.value, langId.value, lessonId, cumulativeTenses, cursor)
-        Log.d(logTag, "DailyPractice fallback: built ${tasks.size} tasks, per-block=${tasks.groupBy { it.blockType }.mapValues { it.value.size }}")
-        if (tasks.isEmpty()) return false
+        val blocks = composer.buildBlocks(effectiveLevel, packId.value, langId.value, lessonId, cumulativeTenses, cursor)
+        Log.d(logTag, "DailyPractice: built ${blocks.size} blocks, per-type=${blocks.associate { it.type to it.tasks.size }}")
+        if (blocks.isEmpty()) return false
 
-        lastDailyTasks = tasks
-        startDailySession(tasks, effectiveLevel)
+        lastDailyBlocks = blocks
+        startDailySession(blocks, effectiveLevel)
 
         if (isFirstSessionToday) {
-            val sentenceIds = tasks
+            val allTasks = blocks.flatMap { it.tasks }
+            val sentenceIds = allTasks
                 .filterIsInstance<DailyTask.TranslateSentence>()
                 .map { it.card.id }
-            val verbIds = tasks
+            val verbIds = allTasks
                 .filterIsInstance<DailyTask.ConjugateVerb>()
                 .map { it.card.id }
             onStoreFirstSessionCardIds(sentenceIds, verbIds)
@@ -377,7 +332,7 @@ class DailyPracticeCoordinator(
         val today = java.time.LocalDate.now().toString()
 
         // Try in-memory cache first (fastest path, same app run)
-        val cached = lastDailyTasks
+        val cached = lastDailyBlocks
         if (cached != null && cached.isNotEmpty()) {
             startDailySession(cached, lessonLevel)
             return true
@@ -391,14 +346,14 @@ class DailyPracticeCoordinator(
             val verbDrillStore = getVerbDrillStore(packId.value)
             val packWordMasteryStore = getWordMasteryStore(packId.value)
             val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
-            val tasks = composer.buildRepeatSession(
+            val blocks = composer.buildRepeatBlocks(
                 lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses,
                 sentenceCardIds = cursor.firstSessionSentenceCardIds,
                 verbCardIds = cursor.firstSessionVerbCardIds
             )
-            if (tasks.isNotEmpty()) {
-                lastDailyTasks = tasks
-                startDailySession(tasks, lessonLevel)
+            if (blocks.isNotEmpty()) {
+                lastDailyBlocks = blocks
+                startDailySession(blocks, lessonLevel)
                 return true
             }
         }
@@ -409,25 +364,15 @@ class DailyPracticeCoordinator(
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
-        val tasks = composer.buildSession(lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses, resetCursor)
-        if (tasks.isEmpty()) return false
+        val blocks = composer.buildBlocks(lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses, resetCursor)
+        if (blocks.isEmpty()) return false
 
-        lastDailyTasks = tasks
-        startDailySession(tasks, lessonLevel)
+        lastDailyBlocks = blocks
+        startDailySession(blocks, lessonLevel)
         return true
     }
 
-    // ── Task / block navigation ────────────────────────────────────────
-
-    fun advanceDailyTask(
-        onPersistVerbProgress: (VerbDrillCard) -> Unit
-    ): Boolean {
-        val task = getCurrentTask()
-        if (task is DailyTask.ConjugateVerb) {
-            onPersistVerbProgress(task.card)
-        }
-        return nextTask()
-    }
+    // ── Progress tracking ────────────────────────────────────────────────
 
     fun recordDailyCardPracticed(
         blockType: DailyBlockType,
@@ -437,18 +382,13 @@ class DailyPracticeCoordinator(
         dailyPracticeAnsweredCounts[blockType] = count + 1
 
         if (blockType == DailyBlockType.TRANSLATE) {
-            val task = getCurrentTask() as? DailyTask.TranslateSentence
-            if (task != null) {
-                val card = task.card
-                val lessonId = resolveCardLessonId(card)
-                val languageId = stateAccess.uiState.value.navigation.selectedLanguageId
-                masteryStore.recordCardShow(lessonId, languageId.value, card.id)
-            }
+            val block = getCurrentBlock() ?: return
+            val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return
+            val card = task.card
+            val lessonId = resolveCardLessonId(card)
+            val languageId = stateAccess.uiState.value.navigation.selectedLanguageId
+            masteryStore.recordCardShow(lessonId, languageId.value, card.id)
         }
-    }
-
-    fun advanceDailyBlock(): Boolean {
-        return advanceToNextBlock()
     }
 
     fun persistDailyVerbProgress(card: VerbDrillCard) {
@@ -469,6 +409,8 @@ class DailyPracticeCoordinator(
         store.upsertComboProgress(comboKey, updated)
     }
 
+    // ── Repeat / rebuild ─────────────────────────────────────────────────
+
     fun repeatDailyBlock(
         resolveProgressLessonInfo: () -> Pair<String, Int>?
     ): Boolean {
@@ -487,12 +429,28 @@ class DailyPracticeCoordinator(
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
-        val newTasks = composer.rebuildBlock(blockType, lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses)
-        if (newTasks.isEmpty()) return false
+        val newBlock = composer.rebuildBlockAsBlock(blockType, lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses)
+        if (newBlock.tasks.isEmpty()) return false
 
-        replaceCurrentBlock(newTasks)
+        replaceCurrentBlock(newBlock)
         return true
     }
+
+    private fun replaceCurrentBlock(newBlock: DailyBlock) {
+        val ds = _state.value.dailySession
+        if (!ds.active) return
+
+        val updatedBlocks = ds.blocks.mapIndexed { index, block ->
+            if (index == ds.blockIndex) newBlock else block
+        }
+
+        _state.update {
+            it.copy(dailySession = it.dailySession.copy(blocks = updatedBlocks))
+        }
+        stateAccess.saveProgress()
+    }
+
+    // ── Cancel ───────────────────────────────────────────────────────────
 
     /**
      * Cancel the daily session. Conditionally advances cursor based on
@@ -507,8 +465,10 @@ class DailyPracticeCoordinator(
         if (ds.finishedToken) {
             val sentenceCount = dailyPracticeAnsweredCounts[DailyBlockType.TRANSLATE] ?: 0
             val verbCount = dailyPracticeAnsweredCounts[DailyBlockType.VERBS] ?: 0
-            val expectedSentenceCount = ds.tasks.count { it is DailyTask.TranslateSentence }
-            val expectedVerbCount = ds.tasks.count { it is DailyTask.ConjugateVerb }
+            val sentenceBlock = ds.blocks.find { it.type == DailyBlockType.TRANSLATE }
+            val verbBlock = ds.blocks.find { it.type == DailyBlockType.VERBS }
+            val expectedSentenceCount = sentenceBlock?.tasks?.size ?: 0
+            val expectedVerbCount = verbBlock?.tasks?.size ?: 0
             val allSentencePracticed = sentenceCount >= expectedSentenceCount
             val allVerbsPracticed = verbCount >= expectedVerbCount
             if (allSentencePracticed && allVerbsPracticed) {
@@ -523,7 +483,8 @@ class DailyPracticeCoordinator(
     // ── Vocab SRS ──────────────────────────────────────────────────────
 
     fun rateVocabCard(rating: SrsRating) {
-        val task = getCurrentTask() as? DailyTask.VocabFlashcard ?: return
+        val block = getCurrentBlock() ?: return
+        val task = block.tasks.firstOrNull() as? DailyTask.VocabFlashcard ?: return
         val wordId = task.word.id
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return
@@ -547,18 +508,38 @@ class DailyPracticeCoordinator(
 
     fun getDailyCurrentTask(): DailyTask? = getCurrentTask()
 
-    fun getDailyBlockProgress(): BlockProgress = getBlockProgress()
+    fun getDailyBlockProgress(): BlockProgress {
+        val ds = _state.value.dailySession
+        if (!ds.active) return BlockProgress.Empty
+
+        val currentBlock = ds.currentBlock ?: return BlockProgress.Empty
+        val blockSize = currentBlock.tasks.size
+
+        // Calculate global position: sum of all completed blocks + 1 for current
+        val completedTasks = ds.blocks.take(ds.blockIndex).sumOf { it.tasks.size }
+        val globalPosition = completedTasks + 1
+
+        return BlockProgress(
+            blockType = currentBlock.type,
+            positionInBlock = 1,
+            blockSize = blockSize,
+            totalTasks = ds.totalTasks,
+            globalPosition = globalPosition
+        )
+    }
 
     // ── Answer submission ──────────────────────────────────────────────
 
     fun submitDailySentenceAnswer(input: String): Boolean {
-        val task = getCurrentTask() as? DailyTask.TranslateSentence ?: return false
+        val block = getCurrentBlock() ?: return false
+        val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return false
         val card = task.card
         return answerValidator.validate(input, card.acceptedAnswers).isCorrect
     }
 
     fun submitDailyVerbAnswer(input: String): Boolean {
-        val task = getCurrentTask() as? DailyTask.ConjugateVerb ?: return false
+        val block = getCurrentBlock() ?: return false
+        val task = block.tasks.firstOrNull() as? DailyTask.ConjugateVerb ?: return false
         val card = task.card
         return answerValidator.validate(input, card.acceptedAnswers).isCorrect
     }
@@ -566,12 +547,14 @@ class DailyPracticeCoordinator(
     // ── Answer retrieval ───────────────────────────────────────────────
 
     fun getDailySentenceAnswer(): String? {
-        val task = getCurrentTask() as? DailyTask.TranslateSentence ?: return null
+        val block = getCurrentBlock() ?: return null
+        val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return null
         return task.card.acceptedAnswers.firstOrNull()
     }
 
     fun getDailyVerbAnswer(): String? {
-        val task = getCurrentTask() as? DailyTask.ConjugateVerb ?: return null
+        val block = getCurrentBlock() ?: return null
+        val task = block.tasks.firstOrNull() as? DailyTask.ConjugateVerb ?: return null
         return task.card.answer
     }
 
@@ -592,9 +575,9 @@ class DailyPracticeCoordinator(
         val packWordMasteryStore = getWordMasteryStore(packId)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId, lessonLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
-        val tasks = composer.buildSession(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
-        if (tasks.isNotEmpty()) {
-            prebuiltDailySession = tasks
+        val blocks = composer.buildBlocks(lessonLevel, packId, langId, lessonId, cumulativeTenses, cursor)
+        if (blocks.isNotEmpty()) {
+            prebuiltDailyBlocks = blocks
             prebuiltSessionLevel = lessonLevel
         }
     }
@@ -606,8 +589,8 @@ class DailyPracticeCoordinator(
     }
 
     fun resetState() {
-        lastDailyTasks = null
-        prebuiltDailySession = null
+        lastDailyBlocks = null
+        prebuiltDailyBlocks = null
         prebuiltSessionLevel = 0
         dailyPracticeAnsweredCounts.clear()
         _state.update { DailyPracticeState() }
@@ -618,28 +601,20 @@ class DailyPracticeCoordinator(
      * during startDailyPractice or when it should be discarded.
      */
     fun clearPrebuiltSession() {
-        prebuiltDailySession = null
+        prebuiltDailyBlocks = null
         prebuiltSessionLevel = 0
     }
 
     // ── Cursor management (called by ViewModel) ──────────────────────────
 
-    /**
-     * Update the daily cursor state.
-     * Called by the ViewModel when advancing cursor after session completion
-     * or storing first-session card IDs.
-     */
     fun updateCursor(cursor: DailyCursorState) {
         _state.update { it.copy(dailyCursor = cursor) }
     }
 
-    /**
-     * Get the current daily cursor state.
-     */
     fun getCursor(): DailyCursorState = _state.value.dailyCursor
 
     /**
-     * FIX 2: Advance the daily cursor with lesson transition and pack wrapping.
+     * Advance the daily cursor with lesson transition and pack wrapping.
      *
      * Increases sentenceOffset by [sentenceCount]. If the offset exceeds the
      * current lesson's card count, advances currentLessonIndex and resets
@@ -663,11 +638,9 @@ class DailyPracticeCoordinator(
 
         val currentLesson = lessons.getOrNull(currentLessonIndex)
         if (currentLesson != null && sentenceOffset >= currentLesson.cards.size) {
-            // Current lesson exhausted — advance to next lesson, reset offset
             currentLessonIndex++
             sentenceOffset = 0
             if (currentLessonIndex >= lessons.size) {
-                // Pack wrap: start over from the first lesson
                 currentLessonIndex = 0
             }
         }
@@ -676,5 +649,37 @@ class DailyPracticeCoordinator(
             currentLessonIndex = currentLessonIndex,
             sentenceOffset = sentenceOffset
         )
+    }
+
+    // ── Convenience: get cards for current TRANSLATE or VERBS block ────
+
+    /**
+     * Get the SessionCard list for the current TRANSLATE block.
+     * Used by GrammarMateApp to pass to TrainingScreen.
+     */
+    fun getCurrentTranslateCards(): List<com.alexpo.grammermate.data.SessionCard> {
+        val ds = _state.value.dailySession
+        val block = ds.blocks.getOrNull(ds.blockIndex) ?: return emptyList()
+        if (block.type != DailyBlockType.TRANSLATE) return emptyList()
+        return block.tasks.filterIsInstance<DailyTask.TranslateSentence>().map { it.card }
+    }
+
+    /**
+     * Get the SessionCard list for the current VERBS block.
+     * Used by GrammarMateApp to pass to TrainingScreen.
+     */
+    fun getCurrentVerbCards(): List<com.alexpo.grammermate.data.SessionCard> {
+        val ds = _state.value.dailySession
+        val block = ds.blocks.getOrNull(ds.blockIndex) ?: return emptyList()
+        if (block.type != DailyBlockType.VERBS) return emptyList()
+        return block.tasks.filterIsInstance<DailyTask.ConjugateVerb>().map { it.card }
+    }
+
+    /**
+     * Get the DailyTask list for the current block (all types).
+     * Used by DailyPracticeSessionProvider to access tasks for the block.
+     */
+    fun getCurrentBlockTasks(): List<DailyTask> {
+        return getCurrentBlock()?.tasks ?: emptyList()
     }
 }

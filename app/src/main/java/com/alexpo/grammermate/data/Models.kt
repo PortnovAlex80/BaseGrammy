@@ -265,14 +265,51 @@ sealed class DailyTask {
     }
 }
 
+/**
+ * Represents a single block within a daily practice session.
+ * Each block has a type (TRANSLATE, VOCAB, VERBS), a list of tasks,
+ * and a completion flag.
+ */
+data class DailyBlock(
+    val type: DailyBlockType,
+    val tasks: List<DailyTask>,
+    val isComplete: Boolean = false
+) {
+    /** How the block is rendered in the UI. */
+    val renderVia: BlockRenderVia
+        get() = when (type) {
+            DailyBlockType.TRANSLATE, DailyBlockType.VERBS -> BlockRenderVia.TRAINING_SCREEN
+            DailyBlockType.VOCAB -> BlockRenderVia.INLINE
+        }
+}
+
+/** How a block should be rendered. */
+enum class BlockRenderVia {
+    /** Navigate to TrainingScreen (TRANSLATE, VERBS). */
+    TRAINING_SCREEN,
+    /** Render inline within DailyPracticeScreen (VOCAB). */
+    INLINE
+}
+
 data class DailySessionState(
     val active: Boolean = false,
-    val tasks: List<DailyTask> = emptyList(),
-    val taskIndex: Int = 0,
+    val blocks: List<DailyBlock> = emptyList(),
     val blockIndex: Int = 0,
     val level: Int = 0,
     val finishedToken: Boolean = false
-)
+) {
+    /** Get the current block, or null if session is not active or out of range. */
+    val currentBlock: DailyBlock?
+        get() = blocks.getOrNull(blockIndex)
+
+    /** Get the current block type, or null. */
+    val currentBlockType: DailyBlockType?
+        get() = currentBlock?.type
+
+    /** Total tasks across all blocks. */
+    val totalTasks: Int
+        get() = blocks.sumOf { it.tasks.size }
+}
 
 data class DailyCursorState(
     val sentenceOffset: Int = 0,        // cards shown in current lesson (0, 10, 20, ...)
@@ -343,7 +380,8 @@ data class CardSessionState(
     val testMode: Boolean = false,
     val vocabSprintLimit: Int = 20,
     val todayFireCount: Int = 0,
-    val screenMode: TrainingScreenMode = TrainingScreenMode.NORMAL
+    val screenMode: TrainingScreenMode = TrainingScreenMode.NORMAL,
+    val returnTo: String = ""
 ) {
     /** Whether the session can accept an answer submission. */
     val canSubmit: Boolean

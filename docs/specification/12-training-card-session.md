@@ -495,22 +495,45 @@ Verb Drill uses `TrainingCardSession` with four custom slots:
 
 **File:** `ui/DailyPracticeScreen.kt`
 
-Daily Practice uses `TrainingCardSession` for blocks 1 (Translation) and 3 (Verb Conjugation). Block 2 (Vocab Flashcard) uses a completely separate composable (`VocabFlashcardBlock`).
+Daily Practice uses a block-config orchestration model. The coordinator (`DailyPracticeCoordinator`) builds an ordered list of `DailyBlock` objects, each with a type (TRANSLATE, VOCAB, VERBS) and a list of tasks. Blocks 1 (Translation) and 3 (Verb Conjugation) are rendered via TrainingScreen. Block 2 (Vocab Flashcard) uses a completely separate composable (`VocabFlashcardBlock`) rendered inline within DailyPracticeScreen.
 
-**Session flow:**
+**Data model:**
 
-1. `DailyPracticeScreen` dispatches to `CardSessionBlock` for TRANSLATE and VERBS blocks.
-2. `CardSessionBlock` creates a `DailyPracticeSessionProvider` scoped by `(blockIndex, taskIndex, tasks.size)`.
-3. `DailyTrainingCardSession` wraps `TrainingCardSession` with custom `cardContent` (adds verb/tense chips like Verb Drill) and custom `inputControls` (`DailyInputControls`).
-4. On block completion, `onAdvanceBlock()` moves to the next block. A `BlockSparkleOverlay` shows the transition animation.
+```
+DailySessionState(
+    active: Boolean,
+    blocks: List<DailyBlock>,
+    blockIndex: Int,
+    level: Int,
+    finishedToken: Boolean
+)
+
+DailyBlock(
+    type: DailyBlockType,
+    tasks: List<DailyTask>,
+    isComplete: Boolean
+)
+```
+
+**Coordinator flow:**
+
+1. `DailyPracticeCoordinator.startDailyPractice()` builds blocks via `DailySessionComposer.buildBlocks()`.
+2. Coordinator stores blocks in `DailySessionState.blocks` and sets `blockIndex = 0`.
+3. For TRANSLATE/VERBS blocks (`renderVia == TRAINING_SCREEN`): DailyPracticeScreen calls `onStartCardBlock()` which navigates to TrainingScreen with the block's cards.
+4. For VOCAB blocks (`renderVia == INLINE`): DailyPracticeScreen renders the `VocabFlashcardBlock` inline.
+5. On block completion, a single `coordinator.onBlockComplete()` call advances `blockIndex`. If more blocks exist, the next block starts. If all blocks are done, `endSession()` fires.
+6. TRANSLATE/VERBS completion: TrainingScreen sets `subLessonFinishedToken` -> GrammarMateApp detects daily mode -> `coordinator.onBlockComplete()` -> navigate back to DAILY_PRACTICE.
+7. VOCAB completion: DailyPracticeScreen calls `coordinator.onBlockComplete()` directly via the `onComplete` callback.
+
+**Single completion path:** ALL blocks signal completion through ONE mechanism: `onBlockComplete()` -> `blockIndex++` -> `startNextBlock`. No more `advanceDailyBlock()` / `advanceToNextBlock()` scanning logic.
 
 **Customizations:**
 - Custom header with back arrow, "Daily Practice" title, and block label chip (primaryContainer card).
-- `BlockProgressBar` (separate from TrainingCardSession's progress indicator) shows overall session progress.
+- `BlockProgressBar` (separate from TrainingCardSession's progress indicator) shows overall session progress across all blocks.
 - Block transition sparkle overlay between blocks.
 - `DailyPracticeCompletionScreen` at the end of all 3 blocks.
 
-**Adapter:** `DailyPracticeSessionProvider`. Capabilities: TTS true, voice true, word bank true, flagging false (no report button in daily practice), navigation true, pause true.
+**Adapter:** `DailyPracticeSessionProvider`. Capabilities: TTS true, voice true, word bank true, flagging true, navigation true, pause true.
 
 **Progress persistence:** `onCardAdvanced` callback is called for each card advanced (only for non-WORD_BANK modes). For `ConjugateVerb` tasks, it calls `onPersistVerbProgress`. For all tasks, it calls `onCardPracticed` for cursor advancement tracking.
 

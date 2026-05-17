@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.alexpo.grammermate.R
+import com.alexpo.grammermate.data.DailyBlock
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DailyTask
@@ -70,24 +71,17 @@ import com.alexpo.grammermate.feature.daily.BlockProgress
 fun DailyPracticeScreen(
     state: DailySessionState,
     blockProgress: BlockProgress,
+    currentBlock: DailyBlock?,
     currentTask: DailyTask?,
-    onSubmitSentence: (String) -> Boolean,
-    onSubmitVerb: (String) -> Boolean,
     onShowSentenceAnswer: () -> String?,
     onShowVerbAnswer: () -> String?,
-    onFlipVocabCard: () -> Unit,
     onRateVocabCard: (SrsRating) -> Unit,
-    onPersistVerbProgress: (com.alexpo.grammermate.data.VerbDrillCard) -> Unit = {},
-    onCardPracticed: (DailyBlockType) -> Unit = {},
-    onAdvance: () -> Boolean,
-    onAdvanceBlock: () -> Boolean,
-    onRepeatBlock: () -> Boolean,
-    onStartCardBlock: (DailyBlockType, List<com.alexpo.grammermate.data.SessionCard>) -> Unit = { _, _ -> },
     onSpeak: (String) -> Unit,
     onStopTts: () -> Unit,
     ttsState: TtsState,
     onExit: () -> Unit,
     onComplete: () -> Unit,
+    onStartCardBlock: (DailyBlockType, List<com.alexpo.grammermate.data.SessionCard>) -> Unit = { _, _ -> },
     languageId: String = "en",
     onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
@@ -113,7 +107,7 @@ fun DailyPracticeScreen(
         return
     }
 
-    if (!state.active || currentTask == null) {
+    if (!state.active || currentBlock == null || currentTask == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -136,7 +130,7 @@ fun DailyPracticeScreen(
         // Block-transition sparkle overlay
         var previousBlockType by remember { mutableStateOf<DailyBlockType?>(null) }
         var showBlockTransition by remember { mutableStateOf(false) }
-        val currentBlockType = currentTask.blockType
+        val currentBlockType = currentBlock.type
 
         LaunchedEffect(currentBlockType) {
             if (previousBlockType != null && currentBlockType != null && previousBlockType != currentBlockType) {
@@ -147,26 +141,26 @@ fun DailyPracticeScreen(
 
         if (showBlockTransition) {
             BlockSparkleOverlay(
-                blockType = currentBlockType ?: DailyBlockType.TRANSLATE,
-                isLastBlock = currentBlockType == DailyBlockType.VERBS && blockProgress.globalPosition >= blockProgress.totalTasks,
+                blockType = currentBlockType,
+                isLastBlock = currentBlockType == DailyBlockType.VERBS && state.blockIndex >= state.blocks.size - 1,
                 onDismiss = { showBlockTransition = false }
             )
         }
 
-        when (currentTask.blockType) {
+        when (currentBlockType) {
             DailyBlockType.TRANSLATE, DailyBlockType.VERBS -> {
                 // Navigate to TrainingScreen for card rendering
-                LaunchedEffect(state.taskIndex) {
-                    val cards: List<com.alexpo.grammermate.data.SessionCard> = when (currentTask.blockType) {
-                        DailyBlockType.TRANSLATE -> state.tasks
+                LaunchedEffect(state.blockIndex) {
+                    val cards: List<com.alexpo.grammermate.data.SessionCard> = when (currentBlockType) {
+                        DailyBlockType.TRANSLATE -> currentBlock.tasks
                             .filterIsInstance<DailyTask.TranslateSentence>()
                             .map { it.card }
-                        DailyBlockType.VERBS -> state.tasks
+                        DailyBlockType.VERBS -> currentBlock.tasks
                             .filterIsInstance<DailyTask.ConjugateVerb>()
                             .map { it.card }
                         else -> emptyList()
                     }
-                    onStartCardBlock(currentTask.blockType, cards)
+                    onStartCardBlock(currentBlockType, cards)
                 }
                 // Show loading while navigation happens
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -176,19 +170,15 @@ fun DailyPracticeScreen(
             DailyBlockType.VOCAB -> {
                 val task = currentTask as DailyTask.VocabFlashcard
                 VocabFlashcardBlock(
-                    task = task, onFlip = onFlipVocabCard, onRate = onRateVocabCard,
-                    onAdvance = onAdvance,
-                    onComplete = {
-                        val hasMore = onAdvanceBlock()
-                        if (!hasMore) onComplete()
-                    },
+                    task = task, onFlip = { /* no-op */ }, onRate = onRateVocabCard,
                     onSpeak = onSpeak,
                     onFlagDailyBadSentence = onFlagDailyBadSentence,
                     onUnflagDailyBadSentence = onUnflagDailyBadSentence,
                     isDailyBadSentence = isDailyBadSentence,
                     onExportDailyBadSentences = onExportDailyBadSentences,
                     languageId = languageId,
-                    textScale = textScale
+                    textScale = textScale,
+                    onComplete = onComplete
                 )
             }
         }
@@ -240,8 +230,6 @@ private fun ColumnScope.VocabFlashcardBlock(
     task: DailyTask.VocabFlashcard,
     onFlip: () -> Unit,
     onRate: (SrsRating) -> Unit,
-    onAdvance: () -> Boolean,
-    onComplete: () -> Unit,
     onSpeak: (String) -> Unit,
     onFlagDailyBadSentence: (cardId: String, languageId: String, sentence: String, translation: String, mode: String) -> Unit = { _, _, _, _, _ -> },
     onUnflagDailyBadSentence: (cardId: String) -> Unit = {},
@@ -249,7 +237,8 @@ private fun ColumnScope.VocabFlashcardBlock(
     onExportDailyBadSentences: () -> String? = { null },
     languageId: String = "en",
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    textScale: Float = 1.0f
+    textScale: Float = 1.0f,
+    onComplete: () -> Unit = {}
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
     var isVoiceActive by remember { mutableStateOf(false) }
@@ -278,7 +267,8 @@ private fun ColumnScope.VocabFlashcardBlock(
                 if (isCorrect && !isRated) {
                     isRated = true
                     onRate(SrsRating.GOOD)
-                    if (!onAdvance()) onComplete()
+                    // Vocab card completed correctly via voice — signal block completion
+                    onComplete()
                 }
             }
         }
@@ -334,7 +324,7 @@ private fun ColumnScope.VocabFlashcardBlock(
                 SrsRating.EASY -> Pair(SrsEasyBackground, SrsEasyText)
             }
             OutlinedButton(
-                onClick = { onRate(rating); if (!onAdvance()) onComplete() },
+                onClick = { onRate(rating); onComplete() },
                 modifier = Modifier.weight(1f),
                 colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = colors.first, contentColor = colors.second)
             ) { Text(label, fontSize = 12.sp) }
@@ -415,4 +405,3 @@ private fun DailyPracticeCompletionScreen(onExit: () -> Unit) {
         Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.daily_back_to_home)) }
     }
 }
-

@@ -584,7 +584,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * this will render the cards in TrainingScreen with verb drill styling.
      */
     fun startVerbDrillSession(cards: List<com.alexpo.grammermate.data.VerbDrillCard>) {
-        val events = sessionRunner.startVerbDrillSession(cards)
+        val events = sessionRunner.startCardSession(cards, com.alexpo.grammermate.data.TrainingScreenMode.VERB_DRILL)
         handleSessionEvents(events)
     }
 
@@ -593,7 +593,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Call when the user exits the verb drill from TrainingScreen.
      */
     fun exitVerbDrillSession() {
-        val events = sessionRunner.exitVerbDrillSession()
+        val events = sessionRunner.exitCardSession()
         handleSessionEvents(events)
     }
 
@@ -607,7 +607,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Sets screenMode to DAILY_TRANSLATE and activates the session.
      */
     fun startDailyTranslateSession(cards: List<com.alexpo.grammermate.data.SessionCard>) {
-        val events = sessionRunner.startDailyTranslateSession(cards)
+        val events = sessionRunner.startCardSession(cards, com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE)
         handleSessionEvents(events)
     }
 
@@ -616,7 +616,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Sets screenMode to DAILY_VERBS and activates the session.
      */
     fun startDailyVerbsSession(cards: List<com.alexpo.grammermate.data.SessionCard>) {
-        val events = sessionRunner.startDailyVerbsSession(cards)
+        val events = sessionRunner.startCardSession(cards, com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS)
         handleSessionEvents(events)
     }
 
@@ -625,7 +625,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Call when the user finishes or exits a daily practice block.
      */
     fun exitDailySession() {
-        val events = sessionRunner.exitDailySession()
+        val events = sessionRunner.exitCardSession()
         handleSessionEvents(events)
     }
 
@@ -634,6 +634,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val mode = _coreState.value.cardSession.screenMode
         return mode == com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE ||
                mode == com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS
+    }
+
+    /** Set the route to navigate back to when the training session ends. */
+    fun setReturnTo(route: String) {
+        _coreState.update { it.copy(cardSession = it.cardSession.copy(returnTo = route)) }
     }
 
     fun importLesson(uri: Uri) {
@@ -794,10 +799,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun advanceDailyTask(): Boolean {
-        return dailyPracticeCoordinator.advanceDailyTask(
-            onPersistVerbProgress = { card -> dailyPracticeCoordinator.persistDailyVerbProgress(card) }
-        )
+    /**
+     * Advance to the next block in the daily practice session.
+     * Called when TRANSLATE/VERBS block finishes in TrainingScreen (via GrammarMateApp token detection)
+     * or when VOCAB block completes in DailyPracticeScreen.
+     *
+     * @return the next block to render, or null if all blocks are done.
+     */
+    fun onDailyBlockComplete(): com.alexpo.grammermate.data.DailyBlock? {
+        return dailyPracticeCoordinator.onBlockComplete()
     }
 
     /**

@@ -114,13 +114,14 @@ fun TrainingScreen(
     isBadSentence: () -> Boolean = { false },
     onStartOfflineRecognition: () -> Unit = {},
     hintLevel: HintLevel = HintLevel.EASY,
-    isVerbDrillMode: Boolean = false,
-    isDailySession: Boolean = false,
     onVerbDrillMore: () -> Unit = {}
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
     val mode = state.cardSession.screenMode
+
+    // Derive verb drill flag from screenMode instead of boolean param
+    val isVerbDrillMode = mode == TrainingScreenMode.VERB_DRILL
 
     // VERB_DRILL completion: show stats + More/Exit buttons instead of card session
     val isVerbDrillComplete = isVerbDrillMode && !hasCards && mode == TrainingScreenMode.VERB_DRILL
