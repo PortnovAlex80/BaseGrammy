@@ -428,7 +428,7 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
             }
             TtsSpeakerButton(
                 ttsState = state.audio.ttsState,
-                enabled = state.cardSession.currentCard != null,
+                enabled = state.cardSession.currentCard != null && state.audio.ttsModelReady,
                 onClick = onSpeak
             )
         }

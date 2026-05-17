@@ -140,6 +140,9 @@ class AudioCoordinator(
 
     fun onTtsSpeak(text: String, speed: Float? = null) {
         if (text.isBlank()) return
+        // Defense in depth: never attempt speak if engine is not initialized.
+        // Prevents native crash from calling speak() on an uninitialized Sherpa-ONNX engine.
+        if (ttsEngine.state.value != TtsState.Ready && ttsEngine.state.value != TtsState.Idle) return
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         val effectiveSpeed = speed ?: _audioState.value.ttsSpeed
         coroutineScope.launch {
@@ -234,24 +237,26 @@ class AudioCoordinator(
                     } else {
                         current.ttsDownloadState
                     }
+                    // Do NOT set ttsModelReady = true here — engine init must complete first.
+                    // ttsModelReady is set after engine initialization succeeds below.
                     current.copy(
                         bgTtsDownloadStates = updatedBgStates,
                         ttsModelsReady = updatedReady,
-                        ttsDownloadState = downloadStateOverride,
-                        ttsModelReady = if (languageId == selectedLangId && downloadState is DownloadState.Done) true else current.ttsModelReady
+                        ttsDownloadState = downloadStateOverride
                     )
                 }
-                // Recover TTS engine from ERROR/IDLE after per-language download completes.
+                // Initialize engine and set ttsModelReady only after engine is confirmed ready.
                 if (downloadState is DownloadState.Done) {
-                    val engineState = ttsEngine.state.value
-                    if (engineState is TtsState.Error || engineState == TtsState.Idle) {
-                        try {
-                            delay(500) // Let filesystem buffers flush after extraction
-                            ttsEngine.initialize(languageId)
-                            Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to auto-initialize TTS for $languageId after download", e)
-                        }
+                    try {
+                        delay(500) // Let filesystem buffers flush after extraction
+                        ttsEngine.initialize(languageId)
+                        Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to auto-initialize TTS for $languageId after download", e)
+                    }
+                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                    if (languageId == selectedLangId && ttsEngine.state.value == TtsState.Ready) {
+                        _audioState.update { it.copy(ttsModelReady = true) }
                     }
                 }
             }
@@ -382,10 +387,11 @@ class AudioCoordinator(
                             }
                         }
                     }
+                    // Do NOT set ttsModelReady = true here — engine init must complete first.
+                    // ttsModelReady is set after engine initialization succeeds below.
                     current.copy(
                         bgTtsDownloadStates = stateMap,
                         bgTtsDownloading = anyActive,
-                        ttsModelReady = ttsModelManager.isModelReady(selectedLangId),
                         ttsDownloadState = downloadStateOverride,
                         ttsModelsReady = updatedReady
                     )
@@ -405,6 +411,11 @@ class AudioCoordinator(
                         } catch (e: Exception) {
                             Log.w(TAG, "Failed to auto-initialize TTS for $langToInit after download", e)
                         }
+                    }
+                    // Set ttsModelReady = true only after engine init succeeds for the selected language.
+                    val selectedLang = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                    if (newlyCompleted.contains(selectedLang) && ttsEngine.state.value == TtsState.Ready) {
+                        _audioState.update { it.copy(ttsModelReady = true) }
                     }
                 }
 
@@ -455,17 +466,17 @@ class AudioCoordinator(
             ttsModelManager.download(langId.value).collect { downloadState ->
                 _audioState.update { it.copy(ttsDownloadState = downloadState) }
                 if (downloadState is DownloadState.Done) {
-                    _audioState.update { it.copy(ttsModelReady = true) }
-                    // Recover TTS engine from ERROR/IDLE after user-initiated download.
-                    val engineState = ttsEngine.state.value
-                    if (engineState is TtsState.Error || engineState == TtsState.Idle) {
-                        try {
-                            delay(500) // Let filesystem buffers flush after extraction
-                            ttsEngine.initialize(langId.value)
-                            Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
-                        }
+                    // Initialize engine BEFORE setting ttsModelReady = true to prevent
+                    // race condition where UI tries to speak with uninitialized engine.
+                    try {
+                        delay(500) // Let filesystem buffers flush after extraction
+                        ttsEngine.initialize(langId.value)
+                        Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
+                    }
+                    if (ttsEngine.state.value == TtsState.Ready) {
+                        _audioState.update { it.copy(ttsModelReady = true) }
                     }
                 }
             }
