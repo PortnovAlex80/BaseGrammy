@@ -165,43 +165,79 @@ TrainingScreen — единственный экземпляр экрана дл
 
 ---
 
-## 10. Screen Element Logic
+## 10. Screen Element Logic — Verified Audit
+
+### Screen: HomeScreen
+
+| Element | Visibility | Enabled | Behavior | Notes |
+|---------|-----------|---------|----------|-------|
+| Avatar circle | Always | Always | Calls onProfileClick | |
+| User name | Always, `.take(6)` hard-truncates | N/A | Display only | `.take(6)` clips before Ellipsis has effect |
+| Language selector | Always | Always | DropdownMenu with languages | |
+| Settings gear | Always | Always | Opens settings | |
+| Primary action card | Always | Always | "Continue/Start learning" → navigates | |
+| Lesson tile grid | Always (4-column) | Per tile: locked shows dialog | Unlocked → selectLesson | |
+| Fire streak indicator | Always (inline after username) | N/A | todayFires emojis + "Nd" streak | Always shows at least one dimmed fire even at streak=0 |
+| Tomato (Pomodoro) icon | Always | Always | Opens PomodoroSelectorSheet | |
+| Verb Drill tile | `hasVerbDrill == true` | Always | Opens verb drill selection | Pack-scoped |
+| Vocab Drill tile | `hasVocabDrill == true` | Always | Opens vocab drill | Pack-scoped, shows mastered count |
+| Daily Practice tile | Always | Always | Opens daily practice | |
+| "How This Training Works" | Always | Always | Opens info dialog | |
 
 ### Screen: TrainingScreen (unified card renderer)
 
-| Element | Behavior |
-|---------|----------|
-| Title | "GrammarMate" for all modes — hardcoded, not mode-dependent |
-| Header subtitle | Text varies by TrainingScreenMode: tense label for VERB_DRILL/DAILY_VERBS, "Review Session" for BOSS, etc. |
-| Card prompt | Russian sentence or word from current SentenceCard |
-| Verb chips | Visible only when mode is VERB_DRILL or DAILY_VERBS. Show conjugation group/tense info. |
-| Input controls | UnifiedInputControlsBar: text field (keyboard), voice button, word bank toggle. Visible and functional during ALL states (ACTIVE, PAUSED, HINT_SHOWN) — no session state gate on visibility. |
-| Word bank toggle | Visible only when `hintLevel == EASY` AND `wordBankWords.isNotEmpty()`. Hidden at MEDIUM/HARD difficulty. |
-| Word bank chips | Shown when `inputMode == WORD_BANK` AND `supportsWordBank == true`. Chips are clickable answer fragments. |
-| Input controls (pomodoro) | Input bar VISIBLE during pomodoro pause — cascade behavior allows typing and checking during pause. Play resumes session. |
-| Card counter | "N / total" indicator showing progress through current session |
-| Next card button | Advances to next card in session. Disabled until answer submitted or skipped. |
-| Exit / Stop button | Opens exit confirmation dialog → navigates to HOME via cancelDailySession / session cleanup |
+| Element | Visibility | Enabled | Behavior | Notes |
+|---------|-----------|---------|----------|-------|
+| Title "GrammarMate" | Always (TopBar) | N/A | Display only | Same for ALL modes |
+| Settings gear (TopBar) | Always | Always | Opens settings | NOT removed — still in TopBar |
+| PomodoroTimerBanner | `pomodoro.isActive && !pomodoro.isComplete` | Pause/Resume button | Shows timer + stats | 48dp Card above session |
+| Header subtitle | BOSS/BOSS_MEGA → "Review Session"; ELITE → "Refresh Session" | N/A | Display only | NORMAL/DRILL/VERB_DRILL show tense label instead |
+| Tense label | `card.tense != null` for non-BOSS/non-ELITE | N/A | Color varies by mode | Green for drill/verb, blue for mix |
+| Card prompt (header) | `cleanPrompt.isNotBlank()` | N/A | Strips ALL parentheticals via regex | **Always strips, ignores HintLevel** |
+| Card prompt (CardPrompt) | `currentCard != null` | N/A | Uses HintCalculator (respects HintLevel) | **Can differ from header prompt** |
+| Verb drill chips | `mode == VERB_DRILL \|\| DAILY_VERBS) && drillCard != null` | N/A | Display only (onClick no-op) | Verb/tense/group info |
+| Answer text field | Always (UnifiedInputControlsBar) | `hasCards` | Auto-submit on exact match in KEYBOARD | |
+| Mic trailing icon | `supportsVoiceInput` (always true) | `hasCards && canSubmit` | Switches to VOICE + launches speech | |
+| Voice mode hint | `inputMode == VOICE && canSubmit` | N/A | "Say translation: {prompt}" | Shows during PAUSED too |
+| Word bank toggle | `supportsWordBank && hintLevel == EASY` | `canSelectInputMode` | Switches to WORD_BANK mode | Hidden at MEDIUM/HARD |
+| Word bank chips | `inputMode == WORD_BANK && supportsWordBank` | Per chip (used ones disabled) | Appends word to answer | |
+| Check button | Always | `hasCards && inputText.isNotBlank() && canSubmit` | Submits answer | canSubmit = ACTIVE or PAUSED (NOT HINT_SHOWN) |
+| Show answer (eye) | Always | `hasCards && hintAnswer == null` | Calls showAnswer() | Disabled when hint already shown |
+| Report button | `supportsFlagging && hasCards` | `hasCards` | Opens report sheet | |
+| HintAnswerCard | `hintAnswer != null` (answerText from state) | N/A | Pink card with answer text | Shows after eye click or 3 wrong |
+| Result label | `lastResult != null` | N/A | "Correct" green / "Incorrect" red | |
+| Prev button | `supportsNavigation` | `hasCurrentCard` | ArrowBack, pause-first navigation | |
+| Pause/Play button | `supportsPause && supportsNavigation` | `hasCurrentCard` | Pause when active, Play otherwise | Play from hint clears hint, resumes ACTIVE |
+| Exit button | `supportsNavigation` | `hasCurrentCard` | StopCircle, opens exit dialog | |
+| Next button | `supportsNavigation` | `hasCurrentCard` | ArrowForward, pause-first navigation | |
+| VerbDrillCompletion | `VERB_DRILL && !hasCards` | More/Exit buttons | Stats + party popper | Only for VERB_DRILL mode |
+| PomodoroSummary | `pomodoro.isComplete` | "OK" button | Full screen: ring + stats + streak | Stays until OK pressed |
+| Auto-voice LaunchedEffect | `voiceAutoStart && VOICE && ACTIVE && hasCard` | N/A | Launches speech after 200ms delay | Watches card.id changes |
 
 ### Screen: DailyPracticeScreen (coordinator)
 
-| Element | Behavior |
-|---------|----------|
-| Role | Orchestrator — renders 3 blocks sequentially, does NOT render cards itself (except VOCAB) |
-| TRANSLATE block | Detects block type == TRANSLATE → extracts cards → navigates to TrainingScreen with `returnTo = DAILY_PRACTICE` |
-| VOCAB block | Inline VocabFlashcardBlock: flip card animation → voice input → SRS difficulty rating (AGAIN/HARD/GOOD/EASY) → next card via taskIndex increment → after last card → onBlockComplete() |
-| VERBS block | Detects block type == VERBS → extracts cards → navigates to TrainingScreen with `returnTo = DAILY_PRACTICE` |
-| Block transitions | After each block completes → sparkle animation → next block starts automatically |
-| All blocks done | Navigate to HOME → record daily streak → show completion indicator |
+| Element | Visibility | Enabled | Behavior | Notes |
+|---------|-----------|---------|----------|-------|
+| Loading spinner | `!active \|\| currentBlock == null` | N/A | "Loading session..." | |
+| Back button | Always | Always | Opens exit confirmation | |
+| "Daily Practice" title | Always | N/A | 18sp SemiBold | |
+| Block type badge | Always | N/A | primaryContainer chip | "Translation"/"Vocabulary"/"Verbs" |
+| Block progress bar | `totalTasks > 0` | N/A | LinearProgressIndicator + "N/M" | |
+| Block sparkle overlay | `showBlockTransition == true` | N/A | Auto-dismisses after 800ms | Shows "Next: {BlockType}" |
+| TRANSLATE/VERBS block | `blockType == TRANSLATE \|\| VERBS` | N/A | Navigates to TrainingScreen | Cards rendered in TrainingScreen, NOT here |
+| VOCAB flashcard | `blockType == VOCAB` | N/A | Inline card with prompt + translation | Both prompt and answer always visible |
+| Vocab TTS button | VOCAB block active | Always | Speaks prompt text | |
+| Vocab mic button | VOCAB block active | `!isVoiceActive` | 64dp button, launches speech | |
+| Vocab rating buttons | VOCAB block active | Always (4 buttons) | AGAIN/HARD/GOOD/EASY → auto-advances | Rating recorded, taskIndex++ |
+| Completion sparkle | `finishedToken && !hasShownCompletion` | N/A | "Session Complete!" | |
+| Exit confirmation | `showExitDialog` | Stay/Exit | "Exit practice?" | |
 
 ### Screen: VerbDrillScreen (selection only)
 
-| Element | Behavior |
-|---------|----------|
-| Role | Tense/group picker only. Does NOT render cards itself. |
-| Selection UI | Shows available tenses and verb groups from active pack |
-| On selection | Calls `startCardSession(cards, VERB_DRILL)` → navigates to TrainingScreen with `returnTo = VERB_DRILL` |
-| After session | TrainingScreen completes → navigates back to VERB_DRILL screen (not HOME) |
+| Element | Visibility | Enabled | Behavior | Notes |
+|---------|-----------|---------|----------|-------|
+| Tense/group picker | Always | Always | Grid of tenses and groups | Selection screen only |
+| On selection | — | — | startCardSession → TrainingScreen(VERB_DRILL) | |
 
 ### Navigation: returnTo token
 
@@ -215,6 +251,41 @@ TrainingScreen — единственный экземпляр экрана дл
 - `setReturnTo()` is called at ALL navigation-to-TrainingScreen sites
 - NavDialogs reads returnTo value → navigates to correct destination
 - For DAILY_PRACTICE: completion also calls `onBlockComplete()` to advance block cursor
+- For POMODORO: completion blocks navigation, shows summary until OK pressed
+
+---
+
+## 10.1 Discrepancies Found (Spec vs Code)
+
+### HIGH — Behavioral mismatch
+
+| # | Element | Issue | Status |
+|---|---------|-------|--------|
+| D1 | Check button (TS-25) | `canSubmit` excludes HINT_SHOWN — user cannot submit during hint shown. Spec says "no session state gate" | **BY DESIGN** — hint is the answer, re-submitting makes no sense |
+| D2 | TS-38 Session Completion | Universal completion overlay for NORMAL/DRILL/ELITE does not exist in code. Only VerbDrill has completion. | **TODO** — future task |
+| D3 | Verb/Tense chip taps | onClick is no-op. Bottom sheets not implemented. | **TODO** — future task |
+| D4 | PM-04 DifficultyRatingRow | Imported but never rendered in TrainingScreen. | **REMOVED** — pomodoro stripped to timer-only |
+
+### MEDIUM — Visual/conditional mismatch
+
+| # | Element | Issue | Status |
+|---|---------|-------|--------|
+| D5 | Header prompt vs Card prompt | Header strips ALL parentheticals; Card uses HintCalculator. Two different texts visible. | **BY DESIGN** — header is abbreviated |
+| D6 | Show answer (eye) | Extra guard `hintAnswer == null` not in spec. Disables when hint already shown. | **CORRECT** — prevents double-click |
+| D7 | Voice mode hint | Shows during PAUSED too (via canSubmit), spec says ACTIVE only. | **BY DESIGN** — Variant B cascade |
+| D8 | Keyboard button | Always visible, disabled when not available (spec implies conditional visibility). | **LOW PRIORITY** |
+| D9 | Fire streak | Always shows at least one dimmed fire emoji even at streak=0. | **LOW PRIORITY** |
+| D10 | PomodoroSummary "OK" vs "Done" | Code uses regular Button "OK", spec says FilledTonalButton "Done". | **USER CHOICE** — OK is correct |
+| D11 | PomodoroSummary ring duration | Shows selected duration MM:00, not actual active time. | **LOW PRIORITY** |
+
+### LOW — Stale spec notes
+
+| # | Element | Issue |
+|---|---------|-------|
+| D12 | MixChallengeSurface | Spec says "hardcoded" but already theme-aware |
+| D13 | Progress bar colors | Spec lists hardcoded hex, code uses theme colors |
+| D14 | PomodoroSummary ring/difficulty colors | Hardcoded, not theme-aware (dark mode contrast risk) |
+| D15 | Dead code | HeaderStats() and ModeSelector() composables never called |
 
 ---
 
@@ -237,7 +308,10 @@ TrainingScreen — единственный экземпляр экрана дл
 | 11 | Back button from lesson | During regular lesson → press back | Correct destination (HOME or lesson screen) |
 | 12 | Back button from daily | During daily practice → press back | Navigates to HOME |
 | 13 | Pomodoro pause/resume | Start session → pause → type answer → Check → Play | Input visible during pause, Check validates, Play resumes |
-| 14 | Pomodoro complete | Start session → complete all cards in time | Summary shown → difficulty rating → HOME |
+| 14 | Pomodoro complete | Start session → complete all cards in time | Summary shown with OK button → press OK → HOME |
+| 14a | Pomodoro summary stays | Complete pomodoro → summary screen | Summary stays until OK pressed, no auto-dismiss |
+| 14b | Eye/hint button (fresh card) | Any mode → fresh card → press eye | Answer shown in pink card. Works before any attempt. |
+| 14c | Eye/hint button (after wrong) | Any mode → wrong answer → press eye | Answer shown in pink card. |
 | 15 | Boss battle | Start boss → TrainingScreen → complete | Returns HOME, boss result recorded |
 | 16 | Mix challenge | Start mix from HOME → TrainingScreen → complete | Returns HOME |
 | 17 | Daily VOCAB SRS | Daily → VOCAB block → flip card → voice input → rate AGAIN/HARD/GOOD/EASY | Rating recorded, next card appears, SRS step updated |

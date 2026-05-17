@@ -147,7 +147,8 @@ enum class TrainingScreenMode {
     ELITE,            // Elite/daily step
     VERB_DRILL,       // Verb conjugation (chips: verb, tense)
     DAILY_TRANSLATE,  // Daily Practice block 1 (translation)
-    DAILY_VERBS       // Daily Practice block 3 (verb conjugation with chips)
+    DAILY_VERBS,      // Daily Practice block 3 (verb conjugation with chips)
+    MIX_CHALLENGE     // Mix challenge mode (mixed lesson review)
 }
 
 data class TrainingProgress(

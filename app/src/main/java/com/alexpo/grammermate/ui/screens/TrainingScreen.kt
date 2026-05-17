@@ -23,18 +23,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +74,7 @@ import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.ui.components.AsrStatusIndicator
 import com.alexpo.grammermate.ui.components.HintAnswerCard
@@ -90,7 +85,9 @@ import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.PomodoroTimerBanner
 import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
-import com.alexpo.grammermate.ui.components.DifficultyRatingRow
+import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
+import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,7 +120,8 @@ fun TrainingScreen(
     onResumePomodoro: () -> Unit = {},
     onCancelPomodoro: () -> Unit = {},
     onRateCardDifficulty: (com.alexpo.grammermate.data.CardDifficultyRating) -> Unit = {},
-    onVerbDrillMore: () -> Unit = {}
+    onVerbDrillMore: () -> Unit = {},
+    onSessionDone: () -> Unit = {}
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -131,6 +129,11 @@ fun TrainingScreen(
 
     // Derive verb drill flag from screenMode instead of boolean param
     val isVerbDrillMode = mode == TrainingScreenMode.VERB_DRILL
+
+    // Bottom sheet state for verb/tense chip taps
+    var showVerbSheet by remember { mutableStateOf(false) }
+    var showTenseSheet by remember { mutableStateOf(false) }
+    val drillCard = state.cardSession.currentCard as? VerbDrillCard
 
     // VERB_DRILL completion: show stats + More/Exit buttons instead of card session
     val isVerbDrillComplete = isVerbDrillMode && !hasCards && mode == TrainingScreenMode.VERB_DRILL
@@ -141,6 +144,20 @@ fun TrainingScreen(
             onMore = onVerbDrillMore,
             onExit = onRequestExit
         )
+        return
+    }
+
+    // Universal session completion for all other modes (NORMAL, DRILL, ELITE, BOSS, BOSS_MEGA, MIX_CHALLENGE, DAILY_TRANSLATE, DAILY_VERBS)
+    if (!hasCards) {
+        Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+            SessionCompletionContent(
+                modifier = Modifier.padding(padding),
+                mode = mode,
+                correctCount = state.cardSession.correctCount,
+                incorrectCount = state.cardSession.incorrectCount,
+                onDone = onSessionDone
+            )
+        }
         return
     }
 
@@ -278,9 +295,12 @@ fun TrainingScreen(
             }
 
             // ── Chips for VERB_DRILL / DAILY_VERBS ──────────────────────
-            val drillCard = state.cardSession.currentCard as? VerbDrillCard
             if ((mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS) && drillCard != null) {
-                VerbDrillChips(drillCard)
+                VerbDrillChips(
+                    card = drillCard,
+                    onVerbClick = { showVerbSheet = true },
+                    onTenseClick = { showTenseSheet = true }
+                )
             }
 
             // ── Progress indicator ─────────────────────────────────────
@@ -344,129 +364,24 @@ fun TrainingScreen(
             )
         }
     }
-}
 
-@Composable
-fun HeaderStats(state: TrainingUiState, isDrillMode: Boolean = false) {
-    val total = if (state.boss.bossActive) state.boss.bossTotal else state.cardSession.subLessonTotal
-    val progressIndex = if (total > 0) {
-        if (state.boss.bossActive) {
-            state.boss.bossProgress.coerceIn(0, total)
-        } else {
-            state.cardSession.currentIndex.coerceIn(0, total)
-        }
-    } else {
-        0
+    // Verb/tense bottom sheets for VERB_DRILL and DAILY_VERBS modes
+    if (showVerbSheet && drillCard != null && !drillCard.verb.isNullOrBlank()) {
+        VerbReferenceBottomSheet(
+            verb = drillCard.verb,
+            tense = drillCard.tense,
+            conjugationCards = listOf(drillCard),
+            ttsState = state.audio.ttsState,
+            onSpeakVerb = { onTtsSpeak() },
+            onDismiss = { showVerbSheet = false }
+        )
     }
-    val progressPercent = if (total > 0) {
-        ((progressIndex.toDouble() / total.toDouble()) * 100).toInt()
-    } else {
-        0
-    }
-    val speed = speedPerMinute(state.cardSession.voiceActiveMs, state.cardSession.voiceWordCount)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (!isDrillMode) {
-            Column {
-                Text(text = if (state.boss.bossActive) stringResource(R.string.training_review) else stringResource(R.string.training_progress))
-                val progressText = when {
-                    state.boss.bossActive -> "${progressPercent}% (${progressIndex}/${total})"
-                    state.navigation.mode == TrainingMode.ALL_MIXED -> "${progressPercent}% (${progressIndex}/${total})"
-                    else -> "${progressPercent}%"
-                }
-                Text(
-                    text = progressText,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-        if (!isDrillMode) {
-            Column(horizontalAlignment = Alignment.End) {
-                Text(text = stringResource(R.string.training_time))
-                Text(text = formatTime(state.cardSession.activeTimeMs), fontWeight = FontWeight.SemiBold)
-            }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(text = stringResource(R.string.training_speed))
-            Text(text = speed, fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
-
-@Composable
-fun ModeSelector(
-    state: TrainingUiState,
-    onSelectMode: (TrainingMode) -> Unit,
-    onSelectLesson: (String) -> Unit
-) {
-    var lessonExpanded by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            ModeIconButton(
-                selected = state.navigation.mode == TrainingMode.LESSON,
-                icon = Icons.Default.MenuBook,
-                contentDescription = stringResource(R.string.training_lesson)
-            ) {
-                onSelectMode(TrainingMode.LESSON)
-                lessonExpanded = true
-            }
-            DropdownMenu(
-                expanded = lessonExpanded,
-                onDismissRequest = { lessonExpanded = false }
-            ) {
-                if (state.navigation.lessons.isEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.training_no_lessons)) },
-                        onClick = { lessonExpanded = false }
-                    )
-                } else {
-                    state.navigation.lessons.forEach { lesson ->
-                        DropdownMenuItem(
-                            text = { Text(text = lesson.title) },
-                            onClick = {
-                                lessonExpanded = false
-                                onSelectLesson(lesson.id.value)
-                            }
-                        )
-                    }
-                }
-            }
-        }
-        ModeIconButton(
-            selected = state.navigation.mode == TrainingMode.ALL_SEQUENTIAL,
-            icon = Icons.Default.LibraryBooks,
-            contentDescription = stringResource(R.string.training_all_lessons)
-        ) { onSelectMode(TrainingMode.ALL_SEQUENTIAL) }
-        ModeIconButton(
-            selected = state.navigation.mode == TrainingMode.ALL_MIXED,
-            icon = Icons.Default.SwapHoriz,
-            contentDescription = stringResource(R.string.training_mixed)
-        ) { onSelectMode(TrainingMode.ALL_MIXED) }
-    }
-}
-
-@Composable
-fun ModeIconButton(
-    selected: Boolean,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit
-) {
-    if (selected) {
-        FilledTonalIconButton(onClick = onClick) {
-            Icon(icon, contentDescription = contentDescription)
-        }
-    } else {
-        IconButton(onClick = onClick) {
-            Icon(icon, contentDescription = contentDescription)
-        }
+    if (showTenseSheet && drillCard != null && !drillCard.tense.isNullOrBlank()) {
+        TenseInfoBottomSheet(
+            tenseName = drillCard.tense,
+            tenseInfo = null,
+            onDismiss = { showTenseSheet = false }
+        )
     }
 }
 
@@ -735,16 +650,20 @@ private fun launchVoiceRecognition(
 
 /**
  * Renders verb/tense/group info chips below the prompt for VERB_DRILL mode.
- * Chips show reference data (verb infinitive + rank, abbreviated tense, conjugation group).
+ * Tapping verb chip opens VerbReferenceBottomSheet, tense chip opens TenseInfoBottomSheet.
  */
 @Composable
-private fun VerbDrillChips(card: VerbDrillCard) {
+private fun VerbDrillChips(
+    card: VerbDrillCard,
+    onVerbClick: () -> Unit = {},
+    onTenseClick: () -> Unit = {}
+) {
     val verbText = card.verb
     if (!verbText.isNullOrBlank()) {
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SuggestionChip(
-                onClick = { /* No-op: reference data */ },
+                onClick = onVerbClick,
                 label = {
                     Text(
                         text = if (card.rank != null) "$verbText #${card.rank}" else verbText,
@@ -756,7 +675,7 @@ private fun VerbDrillChips(card: VerbDrillCard) {
             )
             card.tense?.takeIf { it.isNotBlank() }?.let { tenseText ->
                 SuggestionChip(
-                    onClick = { /* No-op: reference data */ },
+                    onClick = onTenseClick,
                     label = {
                         Text(
                             text = abbreviateTense(tenseText),
@@ -768,7 +687,7 @@ private fun VerbDrillChips(card: VerbDrillCard) {
             }
             card.group?.takeIf { it.isNotBlank() }?.let { groupText ->
                 SuggestionChip(
-                    onClick = { /* No-op: reference data */ },
+                    onClick = {},
                     label = {
                         Text(
                             text = groupText,
@@ -846,6 +765,57 @@ private fun VerbDrillCompletionContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = stringResource(R.string.verb_exit))
+        }
+    }
+}
+
+/**
+ * Universal session completion screen for NORMAL, DRILL, ELITE, BOSS, MIX_CHALLENGE,
+ * DAILY_TRANSLATE, DAILY_VERBS modes.
+ * Shows stats + OK button. Stays until user presses OK.
+ */
+@Composable
+private fun SessionCompletionContent(
+    modifier: Modifier = Modifier,
+    mode: TrainingScreenMode,
+    correctCount: Int,
+    incorrectCount: Int,
+    onDone: () -> Unit
+) {
+    val title = when (mode) {
+        TrainingScreenMode.BOSS, TrainingScreenMode.BOSS_MEGA -> stringResource(R.string.training_review_session)
+        TrainingScreenMode.ELITE -> stringResource(R.string.training_refresh_session)
+        TrainingScreenMode.DRILL -> "Drill Complete!"
+        TrainingScreenMode.MIX_CHALLENGE -> "Challenge Complete!"
+        else -> stringResource(R.string.verb_completion_excellent)
+    }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "🎉", fontSize = 48.sp)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = title,
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        val total = correctCount + incorrectCount
+        val rate = if (total > 0) correctCount * 100 / total else 0
+        Text(
+            text = "$correctCount correct / $incorrectCount incorrect ($rate%)",
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onDone,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("OK")
         }
     }
 }

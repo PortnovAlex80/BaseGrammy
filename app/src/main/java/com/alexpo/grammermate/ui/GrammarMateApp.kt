@@ -395,7 +395,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 vm.exitVerbDrillSession()
                                 onNavigate(Routes.VERB_DRILL)
                             },
-                            onNavigate = onNavigate
+                            onNavigate = onNavigate,
+                            onSessionDone = {
+                                val returnTo = state.cardSession.returnTo
+                                when {
+                                    returnTo == Routes.DAILY_PRACTICE -> {
+                                        vm.daily.onBlockComplete()
+                                        onNavigate(Routes.DAILY_PRACTICE)
+                                    }
+                                    else -> onNavigate(Routes.HOME)
+                                }
+                            }
                         )
                     }
 
@@ -557,7 +567,8 @@ private fun TrainingScreenContent(
     onTtsSpeak: () -> Unit,
     hintLevel: HintLevel = HintLevel.EASY,
     onVerbDrillMore: () -> Unit = {},
-    onNavigate: (String) -> Unit = {}
+    onNavigate: (String) -> Unit = {},
+    onSessionDone: () -> Unit = {}
 ) {
     TrainingScreen(
         state = state,
@@ -591,7 +602,8 @@ private fun TrainingScreenContent(
             onNavigate(Routes.HOME)
         },
         onRateCardDifficulty = vm::rateCardDifficulty,
-        onVerbDrillMore = onVerbDrillMore
+        onVerbDrillMore = onVerbDrillMore,
+        onSessionDone = onSessionDone
     )
 }
 
