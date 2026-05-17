@@ -1085,3 +1085,91 @@ All card modes share one submit/retry/voice/wordbank/pause/nav logic in SessionR
 - Navigation (next/prev) and card advancement
 
 Different modes provide different card sources via adapters, but the session behavior is identical.
+
+---
+
+## 12.10 Pomodoro Session Summary (7-Day Statistics)
+
+### 12.10.1 Overview
+
+When a Pomodoro timer reaches 0 (or session completes early), the summary screen is enhanced with a 7-day progress chart showing the current static week (Mon-Sun). The screen shows the LAST session stats (not aggregated), and "easy" means the card was answered correctly with 0 incorrect attempts (not a user rating).
+
+### 12.10.2 Data Model
+
+**New data classes (to be added to `data/Models.kt`):**
+
+```kotlin
+data class PomodoroDayStats(
+    val date: String,          // "yyyy-MM-dd"
+    val cardsCompleted: Int,   // cards answered correctly
+    val cardsShown: Int,       // total cards shown
+    val easyCards: Int,        // cards with incorrectAttemptsForCard == 0
+    val totalMinutes: Int      // session duration in minutes
+)
+
+data class PomodoroHistory(
+    val days: Map<String, PomodoroDayStats>  // keyed by "yyyy-MM-dd"
+)
+```
+
+**Storage:** `grammarmate/pomodoro_history.yaml`
+- Stores up to 7 entries (current static week Mon-Sun)
+- Entries for days outside the current week are pruned on write
+- Multiple sessions on the same day: last session overwrites (not aggregated)
+
+### 12.10.3 Screen Structure
+
+Full-screen overlay replacing training content (same style as existing PomodoroSummaryScreen):
+
+```
++====================================================+
+|                                                     |
+|               Session Summary                       |
+|                                                     |
+|  Duration:  12:34                                   |
+|  Cards completed:  18                               |
+|  Success rate:  72%                                 |
+|  Easy cards:  10                                    |
+|                                                     |
+|  +----------------------------------------------+  |
+|  |  Mon  Tue  Wed  Thu  Fri  Sat  Sun            |  |
+|  |   8    12   15    18                          |  |
+|  |  [##] [##] [##] [##] [  ] [  ] [  ]          |  |
+|  +----------------------------------------------+  |
+|                                                     |
+| +------------------------------------------------+ |
+| |                    Done                        | |
+| +------------------------------------------------+ |
++====================================================+
+```
+
+**Top section -- session stats:**
+- Duration: formatted as M:SS from session active time
+- Cards completed: count of cards answered correctly (`correctCount`)
+- Success rate: `(cardsCompleted / cardsShown) * 100` percent
+- Easy cards: count where `incorrectAttemptsForCard == 0` (answered correctly on first attempt)
+
+**Bottom section -- 7-day progress chart:**
+- Columns: Mon Tue Wed Thu Fri Sat Sun (static current week)
+- Bar height: proportional to `cardsCompleted` (max day in chart = full height)
+- Current day: primary color fill, subtle in-progress indicator (e.g., pulsing border or elevated shadow)
+- Past days with data: filled bars with `cardsCompleted` number label below
+- Future days / empty past days: minimal dot or thin bar placeholder
+- Only shows current static week (Mon-Sun based on today's date)
+
+### 12.10.4 Behavioral Contract
+
+| User Action | System Response | User Outcome |
+|---|---|---|
+| Pomodoro timer reaches 0 | Save session stats to `pomodoro_history.yaml` for today's date. Overwrite if entry exists. Show PomodoroSummaryScreen with last session stats + 7-day chart. | User sees session stats and weekly progress |
+| Multiple sessions same day | Overwrite previous entry for that day with last session data (not aggregated). | Last session shown in chart |
+| No prior data (first session ever) | Show only current session stats. Other 6 days show empty bars/placeholders. | User sees just today's bar |
+| Tap "Done" button | Navigate HOME. | Return to HomeScreen |
+
+### 12.10.5 Integration Notes
+
+- Stats are computed from `PomodoroSessionStats` fields already tracked during the session
+- `easyCards` is derived from per-card tracking: `incorrectAttemptsForCard == 0` at time of correct answer
+- Chart reads from `PomodoroHistory` loaded at summary screen creation
+- History write uses `AtomicFileWriter` (temp -> fsync -> rename) per project file I/O rules
+- Existing PM elements (PM-05 through PM-08) are enhanced; no new overlay is created -- the summary screen gains the 7-day chart section below existing stats

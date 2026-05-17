@@ -245,6 +245,9 @@ TrainingScreen — единственный экземпляр экрана дл
 | 19 | Pause — input cascade (hint) | 3 wrong answers → hint shown → type answer → Check | Check validates, Play activates, no auto-advance |
 | 20 | Pause — input cascade (pomodoro) | Pomodoro pause → type answer → Check | Check validates, Play activates |
 | 21 | Pause — input preserved | Pause → input has text → resume | Input text preserved after resume |
+| 22 | Pomodoro summary stats | Start pomodoro → complete session | Summary shows cardsCompleted, successRate, easyCards |
+| 23 | Pomodoro 7-day chart | Complete session → check summary | Mon-Sun chart visible, current day highlighted |
+| 24 | Pomodoro session overwrite | Complete 2 sessions same day | Last session data shown, not sum |
 
 ### Priority Order
 1. Test cases 1-5 (Daily Practice + regular lesson with all hint levels)

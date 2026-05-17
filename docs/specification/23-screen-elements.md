@@ -17,7 +17,8 @@
 | GrammarMateApp Dialogs | DG | 18 |
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
 | Pomodoro | PM | 9 |
-| **Total** | | **329** |
+| Pomodoro Summary | PS | 7 |
+| **Total** | | **336** |
 
 ---
 
@@ -502,3 +503,17 @@ These shared composables enforce cross-screen UI consistency. Each is used by 2+
 | Difficulty breakdown bars | PM-07 | progress | Pomodoro complete | Horizontal bars per rating (Again/Hard/Good/Easy), proportional to total ratings. | UC-78 AC5 |
 | Session summary screen | PM-08 | card | Pomodoro complete | Full-screen overlay with PM-05 + PM-06 + PM-07 + streak indicator + "Done" button. Shows "Early completion!" if session ended before timer. | UC-78, UC-82 |
 | Exit confirmation dialog | PM-09 | dialog | Pomodoro active + back pressed | AlertDialog: "End Pomodoro session?" with Confirm/Cancel. | UC-80 AC1-4 |
+
+---
+
+## 14. Pomodoro Summary (PS)
+
+| Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
+|---------|-----|------|-------------|---------------------|------------|
+| Session duration | PS-01 | text | Pomodoro complete | Formatted as M:SS from session active time. | UC-88 AC1 |
+| Cards completed count | PS-02 | text | Pomodoro complete | Count of cards answered correctly (`correctCount`). | UC-88 AC1 |
+| Success rate percentage | PS-03 | text | Pomodoro complete | `(cardsCompleted / cardsShown) * 100` formatted as "N%". | UC-88 AC1 |
+| Easy cards count | PS-04 | text | Pomodoro complete | Count where `incorrectAttemptsForCard == 0` at time of correct answer. NOT a user rating — derived from per-card attempt tracking. | UC-88 AC1, AC5 |
+| 7-day bar chart | PS-05 | card | Pomodoro complete | Row of 7 day columns (Mon-Sun). Bar height proportional to `cardsCompleted`. Max day in chart = full height. Current day highlighted with primary color and in-progress indicator. Past days with data: filled bars with number label. Empty/future days: minimal dot placeholder. Shows current static week only. | UC-88 AC2 |
+| Day column with bar + label | PS-06 | card | Per day in chart | Individual day column: abbreviated day label (Mon/Tue/...), proportional bar, `cardsCompleted` number below bar when data exists. | UC-88 AC2 |
+| "Done" button | PS-07 | button | Pomodoro complete | Full-width FilledTonalButton. Navigates to HOME. | UC-88 AC3 |

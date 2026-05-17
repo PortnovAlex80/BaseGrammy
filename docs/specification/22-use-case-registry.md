@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 87 |
-| Total Acceptance Criteria | 468 |
-| Domains | 27 |
+| Total Use Cases | 88 |
+| Total Acceptance Criteria | 473 |
+| Domains | 28 |
 
 ### Per-Domain Counts
 
@@ -43,6 +43,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 25 | Lesson unlock by mastery threshold | 1 | 8 |
 | 26 | Pomodoro Timer | 9 | 36 |
 | 27 | Universal training completion screen | 1 | 7 |
+| 28 | Pomodoro session summary with 7-day progress | 1 | 5 |
 
 ---
 
@@ -413,6 +414,14 @@ Structured registry of all verified use cases extracted from scenario traces and
 | UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
 | UC-87 | View session completion summary | User has answered the last card in a training session (NORMAL, DRILL, ELITE, or MIX_CHALLENGE mode) | 1. System detects session completion (`currentCard == null`, `sessionState == PAUSED`, `subLessonFinishedToken` incremented from previous value). 2. System shows completion screen with stats (correct/incorrect counts, active time). 3. User taps "Done" or presses Back. 4. System navigates to `returnTo` destination (LESSON for lesson sessions). | AC1 [BEHAVIORAL]: After last card is answered in NORMAL mode, completion screen shows with correctCount and incorrectCount visible. AC2 [BEHAVIORAL]: Tap "Done" -> navigate(returnTo). For lesson sessions returnTo=LESSON -> user sees LessonRoadmapScreen. AC3 [BEHAVIORAL]: System Back during completion screen -> same as "Done" (navigate to returnTo). AC4 [NON-DEFAULT]: DAILY_TRANSLATE/VERBS modes do NOT show completion screen -- they navigate to DAILY_PRACTICE for sparkle transition. AC5 [NON-DEFAULT]: VERB_DRILL mode does NOT show universal completion -- it uses existing VerbDrillCompletionContent. AC6 [NON-DEFAULT]: BOSS/BOSS_MEGA modes do NOT show universal completion -- boss reward dialog handles completion feedback. AC7 [NON-DEFAULT]: When Pomodoro timer expired, PomodoroSummaryScreen takes priority over universal completion screen. | TrainingScreen | `ui/screens/TrainingScreen.kt`, `ui/GrammarMateApp.kt`, `feature/training/SessionRunner.kt` | 12-training-card-session.md#12.6 |
+
+---
+
+## Domain 28: Pomodoro Session Summary with 7-Day Progress
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-88 | View pomodoro session summary with 7-day progress | Pomodoro session has completed (timer expired or early completion) | 1. System saves session stats to `pomodoro_history.yaml` for today's date. 2. System displays PomodoroSummaryScreen with last session stats (duration, cardsCompleted, successRate, easyCards). 3. System displays 7-day bar chart showing Mon-Sun columns for current static week. 4. Current day highlighted with primary color. 5. User taps "Done" to navigate HOME. | AC1 [BEHAVIORAL]: After pomodoro timer expires, summary shows cardsCompleted count, successRate percentage, and easyCards count (where incorrectAttemptsForCard == 0). AC2 [BEHAVIORAL]: 7-day chart shows Mon-Sun columns with current day highlighted in primary color. Past days with data show filled bars with number labels. Empty days show minimal placeholders. AC3 [BEHAVIORAL]: Tap "Done" -> navigate HOME. AC4 [NON-DEFAULT]: Multiple sessions same day -> last session data overwrites previous entry (not aggregated). AC5 [NON-DEFAULT]: "Easy" = answered correctly with 0 incorrect attempts (incorrectAttemptsForCard == 0), not a user-submitted difficulty rating. | PomodoroSummaryScreen | `ui/screens/PomodoroSummaryScreen.kt`, `data/Models.kt` | 12-training-card-session.md#12.10 |
 
 ---
 
