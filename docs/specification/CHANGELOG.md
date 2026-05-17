@@ -2,6 +2,17 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [TASK-061: DailyPractice Block-Config Coordinator] - 2026-05-17
+
+### Changed
+- `12-training-card-session.md`: Updated section 12.5.2 (Daily Practice Integration) to document the new block-config orchestration model. DailySessionState now uses `List<DailyBlock>` instead of flat `List<DailyTask>`. Single completion path via `coordinator.onBlockComplete()`.
+- `Models.kt`: Added `DailyBlock` data class with type/tasks/isComplete/renderVia. Added `BlockRenderVia` enum. Updated `DailySessionState` to use blocks+blockIndex instead of tasks+taskIndex+blockIndex.
+- `DailyPracticeCoordinator.kt`: Rewritten to block-config model. Removed advanceToNextBlock(), advanceDailyBlock(), replaceCurrentBlock() scanning logic. Added onBlockComplete() single completion path.
+- `DailySessionComposer.kt`: Added buildBlocks(), buildRepeatBlocks(), rebuildBlockAsBlock(), tasksToBlocks() methods.
+- `DailyPracticeScreen.kt`: Simplified to use currentBlock+currentTask instead of taskIndex-based navigation. VOCAB block signals completion via onComplete callback.
+- `GrammarMateApp.kt`: Updated DailyPracticeScreenContent to use new coordinator API. Updated daily block completion detection in NavDialogs.
+- `TrainingViewModel.kt`: Replaced advanceDailyTask() with onDailyBlockComplete(). Removed redundant delegation methods.
+
 ## [TASK-054: TrainingScreen TCS Migration] - 2026-05-16
 
 ### Changed

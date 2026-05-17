@@ -7,7 +7,8 @@ TrainingCardSession is a reusable Compose composable that provides the entire ca
 > **Design Principle — Universal Card Engine:** TrainingScreen (via TrainingCardSession + SessionRunner) is the universal card training engine. All card-based training uses the same UI, navigation, input controls, and feedback. Modes differ ONLY in:
 > 1. Card source (which cards are loaded into `sessionCards`)
 > 2. Scoring logic (mastery tracking, boss rewards)
-> 3. Exit destination (HOME vs LESSON)
+> 3. Visual theme (normal background)
+> 4. Exit destination (HOME vs LESSON)
 >
 > **All 7 modes are Tier 1 sub-modes of TrainingScreen:**
 > 1. **TRAINING_NORMAL** — standard sub-lessons (cards from MixedReviewScheduler)
@@ -26,7 +27,22 @@ TrainingCardSession is a reusable Compose composable that provides the entire ca
 >
 > **Drill sub-mode key change:** Instead of loading 1 card at a time via `advanceDrillCard()`, drill loads ALL `lesson.drillCards` into `sessionCards` and uses standard `navigateNext()`/`navigatePrev()` navigation. Progress tracked via `drillProgressStore` with `drillCardIndex`. Mastery NOT counted.
 
-All 7 modes share the same visual layout, input methods, feedback animations, navigation pattern, and unified header with back arrow. The only difference between training modes is **card selection and scoring logic**, not the card training UI. One theme for all modes — no green drill theme or other custom themes.
+The component is consumed by two tiers of training modes:
+
+**Tier 1 — Sub-modes within TrainingScreen (5 modes):**
+1. **TRAINING_NORMAL** — standard sub-lessons (via MixedReviewScheduler).
+2. **TRAINING_BOSS** — boss battle review (cards from lesson pool).
+3. **TRAINING_BOSS_MEGA** — mega boss battle.
+4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once, mastery NOT counted).
+5. **TRAINING_ELITE** — elite/daily step.
+
+**Tier 2 — Separate screens using TrainingCardSession component (2 modes):**
+6. **Verb Drill** (via `VerbDrillCardSessionProvider` wrapping `VerbDrillViewModel`).
+7. **Daily Practice Blocks 1 and 3** — translation and verb conjugation (via `DailyPracticeSessionProvider`).
+
+**Excluded:** VocabDrill (Block 2 / standalone) uses an Anki-style flashcard flip UI — fundamentally different interaction pattern, does NOT use TrainingCardSession.
+
+The key design principle: the only difference between training modes is **card selection and scoring logic**, not the card training UI. All modes share the same visual layout, input methods, feedback animations, navigation pattern, and unified header with back arrow. One theme for all modes — no green drill theme or other custom themes.
 
 > **Note:** Drill sub-mode (TRAINING_DRILL) was added to the unified model in spec update 2026-05-16. Previously it used a separate `advanceDrillCard()` mechanism.
 
@@ -40,6 +56,117 @@ All 7 modes share the same visual layout, input methods, feedback animations, na
 | `feature/daily/DailyPracticeSessionProvider.kt` | Adapter for Daily Practice translation and verb blocks |
 | `ui/VerbDrillScreen.kt` | Verb Drill screen: selection screen + `TrainingCardSession` with custom slots + reference sheets |
 | `ui/DailyPracticeScreen.kt` | Daily Practice screen: 3-block session with `TrainingCardSession` for blocks 1 and 3 |
+
+### §12.1.1 Unified Screen Architecture
+
+TrainingScreen is the ONE AND ONLY screen for all card-based training. All 7 modes render through it. There are no separate card session screens.
+
+**Navigation flow:**
+```
+VerbDrillSelectionScreen → TrainingScreen(mode=VERB_DRILL)
+HomeScreen lesson tile   → TrainingScreen(mode=NORMAL/BOSS/etc)
+DailyPracticeScreen      → TrainingScreen(mode=DAILY) for blocks 1&3
+```
+
+**TrainingScreen renders identically for all modes — only 3 things change:**
+
+1. **Card source** — `List<SessionCard>` on input. Where cards come from.
+2. **Completion callback** — what happens when session ends (mastery++, combo progress, block transition, etc.)
+3. **UI slots** — chips (verb/tense/group) for VERB_DRILL/DAILY_VERBS only.
+
+**ASCII — TrainingScreen universal layout:**
+```
++====================================================+
+| [←]  Sentence Trainer                              |
++====================================================+
+| (subtitle — mode-specific)                         |
+|                                                     |
+| NORMAL:    Present Simple / я говорю по-ит...       |
+| BOSS:      Review Session                           |
+| BOSS_MEGA: Mega Boss Battle                         |
+| ELITE:     Refresh Session                          |
+| DRILL:     Present Simple / я говорю по-ит...       |
+| VERB_DRILL: Present Simple / я говорю              |
+| DAILY:     [TRANSLATE] or [VERBS] block chip        |
+|                                                     |
+| [======>          ] N/M                             |
+|                                                     |
+| +------------------------------------------------+ |
+| | RU                                             | |
+| | prompt text                           [TTS]    | |
+| | [verb chip] [tense chip] [group chip]  ← only  |
+| |                                       VERB_DRILL|
+| +------------------------------------------------+ |
+|                                                     |
+| Your translation                            [Mic]  |
+| +--------------------------------------------+     |
+| |                                        [mic]|     |
+| +--------------------------------------------+     |
+| [Mic] [Kbd] [Books]       [Eye] [!]  mode label    |
+| +------------------------------------------------+ |
+| |                  Check                        | |
+| +------------------------------------------------+ |
+|                                                     |
+| [<Prev]    [Play/Pause]  [Stop]    [Next>]         |
++====================================================+
+```
+
+**ASCII — VerbDrill flow:**
+```
+SelectionScreen (unchanged):
++====================================================+
+| [←]  Verb Drill                                    |
++====================================================+
+| Select tense:    [All tenses ▾]                     |
+| Select group:    [All groups ▾]                     |
+| [x] Sort by frequency                               |
+| 42/120 practiced | 8 today                          |
+| [=============                ]                     |
+| [Continue]                                          |
++====================================================+
+          │
+          │ onStartSession(cards)
+          ▼
+TrainingScreen(mode=VERB_DRILL):
+  (same layout as above, with verb/tense chips in card)
+```
+
+**ASCII — DailyPractice flow:**
+```
++====================================================+
+| [←]  Daily Practice                                |
++====================================================+
+| [=============>                   ] 15/25  overall  |
++====================================================+
+|                                                     |
+| ┌─ TrainingScreen(mode=DAILY, block=TRANSLATE) ──┐ |
+| │ (standard card session — no chips)              │ |
+| └────────────────────────────────────────────────┘ |
+|                                                     |
+| (Block 2 Vocab — Anki flip cards, unchanged)       |
+|                                                     |
+| ┌─ TrainingScreen(mode=DAILY, block=VERBS) ──────┐ |
+| │ (card session with verb/tense/group chips)      │ |
+| └────────────────────────────────────────────────┘ |
+|                                                     |
+| Block transitions: sparkle overlay (800ms)          |
++====================================================+
+```
+
+**Mode differences table:**
+
+| Mode | Card source | Chips | Completion callback | Exit to |
+|------|------------|-------|-------------------|--------|
+| NORMAL | Lesson CSV schedule | No | mastery++, flower | LESSON |
+| BOSS | Lesson pool cards | No | boss reward | LESSON |
+| BOSS_MEGA | Lesson pool cards | No | boss reward | LESSON |
+| ELITE | Refresh cards | No | mastery refresh | LESSON |
+| DRILL | Lesson drill cards | No | none (mastery NOT counted) | LESSON |
+| VERB_DRILL | Verb CSV filtered | Yes (verb, tense) | combo progress | HOME→VerbDrill |
+| DAILY_TRANSLATE | Daily sentence tasks | No | block transition | next block |
+| DAILY_VERBS | Daily verb tasks | Yes (verb, tense, group) | block transition | next block |
+
+**Excluded:** VocabDrill (Anki flip card paradigm — fundamentally different).
 
 ---
 
@@ -74,6 +201,7 @@ Optional capability flags that adapters declare. All default to `false`:
 | `supportsFlagging` | Shows report/flag button that opens bottom sheet |
 | `supportsNavigation` | Shows bottom navigation row (prev/pause/exit/next) |
 | `supportsPause` | Shows pause/play toggle button in navigation |
+| `supportsDrillTheme` | Shows green prompt text, green tense labels when `isDrillMode == true` |
 
 ### 12.2.3 Supporting Data Classes
 
@@ -369,24 +497,47 @@ Verb Drill uses `TrainingCardSession` with four custom slots:
 
 **File:** `ui/DailyPracticeScreen.kt`
 
-Daily Practice uses `TrainingCardSession` for blocks 1 (Translation) and 3 (Verb Conjugation). Block 2 (Vocab Flashcard) uses a completely separate composable (`VocabFlashcardBlock`). Blocks 1 and 3 delegate to TrainingScreen as sub-modes, sharing the same session engine as all other card modes.
+Daily Practice uses a block-config orchestration model. The coordinator (`DailyPracticeCoordinator`) builds an ordered list of `DailyBlock` objects, each with a type (TRANSLATE, VOCAB, VERBS) and a list of tasks. Blocks 1 (Translation) and 3 (Verb Conjugation) are rendered via TrainingScreen. Block 2 (Vocab Flashcard) uses a completely separate composable (`VocabFlashcardBlock`) rendered inline within DailyPracticeScreen.
 
 **Daily Block 3 (Verbs) = VerbDrill:** Same chips (verb infinitive, rank, tense), same logic, same session behavior as VerbDrill mode. No separate implementation.
 
-**Session flow:**
+**Data model:**
 
-1. `DailyPracticeScreen` dispatches to `CardSessionBlock` for TRANSLATE and VERBS blocks.
-2. `CardSessionBlock` creates a `DailyPracticeSessionProvider` scoped by `(blockIndex, taskIndex, tasks.size)`.
-3. `DailyTrainingCardSession` wraps `TrainingCardSession` with custom `cardContent` (adds verb/tense chips like Verb Drill) and custom `inputControls` (`DailyInputControls`).
-4. On block completion, `onAdvanceBlock()` moves to the next block. A `BlockSparkleOverlay` shows the transition animation.
+```
+DailySessionState(
+    active: Boolean,
+    blocks: List<DailyBlock>,
+    blockIndex: Int,
+    level: Int,
+    finishedToken: Boolean
+)
+
+DailyBlock(
+    type: DailyBlockType,
+    tasks: List<DailyTask>,
+    isComplete: Boolean
+)
+```
+
+**Coordinator flow:**
+
+1. `DailyPracticeCoordinator.startDailyPractice()` builds blocks via `DailySessionComposer.buildBlocks()`.
+2. Coordinator stores blocks in `DailySessionState.blocks` and sets `blockIndex = 0`.
+3. For TRANSLATE/VERBS blocks (`renderVia == TRAINING_SCREEN`): DailyPracticeScreen calls `onStartCardBlock()` which navigates to TrainingScreen with the block's cards.
+4. For VOCAB blocks (`renderVia == INLINE`): DailyPracticeScreen renders the `VocabFlashcardBlock` inline.
+5. On block completion, a single `coordinator.onBlockComplete()` call advances `blockIndex`. If more blocks exist, the next block starts. If all blocks are done, `endSession()` fires.
+6. TRANSLATE/VERBS completion: TrainingScreen sets `subLessonFinishedToken` -> GrammarMateApp detects daily mode -> `coordinator.onBlockComplete()` -> navigate back to DAILY_PRACTICE.
+7. VOCAB completion: DailyPracticeScreen calls `coordinator.onBlockComplete()` directly via the `onComplete` callback.
+
+**Single completion path:** ALL blocks signal completion through ONE mechanism: `onBlockComplete()` -> `blockIndex++` -> `startNextBlock`. No more `advanceDailyBlock()` / `advanceToNextBlock()` scanning logic.
 
 **Customizations:**
-- Unified header with back arrow, "Daily Practice" subtitle, and block label chip (primaryContainer card). No settings gear.
-- `BlockProgressBar` (separate from TrainingCardSession's progress indicator) shows overall session progress.
+- Custom header with back arrow, "Daily Practice" title, and block label chip (primaryContainer card).
+- `BlockProgressBar` (separate from TrainingCardSession's progress indicator) shows overall session progress across all blocks.
 - Block transition sparkle overlay between blocks.
 - `DailyPracticeCompletionScreen` at the end of all 3 blocks.
 
-**Adapter:** `DailyPracticeSessionProvider`. Capabilities: TTS true, voice true, word bank true, flagging false (no report button in daily practice), navigation true, pause true.
+**Adapter:** `DailyPracticeSessionProvider`. Capabilities: TTS true, voice true, word bank true, flagging true, navigation true, pause true.
 
 **Progress persistence:** `onCardAdvanced` callback is called for each card advanced (only for non-WORD_BANK modes). For `ConjugateVerb` tasks, it calls `onPersistVerbProgress`. For all tasks, it calls `onCardPracticed` for cursor advancement tracking.
 
@@ -398,12 +549,12 @@ Standard lesson training in TrainingScreen will use `TrainingCardSession` via a 
 - Wraps `SessionRunner` and reads from `TrainingUiState`
 - Capabilities: all true (TTS, voice, word bank, flagging, navigation, pause)
 - Handles sub-mode switching transparently — no conditional logic in the composable
-- One theme for all modes — no green drill theme or other custom themes
+- Drill sub-mode visual differences handled via `supportsDrillTheme` capability
 
 **Sub-mode handling in adapter:**
 - All 5 sub-modes share the same card presentation, input, and navigation slots
 - BOSS mode: custom progress display (boss progress bar instead of sub-lesson progress)
-- DRILL mode: no mastery tracking, standard theme
+- DRILL mode: drill theme via `supportsDrillTheme`, no mastery tracking
 - ELITE mode: standard flow, different card source
 
 **Custom slots:**
@@ -440,8 +591,9 @@ Drill is a sub-mode of TrainingScreen, triggered by the DrillTile on LessonRoadm
 **Navigation:** Standard `navigateNext()` / `navigatePrev()` — identical to normal training. No special drill navigation functions.
 
 **Visual theme:**
-- One theme for all modes — no custom green background or green text tint.
-- All UI elements (input controls, navigation row, check button) remain standard across modes.
+- Tense labels: green color instead of primary.
+- Prompt text tint: green instead of default.
+- All other UI elements (input controls, navigation row, check button) remain standard.
 
 **Progress tracking:**
 - `drillProgressStore` tracks `drillCardIndex` per lesson.

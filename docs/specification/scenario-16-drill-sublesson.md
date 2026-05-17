@@ -2,7 +2,7 @@
 
 ## Overview
 
-Drill sub-mode provides additional practice on lesson-specific sentence cards within TrainingScreen. Unlike standalone VerbDrill, drill sub-mode has no selection screen — the lesson pack author pre-curates `lesson.drillCards` for this lesson's theme and tense, so the user goes directly into practice. The UI and mechanics are identical to normal training: same navigation, same input modes, same feedback. The only differences are visual (green theme) and scoring (mastery not counted).
+Drill sub-mode provides additional practice on lesson-specific sentence cards within TrainingScreen. Unlike standalone VerbDrill, drill sub-mode has no selection screen — the lesson pack author pre-curates `lesson.drillCards` for this lesson's theme and tense, so the user goes directly into practice. The UI and mechanics are identical to normal training: same navigation, same input modes, same feedback. The only differences are visual (green accents on tense labels and prompt text) and scoring (mastery not counted).
 
 Relationship to standalone VerbDrill: Drill sub-mode is a lesson-scoped VerbDrill without the SelectionScreen. Where VerbDrill lets users choose verb/tense/group, drill sub-mode uses the lesson's pre-built card set.
 
@@ -32,7 +32,7 @@ Relationship to standalone VerbDrill: Drill sub-mode is a lesson-scoped VerbDril
 4. Sets `isDrillMode=true`, `drillCardIndex=0`, `drillTotalCards=drillCards.size`
 5. Sets `currentIndex=0`, `currentCard=drillCards[0]`, `subLessonTotal=drillCards.size`
 6. Sets `sessionState=PAUSED` (user must press Play)
-7. Visual: green background, green prompt text, green tense labels
+7. Visual: green prompt text, green tense labels
 
 ### Path B: Resume
 1. User taps "Continue"
@@ -41,7 +41,7 @@ Relationship to standalone VerbDrill: Drill sub-mode is a lesson-scoped VerbDril
 4. Same as Path A but starts at saved index
 
 ### Post-condition
-- TrainingScreen visible with green drill theme
+- TrainingScreen visible in drill mode
 - All drill cards loaded in `sessionCards`
 - Standard navigation available (Next/Prev/Pause/Play/Exit)
 
@@ -108,7 +108,7 @@ For each card in `sessionCards`:
 | Card source | MixedReviewScheduler | lesson.drillCards |
 | Cards per session | 10 (sub-lesson size) | All drill cards |
 | Mastery counted | Yes (VOICE/KEYBOARD only) | No |
-| Visual theme | Default | Green (0xFFE8F5E9) |
+| Visual theme | Default | Default |
 | Progress store | progressStore + masteryStore | drillProgressStore |
 | Exit destination | LESSON | LESSON |
 | Navigation | navigateNext/navigatePrev | SAME (navigateNext/navigatePrev) |

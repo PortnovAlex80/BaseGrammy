@@ -28,7 +28,8 @@ The app separates card browsing from active practice. PAUSED = browsing mode, AC
 All card-based training modes are sub-modes of TrainingScreen. The only differences between modes are:
 1. **Card source** — which cards populate `sessionCards` (schedule, boss pool, drill cards, etc.)
 2. **Scoring** — whether mastery is counted, whether boss rewards apply
-3. **Exit** — destination screen after completion
+3. **Theme** — standard theme for all modes
+4. **Exit** — destination screen after completion
 
 All 7 modes (NORMAL, BOSS, BOSS_MEGA, ELITE, DRILL, VERB_DRILL, DAILY_PRACTICE) are Tier 1 sub-modes of TrainingScreen. Different modes = different card sources fed into SessionRunner. There are no Tier 2 separate screens — VerbDrillScreen's card session portion and DailyPracticeScreen's card blocks (1 and 3) run through TrainingScreen.
 

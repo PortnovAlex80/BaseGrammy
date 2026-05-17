@@ -60,7 +60,7 @@ Key decisions:
 **Phase 2: Seamless Continuous Drill (2026-05-08)**
 One day later, the design was revised to remove the group-based fragmentation. The new design introduced:
 - Continuous sequential card stream with no pauses
-- Green theme override during drill mode (mint background, green accents)
+- Drill mode visual accents (green tense labels, green prompt text)
 - Circular progress indicator replacing the text counter
 - Progress tracked by card index instead of group index
 - Long-press on Drill tile to reset progress

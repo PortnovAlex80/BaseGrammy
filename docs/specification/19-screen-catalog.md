@@ -187,8 +187,8 @@ Global dialogs (overlay on any screen):
 - **Source file**: `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt` (composable at line 2554)
 - **Parent**: LessonRoadmapScreen (start sub-lesson, boss, or drill)
 - **Key UI elements**:
-  - **Scaffold TopBar**: "Тренажер предложений" title (localized ru/en/it) + Back arrow [<-]. No settings gear in training headers — settings only from HomeScreen.
-  - **Session header**: "Review Session" (boss), "Refresh Session" (elite), or mode-specific subtitle
+  - **Scaffold TopBar**: "GrammarMate" title + Settings gear IconButton
+  - **Session header**: "Review Session" (boss), "Refresh Session" (elite), or drill-specific header
   - **Tense label**: Optional (13sp, SemiBold) when card has tense
   - **Prompt text**: Russian prompt with parenthetical hints stripped (18sp * ruTextScale)
   - **DrillProgressRow**: Progress bar (70% width, green fill, "X/Y" overlay) + Speedometer (30% width, Canvas arc, color by WPM: red <=20, yellow <=40, green >40)
@@ -214,7 +214,6 @@ Global dialogs (overlay on any screen):
   - Voice mode auto-triggers on new card (200ms delay), auto-submits on result
   - Check disabled when input blank, no cards, or session paused
   - Boss mode uses `bossProgress`/`bossTotal`; Drill mode uses standard `navigateNext()`/`navigatePrev()` through `sessionCards` (all drill cards loaded at once). Progress tracked via `drillProgressStore`
-  - Drill mode: standard theme (no custom green background)
   - TTS requires model download (~346 MB)
   - Report sheet: flag/unflag persisted immediately; export to `Downloads/BaseGrammy/bad_sentences_all.txt`
 - **Cross-reference**: Russian spec section 4 matches closely. Note: Russian spec says TrainingScreen "does NOT use TrainingCardSession" which matches code (it has its own inline implementation). The report sheet in Training is a `ModalBottomSheet`, not a Dialog, matching both specs. No discrepancies.

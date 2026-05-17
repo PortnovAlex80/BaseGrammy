@@ -178,7 +178,7 @@ All dialogs use Material 3 `AlertDialog` or `ModalBottomSheet`.
 | `secondaryContainer` at 70% | `secondaryContainer.copy(alpha = 0.7f)` | VocabDrillEntryTile |
 | `surfaceVariant` (disabled) | `surfaceVariant` | Disabled DrillTile |
 | `primaryContainer` (enabled) | `primaryContainer` | Enabled DrillTile |
-| Default Card (drill green) | N/A -- background only | TrainingScreen scaffold in drill mode uses `Color(0xFFE8F5E9)` as containerColor |
+
 
 ### 14.2.4 Progress Indicators
 
@@ -458,7 +458,6 @@ Emoji characters are used extensively for flower state visualization (see sectio
 
 | Element | Color | Hex |
 |---|---|---|
-| Drill background | Light green | `#E8F5E9` |
 | Drill prompt tense label | Medium green | `#388E3C` |
 | Drill prompt text | Dark green | `#2E7D32` |
 | Vocab mastered count | Dark green | `#2E7D32` |
@@ -659,7 +658,6 @@ The following hardcoded colors need dark-mode equivalents. Each color has an exa
 
 | Current Hardcoded | Location | Dark Mode Value | Rationale |
 |---|---|---|---|
-| `Color(0xFFE8F5E9)` drill background | TrainingScreen | `Color(0xFF1B3A1D)` | Dark muted green |
 | `Color(0xFF388E3C)` drill tense label | TrainingScreen | `Color(0xFF81C784)` | Light green for readability on dark |
 | `Color(0xFF2E7D32)` drill prompt / vocab mastered | Multiple | `Color(0xFF66BB6A)` | Medium green for dark bg |
 | `Color(0xFF4CAF50)` progress bar fill | DrillProgressRow | `Color(0xFF66BB6A)` | Same medium green |
@@ -723,7 +721,7 @@ val ColorScheme.drillBackground: Color
 
 | Screen | Status | Issues |
 |--------|--------|--------|
-| TrainingScreen | BROKEN | Drill background, mix challenge, tense labels, result text all hardcoded light-mode |
+| TrainingScreen | BROKEN | Mix challenge, tense labels, result text all hardcoded light-mode |
 | VocabDrillScreen | BROKEN | Card backgrounds (correct/incorrect), interval labels, mastery text all hardcoded |
 | DailyPracticeScreen | BROKEN | All 4 SRS rating button backgrounds hardcoded pastel |
 | SessionProgressIndicator | BROKEN | Progress track and speedometer track hardcoded light colors |

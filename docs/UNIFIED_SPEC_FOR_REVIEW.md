@@ -314,7 +314,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 |---------|----|------|-------------|----------------------|------------|
 | Scaffold TopBar title | TS-01 | text | Always | "GrammarMate" in titleLarge, Bold. | ? |
 | Settings gear (top bar) | TS-02 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()` + `onShowSettings()`. | ? |
-| Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`, green-tinted text in drill mode. | ? |
+| Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`. | ? |
 | Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). In drill mode: green (0xFF388E3C). | ? |
 | Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), `(18f * ruTextScale).sp`, Medium weight. Green tint in drill mode. | UC-56 |
 | DrillProgressRow (progress bar) | TS-06 | progress-bar | Always | Rounded green bar (70% width, #4CAF50 on #C8E6C9 track). "N / Total" text overlay. Text color flips dark-green-to-white at 12% fill. | ? |
@@ -347,7 +347,6 @@ Structured registry of all verified use cases extracted from scenario traces and
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text. | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
-| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). | ? |
 | Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #01565C0). | ? |
 
 ---

@@ -8,7 +8,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -20,14 +19,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -37,8 +37,10 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,31 +56,30 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.ui.CorrectGreen
-import com.alexpo.grammermate.ui.DrillBackgroundGreen
 import com.alexpo.grammermate.ui.DrillPromptGreen
 import com.alexpo.grammermate.ui.DrillTenseLabelGreen
 import com.alexpo.grammermate.ui.IncorrectRed
 import com.alexpo.grammermate.ui.MixChallengeSurface
 import com.alexpo.grammermate.ui.MixChallengeText
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingMode
+import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.ui.components.AsrStatusIndicator
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.QrShareDialog
@@ -120,14 +121,30 @@ fun TrainingScreen(
     onPausePomodoro: () -> Unit = {},
     onResumePomodoro: () -> Unit = {},
     onCancelPomodoro: () -> Unit = {},
-    onRateCardDifficulty: (com.alexpo.grammermate.data.CardDifficultyRating) -> Unit = {}
+    onRateCardDifficulty: (com.alexpo.grammermate.data.CardDifficultyRating) -> Unit = {},
+    onVerbDrillMore: () -> Unit = {}
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
-    val drillGreen = DrillBackgroundGreen
+    val mode = state.cardSession.screenMode
+
+    // Derive verb drill flag from screenMode instead of boolean param
+    val isVerbDrillMode = mode == TrainingScreenMode.VERB_DRILL
+
+    // VERB_DRILL completion: show stats + More/Exit buttons instead of card session
+    val isVerbDrillComplete = isVerbDrillMode && !hasCards && mode == TrainingScreenMode.VERB_DRILL
+    if (isVerbDrillComplete) {
+        VerbDrillCompletionContent(
+            correctCount = state.cardSession.correctCount,
+            incorrectCount = state.cardSession.incorrectCount,
+            onMore = onVerbDrillMore,
+            onExit = onRequestExit
+        )
+        return
+    }
 
     Scaffold(
-        containerColor = if (state.drill.isDrillMode) drillGreen else MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(
                 modifier = Modifier
@@ -183,88 +200,89 @@ fun TrainingScreen(
                     todayFireCount = state.cardSession.todayFireCount,
                     onDone = { onCancelPomodoro() }
                 )
-            } else if (state.boss.bossActive) {
-                Text(text = stringResource(R.string.training_review_session), fontWeight = FontWeight.SemiBold)
-            } else if (state.elite.eliteActive) {
-                Text(text = stringResource(R.string.training_refresh_session), fontWeight = FontWeight.SemiBold)
-            } else if (state.drill.isDrillMode) {
-                // Drill: prompt without hints + progress bar + speedometer
-                val cardTense = state.cardSession.currentCard?.tense
-                if (!cardTense.isNullOrBlank()) {
-                    Text(
-                        text = cardTense,
-                        fontSize = 13.sp,
-                        color = DrillTenseLabelGreen,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            } else {
+            // ── Header subtitle: varies by mode ────────────────────────
+            when (mode) {
+                TrainingScreenMode.BOSS, TrainingScreenMode.BOSS_MEGA -> {
+                    Text(text = stringResource(R.string.training_review_session), fontWeight = FontWeight.SemiBold)
                 }
-                val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
-                val cleanPrompt = HintCalculator.calculateEffectiveHints(
-                    promptRu = rawPrompt,
-                    encounterCount = state.cardSession.encounterCount,
-                    hintLevel = hintLevel,
-                    sessionOffset = state.cardSession.hintSessionOffset,
-                    isBossBattle = false
+                TrainingScreenMode.ELITE -> {
+                    Text(text = stringResource(R.string.training_refresh_session), fontWeight = FontWeight.SemiBold)
+                }
+                else -> {
+                    // NORMAL, DRILL, VERB_DRILL — tense label + prompt
+                    val sentenceCard = state.cardSession.currentCard as? SentenceCard
+                    val cardTense = sentenceCard?.tense
+                    val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
+                    if (!cardTense.isNullOrBlank()) {
+                        if (isDrillStyle) {
+                            Text(
+                                text = cardTense,
+                                fontSize = 13.sp,
+                                color = DrillTenseLabelGreen,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            val isMixChallenge = state.navigation.mode == TrainingMode.MIX_CHALLENGE
+                            if (isMixChallenge) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MixChallengeSurface
+                                ) {
+                                    Text(
+                                        text = cardTense,
+                                        fontSize = 14.sp,
+                                        color = MixChallengeText,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = cardTense,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Prompt text ────────────────────────────────────────────
+            val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
+            val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+            val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
+            if (cleanPrompt.isNotBlank()) {
+                Text(
+                    text = cleanPrompt,
+                    fontSize = (18f * state.audio.ruTextScale).sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isDrillStyle) DrillPromptGreen else MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                if (cleanPrompt.isNotBlank()) {
-                    Text(
-                        text = cleanPrompt,
-                        fontSize = (18f * state.audio.ruTextScale).sp,
-                        fontWeight = FontWeight.Medium,
-                        color = DrillPromptGreen,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            }
+
+            // ── Chips for VERB_DRILL / DAILY_VERBS ──────────────────────
+            val drillCard = state.cardSession.currentCard as? VerbDrillCard
+            if ((mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS) && drillCard != null) {
+                VerbDrillChips(drillCard)
+            }
+
+            // ── Progress indicator ─────────────────────────────────────
+            if (state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL) {
+                val drillCurrent = if (state.drill.isDrillMode) state.drill.drillCardIndex else state.cardSession.currentIndex
+                val drillTotal = if (state.drill.isDrillMode) state.drill.drillTotalCards else state.cardSession.subLessonTotal
                 SessionProgressIndicator(
-                    current = state.drill.drillCardIndex + 1,
-                    total = state.drill.drillTotalCards,
+                    current = drillCurrent + 1,
+                    total = drillTotal,
                     speedWpm = if (state.cardSession.voiceActiveMs > 0) (state.cardSession.voiceWordCount / (state.cardSession.voiceActiveMs / 60000.0)).toInt() else 0
                 )
             } else {
-                val cardTense = state.cardSession.currentCard?.tense
-                val isMixChallenge = state.navigation.mode == TrainingMode.MIX_CHALLENGE
-                if (!cardTense.isNullOrBlank()) {
-                    if (isMixChallenge) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.small,
-                            color = MixChallengeSurface
-                        ) {
-                            Text(
-                                text = cardTense,
-                                fontSize = 14.sp,
-                                color = MixChallengeText,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = cardTense,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-                val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
-                val cleanPrompt = HintCalculator.calculateEffectiveHints(
-                    promptRu = rawPrompt,
-                    encounterCount = state.cardSession.encounterCount,
-                    hintLevel = hintLevel,
-                    sessionOffset = state.cardSession.hintSessionOffset,
-                    isBossBattle = state.boss.bossActive
-                )
-                if (cleanPrompt.isNotBlank()) {
-                    Text(
-                        text = cleanPrompt,
-                        fontSize = (18f * state.audio.ruTextScale).sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
                 val total = if (state.boss.bossActive) state.boss.bossTotal else state.cardSession.subLessonTotal
                 val current = if (state.boss.bossActive) state.boss.bossProgress else state.cardSession.currentIndex
                 SessionProgressIndicator(
@@ -273,37 +291,37 @@ fun TrainingScreen(
                     speedWpm = if (state.cardSession.voiceActiveMs > 0) (state.cardSession.voiceWordCount / (state.cardSession.voiceActiveMs / 60000.0)).toInt() else 0
                 )
             }
-            if (!state.pomodoro.isComplete) {
-                CardPrompt(state, onSpeak = onTtsSpeak)
-                AnswerBox(
-                    state,
-                    onInputChange,
-                    onSubmit,
-                    onSetInputMode,
-                    onShowAnswer,
-                    onVoicePromptStarted,
-                    onSelectWordFromBank,
-                    onRemoveLastWord,
-                    hasCards,
-                    onFlagBadSentence,
-                    onUnflagBadSentence,
-                    onHideCard,
-                    onExportBadSentences,
-                    isBadSentence,
-                    onStartOfflineRecognition,
-                    hintLevel
+
+            CardPrompt(state, onSpeak = onTtsSpeak)
+            AnswerBox(
+                state,
+                onInputChange,
+                onSubmit,
+                onSetInputMode,
+                onShowAnswer,
+                onVoicePromptStarted,
+                onSelectWordFromBank,
+                onRemoveLastWord,
+                hasCards,
+                onFlagBadSentence,
+                onUnflagBadSentence,
+                onHideCard,
+                onExportBadSentences,
+                isBadSentence,
+                onStartOfflineRecognition,
+                hintLevel
+            )
+            ResultBlock(state)
+            // Pomodoro difficulty rating prompt
+            if (state.pomodoro.isActive && state.pomodoro.showRatingPrompt) {
+                DifficultyRatingRow(
+                    onRatingSelected = { rating ->
+                        onRateCardDifficulty(rating)
+                        onNext()
+                    }
                 )
-                ResultBlock(state)
-                // Pomodoro difficulty rating prompt
-                if (state.pomodoro.isActive && state.pomodoro.showRatingPrompt) {
-                    DifficultyRatingRow(
-                        onRatingSelected = { rating ->
-                            onRateCardDifficulty(rating)
-                            onNext()
-                        }
-                    )
-                }
-                UnifiedNavigationRow(
+            }
+            UnifiedNavigationRow(
                 stateModel = object : com.alexpo.grammermate.data.CardSessionStateModel {
                     override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
                     override val isPaused = state.cardSession.sessionState == SessionState.PAUSED
@@ -719,4 +737,121 @@ private fun launchVoiceRecognition(
         putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: context.getString(R.string.training_say_the_translation))
     }
     launcher.launch(intent)
+}
+
+/**
+ * Renders verb/tense/group info chips below the prompt for VERB_DRILL mode.
+ * Chips show reference data (verb infinitive + rank, abbreviated tense, conjugation group).
+ */
+@Composable
+private fun VerbDrillChips(card: VerbDrillCard) {
+    val verbText = card.verb
+    if (!verbText.isNullOrBlank()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SuggestionChip(
+                onClick = { /* No-op: reference data */ },
+                label = {
+                    Text(
+                        text = if (card.rank != null) "$verbText #${card.rank}" else verbText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                },
+                icon = { Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp)) }
+            )
+            card.tense?.takeIf { it.isNotBlank() }?.let { tenseText ->
+                SuggestionChip(
+                    onClick = { /* No-op: reference data */ },
+                    label = {
+                        Text(
+                            text = abbreviateTense(tenseText),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                )
+            }
+            card.group?.takeIf { it.isNotBlank() }?.let { groupText ->
+                SuggestionChip(
+                    onClick = { /* No-op: reference data */ },
+                    label = {
+                        Text(
+                            text = groupText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+/** Abbreviates Italian tense names for compact chip display. */
+private fun abbreviateTense(tense: String): String {
+    return mapOf(
+        "Presente" to "Pres.",
+        "Imperfetto" to "Imperf.",
+        "Passato Prossimo" to "P. Pross.",
+        "Passato Remoto" to "P. Rem.",
+        "Trapassato Prossimo" to "Trap. P.",
+        "Futuro Semplice" to "Fut. Sempl.",
+        "Futuro Anteriore" to "Fut. Ant.",
+        "Condizionale Presente" to "Cond. Pres.",
+        "Condizionale Passato" to "Cond. Pass.",
+        "Congiuntivo Presente" to "Cong. Pres.",
+        "Congiuntivo Imperfetto" to "Cong. Imp.",
+        "Congiuntivo Passato" to "Cong. Pass."
+    )[tense] ?: tense.take(8)
+}
+
+/**
+ * Completion screen shown when a VerbDrill session finishes.
+ * Displays correct/incorrect stats and offers More (next batch) and Exit buttons.
+ */
+@Composable
+private fun VerbDrillCompletionContent(
+    correctCount: Int,
+    incorrectCount: Int,
+    onMore: () -> Unit,
+    onExit: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "🎉",
+            fontSize = 48.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.verb_completion_excellent),
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.verb_completion_stats, correctCount, incorrectCount),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onMore,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = stringResource(R.string.verb_more))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = onExit,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = stringResource(R.string.verb_exit))
+        }
+    }
 }
