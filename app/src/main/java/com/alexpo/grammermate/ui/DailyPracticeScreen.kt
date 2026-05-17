@@ -40,6 +40,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.PlainTooltip
@@ -72,6 +73,7 @@ import com.alexpo.grammermate.data.DailySessionState
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SrsRating
+import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.ui.TenseExample
@@ -240,12 +242,17 @@ private fun ColumnScope.CardSessionBlock(
     val blockKey = Triple(state.blockIndex, state.taskIndex, state.tasks.size)
     var blockComplete by remember { mutableStateOf(false) }
 
+    val currentBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
+        is DailyTask.TranslateSentence -> DailyBlockType.TRANSLATE
+        is DailyTask.ConjugateVerb -> DailyBlockType.VERBS
+        else -> DailyBlockType.TRANSLATE
+    }
+    val screenMode = when (currentBlockType) {
+        DailyBlockType.VERBS -> TrainingScreenMode.DAILY_VERBS
+        else -> TrainingScreenMode.DAILY_TRANSLATE
+    }
+
     val provider = remember(blockKey) {
-        val currentBlockType = when (state.tasks.getOrNull(state.taskIndex)) {
-            is DailyTask.TranslateSentence -> DailyBlockType.TRANSLATE
-            is DailyTask.ConjugateVerb -> DailyBlockType.VERBS
-            else -> DailyBlockType.TRANSLATE
-        }
         DailyPracticeSessionProvider(
             tasks = state.tasks, blockType = currentBlockType,
             onBlockComplete = { blockComplete = true }, languageId = languageId,
@@ -288,11 +295,12 @@ private fun ColumnScope.CardSessionBlock(
         modifier = Modifier.weight(1f), hintLevel = hintLevel, textScale = textScale,
         voiceAutoStart = voiceAutoStart,
         onSpeakVerb = { verb -> onSpeak(verb) },
-        ttsState = ttsState
+        ttsState = ttsState,
+        screenMode = screenMode
     )
 }
 
-/** TrainingCardSession wrapper with custom cardContent for verb chips and custom inputControls. */
+/** TrainingCardSession wrapper with mode chip header, verb chips, and custom inputControls. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DailyTrainingCardSession(
@@ -304,7 +312,8 @@ private fun DailyTrainingCardSession(
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true,
     onSpeakVerb: (String) -> Unit = {},
-    ttsState: TtsState = TtsState.Idle
+    ttsState: TtsState = TtsState.Idle,
+    screenMode: TrainingScreenMode = TrainingScreenMode.DAILY_TRANSLATE
 ) {
     val latestProvider by rememberUpdatedState(provider)
     var voiceInputText by remember { mutableStateOf<String?>(null) }
@@ -358,6 +367,38 @@ private fun DailyTrainingCardSession(
 
     TrainingCardSession(
         contract = provider, hintLevel = hintLevel,
+        header = {
+            // Mode chip header — matches TrainingScreen's DAILY_TRANSLATE / DAILY_VERBS rendering
+            when (screenMode) {
+                TrainingScreenMode.DAILY_TRANSLATE -> {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = "[TRANSLATE]",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                TrainingScreenMode.DAILY_VERBS -> {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = "[VERBS]",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+                else -> {}
+            }
+        },
         cardContent = {
             val card = currentCard ?: return@TrainingCardSession
             val drillCard = provider.currentVerbDrillCard()

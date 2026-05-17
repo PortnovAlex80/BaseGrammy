@@ -34,8 +34,8 @@ import com.alexpo.grammermate.data.CardSessionStateModel
  * Design Principle DP-01: All card-based drill modes MUST use identical
  * play/pause/submit/retry/navigation behavior.
  *
- * @param stateModel   Unified state source (SessionRunner, VerbDrillCardSessionProvider, or
- *                     DailyPracticeSessionProvider — all implement [CardSessionStateModel]).
+ * @param stateModel   Unified state source (SessionRunner or
+ *                     DailyPracticeSessionProvider — both implement [CardSessionStateModel]).
  * @param supportsPause Whether the play/pause button should be shown.
  * @param supportsNavigation Whether the navigation row should be shown at all.
  * @param onPrev       Navigate to the previous card (pauses-first).

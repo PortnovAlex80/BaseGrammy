@@ -55,6 +55,117 @@ The key design principle: the only difference between training modes is **card s
 | `ui/VerbDrillScreen.kt` | Verb Drill screen: selection screen + `TrainingCardSession` with custom slots + reference sheets |
 | `ui/DailyPracticeScreen.kt` | Daily Practice screen: 3-block session with `TrainingCardSession` for blocks 1 and 3 |
 
+### §12.1.1 Unified Screen Architecture
+
+TrainingScreen is the ONE AND ONLY screen for all card-based training. All 7 modes render through it. There are no separate card session screens.
+
+**Navigation flow:**
+```
+VerbDrillSelectionScreen → TrainingScreen(mode=VERB_DRILL)
+HomeScreen lesson tile   → TrainingScreen(mode=NORMAL/BOSS/etc)
+DailyPracticeScreen      → TrainingScreen(mode=DAILY) for blocks 1&3
+```
+
+**TrainingScreen renders identically for all modes — only 3 things change:**
+
+1. **Card source** — `List<SessionCard>` on input. Where cards come from.
+2. **Completion callback** — what happens when session ends (mastery++, combo progress, block transition, etc.)
+3. **UI slots** — chips (verb/tense/group) for VERB_DRILL/DAILY_VERBS only.
+
+**ASCII — TrainingScreen universal layout:**
+```
++====================================================+
+| [←]  Sentence Trainer                              |
++====================================================+
+| (subtitle — mode-specific)                         |
+|                                                     |
+| NORMAL:    Present Simple / я говорю по-ит...       |
+| BOSS:      Review Session                           |
+| BOSS_MEGA: Mega Boss Battle                         |
+| ELITE:     Refresh Session                          |
+| DRILL:     Present Simple / я говорю по-ит...       |
+| VERB_DRILL: Present Simple / я говорю              |
+| DAILY:     [TRANSLATE] or [VERBS] block chip        |
+|                                                     |
+| [======>          ] N/M                             |
+|                                                     |
+| +------------------------------------------------+ |
+| | RU                                             | |
+| | prompt text                           [TTS]    | |
+| | [verb chip] [tense chip] [group chip]  ← only  |
+| |                                       VERB_DRILL|
+| +------------------------------------------------+ |
+|                                                     |
+| Your translation                            [Mic]  |
+| +--------------------------------------------+     |
+| |                                        [mic]|     |
+| +--------------------------------------------+     |
+| [Mic] [Kbd] [Books]       [Eye] [!]  mode label    |
+| +------------------------------------------------+ |
+| |                  Check                        | |
+| +------------------------------------------------+ |
+|                                                     |
+| [<Prev]    [Play/Pause]  [Stop]    [Next>]         |
++====================================================+
+```
+
+**ASCII — VerbDrill flow:**
+```
+SelectionScreen (unchanged):
++====================================================+
+| [←]  Verb Drill                                    |
++====================================================+
+| Select tense:    [All tenses ▾]                     |
+| Select group:    [All groups ▾]                     |
+| [x] Sort by frequency                               |
+| 42/120 practiced | 8 today                          |
+| [=============                ]                     |
+| [Continue]                                          |
++====================================================+
+          │
+          │ onStartSession(cards)
+          ▼
+TrainingScreen(mode=VERB_DRILL):
+  (same layout as above, with verb/tense chips in card)
+```
+
+**ASCII — DailyPractice flow:**
+```
++====================================================+
+| [←]  Daily Practice                                |
++====================================================+
+| [=============>                   ] 15/25  overall  |
++====================================================+
+|                                                     |
+| ┌─ TrainingScreen(mode=DAILY, block=TRANSLATE) ──┐ |
+| │ (standard card session — no chips)              │ |
+| └────────────────────────────────────────────────┘ |
+|                                                     |
+| (Block 2 Vocab — Anki flip cards, unchanged)       |
+|                                                     |
+| ┌─ TrainingScreen(mode=DAILY, block=VERBS) ──────┐ |
+| │ (card session with verb/tense/group chips)      │ |
+| └────────────────────────────────────────────────┘ |
+|                                                     |
+| Block transitions: sparkle overlay (800ms)          |
++====================================================+
+```
+
+**Mode differences table:**
+
+| Mode | Card source | Chips | Completion callback | Exit to |
+|------|------------|-------|-------------------|--------|
+| NORMAL | Lesson CSV schedule | No | mastery++, flower | LESSON |
+| BOSS | Lesson pool cards | No | boss reward | LESSON |
+| BOSS_MEGA | Lesson pool cards | No | boss reward | LESSON |
+| ELITE | Refresh cards | No | mastery refresh | LESSON |
+| DRILL | Lesson drill cards | No | none (mastery NOT counted) | LESSON |
+| VERB_DRILL | Verb CSV filtered | Yes (verb, tense) | combo progress | HOME→VerbDrill |
+| DAILY_TRANSLATE | Daily sentence tasks | No | block transition | next block |
+| DAILY_VERBS | Daily verb tasks | Yes (verb, tense, group) | block transition | next block |
+
+**Excluded:** VocabDrill (Anki flip card paradigm — fundamentally different).
+
 ---
 
 ## 12.2 CardSessionContract

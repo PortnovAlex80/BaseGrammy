@@ -234,7 +234,7 @@ class BossBattleRunner {
     fun clearBossRewardMessage(
         bossActive: Boolean,
         sessionState: com.alexpo.grammermate.data.SessionState,
-        currentCard: SentenceCard?,
+        currentCard: com.alexpo.grammermate.data.SessionCard?,
         inputMode: com.alexpo.grammermate.data.InputMode
     ): BossRewardClearResult {
         val shouldResume = bossActive &&

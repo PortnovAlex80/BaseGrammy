@@ -46,7 +46,7 @@ class ProgressTracker(
      * WORD_BANK mode never counts for mastery (flower growth).
      */
     fun recordCardShowForMastery(
-        card: SentenceCard,
+        card: com.alexpo.grammermate.data.SessionCard,
         bossActive: Boolean,
         isDrillMode: Boolean,
         inputMode: InputMode,
@@ -81,7 +81,7 @@ class ProgressTracker(
      * word-bank sessions that don't count for mastery but need tracking).
      */
     fun markSubLessonCardsShown(
-        cards: List<SentenceCard>,
+        cards: List<com.alexpo.grammermate.data.SessionCard>,
         inputMode: InputMode,
         selectedLessonId: LessonId?,
         selectedLanguageId: LanguageId,
@@ -159,7 +159,7 @@ class ProgressTracker(
      * then searches all lessons. Falls back to selectedLessonId or "unknown".
      */
     fun resolveCardLessonId(
-        card: SentenceCard,
+        card: com.alexpo.grammermate.data.SessionCard,
         selectedLessonId: LessonId?,
         lessons: List<Lesson>
     ): LessonId {

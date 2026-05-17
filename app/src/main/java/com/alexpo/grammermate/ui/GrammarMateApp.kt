@@ -341,7 +341,26 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.TRAINING) {
-                        TrainingScreenContent(state, vm, { dialogs = dialogs.copy(showExitDialog = true) }, { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) }, onTtsSpeak)
+                        val isVerbDrill = vm.isVerbDrillSession()
+                        TrainingScreenContent(
+                            state, vm,
+                            onShowExitDialog = {
+                                if (isVerbDrill) {
+                                    vm.exitVerbDrillSession()
+                                    onNavigate(Routes.VERB_DRILL)
+                                } else {
+                                    dialogs = dialogs.copy(showExitDialog = true)
+                                }
+                            },
+                            onShowSettings = { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) },
+                            onTtsSpeak = onTtsSpeak,
+                            isVerbDrillMode = isVerbDrill,
+                            onVerbDrillMore = {
+                                // Stay on VERB_DRILL selection screen for next batch
+                                vm.exitVerbDrillSession()
+                                onNavigate(Routes.VERB_DRILL)
+                            }
+                        )
                     }
 
                     composable(Routes.VERB_DRILL) {
@@ -355,9 +374,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         VerbDrillScreen(
                             viewModel = verbDrillVm,
                             onBack = { onNavigate(Routes.HOME) },
-                            hintLevel = state.cardSession.hintLevel,
-                            textScale = state.audio.ruTextScale,
-                            voiceAutoStart = state.audio.voiceAutoStart
+                            onStartSession = { cards ->
+                                vm.startVerbDrillSession(cards)
+                                onNavigate(Routes.TRAINING)
+                            }
                         )
                     }
 
@@ -461,6 +481,13 @@ private fun NavBackHandlers(
             vm.resumeFromSettings()
         }
     }
+    BackHandler(enabled = currentRoute == Routes.TRAINING && vm.isVerbDrillSession() && !showSettings) {
+        vm.exitVerbDrillSession()
+        navController.navigate(Routes.VERB_DRILL) {
+            popUpTo(Routes.HOME) { inclusive = false }
+            launchSingleTop = true
+        }
+    }
     BackHandler(enabled = currentRoute == Routes.VERB_DRILL && !showSettings) {
         navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = false }
@@ -480,7 +507,9 @@ private fun TrainingScreenContent(
     onShowExitDialog: () -> Unit,
     onShowSettings: () -> Unit,
     onTtsSpeak: () -> Unit,
-    hintLevel: HintLevel = HintLevel.EASY
+    hintLevel: HintLevel = HintLevel.EASY,
+    isVerbDrillMode: Boolean = false,
+    onVerbDrillMore: () -> Unit = {}
 ) {
     TrainingScreen(
         state = state,
@@ -506,7 +535,9 @@ private fun TrainingScreenContent(
         onExportBadSentences = vm.reports::exportBadSentences,
         isBadSentence = vm.reports::isBadSentence,
         onStartOfflineRecognition = vm::startOfflineRecognition,
-        hintLevel = hintLevel
+        hintLevel = hintLevel,
+        isVerbDrillMode = isVerbDrillMode,
+        onVerbDrillMore = onVerbDrillMore
     )
 }
 
@@ -667,7 +698,7 @@ private fun NavDialogs(
     }
 
     // Token-based navigation: sub-lesson finished
-    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
+    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value && !vm.isVerbDrillSession()) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         onNavigate(Routes.LESSON)
     }

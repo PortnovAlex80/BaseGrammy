@@ -22,7 +22,7 @@ data class ValidationResult(
 /**
  * Pure-Kotlin answer validation logic extracted from the duplicated patterns in
  * [com.alexpo.grammermate.ui.TrainingViewModel],
- * [com.alexpo.grammermate.ui.VerbDrillCardSessionProvider], and
+ * [SessionRunner], and
  * [com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider].
  *
  * Normalizes the user's input via [Normalizer], then compares it against every
@@ -96,7 +96,7 @@ class AnswerValidator(
      * Build the hint text from the list of accepted answers.
      *
      * Returns the first accepted answer, matching the behaviour of both
-     * [com.alexpo.grammermate.ui.VerbDrillCardSessionProvider] and
+     * [SessionRunner] and
      * [com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider]
      * which show `card.acceptedAnswers.first()` or `card.answer` as the hint.
      *

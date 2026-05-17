@@ -138,6 +138,18 @@ enum class HintLevel {
     HARD
 }
 
+/** UI mode for TrainingScreen — controls header, chips, completion callback. */
+enum class TrainingScreenMode {
+    NORMAL,           // Standard sub-lessons
+    BOSS,             // Boss battle review
+    BOSS_MEGA,        // Mega boss battle
+    DRILL,            // Lesson drill
+    ELITE,            // Elite/daily step
+    VERB_DRILL,       // Verb conjugation (chips: verb, tense)
+    DAILY_TRANSLATE,  // Daily Practice block 1 (translation)
+    DAILY_VERBS       // Daily Practice block 3 (verb conjugation with chips)
+}
+
 data class TrainingProgress(
     val languageId: LanguageId = LanguageId("en"),
     val mode: TrainingMode = TrainingMode.LESSON,
@@ -299,7 +311,7 @@ data class NavigationState(
 data class CardSessionState(
     val sessionState: SessionState = SessionState.ACTIVE,
     val currentIndex: Int = 0,
-    val currentCard: SentenceCard? = null,
+    val currentCard: SessionCard? = null,
     val inputText: String = "",
     val correctCount: Int = 0,
     val incorrectCount: Int = 0,
@@ -330,7 +342,8 @@ data class CardSessionState(
     val badSentenceCount: Int = 0,
     val testMode: Boolean = false,
     val vocabSprintLimit: Int = 20,
-    val todayFireCount: Int = 0
+    val todayFireCount: Int = 0,
+    val screenMode: TrainingScreenMode = TrainingScreenMode.NORMAL
 ) {
     /** Whether the session can accept an answer submission. */
     val canSubmit: Boolean

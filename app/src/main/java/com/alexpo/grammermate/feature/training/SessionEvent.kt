@@ -4,7 +4,7 @@ import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.ScheduledSubLesson
-import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.SessionCard
 
 /**
  * Event types for [SessionRunner] methods.
@@ -21,8 +21,8 @@ sealed class SessionEvent {
     object BuildSessionCards : SessionEvent()
     object PlaySuccess : SessionEvent()
     object PlayError : SessionEvent()
-    data class RecordCardShow(val card: SentenceCard) : SessionEvent()
-    data class MarkSubLessonCardsShown(val cards: List<SentenceCard>) : SessionEvent()
+    data class RecordCardShow(val card: SessionCard) : SessionEvent()
+    data class MarkSubLessonCardsShown(val cards: List<SessionCard>) : SessionEvent()
     object CheckAndMarkLessonCompleted : SessionEvent()
     data class CalculateCompletedSubLessons(
         val subLessons: List<ScheduledSubLesson>,

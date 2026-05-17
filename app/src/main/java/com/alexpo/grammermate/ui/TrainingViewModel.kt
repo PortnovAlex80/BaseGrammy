@@ -313,7 +313,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshFlowerStates()
         if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
             sessionRunner.resumeTimer()
-            _coreState.value.cardSession.currentCard?.let { recordCardShowForMastery(it) }
+            (_coreState.value.cardSession.currentCard as? SentenceCard)?.let { recordCardShowForMastery(it) }
             if (_coreState.value.cardSession.inputMode == InputMode.VOICE) {
                 _coreState.update { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
             }
@@ -576,6 +576,31 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun showAnswer() = handleSessionEvents(sessionRunner.showAnswer())
+
+    /**
+     * Start a verb drill session with cards from [VerbDrillViewModel].
+     * Loads cards into SessionRunner, sets screenMode to VERB_DRILL,
+     * and activates the session. Navigating to TRAINING after calling
+     * this will render the cards in TrainingScreen with verb drill styling.
+     */
+    fun startVerbDrillSession(cards: List<com.alexpo.grammermate.data.VerbDrillCard>) {
+        val events = sessionRunner.startVerbDrillSession(cards)
+        handleSessionEvents(events)
+    }
+
+    /**
+     * Exit the verb drill session and reset to normal mode.
+     * Call when the user exits the verb drill from TrainingScreen.
+     */
+    fun exitVerbDrillSession() {
+        val events = sessionRunner.exitVerbDrillSession()
+        handleSessionEvents(events)
+    }
+
+    /** Whether the current session is in VERB_DRILL screen mode. */
+    fun isVerbDrillSession(): Boolean {
+        return _coreState.value.cardSession.screenMode == com.alexpo.grammermate.data.TrainingScreenMode.VERB_DRILL
+    }
 
     fun importLesson(uri: Uri) {
         val languageId = _coreState.value.navigation.selectedLanguageId
@@ -948,7 +973,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Word Bank НЕ учитывается для формирования навыка (роста цветка).
      * Учитывается только голосовой ввод и клавиатура.
      */
-    private fun recordCardShowForMastery(card: SentenceCard) {
+    private fun recordCardShowForMastery(card: com.alexpo.grammermate.data.SessionCard) {
+        // VerbDrillCards have their own progress tracking in VerbDrillViewModel
+        if (card is com.alexpo.grammermate.data.VerbDrillCard) return
         val s = _coreState.value
         progressTracker.recordCardShowForMastery(
             card = card,
@@ -1053,7 +1080,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun markSubLessonCardsShown(cards: List<SentenceCard>) {
+    private fun markSubLessonCardsShown(cards: List<com.alexpo.grammermate.data.SessionCard>) {
         val s = _coreState.value
         progressTracker.markSubLessonCardsShown(
             cards = cards,
