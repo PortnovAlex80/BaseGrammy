@@ -144,7 +144,7 @@ class DailyPracticeSessionProvider(
         get() = sm.hintAnswer != null
 
     override val canSubmit: Boolean
-        get() = sessionActive && currentCard != null
+        get() = currentCard != null
 
     override val hasCurrentCard: Boolean
         get() = currentCard != null

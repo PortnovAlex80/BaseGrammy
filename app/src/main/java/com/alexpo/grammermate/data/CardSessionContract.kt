@@ -104,7 +104,7 @@ interface CardSessionContract : CardSessionCapabilities, CardSessionStateModel {
     override val isActive: Boolean get() = sessionActive && !isHintShown
     override val isPaused: Boolean get() = !sessionActive && !isComplete
     override val isHintShown: Boolean get() = lastResult?.hintShown == true
-    override val canSubmit: Boolean get() = sessionActive && currentCard != null
+    override val canSubmit: Boolean get() = currentCard != null
     override val hasCurrentCard: Boolean get() = currentCard != null
 
     /** Current TTS state for speaker button rendering. */

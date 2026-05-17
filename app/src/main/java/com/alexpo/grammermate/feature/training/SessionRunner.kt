@@ -185,7 +185,7 @@ class SessionRunner(
             stateMachine.triggerVoice()
         }
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE, inputText = "", answerText = null, incorrectAttemptsForCard = 0, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null))
+            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE, inputText = it.cardSession.inputText, answerText = null, incorrectAttemptsForCard = 0, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null))
         }
         // Populate word bank so the UI toggle is visible from the start.
         // Without this, regular lesson sessions start with wordBankWords=empty,
@@ -284,7 +284,6 @@ class SessionRunner(
      */
     fun submitAnswer(): Pair<SubmitResult, List<SessionEvent>> {
         val state = stateAccess.uiState.value
-        if (state.cardSession.sessionState != SessionState.ACTIVE) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         if (state.cardSession.inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val card = currentCard() ?: return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode)
@@ -296,7 +295,30 @@ class SessionRunner(
         var hintShown = false
 
         if (accepted) {
-            val events = mutableListOf<SessionEvent>(SessionEvent.PlaySuccess, SessionEvent.RecordCardShow(card))
+            val events = mutableListOf<SessionEvent>(SessionEvent.PlaySuccess)
+
+            // When session is not ACTIVE (PAUSED / HINT_SHOWN), validate the answer
+            // and show correct feedback but do NOT advance to the next card.
+            // The user stays on the same card and can press Play to formally resume.
+            if (state.cardSession.sessionState != SessionState.ACTIVE) {
+                events.add(SessionEvent.RecordCardShow(card))
+                stateMachine.reset()
+                stateAccess.updateState {
+                    it.copy(cardSession = it.cardSession.copy(
+                        correctCount = it.cardSession.correctCount + 1,
+                        lastResult = true,
+                        incorrectAttemptsForCard = 0,
+                        answerText = null,
+                        voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs,
+                        voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount,
+                        voicePromptStartMs = null
+                    ))
+                }
+                Log.d(logTag, "Answer accepted during ${state.cardSession.sessionState} — staying on card")
+                return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = true, needsFlowerRefresh = true) to events
+            }
+
+            events.add(SessionEvent.RecordCardShow(card))
             val isLastCard = state.cardSession.currentIndex >= sessionCards.lastIndex
 
             val result = when {
@@ -792,7 +814,7 @@ class SessionRunner(
                     sessionState = SessionState.ACTIVE,
                     incorrectAttemptsForCard = 0,
                     answerText = null,
-                    inputText = "",
+                    inputText = it.cardSession.inputText,
                     voiceTriggerToken = stateMachine.voiceTriggerToken,
                     voicePromptStartMs = null
                 ))

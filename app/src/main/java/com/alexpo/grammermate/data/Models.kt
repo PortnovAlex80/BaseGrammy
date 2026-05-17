@@ -426,7 +426,7 @@ data class CardSessionState(
 ) {
     /** Whether the session can accept an answer submission. */
     val canSubmit: Boolean
-        get() = sessionState == SessionState.ACTIVE && currentCard != null
+        get() = currentCard != null && (sessionState == SessionState.ACTIVE || sessionState == SessionState.PAUSED)
 }
 
 data class BossState(

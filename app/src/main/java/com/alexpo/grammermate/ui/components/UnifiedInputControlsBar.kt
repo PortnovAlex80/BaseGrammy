@@ -95,8 +95,8 @@ fun UnifiedInputControlsBar(
     reportCard: com.alexpo.grammermate.data.SessionCard? = null,
     hintLevel: HintLevel = HintLevel.EASY
 ) {
-    val canLaunchVoice = hasCards && contract.sessionActive
-    val canSelectInputMode = hasCards && contract.sessionActive
+    val canLaunchVoice = hasCards && contract.canSubmit
+    val canSelectInputMode = hasCards && contract.canSubmit
 
     // Voice recognition launcher
     val latestContract by rememberUpdatedState(contract)
@@ -165,7 +165,7 @@ fun UnifiedInputControlsBar(
                 onInputChanged(newText)
                 // Auto-submit in keyboard mode when typed text matches accepted answer
                 if (contract.currentInputMode == InputMode.KEYBOARD &&
-                    contract.sessionActive &&
+                    contract.canSubmit &&
                     hasCards &&
                     contract.currentCard != null &&
                     newText.isNotBlank()
@@ -212,7 +212,7 @@ fun UnifiedInputControlsBar(
         }
 
         // Voice mode hint
-        if (contract.currentInputMode == InputMode.VOICE && contract.sessionActive) {
+        if (contract.currentInputMode == InputMode.VOICE && contract.canSubmit) {
             Text(
                 text = contract.currentCard?.promptRu?.let {
                     val cleanPrompt = HintCalculator.calculateEffectiveHints(

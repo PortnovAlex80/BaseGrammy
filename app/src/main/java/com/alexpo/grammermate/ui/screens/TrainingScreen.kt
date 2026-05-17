@@ -544,7 +544,6 @@ fun AnswerBox(
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
-                if (latestState.cardSession.sessionState == SessionState.PAUSED) return@rememberLauncherForActivityResult
                 onInputChange(spoken)
                 onSubmit()
             }
@@ -671,23 +670,21 @@ fun AnswerBox(
         }
     }
 
-    if (!state.pomodoro.isPaused) {
-        com.alexpo.grammermate.ui.components.UnifiedInputControlsBar(
-            contract = contractAdapter,
-            inputText = state.cardSession.inputText,
-            onInputChanged = onInputChange,
-            onSubmit = { onSubmit() },
-            hasCards = hasCards,
-            hintAnswer = if (state.cardSession.answerText != null && state.cardSession.lastResult != null) state.cardSession.answerText else null,
-            onShowReport = { showReportSheet = true },
-            reportCard = state.cardSession.currentCard,
-            hintLevel = hintLevel
-        )
+    com.alexpo.grammermate.ui.components.UnifiedInputControlsBar(
+        contract = contractAdapter,
+        inputText = state.cardSession.inputText,
+        onInputChanged = onInputChange,
+        onSubmit = { onSubmit() },
+        hasCards = hasCards,
+        hintAnswer = if (state.cardSession.answerText != null && state.cardSession.lastResult != null) state.cardSession.answerText else null,
+        onShowReport = { showReportSheet = true },
+        reportCard = state.cardSession.currentCard,
+        hintLevel = hintLevel
+    )
 
-        // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)
-        if (state.audio.useOfflineAsr) {
-            AsrStatusIndicator(state.audio.asrState)
-        }
+    // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)
+    if (state.audio.useOfflineAsr) {
+        AsrStatusIndicator(state.audio.asrState)
     }
 }
 
