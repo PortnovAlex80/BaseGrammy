@@ -8,6 +8,7 @@ import com.alexpo.grammermate.data.CardSessionStateModel
 import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonSchedule
@@ -1076,7 +1077,10 @@ class SessionRunner(
                     wordBankWords = emptyList(),
                     selectedWords = emptyList(),
                     screenMode = mode,
-                    voiceTriggerToken = stateMachine.voiceTriggerToken
+                    voiceTriggerToken = stateMachine.voiceTriggerToken,
+                    verbConjugationCards = if (mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS) {
+                        cards.filterIsInstance<VerbDrillCard>()
+                    } else emptyList()
                 ),
                 drill = it.drill.copy(isDrillMode = false),
                 boss = it.boss.copy(bossActive = false),

@@ -423,7 +423,8 @@ data class CardSessionState(
     val vocabSprintLimit: Int = 20,
     val todayFireCount: Int = 0,
     val screenMode: TrainingScreenMode = TrainingScreenMode.NORMAL,
-    val returnTo: String = ""
+    val returnTo: String = "",
+    val verbConjugationCards: List<VerbDrillCard> = emptyList()
 ) {
     /** Whether the session can accept an answer submission. */
     val canSubmit: Boolean

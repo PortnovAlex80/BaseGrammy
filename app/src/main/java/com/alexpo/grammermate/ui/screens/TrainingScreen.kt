@@ -367,11 +367,13 @@ fun TrainingScreen(
     }
 
     // Verb/tense bottom sheets for VERB_DRILL and DAILY_VERBS modes
+    val conjugationCards = state.cardSession.verbConjugationCards
+        .filter { it.verb == drillCard?.verb }
     if (showVerbSheet && drillCard != null && !drillCard.verb.isNullOrBlank()) {
         VerbReferenceBottomSheet(
             verb = drillCard.verb,
             tense = drillCard.tense,
-            conjugationCards = listOf(drillCard),
+            conjugationCards = conjugationCards,
             ttsState = state.audio.ttsState,
             onSpeakVerb = { onTtsSpeak() },
             onDismiss = { showVerbSheet = false }
