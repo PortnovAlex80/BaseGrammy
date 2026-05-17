@@ -267,8 +267,6 @@ private fun ColumnScope.VocabFlashcardBlock(
                 if (isCorrect && !isRated) {
                     isRated = true
                     onRate(SrsRating.GOOD)
-                    // Vocab card completed correctly via voice — signal block completion
-                    onComplete()
                 }
             }
         }
@@ -324,7 +322,7 @@ private fun ColumnScope.VocabFlashcardBlock(
                 SrsRating.EASY -> Pair(SrsEasyBackground, SrsEasyText)
             }
             OutlinedButton(
-                onClick = { onRate(rating); onComplete() },
+                onClick = { onRate(rating) },
                 modifier = Modifier.weight(1f),
                 colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = colors.first, contentColor = colors.second)
             ) { Text(label, fontSize = 12.sp) }

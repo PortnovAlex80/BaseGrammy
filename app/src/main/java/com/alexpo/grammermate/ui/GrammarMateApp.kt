@@ -749,6 +749,11 @@ private fun NavDialogs(
         )
     }
 
+    // Sync lastFinishedToken when token is reset (new session started)
+    if (state.cardSession.subLessonFinishedToken < lastFinishedToken.value) {
+        lastFinishedToken.value = state.cardSession.subLessonFinishedToken
+    }
+
     // Token-based navigation: sub-lesson finished — unified via returnTo
     if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken

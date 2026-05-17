@@ -1043,6 +1043,11 @@ class SessionRunner(
         }
         if (firstCard != null) {
             resumeTimer()
+            // Populate word bank unconditionally.
+            // Without this, daily translate sessions carry over WORD_BANK input mode
+            // from a previous session but never call updateWordBank() (which is only
+            // triggered via setInputMode/nextCard/navigateNext).
+            updateWordBank()
         }
         return listOf(SessionEvent.SaveProgress)
     }

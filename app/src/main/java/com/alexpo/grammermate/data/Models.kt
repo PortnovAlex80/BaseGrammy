@@ -311,7 +311,8 @@ sealed class DailyTask {
 data class DailyBlock(
     val type: DailyBlockType,
     val tasks: List<DailyTask>,
-    val isComplete: Boolean = false
+    val isComplete: Boolean = false,
+    val taskIndex: Int = 0
 ) {
     /** How the block is rendered in the UI. */
     val renderVia: BlockRenderVia

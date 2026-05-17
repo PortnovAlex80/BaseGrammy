@@ -202,7 +202,8 @@ class DailyPracticeCoordinator(
      * Used for VOCAB blocks rendered inline.
      */
     fun getCurrentTask(): DailyTask? {
-        return getCurrentBlock()?.tasks?.firstOrNull()
+        val block = getCurrentBlock() ?: return null
+        return block.tasks.getOrNull(block.taskIndex)
     }
 
     /**
@@ -484,7 +485,7 @@ class DailyPracticeCoordinator(
 
     fun rateVocabCard(rating: SrsRating) {
         val block = getCurrentBlock() ?: return
-        val task = block.tasks.firstOrNull() as? DailyTask.VocabFlashcard ?: return
+        val task = block.tasks.getOrNull(block.taskIndex) as? DailyTask.VocabFlashcard ?: return
         val wordId = task.word.id
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return
@@ -502,6 +503,24 @@ class DailyPracticeCoordinator(
         val isLearned = newStepIndex >= TrainingConfig.LEARNED_THRESHOLD
         val updated = current.copy(correctCount = current.correctCount + (if (rating != SrsRating.AGAIN) 1 else 0), incorrectCount = current.incorrectCount + (if (rating == SrsRating.AGAIN) 1 else 0), intervalStepIndex = newStepIndex, lastReviewDateMs = now, nextReviewDateMs = newNextReview, isLearned = isLearned)
         store.upsertMastery(updated)
+
+        // Advance task index within the VOCAB block
+        val nextIndex = block.taskIndex + 1
+        if (nextIndex >= block.tasks.size) {
+            // All VOCAB cards rated — mark block complete
+            onBlockComplete()
+        } else {
+            // Advance to next vocab card
+            val ds = _state.value.dailySession
+            _state.update {
+                it.copy(dailySession = it.dailySession.copy(
+                    blocks = it.dailySession.blocks.mapIndexed { i, b ->
+                        if (i == ds.blockIndex) b.copy(taskIndex = nextIndex) else b
+                    }
+                ))
+            }
+            stateAccess.saveProgress()
+        }
     }
 
     // ── Current state queries ──────────────────────────────────────────
@@ -515,13 +534,14 @@ class DailyPracticeCoordinator(
         val currentBlock = ds.currentBlock ?: return BlockProgress.Empty
         val blockSize = currentBlock.tasks.size
 
-        // Calculate global position: sum of all completed blocks + 1 for current
+        // Calculate global position: sum of all completed blocks + position within current block
         val completedTasks = ds.blocks.take(ds.blockIndex).sumOf { it.tasks.size }
-        val globalPosition = completedTasks + 1
+        val positionInBlock = currentBlock.taskIndex + 1
+        val globalPosition = completedTasks + positionInBlock
 
         return BlockProgress(
             blockType = currentBlock.type,
-            positionInBlock = 1,
+            positionInBlock = positionInBlock,
             blockSize = blockSize,
             totalTasks = ds.totalTasks,
             globalPosition = globalPosition
