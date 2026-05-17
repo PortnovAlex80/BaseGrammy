@@ -175,10 +175,10 @@ TrainingScreen — единственный экземпляр экрана дл
 | Header subtitle | Text varies by TrainingScreenMode: tense label for VERB_DRILL/DAILY_VERBS, "Review Session" for BOSS, etc. |
 | Card prompt | Russian sentence or word from current SentenceCard |
 | Verb chips | Visible only when mode is VERB_DRILL or DAILY_VERBS. Show conjugation group/tense info. |
-| Input controls | UnifiedInputControlsBar: text field (keyboard), voice button, word bank toggle |
+| Input controls | UnifiedInputControlsBar: text field (keyboard), voice button, word bank toggle. Visible and functional during ALL states (ACTIVE, PAUSED, HINT_SHOWN) — no session state gate on visibility. |
 | Word bank toggle | Visible only when `hintLevel == EASY` AND `wordBankWords.isNotEmpty()`. Hidden at MEDIUM/HARD difficulty. |
 | Word bank chips | Shown when `inputMode == WORD_BANK` AND `supportsWordBank == true`. Chips are clickable answer fragments. |
-| Input controls (pomodoro) | Entire input bar hidden when `pomodoro.isPaused == true`. Resumes on unpause. |
+| Input controls (pomodoro) | Input bar VISIBLE during pomodoro pause — cascade behavior allows typing and checking during pause. Play resumes session. |
 | Card counter | "N / total" indicator showing progress through current session |
 | Next card button | Advances to next card in session. Disabled until answer submitted or skipped. |
 | Exit / Stop button | Opens exit confirmation dialog → navigates to HOME via cancelDailySession / session cleanup |
@@ -224,13 +224,13 @@ TrainingScreen — единственный экземпляр экрана дл
 
 | # | Test Case | Steps | Expected |
 |---|-----------|-------|----------|
-| 1 | Daily Practice full flow | Start daily → TRANSLATE (10 cards) → VOCAB (5 cards) → VERBS (10 cards) | All 3 blocks complete → HOME → streak recorded |
-| 2 | Regular lesson | Select lesson → TrainingScreen → complete all cards | Returns HOME → streak updated |
-| 3 | Regular lesson — word bank | Settings: EASY → select lesson → TrainingScreen | Word bank toggle visible, chips work |
+| 1 | Daily Practice full flow | Start daily → TRANSLATE (10 cards) → VOCAB (5 cards) → VERBS (10 cards) | All 3 blocks complete → HOME → streak recorded. Pause→Check→Play cascade works during TRANSLATE and VERBS blocks. |
+| 2 | Regular lesson | Select lesson → TrainingScreen → complete all cards | Returns HOME → streak updated. Pause→Check→Play cascade works: type during pause → Check validates → Play resumes (no auto-advance). |
+| 3 | Regular lesson — word bank | Settings: EASY → select lesson → TrainingScreen | Word bank toggle visible, chips work. Cascade: word bank usable during pause state. |
 | 4 | Regular lesson — no word bank (MEDIUM) | Settings: MEDIUM → select lesson → TrainingScreen | Word bank toggle hidden, keyboard + voice only |
 | 5 | Regular lesson — no word bank (HARD) | Settings: HARD → select lesson → TrainingScreen | Word bank toggle hidden, voice only |
-| 6 | Verb Drill full flow | Select tense → TrainingScreen → complete cards | Returns to VERB_DRILL selection screen |
-| 7 | Verb Drill — word bank | Settings: EASY → Verb Drill → TrainingScreen | Word bank toggle visible |
+| 6 | Verb Drill full flow | Select tense → TrainingScreen → complete cards | Returns to VERB_DRILL selection screen. Pause→Check→Play cascade works during verb drill. |
+| 7 | Verb Drill — word bank | Settings: EASY → Verb Drill → TrainingScreen | Word bank toggle visible. Cascade: input visible during pause, Check validates, Play resumes. |
 | 8 | Stop/exit from lesson | During regular lesson → press stop → confirm dialog | Navigates to HOME |
 | 9 | Stop/exit from daily | During daily TRANSLATE → press stop → confirm | Navigates to HOME, cancelDailySession called |
 | 10 | Stop/exit from verb drill | During verb drill → press stop → confirm | Navigates to HOME or back to selection |

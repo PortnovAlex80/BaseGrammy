@@ -75,7 +75,7 @@
 | Speedometer (progress arc) | TS-07 | progress-bar | Always | Canvas arc (30% width, 44dp). Color: red (<=20 wpm), yellow (<=40 wpm), green (>40 wpm). Center shows numeric wpm. | ? |
 | CardPrompt card | TS-08 | card | `currentCard != null` | Material Card with "RU" label + prompt text (`(20f * ruTextScale).sp`, SemiBold) + TtsSpeakerButton. | UC-56 |
 | CardPrompt TTS button | TS-09 | button | `currentCard != null` | TtsSpeakerButton: 4 states (SPEAKING=StopCircle red, INITIALIZING=spinner, ERROR=ReportProblem red, IDLE=VolumeUp). Calls `onTtsSpeak()`. | ? |
-| Answer text field | TS-10 | input-field | `hasCards == true` | OutlinedTextField "Your translation". Enabled only when `hasCards`. Auto-submits on exact match in KEYBOARD mode via Normalizer.isExactMatch. | ? |
+| Answer text field | TS-10 | input-field | `hasCards == true` | OutlinedTextField "Your translation". Enabled only when `hasCards`. Visible and functional during ALL session states (ACTIVE, PAUSED, HINT_SHOWN) — no session state gate on visibility. Auto-submits on exact match in KEYBOARD mode via Normalizer.isExactMatch. | ? |
 | Mic trailing icon (text field) | TS-11 | button | `canLaunchVoice` | IconButton inside trailingIcon. Switches to VOICE mode + launches speech recognition. | ? |
 | "No cards" error text | TS-12 | text | `hasCards == false` | Red error text. | ? |
 | Voice mode hint | TS-13 | text | `inputMode == VOICE` and `sessionState == ACTIVE` | Muted text "Say translation: {promptRu}". | ? |
@@ -90,12 +90,12 @@
 | Show answer button | TS-22 | button | `hasCards` | IconButton with Visibility icon + "Show answer" tooltip. Calls `onShowAnswer()`. | ? |
 | Report button | TS-23 | button | `hasCards` | IconButton with ReportProblem icon + "Report sentence" tooltip. Opens report ModalBottomSheet. | ? |
 | Current mode label | TS-24 | text | Always | "Voice" / "Keyboard" / "Word Bank" label text. | ? |
-| Check button | TS-25 | button | `hasCards && inputText.isNotBlank() && sessionState == ACTIVE && currentCard != null` | Full-width Button "Check". Calls `onSubmit()`. | ? |
+| Check button | TS-25 | button | `hasCards && inputText.isNotBlank() && currentCard != null` (no sessionState gate) | Full-width Button "Check". Calls `onSubmit()`. Enabled when `inputText.isNotBlank() && currentCard != null` — works during PAUSED and HINT_SHOWN states (no `sessionState == ACTIVE` gate). | ? |
 | Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
 | Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | REMOVED from HintAnswerCard. TTS replay is now handled solely by the result row TcsSpeakerButton (TCS-28). | ? |
 | Answer text | TS-28 | text | `answerText` not blank | "Answer: {answerText}" text. | ? |
 | Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
-| Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
+| Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. **Cascade behavior:** After Check during pause (manual, hint, pomodoro), Play resumes session on same card — preserves inputText, no auto-advance. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
 | Navigation Exit button | TS-31 | button | `hasCards` | NavIconButton with StopCircle icon. Calls `onRequestExit()` (triggers exit dialog). **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69 |
 | Navigation Next button | TS-32 | button | `hasCards` | NavIconButton with ArrowForward. Calls `onNext(false)`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |

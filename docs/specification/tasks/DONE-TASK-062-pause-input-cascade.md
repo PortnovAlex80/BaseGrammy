@@ -40,34 +40,34 @@ When a training session is PAUSED (regular pause or after hint shown), the input
 ## Чеклист
 
 ### A. Input visible during pause
-- [ ] Regular pause -> input field visible and editable
-- [ ] Hint shown (3 retries) -> input field visible and editable
-- [ ] Pomodoro pause -> input field visible and editable
-- [ ] Input text preserved across pause/resume
+- [x] Regular pause -> input field visible and editable
+- [x] Hint shown (3 retries) -> input field visible and editable
+- [x] Pomodoro pause -> input field visible and editable
+- [x] Input text preserved across pause/resume
 
 ### B. Check button cascade
-- [ ] During ACTIVE: Check works as before
-- [ ] During PAUSED: Check enabled when input non-blank
-- [ ] During HINT_SHOWN: Check enabled when input non-blank
-- [ ] Check during pause -> answer validated -> result shown
-- [ ] Check during pause does NOT advance to next card
+- [x] During ACTIVE: Check works as before
+- [x] During PAUSED: Check enabled when input non-blank
+- [x] During HINT_SHOWN: Check enabled when input non-blank
+- [x] Check during pause -> answer validated -> result shown
+- [x] Check during pause does NOT advance to next card
 
 ### C. Play button after Check
-- [ ] After Check during pause -> Play button activates
-- [ ] Pressing Play -> resumes ACTIVE on same card
-- [ ] Play does NOT auto-advance
+- [x] After Check during pause -> Play button activates
+- [x] Pressing Play -> resumes ACTIVE on same card
+- [x] Play does NOT auto-advance
 
 ### D. Cross-mode
-- [ ] NORMAL mode -- cascade works
-- [ ] VERB_DRILL mode -- cascade works
-- [ ] DAILY_TRANSLATE mode -- cascade works
-- [ ] DAILY_VERBS mode -- cascade works
-- [ ] DRILL mode -- cascade works
+- [x] NORMAL mode -- cascade works
+- [x] VERB_DRILL mode -- cascade works
+- [x] DAILY_TRANSLATE mode -- cascade works
+- [x] DAILY_VERBS mode -- cascade works
+- [x] DRILL mode -- cascade works
 
 ### E. Anti-check
-- [ ] NO auto-advance after Check during pause
-- [ ] NO input hiding during any pause type
-- [ ] submitAnswer() does NOT require sessionState == ACTIVE
+- [x] NO auto-advance after Check during pause
+- [x] NO input hiding during any pause type
+- [x] submitAnswer() does NOT require sessionState == ACTIVE
 
 ## Ключевые файлы
 | Файл | Что менять |

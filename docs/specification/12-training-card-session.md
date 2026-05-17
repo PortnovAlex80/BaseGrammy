@@ -446,7 +446,9 @@ All navigation buttons use `NavIconButton` styling: 44dp square, `surfaceVariant
 
 **Exit button** opens an `AlertDialog` confirmation: "End session? Your progress will be saved." with "End" and "Cancel" buttons.
 
-**Pause/Play button** toggles session active state via `togglePause()`. When a hint is shown (after 3 incorrect attempts or manual eye button), the Play button shows `PlayArrow` (not `SkipNext`). Pressing Play clears the hint and resumes ACTIVE on the same card — it does NOT advance. User must press the explicit Next button (ArrowForward) to advance.
+**Pause/Play button** toggles session active state via `togglePause()`. When a hint is shown (after 3 incorrect attempts or manual eye button), the Play button shows `PlayArrow` (not `SkipNext`). Pressing Play clears the hint and resumes ACTIVE on the same card — it does NOT advance.
+
+**Pause → Input → Check → Play cascade (Variant B):** During any paused state (manual pause, hint shown, pomodoro pause), the input field remains visible and functional. The user can type an answer and press Check to validate it (Check does NOT require sessionState == ACTIVE). After Check, Play resumes the session on the same card — no auto-advance. Input text is preserved across pause/resume cycles. This applies to ALL modes: NORMAL, DRILL, ELITE, VERB_DRILL, DAILY_TRANSLATE, DAILY_VERBS. User must press the explicit Next button (ArrowForward) to advance.
 
 ### 12.4.9 TtsSpeakerButton
 
@@ -789,9 +791,9 @@ Adapters are created via `remember` with a key:
 | "Hide this card from lessons" | Calls `contract.hideCurrentCard()`. Closes sheet. |
 | "Export bad sentences to file" | Calls `contract.exportFlaggedCards()`. Shows result in AlertDialog. |
 | "Copy text" | Copies card info (ID, source, target) to clipboard. |
-| "Check" button | Calls `scope.onSubmit()`. Validates the answer. Resets input text. |
+| "Check" button | Calls `scope.onSubmit()`. Validates the answer. Enabled when `inputText.isNotBlank() && currentCard != null` — no session state gate. Works during PAUSED and HINT_SHOWN states. Resets input text. |
 | Prev button (nav) | Calls `scope.onPrev()`. Goes to previous card. Resets input text. |
-| Pause button (nav) | Calls `contract.togglePause()`. Toggles session pause. Behavior depends on pause reason: (1) paused with hint shown (`hintAnswer != null`) → Play clears hint and resumes ACTIVE on the same card (does NOT advance); user must press explicit Next button to advance to the next card; (2) paused without hint (manual pause, `hintAnswer == null`) → Play resumes the current card without advancing, preserving input text and attempt state. This applies to all adapters using `supportsPause`. |
+| Pause button (nav) | Calls `contract.togglePause()`. Toggles session pause. Behavior depends on pause reason: (1) paused with hint shown (`hintAnswer != null`) → Play clears hint and resumes ACTIVE on the same card (does NOT advance); user must press explicit Next button to advance to the next card; (2) paused without hint (manual pause, `hintAnswer == null`) → Play resumes the current card without advancing, preserving input text and attempt state. This applies to all adapters using `supportsPause`. **Cascade behavior:** During ANY paused state (manual, hint, pomodoro), input field remains visible and functional. Check button validates answer regardless of session state (no `sessionState == ACTIVE` gate). After Check during pause, Play resumes session on same card without auto-advancing. Input text preserved across pause/resume. Applies to ALL card modes. |
 | Exit button (nav) | Shows exit confirmation dialog. On confirm: calls `contract.requestExit()`. |
 | "End" (exit dialog) | Confirms exit. Calls `contract.requestExit()`. |
 | "Cancel" (exit dialog) | Dismisses exit dialog. |

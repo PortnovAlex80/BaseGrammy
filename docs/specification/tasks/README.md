@@ -40,4 +40,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-059](TASK-059-unify-voice-auto-launch.md) | Unify Voice Auto-Launch Mechanism | OPEN | 12, 10 | 2026-05-17 |
 | [DONE-TASK-058](DONE-TASK-058-two-layer-hint-system.md) | Two-Layer Hint System — Difficulty + Scheduler | DONE | 03, 21, 01, 12, 08, 22, 23 | 2026-05-17 |
 | [TASK-061](TASK-061-training-consolidation.md) | Training Consolidation — One Engine, One Screen | OPEN | 12, DP-04, 10, 09 | 2026-05-17 |
-| [TASK-062](TASK-062-pause-input-cascade.md) | Pause → Input → Check → Play Cascade | OPEN | 12, 08, 22, 23 | 2026-05-17 |
+| [DONE-TASK-062](DONE-TASK-062-pause-input-cascade.md) | Pause → Input → Check → Play Cascade | DONE | 12, 08, 22, 23 | 2026-05-17 |
