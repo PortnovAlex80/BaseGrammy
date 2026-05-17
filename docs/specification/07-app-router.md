@@ -171,10 +171,30 @@ Back handling is registered per-screen. When `showSettings == true`, all BackHan
 
 Two token-based transitions occur when `screen == TRAINING`:
 
-1. **Sub-lesson finish** -- When `state.subLessonFinishedToken` differs from `lastFinishedToken.value`, the router sets `screen = LESSON`.
+1. **Sub-lesson finish** -- When `state.subLessonFinishedToken` differs from `lastFinishedToken.value`:
+   - For DAILY modes (DAILY_TRANSLATE, DAILY_VERBS): the router navigates immediately to `returnTo` (DAILY_PRACTICE) and calls `onBlockComplete()`. No completion screen shown.
+   - For BOSS/BOSS_MEGA: the router navigates immediately to LESSON. Boss reward dialog handles completion feedback.
+   - For VERB_DRILL: VerbDrill has its own `VerbDrillCompletionContent`. The router does not navigate on token change; VerbDrillScreen handles completion internally.
+   - For NORMAL, DRILL, ELITE, MIX_CHALLENGE: the router does **NOT** navigate immediately. TrainingScreen intercepts the completion state and renders the Universal Completion Screen (see 12-training-card-session.md#12.6). Navigation happens when the user taps "Done" or presses Back on the completion screen. The router's `LaunchedEffect` is guarded to skip navigation when the completion screen is active (detected via a flag or by checking that TrainingScreen has consumed the token).
 2. **Boss finish** -- When `state.bossFinishedToken` differs from `lastBossFinishedToken.value`, the router sets `screen = LESSON`.
 
 These tokens are ViewModel-generated monotonically increasing values that signal session completion without requiring the ViewModel to know about the router's screen state.
+
+### 7.3.4a NavHost Fade Transitions
+
+All screen transitions use fade animations for a smooth visual experience:
+
+```kotlin
+NavHost(
+    enterTransition = { fadeIn(tween(300)) },
+    exitTransition = { fadeOut(tween(300)) }
+)
+```
+
+- **enterTransition:** `fadeIn(tween(300))` -- new screen fades in over 300ms.
+- **exitTransition:** `fadeOut(tween(300))` -- current screen fades out over 300ms.
+- Applies globally to all screen transitions (HOME <-> LESSON <-> TRAINING, etc.).
+- Does not apply to dialog appearances (dialogs use their own animation).
 
 ### 7.3.5 State Restoration
 

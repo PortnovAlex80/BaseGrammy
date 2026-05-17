@@ -23,7 +23,9 @@ import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.PracticeType
+import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
+import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +65,7 @@ class DailyPracticeCoordinator(
     private val verbDrillStoreFactory: (String?) -> VerbDrillStore,
     private val wordMasteryStoreFactory: (String?) -> WordMasteryStore,
     private val streakStore: StreakStore,
+    private val streakManager: StreakManager,
     private var sessionSize: Int = 10
 ) {
 
@@ -122,9 +125,34 @@ class DailyPracticeCoordinator(
             DailyBlockType.VOCAB to PracticeType.VOCAB,
             DailyBlockType.VERBS to PracticeType.VERB
         )
+        var lastStreakData: StreakData? = null
+        var anyNewFire = false
         for (blockType in blockTypes) {
             val practiceType = blockTypeToPracticeType[blockType] ?: continue
-            streakStore.recordPracticeTypeCompletion(languageId, practiceType)
+            val (updated, isNewFire) = streakStore.recordPracticeTypeCompletion(languageId, practiceType)
+            lastStreakData = updated
+            if (isNewFire) anyNewFire = true
+        }
+
+        // Update in-memory core state so HomeScreen shows the new streak immediately
+        // without requiring an app restart. The store already persists to disk,
+        // but the UI reads from _coreState which was not being updated here.
+        // Also generate a celebration message when a new fire is earned, so the
+        // streak celebration dialog appears after daily practice (same as regular training).
+        val streakSnapshot = lastStreakData
+        if (streakSnapshot != null) {
+            val message = if (anyNewFire && streakSnapshot.currentStreak > 0) {
+                streakManager.getCelebrationMessage(streakSnapshot.currentStreak, streakSnapshot.todayFireCount)
+            } else null
+            stateAccess.updateState { state ->
+                state.copy(cardSession = state.cardSession.copy(
+                    currentStreak = streakSnapshot.currentStreak,
+                    longestStreak = streakSnapshot.longestStreak,
+                    todayFireCount = streakSnapshot.todayFireCount,
+                    streakMessage = message,
+                    streakCelebrationToken = if (message != null) state.cardSession.streakCelebrationToken + 1 else state.cardSession.streakCelebrationToken
+                ))
+            }
         }
 
         _state.update { state ->

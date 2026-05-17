@@ -408,7 +408,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         VerbDrillScreen(
                             viewModel = verbDrillVm,
-                            onBack = { onNavigate(Routes.HOME) },
+                            onBack = {
+                                vm.refreshStreakFromStore()
+                                onNavigate(Routes.HOME)
+                            },
                             onStartSession = { cards ->
                                 vm.startVerbDrillSession(cards)
                                 vm.setReturnTo(Routes.VERB_DRILL)
@@ -429,6 +432,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             if (vocabDrillVm.hasRatedCards) {
                                 vm.refreshVocabMasteryCount()
                             }
+                            vm.refreshStreakFromStore()
                             onNavigate(Routes.HOME)
                         }
                         BackHandler { vocabExit() }

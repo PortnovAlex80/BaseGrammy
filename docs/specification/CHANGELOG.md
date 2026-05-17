@@ -2,6 +2,13 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [Bug Fix: No auto-advance after 3 incorrect retries] - 2026-05-17
+
+### Changed
+- `12-training-card-session.md`: Updated section 12.3.3 (Retry and Hint Flow) to clarify that after 3 incorrect attempts the system shows the answer but does NOT auto-advance. Updated section 12.4.8 (Default Navigation Controls) to specify that Play/Pause button shows PlayArrow (not SkipNext) when hint is shown, and pressing it clears the hint without advancing.
+- `22-use-case-registry.md`: Updated UC-03 AC6 to explicitly state no auto-advance after hint shown. Added AC7 specifying PlayArrow icon behavior on hint shown.
+- `UnifiedNavigationRow.kt`: Removed misleading SkipNext icon when hint is shown. Play/Pause button now always shows PlayArrow when paused (including during hint), making it clear the button clears the hint and retries the same card rather than advancing.
+
 ## [TASK-061: DailyPractice Block-Config Coordinator] - 2026-05-17
 
 ### Changed

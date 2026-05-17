@@ -172,7 +172,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         masteryStore = masteryStore,
         verbDrillStoreFactory = { packId -> container.verbDrillStore(packId) },
         wordMasteryStoreFactory = { packId -> container.wordMasteryStore(packId) },
-        streakStore = streakStore
+        streakStore = streakStore,
+        streakManager = streakManager
     )
 
     private val storyRunner = StoryRunner(
@@ -1263,6 +1264,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _coreState.update {
                 it.copy(cardSession = it.cardSession.copy(currentStreak = updatedStreak.currentStreak, longestStreak = updatedStreak.longestStreak, todayFireCount = fireCount))
             }
+        }
+    }
+
+    /**
+     * Reload streak data from the store into _coreState.
+     * Called when returning to HomeScreen from standalone drill ViewModels
+     * (VocabDrill, VerbDrill) that record streak to disk but don't share _coreState.
+     * Without this, the streak display on HomeScreen is stale until app restart.
+     */
+    fun refreshStreakFromStore() {
+        val languageId = _coreState.value.navigation.selectedLanguageId.value
+        val streakData = streakStore.getCurrentStreak(languageId)
+        _coreState.update {
+            it.copy(cardSession = it.cardSession.copy(
+                currentStreak = streakData.currentStreak,
+                longestStreak = streakData.longestStreak,
+                todayFireCount = streakData.todayFireCount
+            ))
         }
     }
 

@@ -273,10 +273,10 @@ Each card progresses through these states:
        +--> INCORRECT_FEEDBACK --> PRESENTING (retry) -+
        |
        |           (wrong, attempts >= 3)
-       +--> HINT_SHOWN --> NEXT (via play/pause or next)
+       +--> HINT_SHOWN --> PRESENTING (play clears hint, same card) or NEXT (via Next button)
        |
        |           (manual eye button)
-       +--> HINT_SHOWN --> NEXT
+       +--> HINT_SHOWN --> PRESENTING (play clears hint, same card) or NEXT (via Next button)
 ```
 
 **State determination:** The composable determines which state to render based on adapter properties:
@@ -300,13 +300,13 @@ The answer validation pipeline:
 
 ### 12.3.3 Retry and Hint Flow
 
-Both `VerbDrillCardSessionProvider` and `DailyPracticeSessionProvider` implement an identical retry/hint flow:
+All card session modes use the same retry/hint flow via `CardSessionStateMachine` and `SessionRunner`:
 
-1. **Correct answer:** Set `pendingCard` and `pendingAnswerResult`. The card stays visible for feedback. ViewModel index is NOT advanced yet.
-2. **Wrong answer (attempt < 3):** Show inline "Incorrect" feedback with remaining attempt count. Input stays visible. If in VOICE mode, auto-trigger voice recognition after a 1200ms delay.
-3. **Wrong answer (attempt >= 3):** Auto-show answer as hint in an error-colored card. Set `isPaused = true`. Input controls stay visible below the hint card.
-4. **Manual "Show Answer" (eye button):** Same as attempt >= 3: show hint card, pause session.
-5. **Advancement:** `nextCard()` clears all pending state and advances the index. If a hint was shown, the card is marked as completed (no credit). If a correct answer was pending, the ViewModel records it.
+1. **Correct answer:** Advance to next card (auto-advance). The card stays visible for feedback briefly. For VOICE mode, auto-advance after a short delay.
+2. **Wrong answer (attempt < 3):** Show inline "Incorrect" feedback with remaining attempt count. Input stays visible. If in VOICE mode, auto-trigger voice recognition after a short delay.
+3. **Wrong answer (attempt >= 3):** Auto-show answer as hint (error-colored card). Timer pauses. Session enters `HINT_SHOWN` state. **The system does NOT auto-advance to the next card.** The user must manually press the explicit Next button (ArrowForward) to advance. The Play/Pause button shows PlayArrow and clears the hint, allowing the user to retry the same card.
+4. **Manual "Show Answer" (eye button):** Same as attempt >= 3: show hint card, pause session. No auto-advance.
+5. **Advancement:** Only `nextCard()` (triggered by the explicit Next button) clears all pending state and advances the index. If a hint was shown, the card is marked as completed (no credit). If a correct answer was pending, the ViewModel records it.
 
 ### 12.3.4 Batch Management
 
@@ -446,7 +446,7 @@ All navigation buttons use `NavIconButton` styling: 44dp square, `surfaceVariant
 
 **Exit button** opens an `AlertDialog` confirmation: "End session? Your progress will be saved." with "End" and "Cancel" buttons.
 
-**Pause/Play button** toggles session active state via `togglePause()`.
+**Pause/Play button** toggles session active state via `togglePause()`. When a hint is shown (after 3 incorrect attempts or manual eye button), the Play button shows `PlayArrow` (not `SkipNext`). Pressing Play clears the hint and resumes ACTIVE on the same card — it does NOT advance. User must press the explicit Next button (ArrowForward) to advance.
 
 ### 12.4.9 TtsSpeakerButton
 
@@ -612,9 +612,96 @@ Drill is a sub-mode of TrainingScreen, triggered by the DrillTile on LessonRoadm
 
 ---
 
-## 12.6 State Management
+## 12.6 Universal Completion Screen
 
-### 12.6.1 Local UI State (Composable-owned)
+### 12.6.1 Overview
+
+The Universal Completion Screen is a full-screen overlay shown inside TrainingScreen's content area when a training session completes in eligible modes. It replaces the card area with session statistics and a "Done" button, giving the user a moment to see their results before navigating away.
+
+This replaces the previous immediate-navigation pattern where `subLessonFinishedToken` caused GrammarMateApp to navigate away the instant the last card was answered.
+
+### 12.6.2 Structure
+
+```
++====================================================+
+| [<-]  Sentence Trainer                              |
++====================================================+
+|                                                     |
+|                        🎉                           |
+|                    (48sp emoji)                      |
+|                                                     |
+|                   "Well done!"                       |
+|               (headlineMedium, Bold)                 |
+|                                                     |
+|              8 correct / 2 incorrect                 |
+|                  (bodyLarge)                         |
+|                                                     |
+|                     3:42                             |
+|                (bodyMedium, muted)                   |
+|                                                     |
+| +------------------------------------------------+ |
+| |                    Done                        | |
+| +------------------------------------------------+ |
+|                                                     |
++====================================================+
+```
+
+**Components:**
+- Party popper emoji "🎉" at 48sp
+- Title: "Well done!" (headlineMedium, bold)
+- Stats row: "{correctCount} correct / {incorrectCount} incorrect" (bodyLarge)
+- Time: "{activeTimeMs formatted as M:SS}" (bodyMedium, muted)
+- "Done" button (FilledTonalButton, full width) -> triggers navigate(returnTo)
+
+### 12.6.3 Visibility Conditions
+
+**Shown when ALL of the following are true:**
+1. `sessionState == PAUSED`
+2. `currentCard == null`
+3. `subLessonFinishedToken > 0` (incremented from previous value)
+4. `screenMode` is one of: NORMAL, DRILL, ELITE, MIX_CHALLENGE (via NORMAL mode)
+
+**NOT shown (special handling) for these modes:**
+- **DAILY_TRANSLATE / DAILY_VERBS:** No completion screen. Token change triggers immediate navigation to DAILY_PRACTICE for sparkle transition (existing behavior preserved).
+- **VERB_DRILL:** Uses its own `VerbDrillCompletionContent` with stats + "More" + "Exit" buttons (existing behavior, no change).
+- **BOSS / BOSS_MEGA:** Boss reward dialog handles completion feedback. No universal completion screen.
+
+**Priority override:**
+- When Pomodoro timer has expired during the session, `PomodoroSummaryScreen` takes priority over the universal completion screen. The Pomodoro "Done" button navigates normally (which may then show the completion screen, or navigate directly -- combined flow to be determined during implementation).
+
+### 12.6.4 Behavioral Contract
+
+| User Action | System Response | User Outcome |
+|---|---|---|
+| Session completes (last card answered) | SessionRunner sets `sessionState=PAUSED`, `currentCard=null`, increments `subLessonFinishedToken`. TrainingScreen detects completion state and renders Universal Completion Screen instead of navigating away. GrammarMateApp does NOT navigate on token change while completion screen is visible. | User sees "Well done!" with stats |
+| Tap "Done" button | TrainingScreen calls `onComplete` callback. GrammarMateApp reads `returnTo` from state and navigates to `returnTo` route. | User arrives at LESSON/HOME/returnTo destination |
+| Tap system Back during completion screen | Same as "Done" -- `navigate(returnTo)`. BackHandler captures system back and triggers the same navigation path. | Same outcome as "Done" |
+| Completion screen + Pomodoro active | If pomodoro timer expired, show PomodoroSummaryScreen instead. Pomodoro "Done" navigates then shows completion, or combined flow. | Pomodoro summary takes priority |
+| DAILY_TRANSLATE/VERBS last card | SessionRunner increments token. GrammarMateApp detects token change, reads `returnTo=DAILY_PRACTICE`, calls `onBlockComplete()`, navigates to DAILY_PRACTICE. No completion screen. | User returns to DailyPracticeScreen, sees sparkle, next block starts |
+| VERB_DRILL last card | Existing VerbDrillCompletionContent shown (no change from current behavior) | User sees stats + More/Exit |
+| BOSS/BOSS_MEGA last card | Boss reward dialog shown (no change). No universal completion screen. | User sees trophy reward |
+| DRILL last card | Universal completion screen shown. "Done" navigates to LESSON (returnTo=LESSON). | User sees "Well done!", returns to roadmap |
+| ELITE last card | Universal completion screen shown. "Done" navigates to LESSON (returnTo=LESSON). | User sees "Well done!", returns to roadmap |
+| MIX_CHALLENGE last card | Universal completion screen shown. "Done" navigates to LESSON (returnTo=LESSON). | User sees "Well done!", returns to roadmap |
+
+### 12.6.5 Deferred Navigation Pattern
+
+The `subLessonFinishedToken` is no longer the immediate navigation trigger for eligible modes. Instead:
+
+1. **Token increments** as before when session completes.
+2. **TrainingScreen checks** for completion state (PAUSED + null card + token changed + eligible mode).
+3. **Completion screen renders** instead of triggering navigation.
+4. **Navigation happens** when user taps "Done" or presses Back.
+5. **GrammarMateApp** still reads `returnTo` from state for the destination.
+6. **Token-based LaunchedEffect** in GrammarMateApp is guarded: it only navigates if `returnTo != TRAINING` and the completion screen is not being shown (i.e., the TrainingScreen has not intercepted the completion state).
+
+For DAILY modes, the token-based navigation in GrammarMateApp continues to work as before -- immediate navigation to DAILY_PRACTICE with `onBlockComplete()`.
+
+---
+
+## 12.7 State Management
+
+### 12.7.1 Local UI State (Composable-owned)
 
 The `TrainingCardSession` composable manages these local state variables:
 
@@ -626,7 +713,7 @@ The `TrainingCardSession` composable manages these local state variables:
 | `showReportSheet` | `Boolean` | Controls report bottom sheet visibility. |
 | `exportMessage` | `String?` | Shows export result in an AlertDialog. |
 
-### 12.6.2 Adapter State (Compose-observable)
+### 12.7.2 Adapter State (Compose-observable)
 
 Adapters store their state in `mutableStateOf` fields for direct Compose recomposition:
 
@@ -655,7 +742,7 @@ Identical fields to VerbDrillCardSessionProvider, plus:
 | `currentIndex` | `Int` | Position within the block's card list |
 | `pendingInput` | `String` | Text being composed before submit |
 
-### 12.6.3 ViewModel State (Flow-owned)
+### 12.7.3 ViewModel State (Flow-owned)
 
 Adapters read from their backing ViewModel's `StateFlow` for source-of-truth data:
 
@@ -663,7 +750,7 @@ Adapters read from their backing ViewModel's `StateFlow` for source-of-truth dat
 - `VerbDrillViewModel.ttsState` provides the current TTS playback state.
 - Daily Practice reads from `DailySessionState` via callbacks rather than a direct ViewModel reference.
 
-### 12.6.4 Card Counter and Progress
+### 12.7.4 Card Counter and Progress
 
 Progress is always 1-based for display: `SessionProgress(current = index + 1, total = cards.size)`.
 
@@ -671,7 +758,7 @@ In the Verb Drill adapter, the index is advanced by `nextCard()` (not by `submit
 
 In the Daily Practice adapter, `currentIndex` is incremented directly in `nextCard()`. The provider caps display at `blockCards.size` via `coerceAtMost`.
 
-### 12.6.5 Adapter Lifecycle
+### 12.7.5 Adapter Lifecycle
 
 Adapters are created via `remember` with a key:
 
@@ -680,9 +767,9 @@ Adapters are created via `remember` with a key:
 
 ---
 
-## 12.7 User Interactions
+## 12.8 User Interactions
 
-### 12.7.1 Touch/Tap Interactions
+### 12.8.1 Touch/Tap Interactions
 
 | Target | Action |
 |--------|--------|
@@ -704,7 +791,7 @@ Adapters are created via `remember` with a key:
 | "Copy text" | Copies card info (ID, source, target) to clipboard. |
 | "Check" button | Calls `scope.onSubmit()`. Validates the answer. Resets input text. |
 | Prev button (nav) | Calls `scope.onPrev()`. Goes to previous card. Resets input text. |
-| Pause button (nav) | Calls `contract.togglePause()`. Toggles session pause. Behavior depends on pause reason: (1) paused with hint shown (`hintAnswer != null`) → Play advances to next card; (2) paused without hint (manual pause, `hintAnswer == null`) → Play resumes the current card without advancing, preserving input text and attempt state. This applies to all adapters using `supportsPause`. |
+| Pause button (nav) | Calls `contract.togglePause()`. Toggles session pause. Behavior depends on pause reason: (1) paused with hint shown (`hintAnswer != null`) → Play clears hint and resumes ACTIVE on the same card (does NOT advance); user must press explicit Next button to advance to the next card; (2) paused without hint (manual pause, `hintAnswer == null`) → Play resumes the current card without advancing, preserving input text and attempt state. This applies to all adapters using `supportsPause`. |
 | Exit button (nav) | Shows exit confirmation dialog. On confirm: calls `contract.requestExit()`. |
 | "End" (exit dialog) | Confirms exit. Calls `contract.requestExit()`. |
 | "Cancel" (exit dialog) | Dismisses exit dialog. |
@@ -715,7 +802,7 @@ Adapters are created via `remember` with a key:
 | SuggestionChip (tense) | Opens Tense Info Bottom Sheet showing formula, usage, and examples. |
 | Verb Reference TTS button | Speaks the verb infinitive via `viewModel.speakVerbInfinitive(verb)`. |
 
-### 12.7.2 Voice Input Flow
+### 12.8.2 Voice Input Flow
 
 The voice input flow differs between the default input controls and the custom adapters:
 
@@ -735,18 +822,18 @@ The voice input flow differs between the default input controls and the custom a
 4. If correct, input is cleared. A `LaunchedEffect` detects the correct result and auto-advances to the next card after 400-500ms.
 5. If incorrect, the spoken text is placed in the input field for manual editing.
 
-### 12.7.3 Keyboard Interactions
+### 12.8.3 Keyboard Interactions
 
 - **Typing:** Standard Android text input. `onValueChange` callback updates `localInputText`.
 - **Clearing incorrect feedback:** In custom adapters, typing after an incorrect answer clears the inline "Incorrect" feedback via `provider.clearIncorrectFeedback()`.
 - **Clearing hint:** In custom adapters, typing after a hint is shown clears the hint, unpauses the session, and resets the attempt counter.
 - **Submit:** The "Check" button is the primary submit mechanism. There is no IME action (Enter key) submission -- the user must tap the button.
 
-### 12.7.4 Swipe Gestures
+### 12.8.4 Swipe Gestures
 
 TrainingCardSession does not implement any swipe gestures. Card navigation is exclusively via the prev/next navigation buttons.
 
-### 12.7.5 Answer Normalization
+### 12.8.5 Answer Normalization
 
 All answer comparisons go through `Normalizer.normalize()`:
 
@@ -758,14 +845,14 @@ All answer comparisons go through `Normalizer.normalize()`:
 
 This ensures answers are matched regardless of capitalization, accent usage, trailing punctuation, or minor whitespace differences.
 
-### 12.7.6 Card Presentation Order
+### 12.8.6 Card Presentation Order
 
 Cards are presented in the order provided by the adapter. The composable itself does not shuffle or reorder cards. Ordering is determined by:
 
 - **Verb Drill:** `VerbDrillViewModel` selects and orders cards based on selected tense/group filters and frequency sorting preference.
 - **Daily Practice:** `DailySessionComposer` builds the task list with a fixed block order (TRANSLATE, VOCAB, VERBS). Within each block, cards are ordered by the composer's selection algorithm.
 
-### 12.7.7 Session Completion
+### 12.8.7 Session Completion
 
 A session is complete when `contract.isComplete == true` and `lastResult == null` (no pending result to display).
 
@@ -775,7 +862,7 @@ The completion behavior varies by mode:
 - **Verb Drill:** Shows stats (correct/incorrect counts). If not all cards are done for today, shows "More" button to load the next batch. Always shows "Exit" outlined button.
 - **Daily Practice:** Block completion triggers `onAdvanceBlock()`. If there are more blocks, a `BlockSparkleOverlay` appears briefly, then the next block starts. If all blocks are done, a final `DailyPracticeCompletionScreen` shows "Session Complete!" with a "Back to Home" button.
 
-### 12.7.8 Error States
+### 12.8.8 Error States
 
 | Condition | UI Response |
 |-----------|-------------|
@@ -787,13 +874,13 @@ The completion behavior varies by mode:
 
 ---
 
-## 12.8 UI Consistency — Shared Components [UI-CONSISTENCY-2025]
+## 12.9 UI Consistency — Shared Components [UI-CONSISTENCY-2025]
 
 This section documents the shared UI components to be extracted from existing screen-specific implementations for cross-screen consistency. The goal is to unify input mode bars, report sheets, and voice auto-launch behavior across VerbDrill, VocabDrill, TrainingScreen, and DailyPractice.
 
 ---
 
-### 12.8.1 Shared InputModeBar Component [UI-CONSISTENCY-2025]
+### 12.9.1 Shared InputModeBar Component [UI-CONSISTENCY-2025]
 
 A shared `SharedInputModeBar` composable must be extracted to `ui/components/SharedInputModeBar.kt`, unifying three current implementations.
 
@@ -847,7 +934,7 @@ fun SharedInputModeBar(
 
 ---
 
-### 12.8.2 Shared ReportSheet Component [UI-CONSISTENCY-2025]
+### 12.9.2 Shared ReportSheet Component [UI-CONSISTENCY-2025]
 
 #### Behavioral Contract
 
@@ -954,7 +1041,7 @@ fun SharedReportSheet(
 
 ---
 
-### 12.8.3 Cross-Screen Consistency Matrix [UI-CONSISTENCY-2025]
+### 12.9.3 Cross-Screen Consistency Matrix [UI-CONSISTENCY-2025]
 
 Summary of which component is the reference and which are adopters:
 
@@ -967,7 +1054,7 @@ Summary of which component is the reference and which are adopters:
 
 ---
 
-### 12.8.4 Shared Components (updated 2026-05-16)
+### 12.9.4 Shared Components (updated 2026-05-16)
 
 Per DP-03 (see user-journey-models.md), the following must be single shared components used by ALL card-based modes. No mode may duplicate these with its own version:
 

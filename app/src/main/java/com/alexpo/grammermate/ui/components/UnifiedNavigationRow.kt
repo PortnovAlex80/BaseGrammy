@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -101,13 +100,10 @@ fun UnifiedNavigationRow(
                     if (stateModel.isActive) {
                         Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.content_desc_pause))
                     } else {
-                        // When hint is shown, show SkipNext to indicate "advance";
-                        // otherwise show PlayArrow for "resume from pause".
-                        if (stateModel.isHintShown) {
-                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.content_desc_next))
-                        } else {
-                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
-                        }
+                        // Always show PlayArrow: Play clears hint (same card) or resumes from pause.
+                        // After 3 incorrect retries, the hint is shown but the card does NOT auto-advance.
+                        // User must press the explicit Next button (ArrowForward) to advance.
+                        Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.content_desc_play))
                     }
                 }
             }

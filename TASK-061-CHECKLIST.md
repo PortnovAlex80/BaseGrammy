@@ -236,15 +236,19 @@ TrainingScreen — единственный экземпляр экрана дл
 | 10 | Stop/exit from verb drill | During verb drill → press stop → confirm | Navigates to HOME or back to selection |
 | 11 | Back button from lesson | During regular lesson → press back | Correct destination (HOME or lesson screen) |
 | 12 | Back button from daily | During daily practice → press back | Navigates to HOME |
-| 13 | Pomodoro pause/resume | Start session → pause → observe → resume | Input controls hidden on pause, visible on resume |
+| 13 | Pomodoro pause/resume | Start session → pause → type answer → Check → Play | Input visible during pause, Check validates, Play resumes |
 | 14 | Pomodoro complete | Start session → complete all cards in time | Summary shown → difficulty rating → HOME |
 | 15 | Boss battle | Start boss → TrainingScreen → complete | Returns HOME, boss result recorded |
 | 16 | Mix challenge | Start mix from HOME → TrainingScreen → complete | Returns HOME |
 | 17 | Daily VOCAB SRS | Daily → VOCAB block → flip card → voice input → rate AGAIN/HARD/GOOD/EASY | Rating recorded, next card appears, SRS step updated |
+| 18 | Pause — input cascade (Variant B) | During lesson → pause → type answer → Check | Check validates answer, Play button activates |
+| 19 | Pause — input cascade (hint) | 3 wrong answers → hint shown → type answer → Check | Check validates, Play activates, no auto-advance |
+| 20 | Pause — input cascade (pomodoro) | Pomodoro pause → type answer → Check | Check validates, Play activates |
+| 21 | Pause — input preserved | Pause → input has text → resume | Input text preserved after resume |
 
 ### Priority Order
 1. Test cases 1-5 (Daily Practice + regular lesson with all hint levels)
 2. Test cases 6-7 (Verb Drill)
 3. Test cases 8-12 (Stop/exit/back from all modes)
-4. Test cases 13-14 (Pomodoro)
+4. Test cases 13-14, 18-21 (Pomodoro + pause-input cascade)
 5. Test cases 15-17 (Boss, Mix, SRS)

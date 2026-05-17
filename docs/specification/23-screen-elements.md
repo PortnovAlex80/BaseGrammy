@@ -5,7 +5,7 @@
 | Screen | Prefix | Element Count |
 |--------|--------|---------------|
 | HomeScreen | HS | 23 |
-| TrainingScreen | TS | 37 |
+| TrainingScreen | TS | 38 |
 | TrainingCardSession | TCS | 29 |
 | DailyPracticeScreen | DP | 30 |
 | VerbDrillScreen | VD | 41 |
@@ -17,7 +17,7 @@
 | GrammarMateApp Dialogs | DG | 18 |
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
 | Pomodoro | PM | 9 |
-| **Total** | | **328** |
+| **Total** | | **329** |
 
 ---
 
@@ -102,6 +102,7 @@
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
 | Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #1565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
+| Session Completion Screen | TS-38 | overlay | `sessionState==PAUSED && currentCard==null && subLessonFinishedToken>0 && screenMode in {NORMAL, DRILL, ELITE}` | Full-screen overlay replacing card content area. Surface background. Center-aligned Column: party popper emoji (48sp), "Well done!" title (headlineMedium Bold), stats row "{correctCount} correct / {incorrectCount} incorrect" (bodyLarge), time "{M:SS}" (bodyMedium muted), "Done" FilledTonalButton (full width) -> navigate(returnTo). NOT shown for DAILY, VERB_DRILL, BOSS/BOSS_MEGA modes. PomodoroSummaryScreen takes priority when Pomodoro timer expired. See 12-training-card-session.md#12.6. | UC-87 |
 
 ---
 
@@ -137,7 +138,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Report bottom sheet | TCS-22 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt + flag/unflag + hide card + export + copy text + share translation via QR (when shareText != null). | ? |
 | Navigation row | TCS-23 | button | `supportsNavigation` | Prev + Pause/Play (if `supportsPause`) + Exit + Next NavIconButtons. | ? |
 | Exit confirmation dialog | TCS-24 | dialog | Exit button tapped | "End session? Your progress will be saved." with "End"/"Cancel". | ? |
-| Completion screen | TCS-25 | card | `isComplete && !isShowingResult` | Party popper emoji (48sp) + "Well done!" (24sp Bold) + progress text + "Done" button. | ? |
+| Completion screen | TCS-25 | card | `isComplete && !isShowingResult` | Party popper emoji (48sp) + "Well done!" (24sp Bold) + progress text + "Done" button. For TrainingScreen modes (NORMAL, DRILL, ELITE): replaced by Universal Completion Screen (TS-38, see 12-training-card-session.md#12.6). VerbDrill uses custom completion (VD-37 through VD-41). Daily Practice uses sparkle transition. | UC-87 |
 | Progress text overlay | TCS-26 | text | Inside progress bar | "N / Total" in 12sp Bold. Color switches at 12% fill. | ? |
 | Speed value text | TCS-27 | text | Inside speedometer | Numeric wpm value in 13sp Bold, colored by speed range. | ? |
 | Result TTS replay button | TCS-28 | button | `isShowingResult && supportsTts` | TtsSpeakerButton in result section. Speaks `displayAnswer`. | ? |

@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 86 |
-| Total Acceptance Criteria | 461 |
-| Domains | 26 |
+| Total Use Cases | 87 |
+| Total Acceptance Criteria | 468 |
+| Domains | 27 |
 
 ### Per-Domain Counts
 
@@ -42,6 +42,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 24 | Unified bad sentence reporting | 1 | 8 |
 | 25 | Lesson unlock by mastery threshold | 1 | 8 |
 | 26 | Pomodoro Timer | 9 | 36 |
+| 27 | Universal training completion screen | 1 | 7 |
 
 ---
 
@@ -51,7 +52,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 |-------|----------|---------------|-------|---------------------|--------|--------------|--------|
 | UC-01 | Start a training sub-lesson | At least one lesson is unlocked; user is on Lesson Roadmap | 1. User taps a sub-lesson circle on the roadmap. 2. App loads sub-lesson cards (NEW_ONLY or MIXED). 3. Screen transitions to Training. 4. First card displays Russian prompt. 5. Input mode defaults to VOICE. 6. Session state is set to ACTIVE; timer begins. | AC1: Session state transitions from PAUSED to ACTIVE on user action. AC2: First card's `promptRu` is displayed. AC3: `inputMode` is set to VOICE. AC4: `activeTimeMs` begins incrementing. AC5: `currentIndex` is 0. | TrainingScreen (ui/screens/TrainingScreen.kt) | `feature/training/SessionRunner.kt`, `ui/TrainingViewModel.kt` | scenario-01, US-10 |
 | UC-02 | Submit a correct answer | Training session is ACTIVE; a card is displayed | 1. User types or speaks the target-language translation. 2. Answer is normalized via Normalizer pipeline. 3. Normalized input is compared against each normalized accepted answer. 4. If any match, answer is accepted. 5. Correct count increments, mastery is recorded. | AC1: `Normalizer.normalize()` trims whitespace, lowercases, removes punctuation (except hyphens), collapses spaces. AC2: Comparison checks ALL `acceptedAnswers` using `.any {}`. AC3: `correctCount` increments by 1 on correct answer. AC4: `recordCardShowForMastery()` is called (unless WORD_BANK or drill mode). AC5: `lastResult` is set to `true`. | TrainingScreen (ui/screens/TrainingScreen.kt) | `feature/training/AnswerValidator.kt`, `data/Normalization.kt`, `ui/TrainingViewModel.kt` | scenario-01, scenario-02 |
-| UC-03 | Submit an incorrect answer (retry/hint flow) | Training session is ACTIVE; a card is displayed | 1. User submits a wrong answer. 2. Error tone plays, `incorrectCount` and `incorrectAttemptsForCard` increment. 3. If attempts < 3: retry allowed, voice re-triggered if VOICE mode. 4. If attempts >= 3: all accepted answers shown as hint, timer paused, `incorrectAttemptsForCard` reset to 0. | AC1: `incorrectCount` increments on every wrong answer. AC2: After 3 wrong attempts, `answerText` contains all accepted answers joined by " / ". AC3: `sessionState` is set to `HINT_SHOWN` after 3 attempts. AC4: Timer is paused when hint is shown. AC5: `incorrectAttemptsForCard` resets to 0 when hint is shown. AC6: User must manually advance after hint (nextCard). | TrainingScreen (ui/screens/TrainingScreen.kt) | `feature/training/AnswerValidator.kt`, `data/Normalization.kt`, `ui/TrainingViewModel.kt` | scenario-01 |
+| UC-03 | Submit an incorrect answer (retry/hint flow) | Training session is ACTIVE; a card is displayed | 1. User submits a wrong answer. 2. Error tone plays, `incorrectCount` and `incorrectAttemptsForCard` increment. 3. If attempts < 3: retry allowed, voice re-triggered if VOICE mode. 4. If attempts >= 3: all accepted answers shown as hint, timer paused, `incorrectAttemptsForCard` reset to 0. 5. System does NOT auto-advance to next card after showing hint. User must press explicit Next button. | AC1: `incorrectCount` increments on every wrong answer. AC2: After 3 wrong attempts, `answerText` contains all accepted answers joined by " / ". AC3: `sessionState` is set to `HINT_SHOWN` after 3 attempts. AC4: Timer is paused when hint is shown. AC5: `incorrectAttemptsForCard` resets to 0 when hint is shown. AC6: System does NOT auto-advance after showing hint — user must press the explicit Next button (ArrowForward). AC7: Play/Pause button shows PlayArrow (not SkipNext) when hint is shown; pressing it clears hint and resumes ACTIVE on the same card without advancing. | TrainingScreen (ui/screens/TrainingScreen.kt) | `feature/training/AnswerValidator.kt`, `feature/training/CardSessionStateMachine.kt`, `feature/training/SessionRunner.kt`, `ui/TrainingViewModel.kt` | scenario-01 |
 | UC-04 | Navigate to next card | User has answered a card (correct or after hint) | 1. `nextCard()` increments `currentIndex`. 2. Next card is loaded from `sessionCards`. 3. Input text, last result, and answer text are cleared. 4. Mastery is recorded for the new card. 5. Timer resumes if hint was shown. 6. Progress is saved. | AC1: `currentIndex` advances by 1 (clamped to last index). AC2: `currentCard` is updated to the next card. AC3: `inputText` is cleared. AC4: `recordCardShowForMastery()` is called for the new card. AC5: `saveProgress()` is called. | TrainingScreen (ui/screens/TrainingScreen.kt) | `feature/training/SessionRunner.kt`, `ui/TrainingViewModel.kt` | scenario-01 |
 | UC-05 | Complete a sub-lesson (last card) | User is on the last card of a sub-lesson | 1. User answers the final card correctly. 2. Timer pauses. 3. Completed sub-lesson count is recalculated from mastery data. 4. `activeSubLessonIndex` advances (never moves backward). 5. `subLessonFinishedToken` increments. 6. Session cards are rebuilt for the next sub-lesson. 7. Flower states are refreshed. 8. Backup is triggered on next save. | AC1: `completedSubLessonCount` is recalculated from MasteryStore data. AC2: `activeSubLessonIndex` uses `maxOf(current, actual)` to prevent regression. AC3: `subLessonFinishedToken` increments, triggering navigation to LESSON screen. AC4: `refreshFlowerStates()` is called. AC5: `forceBackupOnSave` is set to `true`. AC6: `checkAndMarkLessonCompleted()` is called (marks lesson complete at 15 sub-lessons). | TrainingScreen (ui/screens/TrainingScreen.kt) | `feature/training/SessionRunner.kt`, `feature/progress/ProgressTracker.kt`, `ui/TrainingViewModel.kt` | scenario-01, US-16 |
 | UC-06 | End session manually | User is in an active training session | 1. User presses back or taps exit. 2. Exit confirmation dialog appears. 3. User confirms. 4. `finishSession()` pauses timer, calculates rating, resets to PAUSED. 5. Progress is saved. 6. Screen navigates to LESSON. | AC1: Exit confirmation dialog is shown before ending session. AC2: `finishSession()` sets `sessionState` to PAUSED. AC3: `saveProgress()` persists the session state. AC4: Navigation goes to `AppScreen.LESSON`, not HOME. | GrammarMateApp (ui/GrammarMateApp.kt) | `feature/training/SessionRunner.kt`, `ui/TrainingViewModel.kt` | scenario-11 |
@@ -407,6 +408,14 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 27: Universal Training Completion Screen
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-87 | View session completion summary | User has answered the last card in a training session (NORMAL, DRILL, ELITE, or MIX_CHALLENGE mode) | 1. System detects session completion (`currentCard == null`, `sessionState == PAUSED`, `subLessonFinishedToken` incremented from previous value). 2. System shows completion screen with stats (correct/incorrect counts, active time). 3. User taps "Done" or presses Back. 4. System navigates to `returnTo` destination (LESSON for lesson sessions). | AC1 [BEHAVIORAL]: After last card is answered in NORMAL mode, completion screen shows with correctCount and incorrectCount visible. AC2 [BEHAVIORAL]: Tap "Done" -> navigate(returnTo). For lesson sessions returnTo=LESSON -> user sees LessonRoadmapScreen. AC3 [BEHAVIORAL]: System Back during completion screen -> same as "Done" (navigate to returnTo). AC4 [NON-DEFAULT]: DAILY_TRANSLATE/VERBS modes do NOT show completion screen -- they navigate to DAILY_PRACTICE for sparkle transition. AC5 [NON-DEFAULT]: VERB_DRILL mode does NOT show universal completion -- it uses existing VerbDrillCompletionContent. AC6 [NON-DEFAULT]: BOSS/BOSS_MEGA modes do NOT show universal completion -- boss reward dialog handles completion feedback. AC7 [NON-DEFAULT]: When Pomodoro timer expired, PomodoroSummaryScreen takes priority over universal completion screen. | TrainingScreen | `ui/screens/TrainingScreen.kt`, `ui/GrammarMateApp.kt`, `feature/training/SessionRunner.kt` | 12-training-card-session.md#12.6 |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -439,3 +448,4 @@ Structured registry of all verified use cases extracted from scenario traces and
 | TASK-012, TASK-013, TASK-014 | UC-68 |
 | TASK-051 | UC-71, UC-72 |
 | TASK-052 | UC-73 |
+| 12-training-card-session.md#12.6 | UC-87 |
