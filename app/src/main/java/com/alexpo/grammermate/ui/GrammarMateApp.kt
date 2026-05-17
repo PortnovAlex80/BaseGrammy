@@ -335,7 +335,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                     composable(Routes.MIX_CHALLENGE) {
                         LaunchedEffect(Unit) { vm.setReturnTo(Routes.HOME) }
-                        TrainingScreenContent(state, vm, { dialogs = dialogs.copy(showExitDialog = true) }, { previousRoute = Routes.MIX_CHALLENGE; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) }, onTtsSpeak, hintLevel = state.cardSession.hintLevel)
+                        TrainingScreenContent(state, vm, { dialogs = dialogs.copy(showExitDialog = true) }, { previousRoute = Routes.MIX_CHALLENGE; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) }, onTtsSpeak, hintLevel = state.cardSession.hintLevel, onNavigate = onNavigate)
                     }
 
                     composable(Routes.STORY) {
@@ -394,7 +394,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 // Stay on VERB_DRILL selection screen for next batch
                                 vm.exitVerbDrillSession()
                                 onNavigate(Routes.VERB_DRILL)
-                            }
+                            },
+                            onNavigate = onNavigate
                         )
                     }
 
@@ -555,7 +556,8 @@ private fun TrainingScreenContent(
     onShowSettings: () -> Unit,
     onTtsSpeak: () -> Unit,
     hintLevel: HintLevel = HintLevel.EASY,
-    onVerbDrillMore: () -> Unit = {}
+    onVerbDrillMore: () -> Unit = {},
+    onNavigate: (String) -> Unit = {}
 ) {
     TrainingScreen(
         state = state,
@@ -584,7 +586,10 @@ private fun TrainingScreenContent(
         hintLevel = hintLevel,
         onPausePomodoro = vm::pausePomodoro,
         onResumePomodoro = vm::resumePomodoro,
-        onCancelPomodoro = vm::cancelPomodoro,
+        onCancelPomodoro = {
+            vm.cancelPomodoro()
+            onNavigate(Routes.HOME)
+        },
         onRateCardDifficulty = vm::rateCardDifficulty,
         onVerbDrillMore = onVerbDrillMore
     )
@@ -763,21 +768,26 @@ private fun NavDialogs(
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         // Pomodoro: track session completion for timer stats
         vm.onTrainingSessionCompleted()
-        val returnTo = state.cardSession.returnTo
-        if (returnTo.isNotEmpty()) {
-            if (returnTo == Routes.DAILY_PRACTICE) {
-                vm.daily.onBlockComplete()
+        // If pomodoro completed, stay on TrainingScreen to show summary — user presses Done to leave
+        if (!state.pomodoro.isComplete) {
+            val returnTo = state.cardSession.returnTo
+            if (returnTo.isNotEmpty()) {
+                if (returnTo == Routes.DAILY_PRACTICE) {
+                    vm.daily.onBlockComplete()
+                }
+                onNavigate(returnTo)
+            } else {
+                // Default: sub-lesson from LESSON screen
+                onNavigate(Routes.LESSON)
             }
-            onNavigate(returnTo)
-        } else {
-            // Default: sub-lesson from LESSON screen
-            onNavigate(Routes.LESSON)
         }
     }
     if (currentRoute == Routes.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         vm.onTrainingSessionCompleted()
-        onNavigate(Routes.HOME)
+        if (!state.pomodoro.isComplete) {
+            onNavigate(Routes.HOME)
+        }
     }
 
     // Token-based navigation: boss finished

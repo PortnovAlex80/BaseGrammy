@@ -113,7 +113,7 @@ fun PomodoroSummaryScreen(
             onClick = onDone,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Done")
+            Text("OK")
         }
     }
 }
