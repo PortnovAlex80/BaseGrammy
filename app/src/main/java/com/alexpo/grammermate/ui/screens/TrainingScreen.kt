@@ -312,15 +312,6 @@ fun TrainingScreen(
                 hintLevel
             )
             ResultBlock(state)
-            // Pomodoro difficulty rating prompt
-            if (state.pomodoro.isActive && state.pomodoro.showRatingPrompt) {
-                DifficultyRatingRow(
-                    onRatingSelected = { rating ->
-                        onRateCardDifficulty(rating)
-                        onNext()
-                    }
-                )
-            }
             UnifiedNavigationRow(
                 stateModel = object : com.alexpo.grammermate.data.CardSessionStateModel {
                     override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
@@ -697,11 +688,6 @@ fun ResultBlock(state: TrainingUiState) {
                 false -> Text(text = stringResource(R.string.training_incorrect), color = IncorrectRed, fontWeight = FontWeight.Bold)
                 null -> Text(text = "")
             }
-        }
-        if (!state.cardSession.answerText.isNullOrBlank()) {
-            HintAnswerCard(
-                answerText = state.cardSession.answerText!!
-            )
         }
     }
 }
