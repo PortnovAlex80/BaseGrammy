@@ -608,8 +608,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             forceBackupOnSave = true
         }
 
-        // Pomodoro: show difficulty rating prompt after each answer
-        if (_coreState.value.pomodoro.isActive) {
+        // Pomodoro: show difficulty rating prompt only after correct answers.
+        // Showing it on incorrect answers causes the 3-second auto-select in
+        // DifficultyRatingRow to call onNext(), skipping the retry flow entirely.
+        if (_coreState.value.pomodoro.isActive && result.accepted) {
             pomodoroHelper.setShowRatingPrompt(true)
         }
 
