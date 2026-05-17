@@ -69,6 +69,8 @@ import com.alexpo.grammermate.ui.screens.HomeScreen
 import com.alexpo.grammermate.ui.screens.LessonRoadmapScreen
 import com.alexpo.grammermate.ui.screens.StoryQuizScreen
 import com.alexpo.grammermate.ui.screens.TrainingScreen
+import com.alexpo.grammermate.ui.TenseInfo
+import com.alexpo.grammermate.ui.VerbDrillViewModel
 import com.alexpo.grammermate.ui.screens.SettingsSheet
 import com.alexpo.grammermate.ui.screens.LadderScreen
 import com.alexpo.grammermate.ui.components.TtsDownloadDialog
@@ -370,6 +372,14 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.TRAINING) {
+                        // Create VerbDrillViewModel scoped to this route for tense info bottom sheet
+                        val verbDrillVmForTenses = viewModel<VerbDrillViewModel>()
+                        val activePackIdForTenses = state.navigation.activePackId
+                        if (activePackIdForTenses != null) {
+                            verbDrillVmForTenses.reloadForPack(activePackIdForTenses.value)
+                        } else {
+                            verbDrillVmForTenses.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                        }
                         TrainingScreenContent(
                             state, vm,
                             onShowExitDialog = {
@@ -405,7 +415,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                     else -> onNavigate(Routes.HOME)
                                 }
-                            }
+                            },
+                            getTenseInfo = { tenseName -> verbDrillVmForTenses.getTenseInfo(tenseName) }
                         )
                     }
 
@@ -568,7 +579,8 @@ private fun TrainingScreenContent(
     hintLevel: HintLevel = HintLevel.EASY,
     onVerbDrillMore: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
-    onSessionDone: () -> Unit = {}
+    onSessionDone: () -> Unit = {},
+    getTenseInfo: (String) -> TenseInfo? = { null }
 ) {
     TrainingScreen(
         state = state,
@@ -603,7 +615,8 @@ private fun TrainingScreenContent(
         },
         onRateCardDifficulty = vm::rateCardDifficulty,
         onVerbDrillMore = onVerbDrillMore,
-        onSessionDone = onSessionDone
+        onSessionDone = onSessionDone,
+        getTenseInfo = getTenseInfo
     )
 }
 

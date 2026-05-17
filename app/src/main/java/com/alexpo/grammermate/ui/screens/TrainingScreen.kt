@@ -121,7 +121,8 @@ fun TrainingScreen(
     onCancelPomodoro: () -> Unit = {},
     onRateCardDifficulty: (com.alexpo.grammermate.data.CardDifficultyRating) -> Unit = {},
     onVerbDrillMore: () -> Unit = {},
-    onSessionDone: () -> Unit = {}
+    onSessionDone: () -> Unit = {},
+    getTenseInfo: (String) -> com.alexpo.grammermate.ui.TenseInfo? = { null }
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -380,9 +381,10 @@ fun TrainingScreen(
         )
     }
     if (showTenseSheet && drillCard != null && !drillCard.tense.isNullOrBlank()) {
+        val tenseInfo = remember(drillCard.tense) { getTenseInfo(drillCard.tense) }
         TenseInfoBottomSheet(
             tenseName = drillCard.tense,
-            tenseInfo = null,
+            tenseInfo = tenseInfo,
             onDismiss = { showTenseSheet = false }
         )
     }
