@@ -262,8 +262,8 @@ TrainingScreen — единственный экземпляр экрана дл
 | # | Element | Issue | Status |
 |---|---------|-------|--------|
 | D1 | Check button (TS-25) | `canSubmit` excludes HINT_SHOWN — user cannot submit during hint shown. Spec says "no session state gate" | **BY DESIGN** — hint is the answer, re-submitting makes no sense |
-| D2 | TS-38 Session Completion | Universal completion overlay for NORMAL/DRILL/ELITE does not exist in code. Only VerbDrill has completion. | **TODO** — future task |
-| D3 | Verb/Tense chip taps | onClick is no-op. Bottom sheets not implemented. | **TODO** — future task |
+| D2 | TS-38 Session Completion | Universal completion overlay for NORMAL/DRILL/ELITE. | **FIXED** — SessionCompletionContent with OK button |
+| D3 | Verb/Tense chip taps | Bottom sheets wired to chip onClick. | **FIXED** — VerbReferenceBottomSheet + TenseInfoBottomSheet |
 | D4 | PM-04 DifficultyRatingRow | Imported but never rendered in TrainingScreen. | **REMOVED** — pomodoro stripped to timer-only |
 
 ### MEDIUM — Visual/conditional mismatch
@@ -285,7 +285,7 @@ TrainingScreen — единственный экземпляр экрана дл
 | D12 | MixChallengeSurface | Spec says "hardcoded" but already theme-aware |
 | D13 | Progress bar colors | Spec lists hardcoded hex, code uses theme colors |
 | D14 | PomodoroSummary ring/difficulty colors | Hardcoded, not theme-aware (dark mode contrast risk) |
-| D15 | Dead code | HeaderStats() and ModeSelector() composables never called |
+| D15 | Dead code | HeaderStats(), ModeSelector() deleted | **FIXED** — removed dead composables and imports |
 
 ---
 
@@ -312,6 +312,12 @@ TrainingScreen — единственный экземпляр экрана дл
 | 14a | Pomodoro summary stays | Complete pomodoro → summary screen | Summary stays until OK pressed, no auto-dismiss |
 | 14b | Eye/hint button (fresh card) | Any mode → fresh card → press eye | Answer shown in pink card. Works before any attempt. |
 | 14c | Eye/hint button (after wrong) | Any mode → wrong answer → press eye | Answer shown in pink card. |
+| 14d | Completion screen (lesson) | Complete regular lesson → all cards done | "🎉" + stats + OK button shown. Press OK → HOME |
+| 14e | Completion screen (daily block) | Complete daily TRANSLATE or VERBS block | "🎉" + stats + OK → returns to daily coordinator → next block |
+| 14f | Completion screen (boss/mix) | Complete boss battle or mix challenge | "🎉" + stats + OK → HOME |
+| 14g | Verb chip bottom sheet | During verb drill → tap verb chip | VerbReferenceBottomSheet opens with conjugation info |
+| 14h | Tense chip bottom sheet | During verb drill → tap tense chip | TenseInfoBottomSheet opens (fallback: abbreviated name) |
+| 14i | Verb chip bottom sheet (daily) | During daily VERBS block → tap verb chip | VerbReferenceBottomSheet opens |
 | 15 | Boss battle | Start boss → TrainingScreen → complete | Returns HOME, boss result recorded |
 | 16 | Mix challenge | Start mix from HOME → TrainingScreen → complete | Returns HOME |
 | 17 | Daily VOCAB SRS | Daily → VOCAB block → flip card → voice input → rate AGAIN/HARD/GOOD/EASY | Rating recorded, next card appears, SRS step updated |

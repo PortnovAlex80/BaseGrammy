@@ -780,8 +780,9 @@ private fun NavDialogs(
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         // Pomodoro: track session completion for timer stats
         vm.onTrainingSessionCompleted()
-        // If pomodoro completed, stay on TrainingScreen to show summary — user presses Done to leave
-        if (!state.pomodoro.isComplete) {
+        val hasCards = state.cardSession.currentCard != null
+        // If pomodoro completed OR no cards left (session finished), stay on TrainingScreen for summary/completion
+        if (!state.pomodoro.isComplete && hasCards) {
             val returnTo = state.cardSession.returnTo
             if (returnTo.isNotEmpty()) {
                 if (returnTo == Routes.DAILY_PRACTICE) {
@@ -789,15 +790,17 @@ private fun NavDialogs(
                 }
                 onNavigate(returnTo)
             } else {
-                // Default: sub-lesson from LESSON screen
+                // Default: sub-lesson from LESSON screen — more sub-lessons available
                 onNavigate(Routes.LESSON)
             }
         }
+        // If !hasCards: SessionCompletionContent will render via TrainingScreen early-return
+        // User presses OK → onSessionDone → navigate HOME or DAILY_PRACTICE
     }
     if (currentRoute == Routes.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         vm.onTrainingSessionCompleted()
-        if (!state.pomodoro.isComplete) {
+        if (!state.pomodoro.isComplete && state.cardSession.currentCard != null) {
             onNavigate(Routes.HOME)
         }
     }

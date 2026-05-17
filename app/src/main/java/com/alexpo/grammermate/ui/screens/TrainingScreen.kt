@@ -147,21 +147,8 @@ fun TrainingScreen(
         return
     }
 
-    // Universal session completion for all other modes (NORMAL, DRILL, ELITE, BOSS, BOSS_MEGA, MIX_CHALLENGE, DAILY_TRANSLATE, DAILY_VERBS)
-    if (!hasCards) {
-        Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
-            SessionCompletionContent(
-                modifier = Modifier.padding(padding),
-                mode = mode,
-                correctCount = state.cardSession.correctCount,
-                incorrectCount = state.cardSession.incorrectCount,
-                onDone = onSessionDone
-            )
-        }
-        return
-    }
-
     // Pomodoro completion: render summary OUTSIDE the scrolling Column to avoid nested verticalScroll crash
+    // Takes priority over session completion — pomodoro stats are more important
     if (state.pomodoro.isComplete) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background
@@ -174,6 +161,20 @@ fun TrainingScreen(
                     onDone = { onCancelPomodoro() }
                 )
             }
+        }
+        return
+    }
+
+    // Universal session completion for ALL modes when no cards remain
+    if (!hasCards) {
+        Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+            SessionCompletionContent(
+                modifier = Modifier.padding(padding),
+                mode = mode,
+                correctCount = state.cardSession.correctCount,
+                incorrectCount = state.cardSession.incorrectCount,
+                onDone = onSessionDone
+            )
         }
         return
     }
