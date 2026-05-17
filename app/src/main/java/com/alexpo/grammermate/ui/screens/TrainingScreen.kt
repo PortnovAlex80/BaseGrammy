@@ -88,6 +88,9 @@ import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 
+/** Pre-compiled regex to strip parenthetical hints from card prompts. */
+private val ParentheticalRegex = Regex("\\s*\\([^)]+\\)")
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,7 +125,8 @@ fun TrainingScreen(
     onRateCardDifficulty: (com.alexpo.grammermate.data.CardDifficultyRating) -> Unit = {},
     onVerbDrillMore: () -> Unit = {},
     onSessionDone: () -> Unit = {},
-    getTenseInfo: (String) -> com.alexpo.grammermate.ui.TenseInfo? = { null }
+    getTenseInfo: (String) -> com.alexpo.grammermate.ui.TenseInfo? = { null },
+    pomodoroRemainingSeconds: Int = 0
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -219,7 +223,7 @@ fun TrainingScreen(
                 val totalCards = sessionCorrect + sessionIncorrect
                 val successRate = if (totalCards > 0) sessionCorrect * 100 / totalCards else 0
                 PomodoroTimerBanner(
-                    remainingSeconds = state.pomodoro.remainingSeconds,
+                    remainingSeconds = if (pomodoroRemainingSeconds > 0) pomodoroRemainingSeconds else state.pomodoro.remainingSeconds,
                     totalSeconds = state.pomodoro.totalSeconds,
                     cardsShown = totalCards,
                     successRate = successRate,
@@ -284,7 +288,7 @@ fun TrainingScreen(
 
             // ── Prompt text ────────────────────────────────────────────
             val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
-            val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
+            val cleanPrompt = rawPrompt.replace(ParentheticalRegex, "")
             val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
             if (cleanPrompt.isNotBlank()) {
                 Text(
@@ -345,17 +349,24 @@ fun TrainingScreen(
             )
             ResultBlock(state)
             UnifiedNavigationRow(
-                stateModel = object : com.alexpo.grammermate.data.CardSessionStateModel {
-                    override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
-                    override val isPaused = state.cardSession.sessionState == SessionState.PAUSED
-                    override val isHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN
-                    override val canSubmit = state.cardSession.canSubmit
-                    override val hasCurrentCard = hasCards
-                    override val isComplete = state.cardSession.sessionState == SessionState.PAUSED && state.cardSession.currentCard == null
-                    override val progress = com.alexpo.grammermate.data.SessionProgress(
-                        current = (state.cardSession.currentIndex + 1).coerceAtMost(state.cardSession.subLessonTotal.coerceAtLeast(1)),
-                        total = state.cardSession.subLessonTotal.coerceAtLeast(1)
-                    )
+                stateModel = remember(
+                    state.cardSession.sessionState,
+                    state.cardSession.currentCard,
+                    state.cardSession.inputMode,
+                    state.boss?.bossActive
+                ) {
+                    object : com.alexpo.grammermate.data.CardSessionStateModel {
+                        override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
+                        override val isPaused = state.cardSession.sessionState == SessionState.PAUSED
+                        override val isHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN
+                        override val canSubmit = state.cardSession.canSubmit
+                        override val hasCurrentCard = hasCards
+                        override val isComplete = state.cardSession.sessionState == SessionState.PAUSED && state.cardSession.currentCard == null
+                        override val progress = com.alexpo.grammermate.data.SessionProgress(
+                            current = (state.cardSession.currentIndex + 1).coerceAtMost(state.cardSession.subLessonTotal.coerceAtLeast(1)),
+                            total = state.cardSession.subLessonTotal.coerceAtLeast(1)
+                        )
+                    }
                 },
                 supportsPause = true,
                 supportsNavigation = true,
@@ -533,7 +544,7 @@ fun AnswerBox(
     }
 
     // Thin CardSessionContract adapter for TrainingScreen's TrainingUiState
-    val contractAdapter = remember(state, onSetInputMode, onInputChange, onSelectWordFromBank, onRemoveLastWord) {
+    val contractAdapter = remember(state.cardSession, onSetInputMode, onInputChange, onSelectWordFromBank, onRemoveLastWord) {
         object : com.alexpo.grammermate.data.CardSessionContract {
             override val currentCard: com.alexpo.grammermate.data.SessionCard?
                 get() = state.cardSession.currentCard

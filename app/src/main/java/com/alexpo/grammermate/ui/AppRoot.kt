@@ -9,7 +9,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,9 +23,9 @@ import com.alexpo.grammermate.data.RestoreStatus
 @Composable
 fun AppRoot() {
     val vm: TrainingViewModel = viewModel()
-    val state by vm.uiState.collectAsState()
+    val state by vm.uiState.collectAsStateWithLifecycle()
     GrammarMateTheme(themeMode = state.navigation.themeMode) {
-        val restoreState by RestoreNotifier.restoreState.collectAsState()
+        val restoreState by RestoreNotifier.restoreState.collectAsStateWithLifecycle()
         if (restoreState.status == RestoreStatus.DONE) {
             GrammarMateApp(vm = vm)
         } else {

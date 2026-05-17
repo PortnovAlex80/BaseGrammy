@@ -110,6 +110,46 @@ This section specifies the non-functional qualities, constraints, and operationa
 - `rebuildBlock()`: non-suspend, single block rebuild (no parallelism needed).
 - `DailyPracticeCoordinator.prebuildSession()` already runs on `Dispatchers.IO` from the ViewModel, so the parallel async blocks inherit the IO dispatcher.
 
+### 20.1.8 Compose Rendering Performance
+
+**Performance audit date:** 2026-05-17
+
+#### State Flow Consumption Requirements
+
+| ID | Requirement | Level | Status |
+|----|-------------|-------|--------|
+| PERF-01 | Combined `TrainingUiState` flow MUST use `distinctUntilChanged()` to prevent structurally identical emissions from triggering recomposition | MUST | Pending |
+| PERF-02 | All StateFlow collection in composables MUST use `collectAsStateWithLifecycle()` instead of `collectAsState()` to prevent background recomposition | MUST | Pending |
+| PERF-03 | Shared `uiState` flow MUST use `SharingStarted.WhileSubscribed(5000)` instead of `Eagerly` to stop upstream flow collection when no subscribers exist | MUST | Pending |
+| PERF-04 | Timer-driven state updates (session timer at 500ms, pomodoro at 1s) MUST NOT trigger full `TrainingUiState` recomposition. Separate `StateFlow` instances MUST be used for high-frequency timer values, collected only where the timer UI is displayed | MUST | Pending |
+| PERF-05 | `saveProgress()` MUST be debounced (max once per 10 seconds) during active timer ticks, not called on every 500ms tick | MUST | Pending |
+| PERF-06 | `PomodoroHelper` state updates MUST use atomic `MutableStateFlow.update {}` instead of non-atomic `.value =` setter | MUST | Pending |
+
+#### Compose Recomposition Requirements
+
+| ID | Requirement | Level | Status |
+|----|-------------|-------|--------|
+| PERF-07 | Lambda parameters passed to screen composables in `GrammarMateApp` MUST be stable — wrapped in `remember` with minimal keys, or using `rememberUpdatedState` for callbacks that read current state | MUST | Pending |
+| PERF-08 | Derived values in composables (computed from state fields) SHOULD use `derivedStateOf` to prevent unnecessary recomputation on unrelated state changes | SHOULD | Pending |
+| PERF-09 | Anonymous object allocations in composable body (e.g., `CardSessionStateModel`, `CardSessionContract`) MUST be wrapped in `remember` with specific field keys, not the entire state object | MUST | Pending |
+| PERF-10 | `LazyVerticalGrid` and `LazyColumn` items MUST provide `key` parameter for efficient item recycling. `contentType` SHOULD be provided for pool reuse | MUST / SHOULD | Pending |
+| PERF-11 | Regex patterns used in composable body MUST be compiled once at companion/object level, not per-recomposition | MUST | Pending |
+| PERF-12 | Debug `Log.d()` calls in production code MUST be gated behind `BuildConfig.DEBUG` or removed | SHOULD | Pending |
+
+#### Performance Budget (Tablet / Low-End Device)
+
+| Metric | Target | Current (Measured) |
+|--------|--------|--------------------|
+| Recompositions per second during active training | ≤ 1 (on meaningful events only) | 3+ (timer 2/s + pomodoro 1/s) |
+| Recompositions per second on Home screen (idle) | 0 | 2-3 (from timer + state leaks) |
+| State emissions while app is backgrounded | 0 | 2-3/s (Eagerly + collectAsState) |
+| Time spent on YAML fsync per training session (10 cards) | ≤ 100ms total | 500-1500ms (per-card fsync) |
+| ViewModel init blocking time on main thread | ≤ 100ms | 500-2000ms (12+ sync I/O ops) |
+
+#### Architectural Constraint
+
+These requirements optimize HOW the monolithic `TrainingUiState` is consumed, without splitting the data class or introducing additional ViewModels. The single-ViewModel pattern (`TrainingViewModel`) and single-state pattern (`TrainingUiState`) are preserved. Timer isolation uses additional `StateFlow` instances owned by the ViewModel, collected separately by timer UI elements.
+
 ---
 
 ## 20.2 Offline Capability

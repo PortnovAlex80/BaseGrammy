@@ -59,7 +59,8 @@ class SessionRunner(
     private val getMastery: (String, String) -> LessonMasteryState?,
     private val getSchedule: (String) -> LessonSchedule?,
     private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?) -> Int,
-    private val onTimerSaveProgress: () -> Unit
+    private val onTimerSaveProgress: () -> Unit,
+    private val sessionTimerMsSink: ((Long) -> Unit)? = null
 ) : CardSessionStateModel {
     private val logTag = "SessionRunner"
 
@@ -76,6 +77,8 @@ class SessionRunner(
     private var eliteCards: List<SessionCard> = emptyList()
     private var timerJob: Job? = null
     private var activeStartMs: Long? = null
+    private var timerTickCounter = 0
+    private var lastSaveActiveTimeMs: Long = 0L
 
     private var subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
@@ -209,8 +212,10 @@ class SessionRunner(
             return SessionFinishResult.EliteCancelled to emptyList()
         }
         pauseTimer()
-        val minutes = state.cardSession.activeTimeMs / 60000.0
-        val rating = if (minutes <= 0.0) 0.0 else state.cardSession.correctCount / minutes
+        // Re-read state after pauseTimer() flush to get accurate activeTimeMs
+        val flushedState = stateAccess.uiState.value
+        val minutes = flushedState.cardSession.activeTimeMs / 60000.0
+        val rating = if (minutes <= 0.0) 0.0 else flushedState.cardSession.correctCount / minutes
         val firstCard = sessionCards.firstOrNull()
         stateMachine.reset()
         stateAccess.updateState {
@@ -1194,22 +1199,45 @@ class SessionRunner(
     fun resumeTimer() {
         if (timerJob?.isActive == true) return
         activeStartMs = SystemClock.elapsedRealtime()
+        timerTickCounter = 0
+        lastSaveActiveTimeMs = stateAccess.uiState.value.cardSession.activeTimeMs
         timerJob = coroutineScope.launch {
             while (true) {
                 delay(500)
                 val start = activeStartMs ?: continue
                 val elapsed = SystemClock.elapsedRealtime() - start
-                stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(activeTimeMs = it.cardSession.activeTimeMs + elapsed)) }
                 activeStartMs = SystemClock.elapsedRealtime()
-                onTimerSaveProgress()
+
+                // Accumulate total active time internally
+                lastSaveActiveTimeMs += elapsed
+
+                // Push high-frequency timer value to separate flow (for UI display)
+                sessionTimerMsSink?.invoke(lastSaveActiveTimeMs)
+
+                // Push activeTimeMs to main state and save progress only every ~10s (20 ticks)
+                timerTickCounter++
+                if (timerTickCounter >= 20) {
+                    timerTickCounter = 0
+                    stateAccess.updateState {
+                        it.copy(cardSession = it.cardSession.copy(activeTimeMs = lastSaveActiveTimeMs))
+                    }
+                    onTimerSaveProgress()
+                }
             }
         }
     }
 
     fun pauseTimer() {
+        // Flush accumulated time to main state before stopping
+        if (lastSaveActiveTimeMs > 0 && timerJob?.isActive == true) {
+            stateAccess.updateState {
+                it.copy(cardSession = it.cardSession.copy(activeTimeMs = lastSaveActiveTimeMs))
+            }
+        }
         timerJob?.cancel()
         timerJob = null
         activeStartMs = null
+        timerTickCounter = 0
     }
 
     // ── Internal helpers ────────────────────────────────────────────────

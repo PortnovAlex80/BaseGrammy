@@ -31,7 +31,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -64,7 +64,7 @@ internal fun VerbReferenceBottomSheet(
     val conjugation = remember(verb, tense) {
         viewModel.getConjugationForVerb(verb, tense ?: "")
     }
-    val ttsState by viewModel.ttsState.collectAsState()
+    val ttsState by viewModel.ttsState.collectAsStateWithLifecycle()
 
     VerbReferenceBottomSheet(
         verb = verb,

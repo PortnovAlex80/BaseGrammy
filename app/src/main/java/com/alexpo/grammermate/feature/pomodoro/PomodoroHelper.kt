@@ -16,9 +16,12 @@ class PomodoroHelper(
     private val scope: CoroutineScope,
     private val onPauseTraining: () -> Unit = {},
     private val onResumeTraining: () -> Unit = {},
-    private val onPlayCompletionSound: () -> Unit = {}
+    private val onPlayCompletionSound: () -> Unit = {},
+    private val onUpdatePomodoroRemaining: ((Int) -> Unit)? = null
 ) {
     private var timerJob: Job? = null
+    /** Tracks the true remaining seconds independently from main state (which is updated periodically). */
+    private var trueRemainingSeconds: Int = 0
 
     fun startPomodoro(durationMinutes: Int) {
         val current = stateProvider()
@@ -34,6 +37,8 @@ class PomodoroHelper(
             baselineIncorrect = current.cardSession.incorrectCount
         )
         updatePomodoroState(state)
+        trueRemainingSeconds = totalSeconds
+        onUpdatePomodoroRemaining?.invoke(totalSeconds)
         startTimer()
     }
 
@@ -41,19 +46,23 @@ class PomodoroHelper(
         timerJob?.cancel()
         timerJob = null
         onPauseTraining()
-        updatePomodoro { it.copy(isPaused = true) }
+        updatePomodoro { it.copy(isPaused = true, remainingSeconds = trueRemainingSeconds) }
+        onUpdatePomodoroRemaining?.invoke(trueRemainingSeconds)
     }
 
     fun resumePomodoro() {
         onResumeTraining()
-        updatePomodoro { it.copy(isPaused = false) }
+        updatePomodoro { it.copy(isPaused = false, remainingSeconds = trueRemainingSeconds) }
+        onUpdatePomodoroRemaining?.invoke(trueRemainingSeconds)
         startTimer()
     }
 
     fun cancelPomodoro() {
         timerJob?.cancel()
         timerJob = null
+        trueRemainingSeconds = 0
         updatePomodoroState(PomodoroState())
+        onUpdatePomodoroRemaining?.invoke(0)
     }
 
     fun completePomodoro() {
@@ -82,9 +91,12 @@ class PomodoroHelper(
             it.copy(
                 isComplete = true,
                 isActive = false,
+                remainingSeconds = 0,
                 stats = stats
             )
         }
+        trueRemainingSeconds = 0
+        onUpdatePomodoroRemaining?.invoke(0)
         onPlayCompletionSound()
     }
 
@@ -126,6 +138,8 @@ class PomodoroHelper(
     fun onLifecycleStart() {
         val pomodoro = stateProvider().pomodoro
         if (pomodoro.isActive && pomodoro.isPaused && !pomodoro.isComplete) {
+            // Sync trueRemainingSeconds from main state on lifecycle resume
+            trueRemainingSeconds = pomodoro.remainingSeconds
             resumePomodoro()
         }
     }
@@ -144,13 +158,20 @@ class PomodoroHelper(
         val current = stateProvider().pomodoro
         if (!current.isActive || current.isPaused || current.isComplete) return
 
-        val newRemaining = current.remainingSeconds - 1
-        if (newRemaining <= 0) {
+        trueRemainingSeconds -= 1
+        if (trueRemainingSeconds <= 0) {
+            trueRemainingSeconds = 0
             completePomodoro()
             return
         }
 
-        updatePomodoro { it.copy(remainingSeconds = newRemaining) }
+        // Push high-frequency remaining seconds to separate flow (for UI countdown display)
+        onUpdatePomodoroRemaining?.invoke(trueRemainingSeconds)
+
+        // Update main state only on significant boundaries (every 10 seconds) for atomicity
+        if (trueRemainingSeconds % 10 == 0) {
+            updatePomodoro { it.copy(remainingSeconds = trueRemainingSeconds) }
+        }
     }
 
     private fun updatePomodoro(transform: (PomodoroState) -> PomodoroState) {

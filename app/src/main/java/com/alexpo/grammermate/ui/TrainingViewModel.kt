@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -85,6 +86,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val backupManager = container.backupManager
     private val profileStore = container.profileStore
     private val _coreState = MutableStateFlow(TrainingUiState())
+
+    // ── High-frequency timer flows (separate from main state for performance) ──
+    private val _sessionTimerMs = MutableStateFlow(0L)
+    val sessionTimerMs: StateFlow<Long> = _sessionTimerMs.asStateFlow()
+
+    private val _pomodoroRemainingSeconds = MutableStateFlow(0)
+    val pomodoroRemainingSeconds: StateFlow<Int> = _pomodoroRemainingSeconds.asStateFlow()
 
     // ── Shared stateAccess — single instance for all helpers ──────────────
     private val stateAccess = object : TrainingStateAccess {
@@ -156,7 +164,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lessons = _coreState.value.navigation.lessons
             )
         },
-        onTimerSaveProgress = { saveProgress() }
+        onTimerSaveProgress = { saveProgress() },
+        sessionTimerMsSink = { ms -> _sessionTimerMs.value = ms }
     )
 
     private val flowerRefresher = FlowerRefresher(
@@ -219,7 +228,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val pomodoroSettingsStore = PomodoroSettingsStore(getApplication<Application>())
     private val pomodoroHelper = PomodoroHelper(
         stateProvider = { _coreState.value },
-        onUpdateState = { newState -> _coreState.value = newState },
+        onUpdateState = { newState -> _coreState.update { newState } },
+        onUpdatePomodoroRemaining = { seconds -> _pomodoroRemainingSeconds.value = seconds },
         scope = viewModelScope,
         onPauseTraining = { handleSessionEvents(sessionRunner.pauseSession()) },
         onResumeTraining = { handleSessionEvents(sessionRunner.resumeFromSettings()) },
@@ -254,7 +264,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         ) { state, flower, boss ->
             state.copy(flowerDisplay = flower, boss = boss)
         }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, _coreState.value)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _coreState.value)
 
     private val settingsActionHandler = SettingsActionHandler(
         stateAccess = stateAccess,
@@ -289,6 +299,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun startPomodoro(durationMinutes: Int) {
         pomodoroSettingsStore.save(durationMinutes)
+        _pomodoroRemainingSeconds.value = durationMinutes * 60
         pomodoroHelper.startPomodoro(durationMinutes)
     }
 
@@ -302,6 +313,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun cancelPomodoro() {
         pomodoroHelper.cancelPomodoro()
+        _pomodoroRemainingSeconds.value = 0
     }
 
     fun onTrainingSessionCompleted() {

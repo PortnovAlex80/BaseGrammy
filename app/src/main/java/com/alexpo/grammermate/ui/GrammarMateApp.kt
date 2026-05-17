@@ -26,7 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +53,7 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AppScreen
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.DailyBlockType
+import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.SessionCard
@@ -112,7 +113,7 @@ private data class DialogState(
 @Composable
 fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
     Surface(modifier = Modifier.fillMaxSize()) {
-        val state by vm.uiState.collectAsState()
+        val state by vm.uiState.collectAsStateWithLifecycle()
         val navController = rememberNavController()
         val currentRoute = navController.currentBackStackEntry?.destination?.route ?: Routes.HOME
         val context = LocalContext.current
@@ -145,32 +146,36 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
             onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
         }
 
-        val onTtsSpeak: () -> Unit = {
-            if (state.audio.ttsState == TtsState.Speaking) {
-                vm.audio.stopTts()
-            } else if (!state.audio.ttsModelReady) {
-                val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
-                if (bgState != null && bgState !is DownloadState.Idle) {
-                    vm.audio.setTtsDownloadStateFromBackground(bgState)
-                }
-                dialogs = dialogs.copy(showTtsDownloadDialog = true)
-            } else {
-                val text = state.cardSession.answerText
-                    ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
-                if (text != null) {
-                    vm.audio.onTtsSpeak(text, speed = 0.67f)
+        val onTtsSpeak: () -> Unit = remember(state.audio.ttsState, state.audio.ttsModelReady, state.audio.bgTtsDownloadStates, state.navigation.selectedLanguageId, state.cardSession.answerText, state.cardSession.currentCard, dialogs) {
+            {
+                if (state.audio.ttsState == TtsState.Speaking) {
+                    vm.audio.stopTts()
+                } else if (!state.audio.ttsModelReady) {
+                    val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
+                    if (bgState != null && bgState !is DownloadState.Idle) {
+                        vm.audio.setTtsDownloadStateFromBackground(bgState)
+                    }
+                    dialogs = dialogs.copy(showTtsDownloadDialog = true)
+                } else {
+                    val text = state.cardSession.answerText
+                        ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
+                    if (text != null) {
+                        vm.audio.onTtsSpeak(text, speed = 0.67f)
+                    }
                 }
             }
         }
 
         // Navigation helper — replaces direct onScreenChange calls
-        val onNavigate: (String) -> Unit = { route ->
-            if (route != currentRoute) {
-                previousRoute = currentRoute
-                navController.navigate(route) {
-                    // Pop up to start destination to avoid building a large back stack
-                    popUpTo(Routes.HOME) { inclusive = false }
-                    launchSingleTop = true
+        val onNavigate: (String) -> Unit = remember(currentRoute) {
+            { route: String ->
+                if (route != currentRoute) {
+                    previousRoute = currentRoute
+                    navController.navigate(route) {
+                        // Pop up to start destination to avoid building a large back stack
+                        popUpTo(Routes.HOME) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }
             }
         }
@@ -192,24 +197,28 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     state = state,
                     vm = vm,
                     navController = navController,
-                    onShowExitDialog = { dialogs = dialogs.copy(showExitDialog = true) }
+                    onShowExitDialog = remember(dialogs) { { dialogs = dialogs.copy(showExitDialog = true) } }
                 )
 
                 SettingsSheet(
                     show = dialogs.showSettings,
                     state = state,
-                    onDismiss = {
-                        dialogs = dialogs.copy(showSettings = false)
-                        if (currentRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
-                            vm.resumeFromSettings()
+                    onDismiss = remember(dialogs, currentRoute, state.cardSession.currentCard) {
+                        {
+                            dialogs = dialogs.copy(showSettings = false)
+                            if (currentRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
+                                vm.resumeFromSettings()
+                            }
                         }
                     },
-                    onOpenLadder = {
-                        dialogs = dialogs.copy(showSettings = false)
-                        previousRoute = currentRoute
-                        navController.navigate(Routes.LADDER) {
-                            popUpTo(Routes.HOME) { inclusive = false }
-                            launchSingleTop = true
+                    onOpenLadder = remember(dialogs, currentRoute) {
+                        {
+                            dialogs = dialogs.copy(showSettings = false)
+                            previousRoute = currentRoute
+                            navController.navigate(Routes.LADDER) {
+                                popUpTo(Routes.HOME) { inclusive = false }
+                                launchSingleTop = true
+                            }
                         }
                     },
                     onSelectLanguage = vm::selectLanguage,
@@ -229,7 +238,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onSetTtsSpeed = vm.audio::setTtsSpeed,
                     onSetRuTextScale = vm::setRuTextScale,
                     onSetUseOfflineAsr = vm.audio::setUseOfflineAsr,
-                    onStartAsrDownload = { vm.audio.startAsrDownload() },
+                    onStartAsrDownload = remember { { vm.audio.startAsrDownload() } },
                     onResetAllProgress = vm::resetLanguageProgress,
                     onSetHintLevel = vm.settings::setHintLevel,
                     onSetThemeMode = vm.settings::setThemeMode,
@@ -247,49 +256,53 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         HomeScreen(
                             state = state,
                             onSelectLanguage = vm::selectLanguage,
-                            onOpenSettings = {
-                                previousRoute = Routes.HOME
-                                vm.pauseSession()
-                                dialogs = dialogs.copy(showSettings = true)
+                            onOpenSettings = remember(dialogs) {
+                                {
+                                    previousRoute = Routes.HOME
+                                    vm.pauseSession()
+                                    dialogs = dialogs.copy(showSettings = true)
+                                }
                             },
-                            onPrimaryAction = { onNavigate(Routes.LESSON) },
-                            onSelectLesson = { lessonId ->
+                            onPrimaryAction = remember { { onNavigate(Routes.LESSON) } },
+                            onSelectLesson = remember { { lessonId: String ->
                                 vm.selectLesson(lessonId)
                                 onNavigate(Routes.LESSON)
-                            },
-                            onOpenElite = {
-                                val level = vm.getProgressLessonLevel()
-                                if (vm.daily.hasResumableDailySession()) {
-                                    dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
-                                } else {
-                                    dialogs = dialogs.copy(isLoadingDaily = true)
-                                    dailyScope.launch {
-                                        try {
-                                            val started = withContext(Dispatchers.IO) {
-                                                vm.startDailyPractice(level)
-                                            }
-                                            dialogs = dialogs.copy(isLoadingDaily = false)
-                                            if (started) {
-                                                onNavigate(Routes.DAILY_PRACTICE)
-                                            } else {
+                            } },
+                            onOpenElite = remember(dialogs) {
+                                {
+                                    val level = vm.getProgressLessonLevel()
+                                    if (vm.daily.hasResumableDailySession()) {
+                                        dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
+                                    } else {
+                                        dialogs = dialogs.copy(isLoadingDaily = true)
+                                        dailyScope.launch {
+                                            try {
+                                                val started = withContext(Dispatchers.IO) {
+                                                    vm.startDailyPractice(level)
+                                                }
+                                                dialogs = dialogs.copy(isLoadingDaily = false)
+                                                if (started) {
+                                                    onNavigate(Routes.DAILY_PRACTICE)
+                                                } else {
+                                                    Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                dialogs = dialogs.copy(isLoadingDaily = false)
                                                 Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                                             }
-                                        } catch (e: Exception) {
-                                            dialogs = dialogs.copy(isLoadingDaily = false)
-                                            Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }
                             },
                             hasVerbDrill = state.navigation.hasVerbDrill,
                             hasVocabDrill = state.navigation.hasVocabDrill,
-                            onOpenVerbDrill = { onNavigate(Routes.VERB_DRILL) },
-                            onOpenVocabDrill = { onNavigate(Routes.VOCAB_DRILL) },
-                            onProfileClick = { dialogs = dialogs.copy(showProfileStats = true) },
-                            onStartPomodoro = { duration ->
+                            onOpenVerbDrill = remember { { onNavigate(Routes.VERB_DRILL) } },
+                            onOpenVocabDrill = remember { { onNavigate(Routes.VOCAB_DRILL) } },
+                            onProfileClick = remember(dialogs) { { dialogs = dialogs.copy(showProfileStats = true) } },
+                            onStartPomodoro = remember { { duration: Int ->
                                 vm.startPomodoro(duration)
                                 onNavigate(Routes.LESSON)
-                            },
+                            } },
                             pomodoroLastDuration = vm.getPomodoroLastDuration()
                         )
                     }
@@ -297,24 +310,24 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     composable(Routes.LESSON) {
                         LessonRoadmapScreen(
                             state = state,
-                            onBack = { onNavigate(Routes.HOME) },
-                            onStartSubLesson = { index ->
+                            onBack = remember { { onNavigate(Routes.HOME) } },
+                            onStartSubLesson = remember { { index: Int ->
                                 vm.selectSubLesson(index)
                                 vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
-                            },
-                            onStartBossLesson = {
+                            } },
+                            onStartBossLesson = remember { {
                                 vm.startBossLesson()
                                 vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
-                            },
-                            onStartBossMega = {
+                            } },
+                            onStartBossMega = remember { {
                                 vm.startBossMega()
                                 vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
-                            },
-                            onDrillStart = {
-                                state.navigation.selectedLessonId?.let { vm.training.showDrillStartDialog(it.value) }
+                            } },
+                            onDrillStart = remember(state.navigation.selectedLessonId) {
+                                { state.navigation.selectedLessonId?.let { vm.training.showDrillStartDialog(it.value) } }
                             }
                         )
                     }
@@ -330,31 +343,33 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.DAILY_PRACTICE) {
-                        DailyPracticeScreenContent(state, vm) { route ->
-                            onNavigate(route)
-                        }
+                        DailyPracticeScreenContent(state, vm, remember { { route: String -> onNavigate(route) } })
                     }
 
                     composable(Routes.MIX_CHALLENGE) {
                         LaunchedEffect(Unit) { vm.setReturnTo(Routes.HOME) }
-                        TrainingScreenContent(state, vm, { dialogs = dialogs.copy(showExitDialog = true) }, { previousRoute = Routes.MIX_CHALLENGE; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) }, onTtsSpeak, hintLevel = state.cardSession.hintLevel, onNavigate = onNavigate)
+                        TrainingScreenContent(state, vm, remember(dialogs) { { dialogs = dialogs.copy(showExitDialog = true) } }, remember(dialogs) { { previousRoute = Routes.MIX_CHALLENGE; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) } }, onTtsSpeak, hintLevel = state.cardSession.hintLevel, onNavigate = onNavigate)
                     }
 
                     composable(Routes.STORY) {
                         StoryQuizScreen(
                             story = state.story.activeStory,
                             testMode = state.cardSession.testMode,
-                            onClose = {
-                                state.story.activeStory?.phase?.let { phase ->
-                                    vm.completeStory(phase, false)
+                            onClose = remember(state.story.activeStory?.phase) {
+                                {
+                                    state.story.activeStory?.phase?.let { phase ->
+                                        vm.completeStory(phase, false)
+                                    }
+                                    onNavigate(Routes.LESSON)
                                 }
-                                onNavigate(Routes.LESSON)
                             },
-                            onComplete = { allCorrect ->
-                                state.story.activeStory?.phase?.let { phase ->
-                                    vm.completeStory(phase, allCorrect)
+                            onComplete = remember(state.story.activeStory?.phase) {
+                                { allCorrect: Boolean ->
+                                    state.story.activeStory?.phase?.let { phase ->
+                                        vm.completeStory(phase, allCorrect)
+                                    }
+                                    onNavigate(Routes.LESSON)
                                 }
-                                onNavigate(Routes.LESSON)
                             }
                         )
                     }
@@ -362,10 +377,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     composable(Routes.LADDER) {
                         LadderScreen(
                             state = state,
-                            onBack = {
-                                onNavigate(previousRoute)
-                                if (previousRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
-                                    vm.resumeFromSettings()
+                            onBack = remember(previousRoute, state.cardSession.currentCard) {
+                                {
+                                    onNavigate(previousRoute)
+                                    if (previousRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
+                                        vm.resumeFromSettings()
+                                    }
                                 }
                             }
                         )
@@ -375,87 +392,99 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         // Create VerbDrillViewModel scoped to this route for tense info bottom sheet
                         val verbDrillVmForTenses = viewModel<VerbDrillViewModel>()
                         val activePackIdForTenses = state.navigation.activePackId
-                        if (activePackIdForTenses != null) {
-                            verbDrillVmForTenses.reloadForPack(activePackIdForTenses.value)
-                        } else {
-                            verbDrillVmForTenses.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                        LaunchedEffect(activePackIdForTenses, state.navigation.selectedLanguageId) {
+                            if (activePackIdForTenses != null) {
+                                verbDrillVmForTenses.reloadForPack(activePackIdForTenses.value)
+                            } else {
+                                verbDrillVmForTenses.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                            }
                         }
                         TrainingScreenContent(
                             state, vm,
-                            onShowExitDialog = {
-                                val returnTo = state.cardSession.returnTo
-                                when {
-                                    returnTo == Routes.VERB_DRILL -> {
-                                        vm.exitVerbDrillSession()
-                                        onNavigate(Routes.VERB_DRILL)
-                                    }
-                                    returnTo == Routes.DAILY_PRACTICE -> {
-                                        vm.cancelDailySession()
-                                        onNavigate(Routes.HOME)
-                                    }
-                                    else -> {
-                                        dialogs = dialogs.copy(showExitDialog = true)
+                            onShowExitDialog = remember(dialogs, state.cardSession.returnTo) {
+                                {
+                                    val returnTo = state.cardSession.returnTo
+                                    when {
+                                        returnTo == Routes.VERB_DRILL -> {
+                                            vm.exitVerbDrillSession()
+                                            onNavigate(Routes.VERB_DRILL)
+                                        }
+                                        returnTo == Routes.DAILY_PRACTICE -> {
+                                            vm.cancelDailySession()
+                                            onNavigate(Routes.HOME)
+                                        }
+                                        else -> {
+                                            dialogs = dialogs.copy(showExitDialog = true)
+                                        }
                                     }
                                 }
                             },
-                            onShowSettings = { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) },
+                            onShowSettings = remember(dialogs) { { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) } },
                             onTtsSpeak = onTtsSpeak,
-                            onVerbDrillMore = {
+                            onVerbDrillMore = remember { {
                                 // Stay on VERB_DRILL selection screen for next batch
                                 vm.exitVerbDrillSession()
                                 onNavigate(Routes.VERB_DRILL)
-                            },
+                            } },
                             onNavigate = onNavigate,
-                            onSessionDone = {
-                                val returnTo = state.cardSession.returnTo
-                                when {
-                                    returnTo == Routes.DAILY_PRACTICE -> {
-                                        vm.daily.onBlockComplete()
-                                        onNavigate(Routes.DAILY_PRACTICE)
+                            onSessionDone = remember(state.cardSession.returnTo) {
+                                {
+                                    val returnTo = state.cardSession.returnTo
+                                    when {
+                                        returnTo == Routes.DAILY_PRACTICE -> {
+                                            vm.daily.onBlockComplete()
+                                            onNavigate(Routes.DAILY_PRACTICE)
+                                        }
+                                        else -> onNavigate(Routes.HOME)
                                     }
-                                    else -> onNavigate(Routes.HOME)
                                 }
                             },
-                            getTenseInfo = { tenseName -> verbDrillVmForTenses.getTenseInfo(tenseName) }
+                            getTenseInfo = remember { { tenseName: String -> verbDrillVmForTenses.getTenseInfo(tenseName) } }
                         )
                     }
 
                     composable(Routes.VERB_DRILL) {
                         val verbDrillVm = viewModel<VerbDrillViewModel>()
                         val activePackId = state.navigation.activePackId
-                        if (activePackId != null) {
-                            verbDrillVm.reloadForPack(activePackId.value)
-                        } else {
-                            verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                        LaunchedEffect(activePackId, state.navigation.selectedLanguageId) {
+                            if (activePackId != null) {
+                                verbDrillVm.reloadForPack(activePackId.value)
+                            } else {
+                                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                            }
                         }
                         VerbDrillScreen(
                             viewModel = verbDrillVm,
-                            onBack = {
+                            onBack = remember { {
                                 vm.refreshStreakFromStore()
                                 onNavigate(Routes.HOME)
-                            },
-                            onStartSession = { cards ->
+                            } },
+                            onStartSession = remember { { cards: List<VerbDrillCard> ->
                                 vm.startVerbDrillSession(cards)
                                 vm.setReturnTo(Routes.VERB_DRILL)
                                 onNavigate(Routes.TRAINING)
-                            }
+                            } }
                         )
                     }
 
                     composable(Routes.VOCAB_DRILL) {
                         val vocabDrillVm = viewModel<VocabDrillViewModel>()
                         val packId = state.navigation.activePackId
-                        if (packId != null) {
-                            vocabDrillVm.reloadForPack(packId.value, state.navigation.selectedLanguageId.value)
-                        } else {
-                            vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
-                        }
-                        val vocabExit = {
-                            if (vocabDrillVm.hasRatedCards) {
-                                vm.refreshVocabMasteryCount()
+                        LaunchedEffect(packId, state.navigation.selectedLanguageId) {
+                            if (packId != null) {
+                                vocabDrillVm.reloadForPack(packId.value, state.navigation.selectedLanguageId.value)
+                            } else {
+                                vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
                             }
-                            vm.refreshStreakFromStore()
-                            onNavigate(Routes.HOME)
+                        }
+                        val vocabExit = remember(vocabDrillVm) {
+                            {
+                                if (vocabDrillVm.hasRatedCards) {
+                                    vm.refreshVocabMasteryCount()
+                                }
+                                vm.refreshStreakFromStore()
+                                onNavigate(Routes.HOME)
+                            }
                         }
                         BackHandler { vocabExit() }
                         VocabDrillScreen(
@@ -476,7 +505,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     dailyScope = dailyScope,
                     lastFinishedToken = lastFinishedToken,
                     lastBossFinishedToken = lastBossFinishedToken,
-                    onDialogsChange = { dialogs = it },
+                    onDialogsChange = remember { { dialogs = it } },
                     onNavigate = onNavigate
                 )
             } // Box
@@ -582,6 +611,7 @@ private fun TrainingScreenContent(
     onSessionDone: () -> Unit = {},
     getTenseInfo: (String) -> TenseInfo? = { null }
 ) {
+    val pomodoroRemainingSeconds by vm.pomodoroRemainingSeconds.collectAsStateWithLifecycle()
     TrainingScreen(
         state = state,
         onInputChange = vm.training::onInputChanged,
@@ -609,14 +639,17 @@ private fun TrainingScreenContent(
         hintLevel = hintLevel,
         onPausePomodoro = vm::pausePomodoro,
         onResumePomodoro = vm::resumePomodoro,
-        onCancelPomodoro = {
-            vm.cancelPomodoro()
-            onNavigate(Routes.HOME)
+        onCancelPomodoro = remember(onNavigate) {
+            {
+                vm.cancelPomodoro()
+                onNavigate(Routes.HOME)
+            }
         },
         onRateCardDifficulty = vm::rateCardDifficulty,
         onVerbDrillMore = onVerbDrillMore,
         onSessionDone = onSessionDone,
-        getTenseInfo = getTenseInfo
+        getTenseInfo = getTenseInfo,
+        pomodoroRemainingSeconds = pomodoroRemainingSeconds
     )
 }
 
@@ -640,8 +673,8 @@ private fun DailyPracticeScreenContent(
         languageId = state.navigation.selectedLanguageId.value,
         onShowSentenceAnswer = vm.daily::getDailySentenceAnswer,
         onShowVerbAnswer = vm.daily::getDailyVerbAnswer,
-        onRateVocabCard = { rating -> vm.daily.rateVocabCard(rating) },
-        onStartCardBlock = { blockType, cards ->
+        onRateVocabCard = remember { { rating: com.alexpo.grammermate.data.SrsRating -> vm.daily.rateVocabCard(rating) } },
+        onStartCardBlock = remember(onNavigate) { { blockType: DailyBlockType, cards: List<com.alexpo.grammermate.data.SessionCard> ->
             when (blockType) {
                 DailyBlockType.TRANSLATE -> vm.startDailyTranslateSession(cards)
                 DailyBlockType.VERBS -> vm.startDailyVerbsSession(cards)
@@ -649,19 +682,19 @@ private fun DailyPracticeScreenContent(
             }
             vm.setReturnTo(Routes.DAILY_PRACTICE)
             onNavigate(Routes.TRAINING)
-        },
-        onSpeak = { text ->
+        } },
+        onSpeak = remember(state.audio.ttsModelReady) { { text: String ->
             if (state.audio.ttsModelReady) {
                 vm.audio.onTtsSpeak(text, speed = 0.67f)
             }
-        },
-        onStopTts = { vm.audio.stopTts() },
+        } },
+        onStopTts = remember { { vm.audio.stopTts() } },
         ttsState = state.audio.ttsState,
-        onExit = {
+        onExit = remember(onNavigate) { {
             vm.cancelDailySession()
             onNavigate(Routes.HOME)
-        },
-        onComplete = {
+        } },
+        onComplete = remember { {
             // VOCAB block completed — signal coordinator to advance to next block
             val nextBlock = vm.daily.onBlockComplete()
             if (nextBlock == null) {
@@ -669,19 +702,19 @@ private fun DailyPracticeScreenContent(
                 // The finishedToken will be set and DailyPracticeScreen shows completion
             }
             // If nextBlock is non-null, the UI will re-render with the new block
-        },
-        onFlagDailyBadSentence = { cardId, langId, sentence, translation, mode ->
+        } },
+        onFlagDailyBadSentence = remember { { cardId: String, langId: String, sentence: String, translation: String, mode: String ->
             vm.reports.flagDailyBadSentence(cardId, langId, sentence, translation, mode)
-        },
-        onUnflagDailyBadSentence = { cardId ->
+        } },
+        onUnflagDailyBadSentence = remember { { cardId: String ->
             vm.reports.unflagDailyBadSentence(cardId)
-        },
-        isDailyBadSentence = { cardId ->
+        } },
+        isDailyBadSentence = remember { { cardId: String ->
             vm.reports.isDailyBadSentence(cardId)
-        },
-        onExportDailyBadSentences = {
+        } },
+        onExportDailyBadSentences = remember { {
             vm.reports.exportDailyBadSentences()
-        },
+        } },
         hintLevel = state.cardSession.hintLevel,
         textScale = state.audio.ruTextScale,
         voiceAutoStart = state.audio.voiceAutoStart

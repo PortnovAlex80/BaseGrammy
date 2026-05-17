@@ -54,7 +54,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -91,7 +91,7 @@ fun VocabDrillScreen(
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     // Track whether RecognizerIntent is currently active (to prevent double-launch)
     var isVoiceActive by remember { mutableStateOf(false) }
@@ -158,7 +158,7 @@ fun VocabDrillScreen(
                 session = session,
                 voiceAutoStart = voiceAutoStart,
                 isVoiceActive = isVoiceActive,
-                ttsState = viewModel.ttsState.collectAsState().value,
+                ttsState = viewModel.ttsState.collectAsStateWithLifecycle().value,
                 onFlip = viewModel::flipCard,
                 onAnswer = viewModel::answerRating,
                 onSpeak = viewModel::speakTts,

@@ -2,6 +2,11 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [Spec Update] - 2026-05-17
+
+### Added
+- `20-non-functional-requirements.md`: Added section 20.1.8 (Compose Rendering Performance) with state flow consumption requirements (PERF-01 through PERF-06), compose recomposition requirements (PERF-07 through PERF-12), performance budget table with current measurements vs targets, and architectural constraint note preserving single-ViewModel/single-state patterns.
+
 ## [Bug Fix: No auto-advance after 3 incorrect retries] - 2026-05-17
 
 ### Changed
