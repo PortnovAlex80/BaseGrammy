@@ -7,7 +7,7 @@ TrainingCardSession is a reusable Compose composable that provides the entire ca
 > **Design Principle — Universal Card Engine:** TrainingScreen (via TrainingCardSession + SessionRunner) is the universal card training engine. All card-based training uses the same UI, navigation, input controls, and feedback. Modes differ ONLY in:
 > 1. Card source (which cards are loaded into `sessionCards`)
 > 2. Scoring logic (mastery tracking, boss rewards)
-> 3. Visual theme (normal background vs green drill theme)
+> 3. Visual theme (normal background)
 > 4. Exit destination (HOME vs LESSON)
 >
 > **Modes using TrainingScreen:**
@@ -31,7 +31,7 @@ The component is consumed by two tiers of training modes:
 1. **TRAINING_NORMAL** — standard sub-lessons (via MixedReviewScheduler).
 2. **TRAINING_BOSS** — boss battle review (cards from lesson pool).
 3. **TRAINING_BOSS_MEGA** — mega boss battle.
-4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once, green theme, mastery NOT counted).
+4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once, mastery NOT counted).
 5. **TRAINING_ELITE** — elite/daily step.
 
 **Tier 2 — Separate screens using TrainingCardSession component (2 modes):**
@@ -199,7 +199,7 @@ Optional capability flags that adapters declare. All default to `false`:
 | `supportsFlagging` | Shows report/flag button that opens bottom sheet |
 | `supportsNavigation` | Shows bottom navigation row (prev/pause/exit/next) |
 | `supportsPause` | Shows pause/play toggle button in navigation |
-| `supportsDrillTheme` | Shows green background, green prompt text, green tense labels when `isDrillMode == true` |
+| `supportsDrillTheme` | Shows green prompt text, green tense labels when `isDrillMode == true` |
 
 ### 12.2.3 Supporting Data Classes
 
@@ -522,12 +522,12 @@ Standard lesson training in TrainingScreen will use `TrainingCardSession` via a 
 - Wraps `SessionRunner` and reads from `TrainingUiState`
 - Capabilities: all true (TTS, voice, word bank, flagging, navigation, pause)
 - Handles sub-mode switching transparently — no conditional logic in the composable
-- Drill sub-mode visual differences (green theme) handled via `supportsDrillTheme` capability
+- Drill sub-mode visual differences handled via `supportsDrillTheme` capability
 
 **Sub-mode handling in adapter:**
 - All 5 sub-modes share the same card presentation, input, and navigation slots
 - BOSS mode: custom progress display (boss progress bar instead of sub-lesson progress)
-- DRILL mode: green theme via `supportsDrillTheme`, no mastery tracking
+- DRILL mode: drill theme via `supportsDrillTheme`, no mastery tracking
 - ELITE mode: standard flow, different card source
 
 **Custom slots:**
@@ -564,7 +564,6 @@ Drill is a sub-mode of TrainingScreen, triggered by the DrillTile on LessonRoadm
 **Navigation:** Standard `navigateNext()` / `navigatePrev()` — identical to normal training. No special drill navigation functions.
 
 **Visual theme:**
-- Background: green tint (`0xFFE8F5E9`) when `isDrillMode == true`.
 - Tense labels: green color instead of primary.
 - Prompt text tint: green instead of default.
 - All other UI elements (input controls, navigation row, check button) remain standard.

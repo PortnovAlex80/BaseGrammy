@@ -28,7 +28,7 @@ The app separates card browsing from active practice. PAUSED = browsing mode, AC
 All card-based training modes share the same TrainingScreen UI engine. The only differences between modes are:
 1. **Card source** — which cards populate `sessionCards` (schedule, boss pool, drill cards, etc.)
 2. **Scoring** — whether mastery is counted, whether boss rewards apply
-3. **Theme** — normal vs drill green background
+3. **Theme** — standard theme for all modes
 4. **Exit** — destination screen after completion
 
 This applies to 5 sub-modes within TrainingScreen: NORMAL, BOSS, BOSS_MEGA, ELITE, DRILL.

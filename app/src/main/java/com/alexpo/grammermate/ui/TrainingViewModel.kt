@@ -602,6 +602,40 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return _coreState.value.cardSession.screenMode == com.alexpo.grammermate.data.TrainingScreenMode.VERB_DRILL
     }
 
+    /**
+     * Start a daily translation session with [SessionCard] cards.
+     * Sets screenMode to DAILY_TRANSLATE and activates the session.
+     */
+    fun startDailyTranslateSession(cards: List<com.alexpo.grammermate.data.SessionCard>) {
+        val events = sessionRunner.startDailyTranslateSession(cards)
+        handleSessionEvents(events)
+    }
+
+    /**
+     * Start a daily verbs session with [SessionCard] cards.
+     * Sets screenMode to DAILY_VERBS and activates the session.
+     */
+    fun startDailyVerbsSession(cards: List<com.alexpo.grammermate.data.SessionCard>) {
+        val events = sessionRunner.startDailyVerbsSession(cards)
+        handleSessionEvents(events)
+    }
+
+    /**
+     * Exit the daily session and reset to normal mode.
+     * Call when the user finishes or exits a daily practice block.
+     */
+    fun exitDailySession() {
+        val events = sessionRunner.exitDailySession()
+        handleSessionEvents(events)
+    }
+
+    /** Whether the current session is in a daily practice screen mode. */
+    fun isDailySession(): Boolean {
+        val mode = _coreState.value.cardSession.screenMode
+        return mode == com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE ||
+               mode == com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS
+    }
+
     fun importLesson(uri: Uri) {
         val languageId = _coreState.value.navigation.selectedLanguageId
         val lesson = lessonStore.importFromUri(languageId.value, uri, getApplication<Application>().contentResolver)

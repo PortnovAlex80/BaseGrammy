@@ -59,13 +59,13 @@
 - TS-10 through TS-25, TS-33, TS-34, TS-35: Custom `inputControls` slot (TrainingInputControlsSlot) delegating to UnifiedInputControlsBar
 - TS-26 through TS-28: Custom `resultContent` slot (TrainingResultContentSlot)
 - TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements)
-- TS-36, TS-37: Kept in TrainingScreen Scaffold containerColor and header slot
+- TS-37: Kept in TrainingScreen header slot
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Scaffold TopBar title | TS-01 | text | Always | "GrammarMate" in titleLarge, Bold. | ? |
 | Settings gear (top bar) | TS-02 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()` + `onShowSettings()`. | ? |
-| Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`, green-tinted text in drill mode. | ? |
+| Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`. | ? |
 | Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). In drill mode: green (0xFF388E3C). | ? |
 | Prompt text (header) | TS-05 | text | `currentCard != null` | Stripped prompt (parenthetical hints removed via regex), `(18f * ruTextScale).sp`, Medium weight. Green tint in drill mode. | UC-56 |
 | DrillProgressRow (progress bar) | TS-06 | progress-bar | Always | Rounded green bar (70% width, #4CAF50 on #C8E6C9 track). "N / Total" text overlay. Text color flips dark-green-to-white at 12% fill. **Dark Mode:** Track must use dark colors: filled = 0xFF2E4A2F, unfilled = 0xFF3A3A3A. [UC-68 AC5] | UC-68 |
@@ -98,7 +98,6 @@
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
-| Drill mode background | TS-36 | (visual) | `isDrillMode` | Scaffold containerColor set to green (0xFFE8F5E9). **Dark Mode:** Must use theme-aware color. Light = 0xFFE8F5E9, Dark = 0xFF1B3A1D. Currently hardcoded `DrillBackgroundGreen` — needs conditional in Theme.kt or `isSystemInDarkTheme()` check. [UC-68 AC1] | UC-68, UC-69 |
 | Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #1565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
 
 ---

@@ -48,8 +48,10 @@ import androidx.navigation.compose.rememberNavController
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AppScreen
 import com.alexpo.grammermate.data.BossReward
+import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.TtsState
 import android.widget.Toast
@@ -342,19 +344,28 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                     composable(Routes.TRAINING) {
                         val isVerbDrill = vm.isVerbDrillSession()
+                        val isDaily = vm.isDailySession()
                         TrainingScreenContent(
                             state, vm,
                             onShowExitDialog = {
-                                if (isVerbDrill) {
-                                    vm.exitVerbDrillSession()
-                                    onNavigate(Routes.VERB_DRILL)
-                                } else {
-                                    dialogs = dialogs.copy(showExitDialog = true)
+                                when {
+                                    isVerbDrill -> {
+                                        vm.exitVerbDrillSession()
+                                        onNavigate(Routes.VERB_DRILL)
+                                    }
+                                    isDaily -> {
+                                        vm.exitDailySession()
+                                        onNavigate(Routes.DAILY_PRACTICE)
+                                    }
+                                    else -> {
+                                        dialogs = dialogs.copy(showExitDialog = true)
+                                    }
                                 }
                             },
                             onShowSettings = { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) },
                             onTtsSpeak = onTtsSpeak,
                             isVerbDrillMode = isVerbDrill,
+                            isDailySession = isDaily,
                             onVerbDrillMore = {
                                 // Stay on VERB_DRILL selection screen for next batch
                                 vm.exitVerbDrillSession()
@@ -488,6 +499,13 @@ private fun NavBackHandlers(
             launchSingleTop = true
         }
     }
+    BackHandler(enabled = currentRoute == Routes.TRAINING && vm.isDailySession() && !showSettings) {
+        vm.exitDailySession()
+        navController.navigate(Routes.DAILY_PRACTICE) {
+            popUpTo(Routes.HOME) { inclusive = false }
+            launchSingleTop = true
+        }
+    }
     BackHandler(enabled = currentRoute == Routes.VERB_DRILL && !showSettings) {
         navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = false }
@@ -509,6 +527,7 @@ private fun TrainingScreenContent(
     onTtsSpeak: () -> Unit,
     hintLevel: HintLevel = HintLevel.EASY,
     isVerbDrillMode: Boolean = false,
+    isDailySession: Boolean = false,
     onVerbDrillMore: () -> Unit = {}
 ) {
     TrainingScreen(
@@ -537,6 +556,7 @@ private fun TrainingScreenContent(
         onStartOfflineRecognition = vm::startOfflineRecognition,
         hintLevel = hintLevel,
         isVerbDrillMode = isVerbDrillMode,
+        isDailySession = isDailySession,
         onVerbDrillMore = onVerbDrillMore
     )
 }
@@ -568,6 +588,14 @@ private fun DailyPracticeScreenContent(
         onAdvance = vm::advanceDailyTask,
         onAdvanceBlock = { vm.daily.advanceDailyBlock() },
         onRepeatBlock = { vm.repeatDailyBlock() },
+        onStartCardBlock = { blockType, cards ->
+            when (blockType) {
+                DailyBlockType.TRANSLATE -> vm.startDailyTranslateSession(cards)
+                DailyBlockType.VERBS -> vm.startDailyVerbsSession(cards)
+                else -> {}
+            }
+            onNavigate(Routes.TRAINING)
+        },
         onSpeak = { text ->
             if (state.audio.ttsModelReady) {
                 vm.audio.onTtsSpeak(text, speed = 0.67f)
@@ -698,9 +726,15 @@ private fun NavDialogs(
     }
 
     // Token-based navigation: sub-lesson finished
-    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value && !vm.isVerbDrillSession()) {
+    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value && !vm.isVerbDrillSession() && !vm.isDailySession()) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         onNavigate(Routes.LESSON)
+    }
+    // Token-based navigation: daily session block finished — advance coordinator and return to DAILY_PRACTICE
+    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value && vm.isDailySession()) {
+        lastFinishedToken.value = state.cardSession.subLessonFinishedToken
+        vm.daily.advanceDailyBlock()
+        onNavigate(Routes.DAILY_PRACTICE)
     }
     if (currentRoute == Routes.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken

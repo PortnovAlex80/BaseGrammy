@@ -66,7 +66,6 @@ import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.ui.CorrectGreen
-import com.alexpo.grammermate.ui.DrillBackgroundGreen
 import com.alexpo.grammermate.ui.DrillPromptGreen
 import com.alexpo.grammermate.ui.DrillTenseLabelGreen
 import com.alexpo.grammermate.ui.IncorrectRed
@@ -116,11 +115,11 @@ fun TrainingScreen(
     onStartOfflineRecognition: () -> Unit = {},
     hintLevel: HintLevel = HintLevel.EASY,
     isVerbDrillMode: Boolean = false,
+    isDailySession: Boolean = false,
     onVerbDrillMore: () -> Unit = {}
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
-    val drillGreen = DrillBackgroundGreen
     val mode = state.cardSession.screenMode
 
     // VERB_DRILL completion: show stats + More/Exit buttons instead of card session
@@ -136,7 +135,7 @@ fun TrainingScreen(
     }
 
     Scaffold(
-        containerColor = if (state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL) drillGreen else MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(
                 modifier = Modifier
@@ -179,7 +178,7 @@ fun TrainingScreen(
                     // NORMAL, DRILL, VERB_DRILL — tense label + prompt
                     val sentenceCard = state.cardSession.currentCard as? SentenceCard
                     val cardTense = sentenceCard?.tense
-                    val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL
+                    val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
                     if (!cardTense.isNullOrBlank()) {
                         if (isDrillStyle) {
                             Text(
@@ -222,7 +221,7 @@ fun TrainingScreen(
             // ── Prompt text ────────────────────────────────────────────
             val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
             val cleanPrompt = rawPrompt.replace(Regex("\\s*\\([^)]+\\)"), "")
-            val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL
+            val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
             if (cleanPrompt.isNotBlank()) {
                 Text(
                     text = cleanPrompt,
@@ -233,9 +232,9 @@ fun TrainingScreen(
                 )
             }
 
-            // ── Chips for VERB_DRILL ────────────────────────────────────
+            // ── Chips for VERB_DRILL / DAILY_VERBS ──────────────────────
             val drillCard = state.cardSession.currentCard as? VerbDrillCard
-            if (mode == TrainingScreenMode.VERB_DRILL && drillCard != null) {
+            if ((mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS) && drillCard != null) {
                 VerbDrillChips(drillCard)
             }
 
