@@ -77,7 +77,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val themeModeStr = data["themeMode"] as? String ?: "SYSTEM"
         val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
         val rawSessionSize = (data["sessionSize"] as? Number)?.toInt() ?: 10
-        val sessionSize = rawSessionSize.coerceIn(6, 12)
+        val sessionSize = rawSessionSize.coerceIn(3, 20)
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,

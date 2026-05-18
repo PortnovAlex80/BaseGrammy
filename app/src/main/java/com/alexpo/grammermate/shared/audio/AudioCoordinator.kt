@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Stateful module managing all audio: TTS playback, ASR recognition, SoundPool effects.
@@ -95,6 +97,13 @@ class AudioCoordinator(
     private var asrDownloadJob: Job? = null
     private var bgDownloadJob: Job? = null
 
+    // ── TTS serialization mutex ────────────────────────────────────────────
+    // Prevents concurrent TTS initialize/speak sequences from colliding at
+    // the AudioCoordinator level. TtsEngine has its own internal mutex but
+    // doRelease() (language switch) can free native resources while another
+    // coroutine is using them. Serializing here closes that window.
+    private val ttsMutex = Mutex()
+
     // ── Init ───────────────────────────────────────────────────────────────
 
     init {
@@ -146,19 +155,21 @@ class AudioCoordinator(
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         val effectiveSpeed = speed ?: _audioState.value.ttsSpeed
         coroutineScope.launch {
-            try {
-                if (ttsEngine.state.value != TtsState.Ready
-                    || ttsEngine.activeLanguageId != langId.value
-                ) {
-                    ttsEngine.initialize(langId.value)
+            ttsMutex.withLock {
+                try {
+                    if (ttsEngine.state.value != TtsState.Ready
+                        || ttsEngine.activeLanguageId != langId.value
+                    ) {
+                        ttsEngine.initialize(langId.value)
+                    }
+                    if (ttsEngine.state.value == TtsState.Ready) {
+                        ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
+                    } else {
+                        Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "onTtsSpeak failed", e)
                 }
-                if (ttsEngine.state.value == TtsState.Ready) {
-                    ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
-                } else {
-                    Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "onTtsSpeak failed", e)
             }
         }
     }
@@ -247,12 +258,14 @@ class AudioCoordinator(
                 }
                 // Initialize engine and set ttsModelReady only after engine is confirmed ready.
                 if (downloadState is DownloadState.Done) {
-                    try {
-                        delay(500) // Let filesystem buffers flush after extraction
-                        ttsEngine.initialize(languageId)
-                        Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to auto-initialize TTS for $languageId after download", e)
+                    ttsMutex.withLock {
+                        try {
+                            delay(500) // Let filesystem buffers flush after extraction
+                            ttsEngine.initialize(languageId)
+                            Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to auto-initialize TTS for $languageId after download", e)
+                        }
                     }
                     val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
                     if (languageId == selectedLangId && ttsEngine.state.value == TtsState.Ready) {
@@ -271,8 +284,13 @@ class AudioCoordinator(
 
     fun checkTtsModel() {
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
-        val ready = ttsModelManager.isModelReady(langId.value)
-        _audioState.update { it.copy(ttsModelReady = ready) }
+        val filesReady = ttsModelManager.isModelReady(langId.value)
+        val engineState = ttsEngine.state.value
+        val engineReady = engineState == TtsState.Ready
+            || engineState == TtsState.Idle
+            || engineState == TtsState.Initializing
+            || engineState == TtsState.Speaking
+        _audioState.update { it.copy(ttsModelReady = filesReady && engineReady) }
     }
 
     fun checkAllTtsModels() {
@@ -404,12 +422,14 @@ class AudioCoordinator(
                         val selectedLang = stateAccess.uiState.value.navigation.selectedLanguageId.value
                         val langToInit = if (newlyCompleted.contains(selectedLang)) selectedLang
                             else newlyCompleted.first()
-                        try {
-                            delay(500) // Let filesystem buffers flush after extraction
-                            ttsEngine.initialize(langToInit)
-                            Log.d(TAG, "Auto-initialized TTS engine for $langToInit after background download")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to auto-initialize TTS for $langToInit after download", e)
+                        ttsMutex.withLock {
+                            try {
+                                delay(500) // Let filesystem buffers flush after extraction
+                                ttsEngine.initialize(langToInit)
+                                Log.d(TAG, "Auto-initialized TTS engine for $langToInit after background download")
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to auto-initialize TTS for $langToInit after download", e)
+                            }
                         }
                     }
                     // Set ttsModelReady = true only after engine init succeeds for the selected language.
@@ -468,12 +488,14 @@ class AudioCoordinator(
                 if (downloadState is DownloadState.Done) {
                     // Initialize engine BEFORE setting ttsModelReady = true to prevent
                     // race condition where UI tries to speak with uninitialized engine.
-                    try {
-                        delay(500) // Let filesystem buffers flush after extraction
-                        ttsEngine.initialize(langId.value)
-                        Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
+                    ttsMutex.withLock {
+                        try {
+                            delay(500) // Let filesystem buffers flush after extraction
+                            ttsEngine.initialize(langId.value)
+                            Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
+                        }
                     }
                     if (ttsEngine.state.value == TtsState.Ready) {
                         _audioState.update { it.copy(ttsModelReady = true) }

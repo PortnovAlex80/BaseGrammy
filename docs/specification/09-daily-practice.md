@@ -1165,6 +1165,8 @@ class DailyPracticeCoordinator(
     fun updateCursor(cursor: DailyCursorState)
     fun getCursor(): DailyCursorState
     fun advanceDailyCursor(sentenceCount: Int, languageId: String): DailyCursorState
+    fun resetState()               // soft reset: clears session, preserves cursor
+    fun resetAllDailyState()       // full wipe: clears session AND cursor
 }
 ```
 
@@ -1289,12 +1291,26 @@ DailyCursorState {
 - User browsing to a different lesson on the roadmap (`selectedLessonId`)
 - Mastery/flower state changes (these grow flowers but don't move the daily cursor)
 - Regular lesson training completion
+- Language change (`selectLanguage()` calls `resetState()` which preserves cursor)
+- Pack import (calls `resetState()` which preserves cursor)
+- Lesson selection (`selectLesson()` calls `resetState()` which preserves cursor)
 
 **What DOES move the daily cursor:**
 - Completing a daily session with all VOICE/KEYBOARD cards → `advanceCursor(sentenceCount)`
 - `sentenceOffset` += practiced sentence count
 - If `sentenceOffset >= lesson.cards.size` → `currentLessonIndex++`, `sentenceOffset = 0`
 - If `currentLessonIndex >= pack.lessons.size` → wrap to 0 (cycle through pack)
+- "Reset all progress" in Settings → calls `resetAllDailyState()` which wipes cursor to defaults
+
+**What wipes the daily cursor entirely:**
+- `resetAllDailyState()` — full wipe of `DailyPracticeState` including `dailyCursor`. Only called from "Reset all progress" in Settings. Sets `_state` to `DailyPracticeState()`, resetting `dailySession` and `dailyCursor` to defaults.
+
+**Soft reset (cursor preserved):**
+- `resetState()` — clears active daily session (`dailySession`) but **preserves** `dailyCursor`. Uses `_state.update { it.copy(dailySession = DailySessionState()) }` instead of full state reset. Called by:
+  - `selectLesson()` — navigating to a different lesson on the roadmap
+  - `selectLanguage()` — switching language
+  - `importLessonPack()` — importing a new lesson pack
+  - `startMixChallenge()` — entering Mix Challenge mode
 
 **Verb cycling:** When all verb cards for the current tenses have been shown, Block 3 cycles them (re-selects from full pool with weakness ordering). Block 3 never returns empty while active tenses exist.
 

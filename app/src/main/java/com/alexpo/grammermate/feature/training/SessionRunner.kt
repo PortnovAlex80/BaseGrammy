@@ -303,10 +303,12 @@ class SessionRunner(
         if (accepted) {
             val events = mutableListOf<SessionEvent>(SessionEvent.PlaySuccess)
 
-            // When session is not ACTIVE (PAUSED / HINT_SHOWN), validate the answer
-            // and show correct feedback but do NOT advance to the next card.
-            // The user stays on the same card and can press Play to formally resume.
-            if (state.cardSession.sessionState != SessionState.ACTIVE) {
+            // When session is HINT_SHOWN, validate the answer and show correct feedback
+            // but do NOT advance to the next card. The user stays on the same card and
+            // can press Play to formally resume.
+            // When session is PAUSED, resume to ACTIVE so the normal advance logic runs.
+            // This fixes the bug where PAUSED + correct showed "Correct" but didn't advance.
+            if (state.cardSession.sessionState == SessionState.HINT_SHOWN) {
                 events.add(SessionEvent.RecordCardShow(card))
                 stateMachine.reset()
                 stateAccess.updateState {
@@ -320,8 +322,18 @@ class SessionRunner(
                         voicePromptStartMs = null
                     ))
                 }
-                Log.d(logTag, "Answer accepted during ${state.cardSession.sessionState} — staying on card")
+                Log.d(logTag, "Answer accepted during HINT_SHOWN — staying on card")
                 return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = true, needsFlowerRefresh = true) to events
+            }
+
+            // PAUSED + correct: resume session to ACTIVE, then fall through to normal advance logic
+            if (state.cardSession.sessionState == SessionState.PAUSED) {
+                stateMachine.resume()
+                resumeTimer()
+                stateAccess.updateState {
+                    it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.ACTIVE))
+                }
+                Log.d(logTag, "Answer accepted during PAUSED — resuming to ACTIVE and advancing")
             }
 
             events.add(SessionEvent.RecordCardShow(card))

@@ -82,6 +82,12 @@ class SettingsActionHandler(
         Log.d(logTag, "Theme mode set: $mode")
     }
 
+    fun setSessionSize(size: Int) {
+        val safe = size.coerceIn(3, 20)
+        configStore.save(configStore.load().copy(sessionSize = safe))
+        Log.d(logTag, "Session size set: $safe")
+    }
+
     /**
      * Sets the UI interface language. Values: "system", "en", "ru".
      * Persists to config and applies locale via AppCompatDelegate.

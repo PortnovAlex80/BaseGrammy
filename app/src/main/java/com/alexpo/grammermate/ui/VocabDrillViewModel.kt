@@ -371,7 +371,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
                 } else {
                     Log.w(logTag, "TTS not ready after initialize, state=${ttsEngine.state.value}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e(logTag, "speakTts failed", e)
             }
         }

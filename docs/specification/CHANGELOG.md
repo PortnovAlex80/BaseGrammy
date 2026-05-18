@@ -5,9 +5,10 @@ All changes to specification documents are tracked here. Each entry references t
 ## [TASK-070: Daily Practice Cursor Fix] - 2026-05-18
 
 ### Changed
-- `09-daily-practice.md`: Updated section 9.2.1 to note `DailyPracticeSessionProvider` is dead code. Updated section 9.3.5 (Mastery Counting) to reflect actual counting path through `TrainingViewModel.submitAnswer()` instead of `DailyPracticeSessionProvider.onCardAdvanced`. Updated section 9.5.6 to note actual verb progress persistence path. Updated section 9.6.2 (Block Transition) to correct the card counting trace. Updated section 9.6.4 to document how `dailyPracticeAnsweredCounts` is populated.
-- `scenario-06-daily-practice.md`: Updated Step 4 card counting trace from `onCardAdvanced` to `submitAnswer()` hook. Updated Step 10 provider reference. Added discrepancy #9 documenting the dead code finding and TASK-070 resolution.
-- `trace-index.md`: Added TASK-070 section with entries for `isDailySession()` and daily tracking block in `submitAnswer()`.
+- `09-daily-practice.md`: Updated section 9.2.1 to note `DailyPracticeSessionProvider` is dead code. Updated section 9.3.5 (Mastery Counting) to reflect actual counting path through `TrainingViewModel.submitAnswer()` instead of `DailyPracticeSessionProvider.onCardAdvanced`. Updated section 9.5.6 to note actual verb progress persistence path. Updated section 9.6.2 (Block Transition) to correct the card counting trace. Updated section 9.6.4 to document how `dailyPracticeAnsweredCounts` is populated. Updated section 9.8.7 (Cursor Invariant) to document soft reset (`resetState()` preserves cursor) vs full wipe (`resetAllDailyState()` wipes cursor), and added cursor survival guarantees for lesson selection, language change, and pack import. Updated DailyPracticeCoordinator API to include `resetState()` and `resetAllDailyState()` signatures.
+- `scenario-06-daily-practice.md`: Updated Step 4 card counting trace from `onCardAdvanced` to `submitAnswer()` hook. Updated Step 10 provider reference. Added discrepancy #9 documenting the dead code finding and TASK-070 resolution. Added discrepancy #10 documenting the `resetState()` cursor wipe bug and Fix 3 resolution.
+- `trace-index.md`: Added TASK-070 section with entries for `isDailySession()`, daily tracking block in `submitAnswer()`, `resetState()` (soft reset), and `resetAllDailyState()` (full wipe).
+- `tasks/TASK-070-daily-cursor-stuck.md`: Added Fix 3 section documenting `resetState()` cursor preservation. Updated verification checklist with items 10-13 for cursor survival checks. Updated completion log with Fix 3 status.
 
 ## [Spec Update] - 2026-05-17
 

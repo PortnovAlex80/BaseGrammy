@@ -1207,10 +1207,36 @@ class DailyPracticeCoordinatorTest {
         startActiveSession()
         assertTrue(coordinator.dailyState.value.dailySession.active)
 
-        coordinator.resetState()
+        coordinator.resetAllDailyState()
 
         assertFalse(coordinator.dailyState.value.dailySession.active)
         assertEquals(DailyPracticeState(), coordinator.dailyState.value)
+    }
+
+    @Test
+    fun resetState_preservesCursor() = runBlocking {
+        // Set a non-default cursor
+        coordinator.updateCursor(DailyCursorState(
+            currentLessonIndex = 3,
+            sentenceOffset = 7,
+            firstSessionDate = "2026-05-18",
+            firstSessionSentenceCardIds = listOf("card-1", "card-2"),
+            firstSessionVerbCardIds = listOf("verb-1")
+        ))
+        startActiveSession()
+        assertTrue(coordinator.dailyState.value.dailySession.active)
+
+        coordinator.resetState()
+
+        // Session should be cleared
+        assertFalse(coordinator.dailyState.value.dailySession.active)
+        // Cursor should be preserved
+        val cursor = coordinator.getCursor()
+        assertEquals(3, cursor.currentLessonIndex)
+        assertEquals(7, cursor.sentenceOffset)
+        assertEquals("2026-05-18", cursor.firstSessionDate)
+        assertEquals(listOf("card-1", "card-2"), cursor.firstSessionSentenceCardIds)
+        assertEquals(listOf("verb-1"), cursor.firstSessionVerbCardIds)
     }
 
     // ══════════════════════════════════════════════════════════════════

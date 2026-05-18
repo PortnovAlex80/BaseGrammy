@@ -77,6 +77,8 @@
     <string name="settings_hard_description">No hints: voice only, produce from Russian prompt alone</string>
     <string name="settings_vocab_sprint_limit">Vocabulary Sprint limit</string>
     <string name="settings_vocab_limit_hint">Set how many words to show (0 = all words)</string>
+    <string name="settings_session_size">Session size</string>
+    <string name="settings_session_size_hint">Cards per block in daily practice (3–20, default 10)</string>
     <string name="settings_pronunciation_speed">Pronunciation speed</string>
     <string name="settings_voice_recognition">Voice recognition</string>
     <string name="settings_offline_speech_recognition">Offline speech recognition</string>

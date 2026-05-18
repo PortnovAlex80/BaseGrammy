@@ -83,7 +83,9 @@ fun SettingsSheet(
     onSetThemeMode: (com.alexpo.grammermate.data.ThemeMode) -> Unit = {},
     onSetVoiceAutoStart: (Boolean) -> Unit = {},
     onSetUiLanguage: (String) -> Unit = {},
+    onSetSessionSize: (Int) -> Unit = {},
     uiLanguage: String = "system",
+    sessionSize: Int = 10,
     languageDisplayName: String = ""
 ) {
     if (!show) return
@@ -91,6 +93,7 @@ fun SettingsSheet(
     var newLessonTitle by remember { mutableStateOf("") }
     var newLanguageName by remember { mutableStateOf("") }
     var vocabLimitText by remember(state.cardSession.vocabSprintLimit) { mutableStateOf(state.cardSession.vocabSprintLimit.toString()) }
+    var sessionSizeText by remember(sessionSize) { mutableStateOf(sessionSize.toString()) }
     var userNameInput by remember(state.navigation.userName) { mutableStateOf(state.navigation.userName) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -267,6 +270,24 @@ fun SettingsSheet(
             )
             Text(
                 text = stringResource(R.string.settings_vocab_limit_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            OutlinedTextField(
+                value = sessionSizeText,
+                onValueChange = { next ->
+                    val cleaned = next.filter { it.isDigit() }
+                    sessionSizeText = cleaned
+                    val parsed = cleaned.toIntOrNull()
+                    if (parsed != null) {
+                        onSetSessionSize(parsed)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(text = stringResource(R.string.settings_session_size)) }
+            )
+            Text(
+                text = stringResource(R.string.settings_session_size_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )

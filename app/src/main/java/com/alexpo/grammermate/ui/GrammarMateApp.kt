@@ -256,6 +256,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onSetThemeMode = vm.settings::setThemeMode,
                     onSetVoiceAutoStart = vm.audio::setVoiceAutoStart,
                     onSetUiLanguage = vm.settings::setUiLanguage,
+                    onSetSessionSize = vm::setSessionSize,
+                    sessionSize = vm.currentSessionSize,
                     uiLanguage = vm.currentUiLanguage,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
                 )

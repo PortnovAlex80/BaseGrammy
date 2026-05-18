@@ -1,6 +1,6 @@
 # TASK-070: Daily Practice Cursor Stuck + Tablet Lesson Boundary
 
-**Status:** IN PROGRESS (Fix 1 done)
+**Status:** IN PROGRESS (Fix 1 + Fix 3 done)
 **Created:** 2026-05-18
 **Branch:** feature/daily-cursor-stuck (from develop)
 **Spec:** 09-daily-practice.md#9.3.5, #9.6.4, #9.8.7
@@ -81,6 +81,23 @@ Files:
 3. On tablet: verify Block 1 cards come from `cursor.currentLessonIndex` lesson
 4. On tablet: verify Block 3 tenses match `effectiveLevel = cursor.currentLessonIndex + 1`
 
+### Fix 3: `resetState()` preserves daily cursor (soft reset)
+**Discrepancy:** Code vs Spec 09#9.8.7 | **UC:** UC-21 AC5-AC6 | **Spec:** 09-daily-practice.md#9.8.7
+
+**Problem:** `DailyPracticeCoordinator.resetState()` was setting `_state` to `DailyPracticeState()` — a full wipe that reset `dailyCursor` to defaults (sentenceOffset=0, currentLessonIndex=0). This was called from `selectLesson()`, `selectLanguage()`, `importLessonPack()`, violating the Independence Principle (09#9.1) that says daily cursor must be independent of lesson roadmap browsing.
+
+**Fix:** Changed `resetState()` to use `_state.update { it.copy(dailySession = DailySessionState()) }` — this clears the active session (`dailySession`) but preserves `dailyCursor`. Added a new `resetAllDailyState()` method that does the old full wipe (`_state.value = DailyPracticeState()`), used only by "Reset all progress" in Settings.
+
+Files:
+- `feature/daily/DailyPracticeCoordinator.kt` — `resetState()` changed to soft reset, `resetAllDailyState()` added
+- `ui/TrainingViewModel.kt` — `handleSettingsResults` calls `resetAllDailyState()` instead of `resetState()` for full reset path
+
+**Verification:**
+1. Start daily session → verify cursor position → `selectLesson()` → verify cursor UNCHANGED
+2. Start daily session → verify cursor position → `selectLanguage()` → verify cursor UNCHANGED
+3. Start daily session → verify cursor position → `importLessonPack()` → verify cursor UNCHANGED
+4. Settings → "Reset all progress" → verify daily cursor IS wiped (sentenceOffset=0, currentLessonIndex=0)
+
 ---
 
 ## Verification Checklist
@@ -93,6 +110,10 @@ Files:
 7. [ ] On tablet: Block 1 always uses `cursor.currentLessonIndex` regardless of regular training progress
 8. [ ] `sentenceOffset >= lesson.cards.size` triggers lesson transition correctly
 9. [ ] Pack wrap (last lesson → lesson 0) works correctly
+10. [ ] After `selectLesson()`, `dailyPracticeCoordinator.getCursor()` returns same values as before
+11. [ ] After `selectLanguage()`, `dailyPracticeCoordinator.getCursor()` returns same values as before
+12. [ ] "Reset all progress" in settings wipes daily cursor (`resetAllDailyState`)
+13. [ ] App restart restores cursor from progress.yaml (`hasResumableDailySession` works)
 
 ## Scope Boundaries
 **Do NOT touch:**
@@ -114,6 +135,12 @@ After all fixes are implemented, run:
    - Boss battle
    - Home screen flower states
    - Lesson roadmap navigation
+5. **Cross-cutting daily cursor integrity checks:**
+   - Start daily session → complete → verify cursor advanced → `selectLesson()` → verify cursor UNCHANGED
+   - Start daily session → complete → verify cursor advanced → `selectLanguage()` → verify cursor UNCHANGED
+   - Start daily session → complete → verify cursor advanced → `importLessonPack()` → verify cursor UNCHANGED
+   - Settings → Reset All Progress → verify daily cursor IS wiped (`resetAllDailyState`)
+   - App kill + restart → verify cursor restored from disk (`hasResumableDailySession` works)
 5. **UC/AC spot-check:** UC-21, UC-24, UC-61 — confirm ACs hold
 6. **Spec sync:** if code diverged from spec intentionally, update spec + CHANGELOG + trace-index
 
@@ -128,3 +155,22 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 |------|-----|--------|-------|
 | 2026-05-18 | Fix 1: Wire recordDailyCardPracticed | Done | Implemented in `TrainingViewModel.submitAnswer()` (lines ~628-643) with `isDailySession()` helper (line ~748). Counts VOICE/KEYBOARD answers in DAILY_TRANSLATE/DAILY_VERBS sessions. Spec updated. |
 | | Fix 2: Tablet lesson boundary | | **Likely consequence of Bug 1.** Since `dailyPracticeAnsweredCounts` was always 0, `cancelDailySession()` never advanced the cursor, meaning the cursor always stayed at `sentenceOffset=0, currentLessonIndex=0`. Tablet users seeing cards from "next lesson" may have been seeing regular training progress leaking into daily level resolution (discrepancy #7 in scenario-06), which was already spec-resolved. Verify after Fix 1 is tested on device. |
+| 2026-05-18 | Fix 3: resetState() preserves cursor | Done | `resetState()` changed from `_state.value = DailyPracticeState()` to `_state.update { it.copy(dailySession = DailySessionState()) }`. New `resetAllDailyState()` added for full wipe (Settings only). Spec 09#9.8.7 updated with soft reset vs full wipe documentation. Scenario-06 discrepancy #10 added. |
+
+---
+
+## Lessons Learned
+
+### Regression gap: cross-state isolation
+The initial regression plan listed "Regular lesson training" as a check but was too vague.
+It did not verify that daily cursor state survives regular lesson navigation — specifically
+`selectLesson()` → `resetState()` → cursor wipe.
+
+**Rule for future regressions:** When two features share a ViewModel but have independent
+state (daily cursor vs. lesson progress), the regression MUST include an explicit
+cross-state isolation check: "Action in feature A does not change state of feature B."
+
+### Root cause category
+This bug belongs to the "shared ViewModel state contamination" category. When `resetState()`
+was written, it was designed as a general cleanup but did not distinguish between
+session-ephemeral state (safe to reset) and accumulated progress state (must survive).

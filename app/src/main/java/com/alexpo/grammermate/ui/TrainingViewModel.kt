@@ -295,6 +295,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     val settings: SettingsActionHandler get() = settingsActionHandler
     /** Current UI language setting for the settings screen selector. */
     val currentUiLanguage: String get() = configStore.load().uiLanguage
+    /** Current session size for the settings screen. */
+    val currentSessionSize: Int get() = sessionSize
 
     // ── Pomodoro operations ─────────────────────────────────────────────────
 
@@ -1120,6 +1122,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         configStore.save(configStore.load().copy(ruTextScale = scale.coerceIn(1.0f, 2.0f)))
     }
 
+    fun setSessionSize(size: Int) {
+        val safe = size.coerceIn(3, 20)
+        sessionSize = safe
+        cardProvider.setSubLessonSize(safe)
+        sessionRunner.setSubLessonSize(safe)
+        dailyPracticeCoordinator.setSessionSize(safe)
+        configStore.save(configStore.load().copy(sessionSize = safe))
+    }
+
     fun startOfflineRecognition() {
         audioCoordinator.startOfflineRecognition { result ->
             sessionRunner.onInputChanged(result)
@@ -1465,7 +1476,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun resetDrillFiles(app: Application) = progressTracker.resetDrillFiles(app)
     private fun resetDrillFilesForPack(app: Application, packId: String) = progressTracker.resetDrillFilesForPack(app, packId)
     private fun clearWordMastery() = wordMasteryStore.saveAll(emptyMap())
-    private fun resetDailyState() = dailyPracticeCoordinator.resetState()
+    private fun resetDailyState() = dailyPracticeCoordinator.resetAllDailyState()
 
     private fun resetStreak() {
         streakStore.resetAll()

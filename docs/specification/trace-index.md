@@ -462,6 +462,7 @@ Owns `MutableStateFlow<DailyPracticeState>`. Orchestrates 3-block daily practice
 | `submitDailyVerbAnswer(input)` | 501 | Method | 09#9.5 | UC-27 | AC1–AC2 |
 | `prebuildSession(...)` | 525 | Method | 09#9.8 | UC-21 | ? |
 | `resetState()` | 544 | Method | 09#9.9 | — | — |
+| `resetAllDailyState()` | 549 | Method | 09#9.9 | UC-30 | AC4 |
 | `clearPrebuiltSession()` | 555 | Method | 09#9.8 | — | — |
 | `updateCursor(cursor)` | 566 | Method | 09#9.9 | UC-21 | ? |
 | `getCursor()` | 573 | Method | 09#9.9 | UC-21 | ? |
@@ -477,6 +478,13 @@ Owns `MutableStateFlow<DailyPracticeState>`. Orchestrates 3-block daily practice
 |--------|------|------|------|----|----|
 | `isDailySession()` | ~748 | Method | 09#9.3.5 | UC-24 | AC1 |
 | Daily tracking block in `submitAnswer()` | ~628-643 | Handler | 09#9.3.5 | UC-24 | AC1 |
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/daily/DailyPracticeCoordinator.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `resetState()` (soft reset, preserves cursor) | ~544 | Method | 09#9.8.7 | UC-21 | AC5-AC6 |
+| `resetAllDailyState()` (full wipe, Settings only) | ~549 | Method | 09#9.8.7 | UC-30 | AC4 |
 
 ### FlowerRefresher.kt
 
@@ -550,7 +558,7 @@ The ViewModel explicitly calls each feature's `resetState()` or `resetStateKeepR
 | `selectLanguage(languageId)` | 414–418 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint, daily) | Language change |
 | `selectLesson(lessonId)` | 463–466 | `resetState` (boss, story, vocabSprint, daily) | Lesson change |
 | `selectSubLesson(index)` | 497–499 | `resetState` (boss, story, vocabSprint) | Sub-lesson change |
-| `resetProgress(app)` | 578–581 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint, daily) | Full progress reset |
+| `resetProgress(app)` | 578–581 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint), `resetAllDailyState` (daily) | Full progress reset |
 | `importLessonPack(uri)` | 619–622 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint, daily) | Pack import |
 | `openVocabSprint(resume)` | 853 | `resetState` (boss) via `VocabResult.ResetBoss` | Vocab sprint start |
 | `submitVocabAnswer(...)` | 891 | `resetState` (boss) via `VocabResult.ResetBoss` | Vocab answer submission |
@@ -558,8 +566,8 @@ The ViewModel explicitly calls each feature's `resetState()` or `resetStateKeepR
 | `advanceDailyCursor(sentenceCount)` | 714–718 | `getCursor`, `updateCursor` | Daily cursor advancement |
 | `refreshVocabMasteryCount()` | 1069 | `updateMasteredCount` | Drill mastery refresh |
 | `handleBossCommands(commands)` | 1259–1264 | `resetState` via `ResetBoss`, `ResetDailySession`, `ResetStory`, `ResetVocabSprint` commands | Boss command dispatch |
-| `handleSettingsResults` — `resetAllProgress` | 1281–1284 | `resetState` (boss, story, vocabSprint, daily) | Settings: reset all |
-| `resetDailyState()` | 1294 | `resetState` (daily) | Settings: reset daily |
+| `handleSettingsResults` — `resetAllProgress` | 1281–1284 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint), `resetAllDailyState` (daily) | Settings: reset all |
+| `resetDailyState()` | 1294 | `resetAllDailyState` (daily) | Settings: reset daily |
 | `startMixChallenge()` | ~101 | `ResetStory`, `ResetVocabSprint`, `ResetDailySession` via `BossCommand` | Mix Challenge start |
 
 ## Cross-Reference: UC → Symbol Coverage

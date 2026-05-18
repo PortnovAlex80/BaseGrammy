@@ -630,13 +630,30 @@ class DailyPracticeCoordinator(
         }
     }
 
-    // ── Reset (for resetAllProgress) ───────────────────────────────────
+    // ── Reset ───────────────────────────────────────────────────────────
 
     fun setSessionSize(size: Int) {
         sessionSize = size
     }
 
+    /**
+     * Soft reset: clears active session and caches but preserves [dailyCursor].
+     * Used by selectLesson(), selectLanguage(), importLessonPack(), refreshLessons(), etc.
+     * The cursor represents accumulated daily progress and must survive these operations.
+     */
     fun resetState() {
+        lastDailyBlocks = null
+        prebuiltDailyBlocks = null
+        prebuiltSessionLevel = 0
+        dailyPracticeAnsweredCounts.clear()
+        _state.update { it.copy(dailySession = DailySessionState()) }
+    }
+
+    /**
+     * Full reset: clears everything including [dailyCursor].
+     * Used ONLY by "reset all progress" / "reset language progress" in Settings.
+     */
+    fun resetAllDailyState() {
         lastDailyBlocks = null
         prebuiltDailyBlocks = null
         prebuiltSessionLevel = 0
