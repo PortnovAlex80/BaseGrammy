@@ -1196,6 +1196,7 @@ class SessionRunner(
                     wordBankWords = emptyList(),
                     selectedWords = emptyList(),
                     screenMode = TrainingScreenMode.NORMAL,
+                    isReviewMode = true,
                     hintLevel = hintLevel,
                     inputMode = defaultInputMode,
                     voiceTriggerToken = stateMachine.voiceTriggerToken,

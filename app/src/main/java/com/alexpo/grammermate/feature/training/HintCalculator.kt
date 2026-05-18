@@ -11,11 +11,13 @@ object HintCalculator {
         encounterCount: Int,
         hintLevel: HintLevel,
         sessionOffset: Int,
-        isBossBattle: Boolean = false
+        isBossBattle: Boolean = false,
+        isReviewMode: Boolean = false
     ): String {
         if (isBossBattle) return stripAll(promptRu)
 
         val schedulerFraction = when {
+            isReviewMode -> 1.0
             encounterCount <= 1 -> 1.0
             encounterCount == 2 -> 0.5
             else -> 0.0

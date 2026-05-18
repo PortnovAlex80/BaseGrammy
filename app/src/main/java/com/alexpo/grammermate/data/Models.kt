@@ -418,6 +418,7 @@ data class CardSessionState(
     val hintLevel: HintLevel = HintLevel.EASY,
     val hintSessionOffset: Int = 0,
     val encounterCount: Int = 0,
+    val isReviewMode: Boolean = false,
     val badSentenceCount: Int = 0,
     val testMode: Boolean = false,
     val vocabSprintLimit: Int = 20,

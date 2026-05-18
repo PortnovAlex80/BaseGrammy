@@ -419,7 +419,8 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
                             encounterCount = state.cardSession.encounterCount,
                             hintLevel = state.cardSession.hintLevel,
                             sessionOffset = state.cardSession.hintSessionOffset,
-                            isBossBattle = state.boss?.bossActive == true
+                            isBossBattle = state.boss?.bossActive == true,
+                            isReviewMode = state.cardSession.isReviewMode
                         )
                     } ?: stringResource(R.string.training_no_cards),
                     fontSize = (20f * state.audio.ruTextScale).sp,

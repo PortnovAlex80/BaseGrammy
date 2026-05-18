@@ -68,7 +68,8 @@ class TrainingCardSessionScope(
     val textScale: Float = 1.0f,
     val encounterCount: Int = 0,
     val sessionOffset: Int = 0,
-    val isBossBattle: Boolean = false
+    val isBossBattle: Boolean = false,
+    val isReviewMode: Boolean = false
 )
 
 /**
@@ -106,7 +107,8 @@ fun TrainingCardSession(
     onExit: () -> Unit,
     onComplete: () -> Unit = {},
     modifier: Modifier = Modifier,
-    hintLevel: HintLevel = HintLevel.EASY
+    hintLevel: HintLevel = HintLevel.EASY,
+    isReviewMode: Boolean = false
 ) {
     // Local input text state managed by the composable
     var localInputText by remember { mutableStateOf("") }
@@ -125,7 +127,7 @@ fun TrainingCardSession(
     val progress = contract.progress
 
     // Create scope for customization slots
-    val scope = remember(contract, currentCard, isShowingResult, lastResult, effectiveInputText, hintLevel) {
+    val scope = remember(contract, currentCard, isShowingResult, lastResult, effectiveInputText, hintLevel, isReviewMode) {
         TrainingCardSessionScope(
             contract = contract,
             currentCard = currentCard,
@@ -159,7 +161,8 @@ fun TrainingCardSession(
             },
             onExit = onExit,
             hintLevel = hintLevel,
-            textScale = contract.textScale
+            textScale = contract.textScale,
+            isReviewMode = isReviewMode
         )
     }
 
@@ -267,7 +270,8 @@ private fun DefaultHeader(scope: TrainingCardSessionScope) {
         encounterCount = scope.encounterCount,
         hintLevel = scope.hintLevel,
         sessionOffset = scope.sessionOffset,
-        isBossBattle = scope.isBossBattle
+        isBossBattle = scope.isBossBattle,
+        isReviewMode = scope.isReviewMode
     )
     if (cleanPrompt.isNotBlank()) {
         Text(
@@ -301,7 +305,8 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
                         encounterCount = scope.encounterCount,
                         hintLevel = scope.hintLevel,
                         sessionOffset = scope.sessionOffset,
-                        isBossBattle = scope.isBossBattle
+                        isBossBattle = scope.isBossBattle,
+                        isReviewMode = scope.isReviewMode
                     ),
                     fontSize = (20f * scope.textScale).sp,
                     fontWeight = FontWeight.SemiBold
