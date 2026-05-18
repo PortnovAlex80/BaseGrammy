@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.io.File
@@ -142,7 +141,7 @@ class TtsEngine(private val context: Context) {
                     tokens = File(modelDir, "tokens.txt").absolutePath,
                     dataDir = File(modelDir, "espeak-ng-data").absolutePath,
                 ),
-                numThreads = 4,
+                numThreads = Runtime.getRuntime().availableProcessors().coerceIn(1, 4),
                 debug = false,
                 provider = "cpu",
             )
@@ -157,7 +156,7 @@ class TtsEngine(private val context: Context) {
                     noiseScaleW = 0.8f,
                     lengthScale = 1.0f,
                 ),
-                numThreads = 4,
+                numThreads = Runtime.getRuntime().availableProcessors().coerceIn(1, 4),
                 debug = false,
                 provider = "cpu",
             )
@@ -292,12 +291,9 @@ class TtsEngine(private val context: Context) {
         activeLanguageId = null
         initFailed = false
         _state.value = TtsState.Idle
-        // Synchronous cleanup: join any in-flight speak job before freeing native resources.
-        // doRelease() is called from within initialize() which already holds the mutex and
-        // runs on Dispatchers.IO, so a brief block here is safe and prevents use-after-free.
-        runBlocking {
-            speakJob?.join()
-        }
+        // Cancel any in-flight speak job and free native resources.
+        // speakJob is cancelled (not joined) to avoid blocking the mutex-holding thread.
+        speakJob?.cancel()
         ttsToFree?.free()
     }
 
