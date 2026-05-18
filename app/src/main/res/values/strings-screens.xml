@@ -33,7 +33,7 @@
     <string name="roadmap_mix">MIX</string>
     <string name="roadmap_review">Review</string>
     <string name="roadmap_mega">Mega</string>
-    <string name="roadmap_complete_15_exercises">Complete at least 15 exercises first</string>
+    <string name="roadmap_complete_n_exercises">Complete at least %1$d exercises first</string>
     <string name="roadmap_start_lesson">Start Lesson</string>
     <string name="roadmap_continue_lesson">Continue Lesson</string>
     <string name="roadmap_start_early_title">Start early?</string>
@@ -41,6 +41,11 @@
     <string name="roadmap_locked">Locked</string>
     <string name="roadmap_locked_message">Complete at least 15 exercises first.</string>
     <string name="roadmap_drill">Drill</string>
+    <string name="roadmap_all_complete">All exercises completed!</string>
+    <string name="roadmap_repeat">Repeat</string>
+    <string name="roadmap_repeat_lesson">Repeat Lesson</string>
+    <string name="roadmap_next_lesson">Next Lesson</string>
+    <string name="roadmap_difficulty_title">Choose difficulty</string>
 
     <!-- LadderScreen -->
     <string name="ladder_back">Back</string>

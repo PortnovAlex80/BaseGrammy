@@ -339,6 +339,21 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             } },
                             onDrillStart = remember(state.navigation.selectedLessonId) {
                                 { state.navigation.selectedLessonId?.let { vm.training.showDrillStartDialog(it.value) } }
+                            },
+                            onReview = remember { { hintLevel: HintLevel ->
+                                vm.startReview(hintLevel)
+                                vm.setReturnTo(Routes.LESSON)
+                                onNavigate(Routes.TRAINING)
+                            } },
+                            onNextLesson = remember(state.navigation.lessons, state.navigation.selectedLessonId) {
+                                {
+                                    val currentIdx = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
+                                    val nextLessonId = state.navigation.lessons.getOrNull(currentIdx + 1)?.id
+                                    if (nextLessonId != null) {
+                                        vm.selectLesson(nextLessonId.value)
+                                        onNavigate(Routes.LESSON)
+                                    }
+                                }
                             }
                         )
                     }

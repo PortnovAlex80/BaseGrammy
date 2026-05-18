@@ -1149,6 +1149,71 @@ class SessionRunner(
     /** Start a daily practice verb conjugation session (block 3). Delegates to [startCardSession]. */
     fun startDailyVerbsSession(cards: List<SessionCard>) = startCardSession(cards, TrainingScreenMode.DAILY_VERBS)
 
+    /**
+     * Start a lesson review session with the given cards and difficulty level.
+     * Resets all session state, sets [hintLevel], and loads cards for review.
+     * Mastery tracking works normally (VOICE/KEYBOARD count).
+     *
+     * @param cards     All lesson cards (shuffled, filtered by hidden).
+     * @param hintLevel The difficulty level for this review session.
+     * @return List of [SessionEvent] to process.
+     */
+    fun startReview(cards: List<SessionCard>, hintLevel: HintLevel): List<SessionEvent> {
+        pauseTimer()
+        stateMachine.reset()
+        sessionCards = cards
+        val firstCard = cards.firstOrNull()
+        val defaultInputMode = when (hintLevel) {
+            HintLevel.EASY -> InputMode.WORD_BANK
+            HintLevel.MEDIUM -> InputMode.KEYBOARD
+            HintLevel.HARD -> InputMode.VOICE
+        }
+        if (defaultInputMode == InputMode.VOICE) {
+            stateMachine.triggerVoice()
+        }
+        stateAccess.updateState {
+            it.copy(
+                cardSession = it.cardSession.copy(
+                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
+                    currentCard = firstCard,
+                    currentIndex = 0,
+                    inputText = "",
+                    lastResult = null,
+                    answerText = null,
+                    incorrectAttemptsForCard = 0,
+                    correctCount = 0,
+                    incorrectCount = 0,
+                    activeTimeMs = 0L,
+                    voiceActiveMs = 0L,
+                    voiceWordCount = 0,
+                    hintCount = 0,
+                    voicePromptStartMs = null,
+                    subLessonTotal = cards.size,
+                    subLessonCount = 1,
+                    activeSubLessonIndex = 0,
+                    completedSubLessonCount = 0,
+                    subLessonFinishedToken = 0,
+                    wordBankWords = emptyList(),
+                    selectedWords = emptyList(),
+                    screenMode = TrainingScreenMode.NORMAL,
+                    hintLevel = hintLevel,
+                    inputMode = defaultInputMode,
+                    voiceTriggerToken = stateMachine.voiceTriggerToken,
+                    returnTo = ""
+                ),
+                drill = it.drill.copy(isDrillMode = false),
+                boss = it.boss.copy(bossActive = false),
+                elite = it.elite.copy(eliteActive = false)
+            )
+        }
+        if (firstCard != null) {
+            resumeTimer()
+            updateWordBank()
+            return listOf(SessionEvent.RecordCardShow(firstCard), SessionEvent.SaveProgress)
+        }
+        return listOf(SessionEvent.SaveProgress)
+    }
+
     /** Exit verb drill mode. Delegates to [exitCardSession]. */
     fun exitVerbDrillSession() = exitCardSession()
 

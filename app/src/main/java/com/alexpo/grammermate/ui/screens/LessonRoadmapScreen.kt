@@ -21,12 +21,14 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.FlowerCalculator
+import com.alexpo.grammermate.data.FlowerVisual
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.TrainingUiState
 
@@ -85,7 +89,9 @@ fun LessonRoadmapScreen(
     onStartSubLesson: (Int) -> Unit,
     onStartBossLesson: () -> Unit,
     onStartBossMega: () -> Unit,
-    onDrillStart: () -> Unit = {}
+    onDrillStart: () -> Unit = {},
+    onReview: (HintLevel) -> Unit = {},
+    onNextLesson: () -> Unit = {}
 ) {
     val lessonTitle = state.navigation.lessons
         .firstOrNull { it.id == state.navigation.selectedLessonId }
@@ -125,11 +131,17 @@ fun LessonRoadmapScreen(
     val shownCards = state.flowerDisplay.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.navigation.selectedLessonId?.let { state.boss.bossLessonRewards[it.value] }
     val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it.value] }
-    val bossUnlocked = state.cardSession.completedSubLessonCount >= 15 || state.cardSession.testMode
+    val bossThreshold = minOf(15, total)
+    val bossUnlocked = state.cardSession.completedSubLessonCount >= bossThreshold || state.cardSession.testMode
     var bossLockedMessage by remember { mutableStateOf<String?>(null) }
-    val lockedMessage = stringResource(R.string.roadmap_complete_15_exercises)
+    val lockedMessage = stringResource(R.string.roadmap_complete_n_exercises, bossThreshold)
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
+    val isLessonComplete = completed >= total
+    var showDifficultyDialog by remember { mutableStateOf(false) }
+
+    // Next lesson info
+    val nextLessonExists = lessonIndex >= 0 && lessonIndex < state.navigation.lessons.lastIndex
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -168,95 +180,147 @@ fun LessonRoadmapScreen(
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            userScrollEnabled = false
-        ) {
-            itemsIndexed(entries) { _, entry ->
-                when (entry) {
-                    is RoadmapEntry.Training -> {
-                        val index = entry.index
-                        val isCompleted = index < completed
-                        val isActive = index == currentIndex
-                        val canEnter = state.cardSession.testMode || isCompleted || isActive
-                        val kindLabel = when (entry.type) {
-                            SubLessonType.NEW_ONLY -> stringResource(R.string.roadmap_new)
-                            SubLessonType.MIXED -> stringResource(R.string.roadmap_mix)
-                        }
-                        // Use lesson flower for exercise tiles (they copy lesson state)
-                        val flower = state.flowerDisplay.currentLessonFlower
-                        val (emoji, scale) = when {
-                            !isCompleted && !state.cardSession.testMode -> {
-                                (if (isActive) "🔓" else "🔒") to 1.0f
+        if (isLessonComplete) {
+            // ── CompletionCard ──
+            CompletionCard(
+                flower = state.flowerDisplay.currentLessonFlower,
+                onNextLesson = if (nextLessonExists) onNextLesson else null,
+                onReview = { showDifficultyDialog = true }
+            )
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                userScrollEnabled = false
+            ) {
+                itemsIndexed(entries) { _, entry ->
+                    when (entry) {
+                        is RoadmapEntry.Training -> {
+                            val index = entry.index
+                            val isCompleted = index < completed
+                            val isActive = index == currentIndex
+                            val canEnter = state.cardSession.testMode || isCompleted || isActive
+                            val kindLabel = when (entry.type) {
+                                SubLessonType.NEW_ONLY -> stringResource(R.string.roadmap_new)
+                                SubLessonType.MIXED -> stringResource(R.string.roadmap_mix)
                             }
-                            flower == null -> "🌸" to 1.0f  // blossom
-                            else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
-                        }
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(72.dp)
-                                .clickable {
-                                    if (canEnter) {
-                                        onStartSubLesson(index)
-                                    } else {
-                                        earlyStartSubLessonIndex = index
-                                    }
+                            // Use lesson flower for exercise tiles (they copy lesson state)
+                            val flower = state.flowerDisplay.currentLessonFlower
+                            val (emoji, scale) = when {
+                                !isCompleted && !state.cardSession.testMode -> {
+                                    (if (isActive) "🔓" else "🔒") to 1.0f
                                 }
-                        ) {
-                            Column(
+                                flower == null -> "🌸" to 1.0f  // blossom
+                                else -> FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
+                            }
+                            Card(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                                    .fillMaxWidth()
+                                    .height(72.dp)
+                                    .clickable {
+                                        if (canEnter) {
+                                            onStartSubLesson(index)
+                                        } else {
+                                            earlyStartSubLessonIndex = index
+                                        }
+                                    }
                             ) {
-                                Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
-                                Text(text = emoji, fontSize = (18 * scale).sp)
-                                Text(text = kindLabel, fontSize = 10.sp)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(text = "${index + 1}", fontWeight = FontWeight.SemiBold)
+                                    Text(text = emoji, fontSize = (18 * scale).sp)
+                                    Text(text = kindLabel, fontSize = 10.sp)
+                                }
                             }
                         }
+                        is RoadmapEntry.Drill -> {
+                            DrillTile(onClick = onDrillStart, enabled = true)
+                        }
+                        is RoadmapEntry.BossLesson -> {
+                            BossTile(
+                                label = stringResource(R.string.roadmap_review),
+                                enabled = bossUnlocked,
+                                reward = if (bossUnlocked) bossLessonReward else null,
+                                locked = !bossUnlocked,
+                                onClick = if (bossUnlocked) onStartBossLesson else {
+                                    { bossLockedMessage = lockedMessage }
+                                }
+                            )
+                        }
+                        is RoadmapEntry.BossMega -> {
+                            BossTile(
+                                label = stringResource(R.string.roadmap_mega),
+                                enabled = bossUnlocked,
+                                reward = if (bossUnlocked) bossMegaReward else null,
+                                locked = !bossUnlocked,
+                                onClick = if (bossUnlocked) onStartBossMega else {
+                                    { bossLockedMessage = lockedMessage }
+                                }
+                            )
+                        }
+                        // StoryCheckIn/StoryCheckOut kept for backward compat but no longer rendered
+                        is RoadmapEntry.StoryCheckIn -> { }
+                        is RoadmapEntry.StoryCheckOut -> { }
                     }
-                    is RoadmapEntry.Drill -> {
-                        DrillTile(onClick = onDrillStart, enabled = true)
-                    }
-                    is RoadmapEntry.BossLesson -> {
-                        BossTile(
-                            label = stringResource(R.string.roadmap_review),
-                            enabled = bossUnlocked,
-                            reward = if (bossUnlocked) bossLessonReward else null,
-                            locked = !bossUnlocked,
-                            onClick = if (bossUnlocked) onStartBossLesson else {
-                                { bossLockedMessage = lockedMessage }
-                            }
-                        )
-                    }
-                    is RoadmapEntry.BossMega -> {
-                        BossTile(
-                            label = stringResource(R.string.roadmap_mega),
-                            enabled = bossUnlocked,
-                            reward = if (bossUnlocked) bossMegaReward else null,
-                            locked = !bossUnlocked,
-                            onClick = if (bossUnlocked) onStartBossMega else {
-                                { bossLockedMessage = lockedMessage }
-                            }
-                        )
-                    }
-                    // StoryCheckIn/StoryCheckOut kept for backward compat but no longer rendered
-                    is RoadmapEntry.StoryCheckIn -> { }
-                    is RoadmapEntry.StoryCheckOut -> { }
                 }
             }
         }
+
+        // Boss and Drill tiles always visible below CompletionCard or grid
+        if (isLessonComplete) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (hasDrill) {
+                    DrillTile(onClick = onDrillStart, enabled = true)
+                }
+                BossTile(
+                    label = stringResource(R.string.roadmap_review),
+                    enabled = bossUnlocked,
+                    reward = if (bossUnlocked) bossLessonReward else null,
+                    locked = !bossUnlocked,
+                    onClick = if (bossUnlocked) onStartBossLesson else {
+                        { bossLockedMessage = lockedMessage }
+                    }
+                )
+                if (hasMegaBoss) {
+                    BossTile(
+                        label = stringResource(R.string.roadmap_mega),
+                        enabled = bossUnlocked,
+                        reward = if (bossUnlocked) bossMegaReward else null,
+                        locked = !bossUnlocked,
+                        onClick = if (bossUnlocked) onStartBossMega else {
+                            { bossLockedMessage = lockedMessage }
+                        }
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { onStartSubLesson(currentIndex) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = if (completed == 0) stringResource(R.string.roadmap_start_lesson) else stringResource(R.string.roadmap_continue_lesson))
+        if (isLessonComplete) {
+            Button(
+                onClick = { showDifficultyDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(R.string.roadmap_repeat_lesson))
+            }
+        } else {
+            Button(
+                onClick = { onStartSubLesson(currentIndex) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = if (completed == 0) stringResource(R.string.roadmap_start_lesson) else stringResource(R.string.roadmap_continue_lesson))
+            }
         }
     }
 
@@ -291,7 +355,17 @@ fun LessonRoadmapScreen(
                 }
             },
             title = { Text(text = stringResource(R.string.roadmap_locked)) },
-            text = { Text(text = stringResource(R.string.roadmap_locked_message)) }
+            text = { Text(text = bossLockedMessage ?: "") }
+        )
+    }
+
+    if (showDifficultyDialog) {
+        DifficultySelectionDialog(
+            onConfirm = { hintLevel ->
+                showDifficultyDialog = false
+                onReview(hintLevel)
+            },
+            onDismiss = { showDifficultyDialog = false }
         )
     }
 }
@@ -363,6 +437,124 @@ fun DrillTile(
             )
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.roadmap_drill), fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun CompletionCard(
+    flower: FlowerVisual?,
+    onNextLesson: (() -> Unit)?,
+    onReview: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            val (emoji, scale) = if (flower != null) {
+                FlowerCalculator.getEmoji(flower.state) to flower.scaleMultiplier
+            } else {
+                "🌸" to 1.0f // 🌸
+            }
+            Text(text = emoji, fontSize = (48 * scale).sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.roadmap_all_complete),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = onReview,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(R.string.roadmap_repeat))
+            }
+            if (onNextLesson != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                FilledTonalButton(
+                    onClick = onNextLesson,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(R.string.roadmap_next_lesson))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DifficultySelectionDialog(
+    onConfirm: (HintLevel) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.roadmap_difficulty_title)) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DifficultyRow(
+                    label = stringResource(R.string.settings_easy),
+                    description = stringResource(R.string.settings_easy_description),
+                    onClick = { onConfirm(HintLevel.EASY) }
+                )
+                DifficultyRow(
+                    label = stringResource(R.string.settings_medium),
+                    description = stringResource(R.string.settings_medium_description),
+                    onClick = { onConfirm(HintLevel.MEDIUM) }
+                )
+                DifficultyRow(
+                    label = stringResource(R.string.settings_hard),
+                    description = stringResource(R.string.settings_hard_description),
+                    onClick = { onConfirm(HintLevel.HARD) }
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.settings_cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun DifficultyRow(
+    label: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Text(text = label, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = description,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
         }
     }
 }

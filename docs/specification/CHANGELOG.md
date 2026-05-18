@@ -2,6 +2,13 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [TASK-070: Daily Practice Cursor Fix] - 2026-05-18
+
+### Changed
+- `09-daily-practice.md`: Updated section 9.2.1 to note `DailyPracticeSessionProvider` is dead code. Updated section 9.3.5 (Mastery Counting) to reflect actual counting path through `TrainingViewModel.submitAnswer()` instead of `DailyPracticeSessionProvider.onCardAdvanced`. Updated section 9.5.6 to note actual verb progress persistence path. Updated section 9.6.2 (Block Transition) to correct the card counting trace. Updated section 9.6.4 to document how `dailyPracticeAnsweredCounts` is populated.
+- `scenario-06-daily-practice.md`: Updated Step 4 card counting trace from `onCardAdvanced` to `submitAnswer()` hook. Updated Step 10 provider reference. Added discrepancy #9 documenting the dead code finding and TASK-070 resolution.
+- `trace-index.md`: Added TASK-070 section with entries for `isDailySession()` and daily tracking block in `submitAnswer()`.
+
 ## [Spec Update] - 2026-05-17
 
 ### Added

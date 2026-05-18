@@ -86,7 +86,7 @@ The Daily Practice system consists of four primary components:
 | `DailySessionComposer` | `feature/daily/DailySessionComposer.kt` | Pure builder: constructs `List<DailyTask>` for all three blocks from lesson, vocab, and verb drill data using cursor-based card selection. |
 | `DailyPracticeCoordinator` | `feature/daily/DailyPracticeCoordinator.kt` | Session orchestrator: owns the `DailyPracticeState` flow, handles start/resume/repeat/cancel, cursor advancement, block navigation, vocab SRS rating, answer validation, and verb progress persistence. Absorbs the former `DailySessionHelper` session-lifecycle methods. |
 | `DailySessionHelper` | `feature/daily/DailySessionHelper.kt` | Shared types only: defines `TrainingStateAccess` interface and `BlockProgress` data class (used by `DailyPracticeCoordinator` and the ViewModel). No longer contains session logic. |
-| `DailyPracticeSessionProvider` | `feature/daily/DailyPracticeSessionProvider.kt` | `CardSessionContract` adapter for Blocks 1 and 3. Manages per-card state via `CardSessionStateMachine` (retry/hint flow, word bank). Block 2 does NOT use this provider. |
+| `DailyPracticeSessionProvider` | `feature/daily/DailyPracticeSessionProvider.kt` | `CardSessionContract` adapter for Blocks 1 and 3. Manages per-card state via `CardSessionStateMachine` (retry/hint flow, word bank). Block 2 does NOT use this provider. **Dead code** -- never instantiated in production. TRANSLATE and VERBS blocks run through `SessionRunner` via `TrainingCardSessionProvider`. The counting hook that was designed in this provider's `onCardAdvanced` is now in `TrainingViewModel.submitAnswer()` instead. |
 | `DailyPracticeScreen` | `ui/screens/DailyPracticeScreen.kt` (currently in `ui/DailyPracticeScreen.kt`) | Composable UI: renders the current block's content, handles block transitions with sparkle overlays, displays session completion screen. |
 
 ### 9.2.2 Data Flow
@@ -300,19 +300,38 @@ Answer validation flow:
 
 ### 9.3.5 Mastery Counting
 
-Only VOICE and KEYBOARD answers count as "practiced" for the purpose of cursor advancement. The `onCardAdvanced` callback in `DailyPracticeSessionProvider.nextCard()` is invoked only when the current input mode is NOT `WORD_BANK`:
+Only VOICE and KEYBOARD answers count as "practiced" for the purpose of cursor advancement. WORD_BANK answers and simple forward navigation (no answer submitted) do NOT count.
+
+**Actual counting path (implemented, TASK-070):**
+
+For TRANSLATE and VERBS blocks, the counting hook lives in `TrainingViewModel.submitAnswer()` (not in `DailyPracticeSessionProvider`). After a correct answer is accepted, the method checks whether the session is a daily session and whether the input mode is not WORD_BANK:
 
 ```kotlin
-if (currentIndex < blockCards.size && _inputMode != InputMode.WORD_BANK) {
-    onCardAdvanced(blockCards[currentIndex])
+// In TrainingViewModel.submitAnswer(), after correct answer processing:
+if (result.accepted && isDailySession()) {
+    val inputMode = _coreState.value.cardSession.inputMode
+    if (inputMode != InputMode.WORD_BANK) {
+        val blockType = when (_coreState.value.cardSession.screenMode) {
+            TrainingScreenMode.DAILY_TRANSLATE -> DailyBlockType.TRANSLATE
+            TrainingScreenMode.DAILY_VERBS -> DailyBlockType.VERBS
+            else -> return SubmitResult(result.accepted, result.hintShown)
+        }
+        recordDailyCardPracticed(blockType)
+    }
 }
 ```
 
-WORD_BANK answers and simple forward navigation (no answer submitted) do NOT count.
+The helper method `isDailySession()` checks whether the current screen mode is `DAILY_TRANSLATE` or `DAILY_VERBS`:
 
-The `onCardAdvanced` callback triggers two actions in the ViewModel (via `CardSessionBlock`'s `onCardAdvanced` lambda):
-1. For `ConjugateVerb` tasks: calls `onPersistVerbProgress(task.card)`.
-2. For all tasks: calls `onCardPracticed(task.blockType)` which increments `dailyPracticeAnsweredCounts[blockType]` and, for TRANSLATE block, records card mastery via `MasteryStore.recordCardShow()` (which grows flowers).
+```kotlin
+fun isDailySession(): Boolean {
+    val mode = _coreState.value.cardSession.screenMode
+    return mode == TrainingScreenMode.DAILY_TRANSLATE ||
+           mode == TrainingScreenMode.DAILY_VERBS
+}
+```
+
+This path calls `DailyPracticeCoordinator.recordDailyCardPracticed(blockType)`, which increments `dailyPracticeAnsweredCounts[blockType]` and, for TRANSLATE block, records card mastery via `MasteryStore.recordCardShow()` (which grows flowers):
 
 ```kotlin
 // DailyPracticeCoordinator.recordDailyCardPracticed()
@@ -333,6 +352,8 @@ fun recordDailyCardPracticed(
     }
 }
 ```
+
+**Note on `DailyPracticeSessionProvider.onCardAdvanced`:** The `DailyPracticeSessionProvider` class has an `onCardAdvanced` callback in its `nextCard()` method that was originally designed for this counting purpose. However, this provider is **dead code** -- it is never instantiated in production. The actual TRANSLATE and VERBS blocks run through `SessionRunner` (via `TrainingCardSessionProvider`), not through `DailyPracticeSessionProvider`. The counting now happens entirely in `TrainingViewModel.submitAnswer()`, bypassing the provider's callback mechanism.
 
 ### 9.3.6 Repeat Session for Block 1
 
@@ -678,7 +699,9 @@ data class VerbDrillComboProgress(
 )
 ```
 
-When a verb card is advanced (via `onCardAdvanced`), the card's ID is added to both `everShownCardIds` and `todayShownCardIds`. The `todayShownCardIds` set is cleared on a new day (when `lastDate != today`).
+When a verb card is advanced, the card's ID is added to both `everShownCardIds` and `todayShownCardIds`. The `todayShownCardIds` set is cleared on a new day (when `lastDate != today`).
+
+**Note:** In production, verb card progress persistence is triggered from `TrainingViewModel.submitAnswer()` via `DailyPracticeCoordinator.persistDailyVerbProgress()`, not from `DailyPracticeSessionProvider.onCardAdvanced` (which is dead code).
 
 The exact persistence logic in `DailyPracticeCoordinator.persistDailyVerbProgress()`:
 ```kotlin
@@ -701,7 +724,7 @@ fun persistDailyVerbProgress(card: VerbDrillCard) {
 }
 ```
 
-Only VOICE and KEYBOARD modes trigger `onCardAdvanced` (WORD_BANK does not), matching the mastery counting rule from Block 1.
+Only VOICE and KEYBOARD modes trigger progress persistence (WORD_BANK does not), matching the mastery counting rule from Block 1. The actual trigger is in `TrainingViewModel.submitAnswer()` which checks `isDailySession()` and `inputMode != WORD_BANK` before calling `recordDailyCardPracticed()` and `persistDailyVerbProgress()`.
 
 ### 9.5.7 Repeat Session for Block 3
 
@@ -778,8 +801,8 @@ fun cancelDailySession(): Int?
 
 When a block completes (all cards in the block finished):
 
-1. `DailyPracticeSessionProvider.nextCard()` increments `currentIndex`.
-2. Before incrementing, calls `onCardAdvanced(blockCards[currentIndex])` if current input mode is NOT `WORD_BANK`. This fires `onPersistVerbProgress` for verb cards and `onCardPracticed` for cursor tracking.
+1. `DailyPracticeSessionProvider.nextCard()` increments `currentIndex` (**note:** `DailyPracticeSessionProvider` is dead code -- the actual TRANSLATE/VERBS blocks run through `SessionRunner` via `TrainingCardSessionProvider`).
+2. Counting for cursor advancement now happens in `TrainingViewModel.submitAnswer()` (see Section 9.3.5), not via `onCardAdvanced`. Verb progress persistence is handled separately via `DailyPracticeCoordinator.persistDailyVerbProgress()`.
 3. When `currentIndex >= blockCards.size`, calls `onBlockComplete()`.
 4. In `CardSessionBlock`, `blockComplete = true`.
 5. `onAdvanceBlock()` is called, which invokes `DailyPracticeCoordinator.advanceToNextBlock()`.
@@ -815,7 +838,7 @@ After all blocks are complete:
 2. `cancelDailySession()` is called (from `onComplete` callback in GrammarMateApp).
 3. Inside `cancelDailySession()`:
    - Checks `ds.finishedToken == true`.
-   - Reads `dailyPracticeAnsweredCounts[TRANSLATE]` and `[VERBS]`.
+   - Reads `dailyPracticeAnsweredCounts[TRANSLATE]` and `[VERBS]`. **These counts are populated by `TrainingViewModel.submitAnswer()` during the session** (see Section 9.3.5) -- each correct VOICE/KEYBOARD answer in a `DAILY_TRANSLATE` or `DAILY_VERBS` session increments the corresponding count.
    - Compares against expected counts from the task list.
    - Only advances cursor if ALL TRANSLATE cards were practiced via VOICE/KEYBOARD AND ALL VERB cards were practiced via VOICE/KEYBOARD.
    - If conditions met, calls `advanceCursor(sentenceCount)`.

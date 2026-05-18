@@ -216,6 +216,30 @@ class CardProvider(
     // ── Boss cards ─────────────────────────────────────────────────────
 
     /**
+     * Build a review card list for a completed lesson.
+     * Returns all lesson cards (shuffled), filtered by hidden card IDs.
+     *
+     * @param lessons          all loaded lessons
+     * @param selectedLessonId the active lesson ID
+     * @param hiddenCardIds    card IDs that should be excluded
+     * @return shuffled card list for the review session
+     */
+    fun buildReviewCards(
+        lessons: List<Lesson>,
+        selectedLessonId: LessonId?,
+        hiddenCardIds: Set<String>
+    ): List<SentenceCard> {
+        val lessonCards = lessons
+            .firstOrNull { it.id == selectedLessonId }
+            ?.cards ?: emptyList()
+        return lessonCards
+            .filter { it.id !in hiddenCardIds }
+            .shuffled()
+    }
+
+    // ── Boss cards ─────────────────────────────────────────────────────
+
+    /**
      * Build the card list for a boss battle.
      *
      * @param lessons          all loaded lessons

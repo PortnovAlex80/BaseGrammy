@@ -4,7 +4,7 @@
 
 GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` enum values, 3 sub-screens), **1 modal bottom sheet** (SettingsSheet), and **17 dialogs**. Navigation is managed via a private `AppScreen` enum inside `GrammarMateApp.kt` -- there is no Jetpack Navigation component. Screen state is held in `remember { mutableStateOf(parseScreen(state.initialScreen)) }` and transitions occur by reassigning this variable.
 
-**Total screen count**: 10 screens + 1 modal sheet + 17 dialogs = 28 UI surfaces.
+**Total screen count**: 10 screens + 1 modal sheet + 18 dialogs = 29 UI surfaces.
 
 **Navigation pattern**: Single-activity, no Navigation Component. `GrammarMateApp()` is the root composable that routes between screens via `when (screen)` on `AppScreen`. Dialogs and sheets are conditionally rendered overlays. Back navigation is handled per-screen via `BackHandler` composables.
 
@@ -29,6 +29,8 @@ GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` en
                                   |       +-- DrillTile --> DrillStartDialog --> [TRAINING] (drill mode)
                                   |       +-- BossTile "Review" --> [TRAINING] (boss mode)
                                   |       +-- BossTile "Mega" --> [TRAINING] (boss mega mode)
+                                  |       +-- CompletionCard "Повторить" --> DifficultySelectionDialog --> [TRAINING] (review mode)
+                                  |       +-- CompletionCard "Следующий урок" --> [LESSON] (next lesson)
                                   |
                                   +-- DailyPracticeEntryTile --> [DAILY_PRACTICE] --(exit)--> [HOME]
                                   |
@@ -91,6 +93,7 @@ Global dialogs (overlay on any screen):
 | D15 | DailyPracticeLoadingOverlay | During session initialization | GrammarMateApp.kt:504 |
 | D16 | ExportBadSentencesResultDialog | After exporting bad sentences | SharedReportSheet.kt |
 | D17 | ProfileStatsPopup | Avatar tap on HomeScreen | ui/components/ProfileStatsPopup.kt |
+| D18 | DifficultySelectionDialog | Tap "Повторить" on completed lesson CompletionCard (LR-16) | LessonRoadmapScreen.kt |
 
 ---
 
@@ -162,6 +165,14 @@ Global dialogs (overlay on any screen):
     - `RoadmapEntry.BossMega`: "Mega" label + trophy/lock icon (only for lessonIndex > 0)
     - `RoadmapEntry.StoryCheckIn`/`StoryCheckOut`: kept for backward compat but NOT rendered
   - **Action button**: "Start Lesson" (completed==0) or "Continue Lesson"
+  - **Completed state** (when `completedSubLessonCount >= subLessonCount`): Instead of the normal sub-lesson grid, a CompletionCard (LR-14) is shown containing:
+    - Flower state emoji (BLOOM or current flower state if decayed)
+    - "Все упражнения пройдены!" message (titleMedium SemiBold, centered)
+    - "Повторить" OutlinedButton (LR-16) → opens DifficultySelectionDialog (LR-15)
+    - "Следующий урок" FilledTonalButton (LR-17) → navigates to next lesson's LessonRoadmapScreen; hidden when no next lesson exists
+    - Boss tiles (LR-09, LR-10) remain visible and functional below the completion card
+    - Bottom action button shows "Повторить урок" instead of "Start Lesson"/"Continue Lesson"
+  - **DifficultySelectionDialog** (LR-15): AlertDialog with title "Выберите сложность", three difficulty rows (EASY/MEDIUM/HARD with Russian descriptions), "Отмена" cancel button. Starts review session with all lesson cards shuffled at selected hintLevel.
 - **State dependencies**: `selectedLessonId`, `lessons`, `subLessonCount`, `completedSubLessonCount`, `subLessonTypes`, `currentLessonShownCount`, `currentLessonFlower`, `bossLessonRewards`, `bossMegaRewards`, `testMode`
 - **User interactions**:
   - Tap back -> HOME
@@ -171,13 +182,23 @@ Global dialogs (overlay on any screen):
   - Tap Boss tile (locked) -> BossLockedDialog
   - Tap Drill tile -> DrillStartDialog -> TRAINING (drill mode)
   - Tap action button -> startSubLesson(currentIndex) + TRAINING
+  - **Completed state interactions:**
+    - Tap "Повторить" (LR-16) -> DifficultySelectionDialog (LR-15)
+    - Select difficulty in dialog -> startReview(hintLevel) + TRAINING (review session with all lesson cards)
+    - Tap "Отмена" in dialog -> dismiss, stay on LessonRoadmapScreen
+    - Tap "Следующий урок" (LR-17) -> selectLesson(nextLessonId) + LESSON (next lesson roadmap)
+    - Tap "Повторить урок" (bottom button in completed state) -> same as "Повторить"
 - **Business rules**:
   - Sub-lessons paginated in cycles of 15
-  - Boss unlocked when `completedSubLessonCount >= 15` or `testMode`
+  - Boss unlocked when `completedSubLessonCount >= min(15, subLessonCount)` or `testMode`
   - Mega Boss only for `lessonIndex > 0`
   - Story entries in RoadmapEntry sealed class are NOT rendered (backward compat only)
   - Default fallback sub-lesson types: first 3 NEW_ONLY, rest MIXED
+  - Completed state (`completedSubLessonCount >= subLessonCount`): CompletionCard replaces sub-lesson grid, showing "Все упражнения пройдены!" with Review and Next Lesson buttons
+  - Review session: all lesson cards shuffled, hintLevel set to user-selected difficulty, mastery tracking active (VOICE/KEYBOARD count)
+  - "Следующий урок" hidden when current lesson is last in pack
 - **Cross-reference**: Russian spec section 3 matches. No discrepancies. Note: Russian spec mentions `DrillTile` and `BossTile` inline which matches the code.
+- **Implementation task:** [TASK-071: Completed Lesson UX](tasks/TASK-071-completed-lesson-ux.md)
 
 ---
 

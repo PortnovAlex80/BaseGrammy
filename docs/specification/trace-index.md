@@ -469,6 +469,15 @@ Owns `MutableStateFlow<DailyPracticeState>`. Orchestrates 3-block daily practice
 | `dailyCursorAtSessionStart` | 73 | Mutable state | 09#9.2 | UC-21 | AC1 |
 | `dailyPracticeAnsweredCounts` | 70 | Mutable state | 09#9.6.4 | UC-24 | AC1 |
 
+### TASK-070: Daily Practice Cursor Fix
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt`
+
+| Symbol | Line | Type | Spec | UC | AC |
+|--------|------|------|------|----|----|
+| `isDailySession()` | ~748 | Method | 09#9.3.5 | UC-24 | AC1 |
+| Daily tracking block in `submitAnswer()` | ~628-643 | Handler | 09#9.3.5 | UC-24 | AC1 |
+
 ### FlowerRefresher.kt
 
 **File:** `app/src/main/java/com/alexpo/grammermate/feature/progress/FlowerRefresher.kt` (92 lines)
@@ -737,6 +746,59 @@ These components exist in code but have no trace-index entries. They should be a
 |-----------|------|------|-------|
 | `DarkColors` palette | ui/Theme.kt | TASK-031 | 0/8 dark theme colors match spec (code uses M3 defaults) |
 | Icon imports (ChevronRight, Warning, Info, etc.) | multiple files | TASK-028 | 8 icons in code not in spec inventory; LocalFlorist in spec but absent from code |
+
+## Phase 8: Completed Lesson UX (POST-IMPLEMENTATION Trace Map)
+
+**Feature:** Completed lesson state, review session with difficulty selection, boss unlock threshold.
+**Source:** completed-lesson-ux
+**Status:** Post-implementation — line numbers verified against code.
+
+### LessonRoadmapScreen.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/screens/LessonRoadmapScreen.kt`
+
+| Symbol | Line | Type | Spec | UC | AC | Notes |
+|--------|------|------|------|----|----|-------|
+| `CompletionCard` | 444 | Composable | 19#3, 23#LR-14 | UC-89 | AC1 | Conditional: `completedSubLessonCount >= subLessonCount` |
+| `DifficultySelectionDialog` | 496 | Composable | 19#3, 23#LR-15 | UC-90 | AC1–AC3 | AlertDialog with 3 difficulty rows |
+| `"Повторить"` button (OutlinedButton) | 477 | Handler | 23#LR-16 | UC-89 | AC2 | Sets state flag → dialog visible |
+| `"Следующий урок"` button (FilledTonalButton) | 485 | Handler | 23#LR-17 | UC-89 | AC3, AC4 | `selectLesson(nextLessonId)` → screen = LESSON |
+| `bossThreshold` calculation | 133 | Logic | 23#LR-09 | UC-91 | AC1–AC3 | `minOf(15, total)` |
+| `bossUnlocked` condition | 134 | Logic | 23#LR-09 | UC-91 | AC1–AC3 | `completedSubLessonCount >= bossThreshold \|\| testMode` |
+| Boss locked dialog message | 348–358 | String | 23#LR-13 | UC-91 | AC4 | Dynamic threshold text |
+
+### GrammarMateApp.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/GrammarMateApp.kt`
+
+| Symbol | Line | Type | Spec | UC | AC | Notes |
+|--------|------|------|------|----|----|-------|
+| `onReview` callback | 343 | Handler | 22#UC-90 | UC-90 | AC2 | Passes `hintLevel` to `vm.startReview()` |
+| `onNextLesson` callback | 348 | Handler | 23#LR-17 | UC-89 | AC3, AC4 | `vm.selectLesson(nextLessonId)` → screen = LESSON |
+
+### SessionRunner.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/SessionRunner.kt`
+
+| Symbol | Line | Type | Spec | UC | AC | Notes |
+|--------|------|------|------|----|----|-------|
+| `startReview(cards, hintLevel)` | 1161 | Method | 22#UC-90 | UC-90 | AC6, AC7 | Loads shuffled cards, sets hintLevel, starts TRAINING |
+
+### CardProvider.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/feature/training/CardProvider.kt`
+
+| Symbol | Line | Type | Spec | UC | AC | Notes |
+|--------|------|------|------|----|----|-------|
+| `buildReviewCards(...)` | 227 | Method | 22#UC-90 | UC-90 | AC6 | Builds shuffled card set for review session |
+
+### TrainingViewModel.kt
+
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt`
+
+| Symbol | Line | Type | Spec | UC | AC | Notes |
+|--------|------|------|------|----|----|-------|
+| `startReview(hintLevel)` | 871 | Method | 22#UC-90 | UC-90 | AC2, AC6, AC7 | Loads all lesson cards via CardProvider, calls SessionRunner.startReview |
 
 ## Trace Index Maintenance Rules
 

@@ -10,7 +10,7 @@
 | DailyPracticeScreen | DP | 30 |
 | VerbDrillScreen | VD | 41 |
 | VocabDrillScreen | VOC | 48 |
-| LessonRoadmapScreen | LR | 13 |
+| LessonRoadmapScreen | LR | 17 |
 | LadderScreen | LS | 11 |
 | SettingsScreen (SettingsSheet) | SS | 48 |
 | StoryQuizScreen | SQ | 13 |
@@ -18,7 +18,7 @@
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
 | Pomodoro | PM | 9 |
 | Pomodoro Summary | PS | 7 |
-| **Total** | | **336** |
+| **Total** | | **340** |
 
 ---
 
@@ -325,11 +325,15 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Sub-lesson grid | LR-06 | card | Always | 4-column LazyVerticalGrid with entries from `buildRoadmapEntries()`. userScrollEnabled=false. | ? |
 | Training tile (exercise) | LR-07 | card | Per entry | Card (72dp) showing: index number, flower emoji (LOCKED/UNLOCKED/completed flower), type label ("NEW"/"MIX"). Clickable when `canEnter`. | ? |
 | Drill tile | LR-08 | card | `hasDrill == true` | Card with FitnessCenter icon + "Drill" label (12sp). primaryContainer when enabled. Calls `onDrillStart()`. See UC-69 for drill session lifecycle. | UC-69 |
-| Boss "Review" tile | LR-09 | card | Always (per cycle) | Card showing "Review" label + trophy icon (colored by reward) or lock icon. Clickable when `bossUnlocked`. | ? |
+| Boss "Review" tile | LR-09 | card | Always (per cycle) | Card showing "Review" label + trophy icon (colored by reward) or lock icon. Clickable when `bossUnlocked`. **Unlock condition:** `completedSubLessonCount >= min(15, subLessonCount) \|\| testMode`. For lessons with < 15 sub-lessons, boss unlocks when all exercises are completed. Locked dialog message uses dynamic threshold: "Complete at least {min(15, subLessonCount)} exercises first." | UC-91 |
 | Boss "Mega" tile | LR-10 | card | `lessonIndex > 0` (per cycle) | Card showing "Mega" label + trophy icon (colored by reward) or lock icon. Clickable when `bossUnlocked`. | ? |
 | "Start Lesson" / "Continue Lesson" button | LR-11 | button | Always | Full-width Button. "Start Lesson" when completed==0, "Continue Lesson" otherwise. Calls `onStartSubLesson(currentIndex)`. | ? |
 | Early start dialog (sub-lesson) | LR-12 | dialog | `earlyStartSubLessonIndex != null` | "Start exercise N early?" with "Yes"/"No". | ? |
-| Boss locked dialog | LR-13 | dialog | `bossLockedMessage != null` | "Locked" title + "Complete at least 15 exercises first." + "OK". | ? |
+| Boss locked dialog | LR-13 | dialog | `bossLockedMessage != null` | "Locked" title + dynamic threshold message "Complete at least {min(15, subLessonCount)} exercises first." + "OK". | UC-91 |
+| CompletionCard | LR-14 | card | `completedSubLessonCount >= subLessonCount` | Card replacing the sub-lesson grid when all exercises are completed. Shows: flower state emoji (BLOOM or current decay state), "Все упражнения пройдены!" message (titleMedium SemiBold, centered), "Повторить" button (LR-16), "Следующий урок" button (LR-17, hidden when no next lesson exists). Boss tiles (LR-09, LR-10) remain visible below this card. **Behavioral contract:** When `completed >= total` → show card; when `completed < total` → show normal sub-lesson grid. Bottom button changes to "Повторить урок". | UC-89 |
+| DifficultySelectionDialog | LR-15 | dialog | User tapped "Повторить" (LR-16) | AlertDialog with title "Выберите сложность". Three selectable rows: EASY ("Все подсказки, банк слов"), MEDIUM ("Частичные подсказки"), HARD ("Без подсказок и банка слов"). "Отмена" TextButton at bottom. Selecting a difficulty calls `startReview(hintLevel)` which loads all lesson cards shuffled and navigates to TRAINING. **Behavioral contract:** EASY → review with all hints + word bank; MEDIUM → review with 50% hints + no word bank; HARD → review with no hints + no word bank; Cancel → dismiss, stay on LessonRoadmapScreen. | UC-90 |
+| "Повторить" button | LR-16 | button | `completedSubLessonCount >= subLessonCount` (inside LR-14) | OutlinedButton "Повторить". Opens DifficultySelectionDialog (LR-15). | UC-89, UC-90 |
+| "Следующий урок" button | LR-17 | button | `completedSubLessonCount >= subLessonCount` AND next lesson exists (inside LR-14) | FilledTonalButton "Следующий урок". Calls `selectLesson(nextLessonId)` and navigates to next lesson's LessonRoadmapScreen. Hidden when current lesson is the last lesson in the pack (no `nextLessonId`). | UC-89 |
 
 ---
 

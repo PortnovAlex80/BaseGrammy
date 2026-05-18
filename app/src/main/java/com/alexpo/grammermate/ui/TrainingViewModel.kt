@@ -23,6 +23,7 @@ import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.DailyBlockType
+import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.CefrCalculator
@@ -625,6 +626,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             forceBackupOnSave = true
         }
 
+        // Track daily card practice for cursor advancement.
+        // Only VOICE and KEYBOARD answers count — WORD_BANK does NOT (Level B rule).
+        // This hook is the sole counting mechanism for DAILY_TRANSLATE and DAILY_VERBS
+        // sessions that run through SessionRunner (the DailyPracticeSessionProvider
+        // path with its onCardAdvanced callback is dead code, never instantiated).
+        if (result.accepted && isDailySession()) {
+            val inputMode = _coreState.value.cardSession.inputMode
+            if (inputMode != InputMode.WORD_BANK) {
+                val blockType = when (_coreState.value.cardSession.screenMode) {
+                    com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE -> DailyBlockType.TRANSLATE
+                    com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS -> DailyBlockType.VERBS
+                    else -> return SubmitResult(result.accepted, result.hintShown)
+                }
+                recordDailyCardPracticed(blockType)
+            }
+        }
 
         Log.d(logTag, "Answer submitted: accepted=${result.accepted}")
         return SubmitResult(result.accepted, result.hintShown)
@@ -845,6 +862,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun resumeFromSettings() = handleSessionEvents(sessionRunner.resumeFromSettings())
 
     fun selectSubLesson(index: Int) = handleSessionEvents(sessionRunner.selectSubLesson(index))
+
+    /**
+     * Start a lesson review session with the given difficulty level.
+     * Loads all lesson cards (shuffled, filtered by hidden), applies [hintLevel],
+     * and starts an ACTIVE training session. Mastery tracking works normally.
+     */
+    fun startReview(hintLevel: HintLevel) {
+        val state = _coreState.value
+        val hiddenIds = hiddenCardStore.getHiddenCardIds()
+        val cards = cardProvider.buildReviewCards(
+            lessons = state.navigation.lessons,
+            selectedLessonId = state.navigation.selectedLessonId,
+            hiddenCardIds = hiddenIds
+        )
+        if (cards.isEmpty()) return
+        val events = sessionRunner.startReview(cards, hintLevel)
+        handleSessionEvents(events)
+    }
 
     fun openEliteStep(index: Int) = handleSessionEvents(sessionRunner.openEliteStep(index))
 

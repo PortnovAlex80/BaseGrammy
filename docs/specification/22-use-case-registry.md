@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 88 |
-| Total Acceptance Criteria | 473 |
-| Domains | 28 |
+| Total Use Cases | 91 |
+| Total Acceptance Criteria | 490 |
+| Domains | 29 |
 
 ### Per-Domain Counts
 
@@ -44,6 +44,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 26 | Pomodoro Timer | 9 | 36 |
 | 27 | Universal training completion screen | 1 | 7 |
 | 28 | Pomodoro session summary with 7-day progress | 1 | 5 |
+| 29 | Completed lesson UX (completion state, review, boss threshold) | 3 | 17 |
 
 ---
 
@@ -425,6 +426,16 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 ---
 
+## Domain 29: Completed Lesson UX (Completion State, Review, Boss Threshold)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-89 | View completed lesson state | `completedSubLessonCount >= subLessonCount` (all sub-lessons in lesson completed) | 1. User opens completed lesson on LessonRoadmapScreen. 2. System detects `completedSubLessonCount >= subLessonCount`. 3. Instead of empty sub-lesson grid, system shows CompletionCard with: flower state emoji (BLOOM or current flower state), "Все упражнения пройдены!" message. 4. Two action buttons shown: "Повторить" (Review) and "Следующий урок" (Next Lesson). 5. Boss tiles (LR-09, LR-10) remain visible and functional below the completion card. 6. Bottom button shows "Повторить урок" instead of "Start/Continue Lesson". | AC1 [BEHAVIORAL]: When `completedSubLessonCount >= subLessonCount`, completion card (LR-14) is shown instead of the normal sub-lesson grid (LR-06). AC2 [BEHAVIORAL]: "Повторить" button (LR-16) opens DifficultySelectionDialog (LR-15). AC3 [BEHAVIORAL]: "Следующий урок" button (LR-17) navigates to next lesson's LessonRoadmapScreen via `selectLesson(nextLessonId)` + screen transition to LESSON. AC4 [NON-DEFAULT]: If no next lesson exists (current lesson is last in pack), "Следующий урок" button (LR-17) is hidden. AC5 [BEHAVIORAL]: Boss tiles (LR-09, LR-10) remain visible and functional below the completion card — tapping unlocked boss tiles starts boss battle normally. AC6 [BEHAVIORAL]: Bottom button text changes from "Start Lesson"/"Continue Lesson" to "Повторить урок" when completion state is active. AC7 [BEHAVIORAL]: Flower state displayed on completion card reflects current lesson flower (BLOOM for fully mastered, WILTING/WILTED if decayed). | LessonRoadmapScreen (ui/screens/LessonRoadmapScreen.kt) | `ui/screens/LessonRoadmapScreen.kt`, `ui/TrainingViewModel.kt` | completed-lesson-ux |
+| UC-90 | Start review session with difficulty selection | Lesson is completed (`completedSubLessonCount >= subLessonCount`); user tapped "Повторить" (LR-16) | 1. DifficultySelectionDialog (LR-15) appears with title "Выберите сложность". 2. Three options displayed: EASY ("Все подсказки, банк слов"), MEDIUM ("Частичные подсказки"), HARD ("Без подсказок и банка слов"). 3. "Отмена" (Cancel) button at bottom. 4. User selects a difficulty level. 5. System loads ALL lesson cards (main pool + reserve pool), shuffles them. 6. System sets `hintLevel` to the selected difficulty. 7. System starts a TRAINING session (same flow as normal sub-lesson). 8. Mastery tracking works normally — VOICE and KEYBOARD answers count toward mastery. | AC1 [BEHAVIORAL]: Dialog shows three difficulty options (EASY/MEDIUM/HARD) with Russian descriptions: EASY = "Все подсказки, банк слов", MEDIUM = "Частичные подсказки", HARD = "Без подсказок и банка слов". AC2 [BEHAVIORAL]: Selecting any difficulty starts a review session with all lesson cards shuffled, `hintLevel` set to the chosen level, navigating to TRAINING screen. AC3 [BEHAVIORAL]: Tapping "Отмена" closes dialog, stays on LessonRoadmapScreen with completion state visible. AC4 [NON-DEFAULT]: In EASY mode review, word bank is available and all parenthetical hints shown (same as normal EASY behavior). AC5 [NON-DEFAULT]: In HARD mode review, no word bank, no parenthetical hints, no tense labels (same as normal HARD behavior). AC6 [BEHAVIORAL]: Review session uses ALL lesson cards (both main pool and reserve pool), not just boss cards — distinct from Boss battle. AC7 [BEHAVIORAL]: Mastery tracking is active during review — VOICE/KEYBOARD answers increment `uniqueCardShows` via `recordCardShowForMastery()`. | LessonRoadmapScreen, TrainingScreen (ui/screens/LessonRoadmapScreen.kt, ui/screens/TrainingScreen.kt) | `ui/screens/LessonRoadmapScreen.kt`, `ui/TrainingViewModel.kt` | completed-lesson-ux |
+| UC-91 | Boss unlock at lesson completion threshold | System evaluates boss unlock condition for a lesson | 1. System computes `bossUnlocked = completedSubLessonCount >= min(15, subLessonCount) \|\| testMode`. 2. For lessons with >= 15 sub-lessons: threshold remains 15 (unchanged). 3. For lessons with < 15 sub-lessons: threshold equals total sub-lesson count (boss unlocks when all exercises are done). 4. `testMode` still bypasses lock entirely. | AC1 [BEHAVIORAL]: Boss unlocks when `completedSubLessonCount >= min(15, subLessonCount)`. AC2 [NON-DEFAULT]: Lesson with 10 sub-lessons unlocks boss at 10 completed exercises, not 15. AC3 [NON-DEFAULT]: `testMode == true` still bypasses boss lock regardless of completion count. AC4 [BEHAVIORAL]: Boss locked dialog (LR-13) message updates to reflect dynamic threshold: "Complete at least {min(15, subLessonCount)} exercises first." | LessonRoadmapScreen (ui/screens/LessonRoadmapScreen.kt) | `ui/screens/LessonRoadmapScreen.kt` | completed-lesson-ux |
+
+---
+
 ## Cross-Reference: Source to Use Case Mapping
 
 | Source | UCs |
@@ -458,3 +469,6 @@ Structured registry of all verified use cases extracted from scenario traces and
 | TASK-051 | UC-71, UC-72 |
 | TASK-052 | UC-73 |
 | 12-training-card-session.md#12.6 | UC-87 |
+| completed-lesson-ux | UC-89, UC-90, UC-91 |
+
+**Implementation task:** [TASK-071: Completed Lesson UX](tasks/TASK-071-completed-lesson-ux.md)

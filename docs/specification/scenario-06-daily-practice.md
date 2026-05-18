@@ -82,26 +82,27 @@ User starts daily practice -> block 1 (10 translations) -> block 2 (10 vocab) ->
 ### Step 4: Block 1: last card completed -> block transition
 
 **Code path:**
-- `DailyPracticeSessionProvider.kt:226-257` -- `nextCard()` increments `currentIndex`
-- `DailyPracticeSessionProvider.kt:254-256` -- when `currentIndex >= blockCards.size`, calls `onBlockComplete()`
+- `TrainingCardSessionProvider.nextCard()` or `DailyPracticeSessionProvider.nextCard()` -- increments card index
 - `DailyPracticeScreen.kt:281-288` -- `blockComplete` flag triggers `onAdvanceBlock()`
 - `TrainingViewModel.kt:1620-1625` -- `advanceDailyBlock()` calls `dailySessionHelper.advanceToNextBlock()`
 - `DailySessionHelper.kt:76-105` -- `advanceToNextBlock()` scans forward past current block type
 
 **Transition flow:**
-1. Provider's `nextCard()` increments `currentIndex` (line 247).
-2. Before incrementing, calls `onCardAdvanced(blockCards[currentIndex])` if not WORD_BANK (lines 242-244). This fires `onPersistVerbProgress` for verb cards and `onCardPracticed` for cursor tracking.
-3. When `currentIndex >= blockCards.size`, calls `onBlockComplete()` (line 255).
-4. In `CardSessionBlock`, `blockComplete = true` (line 255 of DailyPracticeScreen.kt).
-5. Auto-advance logic calls `onAdvanceBlock()` (line 282).
-6. `advanceToNextBlock()` in DailySessionHelper scans forward in task list past all TRANSLATE tasks, lands on first VOCAB task.
-7. Updates `taskIndex` to first VOCAB task, increments `blockIndex` to 1.
-8. `DailyPracticeScreen.kt:158-177` -- LaunchedEffect detects `currentBlockType` change (TRANSLATE -> VOCAB), sets `showBlockTransition = true`.
-9. `BlockSparkleOverlay` shows "Next: Vocabulary" for 800ms (line 1003-1007).
+1. Provider's `nextCard()` increments card index.
+2. When card index >= block size, calls `onBlockComplete()`.
+3. In `CardSessionBlock`, `blockComplete = true` (line 255 of DailyPracticeScreen.kt).
+4. Auto-advance logic calls `onAdvanceBlock()` (line 282).
+5. `advanceToNextBlock()` in DailySessionHelper scans forward in task list past all TRANSLATE tasks, lands on first VOCAB task.
+6. Updates `taskIndex` to first VOCAB task, increments `blockIndex` to 1.
+7. `DailyPracticeScreen.kt:158-177` -- LaunchedEffect detects `currentBlockType` change (TRANSLATE -> VOCAB), sets `showBlockTransition = true`.
+8. `BlockSparkleOverlay` shows "Next: Vocabulary" for 800ms (line 1003-1007).
 
-**Expected vs actual:** MATCH. Spec 9.6.2 describes this exact flow.
+**Card counting for cursor advancement (TASK-070 fix):**
+Card counting no longer happens in the provider's `onCardAdvanced` callback. Instead, `TrainingViewModel.submitAnswer()` tracks daily card practice when a correct answer is accepted in `DAILY_TRANSLATE` or `DAILY_VERBS` screen mode with VOICE or KEYBOARD input (not WORD_BANK). This hook calls `recordDailyCardPracticed(blockType)` which increments `dailyPracticeAnsweredCounts[blockType]`. See Spec 09#9.3.5 for the full counting path.
 
-**Discrepancy:** None.
+**Expected vs actual:** MATCH (after TASK-070 fix). Spec 9.6.2 describes this flow.
+
+**Discrepancy:** The original trace referenced `DailyPracticeSessionProvider.onCardAdvanced` as the counting mechanism. This provider is dead code -- TRANSLATE/VERBS blocks actually run through `SessionRunner` via `TrainingCardSessionProvider`. The counting now happens in `TrainingViewModel.submitAnswer()`.
 
 ---
 
@@ -228,7 +229,7 @@ User starts daily practice -> block 1 (10 translations) -> block 2 (10 vocab) ->
 ### Step 10: Block 3: last card -> session completion screen
 
 **Code path:**
-- `DailyPracticeSessionProvider.kt:254-256` -- `onBlockComplete()` when last verb card done
+- Provider's `nextCard()` -- `onBlockComplete()` when last verb card done
 - `DailyPracticeScreen.kt:281-288` -- `blockComplete = true`, calls `onAdvanceBlock()`
 - `DailySessionHelper.kt:87-89` -- `advanceToNextBlock()` reaches end of task list, calls `endSession()`
 - `DailySessionHelper.kt:144-154` -- `endSession()` sets `active=false, finishedToken=true`
@@ -420,6 +421,7 @@ The block transition sparkle message uses the NEXT block's label (line 1003: "Ne
 | 6 | **Trivial** | Spec says Hard rating may "move down" step, but code only stays the same. Acceptable interpretation but not exactly matching spec wording. | `TrainingViewModel.kt:1703`, Spec 9.4.6 | OPEN |
 | 7 | **Moderate** | `resolveProgressLessonInfo()` used for daily practice level resolution instead of `DailyCursorState`. This caused Imperfetto verbs at level 1. **RESOLVED in spec 09#9.1 (Independence Principle) and 09#9.5.1**: daily practice now uses `cursor.currentLessonIndex + 1` as sole level source. **Code fix pending.** | `DailyPracticeCoordinator.kt`, `ProgressTracker.kt` | SPEC RESOLVED, CODE PENDING |
 | 8 | **Moderate** | Block 3 returns empty when all verb cards for active tenses have been shown. **RESOLVED in spec 09#9.5.1 (Verb cycling)**: when unshown set is empty, algorithm cycles through full filtered pool with weakness ordering. UC-60 added. **Code fix pending.** | `DailySessionComposer.kt:327` | SPEC RESOLVED, CODE PENDING |
+| 9 | **Significant** | Card counting for cursor advancement was traced through `DailyPracticeSessionProvider.onCardAdvanced`, but this provider is dead code (never instantiated in production). **RESOLVED by TASK-070**: counting now happens in `TrainingViewModel.submitAnswer()` which checks `isDailySession()` and `inputMode != WORD_BANK` before calling `recordDailyCardPracticed(blockType)`. Spec 09#9.3.5 updated. | `TrainingViewModel.kt:628-643`, `DailyPracticeSessionProvider.kt` | RESOLVED (TASK-070) |
 
 ### Spec Compliance: Overall Assessment
 
