@@ -642,6 +642,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     else -> return SubmitResult(result.accepted, result.hintShown)
                 }
                 recordDailyCardPracticed(blockType)
+                // Persist verb card progress so buildVerbBlock doesn't repeat the same cards
+                if (blockType == DailyBlockType.VERBS) {
+                    val currentCard = _coreState.value.cardSession.currentCard
+                    if (currentCard is com.alexpo.grammermate.data.VerbDrillCard) {
+                        dailyPracticeCoordinator.persistDailyVerbProgress(currentCard)
+                    }
+                }
             }
         }
 

@@ -150,17 +150,20 @@ fun DailyPracticeScreen(
         when (currentBlockType) {
             DailyBlockType.TRANSLATE, DailyBlockType.VERBS -> {
                 // Navigate to TrainingScreen for card rendering
-                LaunchedEffect(state.blockIndex) {
-                    val cards: List<com.alexpo.grammermate.data.SessionCard> = when (currentBlockType) {
-                        DailyBlockType.TRANSLATE -> currentBlock.tasks
-                            .filterIsInstance<DailyTask.TranslateSentence>()
-                            .map { it.card }
-                        DailyBlockType.VERBS -> currentBlock.tasks
-                            .filterIsInstance<DailyTask.ConjugateVerb>()
-                            .map { it.card }
-                        else -> emptyList()
+                LaunchedEffect(state.blockIndex, currentBlock.isComplete) {
+                    // Guard: don't re-trigger a block that was already completed
+                    if (!currentBlock.isComplete) {
+                        val cards: List<com.alexpo.grammermate.data.SessionCard> = when (currentBlockType) {
+                            DailyBlockType.TRANSLATE -> currentBlock.tasks
+                                .filterIsInstance<DailyTask.TranslateSentence>()
+                                .map { it.card }
+                            DailyBlockType.VERBS -> currentBlock.tasks
+                                .filterIsInstance<DailyTask.ConjugateVerb>()
+                                .map { it.card }
+                            else -> emptyList()
+                        }
+                        onStartCardBlock(currentBlockType, cards)
                     }
-                    onStartCardBlock(currentBlockType, cards)
                 }
                 // Show loading while navigation happens
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
