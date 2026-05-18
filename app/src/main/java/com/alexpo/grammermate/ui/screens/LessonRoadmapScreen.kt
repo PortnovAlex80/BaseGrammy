@@ -133,8 +133,7 @@ fun LessonRoadmapScreen(
     val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it.value] }
     val bossThreshold = minOf(15, total)
     val bossUnlocked = state.cardSession.completedSubLessonCount >= bossThreshold || state.cardSession.testMode
-    var bossLockedMessage by remember { mutableStateOf<String?>(null) }
-    val lockedMessage = stringResource(R.string.roadmap_complete_n_exercises, bossThreshold)
+    val noOp: () -> Unit = { }
     val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
     val isLessonComplete = completed >= total
@@ -249,9 +248,7 @@ fun LessonRoadmapScreen(
                                 enabled = bossUnlocked,
                                 reward = if (bossUnlocked) bossLessonReward else null,
                                 locked = !bossUnlocked,
-                                onClick = if (bossUnlocked) onStartBossLesson else {
-                                    { bossLockedMessage = lockedMessage }
-                                }
+                                onClick = if (bossUnlocked) onStartBossLesson else noOp
                             )
                         }
                         is RoadmapEntry.BossMega -> {
@@ -260,9 +257,7 @@ fun LessonRoadmapScreen(
                                 enabled = bossUnlocked,
                                 reward = if (bossUnlocked) bossMegaReward else null,
                                 locked = !bossUnlocked,
-                                onClick = if (bossUnlocked) onStartBossMega else {
-                                    { bossLockedMessage = lockedMessage }
-                                }
+                                onClick = if (bossUnlocked) onStartBossMega else noOp
                             )
                         }
                         // StoryCheckIn/StoryCheckOut kept for backward compat but no longer rendered
@@ -288,9 +283,7 @@ fun LessonRoadmapScreen(
                     enabled = bossUnlocked,
                     reward = if (bossUnlocked) bossLessonReward else null,
                     locked = !bossUnlocked,
-                    onClick = if (bossUnlocked) onStartBossLesson else {
-                        { bossLockedMessage = lockedMessage }
-                    }
+                    onClick = if (bossUnlocked) onStartBossLesson else noOp
                 )
                 if (hasMegaBoss) {
                     BossTile(
@@ -298,9 +291,7 @@ fun LessonRoadmapScreen(
                         enabled = bossUnlocked,
                         reward = if (bossUnlocked) bossMegaReward else null,
                         locked = !bossUnlocked,
-                        onClick = if (bossUnlocked) onStartBossMega else {
-                            { bossLockedMessage = lockedMessage }
-                        }
+                        onClick = if (bossUnlocked) onStartBossMega else noOp
                     )
                 }
             }
@@ -343,19 +334,6 @@ fun LessonRoadmapScreen(
             },
             title = { Text(text = stringResource(R.string.roadmap_start_early_title)) },
             text = { Text(text = stringResource(R.string.roadmap_start_early_message, idx + 1)) }
-        )
-    }
-
-    if (bossLockedMessage != null) {
-        AlertDialog(
-            onDismissRequest = { bossLockedMessage = null },
-            confirmButton = {
-                TextButton(onClick = { bossLockedMessage = null }) {
-                    Text(text = stringResource(R.string.home_ok))
-                }
-            },
-            title = { Text(text = stringResource(R.string.roadmap_locked)) },
-            text = { Text(text = bossLockedMessage ?: "") }
         )
     }
 

@@ -178,10 +178,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         }
 
         // Navigation helper — replaces direct onScreenChange calls
-        val onNavigate: (String) -> Unit = remember(currentRoute) {
+        val onNavigate: (String) -> Unit = remember(navController) {
             { route: String ->
-                if (route != currentRoute) {
-                    previousRoute = currentRoute
+                val actual = navController.currentBackStackEntry?.destination?.route
+                if (route != actual) {
+                    previousRoute = actual ?: Routes.HOME
                     navController.navigate(route) {
                         // Pop up to start destination to avoid building a large back stack
                         popUpTo(Routes.HOME) { inclusive = false }

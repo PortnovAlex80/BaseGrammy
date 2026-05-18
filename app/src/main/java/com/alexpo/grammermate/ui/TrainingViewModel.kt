@@ -1359,10 +1359,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
     private fun saveProgress() {
         val state = uiState.value
+        // Read daily cursor directly from coordinator to avoid combine flow staleness.
+        // The combine() flow that produces uiState merges _coreState with coordinator's
+        // dailyState; after updateCursor() the MutableStateFlow is updated immediately
+        // but the downstream combine may not have propagated yet, so uiState.value can
+        // contain a stale cursor. This caused storeFirstSessionCardIds() to write a
+        // cursor missing firstSessionDate/cardIds to disk, breaking Repeat after restart.
+        val actualCursor = dailyPracticeCoordinator.getCursor()
+        val stateToSave = if (state.daily.dailyCursor != actualCursor) {
+            state.copy(daily = state.daily.copy(dailyCursor = actualCursor))
+        } else {
+            state
+        }
         val shouldBackup = progressTracker.saveProgress(
-            state = state,
+            state = stateToSave,
             forceBackup = forceBackupOnSave,
-            normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(state.elite.eliteBestSpeeds)
+            normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(stateToSave.elite.eliteBestSpeeds)
         )
         masteryStore.flush()
         if (shouldBackup) {
