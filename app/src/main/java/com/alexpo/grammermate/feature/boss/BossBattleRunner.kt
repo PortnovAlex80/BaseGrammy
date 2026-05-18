@@ -86,14 +86,16 @@ class BossBattleRunner {
         cards: List<SentenceCard>,
         selectedLessonId: String?,
         completedSubLessonCount: Int,
+        subLessonCount: Int,
         testMode: Boolean
     ): BossStartResult {
-        // Unlock guard: require at least 15 completed sub-lessons (unless test mode or elite)
-        if (type != BossType.ELITE && completedSubLessonCount < TrainingConfig.BOSS_UNLOCK_SUB_LESSONS && !testMode) {
+        // Unlock guard: require min(15, total) completed sub-lessons (unless test mode or elite)
+        val threshold = minOf(TrainingConfig.BOSS_UNLOCK_SUB_LESSONS, subLessonCount)
+        if (type != BossType.ELITE && completedSubLessonCount < threshold && !testMode) {
             return BossStartResult(
                 success = false,
                 cards = emptyList(),
-                errorMessage = "Complete at least ${TrainingConfig.BOSS_UNLOCK_SUB_LESSONS} exercises first"
+                errorMessage = "Complete at least $threshold exercises first"
             )
         }
 

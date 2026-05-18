@@ -123,6 +123,7 @@ class BossOrchestrator(
             cards = cards,
             selectedLessonId = selectedId?.value,
             completedSubLessonCount = state.cardSession.completedSubLessonCount,
+            subLessonCount = state.cardSession.subLessonCount,
             testMode = state.cardSession.testMode
         )
         if (!result.success) {
