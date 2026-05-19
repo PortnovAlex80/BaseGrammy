@@ -30,6 +30,7 @@ Thumbs.db
 
 # Claude Code plans
 .claude/plans/
+.claude/worktrees/
 
 # Unpacked lesson content (mirror of packs/*.zip for browsing)
 /lesson-content/
@@ -38,3 +39,43 @@ Thumbs.db
 SESSION_REPORT_*.md
 TEAM.md
 generate_*.py
+
+# Build cache directories (local Gradle artifacts)
+/.docker-build/
+/.docker-gradle-cache/
+/build-cache-*/
+/jars-*/
+/modules-*/
+/journal-*/
+/gradle-cache-*/
+/gradle-*-export/
+/maven-*/
+/8.*/
+/9.*/
+/.serena/
+
+# Generated Docker/test files
+/Dockerfile.test
+/Dockerfile.*
+/docker-compose.*.yml
+/disable-wan-miniports.gradle
+/offline-init.gradle
+/offline-settings.gradle.kts
+/test-classpath.*
+
+# Generated test scripts
+/*.bat
+/*.sh
+/*.ps1
+/run_*.bat
+/run_*.sh
+/run_*.ps1
+/build_*.sh
+/count_tests*.sh
+/create_manifest.sh
+/create_maven_repo.py
+/UI_JOURNEY_TESTS_REPORT.md
+
+# Local Gradle config
+/gradle.properties.local
+/CACHEDIR.TAG
