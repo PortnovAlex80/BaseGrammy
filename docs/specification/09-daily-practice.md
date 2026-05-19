@@ -510,6 +510,10 @@ DailyCursorState.currentLessonIndex (= 0-based index)
 
 When the daily cursor advances to the next lesson (Section 9.6.4), Block 3 automatically adds the new lesson's tenses. Example: cursor at lesson index 1 (level 2) → Presente + Imperfetto.
 
+**Verb block cursor-based advancement:**
+
+Block 3 uses `verbOffset` from `DailyCursorState` to track position through the verb drill pool. After each session completion, `verbOffset` increments by `sessionSize` (default 10). When `verbOffset` exceeds the total verb card count for the active tenses, it wraps to 0 (cycles through the pool). This ensures systematic coverage of all verb conjugations without repetition until the full pool has been exhausted.
+
 **Verb cycling (cards run out → repeat):**
 
 When all verb cards for the active tenses have been previously shown (`unshown` set is empty), the algorithm **cycles**: it resets the exclusion filter and selects from the full set of cards matching the active tenses. This prevents Block 3 from returning empty when the user has practiced all available verbs. Cycled cards retain their weakness scores (weakest-first still applies), so the least-practiced forms are still prioritized.
@@ -520,10 +524,10 @@ When all verb cards for the active tenses have been previously shown (`unshown` 
 2. Load all verb drill cards from the pack's verb drill files via `LessonStore.getVerbDrillFiles()` and `VerbDrillCsvParser`.
 3. Filter cards by **active tenses** for `effectiveLevel` (see above).
 4. If no tenses are active, return an empty block.
-5. Load progress from `VerbDrillStore.loadProgress()`.
-6. Collect IDs of all previously shown cards across all combos (`everShownCardIds`).
-7. **Try** to exclude previously shown cards → `unshown` set.
-8. **If `unshown` is empty** (all cards already shown for these tenses): **cycle** -- use the full filtered set (step 3 result) as the candidate pool. Weakness scores still apply based on progress data.
+5. Apply cursor-based offset: start selection from `verbOffset` position in the filtered list (wraps to 0 if exceeds pool size).
+6. Take up to `sessionSize` (default 10) cards from the offset position.
+7. Load progress from `VerbDrillStore.loadProgress()`.
+8. Score candidate cards by **weakness** (weakest tenses prioritized within the offset window).
 9. Score candidate cards by **weakness**:
 
 ```kotlin
@@ -952,7 +956,7 @@ On the first card of Block 1:
 
 ### 9.6.8 Card Counting and Batch Management
 
-- Each block targets exactly 10 cards (`CARDS_PER_BLOCK` constant).
+- Each block targets exactly `sessionSize` cards (from `AppConfig.sessionSize`, default 10). The `CARDS_PER_BLOCK` constant alias exists for backward compatibility but `sessionSize` is the authoritative source.
 - Cards within a block are consumed sequentially (no wrap-around within a single session).
 - The `DailyPracticeSessionProvider` tracks progress via `currentIndex` (Compose mutable state) which is separate from `DailyPracticeCoordinator.taskIndex` (StateFlow via `DailyPracticeState`).
 - When `currentIndex >= blockCards.size`, the provider calls `onBlockComplete()`.
@@ -1281,10 +1285,11 @@ It:
 DailyCursorState {
     currentLessonIndex: Int   // 0-based
     sentenceOffset: Int       // cards completed in current lesson
+    verbOffset: Int           // position in verb drill pool (0, 10, 20, ...)
 }
   → effectiveLevel = currentLessonIndex + 1
   → Block 1: lesson at currentLessonIndex, cards from sentenceOffset
-  → Block 3: tenses for effectiveLevel (getCumulativeTenses or TENSE_LADDER)
+  → Block 3: tenses for effectiveLevel, cards from verbOffset
 ```
 
 **What MUST NOT affect daily practice:**
@@ -1298,6 +1303,7 @@ DailyCursorState {
 **What DOES move the daily cursor:**
 - Completing a daily session with all VOICE/KEYBOARD cards → `advanceCursor(sentenceCount)`
 - `sentenceOffset` += practiced sentence count
+- `verbOffset` += sessionSize (default 10), wraps when exceeding verb pool size
 - If `sentenceOffset >= lesson.cards.size` → `currentLessonIndex++`, `sentenceOffset = 0`
 - If `currentLessonIndex >= pack.lessons.size` → wrap to 0 (cycle through pack)
 - "Reset all progress" in Settings → calls `resetAllDailyState()` which wipes cursor to defaults

@@ -287,6 +287,7 @@ Sources:
 |-------|------|---------|---------------------|
 | `sentenceOffset` | `Int` | `0` | Number of sentence cards already shown in current lesson. Increments by `SUB_LESSON_SIZE_DEFAULT` (10). |
 | `currentLessonIndex` | `Int` | `0` | 0-based index of the current lesson in the pack. Increments when a lesson's cards are exhausted. |
+| `verbOffset` | `Int` | `0` | Position in the verb drill pool for Block 3. Increments by `sessionSize` after each session, wraps when exceeding pool size. |
 | `lastSessionHash` | `Int` | `0` | Hash of the last completed session. Used as a cache key for the "Repeat" option. |
 | `firstSessionDate` | `String` | `""` | ISO date (`yyyy-MM-dd`) of the first session of the current day. Empty if no session today. |
 | `firstSessionSentenceCardIds` | `List<String>` | `emptyList()` | Card IDs from the first session's translate block. Used to reproduce cards on "Repeat". |

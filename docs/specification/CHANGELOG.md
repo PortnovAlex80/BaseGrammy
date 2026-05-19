@@ -2,6 +2,18 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [Daily Practice Session Size and Verb Offset Fixes] - 2026-05-20
+
+### Changed
+- `09-daily-practice.md`: Updated section 9.6.8 to document that sessionSize from AppConfig now controls block sizes for all three blocks (TRANSLATE, VOCAB, VERBS), replacing the hardcoded CARDS_PER_BLOCK constant. Updated section 9.5.1 to describe cursor-based verb block advancement using verbOffset, which increments by sessionSize after each session and cycles at the pool end. Updated section 9.8.7 to add verbOffset to the DailyCursorState documentation and cursor advancement rules.
+- `01-models-and-state.md`: Added verbOffset field to DailyCursorState documentation with description of its purpose and increment behavior.
+- `22-use-case-registry.md`: Updated UC-21 AC2 to specify that sessionSize from AppConfig affects all three daily practice blocks uniformly. Updated UC-24 to add AC7 documenting verbOffset tracking through the verb drill pool.
+
+### Key Changes
+- sessionSize config parameter now applies to ALL daily practice modes (no coerceIn restrictions)
+- Block 3 verb cards use cursor-based advancement via verbOffset (not everShownCardIds exclusion)
+- verbOffset increments by sessionSize after session completion, cycles at pool end
+
 ## [Test Infrastructure Cleanup] - 2026-05-19
 
 ### Changed
