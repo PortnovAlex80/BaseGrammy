@@ -1,0 +1,9 @@
+appId: com.alexpo.grammermate
+tags:
+  - navigation
+  - lesson
+---
+- launchApp
+- tapOn: "Continue Learning"
+- assertVisible: "Exercise"
+- assertVisible: "Start Lesson"

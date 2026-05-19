@@ -380,6 +380,62 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 
 ---
 
+## E2E & UI Testing Infrastructure
+
+### Layer 1: mobile-mcp (AI-driven interactive testing)
+
+**What:** MCP server that lets Claude Code directly interact with an Android emulator/device — take screenshots, read UI elements, click buttons, type text.
+
+**Setup:** `claude mcp add mobile-mcp -- npx -y @mobilenext/mobile-mcp@latest` (already configured)
+
+**Prerequisites:** Node.js 22+, ADB in PATH, running Android emulator or connected device.
+
+**Usage pattern:**
+1. Build APK: `java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain assembleDebug`
+2. Install: `adb install -r app/build/outputs/apk/debug/grammermate.apk`
+3. Claude Code uses mobile-mcp tools: `mobile_take_screenshot`, `mobile_list_elements_on_screen`, `mobile_click_on_screen_at_coordinates`, `mobile_type_keys`, `mobile_press_button`
+4. Agent sees rendered screen, makes decisions, navigates through user journeys
+
+**When to use:** Exploratory testing, verifying UI changes visually, debugging user-reported issues, `/verify-user-journey` skill enhancement.
+
+### Layer 2: Maestro (E2E regression tests)
+
+**What:** YAML-based E2E testing framework. Runs via CLI against emulator/device. Uses accessibility tree for element selection.
+
+**Install:** `curl -Ls "https://get.maestro.mobile.dev" | bash` (macOS/Linux). Windows: download from [maestro.mobile.dev](https://maestro.mobile.dev).
+
+**Test flows location:** `.maestro/flows/`
+
+| Flow | File | Covers |
+|------|------|--------|
+| App launch → Home | `01-app-launch-home.yaml` | Startup, home screen elements |
+| Settings navigation | `02-settings-navigation.yaml` | Sheet open/close, sections visible |
+| Home → Lesson Roadmap | `03-home-to-lesson-roadmap.yaml` | Lesson selection, roadmap rendering |
+| Daily Practice entry | `04-daily-practice.yaml` | Daily session start, block rendering |
+| Verb Drill entry | `05-verb-drill.yaml` | Verb drill selection screen |
+| Vocab Drill entry | `06-vocab-drill.yaml` | Vocab drill selection screen |
+| Training answer flow | `07-training-answer-flow.yaml` | Full session: enter answer → check → exit |
+| Welcome dialog | `08-welcome-dialog.yaml` | First launch onboarding (requires fresh data) |
+| Input mode switching | `09-training-input-modes.yaml` | Voice/keyboard/word bank toggle |
+| Ladder screen | `10-ladder-screen.yaml` | Settings → ladder → back |
+
+**Run all flows:** `maestro test .maestro/flows/`
+**Run tagged:** `maestro test .maestro/flows/ --include-tags smoke`
+**Run single:** `maestro test .maestro/flows/01-app-launch-home.yaml`
+
+**Tags:** `smoke` (basic launch/nav), `critical` (core user paths), `navigation`, `training`, `daily`, `drill`, `vocab`, `verb`, `input-modes`, `onboarding`, `ladder`, `lesson`
+
+**When to use:** CI regression, pre-release smoke tests, after UI changes affecting navigation/rendering.
+
+### UI string references
+
+The app uses `stringResource(R.string.*)` for all visible text. Default locale is English (`values/strings-*.xml`). Russian overrides in `values-ru/strings-*.xml`. When writing Maestro selectors or mobile-mcp assertions, reference these files for exact text:
+- `values/strings-screens.xml` — screen titles, button labels, navigation
+- `values/strings-components.xml` — shared components, daily practice, training card session
+- `values/strings-app.xml` — dialogs, drill screens, app-level strings
+
+---
+
 ## Architecture
 
 ### MVVM — Single ViewModel (with two exceptions)

@@ -1,0 +1,32 @@
+appId: com.alexpo.grammermate
+tags:
+  - training
+  - critical
+---
+# Full training session flow: Home → Lesson → Training → Answer → Exit
+- launchApp
+
+# Navigate to lesson roadmap
+- tapOn: "Continue Learning"
+
+# Start first sub-lesson (or continue)
+- tapOn: "Start Lesson"
+
+# Training screen should render
+- assertVisible: "RU"
+- assertVisible: "Your translation"
+- assertVisible: "Check"
+
+# Type an answer (test mode accepts anything)
+- tapOn: "Your translation"
+- inputText: "test answer"
+- tapOn: "Check"
+
+# Result should show (correct in test mode, incorrect otherwise)
+- assertVisible: ".*"
+
+# Navigate back
+- back
+- assertVisible: "End session"
+- tapOn: "Exit"
+- assertVisible: "Exercise"

@@ -1,0 +1,10 @@
+appId: com.alexpo.grammermate
+tags:
+  - smoke
+  - navigation
+---
+- launchApp
+- assertVisible: "Grammar Roadmap"
+- assertVisible: "Daily Practice"
+- assertVisible: "Continue Learning"
+- assertVisible: "How This Training Works"
