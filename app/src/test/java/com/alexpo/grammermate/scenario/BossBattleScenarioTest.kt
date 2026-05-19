@@ -196,18 +196,19 @@ class BossBattleScenarioTest {
         var correctCount = 0
 
         for (i in 0 until totalCards) {
-            val currentCardIndex = stateAccess.uiState.value.cardSession.currentIndex
-            val cardNum = i + 1
+            val currentCard = stateAccess.uiState.value.cardSession.currentCard
+            assertNotNull("Current card should not be null at index $i", currentCard)
 
-            // Submit correct answer
+            // Submit correct answer using the actual card's accepted answer
+            val correctAnswer = currentCard!!.acceptedAnswers.first()
             stateAccess.updateState { it.copy(
-                cardSession = it.cardSession.copy(inputText = "english word $cardNum")
+                cardSession = it.cardSession.copy(inputText = correctAnswer)
             ) }
 
             val (result, events) = sessionRunner.submitAnswer()
 
             // Verify: Answer was accepted
-            assertTrue("Answer $cardNum should be accepted", result.accepted)
+            assertTrue("Answer '${correctAnswer}' for card ${currentCard!!.id} should be accepted", result.accepted)
             assertFalse("No hint should be shown for correct answer", result.hintShown)
 
             correctCount++
@@ -219,12 +220,19 @@ class BossBattleScenarioTest {
                 assertFalse("Mid-card should not signal boss finish", result.needsBossFinish)
             }
 
+            // Advance boss progress (simulates what TrainingViewModel.nextCard() does)
+            val nextIndex = (stateAccess.uiState.value.cardSession.currentIndex + 1).coerceAtMost(totalCards - 1)
+            bossOrchestrator.advanceBossProgressOnNextCard(nextIndex, totalCards)
+
             // Check progress updates after each card
+            // Note: bossProgress tracks cards completed, so after i+1 cards, it should be >= i+1
+            // But on last iteration, nextIndex is capped at totalCards-1, so bossProgress caps at totalCards-1
+            val expectedMinProgress = minOf(i + 1, totalCards - 1)
             val updatedBossState = bossOrchestrator.stateFlow.value
-            assertTrue("Boss progress should be >= $i", updatedBossState.bossProgress >= i)
+            assertTrue("Boss progress should be >= $expectedMinProgress but was ${updatedBossState.bossProgress}", updatedBossState.bossProgress >= expectedMinProgress)
 
             // Verify correct count increases
-            assertEquals("Correct count should be $cardNum", cardNum, stateAccess.uiState.value.cardSession.correctCount)
+            assertEquals("Correct count should be ${i + 1}", i + 1, stateAccess.uiState.value.cardSession.correctCount)
         }
 
         // --- STEP 4: Finish boss battle ---
@@ -259,9 +267,10 @@ class BossBattleScenarioTest {
 
         // Answer cards up to bronze threshold
         for (i in 0 until bronzeIndex) {
-            val cardNum = i + 1
+            val currentCard = stateAccess.uiState.value.cardSession.currentCard
+            val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
             stateAccess.updateState { it.copy(
-                cardSession = it.cardSession.copy(inputText = "english word $cardNum")
+                cardSession = it.cardSession.copy(inputText = correctAnswer)
             ) }
             sessionRunner.submitAnswer()
 
@@ -280,9 +289,10 @@ class BossBattleScenarioTest {
 
         // Answer more cards
         for (i in bronzeIndex until silverIndex) {
-            val cardNum = i + 1
+            val currentCard = stateAccess.uiState.value.cardSession.currentCard
+            val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
             stateAccess.updateState { it.copy(
-                cardSession = it.cardSession.copy(inputText = "english word $cardNum")
+                cardSession = it.cardSession.copy(inputText = correctAnswer)
             ) }
             sessionRunner.submitAnswer()
 
@@ -297,9 +307,10 @@ class BossBattleScenarioTest {
         val goldIndex = (totalCards * 0.9).toInt()
 
         for (i in silverIndex until goldIndex) {
-            val cardNum = i + 1
+            val currentCard = stateAccess.uiState.value.cardSession.currentCard
+            val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
             stateAccess.updateState { it.copy(
-                cardSession = it.cardSession.copy(inputText = "english word $cardNum")
+                cardSession = it.cardSession.copy(inputText = correctAnswer)
             ) }
             sessionRunner.submitAnswer()
 
@@ -321,8 +332,10 @@ class BossBattleScenarioTest {
         assertEquals("Initial index should be 0", 0, initialIndex)
 
         // --- TEST: Correct answer on mid-card advances ---
+        val currentCard = stateAccess.uiState.value.cardSession.currentCard
+        val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
         stateAccess.updateState { it.copy(
-            cardSession = it.cardSession.copy(inputText = "english word 1")
+            cardSession = it.cardSession.copy(inputText = correctAnswer)
         ) }
 
         val (result, events) = sessionRunner.submitAnswer()
@@ -352,8 +365,10 @@ class BossBattleScenarioTest {
         assertEquals("Index should stay at 0", 0, stateAccess.uiState.value.cardSession.currentIndex)
 
         // --- TEST: Correct answer after wrong advances ---
+        val currentCard = stateAccess.uiState.value.cardSession.currentCard
+        val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
         stateAccess.updateState { it.copy(
-            cardSession = it.cardSession.copy(inputText = "english word 1")
+            cardSession = it.cardSession.copy(inputText = correctAnswer)
         ) }
 
         val (correctResult, correctEvents) = sessionRunner.submitAnswer()
@@ -381,8 +396,10 @@ class BossBattleScenarioTest {
         sessionRunner.startSession()
         assertEquals("Session should be ACTIVE", SessionState.ACTIVE, stateAccess.uiState.value.cardSession.sessionState)
 
+        val currentCard = stateAccess.uiState.value.cardSession.currentCard
+        val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
         stateAccess.updateState { it.copy(
-            cardSession = it.cardSession.copy(inputText = "english word 1")
+            cardSession = it.cardSession.copy(inputText = correctAnswer)
         ) }
 
         val (result, events) = sessionRunner.submitAnswer()
@@ -399,8 +416,10 @@ class BossBattleScenarioTest {
         val bronzeIndex = (totalCards * 0.3).toInt()
 
         for (i in 0 until bronzeIndex) {
+            val currentCard = stateAccess.uiState.value.cardSession.currentCard
+            val correctAnswer = currentCard?.acceptedAnswers?.first() ?: "fallback"
             stateAccess.updateState { it.copy(
-                cardSession = it.cardSession.copy(inputText = "english word ${i + 1}")
+                cardSession = it.cardSession.copy(inputText = correctAnswer)
             ) }
             sessionRunner.submitAnswer()
             bossOrchestrator.advanceBossProgressOnNextCard(i + 1, totalCards)

@@ -181,11 +181,13 @@ class MasteryProgressionScenarioTest {
         var currentTime = System.currentTimeMillis()
 
         // Simulate 10 consecutive correct answers
+        val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1
         for (i in 0 until 10) {
             val wasOnTime = true // Assume always on time for this test
             val nextStep = SpacedRepetitionConfig.nextIntervalStep(step, wasOnTime)
 
-            assertEquals("Step $i should advance to ${i + 1}", i + 1, nextStep)
+            val expectedStep = minOf(i + 1, maxStep)
+            assertEquals("Step $i should advance to $expectedStep", expectedStep, nextStep)
             step = nextStep
             currentTime += (24 * 60 * 60 * 1000) // Advance 1 day
         }

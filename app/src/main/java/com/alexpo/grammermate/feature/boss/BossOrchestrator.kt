@@ -147,9 +147,13 @@ class BossOrchestrator(
                 savedHintLevel = previousHintLevel
             )
         }
-        // Update core state: cardSession
+        // Update core state: boss + cardSession
         stateAccess.updateState { s ->
             s.copy(
+                boss = s.boss.copy(
+                    bossActive = true,
+                    bossType = type
+                ),
                 cardSession = s.cardSession.copy(
                     currentIndex = 0,
                     currentCard = firstCard,
@@ -207,9 +211,13 @@ class BossOrchestrator(
                 bossMegaRewards = result.updatedMegaRewards
             )
         }
-        // Update core state: navigation + cardSession
+        // Update core state: boss + navigation + cardSession
         stateAccess.updateState { s ->
             s.copy(
+                boss = s.boss.copy(
+                    bossActive = false,
+                    bossType = null
+                ),
                 navigation = s.navigation.copy(
                     selectedLessonId = restoredLessonId,
                     mode = progress.mode
