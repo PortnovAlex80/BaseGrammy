@@ -1,0 +1,18 @@
+appId: com.alexpo.grammermate
+tags:
+  - daily
+  - critical
+---
+# Daily Practice — verify entry and first block renders
+- launchApp
+- tapOn: "Daily Practice"
+
+# If resume dialog appears, choose Continue
+- runFlow:
+    when:
+      visible: "Daily Practice"
+    commands:
+      - tapOn: "Continue"
+
+- assertVisible: "Translation"
+- assertVisible: "Check"

@@ -1,0 +1,15 @@
+appId: com.alexpo.grammermate
+tags:
+  - navigation
+  - ladder
+---
+# Settings → Ladder → Back
+- launchApp
+- tapOn:
+    contentDescription: "Settings"
+- assertVisible: "Show ladder"
+- tapOn: "Show ladder"
+- assertVisible: "Interval Ladder"
+- assertVisible: "Lesson"
+- back
+- assertVisible: "Service Mode"

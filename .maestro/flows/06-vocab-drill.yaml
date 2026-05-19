@@ -1,0 +1,9 @@
+appId: com.alexpo.grammermate
+tags:
+  - drill
+  - vocab
+---
+- launchApp
+- tapOn: "Flashcards"
+- assertVisible: "Flashcards"
+- assertVisible: "IT.*RU"

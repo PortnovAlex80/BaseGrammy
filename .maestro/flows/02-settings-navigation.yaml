@@ -1,0 +1,14 @@
+appId: com.alexpo.grammermate
+tags:
+  - smoke
+  - navigation
+---
+- launchApp
+- tapOn:
+    contentDescription: "Settings"
+- assertVisible: "Service Mode"
+- assertVisible: "Profile"
+- assertVisible: "Backup"
+- assertVisible: "Packs"
+- back
+- assertVisible: "Grammar Roadmap"
