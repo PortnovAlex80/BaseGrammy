@@ -61,6 +61,12 @@ android {
     }
 }
 
+tasks.withType<Test> {
+    jvmArgs("-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8")
+    systemProperty("android.manifest_resource_path",
+        layout.buildDirectory.file("intermediates/merged_manifests/debug/AndroidManifest.xml").get().asFile.absolutePath)
+}
+
 tasks.matching { it.name == "assembleDebug" }.configureEach {
     doLast {
         val apkDir = layout.buildDirectory.dir("outputs/apk/debug").get().asFile
@@ -103,4 +109,6 @@ dependencies {
     testImplementation("org.json:json:20231013")
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.compose.ui:ui-test-manifest")
 }
