@@ -648,7 +648,7 @@ class DailyPracticeCoordinatorTest {
 
     @Test
     fun getBlockProgress_noActiveSession_returnsEmpty() {
-        val progress = coordinator.getBlockProgress()
+        val progress = coordinator.getDailyBlockProgress()
         assertEquals(BlockProgress.Empty, progress)
     }
 
@@ -656,7 +656,7 @@ class DailyPracticeCoordinatorTest {
     fun getBlockProgress_atStartOfTranslateBlock_returnsCorrectPosition() = runBlocking {
         startActiveSession()
 
-        val progress = coordinator.getBlockProgress()
+        val progress = coordinator.getDailyBlockProgress()
         assertEquals(DailyBlockType.TRANSLATE, progress.blockType)
         assertEquals(1, progress.positionInBlock)  // 1-based
         assertEquals(3, progress.blockSize)
@@ -669,7 +669,7 @@ class DailyPracticeCoordinatorTest {
         startActiveSession()
         coordinator.advanceDailyTask {} // index 1
 
-        val progress = coordinator.getBlockProgress()
+        val progress = coordinator.getDailyBlockProgress()
         assertEquals(DailyBlockType.TRANSLATE, progress.blockType)
         assertEquals(2, progress.positionInBlock)
         assertEquals(3, progress.blockSize)
@@ -681,7 +681,7 @@ class DailyPracticeCoordinatorTest {
         startActiveSession()
         coordinator.advanceToNextBlock() // skip to vocab
 
-        val progress = coordinator.getBlockProgress()
+        val progress = coordinator.getDailyBlockProgress()
         assertEquals(DailyBlockType.VOCAB, progress.blockType)
         assertEquals(1, progress.positionInBlock)
         assertEquals(2, progress.blockSize)
@@ -694,7 +694,7 @@ class DailyPracticeCoordinatorTest {
         coordinator.advanceToNextBlock() // -> vocab
         coordinator.advanceToNextBlock() // -> verbs
 
-        val progress = coordinator.getBlockProgress()
+        val progress = coordinator.getDailyBlockProgress()
         assertEquals(DailyBlockType.VERBS, progress.blockType)
         assertEquals(1, progress.positionInBlock)
         assertEquals(2, progress.blockSize)
@@ -1273,7 +1273,7 @@ class DailyPracticeCoordinatorTest {
     fun getDailyBlockProgress_delegatesToGetBlockProgress() = runBlocking {
         startActiveSession()
 
-        assertEquals(coordinator.getBlockProgress(), coordinator.getDailyBlockProgress())
+        assertEquals(coordinator.getDailyBlockProgress(), coordinator.getDailyBlockProgress())
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -1676,6 +1676,8 @@ class DailyPracticeCoordinatorTest {
         override fun getCardEncounterCount(lessonId: String, languageId: String, cardId: String): Int {
             return encounterCounts["$lessonId:$languageId:$cardId"] ?: 0
         }
+
+        override fun flush() {}
     }
 
     /**
@@ -1694,6 +1696,8 @@ class DailyPracticeCoordinatorTest {
         }
         override fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> = emptyList()
         override fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard> = emptyList()
+
+        override fun flush() {}
     }
 
     /**
@@ -1727,11 +1731,110 @@ class DailyPracticeCoordinatorTest {
 
 /**
  * Inject a prebuilt session into the coordinator's internal cache for testing.
- * Uses reflection because [DailyPracticeCoordinator.prebuiltDailySession] has
- * a private setter.
+ * Converts flat task list to blocks grouped by blockType, then sets via reflection.
  */
 private fun DailyPracticeCoordinator.injectPrebuiltSession(tasks: List<DailyTask>) {
-    val field = this::class.java.getDeclaredField("prebuiltDailySession")
+    val blocks = tasks.groupBy { it.blockType }.map { (type, typeTasks) ->
+        DailyBlock(type = type, tasks = typeTasks)
+    }
+    // Reorder to standard: TRANSLATE, VOCAB, VERBS
+    val ordered = mutableListOf<DailyBlock>()
+    blocks.find { it.type == DailyBlockType.TRANSLATE }?.let { ordered.add(it) }
+    blocks.find { it.type == DailyBlockType.VOCAB }?.let { ordered.add(it) }
+    blocks.find { it.type == DailyBlockType.VERBS }?.let { ordered.add(it) }
+    val field = this::class.java.getDeclaredField("prebuiltDailyBlocks")
     field.isAccessible = true
-    field.set(this, tasks)
+    field.set(this, ordered)
+}
+
+/** Shim: flat task list from block-based session (matches old DailySessionState.tasks). */
+private val DailySessionState.tasks: List<DailyTask>
+    get() = blocks.flatMap { it.tasks }
+
+/**
+ * Shim: compute flat task index from blocks (matches old DailySessionState.taskIndex).
+ * Returns the sum of all completed blocks' task counts plus current block's taskIndex.
+ */
+private val DailySessionState.taskIndex: Int
+    get() {
+        val ds = this
+        if (!ds.active) return 0
+        var flatIndex = 0
+        for (i in 0 until ds.blockIndex) {
+            flatIndex += ds.blocks.getOrNull(i)?.tasks?.size ?: 0
+        }
+        flatIndex += ds.currentBlock?.taskIndex ?: 0
+        return flatIndex
+    }
+
+/**
+ * Shim: advance to next block, equivalent to old advanceToNextBlock().
+ * Uses onBlockComplete() internally.
+ * @return true if there is a next block, false if session ended.
+ */
+private fun DailyPracticeCoordinator.advanceToNextBlock(): Boolean {
+    return onBlockComplete() != null
+}
+
+/** Shim: alias for advanceToNextBlock (old API name). */
+private fun DailyPracticeCoordinator.advanceDailyBlock(): Boolean = advanceToNextBlock()
+
+/**
+ * Shim: replace current block's tasks (matches old replaceCurrentBlock(List<DailyTask>)).
+ * Uses reflection to update the blocks in DailyPracticeState.
+ */
+private fun DailyPracticeCoordinator.replaceCurrentBlock(newTasks: List<DailyTask>) {
+    val stateField = this::class.java.getDeclaredField("_state")
+    stateField.isAccessible = true
+    @Suppress("UNCHECKED_CAST")
+    val stateFlow = stateField.get(this) as MutableStateFlow<DailyPracticeState>
+    val ds = stateFlow.value.dailySession
+    if (!ds.active) return
+    val currentBlockType = ds.currentBlock?.type ?: return
+    val newBlock = DailyBlock(type = currentBlockType, tasks = newTasks)
+    val updatedBlocks = ds.blocks.mapIndexed { index, block ->
+        if (index == ds.blockIndex) newBlock else block
+    }
+    stateFlow.value = stateFlow.value.copy(
+        dailySession = ds.copy(blocks = updatedBlocks)
+    )
+}
+
+/**
+ * Shim: advance daily task (matches old advanceDailyTask).
+ * Advances taskIndex within the current block; if at end of block,
+ * calls onBlockComplete() to move to next block.
+ * For VERBS block, calls onPersistVerbProgress if the task is a ConjugateVerb.
+ *
+ * @return true if there is a next task/block, false if session ended.
+ */
+private fun DailyPracticeCoordinator.advanceDailyTask(
+    onPersistVerbProgress: (VerbDrillCard) -> Unit = {}
+): Boolean {
+    val dsField = this::class.java.getDeclaredField("_state")
+    dsField.isAccessible = true
+    @Suppress("UNCHECKED_CAST")
+    val stateFlow = dsField.get(this) as MutableStateFlow<DailyPracticeState>
+    val ds = stateFlow.value.dailySession
+    if (!ds.active) return false
+    val block = ds.currentBlock ?: return false
+    val nextTaskIndex = block.taskIndex + 1
+    // Persist verb progress for the current verb task before advancing
+    val currentTask = block.tasks.getOrNull(block.taskIndex)
+    if (currentTask is DailyTask.ConjugateVerb) {
+        onPersistVerbProgress(currentTask.card)
+    }
+    if (nextTaskIndex >= block.tasks.size) {
+        // End of block -- advance to next block
+        return onBlockComplete() != null
+    } else {
+        // Advance within block
+        val updatedBlocks = ds.blocks.mapIndexed { index, b ->
+            if (index == ds.blockIndex) b.copy(taskIndex = nextTaskIndex) else b
+        }
+        stateFlow.value = stateFlow.value.copy(
+            dailySession = ds.copy(blocks = updatedBlocks)
+        )
+        return true
+    }
 }

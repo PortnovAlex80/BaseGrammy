@@ -59,6 +59,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 14,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)
@@ -76,6 +77,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 15,
+            subLessonCount = 15,
             testMode = false
         )
         assertTrue(result.success)
@@ -89,6 +91,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 99,
+            subLessonCount = 15,
             testMode = false
         )
         assertTrue(result.success)
@@ -101,6 +104,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 0,
+            subLessonCount = 15,
             testMode = true
         )
         assertTrue(result.success)
@@ -113,6 +117,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = null,
             completedSubLessonCount = 0,
+            subLessonCount = 15,
             testMode = false
         )
         assertTrue(result.success)
@@ -127,6 +132,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = null,
             completedSubLessonCount = 20,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)
@@ -140,6 +146,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = null,
             completedSubLessonCount = 20,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)
@@ -153,6 +160,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = null,
             completedSubLessonCount = 0,
+            subLessonCount = 15,
             testMode = false
         )
         assertTrue(result.success)
@@ -167,6 +175,7 @@ class BossBattleRunnerTest {
             cards = emptyList(),
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 20,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)
@@ -180,6 +189,7 @@ class BossBattleRunnerTest {
             cards = emptyList(),
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 20,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)
@@ -193,6 +203,7 @@ class BossBattleRunnerTest {
             cards = emptyList(),
             selectedLessonId = null,
             completedSubLessonCount = 0,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)
@@ -208,6 +219,7 @@ class BossBattleRunnerTest {
             cards = fifteenCards,
             selectedLessonId = "lesson-1",
             completedSubLessonCount = 20,
+            subLessonCount = 15,
             testMode = false
         )
         assertTrue(result.success)
@@ -227,6 +239,7 @@ class BossBattleRunnerTest {
             cards = tenCards,
             selectedLessonId = null,
             completedSubLessonCount = 0,
+            subLessonCount = 15,
             testMode = false
         )
         assertFalse(result.success)

@@ -51,3 +51,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-070](TASK-070-daily-cursor-stuck.md) | Daily Practice Cursor Stuck + Tablet Lesson Boundary | OPEN | 09-daily-practice, scenario-06 | 2026-05-18 |
 | [TASK-071](TASK-071-completed-lesson-ux.md) | Completed Lesson UX — CompletionCard, Review Mode, Boss Threshold | OPEN | 19-screen-catalog#Screen3, UC-89/90/91 | 2026-05-18 |
 | [TASK-072](TASK-072-tts-tablet-crash.md) | TTS Tablet Crash — Shared Singleton Race + Native Free | OPEN | 05-audio-tts-asr | 2026-05-18 |
+| [TASK-074](TASK-074-project-path-latin-migration.md) | Migrate Project to Latin-Only Path | OPEN | infrastructure | 2026-05-19 |

@@ -4,6 +4,8 @@ import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.BossState
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.CardSessionState
+import com.alexpo.grammermate.data.DailyBlock
+import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyPracticeState
 import com.alexpo.grammermate.data.DailySessionState
@@ -121,6 +123,8 @@ class FakeMasteryStore : MasteryStore {
     override fun getCardEncounterCount(lessonId: String, languageId: String, cardId: String): Int {
         return encounterCounts["$lessonId:$languageId:$cardId"] ?: 0
     }
+
+    override fun flush() {}
 }
 
 class FakeProgressStore : ProgressStore {
@@ -951,7 +955,10 @@ class ProgressTrackerTest {
                 incorrectCount = 2
             ),
             daily = DailyPracticeState(
-                dailySession = DailySessionState(level = 3, taskIndex = 4),
+                dailySession = DailySessionState(
+                    level = 3,
+                    blocks = listOf(DailyBlock(type = DailyBlockType.TRANSLATE, tasks = emptyList(), taskIndex = 4))
+                ),
                 dailyCursor = DailyCursorState(sentenceOffset = 20, currentLessonIndex = 2)
             )
         )
