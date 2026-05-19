@@ -8,6 +8,8 @@ import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Scenario test for mastery step transitions and flower progression.
@@ -24,6 +26,7 @@ import org.junit.Test
  * Directly tests the interaction between SpacedRepetitionConfig and FlowerCalculator.
  */
 @Suppress("ReplaceCallWithBinaryOperator")
+@RunWith(RobolectricTestRunner::class)
 class MasteryProgressionScenarioTest {
 
     private val EPSILON = 0.01f

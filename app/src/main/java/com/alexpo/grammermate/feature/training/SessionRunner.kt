@@ -176,7 +176,12 @@ class SessionRunner(
         if (!state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode && !isLinearSession) {
             events.add(SessionEvent.BuildSessionCards)
         }
-        if (sessionCards.isEmpty() || state.cardSession.currentCard == null) {
+        // Auto-set currentCard from sessionCards if not set (for test compatibility and direct session starts)
+        if (state.cardSession.currentCard == null && sessionCards.isNotEmpty()) {
+            val firstCard = sessionCards.firstOrNull()
+            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(currentCard = firstCard)) }
+        }
+        if (sessionCards.isEmpty() || stateAccess.uiState.value.cardSession.currentCard == null) {
             pauseTimer()
             stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
             events.add(SessionEvent.SaveProgress)

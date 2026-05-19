@@ -25,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import org.junit.Test
 
 /**
@@ -52,6 +54,7 @@ import org.junit.Test
  *
  * Uses no mocks — only real SessionRunner + in-memory fakes.
  */
+@RunWith(RobolectricTestRunner::class)
 class EliteModeScenarioTest {
 
     private lateinit var stateAccess: FakeTrainingStateAccess

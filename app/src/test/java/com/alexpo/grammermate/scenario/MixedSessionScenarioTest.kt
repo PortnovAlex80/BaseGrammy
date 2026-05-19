@@ -18,6 +18,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Scenario test for MIXED sub-lesson interleaving behavior.
@@ -28,6 +30,7 @@ import org.junit.Test
  * 3. No card is shown twice within a session
  * 4. Review cards come from the correct previous lessons based on interval schedule
  */
+@RunWith(RobolectricTestRunner::class)
 class MixedSessionScenarioTest {
 
     @Test
