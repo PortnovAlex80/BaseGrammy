@@ -22,7 +22,7 @@ object CsvParser {
                     return@forEach
                 }
                 val columns = CsvLineParser.parseLine(line)
-                if (columns.size < 2) {
+                if (columns.size != 2) {
                     return@forEach
                 }
                 val ru = columns[0].trim().trim('"')
@@ -36,17 +36,11 @@ object CsvParser {
                 if (answers.isEmpty()) {
                     return@forEach
                 }
-                val tense = if (columns.size >= 3) {
-                    columns[2].trim().trim('"').ifBlank { null }
-                } else {
-                    null
-                }
                 cards.add(
                     SentenceCard(
                         id = "card_$lineNumber",
                         promptRu = ru,
-                        acceptedAnswers = answers,
-                        tense = tense
+                        acceptedAnswers = answers
                     )
                 )
             }

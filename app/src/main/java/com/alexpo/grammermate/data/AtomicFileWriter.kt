@@ -26,8 +26,19 @@ object AtomicFileWriter {
             output.write(text.toByteArray(charset))
             output.fd.sync()
         }
-        // On Android/Linux renameTo() atomically replaces the destination,
-        // so no explicit file.delete() is needed before the rename.
+        // On Android/Linux renameTo() atomically replaces the destination.
+        // On Windows, we need to delete the target first if it exists.
+        if (file.exists()) {
+            if (!file.delete()) {
+                // If delete fails, wait a bit and retry (Windows file locking)
+                var attempts = 0
+                while (file.exists() && attempts < 10) {
+                    Thread.sleep(10)
+                    file.delete()
+                    attempts++
+                }
+            }
+        }
         if (!tempFile.renameTo(file)) {
             tempFile.delete()
             error("Failed to finalize ${file.absolutePath}")
@@ -57,6 +68,18 @@ object AtomicFileWriter {
             FileOutputStream(tempFile).use { output ->
                 input.copyTo(output)
                 output.fd.sync()
+            }
+        }
+        // On Windows, we need to delete the target first if it exists.
+        if (target.exists()) {
+            if (!target.delete()) {
+                // If delete fails, wait a bit and retry (Windows file locking)
+                var attempts = 0
+                while (target.exists() && attempts < 10) {
+                    Thread.sleep(10)
+                    target.delete()
+                    attempts++
+                }
             }
         }
         if (!tempFile.renameTo(target)) {

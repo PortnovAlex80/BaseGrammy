@@ -2,7 +2,10 @@ package com.alexpo.grammermate.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class LessonPackManifestTest {
     @Test
     fun parseValidManifest() {
