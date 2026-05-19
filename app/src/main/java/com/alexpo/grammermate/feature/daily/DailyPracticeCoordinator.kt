@@ -25,6 +25,7 @@ import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
+import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -686,6 +687,10 @@ class DailyPracticeCoordinator(
      * sentenceOffset. When currentLessonIndex goes past the last lesson in
      * the pack, it wraps back to 0 (pack wrap).
      *
+     * Also increases verbOffset by [sessionSize]. When verbOffset exceeds
+     * the total verb pool size (filtered by active tenses for the current
+     * lesson level), it wraps back to 0.
+     *
      * @param sentenceCount number of VOICE/KEYBOARD sentence cards completed.
      * @param languageId the active language (for looking up lesson card counts).
      * @return the updated cursor state (caller must apply via updateCursor).
@@ -710,10 +715,50 @@ class DailyPracticeCoordinator(
             }
         }
 
+        // Advance verbOffset with cycling
+        val state = stateAccess.uiState.value
+        val packId = state.navigation.activePackId
+        val newVerbOffset = if (packId != null) {
+            val effectiveLevel = currentLessonIndex + 1
+            val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, effectiveLevel)
+            val totalVerbPoolSize = getTotalVerbPoolSize(packId.value, languageId, cumulativeTenses)
+            val incremented = cursor.verbOffset + sessionSize
+            if (totalVerbPoolSize > 0 && incremented >= totalVerbPoolSize) 0 else incremented
+        } else {
+            cursor.verbOffset
+        }
+
         return cursor.copy(
             currentLessonIndex = currentLessonIndex,
-            sentenceOffset = sentenceOffset
+            sentenceOffset = sentenceOffset,
+            verbOffset = newVerbOffset
         )
+    }
+
+    /**
+     * Get the total number of verb cards filtered by active tenses.
+     * Used for cycling the verbOffset in advanceDailyCursor.
+     */
+    private fun getTotalVerbPoolSize(
+        packId: String,
+        languageId: String,
+        activeTenses: List<String>
+    ): Int {
+        if (activeTenses.isEmpty()) return 0
+        val files = lessonStore.getVerbDrillFiles(packId, languageId)
+        var count = 0
+        for (file in files) {
+            try {
+                val (headers, parsed) = file.bufferedReader().use { reader ->
+                    VerbDrillCsvParser.parse(reader)
+                }
+                // Count cards matching active tenses
+                count += parsed.count { it.tense != null && it.tense in activeTenses }
+            } catch (_: Exception) {
+                // Skip unreadable files
+            }
+        }
+        return count
     }
 
     // ── Convenience: get cards for current TRANSLATE or VERBS block ────

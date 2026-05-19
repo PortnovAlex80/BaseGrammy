@@ -61,7 +61,7 @@ class CardProvider(
         existingSchedules: Map<LessonId, LessonSchedule>
     ): Map<LessonId, LessonSchedule> {
         val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
+        val blockSize = subLessonSize
         val key = "${lessonKey}|${blockSize}"
         if (key == cachedScheduleKey) return existingSchedules
         cachedScheduleKey = key
@@ -117,7 +117,7 @@ class CardProvider(
             else -> emptyList()
         }
 
-        val blockSize = subLessonSize.coerceIn(subLessonSizeMin, subLessonSizeMax)
+        val blockSize = subLessonSize
         val subCount = if (lessonCards.isEmpty()) 0
         else (lessonCards.size + blockSize - 1) / blockSize
         val activeIdx = activeSubLessonIndex.coerceIn(0, (subCount - 1).coerceAtLeast(0))

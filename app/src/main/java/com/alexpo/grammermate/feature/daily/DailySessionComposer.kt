@@ -409,21 +409,26 @@ class DailySessionComposer(
     }
 
     /**
-     * Block 3: Weak-first verb drill selection with collocation grouping.
+     * Block 3: Cursor-based weak-first verb drill selection with collocation grouping.
      *
-     * Cards that have been previously shown (tracked in VerbDrillStore progress)
-     * are excluded. When ALL cards for active tenses have been shown, the
-     * selection cycles: previously shown cards are included again so the block
-     * never returns empty as long as active tenses have cards. Weakness scores
-     * still apply — least-practiced forms appear first.
+     * Uses cursor.verbOffset to skip already-practiced cards in the weak-first order.
+     * Cards are sorted by weakness first (least-practiced tenses appear earliest),
+     * then a sliding window of sessionSize cards is taken starting at the offset.
      *
-     * Remaining/cycled cards are sorted by:
+     * Weakness score calculation: more unshown cards in a tense = weaker tense.
+     * A tense with 0 cards shown has weakness 1.0 (weakest); a fully-shown tense has 0.0.
+     *
+     * Cards within the weakness-sorted list are further ordered by:
      *   1. Weakness descending (weak-first, primary sort)
      *   2. Verb+tense group frequency ascending (most common verb first)
      *   3. Individual card rank ascending (most frequent collocation first)
+     *   4. Original index as tiebreaker for stability
      * This groups all collocations of the same verb+tense together, with
      * the most common verbs appearing first within each weakness tier.
-     * Takes next 10 cards. Returns empty only if active tenses have no cards at all.
+     *
+     * The cursor.verbOffset advances as cards are practiced, enabling progress
+     * through the full deck in weak-first order without repetition.
+     * Returns empty only if active tenses have no cards at all.
      */
     private fun buildVerbBlock(
         packId: String,
@@ -442,18 +447,8 @@ class DailySessionComposer(
 
         val progressMap = verbDrillStore.loadProgress()
 
-        // Collect IDs of cards already shown across all combos
-        val shownCardIds = mutableSetOf<String>()
-        for (progress in progressMap.values) {
-            shownCardIds.addAll(progress.everShownCardIds)
-        }
-
-        // Exclude previously shown cards; if all shown, cycle (reuse all filtered cards)
-        val unshown = filtered.filter { it.id !in shownCardIds }
-        val candidateCards = if (unshown.isEmpty()) filtered else unshown
-
-        // Score candidate cards by weakness: more unshown in that tense = weaker
-        val scored = candidateCards.mapIndexed { idx, card ->
+        // Score ALL filtered cards by weakness: more unshown in that tense = weaker
+        val scored = filtered.mapIndexed { idx, card ->
             val shownInCombo = progressMap.values
                 .filter { it.tense == card.tense }
                 .sumOf { it.everShownCardIds.size }
@@ -482,10 +477,11 @@ class DailySessionComposer(
                 .thenBy { it.third }
         )
 
-        // Take next batch of candidate cards (unshown, or cycled all filtered)
-        if (sorted.isEmpty()) return emptyList()
+        // Apply cursor-based windowing: skip already-practiced cards, take sessionSize
+        val offsetCards = sorted.drop(cursor.verbOffset)
+        if (offsetCards.isEmpty()) return emptyList()
 
-        val selected = sorted.take(sessionSize)
+        val selected = offsetCards.take(sessionSize)
 
         return selected.mapIndexed { index, (card, _, _) ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK

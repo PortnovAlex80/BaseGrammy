@@ -357,7 +357,8 @@ data class DailyCursorState(
     val lastSessionHash: Int = 0,       // hash of last completed session for "repeat" cache
     val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
     val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
-    val firstSessionVerbCardIds: List<String> = emptyList()       // card IDs from first session's block 3
+    val firstSessionVerbCardIds: List<String> = emptyList(),      // card IDs from first session's block 3
+    val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
 )
 
 data class SubmitResult(
