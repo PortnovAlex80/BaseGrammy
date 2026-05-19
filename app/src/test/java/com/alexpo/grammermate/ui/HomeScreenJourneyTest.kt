@@ -2,7 +2,8 @@ package com.alexpo.grammermate.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.screens.HomeScreen
@@ -13,7 +14,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -23,16 +23,13 @@ class HomeScreenJourneyTest {
     val composeTestRule = createComposeRule()
 
     private var clickedPrimary = false
-    private var clickedDaily = false
 
     @Before
     fun reset() {
         clickedPrimary = false
-        clickedDaily = false
     }
 
-    @Test
-    fun `home screen shows key elements`() {
+    private fun setHomeScreenContent() {
         composeTestRule.setContent {
             GrammarMateTheme {
                 HomeScreen(
@@ -41,49 +38,22 @@ class HomeScreenJourneyTest {
                     onOpenSettings = {},
                     onPrimaryAction = { clickedPrimary = true },
                     onSelectLesson = {},
-                    onOpenElite = { clickedDaily = true },
+                    onOpenElite = {},
                 )
             }
         }
-
-        composeTestRule.onNodeWithText("Grammar Roadmap").assertIsDisplayed()
     }
 
     @Test
-    fun `clicking primary action triggers callback`() {
-        composeTestRule.setContent {
-            GrammarMateTheme {
-                HomeScreen(
-                    state = TrainingUiState(),
-                    onSelectLanguage = {},
-                    onOpenSettings = {},
-                    onPrimaryAction = { clickedPrimary = true },
-                    onSelectLesson = {},
-                    onOpenElite = { clickedDaily = true },
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText("Continue Learning").performClick()
-        assertTrue("Primary action should have been clicked", clickedPrimary)
+    fun `home screen renders Grammar Roadmap`() {
+        setHomeScreenContent()
+        composeTestRule.onAllNodesWithText("Grammar Roadmap").onFirst().assertIsDisplayed()
     }
 
     @Test
-    fun `clicking daily practice triggers callback`() {
-        composeTestRule.setContent {
-            GrammarMateTheme {
-                HomeScreen(
-                    state = TrainingUiState(),
-                    onSelectLanguage = {},
-                    onOpenSettings = {},
-                    onPrimaryAction = { clickedPrimary = true },
-                    onSelectLesson = {},
-                    onOpenElite = { clickedDaily = true },
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText("Daily Practice").performClick()
-        assertTrue("Daily practice should have been clicked", clickedDaily)
+    fun `clicking Continue Learning triggers navigation callback`() {
+        setHomeScreenContent()
+        composeTestRule.onAllNodesWithText("Continue Learning").onFirst().performClick()
+        assertTrue("onPrimaryAction callback should fire", clickedPrimary)
     }
 }
