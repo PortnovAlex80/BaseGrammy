@@ -2,7 +2,7 @@
 
 ## What
 End-of-lesson boss battle challenge testing pattern stability under time pressure.
-Supports three boss types (LESSON, MEGA, ELITE) and a Mix Challenge mode.
+Supports three boss types (LESSON, MEGA, ELITE).
 Reward tiers: Bronze (30%), Silver (60%), Gold (90%) of cards completed.
 
 ## API Surface
@@ -19,7 +19,6 @@ Reward tiers: Bronze (30%), Silver (60%), Gold (90%) of cards completed.
   Holds `TrainingStateAccess` and an owned `StateFlow<BossState>`.
   Methods return `List<BossCommand>` for the ViewModel to execute side effects:
   - `startBossLesson() / startBossMega() / startBossElite(): List<BossCommand>`
-  - `startMixChallenge(): Pair<Boolean, List<BossCommand>>`
   - `finishBoss(): List<BossCommand>`
   - `updateBossProgress(progress): List<BossCommand>`
   - `advanceBossProgressOnNextCard(nextIndex, totalCards): Pair<BossAdvanceResult, List<BossCommand>>`
@@ -43,7 +42,6 @@ Also writes to `TrainingUiState.cardSession` and `navigation` via `stateAccess.u
 - `feature.training.CardProvider` -- builds boss card pools
 - `feature.training.SessionRunner` -- sets/clears session cards
 - `data.ProgressStore` -- loads progress for session restoration after finish
-- `data.MasteryStore` -- checks started lessons for Mix Challenge
 - `data.Models` -- BossState, BossType, BossReward, SentenceCard, SessionState, TrainingConfig
 
 ## Edit scope warnings

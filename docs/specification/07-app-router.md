@@ -84,19 +84,20 @@ private enum class AppScreen {
 | `VOCAB_DRILL` | `VocabDrillScreen()` | Standalone vocab flashcard drill with its own `VocabDrillViewModel`. |
 | `ELITE` | *(redirects to HOME)* | **Deprecated.** Kept for backward compatibility with saved state. Redirects to `HOME` immediately. |
 | `VOCAB` | *(redirects to HOME)* | **Deprecated.** Kept for backward compatibility with saved state. Redirects to `HOME` immediately. |
+| `MIX_CHALLENGE` | *(redirects to HOME)* | **DORMANT.** Kept for backward compatibility with saved state. Redirects to `HOME` immediately. |
 
-> **[UI-CONSISTENCY-2025]** `MIX_CHALLENGE` routing is DORMANT. The `AppScreen` enum value and routing logic are retained for backward compat (users may have saved state with `currentScreen='MIX_CHALLENGE'`). The tile is hidden from HomeScreen so no new navigation to this screen is possible.
 
 ### 7.2.2 Backward Compatibility Notes
 
-`ELITE` and `VOCAB` enum values are retained because users may have persisted `currentScreen: "ELITE"` or `currentScreen: "VOCAB"` in their saved state. The `parseScreen()` function handles unknown values by falling back to `HOME`, and the `when` block for `ELITE` / `VOCAB` immediately redirects to `HOME`:
+`ELITE`, `VOCAB`, and `MIX_CHALLENGE` enum values are retained because users may have persisted `currentScreen: "ELITE"`, `currentScreen: "VOCAB"`, or `currentScreen: "MIX_CHALLENGE"` in their saved state. The `parseScreen()` function handles unknown values by falling back to `HOME`, and the `when` block for `ELITE` / `VOCAB` / `MIX_CHALLENGE` immediately redirects to `HOME`:
 
 ```kotlin
 AppScreen.ELITE -> { screen = AppScreen.HOME }
 AppScreen.VOCAB -> { screen = AppScreen.HOME }
+AppScreen.MIX_CHALLENGE -> { screen = AppScreen.HOME }
 ```
 
-Removing these enum values would cause `IllegalArgumentException` on state restoration for users who last used these screens. They must not be removed.
+Removing these enum values would cause `IllegalArgumentException` on state restoration for users who last used these screens. They must not be removed. `MIX_CHALLENGE` is additionally dormant because the tile is hidden from HomeScreen — no new navigation to this screen is possible from the UI.
 
 ### 7.2.3 Screen Parsing
 

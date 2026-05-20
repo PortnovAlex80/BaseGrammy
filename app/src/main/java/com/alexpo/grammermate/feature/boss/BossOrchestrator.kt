@@ -21,12 +21,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Boss battle and Mix Challenge orchestration helper.
+ * Boss battle orchestration helper.
  *
  * Coordinates [BossBattleRunner], [CardProvider], and [SessionRunner] for
- * boss battle lifecycle (start, progress, finish, clear) and Mix Challenge
- * session setup. Holds [TrainingStateAccess] for state reads/writes and
- * returns [BossCommand] lists for cross-module coordination.
+ * boss battle lifecycle (start, progress, finish, clear). Holds [TrainingStateAccess]
+ * for state reads/writes and returns [BossCommand] lists for cross-module coordination.
  *
  * Does NOT duplicate [BossBattleRunner] pure logic -- this class only wires
  * the orchestration between modules.
@@ -43,64 +42,6 @@ class BossOrchestrator(
     // ── Owned state flow ─────────────────────────────────────────────────
     private val _state = MutableStateFlow(BossState())
     val stateFlow: StateFlow<BossState> = _state
-
-    // ── Mix Challenge ──────────────────────────────────────────────────
-
-    /**
-     * Start a Mix Challenge (interleaved practice) session.
-     *
-     * Selects 10 cards from different lessons/tenses with maximum alternation,
-     * then sets up a regular training session with those cards. Mastery tracking
-     * and SRS intervals work identically to regular training.
-     *
-     * @return Pair of (success, commands). Commands should be executed by the ViewModel.
-     */
-    fun startMixChallenge(): Pair<Boolean, List<BossCommand>> {
-        val state = stateAccess.uiState.value
-        val languageId = state.navigation.selectedLanguageId
-        val lessons = state.navigation.lessons
-
-        // Determine which lessons the user has started
-        val startedIds = mutableSetOf<LessonId>()
-        for (lesson in lessons) {
-            val mastery = masteryStore.get(lesson.id.value, languageId.value)
-            if (mastery != null && mastery.uniqueCardShows > 0) {
-                startedIds.add(lesson.id)
-            }
-        }
-        // Also include the first lesson even if not started yet
-        if (startedIds.isEmpty() && lessons.isNotEmpty()) {
-            startedIds.add(lessons.first().id)
-        }
-
-        val cards = cardProvider.buildMixChallengeCards(lessons, startedIds, count = 10)
-        if (cards.isEmpty()) return false to emptyList()
-
-        sessionRunner.clearAllCards()
-
-        sessionRunner.setSessionCards(cards)
-
-        val firstCard = cards.firstOrNull()
-        // Reset boss state (owned by this orchestrator)
-        _state.update { BossState() }
-        // Write core state: navigation + cardSession
-        stateAccess.updateState {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = SessionState.PAUSED,
-                    currentCard = firstCard,
-                    subLessonTotal = cards.size,
-                    subLessonCount = 1
-                ),
-                drill = com.alexpo.grammermate.data.DrillState(),
-                navigation = it.navigation.copy(
-                    mode = TrainingMode.MIX_CHALLENGE,
-                    selectedLessonId = null
-                )
-            )
-        }
-        return true to listOf(BossCommand.PauseTimer, BossCommand.SaveProgress, BossCommand.ResetStory, BossCommand.ResetVocabSprint, BossCommand.ResetDailySession)
-    }
 
     // ── Boss Battle Entry Points ───────────────────────────────────────
 

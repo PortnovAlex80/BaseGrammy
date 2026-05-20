@@ -4,8 +4,8 @@
 
 | Screen | Prefix | Element Count |
 |--------|--------|---------------|
-| HomeScreen | HS | 23 |
-| TrainingScreen | TS | 38 |
+| HomeScreen | HS | 22 |
+| TrainingScreen | TS | 37 |
 | TrainingCardSession | TCS | 29 |
 | DailyPracticeScreen | DP | 30 |
 | VerbDrillScreen | VD | 41 |
@@ -18,7 +18,7 @@
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
 | Pomodoro | PM | 9 |
 | Pomodoro Summary | PS | 7 |
-| **Total** | | **340** |
+| **Total** | | **338** |
 
 ---
 
@@ -39,7 +39,6 @@
 | Verb Drill entry tile | HS-11 | card | `hasVerbDrill == true` | Card with FitnessCenter icon + "Verb Drill" label. 64dp height. Calls `onOpenVerbDrill()`. | ? |
 | Vocab Drill entry tile | HS-12 | card | `hasVocabDrill == true` | Card with MenuBook icon + "Flashcards" label + mastered count badge ("N mastered" in green). Calls `onOpenVocabDrill()`. **Dark Mode:** Mastered count text must use lighter green 0xFF66BB6A for readability (>=4.5:1 contrast against dark background). [UC-68 AC9] | UC-68 |
 | Daily Practice entry tile | HS-13 | card | Always | primaryContainer Card with "Daily Practice" title + "Practice all sub-lessons" subtitle + PlayArrow icon. Calls `onOpenElite()`. | ? |
-| Mix Challenge entry tile | HS-14 | card | **HIDDEN** [UI-CONSISTENCY-2025] | DORMANT: tile is no longer rendered on HomeScreen. Blue-tinted Card (0xFFE3F2FD) with "Mix Challenge" title + "Interleaved practice across tenses" subtitle + SwapHoriz icon. Retained in registry for backward compat. | ? |
 | Legend text | HS-15 | text | Always | 2-line structure: Line 1 = seedling emoji + "seed/growing/bloom" (combined string resource); Line 2 = wilted flower emoji + "wilting/wilted/forgotten" (combined string resource). | ? |
 | "How This Training Works" button | HS-16 | button | Always | OutlinedButton, full-width. Shows HowThisTrainingWorksDialog on tap. | ? |
 | "Continue Learning" button | HS-17 | button | Always | Filled Button, full-width. Calls `onPrimaryAction()`. | ? |
@@ -55,15 +54,14 @@
 
 ## 2. TrainingScreen (ui/screens/TrainingScreen.kt)
 
-**Unified Training Architecture (TASK-055).** All 7 training modes (normal, boss, daily, drill, vocab, verb-drill-in-daily, mix challenge) now use ONE TrainingScreen with shared SessionRunner logic. Behavior is IDENTICAL across modes — not just shared UI components, but shared behavior logic via `UnifiedInputControlsBar` and `UnifiedNavigationRow`. TrainingScreen delegates rendering to `TrainingCardSession` via `TrainingCardSessionProvider`. Elements TS-01 through TS-37 are provided by:
+**Unified Training Architecture (TASK-055).** All 6 training modes (normal, boss, daily, drill, vocab, verb-drill-in-daily) now use ONE TrainingScreen with shared SessionRunner logic. Behavior is IDENTICAL across modes — not just shared UI components, but shared behavior logic via `UnifiedInputControlsBar` and `UnifiedNavigationRow`. TrainingScreen delegates rendering to `TrainingCardSession` via `TrainingCardSessionProvider`. Elements TS-01 through TS-37 are provided by:
 - TS-01: Kept in TrainingScreen Scaffold topBar (back arrow replaces settings gear)
 - TS-02: REMOVED — settings gear no longer present on training screens
 - TS-03 through TS-07: Custom `header` slot (TrainingHeaderSlot)
 - TS-08, TS-09: Custom `cardContent` slot (TrainingCardContentSlot)
 - TS-10 through TS-25, TS-33, TS-34, TS-35: Custom `inputControls` slot (TrainingInputControlsSlot) delegating to UnifiedInputControlsBar
 - TS-26 through TS-28: Custom `resultContent` slot (TrainingResultContentSlot)
-- TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements). Navigation behavior is IDENTICAL across all 7 modes — same `SessionRunner` logic drives prev/next/pause/exit for every mode.
-- TS-37: Kept in TrainingScreen header slot
+- TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements). Navigation behavior is IDENTICAL across all 6 modes — same `SessionRunner` logic drives prev/next/pause/exit for every mode.
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
@@ -102,7 +100,6 @@
 | Report bottom sheet | TS-33 | bottom-sheet | `showReportSheet == true` | ModalBottomSheet: card prompt text + flag/unflag bad sentence + hide card + export bad sentences + copy text + share translation via QR (when shareText != null). | ? |
 | Export result dialog | TS-34 | dialog | `exportMessage != null` | AlertDialog showing export file path or "No bad sentences to export". | ? |
 | Auto-voice LaunchedEffect | TS-35 | (system) | `inputMode == VOICE && sessionState == ACTIVE && currentCard != null` | Auto-launches speech recognition 200ms after card/mode change. | ? |
-| Mix Challenge tense chip | TS-37 | card | `isMixChallenge && card.tense` not blank | Blue Surface (0xFFE3F2FD) with bold tense text (14sp, #1565C0). **Dark Mode:** Must use theme-aware color. Light = 0xFFE3F2FD, Dark = 0xFF1A2E3A. Currently hardcoded `MixChallengeSurface` — needs conditional. [UC-68 AC2] | UC-68 |
 | Session Completion Screen | TS-38 | overlay | `sessionState==PAUSED && currentCard==null && subLessonFinishedToken>0 && screenMode in {NORMAL, DRILL, ELITE}` | Full-screen overlay replacing card content area. Surface background. Center-aligned Column: party popper emoji (48sp), "Well done!" title (headlineMedium Bold), stats row "{correctCount} correct / {incorrectCount} incorrect" (bodyLarge), time "{M:SS}" (bodyMedium muted), "Done" FilledTonalButton (full width) -> navigate(returnTo). NOT shown for DAILY, VERB_DRILL, BOSS/BOSS_MEGA modes. PomodoroSummaryScreen takes priority when Pomodoro timer expired. See 12-training-card-session.md#12.6. | UC-87 |
 
 ---

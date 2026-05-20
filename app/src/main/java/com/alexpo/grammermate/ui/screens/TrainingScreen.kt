@@ -65,8 +65,6 @@ import com.alexpo.grammermate.ui.CorrectGreen
 import com.alexpo.grammermate.ui.DrillPromptGreen
 import com.alexpo.grammermate.ui.DrillTenseLabelGreen
 import com.alexpo.grammermate.ui.IncorrectRed
-import com.alexpo.grammermate.ui.MixChallengeSurface
-import com.alexpo.grammermate.ui.MixChallengeText
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
@@ -257,30 +255,13 @@ fun TrainingScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
-                            val isMixChallenge = state.navigation.mode == TrainingMode.MIX_CHALLENGE
-                            if (isMixChallenge) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MixChallengeSurface
-                                ) {
-                                    Text(
-                                        text = cardTense,
-                                        fontSize = 14.sp,
-                                        color = MixChallengeText,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                    )
-                                }
-                            } else {
-                                Text(
-                                    text = cardTense,
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+                            Text(
+                                text = cardTense,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -787,7 +768,7 @@ private fun VerbDrillCompletionContent(
 }
 
 /**
- * Universal session completion screen for NORMAL, DRILL, ELITE, BOSS, MIX_CHALLENGE,
+ * Universal session completion screen for NORMAL, DRILL, ELITE, BOSS,
  * DAILY_TRANSLATE, DAILY_VERBS modes.
  * Shows stats + OK button. Stays until user presses OK.
  */
@@ -803,7 +784,6 @@ private fun SessionCompletionContent(
         TrainingScreenMode.BOSS, TrainingScreenMode.BOSS_MEGA -> stringResource(R.string.training_review_session)
         TrainingScreenMode.ELITE -> stringResource(R.string.training_refresh_session)
         TrainingScreenMode.DRILL -> "Drill Complete!"
-        TrainingScreenMode.MIX_CHALLENGE -> "Challenge Complete!"
         else -> stringResource(R.string.verb_completion_excellent)
     }
     Column(

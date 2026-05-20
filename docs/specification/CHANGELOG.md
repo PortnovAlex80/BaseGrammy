@@ -2,6 +2,17 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [Remove Mix Challenge Feature (DORMANT)] - 2026-05-20
+
+### Changed
+- `docs/specification/scenarios/click-test-mix-challenge.md`: Deleted (Mix Challenge has no UI entry point, feature is dormant).
+- `docs/specification/22-use-case-registry.md`: Removed UC-54 (Mix Challenge tile not visible). Updated Domain 12 title to remove "Mix Challenge" reference.
+
+### Key Changes
+- Mix Challenge feature was never fully implemented (no UI entry point on HomeScreen)
+- AppScreen.MIX_CHALLENGE enum value kept for backward compatibility
+- Documentation cleanup to reflect current feature state
+
 ## [Verb Drill Start Fresh / Resume Dialog - Remove Staleness Limit] - 2026-05-20
 
 ### Changed

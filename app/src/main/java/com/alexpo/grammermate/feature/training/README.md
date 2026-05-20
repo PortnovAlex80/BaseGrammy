@@ -9,7 +9,7 @@ Core training session engine for GrammarMate. Manages the card-session lifecycle
 
 - **AnswerValidator** `(normalizer: Normalizer = Normalizer)` -- Stateless validation: `validate(input, acceptedAnswers, testMode) -> ValidationResult`, `shouldShowHint(incorrectAttempts)`, `getHintText(acceptedAnswers)`. Handles `+`-separated multi-answer CSV format.
 
-- **CardProvider** `(subLessonSize, subLessonSizeMin, subLessonSizeMax, eliteSizeMultiplier, eliteStepCount, progressTracker?)` -- Card selection: `buildSchedules(lessons, existingSchedules)`, `buildSessionCards(lessons, mode, selectedLessonId, schedules, activeSubLessonIndex, hiddenCardIds, mastery) -> CardSetResult`, `buildMixChallengeCards(lessons, startedLessonIds, count)`, `buildBossCards(lessons, type, selectedLessonId, selectedIndex)`. Wraps `MixedReviewScheduler`; caches schedules by composite key.
+- **CardProvider** `(subLessonSize, subLessonSizeMin, subLessonSizeMax, eliteSizeMultiplier, eliteStepCount, progressTracker?)` -- Card selection: `buildSchedules(lessons, existingSchedules)`, `buildSessionCards(lessons, mode, selectedLessonId, schedules, activeSubLessonIndex, hiddenCardIds, mastery) -> CardSetResult`, `buildBossCards(lessons, type, selectedLessonId, selectedIndex)`. Wraps `MixedReviewScheduler`; caches schedules by composite key.
 
 - **WordBankGenerator** (singleton `object`) -- Pure, no Android deps: `generateForSentence(targetAnswer, allCards, maxDistractors=3)`, `generateForVerb(answer, allAnswers, maxDistractors=8)`, `isDistractor(candidate, normalizedCorrect)`.
 

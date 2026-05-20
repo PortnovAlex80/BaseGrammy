@@ -30,9 +30,6 @@ data class GrammarMateColors(
     val drillBackgroundGreen: Color,
     val drillTenseLabelGreen: Color,
     val drillPromptGreen: Color,
-    // Mix challenge (TrainingScreen)
-    val mixChallengeSurface: Color,
-    val mixChallengeText: Color,
     // Mastery / progress (HomeScreen, SessionProgressIndicator)
     val masteryGreen: Color,
     val progressGreen: Color,
@@ -71,8 +68,6 @@ val LightGrammarMateColors = GrammarMateColors(
     drillBackgroundGreen = Color(0xFFE8F5E9),
     drillTenseLabelGreen = Color(0xFF388E3C),
     drillPromptGreen = Color(0xFF2E7D32),
-    mixChallengeSurface = Color(0xFFE3F2FD),
-    mixChallengeText = Color(0xFF1565C0),
     masteryGreen = Color(0xFF2E7D32),
     progressGreen = Color(0xFF4CAF50),
     progressTrackGreen = Color(0xFFC8E6C9),
@@ -105,8 +100,6 @@ val DarkGrammarMateColors = GrammarMateColors(
     drillBackgroundGreen = Color(0xFF1B3A1D),
     drillTenseLabelGreen = Color(0xFF81C784),
     drillPromptGreen = Color(0xFF66BB6A),
-    mixChallengeSurface = Color(0xFF1A2E3A),
-    mixChallengeText = Color(0xFF64B5F6),
     masteryGreen = Color(0xFF66BB6A),
     progressGreen = Color(0xFF66BB6A),
     progressTrackGreen = Color(0xFF2E4A2F),
@@ -155,12 +148,6 @@ val DrillTenseLabelGreen: Color
     @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillTenseLabelGreen
 val DrillPromptGreen: Color
     @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillPromptGreen
-
-// Mix challenge (TrainingScreen)
-val MixChallengeSurface: Color
-    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.mixChallengeSurface
-val MixChallengeText: Color
-    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.mixChallengeText
 
 // Mastery / progress (HomeScreen, SessionProgressIndicator)
 val MasteryGreen: Color

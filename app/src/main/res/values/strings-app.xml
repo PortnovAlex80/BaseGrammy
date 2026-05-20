@@ -42,7 +42,7 @@
 
     <!-- VerbDrillScreen -->
     <string name="verb_loading">Loading…</string>
-    <string name="verb_drill_title">Verb Drill</string>
+    <string name="verb_drill_title">Verb Practice</string>
     <string name="verb_content_desc_back">Back</string>
     <string name="verb_label_ru">RU</string>
     <string name="verb_content_desc_listen">Listen</string>

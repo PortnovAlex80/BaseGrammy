@@ -332,7 +332,6 @@ Feature class methods whose return types changed from `Unit` to sealed result ty
 
 | Symbol | Line | Type | Return type | Spec | UC | AC |
 |--------|------|------|-------------|------|----|----|
-| `startMixChallenge()` | 49 | Method | `Pair<Boolean, List<BossCommand>>` | 08#7.8 | UC-07 | AC1 |
 | `startBossLesson()` | 94 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
 | `startBossMega()` | 96 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
 | `startBossElite()` | 98 | Method | `List<BossCommand>` | 08#7.8 | UC-07 | AC1 |
@@ -501,16 +500,15 @@ Owns `MutableStateFlow<FlowerDisplayState>`. Recomputes flower visuals and ladde
 
 **File:** `app/src/main/java/com/alexpo/grammermate/feature/boss/BossOrchestrator.kt` (387 lines)
 
-Owns `MutableStateFlow<BossState>`. Boss battle and Mix Challenge orchestration. Coordinates `BossBattleRunner`, `CardProvider`, and `SessionRunner`.
+Owns `MutableStateFlow<BossState>`. Boss battle orchestration. Coordinates `BossBattleRunner`, `CardProvider`, and `SessionRunner`.
 
 | Symbol | Line | Type | Spec | UC | AC |
 |--------|------|------|------|----|----|
 | `_state` / `stateFlow` | 43–44 | StateFlow owner | 08#7.8 | — | — |
-| `startMixChallenge()` | 57 | Method | 08#7.8 | UC-07 | AC1 |
+| `startBoss(type)` | 114 | Method | 08#7.8 | UC-07 | AC1 |
 | `startBossLesson()` | 106 | Method | 08#7.8 | UC-07 | AC1 |
 | `startBossMega()` | 108 | Method | 08#7.8 | UC-07 | AC1 |
 | `startBossElite()` | 110 | Method | 08#7.8 | UC-07 | AC1 |
-| `startBoss(type)` | 114 | Method | 08#7.8 | UC-07 | AC1 |
 | `finishBoss()` | 173 | Method | 08#7.8 | UC-07 | AC5 |
 | `clearBossRewardMessage()` | 230 | Method | 08#7.8 | UC-07 | AC6 |
 | `clearBossError()` | 262 | Method | 08#7.8 | UC-07 | ? |
@@ -568,7 +566,6 @@ The ViewModel explicitly calls each feature's `resetState()` or `resetStateKeepR
 | `handleBossCommands(commands)` | 1259–1264 | `resetState` via `ResetBoss`, `ResetDailySession`, `ResetStory`, `ResetVocabSprint` commands | Boss command dispatch |
 | `handleSettingsResults` — `resetAllProgress` | 1281–1284 | `resetStateKeepRewards` (boss), `resetState` (story, vocabSprint), `resetAllDailyState` (daily) | Settings: reset all |
 | `resetDailyState()` | 1294 | `resetAllDailyState` (daily) | Settings: reset daily |
-| `startMixChallenge()` | ~101 | `ResetStory`, `ResetVocabSprint`, `ResetDailySession` via `BossCommand` | Mix Challenge start |
 
 ## Cross-Reference: UC → Symbol Coverage
 

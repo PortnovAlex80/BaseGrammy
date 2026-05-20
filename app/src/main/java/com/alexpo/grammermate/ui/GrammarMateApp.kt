@@ -87,7 +87,6 @@ private object Routes {
     const val ELITE = "elite"        // backward compat redirect
     const val VOCAB = "vocab"        // backward compat redirect
     const val DAILY_PRACTICE = "daily_practice"
-    const val MIX_CHALLENGE = "mix_challenge"
     const val STORY = "story"
     const val TRAINING = "training"
     const val LADDER = "ladder"
@@ -375,11 +374,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         DailyPracticeScreenContent(state, vm, remember { { route: String -> onNavigate(route) } })
                     }
 
-                    composable(Routes.MIX_CHALLENGE) {
-                        LaunchedEffect(Unit) { vm.setReturnTo(Routes.HOME) }
-                        TrainingScreenContent(state, vm, remember(dialogs) { { dialogs = dialogs.copy(showExitDialog = true) } }, remember(dialogs) { { previousRoute = Routes.MIX_CHALLENGE; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) } }, onTtsSpeak, hintLevel = state.cardSession.hintLevel, onNavigate = onNavigate)
-                    }
-
                     composable(Routes.STORY) {
                         StoryQuizScreen(
                             story = state.story.activeStory,
@@ -419,25 +413,31 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                     composable(Routes.TRAINING) {
                         // Create VerbDrillViewModel scoped to this route for tense info bottom sheet
-                        val verbDrillVmForTenses = viewModel<VerbDrillViewModel>()
+                        val verbTenseInfoVm = viewModel<VerbDrillViewModel>()
                         val activePackIdForTenses = state.navigation.activePackId
                         LaunchedEffect(activePackIdForTenses, state.navigation.selectedLanguageId) {
                             if (activePackIdForTenses != null) {
-                                verbDrillVmForTenses.reloadForPack(activePackIdForTenses.value)
+                                verbTenseInfoVm.reloadForPack(activePackIdForTenses.value)
                             } else {
-                                verbDrillVmForTenses.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                                verbTenseInfoVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
                             }
                         }
                         TrainingScreenContent(
                             state, vm,
-                            onShowExitDialog = remember(dialogs, state.cardSession.returnTo) {
+                            onShowExitDialog = remember(dialogs, state.cardSession.returnTo, state.cardSession.currentCard) {
                                 {
                                     val returnTo = state.cardSession.returnTo
+                                    val hasActiveCard = state.cardSession.currentCard != null
                                     when {
-                                        returnTo == Routes.VERB_DRILL -> {
+                                        // VERB_DRILL with active card (exiting mid-session) → return to selection screen
+                                        returnTo == Routes.VERB_DRILL && hasActiveCard -> {
                                             vm.exitVerbDrillSession()
-                                            verbDrillVmForTenses.exitSession()
                                             onNavigate(Routes.VERB_DRILL)
+                                        }
+                                        // VERB_DRILL with NO active card (block completed) → go to HOME
+                                        returnTo == Routes.VERB_DRILL && !hasActiveCard -> {
+                                            vm.exitVerbDrillSession()
+                                            onNavigate(Routes.HOME)
                                         }
                                         returnTo == Routes.DAILY_PRACTICE -> {
                                             vm.cancelDailySession()
@@ -454,7 +454,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onVerbDrillMore = remember { {
                                 // Stay on VERB_DRILL selection screen for next batch
                                 vm.exitVerbDrillSession()
-                                verbDrillVmForTenses.exitSession()
                                 onNavigate(Routes.VERB_DRILL)
                             } },
                             onNavigate = onNavigate,
@@ -470,13 +469,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                 }
                             },
-                            getTenseInfo = remember { { tenseName: String -> verbDrillVmForTenses.getTenseInfo(tenseName) } }
+                            getTenseInfo = remember { { tenseName: String -> verbTenseInfoVm.getTenseInfo(tenseName) } }
                         )
 
-                        // Local back handler for VERB_DRILL return path (needs verbDrillVmForTenses)
+                        // Local back handler for VERB_DRILL return path
                         BackHandler(enabled = state.cardSession.returnTo == Routes.VERB_DRILL && !dialogs.showSettings) {
                             vm.exitVerbDrillSession()
-                            verbDrillVmForTenses.exitSession()
                             onNavigate(Routes.VERB_DRILL)
                         }
                     }
@@ -565,7 +563,6 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
     Routes.ELITE -> AppScreen.ELITE
     Routes.VOCAB -> AppScreen.VOCAB
     Routes.DAILY_PRACTICE -> AppScreen.DAILY_PRACTICE
-    Routes.MIX_CHALLENGE -> AppScreen.MIX_CHALLENGE
     Routes.STORY -> AppScreen.STORY
     Routes.TRAINING -> AppScreen.TRAINING
     Routes.LADDER -> AppScreen.LADDER
@@ -598,9 +595,6 @@ private fun NavBackHandlers(
     BackHandler(enabled = currentRoute == Routes.DAILY_PRACTICE && !showSettings) {
         onShowExitDialog()
     }
-    BackHandler(enabled = currentRoute == Routes.MIX_CHALLENGE && !showSettings) {
-        onShowExitDialog()
-    }
     BackHandler(enabled = currentRoute == Routes.STORY && !showSettings) {
         navController.navigate(Routes.LESSON) {
             popUpTo(Routes.HOME) { inclusive = false }
@@ -626,8 +620,7 @@ private fun NavBackHandlers(
 }
 
 // ── Shared TrainingScreen helper ─────────────────────────────────────────────
-// TRAINING and MIX_CHALLENGE share the same 15+ callback parameters.
-// This helper avoids duplicating them.
+// This helper avoids duplicating callback parameters.
 
 @Composable
 private fun TrainingScreenContent(
@@ -873,13 +866,6 @@ private fun NavDialogs(
         }
         // If !hasCards: SessionCompletionContent will render via TrainingScreen early-return
         // User presses OK → onSessionDone → navigate HOME or DAILY_PRACTICE
-    }
-    if (currentRoute == Routes.MIX_CHALLENGE && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
-        lastFinishedToken.value = state.cardSession.subLessonFinishedToken
-        vm.onTrainingSessionCompleted()
-        if (!state.pomodoro.isComplete && state.cardSession.currentCard != null) {
-            onNavigate(Routes.HOME)
-        }
     }
 
     // Token-based navigation: boss finished

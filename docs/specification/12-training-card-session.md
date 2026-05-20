@@ -10,14 +10,15 @@ TrainingCardSession is a reusable Compose composable that provides the entire ca
 > 3. Visual theme (normal background)
 > 4. Exit destination (HOME vs LESSON)
 >
-> **All 7 modes are Tier 1 sub-modes of TrainingScreen:**
+> **All 6 modes are Tier 1 sub-modes of TrainingScreen:**
 > 1. **TRAINING_NORMAL** — standard sub-lessons (cards from MixedReviewScheduler)
 > 2. **TRAINING_BOSS** — boss battle review (cards from lesson pool)
 > 3. **TRAINING_BOSS_MEGA** — mega boss battle
 > 4. **TRAINING_DRILL** — lesson drill (all `lesson.drillCards` loaded at once)
 > 5. **TRAINING_ELITE** — elite/daily step
 > 6. **VERB_DRILL** — verb conjugation (VerbDrillScreen contains only SelectionScreen; card session runs through TrainingScreen)
-> 7. **DAILY_PRACTICE** — Daily Practice blocks 1 and 3 (translation and verb conjugation) run through TrainingScreen
+>
+> **Daily Practice** (blocks 1 and 3: translation and verb conjugation) also runs through TrainingScreen via `DailyPracticeSessionProvider`.
 >
 > **Daily Block 3 (Verbs) = VerbDrill:** Same chips, same logic, same session behavior as VerbDrill mode.
 >
@@ -38,7 +39,7 @@ The component is consumed by two tiers of training modes:
 
 **Tier 2 — Separate screens using TrainingCardSession component (2 modes):**
 6. **Verb Drill** (via `VerbDrillCardSessionProvider` wrapping `VerbDrillViewModel`).
-7. **Daily Practice Blocks 1 and 3** — translation and verb conjugation (via `DailyPracticeSessionProvider`).
+7. **Daily Practice** (via `DailyPracticeSessionProvider` for translation and verb blocks).
 
 **Excluded:** VocabDrill (Block 2 / standalone) uses an Anki-style flashcard flip UI — fundamentally different interaction pattern, does NOT use TrainingCardSession.
 
@@ -661,7 +662,7 @@ This replaces the previous immediate-navigation pattern where `subLessonFinished
 1. `sessionState == PAUSED`
 2. `currentCard == null`
 3. `subLessonFinishedToken > 0` (incremented from previous value)
-4. `screenMode` is one of: NORMAL, DRILL, ELITE, MIX_CHALLENGE (via NORMAL mode)
+4. `screenMode` is one of: NORMAL, DRILL, ELITE
 
 **NOT shown (special handling) for these modes:**
 - **DAILY_TRANSLATE / DAILY_VERBS:** No completion screen. Token change triggers immediate navigation to DAILY_PRACTICE for sparkle transition (existing behavior preserved).
@@ -684,7 +685,6 @@ This replaces the previous immediate-navigation pattern where `subLessonFinished
 | BOSS/BOSS_MEGA last card | Boss reward dialog shown (no change). No universal completion screen. | User sees trophy reward |
 | DRILL last card | Universal completion screen shown. "Done" navigates to LESSON (returnTo=LESSON). | User sees "Well done!", returns to roadmap |
 | ELITE last card | Universal completion screen shown. "Done" navigates to LESSON (returnTo=LESSON). | User sees "Well done!", returns to roadmap |
-| MIX_CHALLENGE last card | Universal completion screen shown. "Done" navigates to LESSON (returnTo=LESSON). | User sees "Well done!", returns to roadmap |
 
 ### 12.6.5 Deferred Navigation Pattern
 

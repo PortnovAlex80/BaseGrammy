@@ -11,7 +11,6 @@ enum class AppScreen {
     ELITE,
     VOCAB,
     DAILY_PRACTICE,
-    MIX_CHALLENGE,
     STORY,
     TRAINING,
     LADDER,

@@ -4,7 +4,7 @@
 
 GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` enum values, 3 sub-screens), **1 modal bottom sheet** (SettingsSheet), and **17 dialogs**. Navigation is managed via a private `AppScreen` enum inside `GrammarMateApp.kt` -- there is no Jetpack Navigation component. Screen state is held in `remember { mutableStateOf(parseScreen(state.initialScreen)) }` and transitions occur by reassigning this variable.
 
-**Total screen count**: 10 screens + 1 modal sheet + 18 dialogs = 29 UI surfaces.
+**Total screen count**: 10 screens + 1 modal sheet + 18 dialogs = 29 UI surfaces. (Note: Mix Challenge screen is DORMANT — tile hidden from HomeScreen, enum retained for backward compat.)
 
 **Navigation pattern**: Single-activity, no Navigation Component. `GrammarMateApp()` is the root composable that routes between screens via `when (screen)` on `AppScreen`. Dialogs and sheets are conditionally rendered overlays. Back navigation is handled per-screen via `BackHandler` composables.
 
@@ -48,6 +48,7 @@ GrammarMate contains **10 distinct screens** (7 full screens with `AppScreen` en
 
 AppScreen.ELITE --> redirects to HOME (backward compat, enum kept)
 AppScreen.VOCAB --> redirects to HOME (backward compat, enum kept)
+AppScreen.MIX_CHALLENGE --> redirects to HOME (DORMANT, enum kept, tile hidden)
 
 Global dialogs (overlay on any screen):
   WelcomeDialog, StreakDialog, BossRewardDialog, BossErrorDialog,

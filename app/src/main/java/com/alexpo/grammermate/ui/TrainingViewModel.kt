@@ -1065,16 +1065,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
 
-    /**
-     * Start a Mix Challenge (interleaved practice) session.
-     * Delegates to [BossOrchestrator].
-     */
-    fun startMixChallenge(): Boolean {
-        val (success, commands) = bossOrchestrator.startMixChallenge()
-        handleBossCommands(commands)
-        return success
-    }
-
     fun startBossLesson() = handleBossCommands(bossOrchestrator.startBossLesson())
 
     fun startBossMega() = handleBossCommands(bossOrchestrator.startBossMega())
