@@ -1361,7 +1361,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun isSessionCompleted(): Boolean {
         val state = _coreState.value.cardSession
         val badCount = _coreState.value.cardSession.badSentenceCount
-        val totalRequired = (sessionSize - badCount).coerceAtLeast(1)
+        val sessionTotal = state.subLessonTotal.takeIf { it > 0 } ?: sessionSize
+        val totalRequired = (sessionTotal - badCount).coerceAtLeast(1)
         return state.correctCount >= totalRequired
     }
 
