@@ -52,16 +52,8 @@ class VerbDrillStoreImpl(
 ) : VerbDrillStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file: File = if (packId != null) {
-        File(baseDir, "drills/$packId/verb_drill_progress.yaml")
-    } else {
-        File(baseDir, "verb_drill_progress.yaml")
-    }
-    private val lastSessionFile: File = if (packId != null) {
-        File(baseDir, "drills/$packId/verb_drill_last_session.yaml")
-    } else {
-        File(baseDir, "verb_drill_last_session.yaml")
-    }
+    private val file: File = File(baseDir, "verb_drill_progress.yaml")
+    private val lastSessionFile: File = File(baseDir, "verb_drill_last_session.yaml")
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
 

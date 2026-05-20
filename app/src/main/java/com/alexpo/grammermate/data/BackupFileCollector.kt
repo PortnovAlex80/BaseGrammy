@@ -34,7 +34,10 @@ internal class BackupFileCollector(private val context: Context) {
         "profile.yaml",
         "hidden_cards.yaml",
         "bad_sentences.yaml",
-        "vocab_progress.yaml"
+        "vocab_progress.yaml",
+        // Global verb drill files (not pack-scoped)
+        "verb_drill_progress.yaml",
+        "verb_drill_last_session.yaml"
     )
 
     /** List streak files (streak_*.yaml) from internal storage. */
@@ -73,7 +76,8 @@ internal class BackupFileCollector(private val context: Context) {
         - bad_sentences.yaml (reported bad sentences)
         - vocab_progress.yaml (vocab sprint progress)
         - drill_progress_*.yaml (per-language drill progress)
-        - drills/{packId}/verb_drill_progress.yaml (verb drill progress per pack)
+        - verb_drill_progress.yaml (global verb drill progress)
+        - verb_drill_last_session.yaml (verb drill last session state)
         - drills/{packId}/word_mastery.yaml (word mastery per pack)
     """.trimIndent()
 

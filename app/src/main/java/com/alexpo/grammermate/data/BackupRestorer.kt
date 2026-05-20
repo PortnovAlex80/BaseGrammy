@@ -295,7 +295,8 @@ internal class BackupRestorer(private val context: Context) {
 
     /**
      * Restore a flat-name drill file from scoped backup:
-     * e.g. `drills_{packId}_verb_drill_progress.yaml` -> `drills/{packId}/verb_drill_progress.yaml`
+     * e.g. `drills_{packId}_verb_drill_progress.yaml` -> `verb_drill_progress.yaml` (flat path)
+     * e.g. `drills_{packId}_word_mastery.yaml` -> `drills/{packId}/word_mastery.yaml` (pack-scoped)
      */
     private fun restoreFlatPackDrillFile(
         file: DocumentFile,
@@ -307,36 +308,39 @@ internal class BackupRestorer(private val context: Context) {
         val verbMatch = Regex("^(.+)_verb_drill_progress\\.yaml$").matchEntire(remainder)
         val masteryMatch = Regex("^(.+)_word_mastery\\.yaml$").matchEntire(remainder)
 
-        val packId: String
-        val targetName: String
-
-        if (verbMatch != null) {
-            packId = verbMatch.groupValues[1]
-            targetName = "verb_drill_progress.yaml"
-        } else if (masteryMatch != null) {
-            packId = masteryMatch.groupValues[1]
-            targetName = "word_mastery.yaml"
-        } else {
-            return false
-        }
-
-        val targetDir = File(File(internalDir, "drills"), packId)
-        targetDir.mkdirs()
-        val target = File(targetDir, targetName)
-
         return try {
             val content = context.contentResolver
                 .openInputStream(file.uri)?.bufferedReader()?.use { it.readText() }
-            if (content != null) {
-                if (!validateBackupContent(content, name)) {
-                    log.appendLine("SKIPPED: $name - failed validation")
-                    return false
+            if (content == null) {
+                return false
+            }
+            if (!validateBackupContent(content, name)) {
+                log.appendLine("SKIPPED: $name - failed validation")
+                return false
+            }
+
+            when {
+                verbMatch != null -> {
+                    // Verb drill progress goes to flat path (global)
+                    val target = File(internalDir, "verb_drill_progress.yaml")
+                    AtomicFileWriter.writeText(target, content)
+                    log.appendLine("OK: $name -> verb_drill_progress.yaml (${content.length} chars)")
+                    restoredFiles.add(name)
+                    true
                 }
-                AtomicFileWriter.writeText(target, content)
-                log.appendLine("OK: $name -> drills/$packId/$targetName (${content.length} chars)")
-                restoredFiles.add(name)
-                true
-            } else false
+                masteryMatch != null -> {
+                    // Word mastery stays pack-scoped
+                    val packId = masteryMatch.groupValues[1]
+                    val targetDir = File(File(internalDir, "drills"), packId)
+                    targetDir.mkdirs()
+                    val target = File(targetDir, "word_mastery.yaml")
+                    AtomicFileWriter.writeText(target, content)
+                    log.appendLine("OK: $name -> drills/$packId/word_mastery.yaml (${content.length} chars)")
+                    restoredFiles.add(name)
+                    true
+                }
+                else -> false
+            }
         } catch (e: Exception) {
             log.appendLine("ERROR: $name - ${e.message}")
             false
@@ -362,34 +366,58 @@ internal class BackupRestorer(private val context: Context) {
         }
     }
 
-    /** Restore pack-scoped drill data from `drills/{packId}/` subdirectory. */
+    /** Restore drill data from backup. Verb drill progress goes to flat path, word mastery stays pack-scoped. */
     private fun restorePackDrillDirs(backupSubDir: File) {
+        // Restore global verb drill progress files (flat path) - from legacy pack-scoped or new flat location
+        val flatVerbProgress = File(backupSubDir, "verb_drill_progress.yaml")
+        if (flatVerbProgress.exists()) {
+            val content = flatVerbProgress.readText(Charsets.UTF_8)
+            if (validateBackupContent(content, flatVerbProgress.name)) {
+                AtomicFileWriter.writeText(File(internalDir, "verb_drill_progress.yaml"), content)
+            } else {
+                Log.w(logTag, "Skipping invalid backup file: ${flatVerbProgress.name}")
+            }
+        } else {
+            // Legacy migration: check pack-scoped locations and restore from first found
+            val backupDrillsDir = File(backupSubDir, "drills")
+            if (backupDrillsDir.exists()) {
+                backupDrillsDir.listFiles(java.io.FileFilter { it.isDirectory })?.firstOrNull { packBackupDir ->
+                    val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
+                    if (verbProgress.exists()) {
+                        val content = verbProgress.readText(Charsets.UTF_8)
+                        if (validateBackupContent(content, verbProgress.name)) {
+                            AtomicFileWriter.writeText(File(internalDir, "verb_drill_progress.yaml"), content)
+                            true
+                        } else {
+                            Log.w(logTag, "Skipping invalid backup file: ${verbProgress.name}")
+                            false
+                        }
+                    } else false
+                }
+            }
+        }
+
+        val flatVerbLastSession = File(backupSubDir, "verb_drill_last_session.yaml")
+        if (flatVerbLastSession.exists()) {
+            val content = flatVerbLastSession.readText(Charsets.UTF_8)
+            if (validateBackupContent(content, flatVerbLastSession.name)) {
+                AtomicFileWriter.writeText(File(internalDir, "verb_drill_last_session.yaml"), content)
+            } else {
+                Log.w(logTag, "Skipping invalid backup file: ${flatVerbLastSession.name}")
+            }
+        }
+
+        // Restore pack-scoped word mastery files
         val backupDrillsDir = File(backupSubDir, "drills")
         if (!backupDrillsDir.exists()) return
         backupDrillsDir.listFiles(java.io.FileFilter { it.isDirectory })?.forEach { packBackupDir ->
-            val targetPackDir = File(File(internalDir, "drills"), packBackupDir.name)
-            targetPackDir.mkdirs()
-
-            val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
-            if (verbProgress.exists()) {
-                val content = verbProgress.readText(Charsets.UTF_8)
-                if (validateBackupContent(content, verbProgress.name)) {
-                    AtomicFileWriter.writeText(
-                        File(targetPackDir, "verb_drill_progress.yaml"),
-                        content
-                    )
-                } else {
-                    Log.w(logTag, "Skipping invalid backup file: ${verbProgress.name}")
-                }
-            }
             val wordMastery = File(packBackupDir, "word_mastery.yaml")
             if (wordMastery.exists()) {
                 val content = wordMastery.readText(Charsets.UTF_8)
                 if (validateBackupContent(content, wordMastery.name)) {
-                    AtomicFileWriter.writeText(
-                        File(targetPackDir, "word_mastery.yaml"),
-                        content
-                    )
+                    val targetPackDir = File(File(internalDir, "drills"), packBackupDir.name)
+                    targetPackDir.mkdirs()
+                    AtomicFileWriter.writeText(File(targetPackDir, "word_mastery.yaml"), content)
                 } else {
                     Log.w(logTag, "Skipping invalid backup file: ${wordMastery.name}")
                 }
