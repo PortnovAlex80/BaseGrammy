@@ -23,9 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.PomodoroPreset
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +37,7 @@ fun PomodoroSelectorSheet(
     val sheetState = rememberModalBottomSheetState()
     var selectedMinutes by remember(lastDuration) { mutableIntStateOf(lastDuration) }
     var customMinutes by remember { mutableIntStateOf(25) }
-    var showStats by remember(showSheet) { mutableStateOf(false) }
+    var showStats by remember { mutableStateOf(false) }
 
     if (showSheet) {
         ModalBottomSheet(
@@ -302,8 +300,6 @@ private fun StatChip(label: String, value: String, modifier: Modifier = Modifier
 }
 
 private fun buildWeeklyStats(history: List<PomodoroHistoryEntry>): List<PomodoroDayStat> {
-    val dayFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    val labelFormat = SimpleDateFormat("EEE", Locale.US)
     val today = Calendar.getInstance()
     val days = (6 downTo 0).map { offset ->
         Calendar.getInstance().apply {
@@ -312,13 +308,22 @@ private fun buildWeeklyStats(history: List<PomodoroHistoryEntry>): List<Pomodoro
         }
     }
     val grouped = history.groupBy {
-        dayFormat.format(Calendar.getInstance().apply { timeInMillis = it.completedAtMs }.time)
+        val cal = Calendar.getInstance().apply { timeInMillis = it.completedAtMs }
+        String.format("%04d-%02d-%02d",
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.DAY_OF_MONTH))
     }
-    return days.map { day ->
-        val key = dayFormat.format(day.time)
+    return days.mapIndexed { idx, day ->
+        val cal = day
+        val key = String.format("%04d-%02d-%02d",
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.DAY_OF_MONTH))
         val entries = grouped[key].orEmpty()
+        val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
         PomodoroDayStat(
-            label = labelFormat.format(day.time),
+            label = dayNames[cal.get(Calendar.DAY_OF_WEEK) - 1],
             sessions = entries.size,
             cards = entries.sumOf { it.cardsShown },
             correct = entries.sumOf { it.cardsCorrect },
