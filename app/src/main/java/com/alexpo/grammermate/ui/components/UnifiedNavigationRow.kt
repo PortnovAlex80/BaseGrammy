@@ -96,6 +96,7 @@ fun UnifiedNavigationRow(
         ) {
             if (supportsPause) {
                 NavIconButton(
+                    modifier = Modifier.testTag("pause_button"),
                     onClick = onTogglePause,
                     enabled = stateModel.hasCurrentCard
                 ) {

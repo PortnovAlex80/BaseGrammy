@@ -15,6 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.alexpo.grammermate.R
@@ -56,7 +57,7 @@ fun WordBankSection(
     )
     Spacer(modifier = Modifier.height(4.dp))
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("word_bank_container"),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -65,6 +66,7 @@ fun WordBankSection(
             val usedCount = selectedWords.count { it == word }
             val isFullyUsed = usedCount >= availableCount
             FilterChip(
+                modifier = Modifier.testTag("word_bank_chip_$word"),
                 selected = usedCount > 0,
                 onClick = { if (!isFullyUsed) onSelectWord(word) },
                 label = { Text(text = word) },
@@ -84,7 +86,10 @@ fun WordBankSection(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
-            TextButton(onClick = onRemoveLastWord) { Text(stringResource(R.string.word_bank_undo)) }
+            TextButton(
+                modifier = Modifier.testTag("word_bank_undo"),
+                onClick = onRemoveLastWord
+            ) { Text(stringResource(R.string.word_bank_undo)) }
         }
     }
 }
