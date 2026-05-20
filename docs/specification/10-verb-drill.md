@@ -387,6 +387,8 @@ context.filesDir/grammarmate/drills/{packId}/verb_drill/{languageId}_{lessonId}.
 
 Files are filtered by `{languageId}_` prefix and `.csv` extension when loading.
 
+**Implementation task:** [TASK-077: Verb Drill Progress Lost on APK Update](tasks/TASK-077-verb-drill-progress-lost-on-apk-update.md)
+
 ---
 
 ## 10.4 VerbDrillCardSessionProvider
