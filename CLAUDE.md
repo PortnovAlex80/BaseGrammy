@@ -8,69 +8,6 @@
 
 **Stack:** Kotlin 1.9.22, Jetpack Compose (BOM 2024.02.00), Material 3, Android SDK 24–34, Java 17, SnakeYAML 2.2, Sherpa-ONNX (TTS/ASR)
 
-**Run:** Local Gradle build via `java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain` (Windows wrapper workaround required). APK installed on device/emulator.
-
----
-
-## PROJECT STRUCTURE
-
-```
-BaseGrammy/
-├── app/src/main/
-│   ├── java/com/alexpo/grammermate/
-│   │   ├── data/                          # Data layer: stores, parsers, models
-│   │   │   ├── Models.kt                  # Core data classes (Lesson, Card, enums)
-│   │   │   ├── VocabWord.kt               # Vocab drill data classes
-│   │   │   ├── LessonStore.kt             # Pack import, language management
-│   │   │   ├── MasteryStore.kt            # Card mastery tracking
-│   │   │   ├── ProgressStore.kt           # Session state persistence
-│   │   │   ├── FlowerCalculator.kt        # Mastery → flower state mapping
-│   │   │   ├── MixedReviewScheduler.kt    # Sub-lesson scheduling
-│   │   │   ├── SpacedRepetitionConfig.kt  # Ebbinghaus curve math
-│   │   │   ├── BackupManager.kt           # Backup/restore logic
-│   │   │   ├── TtsEngine.kt / AsrEngine.kt    # Audio (TTS/ASR)
-│   │   │   └── YamlListStore.kt           # Generic YAML storage
-│   │   │
-│   │   ├── feature/                       # Domain helpers (plain classes, NOT ViewModels)
-│   │   │   ├── boss/                      # Boss battle logic
-│   │   │   ├── daily/                     # Daily Practice 3-block session
-│   │   │   ├── progress/                  # Progress calculation helpers
-│   │   │   ├── training/                  # Training session helpers
-│   │   │   └── vocab/                     # Vocab drill helpers
-│   │   │
-│   │   ├── shared/
-│   │   │   └── audio/                     # Audio playback utilities
-│   │   │
-│   │   └── ui/                            # UI layer
-│   │       ├── GrammarMateApp.kt          # Screen router, dialog orchestration
-│   │       ├── TrainingViewModel.kt       # PRIMARY ViewModel (all business logic)
-│   │       ├── DailyPracticeScreen.kt     # Daily Practice UI
-│   │       ├── AppRoot.kt                 # Entry point (backup restore check)
-│   │       ├── Theme.kt                   # Material 3 theme
-│   │       ├── screens/*.kt               # Per-screen composables
-│   │       └── components/*.kt            # Shared UI components
-│   │
-│   ├── res/
-│   │   ├── values/strings-*.xml           # UI strings (English)
-│   │   ├── values-ru/strings-*.xml        # UI strings (Russian)
-│   │   └── xml/                           # XML configs
-│   │
-│   └── assets/grammarmate/
-│       ├── packs/                         # Default lesson pack ZIPs
-│       ├── vocab/it/                      # Italian vocab drill CSVs
-│       └── config.yaml                    # Runtime flags
-│
-├── docs/specification/                    # Project specs & scenarios
-│   ├── 01-models-and-state.md
-│   ├── 02-data-stores.md
-│   ├── 08-training-viewmodel.md
-│   ├── scenarios/*.md                     # Code traces for user flows
-│   └── tasks/                             # Implementation task files
-│
-├── tools/pack_validator/                  # Lesson pack validation
-└── CLAUDE.md                              # This file
-```
-
 ---
 
 ## CRITICAL GOTCHAS
@@ -83,6 +20,49 @@ BaseGrammy/
 | **Single ViewModel** | `TrainingViewModel` is ~1500 lines. Decompose helpers to `feature/` when adding logic. |
 | **Pack-scoped drills** | `hasVerbDrill`/`hasVocabDrill` check active pack manifest only |
 | **Learned threshold** | Mastery step ≥ 3 = "learned", not step 9 (full mastery) |
+
+---
+
+## BUILD APK
+
+**Java NOT available in this environment.** Build APK on your local machine.
+
+### Prerequisites
+
+| Component | Version |
+|-----------|---------|
+| Java JDK | 17 |
+| Android SDK | API 34 |
+
+### Full instructions
+
+See `docs/BUILD_INSTRUCTIONS.md` for:
+- Java setup (IntelliJ bundle or standalone)
+- Android SDK installation
+- Windows Gradle workaround
+- Troubleshooting
+
+### Quick commands
+
+```cmd
+:: Debug APK (output: app\build\outputs\apk\debug\grammermate.apk)
+java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+:: Release APK
+java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain assembleRelease
+
+:: Run tests
+java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain test
+```
+
+**Windows workaround:** Gradle 8.9+ requires all 3 wrapper JARs in classpath:
+```
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper-shared.jar
+gradle/wrapper/gradle-cli.jar
+```
+
+Use `java -cp "gradle/wrapper/..."` or create `build.bat` (see BUILD_INSTRUCTIONS.md).
 
 ---
 
@@ -175,24 +155,6 @@ UI-AGENT:      ui/ → TrainingViewModel, screens (waits for HELPERS summary)
 
 ---
 
-## BUILD COMMANDS
-
-```bash
-# Windows Gradle workaround
-java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain
-
-# Build debug APK
-... assembleDebug
-
-# Run tests
-... test
-
-# Validate lesson pack
-python tools/pack_validator/pack_validator.py path/to/pack.zip
-```
-
----
-
 ## GIT WORKFLOW
 
 1. Features in `feature/xxx` branches
@@ -212,6 +174,7 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 | `/regression-check` | After touching ≥2 files, before commit |
 | `/verify-user-journey` | Before committing UI/data changes |
 | `/add-feature` | Adding new feature or porting UI element |
+| `/build-apk` | Build debug or release APK locally |
 
 ---
 
