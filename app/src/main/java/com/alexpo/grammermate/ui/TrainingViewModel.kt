@@ -615,6 +615,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun submitAnswer(): SubmitResult {
+        val beforeState = _coreState.value.cardSession
+        val beforeCard = beforeState.currentCard
+        val beforeInputMode = beforeState.inputMode
+        val beforeScreenMode = beforeState.screenMode
         val (result, events) = sessionRunner.submitAnswer()
         handleSessionEvents(events)
 
@@ -634,9 +638,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // sessions that run through SessionRunner (the DailyPracticeSessionProvider
         // path with its onCardAdvanced callback is dead code, never instantiated).
         if (result.accepted && isDailySession()) {
-            val inputMode = _coreState.value.cardSession.inputMode
-            if (inputMode != InputMode.WORD_BANK) {
-                val blockType = when (_coreState.value.cardSession.screenMode) {
+            if (beforeInputMode != InputMode.WORD_BANK) {
+                val blockType = when (beforeScreenMode) {
                     com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE -> DailyBlockType.TRANSLATE
                     com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS -> DailyBlockType.VERBS
                     else -> return SubmitResult(result.accepted, result.hintShown)
@@ -644,9 +647,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 recordDailyCardPracticed(blockType)
                 // Persist verb card progress so buildVerbBlock doesn't repeat the same cards
                 if (blockType == DailyBlockType.VERBS) {
-                    val currentCard = _coreState.value.cardSession.currentCard
-                    if (currentCard is com.alexpo.grammermate.data.VerbDrillCard) {
-                        dailyPracticeCoordinator.persistDailyVerbProgress(currentCard)
+                    if (beforeCard is com.alexpo.grammermate.data.VerbDrillCard) {
+                        dailyPracticeCoordinator.persistDailyVerbProgress(beforeCard)
                     }
                 }
             }

@@ -9,18 +9,20 @@ Trace of the complete standalone Verb Drill flow, comparing code implementation 
 **Code path:**
 
 1. HomeScreen verb drill tile click: `GrammarMateApp.kt:341` sets `screen = AppScreen.VERB_DRILL`
-2. Router renders at `GrammarMateApp.kt:455-466`:
+2. Router renders at `GrammarMateApp.kt:537-554`:
    - Gets or creates `VerbDrillViewModel` via `viewModel<VerbDrillViewModel>()`
    - Calls `verbDrillVm.reloadForPack(activePackId)` if pack exists, otherwise `reloadForLanguage(languageId)`
-3. ViewModel `init` block (`VerbDrillViewModel.kt:93-96`): sets `isLoading = true`, launches `loadCards()` coroutine
-4. `reloadForPack` (`VerbDrillViewModel.kt:115-121`): if packId unchanged and cards exist, returns early; otherwise creates new `VerbDrillStore(packId)`, sets loading, launches `loadCards()`
-5. `loadCards()` (`VerbDrillViewModel.kt:123-179`): resolves language, gets files from `LessonStore.getVerbDrillFiles(packId, lang)`, parses each CSV via `VerbDrillCsvParser`, builds `packIdForCardId` map, extracts tenses/groups, loads progress, loads tense reference YAML
+3. `VerbDrillScreen` entry: `LaunchedEffect(Unit)` calls `viewModel.refreshLastSessionContext()` (`VerbDrillScreen.kt:66-68`). This reloads `lastSessionContext` from YAML file, ensuring the inline SessionCard (VD-51) shows accurate data even if the ViewModel was reused across navigation.
+4. ViewModel `init` block: sets `isLoading = true`, launches `loadCards()` coroutine
+5. `reloadForPack` (`VerbDrillViewModel.kt:115-121`): if packId unchanged and cards exist, returns early; otherwise creates new `VerbDrillStore(packId)`, sets loading, launches `loadCards()`
+6. `loadCards()`: resolves language, gets files from `LessonStore.getVerbDrillFiles(packId, lang)`, parses each CSV via `VerbDrillCsvParser`, builds `packIdForCardId` map, extracts tenses/groups, loads progress, loads tense reference YAML
+7. After cards loaded: `checkForLastSessionAndShowDialog()` checks for saved session. If found, sets `lastSessionContext` (NOT `showStartFreshResumeDialog`). If no YAML file exists, clears `lastSessionContext = null` via the else branch.
 
 **Expected (spec 10.5.3):** Init sets `isLoading = true`, launches coroutine to call `loadCards()`. Files obtained from `LessonStore.getVerbDrillFiles(packId, languageId)`.
 
-**Actual:** Matches spec. No discrepancy.
+**Actual:** Matches spec with VD-51 addition. No discrepancy.
 
-**Note:** The `reloadForPack` call from `GrammarMateApp.kt:459` runs on **every recomposition** of the `VERB_DRILL` screen branch (it's not in a `LaunchedEffect`). However, it has an early-return guard (`if (currentPackId == packId && allCards.isNotEmpty())`), so it only loads once per pack. This is correct but fragile -- if the ViewModel is recreated (e.g., configuration change), it would load twice (once in `init`, once in `reloadForPack`).
+**SPEC UPDATED (TASK-076):** Step 1 now includes `refreshLastSessionContext()` on screen entry and the VD-51 inline SessionCard flow. VD-50 modal dialog is disabled (`showStartFreshResumeDialog` is never set to `true`). When `lastSessionContext != null`, the selection screen shows an inline `SessionCard` with "Repeat" / "Continue" / "Reset" buttons instead of the dropdowns and filter controls.
 
 ---
 
@@ -184,12 +186,17 @@ Trace of the complete standalone Verb Drill flow, comparing code implementation 
 
 ---
 
-## Step 9: Continue -> next batch of 10
+## Step 9: "Ещё" (More) -> loads next batch in-place
 
 **Code path:**
 
-1. Completion screen "More" button (`VerbDrillScreen.kt:1189`): calls `viewModel.nextBatch()`
-2. `nextBatch()` (`VerbDrillViewModel.kt:416-418`): delegates to `startSession()`
+1. Completion screen "More" button triggers `onVerbDrillMore` callback in `GrammarMateApp.kt:501-511`:
+   - Calls `verbDrillVm.persistSessionState()` to save current batch
+   - Calls `verbDrillVm.nextBatch()` which delegates to `startSession()`
+   - Reads next cards from `verbDrillVm.uiState.value.session?.cards`
+   - If cards exist: calls `vm.replaceVerbDrillCards(nextCards)` which replaces cards in the active TrainingScreen card session **without leaving the training screen**
+   - If no cards: calls `vm.exitVerbDrillSession()` + `onNavigate(Routes.VERB_DRILL)` to return to selection
+2. `replaceVerbDrillCards()` (`TrainingViewModel.kt:729-732`): delegates to `sessionRunner.replaceCards(cards)` + `handleSessionEvents(events)`. The card session is updated in-place -- no navigation occurs.
 3. `startSession()` runs the same selection algorithm:
    - Filters by tense/group
    - Excludes `todayShownCardIds` (cards already practiced today)
@@ -198,7 +205,9 @@ Trace of the complete standalone Verb Drill flow, comparing code implementation 
 
 **Expected (spec 10.6.9):** "More" button starts new batch. Hidden when `allDoneToday`.
 
-**Actual:** Matches spec. No discrepancy.
+**Actual:** Matches spec with in-place loading enhancement (TASK-076). The "Ещё" button now calls `persistSessionState()` before loading the next batch and uses `replaceVerbDrillCards()` to swap cards without leaving TrainingScreen. Previously, the "More" button navigated back to the selection screen.
+
+**SPEC UPDATED (TASK-076):** Step 9 updated to reflect in-place batch loading via `replaceVerbDrillCards()` instead of navigation to selection screen.
 
 ---
 
@@ -375,6 +384,7 @@ Trace of the complete standalone Verb Drill flow, comparing code implementation 
 | 2 | Low | 10 | **"Hide this card from lessons" option is a visible no-op.** `hideCurrentCard()` in `VerbDrillCardSessionProvider.kt:372-373` is empty ("Not yet supported for VerbDrill"), but the button is still shown in the report sheet. Should be hidden or disabled for VerbDrill context. |
 | 3 | Trivial | 11 | **Speed tracking not reset on `reloadForPack()`.** `totalAnswerTimeMs` and `totalAnswersForSpeed` carry over when switching packs. Only reset in `startSession()`. Impact is minimal since switching packs implies no active session. |
 | 4 | Trivial | 12 | **`currentSpeedWpm` measures "answers per minute", not words per minute.** Each correct answer counts as 1 unit regardless of answer length. Name is misleading. |
+| 5 | SPEC UPDATED | 1, 9 | **VD-50 dialog disabled, VD-51 inline SessionCard active.** Spec 10.6.2 describes a modal dialog (`showStartFreshResumeDialog`). Code never sets `showStartFreshResumeDialog = true`. Instead, an inline `SessionCard` composable is shown on `VerbDrillSelectionScreen` when `lastSessionContext != null`. Session persistence lifecycle updated in TASK-076. |
 
 ### Spec Compliance
 
@@ -413,11 +423,29 @@ Trace of the complete standalone Verb Drill flow, comparing code implementation 
 - Navigation: prev card, next card, exit session
 - Voice recognition auto-trigger and auto-advance on correct answer
 - Input mode switching (VOICE, KEYBOARD, WORD_BANK)
+- **VD-51 inline SessionCard** shown on selection screen when `lastSessionContext != null`
+- **refreshLastSessionContext()** called on every VerbDrillScreen entry via LaunchedEffect
+- **lastSessionContext** properly cleared to null when no YAML file exists
+- **persistSessionState()** called on all exit paths from GrammarMateApp
+- **"Ещё" button** loads next batch in-place via `replaceVerbDrillCards()` without leaving TrainingScreen
+- **exitSession()** always saves (never auto-deletes on completion)
 
-### Exit Navigation Issue (Found Post-Audit)
+### Exit Navigation & Session Persistence (Updated TASK-076)
 
-**Bug:** All in-app exit controls in Verb Drill (back arrow, nav exit button, completion Exit button) only clear session state (`session = null`), switching to the Verb Drill selection screen instead of navigating to HOME. Only the system back button correctly navigates to HOME.
+**Current behavior (fixed):** All exit paths now correctly:
+1. Call `verbDrillVm.persistSessionState()` to save session state before navigating
+2. Navigate to the correct destination (HOME for completed sessions, VERB_DRILL selection for mid-session exits)
 
-**Root cause:** `VerbDrillScreen.kt:114` passes `onExit = viewModel::exitSession` to the session screen, which only clears session state. The `onBack` lambda (which calls `onNavigate(Routes.HOME)`) is available at `VerbDrillScreen` level but is NOT passed through to the session.
+**Exit paths and their behavior:**
 
-**Fix:** Pass `onBack` to `VerbDrillSessionWithCardSession` and combine with `exitSession` in the `onExit` callback: `{ viewModel.exitSession(); onBack() }`. See TASK-007.
+| Exit path | Calls persistSessionState? | Navigates to |
+|-----------|---------------------------|--------------|
+| Back arrow (VD-11) during active session | Yes (`GrammarMateApp.kt:479`) | VERB_DRILL selection screen |
+| Nav Exit button (VD-36) with active card | Yes (`GrammarMateApp.kt:479`) | VERB_DRILL selection screen |
+| Nav Exit button (VD-36) with NO active card (completed) | Yes (`GrammarMateApp.kt:485`) | HOME |
+| Completion Exit button (VD-41) | Yes (via session done path) | HOME |
+| System Back during VERB_DRILL training | Yes (`GrammarMateApp.kt:531`) | VERB_DRILL selection screen |
+| "Ещё" (More) button | Yes (`GrammarMateApp.kt:502`) | Stays on TrainingScreen (in-place) |
+| VerbDrillScreen exit (back arrow from selection) | No (via `exitSession()` + `onBack()`) | HOME |
+
+**SPEC UPDATED (TASK-076):** `exitSession()` now always saves session state (never auto-deletes on completion). `persistSessionState()` is called from GrammarMateApp on every exit path. The `lastSessionContext` is properly cleared to null via the else branch in `checkForLastSessionAndShowDialog()` when no YAML file exists.

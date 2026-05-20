@@ -506,7 +506,8 @@ class DailyPracticeCoordinator(
             }
         }
         dailyPracticeAnsweredCounts.clear()
-        endSession()
+        _state.update { it.copy(dailySession = DailySessionState()) }
+        stateAccess.saveProgress()
         return sentenceCountToAdvance
     }
 

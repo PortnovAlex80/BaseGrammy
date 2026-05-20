@@ -2,6 +2,22 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [TASK-076: Verb Drill Session Persistence Lifecycle] - 2026-05-20
+
+### Changed
+- `docs/specification/scenario-07-verb-drill.md`: Updated Step 1 to include `refreshLastSessionContext()` on screen entry and VD-51 inline SessionCard flow. Updated Step 9 to reflect in-place batch loading via `replaceVerbDrillCards()` instead of navigation to selection screen. Updated Exit Navigation section with `persistSessionState()` call on all exit paths. Added discrepancy #5 documenting VD-50 dialog disabled / VD-51 inline SessionCard active.
+- `docs/specification/22-use-case-registry.md`: Updated UC-74 from "Start Fresh / Resume dialog" to "inline SessionCard and session persistence". Added ACs for: `refreshLastSessionContext()` on screen entry, in-place "Ещё" batch loading, `persistSessionState()` on all exit paths, proper `lastSessionContext` null clearing, "Repeat" button replaying same cards.
+- `docs/specification/23-screen-elements.md`: Added VD-51 (Inline SessionCard) element. Updated VD-40 (More button) behavior to call `replaceVerbDrillCards()` in-place. Updated VD-41 (Exit button) to document `persistSessionState()` call. Updated element count to 42 / total 339.
+- `docs/specification/10-verb-drill.md`: No changes in this update (spec section 10.6.2 still documents VD-50 dialog -- discrepancy noted in scenario-07 discrepancy #5).
+
+### Key Changes
+- VD-50 modal dialog is disabled (`showStartFreshResumeDialog` never set to true)
+- VD-51 inline SessionCard shown on VerbDrillSelectionScreen when `lastSessionContext != null`
+- `persistSessionState()` called on all exit paths from GrammarMateApp
+- "Ещё" button loads next batch in-place via `replaceVerbDrillCards()` without leaving TrainingScreen
+- `refreshLastSessionContext()` called on every VerbDrillScreen entry via LaunchedEffect
+- `lastSessionContext` properly cleared to null when no YAML file exists
+
 ## [Remove Mix Challenge Feature (DORMANT)] - 2026-05-20
 
 ### Changed

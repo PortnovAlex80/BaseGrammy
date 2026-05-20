@@ -8,7 +8,7 @@
 | TrainingScreen | TS | 37 |
 | TrainingCardSession | TCS | 29 |
 | DailyPracticeScreen | DP | 30 |
-| VerbDrillScreen | VD | 41 |
+| VerbDrillScreen | VD | 42 |
 | VocabDrillScreen | VOC | 48 |
 | LessonRoadmapScreen | LR | 17 |
 | LadderScreen | LS | 11 |
@@ -18,7 +18,7 @@
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
 | Pomodoro | PM | 9 |
 | Pomodoro Summary | PS | 7 |
-| **Total** | | **338** |
+| **Total** | | **339** |
 
 ---
 
@@ -197,6 +197,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Progress bar (selection) | VD-08 | progress-bar | `totalCards > 0` | LinearProgressIndicator showing everShownCount / totalCards. | ? |
 | "All done today" text | VD-09 | text | `allDoneToday` | SemiBold 18sp centered text. | ? |
 | Start/Continue button | VD-10 | button | `!allDoneToday && (totalCards > 0 \|\| tenses/groups available)` | "Start" if todayShownCount == 0, "Continue" otherwise. Calls `onStart()`. | ? |
+| Inline SessionCard | VD-51 | card | `state.lastSessionContext != null` | secondaryContainer Card with session context: filter info (tense, group) + shown count from `lastSessionContext.todayShownCardIds.size`. Three buttons: "Repeat" (replays same cards), "Continue" (loads next cards from pool), "Reset" (clears lastSessionContext to null, deletes session file). When visible, dropdowns and filter controls are hidden. VD-50 modal dialog is disabled -- this inline card replaces it. | UC-74 |
 
 ### 5b. Active Session
 
@@ -238,8 +239,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Sparkle emoji | VD-37 | text | Session complete | 48sp party popper emoji. | ? |
 | "Otlichno!" title | VD-38 | text | Session complete | Bold 24sp. | ? |
 | Stats text | VD-39 | text | Session complete | "Pravilnykh: X \| Oshibok: Y" in muted color. | ? |
-| "More" button | VD-40 | button | `!allDoneToday` | "Eshche" Button. Calls `viewModel.nextBatch()` to load 10 more cards. | ? |
-| "Exit" button | VD-41 | button | Session complete | OutlinedButton "Vykhod". Calls `viewModel.exitSession()` + `onBack()` (navigates to HOME, not selection screen). | UC-64 |
+| "More" button | VD-40 | button | `!allDoneToday` | "Eshche" Button. Calls `onVerbDrillMore` in GrammarMateApp which: (1) calls `verbDrillVm.persistSessionState()` to save current batch, (2) calls `verbDrillVm.nextBatch()` to load next 10 cards, (3) calls `vm.replaceVerbDrillCards(nextCards)` to swap cards in-place on TrainingScreen without navigation. If no cards remain: exits to VERB_DRILL selection screen. | UC-74 |
+| "Exit" button | VD-41 | button | Session complete | OutlinedButton "Vykhod". Calls session done path in GrammarMateApp which calls `verbDrillVm.persistSessionState()` before navigating to HOME. | UC-64, UC-74 |
 
 ---
 

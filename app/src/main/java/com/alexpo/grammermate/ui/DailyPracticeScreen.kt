@@ -244,8 +244,9 @@ private fun ColumnScope.VocabFlashcardBlock(
     onComplete: () -> Unit = {}
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
-    var isVoiceActive by remember { mutableStateOf(false) }
-    var voiceRecognizedText by remember { mutableStateOf<String?>(null) }
+    var showAnswer by remember(task.id) { mutableStateOf(false) }
+    var isVoiceActive by remember(task.id) { mutableStateOf(false) }
+    var voiceRecognizedText by remember(task.id) { mutableStateOf<String?>(null) }
     var showReportSheet by remember { mutableStateOf(false) }
     var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
@@ -269,6 +270,7 @@ private fun ColumnScope.VocabFlashcardBlock(
                 val isCorrect = com.alexpo.grammermate.data.Normalizer.normalize(spoken) == com.alexpo.grammermate.data.Normalizer.normalize(answerText)
                 if (isCorrect && !isRated) {
                     isRated = true
+                    showAnswer = true
                     onRate(SrsRating.GOOD)
                 }
             }
@@ -286,9 +288,10 @@ private fun ColumnScope.VocabFlashcardBlock(
                     Icon(Icons.Default.ReportProblem, stringResource(R.string.content_desc_report_word), tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            // Answer text -- always visible (reference data, not a hint)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(answerText, fontSize = (18f * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
+            if (showAnswer) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(answerText, fontSize = (18f * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 
@@ -316,19 +319,37 @@ private fun ColumnScope.VocabFlashcardBlock(
     ) { Icon(Icons.Default.Mic, stringResource(R.string.content_desc_voice_input), modifier = Modifier.size(32.dp)) }
 
     Spacer(modifier = Modifier.height(12.dp))
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(stringResource(R.string.srs_again) to SrsRating.AGAIN, stringResource(R.string.srs_hard) to SrsRating.HARD, stringResource(R.string.srs_good) to SrsRating.GOOD, stringResource(R.string.srs_easy) to SrsRating.EASY).forEach { (label, rating) ->
-            val colors = when (rating) {
-                SrsRating.AGAIN -> Pair(SrsAgainBackground, SrsAgainText)
-                SrsRating.HARD -> Pair(SrsHardBackground, SrsHardText)
-                SrsRating.GOOD -> Pair(SrsGoodBackground, SrsGoodText)
-                SrsRating.EASY -> Pair(SrsEasyBackground, SrsEasyText)
+    if (showAnswer) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(stringResource(R.string.srs_again) to SrsRating.AGAIN, stringResource(R.string.srs_hard) to SrsRating.HARD, stringResource(R.string.srs_good) to SrsRating.GOOD, stringResource(R.string.srs_easy) to SrsRating.EASY).forEach { (label, rating) ->
+                val colors = when (rating) {
+                    SrsRating.AGAIN -> Pair(SrsAgainBackground, SrsAgainText)
+                    SrsRating.HARD -> Pair(SrsHardBackground, SrsHardText)
+                    SrsRating.GOOD -> Pair(SrsGoodBackground, SrsGoodText)
+                    SrsRating.EASY -> Pair(SrsEasyBackground, SrsEasyText)
+                }
+                OutlinedButton(
+                    onClick = {
+                        if (!isRated) {
+                            isRated = true
+                            onRate(rating)
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !isRated,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = colors.first, contentColor = colors.second)
+                ) { Text(label, fontSize = 12.sp) }
             }
-            OutlinedButton(
-                onClick = { onRate(rating) },
-                modifier = Modifier.weight(1f),
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = colors.first, contentColor = colors.second)
-            ) { Text(label, fontSize = 12.sp) }
+        }
+    } else {
+        Button(
+            onClick = {
+                showAnswer = true
+                onFlip()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.verb_show_answer))
         }
     }
 
