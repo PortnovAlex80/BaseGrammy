@@ -2,6 +2,18 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [Verb Drill Start Fresh / Resume Dialog - Remove Staleness Limit] - 2026-05-20
+
+### Changed
+- `10-verb-drill.md`: Updated section 10.2.5 (VerbDrillLastSessionState) - removed staleness language, timestamp now used only for session age display. Updated section 10.6.2 (Start Fresh / Resume Dialog VD-50) - removed 24-hour staleness condition from dialog trigger, updated dialog layout to show session context (age, tense, group, progress, score), removed staleness condition from behavior table, updated "When to clear last session" section. Updated dialog text localization table to include tense/group/progress/score labels.
+- `22-use-case-registry.md`: Updated UC-74 - removed "within 24 hours" from preconditions and AC1, removed AC6 (staleness), added AC8-AC12 for session context display (tense, group, progress, score labels).
+
+### Key Changes
+- Dialog now appears whenever a previous incomplete session exists (no time limit)
+- Dialog displays full session context: tense filter, group filter, progress (e.g., "5/10 cards"), score (correct/incorrect counts)
+- Labels show "All tenses" / "All groups" when filters are null
+- Last session is never auto-cleared due to age (only on completion, Start Fresh, or pack switch)
+
 ## [Daily Practice Session Size and Verb Offset Fixes] - 2026-05-20
 
 ### Changed

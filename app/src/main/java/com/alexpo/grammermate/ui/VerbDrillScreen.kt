@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,6 +20,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.VerbDrillCard
+import com.alexpo.grammermate.data.VerbDrillLastSessionState
 import com.alexpo.grammermate.data.VerbDrillUiState
 
 /**
@@ -88,6 +92,29 @@ fun VerbDrillScreen(
         },
         onBack = onBack
     )
+
+    // VD-50: Start Fresh / Resume Dialog
+    if (state.showStartFreshResumeDialog) {
+        StartFreshResumeDialog(
+            lastSessionContext = state.lastSessionContext,
+            sessionAge = state.lastSessionContext?.timestamp?.let { viewModel.formatSessionAge(it) },
+            onDismiss = {
+                viewModel.onDismissDialog()
+                onBack()
+            },
+            onResume = {
+                viewModel.onResumeSession()
+                // After resume, read the session cards and start the session
+                val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
+                if (sessionCards.isNotEmpty()) {
+                    onStartSession(sessionCards)
+                }
+            },
+            onStartFresh = {
+                viewModel.onStartFresh()
+            }
+        )
+    }
 }
 
 @Composable
@@ -221,5 +248,147 @@ private fun VerbDrillDropdown(
                 )
             }
         }
+    }
+}
+
+/**
+ * VD-50: Start Fresh / Resume Dialog
+ *
+ * Shown when user opens VerbDrillScreen and a previous incomplete session exists.
+ * Displays session context (tense, group, progress, age) to help user decide.
+ */
+@Composable
+private fun StartFreshResumeDialog(
+    lastSessionContext: VerbDrillLastSessionState?,
+    sessionAge: String?,
+    onDismiss: () -> Unit,
+    onResume: () -> Unit,
+    onStartFresh: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(R.string.verb_drill_title))
+        },
+        text = {
+            Column {
+                Text(stringResource(R.string.verb_resume_dialog_message))
+                Spacer(modifier = Modifier.height(12.dp))
+                // Session context display
+                if (lastSessionContext != null) {
+                    SessionContextInfo(
+                        selectedTense = lastSessionContext.selectedTense,
+                        selectedGroup = lastSessionContext.selectedGroup,
+                        currentIndex = lastSessionContext.currentIndex,
+                        totalCards = lastSessionContext.cards.size,
+                        correctCount = lastSessionContext.correctCount,
+                        incorrectCount = lastSessionContext.incorrectCount,
+                        sessionAge = sessionAge
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onResume
+            ) {
+                Text(stringResource(R.string.verb_resume_dialog_resume))
+            }
+        },
+        dismissButton = {
+            Column {
+                OutlinedButton(
+                    onClick = onStartFresh,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.verb_resume_dialog_start_fresh))
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.dialog_cancel))
+                }
+            }
+        }
+    )
+}
+
+/**
+ * Displays session context information in the Start Fresh / Resume dialog.
+ */
+@Composable
+private fun SessionContextInfo(
+    selectedTense: String?,
+    selectedGroup: String?,
+    currentIndex: Int,
+    totalCards: Int,
+    correctCount: Int,
+    incorrectCount: Int,
+    sessionAge: String?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        // Tense
+        if (selectedTense != null) {
+            SessionInfoRow(
+                label = stringResource(R.string.verb_resume_dialog_tense),
+                value = selectedTense
+            )
+        }
+        // Group
+        if (selectedGroup != null) {
+            SessionInfoRow(
+                label = stringResource(R.string.verb_resume_dialog_group),
+                value = selectedGroup
+            )
+        }
+        // Progress
+        SessionInfoRow(
+            label = stringResource(R.string.verb_resume_dialog_progress),
+            value = stringResource(R.string.verb_resume_dialog_progress_value, currentIndex + 1, totalCards)
+        )
+        // Score
+        SessionInfoRow(
+            label = stringResource(R.string.verb_resume_dialog_score),
+            value = stringResource(R.string.verb_resume_dialog_score_value, correctCount, incorrectCount)
+        )
+        // Age
+        if (sessionAge != null) {
+            SessionInfoRow(
+                label = stringResource(R.string.verb_resume_dialog_age),
+                value = sessionAge
+            )
+        }
+    }
+}
+
+/**
+ * A single row in the session context info display.
+ */
+@Composable
+private fun SessionInfoRow(
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium
+        )
     }
 }

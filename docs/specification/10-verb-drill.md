@@ -164,7 +164,58 @@ data class VerbDrillSessionState(
 | `incorrectCount` | Number of cards where hint was shown (3 wrong attempts or manual eye) |
 | `isComplete` | `true` when `currentIndex` reaches `cards.size` |
 
-### 10.2.5 VerbDrillUiState
+### 10.2.5 VerbDrillLastSessionState
+
+Represents the state of the last incomplete verb drill session, enabling resume functionality.
+
+```kotlin
+data class VerbDrillLastSessionState(
+    val selectedTense: String?,
+    val selectedGroup: String?,
+    val sortByFrequency: Boolean,
+    val cards: List<VerbDrillCard>,
+    val currentIndex: Int,
+    val correctCount: Int,
+    val incorrectCount: Int,
+    val timestamp: Long
+)
+```
+
+| Field | Description |
+|-------|-------------|
+| `selectedTense` | The tense filter selected for the session (e.g., `"Presente"`) or `null` for all tenses |
+| `selectedGroup` | The group filter selected for the session (e.g., `"regular_are"`) or `null` for all groups |
+| `sortByFrequency` | Whether frequency sorting was enabled for this session |
+| `cards` | The 10 cards in the session batch (must be persisted to reconstruct session) |
+| `currentIndex` | Index of the current card (0-9) when session was interrupted |
+| `correctCount` | Number of cards answered correctly before interruption |
+| `incorrectCount` | Number of cards where hint was shown before interruption |
+| `timestamp` | `System.currentTimeMillis()` when session was saved (for session age display) |
+
+**Persistence location:** `context.filesDir/grammarmate/drills/{packId}/verb_drill_last_session.yaml`
+
+**YAML schema:**
+```yaml
+schemaVersion: 1
+selectedTense: "Presente"
+selectedGroup: "regular_are"
+sortByFrequency: false
+cards:
+  - id: "regular_are_Presente_0"
+    promptRu: "я говорю"
+    answer: "io parlo"
+    verb: "parlare"
+    tense: "Presente"
+    group: "regular_are"
+    rank: 1
+  # ... (up to 10 cards)
+currentIndex: 5
+correctCount: 3
+incorrectCount: 2
+timestamp: 1716172800000
+```
+
+### 10.2.6 VerbDrillUiState
 
 The full UI state exposed by `VerbDrillViewModel` as a `StateFlow`.
 
@@ -183,9 +234,14 @@ data class VerbDrillUiState(
     val loadedLanguageId: String? = null,
     val badSentenceCount: Int = 0,
     val currentCardIsBad: Boolean = false,
-    val sortByFrequency: Boolean = false
+    val sortByFrequency: Boolean = false,
+    val showStartFreshResumeDialog: Boolean = false
 )
 ```
+
+| Field | Description |
+|-------|-------------|
+| `showStartFreshResumeDialog` | When `true`, shows the "Start Fresh / Resume" dialog on entry. Only `true` when a previous session state exists to resume. |
 
 ### 10.2.6 VerbDrillCsvParser
 
@@ -670,7 +726,92 @@ fun VerbDrillScreen(
 
 **Loading state**: When `state.isLoading == true`, shows a centered `CircularProgressIndicator` with "Loading..." text.
 
-### 10.6.2 Selection Screen (VerbDrillSelectionScreen)
+### 10.6.2 Start Fresh / Resume Dialog (VD-50)
+
+**VD-50: Verb Drill Start Choice Dialog**
+
+When the user opens VerbDrillScreen and a previous incomplete session exists, a dialog appears offering a choice between starting fresh or resuming the previous session.
+
+**Dialog trigger:**
+- User navigates to VerbDrillScreen from HomeScreen or LessonRoadmap
+- ViewModel loads and checks for `VerbDrillLastSessionState` on `init`
+- If last session exists: set `showStartFreshResumeDialog = true`
+
+**Dialog layout:**
+
+```
++----------------------------------+
+|                  [X]             |
+|                                  |
+|            Verb Drill            |
+|                                  |
+|  You have an incomplete session: |
+|  - Tense: Presente               |
+|  - Group: regular_are            |
+|  - Progress: 5/10 cards          |
+|  - Correct: 3 | Incorrect: 2     |
+|                                  |
+|  [     Resume (Продолжить)    ]  |
+|  [  Start Fresh (Начать сначала) ]|
+|                                  |
++----------------------------------+
+```
+
+The dialog shows the full session context:
+- **Tense**: The selected tense filter (or "All tenses" if `selectedTense == null`)
+- **Group**: The selected group filter (or "All groups" if `selectedGroup == null`)
+- **Progress**: Current position (e.g., "5/10 cards" for `currentIndex = 5` in a 10-card batch)
+- **Score**: Correct and incorrect counts from the saved session
+
+**Behavior:**
+
+| User Action | System Response | User Outcome |
+|-------------|----------------|--------------|
+| User taps "Resume" | Restore last session state: set `selectedTense`, `selectedGroup`, `sortByFrequency` from saved state. Create new `VerbDrillSessionState` with saved cards, advance to saved `currentIndex`. Set `showStartFreshResumeDialog = false`. | Continues exactly where left off with same filters and card order |
+| User taps "Start Fresh" | Clear filters: set `selectedTense = null`, `selectedGroup = null`, `sortByFrequency = false`. Delete last session file. Set `showStartFreshResumeDialog = false`. | Returns to selection screen with default filters, can choose new filters |
+| User taps X (close) or Back | Set `showStartFreshResumeDialog = false`. Navigate back to previous screen. | Cancels entry, dialog dismissed |
+
+**State persistence requirements:**
+
+To support resume, the following must be saved to `verb_drill_last_session.yaml`:
+
+1. **Filter state:** `selectedTense`, `selectedGroup`, `sortByFrequency`
+2. **Session cards:** The full list of 10 `VerbDrillCard` objects (ID, promptRu, answer, verb, tense, group, rank)
+3. **Progress:** `currentIndex`, `correctCount`, `incorrectCount`
+4. **Timestamp:** `System.currentTimeMillis()` for staleness detection
+
+**When to save last session:**
+- When user exits via back button during active session (`currentIndex < cards.size`)
+- When user navigates away via Home tile during active session
+- When system kills the app (saved on `onSaveInstanceState` or via `DisposableEffect`)
+
+**When to clear last session:**
+- On normal session completion (all 10 cards done)
+- When user taps "Start Fresh" in the dialog
+- When user switches to a different pack (pack-scoped isolation)
+
+**Dialog text localization:**
+
+| Element | English (en) | Russian (ru) |
+|---------|--------------|--------------|
+| Title | "Verb Drill" | "Глагольный тренажёр" |
+| Message | "You have an incomplete session:" | "У вас есть незавершённая сессия:" |
+| Tense label | "Tense:" | "Время:" |
+| Group label | "Group:" | "Группа:" |
+| Progress label | "Progress:" | "Прогресс:" |
+| Score label | "Correct: {n} | Incorrect: {n}" | "Правильно: {n} | Ошибок: {n}" |
+| "All tenses" | "All tenses" | "Все времена" |
+| "All groups" | "All groups" | "Все группы" |
+| Resume button | "Resume" | "Продолжить" |
+| Start Fresh button | "Start Fresh" | "Начать сначала" |
+
+**First launch behavior:**
+- When `VerbDrillLastSessionState` does not exist, `showStartFreshResumeDialog` remains `false`
+- Selection screen is shown directly with default filters (all tenses, all groups, frequency off)
+
+**Implementation task:** [TASK-XXX: Verb Drill Start Fresh / Resume Dialog](../tasks/TASK-XXX-verb-drill-start-fresh-resume.md)
+
+### 10.6.3 Selection Screen (VerbDrillSelectionScreen)
 
 **Layout:**
 
@@ -705,7 +846,7 @@ fun VerbDrillScreen(
 - **Start/Continue button**: text is "Продолжить" if `todayShownCount > 0`, otherwise "Старт". Calls `viewModel.startSession()`.
 - **All done message**: when `state.allDoneToday == true`, shows "На сегодня всё!" instead of the start button.
 
-### 10.6.3 Session Screen (VerbDrillSessionWithCardSession)
+### 10.6.4 Session Screen (VerbDrillSessionWithCardSession)
 
 The session screen uses the shared `TrainingCardSession` composable with VerbDrill-specific customizations.
 
@@ -742,7 +883,7 @@ VerbDrillScreen applies `ruTextScale` (from `AudioState` / Settings) to the card
 - **Verb chip** (`SuggestionChip`): shows verb name (with rank if present, e.g., "essere #1"). Tappable -- opens `VerbReferenceBottomSheet`. **Always visible regardless of HintLevel.** These are reference data about the verb form, NOT hints.
 - **Tense chip** (`SuggestionChip`): shows abbreviated tense name. Tappable -- opens `TenseInfoBottomSheet`. **Always visible regardless of HintLevel.** These are reference data about the tense, NOT hints.
 
-### 10.6.4 Input Controls (DefaultVerbDrillInputControls)
+### 10.6.5 Input Controls (DefaultVerbDrillInputControls)
 
 The input controls mirror the `AnswerBox` component used in regular training:
 
@@ -783,7 +924,7 @@ The input controls mirror the `AnswerBox` component used in regular training:
 - **Flag button** (report icon): opens report bottom sheet.
 - **Check button**: submits the input via `provider.submitAnswerWithInput()`. Enabled only when input is non-blank and session is active.
 
-### 10.6.5 Voice Recognition
+### 10.6.6 Voice Recognition
 
 Voice recognition follows the same pattern as `AnswerBox`:
 
@@ -793,7 +934,7 @@ Voice recognition follows the same pattern as `AnswerBox`:
 4. On result: sets input text, calls `submitAnswerWithInput()`, clears input
 5. Auto-advance after correct voice answer: `LaunchedEffect` waits 500ms then calls `provider.nextCard()`
 
-### 10.6.6 Verb Reference Bottom Sheet
+### 10.6.7 Verb Reference Bottom Sheet
 
 **Triggered by**: tapping the verb chip on a card.
 
@@ -818,7 +959,7 @@ Voice recognition follows the same pattern as `AnswerBox`:
 - **Tense label** (if present)
 - **Conjugation table**: all cards from the current session matching the verb+tense, showing each card's answer
 
-### 10.6.7 Tense Info Bottom Sheet
+### 10.6.8 Tense Info Bottom Sheet
 
 **Triggered by**: tapping the tense chip on a card.
 
@@ -852,7 +993,7 @@ Voice recognition follows the same pattern as `AnswerBox`:
 
 When `TenseInfo` is unavailable for a tense, shows a fallback with just the tense name and "Справочная информация для этого времени недоступна."
 
-### 10.6.8 Report Bottom Sheet
+### 10.6.9 Report Bottom Sheet
 
 **Triggered by**: tapping the flag/report button.
 
@@ -863,7 +1004,7 @@ When `TenseInfo` is unavailable for a tense, shows a fallback with just the tens
 - **Export bad sentences to file**
 - **Copy text** (copies card ID, source, and target to clipboard)
 
-### 10.6.9 Completion Screen (VerbDrillCompletionScreen)
+### 10.6.10 Completion Screen (VerbDrillCompletionScreen)
 
 Shown when the session is complete (all 10 cards done).
 
@@ -886,7 +1027,7 @@ Shown when the session is complete (all 10 cards done).
 - **"Ещё" button**: calls `viewModel.nextBatch()` to start a new 10-card batch (hidden when `allDoneToday == true`)
 - **"Выход" button**: exits session AND navigates to HOME screen (not just selection screen)
 
-### 10.6.11 Exit Navigation Rule
+### 10.6.13 Exit Navigation Rule
 
 All exit paths from the Verb Drill session MUST navigate to HOME, not just clear the session state:
 
@@ -901,7 +1042,7 @@ All exit paths from the Verb Drill session MUST navigate to HOME, not just clear
 
 **Rationale:** Pressing an exit/back button should return to the previous screen (HOME). The old behavior of clearing session state and showing the selection screen confused users who expected to return home.
 
-### 10.6.10 Tense Abbreviation Map
+### 10.6.12 Tense Abbreviation Map
 
 Used in tense chips to keep them compact:
 
@@ -1081,6 +1222,17 @@ This allows the daily practice "Repeat" function to replay the exact same verb c
 ### US-10.19: Navigate Between Cards
 
 **As a user**, I want to go back to previous cards in the current session, so that I can review cards I already answered or check something I missed.
+
+### US-10.20: Start Fresh or Resume Incomplete Session
+
+**As a user**, when I open Verb Drill after leaving an incomplete session, I want to see a dialog offering to resume where I left off or start fresh, so that I can either continue my practice or begin with new filters without losing my previous progress context.
+
+**Acceptance criteria:**
+- Dialog appears on VerbDrillScreen entry if a previous incomplete session exists (within 24 hours)
+- "Resume" restores the exact session state: filters (tense, group, sort), card list, current position, score
+- "Start Fresh" clears filters and returns to selection screen, deleting the incomplete session
+- Dialog is skipped on first launch (no previous session) or if previous session is stale (>24 hours old)
+- Last session state is persisted per pack (switching packs doesn't show another pack's session)
 
 ---
 

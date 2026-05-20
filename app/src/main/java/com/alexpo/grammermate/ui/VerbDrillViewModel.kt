@@ -49,7 +49,36 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         is GrammarMateApplication -> application.container
         else -> AppContainer(application)
     }
-    private var verbDrillStore = container.verbDrillStore(null)
+    private var verbDrillStore: VerbDrillStore = container.verbDrillStore(null)
+    private var usingTestStore = false
+
+    /**
+     * Test-only constructor that accepts a fake VerbDrillStore.
+     * Usage in tests: VerbDrillViewModel(application, fakeStore)
+     */
+    constructor(application: Application, testStore: VerbDrillStore) : this(application) {
+        verbDrillStore = testStore
+        usingTestStore = true
+    }
+
+    /**
+     * Test-only method to inject cards directly into the ViewModel.
+     * Bypasses the normal LessonStore-based card loading for testing.
+     */
+    fun injectTestCards(cards: List<VerbDrillCard>) {
+        allCards = cards
+        val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
+        val groups = cards.mapNotNull { it.group }.distinct().sorted()
+        _uiState.update {
+            it.copy(
+                availableTenses = tenses,
+                availableGroups = groups,
+                isLoading = false,
+                loadedLanguageId = "it"
+            )
+        }
+    }
+
     private val lessonStore = container.lessonStore
     private val progressStore = container.progressStore
     private val badSentenceStore = container.badSentenceStore
@@ -64,6 +93,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Active pack ID for pack-scoped drill loading, null for legacy global mode */
     private var currentPackId: String? = null
+
+    /** Flag to track if reloadForPack() has been called. Used to defer last session check. */
+    private var reloadForPackCalled = false
 
     /** Maps card ID to pack ID for bad sentence scoping */
     private var packIdForCardId: Map<String, String> = emptyMap()
@@ -104,8 +136,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     init {
         sessionSize = container.configStore.load().sessionSize
-        _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch { loadCards() }
+        // Don't load cards in init — wait for reloadForPack() to set up pack-scoped store
+        // Loading cards before reloadForPack() would check for last session in wrong path
     }
 
     /**
@@ -126,22 +158,66 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * then loads cards from [LessonStore.getVerbDrillFiles] with the pack parameter.
      */
     fun reloadForPack(packId: String) {
+        Log.d(logTag, "reloadForPack: packId=$packId, currentPackId=$currentPackId, reloadForPackCalled=$reloadForPackCalled")
         sessionSize = container.configStore.load().sessionSize
+        reloadForPackCalled = true
         if (currentPackId == packId && allCards.isNotEmpty()) {
             // Cards already loaded, but progress may be stale — force re-read from disk
             viewModelScope.launch {
                 progressMap = withContext(Dispatchers.IO) { verbDrillStore.loadProgress() }
                 updateProgressDisplay()
+                // Check for last session even when cards are already loaded
+                checkForLastSessionAndShowDialog()
             }
             return
         }
         currentPackId = packId
-        verbDrillStore = container.verbDrillStore(packId)
+        // Only replace verbDrillStore if not using a test store (injected via constructor)
+        // This allows tests to inject a fake store without it being overwritten
+        if (!usingTestStore) {
+            verbDrillStore = container.verbDrillStore(packId)
+            Log.d(logTag, "reloadForPack: created new pack-scoped store for packId=$packId")
+        }
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards() }
     }
 
+    /**
+     * Check for a last session and show the dialog if needed (VD-50).
+     * Called after cards are loaded to determine if user should see Start Fresh/Resume dialog.
+     * Session is shown regardless of age - context displays how long ago it was saved.
+     */
+    private fun checkForLastSessionAndShowDialog() {
+        Log.d(logTag, "checkForLastSessionAndShowDialog: currentPackId=$currentPackId, reloadForPackCalled=$reloadForPackCalled")
+        val lastSession = verbDrillStore.loadLastSession()
+        Log.d(logTag, "checkForLastSession: lastSession = ${lastSession != null}, cards=${lastSession?.cards?.size ?: 0}")
+        if (lastSession != null) {
+            _uiState.update {
+                it.copy(
+                    showStartFreshResumeDialog = true,
+                    lastSessionContext = lastSession
+                )
+            }
+            Log.d(logTag, "checkForLastSession: showStartFreshResumeDialog set to true")
+        }
+    }
+
     private suspend fun loadCards(languageId: String? = null) {
+        // For tests: if using test store, skip file I/O
+        if (usingTestStore) {
+            if (allCards.isNotEmpty()) {
+                // Cards already injected via injectTestCards()
+                _uiState.update { it.copy(isLoading = false) }
+                progressMap = verbDrillStore.loadProgress()
+                updateProgressDisplay()
+                checkForLastSessionAndShowDialog()
+            } else {
+                // No cards yet, will be loaded via injectTestCards()
+                _uiState.update { it.copy(isLoading = false) }
+            }
+            return
+        }
+
         // All file I/O and parsing runs on Dispatchers.IO to avoid blocking main thread
         val ioResult = withContext(Dispatchers.IO) {
             val lang = languageId ?: progressStore.load().languageId.value
@@ -203,6 +279,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         Log.d(logTag, "Loaded ${ioResult.cards.size} verb drill cards for language ${ioResult.lang}")
+
+        // Check for last session and show dialog if needed (VD-50)
+        checkForLastSessionAndShowDialog()
     }
 
     /** Holds the result of I/O-heavy card loading, returned from Dispatchers.IO */
@@ -387,6 +466,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         if (isComplete) {
             recordFireStreakIfCompleted(updatedCorrect)
+            // Delete last session when session completes (VD-50)
+            verbDrillStore.deleteLastSession()
         } else {
             cardShownTimestamp = System.currentTimeMillis()
         }
@@ -517,8 +598,140 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun exitSession() {
+        Log.d(logTag, "exitSession: saving last session...")
+        val session = _uiState.value.session
+        // Save last session state for resume if session was incomplete (VD-50)
+        if (session != null && !session.isComplete) {
+            saveLastSessionState(session)
+        } else if (session != null && session.isComplete) {
+            // Delete last session on complete session
+            verbDrillStore.deleteLastSession()
+        }
         verbDrillStore.flush()
         _uiState.update { it.copy(session = null, currentCardIsBad = false) }
+    }
+
+    /**
+     * Save the current session state for potential resume (VD-50).
+     * Called when user exits an incomplete session.
+     */
+    private fun saveLastSessionState(session: VerbDrillSessionState) {
+        val state = _uiState.value
+        val lastSessionState = com.alexpo.grammermate.data.VerbDrillLastSessionState(
+            selectedTense = state.selectedTense,
+            selectedGroup = state.selectedGroup,
+            sortByFrequency = state.sortByFrequency,
+            cards = session.cards,
+            currentIndex = session.currentIndex,
+            correctCount = session.correctCount,
+            incorrectCount = session.incorrectCount,
+            timestamp = System.currentTimeMillis()
+        )
+        verbDrillStore.saveLastSession(lastSessionState)
+        Log.d(logTag, "saveLastSessionState: saved ${lastSessionState.cards.size} cards, packId=$currentPackId")
+    }
+
+    // ── Start Fresh / Resume Dialog (VD-50) ──────────────────────────────────────
+
+    /**
+     * Resume the last incomplete session (VD-50).
+     * Restores filters, session data, and dismisses the dialog.
+     */
+    fun onResumeSession() {
+        val lastSession = verbDrillStore.loadLastSession() ?: run {
+            // No session to resume - should not happen if dialog was shown
+            _uiState.update { it.copy(showStartFreshResumeDialog = false) }
+            return
+        }
+
+        // Validate session has cards
+        if (lastSession.cards.isEmpty()) {
+            // Invalid session - delete and return to selection screen
+            verbDrillStore.deleteLastSession()
+            _uiState.update {
+                it.copy(
+                    showStartFreshResumeDialog = false,
+                    selectedTense = null,
+                    selectedGroup = null,
+                    sortByFrequency = false,
+                    session = null
+                )
+            }
+            return
+        }
+
+        // Restore filters and session state
+        _uiState.update { state ->
+            state.copy(
+                selectedTense = lastSession.selectedTense,
+                selectedGroup = lastSession.selectedGroup,
+                sortByFrequency = lastSession.sortByFrequency,
+                session = VerbDrillSessionState(
+                    cards = lastSession.cards,
+                    currentIndex = lastSession.currentIndex,
+                    correctCount = lastSession.correctCount,
+                    incorrectCount = lastSession.incorrectCount,
+                    isComplete = lastSession.currentIndex >= lastSession.cards.size
+                ),
+                showStartFreshResumeDialog = false
+            )
+        }
+
+        // Update the current card's bad sentence flag
+        val session = _uiState.value.session
+        if (session != null && session.currentIndex < session.cards.size) {
+            val currentCard = session.cards[session.currentIndex]
+            val cardIsBad = isCardBad(currentCard)
+            _uiState.update { it.copy(currentCardIsBad = cardIsBad) }
+        }
+
+        updateProgressDisplay()
+    }
+
+    /**
+     * Start fresh - delete last session and return to selection screen (VD-50).
+     */
+    fun onStartFresh() {
+        verbDrillStore.deleteLastSession()
+        _uiState.update { state ->
+            state.copy(
+                showStartFreshResumeDialog = false,
+                selectedTense = null,
+                selectedGroup = null,
+                sortByFrequency = false,
+                session = null,
+                currentCardIsBad = false,
+                allDoneToday = false
+            )
+        }
+        updateProgressDisplay()
+    }
+
+    /**
+     * Dismiss the Start Fresh / Resume dialog (VD-50).
+     * Does NOT delete the last session - user may return.
+     */
+    fun onDismissDialog() {
+        _uiState.update { it.copy(showStartFreshResumeDialog = false) }
+    }
+
+    /**
+     * Format the session age as a human-readable string.
+     * Returns "just now", "X minutes ago", "X hours ago", or "X days ago".
+     */
+    fun formatSessionAge(timestamp: Long): String {
+        val now = System.currentTimeMillis()
+        val diffMs = now - timestamp
+        val diffMinutes = diffMs / (1000 * 60)
+        val diffHours = diffMs / (1000 * 60 * 60)
+        val diffDays = diffMs / (1000 * 60 * 60 * 24)
+
+        return when {
+            diffMinutes < 1 -> "just now"
+            diffMinutes < 60 -> "$diffMinutes minute${if (diffMinutes > 1) "s" else ""} ago"
+            diffHours < 24 -> "$diffHours hour${if (diffHours > 1) "s" else ""} ago"
+            else -> "$diffDays day${if (diffDays > 1) "s" else ""} ago"
+        }
     }
 
     // ── Bad Sentence Support ──────────────────────────────────────────────

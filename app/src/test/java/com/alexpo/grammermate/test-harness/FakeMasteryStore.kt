@@ -98,4 +98,80 @@ class FakeMasteryStore : MasteryStore {
     override fun flush() {
         // No-op for tests
     }
+
+    /**
+     * Simulate completion of a lesson by recording card shows.
+     *
+     * @param lessonId The lesson ID
+     * @param languageId The language ID
+     * @param cardsToShow Number of unique cards to mark as shown
+     * @param markCompleted Whether to mark the lesson as completed
+     */
+    fun simulateLessonCompletion(
+        lessonId: String,
+        languageId: String,
+        cardsToShow: Int = 150,
+        markCompleted: Boolean = true
+    ) {
+        // Record card shows for the specified number of cards
+        for (i in 1..cardsToShow) {
+            val cardId = "${lessonId}_card_$i"
+            recordCardShow(lessonId, languageId, cardId)
+        }
+
+        // Mark lesson as completed if requested
+        if (markCompleted) {
+            markLessonCompleted(lessonId, languageId)
+        }
+    }
+
+    /**
+     * Simulate partial completion of a lesson.
+     *
+     * @param lessonId The lesson ID
+     * @param languageId The language ID
+     * @param cardsShown Number of unique cards already shown
+     * @param isCompleted Whether the lesson is marked completed
+     */
+    fun simulatePartialProgress(
+        lessonId: String,
+        languageId: String,
+        cardsShown: Int = 50,
+        isCompleted: Boolean = false
+    ) {
+        val state = getOrCreate(lessonId, languageId)
+        val shownCardIds = (1..cardsShown).map { "${lessonId}_card_$it" }.toSet()
+
+        val updated = state.copy(
+            uniqueCardShows = cardsShown,
+            totalCardShows = cardsShown + 5,
+            lastShowDateMs = System.currentTimeMillis() - (cardsShown * 60_000L),
+            shownCardIds = shownCardIds,
+            completedAtMs = if (isCompleted) System.currentTimeMillis() - 86_400_000L else null
+        )
+        save(updated)
+    }
+
+    /**
+     * Reset all mastery data for testing.
+     */
+    fun resetAll() {
+        data.clear()
+    }
+
+    /**
+     * Get the number of lessons with mastery data.
+     */
+    fun getLessonCount(): Int = data.size
+
+    /**
+     * Get all lesson IDs that have mastery data.
+     */
+    fun getAllLessonIds(languageId: String? = null): Set<String> {
+        return if (languageId != null) {
+            data[languageId]?.keys ?: emptySet()
+        } else {
+            data.values.flatMap { it.keys }.toSet()
+        }
+    }
 }

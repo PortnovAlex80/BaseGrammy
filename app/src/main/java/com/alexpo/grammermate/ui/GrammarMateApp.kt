@@ -436,6 +436,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     when {
                                         returnTo == Routes.VERB_DRILL -> {
                                             vm.exitVerbDrillSession()
+                                            verbDrillVmForTenses.exitSession()
                                             onNavigate(Routes.VERB_DRILL)
                                         }
                                         returnTo == Routes.DAILY_PRACTICE -> {
@@ -453,6 +454,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onVerbDrillMore = remember { {
                                 // Stay on VERB_DRILL selection screen for next batch
                                 vm.exitVerbDrillSession()
+                                verbDrillVmForTenses.exitSession()
                                 onNavigate(Routes.VERB_DRILL)
                             } },
                             onNavigate = onNavigate,
@@ -470,6 +472,13 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             getTenseInfo = remember { { tenseName: String -> verbDrillVmForTenses.getTenseInfo(tenseName) } }
                         )
+
+                        // Local back handler for VERB_DRILL return path (needs verbDrillVmForTenses)
+                        BackHandler(enabled = state.cardSession.returnTo == Routes.VERB_DRILL && !dialogs.showSettings) {
+                            vm.exitVerbDrillSession()
+                            verbDrillVmForTenses.exitSession()
+                            onNavigate(Routes.VERB_DRILL)
+                        }
                     }
 
                     composable(Routes.VERB_DRILL) {
@@ -482,12 +491,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
                             }
                         }
-                        VerbDrillScreen(
-                            viewModel = verbDrillVm,
-                            onBack = remember { {
+                        val verbDrillExit = remember(verbDrillVm) {
+                            {
+                                verbDrillVm.exitSession()
                                 vm.refreshStreakFromStore()
                                 onNavigate(Routes.HOME)
-                            } },
+                            }
+                        }
+                        BackHandler { verbDrillExit() }
+                        VerbDrillScreen(
+                            viewModel = verbDrillVm,
+                            onBack = verbDrillExit,
                             onStartSession = remember { { cards: List<VerbDrillCard> ->
                                 vm.startVerbDrillSession(cards)
                                 vm.setReturnTo(Routes.VERB_DRILL)
@@ -602,21 +616,8 @@ private fun NavBackHandlers(
             vm.resumeFromSettings()
         }
     }
-    BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.VERB_DRILL && !showSettings) {
-        vm.exitVerbDrillSession()
-        navController.navigate(Routes.VERB_DRILL) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
-    }
     BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.DAILY_PRACTICE && !showSettings) {
         vm.cancelDailySession()
-        navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
-    }
-    BackHandler(enabled = currentRoute == Routes.VERB_DRILL && !showSettings) {
         navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = false }
             launchSingleTop = true

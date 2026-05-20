@@ -29,6 +29,32 @@ data class VerbDrillSessionState(
     val isComplete: Boolean = false
 )
 
+/**
+ * Represents the state of the last incomplete verb drill session, enabling resume functionality.
+ *
+ * This state is persisted to `verb_drill_last_session.yaml` and restored when the user
+ * re-enters the Verb Drill screen within 24 hours of leaving.
+ *
+ * @property selectedTense The tense filter selected by the user (e.g., "Presente", "Imperfetto")
+ * @property selectedGroup The conjugation group filter (e.g., "regular_are", "irregular")
+ * @property sortByFrequency Whether cards were sorted by frequency rank
+ * @property cards The list of cards in the session (order matters for resume)
+ * @property currentIndex The position of the current card (0-based)
+ * @property correctCount Number of cards answered correctly
+ * @property incorrectCount Number of cards where hint was shown
+ * @property timestamp Unix timestamp (ms) when session was saved
+ */
+data class VerbDrillLastSessionState(
+    val selectedTense: String?,
+    val selectedGroup: String?,
+    val sortByFrequency: Boolean,
+    val cards: List<VerbDrillCard>,
+    val currentIndex: Int,
+    val correctCount: Int,
+    val incorrectCount: Int,
+    val timestamp: Long
+)
+
 data class VerbDrillUiState(
     val availableTenses: List<String> = emptyList(),
     val availableGroups: List<String> = emptyList(),
@@ -43,5 +69,7 @@ data class VerbDrillUiState(
     val loadedLanguageId: String? = null,
     val badSentenceCount: Int = 0,
     val currentCardIsBad: Boolean = false,
-    val sortByFrequency: Boolean = false
+    val sortByFrequency: Boolean = false,
+    val showStartFreshResumeDialog: Boolean = false,
+    val lastSessionContext: VerbDrillLastSessionState? = null
 )

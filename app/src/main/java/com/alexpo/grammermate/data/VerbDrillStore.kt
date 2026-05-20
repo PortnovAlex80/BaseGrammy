@@ -29,6 +29,27 @@ interface VerbDrillStore {
 
     /** Flush any pending writes to disk immediately. Call at session end, app background, etc. */
     fun flush()
+
+    // ── Last Session Persistence (VD-50) ────────────────────────────────────────
+
+    /**
+     * Load the last incomplete verb drill session.
+     * Returns null if no session exists.
+     * Session is returned regardless of age (no staleness check).
+     */
+    fun loadLastSession(): VerbDrillLastSessionState?
+
+    /**
+     * Save the current session state for potential resume.
+     * Called when user exits an incomplete session.
+     */
+    fun saveLastSession(session: VerbDrillLastSessionState)
+
+    /**
+     * Delete the last session state.
+     * Called when user completes a session or chooses "Start Fresh".
+     */
+    fun deleteLastSession()
 }
 
 class VerbDrillStoreImpl(
@@ -41,6 +62,11 @@ class VerbDrillStoreImpl(
         File(baseDir, "drills/$packId/verb_drill_progress.yaml")
     } else {
         File(baseDir, "verb_drill_progress.yaml")
+    }
+    private val lastSessionFile: File = if (packId != null) {
+        File(baseDir, "drills/$packId/verb_drill_last_session.yaml")
+    } else {
+        File(baseDir, "verb_drill_last_session.yaml")
     }
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
@@ -216,5 +242,99 @@ class VerbDrillStoreImpl(
         progressCache = null
         cardsCacheKey = null
         cardsCache = null
+    }
+
+    // ── Last Session Persistence (VD-50) ────────────────────────────────────────
+
+    private var lastSessionCache: VerbDrillLastSessionState? = null
+
+    override fun loadLastSession(): VerbDrillLastSessionState? = mutex.withLock {
+        lastSessionCache?.let { return@withLock it }
+
+        if (!lastSessionFile.exists() || lastSessionFile.length() == 0L) return@withLock null
+
+        val loaded = try {
+            loadLastSessionFromDisk()
+        } catch (e: Exception) {
+            return@withLock null
+        }
+
+        lastSessionCache = loaded
+        return@withLock loaded
+    }
+
+    private fun loadLastSessionFromDisk(): VerbDrillLastSessionState? {
+        val raw = try { yaml.load<Any>(lastSessionFile.readText()) } catch (_: Exception) { null } ?: return null
+        val data = raw as? Map<*, *> ?: return null
+
+        // Parse cards list
+        val cardsData = data["cards"] as? List<*> ?: return null
+        val cards = cardsData.mapNotNull { cardData ->
+            val cardMap = cardData as? Map<*, *> ?: return@mapNotNull null
+            VerbDrillCard(
+                id = cardMap["id"] as? String ?: return@mapNotNull null,
+                promptRu = cardMap["promptRu"] as? String ?: "",
+                answer = cardMap["answer"] as? String ?: "",
+                verb = cardMap["verb"] as? String,
+                tense = cardMap["tense"] as? String,
+                group = cardMap["group"] as? String,
+                rank = cardMap["rank"] as? Int
+            )
+        }
+
+        return VerbDrillLastSessionState(
+            selectedTense = data["selectedTense"] as? String,
+            selectedGroup = data["selectedGroup"] as? String,
+            sortByFrequency = data["sortByFrequency"] as? Boolean ?: false,
+            cards = cards,
+            currentIndex = (data["currentIndex"] as? Number)?.toInt() ?: 0,
+            correctCount = (data["correctCount"] as? Number)?.toInt() ?: 0,
+            incorrectCount = (data["incorrectCount"] as? Number)?.toInt() ?: 0,
+            timestamp = (data["timestamp"] as? Number)?.toLong() ?: 0L
+        )
+    }
+
+    override fun saveLastSession(session: VerbDrillLastSessionState) = mutex.withLock {
+        lastSessionCache = session
+        persistLastSessionToDisk(session)
+    }
+
+    private fun persistLastSessionToDisk(session: VerbDrillLastSessionState) {
+        val cardsData = session.cards.map { card ->
+            linkedMapOf(
+                "id" to card.id,
+                "promptRu" to card.promptRu,
+                "answer" to card.answer,
+                "verb" to card.verb,
+                "tense" to card.tense,
+                "group" to card.group,
+                "rank" to card.rank
+            )
+        }
+
+        val data = linkedMapOf(
+            "schemaVersion" to schemaVersion,
+            "selectedTense" to session.selectedTense,
+            "selectedGroup" to session.selectedGroup,
+            "sortByFrequency" to session.sortByFrequency,
+            "cards" to cardsData,
+            "currentIndex" to session.currentIndex,
+            "correctCount" to session.correctCount,
+            "incorrectCount" to session.incorrectCount,
+            "timestamp" to session.timestamp
+        )
+
+        AtomicFileWriter.writeText(lastSessionFile, yaml.dump(data))
+    }
+
+    override fun deleteLastSession() = mutex.withLock {
+        deleteLastSessionInternal()
+    }
+
+    private fun deleteLastSessionInternal() {
+        lastSessionCache = null
+        if (lastSessionFile.exists()) {
+            lastSessionFile.delete()
+        }
     }
 }

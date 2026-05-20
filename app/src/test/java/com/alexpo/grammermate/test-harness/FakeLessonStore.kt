@@ -129,4 +129,57 @@ class FakeLessonStore(
     fun addLesson(lesson: Lesson) {
         lessons = lessons + lesson
     }
+
+    /**
+     * Load complete course test data into the fake store.
+     *
+     * @param courseData CourseTestData from CourseTestDataFactory
+     */
+    fun loadCourseTestData(courseData: CourseTestDataFactory.CourseTestData) {
+        val langId = LanguageId(courseData.languageId)
+        val newLessons = courseData.lessons.map { it.toLesson(langId) }
+        lessons = newLessons
+
+        // Add lesson pack if not exists
+        val existingPack = packs.firstOrNull { it.packId.value == courseData.packId }
+        if (existingPack == null) {
+            packs = packs + LessonPack(
+                packId = PackId(courseData.packId),
+                packVersion = "test-1.0",
+                languageId = langId,
+                importedAt = System.currentTimeMillis(),
+                displayName = "Test Pack ${courseData.packId}"
+            )
+        }
+
+        // Add language if not exists
+        val existingLang = languages.firstOrNull { it.id.value == courseData.languageId }
+        if (existingLang == null) {
+            languages = languages + Language(
+                id = langId,
+                displayName = courseData.languageId.uppercase()
+            )
+        }
+    }
+
+    /**
+     * Generate and load a minimal test course.
+     *
+     * @param lessonCount Number of lessons to generate (5-20)
+     * @param packId Pack identifier for scoping
+     * @param languageId Language code (default "it")
+     */
+    fun generateMinimalCourse(
+        lessonCount: Int = 5,
+        packId: String = "test_pack",
+        languageId: String = "it"
+    ) {
+        val factory = CourseTestDataFactory()
+        val courseData = factory.buildMinimalCourse(
+            lessonCount = lessonCount,
+            packId = packId,
+            languageId = languageId
+        )
+        loadCourseTestData(courseData)
+    }
 }

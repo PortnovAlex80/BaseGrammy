@@ -118,4 +118,14 @@ dependencies {
     testImplementation("androidx.test:core:1.5.0")
     testImplementation("androidx.test.ext:junit:1.1.5")
     testImplementation("androidx.compose.ui:ui-test-junit4")
+
+    // UI integration test dependencies (androidTest - requires Android runtime)
+    androidTestImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
+    androidTestImplementation("org.robolectric:robolectric:4.13")
+    androidTestImplementation("androidx.test:core:1.5.0")
+    androidTestImplementation("com.google.truth:truth:1.1.5")
 }
