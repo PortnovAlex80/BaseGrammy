@@ -85,11 +85,8 @@ fun PomodoroSelectorSheet(
 
                 if (showStats) {
                     PomodoroWeeklyStats(history = history)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    return@Column
-                }
-
-                Row(
+                } else {
+                    Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -172,10 +169,11 @@ fun PomodoroSelectorSheet(
                     Text("Start")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
+                }  // end else
+            }  // end Column
+        }  // end ModalBottomSheet
+    }  // end if (showSheet)
+}  // end PomodoroSelectorSheet
 
 private data class PomodoroDayStat(
     val label: String,
