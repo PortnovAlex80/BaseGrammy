@@ -2,12 +2,7 @@ package com.alexpo.grammermate.data
 
 import android.content.Context
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.util.concurrent.locks.ReentrantLock
@@ -55,11 +50,6 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     // Кеш для быстрого доступа
     private var cache: MutableMap<String, MutableMap<String, LessonMasteryState>> = mutableMapOf()
     private var cacheLoaded = false
-
-    // Write-behind batching: defer disk writes by up to 3 seconds
-    private val debounceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var dirty = false
-    private var persistJob: Job? = null
 
     /**
      * Загрузить все состояния освоения.
@@ -151,7 +141,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
         }
         cache[state.languageId.value]!![state.lessonId.value] = state
 
-        schedulePersist()
+        persistToFile()
     }
 
     /**
@@ -204,7 +194,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             cache[updated.languageId.value] = mutableMapOf()
         }
         cache[updated.languageId.value]!![updated.lessonId.value] = updated
-        schedulePersist()
+        persistToFile()
     }
 
     /**
@@ -224,7 +214,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             cache[updated.languageId.value] = mutableMapOf()
         }
         cache[updated.languageId.value]!![updated.lessonId.value] = updated
-        schedulePersist()
+        persistToFile()
     }
 
     /**
@@ -242,7 +232,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             cache[updated.languageId.value] = mutableMapOf()
         }
         cache[updated.languageId.value]!![updated.lessonId.value] = updated
-        schedulePersist()
+        persistToFile()
     }
 
     /**
@@ -273,7 +263,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             cache[updated.languageId.value] = mutableMapOf()
         }
         cache[updated.languageId.value]!![updated.lessonId.value] = updated
-        schedulePersist()
+        persistToFile()
         newCount
     }
 
@@ -302,38 +292,20 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     override fun clearLanguage(languageId: String) = mutex.withLock {
         loadAllInternal()
         cache.remove(languageId)
-        schedulePersist()
+        persistToFile()
     }
 
     /**
      * Flush any pending dirty data to disk immediately.
      * Call at session end, app background, screen transitions.
      */
-    override fun flush() = mutex.withLock {
-        persistJob?.cancel()
-        persistJob = null
-        if (dirty) {
-            persistToFile()
-            dirty = false
-        }
-    }
-
     /**
-     * Schedule a deferred persist to disk. Cancels any previous pending write.
-     * The in-memory cache is already up-to-date; reads will see fresh data.
+     * Flush any pending dirty data to disk immediately.
+     * No-op: writes are now immediate (no write-behind batching).
+     * Kept for API compatibility.
      */
-    private fun schedulePersist() {
-        dirty = true
-        persistJob?.cancel()
-        persistJob = debounceScope.launch {
-            delay(3000L)
-            mutex.withLock {
-                if (dirty) {
-                    persistToFile()
-                    dirty = false
-                }
-            }
-        }
+    override fun flush() {
+        // No-op: writes are immediate now
     }
 
     private fun persistToFile() {
