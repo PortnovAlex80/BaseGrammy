@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +34,8 @@ fun PomodoroTimerBanner(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp),
+            .height(48.dp)
+            .testTag("pomodoro_banner"),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
@@ -78,7 +80,7 @@ fun PomodoroTimerBanner(
                 Spacer(modifier = Modifier.width(4.dp))
                 IconButton(
                     onClick = onPauseResume,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp).testTag("pomodoro_pause_resume")
                 ) {
                     Icon(
                         painter = if (isPaused) painterResource(android.R.drawable.ic_media_play)

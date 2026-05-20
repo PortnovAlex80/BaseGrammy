@@ -14,6 +14,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +47,8 @@ fun PomodoroSummaryScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(24.dp)
+            .testTag("pomodoro_summary"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "🎉", fontSize = 48.sp)
@@ -111,7 +113,7 @@ fun PomodoroSummaryScreen(
 
         Button(
             onClick = onDone,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("pomodoro_done_button")
         ) {
             Text("OK")
         }
