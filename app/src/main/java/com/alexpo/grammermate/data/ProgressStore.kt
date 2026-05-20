@@ -1,8 +1,10 @@
 ﻿package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -87,43 +89,56 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         }
     }
 
-    override fun save(progress: TrainingProgress) = mutex.withLock {
-        val payload = linkedMapOf(
-            "languageId" to progress.languageId.value,
-            "mode" to progress.mode.name,
-            "lessonId" to progress.lessonId,
-            "currentIndex" to progress.currentIndex,
-            "correctCount" to progress.correctCount,
-            "incorrectCount" to progress.incorrectCount,
-            "incorrectAttemptsForCard" to progress.incorrectAttemptsForCard,
-            "activeTimeMs" to progress.activeTimeMs,
-            "state" to progress.state.name,
-            "bossLessonRewards" to progress.bossLessonRewards,
-            "bossMegaReward" to progress.bossMegaReward,
-            "bossMegaRewards" to progress.bossMegaRewards,
-            "voiceActiveMs" to progress.voiceActiveMs,
-            "voiceWordCount" to progress.voiceWordCount,
-            "hintCount" to progress.hintCount,
-            "eliteStepIndex" to progress.eliteStepIndex,
-            "eliteBestSpeeds" to progress.eliteBestSpeeds,
-            "currentScreen" to progress.currentScreen,
-            "activePackId" to progress.activePackId?.value,
-            "dailyLevel" to progress.dailyLevel,
-            "dailyTaskIndex" to progress.dailyTaskIndex,
-            "dailyCursor" to linkedMapOf(
-                "sentenceOffset" to progress.dailyCursor.sentenceOffset,
-                "currentLessonIndex" to progress.dailyCursor.currentLessonIndex,
-                "lastSessionHash" to progress.dailyCursor.lastSessionHash,
-                "firstSessionDate" to progress.dailyCursor.firstSessionDate,
-                "firstSessionSentenceCardIds" to progress.dailyCursor.firstSessionSentenceCardIds,
-                "firstSessionVerbCardIds" to progress.dailyCursor.firstSessionVerbCardIds
+    override fun save(progress: TrainingProgress) {
+        mutex.withLock {
+            val payload = linkedMapOf(
+                "languageId" to progress.languageId.value,
+                "mode" to progress.mode.name,
+                "lessonId" to progress.lessonId,
+                "currentIndex" to progress.currentIndex,
+                "correctCount" to progress.correctCount,
+                "incorrectCount" to progress.incorrectCount,
+                "incorrectAttemptsForCard" to progress.incorrectAttemptsForCard,
+                "activeTimeMs" to progress.activeTimeMs,
+                "state" to progress.state.name,
+                "bossLessonRewards" to progress.bossLessonRewards,
+                "bossMegaReward" to progress.bossMegaReward,
+                "bossMegaRewards" to progress.bossMegaRewards,
+                "voiceActiveMs" to progress.voiceActiveMs,
+                "voiceWordCount" to progress.voiceWordCount,
+                "hintCount" to progress.hintCount,
+                "eliteStepIndex" to progress.eliteStepIndex,
+                "eliteBestSpeeds" to progress.eliteBestSpeeds,
+                "currentScreen" to progress.currentScreen,
+                "activePackId" to progress.activePackId?.value,
+                "dailyLevel" to progress.dailyLevel,
+                "dailyTaskIndex" to progress.dailyTaskIndex,
+                "dailyCursor" to linkedMapOf(
+                    "sentenceOffset" to progress.dailyCursor.sentenceOffset,
+                    "currentLessonIndex" to progress.dailyCursor.currentLessonIndex,
+                    "lastSessionHash" to progress.dailyCursor.lastSessionHash,
+                    "firstSessionDate" to progress.dailyCursor.firstSessionDate,
+                    "firstSessionSentenceCardIds" to progress.dailyCursor.firstSessionSentenceCardIds,
+                    "firstSessionVerbCardIds" to progress.dailyCursor.firstSessionVerbCardIds
+                )
             )
-        )
-        val data = linkedMapOf(
-            "schemaVersion" to schemaVersion,
-            "data" to payload
-        )
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+            val data = linkedMapOf(
+                "schemaVersion" to schemaVersion,
+                "data" to payload
+            )
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+
+            // Верификация записи
+            if (!file.exists()) {
+                Log.e("ProgressStore", "Файл не создан после записи: ${file.absolutePath}")
+                throw IOException("Failed to create file: ${file.name}")
+            }
+            if (file.length() == 0L) {
+                Log.e("ProgressStore", "Файл пустой после записи: ${file.absolutePath}")
+                throw IOException("File is empty after write: ${file.name}")
+            }
+            Log.i("ProgressStore", "Отлично, прогресс сохранен: ${file.name} (${file.length()} bytes)")
+        }
     }
 
     override fun clear() = mutex.withLock {

@@ -809,8 +809,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun showDebugDialog() {
         viewModelScope.launch {
-            ensureProgressLoaded()
-
             // Build debug info string
             val debugInfo = buildString {
                 appendLine("=== Verb Drill Debug Info ===")
@@ -832,9 +830,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 appendLine()
 
                 // Last session state
-                val lastSession = if (::verbDrillStore.isInitialized) {
-                    verbDrillStore.loadLastSession()
-                } else null
+                val lastSession = verbDrillStore.loadLastSession()
                 if (lastSession != null) {
                     appendLine("Last Session State:")
                     appendLine("  - Tense: ${lastSession.selectedTense ?: "null"}")
@@ -849,7 +845,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 appendLine()
 
                 // Store info
-                if (::verbDrillStore.isInitialized && verbDrillStore is com.alexpo.grammermate.data.VerbDrillStoreImpl) {
+                if (verbDrillStore is com.alexpo.grammermate.data.VerbDrillStoreImpl) {
                     // Use reflection to access the private file field
                     try {
                         val fileField = verbDrillStore.javaClass.getDeclaredField("file")

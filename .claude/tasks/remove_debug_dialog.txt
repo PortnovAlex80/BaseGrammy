@@ -1,0 +1,26 @@
+Remove debug dialog from VerbDrill. Your task:
+
+1. Read app/src/main/java/com/alexpo/grammermate/ui/VerbDrillScreen.kt
+   - Remove the FloatingActionButton with bug icon (lines ~127-140)
+   - Remove the DebugInfoDialog composable (lines ~510-531)
+   - Remove the conditional render for debug dialog (lines ~164-170)
+
+2. Find and read wherever VerbDrillUiState is defined
+   - Remove showDebugInfo: Boolean field from VerbDrillUiState
+   - Remove debugInfo: String field from VerbDrillUiState
+
+3. Read app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt
+   - Remove showDebugDialog() method
+   - Remove hideDebugDialog() method
+
+4. Remove imports that are no longer needed:
+   - Icons.Default.BugReport
+   - AlertDialog (if not used elsewhere)
+   - FloatingActionButton
+   - Scaffold (if not used elsewhere)
+
+5. Build APK using: java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+Return: Exact code changes with line numbers, and build result.
+
+Follow all subagent rules from CLAUDE.md including AtomicFileWriter for any writes, run build check, report pass/fail.

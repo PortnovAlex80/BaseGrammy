@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.time.LocalDate
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -192,6 +194,17 @@ class VerbDrillStoreImpl(
             "data" to comboPayload
         )
         AtomicFileWriter.writeText(file, yaml.dump(data))
+
+        // Верификация записи
+        if (!file.exists()) {
+            Log.e("VerbDrillStore", "Файл не создан после записи: ${file.absolutePath}")
+            throw IOException("Failed to create file: ${file.name}")
+        }
+        if (file.length() == 0L) {
+            Log.e("VerbDrillStore", "Файл пустой после записи: ${file.absolutePath}")
+            throw IOException("File is empty after write: ${file.name}")
+        }
+        Log.i("VerbDrillStore", "Отлично, прогресс сохранен: ${file.name} (${file.length()} bytes)")
     }
 
     /**
@@ -263,6 +276,17 @@ class VerbDrillStoreImpl(
         )
 
         AtomicFileWriter.writeText(lastSessionFile, yaml.dump(data))
+
+        // Верификация записи
+        if (!lastSessionFile.exists()) {
+            Log.e("VerbDrillStore", "Файл не создан после записи: ${lastSessionFile.absolutePath}")
+            throw IOException("Failed to create file: ${lastSessionFile.name}")
+        }
+        if (lastSessionFile.length() == 0L) {
+            Log.e("VerbDrillStore", "Файл пустой после записи: ${lastSessionFile.absolutePath}")
+            throw IOException("File is empty after write: ${lastSessionFile.name}")
+        }
+        Log.i("VerbDrillStore", "Отлично, сессия сохранена: ${lastSessionFile.name} (${lastSessionFile.length()} bytes)")
     }
 
     override fun deleteLastSession() = mutex.withLock {

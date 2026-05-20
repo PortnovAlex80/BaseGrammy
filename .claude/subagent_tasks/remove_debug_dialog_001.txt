@@ -1,0 +1,46 @@
+AGENT TASK: Remove Debug Dialog from VerbDrill
+
+CONTEXT: Remove temporary debugging UI that was added to troubleshoot progress persistence issues. The debug dialog is no longer needed.
+
+FILES TO READ (orientation):
+- app/src/main/java/com/alexpo/grammermate/ui/VerbDrillScreen.kt
+- app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt
+- app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt
+
+FILES TO MODIFY:
+1. app/src/main/java/com/alexpo/grammermate/ui/VerbDrillScreen.kt
+2. app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt
+3. app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt
+
+CHANGES REQUIRED:
+
+File 1: VerbDrillScreen.kt
+- Remove lines 127-140: The Box containing FloatingActionButton with BugReport icon
+- Remove lines 510-531: The DebugInfoDialog composable function
+- Remove lines 164-170: The conditional "if (state.showDebugInfo)" block that renders DebugInfoDialog
+- Remove line 17: import androidx.compose.material.icons.filled.BugReport
+- Remove line 13: import androidx.compose.material3.FloatingActionButton (only used in debug FAB)
+- Remove line 14: import androidx.compose.material3.Scaffold (not used anywhere)
+- KEEP line 18: import androidx.compose.material3.AlertDialog (used in StartFreshResumeDialog)
+
+File 2: VerbDrillCard.kt
+- In VerbDrillUiState data class (around line 72-73):
+  Remove: val showDebugInfo: Boolean = false,
+  Remove: val debugInfo: String = ""
+
+File 3: VerbDrillViewModel.kt
+- Remove showDebugDialog() method (lines 900-976, includes KDoc)
+- Remove hideDebugDialog() method (lines 975-980, includes KDoc)
+
+BUILD COMMAND (run after changes):
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+RULES:
+1. Use AtomicFileWriter for all file writes (temp -> fsync -> rename)
+2. Read spec files before coding
+3. One file per change, verify each edit
+4. Run build check after all changes
+5. Report: files changed with line numbers, change summary, build result, blockers
+6. Commit message: "chore: Remove debug dialog from VerbDrill screen"
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
