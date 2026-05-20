@@ -48,7 +48,7 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-067](TASK-067-perf-005-yaml-cache.md) | PERF-005 YamlListStore Caching | BACKLOG | 20-NFR §20.1.3, §20.1.7 | 2026-05-17 |
 | [TASK-068](TASK-068-perf-006-batch-write.md) | PERF-006 Batch Write I/O | BACKLOG | 20-NFR §20.1.3 | 2026-05-17 |
 | [DONE-TASK-069](DONE-TASK-069-perf-007-background-init.md) | PERF-007 Background ViewModel Init | DONE | 20-NFR §20.1.1, §20.1.7 | 2026-05-17 |
-| [TASK-077](TASK-077-verb-drill-progress-lost-on-apk-update.md) | Verb Drill Progress Lost on APK Update | OPEN | 10-verb-drill | 2026-05-20 |
+| [DONE-TASK-077](DONE-TASK-077-verb-drill-progress-lost-on-apk-update.md) | Verb Drill Progress Lost on APK Update | DONE | 10-verb-drill | 2026-05-20 |
 | [TASK-070](TASK-070-daily-cursor-stuck.md) | Daily Practice Cursor Stuck + Tablet Lesson Boundary | OPEN | 09-daily-practice, scenario-06 | 2026-05-18 |
 | [TASK-071](TASK-071-completed-lesson-ux.md) | Completed Lesson UX — CompletionCard, Review Mode, Boss Threshold | OPEN | 19-screen-catalog#Screen3, UC-89/90/91 | 2026-05-18 |
 | [TASK-072](TASK-072-tts-tablet-crash.md) | TTS Tablet Crash — Shared Singleton Race + Native Free | OPEN | 05-audio-tts-asr | 2026-05-18 |

@@ -1,6 +1,6 @@
 # TASK-077: Verb Drill Progress Lost on APK Update
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-20
 **Branch:** feature/verb-drill-progress-persistence (from main)
 **Spec:** `10-verb-drill.md#10.3, 10-verb-drill.md#10.5.7`
@@ -94,5 +94,5 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| 2026-05-20 | Investigation 1: Verify VerbDrillStore file paths and write behavior | OPEN | Created task |
-| | Fix 1: Apply root cause fix | OPEN | Awaiting investigation |
+| 2026-05-20 | Investigation 1: Verify VerbDrillStore file paths and write behavior | DONE | Root cause: reloadForLanguage() not updating store |
+| 2026-05-20 | Fix 1: Apply root cause fix | DONE | Updated reloadForLanguage() to use currentPackId |
