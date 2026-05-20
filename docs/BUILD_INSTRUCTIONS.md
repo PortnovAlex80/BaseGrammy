@@ -12,6 +12,18 @@
 
 ## 1. Установка Java 17
 
+### Вариант A: Использовать Java из IntelliJ IDEA (рекомендуется)
+
+Если у вас установлена IntelliJ IDEA, Java уже есть в комплекте:
+
+```cmd
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+```
+
+Путь может отличаться в зависимости от версии IntelliJ.
+
+### Вариант B: Установить отдельный JDK
+
 Скачайте и установите JDK 17 (например, [Eclipse Temurin](https://adoptium.net/)). Убедитесь, что команда `java -version` выводит версию 17:
 
 ```cmd
@@ -89,15 +101,22 @@ gradle/wrapper/
 
 Запускайте сборку напрямую через Java, указав все три JAR в classpath:
 
+**С Java из IntelliJ IDEA:**
+```cmd
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+```
+
+**С системным Java:**
 ```cmd
 java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
 
-Для удобства можно создать файл `build.bat` в корне проекта:
+Для удобства можно создать файл `build.bat` в корне проекта (укажите свой путь к Java):
 
 ```bat
 @echo off
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain %*
+set JAVA_EXE=C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe
+"%JAVA_EXE%" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain %*
 ```
 
 После этого можно использовать `build.bat assembleDebug` вместо `gradlew assembleDebug`.
@@ -171,14 +190,15 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 ## Краткая шпаргалка
 
 ```cmd
-:: 1. Проверить Java
-java -version
+:: 1. Проверить Java (из IntelliJ или системная)
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+:: или просто: java -version
 
 :: 2. Проверить Android SDK
 echo %ANDROID_HOME%
 
-:: 3. Собрать debug APK
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+:: 3. Собрать debug APK (укажите свой путь к Java)
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 
 :: 4. Забрать APK
 :: app\build\outputs\apk\debug\grammermate.apk
