@@ -1,12 +1,6 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.time.LocalDate
@@ -71,11 +65,6 @@ class VerbDrillStoreImpl(
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
 
-    // Write-behind batching: defer disk writes by up to 3 seconds
-    private val debounceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var dirty = false
-    private var persistJob: Job? = null
-
     // In-memory cache for progress data — invalidated on progress save
     private var progressCache: Map<String, VerbDrillComboProgress>? = null
 
@@ -134,7 +123,7 @@ class VerbDrillStoreImpl(
 
     override fun saveProgress(progress: Map<String, VerbDrillComboProgress>) {
         progressCache = progress
-        schedulePersist()
+        persistProgressToDisk()
     }
 
     override fun getComboProgress(key: String): VerbDrillComboProgress? {
@@ -144,8 +133,8 @@ class VerbDrillStoreImpl(
     override fun upsertComboProgress(key: String, progress: VerbDrillComboProgress) = mutex.withLock {
         val all = loadProgress().toMutableMap()
         all[key] = progress
-        progressCache = all  // update cache immediately
-        schedulePersist()    // deferred disk write
+        progressCache = all
+        persistProgressToDisk()
     }
 
     override fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
@@ -182,40 +171,18 @@ class VerbDrillStoreImpl(
 
     /**
      * Flush any pending dirty data to disk immediately.
-     * Call at session end, app background, screen transitions.
+     * No-op: writes are now immediate (no write-behind batching).
+     * Kept for API compatibility.
      */
-    override fun flush() = mutex.withLock {
-        persistJob?.cancel()
-        persistJob = null
-        if (dirty) {
-            persistCacheToDisk()
-            dirty = false
-        }
+    override fun flush() {
+        // No-op: writes are immediate now
     }
 
     /**
-     * Schedule a deferred persist to disk. Cancels any previous pending write.
-     * The in-memory cache is already up-to-date; reads will see fresh data.
+     * Write progress to disk immediately via AtomicFileWriter.
+     * Matches WordMasteryStore pattern: immediate write, no batching.
      */
-    private fun schedulePersist() {
-        dirty = true
-        persistJob?.cancel()
-        persistJob = debounceScope.launch {
-            delay(3000L)
-            mutex.withLock {
-                if (dirty) {
-                    persistCacheToDisk()
-                    dirty = false
-                }
-            }
-        }
-    }
-
-    /**
-     * Write the current progressCache to disk via AtomicFileWriter.
-     * Must be called under mutex.
-     */
-    private fun persistCacheToDisk() {
+    private fun persistProgressToDisk() {
         val progress = progressCache ?: return
         val comboPayload = linkedMapOf<String, Any>()
         for ((key, value) in progress) {

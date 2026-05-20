@@ -1,9 +1,11 @@
 ﻿package com.alexpo.grammermate
 
 import android.os.Bundle
+import android.os.Environment
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,6 +50,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install global exception handler to log crashes
+        installCrashHandler()
+
         // Apply saved UI language before content is set
         val configStore = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getAppConfigStore()
         SettingsActionHandler.applyLocale(configStore.load().uiLanguage)
@@ -196,5 +201,37 @@ class MainActivity : ComponentActivity() {
                 RestoreNotifier.markComplete(false)
             }
         }
+    }
+
+    private fun installCrashHandler() {
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            val crashLog = getCrashLog(throwable)
+            Log.e("CRASH", crashLog)
+
+            try {
+                val crashFile = java.io.File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                    "BaseGrammy/crash_log.txt"
+                )
+                crashFile.parentFile?.mkdirs()
+                crashFile.writeText(crashLog)
+            } catch (e: Exception) {
+                Log.e("CRASH", "Failed to write crash log", e)
+            }
+
+            // Call original handler to show crash dialog
+            throw throwable
+        }
+    }
+
+    private fun getCrashLog(throwable: Throwable): String {
+        val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+        val sb = StringBuilder()
+        sb.append("=== CRASH $timestamp ===\n")
+        sb.append("Android: ${android.os.Build.VERSION.RELEASE}\n")
+        sb.append("Model: ${android.os.Build.MODEL}\n")
+        sb.append("\nSTACK TRACE:\n")
+        sb.append(android.util.Log.getStackTraceString(throwable))
+        return sb.toString()
     }
 }
