@@ -1,20 +1,31 @@
 package com.alexpo.grammermate.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
+import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.PomodoroPreset
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,11 +33,13 @@ fun PomodoroSelectorSheet(
     showSheet: Boolean,
     onDismiss: () -> Unit,
     onStart: (Int) -> Unit,
-    lastDuration: Int
+    lastDuration: Int,
+    history: List<PomodoroHistoryEntry> = emptyList()
 ) {
     val sheetState = rememberModalBottomSheetState()
     var selectedMinutes by remember(lastDuration) { mutableIntStateOf(lastDuration) }
     var customMinutes by remember { mutableIntStateOf(25) }
+    var showStats by remember(showSheet) { mutableStateOf(false) }
 
     if (showSheet) {
         ModalBottomSheet(
@@ -40,24 +53,43 @@ fun PomodoroSelectorSheet(
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_tomato),
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = { showStats = !showStats },
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            imageVector = if (showStats) Icons.Default.ArrowBack else Icons.Default.Insights,
+                            contentDescription = if (showStats) "Back to timer" else "Pomodoro stats"
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(R.drawable.ic_tomato),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .align(Alignment.Center),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Pomodoro Training",
+                    text = if (showStats) "Pomodoro Stats" else "Pomodoro Training",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Focus. Practice. Grow.",
+                    text = if (showStats) "Last 7 days" else "Focus. Practice. Grow.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(24.dp))
+
+                if (showStats) {
+                    PomodoroWeeklyStats(history = history)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    return@Column
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -144,5 +176,146 @@ fun PomodoroSelectorSheet(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+}
+
+private data class PomodoroDayStat(
+    val label: String,
+    val sessions: Int,
+    val cards: Int,
+    val correct: Int,
+    val minutes: Int
+)
+
+@Composable
+private fun PomodoroWeeklyStats(history: List<PomodoroHistoryEntry>) {
+    val stats = remember(history) { buildWeeklyStats(history) }
+    val totalSessions = stats.sumOf { it.sessions }
+    val totalCards = stats.sumOf { it.cards }
+    val totalCorrect = stats.sumOf { it.correct }
+    val totalMinutes = stats.sumOf { it.minutes }
+    val accuracy = if (totalCards > 0) totalCorrect * 100 / totalCards else 0
+
+    if (totalSessions == 0) {
+        Text(
+            text = "No Pomodoro sessions yet for this language.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        return
+    }
+
+    PomodoroBarChart(stats)
+    Spacer(modifier = Modifier.height(16.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        StatChip("Sessions", totalSessions.toString(), Modifier.weight(1f))
+        StatChip("Cards", totalCards.toString(), Modifier.weight(1f))
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        StatChip("Accuracy", "$accuracy%", Modifier.weight(1f))
+        StatChip("Focus", "${totalMinutes}m", Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun PomodoroBarChart(stats: List<PomodoroDayStat>) {
+    val maxCards = stats.maxOfOrNull { it.cards }?.coerceAtLeast(1) ?: 1
+    val barColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+        ) {
+            val gap = 8.dp.toPx()
+            val labelHeight = 20.dp.toPx()
+            val chartHeight = size.height - labelHeight
+            val barWidth = (size.width - gap * (stats.size - 1)) / stats.size
+            stats.forEachIndexed { index, day ->
+                val left = index * (barWidth + gap)
+                drawRoundRect(
+                    color = trackColor,
+                    topLeft = Offset(left, 0f),
+                    size = Size(barWidth, chartHeight),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                )
+                val fillHeight = chartHeight * day.cards / maxCards
+                drawRoundRect(
+                    color = if (day.cards > 0) barColor else Color.Transparent,
+                    topLeft = Offset(left, chartHeight - fillHeight),
+                    size = Size(barWidth, fillHeight),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            stats.forEach { day ->
+                Text(
+                    text = day.label,
+                    color = labelColor,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatChip(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = value, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun buildWeeklyStats(history: List<PomodoroHistoryEntry>): List<PomodoroDayStat> {
+    val dayFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    val labelFormat = SimpleDateFormat("EEE", Locale.US)
+    val today = Calendar.getInstance()
+    val days = (6 downTo 0).map { offset ->
+        Calendar.getInstance().apply {
+            timeInMillis = today.timeInMillis
+            add(Calendar.DAY_OF_YEAR, -offset)
+        }
+    }
+    val grouped = history.groupBy {
+        dayFormat.format(Calendar.getInstance().apply { timeInMillis = it.completedAtMs }.time)
+    }
+    return days.map { day ->
+        val key = dayFormat.format(day.time)
+        val entries = grouped[key].orEmpty()
+        PomodoroDayStat(
+            label = labelFormat.format(day.time),
+            sessions = entries.size,
+            cards = entries.sumOf { it.cardsShown },
+            correct = entries.sumOf { it.cardsCorrect },
+            minutes = entries.sumOf { ((it.totalSeconds - it.remainingSeconds).coerceAtLeast(0) + 59) / 60 }
+        )
     }
 }

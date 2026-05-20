@@ -246,6 +246,21 @@ data class PomodoroSessionStats(
     val completedAtMs: Long = 0
 )
 
+data class PomodoroHistoryEntry(
+    val id: String,
+    val languageId: String,
+    val packId: String? = null,
+    val lessonId: String? = null,
+    val completedAtMs: Long,
+    val durationMinutes: Int,
+    val totalSeconds: Int,
+    val remainingSeconds: Int,
+    val cardsShown: Int,
+    val cardsCorrect: Int,
+    val cardsIncorrect: Int,
+    val wordsPerMinute: Double
+)
+
 data class PomodoroState(
     val isActive: Boolean = false,
     val isPaused: Boolean = false,

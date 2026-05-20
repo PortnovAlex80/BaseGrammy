@@ -66,6 +66,9 @@ import com.alexpo.grammermate.shared.SettingsActionHandler
 import com.alexpo.grammermate.shared.SettingsResult
 import com.alexpo.grammermate.shared.audio.AudioCoordinator
 import com.alexpo.grammermate.feature.pomodoro.PomodoroHelper
+import com.alexpo.grammermate.data.PomodoroHistoryEntry
+import com.alexpo.grammermate.data.PomodoroHistoryStore
+import com.alexpo.grammermate.data.PomodoroSessionStats
 import com.alexpo.grammermate.data.PomodoroSettingsStore
 import com.alexpo.grammermate.data.CardDifficultyRating
 
@@ -227,6 +230,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     )
 
     private val pomodoroSettingsStore = PomodoroSettingsStore(getApplication<Application>())
+    private val pomodoroHistoryStore = PomodoroHistoryStore(getApplication<Application>())
     private val pomodoroHelper = PomodoroHelper(
         stateProvider = { _coreState.value },
         onUpdateState = { newState -> _coreState.update { newState } },
@@ -240,6 +244,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 val ringtone = android.media.RingtoneManager.getRingtone(getApplication<Application>(), uri)
                 ringtone?.play()
             } catch (_: Exception) {}
+        },
+        onPomodoroCompleted = { stats, remainingSeconds, totalSeconds ->
+            savePomodoroHistory(stats, remainingSeconds, totalSeconds)
         }
     )
 
@@ -346,6 +353,34 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun getPomodoroLastDuration(): Int {
         return pomodoroSettingsStore.load()
+    }
+
+    fun getPomodoroHistoryForSelectedLanguage() =
+        pomodoroHistoryStore.loadAll(_coreState.value.navigation.selectedLanguageId.value)
+
+    private fun savePomodoroHistory(
+        stats: PomodoroSessionStats,
+        remainingSeconds: Int,
+        totalSeconds: Int
+    ) {
+        val state = _coreState.value
+        val languageId = state.navigation.selectedLanguageId.value
+        pomodoroHistoryStore.append(
+            PomodoroHistoryEntry(
+                id = "${languageId}_${stats.completedAtMs}",
+                languageId = languageId,
+                packId = state.navigation.activePackId?.value,
+                lessonId = state.navigation.selectedLessonId?.value,
+                completedAtMs = stats.completedAtMs,
+                durationMinutes = stats.durationMinutes,
+                totalSeconds = totalSeconds,
+                remainingSeconds = remainingSeconds,
+                cardsShown = stats.cardsShown,
+                cardsCorrect = stats.cardsCorrect,
+                cardsIncorrect = stats.cardsIncorrect,
+                wordsPerMinute = stats.wordsPerMinute
+            )
+        )
     }
 
     init {

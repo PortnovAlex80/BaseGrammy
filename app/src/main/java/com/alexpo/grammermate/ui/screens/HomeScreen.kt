@@ -56,6 +56,7 @@ import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.components.PomodoroSelectorSheet
@@ -104,7 +105,8 @@ fun HomeScreen(
     onOpenVocabDrill: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onStartPomodoro: (Int) -> Unit = {},
-    pomodoroLastDuration: Int = 20
+    pomodoroLastDuration: Int = 20,
+    pomodoroHistory: List<PomodoroHistoryEntry> = emptyList()
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -382,7 +384,8 @@ fun HomeScreen(
             showPomodoroSheet = false
             onStartPomodoro(duration)
         },
-        lastDuration = pomodoroLastDuration
+        lastDuration = pomodoroLastDuration,
+        history = pomodoroHistory
     )
 }
 

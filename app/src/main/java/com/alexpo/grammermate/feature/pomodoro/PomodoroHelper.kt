@@ -17,7 +17,8 @@ class PomodoroHelper(
     private val onPauseTraining: () -> Unit = {},
     private val onResumeTraining: () -> Unit = {},
     private val onPlayCompletionSound: () -> Unit = {},
-    private val onUpdatePomodoroRemaining: ((Int) -> Unit)? = null
+    private val onUpdatePomodoroRemaining: ((Int) -> Unit)? = null,
+    private val onPomodoroCompleted: (PomodoroSessionStats, Int, Int) -> Unit = { _, _, _ -> }
 ) {
     private var timerJob: Job? = null
     /** Tracks the true remaining seconds independently from main state (which is updated periodically). */
@@ -98,6 +99,7 @@ class PomodoroHelper(
         }
         trueRemainingSeconds = remainingAtCompletion
         onUpdatePomodoroRemaining?.invoke(remainingAtCompletion)
+        onPomodoroCompleted(stats, remainingAtCompletion, pomodoro.totalSeconds)
         onPlayCompletionSound()
     }
 
