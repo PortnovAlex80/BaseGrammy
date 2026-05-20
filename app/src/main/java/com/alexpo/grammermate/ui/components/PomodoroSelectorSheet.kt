@@ -228,6 +228,8 @@ private fun PomodoroWeeklyStats(history: List<PomodoroHistoryEntry>) {
 
 @Composable
 private fun PomodoroBarChart(stats: List<PomodoroDayStat>) {
+    if (stats.isEmpty()) return
+
     val maxCards = stats.maxOfOrNull { it.cards }?.coerceAtLeast(1) ?: 1
     val barColor = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -242,7 +244,9 @@ private fun PomodoroBarChart(stats: List<PomodoroDayStat>) {
             val gap = 8.dp.toPx()
             val labelHeight = 20.dp.toPx()
             val chartHeight = size.height - labelHeight
-            val barWidth = (size.width - gap * (stats.size - 1)) / stats.size
+            val availableWidth = size.width - gap * (stats.size - 1)
+            if (availableWidth <= 0) return@Canvas
+            val barWidth = availableWidth / stats.size
             stats.forEachIndexed { index, day ->
                 val left = index * (barWidth + gap)
                 drawRoundRect(
