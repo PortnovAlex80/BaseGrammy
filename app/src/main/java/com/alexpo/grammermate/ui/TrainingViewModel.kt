@@ -722,6 +722,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         handleSessionEvents(events)
     }
 
+    /**
+     * Replace cards in the active Verb Drill card session.
+     * Used by "Ещё" button to load next batch without leaving TrainingScreen.
+     */
+    fun replaceVerbDrillCards(cards: List<com.alexpo.grammermate.data.VerbDrillCard>) {
+        val events = sessionRunner.replaceCards(cards)
+        handleSessionEvents(events)
+    }
+
     /** Whether the current session is in VERB_DRILL screen mode. */
     fun isVerbDrillSession(): Boolean {
         return _coreState.value.cardSession.screenMode == com.alexpo.grammermate.data.TrainingScreenMode.VERB_DRILL

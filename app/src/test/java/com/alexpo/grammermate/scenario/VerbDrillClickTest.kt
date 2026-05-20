@@ -2,15 +2,17 @@ package com.alexpo.grammermate.scenario
 
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillComboProgress
+import com.alexpo.grammermate.data.VerbDrillLastSessionState
 import com.alexpo.grammermate.data.VerbDrillSessionState
-import com.alexpo.grammermate.data.VerbDrillStore
 import com.alexpo.grammermate.data.VerbDrillUiState
 import com.alexpo.grammermate.testharness.FakeVerbDrillStore
+import com.alexpo.grammermate.ui.VerbDrillViewModel
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import java.time.LocalDate
 
 /**
@@ -747,7 +749,557 @@ class VerbDrillClickTest {
     }
 
     // ========================================
+    // SECTION 14: Start Fresh / Resume Dialog (VD-50)
+    // ========================================
+
+    @Test
+    fun testStartFreshResumeDialog_SavesSessionState() {
+        // --- SETUP: Create a session state to save ---
+        val sessionState = VerbDrillLastSessionState(
+            selectedTense = "Presente",
+            selectedGroup = "regular_are",
+            sortByFrequency = false,
+            todayShownCardIds = setOf("card-1", "card-2", "card-3", "card-4", "card-5")
+        )
+
+        // --- ACTION: Save the session ---
+        store.saveLastSession(sessionState)
+
+        // --- ASSERT: Session should be retrievable ---
+        val loadedSession = store.loadLastSession()
+        assertNotNull("Last session should be saved", loadedSession)
+        assertEquals("Tense should be preserved", "Presente", loadedSession?.selectedTense)
+        assertEquals("Group should be preserved", "regular_are", loadedSession?.selectedGroup)
+        assertEquals("Should have 5 shown cards", 5, loadedSession?.todayShownCardIds?.size)
+        assertFalse("Sort by frequency should be false", loadedSession?.sortByFrequency ?: true)
+
+        // --- ASSERT: Specific cards should be in todayShownCardIds ---
+        val shownIds = loadedSession?.todayShownCardIds ?: emptySet()
+        assertTrue("card-1 should be in shown cards", "card-1" in shownIds)
+        assertTrue("card-5 should be in shown cards", "card-5" in shownIds)
+
+        // Total assertions: 6
+    }
+
+    @Test
+    fun testStartFreshResumeDialog_DeleteSessionClearsState() {
+        // --- SETUP: Create and save a session ---
+        val sessionState = VerbDrillLastSessionState(
+            selectedTense = "Imperfetto",
+            selectedGroup = "regular_ere",
+            sortByFrequency = true,
+            todayShownCardIds = setOf("card-10", "card-11", "card-12")
+        )
+
+        store.saveLastSession(sessionState)
+
+        // --- ASSERT: Session should exist before deletion ---
+        assertNotNull("Session should exist before deletion", store.loadLastSession())
+
+        // --- ACTION: Delete the session ---
+        store.deleteLastSession()
+
+        // --- ASSERT: Session should be null after deletion ---
+        assertNull("Last session should be null after deletion", store.loadLastSession())
+
+        // Total assertions: 2
+    }
+
+    @Test
+    fun testStartFreshResumeDialog_OverwritesExistingSession() {
+        // --- SETUP: Create first session ---
+        val firstSession = VerbDrillLastSessionState(
+            selectedTense = "Presente",
+            selectedGroup = "regular_are",
+            sortByFrequency = false,
+            todayShownCardIds = setOf("card-1", "card-2")
+        )
+
+        store.saveLastSession(firstSession)
+
+        // --- ASSERT: First session should be retrievable ---
+        val firstLoaded = store.loadLastSession()
+        assertEquals("Should load first session", "Presente", firstLoaded?.selectedTense)
+        assertEquals("Should have 2 cards", 2, firstLoaded?.todayShownCardIds?.size)
+
+        // --- ACTION: Save a new session (overwrites) ---
+        val secondSession = VerbDrillLastSessionState(
+            selectedTense = "Passato Prossimo",
+            selectedGroup = "regular_ire",
+            sortByFrequency = true,
+            todayShownCardIds = setOf("card-20", "card-21", "card-22", "card-23")
+        )
+
+        store.saveLastSession(secondSession)
+
+        // --- ASSERT: New session should replace old one ---
+        val secondLoaded = store.loadLastSession()
+        assertEquals("Should load second session", "Passato Prossimo", secondLoaded?.selectedTense)
+        assertEquals("Should have 4 cards", 4, secondLoaded?.todayShownCardIds?.size)
+        assertTrue("card-1 from first session should not be present",
+            "card-1" !in (secondLoaded?.todayShownCardIds ?: emptySet()))
+
+        // Total assertions: 5
+    }
+
+    @Test
+    fun testStartFreshResumeDialog_NullFiltersSupported() {
+        // --- SETUP: Create session with null filters (all tenses/groups) ---
+        val sessionState = VerbDrillLastSessionState(
+            selectedTense = null,
+            selectedGroup = null,
+            sortByFrequency = false,
+            todayShownCardIds = setOf("card-1", "card-2", "card-3")
+        )
+
+        // --- ACTION: Save session with nulls ---
+        store.saveLastSession(sessionState)
+
+        // --- ASSERT: Null filters should be preserved ---
+        val loaded = store.loadLastSession()
+        assertNotNull("Session should be loaded", loaded)
+        assertNull("Tense should be null (all tenses)", loaded?.selectedTense)
+        assertNull("Group should be null (all groups)", loaded?.selectedGroup)
+        assertEquals("Should have 3 shown cards", 3, loaded?.todayShownCardIds?.size)
+
+        // Total assertions: 4
+    }
+
+    @Test
+    fun testStartFreshResumeDialog_EmptyTodayShownCards() {
+        // --- SETUP: Create session with no cards shown yet ---
+        val sessionState = VerbDrillLastSessionState(
+            selectedTense = "Futuro Semplice",
+            selectedGroup = "irregular",
+            sortByFrequency = false,
+            todayShownCardIds = emptySet()
+        )
+
+        // --- ACTION: Save session ---
+        store.saveLastSession(sessionState)
+
+        // --- ASSERT: Empty set should be preserved ---
+        val loaded = store.loadLastSession()
+        assertNotNull("Session should be loaded", loaded)
+        assertTrue("todayShownCardIds should be empty", loaded?.todayShownCardIds?.isEmpty() ?: false)
+        assertEquals("Tense should be preserved", "Futuro Semplice", loaded?.selectedTense)
+
+        // Total assertions: 3
+    }
+
+    // ========================================
+    // SECTION 15: Session Persistence Integration Tests
+    // ========================================
+
+    /**
+     * Test 1: User completes 10 cards, then clicks "Ещё" (More) which loads next batch.
+     * Verifies that persistSessionState() + nextBatch() produces a new session with
+     * different cards, and that refreshLastSessionContext() reflects the updated state.
+     */
+    @Test
+    fun complete_and_more_saves_state_and_loads_next_batch() {
+        // --- SETUP: Create ViewModel with 20 test cards (same tense/group) ---
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, _) = createViewModelWithCards(cards)
+
+        // --- ACTION: Select filters and start session ---
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.startSession()
+
+        val firstSession = viewModel.uiState.value.session!!
+        val firstBatchIds = firstSession.cards.map { it.id }.toSet()
+        assertEquals("First session should have 10 cards", 10, firstBatchIds.size)
+
+        // --- ACTION: Simulate 10 correct answers to complete the batch ---
+        for (i in 1..10) {
+            viewModel.submitCorrectAnswer()
+        }
+
+        // --- ASSERT: Session is complete ---
+        val completedState = viewModel.uiState.value
+        assertTrue("Session should be complete after 10 answers", completedState.session?.isComplete == true)
+        assertEquals("Should have 10 correct answers", 10, completedState.session?.correctCount)
+
+        // --- ACTION: persistSessionState() simulates what GrammarMateApp does on "Ещё" ---
+        viewModel.persistSessionState()
+
+        // --- ACTION: Load next batch ---
+        viewModel.nextBatch()
+
+        // --- ASSERT: New session created with different cards ---
+        val secondSession = viewModel.uiState.value.session!!
+        val secondBatchIds = secondSession.cards.map { it.id }.toSet()
+        assertEquals("Second session should have 10 cards", 10, secondBatchIds.size)
+
+        // The new cards should NOT include the first batch (they were marked as shown)
+        val overlap = firstBatchIds.intersect(secondBatchIds)
+        assertTrue(
+            "Second batch should contain NEW cards, not same as first batch. Overlap: $overlap",
+            overlap.isEmpty()
+        )
+
+        // --- ACTION: Refresh last session context ---
+        viewModel.refreshLastSessionContext()
+
+        // --- ASSERT: lastSessionContext is set ---
+        val refreshedState = viewModel.uiState.value
+        assertNotNull(
+            "lastSessionContext should be set after refreshLastSessionContext()",
+            refreshedState.lastSessionContext
+        )
+        assertEquals(
+            "lastSessionContext tense should match selection",
+            "Presente",
+            refreshedState.lastSessionContext?.selectedTense
+        )
+        assertEquals(
+            "lastSessionContext group should match selection",
+            "regular_are",
+            refreshedState.lastSessionContext?.selectedGroup
+        )
+    }
+
+    /**
+     * Test 2: User completes 10 cards, exits, re-enters -> SessionCard shows.
+     * Verifies that exitSession() persists state and refreshLastSessionContext()
+     * restores it so the SessionCard UI element would be visible.
+     */
+    @Test
+    fun complete_and_exit_shows_session_card_on_reentry() {
+        // --- SETUP: Create ViewModel with 20 test cards ---
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, _) = createViewModelWithCards(cards)
+
+        // --- ACTION: Select filters and start session ---
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.startSession()
+
+        // --- ACTION: Complete 10 cards ---
+        for (i in 1..10) {
+            viewModel.submitCorrectAnswer()
+        }
+        assertTrue("Session should be complete", viewModel.uiState.value.session?.isComplete == true)
+
+        // --- ACTION: persistSessionState() (GrammarMateApp calls this on exit) ---
+        viewModel.persistSessionState()
+
+        // --- ACTION: exitSession() clears session from ViewModel ---
+        viewModel.exitSession()
+
+        // --- ASSERT: Session cleared in ViewModel ---
+        assertNull("Session should be null after exitSession()", viewModel.uiState.value.session)
+
+        // --- ACTION: Simulate re-entry: refreshLastSessionContext() ---
+        viewModel.refreshLastSessionContext()
+
+        // --- ASSERT: lastSessionContext is NOT null -> SessionCard would show ---
+        val lastCtx = viewModel.uiState.value.lastSessionContext
+        assertNotNull(
+            "lastSessionContext should NOT be null after refreshLastSessionContext() — SessionCard should show",
+            lastCtx
+        )
+
+        // --- ASSERT: lastSessionContext filters match what was selected ---
+        assertEquals(
+            "lastSessionContext tense should match saved selection",
+            "Presente",
+            lastCtx!!.selectedTense
+        )
+        assertEquals(
+            "lastSessionContext group should match saved selection",
+            "regular_are",
+            lastCtx.selectedGroup
+        )
+
+        // --- ASSERT: todayShownCardIds should contain the 10 completed cards ---
+        assertTrue(
+            "todayShownCardIds should have 10 entries (the completed cards)",
+            lastCtx.todayShownCardIds.size >= 10
+        )
+    }
+
+    /**
+     * Test 3: User does 3 cards, presses Back, re-enters -> Continue loads remaining cards.
+     * Verifies mid-session persistence: shown cards are tracked and excluded on resume.
+     */
+    @Test
+    fun mid_session_back_saves_state_for_resume() {
+        // --- SETUP: Create ViewModel with 20 test cards ---
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, _) = createViewModelWithCards(cards)
+
+        // --- ACTION: Select filters and start session ---
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.startSession()
+
+        val firstSession = viewModel.uiState.value.session!!
+        val sessionCardIds = firstSession.cards.map { it.id }
+
+        // --- ACTION: Simulate 3 correct answers ---
+        val shownCardIds = mutableListOf<String>()
+        for (i in 0 until 3) {
+            shownCardIds.add(sessionCardIds[i])
+            viewModel.submitCorrectAnswer()
+        }
+
+        // --- ACTION: persistSessionState() (GrammarMateApp calls this on Back) ---
+        viewModel.persistSessionState()
+
+        // --- ACTION: exitSession() ---
+        viewModel.exitSession()
+        assertNull("Session should be null after exit", viewModel.uiState.value.session)
+
+        // --- ACTION: Simulate re-entry: refreshLastSessionContext() ---
+        viewModel.refreshLastSessionContext()
+
+        // --- ASSERT: lastSessionContext != null ---
+        val lastCtx = viewModel.uiState.value.lastSessionContext
+        assertNotNull("lastSessionContext should not be null after re-entry", lastCtx)
+
+        // --- ASSERT: todayShownCardIds contains the 3 shown card IDs ---
+        assertEquals(
+            "todayShownCardIds should contain exactly 3 cards",
+            3,
+            lastCtx!!.todayShownCardIds.size
+        )
+        for (id in shownCardIds) {
+            assertTrue(
+                "todayShownCardIds should contain shown card $id",
+                id in lastCtx.todayShownCardIds
+            )
+        }
+
+        // --- ACTION: onResumeSession() -> restores filters and loads the next batch ---
+        viewModel.onResumeSession()
+
+        // --- ASSERT: Next batch created ---
+        val resumedSession = viewModel.uiState.value.session
+        assertNotNull("Session should be active after onResumeSession()", resumedSession)
+        assertEquals("Continue should start a new batch at index 0", 0, resumedSession!!.currentIndex)
+        val resumedCardIds = resumedSession.cards.map { it.id }.toSet()
+        assertTrue(
+            "Continue should not repeat cards from the last saved batch",
+            resumedCardIds.intersect(sessionCardIds.toSet()).isEmpty()
+        )
+
+        // --- ASSERT: Filters are restored ---
+        assertEquals("Tense should be restored", "Presente", viewModel.uiState.value.selectedTense)
+        assertEquals("Group should be restored", "regular_are", viewModel.uiState.value.selectedGroup)
+    }
+
+    /**
+     * Test 4: After resume option appears, user picks "Start Fresh" -> SessionCard gone.
+     * Verifies that onStartFresh() clears the session file, resets filters,
+     * and lastSessionContext becomes null.
+     */
+    @Test
+    fun start_fresh_clears_session_card() {
+        // --- SETUP: Create ViewModel with 20 test cards ---
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, testStore) = createViewModelWithCards(cards)
+
+        // --- ACTION: Select filters and start session ---
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.startSession()
+
+        // --- ACTION: Complete 3 cards ---
+        for (i in 1..3) {
+            viewModel.submitCorrectAnswer()
+        }
+
+        // --- ACTION: Persist and exit ---
+        viewModel.persistSessionState()
+        viewModel.exitSession()
+
+        // --- ACTION: Simulate re-entry ---
+        viewModel.refreshLastSessionContext()
+
+        // --- ASSERT: lastSessionContext != null (SessionCard visible) ---
+        assertNotNull(
+            "lastSessionContext should not be null before Start Fresh (SessionCard visible)",
+            viewModel.uiState.value.lastSessionContext
+        )
+
+        // --- ACTION: User clicks "Start Fresh" ---
+        viewModel.onStartFresh()
+
+        // --- ASSERT: selectedTense == null, selectedGroup == null ---
+        assertNull("selectedTense should be null after Start Fresh", viewModel.uiState.value.selectedTense)
+        assertNull("selectedGroup should be null after Start Fresh", viewModel.uiState.value.selectedGroup)
+
+        // --- ACTION: refreshLastSessionContext() to verify store is cleaned ---
+        viewModel.refreshLastSessionContext()
+
+        // --- ASSERT: lastSessionContext == null (SessionCard hidden) ---
+        assertNull(
+            "lastSessionContext should be null after Start Fresh + refresh (SessionCard hidden)",
+            viewModel.uiState.value.lastSessionContext
+        )
+
+        // --- ASSERT: Session file deleted from store ---
+        assertNull("Store should have no last session", testStore.loadLastSession())
+    }
+
+    @Test
+    fun repeat_uses_saved_batch_order() {
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, _) = createViewModelWithCards(cards)
+
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.startSession()
+
+        val firstBatchIds = viewModel.uiState.value.session!!.cards.map { it.id }
+        repeat(3) {
+            viewModel.submitCorrectAnswer()
+        }
+        viewModel.persistSessionState()
+        viewModel.exitSession()
+        viewModel.refreshLastSessionContext()
+
+        viewModel.onRepeatSession()
+
+        assertEquals(
+            "Repeat should replay the saved batch in the same display order",
+            firstBatchIds,
+            viewModel.uiState.value.session!!.cards.map { it.id }
+        )
+        assertEquals(
+            "Repeat should restart the saved batch from the beginning",
+            0,
+            viewModel.uiState.value.session!!.currentIndex
+        )
+    }
+
+    @Test
+    fun session_size_setting_controls_verb_practice_batch_size() {
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, _) = createViewModelWithCards(cards)
+
+        viewModel.setSessionSize(5)
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.startSession()
+
+        assertEquals(
+            "Verb practice should use the configured session size",
+            5,
+            viewModel.uiState.value.session!!.cards.size
+        )
+    }
+
+    @Test
+    fun new_start_after_reset_ignores_today_shown_cards() {
+        val cards = (1..20).map { i ->
+            makeCard("p-card-$i", tense = "Presente", group = "regular_are", rank = i)
+        }
+        val (viewModel, _) = createViewModelWithCards(cards)
+
+        viewModel.setSessionSize(5)
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.toggleSortByFrequency()
+        viewModel.startSession()
+
+        repeat(3) {
+            viewModel.submitCorrectAnswer()
+        }
+        viewModel.persistSessionState()
+        viewModel.exitSession()
+
+        viewModel.onStartFresh()
+        viewModel.selectTense("Presente")
+        viewModel.selectGroup("regular_are")
+        viewModel.toggleSortByFrequency()
+        viewModel.startSession()
+
+        assertEquals(
+            "New start after reset should begin from the first filtered card, not the next unseen card",
+            "p-card-1",
+            viewModel.uiState.value.session!!.cards.first().id
+        )
+    }
+
+    // ========================================
     // Helper methods
+    // ========================================
+
+    /**
+     * Creates a VerbDrillCard for testing.
+     */
+    private fun makeCard(id: String, tense: String = "Presente", group: String = "regular_are", rank: Int? = null): VerbDrillCard {
+        return VerbDrillCard(
+            id = id,
+            promptRu = "я $id",
+            answer = "io $id",
+            verb = "essere",
+            tense = tense,
+            group = group,
+            rank = rank
+        )
+    }
+
+    /**
+     * Creates a [ViewModelStorePair] containing a VerbDrillViewModel and its FakeVerbDrillStore.
+     * The store is returned so tests can verify persisted state directly.
+     */
+    private data class ViewModelStorePair(
+        val viewModel: VerbDrillViewModel,
+        val testStore: FakeVerbDrillStore
+    )
+
+    /**
+     * Creates a VerbDrillViewModel with the given cards injected via FakeVerbDrillStore.
+     * Uses Robolectric Application context.
+     * Returns both the ViewModel and the store for direct assertions.
+     */
+    private fun createViewModelWithCards(cards: List<VerbDrillCard>): ViewModelStorePair {
+        val application = RuntimeEnvironment.getApplication()
+        val testStore = FakeVerbDrillStore()
+        val viewModel = VerbDrillViewModel(application, testStore)
+        viewModel.injectTestCards(cards)
+        // Wait for async card loading to complete
+        waitForViewModel(viewModel, condition = { state -> !state.isLoading })
+        return ViewModelStorePair(viewModel, testStore)
+    }
+
+    /**
+     * Wait for a condition on the ViewModel's uiState to become true.
+     * Uses simple polling with a timeout.
+     */
+    private fun waitForViewModel(
+        viewModel: VerbDrillViewModel,
+        condition: (VerbDrillUiState) -> Boolean,
+        timeoutMs: Long = 3000
+    ) {
+        val startTime = System.currentTimeMillis()
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
+            if (condition(viewModel.uiState.value)) {
+                return
+            }
+            Thread.sleep(50)
+        }
+        throw AssertionError("Condition not met within ${timeoutMs}ms. Last state: ${viewModel.uiState.value}")
+    }
+
+    // ========================================
+    // Original Helper methods
     // ========================================
 
     /**
@@ -810,4 +1362,5 @@ class VerbDrillClickTest {
 
         return cards
     }
+
 }

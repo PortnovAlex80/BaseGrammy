@@ -272,12 +272,18 @@ class VerbDrillStoreImpl(
             ?.mapNotNull { it as? String }
             ?.toSet()
             ?: emptySet()
+        val sessionCardIds = (data["sessionCardIds"] as? List<*>)
+            ?.mapNotNull { it as? String }
+            ?: emptyList()
+        val currentIndex = (data["currentIndex"] as? Number)?.toInt() ?: 0
 
         return VerbDrillLastSessionState(
             selectedTense = data["selectedTense"] as? String,
             selectedGroup = data["selectedGroup"] as? String,
             sortByFrequency = data["sortByFrequency"] as? Boolean ?: false,
-            todayShownCardIds = todayShownCardIds
+            todayShownCardIds = todayShownCardIds,
+            sessionCardIds = sessionCardIds,
+            currentIndex = currentIndex
         )
     }
 
@@ -292,7 +298,9 @@ class VerbDrillStoreImpl(
             "selectedTense" to session.selectedTense,
             "selectedGroup" to session.selectedGroup,
             "sortByFrequency" to session.sortByFrequency,
-            "todayShownCardIds" to session.todayShownCardIds.toList()
+            "todayShownCardIds" to session.todayShownCardIds.toList(),
+            "sessionCardIds" to session.sessionCardIds,
+            "currentIndex" to session.currentIndex
         )
 
         AtomicFileWriter.writeText(lastSessionFile, yaml.dump(data))

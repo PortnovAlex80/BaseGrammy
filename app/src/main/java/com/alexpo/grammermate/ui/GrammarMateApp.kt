@@ -135,6 +135,18 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
         val lastBossFinishedToken = remember { mutableStateOf(state.boss.bossFinishedToken) }
 
+        // VerbDrillViewModel shared between TRAINING and VERB_DRILL routes for session persistence.
+        // Hoisted to outer scope so TRAINING composable can call persistSessionState() on exit.
+        val verbDrillVm = viewModel<VerbDrillViewModel>()
+        val verbDrillActivePackId = state.navigation.activePackId
+        LaunchedEffect(verbDrillActivePackId, state.navigation.selectedLanguageId) {
+            if (verbDrillActivePackId != null) {
+                verbDrillVm.reloadForPack(verbDrillActivePackId.value)
+            } else {
+                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+            }
+        }
+
         // Map current nav route to AppScreen for legacy tracking
         val currentScreen = routeToScreen(currentRoute)
 
@@ -255,7 +267,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onSetThemeMode = vm.settings::setThemeMode,
                     onSetVoiceAutoStart = vm.audio::setVoiceAutoStart,
                     onSetUiLanguage = vm.settings::setUiLanguage,
-                    onSetSessionSize = vm::setSessionSize,
+                    onSetSessionSize = { size ->
+                        vm.setSessionSize(size)
+                        verbDrillVm.setSessionSize(size)
+                    },
                     sessionSize = vm.currentSessionSize,
                     uiLanguage = vm.currentUiLanguage,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
@@ -424,18 +439,50 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         TrainingScreenContent(
                             state, vm,
+                            onSubmit = {
+                                val beforeCard = state.cardSession.currentCard
+                                val result = vm.submitAnswer()
+                                if (
+                                    state.cardSession.returnTo == Routes.VERB_DRILL &&
+                                    beforeCard is VerbDrillCard &&
+                                    result.accepted
+                                ) {
+                                    verbDrillVm.submitCorrectAnswer()
+                                }
+                                result
+                            },
+                            onNext = {
+                                if (
+                                    state.cardSession.returnTo == Routes.VERB_DRILL &&
+                                    state.cardSession.currentCard is VerbDrillCard
+                                ) {
+                                    verbDrillVm.markCardCompleted()
+                                }
+                                vm.navigateNext()
+                            },
+                            onPrev = {
+                                if (
+                                    state.cardSession.returnTo == Routes.VERB_DRILL &&
+                                    state.cardSession.currentIndex > 0
+                                ) {
+                                    verbDrillVm.prevCard()
+                                }
+                                vm.navigatePrev()
+                            },
                             onShowExitDialog = remember(dialogs, state.cardSession.returnTo, state.cardSession.currentCard) {
                                 {
                                     val returnTo = state.cardSession.returnTo
                                     val hasActiveCard = state.cardSession.currentCard != null
                                     when {
-                                        // VERB_DRILL with active card (exiting mid-session) → return to selection screen
+                                        // VERB_DRILL with active card (exiting mid-session) → save state, return to selection screen
                                         returnTo == Routes.VERB_DRILL && hasActiveCard -> {
+                                            verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
                                             onNavigate(Routes.VERB_DRILL)
                                         }
-                                        // VERB_DRILL with NO active card (block completed) → go to HOME
+                                        // VERB_DRILL with NO active card (block completed) → save state, go to HOME
                                         returnTo == Routes.VERB_DRILL && !hasActiveCard -> {
+                                            verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
                                             onNavigate(Routes.HOME)
                                         }
@@ -452,9 +499,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onShowSettings = remember(dialogs) { { previousRoute = Routes.TRAINING; vm.pauseSession(); dialogs = dialogs.copy(showSettings = true) } },
                             onTtsSpeak = onTtsSpeak,
                             onVerbDrillMore = remember { {
-                                // Stay on VERB_DRILL selection screen for next batch
-                                vm.exitVerbDrillSession()
-                                onNavigate(Routes.VERB_DRILL)
+                                verbDrillVm.persistSessionState()
+                                verbDrillVm.nextBatch()
+                                val nextCards = verbDrillVm.uiState.value.session?.cards ?: emptyList()
+                                if (nextCards.isNotEmpty()) {
+                                    vm.replaceVerbDrillCards(nextCards)
+                                } else {
+                                    // No more cards — go to selection screen
+                                    vm.exitVerbDrillSession()
+                                    onNavigate(Routes.VERB_DRILL)
+                                }
                             } },
                             onNavigate = onNavigate,
                             onSessionDone = remember(state.cardSession.returnTo) {
@@ -474,21 +528,13 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                         // Local back handler for VERB_DRILL return path
                         BackHandler(enabled = state.cardSession.returnTo == Routes.VERB_DRILL && !dialogs.showSettings) {
+                            verbDrillVm.persistSessionState()
                             vm.exitVerbDrillSession()
                             onNavigate(Routes.VERB_DRILL)
                         }
                     }
 
                     composable(Routes.VERB_DRILL) {
-                        val verbDrillVm = viewModel<VerbDrillViewModel>()
-                        val activePackId = state.navigation.activePackId
-                        LaunchedEffect(activePackId, state.navigation.selectedLanguageId) {
-                            if (activePackId != null) {
-                                verbDrillVm.reloadForPack(activePackId.value)
-                            } else {
-                                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
-                            }
-                        }
                         val verbDrillExit = remember(verbDrillVm) {
                             {
                                 verbDrillVm.exitSession()
@@ -626,6 +672,9 @@ private fun NavBackHandlers(
 private fun TrainingScreenContent(
     state: TrainingUiState,
     vm: TrainingViewModel,
+    onSubmit: () -> com.alexpo.grammermate.data.SubmitResult = vm::submitAnswer,
+    onNext: () -> Unit = vm::navigateNext,
+    onPrev: () -> Unit = vm::navigatePrev,
     onShowExitDialog: () -> Unit,
     onShowSettings: () -> Unit,
     onTtsSpeak: () -> Unit,
@@ -639,9 +688,9 @@ private fun TrainingScreenContent(
     TrainingScreen(
         state = state,
         onInputChange = vm.training::onInputChanged,
-        onSubmit = vm::submitAnswer,
-        onPrev = vm::navigatePrev,
-        onNext = vm::navigateNext,
+        onSubmit = onSubmit,
+        onPrev = onPrev,
+        onNext = onNext,
         onTogglePause = vm::togglePause,
         onRequestExit = onShowExitDialog,
         onOpenSettings = { vm.pauseSession() },

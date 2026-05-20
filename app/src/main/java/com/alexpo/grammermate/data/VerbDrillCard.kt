@@ -40,12 +40,16 @@ data class VerbDrillSessionState(
  * @property selectedGroup The conjugation group filter (e.g., "regular_are", "irregular")
  * @property sortByFrequency Whether cards were sorted by frequency rank
  * @property todayShownCardIds Cards already shown today that should be excluded when resuming
+ * @property sessionCardIds Card IDs from the last batch, in display order, for Repeat
+ * @property currentIndex Next card index within [sessionCardIds] for Continue
  */
 data class VerbDrillLastSessionState(
     val selectedTense: String?,
     val selectedGroup: String?,
     val sortByFrequency: Boolean,
-    val todayShownCardIds: Set<String> = emptySet()
+    val todayShownCardIds: Set<String> = emptySet(),
+    val sessionCardIds: List<String> = emptyList(),
+    val currentIndex: Int = 0
 )
 
 data class VerbDrillUiState(

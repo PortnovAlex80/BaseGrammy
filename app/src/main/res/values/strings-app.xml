@@ -75,7 +75,7 @@
     <string name="verb_today">Сегодня: %1$d</string>
     <string name="verb_all_done_today">На сегодня всё!</string>
     <string name="verb_continue">Продолжить</string>
-    <string name="verb_start">Старт</string>
+    <string name="verb_start">Begin</string>
 
     <!-- VD-50: Start Fresh / Resume Dialog -->
     <string name="verb_resume_dialog_message">You have an incomplete training session. Continue where you left off or start fresh?</string>
@@ -88,6 +88,13 @@
     <string name="verb_resume_dialog_score">Score</string>
     <string name="verb_resume_dialog_score_value">%1$d correct / %2$d hints</string>
     <string name="verb_resume_dialog_age">Saved</string>
+
+    <!-- VD-51: Inline session card on VerbDrillSelectionScreen -->
+    <string name="verb_session_card_title">Previous session</string>
+    <string name="verb_session_card_shown">%1$d cards shown</string>
+    <string name="verb_session_card_repeat">Repeat</string>
+    <string name="verb_session_card_continue">Continue</string>
+    <string name="verb_session_card_reset">Reset from beginning</string>
 
     <!-- VerbDrillCompletionScreen (Russian UI strings) -->
     <string name="verb_completion_excellent">Отлично!</string>

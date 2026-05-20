@@ -1217,6 +1217,60 @@ class SessionRunner(
         return listOf(SessionEvent.SaveProgress)
     }
 
+    /**
+     * Replace cards in the active card session without exiting.
+     * Used by "Ещё" button to load the next batch of verb drill cards
+     * without leaving TrainingScreen.
+     *
+     * Resets card navigation state (index, counts, input) but preserves
+     * screenMode and other session context.
+     *
+     * @param cards The new cards to load.
+     * @return List of [SessionEvent] to process.
+     */
+    fun replaceCards(cards: List<SessionCard>): List<SessionEvent> {
+        pauseTimer()
+        stateMachine.reset()
+        sessionCards = cards
+        val firstCard = cards.firstOrNull()
+        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
+            stateMachine.triggerVoice()
+        }
+        stateAccess.updateState {
+            it.copy(
+                cardSession = it.cardSession.copy(
+                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
+                    currentCard = firstCard,
+                    currentIndex = 0,
+                    inputText = "",
+                    lastResult = null,
+                    answerText = null,
+                    incorrectAttemptsForCard = 0,
+                    correctCount = 0,
+                    incorrectCount = 0,
+                    activeTimeMs = 0L,
+                    voiceActiveMs = 0L,
+                    voiceWordCount = 0,
+                    hintCount = 0,
+                    voicePromptStartMs = null,
+                    subLessonTotal = cards.size,
+                    subLessonFinishedToken = 0,
+                    wordBankWords = emptyList(),
+                    selectedWords = emptyList(),
+                    voiceTriggerToken = stateMachine.voiceTriggerToken,
+                    verbConjugationCards = if (it.cardSession.screenMode == TrainingScreenMode.VERB_DRILL || it.cardSession.screenMode == TrainingScreenMode.DAILY_VERBS) {
+                        cards.filterIsInstance<VerbDrillCard>()
+                    } else emptyList()
+                )
+            )
+        }
+        if (firstCard != null) {
+            resumeTimer()
+            updateWordBank()
+        }
+        return listOf(SessionEvent.SaveProgress)
+    }
+
     /** Exit verb drill mode. Delegates to [exitCardSession]. */
     fun exitVerbDrillSession() = exitCardSession()
 

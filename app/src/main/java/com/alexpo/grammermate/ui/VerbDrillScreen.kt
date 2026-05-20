@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -26,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +61,11 @@ fun VerbDrillScreen(
     onStartSession: (List<VerbDrillCard>) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // VD-50/VD-51: Refresh last session context on screen entry to fix stale cache
+    LaunchedEffect(Unit) {
+        viewModel.refreshLastSessionContext()
+    }
 
     if (state.isLoading) {
         Box(
@@ -92,7 +100,25 @@ fun VerbDrillScreen(
                     onStartSession(sessionCards)
                 }
             },
-            onBack = onBack
+            onBack = onBack,
+            onRepeat = {
+                // VD-51: Repeat mode - replay the last saved card order.
+                viewModel.onRepeatSession()
+                val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
+                if (sessionCards.isNotEmpty()) {
+                    onStartSession(sessionCards)
+                }
+            },
+            onContinue = {
+                viewModel.onResumeSession()
+                val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
+                if (sessionCards.isNotEmpty()) {
+                    onStartSession(sessionCards)
+                }
+            },
+            onReset = {
+                viewModel.onStartFresh()
+            }
         )
 
         // VD-50: Start Fresh / Resume Dialog (rendered on top of selection screen)
@@ -126,7 +152,10 @@ private fun VerbDrillSelectionScreen(
     onSelectGroup: (String?) -> Unit,
     onToggleSortByFrequency: () -> Unit,
     onStart: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onRepeat: () -> Unit = {},
+    onContinue: () -> Unit = {},
+    onReset: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -145,7 +174,9 @@ private fun VerbDrillSelectionScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (state.availableTenses.isNotEmpty()) {
+        val hasSavedSession = state.lastSessionContext != null
+
+        if (!hasSavedSession && state.availableTenses.isNotEmpty()) {
             VerbDrillDropdown(
                 label = stringResource(R.string.verb_select_tense),
                 allLabel = stringResource(R.string.verb_all_tenses),
@@ -156,7 +187,7 @@ private fun VerbDrillSelectionScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        if (state.availableGroups.isNotEmpty()) {
+        if (!hasSavedSession && state.availableGroups.isNotEmpty()) {
             VerbDrillDropdown(
                 label = stringResource(R.string.verb_select_group),
                 allLabel = stringResource(R.string.verb_all_groups),
@@ -167,21 +198,23 @@ private fun VerbDrillSelectionScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = state.sortByFrequency,
-                onCheckedChange = { onToggleSortByFrequency() }
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(text = stringResource(R.string.verb_sort_by_frequency))
+        if (!hasSavedSession) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = state.sortByFrequency,
+                    onCheckedChange = { onToggleSortByFrequency() }
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = stringResource(R.string.verb_sort_by_frequency))
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (state.totalCards > 0) {
+        if (!hasSavedSession && state.totalCards > 0) {
             Text(
                 text = stringResource(R.string.verb_progress, state.everShownCount, state.totalCards)
             )
@@ -202,6 +235,17 @@ private fun VerbDrillSelectionScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // VD-51: Inline session card when last session exists
+        if (hasSavedSession) {
+            SessionCard(
+                lastSessionContext = state.lastSessionContext!!,
+                onRepeat = onRepeat,
+                onContinue = onContinue,
+                onReset = onReset
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         if (state.allDoneToday) {
             Text(
                 text = stringResource(R.string.verb_all_done_today),
@@ -210,14 +254,14 @@ private fun VerbDrillSelectionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
-        } else if (state.totalCards > 0 || state.availableTenses.isNotEmpty() || state.availableGroups.isNotEmpty()) {
+        } else if (!hasSavedSession &&
+            (state.totalCards > 0 || state.availableTenses.isNotEmpty() || state.availableGroups.isNotEmpty())
+        ) {
             Button(
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = if (state.todayShownCount > 0) stringResource(R.string.verb_continue) else stringResource(R.string.verb_start)
-                )
+                Text(text = stringResource(R.string.verb_start))
             }
         }
     }
@@ -365,5 +409,73 @@ private fun SessionInfoRow(
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium
         )
+    }
+}
+
+/**
+ * VD-51: Inline card showing previous session context.
+ * Shown on VerbDrillSelectionScreen instead of blocking dialog.
+ * Allows users to Repeat (same cards) or Continue (next cards).
+ */
+@Composable
+internal fun SessionCard(
+    lastSessionContext: VerbDrillLastSessionState,
+    onRepeat: () -> Unit,
+    onContinue: () -> Unit,
+    onReset: () -> Unit = {}
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.verb_session_card_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SessionContextInfo(
+                selectedTense = lastSessionContext.selectedTense,
+                selectedGroup = lastSessionContext.selectedGroup
+            )
+
+            val shownCount = lastSessionContext.todayShownCardIds.size
+            Text(
+                text = stringResource(R.string.verb_session_card_shown, shownCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onRepeat,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.verb_session_card_repeat))
+                }
+                Button(
+                    onClick = onContinue,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.verb_session_card_continue))
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onReset,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.verb_session_card_reset))
+            }
+        }
     }
 }

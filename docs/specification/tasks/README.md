@@ -53,3 +53,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-072](TASK-072-tts-tablet-crash.md) | TTS Tablet Crash — Shared Singleton Race + Native Free | OPEN | 05-audio-tts-asr | 2026-05-18 |
 | [TASK-074](TASK-074-project-path-latin-migration.md) | Migrate Project to Latin-Only Path | OPEN | infrastructure | 2026-05-19 |
 | [TASK-075](TASK-075-verb-drill-resume-next-cards.md) | Verb Drill Resume Loads Next Cards, Not Same Session | OPEN | 10-verb-drill | 2026-05-20 |
+| [TASK-076](TASK-076-verb-drill-session-persistence-lifecycle.md) | Verb Drill Session Persistence Lifecycle | OPEN | 10-verb-drill, UC-74, UC-64 | 2026-05-20 |

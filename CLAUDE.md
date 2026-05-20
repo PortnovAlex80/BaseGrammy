@@ -1,4 +1,4 @@
-# CLAUDE.md
+.# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -355,6 +355,8 @@ If you accidentally flood main context — acknowledge the mistake, do not attem
 ---
 
 ## Build & Test Commands
+
+**Full build instructions:** See [docs/BUILD_INSTRUCTIONS.md](docs/BUILD_INSTRUCTIONS.md) for Java setup, Android SDK configuration, and troubleshooting.
 
 Gradle wrapper on Windows requires a multi-JAR classpath workaround:
 

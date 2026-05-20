@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import com.alexpo.grammermate.ui.MasteryGreen
 import androidx.compose.ui.graphics.Color
@@ -393,6 +394,7 @@ fun VerbDrillEntryTile(
     Card(
         modifier = modifier
             .height(64.dp)
+            .testTag("verb_drill_entry_tile")
             .clickable(onClick = onClick)
     ) {
         Row(
@@ -424,6 +426,7 @@ fun VocabDrillEntryTile(
     Card(
         modifier = modifier
             .height(64.dp)
+            .testTag("vocab_drill_entry_tile")
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
