@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.DownloadState
+import com.alexpo.grammermate.data.InitPhase
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
 
@@ -56,6 +57,7 @@ import com.alexpo.grammermate.data.TtsState
  */
 @Composable
 fun NavIconButton(
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     enabled: Boolean,
     content: @Composable () -> Unit
@@ -63,7 +65,7 @@ fun NavIconButton(
     val surface = MaterialTheme.colorScheme.surfaceVariant
     val accent = MaterialTheme.colorScheme.primary
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(44.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(if (enabled) surface else surface.copy(alpha = 0.5f))
@@ -187,6 +189,27 @@ fun TtsDownloadDialog(
                         )
                     }
                 }
+                is DownloadState.Initializing -> {
+                    Column {
+                        Text(
+                            when (downloadState.phase) {
+                                InitPhase.CHECKING_FILES -> "Checking model files..."
+                                InitPhase.LOADING_MODEL -> "Loading engine..."
+                                InitPhase.PREPARING_ENGINE -> "Preparing..."
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = downloadState.percent / 100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "${downloadState.percent}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
                 is DownloadState.Done -> {
                     Text(stringResource(R.string.tts_download_ready))
                 }
@@ -199,13 +222,13 @@ fun TtsDownloadDialog(
             when (downloadState) {
                 is DownloadState.Idle -> TextButton(onClick = onConfirm) { Text(stringResource(R.string.tts_download_button)) }
                 is DownloadState.Done, is DownloadState.Error -> TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_ok)) }
-                is DownloadState.Downloading, is DownloadState.Extracting -> {
+                is DownloadState.Downloading, is DownloadState.Extracting, is DownloadState.Initializing -> {
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.tts_download_background)) }
                 }
             }
         },
         dismissButton = {
-            if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting) {
+            if (downloadState !is DownloadState.Downloading && downloadState !is DownloadState.Extracting && downloadState !is DownloadState.Initializing) {
                 TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
             }
         }

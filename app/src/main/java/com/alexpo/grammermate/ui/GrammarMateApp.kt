@@ -1292,8 +1292,9 @@ private fun calcBgDownloadProgress(states: Map<String, DownloadState>): Float {
     var total = 0f
     for (s in states.values) {
         total += when (s) {
-            is DownloadState.Downloading -> s.percent / 100f * 0.9f
-            is DownloadState.Extracting -> 0.9f + s.percent / 100f * 0.1f
+            is DownloadState.Downloading -> s.percent / 100f * 0.3f
+            is DownloadState.Extracting -> 0.3f + s.percent / 100f * 0.4f
+            is DownloadState.Initializing -> 0.7f + s.percent / 100f * 0.3f
             is DownloadState.Done -> 1f
             else -> 0f
         }

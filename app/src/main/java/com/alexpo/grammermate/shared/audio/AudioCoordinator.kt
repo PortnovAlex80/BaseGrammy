@@ -113,6 +113,20 @@ class AudioCoordinator(
             }
         }
 
+        // Set up TTS init callback for progress reporting
+        ttsEngine.setInitializingCallback { phase, percent ->
+            _audioState.update {
+                it.copy(ttsDownloadState = DownloadState.Initializing(phase, percent))
+            }
+        }
+
+        // Set up ASR init callback for progress reporting
+        asrEngine?.setInitializingCallback { phase, percent ->
+            _audioState.update {
+                it.copy(asrDownloadState = DownloadState.Initializing(phase, percent))
+            }
+        }
+
         // Seed audio state from config (replaces TrainingViewModel init seeding)
         val config = configStore.load()
         _audioState.update {
@@ -237,7 +251,6 @@ class AudioCoordinator(
             ttsModelManager.download(languageId).collect { downloadState ->
                 _audioState.update { current ->
                     val updatedBgStates = current.bgTtsDownloadStates + (languageId to downloadState)
-                    val updatedReady = current.ttsModelsReady + (languageId to (downloadState is DownloadState.Done))
                     // For the selected language, also update the primary ttsDownloadState
                     val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
                     val downloadStateOverride = if (languageId == selectedLangId
@@ -248,28 +261,37 @@ class AudioCoordinator(
                     } else {
                         current.ttsDownloadState
                     }
-                    // Do NOT set ttsModelReady = true here — engine init must complete first.
-                    // ttsModelReady is set after engine initialization succeeds below.
                     current.copy(
                         bgTtsDownloadStates = updatedBgStates,
-                        ttsModelsReady = updatedReady,
                         ttsDownloadState = downloadStateOverride
                     )
                 }
-                // Initialize engine and set ttsModelReady only after engine is confirmed ready.
+
+                // Initialize engine after download/extract is complete
                 if (downloadState is DownloadState.Done) {
                     ttsMutex.withLock {
                         try {
                             delay(500) // Let filesystem buffers flush after extraction
                             ttsEngine.initialize(languageId)
                             Log.d(TAG, "Auto-initialized TTS engine for $languageId after language download")
+                            val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                            if (languageId == selectedLangId && ttsEngine.state.value == TtsState.Ready) {
+                                _audioState.update {
+                                    it.copy(
+                                        ttsModelsReady = it.ttsModelsReady + (languageId to true),
+                                        ttsModelReady = true
+                                    )
+                                }
+                            }
                         } catch (e: Exception) {
                             Log.w(TAG, "Failed to auto-initialize TTS for $languageId after download", e)
+                            val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                            if (languageId == selectedLangId) {
+                                _audioState.update {
+                                    it.copy(ttsDownloadState = DownloadState.Error(e.message ?: "Init failed"))
+                                }
+                            }
                         }
-                    }
-                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
-                    if (languageId == selectedLangId && ttsEngine.state.value == TtsState.Ready) {
-                        _audioState.update { it.copy(ttsModelReady = true) }
                     }
                 }
             }
@@ -484,21 +506,30 @@ class AudioCoordinator(
         }
         ttsDownloadJob = coroutineScope.launch(Dispatchers.IO) {
             ttsModelManager.download(langId.value).collect { downloadState ->
-                _audioState.update { it.copy(ttsDownloadState = downloadState) }
-                if (downloadState is DownloadState.Done) {
-                    // Initialize engine BEFORE setting ttsModelReady = true to prevent
-                    // race condition where UI tries to speak with uninitialized engine.
-                    ttsMutex.withLock {
-                        try {
-                            delay(500) // Let filesystem buffers flush after extraction
-                            ttsEngine.initialize(langId.value)
-                            Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
+                when (downloadState) {
+                    is DownloadState.Initializing -> {
+                        _audioState.update { it.copy(ttsDownloadState = downloadState) }
+                    }
+                    is DownloadState.Done -> {
+                        // Extract complete, now initialize engine
+                        ttsMutex.withLock {
+                            try {
+                                delay(500) // Let filesystem buffers flush after extraction
+                                ttsEngine.initialize(langId.value)
+                                Log.d(TAG, "Auto-initialized TTS engine for ${langId.value} after user download")
+                                _audioState.update {
+                                    it.copy(ttsDownloadState = DownloadState.Done, ttsModelReady = true)
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to auto-initialize TTS for ${langId.value} after download", e)
+                                _audioState.update {
+                                    it.copy(ttsDownloadState = DownloadState.Error(e.message ?: "Init failed"))
+                                }
+                            }
                         }
                     }
-                    if (ttsEngine.state.value == TtsState.Ready) {
-                        _audioState.update { it.copy(ttsModelReady = true) }
+                    else -> {
+                        _audioState.update { it.copy(ttsDownloadState = downloadState) }
                     }
                 }
             }
@@ -517,9 +548,29 @@ class AudioCoordinator(
             // Then ASR model
             if (!asrModelManager.isAsrReady()) {
                 asrModelManager.downloadAsr().collect { state ->
-                    _audioState.update { it.copy(asrDownloadState = state) }
-                    if (state is DownloadState.Done) {
-                        _audioState.update { it.copy(asrModelReady = true) }
+                    when (state) {
+                        is DownloadState.Initializing -> {
+                            _audioState.update { it.copy(asrDownloadState = state) }
+                        }
+                        is DownloadState.Done -> {
+                            // Extract complete, now initialize engine
+                            try {
+                                delay(500) // Let filesystem buffers flush
+                                asrEngine?.initialize(stateAccess.uiState.value.navigation.selectedLanguageId.value)
+                                Log.d(TAG, "Auto-initialized ASR engine after download")
+                                _audioState.update {
+                                    it.copy(asrDownloadState = DownloadState.Done, asrModelReady = true)
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to auto-initialize ASR after download", e)
+                                _audioState.update {
+                                    it.copy(asrDownloadState = DownloadState.Error(e.message ?: "Init failed"))
+                                }
+                            }
+                        }
+                        else -> {
+                            _audioState.update { it.copy(asrDownloadState = state) }
+                        }
                     }
                 }
             }

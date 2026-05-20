@@ -48,6 +48,13 @@ class TtsEngine(private val context: Context) {
     var activeLanguageId: String? = null
         private set
 
+    var onInitializing: ((InitPhase, Int) -> Unit)? = null
+        private set
+
+    fun setInitializingCallback(callback: ((InitPhase, Int) -> Unit)?) {
+        onInitializing = callback
+    }
+
     @Volatile
     private var currentTrack: AudioTrack? = null
 
@@ -97,17 +104,33 @@ class TtsEngine(private val context: Context) {
 
         withContext(Dispatchers.Default) {
             try {
-                System.gc() // Free memory before heavy native ONNX allocation
+                // Phase 1: Check files (70-75%)
+                emitInitializing(InitPhase.CHECKING_FILES, 70)
                 val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
                 val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
                 if (missingFiles.isNotEmpty()) {
                     throw IllegalStateException("Missing or empty model files: $missingFiles")
                 }
+                emitInitializing(InitPhase.CHECKING_FILES, 75)
+
+                // Phase 2: Load model (75-95%)
+                System.gc() // Free memory before heavy native ONNX allocation
+                emitInitializing(InitPhase.LOADING_MODEL, 75)
+
+                val freeMemory = (Runtime.getRuntime().freeMemory() / (1024 * 1024))
+                if (freeMemory < 100) {
+                    Log.w(TAG, "Low memory before TTS init: ${freeMemory}MB")
+                }
+
                 val config = buildConfig(spec, modelDir)
                 initFailed = true
                 withTimeout(30_000L) {
                     offlineTts = OfflineTts(config = config)
                 }
+                emitInitializing(InitPhase.LOADING_MODEL, 95)
+
+                // Phase 3: Finalize (95-100%)
+                emitInitializing(InitPhase.PREPARING_ENGINE, 95)
                 initFailed = false
                 activeLanguageId = languageId
                 _state.value = TtsState.Ready
@@ -130,6 +153,10 @@ class TtsEngine(private val context: Context) {
                 Log.e(TAG, "TTS initialization failed for $languageId: $reason", e)
             }
         }
+    }
+
+    private fun emitInitializing(phase: InitPhase, percent: Int) {
+        onInitializing?.invoke(phase, percent)
     }
 
     private fun buildConfig(spec: TtsModelSpec, modelDir: File): OfflineTtsConfig {

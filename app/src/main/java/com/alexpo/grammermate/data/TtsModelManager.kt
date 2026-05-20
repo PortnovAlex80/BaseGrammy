@@ -18,14 +18,6 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
-sealed class DownloadState {
-    object Idle : DownloadState()
-    data class Downloading(val percent: Int, val bytesDownloaded: Long, val totalBytes: Long) : DownloadState()
-    data class Extracting(val percent: Int) : DownloadState()
-    object Done : DownloadState()
-    data class Error(val message: String) : DownloadState()
-}
-
 class TtsModelManager(private val context: Context) {
 
     var currentLanguageId: String = "en"

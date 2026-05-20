@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.DownloadState
+import com.alexpo.grammermate.data.InitPhase
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.TrainingUiState
 
@@ -364,6 +365,21 @@ fun SettingsSheet(
                     )
                     Text(
                         text = stringResource(R.string.settings_extracting_model, dlState.percent),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Initializing -> {
+                    LinearProgressIndicator(
+                        progress = { dlState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = when (dlState.phase) {
+                            InitPhase.CHECKING_FILES -> "Checking model files..."
+                            InitPhase.LOADING_MODEL -> "Loading engine..."
+                            InitPhase.PREPARING_ENGINE -> "Preparing..."
+                        } + " ${dlState.percent}%",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )

@@ -50,6 +50,13 @@ class AsrEngine(private val context: Context) {
     private var vad: Vad? = null
     private var audioRecord: AudioRecord? = null
 
+    var onInitializing: ((InitPhase, Int) -> Unit)? = null
+        private set
+
+    fun setInitializingCallback(callback: ((InitPhase, Int) -> Unit)?) {
+        onInitializing = callback
+    }
+
     /**
      * Initialize the ASR engine with the Whisper Small multilingual model.
      * Must be called before transcribe() or recordAndTranscribe().
@@ -66,9 +73,38 @@ class AsrEngine(private val context: Context) {
 
         withContext(Dispatchers.Default) {
             try {
-                System.gc() // Free memory before heavy native ONNX allocation
+                // Phase 1: Check files (70-75%)
+                emitInitializing(InitPhase.CHECKING_FILES, 70)
                 val spec = AsrModelRegistry.defaultModel
                 val modelDir = File(context.filesDir, "asr/${spec.modelDirName}")
+
+                val requiredAsrFiles = listOf(
+                    "small-encoder.int8.onnx",
+                    "small-decoder.int8.onnx",
+                    "small-tokens.txt"
+                )
+                val missingFiles = requiredAsrFiles.filter {
+                    !File(modelDir, it).exists() || File(modelDir, it).length() == 0L
+                }
+                if (missingFiles.isNotEmpty()) {
+                    throw IllegalStateException("Missing or empty ASR model files: $missingFiles")
+                }
+
+                val vadSpec = AsrModelRegistry.vadModel
+                val vadDir = File(context.filesDir, "asr/${vadSpec.modelDirName}")
+                if (!File(vadDir, "silero_vad.onnx").exists()) {
+                    throw IllegalStateException("Missing VAD model file: silero_vad.onnx")
+                }
+                emitInitializing(InitPhase.CHECKING_FILES, 75)
+
+                // Phase 2: Load model (75-95%)
+                System.gc() // Free memory before heavy native ONNX allocation
+                emitInitializing(InitPhase.LOADING_MODEL, 75)
+
+                val freeMemory = (Runtime.getRuntime().freeMemory() / (1024 * 1024))
+                if (freeMemory < 150) {
+                    Log.w(TAG, "Low memory before ASR init: ${freeMemory}MB")
+                }
 
                 val modelConfig = OfflineModelConfig(
                     whisper = OfflineWhisperModelConfig(
@@ -92,10 +128,9 @@ class AsrEngine(private val context: Context) {
                 )
 
                 recognizer = OfflineRecognizer(null, config)
+                emitInitializing(InitPhase.LOADING_MODEL, 90)
 
                 // Initialize VAD
-                val vadSpec = AsrModelRegistry.vadModel
-                val vadDir = File(context.filesDir, "asr/${vadSpec.modelDirName}")
                 val vadConfig = VadModelConfig(
                     sileroVadModelConfig = SileroVadModelConfig(
                         model = File(vadDir, "silero_vad.onnx").absolutePath,
@@ -111,7 +146,10 @@ class AsrEngine(private val context: Context) {
                     debug = false
                 )
                 vad = Vad(null, vadConfig)
+                emitInitializing(InitPhase.LOADING_MODEL, 95)
 
+                // Phase 3: Finalize (95-100%)
+                emitInitializing(InitPhase.PREPARING_ENGINE, 95)
                 _state.value = AsrState.READY
                 Log.d(TAG, "ASR engine initialized (Whisper Small, language=$currentLanguage)")
             } catch (e: kotlinx.coroutines.CancellationException) {
@@ -315,6 +353,10 @@ class AsrEngine(private val context: Context) {
         if (_state.value == AsrState.RECORDING) {
             _state.value = AsrState.READY
         }
+    }
+
+    private fun emitInitializing(phase: InitPhase, percent: Int) {
+        onInitializing?.invoke(phase, percent)
     }
 
     /**
