@@ -149,6 +149,14 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         sessionSize = container.configStore.load().sessionSize
         val currentLang = _uiState.value.loadedLanguageId
         if (currentLang == languageId && allCards.isNotEmpty()) return
+
+        // FIX: If currentPackId is set, update the store to pack-scoped
+        // Otherwise, ensure we're using the correct global store
+        if (!usingTestStore) {
+            verbDrillStore = container.verbDrillStore(currentPackId)
+            Log.d(logTag, "reloadForLanguage: updated store for currentPackId=$currentPackId")
+        }
+
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch { loadCards(languageId) }
     }
