@@ -46,23 +46,28 @@ See `docs/BUILD_INSTRUCTIONS.md` for:
 
 ```cmd
 :: Debug APK (output: app\build\outputs\apk\debug\grammermate.apk)
-java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain assembleDebug
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 
 :: Release APK
-java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain assembleRelease
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleRelease
 
 :: Run tests
-java -cp "gradle/wrapper/*" org.gradle.wrapper.GradleWrapperMain test
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain test
 ```
 
-**Windows workaround:** Gradle 8.9+ requires all 3 wrapper JARs in classpath:
+**Windows workaround:** Gradle 8.9+ requires all 3 wrapper JARs in classpath (wildcard `gradle/wrapper/*` doesn't work):
 ```
 gradle/wrapper/gradle-wrapper.jar
 gradle/wrapper/gradle-wrapper-shared.jar
 gradle/wrapper/gradle-cli.jar
 ```
 
-Use `java -cp "gradle/wrapper/..."` or create `build.bat` (see BUILD_INSTRUCTIONS.md).
+For IntelliJ Java, use full path:
+```cmd
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+```
+
+Or create `build.bat` (see BUILD_INSTRUCTIONS.md).
 
 ---
 

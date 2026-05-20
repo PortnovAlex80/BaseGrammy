@@ -101,7 +101,7 @@ gradle/wrapper/
 
 Запускайте сборку напрямую через Java, указав все три JAR в classpath:
 
-**С Java из IntelliJ IDEA:**
+**С Java из IntelliJ IDEA (рекомендуется):**
 ```cmd
 "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
@@ -110,6 +110,8 @@ gradle/wrapper/
 ```cmd
 java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
+
+> **Примечание:** Путь к IntelliJ JBR может отличаться в зависимости от установленной версии. Проверьте наличие java.exe в каталоге `jbr/bin/` вашей установки IntelliJ.
 
 Для удобства можно создать файл `build.bat` в корне проекта (укажите свой путь к Java):
 
@@ -194,10 +196,10 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
 :: или просто: java -version
 
-:: 2. Проверить Android SDK
+:: 2. Проверить Android SDK (если не настроен local.properties)
 echo %ANDROID_HOME%
 
-:: 3. Собрать debug APK (укажите свой путь к Java)
+:: 3. Собрать debug APK (одна строка, без переноса)
 "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 
 :: 4. Забрать APK
