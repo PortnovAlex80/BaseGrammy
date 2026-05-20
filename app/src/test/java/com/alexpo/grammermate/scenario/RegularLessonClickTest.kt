@@ -19,6 +19,7 @@ import com.alexpo.grammermate.feature.progress.ProgressTracker
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import com.alexpo.grammermate.feature.training.CardProvider
+import com.alexpo.grammermate.feature.training.SessionEvent
 import com.alexpo.grammermate.feature.training.SessionRunner
 import com.alexpo.grammermate.feature.training.WordBankGenerator
 import com.alexpo.grammermate.testharness.FakeDrillProgressStore
@@ -671,6 +672,42 @@ class RegularLessonClickTest {
         // ASSERT: Should be at card 3
         assertEquals("Should advance to card 3", 2, stateAccess.uiState.value.cardSession.currentIndex)
         assertEquals("card-3 should be loaded", "card-3", stateAccess.uiState.value.cardSession.currentCard?.id)
+    }
+
+    @Test
+    fun testNavigationDoesNotAwardMastery() = runBlocking {
+        val lesson = createTestLesson(5)
+        sessionRunner.setSessionCards(lesson.cards)
+
+        val startEvents = sessionRunner.startSession()
+        val nextEvents = sessionRunner.navigateNext()
+
+        assertFalse(
+            "Starting a session should not count as practiced mastery",
+            startEvents.any { it is SessionEvent.RecordCardShow }
+        )
+        assertFalse(
+            "Browsing to the next card should not count as practiced mastery",
+            nextEvents.any { it is SessionEvent.RecordCardShow }
+        )
+    }
+
+    @Test
+    fun testCorrectAnswerAwardsMasteryEvent() = runBlocking {
+        val lesson = createTestLesson(5)
+        sessionRunner.setSessionCards(lesson.cards)
+        sessionRunner.startSession()
+        stateAccess.updateState {
+            it.copy(cardSession = it.cardSession.copy(inputText = "english word 1"))
+        }
+
+        val (result, events) = sessionRunner.submitAnswer()
+
+        assertTrue("Correct answer should be accepted", result.accepted)
+        assertTrue(
+            "Correct answer should count as practiced mastery",
+            events.any { it is SessionEvent.RecordCardShow && it.card.id == "card-1" }
+        )
     }
 
     @Test

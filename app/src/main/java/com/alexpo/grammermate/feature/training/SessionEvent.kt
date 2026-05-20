@@ -3,6 +3,7 @@ package com.alexpo.grammermate.feature.training
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonSchedule
+import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SessionCard
 
@@ -18,6 +19,7 @@ sealed class SessionEvent {
     object SaveProgress : SessionEvent()
     object RefreshFlowerStates : SessionEvent()
     object UpdateStreak : SessionEvent()
+    data class UpdateStreakForType(val type: PracticeType) : SessionEvent()
     object BuildSessionCards : SessionEvent()
     object PlaySuccess : SessionEvent()
     object PlayError : SessionEvent()

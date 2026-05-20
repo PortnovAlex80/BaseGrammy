@@ -13,6 +13,7 @@ import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.Normalizer
+import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionCard
@@ -202,7 +203,6 @@ class SessionRunner(
         // Without this, regular lesson sessions start with wordBankWords=empty,
         // hiding the word bank toggle button (supportsWordBank checks isNotEmpty).
         updateWordBank()
-        currentCard()?.let { events.add(SessionEvent.RecordCardShow(it)) }
         events.add(SessionEvent.SaveProgress)
         return events
     }
@@ -345,7 +345,9 @@ class SessionRunner(
                     r
                 }
                 state.drill.isDrillMode -> {
-                    submitDrillAnswer(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
+                    val (r, e) = submitDrillAnswer(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
+                    events.addAll(e)
+                    r
                 }
                 isLastCard -> {
                     val (r, e) = submitNormalLastCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
@@ -484,13 +486,13 @@ class SessionRunner(
         shouldAddVoiceMetrics: Boolean,
         voiceDurationMs: Long?,
         voiceWords: Int
-    ): SubmitResult {
+    ): Pair<SubmitResult, List<SessionEvent>> {
         stateMachine.reset()
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, inputText = "", voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.ACTIVE))
         }
-        advanceDrillCard()
-        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false)
+        val events = advanceDrillCard()
+        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false) to events
     }
 
     /**
@@ -708,8 +710,6 @@ class SessionRunner(
             it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = stateMachine.incorrectAttempts, sessionState = SessionState.ACTIVE, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null))
         }
         val events = mutableListOf<SessionEvent>()
-        nextCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
-
         // Update word bank if in WORD_BANK mode
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
             updateWordBank()
@@ -730,7 +730,6 @@ class SessionRunner(
             it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
         }
         val events = mutableListOf<SessionEvent>()
-        prevCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
         events.add(SessionEvent.SaveProgress)
         return events
     }
@@ -755,8 +754,6 @@ class SessionRunner(
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
         }
-        nextCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
-
         // Update word bank if in WORD_BANK mode
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
             updateWordBank()
@@ -783,7 +780,6 @@ class SessionRunner(
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
         }
-        prevCard?.let { events.add(SessionEvent.RecordCardShow(it)) }
         events.add(SessionEvent.SaveProgress)
         return events
     }
@@ -1000,18 +996,19 @@ class SessionRunner(
         }
     }
 
-    fun advanceDrillCard() {
+    fun advanceDrillCard(): List<SessionEvent> {
         val state = stateAccess.uiState.value
-        if (!state.drill.isDrillMode) return
-        val lessonId = state.navigation.selectedLessonId ?: return
+        if (!state.drill.isDrillMode) return emptyList()
+        val lessonId = state.navigation.selectedLessonId ?: return emptyList()
 
         val nextIndex = state.drill.drillCardIndex + 1
         drillProgressStore.saveDrillProgress(lessonId.value, nextIndex)
 
-        if (nextIndex >= state.drill.drillTotalCards) {
+        return if (nextIndex >= state.drill.drillTotalCards) {
             finishDrill(lessonId.value)
         } else {
             loadDrillCard(nextIndex, activate = true)
+            emptyList()
         }
     }
 
@@ -1021,7 +1018,12 @@ class SessionRunner(
         stateAccess.updateState {
             it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, currentCard = null, subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1, screenMode = TrainingScreenMode.NORMAL))
         }
-        return listOf(SessionEvent.BuildSessionCards, SessionEvent.RefreshFlowerStates, SessionEvent.SaveProgress)
+        return listOf(
+            SessionEvent.UpdateStreakForType(PracticeType.SUB_DRILL),
+            SessionEvent.BuildSessionCards,
+            SessionEvent.RefreshFlowerStates,
+            SessionEvent.SaveProgress
+        )
     }
 
     fun exitDrillMode(): List<SessionEvent> {

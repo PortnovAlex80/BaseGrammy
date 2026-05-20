@@ -75,6 +75,7 @@ class PomodoroHelper(
 
         val sessionCorrect = (cardSession.correctCount - pomodoro.baselineCorrect).coerceAtLeast(0)
         val sessionIncorrect = (cardSession.incorrectCount - pomodoro.baselineIncorrect).coerceAtLeast(0)
+        val remainingAtCompletion = trueRemainingSeconds.coerceAtLeast(0)
 
         val stats = PomodoroSessionStats(
             cardsShown = sessionCorrect + sessionIncorrect,
@@ -91,12 +92,12 @@ class PomodoroHelper(
             it.copy(
                 isComplete = true,
                 isActive = false,
-                remainingSeconds = 0,
+                remainingSeconds = remainingAtCompletion,
                 stats = stats
             )
         }
-        trueRemainingSeconds = 0
-        onUpdatePomodoroRemaining?.invoke(0)
+        trueRemainingSeconds = remainingAtCompletion
+        onUpdatePomodoroRemaining?.invoke(remainingAtCompletion)
         onPlayCompletionSound()
     }
 

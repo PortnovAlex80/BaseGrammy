@@ -1269,6 +1269,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SessionEvent.SaveProgress -> saveProgress()
                 is SessionEvent.RefreshFlowerStates -> refreshFlowerStates()
                 is SessionEvent.UpdateStreak -> updateStreak()
+                is SessionEvent.UpdateStreakForType -> updateStreak(event.type)
                 is SessionEvent.BuildSessionCards -> buildSessionCards()
                 is SessionEvent.PlaySuccess -> audioCoordinator.playSuccessSound()
                 is SessionEvent.PlayError -> audioCoordinator.playErrorSound()
@@ -1314,13 +1315,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
     private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
-    private fun updateStreak() {
+    private fun updateStreak(forcedPracticeType: PracticeType? = null) {
         // TASK-051: Streak only counts when session is "completed" (засчитанная УЕ).
         // Must have enough correct answers to cover non-bad cards.
         if (!isSessionCompleted()) return
 
         val languageId = _coreState.value.navigation.selectedLanguageId
-        val practiceType = determinePracticeType()
+        val practiceType = forcedPracticeType ?: determinePracticeType()
         val (updatedStreak, isNewFire) = streakManager.recordPracticeTypeCompletion(languageId.value, practiceType)
         val fireCount = updatedStreak.todayFireCount
         if (isNewFire && updatedStreak.currentStreak > 0) {

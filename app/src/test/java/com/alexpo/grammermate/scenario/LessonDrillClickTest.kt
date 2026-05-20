@@ -13,6 +13,7 @@ import com.alexpo.grammermate.feature.progress.ProgressTracker
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import com.alexpo.grammermate.feature.training.HintCalculator
+import com.alexpo.grammermate.feature.training.SessionEvent
 import com.alexpo.grammermate.feature.training.SessionRunner
 import com.alexpo.grammermate.feature.training.WordBankGenerator
 import com.alexpo.grammermate.testharness.FakeDrillProgressStore
@@ -378,17 +379,23 @@ class LessonDrillClickTest {
         sessionRunner.startDrill(resume = false)
         sessionRunner.startSession()
 
-        // Complete one card
-        val currentCard = stateAccess.uiState.value.cardSession.currentCard!!
-        stateAccess.updateState { it.copy(
-            cardSession = it.cardSession.copy(inputText = currentCard.acceptedAnswers.first())
-        ) }
-        sessionRunner.submitAnswer()
+        var completionEvents: List<SessionEvent> = emptyList()
+        while (stateAccess.uiState.value.drill.isDrillMode) {
+            val currentCard = stateAccess.uiState.value.cardSession.currentCard!!
+            stateAccess.updateState { it.copy(
+                cardSession = it.cardSession.copy(inputText = currentCard.acceptedAnswers.first())
+            ) }
+            completionEvents = sessionRunner.submitAnswer().second
+        }
 
         // ASSERT: PracticeType.SUB_DRILL is the 4th fire type
         // Verify the enum exists
         val types = PracticeType.entries
         assertTrue("PracticeType should have SUB_DRILL", PracticeType.SUB_DRILL in types)
+        assertTrue(
+            "Drill completion should request SUB_DRILL streak recording",
+            completionEvents.any { it is SessionEvent.UpdateStreakForType && it.type == PracticeType.SUB_DRILL }
+        )
 
         // SUB_DRILL is the 4th type (after TRANSLATION, VOCAB, VERB)
         assertEquals("SUB_DRILL should be 4th type", PracticeType.SUB_DRILL, types[3])
