@@ -68,5 +68,7 @@ data class VerbDrillUiState(
     val currentCardIsBad: Boolean = false,
     val sortByFrequency: Boolean = false,
     val showStartFreshResumeDialog: Boolean = false,
-    val lastSessionContext: VerbDrillLastSessionState? = null
+    val lastSessionContext: VerbDrillLastSessionState? = null,
+    val showDebugInfo: Boolean = false,
+    val debugInfo: String = ""
 )

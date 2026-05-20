@@ -801,6 +801,91 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(showStartFreshResumeDialog = false) }
     }
 
+    // ── Debug Dialog ─────────────────────────────────────────────────────────────
+
+    /**
+     * Show debugging information about progress files.
+     * Logs and displays the current state of progress data for debugging.
+     */
+    fun showDebugDialog() {
+        viewModelScope.launch {
+            ensureProgressLoaded()
+
+            // Build debug info string
+            val debugInfo = buildString {
+                appendLine("=== Verb Drill Debug Info ===")
+                appendLine()
+
+                // Pack ID
+                appendLine("Pack ID: ${currentPackId ?: "null (legacy mode)"}")
+                appendLine()
+
+                // Progress file path (we need to get this from the store)
+                appendLine("Progress Map Size: ${progressMap.size} entries")
+                if (progressMap.isNotEmpty()) {
+                    appendLine("Progress Keys:")
+                    progressMap.keys.forEach { key ->
+                        val progress = progressMap[key]
+                        appendLine("  - $key: everShown=${progress?.everShownCardIds?.size ?: 0}, todayShown=${progress?.todayShownCardIds?.size ?: 0}")
+                    }
+                }
+                appendLine()
+
+                // Last session state
+                val lastSession = if (::verbDrillStore.isInitialized) {
+                    verbDrillStore.loadLastSession()
+                } else null
+                if (lastSession != null) {
+                    appendLine("Last Session State:")
+                    appendLine("  - Tense: ${lastSession.selectedTense ?: "null"}")
+                    appendLine("  - Group: ${lastSession.selectedGroup ?: "null"}")
+                    appendLine("  - SortByFrequency: ${lastSession.sortByFrequency}")
+                    appendLine("  - TodayShownCardIds: ${lastSession.todayShownCardIds.size}")
+                    appendLine("  - SessionCardIds: ${lastSession.sessionCardIds.size}")
+                    appendLine("  - CurrentIndex: ${lastSession.currentIndex}")
+                } else {
+                    appendLine("Last Session State: null")
+                }
+                appendLine()
+
+                // Store info
+                if (::verbDrillStore.isInitialized && verbDrillStore is com.alexpo.grammermate.data.VerbDrillStoreImpl) {
+                    // Use reflection to access the private file field
+                    try {
+                        val fileField = verbDrillStore.javaClass.getDeclaredField("file")
+                        fileField.isAccessible = true
+                        val file = fileField.get(verbDrillStore) as? java.io.File
+                        appendLine("Progress File Path: ${file?.absolutePath ?: "unknown"}")
+                        appendLine("Progress File Exists: ${file?.exists() ?: false}")
+                        appendLine("Progress File Size: ${if (file?.exists() == true) "${file.length()} bytes" else "N/A"}")
+
+                        val lastSessionFileField = verbDrillStore.javaClass.getDeclaredField("lastSessionFile")
+                        lastSessionFileField.isAccessible = true
+                        val lastSessionFile = lastSessionFileField.get(verbDrillStore) as? java.io.File
+                        appendLine("Last Session File Path: ${lastSessionFile?.absolutePath ?: "unknown"}")
+                        appendLine("Last Session File Exists: ${lastSessionFile?.exists() ?: false}")
+                        appendLine("Last Session File Size: ${if (lastSessionFile?.exists() == true) "${lastSessionFile.length()} bytes" else "N/A"}")
+                    } catch (e: Exception) {
+                        appendLine("Error accessing file info: ${e.message}")
+                    }
+                }
+            }
+
+            // Log the debug info
+            Log.d(logTag, "showDebugDialog:\n$debugInfo")
+
+            // Update UI state to show the dialog
+            _uiState.update { it.copy(showDebugInfo = true, debugInfo = debugInfo) }
+        }
+    }
+
+    /**
+     * Hide the debugging dialog.
+     */
+    fun hideDebugDialog() {
+        _uiState.update { it.copy(showDebugInfo = false) }
+    }
+
     // ── Bad Sentence Support ──────────────────────────────────────────────
 
     fun flagBadSentence() {

@@ -147,29 +147,38 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
         val oldStreakBackup = File(backupSubDir, "streak.yaml")
         if (oldStreakBackup.exists()) oldStreakBackup.delete()
 
-        // Copy drill-progress files
+        // Copy drill-progress files (legacy global format)
         collector.listDrillProgressFiles().forEach { file ->
             AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
         }
 
-        // Copy flat verb drill files
-        val verbDrillProgress = File(internalDir, "verb_drill_progress.yaml")
-        if (verbDrillProgress.exists()) {
-            AtomicFileWriter.copyAtomic(verbDrillProgress, File(backupSubDir, "verb_drill_progress.yaml"))
-        }
-        val verbDrillLastSession = File(internalDir, "verb_drill_last_session.yaml")
-        if (verbDrillLastSession.exists()) {
-            AtomicFileWriter.copyAtomic(verbDrillLastSession, File(backupSubDir, "verb_drill_last_session.yaml"))
-        }
-
-        // Copy pack-scoped drill data (word mastery only)
+        // Copy pack-scoped drill data (vocab drill only - verb drill is now flat)
         collector.listPackDrillDirs().forEach { packDir ->
+            val targetDir = File(backupSubDir, "drills/${packDir.name}")
+            targetDir.mkdirs()
+
+            // Vocab drill: word_mastery.yaml
             val wordMastery = File(packDir, "word_mastery.yaml")
             if (wordMastery.exists()) {
-                val targetDir = File(backupSubDir, "drills/${packDir.name}")
-                targetDir.mkdirs()
                 AtomicFileWriter.copyAtomic(wordMastery, File(targetDir, "word_mastery.yaml"))
             }
+        }
+
+        // Copy flat verb drill files (Fix 9: VerbDrillStore now uses flat paths)
+        val verbDrillProgress = File(internalDir, "verb_drill_progress.yaml")
+        if (verbDrillProgress.exists()) {
+            Log.d(logTag, "Backing up flat verb drill progress file")
+            AtomicFileWriter.copyAtomic(verbDrillProgress, File(backupSubDir, "verb_drill_progress.yaml"))
+        } else {
+            Log.d(logTag, "Flat verb drill progress file does not exist, skipping backup")
+        }
+
+        val verbDrillLastSession = File(internalDir, "verb_drill_last_session.yaml")
+        if (verbDrillLastSession.exists()) {
+            Log.d(logTag, "Backing up flat verb drill last session file")
+            AtomicFileWriter.copyAtomic(verbDrillLastSession, File(backupSubDir, "verb_drill_last_session.yaml"))
+        } else {
+            Log.d(logTag, "Flat verb drill last session file does not exist, skipping backup")
         }
 
         // Write metadata via AtomicFileWriter (fixes violation)
