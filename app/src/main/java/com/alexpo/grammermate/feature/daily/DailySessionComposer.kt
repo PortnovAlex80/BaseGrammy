@@ -534,6 +534,15 @@ class DailySessionComposer(
         }
     }
 
+    /**
+     * Test-only: Inject verb drill cards directly into the cache.
+     * This bypasses file loading for unit tests.
+     */
+    fun injectVerbDrillCardsForTest(packId: String, languageId: String, cards: List<VerbDrillCard>) {
+        val key = "$packId:$languageId"
+        cachedVerbDrillCards = key to cards
+    }
+
     private fun loadVocabWords(packId: String, languageId: String): List<VocabWord> {
         val key = "$packId:$languageId"
         cachedVocabWords?.let { if (it.first == key) return it.second }

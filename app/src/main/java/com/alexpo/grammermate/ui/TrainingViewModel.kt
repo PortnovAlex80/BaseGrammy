@@ -922,15 +922,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Advance the daily cursor offsets after a session is built.
-     * If the sentence offset exceeds the current lesson's card count,
-     * advances currentLessonIndex and resets sentenceOffset.
+     * Uses dailyPracticeCoordinator.advanceDailyCursor() which correctly updates
+     * BOTH sentenceOffset AND verbOffset (unlike progressTracker.advanceCursor()
+     * which only updates sentenceOffset).
      */
     private fun advanceCursor(sentenceCount: Int) {
         val s = _coreState.value
-        val advanced = progressTracker.advanceCursor(
-            currentCursor = dailyPracticeCoordinator.getCursor(),
+        val advanced = dailyPracticeCoordinator.advanceDailyCursor(
             sentenceCount = sentenceCount,
-            selectedLanguageId = s.navigation.selectedLanguageId
+            languageId = s.navigation.selectedLanguageId.value
         )
         dailyPracticeCoordinator.updateCursor(advanced)
     }

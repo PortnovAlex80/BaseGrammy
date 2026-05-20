@@ -103,7 +103,7 @@ class DailyPracticeCoordinator(
 
     // ── Session lifecycle ────────────────────────────────────────────────
 
-    private fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int) {
+    internal fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int) {
         if (blocks.isEmpty()) return
         _state.update { state ->
             state.copy(dailySession = DailySessionState(
@@ -678,6 +678,9 @@ class DailyPracticeCoordinator(
     }
 
     fun getCursor(): DailyCursorState = _state.value.dailyCursor
+
+    /** Test-only accessor to inspect internal state. */
+    internal fun getDailyState(): DailyPracticeState = _state.value
 
     /**
      * Advance the daily cursor with lesson transition and pack wrapping.

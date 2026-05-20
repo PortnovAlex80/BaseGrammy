@@ -131,7 +131,9 @@ class SessionRunner(
     override val isComplete: Boolean
         get() = sessionCards.isEmpty() ||
             (stateAccess.uiState.value.cardSession.sessionState == SessionState.PAUSED &&
-             currentCard() == null)
+             (currentCard() == null ||
+              // All cards in the session have been answered correctly
+              stateAccess.uiState.value.cardSession.correctCount >= sessionCards.size))
 
     override val progress: SessionProgress
         get() {
@@ -179,7 +181,7 @@ class SessionRunner(
         // Auto-set currentCard from sessionCards if not set (for test compatibility and direct session starts)
         if (state.cardSession.currentCard == null && sessionCards.isNotEmpty()) {
             val firstCard = sessionCards.firstOrNull()
-            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(currentCard = firstCard)) }
+            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(currentCard = firstCard, subLessonTotal = sessionCards.size)) }
         }
         if (sessionCards.isEmpty() || stateAccess.uiState.value.cardSession.currentCard == null) {
             pauseTimer()
@@ -968,7 +970,7 @@ class SessionRunner(
         }
 
         stateAccess.updateState {
-            it.copy(drill = it.drill.copy(isDrillMode = true, drillCardIndex = startCardIndex, drillTotalCards = drillCards.size, drillShowStartDialog = false, drillHasProgress = false), cardSession = it.cardSession.copy(currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, wordBankWords = emptyList(), selectedWords = emptyList()), boss = it.boss.copy(bossActive = false, bossType = null, bossTotal = 0, bossProgress = 0, bossReward = null, bossRewardMessage = null, bossFinishedToken = 0, bossErrorMessage = null), elite = it.elite.copy(eliteActive = false))
+            it.copy(drill = it.drill.copy(isDrillMode = true, drillCardIndex = startCardIndex, drillTotalCards = drillCards.size, drillShowStartDialog = false, drillHasProgress = false), cardSession = it.cardSession.copy(currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, wordBankWords = emptyList(), selectedWords = emptyList(), screenMode = TrainingScreenMode.DRILL), boss = it.boss.copy(bossActive = false, bossType = null, bossTotal = 0, bossProgress = 0, bossReward = null, bossRewardMessage = null, bossFinishedToken = 0, bossErrorMessage = null), elite = it.elite.copy(eliteActive = false))
         }
         loadDrillCard(startCardIndex)
         return listOf(SessionEvent.SaveProgress)
@@ -991,7 +993,7 @@ class SessionRunner(
         val card = drillCards[cardIndex]
         sessionCards = listOf(card)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = 0, currentCard = card, subLessonTotal = 1, sessionState = if (activate) SessionState.ACTIVE else SessionState.PAUSED, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0), drill = it.drill.copy(drillCardIndex = cardIndex))
+            it.copy(cardSession = it.cardSession.copy(currentIndex = 0, currentCard = card, subLessonTotal = 1, sessionState = if (activate) SessionState.ACTIVE else SessionState.PAUSED, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, screenMode = TrainingScreenMode.DRILL), drill = it.drill.copy(drillCardIndex = cardIndex))
         }
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
             stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
@@ -1017,7 +1019,7 @@ class SessionRunner(
         drillProgressStore.clearDrillProgress(lessonId)
         stateMachine.reset()
         stateAccess.updateState {
-            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, currentCard = null, subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1))
+            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, currentCard = null, subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1, screenMode = TrainingScreenMode.NORMAL))
         }
         return listOf(SessionEvent.BuildSessionCards, SessionEvent.RefreshFlowerStates, SessionEvent.SaveProgress)
     }
@@ -1032,7 +1034,7 @@ class SessionRunner(
             drillProgressStore.saveDrillProgress(lessonId.value, state.drill.drillCardIndex)
         }
         stateAccess.updateState {
-            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
+            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null, screenMode = TrainingScreenMode.NORMAL))
         }
         return listOf(SessionEvent.BuildSessionCards, SessionEvent.RefreshFlowerStates, SessionEvent.SaveProgress)
     }
