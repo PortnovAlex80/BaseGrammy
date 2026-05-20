@@ -322,11 +322,12 @@ private fun buildWeeklyStats(history: List<PomodoroHistoryEntry>): List<Pomodoro
             cal.get(Calendar.DAY_OF_MONTH))
         val entries = grouped[key].orEmpty()
         val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+        val dayOfWeekIndex = (cal.get(Calendar.DAY_OF_WEEK) - 1).coerceIn(0, dayNames.lastIndex)
         PomodoroDayStat(
-            label = dayNames[cal.get(Calendar.DAY_OF_WEEK) - 1],
+            label = dayNames[dayOfWeekIndex],
             sessions = entries.size,
-            cards = entries.sumOf { it.cardsShown },
-            correct = entries.sumOf { it.cardsCorrect },
+            cards = entries.sumOf { it.cardsShown.coerceAtLeast(0) },
+            correct = entries.sumOf { it.cardsCorrect.coerceAtLeast(0) },
             minutes = entries.sumOf { ((it.totalSeconds - it.remainingSeconds).coerceAtLeast(0) + 59) / 60 }
         )
     }
