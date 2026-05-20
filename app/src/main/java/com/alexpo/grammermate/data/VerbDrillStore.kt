@@ -267,30 +267,17 @@ class VerbDrillStoreImpl(
         val raw = try { yaml.load<Any>(lastSessionFile.readText()) } catch (_: Exception) { null } ?: return null
         val data = raw as? Map<*, *> ?: return null
 
-        // Parse cards list
-        val cardsData = data["cards"] as? List<*> ?: return null
-        val cards = cardsData.mapNotNull { cardData ->
-            val cardMap = cardData as? Map<*, *> ?: return@mapNotNull null
-            VerbDrillCard(
-                id = cardMap["id"] as? String ?: return@mapNotNull null,
-                promptRu = cardMap["promptRu"] as? String ?: "",
-                answer = cardMap["answer"] as? String ?: "",
-                verb = cardMap["verb"] as? String,
-                tense = cardMap["tense"] as? String,
-                group = cardMap["group"] as? String,
-                rank = cardMap["rank"] as? Int
-            )
-        }
+        // Parse todayShownCardIds list
+        val todayShownCardIds = (data["todayShownCardIds"] as? List<*>)
+            ?.mapNotNull { it as? String }
+            ?.toSet()
+            ?: emptySet()
 
         return VerbDrillLastSessionState(
             selectedTense = data["selectedTense"] as? String,
             selectedGroup = data["selectedGroup"] as? String,
             sortByFrequency = data["sortByFrequency"] as? Boolean ?: false,
-            cards = cards,
-            currentIndex = (data["currentIndex"] as? Number)?.toInt() ?: 0,
-            correctCount = (data["correctCount"] as? Number)?.toInt() ?: 0,
-            incorrectCount = (data["incorrectCount"] as? Number)?.toInt() ?: 0,
-            timestamp = (data["timestamp"] as? Number)?.toLong() ?: 0L
+            todayShownCardIds = todayShownCardIds
         )
     }
 
@@ -300,28 +287,12 @@ class VerbDrillStoreImpl(
     }
 
     private fun persistLastSessionToDisk(session: VerbDrillLastSessionState) {
-        val cardsData = session.cards.map { card ->
-            linkedMapOf(
-                "id" to card.id,
-                "promptRu" to card.promptRu,
-                "answer" to card.answer,
-                "verb" to card.verb,
-                "tense" to card.tense,
-                "group" to card.group,
-                "rank" to card.rank
-            )
-        }
-
         val data = linkedMapOf(
             "schemaVersion" to schemaVersion,
             "selectedTense" to session.selectedTense,
             "selectedGroup" to session.selectedGroup,
             "sortByFrequency" to session.sortByFrequency,
-            "cards" to cardsData,
-            "currentIndex" to session.currentIndex,
-            "correctCount" to session.correctCount,
-            "incorrectCount" to session.incorrectCount,
-            "timestamp" to session.timestamp
+            "todayShownCardIds" to session.todayShownCardIds.toList()
         )
 
         AtomicFileWriter.writeText(lastSessionFile, yaml.dump(data))

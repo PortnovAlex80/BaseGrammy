@@ -173,11 +173,7 @@ data class VerbDrillLastSessionState(
     val selectedTense: String?,
     val selectedGroup: String?,
     val sortByFrequency: Boolean,
-    val cards: List<VerbDrillCard>,
-    val currentIndex: Int,
-    val correctCount: Int,
-    val incorrectCount: Int,
-    val timestamp: Long
+    val todayShownCardIds: Set<String>
 )
 ```
 
@@ -186,33 +182,20 @@ data class VerbDrillLastSessionState(
 | `selectedTense` | The tense filter selected for the session (e.g., `"Presente"`) or `null` for all tenses |
 | `selectedGroup` | The group filter selected for the session (e.g., `"regular_are"`) or `null` for all groups |
 | `sortByFrequency` | Whether frequency sorting was enabled for this session |
-| `cards` | The 10 cards in the session batch (must be persisted to reconstruct session) |
-| `currentIndex` | Index of the current card (0-9) when session was interrupted |
-| `correctCount` | Number of cards answered correctly before interruption |
-| `incorrectCount` | Number of cards where hint was shown before interruption |
-| `timestamp` | `System.currentTimeMillis()` when session was saved (for session age display) |
+| `todayShownCardIds` | Set of card IDs already shown today (for exclusion when loading next cards) |
 
 **Persistence location:** `context.filesDir/grammarmate/drills/{packId}/verb_drill_last_session.yaml`
 
 **YAML schema:**
 ```yaml
-schemaVersion: 1
+schemaVersion: 2
 selectedTense: "Presente"
 selectedGroup: "regular_are"
 sortByFrequency: false
-cards:
-  - id: "regular_are_Presente_0"
-    promptRu: "я говорю"
-    answer: "io parlo"
-    verb: "parlare"
-    tense: "Presente"
-    group: "regular_are"
-    rank: 1
-  # ... (up to 10 cards)
-currentIndex: 5
-correctCount: 3
-incorrectCount: 2
-timestamp: 1716172800000
+todayShownCardIds:
+  - "regular_are_Presente_0"
+  - "regular_are_Presente_1"
+  # ... (all card IDs shown today)
 ```
 
 ### 10.2.6 VerbDrillUiState
@@ -748,8 +731,6 @@ When the user opens VerbDrillScreen and a previous incomplete session exists, a 
 |  You have an incomplete session: |
 |  - Tense: Presente               |
 |  - Group: regular_are            |
-|  - Progress: 5/10 cards          |
-|  - Correct: 3 | Incorrect: 2     |
 |                                  |
 |  [     Resume (Продолжить)    ]  |
 |  [  Start Fresh (Начать сначала) ]|
@@ -757,17 +738,15 @@ When the user opens VerbDrillScreen and a previous incomplete session exists, a 
 +----------------------------------+
 ```
 
-The dialog shows the full session context:
+The dialog shows the filter context from the last session:
 - **Tense**: The selected tense filter (or "All tenses" if `selectedTense == null`)
 - **Group**: The selected group filter (or "All groups" if `selectedGroup == null`)
-- **Progress**: Current position (e.g., "5/10 cards" for `currentIndex = 5` in a 10-card batch)
-- **Score**: Correct and incorrect counts from the saved session
 
 **Behavior:**
 
 | User Action | System Response | User Outcome |
 |-------------|----------------|--------------|
-| User taps "Resume" | Restore last session state: set `selectedTense`, `selectedGroup`, `sortByFrequency` from saved state. Create new `VerbDrillSessionState` with saved cards, advance to saved `currentIndex`. Set `showStartFreshResumeDialog = false`. | Continues exactly where left off with same filters and card order |
+| User taps "Resume" | Keep filters from last session (selectedTense, selectedGroup, sortByFrequency). Load next cards from VerbDrill pool, excluding cards in todayShownCardIds. Start new session from current position. Set `showStartFreshResumeDialog = false`. | Continues with same filters, moves to next unseen cards |
 | User taps "Start Fresh" | Clear filters: set `selectedTense = null`, `selectedGroup = null`, `sortByFrequency = false`. Delete last session file. Set `showStartFreshResumeDialog = false`. | Returns to selection screen with default filters, can choose new filters |
 | User taps X (close) or Back | Set `showStartFreshResumeDialog = false`. Navigate back to previous screen. | Cancels entry, dialog dismissed |
 
@@ -776,9 +755,7 @@ The dialog shows the full session context:
 To support resume, the following must be saved to `verb_drill_last_session.yaml`:
 
 1. **Filter state:** `selectedTense`, `selectedGroup`, `sortByFrequency`
-2. **Session cards:** The full list of 10 `VerbDrillCard` objects (ID, promptRu, answer, verb, tense, group, rank)
-3. **Progress:** `currentIndex`, `correctCount`, `incorrectCount`
-4. **Timestamp:** `System.currentTimeMillis()` for staleness detection
+2. **Today's shown card IDs:** Set of card IDs already shown today (for exclusion)
 
 **When to save last session:**
 - When user exits via back button during active session (`currentIndex < cards.size`)
@@ -798,8 +775,6 @@ To support resume, the following must be saved to `verb_drill_last_session.yaml`
 | Message | "You have an incomplete session:" | "У вас есть незавершённая сессия:" |
 | Tense label | "Tense:" | "Время:" |
 | Group label | "Group:" | "Группа:" |
-| Progress label | "Progress:" | "Прогресс:" |
-| Score label | "Correct: {n} | Incorrect: {n}" | "Правильно: {n} | Ошибок: {n}" |
 | "All tenses" | "All tenses" | "Все времена" |
 | "All groups" | "All groups" | "Все группы" |
 | Resume button | "Resume" | "Продолжить" |
@@ -809,7 +784,7 @@ To support resume, the following must be saved to `verb_drill_last_session.yaml`
 - When `VerbDrillLastSessionState` does not exist, `showStartFreshResumeDialog` remains `false`
 - Selection screen is shown directly with default filters (all tenses, all groups, frequency off)
 
-**Implementation task:** [TASK-XXX: Verb Drill Start Fresh / Resume Dialog](../tasks/TASK-XXX-verb-drill-start-fresh-resume.md)
+**Implementation task:** [TASK-075: Verb Drill "Resume" Loads Next Cards](../tasks/TASK-075-verb-drill-resume-next-cards.md)
 
 ### 10.6.3 Selection Screen (VerbDrillSelectionScreen)
 
@@ -1228,10 +1203,10 @@ This allows the daily practice "Repeat" function to replay the exact same verb c
 **As a user**, when I open Verb Drill after leaving an incomplete session, I want to see a dialog offering to resume where I left off or start fresh, so that I can either continue my practice or begin with new filters without losing my previous progress context.
 
 **Acceptance criteria:**
-- Dialog appears on VerbDrillScreen entry if a previous incomplete session exists (within 24 hours)
-- "Resume" restores the exact session state: filters (tense, group, sort), card list, current position, score
+- Dialog appears on VerbDrillScreen entry if a previous incomplete session exists (no time limit)
+- "Resume" keeps filters (tense, group, sort) and loads next cards from pool excluding todayShownCardIds. Does NOT restore previous session's cards, position, or scores.
 - "Start Fresh" clears filters and returns to selection screen, deleting the incomplete session
-- Dialog is skipped on first launch (no previous session) or if previous session is stale (>24 hours old)
+- Dialog is skipped on first launch (no previous session)
 - Last session state is persisted per pack (switching packs doesn't show another pack's session)
 
 ---

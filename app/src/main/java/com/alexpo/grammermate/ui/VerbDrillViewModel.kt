@@ -190,7 +190,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private fun checkForLastSessionAndShowDialog() {
         Log.d(logTag, "checkForLastSessionAndShowDialog: currentPackId=$currentPackId, reloadForPackCalled=$reloadForPackCalled")
         val lastSession = verbDrillStore.loadLastSession()
-        Log.d(logTag, "checkForLastSession: lastSession = ${lastSession != null}, cards=${lastSession?.cards?.size ?: 0}")
+        Log.d(logTag, "checkForLastSession: lastSession = ${lastSession != null}, todayShownCardIds=${lastSession?.todayShownCardIds?.size ?: 0}")
         if (lastSession != null) {
             _uiState.update {
                 it.copy(
@@ -385,7 +385,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun startSession() {
+    fun startSession(additionalShownCardIds: Set<String> = emptySet()) {
         val state = _uiState.value
         val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"
 
@@ -400,9 +400,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         val progress = progressMap[comboKey]
-        val todayShownCardIds = progress?.todayShownCardIds ?: emptySet()
+        val progressTodayShownCardIds = progress?.todayShownCardIds ?: emptySet()
 
-        val remaining = filtered.filter { it.id !in todayShownCardIds }
+        // Merge todayShownCardIds from progress and additional shown cards (from last session)
+        val allShownCardIds = progressTodayShownCardIds + additionalShownCardIds
+
+        val remaining = filtered.filter { it.id !in allShownCardIds }
 
         if (remaining.isEmpty()) {
             _uiState.update { it.copy(allDoneToday = true) }
@@ -558,6 +561,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         startSession()
     }
 
+    fun startSession() {
+        startSession(emptySet())
+    }
+
     fun prevCard() {
         val session = _uiState.value.session ?: return
         if (session.currentIndex > 0) {
@@ -593,7 +600,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             // Persist last card and start new batch
             val card = session.cards[session.currentIndex]
             persistCardProgress(card)
-            startSession()
+            startSession(emptySet())
         }
     }
 
@@ -614,28 +621,29 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /**
      * Save the current session state for potential resume (VD-50).
      * Called when user exits an incomplete session.
+     * Saves filters and todayShownCardIds for loading next cards on resume.
      */
     private fun saveLastSessionState(session: VerbDrillSessionState) {
         val state = _uiState.value
+        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"
+        val progress = progressMap[comboKey]
+        val todayShownCardIds = progress?.todayShownCardIds ?: emptySet()
+
         val lastSessionState = com.alexpo.grammermate.data.VerbDrillLastSessionState(
             selectedTense = state.selectedTense,
             selectedGroup = state.selectedGroup,
             sortByFrequency = state.sortByFrequency,
-            cards = session.cards,
-            currentIndex = session.currentIndex,
-            correctCount = session.correctCount,
-            incorrectCount = session.incorrectCount,
-            timestamp = System.currentTimeMillis()
+            todayShownCardIds = todayShownCardIds
         )
         verbDrillStore.saveLastSession(lastSessionState)
-        Log.d(logTag, "saveLastSessionState: saved ${lastSessionState.cards.size} cards, packId=$currentPackId")
+        Log.d(logTag, "saveLastSessionState: saved filters with ${todayShownCardIds.size} shown cards, packId=$currentPackId")
     }
 
     // ── Start Fresh / Resume Dialog (VD-50) ──────────────────────────────────────
 
     /**
      * Resume the last incomplete session (VD-50).
-     * Restores filters, session data, and dismisses the dialog.
+     * Restores filters and loads NEXT cards from the pool, excluding already shown cards.
      */
     fun onResumeSession() {
         val lastSession = verbDrillStore.loadLastSession() ?: run {
@@ -644,48 +652,21 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
 
-        // Validate session has cards
-        if (lastSession.cards.isEmpty()) {
-            // Invalid session - delete and return to selection screen
-            verbDrillStore.deleteLastSession()
-            _uiState.update {
-                it.copy(
-                    showStartFreshResumeDialog = false,
-                    selectedTense = null,
-                    selectedGroup = null,
-                    sortByFrequency = false,
-                    session = null
-                )
-            }
-            return
-        }
-
-        // Restore filters and session state
+        // Restore filters
         _uiState.update { state ->
             state.copy(
                 selectedTense = lastSession.selectedTense,
                 selectedGroup = lastSession.selectedGroup,
                 sortByFrequency = lastSession.sortByFrequency,
-                session = VerbDrillSessionState(
-                    cards = lastSession.cards,
-                    currentIndex = lastSession.currentIndex,
-                    correctCount = lastSession.correctCount,
-                    incorrectCount = lastSession.incorrectCount,
-                    isComplete = lastSession.currentIndex >= lastSession.cards.size
-                ),
                 showStartFreshResumeDialog = false
             )
         }
 
-        // Update the current card's bad sentence flag
-        val session = _uiState.value.session
-        if (session != null && session.currentIndex < session.cards.size) {
-            val currentCard = session.cards[session.currentIndex]
-            val cardIsBad = isCardBad(currentCard)
-            _uiState.update { it.copy(currentCardIsBad = cardIsBad) }
-        }
+        // Load next cards (startSession() will use todayShownCardIds from last session)
+        startSession(lastSession.todayShownCardIds)
 
-        updateProgressDisplay()
+        // Delete last session after filters are restored and cards are loaded
+        verbDrillStore.deleteLastSession()
     }
 
     /**
@@ -713,25 +694,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun onDismissDialog() {
         _uiState.update { it.copy(showStartFreshResumeDialog = false) }
-    }
-
-    /**
-     * Format the session age as a human-readable string.
-     * Returns "just now", "X minutes ago", "X hours ago", or "X days ago".
-     */
-    fun formatSessionAge(timestamp: Long): String {
-        val now = System.currentTimeMillis()
-        val diffMs = now - timestamp
-        val diffMinutes = diffMs / (1000 * 60)
-        val diffHours = diffMs / (1000 * 60 * 60)
-        val diffDays = diffMs / (1000 * 60 * 60 * 24)
-
-        return when {
-            diffMinutes < 1 -> "just now"
-            diffMinutes < 60 -> "$diffMinutes minute${if (diffMinutes > 1) "s" else ""} ago"
-            diffHours < 24 -> "$diffHours hour${if (diffHours > 1) "s" else ""} ago"
-            else -> "$diffDays day${if (diffDays > 1) "s" else ""} ago"
-        }
     }
 
     // ── Bad Sentence Support ──────────────────────────────────────────────

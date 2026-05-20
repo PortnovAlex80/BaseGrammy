@@ -77,43 +77,45 @@ fun VerbDrillScreen(
         return
     }
 
-    VerbDrillSelectionScreen(
-        state = state,
-        onSelectTense = viewModel::selectTense,
-        onSelectGroup = viewModel::selectGroup,
-        onToggleSortByFrequency = viewModel::toggleSortByFrequency,
-        onStart = {
-            viewModel.startSession()
-            // After startSession(), read the cards from the updated session state
-            val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
-            if (sessionCards.isNotEmpty()) {
-                onStartSession(sessionCards)
-            }
-        },
-        onBack = onBack
-    )
-
-    // VD-50: Start Fresh / Resume Dialog
-    if (state.showStartFreshResumeDialog) {
-        StartFreshResumeDialog(
-            lastSessionContext = state.lastSessionContext,
-            sessionAge = state.lastSessionContext?.timestamp?.let { viewModel.formatSessionAge(it) },
-            onDismiss = {
-                viewModel.onDismissDialog()
-                onBack()
-            },
-            onResume = {
-                viewModel.onResumeSession()
-                // After resume, read the session cards and start the session
+    // Box ensures proper layering: selection screen first, dialog on top
+    Box(modifier = Modifier.fillMaxSize()) {
+        VerbDrillSelectionScreen(
+            state = state,
+            onSelectTense = viewModel::selectTense,
+            onSelectGroup = viewModel::selectGroup,
+            onToggleSortByFrequency = viewModel::toggleSortByFrequency,
+            onStart = {
+                viewModel.startSession()
+                // After startSession(), read the cards from the updated session state
                 val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
                 if (sessionCards.isNotEmpty()) {
                     onStartSession(sessionCards)
                 }
             },
-            onStartFresh = {
-                viewModel.onStartFresh()
-            }
+            onBack = onBack
         )
+
+        // VD-50: Start Fresh / Resume Dialog (rendered on top of selection screen)
+        if (state.showStartFreshResumeDialog) {
+            StartFreshResumeDialog(
+                lastSessionContext = state.lastSessionContext,
+                onDismiss = {
+                    viewModel.onDismissDialog()
+                    onBack()
+                },
+                onResume = {
+                    viewModel.onResumeSession()
+                    // After resume, read the session cards and start the session
+                    val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
+                    if (sessionCards.isNotEmpty()) {
+                        onStartSession(sessionCards)
+                    }
+                },
+                onStartFresh = {
+                    viewModel.onStartFresh()
+                }
+            )
+        }
     }
 }
 
@@ -255,12 +257,12 @@ private fun VerbDrillDropdown(
  * VD-50: Start Fresh / Resume Dialog
  *
  * Shown when user opens VerbDrillScreen and a previous incomplete session exists.
- * Displays session context (tense, group, progress, age) to help user decide.
+ * Displays session filter context (tense, group) to help user decide.
+ * "Resume" loads next cards excluding already shown ones.
  */
 @Composable
 private fun StartFreshResumeDialog(
     lastSessionContext: VerbDrillLastSessionState?,
-    sessionAge: String?,
     onDismiss: () -> Unit,
     onResume: () -> Unit,
     onStartFresh: () -> Unit
@@ -274,16 +276,11 @@ private fun StartFreshResumeDialog(
             Column {
                 Text(stringResource(R.string.verb_resume_dialog_message))
                 Spacer(modifier = Modifier.height(12.dp))
-                // Session context display
+                // Session context display - only filters
                 if (lastSessionContext != null) {
                     SessionContextInfo(
                         selectedTense = lastSessionContext.selectedTense,
-                        selectedGroup = lastSessionContext.selectedGroup,
-                        currentIndex = lastSessionContext.currentIndex,
-                        totalCards = lastSessionContext.cards.size,
-                        correctCount = lastSessionContext.correctCount,
-                        incorrectCount = lastSessionContext.incorrectCount,
-                        sessionAge = sessionAge
+                        selectedGroup = lastSessionContext.selectedGroup
                     )
                 }
             }
@@ -315,17 +312,12 @@ private fun StartFreshResumeDialog(
 }
 
 /**
- * Displays session context information in the Start Fresh / Resume dialog.
+ * Displays session filter context in the Start Fresh / Resume dialog.
  */
 @Composable
 private fun SessionContextInfo(
     selectedTense: String?,
-    selectedGroup: String?,
-    currentIndex: Int,
-    totalCards: Int,
-    correctCount: Int,
-    incorrectCount: Int,
-    sessionAge: String?
+    selectedGroup: String?
 ) {
     Column(
         modifier = Modifier
@@ -344,23 +336,6 @@ private fun SessionContextInfo(
             SessionInfoRow(
                 label = stringResource(R.string.verb_resume_dialog_group),
                 value = selectedGroup
-            )
-        }
-        // Progress
-        SessionInfoRow(
-            label = stringResource(R.string.verb_resume_dialog_progress),
-            value = stringResource(R.string.verb_resume_dialog_progress_value, currentIndex + 1, totalCards)
-        )
-        // Score
-        SessionInfoRow(
-            label = stringResource(R.string.verb_resume_dialog_score),
-            value = stringResource(R.string.verb_resume_dialog_score_value, correctCount, incorrectCount)
-        )
-        // Age
-        if (sessionAge != null) {
-            SessionInfoRow(
-                label = stringResource(R.string.verb_resume_dialog_age),
-                value = sessionAge
             )
         }
     }
