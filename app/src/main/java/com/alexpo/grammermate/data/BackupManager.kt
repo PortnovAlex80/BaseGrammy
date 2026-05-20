@@ -152,14 +152,18 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
             AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
         }
 
-        // Copy pack-scoped drill data
+        // Copy flat verb drill files
+        val verbDrillProgress = File(internalDir, "verb_drill_progress.yaml")
+        if (verbDrillProgress.exists()) {
+            AtomicFileWriter.copyAtomic(verbDrillProgress, File(backupSubDir, "verb_drill_progress.yaml"))
+        }
+        val verbDrillLastSession = File(internalDir, "verb_drill_last_session.yaml")
+        if (verbDrillLastSession.exists()) {
+            AtomicFileWriter.copyAtomic(verbDrillLastSession, File(backupSubDir, "verb_drill_last_session.yaml"))
+        }
+
+        // Copy pack-scoped drill data (word mastery only)
         collector.listPackDrillDirs().forEach { packDir ->
-            val verbProgress = File(packDir, "verb_drill_progress.yaml")
-            if (verbProgress.exists()) {
-                val targetDir = File(backupSubDir, "drills/${packDir.name}")
-                targetDir.mkdirs()
-                AtomicFileWriter.copyAtomic(verbProgress, File(targetDir, "verb_drill_progress.yaml"))
-            }
             val wordMastery = File(packDir, "word_mastery.yaml")
             if (wordMastery.exists()) {
                 val targetDir = File(backupSubDir, "drills/${packDir.name}")

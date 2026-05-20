@@ -371,12 +371,16 @@ class ProgressTracker(
      * Clear drill-related files for all installed packs.
      */
     fun resetDrillFiles(context: android.content.Context) {
-        val packs = lessonStore.getInstalledPacks()
         val baseDir = java.io.File(context.filesDir, "grammarmate")
-        for (pack in packs) {
-            val verbDrillFile = java.io.File(baseDir, "drills/${pack.packId}/verb_drill_progress.yaml")
-            if (verbDrillFile.exists()) verbDrillFile.delete()
+        val verbDrillFile = java.io.File(baseDir, "verb_drill_progress.yaml")
+        if (verbDrillFile.exists()) verbDrillFile.delete()
 
+        val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session.yaml")
+        if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+
+        // Keep pack-scoped logic for word mastery
+        val packs = lessonStore.getInstalledPacks()
+        for (pack in packs) {
             val wordMasteryFile = java.io.File(baseDir, "drills/${pack.packId}/word_mastery.yaml")
             if (wordMasteryFile.exists()) wordMasteryFile.delete()
         }

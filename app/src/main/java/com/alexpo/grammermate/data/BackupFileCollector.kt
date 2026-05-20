@@ -73,7 +73,8 @@ internal class BackupFileCollector(private val context: Context) {
         - bad_sentences.yaml (reported bad sentences)
         - vocab_progress.yaml (vocab sprint progress)
         - drill_progress_*.yaml (per-language drill progress)
-        - drills/{packId}/verb_drill_progress.yaml (verb drill progress per pack)
+        - verb_drill_progress.yaml (verb drill progress - flat path)
+        - verb_drill_last_session.yaml (verb drill last session state - flat path)
         - drills/{packId}/word_mastery.yaml (word mastery per pack)
     """.trimIndent()
 

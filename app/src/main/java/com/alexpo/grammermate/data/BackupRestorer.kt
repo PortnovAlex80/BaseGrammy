@@ -96,7 +96,20 @@ internal class BackupRestorer(private val context: Context) {
             }
         }
 
-        // Pack-scoped drill data (drills/{packId}/)
+        // Flat verb drill files
+        listOf("verb_drill_progress.yaml", "verb_drill_last_session.yaml").forEach { name ->
+            copyIfExists(backupSubDir, internalDir, name)
+            val dest = File(internalDir, name)
+            if (dest.exists()) {
+                val restored = dest.readText(Charsets.UTF_8)
+                if (!validateBackupContent(restored, dest.name)) {
+                    dest.delete()
+                    Log.w(logTag, "Deleted invalid restored file: ${dest.name}")
+                }
+            }
+        }
+
+        // Pack-scoped drill data (drills/{packId}/) - word mastery only
         restorePackDrillDirs(backupSubDir)
 
         return true
@@ -216,6 +229,18 @@ internal class BackupRestorer(private val context: Context) {
                 drillProgressCount++
             }
         }
+
+        // -- Flat verb drill files --
+        logBuilder.appendLine("--- Flat Verb Drill Files ---")
+        listOf("verb_drill_progress.yaml", "verb_drill_last_session.yaml").forEach { name ->
+            val source = backupDir.findFile(name)
+            if (source == null) {
+                logBuilder.appendLine("MISSING: $name")
+            } else {
+                copied = copyDocumentToInternal(source, File(internalDir, name), logBuilder, name, restoredFiles) || copied
+            }
+        }
+        logBuilder.appendLine()
 
         // -- Flat-name pack-scoped drill files (from scoped backup) --
         backupDir.listFiles().forEach { file ->
@@ -370,18 +395,7 @@ internal class BackupRestorer(private val context: Context) {
             val targetPackDir = File(File(internalDir, "drills"), packBackupDir.name)
             targetPackDir.mkdirs()
 
-            val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
-            if (verbProgress.exists()) {
-                val content = verbProgress.readText(Charsets.UTF_8)
-                if (validateBackupContent(content, verbProgress.name)) {
-                    AtomicFileWriter.writeText(
-                        File(targetPackDir, "verb_drill_progress.yaml"),
-                        content
-                    )
-                } else {
-                    Log.w(logTag, "Skipping invalid backup file: ${verbProgress.name}")
-                }
-            }
+            // Only restore word mastery (verb drill is now flat-path)
             val wordMastery = File(packBackupDir, "word_mastery.yaml")
             if (wordMastery.exists()) {
                 val content = wordMastery.readText(Charsets.UTF_8)
