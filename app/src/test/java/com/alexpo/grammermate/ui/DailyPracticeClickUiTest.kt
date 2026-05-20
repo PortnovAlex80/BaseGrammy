@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -31,7 +33,7 @@ import org.junit.runner.RunWith
 class DailyPracticeClickUiTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     // ========================================
     // Test 1: Full 3-Block Session Flow
@@ -262,7 +264,7 @@ class DailyPracticeClickUiTest {
         }
 
         // ACT: Click Show Answer button
-        composeTestRule.onNodeWithText("Show answer")
+        composeTestRule.onNodeWithTag("show_answer_button")
             .performClick()
 
         // ASSERT: Show answer callback invoked

@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
@@ -394,6 +395,7 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
                 Text(text = stringResource(R.string.training_ru), style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
+                    modifier = Modifier.testTag("card_prompt_text"),
                     text = state.cardSession.currentCard?.promptRu?.let {
                         HintCalculator.calculateEffectiveHints(
                             promptRu = it,

@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -31,7 +33,7 @@ import org.junit.runner.RunWith
 class PauseCascadeClickUiTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     // ========================================
     // Test 1: Pause → Type Answer → Check → Same Card
@@ -109,13 +111,13 @@ class PauseCascadeClickUiTest {
         assertEquals("Session should be paused", true, isPaused)
 
         // ACT: Type answer while paused
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("three")
 
         assertEquals("Input should be captured", "three", currentInput)
 
         // ACT: Click Check while paused
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
 
         // ASSERT: Submit was called
         assertEquals("Submit should be called once", 1, submitCount)
@@ -201,7 +203,7 @@ class PauseCascadeClickUiTest {
         isPaused = false
 
         // ACT: Complete the input
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("ond")
 
         // ASSERT: Full input preserved
@@ -345,7 +347,7 @@ class PauseCascadeClickUiTest {
         isPaused = true
 
         // ACT: Try to go to previous (should not work in real app)
-        composeTestRule.onNodeWithText("Previous").performClick()
+        composeTestRule.onNodeWithTag("prev_button").performClick()
 
         // ASSERT: First card still displayed
         composeTestRule.onNodeWithText("первый").assertIsDisplayed()
@@ -416,11 +418,11 @@ class PauseCascadeClickUiTest {
         isPaused = true
 
         // ACT: Type answer
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("ten")
 
         // ACT: Submit while paused
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
 
         // ASSERT: Submit called
         assertEquals("Submit should be called", 1, submitCount)
@@ -489,11 +491,11 @@ class PauseCascadeClickUiTest {
         composeTestRule.onNodeWithText("неправильный").assertIsDisplayed()
 
         // ACT: Type wrong answer
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("wrong")
 
         // ACT: Submit
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
 
         // ASSERT: Card should not have advanced (paused state prevents navigation)
         assertEquals("Should stay at index 0", 0, currentCardIndex)
@@ -632,11 +634,11 @@ class PauseCascadeClickUiTest {
         isPaused = false
 
         // ACT: Type correct answer
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("one")
 
         // ACT: Submit
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
 
         // ASSERT: Card should advance now (resumed, correct answer)
         assertEquals("Should advance to index 1", 1, currentCardIndex)

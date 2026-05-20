@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
@@ -83,6 +84,7 @@ fun UnifiedNavigationRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavIconButton(
+            modifier = Modifier.testTag("prev_button"),
             onClick = onPrev,
             enabled = stateModel.hasCurrentCard
         ) {
@@ -114,6 +116,7 @@ fun UnifiedNavigationRow(
                 Icon(Icons.Default.StopCircle, contentDescription = stringResource(R.string.content_desc_exit_session))
             }
             NavIconButton(
+                modifier = Modifier.testTag("next_button"),
                 onClick = onNext,
                 enabled = stateModel.hasCurrentCard
             ) {

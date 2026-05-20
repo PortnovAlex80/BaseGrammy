@@ -1,10 +1,13 @@
 package com.alexpo.grammermate.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.assertTextContains
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.data.*
 import com.alexpo.grammermate.ui.screens.TrainingScreen
@@ -34,7 +37,7 @@ import org.junit.runner.RunWith
 class RegularLessonClickUiTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     // ========================================
     // Test 1: Start Lesson → Type Answer → Check → Next Card
@@ -97,15 +100,18 @@ class RegularLessonClickUiTest {
             )
         }
 
-        // ASSERT: Verify first card is displayed
-        composeTestRule.onNodeWithText("русское слово 1").assertIsDisplayed()
+        // ASSERT: Verify first card is displayed (use testTag to avoid duplicate nodes)
+        composeTestRule.onNodeWithTag("card_prompt_text")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag("card_prompt_text")
+            .assertTextContains("русское слово 1")
 
         // ACT: Type correct answer
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("english word 1")
 
         // ACT: Click Check button
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
 
         // ASSERT: Verify submit was called
         assert(submitCount == 1) { "Submit should be called once" }
@@ -171,9 +177,9 @@ class RegularLessonClickUiTest {
 
         // ACT: Submit three wrong answers
         repeat(3) {
-            composeTestRule.onNodeWithText("Your translation")
+            composeTestRule.onNodeWithTag("input_field")
                 .performTextInput("wrong answer")
-            composeTestRule.onNodeWithText("Check").performClick()
+            composeTestRule.onNodeWithTag("check_button").performClick()
             // Clear input for next attempt
             currentInput = ""
         }
@@ -301,7 +307,7 @@ class RegularLessonClickUiTest {
         composeTestRule.onNodeWithText("карточка пять").assertIsDisplayed()
 
         // ACT: Type answer while ACTIVE
-        composeTestRule.onNodeWithText("Your translation")
+        composeTestRule.onNodeWithTag("input_field")
             .performTextInput("partial")
 
         // ACT: Pause (via toggle)
@@ -310,7 +316,7 @@ class RegularLessonClickUiTest {
 
         // ACT: Resume and complete the answer
         currentInput = "card five"
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
 
         // ASSERT: Submit was called
         assert(submitCount == 1) { "Submit should be called once" }
@@ -386,7 +392,7 @@ class RegularLessonClickUiTest {
         assert(initialState.cardSession.wordBankWords.contains("word")) { "Word bank should contain 'word'" }
 
         // ACT: Submit
-        composeTestRule.onNodeWithText("Check").performClick()
+        composeTestRule.onNodeWithTag("check_button").performClick()
         assert(submitCount == 1) { "Submit should be called" }
     }
 
@@ -445,7 +451,7 @@ class RegularLessonClickUiTest {
 
         // ACT: Click Show Answer button (eye icon)
         // The eye icon has contentDescription "Show answer"
-        composeTestRule.onNodeWithText("Show answer")
+        composeTestRule.onNodeWithTag("show_answer_button")
             .performClick()
 
         // ASSERT: Callback should be invoked
@@ -509,14 +515,14 @@ class RegularLessonClickUiTest {
         composeTestRule.onNodeWithText("два").assertIsDisplayed()
 
         // ACT: Click Previous
-        composeTestRule.onNodeWithText("Previous")
+        composeTestRule.onNodeWithTag("prev_button")
             .performClick()
 
         // ASSERT: Previous callback invoked
         assert(prevCalled) { "Previous callback should be invoked" }
 
         // ACT: Click Next
-        composeTestRule.onNodeWithText("Next")
+        composeTestRule.onNodeWithTag("next_button")
             .performClick()
 
         // ASSERT: Next callback invoked

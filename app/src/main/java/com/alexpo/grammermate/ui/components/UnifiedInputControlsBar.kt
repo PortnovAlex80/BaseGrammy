@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -179,7 +180,7 @@ fun UnifiedInputControlsBar(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("input_field"),
             label = { Text(text = stringResource(R.string.card_label_your_translation)) },
             singleLine = true,
             enabled = hasCards,
@@ -295,6 +296,7 @@ fun UnifiedInputControlsBar(
                     state = rememberTooltipState()
                 ) {
                     IconButton(
+                        modifier = Modifier.testTag("show_answer_button"),
                         onClick = { if (hasCards) contract.showAnswer() },
                         enabled = hasCards && hintAnswer == null
                     ) {
@@ -341,7 +343,7 @@ fun UnifiedInputControlsBar(
         // Check button
         Button(
             onClick = { onSubmit() },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("check_button"),
             enabled = hasCards && inputText.isNotBlank() && contract.canSubmit
         ) {
             Text(text = stringResource(R.string.button_check))

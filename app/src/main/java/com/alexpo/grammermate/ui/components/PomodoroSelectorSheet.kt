@@ -245,23 +245,26 @@ private fun PomodoroBarChart(stats: List<PomodoroDayStat>) {
             val labelHeight = 20.dp.toPx()
             val chartHeight = size.height - labelHeight
             val availableWidth = size.width - gap * (stats.size - 1)
-            if (availableWidth <= 0) return@Canvas
+            if (chartHeight <= 0f || availableWidth <= 0f) return@Canvas
             val barWidth = availableWidth / stats.size
+            if (barWidth <= 0f) return@Canvas
             stats.forEachIndexed { index, day ->
                 val left = index * (barWidth + gap)
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = Offset(left, 0f),
-                    size = Size(barWidth, chartHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
-                )
-                val fillHeight = chartHeight * day.cards / maxCards
-                drawRoundRect(
-                    color = if (day.cards > 0) barColor else Color.Transparent,
-                    topLeft = Offset(left, chartHeight - fillHeight),
-                    size = Size(barWidth, fillHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
-                )
+                if (left >= 0f && left <= size.width) {
+                    drawRoundRect(
+                        color = trackColor,
+                        topLeft = Offset(left, 0f),
+                        size = Size(barWidth, chartHeight),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                    )
+                    val fillHeight = (chartHeight * day.cards / maxCards).coerceIn(0f, chartHeight)
+                    drawRoundRect(
+                        color = if (day.cards > 0) barColor else Color.Transparent,
+                        topLeft = Offset(left, chartHeight - fillHeight),
+                        size = Size(barWidth, fillHeight),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                    )
+                }
             }
         }
         Row(
