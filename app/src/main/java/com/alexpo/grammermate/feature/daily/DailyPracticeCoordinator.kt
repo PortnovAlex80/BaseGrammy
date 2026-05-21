@@ -363,6 +363,10 @@ class DailyPracticeCoordinator(
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, effectiveLevel)
         val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
+
+        // Clear cache from previous pack
+        composer.invalidateCache()
+
         val blocks = composer.buildBlocks(effectiveLevel, packId.value, langId.value, lessonId, cumulativeTenses, cursor)
         Log.d(logTag, "DailyPractice: built ${blocks.size} blocks, per-type=${blocks.associate { it.type to it.tasks.size }}")
         if (blocks.isEmpty()) return false
@@ -405,14 +409,15 @@ class DailyPracticeCoordinator(
             return true
         }
 
+        // Create composer and clear cache before repeat
+        val composer = DailySessionComposer(lessonStore, getVerbDrillStore(packId.value), getWordMasteryStore(packId.value), sessionSize)
+        composer.invalidateCache()
+
         // Reconstruct from stored first-session card IDs
         if (cursor.firstSessionDate == today &&
             (cursor.firstSessionSentenceCardIds.isNotEmpty() || cursor.firstSessionVerbCardIds.isNotEmpty())
         ) {
             val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
-            val verbDrillStore = getVerbDrillStore(packId.value)
-            val packWordMasteryStore = getWordMasteryStore(packId.value)
-            val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
             val blocks = composer.buildRepeatBlocks(
                 lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses,
                 sentenceCardIds = cursor.firstSessionSentenceCardIds,
@@ -437,10 +442,7 @@ class DailyPracticeCoordinator(
             firstSessionVerbCardIds = resetPackCursor.firstSessionVerbCardIds,
             verbOffset = resetPackCursor.verbOffset
         )
-        val verbDrillStore = getVerbDrillStore(packId.value)
-        val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
-        val composer = DailySessionComposer(lessonStore, verbDrillStore, packWordMasteryStore, sessionSize)
         val blocks = composer.buildBlocks(lessonLevel, packId.value, langId.value, lessonId, cumulativeTenses, resetCursor)
         if (blocks.isEmpty()) return false
 
