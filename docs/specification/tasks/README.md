@@ -59,3 +59,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-079](DONE-TASK-079-daily-practice-pack-switching-and-language-grouping.md) | Daily Practice Pack Switching & Language Grouping | DONE | 22-use-case-registry, UC-21, UC-38, UC-80 | 2026-05-21 |
 | [DONE-TASK-080](DONE-TASK-080-state-isolation-bug.md) | State Isolation Bug Fix — Daily Cursor Cross-Pack Contamination | DONE | 22-use-case-registry, UC-21, UC-24 | 2026-05-21 |
 | [TASK-081](TASK-081-lesson-progress-isolation-bug.md) | Lesson Progress Isolation Bug — Pack-Scoped Lesson Progress | OPEN | 22-use-case-registry, UC-02, UC-06, UC-45 | 2026-05-21 |
+| [DONE-TASK-082](DONE-TASK-082-daily-practice-resume-dialog-bug.md) | Daily Practice Resume Dialog Bug — Pack-Scoped Session Detection | DONE | 22-use-case-registry, UC-23, scenario-06 | 2026-05-21 |
