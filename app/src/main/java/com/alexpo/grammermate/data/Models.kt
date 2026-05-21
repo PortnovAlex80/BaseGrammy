@@ -349,7 +349,8 @@ data class DailySessionState(
     val blocks: List<DailyBlock> = emptyList(),
     val blockIndex: Int = 0,
     val level: Int = 0,
-    val finishedToken: Boolean = false
+    val finishedToken: Boolean = false,
+    val packId: String = ""
 ) {
     /** Get the current block, or null if session is not active or out of range. */
     val currentBlock: DailyBlock?

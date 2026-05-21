@@ -619,6 +619,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun selectPack(packId: String) {
+        // Cancel any active daily session before switching packs
+        if (_coreState.value.daily.dailySession.active) {
+            cancelDailySession()
+        }
+
         val packLessonIds = lessonStore.getLessonIdsForPack(packId)
         if (packLessonIds.isNotEmpty()) {
             val currentLessonId = _coreState.value.navigation.selectedLessonId

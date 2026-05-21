@@ -33,6 +33,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
 /**
+ * Exception thrown when the active pack changes during a daily practice session.
+ * This signals that the current session is invalid and must be rebuilt.
+ */
+class SessionInvalidatedException(message: String) : Exception(message)
+
+/**
  * Stateful module that orchestrates the 3-block daily practice session
  * (Translate, Vocab, Verbs) using a clean block-config model.
  *
@@ -103,7 +109,7 @@ class DailyPracticeCoordinator(
 
     // ── Session lifecycle ────────────────────────────────────────────────
 
-    internal fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int) {
+    internal fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int, packId: String) {
         if (blocks.isEmpty()) return
         _state.update { state ->
             state.copy(dailySession = DailySessionState(
@@ -111,7 +117,8 @@ class DailyPracticeCoordinator(
                 blocks = blocks,
                 blockIndex = 0,
                 level = lessonLevel,
-                finishedToken = false
+                finishedToken = false,
+                packId = packId
             ))
         }
         stateAccess.saveProgress()
@@ -212,10 +219,19 @@ class DailyPracticeCoordinator(
     /**
      * Get the current block to render.
      * Returns null if session is not active or all blocks are done.
+     * Throws [SessionInvalidatedException] if the active pack has changed.
      */
     fun getCurrentBlock(): DailyBlock? {
         val ds = _state.value.dailySession
         if (!ds.active) return null
+
+        // Validate that the session's packId matches the current active pack
+        val currentPackId = stateAccess.uiState.value.navigation.activePackId?.value
+        if (ds.packId.isNotEmpty() && currentPackId != null && ds.packId != currentPackId) {
+            invalidateDailySession()
+            throw SessionInvalidatedException("Pack changed from ${ds.packId} to $currentPackId")
+        }
+
         return ds.currentBlock
     }
 
@@ -307,7 +323,7 @@ class DailyPracticeCoordinator(
                 Log.d(logTag, "DailyPractice: discarded prebuilt session (level mismatch: cached=$cachedLevelValue cursor=$effectiveLevel)")
             } else {
                 lastDailyBlocks = cached
-                startDailySession(cached, effectiveLevel)
+                startDailySession(cached, effectiveLevel, packId.value)
                 prebuiltDailyBlocks = null
                 prebuiltSessionLevel = 0
                 val allTasks = cached.flatMap { it.tasks }
@@ -332,7 +348,7 @@ class DailyPracticeCoordinator(
         if (blocks.isEmpty()) return false
 
         lastDailyBlocks = blocks
-        startDailySession(blocks, effectiveLevel)
+        startDailySession(blocks, effectiveLevel, packId.value)
 
         if (isFirstSessionToday) {
             val allTasks = blocks.flatMap { it.tasks }
@@ -364,7 +380,7 @@ class DailyPracticeCoordinator(
         // Try in-memory cache first (fastest path, same app run)
         val cached = lastDailyBlocks
         if (cached != null && cached.isNotEmpty()) {
-            startDailySession(cached, lessonLevel)
+            startDailySession(cached, lessonLevel, packId.value)
             return true
         }
 
@@ -383,7 +399,7 @@ class DailyPracticeCoordinator(
             )
             if (blocks.isNotEmpty()) {
                 lastDailyBlocks = blocks
-                startDailySession(blocks, lessonLevel)
+                startDailySession(blocks, lessonLevel, packId.value)
                 return true
             }
         }
@@ -398,7 +414,7 @@ class DailyPracticeCoordinator(
         if (blocks.isEmpty()) return false
 
         lastDailyBlocks = blocks
-        startDailySession(blocks, lessonLevel)
+        startDailySession(blocks, lessonLevel, packId.value)
         return true
     }
 
@@ -636,6 +652,15 @@ class DailyPracticeCoordinator(
 
     fun setSessionSize(size: Int) {
         sessionSize = size
+    }
+
+    /**
+     * Invalidate the daily session when the active pack changes.
+     * Clears the session state to force a rebuild with the new pack.
+     */
+    private fun invalidateDailySession() {
+        _state.update { it.copy(dailySession = DailySessionState()) }
+        stateAccess.saveProgress()
     }
 
     /**
