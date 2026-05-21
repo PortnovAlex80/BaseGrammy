@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -56,6 +58,7 @@ import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonPack
 import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingUiState
@@ -106,7 +109,8 @@ fun HomeScreen(
     onProfileClick: () -> Unit = {},
     onStartPomodoro: (Int) -> Unit = {},
     pomodoroLastDuration: Int = 20,
-    pomodoroHistory: List<PomodoroHistoryEntry> = emptyList()
+    pomodoroHistory: List<PomodoroHistoryEntry> = emptyList(),
+    onSelectPack: (String) -> Unit = {}
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -115,6 +119,7 @@ fun HomeScreen(
     var showLockedLessonHint by remember { mutableStateOf(false) }
     var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
     var showPomodoroSheet by remember { mutableStateOf(false) }
+    var showPackageList by remember { mutableStateOf(false) }
     val languageCode = state.navigation.languages
         .firstOrNull { it.id == state.navigation.selectedLanguageId }
         ?.id?.value
@@ -233,25 +238,41 @@ fun HomeScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onPrimaryAction)
+                .clickable(onClick = { showPackageList = true })
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = primaryLabel,
+                    text = activePackDisplayName ?: "Select Pack",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
-                if (nextHint != null) {
-                    Text(
-                        text = nextHint,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
+        }
+
+        if (showPackageList) {
+            PackageSelectorList(
+                packs = state.navigation.installedPacks,
+                currentPackId = state.navigation.activePackId?.value,
+                onPackSelected = { packId ->
+                    onSelectPack(packId)
+                    showPackageList = false
+                },
+                onDismiss = { showPackageList = false }
+            )
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = stringResource(R.string.home_grammar_roadmap), fontWeight = FontWeight.SemiBold)
+        if (state.navigation.selectedLessonId != null) {
+            val lessonIndex = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
+                .takeIf { it >= 0 } ?: 0
+            val exerciseCount = "${state.cardSession.completedSubLessonCount}/${state.cardSession.subLessonCount}"
+            Text(
+                text = "Lesson ${lessonIndex + 1}/ Exercise $exerciseCount",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(8.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -387,6 +408,56 @@ fun HomeScreen(
         lastDuration = pomodoroLastDuration,
         history = pomodoroHistory
     )
+}
+
+@Composable
+fun PackageSelectorList(
+    packs: List<LessonPack>,
+    currentPackId: String?,
+    onPackSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Select Package",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        packs.forEach { pack ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onPackSelected(pack.packId.value)
+                        onDismiss()
+                    }
+                    .background(
+                        if (pack.packId.value == currentPackId)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            Color.Transparent
+                    )
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = pack.displayName ?: pack.packId.value,
+                    fontWeight = if (pack.packId.value == currentPackId) FontWeight.Bold else FontWeight.Normal
+                )
+                if (pack.packId.value == currentPackId) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text("✓", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
 }
 
 @Composable

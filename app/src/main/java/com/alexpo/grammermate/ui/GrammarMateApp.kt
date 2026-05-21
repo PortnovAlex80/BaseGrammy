@@ -284,6 +284,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         HomeScreen(
                             state = state,
                             onSelectLanguage = vm::selectLanguage,
+                            onSelectPack = remember { { packId: String -> vm.selectPack(packId) } },
                             onOpenSettings = remember(dialogs) {
                                 {
                                     previousRoute = Routes.HOME
