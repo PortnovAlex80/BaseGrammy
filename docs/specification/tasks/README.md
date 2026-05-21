@@ -62,3 +62,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-082](DONE-TASK-082-daily-practice-resume-dialog-bug.md) | Daily Practice Resume Dialog Bug — Pack-Scoped Session Detection | DONE | 22-use-case-registry, UC-23, scenario-06 | 2026-05-21 |
 | [DONE-TASK-083](DONE-TASK-083-migration-trigger-missing.md) | Migration Trigger Missing — App Update Breaks State Isolation | DONE | 22-use-case-registry, UC-21, UC-24, 02-data-stores | 2026-05-21 |
 | [DONE-TASK-084](DONE-TASK-084-verb-isolation-bug.md) | Verb Isolation Bug — Wrong Pack Verbs in Daily Practice Block 3 | DONE | 22-use-case-registry, UC-21, UC-24, scenario-06 | 2026-05-21 |
+| [DONE-TASK-085](DONE-TASK-085-lazy-packid-validation.md) | Daily Practice Lazy Loading PackId Validation | DONE | 22-use-case-registry, UC-21, UC-24, scenario-06 | 2026-05-21 |
