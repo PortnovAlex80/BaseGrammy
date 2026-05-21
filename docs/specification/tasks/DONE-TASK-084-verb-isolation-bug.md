@@ -1,6 +1,6 @@
 # TASK-084: Verb Isolation Bug — Wrong Pack Verbs in Daily Practice Block 3
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-21
 **Branch:** feature/verb-isolation-bug (from main)
 **Priority:** HIGH
@@ -337,6 +337,7 @@ Future features that use caching should follow this pattern.
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Phase 1: Add cache invalidation triggers | | |
-| | Phase 2: Enhance cache validation | | |
-| | Phase 3: Add debug logging | | |
+| 2026-05-21 | Phase 1: Add cache invalidation triggers | DONE | Added invalidateCache() calls in startDailyPractice() and repeatDailyPractice() |
+| 2026-05-21 | Phase 2: Enhance cache validation | DONE | Added cache key validation in buildVerbBlock() + enhanced invalidateCache() logic |
+| 2026-05-21 | Phase 3: Add debug logging | DONE | Added cache HIT/MISS/invalidation logging for troubleshooting |
+| 2026-05-21 | Full implementation | DONE | All phases complete, commit 1335fdf |
