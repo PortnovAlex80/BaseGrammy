@@ -387,7 +387,7 @@ class AudioCoordinator(
                     it is DownloadState.Downloading || it is DownloadState.Extracting
                 }
 
-                // Track newly completed downloads to trigger engine recovery
+                // Track newly completed downloads so UI can mark model files ready.
                 val currentReadyMap = _audioState.value.ttsModelsReady
                 val newlyCompleted = stateMap.filter { (langId, dlState) ->
                     dlState is DownloadState.Done && currentReadyMap[langId] != true

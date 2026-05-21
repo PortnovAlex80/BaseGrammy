@@ -460,6 +460,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 audioCoordinator.checkTtsModel()
                 audioCoordinator.checkAllTtsModels()
                 audioCoordinator.checkAsrModel()
+                audioCoordinator.startBackgroundTtsDownload()
                 audioCoordinator.startTtsStateCollection()
             }
 
