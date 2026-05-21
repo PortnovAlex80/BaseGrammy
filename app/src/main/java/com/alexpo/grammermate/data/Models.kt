@@ -164,7 +164,16 @@ data class TrainingProgress(
     val activePackId: PackId? = null,
     val dailyLevel: Int = 0,
     val dailyTaskIndex: Int = 0,
-    val dailyCursor: DailyCursorState = DailyCursorState()
+    val dailyCursor: DailyCursorState = DailyCursorState(),
+    // Legacy fields - kept for backwards compatibility with existing progress files
+    // These are no longer used; lesson progress is now in PackLessonProgressStore
+    val lessonId: String? = null,
+    val currentIndex: Int = 0,
+    val correctCount: Int = 0,
+    val incorrectCount: Int = 0,
+    val incorrectAttemptsForCard: Int = 0,
+    val activeTimeMs: Long = 0L,
+    val state: SessionState = SessionState.PAUSED
 )
 
 /**

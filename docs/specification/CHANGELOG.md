@@ -2,6 +2,20 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## [TASK-080: State Isolation Bug - Pack-Scoped Daily Cursor] - 2026-05-21
+
+### Changed
+- `docs/specification/tasks/TASK-080-state-isolation-bug.md`: Created comprehensive task specification for migrating daily cursor from global state to pack-scoped state. Documented root cause (global `DailyCursorState` in `progress.yaml` causing cross-pack contamination), solution architecture (per-pack `daily_cursor_{packId}.yaml` files following `VerbDrillStore` pattern), migration strategy (one-time migration from global to pack-scoped), and verification checklist.
+- `docs/specification/22-use-case-registry.md`: Updated UC-21 (Start a daily practice session) with AC11-AC13 for pack-scoped cursor loading and session invalidation. Updated UC-24 (Daily practice cursor tracking) with AC8-AC10 for per-pack file storage and migration.
+
+### Key Changes
+- Daily cursor state stored globally in `progress.yaml` → migrated to per-pack `daily_cursor_{packId}.yaml`
+- Pattern follows existing `VerbDrillStore` implementation (language-scoped files, migration logic)
+- `PackDailyCursorStore` interface and implementation for pack-scoped cursor management
+- Migration runs on app upgrade (version 80) to preserve existing user progress
+- Cross-pack contamination eliminated: each pack maintains independent cursor state
+- `DailySessionState.packId` validation (from TASK-079) used for session invalidation
+
 ## [TASK-076: Verb Drill Session Persistence Lifecycle] - 2026-05-20
 
 ### Changed

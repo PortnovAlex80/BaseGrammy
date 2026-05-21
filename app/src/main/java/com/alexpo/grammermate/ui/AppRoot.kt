@@ -63,8 +63,8 @@ private fun checkAndMigrate(context: Context) {
 
     // Migrate lesson progress from global to pack-scoped (TASK-081)
     if (lastVersion < AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION) {
-        val config = configStore.load()
-        val activePackId = config.activePackId?.value
+        val progress = progressStore.load()
+        val activePackId = progress.activePackId?.value
 
         try {
             val migrated = progressStore.migrateGlobalLessonProgressToPackScoped(
