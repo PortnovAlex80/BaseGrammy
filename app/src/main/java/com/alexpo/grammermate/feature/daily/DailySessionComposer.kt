@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.feature.daily
 
+import android.util.Log
 import com.alexpo.grammermate.data.DailyBlock
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
@@ -437,6 +438,14 @@ class DailySessionComposer(
         cursor: DailyCursorState
     ): List<DailyTask.ConjugateVerb> {
         if (activeTenses.isEmpty()) return emptyList()
+
+        // Validate cache key matches current pack
+        val expectedKey = "$packId:$languageId"
+        if (cachedVerbDrillCards?.first != expectedKey) {
+            Log.d("DailySessionComposer", "Cache key mismatch: expected $expectedKey, got ${cachedVerbDrillCards?.first}. Clearing stale cache.")
+            cachedVerbDrillCards = null
+        }
+
         val allCards = loadVerbDrillCards(packId, languageId)
 
         val filtered = allCards.filter { card ->
@@ -524,10 +533,17 @@ class DailySessionComposer(
      * If both params are null, clears all caches.
      */
     fun invalidateCache(packId: String? = null, languageId: String? = null) {
+        Log.d("DailySessionComposer", "Invalidating verb cache for pack: $packId, lang: $languageId")
+
         if (packId != null && languageId != null) {
             val key = "$packId:$languageId"
-            if (cachedVocabWords?.first == key) cachedVocabWords = null
-            if (cachedVerbDrillCards?.first == key) cachedVerbDrillCards = null
+            // Clear cache if key doesn't match (not just if it matches)
+            if (cachedVocabWords?.first != key) {
+                cachedVocabWords = null
+            }
+            if (cachedVerbDrillCards?.first != key) {
+                cachedVerbDrillCards = null
+            }
         } else {
             cachedVocabWords = null
             cachedVerbDrillCards = null
@@ -586,7 +602,13 @@ class DailySessionComposer(
 
     private fun loadVerbDrillCards(packId: String, languageId: String): List<VerbDrillCard> {
         val key = "$packId:$languageId"
-        cachedVerbDrillCards?.let { if (it.first == key) return it.second }
+
+        if (cachedVerbDrillCards?.first == key) {
+            Log.d("DailySessionComposer", "Cache HIT for verb cards: $key")
+            return cachedVerbDrillCards!!.second
+        }
+
+        Log.d("DailySessionComposer", "Cache MISS for verb cards: $key - loading from storage")
 
         val files = lessonStore.getVerbDrillFiles(packId, languageId)
         val cards = mutableListOf<VerbDrillCard>()
