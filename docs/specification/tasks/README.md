@@ -56,3 +56,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-075](TASK-075-verb-drill-resume-next-cards.md) | Verb Drill Resume Loads Next Cards, Not Same Session | OPEN | 10-verb-drill | 2026-05-20 |
 | [TASK-076](TASK-076-verb-drill-session-persistence-lifecycle.md) | Verb Drill Session Persistence Lifecycle | OPEN | 10-verb-drill, UC-74, UC-64 | 2026-05-20 |
 | [TASK-078](TASK-078-home-screen-package-badge-refactor.md) | HomeScreen Package Badge Refactor | OPEN | 22-use-case-registry, UC-38, UC-35, 07-app-router | 2026-05-21 |
+| [TASK-079](TASK-079-daily-practice-pack-switching-and-language-grouping.md) | Daily Practice Pack Switching & Language Grouping | OPEN | 22-use-case-registry, UC-21, UC-38, UC-80 | 2026-05-21 |
