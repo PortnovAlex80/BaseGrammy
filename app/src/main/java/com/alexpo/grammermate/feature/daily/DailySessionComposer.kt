@@ -6,6 +6,7 @@ import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -38,6 +39,16 @@ class DailySessionComposer(
     // Cached parsed data keyed by "$packId:$languageId". Files never change at runtime.
     private var cachedVocabWords: Pair<String, List<VocabWord>>? = null
     private var cachedVerbDrillCards: Pair<String, List<VerbDrillCard>>? = null
+
+    private fun getPackLessons(packId: String, languageId: String): List<Lesson> {
+        val packLessonIds = lessonStore.getLessonIdsForPack(packId).toSet()
+        val languageLessons = lessonStore.getLessons(languageId)
+        return if (packLessonIds.isEmpty()) {
+            languageLessons
+        } else {
+            languageLessons.filter { it.id.value in packLessonIds }
+        }
+    }
 
     companion object {
 
@@ -266,7 +277,7 @@ class DailySessionComposer(
         lessonId: String,
         cursor: DailyCursorState
     ): List<DailyTask.TranslateSentence> {
-        val lessons = lessonStore.getLessons(languageId)
+        val lessons = getPackLessons(packId, languageId)
 
         // Use cursor index to select lesson; fall back to lessonId match
         val lesson = if (cursor.currentLessonIndex in lessons.indices) {
@@ -311,7 +322,7 @@ class DailySessionComposer(
     ): List<DailyTask.TranslateSentence> {
         if (cardIds.isEmpty()) return emptyList()
 
-        val lessons = lessonStore.getLessons(languageId)
+        val lessons = getPackLessons(packId, languageId)
         val allCards = lessons.flatMap { it.cards }
         val cardMap = allCards.associateBy { it.id }
 

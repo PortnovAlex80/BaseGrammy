@@ -93,10 +93,12 @@ class DailyPracticeCoordinator(
 
     /** Level the prebuilt session was built for; used to validate cache match. */
     private var prebuiltSessionLevel: Int = 0
+    private var prebuiltSessionPackId: String? = null
 
     /** In-memory cache for repeat (structured blocks). */
     var lastDailyBlocks: List<DailyBlock>? = null
         private set
+    private var lastDailyBlocksPackId: String? = null
 
     /** Per-block VOICE/KEYBOARD answered card counts for cursor advancement. */
     private var dailyPracticeAnsweredCounts: MutableMap<DailyBlockType, Int> = mutableMapOf()
@@ -358,7 +360,9 @@ class DailyPracticeCoordinator(
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId
 
+        val packLessonIds = state.navigation.activePackLessonIds?.toSet().orEmpty()
         val packLessons = lessonStore.getLessons(langId.value)
+            .let { lessons -> if (packLessonIds.isEmpty()) lessons else lessons.filter { it.id.value in packLessonIds } }
         val effectiveLevel: Int
         val lessonId: String
         val levelFromCursor: Boolean
@@ -380,14 +384,12 @@ class DailyPracticeCoordinator(
         // Try pre-built blocks first (only valid for first session of the day)
         val cached = prebuiltDailyBlocks
         if (isFirstSessionToday && cached != null && cached.isNotEmpty()) {
-            // NEW: Validate that cached session matches current pack
-            val currentPackId = stateAccess.uiState.value.navigation.activePackId?.value
-            val cachedPackId = packId.value
-
-            if (cachedPackId != currentPackId) {
-                Log.i(logTag, "Prebuilt cache packId mismatch: cached=$cachedPackId, current=$currentPackId. Clearing cache.")
+            val cachedPackId = prebuiltSessionPackId
+            if (cachedPackId != packId.value) {
+                Log.i(logTag, "Prebuilt cache packId mismatch: cached=$cachedPackId, current=${packId.value}. Clearing cache.")
                 prebuiltDailyBlocks = null
                 prebuiltSessionLevel = 0
+                prebuiltSessionPackId = null
                 // Fall through to rebuild session
             } else {
                 val levelMismatch = levelFromCursor && prebuiltSessionLevel != effectiveLevel
@@ -395,12 +397,15 @@ class DailyPracticeCoordinator(
                     val cachedLevelValue = prebuiltSessionLevel
                     prebuiltDailyBlocks = null
                     prebuiltSessionLevel = 0
+                    prebuiltSessionPackId = null
                     Log.d(logTag, "DailyPractice: discarded prebuilt session (level mismatch: cached=$cachedLevelValue cursor=$effectiveLevel)")
                 } else {
                     lastDailyBlocks = cached
+                    lastDailyBlocksPackId = packId.value
                     startDailySession(cached, effectiveLevel, packId.value)
                     prebuiltDailyBlocks = null
                     prebuiltSessionLevel = 0
+                    prebuiltSessionPackId = null
                     val allTasks = cached.flatMap { it.tasks }
                     val sentenceIds = allTasks
                         .filterIsInstance<DailyTask.TranslateSentence>()
@@ -428,6 +433,7 @@ class DailyPracticeCoordinator(
         if (blocks.isEmpty()) return false
 
         lastDailyBlocks = blocks
+        lastDailyBlocksPackId = packId.value
         startDailySession(blocks, effectiveLevel, packId.value)
 
         if (isFirstSessionToday) {
@@ -461,13 +467,11 @@ class DailyPracticeCoordinator(
         // Try in-memory cache first (fastest path, same app run)
         val cached = lastDailyBlocks
         if (cached != null && cached.isNotEmpty()) {
-            // NEW: Validate that cached session matches current pack
-            val currentPackId = stateAccess.uiState.value.navigation.activePackId?.value
-            val cachedPackId = packId.value
-
-            if (cachedPackId != currentPackId) {
-                Log.i(logTag, "Repeat cache packId mismatch: cached=$cachedPackId, current=$currentPackId. Clearing cache.")
+            val cachedPackId = lastDailyBlocksPackId
+            if (cachedPackId != packId.value) {
+                Log.i(logTag, "Repeat cache packId mismatch: cached=$cachedPackId, current=${packId.value}. Clearing cache.")
                 lastDailyBlocks = null
+                lastDailyBlocksPackId = null
                 // Fall through to rebuild session
             } else {
                 startDailySession(cached, lessonLevel, packId.value)
@@ -489,11 +493,28 @@ class DailyPracticeCoordinator(
                 sentenceCardIds = cursor.firstSessionSentenceCardIds,
                 verbCardIds = cursor.firstSessionVerbCardIds
             )
-            if (blocks.isNotEmpty()) {
+            val restoredSentenceCount = blocks
+                .find { it.type == DailyBlockType.TRANSLATE }
+                ?.tasks
+                ?.size
+                ?: 0
+            val restoredVerbCount = blocks
+                .find { it.type == DailyBlockType.VERBS }
+                ?.tasks
+                ?.size
+                ?: 0
+            val expectedSentenceCount = cursor.firstSessionSentenceCardIds.take(sessionSize).size
+            val expectedVerbCount = cursor.firstSessionVerbCardIds.take(sessionSize).size
+            val restoredStoredIds =
+                restoredSentenceCount == expectedSentenceCount &&
+                    restoredVerbCount == expectedVerbCount
+            if (blocks.isNotEmpty() && restoredStoredIds) {
                 lastDailyBlocks = blocks
+                lastDailyBlocksPackId = packId.value
                 startDailySession(blocks, lessonLevel, packId.value)
                 return true
             }
+            Log.i(logTag, "Stored repeat card ids do not match pack ${packId.value}; rebuilding daily session from cursor.")
         }
 
         // Last resort: build fresh with cursor at position 0 (start of day)
@@ -513,6 +534,7 @@ class DailyPracticeCoordinator(
         if (blocks.isEmpty()) return false
 
         lastDailyBlocks = blocks
+        lastDailyBlocksPackId = packId.value
         startDailySession(blocks, lessonLevel, packId.value)
         return true
     }
@@ -744,6 +766,7 @@ class DailyPracticeCoordinator(
         if (blocks.isNotEmpty()) {
             prebuiltDailyBlocks = blocks
             prebuiltSessionLevel = lessonLevel
+            prebuiltSessionPackId = packId
         }
     }
 
@@ -769,8 +792,10 @@ class DailyPracticeCoordinator(
      */
     fun resetState() {
         lastDailyBlocks = null
+        lastDailyBlocksPackId = null
         prebuiltDailyBlocks = null
         prebuiltSessionLevel = 0
+        prebuiltSessionPackId = null
         dailyPracticeAnsweredCounts.clear()
         _state.update { it.copy(dailySession = DailySessionState()) }
     }
@@ -781,8 +806,10 @@ class DailyPracticeCoordinator(
      */
     fun resetAllDailyState() {
         lastDailyBlocks = null
+        lastDailyBlocksPackId = null
         prebuiltDailyBlocks = null
         prebuiltSessionLevel = 0
+        prebuiltSessionPackId = null
         dailyPracticeAnsweredCounts.clear()
         _state.update { DailyPracticeState() }
     }
@@ -794,6 +821,7 @@ class DailyPracticeCoordinator(
     fun clearPrebuiltSession() {
         prebuiltDailyBlocks = null
         prebuiltSessionLevel = 0
+        prebuiltSessionPackId = null
     }
 
     // ── Cursor management (called by ViewModel) ──────────────────────────
@@ -846,7 +874,9 @@ class DailyPracticeCoordinator(
     ): DailyCursorState {
         val cursor = getCursor()
         _state.update { it.copy(dailyCursor = cursor) }
+        val packLessonIds = stateAccess.uiState.value.navigation.activePackLessonIds?.toSet().orEmpty()
         val lessons = lessonStore.getLessons(languageId)
+            .let { allLessons -> if (packLessonIds.isEmpty()) allLessons else allLessons.filter { it.id.value in packLessonIds } }
         if (lessons.isEmpty()) return cursor
 
         var sentenceOffset = cursor.sentenceOffset + sentenceCount
