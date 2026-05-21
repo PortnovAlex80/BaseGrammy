@@ -281,7 +281,7 @@ class DailyPracticeCoordinator(
     // ── Session start / resume ─────────────────────────────────────────
 
     fun hasResumableDailySession(): Boolean {
-        val cursor = _state.value.dailyCursor
+        val cursor = getCurrentPackCursor()
         val today = java.time.LocalDate.now().toString()
         return cursor.firstSessionDate == today &&
             (cursor.firstSessionSentenceCardIds.isNotEmpty() ||
