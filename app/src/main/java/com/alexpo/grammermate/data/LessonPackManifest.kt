@@ -38,7 +38,6 @@ data class LessonPackManifest(
                 val file = entry.optString("file").trim()
                 val order = entry.optInt("order", i + 1)
                 val title = entry.optString("title").trim().ifBlank { null }
-                val drillFile = entry.optString("drillFile").trim().ifBlank { null }
                 val type = entry.optString("type", "standard").trim()
                 if (lessonId.isBlank() || file.isBlank()) {
                     error("Invalid lesson entry at index $i")
@@ -49,7 +48,7 @@ data class LessonPackManifest(
                 } else {
                     emptyList()
                 }
-                lessons.add(LessonPackLesson(lessonId, order, title, file, drillFile, type, tenses))
+                lessons.add(LessonPackLesson(lessonId, order, title, file, type, tenses))
 
             }
             val displayName = json.optString("displayName").trim().ifBlank { null }
@@ -81,7 +80,6 @@ data class LessonPackLesson(
     val order: Int,
     val title: String?,
     val file: String,
-    val drillFile: String? = null,
     val type: String = "standard",
     val tenses: List<String> = emptyList()
 )

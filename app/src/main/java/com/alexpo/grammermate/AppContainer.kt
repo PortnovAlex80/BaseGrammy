@@ -22,7 +22,6 @@ class AppContainer(private val application: Application) {
     val hiddenCardStore: HiddenCardStore by lazy { storeFactory.getHiddenCardStore() }
     val vocabProgressStore: VocabProgressStore by lazy { storeFactory.getVocabProgressStore() }
     val profileStore: ProfileStore by lazy { storeFactory.getProfileStore() }
-    val drillProgressStore: DrillProgressStore by lazy { storeFactory.getDrillProgressStore() }
     val backupManager: BackupManager by lazy { BackupManagerImpl(application) }
     val ttsEngine: TtsEngine by lazy { TtsProvider.getInstance(application).ttsEngine }
 

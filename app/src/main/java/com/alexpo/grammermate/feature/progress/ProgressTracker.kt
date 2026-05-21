@@ -47,13 +47,12 @@ class ProgressTracker(
 
     /**
      * Record a card show for mastery tracking.
-     * Skips if bossActive, isDrillMode, or inputMode == WORD_BANK.
+     * Skips if bossActive or inputMode == WORD_BANK.
      * WORD_BANK mode never counts for mastery (flower growth).
      */
     fun recordCardShowForMastery(
         card: com.alexpo.grammermate.data.SessionCard,
         bossActive: Boolean,
-        isDrillMode: Boolean,
         inputMode: InputMode,
         selectedLanguageId: LanguageId,
         lessons: List<Lesson>,
@@ -61,8 +60,6 @@ class ProgressTracker(
     ) {
         // Boss battles do not count toward mastery/flower/SRS progress
         if (bossActive) return
-        // Drill mode: pure card training, no mastery/flower progress
-        if (isDrillMode) return
 
         val lessonId = resolveCardLessonId(card, selectedLessonId, lessons)
         val languageId = selectedLanguageId

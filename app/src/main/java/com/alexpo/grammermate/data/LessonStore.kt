@@ -295,19 +295,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             val csvFile = File(languageDir(languageId), fileName)
             if (!csvFile.exists()) return@mapNotNull null
             val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
-            val drillFileName = entry["drillFile"] as? String
-            val drillCards = if (drillFileName != null) {
-                val drillFile = File(languageDir(languageId), drillFileName)
-                if (drillFile.exists()) {
-                    val (_, parsedDrillCards) = CsvParser.parseLesson(drillFile.inputStream())
-                    parsedDrillCards
-                } else {
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
-            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards, drillCards = drillCards)
+            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
         }
     }
 

@@ -906,9 +906,9 @@ class FullCourseJourneyTest {
      * Test 13: completedTypesToday tracks all four practice types.
      *
      * Verifies that:
-     * - Practicing all 4 types (TRANSLATION, VOCAB, VERB, SUB_DRILL) in one day
-     * - completedTypesToday contains all 4 PracticeType values
-     * - todayFireCount = 4 after all types completed
+     * - Practicing all 3 types (TRANSLATION, VOCAB, VERB) in one day
+     * - completedTypesToday contains all 3 PracticeType values
+     * - todayFireCount = 3 after all types completed
      */
     @Test
     fun testCompletedTypesToday_AllFourTypes() = runBlocking {
@@ -975,42 +975,26 @@ class FullCourseJourneyTest {
         )
         assertEquals("todayFireCount should be 3", 3, streak3.todayFireCount)
 
-        // 4. SUB_DRILL (English pack drill sub-mode)
-        val (streak4, _) = streakManager.recordPracticeTypeCompletion(
-            testLanguageId.value,
-            PracticeType.SUB_DRILL
-        )
-
-        assertTrue(
-            "SUB_DRILL should be in completedTypesToday",
-            streak4.completedTypesToday.contains(PracticeType.SUB_DRILL)
-        )
-        assertEquals("todayFireCount should be 4", 4, streak4.todayFireCount)
-
-        // --- ASSERT: All 4 types in completedTypesToday ---
+        // --- ASSERT: All 3 types in completedTypesToday ---
         assertEquals(
-            "completedTypesToday should contain 4 types",
+            "completedTypesToday should contain 3 types",
             4,
             streak4.completedTypesToday.size
         )
         assertTrue(
             "completedTypesToday should contain TRANSLATION",
-            streak4.completedTypesToday.contains(PracticeType.TRANSLATION)
+            streak3.completedTypesToday.contains(PracticeType.TRANSLATION)
         )
         assertTrue(
             "completedTypesToday should contain VOCAB",
-            streak4.completedTypesToday.contains(PracticeType.VOCAB)
+            streak3.completedTypesToday.contains(PracticeType.VOCAB)
         )
         assertTrue(
             "completedTypesToday should contain VERB",
-            streak4.completedTypesToday.contains(PracticeType.VERB)
-        )
-        assertTrue(
-            "completedTypesToday should contain SUB_DRILL",
-            streak4.completedTypesToday.contains(PracticeType.SUB_DRILL)
+            streak3.completedTypesToday.contains(PracticeType.VERB)
         )
 
-        // Total assertions: 11
+        // Total assertions: 8
     }
 
     /**

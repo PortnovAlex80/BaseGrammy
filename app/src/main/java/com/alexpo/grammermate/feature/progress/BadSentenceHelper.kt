@@ -37,9 +37,6 @@ class BadSentenceHelper(
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId.value)))
         }
-        if (state.drill.isDrillMode) {
-            return BadSentenceResult.AdvanceDrillCard
-        }
         return BadSentenceResult.None
     }
 
@@ -120,7 +117,7 @@ class BadSentenceHelper(
 
     // ── Utility ────────────────────────────────────────────────────────────
 
-    /** Compute the bad-sentence count for the active pack (used during drill transitions). */
+    /** Compute the bad-sentence count for the active pack. */
     fun getBadSentenceCount(): Int {
         val packId = stateAccess.uiState.value.navigation.activePackId ?: return 0
         return badSentenceStore.getBadSentenceCount(packId.value)

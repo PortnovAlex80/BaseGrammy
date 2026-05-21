@@ -153,8 +153,7 @@ internal class PackImporter(
             lessonEntries.forEach { entry ->
                 val sourceFile = File(packDir, entry.file)
                 if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
-                val drillSourceFile = entry.drillFile?.let { File(packDir, it) }
-                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, drillSourceFile)
+                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, null)
             }
 
             // Import pack-scoped drill files
@@ -219,29 +218,13 @@ internal class PackImporter(
             card.copy(id = "${id}_${index}")
         }
 
-        var drillFileName: String? = null
-        var drillCards = emptyList<SentenceCard>()
-        if (drillSourceFile != null && drillSourceFile.exists()) {
-            val drillTargetName = "lesson_${id}_drill.csv"
-            val drillTargetFile = File(dir, drillTargetName)
-            drillSourceFile.inputStream().use { input ->
-                AtomicFileWriter.writeText(drillTargetFile, input.bufferedReader().readText())
-            }
-            val (_, parsedDrillCards) = CsvParser.parseLesson(drillTargetFile.inputStream())
-            drillFileName = drillTargetName
-            drillCards = parsedDrillCards
-        }
-
         if (normalizedId.isNotBlank()) {
             replaceById(languageId, normalizedId)
         } else {
             replaceByTitle(languageId, title)
         }
-        lessonIndexWriter(languageId, id, title, fileName, drillFileName)
-        val uniqueDrillCards = drillCards.mapIndexed { index, card ->
-            card.copy(id = "${id}_drill_${index}")
-        }
-        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = title, cards = uniqueCards, drillCards = uniqueDrillCards)
+        lessonIndexWriter(languageId, id, title, fileName, null)
+        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = title, cards = uniqueCards)
     }
 
     // ── Pack-scoped drill import ─────────────────────────────────────────

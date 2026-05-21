@@ -162,7 +162,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         wordBankGenerator = WordBankGenerator,
         cardProvider = cardProvider,
         streakManager = streakManager,
-        drillProgressStore = container.drillProgressStore,
         getMastery = { lessonId, langId -> masteryStore.get(lessonId, langId) },
         getSchedule = { lessonId -> lessonSchedules[com.alexpo.grammermate.data.LessonId(lessonId)] },
         calculateCompletedSubLessons = { subLessons, mastery, lessonId ->
@@ -1070,27 +1069,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return correct
     }
 
-    // ── Drill Mode ───────────────────────────────────────────────────────
-    // Seamless card training, no mastery/flower progress.
-    // All drill cards in one continuous stream. Save position on exit.
-
-    fun startDrill(resume: Boolean) {
-        vocabSession = emptyList()
-        handleSessionEvents(sessionRunner.startDrill(resume))
-        _coreState.update {
-            it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceHelper.getBadSentenceCount()))
-        }
-    }
-
-    fun exitDrillMode() {
-        handleSessionEvents(sessionRunner.exitDrillMode())
-        _coreState.update {
-            it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceHelper.getBadSentenceCount()))
-        }
-    }
-
-    // ── End Drill Mode ───────────────────────────────────────────────────
-
     fun hasVocabProgress(): Boolean {
         val lessonId = _coreState.value.navigation.selectedLessonId ?: return false
         val languageId = _coreState.value.navigation.selectedLanguageId
@@ -1236,7 +1214,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         progressTracker.recordCardShowForMastery(
             card = card,
             bossActive = bossOrchestrator.stateFlow.value.bossActive,
-            isDrillMode = s.drill.isDrillMode,
             inputMode = s.cardSession.inputMode,
             selectedLanguageId = s.navigation.selectedLanguageId,
             lessons = s.navigation.lessons,
@@ -1305,7 +1282,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun flagBadSentence() {
         when (val result = badSentenceHelper.flagBadSentence()) {
-            is BadSentenceResult.AdvanceDrillCard -> sessionRunner.advanceDrillCard()
             is BadSentenceResult.SkipToNextCard -> sessionRunner.skipToNextCard()
             is BadSentenceResult.None -> {}
         }
@@ -1313,7 +1289,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun hideCurrentCard() {
         when (val result = badSentenceHelper.hideCurrentCard()) {
-            is BadSentenceResult.AdvanceDrillCard -> sessionRunner.advanceDrillCard()
             is BadSentenceResult.SkipToNextCard -> sessionRunner.skipToNextCard()
             is BadSentenceResult.None -> {}
         }
@@ -1432,7 +1407,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val state = _coreState.value
         return when {
             state.boss.bossActive -> PracticeType.TRANSLATION
-            state.drill.isDrillMode -> PracticeType.TRANSLATION
+            false -> PracticeType.TRANSLATION
             else -> PracticeType.TRANSLATION
         }
     }
@@ -1462,7 +1437,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
     private fun buildSessionCards() {
-        if (bossOrchestrator.stateFlow.value.bossActive || _coreState.value.elite.eliteActive || _coreState.value.drill.isDrillMode) return
+        if (bossOrchestrator.stateFlow.value.bossActive || _coreState.value.elite.eliteActive) return
         val state = _coreState.value
         val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val lessons = state.navigation.lessons
