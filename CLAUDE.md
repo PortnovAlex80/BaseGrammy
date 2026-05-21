@@ -1,5 +1,7 @@
 # GrammarMate (BaseGrammy) — AI Agent Context
 
+USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
+
 ---
 
 ## PROJECT CONTEXT
