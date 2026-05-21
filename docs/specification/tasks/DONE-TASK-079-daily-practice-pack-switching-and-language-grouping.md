@@ -1,6 +1,6 @@
 # TASK-079: Daily Practice Pack Switching and Package Language Grouping
 
-**Status:** OPEN  
+**Status:** DONE  
 **Created:** 2026-05-21  
 **Spec Reference:** UC-21 (updated), UC-38 (updated), UC-80 (new)  
 
@@ -398,3 +398,18 @@ fun getLanguageDisplayName(languageId: LanguageId): String {
 - **Current Implementation**: `feature/daily/DailyPracticeCoordinator.kt`, `ui/TrainingViewModel.kt`
 - **Related Task**: TASK-078 (package badge refactor)
 - **Related Spec**: `09-daily-practice.md` (cursor independence principle)
+
+---
+
+## Completion Log
+
+| Date | Fix | Status | Notes |
+|------|-----|--------|-------|
+| 2026-05-21 | Fix 1: Daily practice pack switching | DONE | Commit cbf4a42 - Added pack validation, SessionInvalidatedException, selectPack() calls cancelDailySession() |
+| 2026-05-21 | Fix 2: Pack language filtering | DONE | Commit eed68b9 - Filter packages by selectedLanguageId in PackageSelectorList |
+
+**Implementation Summary:**
+- Fix 1 (Bug): Daily practice now properly switches when user selects different pack
+- Fix 2 (UX): Package selector shows only packs for selected language (no language mixing)
+- Both fixes verified with successful APK builds
+- Total implementation time: ~2 hours including research and testing
