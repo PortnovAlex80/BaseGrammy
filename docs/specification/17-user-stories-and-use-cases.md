@@ -248,8 +248,12 @@
   6. Session state changes to ACTIVE. Timer begins tracking active time.
 - **Alternative Flows:**
   - 2a. Sub-lesson has no cards (empty lesson). Display empty state message.
-- **Postconditions:** Training session is active. Progress is being tracked in `TrainingProgress`.
+- **Postconditions:** Training session is active. Progress is being tracked in pack-scoped `PackLessonProgressState`.
 - **Business Rules:** NEW_ONLY sub-lessons use only cards from the current lesson's main pool. MIXED sub-lessons interleave current lesson cards with review cards from prior lessons (reserve pool priority).
+- **TASK-081 ACs:**
+  - **AC6:** `selectLesson()` loads lesson progress from `lesson_progress_{packId}.yaml` for current `activePackId`
+  - **AC7:** Starting a training session uses pack-scoped `currentIndex` and `correctCount` (not global)
+  - **AC8:** Switching active pack resets training state to new pack's lesson progress (no cross-pack contamination)
 
 ---
 
@@ -329,6 +333,9 @@
   - 1a. User exits mid-session via back button. Exit confirmation dialog appears. If confirmed, session ends and partial progress is saved.
 - **Postconditions:** Sub-lesson progress is persisted. Lesson flower state may update based on accumulated mastery.
 - **Business Rules:** Partial session progress is saved on exit. The `subLessonFinishedToken` is used as a one-shot trigger to prevent double navigation.
+- **TASK-081 ACs:**
+  - **AC7:** Session completion saves progress to `lesson_progress_{packId}.yaml` per pack (not global `progress.yaml`)
+  - **AC8:** Switching between packs preserves each pack's lesson progress independently
 
 ---
 
@@ -683,16 +690,20 @@
 - **Main Flow:**
   1. User relaunches GrammarMate.
   2. AppRoot checks for backup restore status.
-  3. App loads persisted `TrainingProgress` from YAML.
+  3. App loads persisted `TrainingProgress` from YAML (global state only).
   4. `currentScreen` field determines which screen to show.
-  5. If screen was TRAINING: session is restored with card index, counts, and timer.
+  5. If screen was TRAINING: session is restored with card index, counts, and timer from `lesson_progress_{packId}.yaml` for active pack.
   6. If screen was ELITE or VOCAB (legacy enum values): redirected to HOME.
   7. If screen was DAILY_PRACTICE: daily session state is restored from `DailySessionState`.
 - **Alternative Flows:**
   - 4a. `currentScreen` value is unrecognized. Default to HOME.
   - 5a. No progress file exists. Fresh start.
+  - 5b. Pack-scoped lesson progress file missing. Load default progress for active pack.
 - **Postconditions:** User returns to approximately the same state as before the kill.
 - **Business Rules:** `AppScreen.ELITE` and `AppScreen.VOCAB` enum values are retained for backward compatibility. They redirect to HOME when restored. These must not be removed from the enum.
+- **TASK-081 ACs:**
+  - **AC8:** App restoration loads lesson progress from `lesson_progress_{activePackId}.yaml` for the active pack
+  - **AC9:** Switching active pack after restoration loads the correct pack's lesson progress
 
 ---
 

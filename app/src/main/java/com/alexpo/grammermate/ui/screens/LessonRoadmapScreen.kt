@@ -443,7 +443,7 @@ private fun CompletionCard(
             } else {
                 "🌸" to 1.0f // 🌸
             }
-            Text(text = emoji, fontSize = (48 * scale).sp)
+            Text(text = emoji, fontSize = (18 * scale).sp)
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = stringResource(R.string.roadmap_all_complete),

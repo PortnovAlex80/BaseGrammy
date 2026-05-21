@@ -18,6 +18,8 @@ import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.data.PackLessonProgressStore
+import com.alexpo.grammermate.data.PackLessonProgressState
 
 /**
  * Stateful module that wraps MasteryStore + ProgressStore operations.
@@ -33,7 +35,8 @@ class ProgressTracker(
     private val stateAccess: TrainingStateAccess,
     private val masteryStore: MasteryStore,
     private val progressStore: ProgressStore,
-    private val lessonStore: LessonStore
+    private val lessonStore: LessonStore,
+    private val packLessonProgressStore: PackLessonProgressStore
 ) {
 
     private val logTag = "GrammarMate"
@@ -255,6 +258,10 @@ class ProgressTracker(
      * Returns true if backup should be triggered (forceBackup = true),
      * so the ViewModel can call createProgressBackup().
      *
+     * Phase 5, Wave 3.1: Lesson progress fields are saved to PackLessonProgressStore
+     * instead of ProgressStore. Other fields (mode, elite, daily, etc.) remain in
+     * the global ProgressStore.
+     *
      * @param state current UI state snapshot
      * @param forceBackup if true, triggers a backup after saving
      * @param normalizedEliteSpeeds pre-normalized elite speed list
@@ -268,16 +275,40 @@ class ProgressTracker(
         if (state.boss.bossActive && state.boss.bossType != com.alexpo.grammermate.data.BossType.ELITE) {
             return false
         }
-        progressStore.save(
-            TrainingProgress(
-                languageId = state.navigation.selectedLanguageId,
-                mode = state.navigation.mode,
-                lessonId = state.navigation.selectedLessonId?.value,
+
+        // Save lesson progress to pack-scoped store (Phase 5, Wave 3.1)
+        val activePackId = state.navigation.activePackId?.value
+        val selectedLessonId = state.navigation.selectedLessonId?.value
+        if (activePackId != null && selectedLessonId != null) {
+            val packProgress = packLessonProgressStore.loadPackProgress(activePackId)
+                ?: PackLessonProgressState(packId = activePackId)
+
+            val lessonProgress = PackLessonProgressState.LessonProgress(
                 currentIndex = state.cardSession.currentIndex,
                 correctCount = state.cardSession.correctCount,
                 incorrectCount = state.cardSession.incorrectCount,
                 incorrectAttemptsForCard = state.cardSession.incorrectAttemptsForCard,
                 activeTimeMs = state.cardSession.activeTimeMs,
+                state = state.cardSession.sessionState
+            )
+
+            val updatedPackProgress = packProgress.copy(
+                lessonProgress = packProgress.lessonProgress + (selectedLessonId to lessonProgress)
+            )
+            packLessonProgressStore.savePackProgress(updatedPackProgress)
+        }
+
+        // Save other progress fields to global store (NOT lesson progress)
+        progressStore.save(
+            TrainingProgress(
+                languageId = state.navigation.selectedLanguageId,
+                mode = state.navigation.mode,
+                lessonId = state.navigation.selectedLessonId?.value,
+                currentIndex = 0,  // Legacy fields - no longer used
+                correctCount = 0,  // Legacy fields - no longer used
+                incorrectCount = 0,  // Legacy fields - no longer used
+                incorrectAttemptsForCard = 0,  // Legacy fields - no longer used
+                activeTimeMs = 0L,  // Legacy fields - no longer used
                 state = state.cardSession.sessionState,
                 bossLessonRewards = state.boss.bossLessonRewards.mapValues { it.value.name },
                 bossMegaReward = null,

@@ -63,3 +63,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-083](DONE-TASK-083-migration-trigger-missing.md) | Migration Trigger Missing — App Update Breaks State Isolation | DONE | 22-use-case-registry, UC-21, UC-24, 02-data-stores | 2026-05-21 |
 | [DONE-TASK-084](DONE-TASK-084-verb-isolation-bug.md) | Verb Isolation Bug — Wrong Pack Verbs in Daily Practice Block 3 | DONE | 22-use-case-registry, UC-21, UC-24, scenario-06 | 2026-05-21 |
 | [DONE-TASK-085](DONE-TASK-085-lazy-packid-validation.md) | Daily Practice Lazy Loading PackId Validation | DONE | 22-use-case-registry, UC-21, UC-24, scenario-06 | 2026-05-21 |
+| [DONE-TASK-086](DONE-TASK-086-flower-size-completion-card.md) | Flower Size Inconsistency — Completion Card Too Large | DONE | UC-02, UC-06, scenario-01 | 2026-05-21 |
