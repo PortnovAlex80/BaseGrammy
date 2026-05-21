@@ -8,7 +8,7 @@ Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/VocabProgressStore.kt`
-- `app/src/main/java/com/alexpo/grammermate/data/DrillProgressStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/DrillProgressStore.kt` ~~**DEPRECATED**~~ - Drill sub-mode removed, migrated to standalone package
 - `app/src/main/java/com/alexpo/grammermate/data/LessonStore.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/StreakStore.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/AppConfigStore.kt`
@@ -27,7 +27,7 @@ Sources:
 | 2.1 | LessonStore | `data/LessonStore.kt` | `grammarmate/` (multiple subdirs) | Content management: packs, lessons, stories, vocab, drill files | Yes (via YamlListStore) | Yes (drills) | None |
 | 2.2 | MasteryStore | `data/MasteryStore.kt` | `grammarmate/mastery.yaml` | Per-lesson card mastery tracking | Yes | No (global) | Lazy in-memory |
 | 2.3 | ProgressStore | `data/ProgressStore.kt` | `grammarmate/progress.yaml` | Training session state persistence | Yes | No (global) | None |
-| 2.4 | DrillProgressStore | `data/DrillProgressStore.kt` | `grammarmate/drill_progress_{lessonId}.yaml` | Per-lesson drill card index | Yes | No (per-lesson) | None |
+| 2.4 | ~~DrillProgressStore~~ | `data/DrillProgressStore.kt` ~~**DEPRECATED**~~ | ~~`grammarmate/drill_progress_{lessonId}.yaml`~~ | ~~Per-lesson drill card index~~ | ~~Yes~~ | ~~No (per-lesson)~~ | ~~None~~ |
 | 2.5 | VerbDrillStore | `data/VerbDrillStore.kt` | `grammarmate/drills/{packId}/verb_drill_progress.yaml` | Verb conjugation drill progress | Yes | Yes | None |
 | 2.6 | WordMasteryStore | `data/WordMasteryStore.kt` | `grammarmate/drills/{packId}/word_mastery.yaml` | Per-word vocab mastery (Anki-style) | Yes | Yes | None |
 | 2.7 | ProfileStore | `data/ProfileStore.kt` | `grammarmate/profile.yaml` | User profile (name) | Yes | No (global) | None |
@@ -259,39 +259,41 @@ Sources:
 
 ---
 
-## 2.4 DrillProgressStore
+## 2.4 ~~DrillProgressStore~~ **DEPRECATED**
 
-- **Purpose**: Stores the card index position for in-progress drill sessions, allowing users to resume a drill from where they left off.
-- **File location**: `grammarmate/drill_progress_{lessonId}.yaml` (one file per lesson)
-- **Data format**: YAML, no schema version:
+**Status:** This store was removed in [TASK-XXX](tasks/TASK-XXX-remove-drill-submode.md). Drill sub-mode migrated to standalone package `EN_WORD_ORDER_A1_DRILLS`.
+
+~~- **Purpose**: Stores the card index position for in-progress drill sessions, allowing users to resume a drill from where they left off.~~
+~~- **File location**: `grammarmate/drill_progress_{lessonId}.yaml` (one file per lesson)~~
+~~- **Data format**: YAML, no schema version:~~
   ```yaml
   lessonId: "lesson_abc123"
   cardIndex: 15
   ```
 
-- **Public API**:
+~~- **Public API**:~~
 
   | Method | Signature | Return | Behavior |
   |--------|-----------|--------|----------|
-  | `getDrillProgress` | `fun getDrillProgress(lessonId: String): Int` | Int | Returns saved card index, or -1 if no progress exists or file is corrupt. |
-  | `saveDrillProgress` | `fun saveDrillProgress(lessonId: String, cardIndex: Int)` | Unit | Writes the card index to the lesson-specific file via `AtomicFileWriter`. Creates `baseDir` if needed. |
-  | `hasProgress` | `fun hasProgress(lessonId: String): Boolean` | Boolean | Returns `getDrillProgress(lessonId) > 0`. |
-  | `clearDrillProgress` | `fun clearDrillProgress(lessonId: String)` | Unit | Deletes the lesson-specific file. |
+  | ~~`getDrillProgress`~~ | ~~`fun getDrillProgress(lessonId: String): Int`~~ | ~~Int~~ | ~~Returns saved card index, or -1 if no progress exists or file is corrupt.~~ |
+  | ~~`saveDrillProgress`~~ | ~~`fun saveDrillProgress(lessonId: String, cardIndex: Int)`~~ | ~~Unit~~ | ~~Writes the card index to the lesson-specific file via `AtomicFileWriter`. Creates `baseDir` if needed.~~ |
+  | ~~`hasProgress`~~ | ~~`fun hasProgress(lessonId: String): Boolean`~~ | ~~Boolean~~ | ~~Returns `getDrillProgress(lessonId) > 0`.~~ |
+  | ~~`clearDrillProgress`~~ | ~~`fun clearDrillProgress(lessonId: String)`~~ | ~~Unit~~ | ~~Deletes the lesson-specific file.~~
 
-- **Write semantics**: Full rewrite via `AtomicFileWriter`.
+~~- **Write semantics**: Full rewrite via `AtomicFileWriter`.~~
 
-- **Read semantics**: No caching. Reads from disk every time. Returns -1 on any error.
+~~- **Read semantics**: No caching. Reads from disk every time. Returns -1 on any error.~~
 
-- **Error handling**: Missing file returns -1. Parse error returns -1. No crash on corrupt data.
+~~- **Error handling**: Missing file returns -1. Parse error returns -1. No crash on corrupt data.~~
 
-- **Pack scoping**: Per-lesson (not per-pack). File is keyed by `lessonId`, regardless of which pack the lesson belongs to.
+~~- **Pack scoping**: Per-lesson (not per-pack). File is keyed by `lessonId`, regardless of which pack the lesson belongs to.~~
 
-- **Invariants**:
-  - A progress file exists only if the user has started and not completed a drill.
-  - `cardIndex` is positive when stored (store returns -1 for "no progress").
-  - Files are per-lesson, so different lessons have independent drill progress.
+~~- **Invariants**:~~
+  ~~- A progress file exists only if the user has started and not completed a drill.~~
+  ~~- `cardIndex` is positive when stored (store returns -1 for "no progress").~~
+  ~~- Files are per-lesson, so different lessons have independent drill progress.~~
 
-- **Dependencies**: `AtomicFileWriter`.
+~~- **Dependencies**: `AtomicFileWriter`.~~
 
 ---
 
@@ -752,7 +754,7 @@ Sources:
 | `grammarmate/bad_sentences.yaml` | `bad_sentences.yaml` | |
 | `grammarmate/vocab_progress.yaml` | `vocab_progress.yaml` | |
 | `grammarmate/streak_{lang}.yaml` | `streak_{lang}.yaml` | All matching files |
-| `grammarmate/drill_progress_{id}.yaml` | `drill_progress_{id}.yaml` | All matching files |
+| ~~`grammarmate/drill_progress_{id}.yaml`~~ | ~~**DEPRECATED**~~ - Drill sub-mode removed | |
 | `grammarmate/drills/{packId}/verb_drill_progress.yaml` | `drills/{packId}/verb_drill_progress.yaml` (legacy) or `drills_{packId}_verb_drill_progress.yaml` (scoped) | Pack-scoped |
 | `grammarmate/drills/{packId}/word_mastery.yaml` | `drills/{packId}/word_mastery.yaml` (legacy) or `drills_{packId}_word_mastery.yaml` (scoped) | Pack-scoped |
 
@@ -990,6 +992,6 @@ The reset button shows a confirmation dialog before executing. The dialog displa
 
 ### Invariants
 
-- Other language packs' mastery, drill progress, and vocab mastery remain untouched.
+- Other language packs' mastery and vocab mastery remain untouched. ~~Drill progress~~ **DEPRECATED** - drill sub-mode removed.
 - `ProgressStore.clear()` always fires because there is only one active training session at a time.
 - After reset, flower states return to LOCKED/SEED for all lessons in the pack (derived from cleared mastery data).
