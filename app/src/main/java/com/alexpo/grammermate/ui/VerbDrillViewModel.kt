@@ -150,11 +150,25 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val currentLang = _uiState.value.loadedLanguageId
         if (currentLang == languageId && allCards.isNotEmpty()) return
 
-        // FIX: If currentPackId is set, update the store to pack-scoped
-        // Otherwise, ensure we're using the correct global store
+        // FIX: Find packId for language that has verb drill files
+        val packForLanguage = lessonStore.getInstalledPacks()
+            .firstOrNull { pack ->
+                pack.languageId.value == languageId &&
+                lessonStore.hasVerbDrill(pack.packId.value, languageId)
+            }
+
+        val newPackId = packForLanguage?.packId?.value
+        if (newPackId != null) {
+            // Found a pack with verb drill - use pack-scoped path
+            Log.d(logTag, "reloadForLanguage: found pack $newPackId for language $languageId")
+            reloadForPack(newPackId)
+            return
+        }
+
+        // Fallback: no pack found for language, use legacy global store
         if (!usingTestStore) {
-            verbDrillStore = container.verbDrillStore(currentPackId)
-            Log.d(logTag, "reloadForLanguage: updated store for currentPackId=$currentPackId")
+            verbDrillStore = container.verbDrillStore(null)
+            Log.d(logTag, "reloadForLanguage: no pack found, using global store for language $languageId")
         }
 
         _uiState.update { it.copy(isLoading = true) }
