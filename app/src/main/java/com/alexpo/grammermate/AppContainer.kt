@@ -2,6 +2,7 @@ package com.alexpo.grammermate
 
 import android.app.Application
 import com.alexpo.grammermate.data.*
+import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
 
 /**
  * Centralized dependency container that exposes all store interfaces.
@@ -29,6 +30,7 @@ class AppContainer(private val application: Application) {
     fun wordMasteryStore(packId: String?): WordMasteryStore = storeFactory.getWordMasteryStore(packId)
     fun verbDrillStore(packId: String?): VerbDrillStore = storeFactory.getVerbDrillStore(packId)
     fun packDailyCursorStore(): PackDailyCursorStore = PackDailyCursorStoreImpl(application)
+    val packLessonProgressStore: PackLessonProgressStore by lazy { PackLessonProgressStoreImpl(application) }
 
     // Cache management
     fun evict(packId: String?) = storeFactory.evict(packId)

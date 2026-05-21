@@ -25,6 +25,7 @@ import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.AppConfigStoreImpl
 import com.alexpo.grammermate.data.AppVersions
 import com.alexpo.grammermate.data.PackDailyCursorStoreImpl
+import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ProgressStoreImpl
 import com.alexpo.grammermate.data.RestoreNotifier
@@ -34,6 +35,7 @@ private fun checkAndMigrate(context: Context) {
     val configStore = AppConfigStoreImpl(context)
     val progressStore = ProgressStoreImpl(context)
     val packCursorStore = PackDailyCursorStoreImpl(context)
+    val packProgressStore = PackLessonProgressStoreImpl(context)
     val lastVersion = configStore.getLastVersion()
 
     // Migrate daily cursor from global to pack-scoped (TASK-080)
@@ -59,8 +61,30 @@ private fun checkAndMigrate(context: Context) {
         configStore.setLastVersion(AppVersions.VERSION_080_STATE_ISOLATION)
     }
 
-    // Future migrations: TASK-081 (lesson progress), etc.
-    // if (lastVersion < AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION) { ... }
+    // Migrate lesson progress from global to pack-scoped (TASK-081)
+    if (lastVersion < AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION) {
+        val config = configStore.load()
+        val activePackId = config.activePackId?.value
+
+        try {
+            val migrated = progressStore.migrateGlobalLessonProgressToPackScoped(
+                activePackId = activePackId,
+                packProgressStore = packProgressStore
+            )
+            if (migrated) {
+                Log.i("AppRoot", "Successfully migrated lesson progress to pack-scoped for pack: $activePackId")
+            } else {
+                Log.d("AppRoot", "No lesson progress data to migrate")
+            }
+        } catch (e: Exception) {
+            Log.e("AppRoot", "Failed to migrate lesson progress", e)
+            // Continue anyway - don't block app launch
+        }
+
+        configStore.setLastVersion(AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION)
+    }
+
+    // Future migrations: TASK-082, etc.
 }
 
 @Composable

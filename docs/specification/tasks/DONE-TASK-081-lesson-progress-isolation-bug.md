@@ -1,6 +1,6 @@
 # TASK-081: Lesson Progress Isolation Bug - Pack-Scoped Lesson Progress
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-21
 **Branch:** feature/lesson-progress-isolation-bug (from main)
 **Priority:** HIGH
@@ -969,16 +969,11 @@ Example:
 | Date | Phase | Status | Notes |
 |------|-------|--------|-------|
 | 2026-05-21 | Task creation | OPEN | Research complete, spec ready for implementation |
-
-**Next Steps:**
-1. Create feature branch from `main`
-2. Implement Phase 1: Data classes
-3. Implement Phase 2: Pack-scoped store
-4. Implement Phase 3: Migration
-5. Implement Phase 4: TrainingViewModel update
-6. Implement Phase 5: ProgressStore cleanup
-7. Run tests and build APK
-8. Create pull request
+| 2026-05-21 | Wave 1: Data model + Store | DONE | Created PackLessonProgressState data class and PackLessonProgressStore interface/implementation |
+| 2026-05-21 | Wave 2: Migration logic | DONE | Added migrateGlobalLessonProgressToPackScoped() method and AppRoot trigger for VERSION_081 |
+| 2026-05-21 | Wave 3: TrainingViewModel integration | DONE | Updated TrainingViewModel and ProgressTracker to use pack-scoped lesson progress |
+| 2026-05-21 | Wave 3: Legacy cleanup | DONE | Removed lesson progress fields from global TrainingProgress data class |
+| 2026-05-21 | Full implementation | DONE | All phases complete, commit cee76d3 |
 
 ---
 

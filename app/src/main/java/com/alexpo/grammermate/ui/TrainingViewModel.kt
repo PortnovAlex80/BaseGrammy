@@ -71,6 +71,7 @@ import com.alexpo.grammermate.data.PomodoroHistoryStore
 import com.alexpo.grammermate.data.PomodoroSessionStats
 import com.alexpo.grammermate.data.PomodoroSettingsStore
 import com.alexpo.grammermate.data.CardDifficultyRating
+import com.alexpo.grammermate.data.PackLessonProgressStore
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -87,6 +88,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val hiddenCardStore = container.hiddenCardStore
     private val vocabProgressStore = container.vocabProgressStore
     private var wordMasteryStore = container.wordMasteryStore(null)
+    private val packLessonProgressStore = container.packLessonProgressStore
     private val backupManager = container.backupManager
     private val profileStore = container.profileStore
     private val _coreState = MutableStateFlow(TrainingUiState(isLoading = true))
@@ -137,7 +139,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         stateAccess = stateAccess,
         masteryStore = masteryStore,
         progressStore = progressStore,
-        lessonStore = lessonStore
+        lessonStore = lessonStore,
+        packLessonProgressStore = packLessonProgressStore
     )
 
     private val cardProvider = CardProvider(
@@ -408,9 +411,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val packs = lessonStore.getInstalledPacks()
             val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id ?: com.alexpo.grammermate.data.LanguageId("en")
             val lessons = lessonStore.getLessons(selectedLanguageId.value)
-            val selectedLessonId = progress.lessonId?.let { id ->
-                lessons.firstOrNull { it.id.value == id }?.id
-            } ?: lessons.firstOrNull()?.id
+            val selectedLessonId = lessons.firstOrNull()?.id
             val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(progress.eliteBestSpeeds)
             val restoredScreen = "HOME"
             val streakData = streakStore.getCurrentStreak(selectedLanguageId.value)
@@ -425,9 +426,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
             val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
 
+            // Load lesson progress from pack-scoped store (Phase 5, Wave 3.1)
+            val packProgress = initialActivePackId?.let { packLessonProgressStore.loadPackProgress(it.value) }
+            val lessonProgress = selectedLessonId?.let { lessonId ->
+                packProgress?.lessonProgress?.get(lessonId.value)
+            }
+
             withContext(Dispatchers.Main) {
                 _coreState.update {
-                    it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = progress.state, currentIndex = progress.currentIndex, correctCount = progress.correctCount, incorrectCount = progress.incorrectCount, incorrectAttemptsForCard = progress.incorrectAttemptsForCard, activeTimeMs = progress.activeTimeMs, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
+                    it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = lessonProgress?.state ?: SessionState.PAUSED, currentIndex = lessonProgress?.currentIndex ?: 0, correctCount = lessonProgress?.correctCount ?: 0, incorrectCount = lessonProgress?.incorrectCount ?: 0, incorrectAttemptsForCard = lessonProgress?.incorrectAttemptsForCard ?: 0, activeTimeMs = lessonProgress?.activeTimeMs ?: 0L, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
                 }
                 // Initialize feature-owned state from persisted progress
                 bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)

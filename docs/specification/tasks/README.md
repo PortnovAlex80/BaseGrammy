@@ -58,6 +58,7 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-078](DONE-TASK-078-home-screen-package-badge-refactor.md) | HomeScreen Package Badge Refactor | DONE | 22-use-case-registry, UC-38, UC-35, 07-app-router | 2026-05-21 |
 | [DONE-TASK-079](DONE-TASK-079-daily-practice-pack-switching-and-language-grouping.md) | Daily Practice Pack Switching & Language Grouping | DONE | 22-use-case-registry, UC-21, UC-38, UC-80 | 2026-05-21 |
 | [DONE-TASK-080](DONE-TASK-080-state-isolation-bug.md) | State Isolation Bug Fix — Daily Cursor Cross-Pack Contamination | DONE | 22-use-case-registry, UC-21, UC-24 | 2026-05-21 |
-| [TASK-081](TASK-081-lesson-progress-isolation-bug.md) | Lesson Progress Isolation Bug — Pack-Scoped Lesson Progress | OPEN | 22-use-case-registry, UC-02, UC-06, UC-45 | 2026-05-21 |
+| [DONE-TASK-081](DONE-TASK-081-lesson-progress-isolation-bug.md) | Lesson Progress Isolation Bug — Pack-Scoped Lesson Progress | DONE | 22-use-case-registry, UC-02, UC-06, UC-45 | 2026-05-21 |
 | [DONE-TASK-082](DONE-TASK-082-daily-practice-resume-dialog-bug.md) | Daily Practice Resume Dialog Bug — Pack-Scoped Session Detection | DONE | 22-use-case-registry, UC-23, scenario-06 | 2026-05-21 |
 | [DONE-TASK-083](DONE-TASK-083-migration-trigger-missing.md) | Migration Trigger Missing — App Update Breaks State Isolation | DONE | 22-use-case-registry, UC-21, UC-24, 02-data-stores | 2026-05-21 |
+| [TASK-084](TASK-084-verb-isolation-bug.md) | Verb Isolation Bug — Wrong Pack Verbs in Daily Practice Block 3 | OPEN | 22-use-case-registry, UC-21, UC-24, scenario-06 | 2026-05-21 |

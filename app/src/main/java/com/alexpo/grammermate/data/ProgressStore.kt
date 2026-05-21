@@ -28,6 +28,19 @@ interface ProgressStore {
         activePackId: String?,
         packCursorStore: PackDailyCursorStore
     ): Boolean
+
+    /**
+     * Migrate global lesson progress to pack-scoped lesson progress files.
+     * Called once during app upgrade to TASK-081.
+     *
+     * @param activePackId The currently active pack ID to migrate global progress to
+     * @param packProgressStore The pack-scoped progress store to save migrated data
+     * @return true if migration was performed, false if no data to migrate
+     */
+    fun migrateGlobalLessonProgressToPackScoped(
+        activePackId: String?,
+        packProgressStore: PackLessonProgressStore
+    ): Boolean
 }
 
 class ProgressStoreImpl(private val context: Context) : ProgressStore {
@@ -48,13 +61,6 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         return TrainingProgress(
             languageId = LanguageId(payload["languageId"] as? String ?: "en"),
             mode = TrainingMode.valueOf(payload["mode"] as? String ?: TrainingMode.LESSON.name),
-            lessonId = payload["lessonId"] as? String,
-            currentIndex = (payload["currentIndex"] as? Number)?.toInt() ?: 0,
-            correctCount = (payload["correctCount"] as? Number)?.toInt() ?: 0,
-            incorrectCount = (payload["incorrectCount"] as? Number)?.toInt() ?: 0,
-            incorrectAttemptsForCard = (payload["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0,
-            activeTimeMs = (payload["activeTimeMs"] as? Number)?.toLong() ?: 0L,
-            state = SessionState.valueOf(payload["state"] as? String ?: SessionState.PAUSED.name),
             bossLessonRewards = (payload["bossLessonRewards"] as? Map<*, *>)?.mapNotNull { (key, value) ->
                 val lessonId = key as? String ?: return@mapNotNull null
                 val reward = value as? String ?: return@mapNotNull null
@@ -90,16 +96,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
                         ?.mapNotNull { it as? String } ?: emptyList()
                 )
             }
-        ).let { progress ->
-            // Migration: if old single bossMegaReward exists but bossMegaRewards is empty,
-            // migrate it using the current lessonId as the key
-            if (progress.bossMegaReward != null && progress.bossMegaRewards.isEmpty()) {
-                val lessonId = progress.lessonId ?: return@let progress
-                progress.copy(bossMegaRewards = mapOf(lessonId to progress.bossMegaReward))
-            } else {
-                progress
-            }
-        }
+        )
     }
 
     override fun save(progress: TrainingProgress) {
@@ -107,13 +104,6 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
             val payload = linkedMapOf(
                 "languageId" to progress.languageId.value,
                 "mode" to progress.mode.name,
-                "lessonId" to progress.lessonId,
-                "currentIndex" to progress.currentIndex,
-                "correctCount" to progress.correctCount,
-                "incorrectCount" to progress.incorrectCount,
-                "incorrectAttemptsForCard" to progress.incorrectAttemptsForCard,
-                "activeTimeMs" to progress.activeTimeMs,
-                "state" to progress.state.name,
                 "bossLessonRewards" to progress.bossLessonRewards,
                 "bossMegaReward" to progress.bossMegaReward,
                 "bossMegaRewards" to progress.bossMegaRewards,
@@ -211,6 +201,107 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
             return@withLock true
         } catch (e: Exception) {
             Log.e("ProgressStore", "Failed to migrate global cursor to pack: $targetPackId", e)
+            return@withLock false
+        }
+    }
+
+    override fun migrateGlobalLessonProgressToPackScoped(
+        activePackId: String?,
+        packProgressStore: PackLessonProgressStore
+    ): Boolean = mutex.withLock {
+        // Read raw YAML file to access legacy lesson progress fields
+        if (!file.exists() || file.length() == 0L) {
+            Log.d("ProgressStore", "No progress file found for migration")
+            return@withLock false
+        }
+
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null }
+        if (raw == null) {
+            Log.d("ProgressStore", "Failed to read progress file for migration")
+            return@withLock false
+        }
+
+        val data = when (raw) {
+            is Map<*, *> -> raw
+            else -> {
+                Log.d("ProgressStore", "Progress file has invalid format for migration")
+                return@withLock false
+            }
+        }
+        val payload = (data["data"] as? Map<*, *>) ?: data
+
+        // Extract legacy lesson progress fields from raw data
+        val currentIndex = (payload["currentIndex"] as? Number)?.toInt() ?: 0
+        val correctCount = (payload["correctCount"] as? Number)?.toInt() ?: 0
+        val incorrectCount = (payload["incorrectCount"] as? Number)?.toInt() ?: 0
+        val incorrectAttemptsForCard = (payload["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0
+        val activeTimeMs = (payload["activeTimeMs"] as? Number)?.toLong() ?: 0L
+        val lessonId = payload["lessonId"] as? String
+        val stateString = payload["state"] as? String ?: SessionState.PAUSED.name
+
+        // Check if there's meaningful lesson progress data to migrate
+        val hasDataToMigrate = currentIndex > 0 ||
+            correctCount > 0 ||
+            incorrectCount > 0 ||
+            activeTimeMs > 0L
+
+        if (!hasDataToMigrate) {
+            Log.d("ProgressStore", "No global lesson progress data to migrate")
+            return@withLock false
+        }
+
+        // Determine target pack ID for migration
+        val targetPackId = activePackId ?: (payload["activePackId"] as? String)
+        if (targetPackId == null) {
+            Log.w("ProgressStore", "Cannot migrate lesson progress: no active pack ID available")
+            return@withLock false
+        }
+
+        try {
+            // Get lesson ID from legacy data
+            if (lessonId == null) {
+                Log.w("ProgressStore", "Cannot migrate lesson progress: no lesson ID in legacy data")
+                return@withLock false
+            }
+
+            // Parse session state
+            val state = try {
+                SessionState.valueOf(stateString)
+            } catch (e: Exception) {
+                Log.w("ProgressStore", "Invalid session state in legacy data: $stateString")
+                SessionState.PAUSED
+            }
+
+            // Create pack-scoped lesson progress from legacy data
+            val lessonProgressMap = mapOf(
+                lessonId to PackLessonProgressState.LessonProgress(
+                    currentIndex = currentIndex,
+                    correctCount = correctCount,
+                    incorrectCount = incorrectCount,
+                    incorrectAttemptsForCard = incorrectAttemptsForCard,
+                    activeTimeMs = activeTimeMs,
+                    state = state
+                )
+            )
+
+            val packProgress = PackLessonProgressState(
+                packId = targetPackId,
+                lessonProgress = lessonProgressMap
+            )
+
+            // Save to pack-specific file
+            packProgressStore.savePackProgress(packProgress)
+            Log.i("ProgressStore", "Migrated global lesson progress to pack: $targetPackId, lesson: $lessonId")
+
+            // Clear legacy lesson progress fields from progress.yaml by reloading and saving
+            // (the new save() method won't write these fields back)
+            val progress = load()
+            save(progress)
+            Log.i("ProgressStore", "Cleared global lesson progress from progress.yaml after migration")
+
+            return@withLock true
+        } catch (e: Exception) {
+            Log.e("ProgressStore", "Failed to migrate lesson progress to pack: $targetPackId", e)
             return@withLock false
         }
     }
