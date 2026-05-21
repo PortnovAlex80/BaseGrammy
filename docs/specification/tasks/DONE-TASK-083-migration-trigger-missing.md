@@ -1,6 +1,6 @@
 # TASK-083: Migration Trigger Missing — App Update Breaks State Isolation
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-21
 **Branch:** feature/migration-trigger-missing (from main)
 **Priority:** CRITICAL
@@ -373,7 +373,6 @@ After all fixes are implemented, run:
 ## Completion Log
 | Date | Fix | Status | Notes |
 |------|-----|--------|-------|
-| | Phase 1: Add version tracking to AppConfigStore | | |
-| | Phase 2: Add version constants | | |
-| | Phase 3: Implement migration trigger in AppRoot | | |
-| | Phase 4: Update documentation | | |
+| 2026-05-21 | Phase 1: Add version tracking to AppConfigStore | DONE | Added appVersion field to AppConfig, implemented getLastVersion() and setLastVersion() methods in AppConfigStoreImpl. |
+| 2026-05-21 | Phase 2: Add version constants | DONE | Created AppVersions.kt with VERSION_080_STATE_ISOLATION = 80 and VERSION_081_LESSON_PROGRESS_ISOLATION = 81 constants. |
+| 2026-05-21 | Phase 3: Implement migration trigger in AppRoot | DONE | Added checkAndMigrate() function with proper error handling and LaunchedEffect(Unit) trigger. Commit 5733443. |
