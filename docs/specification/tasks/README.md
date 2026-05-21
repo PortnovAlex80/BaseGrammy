@@ -57,4 +57,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-076](TASK-076-verb-drill-session-persistence-lifecycle.md) | Verb Drill Session Persistence Lifecycle | OPEN | 10-verb-drill, UC-74, UC-64 | 2026-05-20 |
 | [DONE-TASK-078](DONE-TASK-078-home-screen-package-badge-refactor.md) | HomeScreen Package Badge Refactor | DONE | 22-use-case-registry, UC-38, UC-35, 07-app-router | 2026-05-21 |
 | [DONE-TASK-079](DONE-TASK-079-daily-practice-pack-switching-and-language-grouping.md) | Daily Practice Pack Switching & Language Grouping | DONE | 22-use-case-registry, UC-21, UC-38, UC-80 | 2026-05-21 |
-| [TASK-080](TASK-080-state-isolation-bug.md) | State Isolation Bug Fix — Daily Cursor Cross-Pack Contamination | OPEN | 22-use-case-registry, UC-21, UC-24 | 2026-05-21 |
+| [DONE-TASK-080](DONE-TASK-080-state-isolation-bug.md) | State Isolation Bug Fix — Daily Cursor Cross-Pack Contamination | DONE | 22-use-case-registry, UC-21, UC-24 | 2026-05-21 |
