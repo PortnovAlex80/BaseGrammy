@@ -250,8 +250,12 @@ fun HomeScreen(
         }
 
         if (showPackageList) {
+            // Filter packs by selected language to avoid mixing languages
+            val languagePacks = state.navigation.installedPacks.filter {
+                it.languageId == state.navigation.selectedLanguageId
+            }
             PackageSelectorList(
-                packs = state.navigation.installedPacks,
+                packs = languagePacks,
                 currentPackId = state.navigation.activePackId?.value,
                 onPackSelected = { packId ->
                     onSelectPack(packId)
