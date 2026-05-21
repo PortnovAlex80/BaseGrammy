@@ -42,6 +42,7 @@ data class VerbDrillSessionState(
  * @property todayShownCardIds Cards already shown today that should be excluded when resuming
  * @property sessionCardIds Card IDs from the last batch, in display order, for Repeat
  * @property currentIndex Next card index within [sessionCardIds] for Continue
+ * @property packId Pack that produced this session, used to reject stale migrated sessions
  */
 data class VerbDrillLastSessionState(
     val selectedTense: String?,
@@ -49,7 +50,8 @@ data class VerbDrillLastSessionState(
     val sortByFrequency: Boolean,
     val todayShownCardIds: Set<String> = emptySet(),
     val sessionCardIds: List<String> = emptyList(),
-    val currentIndex: Int = 0
+    val currentIndex: Int = 0,
+    val packId: String? = null
 )
 
 data class VerbDrillUiState(

@@ -404,7 +404,7 @@ class ProgressTracker(
     fun resetDrillFiles(context: android.content.Context) {
         val baseDir = java.io.File(context.filesDir, "grammarmate")
 
-        // Delete language-scoped verb drill progress files
+        // Delete language-scoped legacy verb drill progress files and pack-scoped files.
         val packs = lessonStore.getInstalledPacks()
         val languageIds = packs.map { it.languageId.value }.distinct()
         for (languageId in languageIds) {
@@ -415,10 +415,16 @@ class ProgressTracker(
             if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
         }
 
-        // Delete pack-scoped vocab drill mastery files
         for (pack in packs) {
-            val wordMasteryFile = java.io.File(baseDir, "drills/${pack.packId}/word_mastery.yaml")
+            val packDir = java.io.File(baseDir, "drills/${pack.packId.value}")
+            val wordMasteryFile = java.io.File(packDir, "word_mastery.yaml")
             if (wordMasteryFile.exists()) wordMasteryFile.delete()
+
+            val verbDrillFile = java.io.File(packDir, "verb_drill_progress.yaml")
+            if (verbDrillFile.exists()) verbDrillFile.delete()
+
+            val verbDrillLastSessionFile = java.io.File(packDir, "verb_drill_last_session.yaml")
+            if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
         }
     }
 
@@ -457,7 +463,14 @@ class ProgressTracker(
             if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
         }
 
-        val wordMasteryFile = java.io.File(baseDir, "drills/$packId/word_mastery.yaml")
+        val packDir = java.io.File(baseDir, "drills/$packId")
+        val wordMasteryFile = java.io.File(packDir, "word_mastery.yaml")
         if (wordMasteryFile.exists()) wordMasteryFile.delete()
+
+        val packVerbDrillFile = java.io.File(packDir, "verb_drill_progress.yaml")
+        if (packVerbDrillFile.exists()) packVerbDrillFile.delete()
+
+        val packVerbDrillLastSessionFile = java.io.File(packDir, "verb_drill_last_session.yaml")
+        if (packVerbDrillLastSessionFile.exists()) packVerbDrillLastSessionFile.delete()
     }
 }

@@ -35,9 +35,8 @@ internal class BackupFileCollector(private val context: Context) {
         "hidden_cards.yaml",
         "bad_sentences.yaml",
         "vocab_progress.yaml"
-        // Verb drill files are language-specific: verb_drill_progress_{languageId}.yaml,
-        // verb_drill_last_session_{languageId}.yaml
-        // These are collected dynamically via listVerbDrillFiles()
+        // Legacy language-scoped verb drill files are collected dynamically via listVerbDrillFiles().
+        // Pack-scoped verb drill files live under drills/{packId}/ and are copied with pack drill data.
     )
 
     /** List streak files (streak_*.yaml) from internal storage. */
@@ -52,7 +51,7 @@ internal class BackupFileCollector(private val context: Context) {
             file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
         }?.toList() ?: emptyList()
 
-    /** List verb drill files (verb_drill_progress_*.yaml, verb_drill_last_session_*.yaml) from internal storage. */
+    /** List legacy language-scoped verb drill files from internal storage. */
     fun listVerbDrillFiles(): List<File> =
         internalDir.listFiles { file ->
             (file.name.startsWith("verb_drill_progress_") || file.name.startsWith("verb_drill_last_session_"))
@@ -83,9 +82,11 @@ internal class BackupFileCollector(private val context: Context) {
         - bad_sentences.yaml (reported bad sentences)
         - vocab_progress.yaml (vocab sprint progress)
         - drill_progress_*.yaml (per-language drill progress)
-        - verb_drill_progress_{languageId}.yaml (per-language verb drill progress)
-        - verb_drill_last_session_{languageId}.yaml (verb drill last session state per language)
+        - verb_drill_progress_{languageId}.yaml (legacy per-language verb drill progress)
+        - verb_drill_last_session_{languageId}.yaml (legacy verb drill last session state per language)
         - drills/{packId}/word_mastery.yaml (word mastery per pack)
+        - drills/{packId}/verb_drill_progress.yaml (verb drill progress per pack)
+        - drills/{packId}/verb_drill_last_session.yaml (verb drill last session per pack)
     """.trimIndent()
 
     fun currentTimestamp(): String =

@@ -521,7 +521,7 @@ internal class BackupRestorer(private val context: Context) {
         }
     }
 
-    /** Restore drill data from backup. Verb drill progress goes to language-specific path, word mastery stays pack-scoped. */
+    /** Restore drill data from backup. Legacy verb files stay language-scoped; new verb files are pack-scoped. */
     private fun restorePackDrillDirs(backupSubDir: File) {
         // Restore language-specific verb drill progress files (new format)
         backupSubDir.listFiles { file ->
@@ -552,19 +552,21 @@ internal class BackupRestorer(private val context: Context) {
         // Migrate old flat verb drill files to language-specific
         migrateOldVerbDrillFormat(backupSubDir)
 
-        // Restore pack-scoped word mastery files
+        // Restore pack-scoped drill files
         val backupDrillsDir = File(backupSubDir, "drills")
         if (!backupDrillsDir.exists()) return
         backupDrillsDir.listFiles(java.io.FileFilter { it.isDirectory })?.forEach { packBackupDir ->
-            val wordMastery = File(packBackupDir, "word_mastery.yaml")
-            if (wordMastery.exists()) {
-                val content = wordMastery.readText(Charsets.UTF_8)
-                if (validateBackupContent(content, wordMastery.name)) {
+            listOf("word_mastery.yaml", "verb_drill_progress.yaml", "verb_drill_last_session.yaml").forEach fileLoop@{ fileName ->
+                val source = File(packBackupDir, fileName)
+                if (source.exists()) {
+                    val content = source.readText(Charsets.UTF_8)
+                    if (!validateBackupContent(content, source.name)) {
+                        Log.w(logTag, "Skipping invalid backup file: ${source.name}")
+                        return@fileLoop
+                    }
                     val targetPackDir = File(File(internalDir, "drills"), packBackupDir.name)
                     targetPackDir.mkdirs()
-                    AtomicFileWriter.writeText(File(targetPackDir, "word_mastery.yaml"), content)
-                } else {
-                    Log.w(logTag, "Skipping invalid backup file: ${wordMastery.name}")
+                    AtomicFileWriter.writeText(File(targetPackDir, fileName), content)
                 }
             }
         }
