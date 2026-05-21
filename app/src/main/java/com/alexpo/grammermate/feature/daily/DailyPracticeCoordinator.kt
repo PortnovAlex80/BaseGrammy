@@ -132,6 +132,46 @@ class DailyPracticeCoordinator(
         packDailyCursorStore.savePackCursor(cursor)
     }
 
+    private fun PackDailyCursorState.toDailyCursor(): DailyCursorState {
+        return DailyCursorState(
+            sentenceOffset = sentenceOffset,
+            currentLessonIndex = currentLessonIndex,
+            lastSessionHash = lastSessionHash,
+            firstSessionDate = firstSessionDate,
+            firstSessionSentenceCardIds = firstSessionSentenceCardIds,
+            firstSessionVerbCardIds = firstSessionVerbCardIds,
+            verbOffset = verbOffset
+        )
+    }
+
+    private fun DailyCursorState.hasMeaningfulData(): Boolean {
+        return sentenceOffset > 0 ||
+            currentLessonIndex > 0 ||
+            lastSessionHash != 0 ||
+            firstSessionDate.isNotEmpty() ||
+            firstSessionSentenceCardIds.isNotEmpty() ||
+            firstSessionVerbCardIds.isNotEmpty() ||
+            verbOffset > 0
+    }
+
+    /**
+     * Initialize in-memory cursor from the active pack. Legacy global progress is used
+     * only when the pack-scoped cursor does not exist yet.
+     */
+    fun initializeCursor(legacyCursor: DailyCursorState = DailyCursorState()) {
+        val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
+        val stored = packDailyCursorStore.loadPackCursor(packId)
+        val cursor = when {
+            stored != null -> stored.toDailyCursor()
+            legacyCursor.hasMeaningfulData() -> {
+                updateCursor(legacyCursor)
+                return
+            }
+            else -> DailyCursorState()
+        }
+        _state.update { it.copy(dailyCursor = cursor) }
+    }
+
     // ── Session lifecycle ────────────────────────────────────────────────
 
     internal fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int, packId: String) {
@@ -309,14 +349,14 @@ class DailyPracticeCoordinator(
         resolveProgressLessonInfo: () -> Pair<String, Int>?,
         onStoreFirstSessionCardIds: (sentenceIds: List<String>, verbIds: List<String>) -> Unit
     ): Boolean {
-        dailyCursorAtSessionStart = _state.value.dailyCursor
+        val cursor = getCursor()
+        _state.update { it.copy(dailyCursor = cursor) }
+        dailyCursorAtSessionStart = cursor
         dailyPracticeAnsweredCounts = mutableMapOf()
 
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId
-
-        val cursor = _state.value.dailyCursor
 
         val packLessons = lessonStore.getLessons(langId.value)
         val effectiveLevel: Int
@@ -772,20 +812,13 @@ class DailyPracticeCoordinator(
             verbOffset = cursor.verbOffset
         )
         saveCurrentPackCursor(packCursor)
+        _state.update { it.copy(dailyCursor = cursor) }
     }
 
     fun getCursor(): DailyCursorState {
         // Return pack-scoped cursor as legacy DailyCursorState for compatibility
         val packCursor = getCurrentPackCursor()
-        return DailyCursorState(
-            sentenceOffset = packCursor.sentenceOffset,
-            currentLessonIndex = packCursor.currentLessonIndex,
-            lastSessionHash = packCursor.lastSessionHash,
-            firstSessionDate = packCursor.firstSessionDate,
-            firstSessionSentenceCardIds = packCursor.firstSessionSentenceCardIds,
-            firstSessionVerbCardIds = packCursor.firstSessionVerbCardIds,
-            verbOffset = packCursor.verbOffset
-        )
+        return packCursor.toDailyCursor()
     }
 
     /** Test-only accessor to inspect internal state. */
@@ -811,7 +844,8 @@ class DailyPracticeCoordinator(
         sentenceCount: Int,
         languageId: String
     ): DailyCursorState {
-        val cursor = _state.value.dailyCursor
+        val cursor = getCursor()
+        _state.update { it.copy(dailyCursor = cursor) }
         val lessons = lessonStore.getLessons(languageId)
         if (lessons.isEmpty()) return cursor
 

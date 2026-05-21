@@ -438,10 +438,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 }
                 // Initialize feature-owned state from persisted progress
                 bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
-                vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
-                dailyPracticeCoordinator.updateCursor(progress.dailyCursor)
-                refreshDrillVisibility()
                 rebindWordMasteryStore(initialActivePackId?.value)
+                vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
+                dailyPracticeCoordinator.initializeCursor(progress.dailyCursor)
+                refreshDrillVisibility()
                 rebuildSchedules(lessons)
                 buildSessionCards()
                 refreshFlowerStates()
@@ -495,6 +495,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                         current.copy(navigation = current.navigation.copy(languages = reloadLanguages, installedPacks = reloadPacks, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = reloadLessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(reloadLessons, current.cardSession.testMode)))
                     }
                     refreshDrillVisibility()
+                    rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
+                    vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
+                    dailyPracticeCoordinator.resetState()
+                    dailyPracticeCoordinator.initializeCursor()
                     val updatedLessons = lessonStore.getLessons(_coreState.value.navigation.selectedLanguageId.value)
                     rebuildSchedules(updatedLessons)
                     buildSessionCards()
@@ -572,6 +576,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         vocabSprintRunner.resetState()
         vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
         dailyPracticeCoordinator.resetState()
+        dailyPracticeCoordinator.initializeCursor()
         refreshDrillVisibility()
         rebuildSchedules(lessons)
         buildSessionCards()
@@ -620,6 +625,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         dailyPracticeCoordinator.resetState()
+        dailyPracticeCoordinator.initializeCursor()
         refreshDrillVisibility()
         buildSessionCards()
         refreshFlowerStates()
@@ -643,6 +649,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _coreState.update {
                 it.copy(navigation = it.navigation.copy(activePackId = com.alexpo.grammermate.data.PackId(packId), activePackLessonIds = emptyList(), selectedLessonId = null))
             }
+            dailyPracticeCoordinator.resetState()
+            dailyPracticeCoordinator.initializeCursor()
             refreshDrillVisibility()
             saveProgress()
         }
