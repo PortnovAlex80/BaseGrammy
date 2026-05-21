@@ -34,10 +34,10 @@ internal class BackupFileCollector(private val context: Context) {
         "profile.yaml",
         "hidden_cards.yaml",
         "bad_sentences.yaml",
-        "vocab_progress.yaml",
-        // Global verb drill files (not pack-scoped)
-        "verb_drill_progress.yaml",
-        "verb_drill_last_session.yaml"
+        "vocab_progress.yaml"
+        // Verb drill files are language-specific: verb_drill_progress_{languageId}.yaml,
+        // verb_drill_last_session_{languageId}.yaml
+        // These are collected dynamically via listVerbDrillFiles()
     )
 
     /** List streak files (streak_*.yaml) from internal storage. */
@@ -50,6 +50,13 @@ internal class BackupFileCollector(private val context: Context) {
     fun listDrillProgressFiles(): List<File> =
         internalDir.listFiles { file ->
             file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
+        }?.toList() ?: emptyList()
+
+    /** List verb drill files (verb_drill_progress_*.yaml, verb_drill_last_session_*.yaml) from internal storage. */
+    fun listVerbDrillFiles(): List<File> =
+        internalDir.listFiles { file ->
+            (file.name.startsWith("verb_drill_progress_") || file.name.startsWith("verb_drill_last_session_"))
+                    && file.name.endsWith(".yaml")
         }?.toList() ?: emptyList()
 
     /** List pack directories under internal drills/. */
@@ -76,8 +83,8 @@ internal class BackupFileCollector(private val context: Context) {
         - bad_sentences.yaml (reported bad sentences)
         - vocab_progress.yaml (vocab sprint progress)
         - drill_progress_*.yaml (per-language drill progress)
-        - verb_drill_progress.yaml (global verb drill progress)
-        - verb_drill_last_session.yaml (verb drill last session state)
+        - verb_drill_progress_{languageId}.yaml (per-language verb drill progress)
+        - verb_drill_last_session_{languageId}.yaml (verb drill last session state per language)
         - drills/{packId}/word_mastery.yaml (word mastery per pack)
     """.trimIndent()
 

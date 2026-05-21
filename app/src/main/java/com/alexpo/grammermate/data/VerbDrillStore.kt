@@ -54,10 +54,18 @@ class VerbDrillStoreImpl(
 ) : VerbDrillStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file: File = File(baseDir, "verb_drill_progress.yaml")
-    private val lastSessionFile: File = File(baseDir, "verb_drill_last_session.yaml")
+
+    // Extract languageId from packId (e.g., "ru-en-v1" → "en", "ru-it-v1" → "it")
+    private val languageId: String = extractLanguageId()
+
+    private val file: File = File(baseDir, "verb_drill_progress_${languageId}.yaml")
+    private val lastSessionFile: File = File(baseDir, "verb_drill_last_session_${languageId}.yaml")
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
+
+    init {
+        migrateLegacyFiles()
+    }
 
     // In-memory cache for progress data — invalidated on progress save
     private var progressCache: Map<String, VerbDrillComboProgress>? = null
@@ -65,6 +73,43 @@ class VerbDrillStoreImpl(
     // In-memory cache for parsed verb drill cards — keyed by "packId:languageId", never invalidated (files don't change at runtime)
     private var cardsCacheKey: String? = null
     private var cardsCache: List<VerbDrillCard>? = null
+
+    // Extract languageId from packId (e.g., "ru-en-v1" → "en", "ru-it-v1" → "it")
+    private fun extractLanguageId(): String {
+        return packId?.let {
+            // Pattern: "ru-en-v1" → extract "en"
+            val parts = it.split("-")
+            if (parts.size >= 2) parts[1] else "en"
+        } ?: "en"
+    }
+
+    // Migrate legacy files to language-specific files
+    private fun migrateLegacyFiles() {
+        try {
+            val legacyProgressFile = File(baseDir, "verb_drill_progress.yaml")
+            val legacySessionFile = File(baseDir, "verb_drill_last_session.yaml")
+
+            // Migrate progress file
+            if (legacyProgressFile.exists()) {
+                Log.i("VerbDrillStore", "Migrating legacy progress file to language-specific: ${file.name}")
+                val legacyData = legacyProgressFile.readText()
+                AtomicFileWriter.writeText(file, legacyData)
+                legacyProgressFile.delete()
+                Log.i("VerbDrillStore", "Legacy progress file migrated and deleted")
+            }
+
+            // Migrate session file
+            if (legacySessionFile.exists()) {
+                Log.i("VerbDrillStore", "Migrating legacy session file to language-specific: ${lastSessionFile.name}")
+                val legacyData = legacySessionFile.readText()
+                AtomicFileWriter.writeText(lastSessionFile, legacyData)
+                legacySessionFile.delete()
+                Log.i("VerbDrillStore", "Legacy session file migrated and deleted")
+            }
+        } catch (e: Exception) {
+            Log.e("VerbDrillStore", "Error migrating legacy files: ${e.message}", e)
+        }
+    }
 
     override fun loadProgress(): Map<String, VerbDrillComboProgress> {
         progressCache?.let { return it }

@@ -96,18 +96,33 @@ internal class BackupRestorer(private val context: Context) {
             }
         }
 
-        // Flat verb drill files
-        listOf("verb_drill_progress.yaml", "verb_drill_last_session.yaml").forEach { name ->
-            copyIfExists(backupSubDir, internalDir, name)
-            val dest = File(internalDir, name)
-            if (dest.exists()) {
-                val restored = dest.readText(Charsets.UTF_8)
-                if (!validateBackupContent(restored, dest.name)) {
-                    dest.delete()
-                    Log.w(logTag, "Deleted invalid restored file: ${dest.name}")
-                }
+        // Language-specific verb drill files (new format)
+        backupSubDir.listFiles { file ->
+            file.name.startsWith("verb_drill_progress_") && file.name.endsWith(".yaml")
+        }?.forEach { file ->
+            val destFile = File(internalDir, file.name)
+            AtomicFileWriter.copyAtomic(file, destFile)
+            val restored = destFile.readText(Charsets.UTF_8)
+            if (!validateBackupContent(restored, destFile.name)) {
+                destFile.delete()
+                Log.w(logTag, "Deleted invalid restored file: ${destFile.name}")
             }
         }
+
+        backupSubDir.listFiles { file ->
+            file.name.startsWith("verb_drill_last_session_") && file.name.endsWith(".yaml")
+        }?.forEach { file ->
+            val destFile = File(internalDir, file.name)
+            AtomicFileWriter.copyAtomic(file, destFile)
+            val restored = destFile.readText(Charsets.UTF_8)
+            if (!validateBackupContent(restored, destFile.name)) {
+                destFile.delete()
+                Log.w(logTag, "Deleted invalid restored file: ${destFile.name}")
+            }
+        }
+
+        // Migrate old flat verb drill files to language-specific
+        migrateOldVerbDrillFormat(backupSubDir)
 
         // Pack-scoped drill data (drills/{packId}/) - word mastery only
         restorePackDrillDirs(backupSubDir)
@@ -230,16 +245,31 @@ internal class BackupRestorer(private val context: Context) {
             }
         }
 
-        // -- Flat verb drill files --
-        logBuilder.appendLine("--- Flat Verb Drill Files ---")
-        listOf("verb_drill_progress.yaml", "verb_drill_last_session.yaml").forEach { name ->
-            val source = backupDir.findFile(name)
-            if (source == null) {
-                logBuilder.appendLine("MISSING: $name")
-            } else {
-                copied = copyDocumentToInternal(source, File(internalDir, name), logBuilder, name, restoredFiles) || copied
+        // -- Language-specific verb drill files --
+        logBuilder.appendLine("--- Language-Specific Verb Drill Files ---")
+        var verbDrillProgressCount = 0
+        backupDir.listFiles().forEach { file ->
+            if (file.name?.startsWith("verb_drill_progress_") == true && file.name?.endsWith(".yaml") == true) {
+                copied = copyDocumentToInternal(file, File(internalDir, file.name!!), logBuilder, file.name!!, restoredFiles) || copied
+                verbDrillProgressCount++
             }
         }
+        if (verbDrillProgressCount == 0) logBuilder.appendLine("No verb_drill_progress_*.yaml files found")
+
+        var verbDrillSessionCount = 0
+        backupDir.listFiles().forEach { file ->
+            if (file.name?.startsWith("verb_drill_last_session_") == true && file.name?.endsWith(".yaml") == true) {
+                copied = copyDocumentToInternal(file, File(internalDir, file.name!!), logBuilder, file.name!!, restoredFiles) || copied
+                verbDrillSessionCount++
+            }
+        }
+        if (verbDrillSessionCount == 0) logBuilder.appendLine("No verb_drill_last_session_*.yaml files found")
+        logBuilder.appendLine()
+
+        // -- Old verb drill migration --
+        logBuilder.appendLine("--- Old Verb Drill Format Migration ---")
+        migrateOldVerbDrillFormatUri(backupDir, logBuilder, restoredFiles)
+        copied = restoredFiles.any { it.contains("(migrated)") } || copied
         logBuilder.appendLine()
 
         // -- Flat-name pack-scoped drill files (from scoped backup) --
@@ -391,46 +421,136 @@ internal class BackupRestorer(private val context: Context) {
         }
     }
 
-    /** Restore drill data from backup. Verb drill progress goes to flat path, word mastery stays pack-scoped. */
-    private fun restorePackDrillDirs(backupSubDir: File) {
-        // Restore global verb drill progress files (flat path) - from legacy pack-scoped or new flat location
-        val flatVerbProgress = File(backupSubDir, "verb_drill_progress.yaml")
-        if (flatVerbProgress.exists()) {
-            val content = flatVerbProgress.readText(Charsets.UTF_8)
-            if (validateBackupContent(content, flatVerbProgress.name)) {
-                AtomicFileWriter.writeText(File(internalDir, "verb_drill_progress.yaml"), content)
-            } else {
-                Log.w(logTag, "Skipping invalid backup file: ${flatVerbProgress.name}")
+    /** Migrate legacy flat verb drill files to language-specific files. */
+    private fun migrateOldVerbDrillFormat(backupSubDir: File) {
+        try {
+            // Migrate progress file
+            val legacyProgressFile = File(backupSubDir, "verb_drill_progress.yaml")
+            if (legacyProgressFile.exists()) {
+                Log.i(logTag, "Migrating legacy verb_drill_progress.yaml to language-specific files")
+                val content = legacyProgressFile.readText()
+                if (!validateBackupContent(content, legacyProgressFile.name)) {
+                    Log.w(logTag, "Skipping invalid backup file: ${legacyProgressFile.name}")
+                    return
+                }
+
+                // Try to extract languageId from content
+                val data = yaml.load<Any>(content) as? Map<*, *>
+                val languageId = data?.get("languageId") as? String ?: "en"
+                val target = File(internalDir, "verb_drill_progress_$languageId.yaml")
+                AtomicFileWriter.writeText(target, content)
+                Log.i(logTag, "Migrated verb_drill_progress.yaml -> verb_drill_progress_$languageId.yaml")
+            }
+
+            // Migrate session file
+            val legacySessionFile = File(backupSubDir, "verb_drill_last_session.yaml")
+            if (legacySessionFile.exists()) {
+                Log.i(logTag, "Migrating legacy verb_drill_last_session.yaml to language-specific files")
+                val content = legacySessionFile.readText()
+                if (!validateBackupContent(content, legacySessionFile.name)) {
+                    Log.w(logTag, "Skipping invalid backup file: ${legacySessionFile.name}")
+                    return
+                }
+
+                // Try to extract languageId from content
+                val data = yaml.load<Any>(content) as? Map<*, *>
+                val languageId = data?.get("languageId") as? String ?: "en"
+                val target = File(internalDir, "verb_drill_last_session_$languageId.yaml")
+                AtomicFileWriter.writeText(target, content)
+                Log.i(logTag, "Migrated verb_drill_last_session.yaml -> verb_drill_last_session_$languageId.yaml")
+            }
+        } catch (e: Exception) {
+            Log.e(logTag, "Error migrating legacy verb drill files: ${e.message}", e)
+        }
+    }
+
+    /** Migrate legacy flat verb drill files to language-specific files (SAF/URI version). */
+    private fun migrateOldVerbDrillFormatUri(
+        backupDir: DocumentFile,
+        log: StringBuilder,
+        restoredFiles: MutableList<String>
+    ) {
+        // Migrate progress file
+        val oldProgressFile = backupDir.findFile("verb_drill_progress.yaml")
+        if (oldProgressFile != null) {
+            try {
+                val content = context.contentResolver
+                    .openInputStream(oldProgressFile.uri)?.bufferedReader()?.use { it.readText() }
+                if (content != null) {
+                    if (!validateBackupContent(content, "verb_drill_progress.yaml")) {
+                        log.appendLine("SKIPPED: verb_drill_progress.yaml - failed validation")
+                    } else {
+                        val data = yaml.load<Any>(content) as? Map<*, *>
+                        val languageId = data?.get("languageId") as? String ?: "en"
+                        val target = File(internalDir, "verb_drill_progress_$languageId.yaml")
+                        AtomicFileWriter.writeText(target, content)
+                        log.appendLine("OK: Migrated verb_drill_progress.yaml -> verb_drill_progress_$languageId.yaml")
+                        restoredFiles.add("verb_drill_progress_$languageId.yaml (migrated)")
+                    }
+                }
+            } catch (e: Exception) {
+                log.appendLine("ERROR: Failed to migrate verb_drill_progress.yaml - ${e.message}")
             }
         } else {
-            // Legacy migration: check pack-scoped locations and restore from first found
-            val backupDrillsDir = File(backupSubDir, "drills")
-            if (backupDrillsDir.exists()) {
-                backupDrillsDir.listFiles(java.io.FileFilter { it.isDirectory })?.firstOrNull { packBackupDir ->
-                    val verbProgress = File(packBackupDir, "verb_drill_progress.yaml")
-                    if (verbProgress.exists()) {
-                        val content = verbProgress.readText(Charsets.UTF_8)
-                        if (validateBackupContent(content, verbProgress.name)) {
-                            AtomicFileWriter.writeText(File(internalDir, "verb_drill_progress.yaml"), content)
-                            true
-                        } else {
-                            Log.w(logTag, "Skipping invalid backup file: ${verbProgress.name}")
-                            false
-                        }
-                    } else false
+            log.appendLine("No old verb_drill_progress.yaml found (this is normal for new backups)")
+        }
+
+        // Migrate session file
+        val oldSessionFile = backupDir.findFile("verb_drill_last_session.yaml")
+        if (oldSessionFile != null) {
+            try {
+                val content = context.contentResolver
+                    .openInputStream(oldSessionFile.uri)?.bufferedReader()?.use { it.readText() }
+                if (content != null) {
+                    if (!validateBackupContent(content, "verb_drill_last_session.yaml")) {
+                        log.appendLine("SKIPPED: verb_drill_last_session.yaml - failed validation")
+                    } else {
+                        val data = yaml.load<Any>(content) as? Map<*, *>
+                        val languageId = data?.get("languageId") as? String ?: "en"
+                        val target = File(internalDir, "verb_drill_last_session_$languageId.yaml")
+                        AtomicFileWriter.writeText(target, content)
+                        log.appendLine("OK: Migrated verb_drill_last_session.yaml -> verb_drill_last_session_$languageId.yaml")
+                        restoredFiles.add("verb_drill_last_session_$languageId.yaml (migrated)")
+                    }
                 }
+            } catch (e: Exception) {
+                log.appendLine("ERROR: Failed to migrate verb_drill_last_session.yaml - ${e.message}")
+            }
+        } else {
+            log.appendLine("No old verb_drill_last_session.yaml found (this is normal for new backups)")
+        }
+    }
+
+    /** Restore drill data from backup. Verb drill progress goes to language-specific path, word mastery stays pack-scoped. */
+    private fun restorePackDrillDirs(backupSubDir: File) {
+        // Restore language-specific verb drill progress files (new format)
+        backupSubDir.listFiles { file ->
+            file.name.startsWith("verb_drill_progress_") && file.name.endsWith(".yaml")
+        }?.forEach { file ->
+            val destFile = File(internalDir, file.name)
+            val content = file.readText(Charsets.UTF_8)
+            if (validateBackupContent(content, file.name)) {
+                AtomicFileWriter.writeText(destFile, content)
+            } else {
+                Log.w(logTag, "Skipping invalid backup file: ${file.name}")
             }
         }
 
-        val flatVerbLastSession = File(backupSubDir, "verb_drill_last_session.yaml")
-        if (flatVerbLastSession.exists()) {
-            val content = flatVerbLastSession.readText(Charsets.UTF_8)
-            if (validateBackupContent(content, flatVerbLastSession.name)) {
-                AtomicFileWriter.writeText(File(internalDir, "verb_drill_last_session.yaml"), content)
+        // Restore language-specific verb drill last session files (new format)
+        backupSubDir.listFiles { file ->
+            file.name.startsWith("verb_drill_last_session_") && file.name.endsWith(".yaml")
+        }?.forEach { file ->
+            val destFile = File(internalDir, file.name)
+            val content = file.readText(Charsets.UTF_8)
+            if (validateBackupContent(content, file.name)) {
+                AtomicFileWriter.writeText(destFile, content)
             } else {
-                Log.w(logTag, "Skipping invalid backup file: ${flatVerbLastSession.name}")
+                Log.w(logTag, "Skipping invalid backup file: ${file.name}")
             }
         }
+
+        // Migrate old flat verb drill files to language-specific
+        migrateOldVerbDrillFormat(backupSubDir)
 
         // Restore pack-scoped word mastery files
         val backupDrillsDir = File(backupSubDir, "drills")

@@ -164,21 +164,10 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
             }
         }
 
-        // Copy flat verb drill files (Fix 9: VerbDrillStore now uses flat paths)
-        val verbDrillProgress = File(internalDir, "verb_drill_progress.yaml")
-        if (verbDrillProgress.exists()) {
-            Log.d(logTag, "Backing up flat verb drill progress file")
-            AtomicFileWriter.copyAtomic(verbDrillProgress, File(backupSubDir, "verb_drill_progress.yaml"))
-        } else {
-            Log.d(logTag, "Flat verb drill progress file does not exist, skipping backup")
-        }
-
-        val verbDrillLastSession = File(internalDir, "verb_drill_last_session.yaml")
-        if (verbDrillLastSession.exists()) {
-            Log.d(logTag, "Backing up flat verb drill last session file")
-            AtomicFileWriter.copyAtomic(verbDrillLastSession, File(backupSubDir, "verb_drill_last_session.yaml"))
-        } else {
-            Log.d(logTag, "Flat verb drill last session file does not exist, skipping backup")
+        // Copy language-specific verb drill files (verb_drill_progress_{languageId}.yaml, verb_drill_last_session_{languageId}.yaml)
+        collector.listVerbDrillFiles().forEach { file ->
+            Log.d(logTag, "Backing up verb drill file: ${file.name}")
+            AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
         }
 
         // Write metadata via AtomicFileWriter (fixes violation)
