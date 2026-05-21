@@ -43,6 +43,7 @@ interface VocabProgressStore {
     fun isDueForReview(entryId: String, lessonId: String, languageId: String): Boolean
     fun sortEntriesForSprint(entries: List<VocabEntry>, lessonId: String, languageId: String): List<VocabEntry>
     fun clear()
+    fun clearLanguage(languageId: String)
 
     companion object {
         val INTERVALS_DAYS = intArrayOf(1, 3, 7, 14, 30)
@@ -268,6 +269,12 @@ class VocabProgressStoreImpl(private val context: Context) : VocabProgressStore 
         if (file.exists()) {
             file.delete()
         }
+    }
+
+    override fun clearLanguage(languageId: String) = mutex.withLock {
+        loadAllInternal()
+        cache.remove(languageId)
+        persistToFile()
     }
 
     private fun persistToFile() {

@@ -89,6 +89,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val vocabProgressStore = container.vocabProgressStore
     private var wordMasteryStore = container.wordMasteryStore(null)
     private val packLessonProgressStore = container.packLessonProgressStore
+    private val packDailyCursorStore = container.packDailyCursorStore()
     private val backupManager = container.backupManager
     private val profileStore = container.profileStore
     private val _coreState = MutableStateFlow(TrainingUiState(isLoading = true))
@@ -191,7 +192,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         wordMasteryStoreFactory = { packId -> container.wordMasteryStore(packId) },
         streakStore = streakStore,
         streakManager = streakManager,
-        packDailyCursorStore = container.packDailyCursorStore()
+        packDailyCursorStore = packDailyCursorStore
     )
 
     private val storyRunner = StoryRunner(
@@ -1538,8 +1539,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         buildSessionCards()
         saveProgress()
     }
-    private fun resetStores(app: Application) = progressTracker.resetStores(app)
-    private fun resetStoresForLanguage(app: Application, languageId: String) = progressTracker.resetStoresForLanguage(app, languageId)
+    private fun resetStores(app: Application) {
+        progressTracker.resetStores(app)
+        vocabProgressStore.clear()
+    }
+    private fun resetStoresForLanguage(app: Application, languageId: String) {
+        progressTracker.resetStoresForLanguage(app, languageId)
+        vocabProgressStore.clearLanguage(languageId)
+    }
     private fun resetDrillFiles(app: Application) {
         progressTracker.resetDrillFiles(app)
         container.clearCache()
