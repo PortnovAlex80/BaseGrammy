@@ -12,6 +12,8 @@ import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.MasteryStore
+import com.alexpo.grammermate.data.PackDailyCursorState
+import com.alexpo.grammermate.data.PackDailyCursorStore
 import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.SrsRating
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
@@ -73,6 +75,7 @@ class DailyPracticeCoordinator(
     private val wordMasteryStoreFactory: (String?) -> WordMasteryStore,
     private val streakStore: StreakStore,
     private val streakManager: StreakManager,
+    private val packDailyCursorStore: PackDailyCursorStore,
     private var sessionSize: Int = 10
 ) {
 
@@ -106,6 +109,23 @@ class DailyPracticeCoordinator(
     fun getVerbDrillStore(packId: String) = verbDrillStoreFactory(packId)
 
     fun getWordMasteryStore(packId: String) = wordMasteryStoreFactory(packId)
+
+    /**
+     * Get the current pack's daily cursor state.
+     * Each pack maintains its own cursor to prevent cross-pack contamination.
+     */
+    fun getCurrentPackCursor(): PackDailyCursorState {
+        val packId = stateAccess.uiState.value.navigation.activePackId?.value
+            ?: return PackDailyCursorState.forPack("unknown")
+        return packDailyCursorStore.loadPackCursor(packId) ?: PackDailyCursorState.forPack(packId)
+    }
+
+    /**
+     * Save cursor state for the current pack.
+     */
+    private fun saveCurrentPackCursor(cursor: PackDailyCursorState) {
+        packDailyCursorStore.savePackCursor(cursor)
+    }
 
     // ── Session lifecycle ────────────────────────────────────────────────
 
@@ -374,7 +394,8 @@ class DailyPracticeCoordinator(
         val progressInfo = resolveProgressLessonInfo()
         val lessonId = progressInfo?.first ?: return false
 
-        val cursor = _state.value.dailyCursor
+        // Use pack-scoped cursor instead of global cursor
+        val cursor = getCurrentPackCursor()
         val today = java.time.LocalDate.now().toString()
 
         // Try in-memory cache first (fastest path, same app run)
@@ -405,7 +426,17 @@ class DailyPracticeCoordinator(
         }
 
         // Last resort: build fresh with cursor at position 0 (start of day)
-        val resetCursor = cursor.copy(sentenceOffset = 0)
+        val resetPackCursor = cursor.copy(sentenceOffset = 0)
+        // Convert PackDailyCursorState to DailyCursorState for legacy API
+        val resetCursor = DailyCursorState(
+            sentenceOffset = resetPackCursor.sentenceOffset,
+            currentLessonIndex = resetPackCursor.currentLessonIndex,
+            lastSessionHash = resetPackCursor.lastSessionHash,
+            firstSessionDate = resetPackCursor.firstSessionDate,
+            firstSessionSentenceCardIds = resetPackCursor.firstSessionSentenceCardIds,
+            firstSessionVerbCardIds = resetPackCursor.firstSessionVerbCardIds,
+            verbOffset = resetPackCursor.verbOffset
+        )
         val verbDrillStore = getVerbDrillStore(packId.value)
         val packWordMasteryStore = getWordMasteryStore(packId.value)
         val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
@@ -700,10 +731,34 @@ class DailyPracticeCoordinator(
     // ── Cursor management (called by ViewModel) ──────────────────────────
 
     fun updateCursor(cursor: DailyCursorState) {
-        _state.update { it.copy(dailyCursor = cursor) }
+        // Convert to pack-scoped cursor and save
+        val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
+        val packCursor = PackDailyCursorState(
+            packId = packId,
+            sentenceOffset = cursor.sentenceOffset,
+            currentLessonIndex = cursor.currentLessonIndex,
+            lastSessionHash = cursor.lastSessionHash,
+            firstSessionDate = cursor.firstSessionDate,
+            firstSessionSentenceCardIds = cursor.firstSessionSentenceCardIds,
+            firstSessionVerbCardIds = cursor.firstSessionVerbCardIds,
+            verbOffset = cursor.verbOffset
+        )
+        saveCurrentPackCursor(packCursor)
     }
 
-    fun getCursor(): DailyCursorState = _state.value.dailyCursor
+    fun getCursor(): DailyCursorState {
+        // Return pack-scoped cursor as legacy DailyCursorState for compatibility
+        val packCursor = getCurrentPackCursor()
+        return DailyCursorState(
+            sentenceOffset = packCursor.sentenceOffset,
+            currentLessonIndex = packCursor.currentLessonIndex,
+            lastSessionHash = packCursor.lastSessionHash,
+            firstSessionDate = packCursor.firstSessionDate,
+            firstSessionSentenceCardIds = packCursor.firstSessionSentenceCardIds,
+            firstSessionVerbCardIds = packCursor.firstSessionVerbCardIds,
+            verbOffset = packCursor.verbOffset
+        )
+    }
 
     /** Test-only accessor to inspect internal state. */
     internal fun getDailyState(): DailyPracticeState = _state.value

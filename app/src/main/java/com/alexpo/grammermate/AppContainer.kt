@@ -28,6 +28,7 @@ class AppContainer(private val application: Application) {
     // Pack-scoped stores
     fun wordMasteryStore(packId: String?): WordMasteryStore = storeFactory.getWordMasteryStore(packId)
     fun verbDrillStore(packId: String?): VerbDrillStore = storeFactory.getVerbDrillStore(packId)
+    fun packDailyCursorStore(): PackDailyCursorStore = PackDailyCursorStoreImpl(application)
 
     // Cache management
     fun evict(packId: String?) = storeFactory.evict(packId)

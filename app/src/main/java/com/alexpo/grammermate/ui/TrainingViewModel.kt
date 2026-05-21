@@ -186,7 +186,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         verbDrillStoreFactory = { packId -> container.verbDrillStore(packId) },
         wordMasteryStoreFactory = { packId -> container.wordMasteryStore(packId) },
         streakStore = streakStore,
-        streakManager = streakManager
+        streakManager = streakManager,
+        packDailyCursorStore = container.packDailyCursorStore()
     )
 
     private val storyRunner = StoryRunner(

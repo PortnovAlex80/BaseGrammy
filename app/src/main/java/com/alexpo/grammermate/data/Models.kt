@@ -375,6 +375,28 @@ data class DailyCursorState(
     val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
 )
 
+/**
+ * Pack-scoped daily cursor state. Each pack maintains its own cursor position
+ * to prevent cross-pack contamination when switching between lesson packs.
+ *
+ * Used by TASK-080: State isolation bug fix.
+ */
+data class PackDailyCursorState(
+    val packId: String,                 // Pack identifier (e.g., "ru-en-v1", "ru-it-v1")
+    val sentenceOffset: Int = 0,        // cards shown in current lesson (0, 10, 20, ...)
+    val currentLessonIndex: Int = 0,    // which lesson in the pack (0-based)
+    val lastSessionHash: Int = 0,       // hash of last completed session for "repeat" cache
+    val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
+    val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
+    val firstSessionVerbCardIds: List<String> = emptyList(),      // card IDs from first session's block 3
+    val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
+) {
+    companion object {
+        /** Create default cursor state for a pack */
+        fun forPack(packId: String) = PackDailyCursorState(packId = packId)
+    }
+}
+
 data class SubmitResult(
     val accepted: Boolean,
     val hintShown: Boolean

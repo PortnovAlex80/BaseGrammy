@@ -15,6 +15,19 @@ interface ProgressStore {
     fun save(progress: TrainingProgress)
 
     fun clear()
+
+    /**
+     * Migrate global daily cursor to pack-scoped cursor files.
+     * Called once during app upgrade to TASK-080.
+     *
+     * @param activePackId The currently active pack ID to migrate global cursor to
+     * @param packCursorStore The pack-scoped cursor store to save migrated data
+     * @return true if migration was performed, false if no data to migrate
+     */
+    fun migrateGlobalDailyCursorToPackScoped(
+        activePackId: String?,
+        packCursorStore: PackDailyCursorStore
+    ): Boolean
 }
 
 class ProgressStoreImpl(private val context: Context) : ProgressStore {
@@ -143,5 +156,62 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
 
     override fun clear() = mutex.withLock {
         if (file.exists()) file.delete()
+    }
+
+    override fun migrateGlobalDailyCursorToPackScoped(
+        activePackId: String?,
+        packCursorStore: PackDailyCursorStore
+    ): Boolean = mutex.withLock {
+        // Check if there's existing global daily cursor data to migrate
+        val progress = load()
+        val globalCursor = progress.dailyCursor
+
+        // Check if global cursor has meaningful data (not defaults)
+        val hasDataToMigrate = globalCursor.sentenceOffset > 0 ||
+            globalCursor.currentLessonIndex > 0 ||
+            globalCursor.firstSessionDate.isNotEmpty() ||
+            globalCursor.firstSessionSentenceCardIds.isNotEmpty() ||
+            globalCursor.firstSessionVerbCardIds.isNotEmpty() ||
+            globalCursor.verbOffset > 0
+
+        if (!hasDataToMigrate) {
+            Log.d("ProgressStore", "No global cursor data to migrate")
+            return@withLock false
+        }
+
+        // Determine target pack ID for migration
+        val targetPackId = activePackId ?: progress.activePackId?.value
+        if (targetPackId == null) {
+            Log.w("ProgressStore", "Cannot migrate global cursor: no active pack ID available")
+            return@withLock false
+        }
+
+        try {
+            // Create pack-scoped cursor state from global cursor
+            val packCursor = PackDailyCursorState(
+                packId = targetPackId,
+                sentenceOffset = globalCursor.sentenceOffset,
+                currentLessonIndex = globalCursor.currentLessonIndex,
+                lastSessionHash = globalCursor.lastSessionHash,
+                firstSessionDate = globalCursor.firstSessionDate,
+                firstSessionSentenceCardIds = globalCursor.firstSessionSentenceCardIds,
+                firstSessionVerbCardIds = globalCursor.firstSessionVerbCardIds,
+                verbOffset = globalCursor.verbOffset
+            )
+
+            // Save to pack-specific file
+            packCursorStore.savePackCursor(packCursor)
+            Log.i("ProgressStore", "Migrated global cursor to pack: $targetPackId")
+
+            // Clear global cursor from progress.yaml
+            val clearedProgress = progress.copy(dailyCursor = DailyCursorState())
+            save(clearedProgress)
+            Log.i("ProgressStore", "Cleared global cursor from progress.yaml after migration")
+
+            return@withLock true
+        } catch (e: Exception) {
+            Log.e("ProgressStore", "Failed to migrate global cursor to pack: $targetPackId", e)
+            return@withLock false
+        }
     }
 }
