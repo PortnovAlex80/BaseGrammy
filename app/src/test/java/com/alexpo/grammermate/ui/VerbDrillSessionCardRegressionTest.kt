@@ -5,8 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -65,9 +65,11 @@ class VerbDrillSessionCardRegressionTest {
         val verbVm = preparedVerbVm(cards, sessionSize = 5)
         val trainingVm = TrainingViewModel(application)
         val route = mutableStateOf(TestRoute.VERB)
-        renderHarness(verbVm, trainingVm, route)
 
-        startVerbSessionThroughUi()
+        renderHarness(verbVm, trainingVm, route)
+        composeRule.waitForIdle()
+
+        startVerbSessionThroughUi(verbVm, trainingVm, route)
         val firstBatchIds = verbVm.uiState.value.session!!.cards.map { it.id }
 
         repeat(3) {
@@ -94,9 +96,11 @@ class VerbDrillSessionCardRegressionTest {
         val verbVm = preparedVerbVm(cards, sessionSize = 5)
         val trainingVm = TrainingViewModel(application)
         val route = mutableStateOf(TestRoute.VERB)
-        renderHarness(verbVm, trainingVm, route)
 
-        startVerbSessionThroughUi()
+        renderHarness(verbVm, trainingVm, route)
+        composeRule.waitForIdle()
+
+        startVerbSessionThroughUi(verbVm, trainingVm, route)
 
         repeat(2) {
             answerCurrentCardCorrectly(trainingVm)
@@ -134,9 +138,11 @@ class VerbDrillSessionCardRegressionTest {
         val verbVm = preparedVerbVm(cards, sessionSize = 5)
         val trainingVm = TrainingViewModel(application)
         val route = mutableStateOf(TestRoute.VERB)
-        renderHarness(verbVm, trainingVm, route)
 
-        startVerbSessionThroughUi()
+        renderHarness(verbVm, trainingVm, route)
+        composeRule.waitForIdle()
+
+        startVerbSessionThroughUi(verbVm, trainingVm, route)
         repeat(2) {
             answerCurrentCardCorrectly(trainingVm)
         }
@@ -148,7 +154,7 @@ class VerbDrillSessionCardRegressionTest {
         composeRule.onNodeWithTag("reset_button").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithTag("session_card").assertDoesNotExist()
+        composeRule.onNodeWithTag("session_card").assertIsNotDisplayed()
         assertNull("Reset should delete only the saved session", store.loadLastSession())
         assertEquals(
             "Reset should not delete verb drill shown-card progress",
@@ -161,6 +167,7 @@ class VerbDrillSessionCardRegressionTest {
         store.setCards(packId, "it", cards)
         return VerbDrillViewModel(application, store).apply {
             injectTestCards(cards)
+            reloadForPack(packId)
             setSessionSize(sessionSize)
             selectTense(tense)
             selectGroup(group)
@@ -231,9 +238,41 @@ class VerbDrillSessionCardRegressionTest {
         }
     }
 
-    private fun startVerbSessionThroughUi() {
-        composeRule.onNodeWithTag("verb_start_button").performClick()
+    private fun startVerbSessionThroughUi(
+        verbVm: VerbDrillViewModel,
+        trainingVm: TrainingViewModel,
+        route: MutableState<TestRoute>? = null
+    ) {
         composeRule.waitForIdle()
+
+        // Wait for button to exist in semantics tree
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            try {
+                composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
+                    .assertExists()
+                true
+            } catch (e: AssertionError) {
+                false
+            }
+        }
+
+        // Click the Start button (TRUE UI click, not ViewModel bypass)
+        composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
+            .performClick()
+
+        composeRule.waitForIdle()
+
+        // Wait for session creation via UI callback
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            verbVm.uiState.value.session?.cards?.isNotEmpty() == true
+        }
+
+        // Wait for route change if applicable
+        route?.let {
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                it.value == TestRoute.TRAINING
+            }
+        }
     }
 
     private fun answerCurrentCardCorrectly(trainingVm: TrainingViewModel) {
