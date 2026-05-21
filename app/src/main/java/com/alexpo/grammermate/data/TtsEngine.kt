@@ -300,13 +300,15 @@ class TtsEngine(private val context: Context) {
         }
     }
 
-    fun stop() {
-        isStopped.set(true)
-        speakJob?.cancel()
-        currentTrack?.let {
-            try {
-                it.stop()
-            } catch (_: IllegalStateException) {}
+    fun stop() = runBlocking {
+        mutex.withLock {
+            doStop()
+            val oldJob = speakJob
+            oldJob?.cancel()
+            oldJob?.join()
+            if (offlineTts != null && _state.value == TtsState.Speaking) {
+                _state.value = TtsState.Ready
+            }
         }
     }
 
