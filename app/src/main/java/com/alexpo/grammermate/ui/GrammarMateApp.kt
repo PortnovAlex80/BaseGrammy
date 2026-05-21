@@ -458,7 +458,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onNext = {
                                 if (
                                     state.cardSession.returnTo == Routes.VERB_DRILL &&
-                                    state.cardSession.currentCard is VerbDrillCard
+                                    state.cardSession.currentCard is VerbDrillCard &&
+                                    (state.cardSession.lastResult == false || state.cardSession.answerText != null)
                                 ) {
                                     verbDrillVm.markCardCompleted()
                                 }

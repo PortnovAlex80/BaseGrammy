@@ -672,9 +672,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val session = _uiState.value.session ?: return
         val nextIndex = session.currentIndex + 1
         if (nextIndex < session.cards.size) {
-            // Persist current card as shown even when skipped
-            val card = session.cards[session.currentIndex]
-            persistCardProgress(card)
             saveLastSessionState(session)
             _uiState.update { state ->
                 state.copy(
@@ -683,9 +680,6 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             }
             cardShownTimestamp = System.currentTimeMillis()
         } else {
-            // Persist last card and start new batch
-            val card = session.cards[session.currentIndex]
-            persistCardProgress(card)
             saveLastSessionState(session)
             startSession(emptySet())
         }
@@ -754,7 +748,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             )
         }
 
-        val excludedCardIds = lastSession.todayShownCardIds + lastSession.sessionCardIds.toSet()
+        val excludedCardIds = lastSession.todayShownCardIds
         startSession(excludedCardIds, ignoreTodayShown = false)
     }
 
