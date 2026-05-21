@@ -7,12 +7,13 @@ This document exhaustively catalogs every data class, enum, sealed class, interf
 **Засчитанная учебная единица (Completed Learning Unit)** — учебная единица, в которой все карточки (минус bad sentences) получили правильный ответ через VOICE или KEYBOARD. Navigation-only прохождение не считается. Bad sentences исключаются из общего числа: если УЕ содержит N карточек и K помечены как bad, достаточно (N-K) правильных ответов через submit.
 
 **PracticeType** — enum classifying the type of practice activity:
-- `TRANSLATION` — training sub-lesson, daily practice block 1, boss battle, drill sub-mode (non-English)
+- `TRANSLATION` — training sub-lesson, daily practice block 1, boss battle
 - `VOCAB` — vocab drill standalone, daily practice block 2
 - `VERB` — verb drill standalone, daily practice block 3
-- `SUB_DRILL` — drill sub-mode (isDrillMode) within English pack lessons
 
-**Fire streak** — система мотивации, где "огонь" начисляется за каждый уникальный тип практики (PracticeType), завершённый засчитанной УЕ за день. Максимум огней за день: 3 (Italian pack) или 4 (English pack с SUB_DRILL). Streak = количество последовательных дней хотя бы с 1 огнём.
+**Implementation task:** [TASK-087: Remove Drill Sub-mode Completely](tasks/TASK-087-remove-drill-submode.md)
+
+**Fire streak** — система мотивации, где "огонь" начисляется за каждый уникальный тип практики (PracticeType), завершённый засчитанной УЕ за день. Максимум огней за день: 3. Streak = количество последовательных дней хотя бы с 1 огнём.
 
 Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/Models.kt`
@@ -60,7 +61,6 @@ Sources:
 | `languageId` | `String` | -- | Links to `Language.id`. |
 | `title` | `String` | -- | Display title. |
 | `cards` | `List<SentenceCard>` | -- | Ordered list of all cards. |
-| `drillCards` | `List<SentenceCard>` | `emptyList()` | Additional drill-only cards. |
 
 **Computed properties:**
 
@@ -257,7 +257,7 @@ Sources:
 | `lastCompletionDateMs` | `Long?` | `null` | Epoch millis of the last day a sub-lesson was completed. `null` if never. |
 | `totalSubLessonsCompleted` | `Int` | `0` | Lifetime count of completed sub-lessons. `>= 0`. |
 | `completedTypesToday` | `Set<PracticeType>` | `emptySet()` | Practice types completed today via засчитанная УЕ. Reset at day boundary. |
-| `todayFireCount` | `Int` | `0` | Number of fires earned today. Invariant: `== completedTypesToday.size`. Max: 4. |
+| `todayFireCount` | `Int` | `0` | Number of fires earned today. Invariant: `== completedTypesToday.size`. Max: 3. |
 | `lastFireDateMs` | `Long?` | `null` | Epoch millis of the last day a fire was earned. `null` if never. |
 
 ---
@@ -524,7 +524,6 @@ Sources:
 | `order` | `Int` | -- | Display/import order. Defaults to index + 1. |
 | `title` | `String?` | `null` | Optional display title. |
 | `file` | `String` | -- | CSV filename within the ZIP. Must not be blank. |
-| `drillFile` | `String?` | `null` | Optional drill-specific CSV filename. |
 | `type` | `String` | `"standard"` | Lesson type. `"standard"` or `"verb_drill"`. `verb_drill` entries are filtered during import and not parsed as regular lessons. |
 | `tenses` | `List<String>` | `emptyList()` | Tenses associated with this lesson. |
 
@@ -661,11 +660,6 @@ Sources:
 | `ttsSpeed` | `Float` | `1.0f` | TTS playback speed multiplier. |
 | `ruTextScale` | `Float` | `1.0f` | Russian text display scale. |
 | `badSentenceCount` | `Int` | `0` | Flagged bad sentences count. |
-| `isDrillMode` | `Boolean` | `false` | Whether in drill mode. |
-| `drillCardIndex` | `Int` | `0` | Current drill card index. |
-| `drillTotalCards` | `Int` | `0` | Total drill cards. |
-| `drillShowStartDialog` | `Boolean` | `false` | Show drill start dialog. |
-| `drillHasProgress` | `Boolean` | `false` | Whether drill has existing progress. |
 | `useOfflineAsr` | `Boolean` | `false` | Whether to use offline ASR. |
 | `asrState` | `AsrState` | `AsrState.IDLE` | Current ASR engine state. |
 | `asrModelReady` | `Boolean` | `false` | Whether ASR model is loaded. |

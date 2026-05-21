@@ -1,10 +1,16 @@
-# Scenario 16: Drill Sub-mode — Lesson Drill Training Flow
+# ~~Scenario 16: Drill Sub-mode — Lesson Drill Training Flow~~ **REMOVED**
+
+**Status:** This drill sub-mode scenario was removed in [TASK-XXX](tasks/TASK-XXX-remove-drill-submode.md). Drill content migrated to standalone package `EN_WORD_ORDER_A1_DRILLS`.
+
+**Historical content preserved for reference below:**
+
+---
 
 ## Overview
 
-Drill sub-mode provides additional practice on lesson-specific sentence cards within TrainingScreen. Unlike standalone VerbDrill, drill sub-mode has no selection screen — the lesson pack author pre-curates `lesson.drillCards` for this lesson's theme and tense, so the user goes directly into practice. The UI and mechanics are identical to normal training: same navigation, same input modes, same feedback. The only differences are visual (green accents on tense labels and prompt text) and scoring (mastery not counted).
+Drill sub-mode provided additional practice on lesson-specific sentence cards within TrainingScreen. Unlike standalone VerbDrill, drill sub-mode had no selection screen — the lesson pack author pre-curated `lesson.drillCards` for this lesson's theme and tense, so the user went directly into practice. The UI and mechanics were identical to normal training: same navigation, same input modes, same feedback. The only differences were visual (green accents on tense labels and prompt text) and scoring (mastery not counted).
 
-Relationship to standalone VerbDrill: Drill sub-mode is a lesson-scoped VerbDrill without the SelectionScreen. Where VerbDrill lets users choose verb/tense/group, drill sub-mode uses the lesson's pre-built card set.
+Relationship to standalone VerbDrill: Drill sub-mode was a lesson-scoped VerbDrill without the SelectionScreen. Where VerbDrill lets users choose verb/tense/group, drill sub-mode used the lesson's pre-built card set.
 
 ## Pre-conditions
 

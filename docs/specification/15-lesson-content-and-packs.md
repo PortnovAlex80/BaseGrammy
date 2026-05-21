@@ -10,7 +10,7 @@ A lesson pack is a standard ZIP archive. Its root directory must contain `manife
 lesson_pack.zip
   manifest.json                          (required)
   lesson_01.csv                          (lesson content, required per manifest entry)
-  lesson_01_drill.csv                    (drill content, optional per manifest entry)
+  ~~lesson_01_drill.csv~~                    (~~drill content~~ **DEPRECATED** - drill sub-mode removed)
   lesson_02.csv
   ...
   it_verb_groups_all.csv                 (verb drill, referenced by verbDrill section)
@@ -62,7 +62,7 @@ File naming within the ZIP is arbitrary except:
 | `file` | string | yes | — | CSV filename within the ZIP. Trimmed; must not be blank. The file must exist in the archive. |
 | `order` | int | no | array index + 1 | Display/ordering position. Used for sorting lessons. |
 | `title` | string | no | null | Lesson title override. If omitted or blank, the title is parsed from the first line of the CSV. |
-| `drillFile` | string | no | null | Optional drill CSV file associated with this lesson. If specified, the file must exist in the archive. |
+| `drillFile` | string | no | null | ~~Optional drill CSV file associated with this lesson. If specified, the file must exist in the archive.~~ **DEPRECATED** - Drill sub-mode removed, use standalone drill package instead. |
 | `type` | string | no | `"standard"` | Lesson type. Currently recognized: `"standard"`, `"verb_drill"`. Lessons with `type: "verb_drill"` are excluded from standard lesson import and instead routed to the verb drill subsystem (legacy per-lesson verb drill path). |
 | `tenses` | array of string | no | `[]` | Tense tags associated with this lesson. Used by `LessonLadderCalculator` to determine cumulative tenses available at each lesson level. |
 
@@ -137,7 +137,7 @@ The Python pack validator (`pack_validator.py`) performs additional checks. See 
       "order": 1,
       "title": "Word Order -- Simple Tenses",
       "file": "lesson_01.csv",
-      "drillFile": "lesson_01_drill.csv"
+      ~~"drillFile": "lesson_01_drill.csv"~~  // **DEPRECATED** - drill sub-mode removed
     }
   ]
 }
@@ -145,7 +145,7 @@ The Python pack validator (`pack_validator.py`) performs additional checks. See 
 
 **Contents**:
 - `lesson_01.csv` -- Main lesson: Russian prompts with English translations. Standard 2-column semicolon-delimited format. Contains sentences practicing present simple, past simple, and future simple patterns.
-- `lesson_01_drill.csv` -- Drill lesson: Same grammatical patterns with varied sentences for the Reserve pool. Uses the verb "say hello" as a carrier phrase across multiple tenses.
+- ~~`lesson_01_drill.csv`~~ -- **DEPRECATED** - Drill lesson removed.
 - `story_L01_CHECK_IN.json` -- Story quiz for the CHECK_IN phase.
 - `story_L01_CHECK_OUT.json` -- Story quiz for the CHECK_OUT phase.
 - `vocab_L01_PRESENT_SIMPLE.csv` -- Vocabulary pairs (Russian;English) for the lesson.
@@ -273,7 +273,7 @@ Each lesson entry in `manifest.lessons` with `type != "verb_drill"` is processed
    - Copies the CSV to `grammarmate/lessons/{languageId}/lesson_{lessonId}.csv`.
    - Parses the CSV to extract the title and cards via `CsvParser`.
    - Prefixes card IDs with the lesson ID to avoid collisions (`{lessonId}_{index}`).
-   - If `drillFile` is specified, copies it to `grammarmate/lessons/{languageId}/lesson_{lessonId}_drill.csv` and parses it.
+   - ~~If `drillFile` is specified, copies it to `grammarmate/lessons/{languageId}/lesson_{lessonId}_drill.csv` and parses it.~~ **DEPRECATED** - drill sub-mode removed.
    - Removes any existing lesson with the same ID (by `replaceById`) or title (by `replaceByTitle`).
    - Appends the lesson to the lesson index at `grammarmate/lessons/{languageId}_index.yaml`.
 
@@ -328,7 +328,7 @@ context.filesDir/grammarmate/
     {languageId}_index.yaml               # lesson index for this language
     {languageId}/
       lesson_{lessonId}.csv               # imported lesson CSV
-      lesson_{lessonId}_drill.csv         # imported drill CSV (if any)
+      ~~lesson_{lessonId}_drill.csv~~         # ~~imported drill CSV (if any)~~ **DEPRECATED** - drill sub-mode removed
   drills/
     {packId}/
       verb_drill/
@@ -460,11 +460,13 @@ Word Order Simple Tenses
 мы не идем на работу;We don't go to work+We do not go to work.
 ```
 
-### 15.5.2 Drill Lesson CSV (per-lesson drillFile)
+### 15.5.2 ~~Drill Lesson CSV (per-lesson drillFile)~~ **DEPRECATED**
 
-Same format as standard lesson CSV (15.5.1). The `drillFile` field in the manifest lesson entry specifies a second CSV with additional practice cards. These cards go into `Lesson.drillCards` and are used as the Reserve pool to prevent memorization of specific phrases.
+**Status:** Drill sub-mode removed in [TASK-XXX](tasks/TASK-XXX-remove-drill-submode.md). Use standalone drill package instead.
 
-Drill cards get IDs of the form `{lessonId}_drill_{index}`.
+~~Same format as standard lesson CSV (15.5.1). The `drillFile` field in the manifest lesson entry specifies a second CSV with additional practice cards. These cards go into `Lesson.drillCards` and are used as the Reserve pool to prevent memorization of specific phrases.~~
+
+~~Drill cards get IDs of the form `{lessonId}_drill_{index}`.~~
 
 ### 15.5.3 Verb Drill CSV
 
@@ -791,7 +793,7 @@ If the pack includes drill content, prepare additional CSVs:
       "order": 1,
       "title": "Lesson 1 Title",
       "file": "lesson_01.csv",
-      "drillFile": "lesson_01_drill.csv"
+      ~~"drillFile": "lesson_01_drill.csv"~~  // **DEPRECATED** - drill sub-mode removed
     }
   ]
 }
@@ -825,7 +827,8 @@ Create a ZIP file with `manifest.json` and all referenced CSV/JSON files at the 
 
 ```bash
 cd my_pack_directory/
-zip -r ../MY_NEW_PACK.zip manifest.json lesson_01.csv lesson_01_drill.csv story_L01_CHECK_IN.json
+zip -r ../MY_NEW_PACK.zip manifest.json lesson_01.csv ~~lesson_01_drill.csv~~ story_L01_CHECK_IN.json
+# **DEPRECATED**: lesson_01_drill.csv no longer used - drill sub-mode removed
 ```
 
 **Step 6: Register as a default pack (if bundling with the app)**
@@ -859,7 +862,7 @@ Install the APK and verify that the new pack is seeded correctly on first launch
 |------|----------|-------|
 | `manifest.json` | yes | Must be at ZIP root |
 | Lesson CSVs (one per manifest entry) | yes | Referenced by `lessons[].file` |
-| Drill CSVs (per lesson) | no | Referenced by `lessons[].drillFile` |
+| ~~Drill CSVs (per lesson)~~ | ~~no~~ | **DEPRECATED** - ~~Referenced by `lessons[].drillFile`~~ - drill sub-mode removed |
 | Story quiz JSONs | no | Any `.json` except `manifest.json` |
 | Vocab CSVs | no | Named `vocab_{lessonId}.csv` |
 | Verb drill CSVs | no | Referenced by `verbDrill.files[]` |
