@@ -14,7 +14,8 @@ data class AppConfig(
     val voiceAutoStart: Boolean = true,
     val uiLanguage: String = "system",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val sessionSize: Int = 10
+    val sessionSize: Int = 10,
+    val appVersion: Int = 0
 )
 
 interface AppConfigStore {
@@ -22,6 +23,10 @@ interface AppConfigStore {
     fun save(config: AppConfig)
 
     fun load(): AppConfig
+
+    fun getLastVersion(): Int
+
+    fun setLastVersion(version: Int)
 }
 
 class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
@@ -41,7 +46,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "voiceAutoStart" to config.voiceAutoStart,
             "uiLanguage" to config.uiLanguage,
             "themeMode" to config.themeMode.name,
-            "sessionSize" to config.sessionSize
+            "sessionSize" to config.sessionSize,
+            "appVersion" to config.appVersion
         )
         AtomicFileWriter.writeText(file, yaml.dump(payload))
     }
@@ -78,6 +84,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
         val rawSessionSize = (data["sessionSize"] as? Number)?.toInt() ?: 10
         val sessionSize = rawSessionSize.coerceIn(3, 20)
+        val appVersion = (data["appVersion"] as? Number)?.toInt() ?: 0
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
@@ -88,7 +95,17 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             voiceAutoStart = voiceAutoStart,
             uiLanguage = uiLanguage,
             themeMode = themeMode,
-            sessionSize = sessionSize
+            sessionSize = sessionSize,
+            appVersion = appVersion
         )
+    }
+
+    override fun getLastVersion(): Int {
+        return load().appVersion
+    }
+
+    override fun setLastVersion(version: Int) {
+        val config = load()
+        save(config.copy(appVersion = version))
     }
 }
