@@ -7,6 +7,7 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Build
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import com.k2fsa.sherpa.onnx.GenerationConfig
 import com.k2fsa.sherpa.onnx.OfflineTts
@@ -21,13 +22,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import java.io.File
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.resume
 
 sealed class TtsState {
     object Idle : TtsState()
@@ -46,6 +49,7 @@ class TtsEngine(private val context: Context) {
         get() = _state.value == TtsState.Ready
 
     private var offlineTts: OfflineTts? = null
+    private var systemTts: TextToSpeech? = null
     var activeLanguageId: String? = null
         private set
 
@@ -117,19 +121,14 @@ class TtsEngine(private val context: Context) {
                 }
                 emitInitializing(InitPhase.CHECKING_FILES, 75)
 
-                // Phase 2: Load model (75-95%)
-                System.gc() // Free memory before heavy native ONNX allocation
+                // Phase 2: Load engine (75-95%). Use Android's system TTS to avoid
+                // native Sherpa TTS crashes observed on some tablets during OfflineTts init.
+                System.gc()
                 emitInitializing(InitPhase.LOADING_MODEL, 75)
 
-                val freeMemory = (Runtime.getRuntime().freeMemory() / (1024 * 1024))
-                if (freeMemory < 100) {
-                    Log.w(TAG, "Low memory before TTS init: ${freeMemory}MB")
-                }
-
-                val config = buildConfig(spec, modelDir)
-                initFailed = true
-                withTimeout(30_000L) {
-                    offlineTts = OfflineTts(config = config)
+                val systemReady = initSystemTts(languageId)
+                if (!systemReady) {
+                    throw IllegalStateException("Android system TTS engine is unavailable for $languageId")
                 }
                 emitInitializing(InitPhase.LOADING_MODEL, 95)
 
@@ -146,12 +145,19 @@ class TtsEngine(private val context: Context) {
                 throw e
             } catch (e: Throwable) {
                 initFailed = true
+                val partiallyLoaded = offlineTts
                 offlineTts = null
+                activeLanguageId = null
+                try {
+                    partiallyLoaded?.free()
+                } catch (freeError: Throwable) {
+                    Log.w(TAG, "Failed to free partially initialized TTS", freeError)
+                }
                 val reason = when (e) {
-                    is OutOfMemoryError -> "Not enough memory"
-                    is kotlinx.coroutines.TimeoutCancellationException -> "Timed out"
-                    is UnsatisfiedLinkError -> "Native library error"
-                    else -> "Initialization failed"
+                    is OutOfMemoryError -> "Not enough memory to load voice model"
+                    is kotlinx.coroutines.TimeoutCancellationException -> "Voice engine startup timed out"
+                    is UnsatisfiedLinkError -> "Native TTS library error: ${e.message ?: e.javaClass.simpleName}"
+                    else -> "Voice engine init failed: ${e.message ?: e.javaClass.simpleName}"
                 }
                 _state.value = TtsState.Error(reason)
                 Log.e(TAG, "TTS initialization failed for $languageId: $reason", e)
@@ -161,6 +167,41 @@ class TtsEngine(private val context: Context) {
 
     private fun emitInitializing(phase: InitPhase, percent: Int) {
         onInitializing?.invoke(phase, percent)
+    }
+
+    private suspend fun initSystemTts(languageId: String): Boolean = withContext(Dispatchers.Main) {
+        systemTts?.shutdown()
+        systemTts = null
+        suspendCancellableCoroutine { continuation ->
+            var ttsRef: TextToSpeech? = null
+            val listener = TextToSpeech.OnInitListener { status ->
+                val tts = ttsRef
+                if (status == TextToSpeech.SUCCESS && tts != null) {
+                    val locale = when (languageId) {
+                        "it" -> Locale.ITALIAN
+                        "en" -> Locale.US
+                        else -> Locale(languageId)
+                    }
+                    val availability = tts.setLanguage(locale)
+                    val ready = availability != TextToSpeech.LANG_MISSING_DATA &&
+                        availability != TextToSpeech.LANG_NOT_SUPPORTED
+                    if (ready) {
+                        systemTts = tts
+                    } else {
+                        tts.shutdown()
+                    }
+                    if (continuation.isActive) continuation.resume(ready)
+                } else {
+                    tts?.shutdown()
+                    if (continuation.isActive) continuation.resume(false)
+                }
+            }
+            ttsRef = TextToSpeech(context.applicationContext, listener)
+            continuation.invokeOnCancellation {
+                ttsRef.shutdown()
+                if (systemTts === ttsRef) systemTts = null
+            }
+        }
     }
 
     private fun buildConfig(spec: TtsModelSpec, modelDir: File): OfflineTtsConfig {
@@ -211,6 +252,20 @@ class TtsEngine(private val context: Context) {
                 if (oldJob != null) {
                     oldJob.cancel()
                     oldJob.join()
+                }
+
+                val system = systemTts
+                if (system != null) {
+                    _state.value = TtsState.Speaking
+                    requestAudioFocus()
+                    val params = android.os.Bundle().apply {
+                        putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
+                    }
+                    system.setSpeechRate(safeSpeed)
+                    val result = system.speak(text, TextToSpeech.QUEUE_FLUSH, params, "tts-${generation.incrementAndGet()}")
+                    _state.value = if (result == TextToSpeech.SUCCESS) TtsState.Ready else TtsState.Error("System TTS playback failed")
+                    abandonAudioFocus()
+                    return
                 }
 
                 val tts = offlineTts
@@ -324,16 +379,20 @@ class TtsEngine(private val context: Context) {
 
     private fun doRelease() {
         val ttsToFree = offlineTts
+        val systemToFree = systemTts
         offlineTts = null
+        systemTts = null
         activeLanguageId = null
         initFailed = false
         _state.value = TtsState.Idle
         speakJob = null
         ttsToFree?.free()
+        systemToFree?.shutdown()
     }
 
     private fun doStop() {
         isStopped.set(true)
+        systemTts?.stop()
         currentTrack?.let {
             try {
                 it.stop()

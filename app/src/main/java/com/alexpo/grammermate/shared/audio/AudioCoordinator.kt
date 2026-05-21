@@ -165,7 +165,10 @@ class AudioCoordinator(
         if (text.isBlank()) return
         // Defense in depth: never attempt speak if engine is not initialized.
         // Prevents native crash from calling speak() on an uninitialized Sherpa-ONNX engine.
-        if (ttsEngine.state.value != TtsState.Ready && ttsEngine.state.value != TtsState.Idle) return
+        if (ttsEngine.state.value != TtsState.Ready &&
+            ttsEngine.state.value != TtsState.Idle &&
+            ttsEngine.state.value !is TtsState.Error
+        ) return
         val langId = stateAccess.uiState.value.navigation.selectedLanguageId
         val effectiveSpeed = speed ?: _audioState.value.ttsSpeed
         coroutineScope.launch {
@@ -444,7 +447,16 @@ class AudioCoordinator(
     fun startTtsStateCollection() {
         coroutineScope.launch {
             ttsEngine.state.collect { ttsState ->
-                _audioState.update { it.copy(ttsState = ttsState) }
+                _audioState.update {
+                    it.copy(
+                        ttsState = ttsState,
+                        ttsDownloadState = when (ttsState) {
+                            is TtsState.Error -> DownloadState.Error(ttsState.reason ?: "Voice engine error")
+                            is TtsState.Ready -> if (it.ttsDownloadState is DownloadState.Initializing) DownloadState.Done else it.ttsDownloadState
+                            else -> it.ttsDownloadState
+                        }
+                    )
+                }
             }
         }
     }

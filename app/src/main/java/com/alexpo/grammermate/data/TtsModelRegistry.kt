@@ -22,14 +22,15 @@ object TtsModelRegistry {
         "en" to TtsModelSpec(
             languageId = "en",
             displayName = "English",
-            modelType = TtsModelType.KOKORO,
-            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-en-v0_19.tar.bz2",
-            archivePrefix = "kokoro-en-v0_19/",
-            modelDirName = "kokoro-en-v0_19",
-            fallbackDownloadSize = 350L * 1024 * 1024,
-            minRequiredBytes = 700L * 1024 * 1024,
-            requiredFiles = listOf("model.onnx", "tokens.txt", "voices.bin"),
-            requiredDirs = listOf("espeak-ng-data")
+            modelType = TtsModelType.VITS_PIPER,
+            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2",
+            archivePrefix = "vits-piper-en_US-amy-low/",
+            modelDirName = "vits-piper-en_US-amy-low",
+            fallbackDownloadSize = 35L * 1024 * 1024,
+            minRequiredBytes = 120L * 1024 * 1024,
+            requiredFiles = listOf("en_US-amy-low.onnx", "tokens.txt"),
+            requiredDirs = listOf("espeak-ng-data"),
+            modelFileName = "en_US-amy-low.onnx"
         ),
         "it" to TtsModelSpec(
             languageId = "it",
