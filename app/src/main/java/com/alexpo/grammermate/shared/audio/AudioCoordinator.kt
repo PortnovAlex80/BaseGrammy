@@ -384,7 +384,9 @@ class AudioCoordinator(
             ttsModelManager.downloadMultiple(missingLanguages).collect { stateMap ->
                 val allDone = stateMap.values.all { it is DownloadState.Done }
                 val anyActive = stateMap.values.any {
-                    it is DownloadState.Downloading || it is DownloadState.Extracting
+                    it is DownloadState.Downloading ||
+                        it is DownloadState.Extracting ||
+                        it is DownloadState.Initializing
                 }
 
                 // Track newly completed downloads so UI can mark model files ready.

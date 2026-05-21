@@ -5,11 +5,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.AlertDialog
@@ -204,6 +206,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
+            val selectedTtsDownloadState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
+                ?: state.audio.ttsDownloadState
             // Persistent TTS download progress bar
             AnimatedVisibility(visible = state.audio.bgTtsDownloading) {
                 LinearProgressIndicator(
@@ -211,6 +215,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     modifier = Modifier.fillMaxWidth().height(2.dp),
                 )
             }
+            TtsDownloadStatusBanner(downloadState = selectedTtsDownloadState)
 
             Box(modifier = Modifier.weight(1f)) {
                 NavBackHandlers(
@@ -1301,4 +1306,64 @@ private fun calcBgDownloadProgress(states: Map<String, DownloadState>): Float {
         }
     }
     return (total / states.size).coerceIn(0f, 1f)
+}
+
+@Composable
+private fun TtsDownloadStatusBanner(downloadState: DownloadState) {
+    val visible = downloadState is DownloadState.Downloading ||
+        downloadState is DownloadState.Extracting ||
+        downloadState is DownloadState.Initializing ||
+        downloadState is DownloadState.Error
+    AnimatedVisibility(visible = visible) {
+        val progress = when (downloadState) {
+            is DownloadState.Downloading -> downloadState.percent / 100f
+            is DownloadState.Extracting -> downloadState.percent / 100f
+            is DownloadState.Initializing -> downloadState.percent / 100f
+            else -> 0f
+        }.coerceIn(0f, 1f)
+        val text = when (downloadState) {
+            is DownloadState.Downloading -> "Voice model downloading ${downloadState.percent}%"
+            is DownloadState.Extracting -> "Voice model extracting ${downloadState.percent}%"
+            is DownloadState.Initializing -> "Voice engine starting ${downloadState.percent}%"
+            is DownloadState.Error -> "Voice model error: ${downloadState.message}"
+            else -> ""
+        }
+        Surface(
+            color = if (downloadState is DownloadState.Error) {
+                MaterialTheme.colorScheme.errorContainer
+            } else {
+                MaterialTheme.colorScheme.secondaryContainer
+            },
+            contentColor = if (downloadState is DownloadState.Error) {
+                MaterialTheme.colorScheme.onErrorContainer
+            } else {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (downloadState !is DownloadState.Error) {
+                        CircularProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.width(18.dp).height(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(text = text, style = MaterialTheme.typography.bodySmall)
+                }
+                if (downloadState !is DownloadState.Error) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
 }
