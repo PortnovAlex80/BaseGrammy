@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -285,7 +286,7 @@ private fun VerbDrillSelectionScreen(
         ) {
             Button(
                 onClick = onStart,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().testTag("verb_start_button")
             ) {
                 Text(text = stringResource(R.string.verb_start))
             }
@@ -451,7 +452,7 @@ internal fun SessionCard(
     onReset: () -> Unit = {}
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("session_card"),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
@@ -484,13 +485,13 @@ internal fun SessionCard(
             ) {
                 OutlinedButton(
                     onClick = onRepeat,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).testTag("repeat_button")
                 ) {
                     Text(stringResource(R.string.verb_session_card_repeat))
                 }
                 Button(
                     onClick = onContinue,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).testTag("continue_button")
                 ) {
                     Text(stringResource(R.string.verb_session_card_continue))
                 }
@@ -498,7 +499,7 @@ internal fun SessionCard(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
                 onClick = onReset,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().testTag("reset_button")
             ) {
                 Text(stringResource(R.string.verb_session_card_reset))
             }

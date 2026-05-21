@@ -25,6 +25,51 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 
 ---
 
+## VerbDrill Clickable Regression Tests
+
+When writing Verb Practice / VerbDrill regression tests, do not submit green TODO scaffolds. A test is only valid if it has real assertions and exercises the relevant UI click path.
+
+Required pattern for SessionCard batch tests:
+
+1. Use deterministic cards with stable IDs and `rank = index`.
+2. Render `VerbDrillScreen` and `TrainingScreen` or a small harness switching between them.
+3. Start through UI using `verb_start_button`.
+4. Complete cards through UI using `input_field` and `check_button`.
+5. Navigate without completion through UI using `next_button` / `prev_button`.
+6. Exercise SessionCard actions through UI using `session_card`, `repeat_button`, `continue_button`, `reset_button`.
+7. Read ViewModel/store state only for answers and assertions. Do not mutate state directly from the test body.
+
+Allowed:
+- Read `currentCard.acceptedAnswers.first()` to type the correct answer.
+- Read `session.cards.map { it.id }` to assert batch identity/order.
+- Read `store.loadLastSession()` and `store.loadProgress()` to assert persistence.
+
+Forbidden in clickable tests:
+- Do not call `submitCorrectAnswer()` directly from the test body instead of clicking `check_button`.
+- Do not call `markCardCompleted()` directly from the test body instead of the UI hint/next flow.
+- Do not call `exitSession()` directly to simulate user navigation.
+- Do not rename unrelated tests to `.bak` or delete existing tests.
+- Do not add passing tests that contain only TODO comments.
+- Do not assert that Repeat returns only checked cards. Repeat replays the full saved batch in order.
+- Do not assert that Reset clears learning progress. Reset clears saved session context; progress remains.
+
+Expected semantics:
+- A card is counted shown only after Check succeeds or after the hint/show-answer completion path.
+- Navigation-only cards are not counted shown.
+- Repeat replays `lastSession.sessionCardIds` in the same order.
+- Continue excludes checked/shown cards, not merely visited cards.
+- Reset hides SessionCard and deletes last session, but keeps VerbDrill progress.
+
+Run the focused test with the Windows wrapper workaround:
+
+```cmd
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain test --tests "com.alexpo.grammermate.ui.VerbDrillSessionCardRegressionTest"
+```
+
+If Java is only available through IntelliJ JBR, use the same classpath with the full `java.exe` path from `docs/BUILD_INSTRUCTIONS.md`.
+
+---
+
 ## BUILD APK
 
 **Java NOT available in this environment.** Build APK on your local machine.
