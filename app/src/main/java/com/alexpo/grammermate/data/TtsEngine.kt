@@ -20,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -82,13 +83,16 @@ class TtsEngine(private val context: Context) {
         // If another language is loaded, release it first and await cleanup
         if (activeLanguageId != null && activeLanguageId != languageId) {
             val oldJob = speakJob
-            doRelease()
+            doStop()
+            oldJob?.cancel()
             oldJob?.join()
+            doRelease()
         }
 
         // Wait if currently speaking — stop first, then proceed
         if (_state.value == TtsState.Speaking) {
             doStop()
+            speakJob?.cancel()
             speakJob?.join()
         }
 
@@ -202,17 +206,17 @@ class TtsEngine(private val context: Context) {
                 initialize(languageId)
             }
 
-            val tts = offlineTts
-            if (tts == null) {
-                Log.w(TAG, "speak() skipped: engine not ready, state=${_state.value}, lang=$activeLanguageId")
-                return
-            }
-
             mutex.withLock {
                 val oldJob = speakJob
                 if (oldJob != null) {
                     oldJob.cancel()
                     oldJob.join()
+                }
+
+                val tts = offlineTts
+                if (tts == null) {
+                    Log.w(TAG, "speak() skipped: engine not ready, state=${_state.value}, lang=$activeLanguageId")
+                    return
                 }
 
                 val myGeneration = generation.incrementAndGet()
@@ -306,10 +310,14 @@ class TtsEngine(private val context: Context) {
         }
     }
 
-    fun release() {
-        doStop()
-        speakJob?.cancel()
-        doRelease()
+    fun release() = runBlocking {
+        mutex.withLock {
+            doStop()
+            val oldJob = speakJob
+            oldJob?.cancel()
+            oldJob?.join()
+            doRelease()
+        }
     }
 
     private fun doRelease() {
@@ -318,9 +326,7 @@ class TtsEngine(private val context: Context) {
         activeLanguageId = null
         initFailed = false
         _state.value = TtsState.Idle
-        // Cancel any in-flight speak job and free native resources.
-        // speakJob is cancelled (not joined) to avoid blocking the mutex-holding thread.
-        speakJob?.cancel()
+        speakJob = null
         ttsToFree?.free()
     }
 
