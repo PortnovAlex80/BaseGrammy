@@ -63,8 +63,6 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.ui.CorrectGreen
-import com.alexpo.grammermate.ui.DrillPromptGreen
-import com.alexpo.grammermate.ui.DrillTenseLabelGreen
 import com.alexpo.grammermate.ui.IncorrectRed
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SentenceCard
@@ -245,13 +243,13 @@ fun TrainingScreen(
                     // NORMAL, DRILL, VERB_DRILL — tense label + prompt
                     val sentenceCard = state.cardSession.currentCard as? SentenceCard
                     val cardTense = sentenceCard?.tense
-                    val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
+                    val isDrillStyle = mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
                     if (!cardTense.isNullOrBlank()) {
                         if (isDrillStyle) {
                             Text(
                                 text = cardTense,
                                 fontSize = 13.sp,
-                                color = DrillTenseLabelGreen,
+                                color = CorrectGreen,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -271,13 +269,13 @@ fun TrainingScreen(
             // ── Prompt text ────────────────────────────────────────────
             val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
             val cleanPrompt = rawPrompt.replace(ParentheticalRegex, "")
-            val isDrillStyle = state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
+            val isDrillStyle = mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
             if (cleanPrompt.isNotBlank()) {
                 Text(
                     text = cleanPrompt,
                     fontSize = (18f * state.audio.ruTextScale).sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isDrillStyle) DrillPromptGreen else MaterialTheme.colorScheme.onBackground,
+                    color = if (isDrillStyle) CorrectGreen else MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -292,9 +290,9 @@ fun TrainingScreen(
             }
 
             // ── Progress indicator ─────────────────────────────────────
-            if (state.drill.isDrillMode || mode == TrainingScreenMode.VERB_DRILL) {
-                val drillCurrent = if (state.drill.isDrillMode) state.drill.drillCardIndex else state.cardSession.currentIndex
-                val drillTotal = if (state.drill.isDrillMode) state.drill.drillTotalCards else state.cardSession.subLessonTotal
+            if (mode == TrainingScreenMode.VERB_DRILL) {
+                val drillCurrent = state.cardSession.currentIndex
+                val drillTotal = state.cardSession.subLessonTotal
                 SessionProgressIndicator(
                     current = drillCurrent + 1,
                     total = drillTotal,
@@ -785,7 +783,7 @@ private fun SessionCompletionContent(
     val title = when (mode) {
         TrainingScreenMode.BOSS, TrainingScreenMode.BOSS_MEGA -> stringResource(R.string.training_review_session)
         TrainingScreenMode.ELITE -> stringResource(R.string.training_refresh_session)
-        TrainingScreenMode.DRILL -> "Drill Complete!"
+        TrainingScreenMode.VERB_DRILL -> "Verb Drill Complete!"
         else -> stringResource(R.string.verb_completion_excellent)
     }
     Column(

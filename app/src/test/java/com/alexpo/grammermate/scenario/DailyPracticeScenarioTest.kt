@@ -12,7 +12,6 @@ import com.alexpo.grammermate.feature.training.AnswerValidator
 import com.alexpo.grammermate.feature.training.CardProvider
 import com.alexpo.grammermate.feature.training.SessionRunner
 import com.alexpo.grammermate.feature.training.WordBankGenerator
-import com.alexpo.grammermate.testharness.FakeDrillProgressStore
 import com.alexpo.grammermate.testharness.FakeMasteryStore
 import com.alexpo.grammermate.testharness.FakeProgressStore
 import com.alexpo.grammermate.testharness.FakeStreakStore
@@ -58,7 +57,6 @@ class DailyPracticeScenarioTest {
     private lateinit var stateAccess: FakeTrainingStateAccess
     private lateinit var masteryStore: FakeMasteryStore
     private lateinit var progressStore: FakeProgressStore
-    private lateinit var drillProgressStore: FakeDrillProgressStore
     private lateinit var streakStore: FakeStreakStore
     private lateinit var sessionRunner: SessionRunner
     private lateinit var answerValidator: AnswerValidator
@@ -90,7 +88,6 @@ class DailyPracticeScenarioTest {
         // Initialize all fake stores
         masteryStore = FakeMasteryStore()
         progressStore = FakeProgressStore()
-        drillProgressStore = FakeDrillProgressStore()
         streakStore = FakeStreakStore()
 
         // Initialize state access with default state

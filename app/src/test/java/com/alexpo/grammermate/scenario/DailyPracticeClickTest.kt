@@ -30,7 +30,6 @@ class DailyPracticeClickTest {
     private lateinit var stateAccess: FakeTrainingStateAccess
     private lateinit var masteryStore: FakeMasteryStore
     private lateinit var progressStore: FakeProgressStore
-    private lateinit var drillProgressStore: FakeDrillProgressStore
     private lateinit var streakStore: FakeStreakStore
     private lateinit var wordMasteryStore: FakeWordMasteryStore
     private lateinit var verbDrillStore: FakeVerbDrillStore
@@ -76,7 +75,6 @@ class DailyPracticeClickTest {
         // Initialize all fake stores
         masteryStore = FakeMasteryStore()
         progressStore = FakeProgressStore()
-        drillProgressStore = FakeDrillProgressStore()
         streakStore = FakeStreakStore()
         wordMasteryStore = FakeWordMasteryStore()
         verbDrillStore = FakeVerbDrillStore()

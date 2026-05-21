@@ -6,7 +6,6 @@ package com.alexpo.grammermate.feature.progress
  * instead of calling a callback.
  */
 sealed class BadSentenceResult {
-    object AdvanceDrillCard : BadSentenceResult()
     object SkipToNextCard : BadSentenceResult()
     object None : BadSentenceResult()
 }

@@ -13,8 +13,7 @@ data class Lesson(
     val id: LessonId,
     val languageId: LanguageId,
     val title: String,
-    val cards: List<SentenceCard>,
-    val drillCards: List<SentenceCard> = emptyList()
+    val cards: List<SentenceCard>
 ) {
     companion object {
         const val MAIN_POOL_SIZE = SpacedRepetitionConfig.MASTERY_THRESHOLD // 150 cards
@@ -142,7 +141,6 @@ enum class TrainingScreenMode {
     NORMAL,           // Standard sub-lessons
     BOSS,             // Boss battle review
     BOSS_MEGA,        // Mega boss battle
-    DRILL,            // Lesson drill
     ELITE,            // Elite/daily step
     VERB_DRILL,       // Verb conjugation (chips: verb, tense)
     DAILY_TRANSLATE,  // Daily Practice block 1 (translation)
@@ -219,10 +217,9 @@ data class FlowerVisual(
  */
 /** Practice type for fire streak tracking. Each unique type per day earns one fire. */
 enum class PracticeType {
-    TRANSLATION,  // training sub-lesson, boss battle, daily block 1, drill sub-mode
+    TRANSLATION,  // training sub-lesson, boss battle, daily block 1
     VOCAB,        // vocab drill standalone, daily block 2
-    VERB,         // verb drill standalone, daily block 3
-    SUB_DRILL     // drill sub-mode in English packs only
+    VERB          // verb drill standalone, daily block 3
 }
 
 enum class PomodoroPreset(val minutes: Int, val label: String) {
@@ -549,14 +546,6 @@ data class EliteState(
     val eliteSizeMultiplier: Double = 1.25
 )
 
-data class DrillState(
-    val isDrillMode: Boolean = false,
-    val drillCardIndex: Int = 0,
-    val drillTotalCards: Int = 0,
-    val drillShowStartDialog: Boolean = false,
-    val drillHasProgress: Boolean = false
-)
-
 data class FlowerDisplayState(
     val lessonFlowers: Map<String, FlowerVisual> = emptyMap(),
     val currentLessonFlower: FlowerVisual? = null,
@@ -595,7 +584,6 @@ data class TrainingUiState(
     val story: StoryState = StoryState(),
     val vocabSprint: VocabSprintState = VocabSprintState(),
     val elite: EliteState = EliteState(),
-    val drill: DrillState = DrillState(),
     val flowerDisplay: FlowerDisplayState = FlowerDisplayState(),
     val audio: AudioState = AudioState(),
     val daily: DailyPracticeState = DailyPracticeState(),
@@ -610,12 +598,11 @@ data class TrainingUiState(
      *
      * NOTE: After Phase 4 extraction, boss/story/vocabSprint/daily/flowerDisplay
      * are owned by feature flows and merged via combine(). This method only resets
-     * core-owned fields (cardSession, drill). Feature resets are called explicitly
+     * core-owned fields (cardSession). Feature resets are called explicitly
      * by the ViewModel.
      */
     fun resetSessionState(): TrainingUiState = copy(
-        cardSession = CardSessionState(sessionState = SessionState.PAUSED),
-        drill = DrillState()
+        cardSession = CardSessionState(sessionState = SessionState.PAUSED)
     )
 
     /**

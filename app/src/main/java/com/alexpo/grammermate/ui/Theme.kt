@@ -26,10 +26,6 @@ data class GrammarMateColors(
     // Correctness feedback
     val correctGreen: Color,
     val incorrectRed: Color,
-    // Drill mode (TrainingScreen)
-    val drillBackgroundGreen: Color,
-    val drillTenseLabelGreen: Color,
-    val drillPromptGreen: Color,
     // Mastery / progress (HomeScreen, SessionProgressIndicator)
     val masteryGreen: Color,
     val progressGreen: Color,
@@ -65,9 +61,6 @@ data class GrammarMateColors(
 val LightGrammarMateColors = GrammarMateColors(
     correctGreen = Color(0xFF2E7D32),
     incorrectRed = Color(0xFFC62828),
-    drillBackgroundGreen = Color(0xFFE8F5E9),
-    drillTenseLabelGreen = Color(0xFF388E3C),
-    drillPromptGreen = Color(0xFF2E7D32),
     masteryGreen = Color(0xFF2E7D32),
     progressGreen = Color(0xFF4CAF50),
     progressTrackGreen = Color(0xFFC8E6C9),
@@ -97,9 +90,6 @@ val LightGrammarMateColors = GrammarMateColors(
 val DarkGrammarMateColors = GrammarMateColors(
     correctGreen = Color(0xFF66BB6A),
     incorrectRed = Color(0xFFEF5350),
-    drillBackgroundGreen = Color(0xFF1B3A1D),
-    drillTenseLabelGreen = Color(0xFF81C784),
-    drillPromptGreen = Color(0xFF66BB6A),
     masteryGreen = Color(0xFF66BB6A),
     progressGreen = Color(0xFF66BB6A),
     progressTrackGreen = Color(0xFF2E4A2F),
@@ -140,14 +130,6 @@ val CorrectGreen: Color
     @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.correctGreen
 val IncorrectRed: Color
     @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.incorrectRed
-
-// Drill mode (TrainingScreen)
-val DrillBackgroundGreen: Color
-    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillBackgroundGreen
-val DrillTenseLabelGreen: Color
-    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillTenseLabelGreen
-val DrillPromptGreen: Color
-    @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.drillPromptGreen
 
 // Mastery / progress (HomeScreen, SessionProgressIndicator)
 val MasteryGreen: Color

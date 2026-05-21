@@ -54,7 +54,6 @@ import com.alexpo.grammermate.data.TrainingUiState
 
 sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
-    object Drill : RoadmapEntry()
     object StoryCheckIn : RoadmapEntry()
     object StoryCheckOut : RoadmapEntry()
     object BossLesson : RoadmapEntry()
@@ -64,13 +63,9 @@ sealed class RoadmapEntry {
 fun buildRoadmapEntries(
     trainingTypes: List<SubLessonType>,
     hasMegaBoss: Boolean,
-    cycleStart: Int = 0,
-    hasDrill: Boolean = false
+    cycleStart: Int = 0
 ): List<RoadmapEntry> {
     val entries = mutableListOf<RoadmapEntry>()
-    if (hasDrill) {
-        entries.add(RoadmapEntry.Drill)
-    }
     trainingTypes.forEachIndexed { index, type ->
         // Use absolute index for proper tracking
         entries.add(RoadmapEntry.Training(cycleStart + index, type))
@@ -89,7 +84,6 @@ fun LessonRoadmapScreen(
     onStartSubLesson: (Int) -> Unit,
     onStartBossLesson: () -> Unit,
     onStartBossMega: () -> Unit,
-    onDrillStart: () -> Unit = {},
     onReview: (HintLevel) -> Unit = {},
     onNextLesson: () -> Unit = {}
 ) {
@@ -134,8 +128,7 @@ fun LessonRoadmapScreen(
     val bossThreshold = minOf(15, total)
     val bossUnlocked = state.cardSession.completedSubLessonCount >= bossThreshold || state.cardSession.testMode
     val noOp: () -> Unit = { }
-    val hasDrill = currentLesson?.drillCards?.isNotEmpty() == true
-    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart, hasDrill)
+    val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart)
     val isLessonComplete = completed >= total
     var showDifficultyDialog by remember { mutableStateOf(false) }
 
@@ -239,9 +232,6 @@ fun LessonRoadmapScreen(
                                 }
                             }
                         }
-                        is RoadmapEntry.Drill -> {
-                            DrillTile(onClick = onDrillStart, enabled = true)
-                        }
                         is RoadmapEntry.BossLesson -> {
                             BossTile(
                                 label = stringResource(R.string.roadmap_review),
@@ -275,9 +265,6 @@ fun LessonRoadmapScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (hasDrill) {
-                    DrillTile(onClick = onDrillStart, enabled = true)
-                }
                 BossTile(
                     label = stringResource(R.string.roadmap_review),
                     enabled = bossUnlocked,
@@ -389,35 +376,6 @@ fun BossTile(label: String, enabled: Boolean, reward: BossReward?, locked: Boole
     }
 }
 
-@Composable
-fun DrillTile(
-    onClick: () -> Unit,
-    enabled: Boolean
-) {
-    Card(
-        onClick = { if (enabled) onClick() },
-        modifier = Modifier.fillMaxWidth().height(72.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (enabled) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.FitnessCenter,
-                contentDescription = stringResource(R.string.roadmap_drill),
-                tint = if (enabled) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.outline
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.roadmap_drill), fontSize = 12.sp)
-        }
-    }
-}
 
 @Composable
 private fun CompletionCard(

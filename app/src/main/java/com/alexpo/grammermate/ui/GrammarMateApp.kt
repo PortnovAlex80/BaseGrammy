@@ -361,9 +361,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 vm.setReturnTo(Routes.LESSON)
                                 onNavigate(Routes.TRAINING)
                             } },
-                            onDrillStart = remember(state.navigation.selectedLessonId) {
-                                { state.navigation.selectedLessonId?.let { vm.training.showDrillStartDialog(it.value) } }
-                            },
                             onReview = remember { { hintLevel: HintLevel ->
                                 vm.startReview(hintLevel)
                                 vm.setReturnTo(Routes.LESSON)
@@ -1046,24 +1043,6 @@ private fun NavDialogs(
             }
         )
     }
-
-    // Drill start dialog
-    if (state.drill.drillShowStartDialog) {
-        DrillStartDialog(
-            hasProgress = state.drill.drillHasProgress,
-            onStartFresh = {
-                vm.startDrill(resume = false)
-                vm.setReturnTo(Routes.LESSON)
-                onNavigate(Routes.TRAINING)
-            },
-            onResume = {
-                vm.startDrill(resume = true)
-                vm.setReturnTo(Routes.LESSON)
-                onNavigate(Routes.TRAINING)
-            },
-            onDismiss = { vm.training.dismissDrillDialog() }
-        )
-    }
 }
 
 // ── Individual dialog composables ────────────────────────────────────────────
@@ -1128,11 +1107,6 @@ private fun ExitConfirmDialog(
                 }
                 if (state.boss.bossActive) {
                     vm.finishBoss()
-                    onNavigate(Routes.LESSON)
-                    return@TextButton
-                }
-                if (state.drill.isDrillMode) {
-                    vm.exitDrillMode()
                     onNavigate(Routes.LESSON)
                     return@TextButton
                 }
@@ -1268,30 +1242,6 @@ private fun WelcomeDialog(
     )
 }
 
-@Composable
-private fun DrillStartDialog(
-    hasProgress: Boolean,
-    onStartFresh: () -> Unit,
-    onResume: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dialog_drill_title)) },
-        text = { Text(if (hasProgress) stringResource(R.string.dialog_drill_resume_prompt) else stringResource(R.string.dialog_drill_start_prompt)) },
-        confirmButton = {
-            TextButton(onClick = if (hasProgress) onResume else onStartFresh) {
-                Text(if (hasProgress) stringResource(R.string.dialog_drill_continue) else stringResource(R.string.dialog_drill_start))
-            }
-        },
-        dismissButton = {
-            if (hasProgress) {
-                TextButton(onClick = onStartFresh) { Text(stringResource(R.string.dialog_drill_start_fresh)) }
-            }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
-        }
-    )
-}
 
 private fun calcBgDownloadProgress(states: Map<String, DownloadState>): Float {
     if (states.isEmpty()) return 0f

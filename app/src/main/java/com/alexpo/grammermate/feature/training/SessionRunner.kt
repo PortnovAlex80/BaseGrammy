@@ -5,7 +5,6 @@ import android.os.SystemClock
 import android.util.Log
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.CardSessionStateModel
-import com.alexpo.grammermate.data.DrillProgressStore
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -36,7 +35,7 @@ import kotlinx.coroutines.launch
  * Session management module extracted from TrainingViewModel.
  *
  * Owns the training session lifecycle: card navigation, answer submission,
- * timer, word bank interaction, drill mode, and elite sub-mode.
+ * timer, word bank interaction, and elite sub-mode.
  *
  * Query-style operations (getMastery, getSchedule, calculateCompletedSubLessons)
  * are injected as constructor function parameters.
@@ -56,7 +55,6 @@ class SessionRunner(
     private val wordBankGenerator: WordBankGenerator,
     private val cardProvider: CardProvider,
     private val streakManager: StreakManager,
-    private val drillProgressStore: DrillProgressStore,
     private val getMastery: (String, String) -> LessonMasteryState?,
     private val getSchedule: (String) -> LessonSchedule?,
     private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?) -> Int,
@@ -176,7 +174,7 @@ class SessionRunner(
     fun startSession(): List<SessionEvent> {
         val events = mutableListOf<SessionEvent>()
         val state = stateAccess.uiState.value
-        if (!state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode && !isLinearSession) {
+        if (!state.boss.bossActive && !state.elite.eliteActive && !isLinearSession) {
             events.add(SessionEvent.BuildSessionCards)
         }
         // Auto-set currentCard from sessionCards if not set (for test compatibility and direct session starts)
@@ -344,11 +342,6 @@ class SessionRunner(
                     events.addAll(e)
                     r
                 }
-                state.drill.isDrillMode -> {
-                    val (r, e) = submitDrillAnswer(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
-                    events.addAll(e)
-                    r
-                }
                 isLastCard -> {
                     val (r, e) = submitNormalLastCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
                     events.addAll(e)
@@ -480,22 +473,6 @@ class SessionRunner(
     }
 
     /**
-     * Drill mode: correct answer. Seamless advance to next drill card.
-     */
-    private fun submitDrillAnswer(
-        shouldAddVoiceMetrics: Boolean,
-        voiceDurationMs: Long?,
-        voiceWords: Int
-    ): Pair<SubmitResult, List<SessionEvent>> {
-        stateMachine.reset()
-        stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, inputText = "", voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.ACTIVE))
-        }
-        val events = advanceDrillCard()
-        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false) to events
-    }
-
-    /**
      * Normal mode: last card of sub-lesson. Pause timer, mark completion,
      * signal ViewModel to orchestrate cross-module updates.
      */
@@ -602,7 +579,7 @@ class SessionRunner(
 
     /**
      * Advance to the next card in a linear session (VERB_DRILL / DAILY_TRANSLATE / DAILY_VERBS).
-     * Similar to [advanceDrillCard] but does not use lesson-based drill progress store.
+     * Similar to drill card advance but does not use lesson-based drill progress store.
      */
     private fun advanceLinearCard() {
         val state = stateAccess.uiState.value
@@ -665,7 +642,7 @@ class SessionRunner(
         }
 
         // Fix 3: If already on the last card, trigger sub-lesson completion instead of staying put
-        if (isOnLastCard && !state.boss.bossActive && !state.elite.eliteActive && !state.drill.isDrillMode) {
+        if (isOnLastCard && !state.boss.bossActive && !state.elite.eliteActive) {
             pauseTimer()
             stateAccess.updateState {
                 val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
@@ -939,108 +916,6 @@ class SessionRunner(
         return words / minutes
     }
 
-    // ── Drill sub-mode ──────────────────────────────────────────────────
-
-    fun showDrillStartDialog(lessonId: String) {
-        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id.value == lessonId } ?: return
-        if (lesson.drillCards.isEmpty()) return
-        val hasProgress = drillProgressStore.hasProgress(lessonId)
-        stateAccess.updateState {
-            it.copy(drill = it.drill.copy(drillShowStartDialog = true, drillHasProgress = hasProgress))
-        }
-    }
-
-    fun startDrill(resume: Boolean): List<SessionEvent> {
-        val lessonId = stateAccess.uiState.value.navigation.selectedLessonId ?: return emptyList()
-        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return emptyList()
-        val drillCards = lesson.drillCards
-        if (drillCards.isEmpty()) return emptyList()
-
-        pauseTimer()
-        stateMachine.reset()
-
-        val startCardIndex = if (resume) {
-            drillProgressStore.getDrillProgress(lessonId.value).coerceIn(0, drillCards.size - 1)
-        } else {
-            0
-        }
-
-        stateAccess.updateState {
-            it.copy(drill = it.drill.copy(isDrillMode = true, drillCardIndex = startCardIndex, drillTotalCards = drillCards.size, drillShowStartDialog = false, drillHasProgress = false), cardSession = it.cardSession.copy(currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, wordBankWords = emptyList(), selectedWords = emptyList(), screenMode = TrainingScreenMode.DRILL), boss = it.boss.copy(bossActive = false, bossType = null, bossTotal = 0, bossProgress = 0, bossReward = null, bossRewardMessage = null, bossFinishedToken = 0, bossErrorMessage = null), elite = it.elite.copy(eliteActive = false))
-        }
-        loadDrillCard(startCardIndex)
-        return listOf(SessionEvent.SaveProgress)
-    }
-
-    fun dismissDrillDialog() {
-        stateAccess.updateState { it.copy(drill = it.drill.copy(drillShowStartDialog = false)) }
-    }
-
-    fun loadDrillCard(cardIndex: Int, activate: Boolean = false) {
-        val lessonId = stateAccess.uiState.value.navigation.selectedLessonId ?: return
-        stateMachine.reset()
-        val lesson = stateAccess.uiState.value.navigation.lessons.firstOrNull { it.id == lessonId } ?: return
-        val drillCards = lesson.drillCards
-        if (cardIndex >= drillCards.size) {
-            finishDrill(lessonId.value)
-            return
-        }
-
-        val card = drillCards[cardIndex]
-        sessionCards = listOf(card)
-        stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = 0, currentCard = card, subLessonTotal = 1, sessionState = if (activate) SessionState.ACTIVE else SessionState.PAUSED, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, screenMode = TrainingScreenMode.DRILL), drill = it.drill.copy(drillCardIndex = cardIndex))
-        }
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
-            stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(voiceTriggerToken = it.cardSession.voiceTriggerToken + 1)) }
-        }
-    }
-
-    fun advanceDrillCard(): List<SessionEvent> {
-        val state = stateAccess.uiState.value
-        if (!state.drill.isDrillMode) return emptyList()
-        val lessonId = state.navigation.selectedLessonId ?: return emptyList()
-
-        val nextIndex = state.drill.drillCardIndex + 1
-        drillProgressStore.saveDrillProgress(lessonId.value, nextIndex)
-
-        return if (nextIndex >= state.drill.drillTotalCards) {
-            finishDrill(lessonId.value)
-        } else {
-            loadDrillCard(nextIndex, activate = true)
-            emptyList()
-        }
-    }
-
-    fun finishDrill(lessonId: String): List<SessionEvent> {
-        drillProgressStore.clearDrillProgress(lessonId)
-        stateMachine.reset()
-        stateAccess.updateState {
-            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, currentCard = null, subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1, screenMode = TrainingScreenMode.NORMAL))
-        }
-        return listOf(
-            SessionEvent.UpdateStreakForType(PracticeType.SUB_DRILL),
-            SessionEvent.BuildSessionCards,
-            SessionEvent.RefreshFlowerStates,
-            SessionEvent.SaveProgress
-        )
-    }
-
-    fun exitDrillMode(): List<SessionEvent> {
-        val state = stateAccess.uiState.value
-        if (!state.drill.isDrillMode) return emptyList()
-        pauseTimer()
-        stateMachine.reset()
-        val lessonId = state.navigation.selectedLessonId
-        if (lessonId != null && state.drill.drillCardIndex > 0) {
-            drillProgressStore.saveDrillProgress(lessonId.value, state.drill.drillCardIndex)
-        }
-        stateAccess.updateState {
-            it.copy(drill = it.drill.copy(isDrillMode = false, drillCardIndex = 0, drillTotalCards = 0), cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, currentIndex = 0, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null, screenMode = TrainingScreenMode.NORMAL))
-        }
-        return listOf(SessionEvent.BuildSessionCards, SessionEvent.RefreshFlowerStates, SessionEvent.SaveProgress)
-    }
-
     // ── Unified card session start/exit ────────────────────────────────────
 
     /**
@@ -1091,7 +966,6 @@ class SessionRunner(
                         cards.filterIsInstance<VerbDrillCard>()
                     } else emptyList()
                 ),
-                drill = it.drill.copy(isDrillMode = false),
                 boss = it.boss.copy(bossActive = false),
                 elite = it.elite.copy(eliteActive = false)
             )
@@ -1206,7 +1080,6 @@ class SessionRunner(
                     voiceTriggerToken = stateMachine.voiceTriggerToken,
                     returnTo = ""
                 ),
-                drill = it.drill.copy(isDrillMode = false),
                 boss = it.boss.copy(bossActive = false),
                 elite = it.elite.copy(eliteActive = false)
             )
