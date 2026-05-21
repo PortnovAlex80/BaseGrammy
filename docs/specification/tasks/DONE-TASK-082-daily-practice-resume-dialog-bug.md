@@ -1,6 +1,6 @@
 # TASK-082: Daily Practice Resume Dialog Bug - Pack-Scoped Session Detection
 
-**Status:** OPEN  
+**Status:** DONE  
 **Created:** 2026-05-21  
 **Branch:** feature/daily-practice-resume-dialog-bug (from main)  
 **Priority:** HIGH  
@@ -229,3 +229,10 @@ Before marking task complete, verify:
 - Add acceptance criterion to TASK-080: "Dialog appears for resumable sessions after migration"
 - Add integration test: `testDailyResumeDialogAppearsAfterFirstSession`
 - Update scenario-06 to include dialog trigger verification
+
+---
+
+## Completion Log
+| Date | Fix | Status | Notes |
+|------|-----|--------|-------|
+| 2026-05-21 | Fix 1: hasResumableDailySession() uses pack-scoped cursor | DONE | Changed line 284 from `_state.value.dailyCursor` to `getCurrentPackCursor()` in DailyPracticeCoordinator.kt. UC-23 updated with AC5. Commit a036b61. |
