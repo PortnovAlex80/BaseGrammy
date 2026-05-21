@@ -152,13 +152,6 @@ enum class TrainingScreenMode {
 data class TrainingProgress(
     val languageId: LanguageId = LanguageId("en"),
     val mode: TrainingMode = TrainingMode.LESSON,
-    val lessonId: String? = null,
-    val currentIndex: Int = 0,
-    val correctCount: Int = 0,
-    val incorrectCount: Int = 0,
-    val incorrectAttemptsForCard: Int = 0,
-    val activeTimeMs: Long = 0L,
-    val state: SessionState = SessionState.PAUSED,
     val bossLessonRewards: Map<String, String> = emptyMap(),
     val bossMegaReward: String? = null,
     val bossMegaRewards: Map<String, String> = emptyMap(),
@@ -395,6 +388,37 @@ data class PackDailyCursorState(
         /** Create default cursor state for a pack */
         fun forPack(packId: String) = PackDailyCursorState(packId = packId)
     }
+}
+
+/**
+ * Pack-scoped lesson progress state.
+ * Persists training progress for a specific lesson pack.
+ * File: lesson_progress_{packId}.yaml
+ *
+ * @param packId Pack identifier (e.g., "en_word_order_a1")
+ * @param lessonProgress Map of lessonId → LessonProgress containing:
+ *   - currentIndex: Current card position in lesson
+ *   - correctCount: Number of correct answers
+ *   - incorrectCount: Number of incorrect answers
+ *   - incorrectAttemptsForCard: Wrong attempts on current card
+ *   - activeTimeMs: Time spent practicing (milliseconds)
+ *   - state: SessionState (PAUSED/ACTIVE/COMPLETED)
+ */
+data class PackLessonProgressState(
+    val packId: String,
+    val lessonProgress: Map<String, LessonProgress> = emptyMap()
+) {
+    /**
+     * Lesson-specific progress tracking.
+     */
+    data class LessonProgress(
+        val currentIndex: Int = 0,
+        val correctCount: Int = 0,
+        val incorrectCount: Int = 0,
+        val incorrectAttemptsForCard: Int = 0,
+        val activeTimeMs: Long = 0L,
+        val state: SessionState = SessionState.PAUSED
+    )
 }
 
 data class SubmitResult(
