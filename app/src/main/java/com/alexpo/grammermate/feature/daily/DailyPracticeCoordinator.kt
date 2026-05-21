@@ -803,11 +803,11 @@ class DailyPracticeCoordinator(
 
         // Advance verbOffset with cycling
         val state = stateAccess.uiState.value
-        val packId = state.navigation.activePackId
+        val packId = state.navigation.activePackId?.value
         val newVerbOffset = if (packId != null) {
             val effectiveLevel = currentLessonIndex + 1
-            val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, effectiveLevel)
-            val totalVerbPoolSize = getTotalVerbPoolSize(packId.value, languageId, cumulativeTenses)
+            val cumulativeTenses = lessonStore.getCumulativeTenses(packId, effectiveLevel)
+            val totalVerbPoolSize = getTotalVerbPoolSize(packId, languageId, cumulativeTenses)
             val incremented = cursor.verbOffset + sessionSize
             if (totalVerbPoolSize > 0 && incremented >= totalVerbPoolSize) 0 else incremented
         } else {
