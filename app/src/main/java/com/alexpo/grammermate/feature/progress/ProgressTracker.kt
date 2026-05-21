@@ -373,15 +373,18 @@ class ProgressTracker(
     fun resetDrillFiles(context: android.content.Context) {
         val baseDir = java.io.File(context.filesDir, "grammarmate")
 
-        // Delete global verb drill progress files (flat path)
-        val verbDrillFile = java.io.File(baseDir, "verb_drill_progress.yaml")
-        if (verbDrillFile.exists()) verbDrillFile.delete()
+        // Delete language-scoped verb drill progress files
+        val packs = lessonStore.getInstalledPacks()
+        val languageIds = packs.map { it.languageId.value }.distinct()
+        for (languageId in languageIds) {
+            val verbDrillFile = java.io.File(baseDir, "verb_drill_progress_$languageId.yaml")
+            if (verbDrillFile.exists()) verbDrillFile.delete()
 
-        val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session.yaml")
-        if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+            val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session_$languageId.yaml")
+            if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+        }
 
         // Delete pack-scoped vocab drill mastery files
-        val packs = lessonStore.getInstalledPacks()
         for (pack in packs) {
             val wordMasteryFile = java.io.File(baseDir, "drills/${pack.packId}/word_mastery.yaml")
             if (wordMasteryFile.exists()) wordMasteryFile.delete()
@@ -409,11 +412,19 @@ class ProgressTracker(
      */
     fun resetDrillFilesForPack(context: android.content.Context, packId: String) {
         val baseDir = java.io.File(context.filesDir, "grammarmate")
-        val verbDrillFile = java.io.File(baseDir, "verb_drill_progress.yaml")
-        if (verbDrillFile.exists()) verbDrillFile.delete()
 
-        val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session.yaml")
-        if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+        // Find the pack to get its languageId
+        val packs = lessonStore.getInstalledPacks()
+        val pack = packs.find { it.packId.value == packId }
+        val languageId = pack?.languageId?.value
+
+        if (languageId != null) {
+            val verbDrillFile = java.io.File(baseDir, "verb_drill_progress_$languageId.yaml")
+            if (verbDrillFile.exists()) verbDrillFile.delete()
+
+            val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session_$languageId.yaml")
+            if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+        }
 
         val wordMasteryFile = java.io.File(baseDir, "drills/$packId/word_mastery.yaml")
         if (wordMasteryFile.exists()) wordMasteryFile.delete()
