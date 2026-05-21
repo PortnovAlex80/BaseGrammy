@@ -18,6 +18,7 @@ import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.data.PackDailyCursorStore
 import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.PackLessonProgressState
 
@@ -36,6 +37,7 @@ class ProgressTracker(
     private val masteryStore: MasteryStore,
     private val progressStore: ProgressStore,
     private val lessonStore: LessonStore,
+    private val packDailyCursorStore: PackDailyCursorStore,
     private val packLessonProgressStore: PackLessonProgressStore
 ) {
 
@@ -396,6 +398,11 @@ class ProgressTracker(
     fun resetStores(context: android.content.Context) {
         progressStore.clear()
         masteryStore.clear()
+        lessonStore.getInstalledPacks().forEach { pack ->
+            val packId = pack.packId.value
+            packLessonProgressStore.deletePackProgress(packId)
+            packDailyCursorStore.deletePackCursor(packId)
+        }
     }
 
     /**
@@ -438,6 +445,13 @@ class ProgressTracker(
     fun resetStoresForLanguage(context: android.content.Context, languageId: String) {
         progressStore.clear()
         masteryStore.clearLanguage(languageId)
+        lessonStore.getInstalledPacks()
+            .filter { it.languageId.value == languageId }
+            .forEach { pack ->
+                val packId = pack.packId.value
+                packLessonProgressStore.deletePackProgress(packId)
+                packDailyCursorStore.deletePackCursor(packId)
+            }
     }
 
     /**

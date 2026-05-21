@@ -140,6 +140,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         masteryStore = masteryStore,
         progressStore = progressStore,
         lessonStore = lessonStore,
+        packDailyCursorStore = packDailyCursorStore,
         packLessonProgressStore = packLessonProgressStore
     )
 
@@ -1539,9 +1540,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
     private fun resetStores(app: Application) = progressTracker.resetStores(app)
     private fun resetStoresForLanguage(app: Application, languageId: String) = progressTracker.resetStoresForLanguage(app, languageId)
-    private fun resetDrillFiles(app: Application) = progressTracker.resetDrillFiles(app)
-    private fun resetDrillFilesForPack(app: Application, packId: String) = progressTracker.resetDrillFilesForPack(app, packId)
-    private fun clearWordMastery() = wordMasteryStore.saveAll(emptyMap())
+    private fun resetDrillFiles(app: Application) {
+        progressTracker.resetDrillFiles(app)
+        container.clearCache()
+        rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
+    }
+    private fun resetDrillFilesForPack(app: Application, packId: String) {
+        progressTracker.resetDrillFilesForPack(app, packId)
+        container.clearCache()
+        rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
+    }
+    private fun clearWordMastery() {
+        wordMasteryStore.saveAll(emptyMap())
+        vocabSprintRunner.updateMasteredCount(0)
+    }
     private fun resetDailyState() = dailyPracticeCoordinator.resetAllDailyState()
 
     private fun resetStreak() {
