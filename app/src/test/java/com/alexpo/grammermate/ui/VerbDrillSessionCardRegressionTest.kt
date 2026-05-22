@@ -295,9 +295,6 @@ class VerbDrillSessionCardRegressionTest {
         // Verify start button is shown (not SessionCard)
         val state = verbVm.uiState.value
 
-        // Debug: Check all conditions for button display
-        println("DEBUG: allDoneToday=${state.allDoneToday}, lastSessionContext=${state.lastSessionContext}, totalCards=${state.totalCards}, availableTenses=${state.availableTenses.size}, availableGroups=${state.availableGroups.size}")
-
         if (state.lastSessionContext != null) {
             throw AssertionError("Expected lastSessionContext to be null so start button is shown, but was: ${state.lastSessionContext}")
         }
@@ -308,12 +305,7 @@ class VerbDrillSessionCardRegressionTest {
                 .fetchSemanticsNodes()
             val unmergedNodes = composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = true)
                 .fetchSemanticsNodes()
-            val found = mergedNodes.isNotEmpty() || unmergedNodes.isNotEmpty()
-            if (!found) {
-                val s = verbVm.uiState.value
-                println("DEBUG: Button not found yet. allDoneToday=${s.allDoneToday}, lastSessionContext=${s.lastSessionContext}, totalCards=${s.totalCards}, merged=${mergedNodes.size}, unmerged=${unmergedNodes.size}")
-            }
-            found
+            mergedNodes.isNotEmpty() || unmergedNodes.isNotEmpty()
         }
 
         // Try clicking with unmerged tree first, fall back to merged tree
@@ -321,12 +313,17 @@ class VerbDrillSessionCardRegressionTest {
             composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
                 .performClick()
         } catch (e: Exception) {
-            println("DEBUG: Failed to click with unmerged tree, trying merged tree")
             composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = false)
                 .performClick()
         }
 
         composeRule.waitForIdle()
+
+        // Wait for session creation in ViewModel after button click
+        // The onStart callback reads session immediately, so we need to ensure it's created
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            verbVm.uiState.value.session?.cards?.isNotEmpty() == true
+        }
 
         // Wait for route change if applicable
         route?.let {
