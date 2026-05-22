@@ -63,10 +63,13 @@ fun UnifiedNavigationRow(
             title = { Text(stringResource(R.string.session_end_title)) },
             text = { Text(stringResource(R.string.session_end_message)) },
             confirmButton = {
-                TextButton(onClick = {
-                    showExitDialog = false
-                    onStop()
-                }) {
+                TextButton(
+                    modifier = Modifier.testTag("exit_confirm_button"),
+                    onClick = {
+                        showExitDialog = false
+                        onStop()
+                    }
+                ) {
                     Text(stringResource(R.string.button_end))
                 }
             },
@@ -111,6 +114,7 @@ fun UnifiedNavigationRow(
                 }
             }
             NavIconButton(
+                modifier = Modifier.testTag("exit_button"),
                 onClick = { showExitDialog = true },
                 enabled = stateModel.hasCurrentCard
             ) {

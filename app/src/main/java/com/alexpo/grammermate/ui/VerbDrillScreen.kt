@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.Icons
@@ -187,6 +189,7 @@ private fun VerbDrillSelectionScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Row(
@@ -232,7 +235,8 @@ private fun VerbDrillSelectionScreen(
             ) {
                 Checkbox(
                     checked = state.sortByFrequency,
-                    onCheckedChange = { onToggleSortByFrequency() }
+                    onCheckedChange = { onToggleSortByFrequency() },
+                    modifier = Modifier.testTag("sort_by_frequency_checkbox")
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = stringResource(R.string.verb_sort_by_frequency))

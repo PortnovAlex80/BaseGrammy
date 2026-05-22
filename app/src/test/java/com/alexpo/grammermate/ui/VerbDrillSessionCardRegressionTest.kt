@@ -7,16 +7,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
-import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.data.InputMode
-import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -47,14 +46,11 @@ class VerbDrillSessionCardRegressionTest {
     private lateinit var store: FakeVerbDrillStore
 
     private val packId = "test_pack_session"
-    private val tense = "Presente"
-    private val group = "regular_are"
 
     @Before
     fun setup() {
         application = RuntimeEnvironment.getApplication()
         store = FakeVerbDrillStore()
-        // Ensure the store is completely clean before each test
         store.clear()
     }
 
@@ -64,73 +60,39 @@ class VerbDrillSessionCardRegressionTest {
     }
 
     @Test
-    fun repeat_replays_last_batch_after_checked_cards() {
-        val cards = createTestVerbCards(12)
-        val verbVm = preparedVerbVm(cards, sessionSize = 5)
-        val trainingVm = TrainingViewModel(application)
-        val route = mutableStateOf(TestRoute.VERB)
+    fun repeat_replays_saved_batch_in_same_order() {
+        val harness = renderPreparedHarness()
 
-        // Configure ViewModel BEFORE rendering UI to avoid LaunchedEffect interference
-        verbVm.setSessionSize(5)
-
-        renderHarness(verbVm, trainingVm, route)
-        composeRule.waitForIdle()
-
-        // Wait for ViewModel async operations to complete
-        // AND lastSessionContext to be null (so start button is displayed)
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            val state = verbVm.uiState.value
-            !state.isLoading && state.totalCards > 0 && state.lastSessionContext == null
-        }
-
-        startVerbSessionThroughUi(verbVm, trainingVm, route)
-        val firstBatchIds = verbVm.uiState.value.session!!.cards.map { it.id }
+        startVerbSessionThroughUi(harness)
+        val firstBatchIds = verbSessionIds(harness.verbVm)
 
         repeat(3) {
-            answerCurrentCardCorrectly(trainingVm)
+            answerCurrentCardCorrectly(harness.trainingVm)
         }
         assertEquals(3, store.loadLastSession()!!.todayShownCardIds.size)
 
-        exitTrainingThroughUi(verbVm, trainingVm, route)
+        exitTrainingThroughUi()
         composeRule.onNodeWithTag("session_card").assertIsDisplayed()
         composeRule.onNodeWithTag("repeat_button").performClick()
-        composeRule.waitForIdle()
+        waitForTrainingRoute(harness)
 
-        val repeatedBatchIds = verbVm.uiState.value.session!!.cards.map { it.id }
         assertEquals(
-            "Repeat should replay the full saved batch in the same order",
+            "Repeat must replay the persisted batch order exactly",
             firstBatchIds,
-            repeatedBatchIds
+            verbSessionIds(harness.verbVm)
         )
     }
 
     @Test
-    fun continue_excludes_checked_cards_but_not_navigation_only_cards() {
-        val cards = createTestVerbCards(12)
-        val verbVm = preparedVerbVm(cards, sessionSize = 5)
-        val trainingVm = TrainingViewModel(application)
-        val route = mutableStateOf(TestRoute.VERB)
+    fun continue_random_mode_excludes_checked_cards_but_not_navigation_only_cards() {
+        val harness = renderPreparedHarness()
 
-        // Configure ViewModel BEFORE rendering UI
-        verbVm.setSessionSize(5)
-
-        renderHarness(verbVm, trainingVm, route)
-        composeRule.waitForIdle()
-
-        // Wait for ViewModel async operations to complete
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            val state = verbVm.uiState.value
-            !state.isLoading && state.totalCards > 0
-        }
-
-        composeRule.waitForIdle()
-
-        startVerbSessionThroughUi(verbVm, trainingVm, route)
-
+        startVerbSessionThroughUi(harness)
         repeat(2) {
-            answerCurrentCardCorrectly(trainingVm)
+            answerCurrentCardCorrectly(harness.trainingVm)
         }
-        val navigationOnlyCardId = trainingVm.uiState.value.cardSession.currentCard!!.id
+
+        val navigationOnlyCardId = currentTrainingCardId(harness.trainingVm)
         composeRule.onNodeWithTag("next_button").performClick()
         composeRule.waitForIdle()
 
@@ -141,51 +103,72 @@ class VerbDrillSessionCardRegressionTest {
             navigationOnlyCardId in shownAfterNavigation
         )
 
-        exitTrainingThroughUi(verbVm, trainingVm, route)
+        exitTrainingThroughUi()
         composeRule.onNodeWithTag("session_card").assertIsDisplayed()
         composeRule.onNodeWithTag("continue_button").performClick()
-        composeRule.waitForIdle()
+        waitForTrainingRoute(harness)
 
-        val continueBatchIds = verbVm.uiState.value.session!!.cards.map { it.id }.toSet()
+        val continueBatchIds = verbSessionIds(harness.verbVm).toSet()
         assertTrue(
-            "Continue must not include already checked cards",
+            "Continue must exclude checked cards",
             continueBatchIds.intersect(shownAfterNavigation).isEmpty()
         )
         assertFalse(
-            "Navigation-only card should remain eligible for future batches",
+            "Navigation-only card should remain eligible because it was not checked",
             navigationOnlyCardId in store.loadLastSession()!!.todayShownCardIds
         )
     }
 
     @Test
-    fun reset_hides_session_card_but_keeps_progress() {
-        val cards = createTestVerbCards(12)
-        val verbVm = preparedVerbVm(cards, sessionSize = 5)
-        val trainingVm = TrainingViewModel(application)
-        val route = mutableStateOf(TestRoute.VERB)
+    fun continue_frequency_mode_resumes_with_next_ranked_cards_in_order() {
+        val harness = renderPreparedHarness()
+        enableSortByFrequencyThroughUi(harness.verbVm)
 
-        // Configure ViewModel BEFORE rendering UI
-        verbVm.setSessionSize(5)
+        startVerbSessionThroughUi(harness)
+        assertEquals(
+            listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5"),
+            verbSessionIds(harness.verbVm)
+        )
 
-        renderHarness(verbVm, trainingVm, route)
-        composeRule.waitForIdle()
-
-        // Wait for ViewModel async operations to complete
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            val state = verbVm.uiState.value
-            !state.isLoading && state.totalCards > 0
-        }
-
-        composeRule.waitForIdle()
-
-        startVerbSessionThroughUi(verbVm, trainingVm, route)
         repeat(2) {
-            answerCurrentCardCorrectly(trainingVm)
+            answerCurrentCardCorrectly(harness.trainingVm)
+        }
+        val navigationOnlyCardId = currentTrainingCardId(harness.trainingVm)
+        assertEquals("test_verb_3", navigationOnlyCardId)
+
+        composeRule.onNodeWithTag("next_button").performClick()
+        composeRule.waitForIdle()
+
+        exitTrainingThroughUi()
+        composeRule.onNodeWithTag("session_card").assertIsDisplayed()
+        composeRule.onNodeWithTag("continue_button").performClick()
+        waitForTrainingRoute(harness)
+
+        assertEquals(
+            "Frequency Continue should exclude only checked cards and keep ranked order",
+            listOf("test_verb_3", "test_verb_4", "test_verb_5", "test_verb_6", "test_verb_7"),
+            verbSessionIds(harness.verbVm)
+        )
+    }
+
+    @Test
+    fun reset_clears_saved_session_keeps_progress_and_allows_ranked_restart_from_beginning() {
+        val harness = renderPreparedHarness()
+        enableSortByFrequencyThroughUi(harness.verbVm)
+
+        startVerbSessionThroughUi(harness)
+        assertEquals(
+            listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5"),
+            verbSessionIds(harness.verbVm)
+        )
+
+        repeat(2) {
+            answerCurrentCardCorrectly(harness.trainingVm)
         }
         val shownBeforeReset = allTodayShownIds()
-        assertEquals(2, shownBeforeReset.size)
+        assertEquals(setOf("test_verb_1", "test_verb_2"), shownBeforeReset)
 
-        exitTrainingThroughUi(verbVm, trainingVm, route)
+        exitTrainingThroughUi()
         composeRule.onNodeWithTag("session_card").assertIsDisplayed()
         composeRule.onNodeWithTag("reset_button").performClick()
         composeRule.waitForIdle()
@@ -197,30 +180,37 @@ class VerbDrillSessionCardRegressionTest {
             shownBeforeReset,
             allTodayShownIds()
         )
+
+        enableSortByFrequencyThroughUi(harness.verbVm)
+        startVerbSessionThroughUi(harness)
+        assertEquals(
+            "After reset, a fresh ranked start should begin from the top of the deck again",
+            listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5"),
+            verbSessionIds(harness.verbVm)
+        )
     }
 
-    private fun preparedVerbVm(cards: List<VerbDrillCard>, sessionSize: Int): VerbDrillViewModel {
+    private fun renderPreparedHarness(): Harness {
+        val cards = createTestVerbCards(12)
         store.setCards(packId, "it", cards)
-        val vm = VerbDrillViewModel(application, store)
-        vm.injectTestCards(cards)
-        vm.reloadForPack(packId) // Triggers async loadCards()
-        // Note: ViewModel configuration will be done after UI rendering to ensure async operations complete
-        return vm
-    }
 
-    private fun renderHarness(
-        verbVm: VerbDrillViewModel,
-        trainingVm: TrainingViewModel,
-        route: MutableState<TestRoute>
-    ) {
+        val verbVm = VerbDrillViewModel(application, store)
+        verbVm.injectTestCards(cards)
+        verbVm.reloadForPack(packId)
+        verbVm.setSessionSize(5)
+
+        val trainingVm = TrainingViewModel(application)
+        val route = mutableStateOf(TestRoute.VERB)
+        val harness = Harness(verbVm, trainingVm, route)
+
         composeRule.setContent {
             MaterialTheme {
                 when (route.value) {
                     TestRoute.VERB -> VerbDrillScreen(
                         viewModel = verbVm,
                         onBack = {},
-                        onStartSession = { cards ->
-                            trainingVm.startVerbDrillSession(cards)
+                        onStartSession = { sessionCards ->
+                            trainingVm.startVerbDrillSession(sessionCards)
                             trainingVm.setReturnTo(VERB_DRILL_ROUTE)
                             trainingVm.training.setInputMode(InputMode.KEYBOARD)
                             route.value = TestRoute.TRAINING
@@ -228,12 +218,12 @@ class VerbDrillSessionCardRegressionTest {
                     )
 
                     TestRoute.TRAINING -> TrainingScreen(
-                        state = trainingVm.uiState.collectAsState().value,  // Note: using .value directly for test harness
+                        state = trainingVm.uiState.collectAsState().value,
                         onInputChange = trainingVm.training::onInputChanged,
                         onSubmit = {
                             val result = trainingVm.submitAnswer()
-                            // Check for VerbDrillSession mode instead of card type
-                            val isVerbDrillMode = trainingVm.uiState.value.cardSession.screenMode == TrainingScreenMode.VERB_DRILL
+                            val isVerbDrillMode =
+                                trainingVm.uiState.value.cardSession.screenMode == TrainingScreenMode.VERB_DRILL
                             if (isVerbDrillMode && result.accepted) {
                                 verbVm.submitCorrectAnswer()
                             }
@@ -254,7 +244,12 @@ class VerbDrillSessionCardRegressionTest {
                             trainingVm.navigateNext()
                         },
                         onTogglePause = trainingVm::togglePause,
-                        onRequestExit = { exitTrainingThroughUi(verbVm, trainingVm, route) },
+                        onRequestExit = {
+                            verbVm.persistSessionState()
+                            verbVm.refreshLastSessionContext()
+                            trainingVm.exitVerbDrillSession()
+                            route.value = TestRoute.VERB
+                        },
                         onOpenSettings = {},
                         onShowSettings = {},
                         onSelectLesson = {},
@@ -265,71 +260,53 @@ class VerbDrillSessionCardRegressionTest {
                         onSelectWordFromBank = trainingVm.training::selectWordFromBank,
                         onRemoveLastWord = trainingVm.training::removeLastSelectedWord,
                         onTtsSpeak = {},
-                        onSessionDone = { exitTrainingThroughUi(verbVm, trainingVm, route) }
+                        onSessionDone = {
+                            verbVm.persistSessionState()
+                            verbVm.refreshLastSessionContext()
+                            trainingVm.exitVerbDrillSession()
+                            route.value = TestRoute.VERB
+                        }
                     )
                 }
             }
         }
+
+        waitForSelectionReady(verbVm)
+        return harness
     }
 
-    private fun startVerbSessionThroughUi(
-        verbVm: VerbDrillViewModel,
-        trainingVm: TrainingViewModel,
-        route: MutableState<TestRoute>? = null
-    ) {
+    private fun waitForSelectionReady(verbVm: VerbDrillViewModel) {
         composeRule.waitForIdle()
-
-        // Wait for ViewModel to be fully ready with totalCards calculated
-        // AND lastSessionContext to be null (so start button is displayed)
         composeRule.waitUntil(timeoutMillis = 10_000) {
             val state = verbVm.uiState.value
             !state.isLoading && state.totalCards > 0 && state.lastSessionContext == null
         }
+        composeRule.onNodeWithTag("verb_start_button").performScrollTo().assertIsDisplayed()
+    }
 
-        // Force multiple recomposition cycles with waitForIdle
-        repeat(3) {
-            composeRule.waitForIdle()
-        }
-
-        // TRUE UI click only - no fallback to direct ViewModel calls
-        // Verify start button is shown (not SessionCard)
-        val state = verbVm.uiState.value
-
-        if (state.lastSessionContext != null) {
-            throw AssertionError("Expected lastSessionContext to be null so start button is shown, but was: ${state.lastSessionContext}")
-        }
-
-        // Wait until the start button exists (try BOTH merged and unmerged trees)
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            val mergedNodes = composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = false)
-                .fetchSemanticsNodes()
-            val unmergedNodes = composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = true)
-                .fetchSemanticsNodes()
-            mergedNodes.isNotEmpty() || unmergedNodes.isNotEmpty()
-        }
-
-        // Try clicking with unmerged tree first, fall back to merged tree
-        try {
-            composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
-                .performClick()
-        } catch (e: Exception) {
-            composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = false)
-                .performClick()
-        }
-
-        composeRule.waitForIdle()
-
-        // Wait for session creation in ViewModel after button click
-        // The onStart callback reads session immediately, so we need to ensure it's created
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            verbVm.uiState.value.session?.cards?.isNotEmpty() == true
-        }
-
-        // Wait for route change if applicable
-        route?.let {
+    private fun enableSortByFrequencyThroughUi(verbVm: VerbDrillViewModel) {
+        waitForSelectionReady(verbVm)
+        if (!verbVm.uiState.value.sortByFrequency) {
+            composeRule.onNodeWithTag("sort_by_frequency_checkbox").performScrollTo().performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
-                it.value == TestRoute.TRAINING
+                verbVm.uiState.value.sortByFrequency
             }
+        }
+    }
+
+    private fun startVerbSessionThroughUi(harness: Harness) {
+        waitForSelectionReady(harness.verbVm)
+        composeRule.onNodeWithTag("verb_start_button").performScrollTo().performClick()
+        waitForTrainingRoute(harness)
+    }
+
+    private fun waitForTrainingRoute(harness: Harness) {
+        composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            harness.route.value == TestRoute.TRAINING &&
+                harness.trainingVm.uiState.value.cardSession.screenMode == TrainingScreenMode.VERB_DRILL &&
+                harness.trainingVm.uiState.value.cardSession.currentCard != null &&
+                harness.verbVm.uiState.value.session?.cards?.isNotEmpty() == true
         }
     }
 
@@ -342,21 +319,34 @@ class VerbDrillSessionCardRegressionTest {
         composeRule.waitForIdle()
     }
 
-    private fun exitTrainingThroughUi(
-        verbVm: VerbDrillViewModel,
-        trainingVm: TrainingViewModel,
-        route: MutableState<TestRoute>
-    ) {
-        verbVm.persistSessionState()
-        verbVm.refreshLastSessionContext()
-        route.value = TestRoute.VERB
-        trainingVm.exitVerbDrillSession()
+    private fun exitTrainingThroughUi() {
+        composeRule.onNodeWithTag("exit_button").performScrollTo().assertIsDisplayed().performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithTag("exit_confirm_button", useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeRule.onNodeWithTag("exit_confirm_button", useUnmergedTree = true).performClick()
         composeRule.waitForIdle()
+    }
+
+    private fun verbSessionIds(verbVm: VerbDrillViewModel): List<String> {
+        return verbVm.uiState.value.session!!.cards.map { it.id }
+    }
+
+    private fun currentTrainingCardId(trainingVm: TrainingViewModel): String {
+        return trainingVm.uiState.value.cardSession.currentCard!!.id
     }
 
     private fun allTodayShownIds(): Set<String> {
         return store.loadProgress().values.flatMap { it.todayShownCardIds }.toSet()
     }
+
+    private data class Harness(
+        val verbVm: VerbDrillViewModel,
+        val trainingVm: TrainingViewModel,
+        val route: MutableState<TestRoute>
+    )
 
     private enum class TestRoute {
         VERB,
