@@ -37,8 +37,16 @@ object DataValidator {
         data: Map<String, Any>?
     ): ValidationResult<LessonMasteryState> {
         if (data == null) {
-            Log.w(TAG, "Missing mastery data for lesson=$lessonId, language=$languageId")
-            return ValidationResult.valid(createDefaultMasteryState(lessonId, languageId))
+            Log.w(TAG, "Missing mastery data for lesson=$lessonId, language=$languageId - using default state")
+            val defaultState = createDefaultMasteryState(lessonId, languageId)
+            return ValidationResult.warning(
+                defaultState,
+                ValidationWarning(
+                    code = "MISSING_MASTERY_DATA",
+                    message = "Mastery data missing for lesson=$lessonId, language=$languageId. Using default state.",
+                    severity = ValidationSeverity.WARNING
+                )
+            )
         }
 
         val errors = mutableListOf<ValidationError>()
@@ -604,8 +612,16 @@ object DataValidator {
         data: Map<String, Any>?
     ): ValidationResult<VerbDrillComboProgress> {
         if (data == null) {
-            Log.w(TAG, "Missing verb drill combo progress for key=$key")
-            return ValidationResult.valid(createDefaultVerbDrillComboProgress())
+            Log.w(TAG, "Missing verb drill combo progress for key=$key - using default")
+            val defaultProgress = createDefaultVerbDrillComboProgress()
+            return ValidationResult.warning(
+                defaultProgress,
+                ValidationWarning(
+                    code = "MISSING_VERB_DRILL_PROGRESS",
+                    message = "Verb drill combo progress missing for key=$key. Using default progress.",
+                    severity = ValidationSeverity.WARNING
+                )
+            )
         }
 
         val errors = mutableListOf<ValidationError>()
@@ -756,8 +772,16 @@ object DataValidator {
      */
     fun validateStreakData(languageId: String, data: Map<String, Any>?): ValidationResult<StreakData> {
         if (data == null) {
-            Log.w(TAG, "Missing streak data for language=$languageId")
-            return ValidationResult.valid(createDefaultStreakData(languageId))
+            Log.w(TAG, "Missing streak data for language=$languageId - using default")
+            val defaultStreak = createDefaultStreakData(languageId)
+            return ValidationResult.warning(
+                defaultStreak,
+                ValidationWarning(
+                    code = "MISSING_STREAK_DATA",
+                    message = "Streak data missing for language=$languageId. Using default streak.",
+                    severity = ValidationSeverity.WARNING
+                )
+            )
         }
 
         val errors = mutableListOf<ValidationError>()
