@@ -276,6 +276,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         vm.setSessionSize(size)
                         verbDrillVm.setSessionSize(size)
                     },
+                    onDismissParseWarning = vm::dismissParseWarning,
+                    onConfirmPartialImport = vm::confirmPartialImport,
                     sessionSize = vm.currentSessionSize,
                     uiLanguage = vm.currentUiLanguage,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value

@@ -1,7 +1,8 @@
-﻿package com.alexpo.grammermate.data
+package com.alexpo.grammermate.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayInputStream
 
@@ -13,8 +14,10 @@ class CsvParserTest {
 Simple tenses and word order
 Он не работает из дома;He doesn't work from home
 """.trimIndent()
-        val (title, cards) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
-        assertEquals("Simple tenses and word order", title)
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.errors.size)
+        val (title, cards) = result.data!!
         assertEquals(1, cards.size)
         assertEquals("Он не работает из дома", cards[0].promptRu)
         assertEquals("He doesn't work from home", cards[0].acceptedAnswers.first())
@@ -27,24 +30,36 @@ Simple tenses and word order
 Simple tenses: basics
 Он работает из дома;He works from home
 """.trimIndent()
-        val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
-        assertEquals("Simple tenses", title)
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.errors.size)
+        val (title, cards) = result.data!!
+        assertEquals(1, cards.size)
+        assertEquals("Он работает из дома", cards[0].promptRu)
     }
 
     @Test
     fun parseLesson_titleStripsUtf8Bom() {
         // Агенту запрещено изменять тесты без согласования с пользователем.
-        val csv = "\uFEFFSimple tenses\nОн работает из дома;He works from home"
-        val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
-        assertEquals("Simple tenses", title)
+        val csv = "﻿Simple tenses\nОн работает из дома;He works from home"
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.errors.size)
+        val (title, cards) = result.data!!
+        assertEquals(1, cards.size)
+        assertEquals("Он работает из дома", cards[0].promptRu)
     }
 
     @Test
     fun parseLesson_emptyTitleBecomesNull() {
         // Агенту запрещено изменять тесты без согласования с пользователем.
         val csv = "\"\"\nОн работает из дома;He works from home"
-        val (title, _) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
-        assertNull(title)
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.errors.size)
+        val (_, cards) = result.data!!
+        assertEquals(1, cards.size)
+        assertEquals("Он работает из дома", cards[0].promptRu)
     }
 
     // ========================================
@@ -58,7 +73,10 @@ Simple tenses: basics
 Simple tenses
 Он работает;He works+He is working+He does work
 """.trimIndent()
-        val (_, cards) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.errors.size)
+        val (_, cards) = result.data!!
         assertEquals(1, cards.size)
         assertEquals(3, cards[0].acceptedAnswers.size)
         assertEquals("He works", cards[0].acceptedAnswers[0])
@@ -76,7 +94,9 @@ Simple tenses
 
 Она учится;She studies
 """.trimIndent()
-        val (_, cards) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        val (_, cards) = result.data!!
         assertEquals(2, cards.size)
         assertEquals("Он работает", cards[0].promptRu)
         assertEquals("Она учится", cards[1].promptRu)
@@ -91,7 +111,9 @@ Simple tenses
 Invalid line without separator
 Она учится;She studies
 """.trimIndent()
-        val (_, cards) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        val (_, cards) = result.data!!
         assertEquals(2, cards.size)
         assertEquals("Он работает", cards[0].promptRu)
         assertEquals("Она учится", cards[1].promptRu)
@@ -105,7 +127,10 @@ Simple tenses
 Он работает;He works;extra;data
 Она учится;She studies
 """.trimIndent()
-        val (_, cards) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isPartial)
+        assertEquals(1, result.errors.size)
+        val (_, cards) = result.data!!
         assertEquals(1, cards.size)
         assertEquals("Она учится", cards[0].promptRu)
         assertEquals("She studies", cards[0].acceptedAnswers[0])
@@ -118,9 +143,70 @@ Simple tenses
 Simple tenses
   Он работает  ;  He works
 """.trimIndent()
-        val (_, cards) = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        val (_, cards) = result.data!!
         assertEquals(1, cards.size)
         assertEquals("Он работает", cards[0].promptRu)
         assertEquals("He works", cards[0].acceptedAnswers[0])
+    }
+
+    // ========================================
+    // Wave 4: ParseResult error handling tests
+    // ========================================
+
+    @Test
+    fun parseLesson_emptyFile_returnsFailure() {
+        val csv = ""
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(!result.isSuccess)
+        assertTrue(!result.isPartial)
+        assertEquals(1, result.errors.size)
+        assertTrue(result.errors.first() is ParseError.EmptyFile)
+    }
+
+    @Test
+    fun parseLesson_malformedLine_returnsPartial() {
+        val csv = """
+Simple tenses
+Он работает;He works
+Invalid line without separator
+Она учится;She studies
+""".trimIndent()
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isPartial)
+        assertEquals(1, result.errors.size)
+        val error = result.errors.first()
+        assertTrue(error is ParseError.MalformedLine)
+        assertEquals(3, error.lineNumber)
+    }
+
+    @Test
+    fun parseLesson_specialCharacters_handlesCorrectly() {
+        val csv = """
+Special chars
+Привет 🌟;Hello 🌟
+Как дела?;How are you?
+""".trimIndent()
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        assertTrue(result.isSuccess)
+        val (_, cards) = result.data!!
+        assertEquals(2, cards.size)
+        assertEquals("Привет 🌟", cards[0].promptRu)
+        assertEquals("Hello 🌟", cards[0].acceptedAnswers[0])
+    }
+
+    @Test
+    fun parseLesson_userMessage_formatsErrors() {
+        val csv = """
+Test
+Он работает;He works
+Invalid line
+Она учится;She studies
+""".trimIndent()
+        val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+        val message = result.getUserMessage { it.toUserMessage() }
+        assertTrue(message.contains("1 error(s)"))
+        assertTrue(message.contains("Line 3"))
     }
 }

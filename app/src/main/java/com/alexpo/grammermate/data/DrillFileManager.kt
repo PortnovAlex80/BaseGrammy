@@ -30,7 +30,7 @@ internal class DrillFileManager(
             val fileName = entry["file"] as? String ?: return@mapNotNull null
             val file = File(storiesDir, fileName)
             if (!file.exists()) return@mapNotNull null
-            runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull()
+            runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull()?.data
         }
     }
 
@@ -48,7 +48,8 @@ internal class DrillFileManager(
             val file = File(languageDir, fileName).takeIf { it.exists() }
                 ?: File(vocabDir, fileName).takeIf { it.exists() }
             if (file == null) return@flatMap emptyList()
-            val rows = runCatching { VocabCsvParser.parse(file.inputStream()) }.getOrNull() ?: return@flatMap emptyList()
+            val parseResult = runCatching { VocabCsvParser.parse(file.inputStream()) }.getOrNull() ?: return@flatMap emptyList()
+            val rows = parseResult.data ?: return@flatMap emptyList()
             rows.mapIndexed { index, row ->
                 VocabEntry(
                     id = "${entryLesson}_${index + 1}",

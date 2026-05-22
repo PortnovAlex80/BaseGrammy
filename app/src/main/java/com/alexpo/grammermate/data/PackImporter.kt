@@ -66,6 +66,7 @@ internal class PackImporter(
     /**
      * Import a single CSV lesson file from a SAF URI.
      * FIX: Uses [AtomicFileWriter] instead of raw [File.outputStream] + [InputStream.copyTo].
+     * Returns Pair<Lesson?, List<ParseError>> to handle parse errors gracefully.
      */
     fun importLessonFromUri(
         languageId: String,
@@ -74,7 +75,7 @@ internal class PackImporter(
         ensureSeedData: () -> Unit,
         loadIndex: (String) -> List<Map<String, Any>>,
         writeIndex: (String, List<Map<String, Any>>) -> Unit
-    ): Lesson {
+    ): Pair<Lesson?, List<ParseError>> {
         ensureSeedData()
         val input = resolver.openInputStream(uri) ?: error("Cannot open CSV")
         val title = guessFileName(resolver, uri) ?: "Lesson"
@@ -86,11 +87,35 @@ internal class PackImporter(
         // AtomicFileWriter fix: read stream fully into string, then write atomically
         val csvContent = input.bufferedReader().use { it.readText() }
         AtomicFileWriter.writeText(csvFile, csvContent)
-        val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
-        val lessonTitle = parsedTitle ?: title
+
+        val parseResult = CsvParser.parseLesson(csvFile.inputStream())
+        val errors = parseResult.errors.map { error ->
+            // Add file context to errors
+            ParseError.WithFileContext(fileName, error)
+        }
+
+        val parsedData = parseResult.data
+        if (parsedData == null) {
+            // Parsing failed completely
+            return Pair(null, errors)
+        }
+
+        val (parsedTitle, cards) = parsedData
+        val lessonTitle = parsedData.first
         replaceByTitle(languageId, lessonTitle)
         saveIndex(languageId, id, lessonTitle, fileName, null)
-        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = lessonTitle, cards = cards)
+
+        val uniqueCards = cards.mapIndexed { index, card ->
+            card.copy(id = "${id}_${index}")
+        }
+
+        val lesson = Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = lessonTitle, cards = uniqueCards)
+
+        return if (errors.isEmpty()) {
+            Pair(lesson, emptyList())
+        } else {
+            Pair(lesson, errors)
+        }
     }
 
     // ── ZIP extraction ───────────────────────────────────────────────────
@@ -98,7 +123,14 @@ internal class PackImporter(
     private fun importPackFromStream(input: InputStream): LessonPack {
         packsDir.mkdirs()
         val tempDir = extractZipToTemp(input)
-        return importPackFromTempDir(tempDir)
+        val (pack, errors) = importPackFromTempDir(tempDir)
+
+        // Log any errors that occurred during import
+        errors.forEach { error ->
+            android.util.Log.w("PackImporter", error.toUserMessage())
+        }
+
+        return pack ?: error("Pack import failed")
     }
 
     private fun extractZipToTemp(input: InputStream): File {
@@ -128,11 +160,17 @@ internal class PackImporter(
 
     // ── Pack import from extracted temp dir ──────────────────────────────
 
-    private fun importPackFromTempDir(tempDir: File): LessonPack {
+    private fun importPackFromTempDir(tempDir: File): Pair<LessonPack?, List<ParseError>> {
+        val allErrors = mutableListOf<ParseError>()
         try {
             val manifestFile = File(tempDir, "manifest.json")
             if (!manifestFile.exists()) {
-                error("Manifest not found")
+                return Pair(null, listOf(
+                    ParseError.InvalidFormat(
+                        lineNumber = 0,
+                        reason = "Manifest file not found in pack"
+                    )
+                ))
             }
             val manifest = LessonPackManifest.fromJson(manifestFile.readText())
             val languageId = manifest.language.lowercase().trim()
@@ -150,17 +188,38 @@ internal class PackImporter(
             val lessonEntries = manifest.lessons
                 .filter { it.type != "verb_drill" }
                 .sortedBy { it.order }
+
+            var successCount = 0
+            var failureCount = 0
             lessonEntries.forEach { entry ->
                 val sourceFile = File(packDir, entry.file)
-                if (!sourceFile.exists()) error("Missing lesson file: ${entry.file}")
-                importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, null)
+                if (!sourceFile.exists()) {
+                    allErrors.add(
+                        ParseError.InvalidFormat(
+                            lineNumber = 0,
+                            reason = "Missing lesson file: ${entry.file}"
+                        )
+                    )
+                    failureCount++
+                    return@forEach
+                }
+                val (lesson, errors) = importLessonFromFile(languageId, sourceFile, entry.title, entry.lessonId, null)
+                if (lesson != null) {
+                    successCount++
+                } else {
+                    failureCount++
+                }
+                allErrors.addAll(errors)
             }
 
             // Import pack-scoped drill files
             importPackDrills(packDir, manifest)
 
-            importStoriesFromPack(packDir, languageId)
-            importVocabFromPack(packDir, languageId)
+            val storyErrors = importStoriesFromPack(packDir, languageId)
+            allErrors.addAll(storyErrors)
+
+            val vocabErrors = importVocabFromPack(packDir, languageId)
+            allErrors.addAll(vocabErrors)
 
             val updated = getInstalledPacks()
                 .filterNot { it.packId.value == manifest.packId }
@@ -184,7 +243,18 @@ internal class PackImporter(
             if (manifest.displayName != null) newEntry["displayName"] = manifest.displayName
             updated.add(newEntry)
             packsStore.write(updated)
-            return LessonPack(PackId(manifest.packId), manifest.packVersion, LanguageId(languageId), System.currentTimeMillis(), manifest.displayName)
+
+            val lessonPack = LessonPack(PackId(manifest.packId), manifest.packVersion, LanguageId(languageId), System.currentTimeMillis(), manifest.displayName)
+
+            // Log summary
+            if (allErrors.isNotEmpty()) {
+                android.util.Log.w("PackImporter", "Imported pack ${manifest.packId} with ${allErrors.size} error(s). Lessons: $successCount succeeded, $failureCount failed")
+                allErrors.forEach { error ->
+                    android.util.Log.w("PackImporter", error.toUserMessage())
+                }
+            }
+
+            return Pair(lessonPack, allErrors)
         } finally {
             // Always clean up temp directory on any error
             if (tempDir.exists()) {
@@ -201,7 +271,7 @@ internal class PackImporter(
         fallbackTitle: String?,
         lessonIdOverride: String? = null,
         drillSourceFile: File? = null
-    ): Lesson {
+    ): Pair<Lesson?, List<ParseError>> {
         val normalizedId = lessonIdOverride?.trim().orEmpty()
         val id = if (normalizedId.isNotBlank()) normalizedId else UUID.randomUUID().toString()
         val fileName = "lesson_$id.csv"
@@ -211,8 +281,21 @@ internal class PackImporter(
         sourceFile.inputStream().use { input ->
             AtomicFileWriter.writeText(targetFile, input.bufferedReader().readText())
         }
-        val (parsedTitle, cards) = CsvParser.parseLesson(targetFile.inputStream())
-        val title = parsedTitle ?: fallbackTitle ?: sourceFile.nameWithoutExtension
+
+        val parseResult = CsvParser.parseLesson(targetFile.inputStream())
+        val errors = parseResult.errors.map { error ->
+            // Add file context to errors
+            ParseError.WithFileContext(sourceFile.name, error)
+        }
+
+        val parsedData = parseResult.data
+        if (parsedData == null) {
+            // Parsing failed completely
+            return Pair(null, errors)
+        }
+
+        val (parsedTitle, cards) = parsedData
+        val title = fallbackTitle ?: parsedTitle
         // Prefix card IDs with lesson ID to avoid collisions across lessons
         val uniqueCards = cards.mapIndexed { index, card ->
             card.copy(id = "${id}_${index}")
@@ -224,7 +307,13 @@ internal class PackImporter(
             replaceByTitle(languageId, title)
         }
         lessonIndexWriter(languageId, id, title, fileName, null)
-        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = title, cards = uniqueCards)
+        val lesson = Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = title, cards = uniqueCards)
+
+        return if (errors.isEmpty()) {
+            Pair(lesson, emptyList())
+        } else {
+            Pair(lesson, errors)
+        }
     }
 
     // ── Pack-scoped drill import ─────────────────────────────────────────
@@ -266,7 +355,8 @@ internal class PackImporter(
 
     // ── Story import from pack ───────────────────────────────────────────
 
-    private fun importStoriesFromPack(packDir: File, languageId: String) {
+    private fun importStoriesFromPack(packDir: File, languageId: String): List<ParseError> {
+        val errors = mutableListOf<ParseError>()
         storiesDir.mkdirs()
         val existing = storiesStore.read().toMutableList()
 
@@ -274,7 +364,16 @@ internal class PackImporter(
             .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
             .filterNot { it.name.equals("manifest.json", ignoreCase = true) }
             .forEach { file ->
-                val story = runCatching { StoryQuizParser.parse(file.readText()) }.getOrNull() ?: return@forEach
+                val parseResult = StoryQuizParser.parse(file.readText())
+                if (parseResult.data == null) {
+                    // Add file context to errors
+                    errors.addAll(parseResult.errors.map { error ->
+                        ParseError.WithFileContext(file.name, error)
+                    })
+                    return@forEach
+                }
+
+                val story = parseResult.data
                 val storedName = "${story.storyId}.json"
                 val target = File(storiesDir, storedName)
                 AtomicFileWriter.writeText(target, file.readText())
@@ -299,13 +398,22 @@ internal class PackImporter(
                         "file" to storedName
                     )
                 )
+
+                // Collect any errors from successful parse
+                if (parseResult.errors.isNotEmpty()) {
+                    errors.addAll(parseResult.errors.map { error ->
+                        ParseError.WithFileContext(file.name, error)
+                    })
+                }
             }
         storiesStore.write(existing)
+        return errors
     }
 
     // ── Vocab import from pack ───────────────────────────────────────────
 
-    private fun importVocabFromPack(packDir: File, languageId: String) {
+    private fun importVocabFromPack(packDir: File, languageId: String): List<ParseError> {
+        val errors = mutableListOf<ParseError>()
         vocabDir.mkdirs()
         val languageDirectory = File(vocabDir, languageId)
         languageDirectory.mkdirs()
@@ -318,27 +426,41 @@ internal class PackImporter(
             .forEach { file ->
                 val lessonId = file.nameWithoutExtension.removePrefix("vocab_")
                 if (lessonId.isBlank()) return@forEach
-                val storedName = "${file.nameWithoutExtension}.csv"
-                val target = File(languageDirectory, storedName)
-                AtomicFileWriter.writeText(target, file.readText())
 
-                // Remove old version of this vocab if exists
-                existing.removeIf { entry ->
-                    val entryLessonId = entry["lessonId"] as? String
-                    val entryLang = entry["languageId"] as? String
-                    entryLessonId == lessonId && entryLang?.equals(languageId, ignoreCase = true) == true
+                // Parse vocab file to check for errors
+                val parseResult = VocabCsvParser.parse(file.inputStream())
+
+                // Add file context to errors
+                val fileErrors = parseResult.errors.map { error ->
+                    ParseError.WithFileContext(file.name, error)
                 }
+                errors.addAll(fileErrors)
 
-                // Add new/updated vocab
-                existing.add(
-                    mapOf(
-                        "lessonId" to lessonId,
-                        "languageId" to languageId,
-                        "file" to storedName
+                // Only import if parsing succeeded (even partially)
+                if (parseResult.data != null) {
+                    val storedName = "${file.nameWithoutExtension}.csv"
+                    val target = File(languageDirectory, storedName)
+                    AtomicFileWriter.writeText(target, file.readText())
+
+                    // Remove old version of this vocab if exists
+                    existing.removeIf { entry ->
+                        val entryLessonId = entry["lessonId"] as? String
+                        val entryLang = entry["languageId"] as? String
+                        entryLessonId == lessonId && entryLang?.equals(languageId, ignoreCase = true) == true
+                    }
+
+                    // Add new/updated vocab
+                    existing.add(
+                        mapOf(
+                            "lessonId" to lessonId,
+                            "languageId" to languageId,
+                            "file" to storedName
+                        )
                     )
-                )
+                }
             }
         vocabStore.write(existing)
+        return errors
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

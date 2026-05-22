@@ -6,6 +6,7 @@ import com.alexpo.grammermate.AppContainer
 import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.data.ParseError
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -836,7 +837,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun importLesson(uri: Uri) {
         val languageId = _coreState.value.navigation.selectedLanguageId
-        val lesson = lessonStore.importFromUri(languageId.value, uri, getApplication<Application>().contentResolver)
+        val (lesson, errors) = lessonStore.importFromUriWithErrors(languageId.value, uri, getApplication<Application>().contentResolver)
+
+        if (errors.isNotEmpty()) {
+            _coreState.update {
+                it.copy(
+                    parseErrors = errors,
+                    showParseWarning = true,
+                    parseUserMessage = getUserMessageForParseErrors(errors)
+                )
+            }
+        }
+
         refreshLessons(lesson.id.value)
     }
 
@@ -862,6 +874,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             Log.e(logTag, "Lesson pack import failed", e)
         }
     }
+
+    fun dismissParseWarning() {
+        _coreState.update {
+            it.copy(
+                parseErrors = emptyList(),
+                showParseWarning = false,
+                parseUserMessage = null
+            )
+        }
+    }
+
+    fun confirmPartialImport() {
+        // Parse errors are already logged by LessonStore
+        // User has chosen to proceed with partial import
+        _coreState.update {
+            it.copy(
+                parseErrors = emptyList(),
+                showParseWarning = false,
+                parseUserMessage = null
+            )
+        }
+    }
+
+    private fun getUserMessageForParseErrors(errors: List<ParseError>): String {
+        return when {
+            errors.isEmpty() -> "Import completed successfully."
+            else -> {
+                val errorSummary = errors.joinToString("\n") { it.toUserMessage() }
+                "Import completed with ${errors.size} error(s):\n$errorSummary"
+            }
+        }
+    }
+
     fun resetAndImportLesson(uri: Uri) {
         val languageId = _coreState.value.navigation.selectedLanguageId
         lessonStore.deleteAllLessons(languageId.value)

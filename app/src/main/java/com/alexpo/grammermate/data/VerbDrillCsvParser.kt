@@ -11,9 +11,10 @@ object VerbDrillCsvParser {
      * Parse verb drill CSV content from a String.
      * Loads the entire content into memory — avoid for large files.
      */
-    fun parse(content: String): Pair<String?, List<VerbDrillCard>> {
+    fun parse(content: String): ParseResult<List<VerbDrillCard>, ParseError> {
         val lines = content.lines()
         val cards = mutableListOf<VerbDrillCard>()
+        val errors = mutableListOf<ParseError>()
         var title: String? = null
         var headerConsumed = false
         var ruIndex = -1
@@ -23,10 +24,26 @@ object VerbDrillCsvParser {
         var groupIndex = -1
         var rankIndex = -1
         var dataRowIndex = 0
+        var consecutiveEmptyLines = 0
 
-        for (rawLine in lines) {
+        for ((lineIndex, rawLine) in lines.withIndex()) {
+            val lineNumber = lineIndex + 1
             val line = rawLine.trim()
-            if (line.isBlank()) continue
+
+            if (line.isBlank()) {
+                consecutiveEmptyLines++
+                if (consecutiveEmptyLines > 3) {
+                    errors.add(
+                        ParseError.MalformedLine(
+                            lineNumber = lineNumber,
+                            expected = "non-empty line or data",
+                            actual = "empty line"
+                        )
+                    )
+                }
+                continue
+            }
+            consecutiveEmptyLines = 0
 
             if (title == null) {
                 title = extractTitle(line)
@@ -50,14 +67,41 @@ object VerbDrillCsvParser {
                 continue
             }
 
-            if (ruIndex < 0 || itIndex < 0) continue
+            if (ruIndex < 0 || itIndex < 0) {
+                errors.add(
+                    ParseError.MalformedLine(
+                        lineNumber = lineNumber,
+                        expected = "CSV header with 'ru' and 'it' columns",
+                        actual = "missing required columns"
+                    )
+                )
+                continue
+            }
 
             val columns = CsvLineParser.parseLine(line)
-            if (columns.size <= maxOf(ruIndex, itIndex)) continue
+            if (columns.size <= maxOf(ruIndex, itIndex)) {
+                errors.add(
+                    ParseError.MalformedLine(
+                        lineNumber = lineNumber,
+                        expected = "at least ${maxOf(ruIndex, itIndex) + 1} columns",
+                        actual = "${columns.size} column(s): $line"
+                    )
+                )
+                continue
+            }
 
             val ru = columns[ruIndex].trim().trim('"')
             val answer = columns[itIndex].trim().trim('"')
-            if (ru.isBlank() || answer.isBlank()) continue
+            if (ru.isBlank() || answer.isBlank()) {
+                errors.add(
+                    ParseError.MalformedLine(
+                        lineNumber = lineNumber,
+                        expected = "non-empty RU and IT columns",
+                        actual = "RU='${ru}', IT='${answer}'"
+                    )
+                )
+                continue
+            }
 
             val verb = if (verbIndex >= 0 && columns.size > verbIndex) {
                 columns[verbIndex].trim().trim('"').ifBlank { null }
@@ -94,7 +138,14 @@ object VerbDrillCsvParser {
             dataRowIndex += 1
         }
 
-        return title to cards
+        return when {
+            cards.isEmpty() && errors.isEmpty() -> ParseResult.failure(
+                listOf(ParseError.EmptyFile(lineNumber = 0))
+            )
+            cards.isEmpty() -> ParseResult.failure(errors)
+            errors.isEmpty() -> ParseResult.success(cards)
+            else -> ParseResult.partial(cards, errors)
+        }
     }
 
     /**
@@ -102,8 +153,9 @@ object VerbDrillCsvParser {
      * to avoid loading the entire file into a single String (OOM-safe).
      * The caller is responsible for closing the reader (e.g. via .use { }).
      */
-    fun parse(reader: BufferedReader): Pair<String?, List<VerbDrillCard>> {
+    fun parse(reader: BufferedReader): ParseResult<List<VerbDrillCard>, ParseError> {
         val cards = mutableListOf<VerbDrillCard>()
+        val errors = mutableListOf<ParseError>()
         var title: String? = null
         var headerConsumed = false
         var ruIndex = -1
@@ -113,10 +165,27 @@ object VerbDrillCsvParser {
         var groupIndex = -1
         var rankIndex = -1
         var dataRowIndex = 0
+        var lineNumber = 0
+        var consecutiveEmptyLines = 0
 
         reader.forEachLine { rawLine ->
+            lineNumber++
             val line = rawLine.trim()
-            if (line.isBlank()) return@forEachLine
+
+            if (line.isBlank()) {
+                consecutiveEmptyLines++
+                if (consecutiveEmptyLines > 3) {
+                    errors.add(
+                        ParseError.MalformedLine(
+                            lineNumber = lineNumber,
+                            expected = "non-empty line or data",
+                            actual = "empty line"
+                        )
+                    )
+                }
+                return@forEachLine
+            }
+            consecutiveEmptyLines = 0
 
             if (title == null) {
                 title = extractTitle(line)
@@ -140,14 +209,41 @@ object VerbDrillCsvParser {
                 return@forEachLine
             }
 
-            if (ruIndex < 0 || itIndex < 0) return@forEachLine
+            if (ruIndex < 0 || itIndex < 0) {
+                errors.add(
+                    ParseError.MalformedLine(
+                        lineNumber = lineNumber,
+                        expected = "CSV header with 'ru' and 'it' columns",
+                        actual = "missing required columns"
+                    )
+                )
+                return@forEachLine
+            }
 
             val columns = CsvLineParser.parseLine(line)
-            if (columns.size <= maxOf(ruIndex, itIndex)) return@forEachLine
+            if (columns.size <= maxOf(ruIndex, itIndex)) {
+                errors.add(
+                    ParseError.MalformedLine(
+                        lineNumber = lineNumber,
+                        expected = "at least ${maxOf(ruIndex, itIndex) + 1} columns",
+                        actual = "${columns.size} column(s): $line"
+                    )
+                )
+                return@forEachLine
+            }
 
             val ru = columns[ruIndex].trim().trim('"')
             val answer = columns[itIndex].trim().trim('"')
-            if (ru.isBlank() || answer.isBlank()) return@forEachLine
+            if (ru.isBlank() || answer.isBlank()) {
+                errors.add(
+                    ParseError.MalformedLine(
+                        lineNumber = lineNumber,
+                        expected = "non-empty RU and IT columns",
+                        actual = "RU='${ru}', IT='${answer}'"
+                    )
+                )
+                return@forEachLine
+            }
 
             val verb = if (verbIndex >= 0 && columns.size > verbIndex) {
                 columns[verbIndex].trim().trim('"').ifBlank { null }
@@ -181,7 +277,14 @@ object VerbDrillCsvParser {
             dataRowIndex += 1
         }
 
-        return title to cards
+        return when {
+            cards.isEmpty() && errors.isEmpty() -> ParseResult.failure(
+                listOf(ParseError.EmptyFile(lineNumber = 0))
+            )
+            cards.isEmpty() -> ParseResult.failure(errors)
+            errors.isEmpty() -> ParseResult.success(cards)
+            else -> ParseResult.partial(cards, errors)
+        }
     }
 
     private fun extractTitle(raw: String): String? {

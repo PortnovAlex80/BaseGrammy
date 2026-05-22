@@ -589,7 +589,13 @@ data class TrainingUiState(
     val daily: DailyPracticeState = DailyPracticeState(),
     val pomodoro: PomodoroState = PomodoroState(),
     /** True while background init (file I/O) is in progress. UI shows a spinner. */
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    /** Parse errors collected during import operations */
+    val parseErrors: List<ParseError> = emptyList(),
+    /** True if parse errors should be shown to the user via warning dialog */
+    val showParseWarning: Boolean = false,
+    /** Formatted user message for parse errors */
+    val parseUserMessage: String? = null
 ) {
     /**
      * Reset all session-related state to defaults.

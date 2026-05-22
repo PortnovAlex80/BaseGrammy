@@ -925,9 +925,11 @@ class DailyPracticeCoordinator(
         var count = 0
         for (file in files) {
             try {
-                val (headers, parsed) = file.bufferedReader().use { reader ->
+                val parseResult = file.bufferedReader().use { reader ->
                     VerbDrillCsvParser.parse(reader)
                 }
+                // Only count successfully parsed cards
+                val parsed = parseResult.data ?: continue
                 // Count cards matching active tenses
                 count += parsed.count { it.tense != null && it.tense in activeTenses }
             } catch (_: Exception) {

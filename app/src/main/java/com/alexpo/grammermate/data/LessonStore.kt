@@ -46,6 +46,8 @@ interface LessonStore {
 
     fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson
 
+    fun importFromUriWithErrors(languageId: String, uri: Uri, resolver: ContentResolver): Pair<Lesson, List<ParseError>>
+
     // -- Lesson CRUD --
 
     fun getLessons(languageId: String): List<Lesson>
@@ -257,14 +259,33 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     // ── CSV lesson import ────────────────────────────────────────────────
 
     override fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson {
-        val lesson = packImporter.importLessonFromUri(
+        val (lesson, errors) = packImporter.importLessonFromUri(
             languageId, uri, resolver,
             ensureSeedData = { ensureSeedData() },
             loadIndex = { loadIndex(it) },
             writeIndex = { langId, entries -> writeIndex(langId, entries) }
         )
+
+        // Log any errors that occurred during import
+        errors.forEach { error ->
+            android.util.Log.w("LessonStore", error.toUserMessage())
+        }
+
         invalidateLessonsCache(languageId)
-        return lesson
+        return lesson ?: error("Lesson import failed")
+    }
+
+    override fun importFromUriWithErrors(languageId: String, uri: Uri, resolver: ContentResolver): Pair<Lesson, List<ParseError>> {
+        val (lesson, errors) = packImporter.importLessonFromUri(
+            languageId, uri, resolver,
+            ensureSeedData = { ensureSeedData() },
+            loadIndex = { loadIndex(it) },
+            writeIndex = { langId, entries -> writeIndex(langId, entries) }
+        )
+
+        invalidateLessonsCache(languageId)
+        val actualLesson = lesson ?: error("Lesson import failed")
+        return Pair(actualLesson, errors)
     }
 
     // ── Lesson CRUD ──────────────────────────────────────────────────────
@@ -295,7 +316,8 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             val fileName = entry["file"] as? String ?: return@mapNotNull null
             val csvFile = File(languageDir(languageId), fileName)
             if (!csvFile.exists()) return@mapNotNull null
-            val (parsedTitle, cards) = CsvParser.parseLesson(csvFile.inputStream())
+            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
+            val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
             Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
         }
     }

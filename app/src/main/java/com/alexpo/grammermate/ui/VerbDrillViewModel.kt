@@ -273,9 +273,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             val packIds = mutableSetOf<String>()
 
             for (file in files) {
-                val (_, parsed) = file.bufferedReader().use { reader ->
+                val parseResult = file.bufferedReader().use { reader ->
                     VerbDrillCsvParser.parse(reader)
                 }
+
+                // Only process successfully parsed cards
+                val parsed = parseResult.data ?: continue
 
                 // Use the active packId, or resolve from filename in global mode
                 val packId = currentPackId ?: run {

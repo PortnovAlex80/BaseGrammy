@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -85,6 +86,8 @@ fun SettingsSheet(
     onSetVoiceAutoStart: (Boolean) -> Unit = {},
     onSetUiLanguage: (String) -> Unit = {},
     onSetSessionSize: (Int) -> Unit = {},
+    onDismissParseWarning: () -> Unit = {},
+    onConfirmPartialImport: () -> Unit = {},
     uiLanguage: String = "system",
     sessionSize: Int = 10,
     languageDisplayName: String = ""
@@ -563,6 +566,46 @@ fun SettingsSheet(
                     },
                     dismissButton = {
                         TextButton(onClick = { showResetConfirmDialog = false }) {
+                            Text(text = stringResource(R.string.settings_cancel))
+                        }
+                    }
+                )
+            }
+
+            if (state.showParseWarning) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = onDismissParseWarning,
+                    title = { Text(text = "Import Warning") },
+                    text = {
+                        Column {
+                            Text(text = "${state.parseErrors.size} card(s) failed to parse. Import anyway?")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            state.parseErrors.take(3).forEach { error ->
+                                Text(
+                                    text = error.toUserMessage(),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            if (state.parseErrors.size > 3) {
+                                Text(
+                                    text = "... and ${state.parseErrors.size - 3} more errors",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                onDismissParseWarning()
+                                onConfirmPartialImport()
+                            }
+                        ) {
+                            Text(text = "Import Partial")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = onDismissParseWarning) {
                             Text(text = stringResource(R.string.settings_cancel))
                         }
                     }

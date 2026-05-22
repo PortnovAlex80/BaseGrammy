@@ -215,10 +215,13 @@ class VerbDrillStoreImpl(
             ?: return emptyList()
         val cards = mutableListOf<VerbDrillCard>()
         for (file in files) {
-            val (_, parsed) = file.bufferedReader().use { reader ->
+            val parseResult = file.bufferedReader().use { reader ->
                 VerbDrillCsvParser.parse(reader)
             }
-            cards.addAll(parsed)
+            // Only add successfully parsed cards
+            parseResult.data?.let { parsed ->
+                cards.addAll(parsed)
+            }
         }
         return cards
     }
