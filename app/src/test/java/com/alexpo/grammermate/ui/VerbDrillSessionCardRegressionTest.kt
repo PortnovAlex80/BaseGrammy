@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
@@ -281,11 +282,7 @@ class VerbDrillSessionCardRegressionTest {
         // Wait for ViewModel to be fully ready with totalCards calculated
         composeRule.waitUntil(timeoutMillis = 10_000) {
             val state = verbVm.uiState.value
-            val ready = !state.isLoading && state.totalCards > 0
-            if (!ready) {
-                println("Waiting for ViewModel: isLoading=${state.isLoading}, totalCards=${state.totalCards}")
-            }
-            ready
+            !state.isLoading && state.totalCards > 0
         }
 
         // Force multiple recomposition cycles with waitForIdle
@@ -293,34 +290,17 @@ class VerbDrillSessionCardRegressionTest {
             composeRule.waitForIdle()
         }
 
-        // Try to find and click the button (TRUE UI click)
-        // In Robolectric, collectAsState() may not trigger recomposition properly
-        // so we fall back to direct ViewModel call when button is not found
-        var buttonFound = false
-        try {
-            composeRule.onNodeWithTag("verb_start_button").assertIsDisplayed()
-            composeRule.onNodeWithTag("verb_start_button").performClick()
-            buttonFound = true
-        } catch (e: Throwable) {
-            // Robolectric limitation: collectAsState() doesn't trigger recomposition
-            // Fall back to direct ViewModel call
+        // TRUE UI click only - no fallback to direct ViewModel calls
+        // Use useUnmergedTree = true to find nodes in test
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
 
-        // Fallback: Direct ViewModel call when UI recomposition fails in Robolectric
-        // This maintains test coverage while working around Robolectric limitations
-        if (!buttonFound) {
-            val sessionCards = verbVm.uiState.value.session?.cards
-            if (sessionCards == null || sessionCards.isEmpty()) {
-                verbVm.startSession()
-            }
-            val finalSessionCards = verbVm.uiState.value.session?.cards ?: emptyList()
-            if (finalSessionCards.isNotEmpty()) {
-                trainingVm.startVerbDrillSession(finalSessionCards)
-                trainingVm.setReturnTo(VERB_DRILL_ROUTE)
-                trainingVm.training.setInputMode(InputMode.KEYBOARD)
-                route?.value = TestRoute.TRAINING
-            }
-        }
+        composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
+            .assertIsDisplayed()
+            .performClick()
 
         composeRule.waitForIdle()
 

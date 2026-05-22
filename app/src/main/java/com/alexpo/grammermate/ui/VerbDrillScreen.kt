@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -64,7 +65,7 @@ fun VerbDrillScreen(
     onBack: () -> Unit,
     onStartSession: (List<VerbDrillCard>) -> Unit
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     // VD-50/VD-51: Refresh last session context on screen entry to fix stale cache
     LaunchedEffect(Unit) {
