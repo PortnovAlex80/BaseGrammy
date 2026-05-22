@@ -38,14 +38,6 @@ Each block has 10 tasks. Replaces former Elite mode and Vocab Sprint.
   - Constructor takes `verbDrillStoreFactory: (String?) -> VerbDrillStore` and
     `wordMasteryStoreFactory: (String?) -> WordMasteryStore` for pack-scoped access
 
-- **DailyPracticeSessionProvider** -- CardSessionContract adapter for Blocks 1 & 3.
-  Block 2 (Vocab) does NOT use this -- the UI switches composables at block boundaries.
-  - Constructor: `DailyPracticeSessionProvider(tasks, blockType, onBlockComplete, ...)`
-  - Implements `CardSessionContract` with TTS, voice input, word bank, flagging support
-  - Delegates retry/hint logic to `CardSessionStateMachine`
-  - `submitAnswer()`, `nextCard()`, `prevCard()`, `showAnswer()`, `setInputMode(mode)`
-  - `currentVerbDrillCard(): VerbDrillCard?`, `getConjugationCards(verb, tense)`
-
 ## State owned
 `DailyPracticeState` via internal MutableStateFlow:
 - `dailySession: DailySessionState` (active, tasks, taskIndex, blockIndex, level, finishedToken)
@@ -64,5 +56,3 @@ Private mutable: `prebuiltDailySession`, `lastDailyTasks`, `dailyPracticeAnswere
 - DailySessionComposer builds blocks in parallel (coroutineScope + async).
   Block builders are suspend functions but internally synchronous -- do not
   add shared mutable state to the composer.
-- DailyPracticeSessionProvider is created fresh per block transition -- do not
-  cache it across block boundaries.
