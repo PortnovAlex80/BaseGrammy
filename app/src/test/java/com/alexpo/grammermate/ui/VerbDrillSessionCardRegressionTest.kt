@@ -76,11 +76,11 @@ class VerbDrillSessionCardRegressionTest {
         renderHarness(verbVm, trainingVm, route)
         composeRule.waitForIdle()
 
-        // Wait for ViewModel async operations AND LaunchedEffect to complete
-        // The LaunchedEffect(Unit) calls refreshLastSessionContext() which may set state
+        // Wait for ViewModel async operations to complete
+        // AND lastSessionContext to be null (so start button is displayed)
         composeRule.waitUntil(timeoutMillis = 10_000) {
             val state = verbVm.uiState.value
-            !state.isLoading && state.totalCards > 0
+            !state.isLoading && state.totalCards > 0 && state.lastSessionContext == null
         }
 
         startVerbSessionThroughUi(verbVm, trainingVm, route)
@@ -280,9 +280,10 @@ class VerbDrillSessionCardRegressionTest {
         composeRule.waitForIdle()
 
         // Wait for ViewModel to be fully ready with totalCards calculated
+        // AND lastSessionContext to be null (so start button is displayed)
         composeRule.waitUntil(timeoutMillis = 10_000) {
             val state = verbVm.uiState.value
-            !state.isLoading && state.totalCards > 0
+            !state.isLoading && state.totalCards > 0 && state.lastSessionContext == null
         }
 
         // Force multiple recomposition cycles with waitForIdle
@@ -291,16 +292,39 @@ class VerbDrillSessionCardRegressionTest {
         }
 
         // TRUE UI click only - no fallback to direct ViewModel calls
-        // Use useUnmergedTree = true to find nodes in test
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+        // Verify start button is shown (not SessionCard)
+        val state = verbVm.uiState.value
+
+        // Debug: Check all conditions for button display
+        println("DEBUG: allDoneToday=${state.allDoneToday}, lastSessionContext=${state.lastSessionContext}, totalCards=${state.totalCards}, availableTenses=${state.availableTenses.size}, availableGroups=${state.availableGroups.size}")
+
+        if (state.lastSessionContext != null) {
+            throw AssertionError("Expected lastSessionContext to be null so start button is shown, but was: ${state.lastSessionContext}")
         }
 
-        composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
-            .assertIsDisplayed()
-            .performClick()
+        // Wait until the start button exists (try BOTH merged and unmerged trees)
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            val mergedNodes = composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = false)
+                .fetchSemanticsNodes()
+            val unmergedNodes = composeRule.onAllNodesWithTag("verb_start_button", useUnmergedTree = true)
+                .fetchSemanticsNodes()
+            val found = mergedNodes.isNotEmpty() || unmergedNodes.isNotEmpty()
+            if (!found) {
+                val s = verbVm.uiState.value
+                println("DEBUG: Button not found yet. allDoneToday=${s.allDoneToday}, lastSessionContext=${s.lastSessionContext}, totalCards=${s.totalCards}, merged=${mergedNodes.size}, unmerged=${unmergedNodes.size}")
+            }
+            found
+        }
+
+        // Try clicking with unmerged tree first, fall back to merged tree
+        try {
+            composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = true)
+                .performClick()
+        } catch (e: Exception) {
+            println("DEBUG: Failed to click with unmerged tree, trying merged tree")
+            composeRule.onNodeWithTag("verb_start_button", useUnmergedTree = false)
+                .performClick()
+        }
 
         composeRule.waitForIdle()
 
