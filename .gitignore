@@ -31,6 +31,8 @@ Thumbs.db
 # Claude Code plans
 .claude/plans/
 .claude/worktrees/
+.claude/settings.json
+.claude/agents/
 
 # Unpacked lesson content (mirror of packs/*.zip for browsing)
 /lesson-content/
