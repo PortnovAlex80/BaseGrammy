@@ -33,22 +33,22 @@ class DrillProgressStoreImpl(private val context: Context) : DrillProgressStore 
         return if (idx > 0) idx else -1
     }
 
-    override fun saveDrillProgress(lessonId: String, cardIndex: Int) = mutex.withLock {
-        baseDir.mkdirs()
-        val file = getFile(lessonId)
-        val payload = mapOf(
-            "lessonId" to lessonId,
-            "cardIndex" to cardIndex
-        )
-        try {
-            AtomicFileWriter.writeText(file, yaml.dump(payload))
-            Log.i("DrillProgressStore", "Successfully saved drill progress for lesson $lessonId: ${file.name} (${file.length()} bytes)")
-        } catch (e: IOException) {
-            Log.e("DrillProgressStore", "Failed to save drill progress for lesson $lessonId: ${file.name}", e)
-            throw e
-        } catch (e: Exception) {
-            Log.e("DrillProgressStore", "Unexpected error saving drill progress for lesson $lessonId: ${file.name}", e)
-            throw IOException("Failed to save drill progress", e)
+    override fun saveDrillProgress(lessonId: String, cardIndex: Int) {
+        mutex.withLock {
+            baseDir.mkdirs()
+            val file = getFile(lessonId)
+            val payload = mapOf(
+                "lessonId" to lessonId,
+                "cardIndex" to cardIndex
+            )
+            try {
+                AtomicFileWriter.writeText(file, yaml.dump(payload))
+                Log.i("DrillProgressStore", "Successfully saved drill progress for lesson $lessonId: ${file.name} (${file.length()} bytes)")
+            } catch (e: IOException) {
+                Log.e("DrillProgressStore", "Failed to save drill progress for lesson $lessonId: ${file.name}", e)
+            } catch (e: Exception) {
+                Log.e("DrillProgressStore", "Unexpected error saving drill progress for lesson $lessonId: ${file.name}", e)
+            }
         }
     }
 
