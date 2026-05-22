@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -38,7 +40,16 @@ class DrillProgressStoreImpl(private val context: Context) : DrillProgressStore 
             "lessonId" to lessonId,
             "cardIndex" to cardIndex
         )
-        AtomicFileWriter.writeText(file, yaml.dump(payload))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(payload))
+            Log.i("DrillProgressStore", "Successfully saved drill progress for lesson $lessonId: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("DrillProgressStore", "Failed to save drill progress for lesson $lessonId: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("DrillProgressStore", "Unexpected error saving drill progress for lesson $lessonId: ${file.name}", e)
+            throw IOException("Failed to save drill progress", e)
+        }
     }
 
     override fun hasProgress(lessonId: String): Boolean {

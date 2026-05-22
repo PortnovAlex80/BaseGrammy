@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -111,7 +113,16 @@ class WordMasteryStoreImpl(
             "schemaVersion" to schemaVersion,
             "data" to payload
         )
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("WordMasteryStore", "Successfully saved word mastery: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("WordMasteryStore", "Failed to save word mastery: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("WordMasteryStore", "Unexpected error saving word mastery: ${file.name}", e)
+            throw IOException("Failed to save word mastery", e)
+        }
     }
 
     /**

@@ -129,18 +129,16 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
                 "schemaVersion" to schemaVersion,
                 "data" to payload
             )
-            AtomicFileWriter.writeText(file, yaml.dump(data))
-
-            // Верификация записи
-            if (!file.exists()) {
-                Log.e("ProgressStore", "Файл не создан после записи: ${file.absolutePath}")
-                throw IOException("Failed to create file: ${file.name}")
+            try {
+                AtomicFileWriter.writeText(file, yaml.dump(data))
+                Log.i("ProgressStore", "Successfully saved training progress: ${file.name} (${file.length()} bytes)")
+            } catch (e: IOException) {
+                Log.e("ProgressStore", "Failed to save training progress: ${file.name}", e)
+                throw e
+            } catch (e: Exception) {
+                Log.e("ProgressStore", "Unexpected error saving training progress: ${file.name}", e)
+                throw IOException("Failed to save training progress", e)
             }
-            if (file.length() == 0L) {
-                Log.e("ProgressStore", "Файл пустой после записи: ${file.absolutePath}")
-                throw IOException("File is empty after write: ${file.name}")
-            }
-            Log.i("ProgressStore", "Отлично, прогресс сохранен: ${file.name} (${file.length()} bytes)")
         }
     }
 

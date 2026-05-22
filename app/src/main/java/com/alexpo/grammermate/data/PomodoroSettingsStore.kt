@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -27,7 +29,16 @@ class PomodoroSettingsStore(context: Context) {
     fun save(durationMinutes: Int) {
         lock.withLock {
             val data = mapOf<String, Any>(KEY_DURATION to durationMinutes)
-            AtomicFileWriter.writeText(file, yaml.dump(data))
+            try {
+                AtomicFileWriter.writeText(file, yaml.dump(data))
+                Log.i("PomodoroSettingsStore", "Successfully saved pomodoro settings: ${file.name} (${file.length()} bytes)")
+            } catch (e: IOException) {
+                Log.e("PomodoroSettingsStore", "Failed to save pomodoro settings: ${file.name}", e)
+                throw e
+            } catch (e: Exception) {
+                Log.e("PomodoroSettingsStore", "Unexpected error saving pomodoro settings: ${file.name}", e)
+                throw IOException("Failed to save pomodoro settings", e)
+            }
         }
     }
 

@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -16,7 +18,16 @@ class PomodoroHistoryStore(context: Context) {
             val sessions = loadAllInternal().toMutableList()
             sessions += entry
             val data = mapOf(KEY_SESSIONS to sessions.map { it.toMap() })
-            AtomicFileWriter.writeText(file, yaml.dump(data))
+            try {
+                AtomicFileWriter.writeText(file, yaml.dump(data))
+                Log.i("PomodoroHistoryStore", "Successfully saved pomodoro history: ${file.name} (${file.length()} bytes)")
+            } catch (e: IOException) {
+                Log.e("PomodoroHistoryStore", "Failed to save pomodoro history: ${file.name}", e)
+                throw e
+            } catch (e: Exception) {
+                Log.e("PomodoroHistoryStore", "Unexpected error saving pomodoro history: ${file.name}", e)
+                throw IOException("Failed to save pomodoro history", e)
+            }
         }
     }
 

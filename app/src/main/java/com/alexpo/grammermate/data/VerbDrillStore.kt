@@ -245,6 +245,7 @@ class VerbDrillStoreImpl(
     /**
      * Write progress to disk immediately via AtomicFileWriter.
      * Matches WordMasteryStore pattern: immediate write, no batching.
+     * Write verification is now handled by AtomicFileWriter.
      */
     private fun persistProgressToDisk() {
         val progress = progressCache ?: return
@@ -263,18 +264,16 @@ class VerbDrillStoreImpl(
             "schemaVersion" to schemaVersion,
             "data" to comboPayload
         )
-        AtomicFileWriter.writeText(file, yaml.dump(data))
-
-        // Верификация записи
-        if (!file.exists()) {
-            Log.e("VerbDrillStore", "Файл не создан после записи: ${file.absolutePath}")
-            throw IOException("Failed to create file: ${file.name}")
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("VerbDrillStore", "Successfully saved verb drill progress: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("VerbDrillStore", "Failed to save verb drill progress: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("VerbDrillStore", "Unexpected error saving verb drill progress: ${file.name}", e)
+            throw IOException("Failed to save verb drill progress", e)
         }
-        if (file.length() == 0L) {
-            Log.e("VerbDrillStore", "Файл пустой после записи: ${file.absolutePath}")
-            throw IOException("File is empty after write: ${file.name}")
-        }
-        Log.i("VerbDrillStore", "Отлично, прогресс сохранен: ${file.name} (${file.length()} bytes)")
     }
 
     /**
@@ -351,18 +350,16 @@ class VerbDrillStoreImpl(
             "packId" to (session.packId ?: packId)
         )
 
-        AtomicFileWriter.writeText(lastSessionFile, yaml.dump(data))
-
-        // Верификация записи
-        if (!lastSessionFile.exists()) {
-            Log.e("VerbDrillStore", "Файл не создан после записи: ${lastSessionFile.absolutePath}")
-            throw IOException("Failed to create file: ${lastSessionFile.name}")
+        try {
+            AtomicFileWriter.writeText(lastSessionFile, yaml.dump(data))
+            Log.i("VerbDrillStore", "Successfully saved last session: ${lastSessionFile.name} (${lastSessionFile.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("VerbDrillStore", "Failed to save last session: ${lastSessionFile.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("VerbDrillStore", "Unexpected error saving last session: ${lastSessionFile.name}", e)
+            throw IOException("Failed to save last session", e)
         }
-        if (lastSessionFile.length() == 0L) {
-            Log.e("VerbDrillStore", "Файл пустой после записи: ${lastSessionFile.absolutePath}")
-            throw IOException("File is empty after write: ${lastSessionFile.name}")
-        }
-        Log.i("VerbDrillStore", "Отлично, сессия сохранена: ${lastSessionFile.name} (${lastSessionFile.length()} bytes)")
     }
 
     override fun deleteLastSession() = mutex.withLock {

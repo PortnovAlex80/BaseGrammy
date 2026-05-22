@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 
 /**
  * Stores user profile information (name, preferences, etc.)
@@ -45,7 +47,16 @@ class ProfileStoreImpl(private val context: Context) : ProfileStore {
             "welcomeDialogAttempts" to profile.welcomeDialogAttempts
         )
 
-        AtomicFileWriter.writeText(file, yaml.dump(payload))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(payload))
+            Log.i("ProfileStore", "Successfully saved user profile: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("ProfileStore", "Failed to save user profile: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("ProfileStore", "Unexpected error saving user profile: ${file.name}", e)
+            throw IOException("Failed to save user profile", e)
+        }
     }
 
     override fun clear() {

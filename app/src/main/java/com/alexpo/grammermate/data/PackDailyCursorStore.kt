@@ -101,9 +101,12 @@ class PackDailyCursorStoreImpl(context: Context) : PackDailyCursorStore {
                     cursorCache = mutableMapOf(cursor.packId to cursor)
                 }
 
-                Log.d("PackDailyCursorStore", "Saved cursor for pack: ${cursor.packId}, offset: ${cursor.sentenceOffset}")
-            } catch (e: Exception) {
+                Log.i("PackDailyCursorStore", "Successfully saved cursor for pack ${cursor.packId}: ${file.name} (${file.length()} bytes)")
+            } catch (e: IOException) {
                 Log.e("PackDailyCursorStore", "Failed to save cursor for pack: ${cursor.packId}", e)
+                throw e
+            } catch (e: Exception) {
+                Log.e("PackDailyCursorStore", "Unexpected error saving cursor for pack: ${cursor.packId}", e)
                 throw IOException("Failed to save pack cursor state", e)
             }
         }

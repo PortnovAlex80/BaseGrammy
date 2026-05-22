@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 
 data class AppConfig(
     val testMode: Boolean = false,
@@ -49,7 +51,16 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "sessionSize" to config.sessionSize,
             "appVersion" to config.appVersion
         )
-        AtomicFileWriter.writeText(file, yaml.dump(payload))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(payload))
+            Log.i("AppConfigStore", "Successfully saved app config: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("AppConfigStore", "Failed to save app config: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("AppConfigStore", "Unexpected error saving app config: ${file.name}", e)
+            throw IOException("Failed to save app config", e)
+        }
     }
 
     override fun load(): AppConfig {

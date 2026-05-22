@@ -1,8 +1,10 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
@@ -53,7 +55,16 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         if (data.lastFireDateMs != null) {
             payload["lastFireDateMs"] = data.lastFireDateMs
         }
-        AtomicFileWriter.writeText(file, yaml.dump(payload))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(payload))
+            Log.i("StreakStore", "Successfully saved streak data for ${data.languageId.value}: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("StreakStore", "Failed to save streak data for ${data.languageId.value}: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("StreakStore", "Unexpected error saving streak data for ${data.languageId.value}: ${file.name}", e)
+            throw IOException("Failed to save streak data", e)
+        }
     }
 
     private fun loadInternal(languageId: String): StreakData {

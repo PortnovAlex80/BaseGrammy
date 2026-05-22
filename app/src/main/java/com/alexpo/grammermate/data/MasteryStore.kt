@@ -334,6 +334,15 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             "data" to payload
         )
 
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("MasteryStore", "Successfully persisted mastery data: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("MasteryStore", "Failed to persist mastery data: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("MasteryStore", "Unexpected error persisting mastery data: ${file.name}", e)
+            throw IOException("Failed to persist mastery data", e)
+        }
     }
 }

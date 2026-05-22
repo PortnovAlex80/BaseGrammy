@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -307,6 +308,15 @@ class VocabProgressStoreImpl(private val context: Context) : VocabProgressStore 
             "data" to payload
         )
 
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("VocabProgressStore", "Successfully saved vocab progress: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("VocabProgressStore", "Failed to save vocab progress: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("VocabProgressStore", "Unexpected error saving vocab progress: ${file.name}", e)
+            throw IOException("Failed to save vocab progress", e)
+        }
     }
 }

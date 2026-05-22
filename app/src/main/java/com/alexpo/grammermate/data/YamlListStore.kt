@@ -1,7 +1,9 @@
 package com.alexpo.grammermate.data
 
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 
 class YamlListStore(
     private val yaml: Yaml,
@@ -43,7 +45,16 @@ class YamlListStore(
             "schemaVersion" to schemaVersion,
             "items" to items
         )
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("YamlListStore", "Successfully wrote YAML list: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("YamlListStore", "Failed to write YAML list: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("YamlListStore", "Unexpected error writing YAML list: ${file.name}", e)
+            throw IOException("Failed to write YAML list", e)
+        }
     }
 
     fun invalidateCache() {

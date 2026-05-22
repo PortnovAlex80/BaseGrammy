@@ -113,9 +113,12 @@ class PackLessonProgressStoreImpl(context: Context) : PackLessonProgressStore {
                     progressCache = mutableMapOf(progress.packId to progress)
                 }
 
-                Log.d("PackLessonProgressStore", "Saved progress for pack: ${progress.packId}, lessons: ${progress.lessonProgress.size}")
-            } catch (e: Exception) {
+                Log.i("PackLessonProgressStore", "Successfully saved progress for pack ${progress.packId}: ${file.name} (${file.length()} bytes)")
+            } catch (e: IOException) {
                 Log.e("PackLessonProgressStore", "Failed to save progress for pack: ${progress.packId}", e)
+                throw e
+            } catch (e: Exception) {
+                Log.e("PackLessonProgressStore", "Unexpected error saving progress for pack: ${progress.packId}", e)
                 throw IOException("Failed to save pack lesson progress state", e)
             }
         }

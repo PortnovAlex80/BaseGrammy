@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -72,6 +73,15 @@ class HiddenCardStoreImpl(private val context: Context) : HiddenCardStore {
             "schemaVersion" to 1,
             "hiddenCardIds" to hiddenIds.toList()
         )
-        AtomicFileWriter.writeText(file, yaml.dump(data))
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("HiddenCardStore", "Successfully saved hidden cards: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("HiddenCardStore", "Failed to save hidden cards: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("HiddenCardStore", "Unexpected error saving hidden cards: ${file.name}", e)
+            throw IOException("Failed to save hidden cards", e)
+        }
     }
 }

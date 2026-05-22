@@ -1,10 +1,31 @@
 package com.alexpo.grammermate.data
 
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.charset.Charset
 
 object AtomicFileWriter {
+
+    /**
+     * Verify that a file was written successfully.
+     * Checks that the file exists and is not empty.
+     * Throws IOException if verification fails.
+     */
+    private fun verifyWrite(file: File, context: String = "file") {
+        if (!file.exists()) {
+            Log.e("AtomicFileWriter", "Write verification failed: $context not created at ${file.absolutePath}")
+            throw IOException("Write failed: $context not created")
+        }
+        if (file.length() == 0L) {
+            Log.e("AtomicFileWriter", "Write verification failed: $context is empty at ${file.absolutePath}")
+            file.delete()
+            throw IOException("Write failed: $context is empty")
+        }
+        Log.d("AtomicFileWriter", "Write verification passed: $context (${file.length()} bytes)")
+    }
+
     fun writeText(file: File, text: String, charset: Charset = Charsets.UTF_8) {
         val parent = file.parentFile
         if (parent != null && !parent.exists()) {
@@ -26,6 +47,10 @@ object AtomicFileWriter {
             output.write(text.toByteArray(charset))
             output.fd.sync()
         }
+
+        // Verify temp file was written successfully
+        verifyWrite(tempFile, "temp file ${tempFile.name}")
+
         // On Android/Linux renameTo() atomically replaces the destination.
         // On Windows, we need to delete the target first if it exists.
         if (file.exists()) {
@@ -43,6 +68,9 @@ object AtomicFileWriter {
             tempFile.delete()
             error("Failed to finalize ${file.absolutePath}")
         }
+
+        // Verify final file exists and is not empty
+        verifyWrite(file, file.name)
     }
 
     /**
@@ -70,6 +98,10 @@ object AtomicFileWriter {
                 output.fd.sync()
             }
         }
+
+        // Verify temp file was written successfully
+        verifyWrite(tempFile, "temp file ${tempFile.name}")
+
         // On Windows, we need to delete the target first if it exists.
         if (target.exists()) {
             if (!target.delete()) {
@@ -86,5 +118,8 @@ object AtomicFileWriter {
             tempFile.delete()
             error("Failed to finalize ${target.absolutePath}")
         }
+
+        // Verify final file exists and is not empty
+        verifyWrite(target, target.name)
     }
 }
