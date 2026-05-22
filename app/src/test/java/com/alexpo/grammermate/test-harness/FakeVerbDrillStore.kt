@@ -90,35 +90,6 @@ class FakeVerbDrillStore : VerbDrillStore {
     }
 
     /**
-     * Load verb drill test data from CourseTestDataFactory.
-     *
-     * @param packId Pack identifier
-     * @param languageId Language code
-     * @param verbDrillData VerbDrillCourseData from CourseTestDataFactory
-     */
-    fun loadVerbDrillData(
-        packId: String,
-        languageId: String,
-        verbDrillData: com.alexpo.grammermate.testharness.CourseTestDataFactory.VerbDrillCourseData
-    ) {
-        val key = "$packId:$languageId"
-        cardsByPackAndLanguage[key] = verbDrillData.allCards
-
-        // Initialize progress for each tense-group combo
-        for (tenseGroup in verbDrillData.tenseGroups) {
-            val comboKey = "${packId}:${tenseGroup.tense}:${tenseGroup.group}"
-            progressData[comboKey] = VerbDrillComboProgress(
-                group = tenseGroup.group,
-                tense = tenseGroup.tense,
-                totalCards = tenseGroup.cards.size,
-                everShownCardIds = emptySet(),
-                todayShownCardIds = emptySet(),
-                lastDate = ""
-            )
-        }
-    }
-
-    /**
      * Simulate showing cards for a specific tense-group combo.
      *
      * @param packId Pack identifier

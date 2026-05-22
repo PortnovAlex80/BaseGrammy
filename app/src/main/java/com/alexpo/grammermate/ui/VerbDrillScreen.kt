@@ -32,7 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +64,7 @@ fun VerbDrillScreen(
     onBack: () -> Unit,
     onStartSession: (List<VerbDrillCard>) -> Unit
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsState()
 
     // VD-50/VD-51: Refresh last session context on screen entry to fix stale cache
     LaunchedEffect(Unit) {
@@ -98,7 +98,7 @@ fun VerbDrillScreen(
             onToggleSortByFrequency = viewModel::toggleSortByFrequency,
             onStart = {
                 viewModel.startSession()
-                // After startSession(), read the cards from the updated session state
+                // Read session immediately (synchronous read after startSession)
                 val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
                 if (sessionCards.isNotEmpty()) {
                     onStartSession(sessionCards)
