@@ -33,6 +33,71 @@ verbVm.toggleSortByFrequency() // включить стабильный поря
 
 ---
 
+## Текущий статус теста и ограничения
+
+**Что тест проверяет честно сейчас:**
+
+✅ **Repeat** - Проверяет порядок честно. Берет `firstBatchIds`, кликает `Repeat`, сравнивает `repeatedBatchIds == firstBatchIds`. Даже если первый батч был случайный, Repeat обязан повторить именно его. Это покрыто нормально.
+
+✅ **Continue (частично)** - Проверяет что checked-карточки исключены, navigation-only карточка не записалась в `todayShownCardIds`. Но **НЕ проверяет порядок нового батча** и не проверяет что navigation-only карточка реально попала следующей в continue batch.
+
+✅ **Reset (частично)** - Проверяет что `SessionCard` скрыт, `lastSession` удален, прогресс не очищен. Но **НЕ проверяет что после Reset новый Start снова начинает колоду с начала**.
+
+**Главная проблема:**
+
+Тест не включает `sortByFrequency`. В текущей ViewModel при `sortByFrequency = false` порядок батча идет через:
+
+```kotlin
+remaining.shuffled().take(sessionSize)
+```
+
+这意味着 точный порядок `[1,2,3,4,5]`, потом `[3,4,5,6,7]`, потом после reset снова `[1,2,3,4,5]` тест **сейчас не может доказать**. Тест может пройти зеленым, даже если порядок Continue/Reset будет неправильный, потому что таких assertions нет.
+
+**Что можно сказать сейчас:**
+
+✅ Тест подтверждает базовую механику SessionCard:
+- Repeat повторяет сохраненный батч
+- Continue не считает navigation-only карточку shown
+- Reset удаляет сессию и сохраняет прогресс
+
+❌ Тест **НЕ** полностью гарантирует мобильную логику порядка батчей во всех режимах.
+
+**Что нужно добавить для полной валидации:**
+
+1. Включить стабильный порядок перед стартом:
+   - Либо через UI-клик по `sortByFrequency` checkbox
+   - Либо явно в VM: `verbVm.toggleSortByFrequency()`
+
+2. Добавить точные assertions на порядок:
+
+```kotlin
+// Use Case 1: Repeat
+assertEquals(
+    listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5"),
+    firstBatchIds
+)
+
+// Use Case 2: Continue
+assertEquals(
+    listOf("test_verb_3", "test_verb_4", "test_verb_5", "test_verb_6", "test_verb_7"),
+    continueBatchIds
+)
+
+// Use Case 3: Reset
+assertEquals(
+    firstBatchIds,
+    batchAfterResetStart
+)
+```
+
+**Примечание про exitTrainingThroughUi:**
+
+Выход из тренировки сделан через helper `exitTrainingThroughUi()`, который вызывает `persistSessionState()` и `refreshLastSessionContext()`. Это не клик по реальной кнопке выхода.
+
+Для проверки SessionCard-логики это приемлемо, но это **не full mobile E2E**. Полный E2E тест включал бы клик по реальной кнопке "Back" или "Exit" на TrainingScreen.
+
+---
+
 ## Use Case 1: Repeat
 
 **Сценарий:**

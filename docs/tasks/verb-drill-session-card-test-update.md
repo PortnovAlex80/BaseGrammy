@@ -11,23 +11,41 @@
 
 Тест `VerbDrillSessionCardRegressionTest` был создан для проверки функциональности SessionCard кнопок (Repeat/Continue/Reset). Тест использует TRUE UI clicks и правильно моделирует путь пользователя через экраны приложения.
 
+**Важно:** Тест полезный и частично честный, но **НЕ полностью доказывает главное требование про порядок карточек во всех режимах**. Нельзя сказать "на мобиле точно все ок с логикой порядка" на основе текущей версии.
+
 Требования к тесту задокументированы в: `docs/testing/VerbDrillSessionCardRegressionTest-Requirements.md`
 
 ---
 
 ## Current Status
 
-**Что уже работает (эталон):**
+**Что тест проверяет честно сейчас:**
+
+✅ **Repeat** - Проверяет порядок честно. Берет `firstBatchIds`, кликает `Repeat`, сравнивает `repeatedBatchIds == firstBatchIds`. Даже если первый батч был случайный, Repeat обязан повторить именно его.
+
+✅ **Continue (частично)** - Проверяет что checked-карточки исключены, navigation-only карточка не записалась в `todayShownCardIds`. Но **НЕ проверяет порядок нового батча** и не проверяет что navigation-only карточка реально попала следующей в continue batch.
+
+✅ **Reset (частично)** - Проверяет что `SessionCard` скрыт, `lastSession` удален, прогресс не очищен. Но **НЕ проверяет что после Reset новый Start снова начинает колоду с начала**.
+
+**Главная проблема:**
+
+Тест не включает `sortByFrequency`. В текущей ViewModel при `sortByFrequency = false` порядок батча идет через `shuffled()`. Это значит точный порядок батчей тест **сейчас не может доказать**.
+
+**Что можно сказать сейчас:**
+- ✅ Тест подтверждает базовую механику SessionCard
+- ❌ Тест **НЕ** полностью гарантирует мобильную логику порядка батчей
+
+**Эталонные механики (сохранить):**
 - ✅ TRUE UI clicks через Compose testing API
 - ✅ Правильная синхронизация с async state updates
-- ✅ Детерминированный порядок карточек через `sortByFrequency`
-- ✅ Проверка Repeat/Continue/Reset через реальные UI клики
 - ✅ Production код не изменен (`collectAsStateWithLifecycle()`)
+- ✅ Чтение state только для assertions, не для мутации
 
-**Что требует обновления:**
-- ❌ Тест не был запущен из-за отсутствия Java в CI среде
-- ❌ Требуется верификация что assertions проверяют порядок батчей
-- ❌ Требуется проверка что все 3 use case работают корректно
+**Примечание про exitTrainingThroughUi:**
+
+Выход из тренировки сделан через helper `exitTrainingThroughUi()`, который вызывает `persistSessionState()` и `refreshLastSessionContext()`. Это не клик по реальной кнопке выхода.
+
+Для проверки SessionCard-логики это приемлемо, но это **не full mobile E2E**.
 
 ---
 
@@ -37,26 +55,54 @@
 
 Обновить тест `VerbDrillSessionCardRegressionTest` чтобы он:
 
-1. Проходил через весь путь пользователя: Start → Check/Next → Exit → Repeat/Continue/Reset
-2. Проверял **порядок карточек в батчах**, а не только факт их существования
-3. Использовал **только TRUE UI clicks** (без ViewModel bypass)
-4. Доказывал что поведение соответствует требованиям из спецификации
+1. **Включал детерминированный порядок** через `sortByFrequency = true`
+2. Проверял **точный порядок карточек в батчах** (не только включение/исключение)
+3. Доказывал что поведение соответствует требованиям для всех 3 use cases
+4. Оставался TRUE UI clicks тестом (без ViewModel bypass)
 
-### Technical Requirements
+### Что именно нужно сделать
+
+**Шаг 1: Включить стабильный порядок**
+
+Добавить в `preparedVerbVm()` или в начало каждого теста:
+
+```kotlin
+verbVm.toggleSortByFrequency() // включить детерминированный порядок
+```
+
+Или через UI-клик если есть checkbox с testTag.
+
+**Шаг 2: Добавить точные assertions на порядок**
+
+```kotlin
+// Use Case 1: Repeat
+val expectedFirstBatch = listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5")
+assertEquals(expectedFirstBatch, firstBatchIds)
+assertEquals(expectedFirstBatch, repeatedBatchIds)
+
+// Use Case 2: Continue
+val expectedContinueBatch = listOf("test_verb_3", "test_verb_4", "test_verb_5", "test_verb_6", "test_verb_7")
+assertEquals(expectedContinueBatch, continueBatchIds)
+
+// Use Case 3: Reset
+assertEquals(expectedFirstBatch, batchAfterResetStart)
+```
+
+**Шаг 3: Убедиться что navigation-only карточка попадает в continue batch**
+
+Добавить assertion:
+
+```kotlin
+assertTrue("Navigation-only card should be in continue batch",
+    navigationOnlyCardId in continueBatchIds)
+```
 
 **Сохранить (эталонные механики):**
 - ✅ TRUE UI clicks только через `performClick()`
 - ✅ Синхронизация через `waitUntil()` с timeout
-- ✅ Детерминированный порядок через `toggleSortByFrequency()`
 - ✅ Чтение state только для assertions, не для мутации
 - ✅ Production код использует `collectAsStateWithLifecycle()`
-
-**Обновить:**
-- 🔄 Добавить assertions на точный порядок батчей
-- 🔄 Проверить что Repeat replay-ит последний batch в том же порядке
-- 🔄 Проверить что Continue исключает только checked карточки
-- 🔄 Проверить что Reset сохраняет прогресс
-- 🔄 Убедиться что navigation-only карточки не считаются показанными
+- ✅ Helper `exitTrainingThroughUi()` допустим (не full E2E, но OK для SessionCard логики)
 
 ### Specific Use Cases
 
@@ -113,18 +159,38 @@ assertThat(progressAfterReset).containsExactly("1","2")
    - `continue_excludes_checked_cards_but_not_navigation_only_cards`
    - `reset_hides_session_card_but_keeps_progress`
 
-2. ✅ Assertions проверяют **точный порядок** батчей, а не только включение/исключение
+2. ✅ **Детерминированный порядок включен:**
+   - `verbVm.toggleSortByFrequency()` вызван перед стартом
+   - ИЛИ через UI-клик если есть checkbox с testTag
+   - Порядок батчей предсказуем: [1,2,3,4,5], [3,4,5,6,7], etc.
 
-3. ✅ Тест использует **только TRUE UI clicks** (никакого ViewModel bypass)
+3. ✅ **Assertions проверяют точный порядок батчей:**
+   ```kotlin
+   // Use Case 1: Repeat
+   assertEquals(listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5"), firstBatchIds)
+   assertEquals(firstBatchIds, repeatedBatchIds)
 
-4. ✅ Production код не изменен (VerbDrillScreen использует `collectAsStateWithLifecycle()`)
+   // Use Case 2: Continue
+   assertEquals(listOf("test_verb_3", "test_verb_4", "test_verb_5", "test_verb_6", "test_verb_7"), continueBatchIds)
+   assertTrue(navigationOnlyCardId in continueBatchIds) // navigation-only card included
 
-5. ✅ Тест запускается и проходит локально:
+   // Use Case 3: Reset
+   assertEquals(firstBatchIds, batchAfterResetStart)
+   assertEquals(shownBeforeReset, allTodayShownIds()) // progress preserved
+   ```
+
+4. ✅ Тест использует **только TRUE UI clicks** (никакого ViewModel bypass из теста)
+
+5. ✅ Production код не изменен (VerbDrillScreen использует `collectAsStateWithLifecycle()`)
+
+6. ✅ Тест запускается и проходит локально:
    ```cmd
    build.bat test --tests "com.alexpo.grammermate.ui.VerbDrillSessionCardRegressionTest"
    ```
 
-6. ✅ Тест стабилен (не flaky) при повторных запусках
+7. ✅ Тест стабилен (не flaky) при повторных запусках
+
+8. ✅ Можно сказать: "Тест полностью гарантирует мобильную логику порядка батчей во всех режимах"
 
 ---
 
@@ -169,17 +235,24 @@ java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared
 
 ## Definition of Done
 
-- [ ] Тест запускается и проходит (все 3 test case green)
-- [ ] Assertions проверяют порядок батчей (не только включение/исключение)
-- [ ] TRUE UI clicks только (без fallback)
-- [ ] Production код не изменен
-- [ ] Тест стабилен при повторных запусках
-- [ ] Код закоммичен и запушен в main
-- [ ] APK собирается успешно
-- [ ] Документация обновлена (если нужно)
+- [ ] **Детерминированный порядок включен** (`sortByFrequency = true`)
+- [ ] **Тест запускается и проходит** (все 3 test case green)
+- [ ] **Assertions проверяют точный порядок батчей:**
+  - [ ] Repeat: `firstBatchIds == repeatedBatchIds`
+  - [ ] Continue: `continueBatchIds == [3,4,5,6,7]`
+  - [ ] Reset: `batchAfterReset == firstBatchIds`
+  - [ ] Navigation-only card в continue batch
+- [ ] **TRUE UI clicks только** (без fallback на ViewModel)
+- [ ] **Production код не изменен** (`collectAsStateWithLifecycle()`)
+- [ ] **Тест стабилен** при повторных запусках (не flaky)
+- [ ] **Код закоммичен и запушен** в main
+- [ ] **APK собирается успешно**
+- [ ] **Можно утверждать:** "Тест полностью гарантирует мобильную логику порядка батчей"
 
 ---
 
 **Estimated Time:** 2-4 hours
-**Complexity:** Medium (requires understanding of Compose testing + VerbDrill domain logic)
+**Complexity:** Medium (requires understanding of Compose testing + VerbDrill domain logic + deterministic ordering)
 **Risk:** Low (test isolation, no production changes)
+
+**Key Challenge:** Понять разницу между "тест зеленый" и "тест доказывает порядок батчей". Текущий тест зеленый, но не доказывает порядок. Нужно добавить assertions на точный порядок.
