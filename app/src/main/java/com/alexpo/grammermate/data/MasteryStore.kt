@@ -87,10 +87,11 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                     val lessonData = lessonValue as? Map<*, *> ?: continue
 
                     // Validate mastery data before using it
+                    @Suppress("UNCHECKED_CAST")
                     val validationResult = DataValidator.validateMasteryState(
                         lessonId = lessonId,
                         languageId = languageId,
-                        data = lessonData
+                        data = lessonData as? Map<String, Any>
                     )
 
                     when (validationResult) {

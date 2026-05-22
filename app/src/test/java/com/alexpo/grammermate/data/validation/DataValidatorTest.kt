@@ -75,7 +75,8 @@ class DataValidatorTest {
             "cardEncounterCounts" to mapOf("card1" to 2)
         )
 
-        val result = DataValidator.validateMasteryState("lesson1", "en", data)
+        @Suppress("UNCHECKED_CAST")
+        val result = DataValidator.validateMasteryState("lesson1", "en", data as Map<String, Any>?)
 
         assertTrue("Valid mastery data should be valid", result.isValid)
         assertEquals(10, result.getDataOrDefault().uniqueCardShows)
@@ -89,7 +90,8 @@ class DataValidatorTest {
             "totalCardShows" to 10
         )
 
-        val result = DataValidator.validateMasteryState("lesson1", "en", data)
+        @Suppress("UNCHECKED_CAST")
+        val result = DataValidator.validateMasteryState("lesson1", "en", data as Map<String, Any>?)
 
         assertFalse("Negative uniqueCardShows should be invalid", result.isValid)
         assertTrue("Should use safe default", result.getDataOrDefault().uniqueCardShows >= 0)
@@ -102,7 +104,8 @@ class DataValidatorTest {
             "totalCardShows" to 10
         )
 
-        val result = DataValidator.validateMasteryState("lesson1", "en", data)
+        @Suppress("UNCHECKED_CAST")
+        val result = DataValidator.validateMasteryState("lesson1", "en", data as Map<String, Any>?)
 
         assertFalse("totalCardShows < uniqueCardShows should be invalid", result.isValid)
     }
@@ -116,7 +119,8 @@ class DataValidatorTest {
             "lastShowDateMs" to futureTimestamp
         )
 
-        val result = DataValidator.validateMasteryState("lesson1", "en", data)
+        @Suppress("UNCHECKED_CAST")
+        val result = DataValidator.validateMasteryState("lesson1", "en", data as Map<String, Any>?)
 
         assertTrue("Future timestamp should generate warning, not error", result.isValid)
         if (result is ValidationResult.Warning) {
@@ -133,7 +137,8 @@ class DataValidatorTest {
             "intervalStepIndex" to 999 // Way beyond MAX_MASTERY_STEP
         )
 
-        val result = DataValidator.validateMasteryState("lesson1", "en", data)
+        @Suppress("UNCHECKED_CAST")
+        val result = DataValidator.validateMasteryState("lesson1", "en", data as Map<String, Any>?)
 
         assertFalse("Out-of-range intervalStepIndex should be invalid", result.isValid)
     }

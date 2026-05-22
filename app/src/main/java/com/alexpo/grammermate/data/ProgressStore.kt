@@ -61,7 +61,8 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         val payload = (data["data"] as? Map<*, *>) ?: data
 
         // Validate training progress before using it
-        val validationResult = DataValidator.validateTrainingProgress(payload)
+        @Suppress("UNCHECKED_CAST")
+        val validationResult = DataValidator.validateTrainingProgress(payload as? Map<String, Any>)
 
         return when (validationResult) {
             is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data

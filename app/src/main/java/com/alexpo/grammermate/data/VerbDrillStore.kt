@@ -156,9 +156,10 @@ class VerbDrillStoreImpl(
             val entry = value as? Map<*, *>
 
             // Validate VerbDrill combo progress before using it
+            @Suppress("UNCHECKED_CAST")
             val validationResult = DataValidator.validateVerbDrillComboProgress(
                 key = comboKey,
-                data = entry
+                data = entry as? Map<String, Any>
             )
 
             when (validationResult) {
@@ -308,7 +309,8 @@ class VerbDrillStoreImpl(
         val data = raw as? Map<*, *> ?: return null
 
         // Validate last session data before using it
-        val validationResult = DataValidator.validateVerbDrillLastSession(data)
+        @Suppress("UNCHECKED_CAST")
+        val validationResult = DataValidator.validateVerbDrillLastSession(data as? Map<String, Any>)
 
         return when (validationResult) {
             is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data

@@ -23,7 +23,6 @@ object DataValidator {
 
     private const val TAG = "DataValidator"
     private const val MAX_MASTERY_STEP = 150
-    private const val MAX_REASONABLE_TIMESTAMP = System.currentTimeMillis() + 86400000L // +1 day
     private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     // ── Mastery Data Validation ─────────────────────────────────────────────────────
@@ -42,9 +41,8 @@ object DataValidator {
             return ValidationResult.warning(
                 defaultState,
                 ValidationWarning(
-                    code = "MISSING_MASTERY_DATA",
-                    message = "Mastery data missing for lesson=$lessonId, language=$languageId. Using default state.",
-                    severity = ValidationSeverity.WARNING
+                    field = "mastery",
+                    message = "Missing mastery data for lesson=$lessonId, language=$languageId. Using default state."
                 )
             )
         }
@@ -92,7 +90,7 @@ object DataValidator {
                 message = "Negative timestamp: $lastShowDateMs"
             ))
         }
-        if (lastShowDateMs > MAX_REASONABLE_TIMESTAMP) {
+        if (lastShowDateMs > System.currentTimeMillis() + 86400000L) {
             warnings.add(ValidationWarning(
                 field = "lastShowDateMs",
                 message = "Timestamp in the future: $lastShowDateMs"
@@ -117,7 +115,7 @@ object DataValidator {
                 message = "Negative completion timestamp: $completedAtMs"
             ))
         }
-        if (completedAtMs != null && completedAtMs > MAX_REASONABLE_TIMESTAMP) {
+        if (completedAtMs != null && completedAtMs > System.currentTimeMillis() + 86400000L) {
             warnings.add(ValidationWarning(
                 field = "completedAtMs",
                 message = "Completion timestamp in the future: $completedAtMs"
@@ -158,9 +156,9 @@ object DataValidator {
                     languageId = LanguageId(languageId),
                     uniqueCardShows = uniqueCardShows.coerceIn(0, Lesson.MAIN_POOL_SIZE),
                     totalCardShows = totalCardShows.coerceAtLeast(0),
-                    lastShowDateMs = lastShowDateMs.coerceAtMost(MAX_REASONABLE_TIMESTAMP),
+                    lastShowDateMs = lastShowDateMs.coerceAtMost(System.currentTimeMillis() + 86400000L),
                     intervalStepIndex = intervalStepIndex.coerceIn(0, MAX_MASTERY_STEP),
-                    completedAtMs = completedAtMs?.coerceIn(0, MAX_REASONABLE_TIMESTAMP),
+                    completedAtMs = completedAtMs?.coerceIn(0, System.currentTimeMillis() + 86400000L),
                     shownCardIds = shownCardIds,
                     cardEncounterCounts = cardEncounterCounts
                 ),
@@ -557,7 +555,7 @@ object DataValidator {
                 message = "Negative import timestamp: $importedAt"
             ))
         }
-        if (importedAt > MAX_REASONABLE_TIMESTAMP) {
+        if (importedAt > System.currentTimeMillis() + 86400000L) {
             warnings.add(ValidationWarning(
                 field = "importedAt",
                 message = "Import timestamp in the future: $importedAt"
@@ -577,7 +575,7 @@ object DataValidator {
                     packId = packId,
                     packVersion = packVersion,
                     languageId = languageId,
-                    importedAt = importedAt.coerceAtMost(MAX_REASONABLE_TIMESTAMP),
+                    importedAt = importedAt.coerceAtMost(System.currentTimeMillis() + 86400000L),
                     displayName = displayName
                 ),
                 warnings
@@ -617,9 +615,8 @@ object DataValidator {
             return ValidationResult.warning(
                 defaultProgress,
                 ValidationWarning(
-                    code = "MISSING_VERB_DRILL_PROGRESS",
-                    message = "Verb drill combo progress missing for key=$key. Using default progress.",
-                    severity = ValidationSeverity.WARNING
+                    field = "verbDrillComboProgress",
+                    message = "Verb drill combo progress missing for key=$key. Using default progress."
                 )
             )
         }
@@ -777,9 +774,8 @@ object DataValidator {
             return ValidationResult.warning(
                 defaultStreak,
                 ValidationWarning(
-                    code = "MISSING_STREAK_DATA",
-                    message = "Streak data missing for language=$languageId. Using default streak.",
-                    severity = ValidationSeverity.WARNING
+                    field = "streak",
+                    message = "Streak data missing for language=$languageId. Using default streak."
                 )
             )
         }
@@ -801,7 +797,7 @@ object DataValidator {
                 message = "Negative last completion timestamp: $lastCompletionDateMs"
             ))
         }
-        if (lastCompletionDateMs != null && lastCompletionDateMs > MAX_REASONABLE_TIMESTAMP) {
+        if (lastCompletionDateMs != null && lastCompletionDateMs > System.currentTimeMillis() + 86400000L) {
             Log.w(TAG, "Last completion timestamp in the future: $lastCompletionDateMs")
         }
 
@@ -838,11 +834,11 @@ object DataValidator {
                     languageId = LanguageId(languageId),
                     currentStreak = currentStreak,
                     longestStreak = longestStreak,
-                    lastCompletionDateMs = lastCompletionDateMs?.coerceIn(0, MAX_REASONABLE_TIMESTAMP),
+                    lastCompletionDateMs = lastCompletionDateMs?.coerceIn(0, System.currentTimeMillis() + 86400000L),
                     totalSubLessonsCompleted = totalSubLessonsCompleted,
                     completedTypesToday = completedTypesToday,
                     todayFireCount = todayFireCount,
-                    lastFireDateMs = lastFireDateMs?.coerceIn(0, MAX_REASONABLE_TIMESTAMP)
+                    lastFireDateMs = lastFireDateMs?.coerceIn(0, System.currentTimeMillis() + 86400000L)
                 )
             )
         }

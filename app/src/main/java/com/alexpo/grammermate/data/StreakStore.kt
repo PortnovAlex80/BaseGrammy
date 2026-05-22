@@ -77,9 +77,10 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         val data = raw as? Map<*, *> ?: return StreakData(languageId = LanguageId(languageId))
 
         // Validate streak data before using it
+        @Suppress("UNCHECKED_CAST")
         val validationResult = DataValidator.validateStreakData(
             languageId = languageId,
-            data = data
+            data = data as? Map<String, Any>
         )
 
         return when (validationResult) {
