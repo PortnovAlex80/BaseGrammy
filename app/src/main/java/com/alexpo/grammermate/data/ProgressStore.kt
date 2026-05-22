@@ -7,6 +7,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import com.alexpo.grammermate.data.validation.DataValidator
 
 interface ProgressStore {
 
@@ -58,45 +59,18 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
             else -> return TrainingProgress()
         }
         val payload = (data["data"] as? Map<*, *>) ?: data
-        return TrainingProgress(
-            languageId = LanguageId(payload["languageId"] as? String ?: "en"),
-            mode = TrainingMode.valueOf(payload["mode"] as? String ?: TrainingMode.LESSON.name),
-            bossLessonRewards = (payload["bossLessonRewards"] as? Map<*, *>)?.mapNotNull { (key, value) ->
-                val lessonId = key as? String ?: return@mapNotNull null
-                val reward = value as? String ?: return@mapNotNull null
-                lessonId to reward
-            }?.toMap() ?: emptyMap(),
-            bossMegaReward = payload["bossMegaReward"] as? String,
-            bossMegaRewards = (payload["bossMegaRewards"] as? Map<*, *>)?.mapNotNull { (key, value) ->
-                val lessonId = key as? String ?: return@mapNotNull null
-                val reward = value as? String ?: return@mapNotNull null
-                lessonId to reward
-            }?.toMap() ?: emptyMap(),
-            voiceActiveMs = (payload["voiceActiveMs"] as? Number)?.toLong() ?: 0L,
-            voiceWordCount = (payload["voiceWordCount"] as? Number)?.toInt() ?: 0,
-            hintCount = (payload["hintCount"] as? Number)?.toInt() ?: 0,
-            eliteStepIndex = (payload["eliteStepIndex"] as? Number)?.toInt() ?: 0,
-            eliteBestSpeeds = (payload["eliteBestSpeeds"] as? List<*>)?.mapNotNull { it as? Number }
-                ?.map { it.toDouble() }
-                ?: emptyList(),
-            currentScreen = payload["currentScreen"] as? String ?: "HOME",
-            activePackId = (payload["activePackId"] as? String)?.let { PackId(it) },
-            dailyLevel = (payload["dailyLevel"] as? Number)?.toInt() ?: 0,
-            dailyTaskIndex = (payload["dailyTaskIndex"] as? Number)?.toInt() ?: 0,
-            dailyCursor = run {
-                val cursorPayload = payload["dailyCursor"] as? Map<*, *>
-                DailyCursorState(
-                    sentenceOffset = (cursorPayload?.get("sentenceOffset") as? Number)?.toInt() ?: 0,
-                    currentLessonIndex = (cursorPayload?.get("currentLessonIndex") as? Number)?.toInt() ?: 0,
-                    lastSessionHash = (cursorPayload?.get("lastSessionHash") as? Number)?.toInt() ?: 0,
-                    firstSessionDate = cursorPayload?.get("firstSessionDate") as? String ?: "",
-                    firstSessionSentenceCardIds = (cursorPayload?.get("firstSessionSentenceCardIds") as? List<*>)
-                        ?.mapNotNull { it as? String } ?: emptyList(),
-                    firstSessionVerbCardIds = (cursorPayload?.get("firstSessionVerbCardIds") as? List<*>)
-                        ?.mapNotNull { it as? String } ?: emptyList()
-                )
+
+        // Validate training progress before using it
+        val validationResult = DataValidator.validateTrainingProgress(payload)
+
+        return when (validationResult) {
+            is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data
+            is com.alexpo.grammermate.data.validation.ValidationResult.Invalid -> {
+                Log.w("ProgressStore", "Using safe default for corrupted progress data")
+                validationResult.safeDefault
             }
-        )
+            is com.alexpo.grammermate.data.validation.ValidationResult.Warning -> validationResult.data
+        }
     }
 
     override fun save(progress: TrainingProgress) {

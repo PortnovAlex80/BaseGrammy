@@ -8,6 +8,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import com.alexpo.grammermate.data.validation.DataValidator
 
 interface MasteryStore {
 
@@ -85,33 +86,25 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                     val lessonId = lessonKey as? String ?: continue
                     val lessonData = lessonValue as? Map<*, *> ?: continue
 
-                    val shownCardIds = (lessonData["shownCardIds"] as? List<*>)
-                        ?.mapNotNull { it as? String }
-                        ?.toSet()
-                        ?: emptySet()
-
-                    val cardEncounterCounts = (lessonData["cardEncounterCounts"] as? Map<*, *>)
-                        ?.mapNotNull { (k, v) ->
-                            val key = k as? String ?: return@mapNotNull null
-                            val value = (v as? Number)?.toInt() ?: return@mapNotNull null
-                            key to value
-                        }
-                        ?.toMap()
-                        ?: emptyMap()
-
-                    val mastery = LessonMasteryState(
-                        lessonId = LessonId(lessonId),
-                        languageId = LanguageId(languageId),
-                        uniqueCardShows = (lessonData["uniqueCardShows"] as? Number)?.toInt() ?: 0,
-                        totalCardShows = (lessonData["totalCardShows"] as? Number)?.toInt() ?: 0,
-                        lastShowDateMs = (lessonData["lastShowDateMs"] as? Number)?.toLong() ?: 0L,
-                        intervalStepIndex = (lessonData["intervalStepIndex"] as? Number)?.toInt() ?: 0,
-                        completedAtMs = (lessonData["completedAtMs"] as? Number)?.toLong(),
-                        shownCardIds = shownCardIds,
-                        cardEncounterCounts = cardEncounterCounts
+                    // Validate mastery data before using it
+                    val validationResult = DataValidator.validateMasteryState(
+                        lessonId = lessonId,
+                        languageId = languageId,
+                        data = lessonData
                     )
 
-                    cache[languageId]!![lessonId] = mastery
+                    when (validationResult) {
+                        is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> {
+                            cache[languageId]!![lessonId] = validationResult.data
+                        }
+                        is com.alexpo.grammermate.data.validation.ValidationResult.Invalid -> {
+                            Log.w("MasteryStore", "Using safe default for corrupted mastery data: lesson=$lessonId")
+                            cache[languageId]!![lessonId] = validationResult.safeDefault
+                        }
+                        is com.alexpo.grammermate.data.validation.ValidationResult.Warning -> {
+                            cache[languageId]!![lessonId] = validationResult.data
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {

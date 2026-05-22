@@ -9,6 +9,7 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import com.alexpo.grammermate.data.validation.DataValidator
 
 interface StreakStore {
 
@@ -75,30 +76,20 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
         val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return StreakData(languageId = LanguageId(languageId))
         val data = raw as? Map<*, *> ?: return StreakData(languageId = LanguageId(languageId))
 
-        val currentStreak = (data["currentStreak"] as? Number)?.toInt() ?: 0
-        val longestStreak = (data["longestStreak"] as? Number)?.toInt() ?: 0
-        val lastCompletionDateMs = (data["lastCompletionDateMs"] as? Number)?.toLong()
-        val totalSubLessonsCompleted = (data["totalSubLessonsCompleted"] as? Number)?.toInt() ?: 0
-
-        // Fire streak fields (migration-safe: defaults for old files)
-        @Suppress("UNCHECKED_CAST")
-        val completedTypesToday = (data["completedTypesToday"] as? List<String>)
-            ?.mapNotNull { name -> PracticeType.entries.find { it.name == name } }
-            ?.toSet()
-            ?: emptySet()
-        val todayFireCount = (data["todayFireCount"] as? Number)?.toInt() ?: 0
-        val lastFireDateMs = (data["lastFireDateMs"] as? Number)?.toLong()
-
-        return StreakData(
-            languageId = LanguageId(languageId),
-            currentStreak = currentStreak,
-            longestStreak = longestStreak,
-            lastCompletionDateMs = lastCompletionDateMs,
-            totalSubLessonsCompleted = totalSubLessonsCompleted,
-            completedTypesToday = completedTypesToday,
-            todayFireCount = todayFireCount,
-            lastFireDateMs = lastFireDateMs
+        // Validate streak data before using it
+        val validationResult = DataValidator.validateStreakData(
+            languageId = languageId,
+            data = data
         )
+
+        return when (validationResult) {
+            is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data
+            is com.alexpo.grammermate.data.validation.ValidationResult.Invalid -> {
+                Log.w("StreakStore", "Using safe default for corrupted streak data: $languageId")
+                validationResult.safeDefault
+            }
+            is com.alexpo.grammermate.data.validation.ValidationResult.Warning -> validationResult.data
+        }
     }
 
     override fun save(data: StreakData) = mutex.withLock {

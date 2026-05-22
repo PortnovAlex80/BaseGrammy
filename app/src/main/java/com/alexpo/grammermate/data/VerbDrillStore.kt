@@ -8,6 +8,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import com.alexpo.grammermate.data.validation.DataValidator
 
 interface VerbDrillStore {
 
@@ -148,36 +149,30 @@ class VerbDrillStoreImpl(
             else -> return emptyMap()
         }
         val payload = (data["data"] as? Map<*, *>) ?: data
-        val today = LocalDate.now().toString()
         val result = mutableMapOf<String, VerbDrillComboProgress>()
+
         for ((key, value) in payload) {
             val comboKey = key as? String ?: continue
-            val entry = value as? Map<*, *> ?: continue
-            val group = entry["group"] as? String ?: continue
-            val tense = entry["tense"] as? String ?: continue
-            val totalCards = (entry["totalCards"] as? Number)?.toInt() ?: 0
-            val everShownCardIds = (entry["everShownCardIds"] as? List<*>)
-                ?.mapNotNull { it as? String }
-                ?.toSet()
-                ?: emptySet()
-            val lastDate = entry["lastDate"] as? String ?: ""
-            val todayShownCardIds = if (lastDate != today) {
-                emptySet()
-            } else {
-                (entry["todayShownCardIds"] as? List<*>)
-                    ?.mapNotNull { it as? String }
-                    ?.toSet()
-                    ?: emptySet()
-            }
-            val updatedLastDate = if (lastDate != today) today else lastDate
-            result[comboKey] = VerbDrillComboProgress(
-                group = group,
-                tense = tense,
-                totalCards = totalCards,
-                everShownCardIds = everShownCardIds,
-                todayShownCardIds = todayShownCardIds,
-                lastDate = updatedLastDate
+            val entry = value as? Map<*, *>
+
+            // Validate VerbDrill combo progress before using it
+            val validationResult = DataValidator.validateVerbDrillComboProgress(
+                key = comboKey,
+                data = entry
             )
+
+            when (validationResult) {
+                is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> {
+                    result[comboKey] = validationResult.data
+                }
+                is com.alexpo.grammermate.data.validation.ValidationResult.Invalid -> {
+                    Log.w("VerbDrillStore", "Using safe default for corrupted combo progress: $comboKey")
+                    // Skip invalid entries
+                }
+                is com.alexpo.grammermate.data.validation.ValidationResult.Warning -> {
+                    result[comboKey] = validationResult.data
+                }
+            }
         }
         return result
     }
@@ -312,25 +307,17 @@ class VerbDrillStoreImpl(
         val raw = try { yaml.load<Any>(lastSessionFile.readText()) } catch (_: Exception) { null } ?: return null
         val data = raw as? Map<*, *> ?: return null
 
-        // Parse todayShownCardIds list
-        val todayShownCardIds = (data["todayShownCardIds"] as? List<*>)
-            ?.mapNotNull { it as? String }
-            ?.toSet()
-            ?: emptySet()
-        val sessionCardIds = (data["sessionCardIds"] as? List<*>)
-            ?.mapNotNull { it as? String }
-            ?: emptyList()
-        val currentIndex = (data["currentIndex"] as? Number)?.toInt() ?: 0
+        // Validate last session data before using it
+        val validationResult = DataValidator.validateVerbDrillLastSession(data)
 
-        return VerbDrillLastSessionState(
-            selectedTense = data["selectedTense"] as? String,
-            selectedGroup = data["selectedGroup"] as? String,
-            sortByFrequency = data["sortByFrequency"] as? Boolean ?: false,
-            todayShownCardIds = todayShownCardIds,
-            sessionCardIds = sessionCardIds,
-            currentIndex = currentIndex,
-            packId = data["packId"] as? String
-        )
+        return when (validationResult) {
+            is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data
+            is com.alexpo.grammermate.data.validation.ValidationResult.Invalid -> {
+                Log.w("VerbDrillStore", "Ignoring corrupted last session data")
+                null
+            }
+            is com.alexpo.grammermate.data.validation.ValidationResult.Warning -> validationResult.data
+        }
     }
 
     override fun saveLastSession(session: VerbDrillLastSessionState) = mutex.withLock {
