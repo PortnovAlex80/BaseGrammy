@@ -1354,6 +1354,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SessionEvent.AdvanceBossProgress -> {
                     val (advanceResult, bossCommands) = bossOrchestrator.advanceBossProgressOnNextCard(event.nextIndex, event.totalCards)
                     handleBossCommands(bossCommands)
+
+                    // Sync bossState from BossOrchestrator to _coreState.boss
+                    // This ensures UI sees updated bossProgress, bossReward, bossRewardMessage
+                    val bossState = bossOrchestrator.stateFlow.value
+                    _coreState.update { it.copy(boss = bossState) }
+
                     // Apply boss pause if reward threshold was crossed
                     if (advanceResult.rewardMessageChanged) {
                         _coreState.update { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
