@@ -23,9 +23,9 @@ with zipfile.ZipFile(pack_path, 'r') as zf:
 
 print(f"Распаковано {len(list(temp_dir.iterdir()))} файлов")
 
-# Копируем ВСЕ обновленные уроки
+# Копируем ВСЕ обновленные уроки (теперь 7 уроков)
 lessons_dir = Path('./data/it/lessons')
-for i in range(1, 7):
+for i in range(1, 8):
     source_lesson = lessons_dir / f'lesson_{i:02d}.csv'
     target_lesson = temp_dir / f'it_lesson_{i:02d}.csv'
     if source_lesson.exists():
