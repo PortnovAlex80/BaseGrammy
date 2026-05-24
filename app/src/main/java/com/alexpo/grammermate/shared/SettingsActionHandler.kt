@@ -100,6 +100,15 @@ class SettingsActionHandler(
         Log.d(logTag, "UI language set to: $safeCode")
     }
 
+    fun setClickableWordHints(enabled: Boolean) {
+        configStore.save(configStore.load().copy(clickableWordHints = enabled))
+        Log.d(logTag, "Clickable word hints set to: $enabled")
+    }
+
+    fun getClickableWordHints(): Boolean {
+        return configStore.load().clickableWordHints
+    }
+
     // ── Profile ─────────────────────────────────────────────────────────
 
     fun updateUserName(newName: String) {

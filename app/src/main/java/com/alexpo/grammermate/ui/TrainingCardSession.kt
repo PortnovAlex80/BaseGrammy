@@ -69,7 +69,9 @@ class TrainingCardSessionScope(
     val encounterCount: Int = 0,
     val sessionOffset: Int = 0,
     val isBossBattle: Boolean = false,
-    val isReviewMode: Boolean = false
+    val isReviewMode: Boolean = false,
+    val clickableWordHints: Boolean = false,
+    val baseDir: java.io.File? = null
 )
 
 /**
@@ -108,7 +110,9 @@ fun TrainingCardSession(
     onComplete: () -> Unit = {},
     modifier: Modifier = Modifier,
     hintLevel: HintLevel = HintLevel.EASY,
-    isReviewMode: Boolean = false
+    isReviewMode: Boolean = false,
+    clickableWordHints: Boolean = false,
+    baseDir: java.io.File? = null
 ) {
     // Local input text state managed by the composable
     var localInputText by remember { mutableStateOf("") }
@@ -127,7 +131,7 @@ fun TrainingCardSession(
     val progress = contract.progress
 
     // Create scope for customization slots
-    val scope = remember(contract, currentCard, isShowingResult, lastResult, effectiveInputText, hintLevel, isReviewMode) {
+    val scope = remember(contract, currentCard, isShowingResult, lastResult, effectiveInputText, hintLevel, isReviewMode, clickableWordHints, baseDir) {
         TrainingCardSessionScope(
             contract = contract,
             currentCard = currentCard,
@@ -162,7 +166,9 @@ fun TrainingCardSession(
             onExit = onExit,
             hintLevel = hintLevel,
             textScale = contract.textScale,
-            isReviewMode = isReviewMode
+            isReviewMode = isReviewMode,
+            clickableWordHints = clickableWordHints,
+            baseDir = baseDir
         )
     }
 
@@ -377,7 +383,9 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         hintAnswer = contract.lastResult?.displayAnswer?.takeIf { contract.lastResult?.hintShown == true },
         onShowReport = { showReportSheet = true },
         reportCard = scope.currentCard,
-        hintLevel = scope.hintLevel
+        hintLevel = scope.hintLevel,
+        clickableWordHints = scope.clickableWordHints,
+        baseDir = scope.baseDir
     )
 }
 

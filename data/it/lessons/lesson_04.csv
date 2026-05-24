@@ -1,217 +1,220 @@
-﻿RU;IT;Tense;Rank;Noun;Gender;Verb;Person;Type;Model
-ты выиграешь (guadagnare) время (tempo).;Tu guadagnerai del tempo.;Futuro Semplice;132;tempo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы спасли (salvare) жизнь.;Noi abbiamo salvato la vita.;Passato Prossimo;137;vita;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я делаю одну часть работы.;Io faccio una parte del lavoro.;Presente;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он делил (dividere) пирог (torta) на части (parti).;Lui divideva la torta in parti.;Imperfetto;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы взяли кусок пиццы.;Noi abbiamo preso un pezzo di pizza.;Passato Prossimo;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты купишь большую часть книги.;Tu comprerai la maggior parte del libro.;Futuro Semplice;147;parte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы часто ели пиццу.;Noi mangiavamo spesso la pizza.;Imperfetto;155;volta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы встретили (incontrare) старых (vecchi) друзей (amici).;Noi abbiamo incontrato dei vecchi amici.;Passato Prossimo;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты найдешь своего лучшего друга.;Tu troverai il tuo migliore amico.;Futuro Semplice;164;amico;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-у него хорошие манеры.;Lui ha buone maniere.;Presente;180;maniera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы (noi) пережили (passare) трудные (difficile) моменты (momenti).;Noi abbiamo passato dei momenti difficili.;Passato Prossimo;218;momento;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты (tu) найдешь (trovare) подходящий (giusto) момент (momento).;Tu troverai il momento giusto.;Futuro Semplice;218;momento;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-у нас будут хорошие идеи (avere, buone).;Noi avremo delle buone idee.;Futuro Semplice;239;idea;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он видел (vedere) хороших (brava) людей (gente).;Lui ha visto della brava gente.;Passato Prossimo;245;gente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы встретим (incontrare) местных (del posto) жителей (gente).;Noi incontreremo la gente del posto.;Futuro Semplice;245;gente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-вы будете смотреть телевизор (la tv);Voi guarderete la tv.;Futuro Semplice;249;;;guardare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-она использовала (usare) грубую (bruta) силу (forza).;Lei ha usato la forza bruta.;Passato Prossimo;254;forza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты придашь ему сил.;Tu gli darai forza.;Futuro Semplice;254;forza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-у нас были некоторые проблемы (avere, problemi).;Noi avevamo dei problemi.;Imperfetto;262;problema;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я люблю (amare) мою (mia) семью (famiglia).;Io amo la mia famiglia.;Presente;278;famiglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-полюби свою семью!;Ama la tua famiglia!;Imperativo tu;278;famiglia;f;;;noun;claude-agent
-мы нашли причины (trovare, ragioni);Noi abbiamo trovato delle ragioni.;Passato Prossimo;285;ragione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я желаю тебе спокойной ночи (augurare, buona notte).;Io ti auguro una buona notte.;Presente;289;notte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-была тихая ночь (essere, silenziosa).;La notte era silenziosa.;Imperfetto;289;notte;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она теряла голову (perdere).;Lei perdeva la testa.;Imperfetto;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я потерял голову (perdere).;Io ho perso la testa.;Passato Prossimo;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты будешь держать голову высоко (alto).;Tu terrai la testa alta.;Futuro Semplice;291;testa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты придумаешь (inventare) истории (storie).;Tu inventerai delle storie.;Futuro Semplice;312;storia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я звоню (chiamare) в полицию (polizia).;Io chiamo la polizia.;Presente;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он видел (vedere) полицию (polizia).;Lui vedeva la polizia.;Imperfetto;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы вызвали (chiamare) полицию (polizia).;Noi abbiamo chiamato la polizia.;Passato Prossimo;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты позвонишь (chiamare) в полицию (polizia).;Tu chiamerai la polizia.;Futuro Semplice;325;polizia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы ждали конца недели.;Noi aspettavamo la fine della settimana.;Imperfetto;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты придешь к концу гонки.;Tu arriverai alla fine della corsa.;Futuro Semplice;334;fine;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты будешь бояться темноты.;Tu avrai paura del buio.;Futuro Semplice;336;paura;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-у тебя будут братья (avere, fratelli).;Tu avrai dei fratelli.;Futuro Semplice;337;fratello;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы купили одежду (capi d'abbigliamento).;Noi abbiamo comprato dei capi d'abbigliamento.;Passato Prossimo;344;capo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он жил (vivere) на первом этаже (primo piano).;Lui viveva al primo piano.;Imperfetto;349;piano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я вожу (guidare) машину (macchina).;Io guido la macchina.;Presente;350;macchina;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он мыл (lavare) машину (macchina).;Lui lavava la macchina.;Imperfetto;350;macchina;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты возьмешь (prendere) машину (macchina).;Tu prenderai la macchina.;Futuro Semplice;350;macchina;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я мою (lavare) руки (mani).;Io mi lavo le mani.;Presente;356;mano;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты использовал (usare) правую (destra) руку (mano).;Tu hai usato la mano destra.;Passato Prossimo;356;mano;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мальчик (bambino) был капризным (capriccioso).;Il bambino era capriccioso.;Imperfetto;362;bambino;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мальчик (bambino) будет маленьким (piccolo).;Il bambino sarà piccolo.;Futuro Semplice;362;bambino;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он читал весь вечер (sera).;Lui leggeva tutta la sera.;Imperfetto;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы провели (passare) вечер (sera) дома (casa).;Noi abbiamo passato la sera a casa.;Passato Prossimo;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты будешь поздно возвращаться вечером.;Tu farai tardi la sera.;Futuro Semplice;371;sera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-маленький дьявол (piccolo) бегал (correre).;Il piccolo diavolo correva.;Imperfetto;380;diavolo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-вина была его.;La colpa era sua.;Imperfetto;389;colpa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты взял (assumersi) на себя вину (colpa).;Tu ti sei assunto la colpa.;Passato Prossimo;389;colpa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы возложим вину на него.;Noi daremo la colpa a lui.;Futuro Semplice;389;colpa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он стал новым Папой.;Lui è diventato il nuovo Papa.;Passato Prossimo;403;Papa;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я жду (aspettare) несколько часов (ore).;Io aspetto delle ore.;Presente;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы работали (lavorare) допоздна (fare le ore piccole).;Noi abbiamo fatto le ore piccole.;Passato Prossimo;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты будешь считать (contare) все часы (tutte le ore).;Tu conterai tutte le ore.;Futuro Semplice;408;ora;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-подожди несколько часов!;Aspetta qualche ora!;Imperativo tu;408;ora;f;;;noun;claude-agent
-она передаст слово (passare la parola);Lei passerà la parola.;Futuro Semplice;409;;;passare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-он обрабатывает землю (lavorare, terra);Lui lavora la terra.;Presente;412;terra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы касались земли (toccare, terra);Noi toccavamo la terra.;Imperfetto;412;terra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты коснулся земли (toccare, terra);Tu hai toccato la terra.;Passato Prossimo;412;terra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-они будут обрабатывать землю (lavorare, terra);Loro lavoreranno la terra.;Futuro Semplice;412;terra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я перехожу дорогу (attraversare, strada).;Io attraverso la strada.;Presente;414;strada;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он шел по сельской дороге (andare, strada di campagna).;Lui andava per la strada di campagna.;Imperfetto;414;strada;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы нашли дорогу (trovare, strada).;Noi abbiamo trovato la strada.;Passato Prossimo;414;strada;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты возьмешь главную дорогу (prendere, strada principale).;Tu prenderai la strada principale.;Futuro Semplice;414;strada;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы проводили неделю дома.;Noi passavamo la settimana a casa.;Imperfetto;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он работал (lavorare) всю (tutta) неделю (settimana).;Lui ha lavorato tutta la settimana.;Passato Prossimo;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты проведешь следующую неделю дома.;Tu passerai la prossima settimana a casa.;Futuro Semplice;420;settimana;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы заработали (guadagnare) несколько (dei) долларов (dollari).;Noi abbiamo guadagnato dei dollari.;Passato Prossimo;427;dollaro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы закончили (finire) школу (scuola).;Noi abbiamo finito la scuola.;Passato Prossimo;432;scuola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-она увидела кровь.;Lei ha visto il sangue.;Passato Prossimo;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты увидишь (vedere) синюю (blu) кровь.;Tu vedrai il sangue blu.;Futuro Semplice;443;sangue;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она позвонит по телефону (telefonare);Lei telefonerà.;Futuro Semplice;444;;;telefonare;lei;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-перевод был автоматическим.;La traduzione era automatica.;Imperfetto;447;traduzione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-у меня есть сладкие воспоминания (avere, dolce, ricordo);Io ho dei dolci ricordi.;Presente;455;ricordo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы увидим (vedere) случайные числа (numeri casuali).;Noi vedremo dei numeri casuali.;Futuro Semplice;470;numero;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он выпил минеральной воды.;Lui ha bevuto dell'acqua minerale.;Passato Prossimo;482;acqua;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я чистил (pulire) комнаты (stanze).;Io pulivo le stanze.;Imperfetto;484;stanza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы сменим (cambiare) комнату (stanza).;Noi cambieremo la stanza.;Futuro Semplice;484;stanza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он покупает хорошую вещь.;Lui compra una cosa buona.;Presente;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я убирал старые вещи (mettere via, vecchia).;Io mettevo via la roba vecchia.;Imperfetto;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты найдешь странные вещи (trovare, strana).;Tu troverai della roba strana.;Futuro Semplice;490;roba;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы изучили человеческое тело.;Noi abbiamo studiato il corpo umano.;Passato Prossimo;493;corpo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он отвечал на звонки.;Lui rispondeva al telefono.;Imperfetto;497;telefono;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты наполнил мусорный пакет.;Tu hai riempito il sacco della spazzatura.;Passato Prossimo;504;sacco;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я видел (vedere) красивых (belle) девушек (ragazze).;Io ho visto delle belle ragazze.;Passato Prossimo;515;ragazza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты познакомишься (conoscere) с девушками (ragazze).;Tu conoscerai delle ragazze.;Futuro Semplice;515;ragazza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он праздновал день рождения (festeggiare, compleanno);Lui ha festeggiato il compleanno.;Passato Prossimo;516;compleanno;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-у нас будет (avere) чувство юмора (umorismo).;Noi avremo un senso dell'umorismo.;Futuro Semplice;517;senso;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-она была моей старшей сестрой (essere, maggiore).;Lei era mia sorella maggiore.;Imperfetto;522;sorella;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы встретили сестер-близнецов (incontrare, gemelle).;Noi abbiamo incontrato delle sorelle gemelle.;Passato Prossimo;522;sorella;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты начнешь (iniziare) в начале (inizio) месяца (mese).;Tu inizierai all'inizio del mese.;Futuro Semplice;529;mese;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-они объявляют (dichiarare) войну (guerra).;Loro dichiarano la guerra.;Presente;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он вел (fare) войну (guerra).;Lui faceva la guerra.;Imperfetto;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы начали (scoppiare) войну (guerra).;Noi abbiamo fatto scoppiare la guerra.;Passato Prossimo;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты проиграешь (perdere) войну (guerra).;Tu perderai la guerra.;Futuro Semplice;537;guerra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он шел (andare) к врачу (dottore).;Lui andava dal dottore.;Imperfetto;538;dottore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты пойдешь (andare) к врачу (dottore).;Tu andrai dal dottore.;Futuro Semplice;538;dottore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я формирую команду (formare, squadra).;Io formo una squadra.;Presente;559;squadra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он тренировал команду (allenare, squadra).;Lui allenava la squadra.;Imperfetto;559;squadra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты будешь частью команды (fare parte, squadra).;Tu farai parte della squadra.;Futuro Semplice;559;squadra;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он — капитан команды (squadra).;Lui è il capitano della squadra.;Presente;572;capitano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она была капитаном корабля (nave).;Lei era la capitana della nave.;Imperfetto;572;capitano;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он искал (cercare) удачу (fortuna).;Lui cercava la fortuna.;Imperfetto;584;fortuna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-нам повезло.;Noi abbiamo avuto fortuna.;Passato Prossimo;584;fortuna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты найдешь (trovare) удачу (fortuna).;Tu troverai la fortuna.;Futuro Semplice;584;fortuna;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я готовлю (preparare) ужин (cena).;Io preparo la cena.;Presente;592;cena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он даёт чувство безопасности.;Lui dà sicurezza.;Presente;605;sicurezza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы чувствовали себя в безопасности.;Noi ci sentivamo al sicuro.;Imperfetto;605;sicurezza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты принял меры безопасности.;Tu hai preso delle misure di sicurezza.;Passato Prossimo;605;sicurezza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-они будут гарантировать (garantire) безопасность (sicurezza).;Loro garantiranno la sicurezza.;Futuro Semplice;605;sicurezza;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он держит (impugnare) пистолет (pistola).;Lui impugna la pistola.;Presente;616;pistola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты направишь пистолет на цель.;Tu punterai la pistola verso il bersaglio.;Futuro Semplice;616;pistola;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы были в начале (all'inizio) пути (percorso).;Noi eravamo all'inizio del percorso.;Imperfetto;623;inizio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-это главная (principale) причина (causa).;Questa è la causa principale.;Presente;625;causa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он искал (cercare) причину (causa).;Lui cercava la causa.;Imperfetto;625;causa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы нашли (trovare) причину (causa).;Noi abbiamo trovato la causa.;Passato Prossimo;625;causa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты узнаешь причину (scoprire, causa).;Tu scoprirai la causa.;Futuro Semplice;625;causa;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мне хочется пиццы.;Ho voglia di pizza.;Presente;626;voglia;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она была (essere) председателем (presidente) комиссии (della commissione).;Lei era la presidente della commissione.;Imperfetto;638;presidente;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы увидим маленькую (piccola) городскую площадь.;Noi vedremo una piccola piazza della città.;Futuro Semplice;639;città;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы пошли (andare) в центральную (centrale) больницу (ospedale).;Noi siamo andati all'ospedale centrale.;Passato Prossimo;642;ospedale;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он решал (risolvere) эту ситуацию (situazione).;Lui risolveva la situazione.;Imperfetto;651;situazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы решили (risolvere) эту ситуацию (situazione).;Noi abbiamo risolto la situazione.;Passato Prossimo;651;situazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-полиция расследовала убийство (indagare su, omicidio).;La polizia ha indagato su un omicidio.;Passato Prossimo;652;omicidio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я делаю (fare) проверку (revisione).;Io faccio la revisione.;Presente;653;revisione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он делал (fare) проверку (revisione).;Lui faceva la revisione.;Imperfetto;653;revisione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы сделали (fare) проверку (revisione).;Noi abbiamo fatto la revisione.;Passato Prossimo;653;revisione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты сделаешь (fare) проверку (revisione).;Tu farai la revisione.;Futuro Semplice;653;revisione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он хочет найти (trovare) мир (pace).;Lui vuole trovare la pace.;Presente;671;pace;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-у нас был (avere) мир (pace).;Noi avevamo la pace.;Imperfetto;671;pace;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-они обрели мир.;Loro hanno trovato la pace.;Passato Prossimo;671;pace;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты найдешь (trovare) мир (pace).;Tu troverai la pace.;Futuro Semplice;671;pace;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я слушаю хорошую музыку.;Io ascolto buona musica.;Presente;673;musica;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он слушал (ascoltare) классическую (classica) музыку.;Lui ascoltava la musica classica.;Imperfetto;673;musica;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы слушали (ascoltare) поп-музыку (musica pop).;Noi abbiamo ascoltato la musica pop.;Passato Prossimo;673;musica;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты будешь слушать (ascoltare) электронную (elettronica) музыку.;Tu ascolterai la musica elettronica.;Futuro Semplice;673;musica;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты купил книги.;Tu hai comprato dei libri.;Passato Prossimo;677;libro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы купим (comprare) книги (libri) для школы (scolastici).;Noi compreremo dei libri scolastici.;Futuro Semplice;677;libro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы узнаем правду (scoprire la verità);Noi scopriremo la verità.;Futuro Semplice;695;;;scoprire;noi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-мы наймем (assumere) адвокатов (avvocati).;Noi assumeremo degli avvocati.;Futuro Semplice;709;avvocato;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он отправлял (inviare) сообщения (messaggio).;Lui inviava dei messaggi.;Imperfetto;712;messaggio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я буду использовать силу (usare la forza);Io userò la forza.;Futuro Semplice;716;;;usare;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-я смотрю на голубое небо (guardare, azzurro).;Io guardo il cielo azzurro.;Presente;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-было ясное небо (essere, sereno).;Il cielo era sereno.;Imperfetto;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он видел облачное небо (vedere, nuvoloso).;Lui ha visto il cielo nuvoloso.;Passato Prossimo;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы увидим звездное небо (vedere, stellato).;Noi vedremo il cielo stellato.;Futuro Semplice;718;cielo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты выйдешь подышать свежим воздухом.;Tu uscirai a prendere un po' d'aria fresca.;Futuro Semplice;721;aria;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты слышал (sentire) голоса (voce).;Tu sentivi delle voci.;Imperfetto;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-она потеряла (perdere) голос (voce).;Lei ha perso la voce.;Passato Prossimo;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы поднимем (alzare) голос (voce).;Noi alzeremo la voce.;Futuro Semplice;722;voce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я включаю (accendere) свет (luce).;Io accendo la luce.;Presente;735;luce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он выключал (spegnere) свет (luce).;Lui spegneva la luce.;Imperfetto;735;luce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы включили (accendere) огни (luci).;Noi abbiamo acceso le luci.;Passato Prossimo;735;luce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты выключишь (spegnere) свет (luce).;Tu spegnerai la luce.;Futuro Semplice;735;luce;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он видит виртуальную реальность (vedere, realtà virtuale).;Lui vede la realtà virtuale.;Presente;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы принимали реальность (accettare, realtà).;Noi accettavamo la realtà.;Imperfetto;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты встретил суровую реальность (incontrare, cruda, realtà).;Tu hai incontrato la cruda realtà.;Passato Prossimo;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-они будут изучать социальную реальность (studiare, realtà sociale).;Loro studieranno la realtà sociale.;Futuro Semplice;749;realta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он задавал сложные вопросы.;Lui faceva delle domande complesse.;Imperfetto;752;domanda;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы будем часто задавать вопросы.;Noi faremo spesso delle domande.;Futuro Semplice;752;domanda;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-для нас это было честью.;È stato un onore per noi.;Passato Prossimo;758;onore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты принесёшь честь своей семье.;Tu porterai onore alla tua famiglia.;Futuro Semplice;758;onore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он говорит (dire) правду (verità).;Lui dice la verità.;Presente;760;verità;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-она знала (sapere) всю (tutta) правду (verità).;Lei sapeva tutta la verità.;Imperfetto;760;verità;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы открыли (scoprire) правду (verità).;Noi abbiamo scoperto la verità.;Passato Prossimo;760;verità;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты скажешь (dire) горькую (amara) правду (verità).;Tu dirai l'amara verità.;Futuro Semplice;760;verità;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-я ем здоровую пищу.;Io mangio cibo sano.;Presente;770;cibo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он спешил.;Lui aveva fretta.;Imperfetto;771;fretta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы спешили.;Noi abbiamo avuto fretta.;Passato Prossimo;771;fretta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты будешь спешить.;Tu avrai fretta.;Futuro Semplice;771;fretta;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-у нас были хорошие намерения (intenzioni).;Noi abbiamo avuto delle buone intenzioni.;Passato Prossimo;782;intenzione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-вы измените жизнь (cambiare vita);Voi cambierete vita.;Futuro Semplice;784;;;cambiare;voi;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-он чистил (pulire) спальню (camera da letto).;Lui puliva la camera da letto.;Imperfetto;786;camera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты сменишь (cambiare) спальню (camera da letto).;Tu cambierai la camera da letto.;Futuro Semplice;786;camera;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты скажешь что-нибудь об этом.;Tu dirai qualcosa al riguardo.;Futuro Semplice;790;riguardo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он открывает (aprire) рот.;Lui apre la bocca.;Presente;796;bocca;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты закрыл (chiudere) рот.;Tu hai chiuso la bocca.;Passato Prossimo;796;bocca;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-у нас будет (avere) сухой (asciutto) рот.;Noi avremo la bocca asciutta.;Futuro Semplice;796;bocca;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я позволю провести встречу (permettere lo svolgimento);Io permetterò lo svolgimento della riunione.;Futuro Semplice;797;;;permettere;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-мы получили приказы (ricevere, ordine).;Noi abbiamo ricevuto degli ordini.;Passato Prossimo;801;ordine;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты положишь вещи в алфавитном порядке (mettere, in, ordine, alfabetico).;Tu metterai le cose in ordine alfabetico.;Futuro Semplice;801;ordine;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он просыпался (svegliarsi) утром.;Lui si svegliava la mattina.;Imperfetto;813;mattina;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты собирал средства.;Tu raccoglievi dei fondi.;Imperfetto;818;fondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы видели (vedere) дно (fondo) моря (mare).;Noi abbiamo visto il fondo del mare.;Passato Prossimo;818;fondo;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-я не мог сказать правду.;Io non potevo dire la verità.;Imperfetto;825;;;potere;io;verb;gemma-4-26b-a4b-it@q4_k_xl:2
-в городе были миллионы жителей.;Nella città c'erano milioni di abitanti.;Imperfetto;826;milione;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-он давал важную информацию.;Lui dava informazioni importanti.;Imperfetto;849;informazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты получишь новые сведения.;Tu otterrai nuove informazioni.;Futuro Semplice;849;informazione;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты причалишь (attraccare) к (a) порту (porto).;Tu attraccherai al porto.;Futuro Semplice;858;porto;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы будем давать (dare) советы (consigli).;Noi daremo dei consigli.;Futuro Semplice;877;consiglio;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы купили вещи в торговом центре (comprare, centro commerciale).;Noi abbiamo comprato delle cose in un centro commerciale.;Passato Prossimo;882;centro;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты увидишь (vedere) летнее (estivo) солнце (sole).;Tu vedrai il sole estivo.;Futuro Semplice;893;sole;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты напишешь (scrivere) закон (legge).;Tu scriverai la legge.;Futuro Semplice;895;legge;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-мы видели (vedere) место (luogo) преступления (crimine).;Noi abbiamo visto la scena del crimine.;Passato Prossimo;899;scena;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-ты совершал (commettere) ошибки (errore).;Tu commettevi degli errori.;Imperfetto;912;errore;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-ты столкнёшься с местной реальностью.;Tu incontrerai la realtà locale.;Futuro Semplice;941;realtà;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-он пойдет в бар в центре (centro).;Lui andrà al bar del centro.;Futuro Semplice;971;bar;m;;;noun;gemma-4-26b-a4b-it@q4_k_xl
-мы найдем (trovare) запасные (di riserva) ключи (chiavi).;Noi troveremo le chiavi di riserva.;Futuro Semplice;997;chiave;f;;;noun;gemma-4-26b-a4b-it@q4_k_xl:2
-помой руки!;Lavati le mani!;Imperativo tu;999;mano;f;;;noun;enriched
-закрой дверь!;Chiudi la porta!;Imperativo tu;999;porta;f;;;noun;enriched
-открой окно!;Apri la finestra!;Imperativo tu;999;finestra;f;;;noun;enriched
-давай поиграем в игру!;Facciamo un gioco!;Imperativo noi;999;gioco;m;;;noun;enriched
-давай выпьем кофе!;Beviamo un caffè!;Imperativo noi;999;caffè;m;;;noun;enriched
-давай приготовим ужин!;Prepariamo la cena!;Imperativo noi;999;cena;f;;;noun;enriched
-я вижу его.;Io lo vedo.;Presente;999;;;;;pronoun;enriched
-я вижу её.;Io la vedo.;Presente;999;;;;;pronoun;enriched
-мы покупаем их.;Noi li compriamo.;Presente;999;;;;;pronoun;enriched
-она открыла её.;Lei l'ha aperta.;Passato Prossimo;999;;;;;pronoun;enriched
-мы их видели.;Noi li abbiamo visti.;Passato Prossimo;999;;;;;pronoun;enriched
-мы встаём рано.;Noi ci alziamo presto.;Presente;999;;;;;reflexive;enriched
-вы моетесь утром.;Voi vi lavate la mattina.;Presente;999;;;;;reflexive;enriched
-это мой дом.;Questa è la mia casa.;Presente;999;casa;f;;;noun;enriched
-это наш учитель.;Questo è il nostro insegnante.;Presente;999;insegnante;m;;;noun;enriched
-я читаю свои книги.;Io leggo i miei libri.;Presente;999;libro;m;;;noun;enriched
+Passato Prossimo
+прошлый (scorso) год (anno) мы жили (vivere) в Риме (Roma).;L'anno scorso noi vivevamo a Roma.
+я делаю одну часть работы (parte del lavoro).;Io faccio una parte del lavoro.
+мы взяли кусок пиццы.;Noi abbiamo preso un pezzo di pizza.
+мы часто ели пиццу.;Noi mangiavamo spesso la pizza.
+я гулял (uscire) с друзьями (amici).;Io uscivo con gli amici.
+мы встретили (incontrare) старых (vecchi) друзей (amici).;Noi abbiamo incontrato dei vecchi amici.
+мы делали это по-разному.;Noi lo facevamo in modo diverso.
+она искала один способ (cercare, uno, modo).;Lei ha cercato un modo.
+он оказывал небольшую услугу.;Lui faceva un piccolo favore.
+ты сделал (fare) большую (grande) услугу (favore).;Tu hai fatto un grande favore.
+ты знаешь (conoscere) эту девушку (la).;Tu la conosci.
+она позвонила (chiamare) подруге (la).;Lei l'ha chiamata.
+мы (noi) пережили (passare) трудные (difficile) моменты (momenti).;Noi abbiamo passato dei momenti difficili.
+он красивый парень (bello, ragazzo).;Lui è un bel ragazzo.
+он тратит (spendere) деньги (soldo).;Lui spende i soldi.
+мы заработали (guadagnare) много (molto) денег (soldi).;Noi abbiamo guadagnato molti soldi.
+у меня есть хорошая идея (avere, buona).;Io ho una buona idea.
+это была плохая идея (essere, brutta).;Era una brutta idea.
+там много (tanta) людей (gente).;C'è tanta gente.
+было мало (poca) людей (gente).;C'era poca gente.
+он видел (vedere) хороших (brava) людей (gente).;Lui ha visto della brava gente.
+я купил (comprare) яблоки (li) на рынке (mercato).;Io li ho comprati al mercato.
+мы видели (vedere) их (li) вчера (ieri).;Noi li abbiamo visti ieri.
+мне там было хорошо.;Io mi sono trovato bene.
+это счастливый (fortunato) случай (caso).;Questo è un caso fortunato.
+это был изолированный (isolato) случай (caso).;Era un caso isolato.
+она использовала (usare) грубую (bruta) силу (forza).;Lei ha usato la forza bruta.
+я вижу (vedere) его (lo) каждый (ogni) день (giorno).;Io lo vedo ogni giorno.
+я писал (scrivere) полное (completo) имя (nome).;Io scrivevo il nome completo.
+у него есть техническая проблема (tecnico, problema).;Lui ha un problema tecnico.
+я знаю (conoscere) весь (intero) мир (mondo).;Io conosco il mondo intero.
+мы изучали (studiare) мир (mondo) животных (animale).;Noi studiavamo il mondo animale.
+он видел (vedere) новый (nuovo) мир (mondo).;Lui ha visto un nuovo mondo.
+она — красивая (bello) женщина (donna).;Lei è una bella donna.
+она была сильной женщиной.;Lei era una donna forte.
+я видел (vedere) молодую (giovane) женщину (donna).;Io ho visto una giovane donna.
+я люблю (amare) мою (mia) семью (famiglia).;Io amo la mia famiglia.
+мы были (essere) большой (grande) семьей (famiglia).;Noi eravamo una grande famiglia.
+мы нашли причины (trovare, ragioni);Noi abbiamo trovato delle ragioni.
+я желаю тебе спокойной ночи (augurare, buona notte).;Io ti auguro una buona notte.
+была тихая ночь (essere, silenziosa).;La notte era silenziosa.
+он провел бессонную ночь (passare, notte bianca).;Lui ha passato una notte bianca.
+она теряла голову (perdere).;Lei perdeva la testa.
+я потерял голову (perdere).;Io ho perso la testa.
+я нашел (trovare) ценное (prezioso) сокровище (tesoro).;Io ho trovato un tesoro prezioso.
+моя жена (moglie) дома (casa).;Mia moglie è a casa.
+я встретил (incontrare) мою жену (moglie).;Ho incontrato mia moglie.
+он рассказывает (raccontare) историю (storia).;Lui racconta una storia.
+она читала (leggere) древнюю (antica) историю (storia).;Lei leggeva una storia antica.
+мы написали (scrivere) короткую (breve) историю (storia).;Noi abbiamo scritto una breve storia.
+они умерли от голода (morire di fame);Loro sono morti di fame.
+мы вызвали (chiamare) полицию (polizia).;Noi abbiamo chiamato la polizia.
+я прочитал газету (leggere il giornale);Io ho letto il giornale.
+это хороший (buono) конец (fine) дня (giorno).;È un buon finale di giornata.
+мы ждали конца недели (aspettare, fine, settimana).;Aspettavamo la fine della settimana.
+мы почувствовали (sentire) большой (grande) страх (paura).;Noi abbiamo sentito una grande paura.
+мой брат был маленький (essere, piccolo).;Mio fratello era piccolo.
+он хороший (buono) начальник (capo).;Lui è un buon capo.
+она была начальницей отдела.;Lei era la caporeparto.
+мы купили одежду (capi d'abbigliamento).;Noi abbiamo comprato dei capi d'abbigliamento.
+мы потеряли (perdere) любовь (amore).;Noi abbiamo perso l'amore.
+она убила его хладнокровно (uccidere a sangue freddo);Lei lo ha ucciso a sangue freddo.
+я играю (suonare) на пианино (piano).;Io suono il piano.
+он жил (vivere) на первом этаже (primo piano).;Lui viveva al primo piano.
+мы купили (comprare) новую (nuova) машину (macchina).;Noi abbiamo comprato una macchina nuova.
+я мою (lavare) руки (mani).;Io mi lavo le mani.
+он помогал.;Lui dava una mano.
+ты использовал (usare) правую (destra) руку (mano).;Tu hai usato la mano destra.
+это любопытный (curioso) мальчик (bambino).;Questo è un bambino curioso.
+мальчик (bambino) был капризным (capriccioso).;Il bambino era capriccioso.
+он вернулся к жизни (tornare in vita);Lui è tornato in vita.
+он читал весь вечер.;Lui leggeva tutta la sera.
+мы провели (passare) вечер (sera) дома (casa).;Noi abbiamo passato la sera a casa.
+я иду прогуляться.;Io vado a fare un giro.
+ты делал короткий круг.;Tu facevi un breve giro.
+он стал папой.;Lui è diventato papà.
+я жду уже несколько часов (aspettare, ore).;Io aspetto da alcune ore.
+мы засиделись допоздна.;Noi abbiamo fatto le ore piccole.
+он шел по сельской дороге (andare, strada di campagna).;Lui andava per la strada di campagna.
+мы проводили неделю дома.;Noi passavamo la settimana a casa.
+он работал (lavorare) всю (tutta) неделю (settimana).;Lui ha lavorato tutta la settimana.
+он был (essere) добрым (bravo) папой (papà).;Lui era un bravo papà.
+мы заработали (guadagnare) несколько (dei) долларов (dollari).;Noi abbiamo guadagnato dei dollari.
+у него голубые (azzurro) глаза.;Lui ha gli occhi azzurri.
+она закрыла (chiudere) глаза.;Lei ha chiuso gli occhi.
+он был в (essere) начальной (elementare) школе (scuola).;Lui era in una scuola elementare.
+мы делали (fare) забор (prelievo) крови.;Noi facevamo un prelievo di sangue.
+она видела красную кровь.;Lei ha visto il sangue rosso.
+перевод был автоматическим.;La traduzione era automatica.
+у него золотое сердце (oro).;Lui ha un cuore d'oro.
+ты разбил ему сердце (spezzare).;Tu hai spezzato il suo cuore.
+мы потеряли воспоминания (perdere, ricordo);Noi abbiamo perso i ricordi.
+он набирает (comporre) номер телефона (numero di telefono).;Lui compone il numero di telefono.
+ты написал (scrivere) номер дома (numero civico).;Tu hai scritto il numero civico.
+я пью (bere) горячую (calda) воду (acqua).;Io bevo l'acqua calda.
+мы хотели (volere) проточную (corrente) воду (acqua).;Noi volevamo l'acqua corrente.
+он пил (bere) минеральную (minerale) воду (acqua).;Lui ha bevuto dell'acqua minerale.
+эта маленькая комната (piccola, stanza) очень красивая (bella).;Questa piccola stanza è molto bella.
+я чистил (pulire) комнаты (stanze).;Io pulivo le stanze.
+он арендовал (affittare) одну комнату (una stanza).;Lui ha affittato una stanza.
+он покупает кое-что хорошее.;Lui compra della roba buona.
+я убирал старые вещи (mettere via, vecchia).;Io mettevo via la roba vecchia.
+мы купили много вещей (comprare, tanta).;Noi abbiamo comprato tanta roba.
+она была секретным агентом.;Lei era un'agente segreta.
+я нанял агента по недвижимости (immobiliare).;Io ho assunto un agente immobiliare.
+он видел (vedere) небесное (celeste) тело (corpo).;Lui vedeva un corpo celeste.
+мы изучали (studiare) человеческое (umano) тело (corpo).;Noi abbiamo studiato il corpo umano.
+я делаю (fare) красивое (bello) фото (foto).;Io faccio una bella foto.
+он отправлял (mandare) групповое (di gruppo) фото (foto).;Lui mandava una foto di gruppo.
+мы сделали (fare) памятное (ricordo) фото (foto).;Noi abbiamo fatto una foto ricordo.
+он отвечал на звонки.;Lui rispondeva al telefono.
+ты купил (comprare) мобильный телефон (telefono cellulare).;Tu hai comprato un telefono cellulare.
+я покупаю мешок картошки.;Io compro un sacco di patate.
+ты наполнил мешок для мусора.;Tu hai riempito il sacco del pattume.
+она симпатичная (carina) девушка (ragazza).;Lei è una ragazza carina.
+та девушка (ragazza) была блондинкой (bionda).;Quella ragazza era bionda.
+я видел (vedere) красивых (belle) девушек (ragazze).;Io ho visto delle belle ragazze.
+она устраивала большую вечеринку (organizzare, grande festa);Lei organizzava una grande festa.
+это потеряло смысл (perdere, senso).;Questo ha perso senso.
+он сделал это за мгновение.;Lui l'ha fatto in un attimo.
+она была моей старшей сестрой (essere, maggiore).;Lei era mia sorella maggiore.
+мы встретили сестер-близнецов (incontrare, gemelle).;Noi abbiamo incontrato delle sorelle gemelle.
+я смотрю (vedere) хороший (bello) фильм.;Io vedo un bel film.
+он посмотрел комедийный фильм.;Lui ha visto un film comico.
+это июньский (giugno) месяц (mese).;Questo è il mese di giugno.
+он ждал (aspettare) весь (intero) месяц (mese).;Lui aspettava l'intero mese.
+они объявляют (dichiarare) войну (guerra).;Loro dichiarano la guerra.
+он вел (fare) войну (guerra).;Lui faceva la guerra.
+мы развязали войну (fare scoppiare la guerra).;Noi abbiamo fatto scoppiare la guerra.
+он шел (andare) к врачу (dottore).;Lui andava dal dottore.
+мы встретили (incontrare) хорошего врача (bravo dottore).;Noi abbiamo incontrato un bravo dottore.
+она живёт как в мечте;Lei vive un sogno.
+ты прожил мечту (vivere un sogno);Tu hai vissuto un sogno.
+мы испытываем её терпение;Noi mettiamo alla prova la sua pazienza.
+они проявили терпение.;Loro hanno mostrato pazienza.
+у меня есть (avere) одна пара (paio) перчаток (guanti).;Io ho un paio di guanti.
+она носила (indossare) одну пару (paio) носков (calzini).;Lei indossava un paio di calzini.
+он купил одну пару ботинок.;Lui ha comprato un paio di stivali.
+он делал (fare) расчеты (conti).;Lui faceva i conti.
+мы закрыли (chiudere) счет (conto).;Noi abbiamo chiuso il conto.
+я пью пол-литра (litro) молока (latte).;Io bevo mezzo litro di latte.
+он использовал (usare) транспортное средство (mezzo di trasporto).;Lui ha usato un mezzo di trasporto.
+они работали на себя (lavorare per conto proprio);Loro lavoravano per conto proprio.
+я составляю команду (comporre, squadra).;Io compongo la squadra.
+он тренировал команду (allenare, squadra).;Lui allenava la squadra.
+мы создали команду (formare, squadra).;Noi abbiamo formato una squadra.
+мы увидели большой маяк.;Noi abbiamo visto un grande faro.
+я сказал одно ключевое слово.;Io ho detto una parola chiave.
+ты поставил правую ногу.;Tu hai messo il piede destro.
+он купил брюссельскую капусту.;Lui ha comprato un cavolo di Bruxelles.
+он — капитан команды (squadra).;Lui è il capitano della squadra.
+она была капитаном корабля (nave).;Lei era la capitana della nave.
+он играл (giocare) в настольную (da tavolo) игру (gioco).;Lui giocava a un gioco da tavolo.
+нам повезло.;Noi abbiamo avuto fortuna.
+ты делаешь вывод (trarre una conclusione);Tu trai una conclusione.
+она черпала вдохновение (trarre ispirazione);Lei traeva ispirazione.
+вы извлекли выгоду (trarre profitto);Voi avete tratto profitto.
+он ел (mangiare) легкий (leggera) ужин (cena).;Lui mangiava una cena leggera.
+мы плотно поужинали.;Noi abbiamo mangiato una cena abbondante.
+он делает (fare) проверки (controllo) безопасности (sicurezza).;Lui fa i controlli di sicurezza.
+мы прошли (superare) проверки (controllo).;Noi abbiamo superato i controlli.
+он заключает выгодную сделку.;Lui fa un buon affare.
+ты услышал (sentire) того парня (quel tizio lì).;Tu hai sentito quel tizio lì.
+ты принял меры безопасности.;Tu hai preso delle misure di sicurezza.
+они празднуют свадьбу.;Loro festeggiano il matrimonio.
+он планировал свадьбу.;Lui pianificava il matrimonio.
+мы отменили свадьбу (annullare, matrimonio).;Noi abbiamo annullato il matrimonio.
+ты видел (vedere) фейерверк (fuoco d'artificio).;Tu hai visto i fuochi d'artificio.
+она видела (vedere) заряженный (carica) пистолет (pistola).;Lei vedeva una pistola carica.
+я купил (comprare) автоматический (automatico) пистолет (pistola).;Io ho comprato una pistola automatica.
+он становится (diventare) королем (re).;Lui diventa il re.
+они короновали (incoronare) короля (re).;Loro hanno incoronato il re.
+это хороший (buono) старт (inizio).;Questo è un buon inizio.
+мы были в начале (all'inizio) пути (percorso).;Noi eravamo all'inizio del percorso.
+я был (essere) молодым родителем (giovane genitore).;Io ero un giovane genitore.
+он — нынешний (attuale) президент (presidente).;Lui è l'attuale presidente.
+она была (essere) председателем комиссии (presidente della commissione).;Lei era la presidente della commissione.
+я живу (abitare) в большом (grande) городе (città).;Io abito in una grande città.
+мы посетили маленький город.;Noi abbiamo visitato una piccola città.
+он был в (essere) большом (grande) госпитале (ospedale).;Lui era in un grande ospedale.
+мы пошли (andare) в центральную (centrale) больницу (ospedale).;Noi siamo andati all'ospedale centrale.
+это сложная (difficile) ситуация (situazione).;Questa è una situazione difficile.
+он совершал серию убийств (commettere, serie, omicidio).;Lui commetteva una serie di omicidi.
+полиция расследовала убийство (indagare, omicidio).;La polizia ha indagato su un omicidio.
+это красивая страна (bello, paese).;Questo è un bel paese.
+я слушаю (ascoltare) хорошую (buona) музыку.;Io ascolto buona musica.
+он слушал (ascoltare) классическую (classica) музыку.;Lui ascoltava la musica classica.
+мы слушали (ascoltare) поп-музыку (musica pop).;Noi abbiamo ascoltato la musica pop.
+я читаю (leggere) интересную (interessante) книгу (libro).;Io leggo un libro interessante.
+ты купил книги.;Tu hai comprato dei libri.
+мы стали знаменитыми (diventare famosi);Noi siamo diventati famosi.
+они ошиблись в адресе (sbagliare indirizzo);Loro hanno sbagliato l'indirizzo.
+они нашли виновного (scoprire il colpevole);Loro hanno scoperto il colpevole.
+она была в ужасной тюрьме (essere, terribile, prigione).;Lei era in una prigione terribile.
+он — хороший (bravo) адвокат (avvocato).;Lui è un bravo avvocato.
+он отправлял (inviare) сообщения (messaggio).;Lui inviava dei messaggi.
+я смотрю на голубое небо (guardare, azzurro).;Io guardo il cielo azzurro.
+было ясное небо (essere, sereno).;Il cielo era sereno.
+он видел облачное небо (vedere, nuvoloso).;Lui ha visto il cielo nuvoloso.
+мы искали отдельный санузел.;Noi cercavamo un bagno privato.
+он использовал общественный туалет.;Lui ha usato un bagno pubblico.
+я выхожу подышать свежим воздухом.;Io esco a prendere un po' d'aria fresca.
+он включал (accendere) кондиционер (aria condizionata).;Lui accendeva l'aria condizionata.
+мы нашли чистый воздух.;Noi abbiamo trovato aria pulita.
+он говорит (parlare) тихим (basso) голосом (voce).;Lui parla a bassa voce.
+ты слышал (sentire) голоса (voce).;Tu sentivi delle voci.
+я гуляю с собакой (portare a spasso, cane).;Io porto a spasso il cane.
+он был верным псом (fedele, cane).;Lui era un cane fedele.
+мы выгуляли собак (portare, cani).;Noi abbiamo portato a spasso i cani.
+он видит (vedere) открытое (aperto) поле (campo).;Lui vede un campo aperto.
+мы включили (accendere) огни (luci).;Noi abbiamo acceso le luci.
+это большая (grande) группа (gruppo).;Questo è un grande gruppo.
+мы были маленькой (piccolo) группой (gruppo).;Noi eravamo un piccolo gruppo.
+они создали музыкальную (musicale) группу (gruppo).;Loro hanno formato un gruppo musicale.
+ты увидел внезапное прибытие поезда.;Tu hai visto un arrivo improvviso del treno.
+он видит виртуальную реальность (vedere, realtà virtuale).;Lui vede la realtà virtuale.
+ты встретил суровую реальность (incontrare, cruda, realtà).;Tu hai incontrato la cruda realtà.
+я жил в маленьком городе.;Io vivevo nel piccolo paese.
+ключ лежит на столе.;La chiave è sul tavolo.

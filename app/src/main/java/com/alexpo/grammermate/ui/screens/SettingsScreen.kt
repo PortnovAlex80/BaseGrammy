@@ -86,10 +86,12 @@ fun SettingsSheet(
     onSetVoiceAutoStart: (Boolean) -> Unit = {},
     onSetUiLanguage: (String) -> Unit = {},
     onSetSessionSize: (Int) -> Unit = {},
+    onSetClickableWordHints: (Boolean) -> Unit = {},
     onDismissParseWarning: () -> Unit = {},
     onConfirmPartialImport: () -> Unit = {},
     uiLanguage: String = "system",
     sessionSize: Int = 10,
+    clickableWordHints: Boolean = true,
     languageDisplayName: String = ""
 ) {
     if (!show) return
@@ -257,6 +259,30 @@ fun SettingsSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
+
+            // Clickable word hints toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Clickable word hints",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = clickableWordHints,
+                    onCheckedChange = { onSetClickableWordHints(it) }
+                )
+            }
+            Text(
+                text = "Show word translations and ranks when viewing answers",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = vocabLimitText,
                 onValueChange = { next ->

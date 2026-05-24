@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -188,7 +190,7 @@ fun VocabDrillScreen(
 
 // -- Selection Screen --
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun VocabDrillSelectionScreen(
     state: VocabDrillUiState,
@@ -227,7 +229,11 @@ private fun VocabDrillSelectionScreen(
         // POS filter chips
         Text(text = stringResource(R.string.vocab_part_of_speech), style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             FilterChip(
                 selected = state.selectedPos == null,
                 onClick = { onSelectPos(null) },
@@ -240,6 +246,7 @@ private fun VocabDrillSelectionScreen(
                     "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
                     "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
                     "numbers" -> stringResource(R.string.vocab_pos_numbers)
+                    "pronouns" -> stringResource(R.string.vocab_pos_pronouns)
                     else -> pos.replaceFirstChar { it.uppercase() }
                 }
                 FilterChip(
@@ -302,6 +309,7 @@ private fun VocabDrillSelectionScreen(
                                     "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
                                     "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
                                     "numbers" -> stringResource(R.string.vocab_pos_numbers)
+                                    "pronouns" -> stringResource(R.string.vocab_pos_pronouns)
                                     else -> pos.replaceFirstChar { it.uppercase() }
                                 }
                                 "$label: $count"
@@ -1098,6 +1106,7 @@ private fun PosBadge(pos: String) {
         "adjectives" -> stringResource(R.string.vocab_badge_adj) to MaterialTheme.colorScheme.tertiaryContainer
         "adverbs" -> stringResource(R.string.vocab_badge_adv) to MaterialTheme.colorScheme.errorContainer
         "numbers" -> stringResource(R.string.vocab_badge_num) to MaterialTheme.colorScheme.surfaceVariant
+        "pronouns" -> stringResource(R.string.vocab_badge_pronoun) to MaterialTheme.colorScheme.surfaceVariant
         else -> pos to MaterialTheme.colorScheme.surfaceVariant
     }
     Card(

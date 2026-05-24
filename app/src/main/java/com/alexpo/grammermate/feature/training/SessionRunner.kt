@@ -684,15 +684,13 @@ class SessionRunner(
             stateMachine.triggerVoice()
         }
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = stateMachine.incorrectAttempts, sessionState = SessionState.ACTIVE, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null),
-                boss = if (it.boss.bossActive) {
-                    it.boss.copy(bossProgress = maxOf(it.boss.bossProgress, nextIndex))
-                } else {
-                    it.boss
-                }
-            )
+            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = stateMachine.incorrectAttempts, sessionState = SessionState.ACTIVE, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null))
         }
         val events = mutableListOf<SessionEvent>()
+        // Boss progress: trigger update in orchestrator
+        if (state.boss.bossActive) {
+            events.add(SessionEvent.AdvanceBossProgress(nextIndex, sessionCards.size))
+        }
         // Update word bank if in WORD_BANK mode
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
             updateWordBank()
