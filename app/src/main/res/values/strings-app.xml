@@ -119,6 +119,7 @@
     <string name="vocab_pos_adjectives">Adj.</string>
     <string name="vocab_pos_adverbs">Adv.</string>
     <string name="vocab_pos_numbers">Numbers</string>
+    <string name="vocab_pos_pronouns">Pronouns</string>
     <string name="vocab_word_frequency">Word frequency</string>
     <string name="vocab_rank_top100">Top 100</string>
     <string name="vocab_rank_top500">Top 500</string>
@@ -184,6 +185,7 @@
     <string name="vocab_badge_adj">adj.</string>
     <string name="vocab_badge_adv">adv.</string>
     <string name="vocab_badge_num">num.</string>
+    <string name="vocab_badge_pronoun">pron.</string>
 
     <!-- AppRoot -->
     <string name="app_restoring_backup">Restoring backup…</string>

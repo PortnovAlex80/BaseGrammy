@@ -1,120 +1,149 @@
 package com.alexpo.grammermate.ui.components
 
-import android.content.Context
-import com.alexpo.grammermate.data.ItalianDrillRow
+import android.util.Log
 import com.alexpo.grammermate.data.ItalianDrillVocabParser
-import com.alexpo.grammermate.data.LessonStore
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
- * Кеш для хранения информации о словах из drill файлов.
- * Предоставляет быстрый доступ к переводам, рангам и коллокациям.
+ * Simple cache for Italian drill word information.
+ * Loads drill data from pack directories and provides fast lookup.
+ *
+ * This is a lightweight alternative to Hilt-based injection - uses simple singleton pattern.
  */
-@Singleton
-class WordInfoCache @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val lessonStore: LessonStore
+class WordInfoCache private constructor(
+    private val baseDir: File
 ) {
-    private var cache: Map<String, WordHint>? = null
-    private var loadedPackId: String? = null
+    companion object {
+        private const val TAG = "WordInfoCache"
 
-    /**
-     * Загружает drill данные для указанного пакета и языка.
-     * Результат кешируется для быстрого доступа.
-     */
-    suspend fun loadPackData(packId: String, languageId: String) = withContext(Dispatchers.IO) {
-        // Проверяем нужно ли перезагрузить
-        if (cache != null && loadedPackId == packId) {
-            return // Уже загружено для этого пакета
-        }
+        @Volatile
+        private var instance: WordInfoCache? = null
 
-        val drillFiles = lessonStore.getVocabDrillFiles(packId, languageId)
-        val wordMap = mutableMapOf<String, WordHint>()
-
-        for (file in drillFiles) {
-            try {
-                val inputStream = FileInputStream(file)
-                val rows = ItalianDrillVocabParser.parse(inputStream, file.name)
-                inputStream.close()
-
-                for (row in rows) {
-                    val word = row.word.lowercase()
-                    val partOfSpeech = when {
-                        file.name.contains("nouns") -> "noun"
-                        file.name.contains("verbs") -> "verb"
-                        file.name.contains("adjectives") -> "adjective"
-                        file.name.contains("adverbs") -> "adverb"
-                        else -> "other"
-                    }
-
-                    // Создаем WordHint только если есть перевод
-                    val translation = row.meaningRu ?: continue
-                    val collocations = row.collocations.take(3) // Максимум 3 коллокации
-
-                    wordMap[word] = WordHint(
-                        translation = translation,
-                        rank = row.rank,
-                        partOfSpeech = partOfSpeech,
-                        collocations = collocations
-                    )
-                }
-            } catch (e: Exception) {
-                // Логируем ошибку, но продолжаем с другими файлами
-                e.printStackTrace()
+        fun getInstance(baseDir: File): WordInfoCache {
+            return instance ?: synchronized(this) {
+                instance ?: WordInfoCache(baseDir).also { instance = it }
             }
         }
 
-        cache = wordMap
-        loadedPackId = packId
+        // Part of speech detection from file names
+        private fun getPosFromFileName(fileName: String): String {
+            return when {
+                fileName.contains("verbs") -> "verbs"
+                fileName.contains("nouns") -> "nouns"
+                fileName.contains("adjectives") -> "adjectives"
+                fileName.contains("adverbs") -> "adverbs"
+                fileName.contains("numbers") -> "numbers"
+                fileName.contains("pronouns") -> "pronouns"
+                else -> "unknown"
+            }
+        }
+    }
+
+    private val cache = mutableMapOf<String, WordHint>()
+    private var loaded = false
+    private val lock = Any()
+
+    /**
+     * Load drill data from pack directories.
+     * Searches for drill files in grammarmate/drills/{packId}/vocab_drill/
+     */
+    fun loadDrillData() {
+        if (loaded) return
+
+        synchronized(lock) {
+            if (loaded) return
+
+            val drillsDir = File(baseDir, "grammarmate/drills")
+            if (!drillsDir.exists()) {
+                Log.w(TAG, "Drills directory not found: ${drillsDir.absolutePath}")
+                loaded = true
+                return
+            }
+
+            var totalLoaded = 0
+            drillsDir.listFiles()?.forEach { packDir ->
+                val vocabDrillDir = File(packDir, "vocab_drill")
+                if (!vocabDrillDir.exists()) return@forEach
+
+                vocabDrillDir.listFiles { file ->
+                    file.extension.equals("csv", ignoreCase = true)
+                }?.forEach { file ->
+                    try {
+                        val pos = getPosFromFileName(file.name)
+                        val rows = ItalianDrillVocabParser.parse(FileInputStream(file), file.name)
+
+                        for (row in rows) {
+                            val hint = WordHint(
+                                translation = row.meaningRu ?: "",
+                                rank = row.rank,
+                                partOfSpeech = pos,
+                                collocations = row.collocations
+                            )
+                            cache[row.word.lowercase()] = hint
+                            totalLoaded++
+                        }
+
+                        Log.d(TAG, "Loaded ${rows.size} words from ${file.name}")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to load drill file: ${file.name}", e)
+                    }
+                }
+            }
+
+            loaded = true
+            Log.i(TAG, "Drill data cache loaded: $totalLoaded words total")
+        }
     }
 
     /**
-     * Получить информацию о словах из drill файлов.
-     * Анализирует предложение и возвращает Map<слово, WordHint>
+     * Get word information for all words in the given text.
+     * Returns a map of lowercase word -> WordHint (only for words found in drill data).
      */
-    fun getWordsInfoFromDrill(answerText: String): Map<String, WordHint> {
-        if (cache == null) {
-            return emptyMap()
+    fun getWordsInfo(text: String): Map<String, WordHint> {
+        if (!loaded) {
+            loadDrillData()
         }
 
-        val wordsInfo = mutableMapOf<String, WordHint>()
-        val words = answerText.split(" ")
+        val result = mutableMapOf<String, WordHint>()
+        val words = text.split(Regex("\\s+"))
 
         for (word in words) {
-            // Убираем знаки препинания
-            val cleanWord = word.lowercase()
-                .replace(Regex("[.,!?;:»«„""]"), "")
-                .replace(Regex("'"), "")
+            val cleanWord = word.replace(Regex("[.,!?;:»«\"'\\[\\](){}]"), "").lowercase()
+            if (cleanWord.isBlank()) continue
 
-            // Ищем в кеше
-            cache?.get(cleanWord)?.let { hint ->
-                wordsInfo[cleanWord] = hint
+            cache[cleanWord]?.let { hint ->
+                result[cleanWord] = hint
             }
         }
 
-        return wordsInfo
+        return result
     }
 
     /**
-     * Получить информацию об одном слове.
+     * Get word information for a single word.
      */
     fun getWordInfo(word: String): WordHint? {
-        return cache?.get(word.lowercase())
+        if (!loaded) {
+            loadDrillData()
+        }
+
+        val cleanWord = word.replace(Regex("[.,!?;:»«\"'\\[\\](){}]"), "").lowercase()
+        return cache[cleanWord]
     }
 
     /**
-     * Очистить кеш (например, при смене пакета).
+     * Clear the cache (useful for testing or pack reload).
      */
     fun clearCache() {
-        cache = null
-        loadedPackId = null
+        synchronized(lock) {
+            cache.clear()
+            loaded = false
+        }
     }
+
+    /**
+     * Check if cache is loaded.
+     */
+    fun isLoaded(): Boolean = loaded
 }

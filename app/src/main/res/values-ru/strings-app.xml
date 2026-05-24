@@ -119,6 +119,7 @@
     <string name="vocab_pos_adjectives">Прил.</string>
     <string name="vocab_pos_adverbs">Нареч.</string>
     <string name="vocab_pos_numbers">Числительные</string>
+    <string name="vocab_pos_pronouns">Местоимения</string>
     <string name="vocab_word_frequency">Частотность слов</string>
     <string name="vocab_rank_top100">Топ 100</string>
     <string name="vocab_rank_top500">Топ 500</string>
@@ -184,6 +185,7 @@
     <string name="vocab_badge_adj">прил.</string>
     <string name="vocab_badge_adv">нареч.</string>
     <string name="vocab_badge_num">числ.</string>
+    <string name="vocab_badge_pronoun">мест.</string>
 
     <!-- AppRoot (Russian) -->
     <string name="app_restoring_backup">Восстановление резервной копии…</string>

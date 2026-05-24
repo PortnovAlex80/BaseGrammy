@@ -10,17 +10,15 @@ data class WordHint(
     val partOfSpeech: String,
     val collocations: List<String> = emptyList()
 ) {
-    companion object {
-        /**
-         * Определить CEFR уровень по частотному рангу.
-         * A1: 1-500, A2: 501-2000, B1+: 2001+
-         */
-        fun getLevelFromRank(rank: Int): String {
-            return when {
-                rank <= 500 -> "A1"
-                rank <= 2000 -> "A2"
-                else -> "B1+"
-            }
+    /**
+     * Определить CEFR уровень по частотному рангу.
+     * A1: 1-500, A2: 501-2000, B1+: 2001+
+     */
+    fun getLevelFromRank(): String {
+        return when {
+            rank <= 500 -> "A1"
+            rank <= 2000 -> "A2"
+            else -> "B1+"
         }
     }
 }

@@ -5,43 +5,50 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 
 /**
- * Popup/dialog с информацией о слове (по аналогии с VerbReferenceBottomSheet)
+ * Modal bottom sheet showing detailed information about a word.
+ * Displays translation, rank, part of speech, and example collocations.
  *
- * Показывает:
- * - Слово и его ранг
- * - Перевод
- * - Часть речи
- * - Коллокации (до 3 штук)
+ * @param word The word to display
+ * @param hint Word information (translation, rank, collocations)
+ * @param onDismiss Callback to close the sheet
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordInfoPopup(
     word: String,
     hint: WordHint,
     onDismiss: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Заголовок - слово и ранг
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Word header with rank badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -49,71 +56,95 @@ fun WordInfoPopup(
             ) {
                 Text(
                     text = word,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
+
+                // Rank badge
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when {
+                            hint.rank <= 500 -> MaterialTheme.colorScheme.primaryContainer
+                            hint.rank <= 2000 -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.tertiaryContainer
+                        }
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "#${hint.rank}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = hint.getLevelFromRank(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
+            // Part of speech
+            if (hint.partOfSpeech.isNotEmpty()) {
                 Text(
-                    text = "#${hint.rank}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
+                    text = hint.partOfSpeech.replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
-            // Уровень (A1/A2/B1+)
-            val level = WordHint.getLevelFromRank(hint.rank)
-            val levelColor = when (level) {
-                "A1" -> Color.Green.copy(alpha = 0.7f)
-                "A2" -> Color.Blue.copy(alpha = 0.7f)
-                else -> Color.Red.copy(alpha = 0.7f)
-            }
-
-            Text(
-                text = "Уровень: $level",
-                style = MaterialTheme.typography.bodyMedium,
-                color = levelColor,
-                fontWeight = FontWeight.Medium
-            )
-
-            // Перевод
-            Text(
-                text = hint.translation,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            // Часть речи
-            Text(
-                text = "Часть речи: ${hint.partOfSpeech}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            // Коллокации (если есть)
-            if (hint.collocations.isNotEmpty()) {
-                Spacer(modifier = Modifier.padding(top = 12.dp))
-                Text(
-                    text = "Коллокации:",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                hint.collocations.forEach { collocation ->
+            // Translation
+            if (hint.translation.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    )
+                ) {
                     Text(
-                        text = "• $collocation",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                        text = hint.translation,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             }
 
-            // Кнопка закрытия
-            Spacer(modifier = Modifier.padding(top = 16.dp))
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Закрыть")
+            // Collocations section
+            if (hint.collocations.isNotEmpty()) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Примеры:",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    hint.collocations.forEach { collocation ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Text(
+                                text = collocation,
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
             }
         }
     }

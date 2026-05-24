@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
@@ -79,6 +80,8 @@ import com.alexpo.grammermate.feature.training.HintCalculator
  * @param onClearIncorrectFeedback Callback to dismiss incorrect feedback.
  * @param onShowReport      Callback to open the report sheet.
  * @param onReportCard      The card to report, or null.
+ * @param clickableWordHints Whether to enable clickable word hints (default: false).
+ * @param baseDir           Base directory for drill data loading (required for clickable hints).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -94,10 +97,32 @@ fun UnifiedInputControlsBar(
     onClearIncorrectFeedback: () -> Unit = {},
     onShowReport: () -> Unit = {},
     reportCard: com.alexpo.grammermate.data.SessionCard? = null,
-    hintLevel: HintLevel = HintLevel.EASY
+    hintLevel: HintLevel = HintLevel.EASY,
+    clickableWordHints: Boolean = false,
+    baseDir: java.io.File? = null
 ) {
     val canLaunchVoice = hasCards && contract.canSubmit
     val canSelectInputMode = hasCards && contract.canSubmit
+
+    // Word info cache for clickable hints (only when feature is enabled)
+    val context = LocalContext.current
+    val wordInfoCache = remember(clickableWordHints, baseDir) {
+        if (clickableWordHints && baseDir != null) {
+            WordInfoCache.getInstance(baseDir)
+        } else {
+            null
+        }
+    }
+
+    // Load drill data when cache is created
+    LaunchedEffect(wordInfoCache) {
+        wordInfoCache?.loadDrillData()
+    }
+
+    // State for word info popup
+    var showWordPopup by remember { mutableStateOf(false) }
+    var wordForPopup by remember { mutableStateOf<String?>(null) }
+    var hintForPopup by remember { mutableStateOf<WordHint?>(null) }
 
     // Voice recognition launcher
     val latestContract by rememberUpdatedState(contract)
@@ -132,7 +157,20 @@ fun UnifiedInputControlsBar(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Hint answer text (eye button)
         if (hintAnswer != null) {
-            HintAnswerCard(answerText = hintAnswer)
+            if (clickableWordHints && wordInfoCache != null) {
+                val wordsInfo = wordInfoCache.getWordsInfo(hintAnswer)
+                ClickableHintAnswerCard(
+                    answerText = hintAnswer,
+                    wordsInfo = wordsInfo,
+                    onWordClick = { word, hint ->
+                        wordForPopup = word
+                        hintForPopup = hint
+                        showWordPopup = true
+                    }
+                )
+            } else {
+                HintAnswerCard(answerText = hintAnswer)
+            }
         }
 
         // Incorrect feedback
@@ -347,6 +385,21 @@ fun UnifiedInputControlsBar(
             enabled = hasCards && inputText.isNotBlank() && contract.canSubmit
         ) {
             Text(text = stringResource(R.string.button_check))
+        }
+
+        // Word info popup
+        val word = wordForPopup
+        val hint = hintForPopup
+        if (showWordPopup && word != null && hint != null) {
+            WordInfoPopup(
+                word = word,
+                hint = hint,
+                onDismiss = {
+                    showWordPopup = false
+                    wordForPopup = null
+                    hintForPopup = null
+                }
+            )
         }
     }
 }

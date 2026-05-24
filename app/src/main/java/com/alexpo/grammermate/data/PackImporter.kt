@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -35,6 +36,9 @@ internal class PackImporter(
     private val removePacksForLanguage: (String, String) -> Unit,
     private val getInstalledPacks: () -> List<LessonPack>
 ) {
+    companion object {
+        private const val TAG = "PackImporter"
+    }
 
     // ── Public entry points ──────────────────────────────────────────────
 

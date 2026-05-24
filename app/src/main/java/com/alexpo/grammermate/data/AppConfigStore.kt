@@ -17,7 +17,8 @@ data class AppConfig(
     val uiLanguage: String = "system",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val sessionSize: Int = 10,
-    val appVersion: Int = 0
+    val appVersion: Int = 0,
+    val clickableWordHints: Boolean = true  // Новая настройка: кликабельные слова в ответах
 )
 
 interface AppConfigStore {
@@ -49,7 +50,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "uiLanguage" to config.uiLanguage,
             "themeMode" to config.themeMode.name,
             "sessionSize" to config.sessionSize,
-            "appVersion" to config.appVersion
+            "appVersion" to config.appVersion,
+            "clickableWordHints" to config.clickableWordHints  // Новая настройка
         )
         try {
             AtomicFileWriter.writeText(file, yaml.dump(payload))
@@ -96,6 +98,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val rawSessionSize = (data["sessionSize"] as? Number)?.toInt() ?: 10
         val sessionSize = rawSessionSize.coerceIn(3, 20)
         val appVersion = (data["appVersion"] as? Number)?.toInt() ?: 0
+        val clickableWordHints = data["clickableWordHints"] as? Boolean ?: true  // Новая настройка
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
@@ -107,7 +110,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             uiLanguage = uiLanguage,
             themeMode = themeMode,
             sessionSize = sessionSize,
-            appVersion = appVersion
+            appVersion = appVersion,
+            clickableWordHints = clickableWordHints  // Новая настройка
         )
     }
 

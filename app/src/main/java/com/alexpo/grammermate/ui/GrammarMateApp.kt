@@ -276,9 +276,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         vm.setSessionSize(size)
                         verbDrillVm.setSessionSize(size)
                     },
+                    onSetClickableWordHints = vm.settings::setClickableWordHints,
                     onDismissParseWarning = vm::dismissParseWarning,
                     onConfirmPartialImport = vm::confirmPartialImport,
                     sessionSize = vm.currentSessionSize,
+                    clickableWordHints = vm.settings.getClickableWordHints(),
                     uiLanguage = vm.currentUiLanguage,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
                 )
@@ -720,16 +722,15 @@ private fun TrainingScreenContent(
         onPausePomodoro = vm::pausePomodoro,
         onResumePomodoro = vm::resumePomodoro,
         onCancelPomodoro = remember(onNavigate) {
-            {
-                vm.cancelPomodoro()
-                onNavigate(Routes.HOME)
-            }
+            vm::cancelPomodoro
         },
         onRateCardDifficulty = vm::rateCardDifficulty,
         onVerbDrillMore = onVerbDrillMore,
         onSessionDone = onSessionDone,
         getTenseInfo = getTenseInfo,
-        pomodoroRemainingSeconds = pomodoroRemainingSeconds
+        pomodoroRemainingSeconds = pomodoroRemainingSeconds,
+        clickableWordHints = vm.settings.getClickableWordHints(),
+        baseDir = LocalContext.current.filesDir
     )
 }
 

@@ -123,7 +123,9 @@ fun TrainingScreen(
     onVerbDrillMore: () -> Unit = {},
     onSessionDone: () -> Unit = {},
     getTenseInfo: (String) -> com.alexpo.grammermate.ui.TenseInfo? = { null },
-    pomodoroRemainingSeconds: Int = 0
+    pomodoroRemainingSeconds: Int = 0,
+    clickableWordHints: Boolean = false,
+    baseDir: java.io.File? = null
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -325,7 +327,9 @@ fun TrainingScreen(
                 onExportBadSentences,
                 isBadSentence,
                 onStartOfflineRecognition,
-                hintLevel
+                hintLevel,
+                clickableWordHints,
+                baseDir
             )
             ResultBlock(state)
             UnifiedNavigationRow(
@@ -435,7 +439,9 @@ fun AnswerBox(
     onExportBadSentences: () -> String? = { null },
     isBadSentence: () -> Boolean = { false },
     onStartOfflineRecognition: () -> Unit = {},
-    hintLevel: HintLevel = HintLevel.EASY
+    hintLevel: HintLevel = HintLevel.EASY,
+    clickableWordHints: Boolean = false,
+    baseDir: java.io.File? = null
 ) {
     val latestState by rememberUpdatedState(state)
     val clipboardManager = LocalClipboardManager.current
@@ -592,7 +598,9 @@ fun AnswerBox(
         hintAnswer = state.cardSession.answerText,
         onShowReport = { showReportSheet = true },
         reportCard = state.cardSession.currentCard,
-        hintLevel = hintLevel
+        hintLevel = hintLevel,
+        clickableWordHints = clickableWordHints,
+        baseDir = baseDir
     )
 
     // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)
