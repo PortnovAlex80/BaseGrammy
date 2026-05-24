@@ -717,26 +717,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun nextCard(triggerVoice: Boolean = false) {
-        val state = _coreState.value
-        val bossState = bossOrchestrator.stateFlow.value
-
-        // Boss-specific progress handling
-        if (bossState.bossActive) {
-            val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionRunner.getSessionCards().lastIndex)
-            val (advanceResult, bossCommands) = bossOrchestrator.advanceBossProgressOnNextCard(nextIndex, sessionRunner.getSessionCards().size)
-
-            val events = sessionRunner.nextCard(triggerVoice)
-            handleSessionEvents(events)
-            handleBossCommands(bossCommands)
-
-            // Apply boss pause if reward threshold was crossed
-            if (advanceResult.rewardMessageChanged) {
-                _coreState.update { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
-            }
-        } else {
-            val events = sessionRunner.nextCard(triggerVoice)
-            handleSessionEvents(events)
-        }
+        val events = sessionRunner.nextCard(triggerVoice)
+        handleSessionEvents(events)
     }
 
     fun prevCard() = handleSessionEvents(sessionRunner.prevCard())
@@ -1369,6 +1351,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SessionEvent.GetMastery -> event.callback(masteryStore.get(event.lessonId, event.langId))
                 is SessionEvent.GetSchedule -> event.callback(lessonSchedules[com.alexpo.grammermate.data.LessonId(event.lessonId)])
                 is SessionEvent.RebuildSchedules -> rebuildSchedules(event.lessons)
+                is SessionEvent.AdvanceBossProgress -> {
+                    val (advanceResult, bossCommands) = bossOrchestrator.advanceBossProgressOnNextCard(event.nextIndex, event.totalCards)
+                    handleBossCommands(bossCommands)
+                    // Apply boss pause if reward threshold was crossed
+                    if (advanceResult.rewardMessageChanged) {
+                        _coreState.update { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
+                    }
+                }
                 is SessionEvent.Composite -> handleSessionEvents(event.events)
             }
         }

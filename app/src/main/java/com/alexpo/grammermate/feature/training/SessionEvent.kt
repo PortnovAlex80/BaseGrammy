@@ -35,5 +35,6 @@ sealed class SessionEvent {
     data class GetMastery(val lessonId: String, val langId: String, val callback: (LessonMasteryState?) -> Unit) : SessionEvent()
     data class GetSchedule(val lessonId: String, val callback: (LessonSchedule?) -> Unit) : SessionEvent()
     data class RebuildSchedules(val lessons: List<Lesson>) : SessionEvent()
+    data class AdvanceBossProgress(val nextIndex: Int, val totalCards: Int) : SessionEvent()
     data class Composite(val events: List<SessionEvent>) : SessionEvent()
 }
