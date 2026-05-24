@@ -136,6 +136,7 @@ internal class PackImporter(
     private fun extractZipToTemp(input: InputStream): File {
         val tempDir = File(packsDir, "tmp_${UUID.randomUUID()}")
         tempDir.mkdirs()
+        Log.d(TAG, "Extracting ZIP to temp dir: ${tempDir.absolutePath}")
         ZipInputStream(input).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
@@ -147,13 +148,21 @@ internal class PackImporter(
                 }
                 if (entry.isDirectory) {
                     outFile.mkdirs()
+                    Log.d(TAG, "Created directory: ${entry.name}")
                 } else {
                     outFile.parentFile?.mkdirs()
                     FileOutputStream(outFile).use { out -> zip.copyTo(out) }
+                    if (entry.name.endsWith(".csv")) {
+                        Log.d(TAG, "Extracted CSV: ${entry.name} (${outFile.length()} bytes)")
+                    }
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
             }
+        }
+        Log.d(TAG, "ZIP extraction complete. Listing CSV files in temp dir:")
+        tempDir.listFiles()?.filter { it.name.endsWith(".csv") }?.forEach {
+            Log.d(TAG, "  - ${it.name} (${it.length()} bytes)")
         }
         return tempDir
     }
@@ -333,11 +342,15 @@ internal class PackImporter(
         }
         manifest.vocabDrill?.files?.forEach { fileName ->
             val source = File(packDir, fileName)
-            if (!source.exists()) return@forEach
+            if (!source.exists()) {
+                Log.w(TAG, "Vocab drill file not found in pack: $fileName (full path: ${source.absolutePath})")
+                return@forEach
+            }
             val targetDir = File(baseDir, "drills/${manifest.packId}/vocab_drill")
             targetDir.mkdirs()
             val target = File(targetDir, source.name)
             AtomicFileWriter.writeText(target, source.readText())
+            Log.d(TAG, "Imported vocab drill file: $fileName to ${target.absolutePath}")
         }
     }
 

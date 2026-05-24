@@ -120,12 +120,14 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
 
+        Log.d(logTag, "Found ${files.size} vocab drill files for pack=$pack, lang=$lang")
         for (file in files) {
             try {
                 val stream = file.inputStream()
                 val fileName = file.name
                 val rows = ItalianDrillVocabParser.parse(stream, fileName)
                 stream.close()
+                Log.d(logTag, "Parsed $fileName: ${rows.size} rows")
 
                 // Derive POS from filename: drill_nouns.csv -> "nouns", it_drill_nouns.csv -> "nouns"
                 val pos = fileName
@@ -144,6 +146,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
                         forms = row.forms
                     ))
                 }
+                Log.d(logTag, "Added ${words.size} words from $fileName with pos='$pos'")
             } catch (e: Exception) {
                 Log.w(logTag, "Failed to load ${file.name}", e)
             }
@@ -153,6 +156,7 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         masteryMap = masteryStore.loadAll()
 
         val availablePos = words.map { it.pos }.distinct().sorted()
+        Log.d(logTag, "Available POS: $availablePos")
 
         _uiState.update {
             it.copy(
