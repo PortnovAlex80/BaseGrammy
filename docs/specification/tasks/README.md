@@ -65,3 +65,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-085](DONE-TASK-085-lazy-packid-validation.md) | Daily Practice Lazy Loading PackId Validation | DONE | 22-use-case-registry, UC-21, UC-24, scenario-06 | 2026-05-21 |
 | [DONE-TASK-086](DONE-TASK-086-flower-size-completion-card.md) | Flower Size Inconsistency — Completion Card Too Large | DONE | UC-02, UC-06, scenario-01 | 2026-05-21 |
 | [TASK-087](TASK-087-remove-drill-submode.md) | Remove Drill Sub-mode Completely | OPEN | 01, 02, 08, 15, 22, scenario-16 | 2026-05-21 |
+| [TASK-088](TASK-088-grammar-story-roadmap.md) | Grammar Story Roadmap Implementation | OPEN | 01, 02, 22, acceptance-criteria-grammar-roadmap | 2026-05-25 |

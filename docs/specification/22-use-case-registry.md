@@ -8,9 +8,9 @@ Structured registry of all verified use cases extracted from scenario traces and
 
 | Metric | Value |
 |--------|-------|
-| Total Use Cases | 93 |
-| Total Acceptance Criteria | 528 |
-| Domains | 29 |
+| Total Use Cases | 100 |
+| Total Acceptance Criteria | 560 |
+| Domains | 30 |
 
 ### Per-Domain Counts
 
@@ -45,6 +45,7 @@ Structured registry of all verified use cases extracted from scenario traces and
 | 27 | Universal training completion screen | 1 | 7 |
 | 28 | Pomodoro session summary with 7-day progress | 1 | 5 |
 | 29 | Completed lesson UX (completion state, review, boss threshold) | 3 | 17 |
+| 30 | Grammar Story Roadmap (chapters, story reader, conditional UI) | 7 | 32 |
 
 ---
 
@@ -480,3 +481,19 @@ Structured registry of all verified use cases extracted from scenario traces and
 | completed-lesson-ux | UC-89, UC-90, UC-91 |
 
 **Implementation task:** [TASK-071: Completed Lesson UX](tasks/TASK-071-completed-lesson-ux.md)
+
+---
+
+## Domain 30: Grammar Story Roadmap (Chapters, Story Reader, Conditional UI)
+
+| UC-ID | Use Case | Preconditions | Steps | Acceptance Criteria | Screen | Source files | Source |
+|-------|----------|---------------|-------|---------------------|--------|--------------|--------|
+| UC-88 | Conditional UI routing (Roadmap vs Classic Home) | App starts; active pack selected | 1. App checks active pack's manifest `schemaVersion`. 2. If `schemaVersion == 2` AND `chapters` non-empty: show `GrammarStoryRoadmapScreen`. 3. If `schemaVersion == 1` OR `chapters` empty: show `ClassicHomeScreen`. | AC1: Manifest v2 with non-empty chapters triggers `GrammarStoryRoadmapScreen`. AC2: Manifest v1 (no chapters) triggers `ClassicHomeScreen`. AC3: Switching active pack updates routing immediately. AC4: Pack switching preserves each pack's chapter progress independently. | GrammarMateApp, HomeScreen | `ui/GrammarMateApp.kt`, `ui/screens/HomeScreen.kt`, `data/LessonStore.kt` | acceptance-criteria-grammar-roadmap.md AC-2.1, AC-2.2 |
+| UC-89 | Chapter list display with progress bars | User is on `GrammarStoryRoadmapScreen`; pack has chapters | 1. Screen loads chapter list from manifest. 2. For each chapter: display title, subtitle, progress bar, status (LOCKED/ACTIVE/DONE). 3. Progress bar shows `lessonsCompleted / totalLessons * 100%`. 4. Chapter 0 shows DONE (100%), Chapter 1 shows ACTIVE, Chapters 2+ show LOCKED. | AC1: All chapters from manifest display in `order` field sequence. AC2: Progress bar shows percentage of completed lessons (mastery >= 3). AC3: Status icons: LOCKED (gray lock), ACTIVE (green highlight), DONE (green checkmark). AC4: Chapter 0 shows DONE when all its lessons have `intervalStepIndex >= 3`. AC5: Chapter N+1 shows LOCKED until Chapter N has `lessonsStarted > 0`. | GrammarStoryRoadmapScreen | `ui/screens/GrammarStoryRoadmapScreen.kt`, `data/ChapterProgressStore.kt` | acceptance-criteria-grammar-roadmap.md AC-2.2, AC-2.3, AC-2.4 |
+| UC-90 | Read Story navigation and markdown rendering | User is on `GrammarStoryRoadmapScreen`; chapter has `storyFile` | 1. User taps "Read Story" button on chapter. 2. Screen navigates to `StoryReaderScreen`. 3. Markdown content loads from `chapterX_story.md`. 4. Markdown renders: headers, bold, italic, lists, code blocks. 5. User taps "Back to Roadmap". 6. Returns to `GrammarStoryRoadmapScreen`. | AC1: "Read Story" button only visible when `chapter.storyFile != null`. AC2: `StoryReaderScreen` loads markdown file from pack's story directory. AC3: Markdown renders with mobile-adapted layout (text wrapping, readable font sizes). AC4: Long content is scrollable. AC5: Back navigation preserves chapter progress. AC6: Missing story file hides button (no crash). | GrammarStoryRoadmapScreen, StoryReaderScreen | `ui/screens/StoryReaderScreen.kt`, `data/LessonStore.kt` | acceptance-criteria-grammar-roadmap.md AC-3.1, AC-3.2, AC-3.3, AC-7.1 |
+| UC-91 | Practice modes integration from Roadmap | User is on `GrammarStoryRoadmapScreen` | 1. User taps "Continue" on active chapter. 2. Last active lesson in chapter loads (TrainingScreen). 3. User taps "Verb Practice" tile. 4. VerbDrillScreen opens (existing functionality). 5. User taps "Flashcards" tile. 6. VocabDrillScreen opens (existing functionality). 7. User taps "Daily Practice" tile. 8. DailyPracticeScreen opens (existing functionality). | AC1: "Continue" button loads last active lesson from chapter (highest `lastAccessedMs`). AC2: Verb Practice opens `VerbDrillScreen` with no regression. AC3: Flashcards opens `VocabDrillScreen` with no regression. AC4: Daily Practice opens `DailyPracticeScreen` with no regression. AC5: All practice modes preserve chapter progress context. | GrammarStoryRoadmapScreen, VerbDrillScreen, VocabDrillScreen, DailyPracticeScreen | `ui/screens/GrammarStoryRoadapScreen.kt`, `ui/VerbDrillScreen.kt`, `ui/VocabDrillScreen.kt`, `ui/DailyPracticeScreen.kt` | acceptance-criteria-grammar-roadmap.md AC-4.1, AC-4.2, AC-4.3, AC-4.4, RT-2, RT-3 |
+| UC-92 | Chapter progress tracking and updates | User completes a lesson within a chapter | 1. User completes lesson (mastery >= 3). 2. `MasteryStore.markLessonCompleted()` called. 3. `ChapterProgressCalculator` updates chapter progress. 4. `ChapterProgressStore.upsertProgress()` persists new state. 5. Progress bar updates on next screen render. | AC1: `lessonsCompleted` increments when lesson reaches `intervalStepIndex >= 3`. AC2: `lessonsStarted` increments on first card show (`uniqueCardShows > 0`). AC3: Progress updates are atomic via `AtomicFileWriter`. AC4: Progress bar shows real-time updates (no stale data). AC5: Chapter status changes from ACTIVE to DONE when all lessons completed. | TrainingScreen, GrammarStoryRoadmapScreen | `feature/progress/ChapterProgressCalculator.kt`, `data/ChapterProgressStore.kt`, `data/MasteryStore.kt` | acceptance-criteria-grammar-roadmap.md AC-5.1, AC-5.2, AC-5.3 |
+| UC-93 | Pack switching with chapter progress isolation | User has two packs: Pack A (with chapters), Pack B (with or without chapters) | 1. User completes lesson in Pack A Chapter 1. 2. User switches to Pack B. 3. Pack B shows its own chapters (or Classic Home if no chapters). 4. Pack A Chapter 1 progress is preserved. 5. User switches back to Pack A. 6. Pack A Chapter 1 shows correct progress. | AC1: Chapter progress is pack-scoped (`chapter_progress_{packId}.yaml`). AC2: Switching packs loads correct progress for target pack. AC3: Progress in Pack A is NOT affected by activity in Pack B. AC4: Two packs can have same `chapterId` values with independent progress. AC5: Pack with no chapters shows Classic Home (no regression). | GrammarMateApp, HomeScreen | `data/ChapterProgressStore.kt`, `data/LessonStore.kt` | acceptance-criteria-grammar-roadmap.md AC-6.1, AC-6.2 |
+| UC-94 | Backward compatibility (manifest v1 packs) | Existing pack without chapters is installed | 1. Pack with `schemaVersion: 1` (no `chapters` field) is imported. 2. `LessonStore.getChapters()` returns `emptyList()`. 3. App shows `ClassicHomeScreen`. 4. All existing functionality works: lessons load, mastery tracks, flowers grow, drills work. | AC1: Manifest v1 packs load without errors (no crash on missing `chapters` field). AC2: `LessonStore.getChapters()` returns empty list for v1 manifests. AC3: Mastery progress preserved (no data loss). AC4: Verb drill works identically (RT-2). AC5: Daily practice works identically (RT-3). AC6: Flower states calculate correctly (RT-4). | GrammarMateApp, HomeScreen | `data/LessonStore.kt`, `data/LessonPackManifest.kt` | acceptance-criteria-grammar-roadmap.md AC-1.2, RT-1, RT-2, RT-3, RT-4 |
+
+**Implementation task:** [TASK-088: Grammar Story Roadmap Implementation](tasks/TASK-088-grammar-story-roadmap.md)

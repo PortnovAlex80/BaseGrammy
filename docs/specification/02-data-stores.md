@@ -17,6 +17,7 @@ Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/ProfileStore.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/BackupManager.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/YamlListStore.kt`
+- `app/src/main/java/com/alexpo/grammermate/data/ChapterProgressStore.kt`
 
 ---
 
@@ -38,6 +39,7 @@ Sources:
 | 2.12 | AppConfigStore | `data/AppConfigStore.kt` | `grammarmate/config.yaml` | Runtime configuration flags | Yes | No (global) | None |
 | 2.13 | BackupManager | `data/BackupManager.kt` | `Downloads/BaseGrammy/backup_latest/` | Backup/restore of all progress data | Mixed (see notes) | N/A | None |
 | 2.14 | YamlListStore | `data/YamlListStore.kt` | Configurable | Generic YAML list storage primitive | Yes | N/A | None |
+| 2.15 | ChapterProgressStore | `data/ChapterProgressStore.kt` | `grammarmate/packs/{packId}/chapter_progress.yaml` | Chapter progress tracking per pack | Yes | Yes | None |
 
 ---
 
@@ -842,6 +844,51 @@ Sources:
 
 ---
 
+## 2.15 ChapterProgressStore
+
+- **Purpose**: Tracks chapter progress per pack. Stores which lessons in each chapter have been started and completed. Pack-scoped, independent progress across chapters.
+- **File location**: `grammarmate/packs/{packId}/chapter_progress.yaml`
+- **Data format**: YAML, schema version 1:
+  ```yaml
+  schemaVersion: 1
+  data:
+    "{chapterId}":
+      lessonsStarted: 2
+      lessonsCompleted: 1
+      lastAccessedMs: 1715500800000
+  ```
+
+- **Public API**:
+
+  | Method | Signature | Return | Behavior |
+  |--------|-----------|--------|----------|
+  | `loadAll` | `fun loadAll(): Map<String, ChapterProgress>` | Map of chapterId -> progress | Loads entire file. Returns empty map if missing or corrupt. |
+  | `saveAll` | `fun saveAll(progress: Map<String, ChapterProgress>)` | Unit | Writes full map via `AtomicFileWriter`. |
+  | `getProgress` | `fun getProgress(chapterId: String): ChapterProgress?` | `ChapterProgress?` | Returns progress for a single chapter, or null if never tracked. |
+  | `upsertProgress` | `fun upsertProgress(progress: ChapterProgress)` | Unit | Load-modify-save: inserts or replaces a single chapter's progress state. |
+  | `clear` | `fun clear()` | Unit | Wipes cache and deletes the file. |
+
+- **Write semantics**: Full rewrite via `AtomicFileWriter` on every `saveAll()` or `upsertProgress()` call.
+
+- **Read semantics**: No caching. Every method reads from disk.
+
+- **Error handling**: Missing file returns empty map. Parse errors return empty map.
+
+- **Pack scoping**: Yes. The file path includes `packId`, so each pack has independent chapter progress.
+
+- **Invariants:**
+- `lessonsStarted >= lessonsCompleted` (started includes completed).
+- `lessonsCompleted <= totalLessonsInChapter`.
+- `lastAccessedMs` is set to current time on any lesson activity within the chapter.
+- Chapter is considered "ACTIVE" if `lessonsStarted > 0 && lessonsCompleted < totalLessonsInChapter`.
+- Chapter is considered "DONE" if `lessonsCompleted == totalLessonsInChapter`.
+
+- **Dependencies**: `AtomicFileWriter`.
+
+**Implementation task:** [TASK-088: Grammar Story Roadmap Implementation](../tasks/TASK-088-grammar-story-roadmap.md)
+
+---
+
 ## Cross-Store Dependencies
 
 ### Dependency Graph
@@ -983,6 +1030,7 @@ When triggered from Settings, the reset performs the following for the current l
 | `ProgressStore` | `clear()` | Session state is always global (one active session), so it is always cleared |
 | `VerbDrillStore` | Delete `drills/{packId}/verb_drill_progress.yaml` | Only the active pack's verb drill progress |
 | `WordMasteryStore` | `saveAll(emptyMap())` | Vocab mastery is pack-scoped; clears via the active pack's store instance |
+| `ChapterProgressStore` | `clear()` | Chapter progress is pack-scoped; clears all chapter progress for the active pack |
 | `DailyPracticeCoordinator` | `resetState()` | In-memory daily session state cleared |
 | `TrainingUiState` | Session fields reset to defaults | currentIndex=0, counts=0, PAUSED |
 

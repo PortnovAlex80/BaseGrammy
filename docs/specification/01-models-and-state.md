@@ -15,6 +15,10 @@ This document exhaustively catalogs every data class, enum, sealed class, interf
 
 **Fire streak** — система мотивации, где "огонь" начисляется за каждый уникальный тип практики (PracticeType), завершённый засчитанной УЕ за день. Максимум огней за день: 3. Streak = количество последовательных дней хотя бы с 1 огнём.
 
+**Grammar Story Roadmap** — нарративный слой глав над уроками для сюжетного обучения грамматике. Паки с главами показывают Grammar Story Roadmap, без глав — классический Home. Прогресс по главам pack-scoped, независимый между главами.
+
+**Implementation task:** [TASK-088: Grammar Story Roadmap Implementation](tasks/TASK-088-grammar-story-roadmap.md)
+
 Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/Models.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt`
@@ -496,20 +500,22 @@ Sources:
 
 | Field | Type | Default | Validation / Notes |
 |-------|------|---------|---------------------|
-| `schemaVersion` | `Int` | -- | Must be `1`. Parsing fails for any other value. |
+| `schemaVersion` | `Int` | -- | Must be `1` or `2`. Parsing fails for any other value. |
 | `packId` | `String` | -- | Unique pack identifier. Must not be blank. |
 | `packVersion` | `String` | -- | Version string. Must not be blank. |
 | `language` | `String` | -- | Target language code. Must not be blank. |
-| `lessons` | `List<LessonPackLesson>` | -- | Lesson entries. Can be empty if drill sections exist. |
+| `lessons` | `List<LessonPackLesson>` | -- | Lesson entries. Can be empty if drill sections exist (v1) or if chapters exist (v2). |
 | `displayName` | `String?` | `null` | Optional display name override. |
 | `verbDrill` | `DrillFiles?` | `null` | Optional verb drill files section. |
 | `vocabDrill` | `DrillFiles?` | `null` | Optional vocab drill files section. |
+| `chapters` | `List<Chapter>` | `emptyList()` | Chapter entries (schema v2 only). Empty list for v1 manifests. |
 
 **Validation rules (enforced in `fromJson`):**
-- `schemaVersion` must be exactly `1`.
+- `schemaVersion` must be `1` or `2`.
 - `packId`, `packVersion`, `language` must all be non-blank.
 - Each lesson entry must have non-blank `lessonId` and `file`.
-- The manifest must have at least one standard lesson OR at least one drill section. A manifest with no lessons and no drills is rejected.
+- Schema v1: The manifest must have at least one standard lesson OR at least one drill section.
+- Schema v2: The manifest must have at least one chapter with non-empty `lessons`, OR at least one drill section. A manifest with no content is rejected.
 
 ---
 
@@ -529,7 +535,56 @@ Sources:
 
 ---
 
-### 1.1.26 `SessionProgress`
+### 1.1.26 `Chapter`
+
+**File:** `Models.kt`
+**Purpose:** Represents a chapter within a lesson pack for narrative grammar learning. Chapters group lessons into a story progression.
+
+| Field | Type | Default | Validation / Notes |
+|-------|------|---------|---------------------|
+| `chapterId` | `String` | -- | Unique chapter identifier within the pack. Must not be blank. |
+| `order` | `Int` | -- | Display order. Lower numbers appear first. |
+| `title` | `String` | -- | Chapter title (e.g., "Before Language"). |
+| `subtitle` | `String?` | `null` | Optional subtitle or description. |
+| `storyFile` | `String?` | `null` | Markdown filename within the pack (e.g., "chapter0_story.md"). Null if no story. |
+| `lessons` | `List<String>` | -- | List of lesson IDs in this chapter, in order. |
+
+**Relationships:** Contained in `LessonPackManifest.chapters` (schema version 2). References lessons by `lessonId`.
+
+**Invariants:**
+- `chapterId` is unique within a pack.
+- `lessons` list maintains order (lesson sequence within chapter).
+- If `storyFile` is null, "Read Story" button is hidden for this chapter.
+
+---
+
+### 1.1.27 `ChapterProgress`
+
+**File:** `Models.kt`
+**Purpose:** Tracks progress through a chapter. Pack-scoped storage.
+
+| Field | Type | Default | Validation / Notes |
+|-------|------|---------|---------------------|
+| `chapterId` | `String` | -- | Links to `Chapter.chapterId`. |
+| `lessonsStarted` | `Int` | `0` | Number of lessons with `mastery > 0`. `>= 0`. |
+| `lessonsCompleted` | `Int` | `0` | Number of lessons with `intervalStepIndex >= 3`. `>= 0`. |
+| `lastAccessedMs` | `Long` | `0L` | Epoch millis of last lesson activity in this chapter. 0 = never accessed. |
+
+**Computation rules:**
+- `lessonsStarted`: Count of lessons in chapter where `uniqueCardShows > 0`.
+- `lessonsCompleted`: Count of lessons in chapter where `intervalStepIndex >= 3` (learned threshold).
+- Chapter completion: `lessonsCompleted == lessons.size`.
+
+**Invariants:**
+- `lessonsStarted >= lessonsCompleted` (started includes completed).
+- `lessonsCompleted <= lessons.size`.
+- `lastAccessedMs` updates on any card show within chapter's lessons.
+
+**Implementation task:** [TASK-088: Grammar Story Roadmap Implementation](../tasks/TASK-088-grammar-story-roadmap.md)
+
+---
+
+### 1.1.28 `SessionProgress`
 
 **File:** `CardSessionContract.kt`
 **Purpose:** Represents the current position within a card session.
