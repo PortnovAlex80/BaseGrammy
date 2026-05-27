@@ -12,12 +12,14 @@ def main():
     source_pack = Path('app/src/main/assets/grammarmate/packs/IT_EXPRESS.zip')
     target_pack = Path('app/src/main/assets/grammarmate/packs/POP_EXPRESS.zip')
     stories_dir = Path('docs/lesson-methodology/books/book3-pop-grammar/rus')
+    grammar_chips_dir = Path('docs/lesson-methodology/grammar_chips_json')
     temp_dir = Path('temp_pop_pack')
 
     print(f"Creating POP_EXPRESS pack from IT_EXPRESS...")
     print(f"Source: {source_pack}")
     print(f"Target: {target_pack}")
     print(f"Stories: {stories_dir}")
+    print(f"Grammar chips: {grammar_chips_dir}")
 
     # Clean and create temp directory
     if temp_dir.exists():
@@ -123,6 +125,26 @@ def main():
         print(f"  Copied {story_file.name}")
 
     print(f"Copied {len(list(stories_dir.glob('chapter_*.md')))} story files")
+
+    # Replace grammar chips
+    grammar_chips_target_dir = temp_dir / 'grammar_chips'
+    if grammar_chips_target_dir.exists():
+        shutil.rmtree(grammar_chips_target_dir)
+    grammar_chips_target_dir.mkdir()
+
+    print(f"\nCopying grammar chip files...")
+    copied_chips = 0
+    for chip_file in grammar_chips_dir.glob('grammar_chip_*.json'):
+        target = grammar_chips_target_dir / chip_file.name
+        shutil.copy(chip_file, target)
+        copied_chips += 1
+        if copied_chips <= 5:  # Show first 5
+            print(f"  Copied {chip_file.name}")
+
+    if copied_chips > 5:
+        print(f"  ... and {copied_chips - 5} more")
+
+    print(f"Copied {copied_chips} grammar chip files")
 
     # Create ZIP
     print(f"\nCreating POP_EXPRESS.zip...")
