@@ -29,6 +29,13 @@ internal class LanguageManager(
                 mapOf("id" to "it", "name" to "Italian")
             )
             languagesStore.write(defaults)
+        } else {
+            // Remove Russian language if it exists (cleanup from old versions)
+            val entries = languagesStore.read()
+            val filtered = entries.filterNot { it["id"] == "ru" }
+            if (filtered.size != entries.size) {
+                languagesStore.write(filtered)
+            }
         }
     }
 
@@ -125,6 +132,10 @@ internal class LanguageManager(
     fun ensureLanguage(languageId: String) {
         val normalized = languageId.lowercase().trim()
         if (normalized.isBlank()) return
+
+        // Skip Russian language - it's the UI language, not a learning target
+        if (normalized == "ru") return
+
         val existing = getLanguages()
         if (existing.any { it.id.value == normalized }) return
         val displayName = when (normalized) {
