@@ -1,3 +1,43 @@
+# GrammarMate (BaseGrammy)
+
+Android language learning app for RU→Target translation (English/Italian) with flower-growing progress tracking and chapter-based narrative learning.
+
+## Features
+
+### 🌱 Flower-Based Progress Tracking
+- Ebbinghaus forgetting curve algorithm
+- Visual flower growth from seed to full bloom
+- Health decay and spaced repetition scheduling
+- Multiple practice modes: translation, vocab, verbs
+
+### 📖 Grammar Story Roadmap
+- **Chapter-based learning**: 8 chapters with progressive difficulty
+- **Allegorical stories**: Narrative-driven grammar education
+- **Story reader**: Mobile-optimized markdown rendering
+- **Language-dependent content**: Russian/English stories
+- **Progress tracking**: Independent chapter progress per pack
+
+### 🎯 Practice Modes
+- **Translation Practice**: Core lesson-based training
+- **Verb Drill**: Conjugation practice with CardSessionProvider
+- **Vocab Drill**: Anki-style flashcard system with SRS
+- **Daily Practice**: 3-block session (translate, vocab, verbs)
+
+### 📦 Pack System
+- ZIP-based lesson pack import/export
+- Manifest v2 with chapter support
+- Backward compatibility with v1 packs
+- Pack-scoped progress tracking
+
+### 🎨 UI Features
+- Settings icon in top bar
+- Conditional drill button visibility
+- Removed status icons for cleaner UX
+- Back navigation to pack selection
+- Material 3 design system
+
+---
+
 # Конспект Лекций по Английскому и Итальянскому Языкам
 
 ## Часть 1. Базовые понятия при изучении языка
