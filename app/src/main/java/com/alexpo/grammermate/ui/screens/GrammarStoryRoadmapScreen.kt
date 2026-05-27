@@ -54,7 +54,9 @@ fun GrammarStoryRoadmapScreen(
     onContinue: (Chapter) -> Unit,
     onVerbPractice: () -> Unit,
     onFlashcards: () -> Unit,
-    onDailyPractice: () -> Unit
+    onDailyPractice: () -> Unit,
+    hasVerbDrill: Boolean = false,
+    hasVocabDrill: Boolean = false
 ) {
     @OptIn(ExperimentalMaterial3Api::class)
     Scaffold(
@@ -87,23 +89,32 @@ fun GrammarStoryRoadmapScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = onVerbPractice,
-                            modifier = Modifier.weight(1f)
+
+                    // Show drill buttons only if drills are available
+                    if (hasVerbDrill || hasVocabDrill) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Verb Practice")
-                        }
-                        OutlinedButton(
-                            onClick = onFlashcards,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Flashcards")
+                            if (hasVerbDrill) {
+                                OutlinedButton(
+                                    onClick = onVerbPractice,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Verb Practice")
+                                }
+                            }
+                            if (hasVocabDrill) {
+                                OutlinedButton(
+                                    onClick = onFlashcards,
+                                    modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Flashcards")
+                                }
+                            }
                         }
                     }
+
                     OutlinedButton(
                         onClick = onDailyPractice,
                         modifier = Modifier.fillMaxWidth()

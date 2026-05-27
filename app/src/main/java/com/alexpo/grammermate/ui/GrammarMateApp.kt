@@ -355,7 +355,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             }
                                         }
                                     }
-                                }
+                                },
+                                hasVerbDrill = state.navigation.hasVerbDrill,
+                                hasVocabDrill = state.navigation.hasVocabDrill
                             )
                         } else {
                             // Show Classic Home Screen for v1 packs without chapters
@@ -687,6 +689,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
                             onDailyPractice = remember(dialogs) {
                                 {
+                                {
+                                {
                                     val level = vm.getProgressLessonLevel()
                                     if (vm.daily.hasResumableDailySession()) {
                                         dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
@@ -710,7 +714,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         }
                                     }
                                 }
-                            }
+                            },
+                            hasVerbDrill = state.navigation.hasVerbDrill,
+                            hasVocabDrill = state.navigation.hasVocabDrill
                         )
                     }
 
