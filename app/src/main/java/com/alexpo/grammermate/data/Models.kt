@@ -692,3 +692,51 @@ data class ChapterProgress(
         fun forChapter(chapterId: String) = ChapterProgress(chapterId)
     }
 }
+
+/**
+ * Grammar chip content loaded from markdown files.
+ * Provides grammar explanations for lessons.
+ *
+ * @param key Grammar chip identifier (e.g., "A01", "A02")
+ * @param title Full title (e.g., "A01 - Presente Indicativo")
+ * @param essence Core explanation in Russian (Суть section)
+ * @param formula Formula section if present (Формула)
+ * @param base Base verbs/phrases section if present (База)
+ * @param examples List of examples with Italian text and Russian translation
+ * @param dontConfuse Optional "Не путать" section content
+ * @param notes Additional notes sections (title -> content)
+ */
+data class GrammarChip(
+    val key: String,
+    val title: String,
+    val essence: String,
+    val formula: String? = null,
+    val base: String? = null,
+    val examples: List<GrammarExample> = emptyList(),
+    val dontConfuse: String? = null,
+    val notes: Map<String, String> = emptyMap()
+) {
+    init {
+        require(key.isNotBlank()) { "key must not be blank" }
+        require(title.isNotBlank()) { "title must not be blank" }
+        require(essence.isNotBlank()) { "essence must not be blank" }
+    }
+}
+
+/**
+ * Single grammar example with Italian text and Russian translation.
+ *
+ * @param it Italian example text
+ * @param ru Russian translation
+ * @param note Optional additional note
+ */
+data class GrammarExample(
+    val it: String,
+    val ru: String,
+    val note: String = ""
+) {
+    init {
+        require(it.isNotBlank()) { "Italian text must not be blank" }
+        require(ru.isNotBlank()) { "Russian translation must not be blank" }
+    }
+}

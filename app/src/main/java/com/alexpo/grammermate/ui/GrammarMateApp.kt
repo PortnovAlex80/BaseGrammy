@@ -918,7 +918,8 @@ private fun TrainingScreenContent(
         getTenseInfo = getTenseInfo,
         pomodoroRemainingSeconds = pomodoroRemainingSeconds,
         clickableWordHints = vm.settings.getClickableWordHints(),
-        baseDir = LocalContext.current.filesDir
+        baseDir = LocalContext.current.filesDir,
+        grammarChip = null // TODO: Load from GrammarChipStore based on lesson ID
     )
 }
 

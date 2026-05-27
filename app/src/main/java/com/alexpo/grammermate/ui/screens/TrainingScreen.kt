@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -84,6 +85,7 @@ import com.alexpo.grammermate.ui.components.PomodoroTimerBanner
 import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
+import com.alexpo.grammermate.ui.components.GrammarInfoBottomSheet
 
 /** Pre-compiled regex to strip parenthetical hints from card prompts. */
 private val ParentheticalRegex = Regex("\\s*\\([^)]+\\)")
@@ -125,7 +127,8 @@ fun TrainingScreen(
     getTenseInfo: (String) -> com.alexpo.grammermate.ui.TenseInfo? = { null },
     pomodoroRemainingSeconds: Int = 0,
     clickableWordHints: Boolean = false,
-    baseDir: java.io.File? = null
+    baseDir: java.io.File? = null,
+    grammarChip: com.alexpo.grammermate.data.GrammarChip? = null
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -137,6 +140,7 @@ fun TrainingScreen(
     // Bottom sheet state for verb/tense chip taps
     var showVerbSheet by remember { mutableStateOf(false) }
     var showTenseSheet by remember { mutableStateOf(false) }
+    var showGrammarSheet by remember { mutableStateOf(false) }
     val drillCard = state.cardSession.currentCard as? VerbDrillCard
 
     // VERB_DRILL completion: show stats + More/Exit buttons instead of card session
@@ -268,6 +272,22 @@ fun TrainingScreen(
                 }
             }
 
+            // ── Grammar chip for NORMAL mode ────────────────────────────
+            if (mode == TrainingScreenMode.NORMAL && grammarChip != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                SuggestionChip(
+                    onClick = { showGrammarSheet = true },
+                    label = {
+                        Text(
+                            text = "📖 ${grammarChip.key}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    icon = { Icon(Icons.Default.MenuBook, null, modifier = Modifier.size(16.dp)) }
+                )
+            }
+
             // ── Prompt text ────────────────────────────────────────────
             val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
             val cleanPrompt = rawPrompt.replace(ParentheticalRegex, "")
@@ -381,6 +401,12 @@ fun TrainingScreen(
             tenseName = drillCard.tense,
             tenseInfo = tenseInfo,
             onDismiss = { showTenseSheet = false }
+        )
+    }
+    if (showGrammarSheet && grammarChip != null) {
+        GrammarInfoBottomSheet(
+            chip = grammarChip,
+            onDismiss = { showGrammarSheet = false }
         )
     }
 }
