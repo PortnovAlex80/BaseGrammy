@@ -97,12 +97,6 @@ fun AppRoot() {
     // Trigger migration on app launch
     LaunchedEffect(Unit) {
         checkAndMigrate(context)
-
-        // Initialize GrammarChipStore to load grammar chips from installed packs
-        launch {
-            val packsDir = File(context.filesDir, "grammarmate/packs")
-            GrammarChipStore.initialize(context, packsDir)
-        }
     }
 
     val vm: TrainingViewModel = viewModel()

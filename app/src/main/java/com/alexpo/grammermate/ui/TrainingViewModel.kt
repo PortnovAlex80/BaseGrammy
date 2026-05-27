@@ -1,9 +1,12 @@
 package com.alexpo.grammermate.ui
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
+import java.io.File
 import com.alexpo.grammermate.AppContainer
 import com.alexpo.grammermate.GrammarMateApplication
+import com.alexpo.grammermate.data.GrammarChipStore
 import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.ParseError
@@ -404,6 +407,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lessonStore.ensureSeedData()
             // Automatically seed/update default packs if needed
             lessonStore.updateDefaultPacksIfNeeded()
+
+            // Initialize GrammarChipStore after packs are installed
+            val packsDir = File(getApplication<Application>().filesDir, "grammarmate/packs")
+            GrammarChipStore.initialize(getApplication(), packsDir)
+
             badSentenceStore.migrateIfNeeded(lessonStore)
             val progress = progressStore.load()
             val config = configStore.load()
