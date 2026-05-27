@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Card
 import androidx.compose.material3.TopAppBarDefaults
@@ -50,6 +51,7 @@ fun GrammarStoryRoadmapScreen(
     onBack: () -> Unit,
     onReadStory: (Chapter) -> Unit,
     onContinue: (Chapter) -> Unit,
+    onPlayChapterStory: (Chapter) -> Unit = {},
     onVerbPractice: () -> Unit,
     onFlashcards: () -> Unit,
     onDailyPractice: () -> Unit,
@@ -136,7 +138,8 @@ fun GrammarStoryRoadmapScreen(
                 ChapterCard(
                     chapterUi = chapterUi,
                     onReadStory = { onReadStory(chapterUi.chapter) },
-                    onContinue = { onContinue(chapterUi.chapter) }
+                    onContinue = { onContinue(chapterUi.chapter) },
+                    onPlayStory = { onPlayChapterStory(chapterUi.chapter) }
                 )
             }
         }
@@ -150,7 +153,8 @@ fun GrammarStoryRoadmapScreen(
 private fun ChapterCard(
     chapterUi: ChapterCardUi,
     onReadStory: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    onPlayStory: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -168,18 +172,34 @@ private fun ChapterCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header with title and subtitle
-            Column {
-                Text(
-                    text = chapterUi.chapter.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                chapterUi.chapter.subtitle?.let { subtitle ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        text = chapterUi.chapter.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
+                    chapterUi.chapter.subtitle?.let { subtitle ->
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                // Play story button
+                if (chapterUi.chapter.storyFile != null) {
+                    IconButton(onClick = onPlayStory) {
+                        Icon(
+                            Icons.Default.VolumeUp,
+                            contentDescription = "Play story",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 

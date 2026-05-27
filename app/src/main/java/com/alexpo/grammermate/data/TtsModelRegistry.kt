@@ -44,6 +44,19 @@ object TtsModelRegistry {
             requiredFiles = listOf("it_IT-paola-medium.onnx", "tokens.txt"),
             requiredDirs = listOf("espeak-ng-data"),
             modelFileName = "it_IT-paola-medium.onnx"
+        ),
+        "ru" to TtsModelSpec(
+            languageId = "ru",
+            displayName = "Russian",
+            modelType = TtsModelType.VITS_PIPER,
+            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-dmitry-medium.tar.bz2",
+            archivePrefix = "vits-piper-ru_RU-dmitry-medium/",
+            modelDirName = "vits-piper-ru_RU-dmitry-medium",
+            fallbackDownloadSize = 65L * 1024 * 1024,
+            minRequiredBytes = 150L * 1024 * 1024,
+            requiredFiles = listOf("ru_RU-dmitry-medium.onnx", "tokens.txt"),
+            requiredDirs = listOf("espeak-ng-data"),
+            modelFileName = "ru_RU-dmitry-medium.onnx"
         )
     )
 

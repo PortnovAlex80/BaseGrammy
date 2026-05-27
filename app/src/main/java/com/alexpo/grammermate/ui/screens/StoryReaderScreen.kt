@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -192,7 +194,10 @@ object SimpleMarkdownParser {
 fun StoryReaderScreen(
     chapterTitle: String,
     markdownContent: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onPlayStory: () -> Unit = {},
+    onStopStory: () -> Unit = {},
+    isPlaying: Boolean = false
 ) {
     Scaffold(
         topBar = {
@@ -201,6 +206,14 @@ fun StoryReaderScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back to Roadmap")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = if (isPlaying) onStopStory else onPlayStory) {
+                        Icon(
+                            if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
+                            contentDescription = if (isPlaying) "Stop story" else "Play story"
+                        )
                     }
                 }
             )

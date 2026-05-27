@@ -115,7 +115,8 @@ private data class DialogState(
     val pendingDailyLevel: Int = 0,
     val isLoadingDaily: Boolean = false,
     val storyReaderChapterTitle: String? = null,
-    val storyReaderContent: String? = null
+    val storyReaderContent: String? = null,
+    val storyReaderIsPlaying: Boolean = false
 )
 
 // ── Main composable ──────────────────────────────────────────────────────────
@@ -325,6 +326,27 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             storyReaderContent = storyContent
                                         )
                                         onNavigate(Routes.STORY_READER)
+                                    } else {
+                                        Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
+                                    }
+                                } },
+                                onPlayChapterStory = remember { { chapter ->
+                                    // Quick play from roadmap - load story and play immediately
+                                    val storyContent = vm.loadStoryContent(chapter.storyFile)
+                                    if (storyContent != null) {
+                                        val plainText = storyContent
+                                            .replace(Regex("""^#+\s+.*$"""), "")
+                                            .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
+                                            .replace(Regex("""\*([^*]+)\*"""), "$1")
+                                            .replace(Regex("""```[^`]*```"""), "")
+                                            .replace(Regex("""```"""), "")
+                                            .replace(Regex("""[-*]\s+"""), "")
+                                            .replace(Regex("""\n\n+"""), "\n")
+                                            .trim()
+
+                                        if (plainText.isNotEmpty()) {
+                                            vm.speakStoryText(plainText)
+                                        }
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                     }
@@ -707,6 +729,27 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 vm.selectChapter(chapter)
                                 onNavigate(Routes.CHAPTER_LESSONS)
                             } },
+                            onPlayChapterStory = remember { { chapter ->
+                                // Quick play from roadmap - load story and play immediately
+                                val storyContent = vm.loadStoryContent(chapter.storyFile)
+                                if (storyContent != null) {
+                                    val plainText = storyContent
+                                        .replace(Regex("""^#+\s+.*$"""), "")
+                                        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
+                                        .replace(Regex("""\*([^*]+)\*"""), "$1")
+                                        .replace(Regex("""```[^`]*```"""), "")
+                                        .replace(Regex("""```"""), "")
+                                        .replace(Regex("""[-*]\s+"""), "")
+                                        .replace(Regex("""\n\n+"""), "\n")
+                                        .trim()
+
+                                    if (plainText.isNotEmpty()) {
+                                        vm.speakStoryText(plainText)
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
+                                }
+                            } },
                             onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
                             onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
                             onDailyPractice = remember(dialogs) {
@@ -749,13 +792,44 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             markdownContent = content,
                             onBack = remember {
                                 {
+                                    // Stop TTS if playing
+                                    if (dialogs.storyReaderIsPlaying) {
+                                        vm.stopStoryNarration()
+                                    }
                                     dialogs = dialogs.copy(
                                         storyReaderChapterTitle = null,
-                                        storyReaderContent = null
+                                        storyReaderContent = null,
+                                        storyReaderIsPlaying = false
                                     )
                                     onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
                                 }
-                            }
+                            },
+                            onPlayStory = remember {
+                                {
+                                    // Extract plain text from markdown for TTS
+                                    val plainText = content
+                                        .replace(Regex("""^#+\s+.*$"""), "") // Remove headers
+                                        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1") // Remove bold markdown
+                                        .replace(Regex("""\*([^*]+)\*"""), "$1") // Remove italic markdown
+                                        .replace(Regex("""```[^`]*```"""), "") // Remove code blocks
+                                        .replace(Regex("""```"""), "") // Remove remaining code markers
+                                        .replace(Regex("""[-*]\s+"""), "") // Remove list markers
+                                        .replace(Regex("""\n\n+"""), "\n") // Normalize line breaks
+                                        .trim()
+
+                                    if (plainText.isNotEmpty()) {
+                                        vm.speakStoryText(plainText)
+                                        dialogs = dialogs.copy(storyReaderIsPlaying = true)
+                                    }
+                                }
+                            },
+                            onStopStory = remember {
+                                {
+                                    vm.stopStoryNarration()
+                                    dialogs = dialogs.copy(storyReaderIsPlaying = false)
+                                }
+                            },
+                            isPlaying = dialogs.storyReaderIsPlaying
                         )
                     }
 

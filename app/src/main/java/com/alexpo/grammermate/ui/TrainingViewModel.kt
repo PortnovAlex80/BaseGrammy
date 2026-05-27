@@ -372,6 +372,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun getPomodoroHistoryForSelectedLanguage() =
         pomodoroHistoryStore.loadAll(_coreState.value.navigation.selectedLanguageId.value)
 
+    // ── TTS playback for story narration ───────────────────────────────────────
+
+    fun speakStoryText(text: String) {
+        audioCoordinator.onTtsSpeak(text)
+    }
+
+    fun stopStoryNarration() {
+        audioCoordinator.stopTts()
+    }
+
     private fun savePomodoroHistory(
         stats: PomodoroSessionStats,
         remainingSeconds: Int,
