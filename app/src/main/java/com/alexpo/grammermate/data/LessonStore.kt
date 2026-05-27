@@ -343,7 +343,30 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     }
 
     private fun loadLessonsFromDisk(languageId: String): List<Lesson> {
-        // Try loading from packs FIRST (new schema v2 structure)
+        // Try loading from legacy structure FIRST (schema v1)
+        // This is because PackImporter.importLessonFromFile() copies lessons from packs to legacy dirs
+        Log.d("LessonStore", "Loading lessons for language: $languageId, trying legacy structure first")
+        val entries = loadIndex(languageId)
+        val legacyLessons = entries.mapNotNull { entry ->
+            val id = entry["id"] as? String ?: return@mapNotNull null
+            val title = entry["title"] as? String ?: "Lesson"
+            val fileName = entry["file"] as? String ?: return@mapNotNull null
+            val csvFile = File(languageDir(languageId), fileName)
+            if (!csvFile.exists()) return@mapNotNull null
+            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
+            val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
+            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
+        }
+
+        // If legacy lessons were found, return them (prioritize legacy over pack dirs)
+        if (legacyLessons.isNotEmpty()) {
+            Log.d("LessonStore", "Loaded ${legacyLessons.size} lessons from legacy structure for language: $languageId (LEGACY LESSONS PRIORITY)")
+            return legacyLessons
+        }
+
+        // Otherwise, fall back to loading from pack directories (new schema v2 structure)
+        // This handles packs that haven't been imported yet or have different structure
+        Log.d("LessonStore", "No legacy lessons found for language: $languageId, falling back to pack directories")
         val packLessons = mutableListOf<Lesson>()
         val installedPacks = getInstalledPacks()
 
@@ -382,28 +405,8 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             }
         }
 
-        // If pack lessons were found, return them (prioritize pack lessons over legacy)
-        if (packLessons.isNotEmpty()) {
-            Log.d("LessonStore", "Loaded ${packLessons.size} lessons from pack directories for language: $languageId (PACK LESSONS PRIORITY)")
-            return packLessons
-        }
-
-        // Otherwise, fall back to legacy structure (schema v1)
-        Log.d("LessonStore", "No pack lessons found for language: $languageId, falling back to legacy structure")
-        val entries = loadIndex(languageId)
-        val legacyLessons = entries.mapNotNull { entry ->
-            val id = entry["id"] as? String ?: return@mapNotNull null
-            val title = entry["title"] as? String ?: "Lesson"
-            val fileName = entry["file"] as? String ?: return@mapNotNull null
-            val csvFile = File(languageDir(languageId), fileName)
-            if (!csvFile.exists()) return@mapNotNull null
-            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
-            val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
-            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
-        }
-
-        Log.d("LessonStore", "Loaded ${legacyLessons.size} lessons from legacy structure for language: $languageId")
-        return legacyLessons
+        Log.d("LessonStore", "Loaded ${packLessons.size} lessons from pack directories for language: $languageId")
+        return packLessons
     }
 
     override fun deleteAllLessons(languageId: String) {
