@@ -1,40 +1,31 @@
-1	B20 - Gerundio semplice
-2	Пока я готовил (обед - pranzo), позвонил Марко;Mentre preparavo il pranzo, Marco ha chiamato
-3	Когда я (читал - leggevo) книгу, пришла Мария;Quando leggevo il libro, è arrivata Maria
-4	Пока мы ужинали, зазвонил (телефон - telefono);Mentre cenavamo, ha suonato il telefono
-5	Когда ты (спал - dormivi), я пришёл;Quando tu dormivi, sono arrivato
-6	Пока она (работала - lavorava), выключился свет;Mentre lavorava, si è spenta la luce
-7	Когда я (гулял - passeggiavo), встретил друга;Quando passeggiavo, ho incontrato un amico
-8	Пока дети (играли - giocavano), начался дождь;Mentre i bambini giocavano, ha iniziato a piovere
-9	Когда я (смотрел - guardavo) телевизор, она вошла;Quando guardavo la televisione, è entrata lei
-10	Пока он (бежал - correva), упал;Mentre correva, è caduto
-11	Когда мы (говорили - parlavamo), пришёл автобус;Quando parlavamo, è arrivato l'autobus
-12	Пока я (одевался - mi vestivo), постучали в дверь;Mentre mi vestivo, hanno bussato alla porta
-13	Когда ты (учился - studiavi), я звонил;Quando tu studiavi, ho chiamato
-14	Пока она (читала - leggeva), заплакала;Mentre leggeva, ha pianto
-15	Когда я (писал - scrivevo) письмо, сломалась ручка;Quando scrivevo la lettera, si è rotta la penna
-16	Пока мы (шли - andavamo), начался дождь;Mentre andavamo, ha iniziato a piovere
-17	Когда он (спал - dormiva), пришёл его брат;Quando dormiva, è arrivato suo fratello
-18	Пока я (ждал - aspettavo), пришла Анна;Mentre aspettavo, è arrivata Anna
-19	Когда они (обедали - pranzavano), зазвонил телефон;Mentre pranzavano, ha suonato il telefono
-20	Пока я (слушал - ascoltavo) музыку, мама вошла;Quando ascoltavo la musica, è entrata mia madre
-21	Когда ты (был - eri) дома, я позвонил;Quando tu eri a casa, ho chiamato
-22	Пока мы (смотрели - guardavamo) фильм, выключили свет;Mentre guardavamo il film, hanno spento la luce
-23	Когда я (шёл - andavo) в школу, встретил учителя;Quando andavo a scuola, ho incontrato l'insegnante
-24	Пока она (готовила - preparava) торт, сгорел;Mentre preparava la torta, si è bruciato
-25	Когда я (был - ero) в парке, нашёл кошелёк;Quando ero nel parco, ho trovato il portafoglio
-26	Пока мы (разговаривали - parlavamo), он ушёл;Mentre parlavamo, è andato via
-27	Когда я (читал - leggevo) газету, пришла твоя сестра;Quando leggevo il giornale, è arrivata tua sorella
-28	Пока она (писала - scriveva), сломалась ручка;Mentre scriveva, si è rotta la penna
-29	Когда я (учился - studiavo), понял урок;Quando studiavo, ho capito la lezione
-30	Пока они (играли - giocavano) в футбол, начал дождь;Mentre giocavano a calcio, ha iniziato a piovere
-31	Когда я (работал - lavoravo) в саду, пришёл Paolo;Quando lavoravo in giardino, è arrivato Paolo
-32	Пока она (мыла - lavava) посуду, разбилась тарелка;Mentre lavava i piatti, si è rotto il piatto
-33	Когда ты (смотрел - guardavi) фильм, я пришёл;Quando guardavi il film, sono arrivato
-34	Пока мы (ели - mangiavamo), пришёл папа;Mentre mangiavamo, è arrivato papà
-35	Когда я (бежал - correvo), потерял ключ;Quando correvo, ho perso la chiave
-36	Пока он (спал - dormiva), пришла его девушка;Quando dormiva, è arrivata la sua ragazza
-37	Когда я (читал - leggevo), услышал шум;Quando leggevo, ho sentito un rumore
-38	Пока она (пела - cantava), танцевала;Mentre cantava, ballava
-39	Когда я (писал - scrivevo), думал;Quando scrivevo, pensavo
-40	Пока он (учился - studiava), слушал музыку;Mentre studiava, ascoltava la musica
+B20 - Participio Assoluto
+Когда обед закончился, мы вышли.;Finito il pranzo, siamo usciti.
+Когда ужин был готов, все сели за стол.;Pronta la cena, tutti si sono seduti a tavola.
+Когда работа была закончена, он пошёл домой.;Finito il lavoro, è andato a casa.
+Когда письмо было написано, он пошёл на почту.;Scritta la lettera, è andato alla posta.
+Когда книга была прочитана, он вернул её.;Letto il libro, l'ha restituito.
+Когда проблема была решена, мы вздохнули спокойно.;Risolto il problema, abbiamo respirato tranquilli.
+Когда начался дождь, мы открыли зонты.;Iniziata la pioggia, abbiamo aperto gli ombrelli.
+Когда солнце село, стало прохладно.;Calato il sole, si è fatto fresco.
+Когда дети вернулись из школы, они поели.;Tornati da scuola, i bambini hanno mangiato.
+Сказав это, он замолчал.;Detto questo, ha taciuto.
+Когда вода закипела, я добавил соль.;Bollita l'acqua, ho aggiunto il sale.
+Когда фильм закончился, мы вышли из кинотеатра.;Finito il film, siamo usciti dal cinema.
+Когда гости ушли, мы убрали со стола.;Partiti gli ospiti, abbiamo sparecchiato.
+Когда пришло время, мы сказали правду.;Arrivato il momento, abbiamo detto la verità.
+Когда работа была сделана, мы отдохнули.;Fatto il lavoro, abbiamo riposato.
+Когда деньги закончились, он попросил помощи.;Finiti i soldi, ha chiesto aiuto.
+Когда мы увидели море, мы остановились.;Visto il mare, ci siamo fermati.
+Когда дверь была открыта, вошёл кот.;Aperta la porta, è entrato il gatto.
+Когда урок закончился, студенты вышли.;Finita la lezione, gli studenti sono usciti.
+Когда день прошёл, мы устали.;Passata la giornata, eravamo stanchi.
+Когда дом был построен, они въехали.;Costruita la casa, ci sono entrati.
+Когда товар был доставлен, клиент был доволен.;Consegnata la merce, il cliente era soddisfatto.
+Когда мы услышали новость, мы удивились.;Sentita la notizia, siamo rimasti sorpresi.
+Когда решение было принято, все согласились.;Presa la decisione, tutti sono stati d'accordo.
+Когда срок истёк, было поздно.;Scaduto il termine, era tardi.
+Когда она пришла домой, она сняла пальто.;Arrivata a casa, si è tolta il cappotto.
+Когда урок был объяснён, мы начали упражнение.;Spiegata la lezione, abbiamo iniziato l'esercizio.
+Когда документы были подписаны, встреча закончилась.;Firmati i documenti, la riunione è finita.
+Когда окна были закрыты, стало теплее.;Chiuse le finestre, è diventato più caldo.
+Когда поезд ушёл, станция опустела.;Partito il treno, la stazione si è svuotata.

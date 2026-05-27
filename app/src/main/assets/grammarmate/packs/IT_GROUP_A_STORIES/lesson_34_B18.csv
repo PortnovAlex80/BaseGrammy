@@ -1,41 +1,41 @@
-1	B18 - Gerundio Functions
-2	Закончив работу, я пошёл домой;Finendo il lavoro, sono andato a casa
-3	Начав говорить, он понял ошибку;Iniziando a parlare, ha capito l'errore
-4	Уезжая, она попрощалась;Partendo, si è salutata
-5	Приходя, я всегда звоню;Arrivando, chiamo sempre
-6	Вставая, он чувствует боль;Alzandosi, sente dolore
-7	Садясь, будь осторожен;Sedendosi, sia attento
-8	Работая, мы учимся;Lavorando, impariamo
-9	Изучая italiano, ты поймёшь культуру;Studiando italiano, capirai la cultura
-10	Готовя, она поёт;Cucinando, canta
-11	Бегая, он слушает музыку;Correndo, ascolta la musica
-12	Играя, дети учатся;Giocando, i bambini imparano
-13	Писав, я думал о тебе;Scrivendo, pensavo a te
-14	Читая, она училась;Leggendo, studiava
-15	Живя в Италии, мы говорим по-итальянски;Vivendo in Italia, parliamo italiano
-16	Работая здесь, ты заработаешь деньги;Lavorando qui, guadagnerai soldi
-17	Изучая diligently, ты сдашь экзамен;Studiando diligentemente, passerai l'esame
-18	Готовя тщательно, ты улучшишь результат;Cucinando carefully, migliorerai il risultato
-19	Бегая регулярно, ты станешь здоровым;Correndo regolarmente, diventerai sano
-20	Читая много, ты узнаешь многое;Leggendo molto, imparerai molto
-21	Писав каждый день, ты улучшишь навык;Scrivendo ogni giorno, migliorerai l'abilità
-22	Говоря медленно, ты будешь понят;Parlando piano, sarai capito
-23	Идя пешком, ты увидишь город;Andando a piedi, vedrai la città
-24	Плывя регулярно, ты станешь сильнее;Nuotando regolarmente, diventerai più forte
-25	Путешествуя, мы узнаём мир;Viaggiando, scopriamo il mondo
-26	Учаясь, мы растём;Studiando, cresciamo
-27	Работая вместе, мы добьёмся успеха;Lavorando insieme, avremo successo
-28	Помогая другим, ты помогаешь себе;Aiutando gli altri, aiuti te stesso
-29	Веря в себя, ты победишь;Credendo in te stesso, vincerai
-30	Смеясь, ты чувствуешь лучше;Ridendo, ti senti meglio
-31	Делая упражнения, ты становишься сильнее;Facendo esercizi, diventi più forte
-32	Слушая внимательно, ты поймёшь лучше;Ascoltando attentamente, capirai meglio
-33	Смотрев внимательно, ты заметишь детали;Guardando attentamente, noterai i dettagli
-34	Практикуясь каждый день, ты улучшится;Praticando ogni giorno, migliorerai
-35	Оставаясь спокойным, ты примешь правильное решение;Rimanendo calmo, prenderai la decisione giusta
-36	Будучи терпеливым, ты добьёшься цели;Essendo paziente, raggiungerai l'obiettivo
-37	Зная это, ты поймёшь остальное;Sapendo questo, capirai il resto
-38	Имея время, я бы помог;Avendo tempo, aiuterei
-39	Будучи больным, он остался дома;Essendo malato, è rimasto a casa
-40	Работая усердно, она добилась успеха;Lavorando sodo, ha ottenuto successo
-41	Изучая язык, ты откроешь новые возможности;Studiando la lingua, aprirai nuove opportunità
+B18 - Gerundio Functions
+Работая, мы учимся (lavorare).;Lavorando, impariamo.
+Изучая итальянский, ты поймешь культуру (italiano).;Studiando italiano, capirai la cultura.
+Готовя, она поет (cucinare).;Cucinando, canta.
+Бегая, он слушает музыку (musica).;Correndo, ascolta la musica.
+Играя, дети учатся (bambini).;Giocando, i bambini imparano.
+Читая, она училась (leggere).;Leggendo, studiava.
+Живя в Италии, мы говорим по-итальянски (Italia).;Vivendo in Italia, parliamo italiano.
+Работая здесь, ты заработаешь деньги (qui, soldi).;Lavorando qui, guadagnerai soldi.
+Учась усердно, ты сдашь экзамен (esame).;Studiando con impegno, passerai l'esame.
+Готовя внимательно, ты улучшишь результат (risultato).;Cucinando con attenzione, migliorerai il risultato.
+Бегая регулярно, ты станешь здоровее (regolarmente).;Correndo regolarmente, diventerai più sano.
+Читая много, ты узнаешь многое (molto).;Leggendo molto, imparerai molto.
+Писав каждый день, ты улучшал навык (ogni giorno).;Scrivendo ogni giorno, miglioravi l'abilità.
+Говоря медленно, ты будешь понят (piano).;Parlando piano, sarai capito.
+Идя пешком, ты увидишь город (città).;Andando a piedi, vedrai la città.
+Плавая регулярно, ты станешь сильнее (forte).;Nuotando regolarmente, diventerai più forte.
+Путешествуя, мы узнаем мир (mondo).;Viaggiando, scopriamo il mondo.
+Учась, мы растем (crescere).;Studiando, cresciamo.
+Работая вместе, мы добьемся успеха (insieme).;Lavorando insieme, avremo successo.
+Помогая другим, ты помогаешь себе (altri).;Aiutando gli altri, aiuti te stesso.
+Веря в себя, ты победишь (vincere).;Credendo in te stesso, vincerai.
+Смеясь, ты чувствуешь себя лучше (meglio).;Ridendo, ti senti meglio.
+Делая упражнения, ты становишься сильнее (esercizi).;Facendo esercizi, diventi più forte.
+Слушая внимательно, ты поймешь лучше (attentamente).;Ascoltando attentamente, capirai meglio.
+Смотря внимательно, ты заметишь детали (dettagli).;Guardando attentamente, noterai i dettagli.
+Практикуясь каждый день, ты улучшаешься (ogni giorno).;Praticando ogni giorno, migliori.
+Оставаясь спокойным, ты примешь правильное решение (calmo).;Rimanendo calmo, prenderai la decisione giusta.
+Будучи терпеливым, ты достигнешь цели (paziente).;Essendo paziente, raggiungerai l'obiettivo.
+Зная это, ты поймешь остальное (resto).;Sapendo questo, capirai il resto.
+Имея время, я бы помог (tempo).;Avendo tempo, aiuterei.
+Будучи больным, он остался дома (malato).;Essendo malato, è rimasto a casa.
+Работая усердно, она добилась успеха (successo).;Lavorando sodo, ha ottenuto successo.
+Изучая язык, ты откроешь новые возможности (lingua).;Studiando la lingua, aprirai nuove opportunità.
+Вставая, он чувствует боль (dolore).;Alzandosi, sente dolore.
+Садясь, будь осторожен (attento).;Sedendoti, sii attento.
+Уезжая, она попрощалась (salutare).;Partendo, ha salutato tutti.
+Приходя, я всегда звоню (sempre).;Arrivando, chiamo sempre.
+Пишу тебе, думая о вчерашнем разговоре (conversazione).;Ti scrivo pensando alla conversazione di ieri.
+Она отвечает, улыбаясь (sorridere).;Risponde sorridendo.
+Мы вошли, говоря тихо (piano).;Siamo entrati parlando piano.

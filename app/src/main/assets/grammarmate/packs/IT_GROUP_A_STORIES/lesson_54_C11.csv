@@ -1,38 +1,41 @@
 C11 - Forma passiva: venire e andare
-Русское предложение (с подсказками);Итальянский перевод
-Эта дверь (porta) открывается (venire/aprire) каждый день;Questa porta viene aperta ogni giorno
-Письма (lettera) доставляются (venire/consegnare) почтальоном;Le lettere vengono consegnate dal postino
-Проблемы (problema) решаются (venire/risolvere) постепенно;I problemi vengono risolti gradualmente
-Вопросы (domanda) обсуждаются (venire/discutere) на собрании;Le domande vengono discusse nella riunione
-Здание (palazzo) строится (venire/costruire) уже два года;Il palazzo viene costruito da due anni
-Еда (cibo) готовится (venire/preparare) с любовью;Il cibo viene preparato con amore
-Правила (regola) изменяются (venire/cambiare) каждый год;Le regole vengono cambiate ogni anno
-Работа (lavoro) делается (venire/fare) тщательно;Il lavoro viene fatto con cura
-Документы (documento) подписываются (venire/firmare) директором;I documenti vengono firmati dal direttore
-Этот проект (progetto) финансируется (venire/finanziare) государством;Questo progetto viene finanziato dallo stato
-История (storia) рассказывается (venire/raccontare) по-разному;La storia viene raccontata in modi diversi
-Цены (prezzo) повышаются (venire/aumentare) каждый месяц;I prezzi vengono aumentati ogni mese
-Школа (scuola) ремонтируется (venire/ristrutturare) этим летом;La scuola viene ristrutturata questa estate
-Вода (acqua) нагревается (venire/riscaldare) солнцем;L'acqua viene riscaldata dal sole
-Планы (piano) одобряются (venire/approvare) советом;I piani vengono approvati dal consiglio
-Дверь (porta) должна быть (andare/chiudere) закрыта;La porta va chiusa
-Это (questo) должно быть (andare/fare) сделано немедленно;Questo va fatto immediatamente
-Задание (compito) должно быть (andare/completare) завершено сегодня;Il compito va completato oggi
-Мусор (spazzatura) должен быть (andare/buttare) выброшен;La spazzatura va buttata
-Комната (stanza) должна быть (andare/pulire) убрана;La stanza va pulita
-Окна (finestra) должны быть (andare/lavare) помыты;Le finestre vanno lavate
-Письмо (lettera) должно быть (andare/spedire) отправлено;La lettera va spedita
-Доклад (relazione) должен быть (andare/scrivere) написан на итальянском;La relazione va scritta in italiano
-Билеты (biglietto) должны быть (andare/comprare) куплены заранее;I biglietti vanno comprati in anticipo
-Машина (macchina) должна быть (andare/parcheggiare) припаркована здесь;La macchina va parcheggiata qui
-Результаты (risultato) должны быть (andare/controllare) проверены;I risultati vanno controllati
-Вещи (cose) должны быть (andare/portare) унесены домой;Le cose vanno portate a casa
-Деньги (soldi) должны быть (andare/pagare) заплачены сегодня;I soldi vanno pagati oggi
-Стол (tavolo) должен быть (andare/apparecchiare) накрыт к обеду;Il tavolo va apparecchiato per pranzo
-Ребёнок (bambino) должен быть (andare/prendere) взят из школы;Il bambino va preso da scuola
-Посуда (piatti) должна быть (andare/lavare) вымыта после ужина;I piatti vanno lavati dopo cena
-Трава (erba) должна быть (andare/tagliare) скошена завтра;L'erba va tagliata domani
-Фото (foto) должны быть (andare/sviluppare) проявлены;Le foto vanno sviluppate
-Форма (modulo) должна быть (andare/compilare) заполнена от руки;Il modulo va compilato a mano
-Вино (vino) должно быть (andare/servire) подано охлаждённым;Il vino va servito fresco
-Мясо (carne) должно быть (andare/cucinare) приготовлено на медленном огне;La carne va cotta a fuoco lento
+Эта дверь открывается каждый день (porta).;Questa porta viene aperta ogni giorno.
+Письма доставляются почтальоном (postino).;Le lettere vengono consegnate dal postino.
+Проблемы решаются постепенно (problemi).;I problemi vengono risolti gradualmente.
+Вопросы обсуждаются на собрании (riunione).;Le domande vengono discusse nella riunione.
+Здание строится уже два года (palazzo).;Il palazzo viene costruito da due anni.
+Еда готовится с любовью (cibo).;Il cibo viene preparato con amore.
+Правила меняются каждый год (regole).;Le regole vengono cambiate ogni anno.
+Работа делается тщательно (cura).;Il lavoro viene fatto con cura.
+Документы подписываются директором (direttore).;I documenti vengono firmati dal direttore.
+Этот проект финансируется государством (stato).;Questo progetto viene finanziato dallo stato.
+История рассказывается по-разному (storia).;La storia viene raccontata in modi diversi.
+Цены повышаются каждый месяц (prezzi).;I prezzi vengono aumentati ogni mese.
+Школа ремонтируется этим летом (scuola).;La scuola viene ristrutturata questa estate.
+Вода нагревается солнцем (sole).;L'acqua viene riscaldata dal sole.
+Планы одобряются советом (consiglio).;I piani vengono approvati dal consiglio.
+Дверь должна быть закрыта (porta).;La porta va chiusa.
+Это должно быть сделано немедленно (subito).;Questo va fatto immediatamente.
+Задание должно быть завершено сегодня (compito).;Il compito va completato oggi.
+Мусор должен быть выброшен (spazzatura).;La spazzatura va buttata.
+Комната должна быть убрана (stanza).;La stanza va pulita.
+Окна должны быть помыты (finestre).;Le finestre vanno lavate.
+Письмо должно быть отправлено (lettera).;La lettera va spedita.
+Доклад должен быть написан по-итальянски (relazione).;La relazione va scritta in italiano.
+Билеты должны быть куплены заранее (biglietti).;I biglietti vanno comprati in anticipo.
+Машина должна быть припаркована здесь (macchina).;La macchina va parcheggiata qui.
+Результаты должны быть проверены (risultati).;I risultati vanno controllati.
+Вещи должны быть унесены домой (cose).;Le cose vanno portate a casa.
+Деньги должны быть заплачены сегодня (soldi).;I soldi vanno pagati oggi.
+Стол должен быть накрыт к обеду (tavolo).;Il tavolo va apparecchiato per pranzo.
+Ребенок должен быть забран из школы (bambino).;Il bambino va preso da scuola.
+Посуда должна быть вымыта после ужина (piatti).;I piatti vanno lavati dopo cena.
+Трава должна быть скошена завтра (erba).;L'erba va tagliata domani.
+Форма должна быть заполнена от руки (modulo).;Il modulo va compilato a mano.
+Вино должно подаваться охлажденным (vino).;Il vino va servito fresco.
+Мясо должно быть приготовлено на медленном огне (carne).;La carne va cotta a fuoco lento.
+Закон должен соблюдаться (legge).;La legge va rispettata.
+Ошибка должна быть исправлена сразу (errore).;L'errore va corretto subito.
+Решение должно быть объяснено ясно (soluzione).;La soluzione va spiegata chiaramente.
+Данные должны быть сохранены (dati).;I dati vanno salvati.
+Файл должен быть отправлен сегодня (file).;Il file va inviato oggi.
