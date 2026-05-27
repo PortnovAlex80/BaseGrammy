@@ -1,15 +1,19 @@
-# C17 - Registers
+# C20 - Style and Paraphrase
 
-## Core Idea
-Italian changes by register: formal writing, neutral speech, colloquial speech.
+## Суть
+Продвинутое владение — это умение выразить одну идею разными способами.
 
-## Contrast
-- formal: `La informo che...`
-- neutral: `Le dico che...`
-- colloquial: `Ti dico che...`
+## Инструменты
+- выбор синонимов
+- переход актив/пассив
+- сжатие местоимений
+- номинализация
+- выбор союзов
 
-## Use
-Match grammar, pronouns, and vocabulary to context.
+## Примеры
+- `Marco ha aperto la porta.`
+- `La porta è stata aperta da Marco.`
+- `Aperta la porta, Marco è entrato.`
 
-## Watch Out
-Correct grammar can still sound wrong if the register is wrong.
+## Не путать
+При перефразировании нужно сохранять смысл, регистр и логику времён.

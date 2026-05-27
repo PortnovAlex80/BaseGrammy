@@ -1,29 +1,24 @@
 {
-  "key": "C13",
-  "title": "C13 - Verbi Pronominali",
-  "essence": "Pronominal verbs include pronouns as part of idiomatic meaning.",
+  "key": "C15",
+  "title": "C15 - Congiuntivo after Conjunctions",
+  "essence": "Некоторые союзы регулярно требуют congiuntivo.",
   "formula": null,
   "base": null,
-  "dontConfuse": "Do not translate each pronoun literally.",
+  "dontConfuse": "Используйте чистые формы congiuntivo, а не намёки на инфинитив, в финальных ответах.",
   "examples": [
     {
-      "it": "andarsene",
-      "ru": "- to go away",
+      "it": "Parto prima che piova.",
+      "ru": "",
       "note": ""
     },
     {
-      "it": "farcela",
-      "ru": "- to manage",
+      "it": "Non vengo a meno che tu venga.",
+      "ru": "",
       "note": ""
     },
     {
-      "it": "cavarsela",
-      "ru": "- to get by",
-      "note": ""
-    },
-    {
-      "it": "prendersela",
-      "ru": "- to take offense",
+      "it": "Parlava come se sapesse tutto.",
+      "ru": "",
       "note": ""
     }
   ]

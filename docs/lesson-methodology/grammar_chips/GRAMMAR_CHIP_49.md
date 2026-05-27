@@ -1,15 +1,12 @@
-# C06 - Concordanza dei Tempi
+# C04 - Indirect Speech: Present Main Verb
 
-## Core Idea
-Subjunctive tense depends on the main verb time and the relation between actions.
+## Суть
+Когда главный глагол в настоящем времени, исходное время часто остаётся неизменным.
 
-## Present Main Verb
-- `Penso che venga.`
-- `Penso che sia venuto.`
+## Примеры
+- `Dice: "Sono stanco." -> Dice che è stanco.`
+- `Dice: "Verrò." -> Dice che verrà.`
+- `Chiede: "Dove vai?" -> Chiede dove vai.`
 
-## Past Main Verb
-- `Pensavo che venisse.`
-- `Pensavo che fosse venuto.`
-
-## Watch Out
-Choose tense by simultaneity, anteriority, or posteriority.
+## Не путать
+Косвенные вопросы не требуют кавычек или прямого порядка слов.

@@ -1,12 +1,19 @@
-# C05 - Indirect Speech: Past Main Verb
+# C07 - Passato Remoto: Recognition
 
-## Core Idea
-With a past reporting verb, Italian often shifts the dependent tense backward.
+## Суть
+Passato remoto часто используется в литературе и исторических повествованиях.
 
-## Examples
-- `Dice che lavora -> Ha detto che lavorava.`
-- `Dice che ha finito -> Ha detto che aveva finito.`
-- `Dice che verrà -> Ha detto che sarebbe venuto.`
+## Ключевые формы
+- `fu` - был
+- `ebbe` - имел
+- `andò` - пошёл
+- `venne` - пришёл
+- `scrisse` - написал
+- `disse` - сказал
 
-## Watch Out
-Future-in-the-past uses condizionale composto.
+## Примеры
+- `Dante scrisse la Divina Commedia.`
+- `Petrarca nacque nel 1304.`
+
+## Не путать
+На этом этапе важнее узнавание, чем производство.

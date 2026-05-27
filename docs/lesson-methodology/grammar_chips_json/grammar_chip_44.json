@@ -1,23 +1,33 @@
 {
-  "key": "C01",
-  "title": "C01 - Congiuntivo Trapassato",
-  "essence": "Congiuntivo trapassato marks an unreal or doubtful action before another past point.",
-  "formula": "`congiuntivo imperfetto of avere/essere + participio passato`",
+  "key": "B22",
+  "title": "B22 - Pronomi Relativi",
+  "essence": "Относительные местоимения соединяют два предложения вокруг общего элемента.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "It combines B27 plus compound-tense auxiliary logic.",
+  "dontConfuse": "Выбор зависит от грамматической роли, а не от перевода \"который\".",
   "examples": [
     {
-      "it": "Pensavo che fosse arrivato.",
+      "it": "Il ragazzo che vedo.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Credevo che avessi capito.",
+      "it": "La donna che lavora qui.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Se fossi stato qui, ti avrei aiutato.",
+      "it": "La casa in cui vivo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "L'amico a cui telefono.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Il tema di cui parliamo.",
       "ru": "",
       "note": ""
     }

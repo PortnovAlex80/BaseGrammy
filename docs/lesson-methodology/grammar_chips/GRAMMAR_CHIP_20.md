@@ -1,19 +1,17 @@
-# B04 - Passato Prossimo with Essere
+# B05 - Passato Prossimo vs Imperfetto
 
-## Core Idea
-Movement, arrival/departure, and state change often use `essere`.
+## Суть
+Passato prossimo — это событие. Imperfetto — это фон.
 
-## Form
-`essere + participio passato`
+## Контраст
+- `Ho letto il libro.` — завершённое событие
+- `Leggevo quando hai chiamato.` — продолжающийся фон
 
-## Examples
-- `Sono andato a scuola.`
-- `È arrivata a casa.`
-- `Siamo usciti.`
-- `Sono nato nel 1990.`
+## Используй Passato Prossimo
+завершённые действия, последовательности, результаты
 
-## Agreement
-`Marco è tornato`, `Maria è tornata`, `loro sono tornati`.
+## Используй Imperfetto
+привычки, описания, состояния, прерванный фон
 
-## Watch Out
-Transitive movement can use `avere`: `Ha attraversato la strada`.
+## Не путать
+Оба переводятся как прошедшее время. Итальянский выбирает по нарративной роли.

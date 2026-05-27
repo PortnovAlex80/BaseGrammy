@@ -1,19 +1,20 @@
-# B23 - Passiva e Si
+# B27 - Congiuntivo Imperfetto
 
-## Core Idea
-Passive changes the viewpoint: object becomes subject.
+## Суть
+Используется после главных предложений в прошедшем времени и в гипотетических конструкциях с `se`.
 
-## Passive
-- `La porta è stata aperta da Marco.`
-- `La lettera è stata scritta.`
+## Формы
+- `essere -> fossi`
+- `avere -> avessi`
+- `parlare -> parlassi`
+- `vedere -> vedessi`
+- `dormire -> dormissi`
 
-## Si Impersonale
-- `Qui si mangia bene.`
-- `In Italia si parla italiano.`
+## Примеры
+- `Pensavo che tu fossi a casa.`
+- `Volevo che venissi.`
+- `Speravo che capissi.`
+- `Se fossi ricco, viaggerei.`
 
-## Si Passivante
-- `Si vendono libri.`
-- `Si studiano le lingue.`
-
-## Watch Out
-`Si vendono libri` agrees with `libri`.
+## Не путать
+В гипотетических конструкциях с `se` сочетается с condizionale: `Se avessi tempo, verrei`.

@@ -1,12 +1,14 @@
-# C10 - Advanced Si Passivante
+# C09 - Trapassato Remoto
 
-## Core Idea
-Advanced `si passivante` focuses on agreement and more complex objects.
+## Суть
+Trapassato remoto обозначает действие, завершённое непосредственно перед другим действием в далёком прошлом.
 
-## Examples
-- `Si vendono libri.`
-- `Si cercano soluzioni.`
-- `Si è presa una decisione.`
+## Формула
+`passato remoto от avere/essere + participio passato`
 
-## Watch Out
-The apparent object controls singular/plural agreement.
+## Примеры
+- `Dopo che ebbe finito, uscì.`
+- `Appena fu arrivato, parlò.`
+
+## Не путать
+Это книжная форма, в основном для восприятия.

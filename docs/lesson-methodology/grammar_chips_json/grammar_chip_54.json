@@ -1,9 +1,25 @@
 {
-  "key": "C11",
-  "title": "C11 - Passive with Venire and Andare",
-  "essence": "Passive can use `venire` for process and `andare` for necessity.",
+  "key": "C10",
+  "title": "C10 - Advanced Si Passivante",
+  "essence": "Продвинутый `si passivante` фокусируется на согласовании и более сложных объектах.",
   "formula": null,
   "base": null,
-  "dontConfuse": "`andare + participio` often means \"must be done\".",
-  "examples": []
+  "dontConfuse": "Кажущийся объект управляет единственным/множественным согласованием.",
+  "examples": [
+    {
+      "it": "Si vendono libri.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Si cercano soluzioni.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Si è presa una decisione.",
+      "ru": "",
+      "note": ""
+    }
+  ]
 }

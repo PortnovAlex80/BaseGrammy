@@ -1,19 +1,16 @@
-# B13 - Verbi Riflessivi
+# B10 - Condizionale Composto
 
-## Core Idea
-The subject acts on itself.
+## Суть
+"Сделал бы" и будущее в прошедшем.
 
-## Forms
-`mi, ti, si, ci, vi, si + verb`
+## Формула
+`condizionale от avere/essere + participio passato`
 
-## Examples
-- `Mi alzo presto.`
-- `Ti lavi le mani.`
-- `Si veste.`
-- `Ci svegliamo alle sette.`
+## Примеры
+- `Avrei mangiato.`
+- `Sarei venuto.`
+- `Ha detto che sarebbe arrivato.`
+- `Avremmo voluto aiutare.`
 
-## Passato Prossimo
-Reflexives use `essere`: `Mi sono alzato`, `Si è vestita`.
-
-## Watch Out
-With modals: `Devo alzarmi` or `Mi devo alzare`.
+## Не путать
+С `essere` — согласование: `sarei venuta`, `saremmo partiti`.

@@ -1,30 +1,30 @@
 {
-  "key": "B11",
-  "title": "B11 - Pronomi Diretti",
-  "essence": "Direct pronouns replace direct objects: who/what, no preposition.",
-  "formula": "`mi, ti, lo, la, ci, vi, li, le`",
+  "key": "B08",
+  "title": "B08 - Futuro Anteriore",
+  "essence": ""Сделаю к" до будущего момента.",
+  "formula": "`будущее время avere/essere + participio passato`",
   "base": null,
-  "dontConfuse": "In passato prossimo: `L'ho vista`, `Li ho comprati`.",
+  "dontConfuse": "Зависит от выбора participio и вспомогательного глагола.",
   "examples": [
     {
-      "it": "Vedo Marco -> Lo vedo.",
+      "it": "Avrò finito entro le otto.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Vedo Maria -> La vedo.",
+      "it": "Saremo arrivati prima di cena.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Compro i libri -> Li compro.",
+      "it": "Quando arriverai, avrò già preparato tutto.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Leggo le lettere -> Le leggo.",
+      "it": "Sarà uscito.",
       "ru": "",
-      "note": ""
+      "note": "Вероятность: Должно быть, он вышел."
     }
   ]
 }

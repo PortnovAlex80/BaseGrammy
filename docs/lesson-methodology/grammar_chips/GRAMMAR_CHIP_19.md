@@ -1,19 +1,19 @@
 # B03 - Passato Prossimo with Avere
 
-## Core Idea
-Completed past action with a result.
+## Суть
+Завершённое прошедшее действие с результатом.
 
-## Form
+## Формула
 `avere + participio passato`
 
-## Examples
+## Примеры
 - `Ho comprato il pane.`
 - `Ha scritto una lettera.`
 - `Abbiamo studiato.`
 - `Hanno visto il film.`
 
-## Markers
+## Маркеры
 `ieri`, `già`, `appena`, `non ancora`
 
-## Watch Out
-With `avere`, the participle normally does not agree with the subject.
+## Не путать
+С `avere` причастие обычно не согласуется с подлежащим.

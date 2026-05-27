@@ -1,23 +1,23 @@
 {
-  "key": "C15",
-  "title": "C15 - Congiuntivo after Conjunctions",
-  "essence": "Some conjunctions regularly require congiuntivo.",
-  "formula": null,
+  "key": "C14",
+  "title": "C14 - Advanced Connectors",
+  "essence": "Продвинутые связки организуют формальную логику и часто вызывают congiuntivo.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Use clean congiuntivo forms, not infinitive hints, in final answers.",
+  "dontConfuse": "Формальные связки полезны в письме, но могут звучать тяжеловесно в речи.",
   "examples": [
     {
-      "it": "Parto prima che piova.",
+      "it": "È stanco, nondimeno continua.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Non vengo a meno che tu venga.",
+      "it": "Studio affinché io passi l'esame.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Parlava come se sapesse tutto.",
+      "it": "Qualora piova, restiamo a casa.",
       "ru": "",
       "note": ""
     }

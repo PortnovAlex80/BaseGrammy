@@ -1,9 +1,15 @@
 {
   "key": "A12",
   "title": "A12 - Frequenza e Quantità",
-  "essence": "Наречия показывают частоту и количество.",
-  "formula": null,
+  "essence": "Наречия показывают частоту и количество.\n\n## Частотность\n`sempre`, `spesso`, `a volte`, `raramente`, `non ... mai`, `non ... più`\n\n## Количество\n`molto`, `poco`, `troppo`, `abbastanza`",
+  "formula": "",
   "base": null,
-  "dontConfuse": null,
-  "examples": []
+  "dontConfuse": "",
+  "examples": [
+    {
+      "it": "Non fumo mai.",
+      "ru": "",
+      "note": ""
+    }
+  ]
 }

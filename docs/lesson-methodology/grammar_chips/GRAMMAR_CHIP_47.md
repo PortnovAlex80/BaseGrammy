@@ -1,12 +1,15 @@
-# C04 - Indirect Speech: Present Main Verb
+# C06 - Concordanza dei Tempi
 
-## Core Idea
-When the reporting verb is present, the original tense often stays stable.
+## Суть
+Время конъюнктива зависит от времени главного глагола и отношения между действиями.
 
-## Examples
-- `Dice: "Sono stanco." -> Dice che è stanco.`
-- `Dice: "Verrò." -> Dice che verrà.`
-- `Chiede: "Dove vai?" -> Chiede dove vai.`
+## Главный глагол в настоящем
+- `Penso che venga.`
+- `Penso che sia venuto.`
 
-## Watch Out
-Indirect questions do not need quotation marks or direct word order.
+## Главный глагол в прошедшем
+- `Pensavo che venisse.`
+- `Pensavo che fosse venuto.`
+
+## Не путать
+Выбирайте время по одновременности, предшествованию или posteriority.

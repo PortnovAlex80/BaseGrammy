@@ -1,20 +1,20 @@
 # B17 - Stare + Gerundio
 
-## Core Idea
-An action in progress right now.
+## Суть
+Действие происходит прямо сейчас.
 
-## Form
+## Формула
 `sto/stai/sta/stiamo/state/stanno + gerundio`
 
-## Gerundio
+## Герундий
 - `parlare -> parlando`
 - `vedere -> vedendo`
 - `dormire -> dormendo`
 
-## Examples
+## Примеры
 - `Sto mangiando.`
 - `Sta scrivendo una lettera.`
 - `Stiamo lavorando.`
 
-## Watch Out
-Do not use it for future plans.
+## Не путать
+Не используй это для будущих планов.

@@ -1,25 +1,9 @@
 {
-  "key": "C05",
-  "title": "C05 - Indirect Speech: Past Main Verb",
-  "essence": "With a past reporting verb, Italian often shifts the dependent tense backward.",
-  "formula": null,
+  "key": "C02",
+  "title": "C02 - Periodo Ipotetico",
+  "essence": "В итальянском языке есть три основных типа условных предложений: реальные, возможные и нереальные.",
+  "formula": "- реальный: `Se ho tempo, vengo.`\n- возможный: `Se avessi tempo, verrei.`\n- нереальный (прошедшее): `Se avessi avuto tempo, sarei venuto.`",
   "base": null,
-  "dontConfuse": "Future-in-the-past uses condizionale composto.",
-  "examples": [
-    {
-      "it": "Dice che lavora -> Ha detto che lavorava.",
-      "ru": "",
-      "note": ""
-    },
-    {
-      "it": "Dice che ha finito -> Ha detto che aveva finito.",
-      "ru": "",
-      "note": ""
-    },
-    {
-      "it": "Dice che verrà -> Ha detto che sarebbe venuto.",
-      "ru": "",
-      "note": ""
-    }
-  ]
+  "dontConfuse": "В стандартных условных предложениях после `se` не используется condizionale.",
+  "examples": []
 }

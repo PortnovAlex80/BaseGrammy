@@ -1,23 +1,23 @@
 {
-  "key": "B22",
-  "title": "B22 - Pronomi Relativi",
-  "essence": "Relative pronouns connect two clauses around a shared element.",
-  "formula": null,
+  "key": "B24",
+  "title": "B24 - Text Connectors",
+  "essence": "Коннекторы выражают противопоставление, причину, следствие, время и условие.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Choose by grammatical role, not by translating \"which\".",
+  "dontConfuse": "Некоторые коннекторы могут требовать congiuntivo.",
   "examples": [
     {
-      "it": "La casa in cui vivo.",
+      "it": "Sono stanco, ma continuo.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "L'amico a cui telefono.",
+      "it": "Resto a casa perché piove.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Il tema di cui parliamo.",
+      "it": "Non ho capito, quindi chiedo.",
       "ru": "",
       "note": ""
     }

@@ -1,12 +1,12 @@
 # C02 - Periodo Ipotetico
 
-## Core Idea
-Italian conditionals have three main types: real, possible, unreal.
+## Суть
+В итальянском языке есть три основных типа условных предложений: реальные, возможные и нереальные.
 
-## Types
-- real: `Se ho tempo, vengo.`
-- possible: `Se avessi tempo, verrei.`
-- unreal past: `Se avessi avuto tempo, sarei venuto.`
+## Типы
+- реальный: `Se ho tempo, vengo.`
+- возможный: `Se avessi tempo, verrei.`
+- нереальный (прошедшее): `Se avessi avuto tempo, sarei venuto.`
 
-## Watch Out
-Do not use condizionale after `se` in standard hypothetical clauses.
+## Не путать
+В стандартных условных предложениях после `se` не используется condizionale.

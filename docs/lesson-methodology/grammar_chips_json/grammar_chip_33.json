@@ -1,23 +1,18 @@
 {
-  "key": "B17",
-  "title": "B17 - Stare + Gerundio",
-  "essence": "An action in progress right now.",
-  "formula": "`sto/stai/sta/stiamo/state/stanno + gerundio`",
+  "key": "B18",
+  "title": "B18 - Gerundio: Other Uses",
+  "essence": "Герундий может сжимать придаточные: пока, потому что, действуя.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Do not use it for future plans.",
+  "dontConfuse": "Держи подлежащее герундия согласованным с подлежащим главного предложения.",
   "examples": [
     {
-      "it": "Sto mangiando.",
+      "it": "Avendo finito, sono uscito.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Sta scrivendo una lettera.",
-      "ru": "",
-      "note": ""
-    },
-    {
-      "it": "Stiamo lavorando.",
+      "it": "Essendo arrivato tardi, ho perso l'inizio.",
       "ru": "",
       "note": ""
     }

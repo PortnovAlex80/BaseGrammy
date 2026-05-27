@@ -1,21 +1,21 @@
 # B24 - Text Connectors
 
-## Core Idea
-Connectors show contrast, cause, result, time, and condition.
+## Суть
+Коннекторы выражают противопоставление, причину, следствие, время и условие.
 
-## Common Connectors
-- `ma / però` - but
-- `perché` - because
-- `quindi / perciò` - therefore
-- `prima / poi` - first / then
-- `mentre` - while
-- `anche se` - although
-- `se` - if
+## Основные коннекторы
+- `ma / però` - но
+- `perché` - потому что
+- `quindi / perciò` - поэтому
+- `prima / poi` - сначала / потом
+- `mentre` - пока
+- `anche se` - хотя
+- `se` - если
 
-## Examples
+## Примеры
 - `Sono stanco, ma continuo.`
 - `Resto a casa perché piove.`
 - `Non ho capito, quindi chiedo.`
 
-## Watch Out
-Some connectors can trigger congiuntivo.
+## Не путать
+Некоторые коннекторы могут требовать congiuntivo.

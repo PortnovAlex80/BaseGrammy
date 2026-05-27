@@ -1,18 +1,23 @@
 {
-  "key": "C07",
-  "title": "C07 - Passato Remoto: Recognition",
-  "essence": "Passato remoto is common in literature and historical narration.",
+  "key": "C04",
+  "title": "C04 - Indirect Speech: Present Main Verb",
+  "essence": "Когда главный глагол в настоящем времени, исходное время часто остаётся неизменным.",
   "formula": null,
   "base": null,
-  "dontConfuse": "At this stage, recognition matters more than production.",
+  "dontConfuse": "Косвенные вопросы не требуют кавычек или прямого порядка слов.",
   "examples": [
     {
-      "it": "Dante scrisse la Divina Commedia.",
+      "it": "Dice: \"Sono stanco.\" -> Dice che è stanco.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Petrarca nacque nel 1304.",
+      "it": "Dice: \"Verrò.\" -> Dice che verrà.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Chiede: \"Dove vai?\" -> Chiede dove vai.",
       "ru": "",
       "note": ""
     }

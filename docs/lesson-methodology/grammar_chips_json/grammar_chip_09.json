@@ -1,9 +1,15 @@
 {
   "key": "A09",
   "title": "A09 - Preposizioni",
-  "essence": "Предлоги выражают отношения: чей, куда, где, с кем, для кого.",
-  "formula": null,
+  "essence": "Предлоги выражают отношения: чей, куда, где, с кем, для кого.\n\n## Основные\n- `di` - принадлежность\n- `a` - направление/адресат\n- `da` - откуда/к человеку\n- `in` - место\n- `con` - с\n- `per` - для",
+  "formula": "",
   "base": null,
-  "dontConfuse": null,
-  "examples": []
+  "dontConfuse": "",
+  "examples": [
+    {
+      "it": "È il libro del mio amico.",
+      "ru": "",
+      "note": ""
+    }
+  ]
 }

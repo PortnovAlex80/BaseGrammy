@@ -1,28 +1,28 @@
 {
-  "key": "B13",
-  "title": "B13 - Verbi Riflessivi",
-  "essence": "The subject acts on itself.",
-  "formula": "`mi, ti, si, ci, vi, si + verb`",
+  "key": "B14",
+  "title": "B14 - Ci e Ne",
+  "essence": "`ci` и `ne` заменяют целые предложные конструкции.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "With modals: `Devo alzarmi` or `Mi devo alzare`.",
+  "dontConfuse": "Ищи скрытый предлог: `a/in` часто становится `ci`; `di/количество` часто становится `ne`.",
   "examples": [
     {
-      "it": "Mi alzo presto.",
+      "it": "Vado a Roma -> Ci vado.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Ti lavi le mani.",
+      "it": "Penso a questo -> Ci penso.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Si veste.",
+      "it": "Parlo di questo -> Ne parlo.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Ci svegliamo alle sette.",
+      "it": "Voglio due mele -> Ne voglio due.",
       "ru": "",
       "note": ""
     }

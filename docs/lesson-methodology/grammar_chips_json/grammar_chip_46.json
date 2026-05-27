@@ -1,18 +1,28 @@
 {
-  "key": "C03",
-  "title": "C03 - Mixed Hypotheticals",
-  "essence": "Mixed hypotheticals connect a past condition with a present result, or a present condition with a past result.",
-  "formula": null,
+  "key": "C06",
+  "title": "C06 - Concordanza dei Tempi",
+  "essence": "Время конъюнктива зависит от времени главного глагола и отношения между действиями.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Track time in both halves separately.",
+  "dontConfuse": "Выбирайте время по одновременности, предшествованию или posteriority.",
   "examples": [
     {
-      "it": "Se avessi studiato, ora sapresti tutto.",
+      "it": "Penso che venga.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Se fossi più attento, non avresti fatto l'errore.",
+      "it": "Penso che sia venuto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Pensavo che venisse.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Pensavo che fosse venuto.",
       "ru": "",
       "note": ""
     }

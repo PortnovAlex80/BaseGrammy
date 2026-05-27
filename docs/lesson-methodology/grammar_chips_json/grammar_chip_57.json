@@ -1,23 +1,28 @@
 {
-  "key": "C14",
-  "title": "C14 - Advanced Connectors",
-  "essence": "Advanced connectors organize formal logic and often trigger congiuntivo.",
-  "formula": null,
+  "key": "C11",
+  "title": "C11 - Passive with Venire and Andare",
+  "essence": "Пассив может использовать `venire` для процесса и `andare` для необходимости.",
+  "formula": "venire + participio passato | andare + participio passato",
   "base": null,
-  "dontConfuse": "Formal connectors are useful in writing, but can sound heavy in speech.",
+  "dontConfuse": "`andare + participio` часто означает "должно быть сделано".",
   "examples": [
     {
-      "it": "È stanco, nondimeno continua.",
+      "it": "La porta viene aperta.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Studio affinché io passi l'esame.",
+      "it": "Il documento viene firmato.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Qualora piova, restiamo a casa.",
+      "it": "Il lavoro va fatto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "La macchina va parcheggiata.",
       "ru": "",
       "note": ""
     }

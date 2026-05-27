@@ -1,17 +1,21 @@
-# B05 - Passato Prossimo vs Imperfetto
+# B02 - Participio Passato
 
-## Core Idea
-Passato prossimo is the event. Imperfetto is the background.
+## Суть
+Participio passato — это итальянская форма V3.
 
-## Contrast
-- `Ho letto il libro.` - completed event
-- `Leggevo quando hai chiamato.` - ongoing background
+## Формы
+- `parlare -> parlato`
+- `vedere -> veduto / visto`
+- `finire -> finito`
+- `fare -> fatto`
+- `dire -> detto`
+- `scrivere -> scritto`
+- `aprire -> aperto`
 
-## Use Passato Prossimo
-completed actions, sequences, results
+## Примеры
+- `un lavoro fatto`
+- `una porta aperta`
+- `una lettera scritta`
 
-## Use Imperfetto
-habits, descriptions, states, interrupted background
-
-## Watch Out
-Both translate as past. Italian chooses by narrative role.
+## Не путать
+Как прилагательное согласуется: `porta aperta`, `libri letti`.

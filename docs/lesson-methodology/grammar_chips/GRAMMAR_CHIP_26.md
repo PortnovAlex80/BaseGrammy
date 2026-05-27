@@ -1,16 +1,20 @@
-# B10 - Condizionale Composto
+# B09 - Condizionale Semplice
 
-## Core Idea
-"Would have done" and future-in-the-past.
+## Суть
+Выражения "бы хотел", вежливые просьбы, советы, гипотетические результаты.
 
-## Form
-`condizionale of avere/essere + participio passato`
+## Формулы
+- `vorrei`
+- `potrei`
+- `dovrei`
+- `sarei`
+- `avrei`
 
-## Examples
-- `Avrei mangiato.`
-- `Sarei venuto.`
-- `Ha detto che sarebbe arrivato.`
-- `Avremmo voluto aiutare.`
+## Примеры
+- `Vorrei un caffè.`
+- `Potrei venire domani.`
+- `Dovresti studiare.`
+- `Sarei felice.`
 
-## Watch Out
-With `essere`, agree: `sarei venuta`, `saremmo partiti`.
+## Не путать
+A15 дал формулы. B09 даёт систему.

@@ -1,23 +1,28 @@
 {
-  "key": "C12",
-  "title": "C12 - Stare per / Past Progressive",
-  "essence": "`stare per + infinito` means \"to be about to\". Past `stare + gerundio` gives ongoing past action.",
+  "key": "C13",
+  "title": "C13 - Verbi Pronominali",
+  "essence": "Местоименные глаголы включают местоимения как часть идиоматического значения.",
   "formula": null,
   "base": null,
-  "dontConfuse": "`stare per` is near future, not generic intention.",
+  "dontConfuse": "Не переводите каждое местоимение буквально.",
   "examples": [
     {
-      "it": "Sto per uscire.",
+      "it": "andarsene",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Stavo per chiamarti.",
+      "it": "farcela",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Stavo leggendo quando sei arrivato.",
+      "it": "cavarsela",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "prendersela",
       "ru": "",
       "note": ""
     }

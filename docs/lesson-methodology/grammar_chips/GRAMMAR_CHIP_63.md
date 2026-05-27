@@ -1,19 +1,14 @@
-# C20 - Style and Paraphrase
+# C18 - Idioms and Collocations
 
-## Core Idea
-Advanced control means saying the same idea in different ways.
+## Суть
+Коллокации — это слова, которые естественным образом сочетаются друг с другом.
 
-## Tools
-- synonym choice
-- active/passive shift
-- pronoun compression
-- nominalization
-- connector choice
+## Примеры
+- `prendere una decisione`
+- `fare una domanda`
+- `avere ragione`
+- `dare un consiglio`
+- `perdere tempo`
 
-## Examples
-- `Marco ha aperto la porta.`
-- `La porta è stata aperta da Marco.`
-- `Aperta la porta, Marco è entrato.`
-
-## Watch Out
-Paraphrase must preserve meaning, register, and tense logic.
+## Не путать
+Не переводите слово в слово. Учите фразу как единое целое.

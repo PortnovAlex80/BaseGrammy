@@ -1,14 +1,15 @@
-# C19 - Case Map
+# C17 - Registers
 
-## Core Idea
-Russian cases often map to Italian prepositions, pronouns, or word order.
+## Суть
+Итальянский меняется в зависимости от регистра: формальная письменная речь, нейтральная речь, разговорная речь.
 
-## Map
-- genitive: `di`
-- dative: `a`, indirect pronouns
-- accusative: direct object, direct pronouns
-- instrumental: `con`, `da` in passive
-- prepositional: `in`, `a`, `su`
+## Контраст
+- формальный: `La informo che...`
+- нейтральный: `Le dico che...`
+- разговорный: `Ti dico che...`
 
-## Watch Out
-Ask what relation is expressed, not which Russian case name appears.
+## Применение
+Сочетайте грамматику, местоимения и лексику с контекстом.
+
+## Не путать
+Правильная грамматика может звучать неправильно, если выбран неверный регистр.

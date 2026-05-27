@@ -1,23 +1,19 @@
-# B26 - Congiuntivo Presente: Irregulars
+# B23 - Passiva e Si
 
-## Core Idea
-Common congiuntivo presente forms are irregular.
+## Суть
+Страдательный залог меняет точку зрения: объект становится подлежащим.
 
-## Key Forms
-- `essere -> sia`
-- `avere -> abbia`
-- `andare -> vada`
-- `venire -> venga`
-- `fare -> faccia`
-- `dire -> dica`
-- `potere -> possa`
-- `dovere -> debba`
-- `sapere -> sappia`
+## Пассивный залог
+- `La porta è stata aperta da Marco.`
+- `La lettera è stata scritta.`
 
-## Examples
-- `Voglio che tu sia qui.`
-- `Spero che lei venga.`
-- `Bisogna che tu lo faccia.`
+## Si безличное
+- `Qui si mangia bene.`
+- `In Italia si parla italiano.`
 
-## Watch Out
-Some plural forms look like indicativo: `che siamo`, `che possiamo`.
+## Si пассивное
+- `Si vendono libri.`
+- `Si studiano le lingue.`
+
+## Не путать
+В `Si vendono libri` глагол согласуется с `libri`.

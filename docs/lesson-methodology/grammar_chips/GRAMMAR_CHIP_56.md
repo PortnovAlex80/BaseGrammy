@@ -1,13 +1,12 @@
-# C13 - Verbi Pronominali
+# C12 - Stare per / Past Progressive
 
-## Core Idea
-Pronominal verbs include pronouns as part of idiomatic meaning.
+## Суть
+`stare per + infinito` означает "собираться". Прошедшее `stare + gerundio` даёт длящееся действие в прошлом.
 
-## Examples
-- `andarsene` - to go away
-- `farcela` - to manage
-- `cavarsela` - to get by
-- `prendersela` - to take offense
+## Примеры
+- `Sto per uscire.`
+- `Stavo per chiamarti.`
+- `Stavo leggendo quando sei arrivato.`
 
-## Watch Out
-Do not translate each pronoun literally.
+## Не путать
+`stare per` — это ближайшее будущее, а не общее намерение.

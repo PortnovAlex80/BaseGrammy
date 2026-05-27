@@ -1,14 +1,14 @@
-# C18 - Idioms and Collocations
+# C19 - Case Map
 
-## Core Idea
-Collocations are words that naturally go together.
+## Суть
+Русские падежи часто соответствуют итальянским предлогам, местоимениям или порядку слов.
 
-## Examples
-- `prendere una decisione`
-- `fare una domanda`
-- `avere ragione`
-- `dare un consiglio`
-- `perdere tempo`
+## Соответствие
+- родительный: `di`
+- дательный: `a`, косвенные местоимения
+- винительный: прямой объект, прямые местоимения
+- творительный: `con`, `da` в пассиве
+- предложный: `in`, `a`, `su`
 
-## Watch Out
-Do not translate word by word. Learn the phrase as one unit.
+## Не путать
+Спрашивайте, какое отношение выражено, а не как называется падеж по-русски.

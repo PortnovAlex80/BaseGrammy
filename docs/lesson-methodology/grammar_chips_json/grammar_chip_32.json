@@ -1,9 +1,50 @@
 {
   "key": "B16",
   "title": "B16 - Pronouns with Verb Forms",
-  "essence": "Pronouns move depending on the verb form.",
-  "formula": null,
+  "essence": "Местоимения меняют положение в зависимости от формы глагола.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "This collects pronoun mechanics deliberately avoided in A14 and A16.",
-  "examples": []
+  "dontConfuse": "Здесь собрана механика местоимений, намеренно избегавшаяся в A14 и A16.",
+  "examples": [
+    {
+      "it": "Lo devo fare.",
+      "ru": "",
+      "note": "Модальные глаголы"
+    },
+    {
+      "it": "Devo farlo.",
+      "ru": "",
+      "note": "Модальные глаголы"
+    },
+    {
+      "it": "Voglio vederlo.",
+      "ru": "",
+      "note": "Инфинитив"
+    },
+    {
+      "it": "Devo parlarti.",
+      "ru": "",
+      "note": "Инфинитив"
+    },
+    {
+      "it": "Lo sto facendo.",
+      "ru": "",
+      "note": "Герундий"
+    },
+    {
+      "it": "Sto facendolo.",
+      "ru": "",
+      "note": "Герундий"
+    },
+    {
+      "it": "Dimmi.",
+      "ru": "",
+      "note": "Повелительное наклонение"
+    },
+    {
+      "it": "Prendilo.",
+      "ru": "",
+      "note": "Повелительное наклонение"
+    }
+  ]
 }

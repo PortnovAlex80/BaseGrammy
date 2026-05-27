@@ -1,23 +1,28 @@
 {
-  "key": "B24",
-  "title": "B24 - Text Connectors",
-  "essence": "Connectors show contrast, cause, result, time, and condition.",
-  "formula": null,
+  "key": "B21",
+  "title": "B21 - Extended Negation",
+  "essence": "В итальянском часто используется non плюс другое отрицательное слово.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Some connectors can trigger congiuntivo.",
+  "dontConfuse": "Двойное отрицание — норма в итальянском.",
   "examples": [
     {
-      "it": "Sono stanco, ma continuo.",
+      "it": "Non so niente.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Resto a casa perché piove.",
+      "it": "Non è venuto nessuno.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Non ho capito, quindi chiedo.",
+      "it": "Non fumo mai.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non lavoro più lì.",
       "ru": "",
       "note": ""
     }

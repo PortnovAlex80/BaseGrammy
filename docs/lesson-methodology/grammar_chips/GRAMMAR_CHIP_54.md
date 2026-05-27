@@ -1,15 +1,20 @@
-# C11 - Passive with Venire and Andare
+# C15 - Congiuntivo after Conjunctions
 
-## Core Idea
-Passive can use `venire` for process and `andare` for necessity.
+## Суть
+Некоторые союзы регулярно требуют congiuntivo.
 
-## Venire Passive
-- `La porta viene aperta.`
-- `Il documento viene firmato.`
+## Триггеры
+- `prima che`
+- `senza che`
+- `a meno che`
+- `purché`
+- `sebbene / benché`
+- `come se`
 
-## Andare Passive
-- `Il lavoro va fatto.`
-- `La macchina va parcheggiata.`
+## Примеры
+- `Parto prima che piova.`
+- `Non vengo a meno che tu venga.`
+- `Parlava come se sapesse tutto.`
 
-## Watch Out
-`andare + participio` often means "must be done".
+## Не путать
+Используйте чистые формы congiuntivo, а не намёки на инфинитив, в финальных ответах.

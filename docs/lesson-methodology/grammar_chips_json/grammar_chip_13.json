@@ -2,9 +2,9 @@
   "key": "A13",
   "title": "A13 - Comparativi",
   "essence": "Сравнение: больше/меньше и самый.",
-  "formula": null,
+  "formula": "- `più ... di`\n- `meno ... di`\n- `il/la più ... di`",
   "base": null,
-  "dontConfuse": null,
+  "dontConfuse": "",
   "examples": [
     {
       "it": "Più facile del russo.",

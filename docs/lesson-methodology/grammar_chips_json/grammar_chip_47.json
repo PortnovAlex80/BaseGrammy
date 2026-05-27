@@ -1,23 +1,28 @@
 {
-  "key": "C04",
-  "title": "C04 - Indirect Speech: Present Main Verb",
-  "essence": "When the reporting verb is present, the original tense often stays stable.",
-  "formula": null,
+  "key": "B12",
+  "title": "B12 - Pronomi Indiretti",
+  "essence": "Косвенные местоимения заменяют a + лицо.",
+  "formula": "mi, ti, gli, le, ci, vi, gli",
   "base": null,
-  "dontConfuse": "Indirect questions do not need quotation marks or direct word order.",
+  "dontConfuse": "lo vedo — прямое дополнение. gli parlo — косвенное.",
   "examples": [
     {
-      "it": "Dice: \"Sono stanco.\" -> Dice che è stanco.",
+      "it": "Telefono a Marco -> Gli telefono.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Dice: \"Verrò.\" -> Dice che verrà.",
+      "it": "Scrivo a Maria -> Le scrivo.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Chiede: \"Dove vai?\" -> Chiede dove vai.",
+      "it": "Parlo a te -> Ti parlo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dico a voi -> Vi dico.",
       "ru": "",
       "note": ""
     }

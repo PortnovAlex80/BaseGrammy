@@ -1,9 +1,25 @@
 {
-  "key": "B05",
-  "title": "B05 - Passato Prossimo vs Imperfetto",
-  "essence": "Passato prossimo is the event. Imperfetto is the background.",
-  "formula": null,
+  "key": "B02",
+  "title": "B02 - Participio Passato",
+  "essence": "Participio passato — это итальянская форма V3.",
+  "formula": "- `parlare -> parlato`\n- `vedere -> veduto / visto`\n- `finire -> finito`\n- `fare -> fatto`\n- `dire -> detto`\n- `scrivere -> scritto`\n- `aprire -> aperto`",
   "base": null,
-  "dontConfuse": "Both translate as past. Italian chooses by narrative role.",
-  "examples": []
+  "dontConfuse": "Как прилагательное согласуется: `porta aperta`, `libri letti`.",
+  "examples": [
+    {
+      "it": "un lavoro fatto",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "una porta aperta",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "una lettera scritta",
+      "ru": "",
+      "note": ""
+    }
+  ]
 }

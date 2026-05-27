@@ -1,28 +1,28 @@
 {
-  "key": "B21",
-  "title": "B21 - Extended Negation",
-  "essence": "Italian often uses `non` plus another negative word.",
-  "formula": null,
+  "key": "B27",
+  "title": "B27 - Congiuntivo Imperfetto",
+  "essence": "Используется после главных предложений в прошедшем времени и в гипотетических конструкциях с se.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Double negation is normal in Italian.",
+  "dontConfuse": "В гипотетических конструкциях с se сочетается с condizionale: Se avessi tempo, verrei.",
   "examples": [
     {
-      "it": "Non so niente.",
+      "it": "Pensavo che tu fossi a casa.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Non è venuto nessuno.",
+      "it": "Volevo che venissi.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Non fumo mai.",
+      "it": "Speravo che capissi.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Non lavoro più lì.",
+      "it": "Se fossi ricco, viaggerei.",
       "ru": "",
       "note": ""
     }

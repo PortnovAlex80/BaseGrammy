@@ -1,9 +1,9 @@
 # B18 - Gerundio: Other Uses
 
-## Core Idea
-Gerundio can compress clauses: while, because, by doing.
+## Суть
+Герундий может сжимать придаточные: пока, потому что, действуя.
 
-## Uses
+## Употребление
 - `Camminando, ho visto Marco.`
 - `Essendo stanco, sono uscito.`
 - `Studiando, si impara.`
@@ -11,9 +11,9 @@ Gerundio can compress clauses: while, because, by doing.
 ## Gerundio Passato
 `avendo/essendo + participio`
 
-## Examples
+## Примеры
 - `Avendo finito, sono uscito.`
 - `Essendo arrivato tardi, ho perso l'inizio.`
 
-## Watch Out
-Keep the gerund subject aligned with the main clause subject.
+## Не путать
+Держи подлежащее герундия согласованным с подлежащим главного предложения.

@@ -1,18 +1,23 @@
 {
-  "key": "B18",
-  "title": "B18 - Gerundio: Other Uses",
-  "essence": "Gerundio can compress clauses: while, because, by doing.",
-  "formula": null,
+  "key": "B17",
+  "title": "B17 - Stare + Gerundio",
+  "essence": "Действие происходит прямо сейчас.",
+  "formula": "sto/stai/sta/stiamo/state/stanno + gerundio",
   "base": null,
-  "dontConfuse": "Keep the gerund subject aligned with the main clause subject.",
+  "dontConfuse": "Не используй это для будущих планов.",
   "examples": [
     {
-      "it": "Avendo finito, sono uscito.",
+      "it": "Sto mangiando.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Essendo arrivato tardi, ho perso l'inizio.",
+      "it": "Sta scrivendo una lettera.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Stiamo lavorando.",
       "ru": "",
       "note": ""
     }

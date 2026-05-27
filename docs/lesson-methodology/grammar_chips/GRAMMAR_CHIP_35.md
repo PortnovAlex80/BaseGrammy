@@ -1,18 +1,18 @@
 # B19 - Infinito Passato
 
-## Core Idea
-"To have done", often after `dopo`.
+## Суть
+"Сделать", часто после `dopo`.
 
-## Form
+## Формула
 `aver/essere + participio passato`
 
-## Examples
+## Примеры
 - `Dopo aver mangiato, sono uscito.`
 - `Dopo aver letto, ho risposto.`
 - `Dopo essere arrivato, ho telefonato.`
 
-## Before
+## Перед
 `Prima di partire, ho chiuso la porta.`
 
-## Watch Out
-Use `essere` where compound tenses use `essere`.
+## Не путать
+Используй `essere` там, где сложные времена используют `essere`.

@@ -1,23 +1,38 @@
 {
-  "key": "B26",
-  "title": "B26 - Congiuntivo Presente: Irregulars",
-  "essence": "Common congiuntivo presente forms are irregular.",
-  "formula": null,
+  "key": "B23",
+  "title": "B23 - Passiva e Si",
+  "essence": "Страдательный залог меняет точку зрения: объект становится подлежащим.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Some plural forms look like indicativo: `che siamo`, `che possiamo`.",
+  "dontConfuse": "В Si vendono libri глагол согласуется с libri.",
   "examples": [
     {
-      "it": "Voglio che tu sia qui.",
+      "it": "La porta è stata aperta da Marco.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Spero che lei venga.",
+      "it": "La lettera è stata scritta.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Bisogna che tu lo faccia.",
+      "it": "Qui si mangia bene.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "In Italia si parla italiano.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Si vendono libri.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Si studiano le lingue.",
       "ru": "",
       "note": ""
     }

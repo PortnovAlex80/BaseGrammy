@@ -1,23 +1,28 @@
 {
-  "key": "B01",
-  "title": "B01 - Imperfetto",
-  "essence": "Imperfetto is past background: habits, descriptions, states, and ongoing actions.",
-  "formula": "- `parlare -> parlavo`\n- `vedere -> vedevo`\n- `dormire -> dormivo`\n- `essere -> ero`",
+  "key": "B04",
+  "title": "B04 - Passato Prossimo with Essere",
+  "essence": "Движение, прибытие/отбытие и изменение состояния часто используют `essere`.",
+  "formula": "`essere + participio passato`",
   "base": null,
-  "dontConfuse": "Choose by function: background/repetition, not Russian aspect.",
+  "dontConfuse": "Переходное движение может использовать `avere`: `Ha attraversato la strada`.",
   "examples": [
     {
-      "it": "Da bambino giocavo fuori.",
+      "it": "Sono andato a scuola.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Il tempo era buono.",
+      "it": "È arrivata a casa.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Leggevo quando sei arrivato.",
+      "it": "Siamo usciti.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Sono nato nel 1990.",
       "ru": "",
       "note": ""
     }

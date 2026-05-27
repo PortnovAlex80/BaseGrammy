@@ -1,21 +1,15 @@
-# B22 - Pronomi Relativi
+# C01 - Congiuntivo Trapassato
 
-## Core Idea
-Relative pronouns connect two clauses around a shared element.
+## Суть
+Congiuntivo trapassato обозначает нереальное или сомнительное действие, произошедшее до другого момента в прошлом.
 
-## Che
-Subject or direct object:
-- `Il ragazzo che vedo.`
-- `La donna che lavora qui.`
+## Формула
+`congiuntivo imperfetto от avere/essere + participio passato`
 
-## Cui
-With a preposition:
-- `a cui`, `di cui`, `con cui`, `in cui`, `per cui`
+## Примеры
+- `Pensavo che fosse arrivato.`
+- `Credevo che avessi capito.`
+- `Se fossi stato qui, ti avrei aiutato.`
 
-## Examples
-- `La casa in cui vivo.`
-- `L'amico a cui telefono.`
-- `Il tema di cui parliamo.`
-
-## Watch Out
-Choose by grammatical role, not by translating "which".
+## Не путать
+Сочетает B27 и логику вспомогательных глаголов составных времён.

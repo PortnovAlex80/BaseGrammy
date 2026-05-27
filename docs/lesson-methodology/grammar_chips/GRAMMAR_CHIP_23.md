@@ -1,17 +1,19 @@
-# B07 - Futuro Semplice
+# B06 - Trapassato Prossimo
 
-## Core Idea
-Future action, or probability about the present.
+## Суть
+"Had done": действие, завершённое до другого момента в прошлом.
 
-## Common Forms
-- `sarò`, `avrò`
-- `andrò`, `farò`
-- `vedrò`, `verrò`
+## Формула
+`imperfetto of avere/essere + participio passato`
 
-## Examples
-- `Domani lavorerò.`
-- `Andremo al cinema.`
-- `Sarà a casa adesso.` - probably at home now
+## Примеры
+- `Avevo già finito.`
+- `Era già uscito.`
+- `Avevamo visto il film.`
+- `Erano già partiti.`
 
-## Watch Out
-Many common verbs have irregular stems.
+## Шаблон
+`Quando sono arrivato, lui era già uscito.`
+
+## Не путать
+Используй `essere` и согласование, когда глагол требует `essere`.

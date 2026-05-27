@@ -1,9 +1,9 @@
 # B15 - Pronomi Combinati
 
-## Core Idea
-Indirect + direct pronouns can combine.
+## Суть
+Косвенные + прямые местоимения могут объединяться.
 
-## Forms
+## Формы
 - `me lo`
 - `te la`
 - `glielo`
@@ -11,11 +11,11 @@ Indirect + direct pronouns can combine.
 - `ve le`
 - `gliene`
 
-## Examples
+## Примеры
 - `Te lo dico.`
 - `Me la dai?`
 - `Glielo porto.`
 - `Ce ne sono due.`
 
-## Watch Out
-`Te lo dico` = I say it to you.
+## Не путать
+`Te lo dico` = Я говорю это тебе.

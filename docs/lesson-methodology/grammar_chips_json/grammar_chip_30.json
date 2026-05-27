@@ -1,9 +1,30 @@
 {
-  "key": "B14",
-  "title": "B14 - Ci e Ne",
-  "essence": "`ci` and `ne` replace whole prepositional meanings.",
-  "formula": null,
+  "key": "B13",
+  "title": "B13 - Verbi Riflessivi",
+  "essence": "Подлежащее действует на само себя.",
+  "formula": "`mi, ti, si, ci, vi, si + глагол`",
   "base": null,
-  "dontConfuse": "Find the hidden preposition: `a/in` often becomes `ci`; `di/quantity` often becomes `ne`.",
-  "examples": []
+  "dontConfuse": "С модальными глаголами: `Devo alzarmi` или `Mi devo alzare`.",
+  "examples": [
+    {
+      "it": "Mi alzo presto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ti lavi le mani.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Si veste.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ci svegliamo alle sette.",
+      "ru": "",
+      "note": ""
+    }
+  ]
 }

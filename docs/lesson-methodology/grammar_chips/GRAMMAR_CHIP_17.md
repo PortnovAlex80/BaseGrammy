@@ -1,18 +1,19 @@
-# B01 - Imperfetto
+# B04 - Passato Prossimo with Essere
 
-## Core Idea
-Imperfetto is past background: habits, descriptions, states, and ongoing actions.
+## Суть
+Движение, прибытие/отбытие и изменение состояния часто используют `essere`.
 
-## Form
-- `parlare -> parlavo`
-- `vedere -> vedevo`
-- `dormire -> dormivo`
-- `essere -> ero`
+## Формула
+`essere + participio passato`
 
-## Examples
-- `Da bambino giocavo fuori.`
-- `Il tempo era buono.`
-- `Leggevo quando sei arrivato.`
+## Примеры
+- `Sono andato a scuola.`
+- `È arrivata a casa.`
+- `Siamo usciti.`
+- `Sono nato nel 1990.`
 
-## Watch Out
-Choose by function: background/repetition, not Russian aspect.
+## Согласование
+`Marco è tornato`, `Maria è tornata`, `loro sono tornati`.
+
+## Не путать
+Переходное движение может использовать `avere`: `Ha attraversato la strada`.

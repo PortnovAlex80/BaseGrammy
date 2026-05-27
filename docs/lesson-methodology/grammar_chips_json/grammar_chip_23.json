@@ -1,24 +1,34 @@
 {
-  "key": "B07",
-  "title": "B07 - Futuro Semplice",
-  "essence": "Future action, or probability about the present.",
-  "formula": null,
+  "key": "B06",
+  "title": "B06 - Trapassato Prossimo",
+  "essence": "\"Had done\": действие, завершённое до другого момента в прошлом.",
+  "formula": "`imperfetto of avere/essere + participio passato`",
   "base": null,
-  "dontConfuse": "Many common verbs have irregular stems.",
+  "dontConfuse": "Используй `essere` и согласование, когда глагол требует `essere`.",
   "examples": [
     {
-      "it": "Domani lavorerò.",
+      "it": "Avevo già finito.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Andremo al cinema.",
+      "it": "Era già uscito.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Sarà a casa adesso.",
-      "ru": "- probably at home now",
+      "it": "Avevamo visto il film.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Erano già partiti.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Quando sono arrivato, lui era già uscito.",
+      "ru": "",
       "note": ""
     }
   ]

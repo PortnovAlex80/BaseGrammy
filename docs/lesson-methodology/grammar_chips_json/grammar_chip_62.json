@@ -1,9 +1,9 @@
 {
   "key": "C19",
   "title": "C19 - Case Map",
-  "essence": "Russian cases often map to Italian prepositions, pronouns, or word order.",
-  "formula": null,
+  "essence": "Русские падежи часто соответствуют итальянским предлогам, местоимениям или порядку слов.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "Ask what relation is expressed, not which Russian case name appears.",
+  "dontConfuse": "Спрашивайте, какое отношение выражено, а не как называется падеж по-русски.",
   "examples": []
 }

@@ -1,10 +1,10 @@
 {
   "key": "B06",
   "title": "B06 - Trapassato Prossimo",
-  "essence": "\"Had done\": an action completed before another past point.",
+  "essence": "\"Had done\": действие, завершённое до другого момента в прошлом.",
   "formula": "`imperfetto of avere/essere + participio passato`",
   "base": null,
-  "dontConfuse": "Use `essere` and agreement when the verb requires `essere`.",
+  "dontConfuse": "Используй `essere` и согласование, когда глагол требует `essere`.",
   "examples": [
     {
       "it": "Avevo già finito.",
@@ -23,6 +23,11 @@
     },
     {
       "it": "Erano già partiti.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Quando sono arrivato, lui era già uscito.",
       "ru": "",
       "note": ""
     }

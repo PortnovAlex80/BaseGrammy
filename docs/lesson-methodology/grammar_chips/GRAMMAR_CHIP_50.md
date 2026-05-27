@@ -1,19 +1,16 @@
-# C07 - Passato Remoto: Recognition
+# C08 - Passato Remoto: Production
 
-## Core Idea
-Passato remoto is common in literature and historical narration.
+## Суть
+Этот урок практикует активное образование passato remoto.
 
-## Key Forms
-- `fu` - was
-- `ebbe` - had
-- `andò` - went
-- `venne` - came
-- `scrisse` - wrote
-- `disse` - said
+## Правильные окончания
+- `parlare -> parlai, parlasti, parlò`
+- `credere -> credetti, credesti, credette`
+- `dormire -> dormii, dormisti, dormì`
 
-## Examples
-- `Dante scrisse la Divina Commedia.`
-- `Petrarca nacque nel 1304.`
+## Примеры
+- `Marco andò a Roma.`
+- `Lucia sentì la musica.`
 
-## Watch Out
-At this stage, recognition matters more than production.
+## Не путать
+Многие частотные формы неправильные.

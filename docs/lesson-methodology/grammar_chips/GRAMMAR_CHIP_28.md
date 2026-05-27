@@ -1,16 +1,19 @@
-# B12 - Pronomi Indiretti
+# B13 - Verbi Riflessivi
 
-## Core Idea
-Indirect pronouns replace `a + person`.
+## Суть
+Подлежащее действует на само себя.
 
-## Forms
-`mi, ti, gli, le, ci, vi, gli`
+## Формулы
+`mi, ti, si, ci, vi, si + глагол`
 
-## Examples
-- `Telefono a Marco -> Gli telefono.`
-- `Scrivo a Maria -> Le scrivo.`
-- `Parlo a te -> Ti parlo.`
-- `Dico a voi -> Vi dico.`
+## Примеры
+- `Mi alzo presto.`
+- `Ti lavi le mani.`
+- `Si veste.`
+- `Ci svegliamo alle sette.`
 
-## Watch Out
-`lo vedo` is direct. `gli parlo` is indirect.
+## Passato Prossimo
+Возвратные глаголы используют `essere`: `Mi sono alzato`, `Si è vestita`.
+
+## Не путать
+С модальными глаголами: `Devo alzarmi` или `Mi devo alzare`.

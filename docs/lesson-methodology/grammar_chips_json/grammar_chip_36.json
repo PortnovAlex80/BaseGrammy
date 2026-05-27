@@ -1,23 +1,23 @@
 {
-  "key": "B20",
-  "title": "B20 - Participio Assoluto",
-  "essence": "A completed action compressed with its own noun.",
-  "formula": null,
+  "key": "B19",
+  "title": "B19 - Infinito Passato",
+  "essence": "Сделать, часто после dopo.",
+  "formula": "aver/essere + participio passato",
   "base": null,
-  "dontConfuse": "It is more written/formal than everyday speech.",
+  "dontConfuse": "Используй essere там, где сложные времена используют essere.",
   "examples": [
     {
-      "it": "Finito il pranzo, siamo usciti.",
+      "it": "Dopo aver mangiato, sono uscito.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Scritta la lettera, è andato alla posta.",
+      "it": "Dopo aver letto, ho risposto.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Partiti gli ospiti, abbiamo sparecchiato.",
+      "it": "Dopo essere arrivato, ho telefonato.",
       "ru": "",
       "note": ""
     }

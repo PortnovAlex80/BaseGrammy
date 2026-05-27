@@ -1,20 +1,20 @@
-# B27 - Congiuntivo Imperfetto
+# B25 - Congiuntivo Presente: Concept
 
-## Core Idea
-Used after past main clauses and in hypothetical `se` clauses.
+## Суть
+Congiuntivo используется после сомнения, желания, необходимости, эмоции или оценки.
 
-## Forms
-- `essere -> fossi`
-- `avere -> avessi`
-- `parlare -> parlassi`
-- `vedere -> vedessi`
-- `dormire -> dormissi`
+## Контраст
+- `So che è qui.` - факт
+- `Penso che sia qui.` - мнение
+- `Sono sicuro che viene.` - уверенность
+- `Non sono sicuro che venga.` - неуверенность
 
-## Examples
-- `Pensavo che tu fossi a casa.`
-- `Volevo che venissi.`
-- `Speravo che capissi.`
-- `Se fossi ricco, viaggerei.`
+## Триггеры
+`penso che`, `voglio che`, `spero che`, `è importante che`, `dubito che`
 
-## Watch Out
-In `se` hypotheticals, pair with condizionale: `Se avessi tempo, verrei`.
+## Примеры
+- `Voglio che tu venga.`
+- `È importante che tu lavori.`
+
+## Не путать
+Не после каждого `che` нужен congiuntivo.

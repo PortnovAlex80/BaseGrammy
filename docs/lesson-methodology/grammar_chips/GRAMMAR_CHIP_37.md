@@ -1,9 +1,9 @@
 # B21 - Extended Negation
 
-## Core Idea
-Italian often uses `non` plus another negative word.
+## Суть
+В итальянском часто используется `non` плюс другое отрицательное слово.
 
-## Patterns
+## Шаблоны
 - `non ... niente`
 - `non ... nessuno`
 - `non ... mai`
@@ -11,11 +11,11 @@ Italian often uses `non` plus another negative word.
 - `non ... ancora`
 - `né ... né`
 
-## Examples
+## Примеры
 - `Non so niente.`
 - `Non è venuto nessuno.`
 - `Non fumo mai.`
 - `Non lavoro più lì.`
 
-## Watch Out
-Double negation is normal in Italian.
+## Не путать
+Двойное отрицание — норма в итальянском.

@@ -1,23 +1,28 @@
 {
-  "key": "C10",
-  "title": "C10 - Advanced Si Passivante",
-  "essence": "Advanced `si passivante` focuses on agreement and more complex objects.",
-  "formula": null,
+  "key": "C06",
+  "title": "C06 - Concordanza dei Tempi",
+  "essence": "Время конъюнктива зависит от времени главного глагола и отношения между действиями.",
+  "formula": "",
   "base": null,
-  "dontConfuse": "The apparent object controls singular/plural agreement.",
+  "dontConfuse": "Выбирайте время по одновременности, предшествованию или posteriority.",
   "examples": [
     {
-      "it": "Si vendono libri.",
+      "it": "Penso che venga.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Si cercano soluzioni.",
+      "it": "Penso che sia venuto.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Si è presa una decisione.",
+      "it": "Pensavo che venisse.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Pensavo che fosse venuto.",
       "ru": "",
       "note": ""
     }

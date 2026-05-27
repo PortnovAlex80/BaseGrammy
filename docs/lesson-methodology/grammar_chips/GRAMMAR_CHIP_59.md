@@ -1,19 +1,19 @@
 # C16 - Alterati
 
-## Core Idea
-Altered nouns add size, affection, or attitude.
+## Суть
+Изменённые существительные добавляют размер, ласковость или отношение.
 
-## Common Suffixes
-- `-ino / -ina` - small or affectionate
-- `-etto / -etta` - small, softer
-- `-one / -ona` - big
-- `-accio / -accia` - negative tone
+## Распространённые суффиксы
+- `-ino / -ina` — маленький или ласковый
+- `-etto / -etta` — маленький, мягче
+- `-one / -ona` — большой
+- `-accio / -accia` — негативный оттенок
 
-## Examples
+## Примеры
 - `casa -> casetta`
 - `libro -> libretto`
 - `ragazzo -> ragazzino`
 - `problema -> problemone`
 
-## Watch Out
-Meaning is emotional, not only physical size.
+## Не путать
+Значение эмоциональное, не только физический размер.

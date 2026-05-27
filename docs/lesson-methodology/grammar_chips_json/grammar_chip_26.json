@@ -1,10 +1,10 @@
 {
   "key": "B10",
   "title": "B10 - Condizionale Composto",
-  "essence": "\"Would have done\" and future-in-the-past.",
-  "formula": "`condizionale of avere/essere + participio passato`",
+  "essence": ""Сделал бы" и будущее в прошедшем.",
+  "formula": "`condizionale от avere/essere + participio passato`",
   "base": null,
-  "dontConfuse": "With `essere`, agree: `sarei venuta`, `saremmo partiti`.",
+  "dontConfuse": "С `essere` — согласование: `sarei venuta`, `saremmo partiti`.",
   "examples": [
     {
       "it": "Avrei mangiato.",

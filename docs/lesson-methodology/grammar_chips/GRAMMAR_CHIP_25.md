@@ -1,20 +1,18 @@
-# B09 - Condizionale Semplice
+# B08 - Futuro Anteriore
 
-## Core Idea
-Would, polite requests, advice, and hypothetical results.
+## Суть
+"Сделаю к" до будущего момента.
 
-## Forms
-- `vorrei`
-- `potrei`
-- `dovrei`
-- `sarei`
-- `avrei`
+## Формула
+`будущее время avere/essere + participio passato`
 
-## Examples
-- `Vorrei un caffè.`
-- `Potrei venire domani.`
-- `Dovresti studiare.`
-- `Sarei felice.`
+## Примеры
+- `Avrò finito entro le otto.`
+- `Saremo arrivati prima di cena.`
+- `Quando arriverai, avrò già preparato tutto.`
 
-## Watch Out
-A15 gave formulas. B09 gives the system.
+## Вероятность
+`Sarà uscito.` — Должно быть, он вышел.
+
+## Не путать
+Зависит от выбора participio и вспомогательного глагола.

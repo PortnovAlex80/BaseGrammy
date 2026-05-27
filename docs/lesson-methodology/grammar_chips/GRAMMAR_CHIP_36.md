@@ -1,18 +1,18 @@
 # B20 - Participio Assoluto
 
-## Core Idea
-A completed action compressed with its own noun.
+## Суть
+Завершённое действие, сжатое с собственным существительным.
 
-## Pattern
+## Шаблон
 `participio + noun, main clause`
 
-## Examples
+## Примеры
 - `Finito il pranzo, siamo usciti.`
 - `Scritta la lettera, è andato alla posta.`
 - `Partiti gli ospiti, abbiamo sparecchiato.`
 
-## Agreement
+## Согласование
 `finito il pranzo`, `finita la lezione`, `finiti i soldi`
 
-## Watch Out
-It is more written/formal than everyday speech.
+## Не путать
+Это более книжный/формальный стиль, чем повседневная речь.

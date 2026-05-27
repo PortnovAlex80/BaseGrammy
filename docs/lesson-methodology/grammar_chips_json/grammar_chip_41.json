@@ -1,18 +1,23 @@
 {
-  "key": "B25",
-  "title": "B25 - Congiuntivo Presente: Concept",
-  "essence": "Congiuntivo appears after doubt, wish, need, emotion, or judgment.",
-  "formula": null,
+  "key": "B26",
+  "title": "B26 - Congiuntivo Presente: Irregulars",
+  "essence": "Распространённые формы congiuntivo presente — неправильные.",
+  "formula": "- `essere -> sia`\n- `avere -> abbia`\n- `andare -> vada`\n- `venire -> venga`\n- `fare -> faccia`\n- `dire -> dica`\n- `potere -> possa`\n- `dovere -> debba`\n- `sapere -> sappia`",
   "base": null,
-  "dontConfuse": "Not every `che` needs congiuntivo.",
+  "dontConfuse": "Некоторые формы множественного числа совпадают с indicativo: `che siamo`, `che possiamo`.",
   "examples": [
     {
-      "it": "Voglio che tu venga.",
+      "it": "Voglio che tu sia qui.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "È importante che tu lavori.",
+      "it": "Spero che lei venga.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Bisogna che tu lo faccia.",
       "ru": "",
       "note": ""
     }

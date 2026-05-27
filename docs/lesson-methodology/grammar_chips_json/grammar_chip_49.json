@@ -1,9 +1,25 @@
 {
-  "key": "C06",
-  "title": "C06 - Concordanza dei Tempi",
-  "essence": "Subjunctive tense depends on the main verb time and the relation between actions.",
+  "key": "C12",
+  "title": "C12 - Stare per / Past Progressive",
+  "essence": "`stare per + infinito` означает \"собираться\". Прошедшее `stare + gerundio` даёт длящееся действие в прошлом.",
   "formula": null,
   "base": null,
-  "dontConfuse": "Choose tense by simultaneity, anteriority, or posteriority.",
-  "examples": []
+  "dontConfuse": "`stare per` — это ближайшее будущее, а не общее намерение.",
+  "examples": [
+    {
+      "it": "Sto per uscire.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Stavo per chiamarti.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Stavo leggendo quando sei arrivato.",
+      "ru": "",
+      "note": ""
+    }
+  ]
 }

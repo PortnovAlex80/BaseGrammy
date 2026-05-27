@@ -1,18 +1,18 @@
 {
-  "key": "C09",
-  "title": "C09 - Trapassato Remoto",
-  "essence": "Trapassato remoto marks an action completed immediately before another remote past action.",
-  "formula": "`passato remoto of avere/essere + participio passato`",
+  "key": "C08",
+  "title": "C08 - Passato Remoto: Production",
+  "essence": "Этот урок практикует активное образование passato remoto.",
+  "formula": null,
   "base": null,
-  "dontConfuse": "This is literary and mostly receptive.",
+  "dontConfuse": "Многие частотные формы неправильные.",
   "examples": [
     {
-      "it": "Dopo che ebbe finito, uscì.",
+      "it": "Marco andò a Roma.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Appena fu arrivato, parlò.",
+      "it": "Lucia sentì la musica.",
       "ru": "",
       "note": ""
     }

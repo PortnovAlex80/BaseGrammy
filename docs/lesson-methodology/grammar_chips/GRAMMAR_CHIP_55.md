@@ -1,12 +1,13 @@
-# C12 - Stare per / Past Progressive
+# C13 - Verbi Pronominali
 
-## Core Idea
-`stare per + infinito` means "to be about to". Past `stare + gerundio` gives ongoing past action.
+## Суть
+Местоименные глаголы включают местоимения как часть идиоматического значения.
 
-## Examples
-- `Sto per uscire.`
-- `Stavo per chiamarti.`
-- `Stavo leggendo quando sei arrivato.`
+## Примеры
+- `andarsene` - уйти
+- `farcela` - справиться
+- `cavarsela` - выбраться
+- `prendersela` - обидеться
 
-## Watch Out
-`stare per` is near future, not generic intention.
+## Не путать
+Не переводите каждое местоимение буквально.

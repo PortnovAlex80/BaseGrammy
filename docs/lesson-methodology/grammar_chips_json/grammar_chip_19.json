@@ -1,10 +1,10 @@
 {
   "key": "B03",
   "title": "B03 - Passato Prossimo with Avere",
-  "essence": "Completed past action with a result.",
+  "essence": "Завершённое прошедшее действие с результатом.",
   "formula": "`avere + participio passato`",
   "base": null,
-  "dontConfuse": "With `avere`, the participle normally does not agree with the subject.",
+  "dontConfuse": "С `avere` причастие обычно не согласуется с подлежащим.",
   "examples": [
     {
       "it": "Ho comprato il pane.",

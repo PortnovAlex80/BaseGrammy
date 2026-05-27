@@ -1,21 +1,21 @@
 # B16 - Pronouns with Verb Forms
 
-## Core Idea
-Pronouns move depending on the verb form.
+## Суть
+Местоимения меняют положение в зависимости от формы глагола.
 
-## Modals
+## Модальные глаголы
 - `Lo devo fare.`
 - `Devo farlo.`
 
-## Infinitive
+## Инфинитив
 - `Voglio vederlo.`
 - `Devo parlarti.`
 
-## Gerund and Imperative
+## Герундий и повелительное наклонение
 - `Lo sto facendo.`
 - `Sto facendolo.`
 - `Dimmi.`
 - `Prendilo.`
 
-## Watch Out
-This collects pronoun mechanics deliberately avoided in A14 and A16.
+## Не путать
+Здесь собрана механика местоимений, намеренно избегавшаяся в A14 и A16.

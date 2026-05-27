@@ -1,23 +1,23 @@
 {
-  "key": "B19",
-  "title": "B19 - Infinito Passato",
-  "essence": "\"To have done\", often after `dopo`.",
-  "formula": "`aver/essere + participio passato`",
+  "key": "B20",
+  "title": "B20 - Participio Assoluto",
+  "essence": "Завершённое действие, сжатое с собственным существительным.",
+  "formula": "participio + noun, main clause",
   "base": null,
-  "dontConfuse": "Use `essere` where compound tenses use `essere`.",
+  "dontConfuse": "Это более книжный/формальный стиль, чем повседневная речь.",
   "examples": [
     {
-      "it": "Dopo aver mangiato, sono uscito.",
+      "it": "Finito il pranzo, siamo usciti.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Dopo aver letto, ho risposto.",
+      "it": "Scritta la lettera, è andato alla posta.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Dopo essere arrivato, ho telefonato.",
+      "it": "Partiti gli ospiti, abbiamo sparecchiato.",
       "ru": "",
       "note": ""
     }

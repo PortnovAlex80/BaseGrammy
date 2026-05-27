@@ -1,16 +1,11 @@
-# C08 - Passato Remoto: Production
+# C03 - Mixed Hypotheticals
 
-## Core Idea
-This lesson practices actively forming passato remoto.
+## Суть
+Смешанные условные предложения связывают прошедшее условие с настоящим результатом, или настоящее условие с прошедшим результатом.
 
-## Regular Endings
-- `parlare -> parlai, parlasti, parlò`
-- `credere -> credetti, credesti, credette`
-- `dormire -> dormii, dormisti, dormì`
+## Примеры
+- `Se avessi studiato, ora sapresti tutto.`
+- `Se fossi più attento, non avresti fatto l'errore.`
 
-## Examples
-- `Marco andò a Roma.`
-- `Lucia sentì la musica.`
-
-## Watch Out
-Many frequent forms are irregular.
+## Не путать
+Отслеживайте время в обеих частях отдельно.

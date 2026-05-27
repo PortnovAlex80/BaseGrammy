@@ -1,23 +1,18 @@
 {
-  "key": "B08",
-  "title": "B08 - Futuro Anteriore",
-  "essence": "\"Will have done\" before a future moment.",
-  "formula": "`future of avere/essere + participio passato`",
+  "key": "C09",
+  "title": "C09 - Trapassato Remoto",
+  "essence": "Trapassato remoto обозначает действие, завершённое непосредственно перед другим действием в далёком прошлом.",
+  "formula": "passato remoto от avere/essere + participio passato",
   "base": null,
-  "dontConfuse": "It depends on participio and auxiliary choice.",
+  "dontConfuse": "Это книжная форма, в основном для восприятия.",
   "examples": [
     {
-      "it": "Avrò finito entro le otto.",
+      "it": "Dopo che ebbe finito, uscì.",
       "ru": "",
       "note": ""
     },
     {
-      "it": "Saremo arrivati prima di cena.",
-      "ru": "",
-      "note": ""
-    },
-    {
-      "it": "Quando arriverai, avrò già preparato tutto.",
+      "it": "Appena fu arrivato, parlò.",
       "ru": "",
       "note": ""
     }

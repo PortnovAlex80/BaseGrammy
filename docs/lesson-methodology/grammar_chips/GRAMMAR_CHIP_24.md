@@ -1,18 +1,16 @@
-# B08 - Futuro Anteriore
+# B12 - Pronomi Indiretti
 
-## Core Idea
-"Will have done" before a future moment.
+## Суть
+Косвенные местоимения заменяют `a + лицо`.
 
-## Form
-`future of avere/essere + participio passato`
+## Формулы
+`mi, ti, gli, le, ci, vi, gli`
 
-## Examples
-- `Avrò finito entro le otto.`
-- `Saremo arrivati prima di cena.`
-- `Quando arriverai, avrò già preparato tutto.`
+## Примеры
+- `Telefono a Marco -> Gli telefono.`
+- `Scrivo a Maria -> Le scrivo.`
+- `Parlo a te -> Ti parlo.`
+- `Dico a voi -> Vi dico.`
 
-## Probability
-`Sarà uscito.` - He must have gone out.
-
-## Watch Out
-It depends on participio and auxiliary choice.
+## Не путать
+`lo vedo` — прямое дополнение. `gli parlo` — косвенное.

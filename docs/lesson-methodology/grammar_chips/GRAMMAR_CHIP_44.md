@@ -1,15 +1,21 @@
-# C01 - Congiuntivo Trapassato
+# B22 - Pronomi Relativi
 
-## Core Idea
-Congiuntivo trapassato marks an unreal or doubtful action before another past point.
+## Суть
+Относительные местоимения соединяют два предложения вокруг общего элемента.
 
-## Form
-`congiuntivo imperfetto of avere/essere + participio passato`
+## Che
+Подлежащее или прямое дополнение:
+- `Il ragazzo che vedo.`
+- `La donna che lavora qui.`
 
-## Examples
-- `Pensavo che fosse arrivato.`
-- `Credevo che avessi capito.`
-- `Se fossi stato qui, ti avrei aiutato.`
+## Cui
+С предлогом:
+- `a cui`, `di cui`, `con cui`, `in cui`, `per cui`
 
-## Watch Out
-It combines B27 plus compound-tense auxiliary logic.
+## Примеры
+- `La casa in cui vivo.`
+- `L'amico a cui telefono.`
+- `Il tema di cui parliamo.`
+
+## Не путать
+Выбор зависит от грамматической роли, а не от перевода "который".
