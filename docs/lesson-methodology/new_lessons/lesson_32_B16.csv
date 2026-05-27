@@ -1,41 +1,41 @@
-B16 - Pronouns with Verbs
-2	Я должен это сделать;Lo devo fare
-3	Ты хочешь это посмотреть;Lo vuoi vedere
-4	Он может это сделать;Lo può fare
-5	Мы должны это прочитать;Lo dobbiamo leggere
-6	Вы хотите это попробовать;Lo volete provare
-7	Они могут это купить;Lo possono comprare
-8	Я должен тебе сказать;Ti devo dire
-9	Ты хочешь мне помочь;Mi vuoi aiutare
-10	Он хочет нас встретить;Ci vuole incontrare
-11	Мы должны тебе позвонить;Ti dobbiamo chiamare
-12	Вы хотите нас видеть;Ci volete vedere
-13	Они хотят мне помочь;Mi vogliono aiutare
-14	Я могу это сделать;Lo posso fare
-15	Ты должен это понять;Lo devi capire
-16	Он может это объяснить;Lo può spiegare
-17	Мы должны это закончить;Lo dobbiamo finire
-18	Вы можете это начать;Lo potete iniziare
-19	Они могут это изучить;Lo possono studiare
-20	Я должен туда пойти;Ci devo andare
-21	Ты хочешь туда прийти;Ci vuoi venire
-22	Он может туда прийти;Ci può venire
-23	Мы должны там быть;Ci dobbiamo essere
-24	Вы хотите там жить;Ci volete vivere
-25	Они могут там работать;Ci possono lavorare
-26	Я хочу тебя увидеть;Ti voglio vedere
-27	Ты должен меня услышать;Mi devi sentire
-28	Он хочет нас понять;Ci vuole capire
-29	Мы должны вас встретить;Vi dobbiamo incontrare
-30	Вы хотите нас найти;Ci volete trovare
-31	Они могут мне помочь;Mi possono aiutare
-32	Я должен это сказать;Lo devo dire
-33	Ты можешь это сделать;Lo puoi fare
-34	Он должен это понять;Lo deve capire
-35	Мы можем это увидеть;Lo possiamo vedere
-36	Вы должны это знать;Lo dovete sapere
-37	Они могут это сделать;Lo possono fare
-38	Я хочу тебя услышать;Ti voglio sentire
-39	Ты должен мне помочь;Mi devi aiutare
-40	Он хочет нас видеть;Ci vuole vedere
-41	Мы должны вам сказать;Vi dobbiamo dire
+B16 - Pronouns with modals, infinitive, gerundio, imperativo
+Я должен это сделать (fare).;Lo devo fare.
+Я должен сделать это (fare).;Devo farlo.
+Я хочу тебе помочь (aiutare).;Ti voglio aiutare.
+Я хочу помочь тебе (aiutare).;Voglio aiutarti.
+Он может нам позвонить (telefonare).;Ci può telefonare.
+Он может позвонить нам (telefonare).;Può telefonarci.
+Мы должны ему ответить (rispondere).;Gli dobbiamo rispondere.
+Мы должны ответить ему (rispondere).;Dobbiamo rispondergli.
+Я хочу тебе это сказать (dire).;Te lo voglio dire.
+Я хочу сказать тебе это (dire).;Voglio dirtelo.
+Она может мне это объяснить (spiegare).;Me lo può spiegare.
+Она может объяснить мне это (spiegare).;Può spiegarmelo.
+Мы должны отправить ему его (mandare).;Glielo dobbiamo mandare.
+Мы должны отправить ему его (mandare).;Dobbiamo mandarglielo.
+Ты можешь принести мне их (portare).;Me li puoi portare.
+Ты можешь принести мне их (portare).;Puoi portarmeli.
+Я это делаю сейчас (fare).;Lo sto facendo.
+Я сейчас делаю это (fare).;Sto facendolo.
+Она тебя слушает сейчас (ascoltare).;Ti sta ascoltando.
+Она сейчас слушает тебя (ascoltare).;Sta ascoltandoti.
+Мы ему это объясняем сейчас (spiegare).;Glielo stiamo spiegando.
+Мы сейчас объясняем ему это (spiegare).;Stiamo spiegandoglielo.
+Они нас ждут сейчас (aspettare).;Ci stanno aspettando.
+Они сейчас ждут нас (aspettare).;Stanno aspettandoci.
+Он об этом думает сейчас (pensare).;Ci sta pensando.
+Он сейчас думает об этом (pensare).;Sta pensandoci.
+Я об этом говорю сейчас (parlare).;Ne sto parlando.
+Я сейчас говорю об этом (parlare).;Sto parlandone.
+Скажи мне правду (verità).;Dimmi la verità.
+Скажи мне это (dire).;Dimmelo.
+Возьми его (prendere).;Prendilo.
+Помоги мне (aiutare).;Aiutami.
+Напиши ему (scrivere).;Scrivigli.
+Отправь ему это (mandare).;Mandaglielo.
+Не делай это (fare).;Non lo fare.
+Не делай этого (fare).;Non farlo.
+Не говори ему это (dire).;Non glielo dire.
+Не говори этого ему (dire).;Non dirglielo.
+Дайте мне это, пожалуйста (dare).;Me lo dia, per favore.
+Принесите нам их, пожалуйста (portare).;Ce li porti, per favore.
