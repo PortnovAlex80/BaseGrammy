@@ -6,7 +6,7 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 
 ## PROJECT CONTEXT
 
-**What:** Android language learning app for RU→Target translation (English/Italian). Flower-growing metaphor for progress based on Ebbinghaus forgetting curve.
+**What:** Android language learning app for RU→Target translation (English/Italian). Flower-growing metaphor for progress based on Ebbinghaus forgetting curve. Grammar Story Roadmap: chapter-based narrative learning with allegorical stories.
 
 **Stack:** Kotlin 1.9.22, Jetpack Compose (BOM 2024.02.00), Material 3, Android SDK 24–34, Java 17, SnakeYAML 2.2, Sherpa-ONNX (TTS/ASR)
 
@@ -22,6 +22,11 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 | **Single ViewModel** | `TrainingViewModel` is ~1500 lines. Decompose helpers to `feature/` when adding logic. |
 | **Pack-scoped drills** | `hasVerbDrill`/`hasVocabDrill` check active pack manifest only |
 | **Learned threshold** | Mastery step ≥ 3 = "learned", not step 9 (full mastery) |
+| **Chapter progress** | `ChapterProgress` is pack-scoped. Independent between packs and chapters. |
+| **UI conditional visibility** | No pack selected = hide lesson tiles, daily practice. Use `activePack != null` check. |
+| **Story language fallback** | Story files prefer `<storyFile>`, fallback to `stories/<language>/<storyFile>`. |
+| **LOCKED status removed** | ChapterStatus only has ACTIVE, DONE. No LOCKED state anymore. |
+| **Settings icon placement** | Settings icon in top bar, not on home screen tiles anymore. |
 
 ---
 
@@ -249,6 +254,80 @@ Full specs in `docs/specification/`:
 | `01-models-and-state.md` | Data classes, enums, state |
 | `02-data-stores.md` | All data stores |
 | `08-training-viewmodel.md` | TrainingViewModel logic |
+| `acceptance-criteria-grammar-roadmap.md` | Grammar Story Roadmap feature spec |
 | `scenarios/*.md` | Code traces for user flows |
 
 **Rule:** Read spec before modifying code. If spec ≠ code, code is source of truth. Update spec after changes.
+
+---
+
+## GRAMMAR STORY ROADMAP
+
+### Overview
+Grammar Story Roadmap is a narrative layer that organizes lessons into chapters with allegorical stories. Packs with chapters show GrammarStoryRoadmapScreen, packs without chapters show ClassicHomeScreen.
+
+### Key Features
+
+**Chapter System:**
+- 8 chapters with progressive difficulty (Before Language → First Words → Grammar Garden)
+- Each chapter has: title, subtitle, story file, ordered lessons
+- Chapter progress tracked independently: lessonsStarted, lessonsCompleted, lastAccessedMs
+- Progress pack-scoped via ChapterProgressStore
+
+**Story Reader:**
+- Markdown rendering with mobile-optimized layout
+- Language-dependent content (Russian/English)
+- Story files in `stories/<language>/` or pack root
+- Fallback: `<storyFile>` → `stories/<language>/<storyFile>`
+
+**UI Changes:**
+- Settings icon moved to top bar (removed from home tiles)
+- All status icons removed (no locks, no checkmarks)
+- Conditional visibility: no pack = hide lesson tiles, daily practice
+- Drill buttons: only show if hasVerbDrill/hasVocabDrill
+- Back navigation: Grammar Story Roadmap → Pack Selection
+
+**Navigation Flow:**
+```
+Pack Selection (no active pack)
+    ↓ [select pack]
+Grammar Story Roadmap (chapters pack)
+    ↓ [continue lesson]
+Training Screen (LESSON mode)
+    ↓ [back]
+Grammar Story Roadmap
+    ↓ [back button]
+Pack Selection
+```
+
+**Manifest v2:**
+```json
+{
+  "schemaVersion": 2,
+  "chapters": [
+    {
+      "chapterId": "chapter_0",
+      "order": 0,
+      "title": "Before Language",
+      "subtitle": "The silence before words",
+      "storyFile": "chapter_00_original.md",
+      "lessons": ["lesson_01_A01", "lesson_02_A02"]
+    }
+  ]
+}
+```
+
+**Chapter Status:**
+- ACTIVE: Chapter in progress (green highlight)
+- DONE: All lessons completed (mastery >= 3)
+- No LOCKED state (removed for cleaner UX)
+
+**Progress Calculation:**
+- `lessonsStarted`: lessons with mastery > 0
+- `lessonsCompleted`: lessons with intervalStepIndex >= 3
+- Progress %: (lessonsCompleted / totalLessons) * 100
+
+**Data Stores:**
+- `ChapterProgressStore`: pack-scoped chapter progress
+- `ChapterProgressCalculator`: computes progress from mastery data
+- Atomic writes via AtomicFileWriter pattern

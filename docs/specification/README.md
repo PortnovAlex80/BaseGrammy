@@ -53,6 +53,7 @@ Source of truth for all project specs. Numbered specs (01–23) are current; sce
 | 21 | [Product Roadmap](21-product-roadmap.md) | Next sprint features: Card Feel Rating, Difficulty Levels |
 | 22 | [Use Case Registry](22-use-case-registry.md) | UC IDs with acceptance criteria — for regression checks and PR review |
 | 23 | [Screen Elements](23-screen-elements.md) | Screen element catalog with invariants — for UI regression checks |
+| 24 | [Grammar Story Roadmap](24-grammar-story-roadmap.md) | Chapter-based narrative learning system with story reader |
 
 ---
 

@@ -19,6 +19,19 @@ This document exhaustively catalogs every data class, enum, sealed class, interf
 
 **Implementation task:** [TASK-088: Grammar Story Roadmap Implementation](tasks/TASK-088-grammar-story-roadmap.md)
 
+**Status:** ✅ IMPLEMENTED (feature/grammar-story-roadmap branch)
+
+**Key Features:**
+- Chapter-based learning with 8 chapters
+- Story reader with markdown rendering
+- Chapter progress tracking (lessonsStarted, lessonsCompleted, lastAccessedMs)
+- Conditional UI routing (chapters vs classic home)
+- Language-dependent story content (Russian/English)
+- Settings icon in top bar
+- Removed all status icons (locks, checkmarks)
+- Conditional drill button visibility
+- Back navigation to pack selection
+
 Sources:
 - `app/src/main/java/com/alexpo/grammermate/data/Models.kt`
 - `app/src/main/java/com/alexpo/grammermate/data/VerbDrillCard.kt`
