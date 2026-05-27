@@ -112,13 +112,15 @@ class TtsEngine(private val context: Context) {
 
         withContext(Dispatchers.Default) {
             try {
-                // Phase 1: Check files (70-75%) - only for offline Sherpa-ONNX models
-                // System TTS doesn't require model files
+                // Phase 1: Check files (70-75%) - for both KOKORO and VITS_PIPER
                 emitInitializing(InitPhase.CHECKING_FILES, 70)
-                if (spec.modelType == TtsModelType.KOKORO) {
-                    val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
-                    val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
-                    if (missingFiles.isNotEmpty()) {
+                val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
+                val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
+                if (missingFiles.isNotEmpty()) {
+                    // For VITS_PIPER, fall back to system TTS if files are missing
+                    if (spec.modelType == TtsModelType.VITS_PIPER) {
+                        Log.d(TAG, "VITS_PIPER model files not found for $languageId, falling back to system TTS")
+                    } else {
                         throw IllegalStateException("Missing or empty model files: $missingFiles")
                     }
                 }
