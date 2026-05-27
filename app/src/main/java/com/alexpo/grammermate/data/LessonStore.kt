@@ -446,11 +446,18 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         val storiesDir = File(packDir, "stories")
         val storyFileObj = File(storiesDir, storyFile)
 
+        Log.d("LessonStore", "Loading story: packId=$packId, storyFile=$storyFile")
+        Log.d("LessonStore", "Pack dir exists: ${packDir.exists()}, Stories dir exists: ${storiesDir.exists()}")
+
         return try {
             // First, try to read from internal storage
             if (storyFileObj.exists()) {
+                Log.d("LessonStore", "Story found in internal storage: ${storyFileObj.absolutePath}")
                 return storyFileObj.readText()
             }
+
+            Log.d("LessonStore", "Story NOT found in internal storage, trying assets...")
+            Log.d("LessonStore", "Story file path: ${storyFileObj.absolutePath}")
 
             // If not in internal storage, try to read from assets and copy it
             val assetPath = "grammarmate/packs/$packId/stories/$storyFile"
@@ -459,6 +466,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                     // Ensure the stories directory exists
                     if (!storiesDir.exists()) {
                         storiesDir.mkdirs()
+                        Log.d("LessonStore", "Created stories directory: ${storiesDir.absolutePath}")
                     }
 
                     // Read from assets and write to internal storage
@@ -469,7 +477,11 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                     return content
                 }
             } catch (e: Exception) {
-                Log.w("LessonStore", "Story file not found in assets: $assetPath", e)
+                Log.e("LessonStore", "Story file not found in assets: $assetPath", e)
+                Log.d("LessonStore", "Available stories in pack:")
+                storiesDir.listFiles()?.forEach { file ->
+                    Log.d("LessonStore", "  - ${file.name}")
+                }
                 null
             }
         } catch (e: Exception) {
@@ -589,11 +601,17 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? {
         val packDir = File(packsDir, packId)
         val storiesDir = File(packDir, "stories")
-        if (!storiesDir.exists()) return null
+        if (!storiesDir.exists()) {
+            android.util.Log.w("LessonStore", "Stories directory does not exist for pack: $packId")
+            return null
+        }
 
         // Normalize chapter ID for filename
         val chapterBase = chapterId.removePrefix("chapter_").trim()
-        if (chapterBase.isEmpty()) return null
+        if (chapterBase.isEmpty()) {
+            android.util.Log.w("LessonStore", "Invalid chapter ID: $chapterId")
+            return null
+        }
 
         // Determine preferred language
         val preferRussian = when (uiLanguage.lowercase()) {
@@ -606,24 +624,29 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             else -> false
         }
 
-        // Try preferred language first, then fallback
-        val candidates = if (preferRussian) {
-            listOf(
-                "chapter_${chapterBase}_original.md",  // Russian original
-                "chapter_${chapterBase}.md"             // English translation
-            )
+        android.util.Log.d("LessonStore", "Detecting story language for chapterId=$chapterId, preferRussian=$preferRussian")
+
+        // List all available story files for this chapter
+        val availableFiles = storiesDir.listFiles()?.filter { file ->
+            file.name.startsWith("chapter_${chapterBase}") && file.name.endsWith(".md")
+        } ?: emptyList()
+
+        android.util.Log.d("LessonStore", "Available story files for chapter $chapterBase: ${availableFiles.map { it.name }}")
+
+        // Prioritize based on language preference
+        val prioritizedFiles = if (preferRussian) {
+            // Prefer _original.md (Russian), then any other variant
+            availableFiles.sortedByDescending { it.name.endsWith("_original.md") }
         } else {
-            listOf(
-                "chapter_${chapterBase}.md",             // English translation
-                "chapter_${chapterBase}_original.md"  // Russian original
-            )
+            // Prefer non-_original.md files (English variants), then _original.md
+            availableFiles.sortedBy { it.name.endsWith("_original.md") }
         }
 
-        for (candidate in candidates) {
-            val file = File(storiesDir, candidate)
+        for (file in prioritizedFiles) {
+            android.util.Log.d("LessonStore", "Trying story file: ${file.name}")
             if (file.exists()) {
-                android.util.Log.d("LessonStore", "Found story file for $chapterId: $candidate (uiLanguage=$uiLanguage)")
-                return candidate
+                android.util.Log.d("LessonStore", "Found story file for $chapterId: ${file.name} (uiLanguage=$uiLanguage)")
+                return file.name
             }
         }
 

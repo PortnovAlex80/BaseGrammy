@@ -195,7 +195,29 @@ internal class PackImporter(
             if (packDir.exists()) {
                 packDir.deleteRecursively()
             }
+
+            // Debug: List temp dir contents before copying
+            Log.d(TAG, "Temp dir contents before copy:")
+            tempDir.walkTopDown().maxDepth(2).forEach { file ->
+                Log.d(TAG, "  ${file.absolutePath}")
+            }
+
+            // Check if stories directory exists in temp
+            val storiesTempDir = File(tempDir, "stories")
+            Log.d(TAG, "Stories dir in temp: ${storiesTempDir.exists()}, files: ${storiesTempDir.listFiles()?.size ?: 0}")
+
             tempDir.copyRecursively(packDir, overwrite = true)
+
+            // Debug: List pack dir contents after copying
+            Log.d(TAG, "Pack dir contents after copy:")
+            packDir.walkTopDown().maxDepth(2).forEach { file ->
+                Log.d(TAG, "  ${file.absolutePath}")
+            }
+
+            // Check if stories directory exists in pack
+            val storiesPackDir = File(packDir, "stories")
+            Log.d(TAG, "Stories dir in pack: ${storiesPackDir.exists()}, files: ${storiesPackDir.listFiles()?.size ?: 0}")
+
             tempDir.deleteRecursively()
 
             val lessonEntries = manifest.lessons

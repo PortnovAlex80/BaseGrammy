@@ -96,48 +96,58 @@ def main():
     with open(manifest_path, 'r', encoding='utf-8') as f:
         manifest = json.load(f)
 
-    # Update lessons with grammar chip references (chapter-based structure)
-    updated_count = 0
+    # Update pack version to force reinstallation
+    old_version = manifest.get('packVersion', 'v1')
+    manifest['packVersion'] = 'v2'  # Increment version to force update
+    print(f"Updating pack version: {old_version} -> {manifest['packVersion']}")
+
+    # First, update root-level lessons (used by GrammarChipStore)
+    root_updated = 0
+    if 'lessons' in manifest:
+        for lesson in manifest['lessons']:
+            lesson_id = lesson.get('lessonId')
+            if lesson_id and lesson_id in LESSON_TO_CHIP:
+                lesson['grammarChip'] = LESSON_TO_CHIP[lesson_id]
+                root_updated += 1
+                print(f"  Added grammar chip to root lesson {lesson_id}: {LESSON_TO_CHIP[lesson_id]}")
+        print(f"Updated {root_updated} root-level lessons with grammar chip references")
+
+    # Then, update chapter lessons (keep as strings for Chapter data class)
+    chapter_updated = 0
     for chapter in manifest.get('chapters', []):
         chapter_title = chapter.get('title', 'Unknown')
         print(f"  Processing chapter: {chapter_title}")
 
-        # Convert lesson IDs to objects with grammarChip field
+        # Process lessons - keep as strings
         updated_lessons = []
         for lesson_entry in chapter.get('lessons', []):
             if isinstance(lesson_entry, str):
-                # It's a lesson ID string, convert to object
+                # It's a lesson ID string - keep it as string
                 lesson_id = lesson_entry
-                lesson_obj = {
-                    "lessonId": lesson_id,
-                    "order": 0  # Will be set by index
-                }
                 if lesson_id in LESSON_TO_CHIP:
-                    lesson_obj['grammarChip'] = LESSON_TO_CHIP[lesson_id]
-                    updated_count += 1
-                    print(f"    Added grammar chip to {lesson_id}: {LESSON_TO_CHIP[lesson_id]}")
-                updated_lessons.append(lesson_obj)
+                    chapter_updated += 1
+                    print(f"    Chapter has lesson with grammar chip: {lesson_id}")
+                updated_lessons.append(lesson_id)
             elif isinstance(lesson_entry, dict):
-                # It's already an object, just add grammarChip if missing
+                # It's an object - extract lessonId and keep as string
                 lesson_id = lesson_entry.get('lessonId')
-                if lesson_id in LESSON_TO_CHIP and 'grammarChip' not in lesson_entry:
-                    lesson_entry['grammarChip'] = LESSON_TO_CHIP[lesson_id]
-                    updated_count += 1
-                    print(f"    Added grammar chip to {lesson_id}: {LESSON_TO_CHIP[lesson_id]}")
-                updated_lessons.append(lesson_entry)
+                if lesson_id:
+                    if lesson_id in LESSON_TO_CHIP:
+                        chapter_updated += 1
+                        print(f"    Chapter has lesson with grammar chip: {lesson_id}")
+                    updated_lessons.append(lesson_id)
 
-        # Update order indices
-        for idx, lesson in enumerate(updated_lessons):
-            lesson['order'] = idx + 1
-
-        # Replace lessons array with updated version
+        # Replace lessons array with strings (not objects)
         chapter['lessons'] = updated_lessons
+
+    print(f"Processed {chapter_updated} chapter lessons with grammar chips")
 
     # Write updated manifest
     with open(manifest_path, 'w', encoding='utf-8') as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-    print(f"Updated {updated_count} lessons with grammar chip references")
+    print(f"Updated {root_updated} root lessons with grammar chip references")
+    print(f"Processed {chapter_updated} chapter lesson references")
 
     # Create grammar_chips directory and copy files
     gc_dir = pack_dir / 'grammar_chips'
@@ -171,7 +181,7 @@ def main():
     print(f"Cleaned up temp directory")
 
     print(f"\nSuccessfully rebuilt IT_EXPRESS.zip with grammar chips!")
-    print(f"   - Updated {updated_count} lessons with grammar chip references")
+    print(f"   - Updated {root_updated} root lessons with grammar chip references")
     print(f"   - Embedded {copied_count} grammar chip files")
 
 if __name__ == '__main__':

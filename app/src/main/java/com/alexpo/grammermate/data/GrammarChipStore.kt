@@ -19,15 +19,40 @@ object GrammarChipStore {
     private val cache = mutableMapOf<String, GrammarChip>()
     private val lessonToChipFile = mutableMapOf<String, Pair<String, String>>() // lessonId -> (packId, chipFile)
     private var initialized = false
+    private var initializing = false
 
     private const val TAG = "GrammarChipStore"
+
+    /**
+     * Check if the store has been initialized.
+     */
+    fun isInitialized(): Boolean = initialized
+
+    /**
+     * Check if the store is currently initializing.
+     */
+    fun isInitializing(): Boolean = initializing
 
     /**
      * Initialize grammar chip store by scanning all installed packs.
      * This should be called after packs are imported/installed.
      */
     suspend fun initialize(@Suppress("UNUSED_PARAMETER") context: Context, packsDir: File) = withContext(Dispatchers.IO) {
-        if (initialized) return@withContext
+        if (initialized) {
+            Log.d(TAG, "Already initialized, skipping")
+            return@withContext
+        }
+
+        if (initializing) {
+            Log.d(TAG, "Already initializing, waiting...")
+            while (initializing) {
+                kotlinx.coroutines.delay(100)
+            }
+            return@withContext
+        }
+
+        initializing = true
+        Log.d(TAG, "Starting initialization...")
 
         try {
             cache.clear()
@@ -88,10 +113,11 @@ object GrammarChipStore {
             }
 
             initialized = true
+            initializing = false
             Log.d(TAG, "Initialized with ${cache.size} grammar chips and ${lessonToChipFile.size} lesson mappings")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize GrammarChipStore", e)
-            initialized = true
+            initializing = false
         }
     }
 
@@ -102,9 +128,16 @@ object GrammarChipStore {
      * This looks up the lesson in the manifest mappings and returns the appropriate chip.
      */
     fun getChipForLesson(lessonId: String): GrammarChip? {
+        if (!initialized) {
+            Log.w(TAG, "GrammarChipStore not initialized yet! Cannot get chip for lesson: $lessonId")
+            Log.d(TAG, "Cache size: ${cache.size}, Mappings size: ${lessonToChipFile.size}")
+            return null
+        }
+
         val mapping = lessonToChipFile[lessonId]
         if (mapping == null) {
             Log.d(TAG, "No grammar chip mapping for lesson: $lessonId")
+            Log.d(TAG, "Available mappings: ${lessonToChipFile.keys.take(10)}...")
             return null
         }
 
@@ -120,7 +153,7 @@ object GrammarChipStore {
 
         if (chip == null) {
             Log.w(TAG, "Chip not found in cache for key: $chipKey")
-            Log.d(TAG, "Available keys in cache: ${cache.keys.joinToString()}")
+            Log.d(TAG, "Available keys in cache: ${cache.keys.take(10)}...")
         } else {
             Log.d(TAG, "Successfully loaded chip: ${chip.key}")
         }
@@ -206,5 +239,6 @@ object GrammarChipStore {
         cache.clear()
         lessonToChipFile.clear()
         initialized = false
+        initializing = false
     }
 }
