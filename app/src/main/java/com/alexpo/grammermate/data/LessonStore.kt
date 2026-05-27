@@ -362,13 +362,32 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                 it.isFile && it.name.endsWith(".csv")
             } ?: continue
 
-            Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}")
+            // Read manifest to get lesson IDs for schema v1
+            val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
+
+            Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}, schema: ${manifest?.schemaVersion}")
 
             for (lessonFile in lessonFiles) {
                 try {
                     val parseResult = CsvParser.parseLesson(lessonFile.inputStream())
                     val (parsedTitle, cards) = parseResult.data ?: continue
-                    val lessonId = lessonFile.name.removeSuffix(".csv")
+
+                    // For schema v1, use lessonId from manifest; for schema v2, use filename
+                    val lessonId = if (manifest?.schemaVersion == 1) {
+                        // Find lesson in manifest by filename
+                        val fileName = lessonFile.name
+                        val lessonEntry = manifest.lessons.find { it.file == fileName }
+                        if (lessonEntry != null) {
+                            Log.d("LessonStore", "Mapped file '$fileName' to lessonId '${lessonEntry.lessonId}'")
+                            lessonEntry.lessonId
+                        } else {
+                            Log.w("LessonStore", "No manifest entry for file: $fileName, using filename as ID")
+                            fileName.removeSuffix(".csv")
+                        }
+                    } else {
+                        // Schema v2 or no manifest - use filename
+                        lessonFile.name.removeSuffix(".csv")
+                    }
 
                     packLessons.add(Lesson(
                         id = LessonId(lessonId),
