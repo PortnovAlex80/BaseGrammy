@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Card
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,7 +29,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.data.Chapter
@@ -160,43 +157,20 @@ private fun ChapterCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header row with title and status icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = chapterUi.chapter.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    chapterUi.chapter.subtitle?.let { subtitle ->
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-
-                // Status icon
-                Icon(
-                    imageVector = when (chapterUi.status) {
-                        ChapterStatus.ACTIVE -> Icons.Default.CheckCircle
-                        ChapterStatus.DONE -> Icons.Default.CheckCircle
-                    },
-                    contentDescription = when (chapterUi.status) {
-                        ChapterStatus.ACTIVE -> "In Progress"
-                        ChapterStatus.DONE -> "Completed"
-                    },
-                    tint = when (chapterUi.status) {
-                        ChapterStatus.ACTIVE -> MaterialTheme.colorScheme.primary
-                        ChapterStatus.DONE -> MasteryGreen
-                    },
-                    modifier = Modifier.size(32.dp)
+            // Header with title and subtitle
+            Column {
+                Text(
+                    text = chapterUi.chapter.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
+                chapterUi.chapter.subtitle?.let { subtitle ->
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             // Progress section

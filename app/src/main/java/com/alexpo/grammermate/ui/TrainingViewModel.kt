@@ -1771,63 +1771,34 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Load story content from a story file with automatic language detection.
      * Returns null if the file doesn't exist or cannot be read.
      *
-     * This method uses the story file name to automatically detect the appropriate
+     * This method uses the chapter ID to automatically detect the appropriate
      * story file based on the UI language setting (Russian/English).
      *
      * Language detection logic:
      * - If UI language is "ru", prefer Russian versions (*_original.md)
      * - If UI language is "en" or "system", prefer English versions
      * - Falls back to available version if preferred doesn't exist
+     *
+     * @param storyFile The story filename from chapter manifest (can be null)
+     * @return Story content in the appropriate language, or null if not found
      */
     fun loadStoryContent(storyFile: String?): String? {
         if (storyFile == null) return null
 
         return try {
             val activePackId = _coreState.value.navigation.activePackId?.value ?: return null
-            val uiLanguage = currentUiLanguage
 
-            // Determine if we should prefer Russian or English stories
-            val preferRussian = when (uiLanguage.lowercase()) {
-                "ru" -> true
-                "system" -> {
-                    // Check system locale
-                    val systemLang = java.util.Locale.getDefault().language
-                    systemLang == "ru"
-                }
-                else -> false
+            // Directly load the story file specified in the manifest
+            // The manifest already contains the correct story filename
+            val content = lessonStore.getChapterStory(activePackId, storyFile)
+
+            if (content != null) {
+                Log.d(logTag, "Successfully loaded story: $storyFile")
+                content
+            } else {
+                Log.w(logTag, "Story file not found: $storyFile")
+                null
             }
-
-            // Generate candidates based on language preference
-            val candidates = when {
-                storyFile.contains("_original") && preferRussian -> {
-                    // Already have Russian file and prefer Russian - use as is
-                    listOf(storyFile)
-                }
-                storyFile.contains("_original") && !preferRussian -> {
-                    // Have Russian file but prefer English - try English fallback
-                    val baseName = storyFile.replace("_original", "")
-                    listOf(baseName, storyFile) // Try English first, then Russian
-                }
-                !storyFile.contains("_original") && preferRussian -> {
-                    // Have English file but prefer Russian - try Russian fallback
-                    val russianName = storyFile.replace(".md", "_original.md")
-                    listOf(russianName, storyFile) // Try Russian first, then English
-                }
-                else -> {
-                    // Have English file and prefer English - use as is
-                    listOf(storyFile)
-                }
-            }
-
-            // Try each candidate until one works
-            for (candidate in candidates) {
-                val content = lessonStore.getChapterStory(activePackId, candidate)
-                if (content != null) {
-                    return content
-                }
-            }
-
-            null
         } catch (e: Exception) {
             Log.e(logTag, "Failed to load story content: $storyFile", e)
             null
