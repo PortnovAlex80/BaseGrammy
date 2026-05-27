@@ -231,22 +231,24 @@ private fun ChapterCard(
                     }
                 }
 
-                // "Continue" button
-                when (chapterUi.status) {
-                    ChapterStatus.ACTIVE -> {
-                        OutlinedButton(
-                            onClick = onContinue,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Continue")
+                // "Continue" button (only show if chapter has lessons)
+                if (chapterUi.chapter.lessons.isNotEmpty()) {
+                    when (chapterUi.status) {
+                        ChapterStatus.ACTIVE -> {
+                            OutlinedButton(
+                                onClick = onContinue,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Continue")
+                            }
                         }
-                    }
-                    ChapterStatus.DONE -> {
-                        OutlinedButton(
-                            onClick = onContinue,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Review")
+                        ChapterStatus.DONE -> {
+                            OutlinedButton(
+                                onClick = onContinue,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Review")
+                            }
                         }
                     }
                 }
