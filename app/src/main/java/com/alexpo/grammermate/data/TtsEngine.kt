@@ -117,24 +117,17 @@ class TtsEngine(private val context: Context) {
                 val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
                 val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
                 if (missingFiles.isNotEmpty()) {
-                    // For VITS_PIPER, fall back to system TTS if files are missing
-                    if (spec.modelType == TtsModelType.VITS_PIPER) {
-                        Log.d(TAG, "VITS_PIPER model files not found for $languageId, falling back to system TTS")
-                    } else {
-                        throw IllegalStateException("Missing or empty model files: $missingFiles")
-                    }
+                    throw IllegalStateException("Missing or empty model files: $missingFiles")
                 }
                 emitInitializing(InitPhase.CHECKING_FILES, 75)
 
-                // Phase 2: Load engine (75-95%). Use Android's system TTS to avoid
-                // native Sherpa TTS crashes observed on some tablets during OfflineTts init.
+                // Phase 2: Load Sherpa-ONNX offline TTS engine (75-95%)
                 System.gc()
                 emitInitializing(InitPhase.LOADING_MODEL, 75)
 
-                val systemReady = initSystemTts(languageId)
-                if (!systemReady) {
-                    throw IllegalStateException("Android system TTS engine is unavailable for $languageId")
-                }
+                val config = buildConfig(spec, modelDir)
+                val tts = OfflineTts(config)
+                offlineTts = tts
                 emitInitializing(InitPhase.LOADING_MODEL, 95)
 
                 // Phase 3: Finalize (95-100%)
@@ -258,20 +251,6 @@ class TtsEngine(private val context: Context) {
                 if (oldJob != null) {
                     oldJob.cancel()
                     oldJob.join()
-                }
-
-                val system = systemTts
-                if (system != null) {
-                    _state.value = TtsState.Speaking
-                    requestAudioFocus()
-                    val params = android.os.Bundle().apply {
-                        putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
-                    }
-                    system.setSpeechRate(safeSpeed)
-                    val result = system.speak(text, TextToSpeech.QUEUE_FLUSH, params, "tts-${generation.incrementAndGet()}")
-                    _state.value = if (result == TextToSpeech.SUCCESS) TtsState.Ready else TtsState.Error("System TTS playback failed")
-                    abandonAudioFocus()
-                    return
                 }
 
                 val tts = offlineTts
