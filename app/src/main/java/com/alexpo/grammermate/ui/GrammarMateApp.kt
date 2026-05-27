@@ -303,7 +303,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             // Show Grammar Story Roadmap for packs with chapters
                             GrammarStoryRoadmapScreen(
                                 chapters = vm.getChapterCards(),
-                                onBack = remember { { onNavigate(Routes.HOME) } },
+                                onBack = remember {
+                                    {
+                                        // Clear active pack to show pack selection
+                                        vm.clearActivePack()
+                                        // Force recomposition by navigating to HOME
+                                        navController.navigate(Routes.HOME) {
+                                            popUpTo(Routes.HOME) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                },
                                 onReadStory = remember { { chapter ->
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
                                     if (storyContent != null) {
@@ -360,7 +370,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                 },
                                 hasVerbDrill = state.navigation.hasVerbDrill,
-                                hasVocabDrill = state.navigation.hasVocabDrill
+                                hasVocabDrill = state.navigation.hasVocabDrill,
+                                showBackButton = true  // Show back button to return to pack selection
                             )
                         } else {
                             // Show Classic Home Screen for v1 packs without chapters
@@ -671,6 +682,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         GrammarStoryRoadmapScreen(
                             chapters = vm.getChapterCards(),
                             onBack = remember { { onNavigate(Routes.HOME) } },
+                            showBackButton = true,  // Show back button when accessed via direct route
                             onReadStory = remember { { chapter ->
                                 val storyContent = vm.loadStoryContent(chapter.storyFile)
                                 if (storyContent != null) {
@@ -831,9 +843,14 @@ private fun NavBackHandlers(
             launchSingleTop = true
         }
     }
-    BackHandler(enabled = currentRoute == Routes.GRAMMAR_STORY_ROADMAP && !showSettings) {
+    // GRAMMAR_STORY_ROADMAP is shown on HOME route when pack has chapters
+    // Back handler clears the active pack to return to pack selection
+    BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && vm.hasPackChapters(state.navigation.activePackId.value) && !showSettings) {
+        // Clear active pack to show pack selection
+        vm.clearActivePack()
+        // Force recomposition by navigating to HOME
         navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = false }
+            popUpTo(Routes.HOME) { inclusive = true }
             launchSingleTop = true
         }
     }

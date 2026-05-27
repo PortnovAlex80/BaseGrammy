@@ -675,6 +675,28 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return lessonStore.hasChapters(packId)
     }
 
+    /**
+     * Clear the active pack to return to pack selection screen.
+     */
+    fun clearActivePack() {
+        // Cancel any active daily session before clearing pack
+        if (_coreState.value.daily.dailySession.active) {
+            cancelDailySession()
+        }
+
+        _coreState.update {
+            it.copy(navigation = it.navigation.copy(
+                activePackId = null,
+                activePackLessonIds = emptyList(),
+                selectedLessonId = null
+            ))
+        }
+        dailyPracticeCoordinator.resetState()
+        dailyPracticeCoordinator.initializeCursor()
+        refreshDrillVisibility()
+        saveProgress()
+    }
+
     fun selectMode(mode: TrainingMode) {
         sessionRunner.pauseTimer()
         vocabSession = emptyList()
