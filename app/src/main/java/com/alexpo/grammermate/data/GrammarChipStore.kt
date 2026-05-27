@@ -102,14 +102,30 @@ object GrammarChipStore {
      * This looks up the lesson in the manifest mappings and returns the appropriate chip.
      */
     fun getChipForLesson(lessonId: String): GrammarChip? {
-        val mapping = lessonToChipFile[lessonId] ?: return null
-        val (packId, chipFile) = mapping
+        val mapping = lessonToChipFile[lessonId]
+        if (mapping == null) {
+            Log.d(TAG, "No grammar chip mapping for lesson: $lessonId")
+            return null
+        }
 
-        // Extract chip key from filename (grammar_chip_01.json -> A01)
+        val (packId, chipFile) = mapping
+        Log.d(TAG, "Found mapping for $lessonId -> $packId/$chipFile")
+
+        // Extract chip number from filename and get key
         val chipNumber = chipFile.removePrefix("grammar_chip_").removeSuffix(".json")
         val chipKey = getChipKeyFromNumber(chipNumber)
 
-        return cache[chipKey]
+        Log.d(TAG, "Looking for chip with key: $chipKey (from file: $chipFile)")
+        val chip = cache[chipKey]
+
+        if (chip == null) {
+            Log.w(TAG, "Chip not found in cache for key: $chipKey")
+            Log.d(TAG, "Available keys in cache: ${cache.keys.joinToString()}")
+        } else {
+            Log.d(TAG, "Successfully loaded chip: ${chip.key}")
+        }
+
+        return chip
     }
 
     fun hasChipForLesson(lessonId: String): Boolean = getChipForLesson(lessonId) != null
