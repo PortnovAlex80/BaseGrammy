@@ -303,13 +303,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             // Show Grammar Story Roadmap for packs with chapters
                             GrammarStoryRoadmapScreen(
                                 chapters = vm.getChapterCards(),
-                                onBack = remember(dialogs) {
-                                    {
-                                        previousRoute = Routes.HOME
-                                        vm.pauseSession()
-                                        dialogs = dialogs.copy(showSettings = true)
-                                    }
-                                },
+                                onBack = remember { { onNavigate(Routes.HOME) } },
                                 onReadStory = remember { { chapter ->
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
                                     if (storyContent != null) {
@@ -318,8 +312,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             storyReaderContent = storyContent
                                         )
                                         onNavigate(Routes.STORY_READER)
+                                    } else {
+                                        Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                     }
                                 } },
+                                onOpenSettings = remember(dialogs) {
+                                    {
+                                        previousRoute = Routes.HOME
+                                        vm.pauseSession()
+                                        dialogs = dialogs.copy(showSettings = true)
+                                    }
+                                },
                                 onContinue = remember { { chapter ->
                                     // Navigate to first incomplete lesson in chapter
                                     val firstIncompleteLesson = vm.getFirstIncompleteLesson(chapter)
@@ -676,8 +679,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         storyReaderContent = storyContent
                                     )
                                     onNavigate(Routes.STORY_READER)
+                                } else {
+                                    Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                 }
                             } },
+                            onOpenSettings = remember(dialogs) {
+                                {
+                                    previousRoute = Routes.GRAMMAR_STORY_ROADMAP
+                                    vm.pauseSession()
+                                    dialogs = dialogs.copy(showSettings = true)
+                                }
+                            },
                             onContinue = remember { { chapter ->
                                 val firstIncompleteLesson = vm.getFirstIncompleteLesson(chapter)
                                 if (firstIncompleteLesson != null) {
@@ -688,8 +700,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
                             onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
                             onDailyPractice = remember(dialogs) {
-                                {
-                                {
                                 {
                                     val level = vm.getProgressLessonLevel()
                                     if (vm.daily.hasResumableDailySession()) {

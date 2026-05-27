@@ -3,6 +3,7 @@ package com.alexpo.grammermate.data
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
@@ -80,6 +81,22 @@ interface LessonStore {
 
     fun hasVocabDrill(packId: String, languageId: String): Boolean
 
+    // -- Chapter queries (Grammar Story Roadmap) --
+
+    fun getChapters(packId: String): List<Chapter>
+
+    fun getChapterStory(packId: String, storyFile: String): String?
+
+    fun hasChapters(packId: String): Boolean
+
+    // -- External lesson loading --
+
+    fun loadExternalLessons(languageId: String, externalDirPath: String): Int
+
+    // -- Story language detection --
+
+    fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String?
+
     @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
     fun getVerbDrillFiles(languageId: String): List<File>
 
@@ -121,7 +138,8 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1_DRILLS", "grammarmate/packs/EN_WORD_ORDER_A1_DRILLS.zip"),
         LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip"),
-        LanguageManager.DefaultPack("IT_STORY_UNA_SPIAGGIA_RISCHIOSA", "grammarmate/packs/UNA_SPIAGGIA_RISCHIOSA.zip")
+        LanguageManager.DefaultPack("IT_STORY_UNA_SPIAGGIA_RISCHIOSA", "grammarmate/packs/UNA_SPIAGGIA_RISCHIOSA.zip"),
+        LanguageManager.DefaultPack("IT_GROUP_A_STORIES", "grammarmate/packs/IT_GROUP_A_STORIES.zip")
     )
 
     private val languageManager = LanguageManager(
@@ -413,6 +431,205 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
     override fun hasVerbDrillLessons(languageId: String): Boolean =
         drillFileManager.hasVerbDrillLessons(languageId)
+
+    // ── Chapter queries (Grammar Story Roadmap) ───────────────────────────
+
+    override fun getChapters(packId: String): List<Chapter> {
+        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
+        return manifest.chapters.sortedBy { it.order }
+    }
+
+    override fun getChapterStory(packId: String, storyFile: String): String? {
+        if (storyFile.isBlank()) return null
+
+        val packDir = File(packsDir, packId)
+        val storiesDir = File(packDir, "stories")
+        val storyFileObj = File(storiesDir, storyFile)
+
+        return try {
+            // First, try to read from internal storage
+            if (storyFileObj.exists()) {
+                return storyFileObj.readText()
+            }
+
+            // If not in internal storage, try to read from assets and copy it
+            val assetPath = "grammarmate/packs/$packId/stories/$storyFile"
+            try {
+                context.assets.open(assetPath).use { input ->
+                    // Ensure the stories directory exists
+                    if (!storiesDir.exists()) {
+                        storiesDir.mkdirs()
+                    }
+
+                    // Read from assets and write to internal storage
+                    val content = input.bufferedReader().readText()
+                    storyFileObj.writeText(content)
+
+                    Log.d("LessonStore", "Copied story from assets: $assetPath -> $storyFileObj")
+                    return content
+                }
+            } catch (e: Exception) {
+                Log.w("LessonStore", "Story file not found in assets: $assetPath", e)
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("LessonStore", "Failed to load story content: $storyFile", e)
+            null
+        }
+    }
+
+    /**
+     * Get chapter story with automatic language detection based on UI language preference.
+     * This is the preferred method for loading stories in the Grammar Story Roadmap.
+     *
+     * @param packId Pack identifier
+     * @param chapterId Chapter identifier (e.g., "chapter_01")
+     * @param uiLanguage UI language setting ("ru", "en", "system")
+     * @return Story content if found, null otherwise
+     */
+    fun getChapterStoryWithLanguageDetection(packId: String, chapterId: String, uiLanguage: String): String? {
+        val storyFile = detectStoryLanguage(packId, chapterId, uiLanguage) ?: return null
+        return getChapterStory(packId, storyFile)
+    }
+
+    override fun hasChapters(packId: String): Boolean {
+        val manifest = languageManager.readInstalledPackManifest(packId) ?: return false
+        return manifest.chapters.isNotEmpty()
+    }
+
+    // ── External lesson loading ─────────────────────────────────────────────
+
+    /**
+     * Load lessons from an external directory with Russian naming pattern.
+     * Pattern: урок_{number}_{code}.csv (e.g., урок_01_A01.csv, урок_02_A02.csv)
+     *
+     * @param languageId Target language ID (e.g., "it" for Italian)
+     * @param externalDirPath Absolute path to external lesson directory
+     * @return Number of lessons successfully loaded
+     */
+    override fun loadExternalLessons(languageId: String, externalDirPath: String): Int {
+        ensureSeedData()
+        val externalDir = File(externalDirPath)
+        if (!externalDir.exists() || !externalDir.isDirectory) {
+            android.util.Log.w("LessonStore", "External directory does not exist: $externalDirPath")
+            return 0
+        }
+
+        // Russian pattern: урок_{number}_{code}.csv
+        val lessonPattern = Regex("""урок_(\d+)_[A-Z]\d+\.csv""")
+        val lessonFiles = externalDir.listFiles()
+            ?.filter { it.isFile && it.extension == "csv" }
+            ?.filter { lessonPattern.matches(it.name) }
+            ?.sortedBy { it.name }
+            ?: emptyList()
+
+        if (lessonFiles.isEmpty()) {
+            android.util.Log.w("LessonStore", "No lessons found matching pattern in: $externalDirPath")
+            return 0
+        }
+
+        var loadedCount = 0
+        lessonFiles.forEach { file ->
+            try {
+                val match = lessonPattern.find(file.name) ?: return@forEach
+                val lessonNumber = match.groupValues[1]
+                val codeMatch = Regex("""[A-Z]\d+""").find(file.name)
+                val code = codeMatch?.value ?: "UNKNOWN"
+
+                // Parse the CSV file
+                val parseResult = CsvParser.parseLesson(file.inputStream())
+                val (title, cards) = parseResult.data ?: return@forEach
+
+                // Create lesson ID from code
+                val lessonId = "${languageId}_lesson_${code}"
+
+                // Check if lesson already exists and replace it
+                replaceById(languageId, lessonId)
+
+                // Copy file to language directory
+                val fileName = "lesson_${code}.csv"
+                val dir = languageDir(languageId)
+                dir.mkdirs()
+                val csvFile = File(dir, fileName)
+                AtomicFileWriter.writeText(csvFile, file.readText())
+
+                // Update index
+                saveIndex(languageId, LessonIndexEntry(lessonId, title ?: "Lesson $lessonNumber", fileName))
+
+                loadedCount++
+                android.util.Log.i("LessonStore", "Loaded external lesson: ${file.name} -> $lessonId")
+            } catch (e: Exception) {
+                android.util.Log.e("LessonStore", "Failed to load lesson: ${file.name}", e)
+            }
+        }
+
+        if (loadedCount > 0) {
+            invalidateLessonsCache(languageId)
+            android.util.Log.i("LessonStore", "Successfully loaded $loadedCount lessons from $externalDirPath")
+        }
+
+        return loadedCount
+    }
+
+    // ── Story language detection ─────────────────────────────────────────────
+
+    /**
+     * Detect which story file to use based on UI language preference.
+     *
+     * Logic:
+     * - If uiLanguage is "ru", try Russian story file first (chapter_XX_original.md)
+     * - If uiLanguage is "en" or "system", try English story file first (chapter_XX.md)
+     * - Fall back to available file if preferred language doesn't exist
+     *
+     * @param packId Pack identifier
+     * @param chapterId Chapter identifier (e.g., "chapter_01")
+     * @param uiLanguage UI language setting ("ru", "en", "system")
+     * @return Story filename if found, null otherwise
+     */
+    override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? {
+        val packDir = File(packsDir, packId)
+        val storiesDir = File(packDir, "stories")
+        if (!storiesDir.exists()) return null
+
+        // Normalize chapter ID for filename
+        val chapterBase = chapterId.removePrefix("chapter_").trim()
+        if (chapterBase.isEmpty()) return null
+
+        // Determine preferred language
+        val preferRussian = when (uiLanguage.lowercase()) {
+            "ru" -> true
+            "system" -> {
+                // Check system locale
+                val systemLang = java.util.Locale.getDefault().language
+                systemLang == "ru"
+            }
+            else -> false
+        }
+
+        // Try preferred language first, then fallback
+        val candidates = if (preferRussian) {
+            listOf(
+                "chapter_${chapterBase}_original.md",  // Russian original
+                "chapter_${chapterBase}.md"             // English translation
+            )
+        } else {
+            listOf(
+                "chapter_${chapterBase}.md",             // English translation
+                "chapter_${chapterBase}_original.md"  // Russian original
+            )
+        }
+
+        for (candidate in candidates) {
+            val file = File(storiesDir, candidate)
+            if (file.exists()) {
+                android.util.Log.d("LessonStore", "Found story file for $chapterId: $candidate (uiLanguage=$uiLanguage)")
+                return candidate
+            }
+        }
+
+        android.util.Log.w("LessonStore", "No story file found for $chapterId in pack $packId")
+        return null
+    }
 
     // ── Private helpers ──────────────────────────────────────────────────
 
