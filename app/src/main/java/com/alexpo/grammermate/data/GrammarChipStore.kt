@@ -232,7 +232,7 @@ object GrammarChipStore {
         // B01-B27: lessons 17-43
         // C01-C20: lessons 44-63
         return when {
-            num <= 16 -> "A$num.toString().padStart(2, '0')"
+            num <= 16 -> "A${num.toString().padStart(2, '0')}"
             num <= 43 -> "B${(num - 16).toString().padStart(2, '0')}"
             num <= 63 -> "C${(num - 43).toString().padStart(2, '0')}"
             else -> number.uppercase()
