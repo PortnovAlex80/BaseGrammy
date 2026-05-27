@@ -83,6 +83,27 @@ object GrammarChipStore {
                         }
                     }
 
+                    // Also build mappings for chapter-level lessons (schema v2)
+                    manifest.chapters.forEach { chapter ->
+                        chapter.lessons.forEach { lessonId ->
+                            // Extract level from lesson ID (e.g., "A01" from "lesson_01_A01")
+                            val levelMatch = Regex("_(A\\d\\d|B\\d\\d|C\\d\\d)").find(lessonId)
+                            if (levelMatch != null) {
+                                val level = levelMatch.value.removePrefix("_")
+                                // Map level to chip number (A01 -> chip_01, B01 -> chip_17, C01 -> chip_44)
+                                val chipNumber = when {
+                                    level.startsWith("A") -> level.removePrefix("A").toIntOrNull() ?: 1
+                                    level.startsWith("B") -> 16 + (level.removePrefix("B").toIntOrNull() ?: 1)
+                                    level.startsWith("C") -> 43 + (level.removePrefix("C").toIntOrNull() ?: 1)
+                                    else -> 1
+                                }
+                                val chipFileName = "grammar_chip_${chipNumber.toString().padStart(2, '0')}.json"
+                                lessonToChipFile[lessonId] = Pair(packId, chipFileName)
+                                Log.d(TAG, "Mapped chapter lesson $lessonId -> $packId/$chipFileName (level: $level)")
+                            }
+                        }
+                    }
+
                     // Check if grammar_chips directory exists
                     val gcDir = File(packDir, "grammar_chips")
                     if (!gcDir.exists()) {

@@ -322,10 +322,15 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     override fun getLessons(languageId: String): List<Lesson> {
         ensureSeedData()
         // Return cached result if available
-        lessonsCache[languageId]?.let { return it }
+        lessonsCache[languageId]?.let {
+            Log.d("LessonStore", "Returning cached lessons for language: $languageId, count: ${it.size}")
+            return it
+        }
         // Cache miss: read from disk
+        Log.d("LessonStore", "Cache miss for language: $languageId, loading from disk")
         val lessons = loadLessonsFromDisk(languageId)
         lessonsCache = lessonsCache + (languageId to lessons)
+        Log.d("LessonStore", "Loaded ${lessons.size} lessons for language: $languageId")
         return lessons
     }
 
@@ -338,25 +343,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     }
 
     private fun loadLessonsFromDisk(languageId: String): List<Lesson> {
-        // Try loading from language index first (legacy structure)
-        val entries = loadIndex(languageId)
-        val legacyLessons = entries.mapNotNull { entry ->
-            val id = entry["id"] as? String ?: return@mapNotNull null
-            val title = entry["title"] as? String ?: "Lesson"
-            val fileName = entry["file"] as? String ?: return@mapNotNull null
-            val csvFile = File(languageDir(languageId), fileName)
-            if (!csvFile.exists()) return@mapNotNull null
-            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
-            val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
-            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
-        }
-
-        // If legacy structure has lessons, return them
-        if (legacyLessons.isNotEmpty()) {
-            return legacyLessons
-        }
-
-        // Otherwise, load from packs (new structure)
+        // Try loading from packs FIRST (new schema v2 structure)
         val packLessons = mutableListOf<Lesson>()
         val installedPacks = getInstalledPacks()
 
@@ -365,12 +352,17 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             if (pack.languageId.value != languageId) continue
 
             val packDir = File(packsDir, pack.packId.value)
-            if (!packDir.exists()) continue
+            if (!packDir.exists()) {
+                Log.w("LessonStore", "Pack directory does not exist: ${packDir.absolutePath}")
+                continue
+            }
 
             // Load lessons from pack directory
             val lessonFiles = packDir.listFiles()?.filter {
                 it.isFile && it.name.endsWith(".csv")
             } ?: continue
+
+            Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}")
 
             for (lessonFile in lessonFiles) {
                 try {
@@ -390,7 +382,28 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             }
         }
 
-        return packLessons
+        // If pack lessons were found, return them (prioritize pack lessons over legacy)
+        if (packLessons.isNotEmpty()) {
+            Log.d("LessonStore", "Loaded ${packLessons.size} lessons from pack directories for language: $languageId (PACK LESSONS PRIORITY)")
+            return packLessons
+        }
+
+        // Otherwise, fall back to legacy structure (schema v1)
+        Log.d("LessonStore", "No pack lessons found for language: $languageId, falling back to legacy structure")
+        val entries = loadIndex(languageId)
+        val legacyLessons = entries.mapNotNull { entry ->
+            val id = entry["id"] as? String ?: return@mapNotNull null
+            val title = entry["title"] as? String ?: "Lesson"
+            val fileName = entry["file"] as? String ?: return@mapNotNull null
+            val csvFile = File(languageDir(languageId), fileName)
+            if (!csvFile.exists()) return@mapNotNull null
+            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
+            val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
+            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
+        }
+
+        Log.d("LessonStore", "Loaded ${legacyLessons.size} lessons from legacy structure for language: $languageId")
+        return legacyLessons
     }
 
     override fun deleteAllLessons(languageId: String) {

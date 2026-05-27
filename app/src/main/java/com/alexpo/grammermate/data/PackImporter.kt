@@ -220,13 +220,39 @@ internal class PackImporter(
 
             tempDir.deleteRecursively()
 
-            val lessonEntries = manifest.lessons
-                .filter { it.type != "verb_drill" }
+            // Collect lesson entries from both root-level lessons and chapter-level lessons (schema v2)
+            val lessonEntries = mutableListOf<LessonPackLesson>()
+
+            // Add root-level lessons (schema v1)
+            lessonEntries.addAll(
+                manifest.lessons
+                    .filter { lesson -> lesson.type != "verb_drill" }
+            )
+
+            // Add chapter-level lessons (schema v2)
+            manifest.chapters.forEach { chapter ->
+                chapter.lessons.forEach { lessonId ->
+                    // Find the corresponding CSV file
+                    val csvFileName = "$lessonId.csv"
+                    lessonEntries.add(
+                        LessonPackLesson(
+                            lessonId = lessonId,
+                            title = lessonId, // Use lessonId as title fallback
+                            file = csvFileName,
+                            type = "lesson",
+                            order = 0 // Order doesn't matter for chapter-level lessons
+                        )
+                    )
+                }
+            }
+
+            val sortedLessonEntries = lessonEntries
+                .distinctBy { it.lessonId } // Deduplicate by lessonId
                 .sortedBy { it.order }
 
             var successCount = 0
             var failureCount = 0
-            lessonEntries.forEach { entry ->
+            sortedLessonEntries.forEach { entry ->
                 val sourceFile = File(packDir, entry.file)
                 if (!sourceFile.exists()) {
                     allErrors.add(
