@@ -26,8 +26,7 @@ internal class LanguageManager(
         if (!languagesFile.exists()) {
             val defaults = listOf(
                 mapOf("id" to "en", "name" to "English"),
-                mapOf("id" to "it", "name" to "Italian"),
-                mapOf("id" to "ru", "name" to "Russian")
+                mapOf("id" to "it", "name" to "Italian")
             )
             languagesStore.write(defaults)
         }
@@ -131,7 +130,6 @@ internal class LanguageManager(
         val displayName = when (normalized) {
             "en" -> "English"
             "it" -> "Italian"
-            "ru" -> "Russian"
             else -> normalized.uppercase()
         }
         val newEntry = mapOf("id" to normalized, "name" to displayName)

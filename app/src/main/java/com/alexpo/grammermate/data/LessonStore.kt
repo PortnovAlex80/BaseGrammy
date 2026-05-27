@@ -357,22 +357,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                 continue
             }
 
-            // Try loading from new schema v2 structure: lessons/{language}/
-            val newLangDir = File(packDir, "lessons/$languageId")
-            val lessonFiles: Array<File> = if (newLangDir.exists()) {
-                // New format: lessons/{language}/
-                newLangDir.listFiles()?.filter {
-                    it.isFile && it.name.endsWith(".csv")
-                }?.toTypedArray() ?: emptyArray()
-            } else {
-                // Old format: root directory, exclude drill files
-                val drillPrefix = "${languageId}_drill_"
-                packDir.listFiles()?.filter {
-                    it.isFile && it.name.endsWith(".csv") && !it.name.startsWith(drillPrefix)
-                }?.toTypedArray() ?: emptyArray()
-            }
-
-            if (lessonFiles.isEmpty()) continue
+            // Load lessons from pack directory
+            val lessonFiles = packDir.listFiles()?.filter {
+                it.isFile && it.name.endsWith(".csv")
+            } ?: continue
 
             Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}")
 
