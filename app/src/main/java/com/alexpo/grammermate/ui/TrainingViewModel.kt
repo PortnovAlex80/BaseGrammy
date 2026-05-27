@@ -374,8 +374,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── TTS playback for story narration ───────────────────────────────────────
 
-    fun speakStoryText(text: String) {
-        audioCoordinator.onTtsSpeak(text)
+    fun speakStoryText(text: String, languageId: String = "ru") {
+        audioCoordinator.onTtsSpeak(text, languageId = languageId)
     }
 
     fun stopStoryNarration() {

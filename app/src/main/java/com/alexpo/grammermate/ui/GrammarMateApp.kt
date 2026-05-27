@@ -345,7 +345,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             .trim()
 
                                         if (plainText.isNotEmpty()) {
-                                            vm.speakStoryText(plainText)
+                                            // Stories are in Russian - use Russian TTS
+                                            vm.speakStoryText(plainText, "ru")
                                         }
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -744,7 +745,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         .trim()
 
                                     if (plainText.isNotEmpty()) {
-                                        vm.speakStoryText(plainText)
+                                        // Stories are in Russian - use Russian TTS
+                                        vm.speakStoryText(plainText, "ru")
                                     }
                                 } else {
                                     Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -818,7 +820,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         .trim()
 
                                     if (plainText.isNotEmpty()) {
-                                        vm.speakStoryText(plainText)
+                                        // Stories are in Russian - use Russian TTS
+                                        vm.speakStoryText(plainText, "ru")
                                         dialogs = dialogs.copy(storyReaderIsPlaying = true)
                                     }
                                 }

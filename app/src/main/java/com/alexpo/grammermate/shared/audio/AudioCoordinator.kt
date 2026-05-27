@@ -161,7 +161,7 @@ class AudioCoordinator(
 
     // ── TTS playback ───────────────────────────────────────────────────────
 
-    fun onTtsSpeak(text: String, speed: Float? = null) {
+    fun onTtsSpeak(text: String, languageId: String? = null, speed: Float? = null) {
         if (text.isBlank()) return
         // Defense in depth: never attempt speak if engine is not initialized.
         // Prevents native crash from calling speak() on an uninitialized Sherpa-ONNX engine.
@@ -169,18 +169,18 @@ class AudioCoordinator(
             ttsEngine.state.value != TtsState.Idle &&
             ttsEngine.state.value !is TtsState.Error
         ) return
-        val langId = stateAccess.uiState.value.navigation.selectedLanguageId
+        val langId = languageId ?: stateAccess.uiState.value.navigation.selectedLanguageId.value
         val effectiveSpeed = speed ?: _audioState.value.ttsSpeed
         coroutineScope.launch {
             ttsMutex.withLock {
                 try {
                     if (ttsEngine.state.value != TtsState.Ready
-                        || ttsEngine.activeLanguageId != langId.value
+                        || ttsEngine.activeLanguageId != langId
                     ) {
-                        ttsEngine.initialize(langId.value)
+                        ttsEngine.initialize(langId)
                     }
                     if (ttsEngine.state.value == TtsState.Ready) {
-                        ttsEngine.speak(text, languageId = langId.value, speed = effectiveSpeed)
+                        ttsEngine.speak(text, languageId = langId, speed = effectiveSpeed)
                     } else {
                         Log.w(TAG, "TTS not ready after initialize, state=${ttsEngine.state.value}")
                     }
