@@ -96,14 +96,42 @@ def main():
     with open(manifest_path, 'r', encoding='utf-8') as f:
         manifest = json.load(f)
 
-    # Update lessons with grammar chip references
+    # Update lessons with grammar chip references (chapter-based structure)
     updated_count = 0
-    for lesson in manifest.get('lessons', []):
-        lesson_id = lesson.get('lessonId')
-        if lesson_id in LESSON_TO_CHIP:
-            lesson['grammarChip'] = LESSON_TO_CHIP[lesson_id]
-            updated_count += 1
-            print(f"  Added grammar chip to {lesson_id}: {LESSON_TO_CHIP[lesson_id]}")
+    for chapter in manifest.get('chapters', []):
+        chapter_title = chapter.get('title', 'Unknown')
+        print(f"  Processing chapter: {chapter_title}")
+
+        # Convert lesson IDs to objects with grammarChip field
+        updated_lessons = []
+        for lesson_entry in chapter.get('lessons', []):
+            if isinstance(lesson_entry, str):
+                # It's a lesson ID string, convert to object
+                lesson_id = lesson_entry
+                lesson_obj = {
+                    "lessonId": lesson_id,
+                    "order": 0  # Will be set by index
+                }
+                if lesson_id in LESSON_TO_CHIP:
+                    lesson_obj['grammarChip'] = LESSON_TO_CHIP[lesson_id]
+                    updated_count += 1
+                    print(f"    Added grammar chip to {lesson_id}: {LESSON_TO_CHIP[lesson_id]}")
+                updated_lessons.append(lesson_obj)
+            elif isinstance(lesson_entry, dict):
+                # It's already an object, just add grammarChip if missing
+                lesson_id = lesson_entry.get('lessonId')
+                if lesson_id in LESSON_TO_CHIP and 'grammarChip' not in lesson_entry:
+                    lesson_entry['grammarChip'] = LESSON_TO_CHIP[lesson_id]
+                    updated_count += 1
+                    print(f"    Added grammar chip to {lesson_id}: {LESSON_TO_CHIP[lesson_id]}")
+                updated_lessons.append(lesson_entry)
+
+        # Update order indices
+        for idx, lesson in enumerate(updated_lessons):
+            lesson['order'] = idx + 1
+
+        # Replace lessons array with updated version
+        chapter['lessons'] = updated_lessons
 
     # Write updated manifest
     with open(manifest_path, 'w', encoding='utf-8') as f:
