@@ -634,6 +634,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         android.util.Log.d("LessonStore", "Available story files for chapter $chapterBase: ${availableFiles.map { it.name }}")
 
         // Prioritize based on language preference
+        // _original.md files are Russian, others are English translations
         val prioritizedFiles = if (preferRussian) {
             // Prefer _original.md (Russian), then any other variant
             availableFiles.sortedByDescending { it.name.endsWith("_original.md") }
@@ -642,10 +643,12 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             availableFiles.sortedBy { it.name.endsWith("_original.md") }
         }
 
+        android.util.Log.d("LessonStore", "Prioritized story files: ${prioritizedFiles.map { it.name }}")
+
         for (file in prioritizedFiles) {
             android.util.Log.d("LessonStore", "Trying story file: ${file.name}")
             if (file.exists()) {
-                android.util.Log.d("LessonStore", "Found story file for $chapterId: ${file.name} (uiLanguage=$uiLanguage)")
+                android.util.Log.d("LessonStore", "Found story file for $chapterId: ${file.name} (uiLanguage=$uiLanguage, preferRussian=$preferRussian)")
                 return file.name
             }
         }

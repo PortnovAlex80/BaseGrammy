@@ -1838,16 +1838,33 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         return try {
             val activePackId = _coreState.value.navigation.activePackId?.value ?: return null
+            val uiLanguage = currentUiLanguage // Get from configStore
 
-            // Directly load the story file specified in the manifest
-            // The manifest already contains the correct story filename
-            val content = lessonStore.getChapterStory(activePackId, storyFile)
+            // Extract chapter ID from storyFile for language detection
+            // storyFile format: "chapter_XX_original.md" or "chapter_XX_name.md"
+            val chapterBase = storyFile.removePrefix("chapter_")
+                .removeSuffix(".md")
+                .split("_")[0] // Get "XX" part
+            val chapterId = "chapter_$chapterBase"
 
-            if (content != null) {
-                Log.d(logTag, "Successfully loaded story: $storyFile")
-                content
+            Log.d(logTag, "Loading story: storyFile=$storyFile, chapterId=$chapterId, uiLanguage=$uiLanguage")
+
+            // Use language detection to get the right story file
+            val detectedStoryFile = lessonStore.detectStoryLanguage(activePackId, chapterId, uiLanguage)
+
+            if (detectedStoryFile != null) {
+                Log.d(logTag, "Detected story file: $detectedStoryFile (original request: $storyFile)")
+                val content = lessonStore.getChapterStory(activePackId, detectedStoryFile)
+
+                if (content != null) {
+                    Log.d(logTag, "Successfully loaded story: $detectedStoryFile")
+                    content
+                } else {
+                    Log.w(logTag, "Story file not found: $detectedStoryFile")
+                    null
+                }
             } else {
-                Log.w(logTag, "Story file not found: $storyFile")
+                Log.w(logTag, "No story file detected for chapter: $chapterId")
                 null
             }
         } catch (e: Exception) {

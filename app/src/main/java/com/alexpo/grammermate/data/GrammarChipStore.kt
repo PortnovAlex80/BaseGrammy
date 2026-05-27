@@ -100,8 +100,9 @@ object GrammarChipStore {
                     chipFiles.forEach { chipFile ->
                         try {
                             val chip = parseGrammarChipFromJson(chipFile)
-                            cache[chip.key] = chip
-                            Log.d(TAG, "Loaded grammar chip: ${chip.key}")
+                            val chipKey = chip.key.uppercase() // Normalize to uppercase
+                            cache[chipKey] = chip
+                            Log.d(TAG, "Loaded grammar chip: $chipKey (from ${chipFile.name})")
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to parse grammar chip file: ${chipFile.name}", e)
                         }
@@ -148,14 +149,17 @@ object GrammarChipStore {
         val chipNumber = chipFile.removePrefix("grammar_chip_").removeSuffix(".json")
         val chipKey = getChipKeyFromNumber(chipNumber)
 
-        Log.d(TAG, "Looking for chip with key: $chipKey (from file: $chipFile)")
-        val chip = cache[chipKey]
+        Log.d(TAG, "Looking for chip with key: $chipKey (from file: $chipFile, lesson: $lessonId)")
+
+        // Try both uppercase and lowercase keys
+        val chip = cache[chipKey] ?: cache[chipKey.uppercase()] ?: cache[chipKey.lowercase()]
 
         if (chip == null) {
             Log.w(TAG, "Chip not found in cache for key: $chipKey")
             Log.d(TAG, "Available keys in cache: ${cache.keys.take(10)}...")
+            Log.d(TAG, "Total cache size: ${cache.size}")
         } else {
-            Log.d(TAG, "Successfully loaded chip: ${chip.key}")
+            Log.d(TAG, "Successfully loaded chip: ${chip.key} (for lesson: $lessonId)")
         }
 
         return chip
