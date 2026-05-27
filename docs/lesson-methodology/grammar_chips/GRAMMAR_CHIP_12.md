@@ -1,28 +1,13 @@
 # A12 - Frequenza e Quantità
 
 ## Суть
-Наречия показывают как часто и насколько много.
+Наречия показывают частоту и количество.
 
 ## Частотность
-- `sempre` - всегда
-- `spesso` - часто
-- `a volte` - иногда
-- `raramente` - редко
-- `non ... mai` - никогда
-- `non ... più` - больше не
+`sempre`, `spesso`, `a volte`, `raramente`, `non ... mai`, `non ... più`
 
 ## Количество
-- `molto` - много, очень
-- `poco` - мало
-- `troppo` - слишком
-- `abbastanza` - достаточно
-- `più / meno` - больше / меньше
+`molto`, `poco`, `troppo`, `abbastanza`
 
-## Примеры
-- `Dico sempre la verità.`
-- `Non fumo mai.`
-- `Mangio molto pane.`
-- `Parlo abbastanza bene italiano.`
-
-## Не путать
-`mai` с отрицанием: `Non mento mai`, а не просто `Mento mai`.
+## Пример
+`Non fumo mai.`

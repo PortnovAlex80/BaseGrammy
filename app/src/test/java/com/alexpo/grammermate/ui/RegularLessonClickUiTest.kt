@@ -233,7 +233,8 @@ class RegularLessonClickUiTest {
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
                 onTtsSpeak = { /* no-op */ },
-                onSessionDone = { onDoneCalled = true }
+                onSessionDone = { onDoneCalled = true },
+                lessonTitle = null
             )
         }
 

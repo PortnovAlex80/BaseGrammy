@@ -83,7 +83,7 @@ val config = configStore.load()
 val uiLanguage = config.uiLanguage // "ru", "en", or "system"
 
 val storyFile = lessonStore.detectStoryLanguage(
-    packId = "IT_GROUP_A_STORIES",
+    packId = "IT_EXPRESS",
     chapterId = "chapter_01",
     uiLanguage = uiLanguage
 )
@@ -95,7 +95,7 @@ val storyFile = lessonStore.detectStoryLanguage(
 ```kotlin
 // Preferred method - combines detection and loading
 val storyContent = lessonStore.getChapterStoryWithLanguageDetection(
-    packId = "IT_GROUP_A_STORIES",
+    packId = "IT_EXPRESS",
     chapterId = "chapter_01",
     uiLanguage = uiLanguage
 )

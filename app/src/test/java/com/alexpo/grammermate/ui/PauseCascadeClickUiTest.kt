@@ -98,7 +98,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -191,7 +192,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -267,7 +269,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -339,7 +342,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -407,7 +411,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -483,7 +488,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -552,7 +558,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { voicePromptStarted = true },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
@@ -622,7 +629,8 @@ class PauseCascadeClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 

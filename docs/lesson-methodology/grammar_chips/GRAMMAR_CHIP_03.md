@@ -1,24 +1,17 @@
-# A03 - Sostantivi: Genere e Numero
+# A03 - Genere e Numero
 
 ## Суть
-Существительное несёт род и число. От этого дальше зависят артикли, прилагательные и possessivi.
+Род и число существительного управляют остальными словами рядом.
 
 ## Формула
-- `-o -> -i`: `ragazzo -> ragazzi`
-- `-a -> -e`: `ragazza -> ragazze`
-- `-e -> -i`: `lezione -> lezioni`
-
-## Особые типы
-- `problema -> problemi` мужской род
-- `città -> città` не меняется
-- `uomo -> uomini`
-- `mano -> mani`
+- `-o -> -i`
+- `-a -> -e`
+- `-e -> -i`
 
 ## Примеры
-- `Questo è un ragazzo.`
-- `Questa è una ragazza.`
-- `Questi sono libri.`
-- `Queste sono penne.`
+- `un ragazzo / ragazzi`
+- `una ragazza / ragazze`
+- `una lezione / lezioni`
 
 ## Не путать
-Сначала определяй существительное, потом подстраивай всё вокруг него.
+`città` не меняется во множественном числе.

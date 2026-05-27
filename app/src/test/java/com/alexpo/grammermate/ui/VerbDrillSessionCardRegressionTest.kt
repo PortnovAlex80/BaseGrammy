@@ -265,7 +265,8 @@ class VerbDrillSessionCardRegressionTest {
                             verbVm.refreshLastSessionContext()
                             trainingVm.exitVerbDrillSession()
                             route.value = TestRoute.VERB
-                        }
+                        },
+                        lessonTitle = null
                     )
                 }
             }

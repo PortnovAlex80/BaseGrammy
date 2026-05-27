@@ -171,11 +171,13 @@ fun GrammarInfoBottomSheet(
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium
                                 )
-                                Text(
-                                    text = example.ru,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                )
+                                if (example.ru.isNotBlank()) {
+                                    Text(
+                                        text = example.ru,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
                                 if (example.note.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(

@@ -737,6 +737,5 @@ data class GrammarExample(
 ) {
     init {
         require(it.isNotBlank()) { "Italian text must not be blank" }
-        require(ru.isNotBlank()) { "Russian translation must not be blank" }
     }
 }

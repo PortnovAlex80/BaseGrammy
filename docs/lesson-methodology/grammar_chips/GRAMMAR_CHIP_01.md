@@ -1,25 +1,16 @@
-ну# A01 - Presente Indicativo
+# A01 - Presente Indicativo
 
 ## Суть
-Настоящее время отвечает за обычные действия, факты и состояние сейчас.
+Настоящее время: факты, привычки, действия сейчас.
 
 ## Формула
-- `parlare` -> `parlo, parli, parla, parliamo, parlate, parlano`
-- `vedere` -> `vedo, vedi, vede, vediamo, vedete, vedono`
-- `capire` -> `capisco, capisci, capisce, capiamo, capite, capiscono`
-- Отрицание: `non + verbo`
-
-## База
-- `Sono` - я есть
-- `Ho` - у меня есть
-- `Vado` - я иду
-- `Faccio` - я делаю
+`non + verbo` для отрицания.
 
 ## Примеры
-- `Parlo italiano.` - Я говорю по-итальянски.
-- `Non capisco.` - Я не понимаю.
-- `Ho tempo.` - У меня есть время.
-- `Vado a casa.` - Я иду домой.
+- `Parlo italiano.`
+- `Non capisco.`
+- `Ho tempo.`
+- `Vado a casa.`
 
 ## Не путать
-Личное местоимение часто не нужно: `Parlo`, а не обязательно `Io parlo`.
+Личное местоимение часто опускается: `Parlo`, не обязательно `Io parlo`.

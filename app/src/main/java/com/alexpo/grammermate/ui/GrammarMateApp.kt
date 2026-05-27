@@ -61,6 +61,7 @@ import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.data.GrammarChipStore
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
@@ -882,6 +883,16 @@ private fun TrainingScreenContent(
     getTenseInfo: (String) -> TenseInfo? = { null }
 ) {
     val pomodoroRemainingSeconds by vm.pomodoroRemainingSeconds.collectAsStateWithLifecycle()
+
+    // Get lesson title for header
+    val lessonTitle = state.navigation.lessons
+        .firstOrNull { it.id == state.navigation.selectedLessonId }?.title
+
+    // Load grammar chip for current lesson
+    val grammarChip = state.navigation.selectedLessonId?.let { lessonId ->
+        GrammarChipStore.getChipForLesson(lessonId.value)
+    }
+
     TrainingScreen(
         state = state,
         onInputChange = vm.training::onInputChanged,
@@ -919,7 +930,8 @@ private fun TrainingScreenContent(
         pomodoroRemainingSeconds = pomodoroRemainingSeconds,
         clickableWordHints = vm.settings.getClickableWordHints(),
         baseDir = LocalContext.current.filesDir,
-        grammarChip = null // TODO: Load from GrammarChipStore based on lesson ID
+        grammarChip = grammarChip,
+        lessonTitle = lessonTitle
     )
 }
 

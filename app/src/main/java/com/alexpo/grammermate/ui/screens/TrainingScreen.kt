@@ -128,7 +128,8 @@ fun TrainingScreen(
     pomodoroRemainingSeconds: Int = 0,
     clickableWordHints: Boolean = false,
     baseDir: java.io.File? = null,
-    grammarChip: com.alexpo.grammermate.data.GrammarChip? = null
+    grammarChip: com.alexpo.grammermate.data.GrammarChip? = null,
+    lessonTitle: String? = null
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -198,7 +199,7 @@ fun TrainingScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.training_grammarmate),
+                    text = lessonTitle ?: stringResource(R.string.training_grammarmate),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )

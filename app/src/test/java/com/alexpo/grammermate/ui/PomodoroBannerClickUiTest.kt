@@ -92,7 +92,8 @@ class PomodoroBannerClickUiTest {
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
                 onTtsSpeak = { /* no-op */ },
-                pomodoroRemainingSeconds = 1200
+                pomodoroRemainingSeconds = 1200,
+                lessonTitle = null
             )
         }
 

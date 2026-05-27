@@ -139,7 +139,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1_DRILLS", "grammarmate/packs/EN_WORD_ORDER_A1_DRILLS.zip"),
         LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip"),
         LanguageManager.DefaultPack("IT_STORY_UNA_SPIAGGIA_RISCHIOSA", "grammarmate/packs/UNA_SPIAGGIA_RISCHIOSA.zip"),
-        LanguageManager.DefaultPack("IT_GROUP_A_STORIES", "grammarmate/packs/IT_GROUP_A_STORIES.zip")
+        LanguageManager.DefaultPack("IT_EXPRESS", "grammarmate/packs/IT_EXPRESS.zip")
     )
 
     private val languageManager = LanguageManager(

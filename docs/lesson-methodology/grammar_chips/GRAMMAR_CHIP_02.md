@@ -1,26 +1,16 @@
 # A02 - Articoli
 
 ## Суть
-Артикль показывает, о каком существительном речь: о новом/любом или уже конкретном.
+Артикль показывает статус существительного: новое/любое или конкретное.
 
-## Неопределённый
-- `un libro`
-- `uno studente`
-- `una casa`
-- `un'amica`
-
-## Определённый
-- `il libro`
-- `lo specchio`
-- `la casa`
-- `l'amico`
-- `i libri`, `gli studenti`, `le case`
+## Формы
+- `un, uno, una, un'`
+- `il, lo, la, l', i, gli, le`
 
 ## Примеры
-- `Questo è un libro.` - Это книга.
-- `Questo è il libro.` - Это та самая книга.
-- `Questa è una casa.` - Это дом.
-- `Questo è uno zio.` - Это дядя.
+- `Questo è un libro.`
+- `Questo è il libro.`
+- `Questo è uno zio.`
 
 ## Не путать
 `problema` мужского рода: `un problema`, `il problema`.

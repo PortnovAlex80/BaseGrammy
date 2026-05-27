@@ -107,7 +107,8 @@ class BossBattleClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { /* no-op */ },
                 onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ }
+                onTtsSpeak = { /* no-op */ },
+                lessonTitle = null
             )
         }
 
