@@ -1,60 +1,60 @@
-1	A06 - Essere vs Avere (states vs sensations)
-2	Я студент.;Io sono studente.
-3	Ты уставший.;Tu sei stanco.
-4	Он счастливый человек.;Lui è una persona felice.
-5	Она дома.;Lei è a casa.
-6	Мы друзья.;Noi siamo amici.
-7	Вы в Италии.;Voi siete in Italia.
-8	Они из России.;Loro sono della Russia.
-9	Это моя книга.;Questo è il mio libro.
-10	Я итальянский.;Io sono italiano.
-11	Ты высокий.;Tu sei alto.
-12	Она красивая.;Lei è bella.
-13	Мы молодые.;Siamo giovani.
-14	Вы грустные.;Siete tristi.
-15	Они богатые.;Loro sono ricchi.
-16	Я счастлив.;Sono felice.
-17	Ты болен.;Sei malato.
-18	Я врач.;Io sono dottore.
-19	Ты учитель.;Tu sei insegnante.
-20	Она домохозяйка.;Lei è casalinga.
-21	Мы учителя.;Siamo insegnanti.
-22	Вы студенты.;Siete studenti.
-23	Они врачи.;Loro sono medici.
-24	Мне 20 лет.;Ho 20 anni.
-25	У тебя есть брат?;Hai un fratello?
-26	У него есть машина.;Lui ha una macchina.
-27	У неё есть время.;Lei ha tempo.
-28	У нас есть проблема.;Abbiamo un problema.
-29	У вас есть вопросы?;Avete domande?
-30	У них есть дети.;Loro hanno figli.
-31	Я голоден.;Ho fame.
-32	Ты хочешь пить.;Hai sete.
-33	Ему холодно.;Lui ha freddo.
-34	Ей страшно.;Lei ha paura.
-35	Мы хотим спать.;Abbiamo sonno.
-36	Я спешу.;Ho fretta.
-37	Тебе повезло.;Hai fortuna.
-38	Он прав.;Lui ha ragione.
-39	Она неправа.;Lei ha torto.
-40	Мне 25 лет.;Ho 25 anni.
-41	Ему 30 лет.;Lui ha 30 anni.
-42	У меня болит голова.;Ho mal di testa.
-43	У тебя болят зубы.;Hai mal di denti.
-44	Я не студент.;Non sono studente.
-45	Ты не уставший.;Non sei stanco.
-46	Он не счастливый.;Lui non è felice.
-47	Она не дома.;Lei non è a casa.
-48	Мы не друзья.;Non siamo amici.
-49	Я не голоден.;Non ho fame.
-50	Ты не хочешь пить.;Non hai sete.
-51	У меня нет времени.;Non ho tempo.
-52	У тебя нет машины.;Non hai una macchina.
-53	Ему не холодно.;Lui non ha freddo.
-54	Ей не страшно.;Lei non ha paura.
-55	Мы не хотим спать.;Non abbiamo sonno.
-56	Я не спешу.;Non ho fretta.
-57	Тебе не повезло.;Non hai fortuna.
-58	Он не прав.;Lui non ha ragione.
-59	Она не ошибается.;Lei non ha torto.
-60	У меня не болит голова.;Non ho mal di testa.
+A06 - Essere vs Avere (states vs sensations)
+Я студент.;Io sono studente.
+Ты уставший.;Tu sei stanco.
+Он счастливый человек.;Lui è una persona felice.
+Она дома.;Lei è a casa.
+Мы друзья.;Noi siamo amici.
+Вы в Италии.;Voi siete in Italia.
+Они из России.;Loro sono della Russia.
+Это моя книга.;Questo è il mio libro.
+Я итальянский.;Io sono italiano.
+Ты высокий.;Tu sei alto.
+Она красивая.;Lei è bella.
+Мы молодые.;Siamo giovani.
+Вы грустные.;Siete tristi.
+Они богатые.;Loro sono ricchi.
+Я счастлив.;Sono felice.
+Ты болен.;Sei malato.
+Я врач.;Io sono dottore.
+Ты учитель.;Tu sei insegnante.
+Она домохозяйка.;Lei è casalinga.
+Мы учителя.;Siamo insegnanti.
+Вы студенты.;Siete studenti.
+Они врачи.;Loro sono medici.
+Мне 20 лет.;Ho 20 anni.
+У тебя есть брат?;Hai un fratello?
+У него есть машина.;Lui ha una macchina.
+У неё есть время.;Lei ha tempo.
+У нас есть проблема.;Abbiamo un problema.
+У вас есть вопросы?;Avete domande?
+У них есть дети.;Loro hanno figli.
+Я голоден.;Ho fame.
+Ты хочешь пить.;Hai sete.
+Ему холодно.;Lui ha freddo.
+Ей страшно.;Lei ha paura.
+Мы хотим спать.;Abbiamo sonno.
+Я спешу.;Ho fretta.
+Тебе повезло.;Hai fortuna.
+Он прав.;Lui ha ragione.
+Она неправа.;Lei ha torto.
+Мне 25 лет.;Ho 25 anni.
+Ему 30 лет.;Lui ha 30 anni.
+У меня болит голова.;Ho mal di testa.
+У тебя болят зубы.;Hai mal di denti.
+Я не студент.;Non sono studente.
+Ты не уставший.;Non sei stanco.
+Он не счастливый.;Lui non è felice.
+Она не дома.;Lei non è a casa.
+Мы не друзья.;Non siamo amici.
+Я не голоден.;Non ho fame.
+Ты не хочешь пить.;Non hai sete.
+У меня нет времени.;Non ho tempo.
+У тебя нет машины.;Non hai una macchina.
+Ему не холодно.;Lui non ha freddo.
+Ей не страшно.;Lei non ha paura.
+Мы не хотим спать.;Non abbiamo sonno.
+Я не спешу.;Non ho fretta.
+Тебе не повезло.;Non hai fortuna.
+Он не прав.;Lui non ha ragione.
+Она не ошибается.;Lei non ha torto.
+У меня не болит голова.;Non ho mal di testa.

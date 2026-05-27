@@ -1,40 +1,67 @@
-1	Я говорю (parlo) по-итальянски (italiano);Parlo italiano
-2	Я не понимаю (non capisco);Non capisco
-3	Я не говорю (non parlo) по-английски (inglese);Non parlo inglese
-4	Я студент (studente);Sono studente
-5	Я не студент (non sono) студент (studente);Non sono studente
-6	У меня есть время (tempo);Ho tempo
-7	У меня нет времени (non ho tempo);Non ho tempo
-8	Я иду (vado) домой (casa);Vado a casa
-9	Я не иду (non vado) в школу (scuola);Non vado a scuola
-10	Я делаю (faccio) домашнее задание (compiti);Faccio i compiti
-11	Я не делаю (non faccio) ошибки (errori);Non faccio errori
-12	Мы едим (mangiamo) хлеб (pane);Mangiamo pane
-13	Мы не едим (non mangiamo) мясо (carne);Non mangiamo carne
-14	Ты понимаешь (capisci) меня (me);Capisci me
-15	Ты не понимаешь (non capisci);Non capisci
-16	Он живёт (vive) в Риме (Roma);Vive a Roma
-17	Он не живёт (non vive) в Милане (Milano);Non vive a Milano
-18	Она работает (lavora);Lavora
-19	Она не работает (non lavorа);Non lavora
-20	Мы изучаем (studiamo) итальянский (italiano);Studiamo italiano
-21	Мы не изучаем (non studiamo) испанский (spagnolo);Non studiamo spagnolo
-22	Вы читаете (leggete) книгу (libro);Leggete libro
-23	Вы не читаете (non leggete) газету (giornale);Non leggete giornale
-24	Они пишут (scrivono) письмо (lettera);Scrivono lettera
-25	Они не пишут (non scrivono) сообщения (messaggi);Non scrivono messaggi
-26	Меня зовут Марко (Mi chiamo Marco);Mi chiamo Marco
-27	Я чувствую себя хорошо (Mi sento bene);Mi sento bene
-28	Как дела? (Come stai?);Come stai?
-29	Я хорошо (Sto bene);Sto bene
-30	Я не хорошо (Non sto bene);Non sto bene
-31	У меня есть (Ho) машина (macchina);Ho macchina
-32	У меня нет (Non ho) машины (macchina);Non ho macchina
-33	Я дома (Sono a casa);Sono a casa
-34	Я не дома (Non sono a casa);Non sono a casa
-35	Я ем (Mangio);Mangio
-36	Я не ем (Non mangio);Non mangio
-37	Я пью (Bevo) воду (acqua);Bevo acqua
-38	Я не пью (Non bevo) вино (vino);Non bevo vino
-39	Он имеет (Ha) деньги (soldi);Ha soldi
-40	Он не имеет (Non ha) денег (soldi);Non ha soldi
+A01 - Presente Indicativo
+Я говорю по-итальянски;Parlo italiano
+Ты понимаешь итальянский?;Capisci italiano?
+Вы изучаете итальянский?;Studiate italiano?
+Мы учимся в Риме;Studiamo a Roma
+Они говорят по-русски;Parlano russo
+Я не понимаю;Non capisco
+Ты не говоришь по-английски;Non parli inglese
+Мы не изучаем испанский;Non studiamo spagnolo
+Она не работает здесь;Non lavora qui
+Они не живут в Милане;Non vivono a Milano
+Я студент;Sono studente
+Ты учитель;Sei insegnante
+Он врач;È dottore
+Она инженер;È ingegnere
+Мы студенты;Siamo studenti
+Вы учителя;Siete insegnanti
+Они врачи;Sono medici
+Я не студент;Non sono studente
+Ты не учитель;Non sei insegnante
+Он не врач;Non è dottore
+Она не инженер;Non è ingegnere
+Мы не студенты;Non siamo studenti
+Вы не учителя;Non siete insegnanti
+Они не врачи;Non sono medici
+У меня есть время;Ho tempo
+У тебя есть книга?;Hai un libro?
+У него есть машина;Ha una macchina
+У неё есть семья;Ha una famiglia
+У нас есть проблема;Abbiamo un problema
+У вас есть вопросы?;Avete domande?
+У них есть дети;Hanno figli
+У меня нет времени;Non ho tempo
+У тебя нет книги;Non hai un libro
+У него нет машины;Non ha una macchina
+У неё нет семьи;Non ha una famiglia
+У нас нет проблемы;Non abbiamo un problema
+У вас нет вопросов;Non avete domande
+У них нет детей;Non hanno figli
+Я иду домой;Vado a casa
+Ты идешь в школу;Vai a scuola
+Он идет на работу;Va al lavoro
+Она идет в театр;Va a teatro
+Мы идем в парк;Andiamo al parco
+Вы идете на рынок;Andate al mercato
+Они идут в ресторan;Vanno al ristorante
+Я не иду домой;Non vado a casa
+Ты не идешь в школу;Non vai a scuola
+Он не идет на работу;Non va al lavoro
+Она не идет в театр;Non va al teatro
+Мы не идем в парк;Non andiamo al parco
+Вы не идете на рынок;Non andate al mercato
+Они не идут в ресторan;Non vanno al ristorante
+Я делаю домашнее задание;Faccio i compiti
+Ты делаешь зарядку;Fai ginnastica
+Он делает завтрак;Fa colazione
+Она делает покупки;Fa la spesa
+Мы делаем уроки;Facciamo i compiti
+Вы делаете работу;Fate il lavoro
+Они делают обед;Fanno il pranzo
+Я не делаю ошибки;Non faccio errori
+Ты не делаешь зарядку;Non fai ginnastica
+Он не делает завтрак;Non fa colazione
+Она не делает покупки;Non fa la spesa
+Мы не делаем уроки;Non facciamo i compiti
+Вы не делаете работу;Non fate il lavoro
+Они не делают обед;Non fanno il pranzo

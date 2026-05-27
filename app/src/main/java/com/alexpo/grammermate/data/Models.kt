@@ -588,6 +588,12 @@ data class TrainingUiState(
     val audio: AudioState = AudioState(),
     val daily: DailyPracticeState = DailyPracticeState(),
     val pomodoro: PomodoroState = PomodoroState(),
+    /** Grammar Story Roadmap: chapters for current pack */
+    val chapters: List<Chapter> = emptyList(),
+    /** Grammar Story Roadmap: chapter progress for current pack */
+    val chapterProgresses: Map<String, ChapterProgress> = emptyMap(),
+    /** Grammar Story Roadmap: active chapter ID (null if no chapters) */
+    val activeChapterId: String? = null,
     /** True while background init (file I/O) is in progress. UI shows a spinner. */
     val isLoading: Boolean = false,
     /** Parse errors collected during import operations */
@@ -632,3 +638,57 @@ data class LessonLadderRow(
     val daysSinceLastShow: Int?,
     val intervalLabel: String?
 )
+
+/**
+ * Represents a chapter within a lesson pack for narrative grammar learning.
+ * Chapters group lessons into a story progression.
+ *
+ * @param chapterId Unique chapter identifier within the pack. Must not be blank.
+ * @param order Display order. Lower numbers appear first.
+ * @param title Chapter title (e.g., "Before Language").
+ * @param subtitle Optional subtitle or description.
+ * @param storyFile Markdown filename within the pack (e.g., "chapter0_story.md"). Null if no story.
+ * @param lessons List of lesson IDs in this chapter, in order.
+ */
+data class Chapter(
+    val chapterId: String,
+    val order: Int,
+    val title: String,
+    val subtitle: String? = null,
+    val storyFile: String? = null,
+    val lessons: List<String> = emptyList()
+) {
+    init {
+        require(chapterId.isNotBlank()) { "chapterId must not be blank" }
+        require(title.isNotBlank()) { "title must not be blank" }
+        require(lessons.all { it.isNotBlank() }) { "all lesson IDs must be non-blank" }
+    }
+}
+
+/**
+ * Tracks progress through a chapter. Pack-scoped storage.
+ *
+ * @param chapterId Links to Chapter.chapterId.
+ * @param lessonsStarted Number of lessons with mastery > 0. >= 0.
+ * @param lessonsCompleted Number of lessons with intervalStepIndex >= 3. >= 0.
+ * @param lastAccessedMs Epoch millis of last lesson activity in this chapter. 0 = never accessed.
+ */
+data class ChapterProgress(
+    val chapterId: String,
+    val lessonsStarted: Int = 0,
+    val lessonsCompleted: Int = 0,
+    val lastAccessedMs: Long = 0L
+) {
+    init {
+        require(lessonsStarted >= 0) { "lessonsStarted must be >= 0" }
+        require(lessonsCompleted >= 0) { "lessonsCompleted must be >= 0" }
+        require(lessonsStarted >= lessonsCompleted) { "lessonsStarted must be >= lessonsCompleted" }
+    }
+
+    companion object {
+        /**
+         * Creates a new ChapterProgress with zero values for a chapter.
+         */
+        fun forChapter(chapterId: String) = ChapterProgress(chapterId)
+    }
+}

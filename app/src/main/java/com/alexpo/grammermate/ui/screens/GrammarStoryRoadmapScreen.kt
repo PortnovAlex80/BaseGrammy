@@ -55,7 +55,8 @@ fun GrammarStoryRoadmapScreen(
     onDailyPractice: () -> Unit,
     onOpenSettings: () -> Unit = {},
     hasVerbDrill: Boolean = false,
-    hasVocabDrill: Boolean = false
+    hasVocabDrill: Boolean = false,
+    showBackButton: Boolean = false  // Default to false - shown on HOME route
 ) {
     @OptIn(ExperimentalMaterial3Api::class)
     Scaffold(
@@ -63,8 +64,10 @@ fun GrammarStoryRoadmapScreen(
             TopAppBar(
                 title = { Text("Grammar Story Roadmap") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
                     }
                 },
                 actions = {

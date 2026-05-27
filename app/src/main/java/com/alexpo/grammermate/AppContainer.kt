@@ -30,6 +30,7 @@ class AppContainer(private val application: Application) {
     fun verbDrillStore(packId: String?): VerbDrillStore = storeFactory.getVerbDrillStore(packId)
     fun packDailyCursorStore(): PackDailyCursorStore = PackDailyCursorStoreImpl(application)
     val packLessonProgressStore: PackLessonProgressStore by lazy { PackLessonProgressStoreImpl(application) }
+    fun chapterProgressStore(packId: String): ChapterProgressStore = ChapterProgressStore(application, packId)
 
     // Cache management
     fun evict(packId: String?) = storeFactory.evict(packId)

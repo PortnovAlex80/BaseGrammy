@@ -1,0 +1,236 @@
+================================================================================
+GRAMMARMATE (BASEGRAMMY) - JAVA SETUP AND APK BUILD INSTRUCTIONS
+================================================================================
+
+This file contains complete instructions for setting up Java 17 and building
+the Android APK on Windows, including workarounds for Gradle wrapper issues.
+
+================================================================================
+CRITICAL: USE INTELLIJ JBR FULL PATH (PRIMARY SOLUTION)
+================================================================================
+
+If the `java` command is not found in your PATH, use the full path to IntelliJ
+JBR java.exe. This works even when `java -version` fails or Java is not in PATH.
+
+WORKING COMMAND (tested and confirmed):
+  "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+Key points:
+- The full path to IntelliJ JBR java.exe works even when `java` command fails
+- This is the PRIMARY solution for Windows environments without Java in PATH
+- Path may differ depending on your IntelliJ version
+- See troubleshooting section below if this path doesn't work
+
+================================================================================
+REQUIREMENTS
+================================================================================
+
+| Component  | Version | Notes                      |
+|------------|---------|----------------------------|
+| Java JDK   | 17      | Required. Other versions unsupported. |
+| Android SDK| API 34  | Platform, build-tools, platform-tools |
+| Gradle     | 8.9     | Auto-downloaded via wrapper |
+
+================================================================================
+1. JAVA 17 INSTALLATION
+================================================================================
+
+OPTION A: Use Java from IntelliJ IDEA (RECOMMENDED)
+---------------------------------------------------
+If you have IntelliJ IDEA installed, Java is already included:
+
+Check version:
+  "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+
+Note: Path may differ depending on your IntelliJ version.
+
+OPTION B: Install standalone JDK
+---------------------------------
+Download and install JDK 17 (e.g., Eclipse Temurin from https://adoptium.net/)
+
+Verify installation:
+  java -version
+
+Set JAVA_HOME environment variable to point to JDK installation directory.
+
+================================================================================
+2. ANDROID SDK SETUP (without Android Studio)
+================================================================================
+
+If Android Studio is not installed, set up SDK from command line.
+
+2.1. Download command-line tools
+----------------------------------
+Download from: https://developer.android.com/studio#command-tools
+(Section "Command line tools only")
+
+2.2. Installation
+------------------
+Extract to a convenient directory, e.g., C:\Users\user\Android\Sdk\cmdline-tools\latest\
+
+Install required components:
+  sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+Accept licenses:
+  sdkmanager --licenses
+
+2.3. Configure local.properties
+--------------------------------
+Create file `local.properties` in project root with:
+
+  sdk.dir=C:\\Users\\user\\Android\\Sdk
+
+(Replace with your actual SDK path. This file is not committed to repo.)
+
+Alternative: Set ANDROID_HOME environment variable:
+  set ANDROID_HOME=C:\Users\user\Android\Sdk
+
+================================================================================
+3. GRADLE WRAPPER ISSUE ON WINDOWS
+================================================================================
+
+PROBLEM:
+--------
+Project uses Gradle 8.9 with multi-JAR wrapper format. Standard `gradlew.bat`
+script may fail with:
+
+  NoClassDefFoundError: org/gradle/wrapper/IDownload
+
+CAUSE:
+------
+Starting with Gradle 8.9, wrapper consists of multiple JAR files:
+
+  gradle/wrapper/
+    gradle-wrapper.jar
+    gradle-wrapper-shared.jar
+    gradle-cli.jar
+
+The standard `gradlew` script only loads `gradle-wrapper.jar`, causing the error.
+
+SOLUTION:
+---------
+Run build directly through Java, specifying all three JARs in classpath.
+
+WITH INTELLIJ JBR (RECOMMENDED):
+--------------------------------
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+WITH SYSTEM JAVA:
+-----------------
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+Note: Path to IntelliJ JBR may differ. Check for java.exe in jbr/bin/ directory.
+
+CREATE BUILD.BAT FOR CONVENIENCE:
+----------------------------------
+Create file `build.bat` in project root (adjust JAVA_EXE path):
+
+@echo off
+set JAVA_EXE=C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe
+"%JAVA_EXE%" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain %*
+
+Then use: build.bat assembleDebug
+
+================================================================================
+4. NON-CYRILLIC PROJECT PATH
+================================================================================
+
+If project directory contains non-Latin characters (e.g., "Разработка"),
+Gradle may show path validation error.
+
+File `gradle.properties` already contains:
+  android.overridePathCheck=true
+
+If missing, add this line to disable non-ASCII path check.
+
+================================================================================
+5. BUILD COMMANDS
+================================================================================
+
+DEBUG APK:
+----------
+build.bat assembleDebug
+
+Output: app\build\outputs\apk\debug\grammermate.apk
+
+RELEASE APK:
+-----------
+build.bat assembleRelease
+
+RUN TESTS:
+----------
+build.bat test
+
+Specific test class:
+  build.bat test --tests "com.alexpo.grammermate.data.FlowerCalculatorTest"
+
+Specific test method:
+  build.bat test --tests "com.alexpo.grammermate.data.FlowerCalculatorTest.testBloomState"
+
+CLEAN:
+------
+build.bat clean
+
+================================================================================
+6. LESSON PACK VALIDATION
+================================================================================
+
+To validate lesson pack ZIP archives:
+
+  python tools/pack_validator/pack_validator.py path/to/pack.zip
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+:: 1. Check Java (IntelliJ or system)
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+:: or simply: java -version
+
+:: 2. Check Android SDK (if local.properties not configured)
+echo %ANDROID_HOME%
+
+:: 3. Build debug APK (one line, no wrap)
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+:: 4. Get APK
+:: app\build\outputs\apk\debug\grammermate.apk
+
+================================================================================
+ADDITIONAL CONTEXT FOR PROJECT
+================================================================================
+
+PROJECT: GrammarMate (BaseGrammy)
+DESCRIPTION: Android language learning app for RU→Target translation (English/Italian)
+STACK: Kotlin 1.9.22, Jetpack Compose (BOM 2024.02.00), Material 3, Android SDK 24–34
+
+CRITICAL BUILD NOTES:
+- Windows environment requires the 3-JAR classpath workaround above
+- Java 17 is mandatory (other versions unsupported)
+- Output APK: grammermate.apk (note spelling)
+- Project uses SnakeYAML 2.2 and Sherpa-ONNX (TTS/ASR)
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: 'java' command not found or java -version fails
+Solution: Use full IntelliJ JBR path instead of 'java' command
+  "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+
+Problem: IntelliJ JBR path differs from documented path
+Solution: Locate your IntelliJ installation and find java.exe in jbr/bin/ directory
+  - Common locations:
+    - C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe
+    - C:\Program Files\JetBrains\IntelliJ IDEA Ultimate\jbr\bin\java.exe
+    - C:\Program Files (x86)\JetBrains\IntelliJ IDEA *\jbr\bin\java.exe
+
+Problem: NoClassDefFoundError: org/gradle/wrapper/IDownload
+Solution: Ensure all three JARs are in classpath (see section 3 above)
+
+Problem: Build fails despite correct Java setup
+Solution: Check Android SDK path in local.properties and ensure API 34 is installed
+
+================================================================================
+END OF INSTRUCTIONS
+================================================================================

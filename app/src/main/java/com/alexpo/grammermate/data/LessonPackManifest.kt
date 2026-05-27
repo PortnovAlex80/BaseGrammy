@@ -17,13 +17,16 @@ data class LessonPackManifest(
     val lessons: List<LessonPackLesson>,
     val displayName: String? = null,
     val verbDrill: DrillFiles? = null,
-    val vocabDrill: DrillFiles? = null
+    val vocabDrill: DrillFiles? = null,
+    val chapters: List<Chapter> = emptyList()
 ) {
     companion object {
         fun fromJson(text: String): LessonPackManifest {
             val json = JSONObject(text)
             val schemaVersion = json.optInt("schemaVersion", -1)
-            if (schemaVersion != 1) error("Unsupported schemaVersion: $schemaVersion")
+            if (schemaVersion != 1 && schemaVersion != 2) {
+                error("Unsupported schemaVersion: $schemaVersion")
+            }
             val packId = json.optString("packId").trim()
             val packVersion = json.optString("packVersion").trim()
             val language = json.optString("language").trim()
@@ -56,13 +59,42 @@ data class LessonPackManifest(
             val verbDrill = parseDrillFiles(json.optJSONObject("verbDrill"))
             val vocabDrill = parseDrillFiles(json.optJSONObject("vocabDrill"))
 
-            // Manifest must have at least one lesson, or drill/vocab sections
-            val hasStandardLessons = lessons.any { it.type != "verb_drill" }
-            if (!hasStandardLessons && verbDrill == null && vocabDrill == null) {
-                error("Manifest has no lessons and no drill sections")
+            // Parse chapters (schema v2 only)
+            val chapters = if (schemaVersion == 2) {
+                parseChapters(json.optJSONArray("chapters"))
+            } else {
+                emptyList()
             }
 
-            return LessonPackManifest(schemaVersion, packId, packVersion, language, lessons, displayName, verbDrill, vocabDrill)
+            // Validation: Manifest must have content
+            // v1: at least one standard lesson OR drill sections
+            // v2: at least one chapter with non-empty lessons OR drill sections
+            when (schemaVersion) {
+                1 -> {
+                    val hasStandardLessons = lessons.any { it.type != "verb_drill" }
+                    if (!hasStandardLessons && verbDrill == null && vocabDrill == null) {
+                        error("Schema v1 manifest has no lessons and no drill sections")
+                    }
+                }
+                2 -> {
+                    val hasChapterContent = chapters.any { it.lessons.isNotEmpty() }
+                    if (!hasChapterContent && verbDrill == null && vocabDrill == null) {
+                        error("Schema v2 manifest has no chapter content and no drill sections")
+                    }
+                }
+            }
+
+            return LessonPackManifest(
+                schemaVersion = schemaVersion,
+                packId = packId,
+                packVersion = packVersion,
+                language = language,
+                lessons = lessons,
+                displayName = displayName,
+                verbDrill = verbDrill,
+                vocabDrill = vocabDrill,
+                chapters = chapters
+            )
         }
 
         private fun parseDrillFiles(obj: JSONObject?): DrillFiles? {
@@ -71,6 +103,37 @@ data class LessonPackManifest(
             val files = (0 until arr.length()).mapNotNull { arr.optString(it)?.trim()?.ifBlank { null } }
             if (files.isEmpty()) return null
             return DrillFiles(files)
+        }
+
+        private fun parseChapters(chaptersJson: JSONArray?): List<Chapter> {
+            if (chaptersJson == null) return emptyList()
+
+            val chapters = mutableListOf<Chapter>()
+            for (i in 0 until chaptersJson.length()) {
+                val entry = chaptersJson.optJSONObject(i) ?: continue
+                val chapterId = entry.optString("chapterId").trim()
+                val title = entry.optString("title").trim()
+                val order = entry.optInt("order", i)
+                val subtitle = entry.optString("subtitle").trim().ifBlank { null }
+                val storyFile = entry.optString("storyFile").trim().ifBlank { null }
+
+                if (chapterId.isBlank() || title.isBlank()) {
+                    error("Invalid chapter entry at index $i: missing chapterId or title")
+                }
+
+                val lessonsJson = entry.optJSONArray("lessons") ?: JSONArray()
+                val lessons = mutableListOf<String>()
+                for (j in 0 until lessonsJson.length()) {
+                    val lessonId = lessonsJson.optString(j).trim()
+                    if (lessonId.isNotBlank()) {
+                        lessons.add(lessonId)
+                    }
+                }
+
+                chapters.add(Chapter(chapterId, order, title, subtitle, storyFile, lessons))
+            }
+
+            return chapters
         }
     }
 }

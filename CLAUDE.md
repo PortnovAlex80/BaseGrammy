@@ -16,7 +16,7 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 
 | Gotcha | Details |
 |--------|---------|
-| **Windows Gradle** | Must use `java -cp "gradle/wrapper/*"` workaround, not `gradlew` |
+| **Windows Gradle** | Must use `java -cp "gradle/wrapper/*"` workaround, not `gradlew`. See `java.txt` for complete build commands and setup instructions. |
 | **WORD_BANK ≠ mastery** | Only VOICE and KEYBOARD grow flowers. WORD_BANK never counts. |
 | **AtomicFileWriter** | All file writes must use temp → fsync → rename pattern |
 | **Single ViewModel** | `TrainingViewModel` is ~1500 lines. Decompose helpers to `feature/` when adding logic. |
@@ -66,13 +66,26 @@ Run the focused test with the Windows wrapper workaround:
 java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain test --tests "com.alexpo.grammermate.ui.VerbDrillSessionCardRegressionTest"
 ```
 
-If Java is only available through IntelliJ JBR, use the same classpath with the full `java.exe` path from `docs/BUILD_INSTRUCTIONS.md`.
+If Java is only available through IntelliJ JBR, use the same classpath with the full `java.exe` path from `docs/BUILD_INSTRUCTIONS.md` or `java.txt`.
 
 ---
 
 ## BUILD APK
 
 **Java NOT available in this environment.** Build APK on your local machine.
+
+### Complete build documentation
+
+**The file `java.txt` in the project root contains complete build instructions, including:**
+- Java 17 installation (IntelliJ JBR or standalone)
+- Android SDK setup without Android Studio
+- Windows Gradle wrapper workaround (3-JAR classpath)
+- All build commands with examples
+- Troubleshooting guide
+
+### Quick reference
+
+Also see `docs/BUILD_INSTRUCTIONS.md` for additional setup details.
 
 ### Prerequisites
 
@@ -81,15 +94,9 @@ If Java is only available through IntelliJ JBR, use the same classpath with the 
 | Java JDK | 17 |
 | Android SDK | API 34 |
 
-### Full instructions
-
-See `docs/BUILD_INSTRUCTIONS.md` for:
-- Java setup (IntelliJ bundle or standalone)
-- Android SDK installation
-- Windows Gradle workaround
-- Troubleshooting
-
 ### Quick commands
+
+**IMPORTANT:** If `java` command is not found, use full IntelliJ JBR path (see note below).
 
 ```cmd
 :: Debug APK (output: app\build\outputs\apk\debug\grammermate.apk)
@@ -109,12 +116,15 @@ gradle/wrapper/gradle-wrapper-shared.jar
 gradle/wrapper/gradle-cli.jar
 ```
 
-For IntelliJ Java, use full path:
+**IntelliJ JBR full path (PRIMARY SOLUTION when `java` command fails):**
 ```cmd
 "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
 
-Or create `build.bat` (see BUILD_INSTRUCTIONS.md).
+The full IntelliJ JBR path works even when `java -version` fails or Java is not in PATH.
+See `java.txt` or `docs/BUILD_INSTRUCTIONS.md` for complete troubleshooting guide.
+
+Or create `build.bat` (see BUILD_INSTRUCTIONS.md or java.txt for full instructions).
 
 ---
 

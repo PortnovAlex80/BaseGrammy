@@ -114,7 +114,22 @@ internal class DrillFileManager(
 
     /**
      * Get verb drill CSV files for a specific pack and language.
-     * Looks in grammarmate/drills/{packId}/verb_drill/.
+     *
+     * **Drill Detection Logic:**
+     * - Directory structure: `grammarmate/drills/{packId}/verb_drill/`
+     * - File naming pattern: `{languageId}_*.csv` (e.g., `it_verb_drill.csv`, `en_drills.csv`)
+     * - Checks for both language-specific prefix and `.csv` extension
+     * - Returns empty list if directory doesn't exist or no matching files found
+     *
+     * **Usage for conditional button hiding:**
+     * ```kotlin
+     * val hasVerbDrills = drillFileManager.hasVerbDrill(packId, languageId)
+     * // Hide/show verb practice button based on result
+     * ```
+     *
+     * @param packId Pack identifier (e.g., "IT_VERB_GROUPS_ALL")
+     * @param languageId Language code (e.g., "it", "en")
+     * @return List of verb drill CSV files, empty if none found
      */
     fun getVerbDrillFiles(packId: String, languageId: String): List<File> {
         val drillDir = File(baseDir, "drills/$packId/verb_drill")
@@ -126,7 +141,14 @@ internal class DrillFileManager(
 
     /**
      * Get all verb drill CSV files for a specific pack (any language prefix).
-     * Looks in grammarmate/drills/{packId}/verb_drill/.
+     *
+     * **Pack-Scoped Drill Detection:**
+     * - Directory structure: `grammarmate/drills/{packId}/verb_drill/`
+     * - Returns ALL `.csv` files regardless of language prefix
+     * - Useful for pack-level drill inventory or validation
+     *
+     * @param packId Pack identifier
+     * @return List of all verb drill CSV files in the pack, empty if none found
      */
     fun getVerbDrillFilesForPack(packId: String): List<File> {
         val drillDir = File(baseDir, "drills/$packId/verb_drill")
@@ -138,7 +160,22 @@ internal class DrillFileManager(
 
     /**
      * Get vocab drill CSV files for a specific pack and language.
-     * Looks in grammarmate/drills/{packId}/vocab_drill/.
+     *
+     * **Vocab Drill Detection Logic:**
+     * - Directory structure: `grammarmate/drills/{packId}/vocab_drill/`
+     * - File naming pattern: `{languageId}_*.csv` (e.g., `it_vocab.csv`, `en_words.csv`)
+     * - Checks for both language-specific prefix and `.csv` extension
+     * - Returns empty list if directory doesn't exist or no matching files found
+     *
+     * **Usage for conditional button hiding:**
+     * ```kotlin
+     * val hasVocabDrills = drillFileManager.hasVocabDrill(packId, languageId)
+     * // Hide/show vocab practice button based on result
+     * ```
+     *
+     * @param packId Pack identifier (e.g., "IT_VERB_GROUPS_ALL")
+     * @param languageId Language code (e.g., "it", "en")
+     * @return List of vocab drill CSV files, empty if none found
      */
     fun getVocabDrillFiles(packId: String, languageId: String): List<File> {
         val drillDir = File(baseDir, "drills/$packId/vocab_drill")
@@ -150,7 +187,14 @@ internal class DrillFileManager(
 
     /**
      * Get all vocab drill CSV files for a specific pack (any language prefix).
-     * Looks in grammarmate/drills/{packId}/vocab_drill/.
+     *
+     * **Pack-Scoped Vocab Drill Detection:**
+     * - Directory structure: `grammarmate/drills/{packId}/vocab_drill/`
+     * - Returns ALL `.csv` files regardless of language prefix
+     * - Useful for pack-level vocab drill inventory or validation
+     *
+     * @param packId Pack identifier
+     * @return List of all vocab drill CSV files in the pack, empty if none found
      */
     fun getVocabDrillFilesForPack(packId: String): List<File> {
         val drillDir = File(baseDir, "drills/$packId/vocab_drill")
@@ -189,10 +233,50 @@ internal class DrillFileManager(
         return words.sortedBy { it.rank }
     }
 
+    /**
+     * Check if verb drills exist for a specific pack and language.
+     *
+     * **Primary Method for Conditional Button Hiding:**
+     * - Returns `true` if at least one verb drill file exists for the language
+     * - Used to show/hide "Verb Practice" buttons in UI
+     * - Pack-scoped: checks only within the specified pack directory
+     *
+     * **UI Usage Example:**
+     * ```kotlin
+     * val showVerbButton = lessonStore.hasVerbDrill(packId, languageId)
+     * if (showVerbButton) {
+     *     VerbPracticeButton(onClick = { /* navigate to verb drill */ })
+     * }
+     * ```
+     *
+     * @param packId Pack identifier
+     * @param languageId Language code
+     * @return true if verb drills exist, false otherwise
+     */
     fun hasVerbDrill(packId: String, languageId: String): Boolean {
         return getVerbDrillFiles(packId, languageId).isNotEmpty()
     }
 
+    /**
+     * Check if vocab drills exist for a specific pack and language.
+     *
+     * **Primary Method for Conditional Button Hiding:**
+     * - Returns `true` if at least one vocab drill file exists for the language
+     * - Used to show/hide "Vocab Practice" buttons in UI
+     * - Pack-scoped: checks only within the specified pack directory
+     *
+     * **UI Usage Example:**
+     * ```kotlin
+     * val showVocabButton = lessonStore.hasVocabDrill(packId, languageId)
+     * if (showVocabButton) {
+     *     VocabPracticeButton(onClick = { /* navigate to vocab drill */ })
+     * }
+     * ```
+     *
+     * @param packId Pack identifier
+     * @param languageId Language code
+     * @return true if vocab drills exist, false otherwise
+     */
     fun hasVocabDrill(packId: String, languageId: String): Boolean {
         return getVocabDrillFiles(packId, languageId).isNotEmpty()
     }

@@ -1,5 +1,23 @@
 # Инструкция по сборке GrammarMate (BaseGrammy)
 
+## ⚠️ ВАЖНО: ИСПОЛЬЗУЙТЕ ПОЛНЫЙ ПУТЬ К INTELLIJ JBR (ОСНОВНОЕ РЕШЕНИЕ)
+
+Если команда `java` не найдена в PATH, используйте полный путь к java.exe из IntelliJ JBR.
+Это работает даже когда `java -version` не выполняется или Java отсутствует в PATH.
+
+**РАБОЧАЯ КОМАНДА (проверено и подтверждено):**
+```cmd
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+```
+
+**Ключевые моменты:**
+- Полный путь к java.exe из IntelliJ JBR работает даже когда команда `java` не доступна
+- Это ОСНОВНОЕ решение для окружений Windows без Java в PATH
+- Путь может отличаться в зависимости от версии IntelliJ
+- См. раздел troubleshooting ниже, если этот путь не работает
+
+---
+
 ## Предварительные требования
 
 | Компонент | Версия | Примечание |
@@ -205,3 +223,26 @@ echo %ANDROID_HOME%
 :: 4. Забрать APK
 :: app\build\outputs\apk\debug\grammermate.apk
 ```
+
+---
+
+## Решение проблем
+
+### Проблема: команда `java` не найдена или `java -version` не выполняется
+**Решение:** Используйте полный путь к IntelliJ JBR вместо команды `java`
+```cmd
+"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+```
+
+### Проблема: путь к IntelliJ JBR отличается от документированного
+**Решение:** Найдите установку IntelliJ и locate java.exe в каталоге jbr/bin/
+- Обычные расположения:
+  - `C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe`
+  - `C:\Program Files\JetBrains\IntelliJ IDEA Ultimate\jbr\bin\java.exe`
+  - `C:\Program Files (x86)\JetBrains\IntelliJ IDEA *\jbr\bin\java.exe`
+
+### Проблема: NoClassDefFoundError: org/gradle/wrapper/IDownload
+**Решение:** Убедитесь, что все три JAR указаны в classpath (см. раздел 3 выше)
+
+### Проблема: Сборка не выполняется несмотря на правильную настройку Java
+**Решение:** Проверьте путь к Android SDK в local.properties и убедитесь, что установлен API 34
