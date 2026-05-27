@@ -338,8 +338,9 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     }
 
     private fun loadLessonsFromDisk(languageId: String): List<Lesson> {
+        // Try loading from language index first (legacy structure)
         val entries = loadIndex(languageId)
-        return entries.mapNotNull { entry ->
+        val legacyLessons = entries.mapNotNull { entry ->
             val id = entry["id"] as? String ?: return@mapNotNull null
             val title = entry["title"] as? String ?: "Lesson"
             val fileName = entry["file"] as? String ?: return@mapNotNull null
@@ -349,6 +350,47 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
             Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
         }
+
+        // If legacy structure has lessons, return them
+        if (legacyLessons.isNotEmpty()) {
+            return legacyLessons
+        }
+
+        // Otherwise, load from packs (new structure)
+        val packLessons = mutableListOf<Lesson>()
+        val installedPacks = getInstalledPacks()
+
+        for (pack in installedPacks) {
+            // Only load packs matching the languageId
+            if (pack.languageId.value != languageId) continue
+
+            val packDir = File(packsDir, pack.packId.value)
+            if (!packDir.exists()) continue
+
+            // Load lessons from pack directory
+            val lessonFiles = packDir.listFiles()?.filter {
+                it.isFile && it.name.endsWith(".csv")
+            } ?: continue
+
+            for (lessonFile in lessonFiles) {
+                try {
+                    val parseResult = CsvParser.parseLesson(lessonFile.inputStream())
+                    val (parsedTitle, cards) = parseResult.data ?: continue
+                    val lessonId = lessonFile.name.removeSuffix(".csv")
+
+                    packLessons.add(Lesson(
+                        id = LessonId(lessonId),
+                        languageId = LanguageId(languageId),
+                        title = parsedTitle ?: lessonId,
+                        cards = cards
+                    ))
+                } catch (e: Exception) {
+                    Log.e("LessonStore", "Failed to parse lesson file: ${lessonFile.name}", e)
+                }
+            }
+        }
+
+        return packLessons
     }
 
     override fun deleteAllLessons(languageId: String) {
