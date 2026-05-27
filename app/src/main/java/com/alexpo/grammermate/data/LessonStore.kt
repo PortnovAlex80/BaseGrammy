@@ -208,8 +208,18 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         val packs = getInstalledPacks()
         for (pack in packs) {
             val manifest = languageManager.readInstalledPackManifest(pack.packId.value) ?: continue
+
+            // Check root-level lessons (schema v1)
             if (manifest.lessons.any { it.lessonId == lessonId }) {
                 return pack.packId.value
+            }
+
+            // Check chapter-level lessons (schema v2)
+            for (chapter in manifest.chapters) {
+                val chapterLessonIds = chapter.lessons
+                if (chapterLessonIds.contains(lessonId)) {
+                    return pack.packId.value
+                }
             }
         }
         return null
