@@ -278,31 +278,33 @@ fun HomeScreen(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            userScrollEnabled = false
-        ) {
-            itemsIndexed(tiles) { _, tile ->
-                val flower = tile.lessonId?.let { state.flowerDisplay.lessonFlowers[it] }
-                LessonTile(
-                    tile = tile,
-                    flower = flower,
-                    onSelect = {
-                        val lessonId = tile.lessonId ?: return@LessonTile
-                        onSelectLesson(lessonId)
-                    },
-                    onLockedClick = {
-                        // For locked tiles with a lesson, offer early start
-                        if (tile.lessonId != null) {
-                            earlyStartLessonId = tile.lessonId
-                        } else {
-                            showLockedLessonHint = true
+        if (state.navigation.activePackId != null) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                userScrollEnabled = false
+            ) {
+                itemsIndexed(tiles) { _, tile ->
+                    val flower = tile.lessonId?.let { state.flowerDisplay.lessonFlowers[it] }
+                    LessonTile(
+                        tile = tile,
+                        flower = flower,
+                        onSelect = {
+                            val lessonId = tile.lessonId ?: return@LessonTile
+                            onSelectLesson(lessonId)
+                        },
+                        onLockedClick = {
+                            // For locked tiles with a lesson, offer early start
+                            if (tile.lessonId != null) {
+                                earlyStartLessonId = tile.lessonId
+                            } else {
+                                showLockedLessonHint = true
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -327,9 +329,11 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
-        DailyPracticeEntryTile(
-            onClick = onOpenElite
-        )
+        if (state.navigation.activePackId != null) {
+            DailyPracticeEntryTile(
+                onClick = onOpenElite
+            )
+        }
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = stringResource(R.string.home_legend), fontWeight = FontWeight.SemiBold)
         Text(text = "🌱 ${stringResource(R.string.home_legend_seed_growing_bloom)}")
