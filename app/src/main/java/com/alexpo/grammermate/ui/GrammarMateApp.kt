@@ -72,6 +72,8 @@ import com.alexpo.grammermate.ui.screens.HomeScreen
 import com.alexpo.grammermate.ui.screens.LessonRoadmapScreen
 import com.alexpo.grammermate.ui.screens.StoryQuizScreen
 import com.alexpo.grammermate.ui.screens.TrainingScreen
+import com.alexpo.grammermate.ui.screens.GrammarStoryRoadmapScreen
+import com.alexpo.grammermate.ui.screens.StoryReaderScreen
 import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.VerbDrillViewModel
 import com.alexpo.grammermate.ui.screens.SettingsSheet
@@ -94,6 +96,8 @@ private object Routes {
     const val LADDER = "ladder"
     const val VERB_DRILL = "verb_drill"
     const val VOCAB_DRILL = "vocab_drill"
+    const val GRAMMAR_STORY_ROADMAP = "grammar_story_roadmap"
+    const val STORY_READER = "story_reader"
 }
 
 // ── Dialog state holder ──────────────────────────────────────────────────────
@@ -106,7 +110,9 @@ private data class DialogState(
     val showTtsDownloadDialog: Boolean = false,
     val showProfileStats: Boolean = false,
     val pendingDailyLevel: Int = 0,
-    val isLoadingDaily: Boolean = false
+    val isLoadingDaily: Boolean = false,
+    val storyReaderChapterTitle: String? = null,
+    val storyReaderContent: String? = null
 )
 
 // ── Main composable ──────────────────────────────────────────────────────────
@@ -290,60 +296,124 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     startDestination = Routes.HOME
                 ) {
                     composable(Routes.HOME) {
-                        HomeScreen(
-                            state = state,
-                            onSelectLanguage = vm::selectLanguage,
-                            onSelectPack = remember { { packId: String -> vm.selectPack(packId) } },
-                            onOpenSettings = remember(dialogs) {
-                                {
-                                    previousRoute = Routes.HOME
-                                    vm.pauseSession()
-                                    dialogs = dialogs.copy(showSettings = true)
-                                }
-                            },
-                            onPrimaryAction = remember { { onNavigate(Routes.LESSON) } },
-                            onSelectLesson = remember { { lessonId: String ->
-                                vm.selectLesson(lessonId)
-                                onNavigate(Routes.LESSON)
-                            } },
-                            onOpenElite = remember(dialogs) {
-                                {
-                                    val level = vm.getProgressLessonLevel()
-                                    if (vm.daily.hasResumableDailySession()) {
-                                        dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
-                                    } else {
-                                        dialogs = dialogs.copy(isLoadingDaily = true)
-                                        dailyScope.launch {
-                                            try {
-                                                val started = withContext(Dispatchers.IO) {
-                                                    vm.startDailyPractice(level)
-                                                }
-                                                dialogs = dialogs.copy(isLoadingDaily = false)
-                                                if (started) {
-                                                    onNavigate(Routes.DAILY_PRACTICE)
-                                                } else {
+                        val activePackId = state.navigation.activePackId?.value
+                        val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+
+                        if (hasChapters) {
+                            // Show Grammar Story Roadmap for packs with chapters
+                            GrammarStoryRoadmapScreen(
+                                chapters = vm.getChapterCards(),
+                                onBack = remember(dialogs) {
+                                    {
+                                        previousRoute = Routes.HOME
+                                        vm.pauseSession()
+                                        dialogs = dialogs.copy(showSettings = true)
+                                    }
+                                },
+                                onReadStory = remember { { chapter ->
+                                    val storyContent = vm.loadStoryContent(chapter.storyFile)
+                                    if (storyContent != null) {
+                                        dialogs = dialogs.copy(
+                                            storyReaderChapterTitle = chapter.title,
+                                            storyReaderContent = storyContent
+                                        )
+                                        onNavigate(Routes.STORY_READER)
+                                    }
+                                } },
+                                onContinue = remember { { chapter ->
+                                    // Navigate to first incomplete lesson in chapter
+                                    val firstIncompleteLesson = vm.getFirstIncompleteLesson(chapter)
+                                    if (firstIncompleteLesson != null) {
+                                        vm.selectLesson(firstIncompleteLesson)
+                                        onNavigate(Routes.LESSON)
+                                    }
+                                } },
+                                onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
+                                onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
+                                onDailyPractice = remember(dialogs) {
+                                    {
+                                        val level = vm.getProgressLessonLevel()
+                                        if (vm.daily.hasResumableDailySession()) {
+                                            dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
+                                        } else {
+                                            dialogs = dialogs.copy(isLoadingDaily = true)
+                                            dailyScope.launch {
+                                                try {
+                                                    val started = withContext(Dispatchers.IO) {
+                                                        vm.startDailyPractice(level)
+                                                    }
+                                                    dialogs = dialogs.copy(isLoadingDaily = false)
+                                                    if (started) {
+                                                        onNavigate(Routes.DAILY_PRACTICE)
+                                                    } else {
+                                                        Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                                    }
+                                                } catch (e: Exception) {
+                                                    dialogs = dialogs.copy(isLoadingDaily = false)
                                                     Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                                                 }
-                                            } catch (e: Exception) {
-                                                dialogs = dialogs.copy(isLoadingDaily = false)
-                                                Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                     }
                                 }
-                            },
-                            hasVerbDrill = state.navigation.hasVerbDrill,
-                            hasVocabDrill = state.navigation.hasVocabDrill,
-                            onOpenVerbDrill = remember { { onNavigate(Routes.VERB_DRILL) } },
-                            onOpenVocabDrill = remember { { onNavigate(Routes.VOCAB_DRILL) } },
-                            onProfileClick = remember(dialogs) { { dialogs = dialogs.copy(showProfileStats = true) } },
-                            onStartPomodoro = remember { { duration: Int ->
-                                vm.startPomodoro(duration)
-                                onNavigate(Routes.LESSON)
-                            } },
-                            pomodoroLastDuration = vm.getPomodoroLastDuration(),
-                            pomodoroHistory = vm.getPomodoroHistoryForSelectedLanguage()
-                        )
+                            )
+                        } else {
+                            // Show Classic Home Screen for v1 packs without chapters
+                            HomeScreen(
+                                state = state,
+                                onSelectLanguage = vm::selectLanguage,
+                                onSelectPack = remember { { packId: String -> vm.selectPack(packId) } },
+                                onOpenSettings = remember(dialogs) {
+                                    {
+                                        previousRoute = Routes.HOME
+                                        vm.pauseSession()
+                                        dialogs = dialogs.copy(showSettings = true)
+                                    }
+                                },
+                                onPrimaryAction = remember { { onNavigate(Routes.LESSON) } },
+                                onSelectLesson = remember { { lessonId: String ->
+                                    vm.selectLesson(lessonId)
+                                    onNavigate(Routes.LESSON)
+                                } },
+                                onOpenElite = remember(dialogs) {
+                                    {
+                                        val level = vm.getProgressLessonLevel()
+                                        if (vm.daily.hasResumableDailySession()) {
+                                            dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
+                                        } else {
+                                            dialogs = dialogs.copy(isLoadingDaily = true)
+                                            dailyScope.launch {
+                                                try {
+                                                    val started = withContext(Dispatchers.IO) {
+                                                        vm.startDailyPractice(level)
+                                                    }
+                                                    dialogs = dialogs.copy(isLoadingDaily = false)
+                                                    if (started) {
+                                                        onNavigate(Routes.DAILY_PRACTICE)
+                                                    } else {
+                                                        Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                                    }
+                                                } catch (e: Exception) {
+                                                    dialogs = dialogs.copy(isLoadingDaily = false)
+                                                    Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                hasVerbDrill = state.navigation.hasVerbDrill,
+                                hasVocabDrill = state.navigation.hasVocabDrill,
+                                onOpenVerbDrill = remember { { onNavigate(Routes.VERB_DRILL) } },
+                                onOpenVocabDrill = remember { { onNavigate(Routes.VOCAB_DRILL) } },
+                                onProfileClick = remember(dialogs) { { dialogs = dialogs.copy(showProfileStats = true) } },
+                                onStartPomodoro = remember { { duration: Int ->
+                                    vm.startPomodoro(duration)
+                                    onNavigate(Routes.LESSON)
+                                } },
+                                pomodoroLastDuration = vm.getPomodoroLastDuration(),
+                                pomodoroHistory = vm.getPomodoroHistoryForSelectedLanguage()
+                            )
+                        }
                     }
 
                     composable(Routes.LESSON) {
@@ -591,6 +661,77 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             voiceAutoStart = state.audio.voiceAutoStart
                         )
                     }
+
+                    composable(Routes.GRAMMAR_STORY_ROADMAP) {
+                        GrammarStoryRoadmapScreen(
+                            chapters = vm.getChapterCards(),
+                            onBack = remember { { onNavigate(Routes.HOME) } },
+                            onReadStory = remember { { chapter ->
+                                val storyContent = vm.loadStoryContent(chapter.storyFile)
+                                if (storyContent != null) {
+                                    dialogs = dialogs.copy(
+                                        storyReaderChapterTitle = chapter.title,
+                                        storyReaderContent = storyContent
+                                    )
+                                    onNavigate(Routes.STORY_READER)
+                                }
+                            } },
+                            onContinue = remember { { chapter ->
+                                val firstIncompleteLesson = vm.getFirstIncompleteLesson(chapter)
+                                if (firstIncompleteLesson != null) {
+                                    vm.selectLesson(firstIncompleteLesson)
+                                    onNavigate(Routes.LESSON)
+                                }
+                            } },
+                            onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
+                            onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
+                            onDailyPractice = remember(dialogs) {
+                                {
+                                    val level = vm.getProgressLessonLevel()
+                                    if (vm.daily.hasResumableDailySession()) {
+                                        dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
+                                    } else {
+                                        dialogs = dialogs.copy(isLoadingDaily = true)
+                                        dailyScope.launch {
+                                            try {
+                                                val started = withContext(Dispatchers.IO) {
+                                                    vm.startDailyPractice(level)
+                                                }
+                                                dialogs = dialogs.copy(isLoadingDaily = false)
+                                                if (started) {
+                                                    onNavigate(Routes.DAILY_PRACTICE)
+                                                } else {
+                                                    Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                dialogs = dialogs.copy(isLoadingDaily = false)
+                                                Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    }
+
+                    composable(Routes.STORY_READER) {
+                        val chapterTitle = dialogs.storyReaderChapterTitle ?: "Unknown Chapter"
+                        val content = dialogs.storyReaderContent ?: ""
+
+                        StoryReaderScreen(
+                            chapterTitle = chapterTitle,
+                            markdownContent = content,
+                            onBack = remember {
+                                {
+                                    dialogs = dialogs.copy(
+                                        storyReaderChapterTitle = null,
+                                        storyReaderContent = null
+                                    )
+                                    onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
+                                }
+                            }
+                        )
+                    }
                 }
 
                 NavDialogs(
@@ -623,6 +764,8 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
     Routes.LADDER -> AppScreen.LADDER
     Routes.VERB_DRILL -> AppScreen.VERB_DRILL
     Routes.VOCAB_DRILL -> AppScreen.VOCAB_DRILL
+    Routes.GRAMMAR_STORY_ROADMAP -> AppScreen.HOME // Treat as home for tracking
+    Routes.STORY_READER -> AppScreen.STORY // Treat as story for tracking
     else -> AppScreen.HOME
 }
 
@@ -669,6 +812,18 @@ private fun NavBackHandlers(
         vm.cancelDailySession()
         navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = false }
+            launchSingleTop = true
+        }
+    }
+    BackHandler(enabled = currentRoute == Routes.GRAMMAR_STORY_ROADMAP && !showSettings) {
+        navController.navigate(Routes.HOME) {
+            popUpTo(Routes.HOME) { inclusive = false }
+            launchSingleTop = true
+        }
+    }
+    BackHandler(enabled = currentRoute == Routes.STORY_READER && !showSettings) {
+        navController.navigate(Routes.GRAMMAR_STORY_ROADMAP) {
+            popUpTo(Routes.GRAMMAR_STORY_ROADMAP) { inclusive = false }
             launchSingleTop = true
         }
     }
