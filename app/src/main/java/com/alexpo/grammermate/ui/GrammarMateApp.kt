@@ -74,6 +74,7 @@ import com.alexpo.grammermate.ui.screens.LessonRoadmapScreen
 import com.alexpo.grammermate.ui.screens.StoryQuizScreen
 import com.alexpo.grammermate.ui.screens.TrainingScreen
 import com.alexpo.grammermate.ui.screens.GrammarStoryRoadmapScreen
+import com.alexpo.grammermate.ui.screens.ChapterLessonsScreen
 import com.alexpo.grammermate.ui.screens.StoryReaderScreen
 import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.VerbDrillViewModel
@@ -89,6 +90,7 @@ import com.alexpo.grammermate.ui.components.ProfileStatsPopup
 private object Routes {
     const val HOME = "home"
     const val LESSON = "lesson"
+    const val CHAPTER_LESSONS = "chapter_lessons"
     const val ELITE = "elite"        // backward compat redirect
     const val VOCAB = "vocab"        // backward compat redirect
     const val DAILY_PRACTICE = "daily_practice"
@@ -335,12 +337,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                 },
                                 onContinue = remember { { chapter ->
-                                    // Navigate to first incomplete lesson in chapter
-                                    val firstIncompleteLesson = vm.getFirstIncompleteLesson(chapter)
-                                    if (firstIncompleteLesson != null) {
-                                        vm.selectLesson(firstIncompleteLesson)
-                                        onNavigate(Routes.LESSON)
-                                    }
+                                    // Navigate to chapter lessons screen
+                                    vm.selectChapter(chapter)
+                                    onNavigate(Routes.CHAPTER_LESSONS)
                                 } },
                                 onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
                                 onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
@@ -704,11 +703,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             },
                             onContinue = remember { { chapter ->
-                                val firstIncompleteLesson = vm.getFirstIncompleteLesson(chapter)
-                                if (firstIncompleteLesson != null) {
-                                    vm.selectLesson(firstIncompleteLesson)
-                                    onNavigate(Routes.LESSON)
-                                }
+                                // Navigate to chapter lessons screen
+                                vm.selectChapter(chapter)
+                                onNavigate(Routes.CHAPTER_LESSONS)
                             } },
                             onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
                             onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
@@ -760,6 +757,35 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             }
                         )
+                    }
+
+                    composable(Routes.CHAPTER_LESSONS) {
+                        val selectedChapter = state.navigation.selectedChapter
+                        val packId = state.navigation.activePackId
+
+                        if (selectedChapter != null && packId != null) {
+                            val chapterProgress = vm.getChapterProgress(packId.value, selectedChapter.chapterId)
+                            val lessons = vm.getLessonsForChapter(selectedChapter)
+                            val completedLessonIds = vm.getCompletedLessonIds(selectedChapter)
+
+                            ChapterLessonsScreen(
+                                chapterTitle = selectedChapter.title,
+                                chapterSubtitle = selectedChapter.subtitle ?: "",
+                                lessons = lessons,
+                                chapterProgress = chapterProgress,
+                                completedLessonIds = completedLessonIds,
+                                onLessonClick = remember { { lesson ->
+                                    vm.selectLesson(lesson.id.value)
+                                    onNavigate(Routes.LESSON)
+                                } },
+                                onBack = remember { { onNavigate(Routes.GRAMMAR_STORY_ROADMAP) } }
+                            )
+                        } else {
+                            // Fallback if no chapter selected
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                            }
+                        }
                     }
                 }
 

@@ -645,6 +645,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         saveProgress()
     }
 
+    fun selectChapter(chapter: Chapter) {
+        _coreState.update {
+            it.copy(navigation = it.navigation.copy(selectedChapter = chapter))
+        }
+    }
+
+    fun getLessonsForChapter(chapter: Chapter): List<Lesson> {
+        val packId = _coreState.value.navigation.activePackId?.value
+            ?: return emptyList()
+
+        return chapter.lessons.mapNotNull { lessonId ->
+            _coreState.value.navigation.lessons.firstOrNull { it.id.value == lessonId }
+        }
+    }
+
+    fun getChapterProgress(packId: String, chapterId: String): ChapterProgress? {
+        return _coreState.value.chapterProgresses[chapterId]
+    }
+
     fun selectPack(packId: String) {
         // Cancel any active daily session before switching packs
         if (_coreState.value.daily.dailySession.active) {
@@ -1974,6 +1993,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     fun getChapterProgress(chapterId: String): ChapterProgress? {
         return _coreState.value.chapterProgresses[chapterId]
+    }
+
+    fun getCompletedLessonIds(chapter: Chapter): Set<String> {
+        val languageId = _coreState.value.navigation.selectedLanguageId.value
+        return chapter.lessons.filter { lessonId ->
+            val mastery = masteryStore.get(lessonId, languageId)
+            mastery?.intervalStepIndex ?: 0 >= 3 // Learned threshold
+        }.toSet()
     }
 }
 

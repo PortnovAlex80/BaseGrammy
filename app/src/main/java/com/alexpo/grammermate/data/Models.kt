@@ -448,6 +448,7 @@ data class NavigationState(
     val appVersion: String = "1.5",
     val hasVerbDrill: Boolean = false,
     val hasVocabDrill: Boolean = false,
+    val selectedChapter: Chapter? = null,
     val welcomeDialogAttempts: Int = 0,
     val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
@@ -683,6 +684,22 @@ data class ChapterProgress(
         require(lessonsStarted >= 0) { "lessonsStarted must be >= 0" }
         require(lessonsCompleted >= 0) { "lessonsCompleted must be >= 0" }
         require(lessonsStarted >= lessonsCompleted) { "lessonsStarted must be >= lessonsCompleted" }
+    }
+
+    val progress: Float
+        get() = if (lessonsStarted == 0) 0f else lessonsCompleted.toFloat() / lessonsStarted
+
+    val totalLessons: Int
+        get() = lessonsStarted // This is updated as lessons are discovered
+
+    /**
+     * Check if a specific lesson is completed (mastery step >= 3).
+     * This requires mastery data to be passed separately.
+     */
+    fun isLessonCompleted(lessonId: String): Boolean {
+        // This is a placeholder - actual completion check requires mastery data
+        // Returns false by default, should be overridden with actual mastery check
+        return false
     }
 
     companion object {
