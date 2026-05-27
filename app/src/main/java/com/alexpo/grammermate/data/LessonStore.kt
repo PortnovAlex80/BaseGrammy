@@ -227,6 +227,15 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun getLessonIdsForPack(packId: String): List<String> {
         val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
+
+        // For schema v2, collect lessons from chapters in order
+        if (manifest.schemaVersion == 2) {
+            return manifest.chapters
+                .sortedBy { it.order }
+                .flatMap { chapter -> chapter.lessons }
+        }
+
+        // For schema v1, use root-level lessons
         return manifest.lessons.sortedBy { it.order }.map { it.lessonId }
     }
 
