@@ -11,6 +11,8 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonId
+import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
@@ -48,6 +50,7 @@ import com.alexpo.grammermate.feature.daily.DailyPracticeCoordinator
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.BadSentenceHelper
 import com.alexpo.grammermate.feature.progress.BadSentenceResult
+import com.alexpo.grammermate.feature.progress.ChapterProgressCalculator
 import com.alexpo.grammermate.feature.progress.FlowerRefresher
 import com.alexpo.grammermate.feature.progress.ProgressResult
 import com.alexpo.grammermate.feature.progress.ProgressRestorer
@@ -73,6 +76,8 @@ import com.alexpo.grammermate.data.PomodoroSessionStats
 import com.alexpo.grammermate.data.PomodoroSettingsStore
 import com.alexpo.grammermate.data.CardDifficultyRating
 import com.alexpo.grammermate.data.PackLessonProgressStore
+import com.alexpo.grammermate.data.Chapter
+import com.alexpo.grammermate.data.ChapterProgress
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -447,6 +452,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 rebuildSchedules(lessons)
                 buildSessionCards()
                 refreshFlowerStates()
+                loadChapters()
                 if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
                     sessionRunner.resumeTimer()
                     (_coreState.value.cardSession.currentCard as? SentenceCard)?.let {
@@ -505,6 +511,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     rebuildSchedules(updatedLessons)
                     buildSessionCards()
                     refreshFlowerStates()
+                    loadChapters()
                 }
             }
 
@@ -583,6 +590,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         rebuildSchedules(lessons)
         buildSessionCards()
         refreshFlowerStates()
+        loadChapters()
         saveProgress()
         audioCoordinator.ttsModelManager.currentLanguageId = languageId
         audioCoordinator.checkTtsModel()
@@ -631,6 +639,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshDrillVisibility()
         buildSessionCards()
         refreshFlowerStates()
+        loadChapters()
         saveProgress()
     }
 
@@ -654,8 +663,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             dailyPracticeCoordinator.resetState()
             dailyPracticeCoordinator.initializeCursor()
             refreshDrillVisibility()
+            loadChapters()
             saveProgress()
         }
+    }
+
+    /**
+     * Check if a pack has chapters (Grammar Story Roadmap support).
+     */
+    fun hasPackChapters(packId: String): Boolean {
+        return lessonStore.hasChapters(packId)
     }
 
     fun selectMode(mode: TrainingMode) {
@@ -851,6 +868,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             refreshDrillVisibility()
             rebuildSchedules(lessons)
             buildSessionCards()
+            loadChapters()
             saveProgress()
         } catch (e: Exception) {
             Log.e(logTag, "Lesson pack import failed", e)
@@ -925,6 +943,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshDrillVisibility()
         rebuildSchedules(lessons)
         buildSessionCards()
+        loadChapters()
         saveProgress()
     }
 
@@ -1379,7 +1398,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             selectedLanguageId = s.navigation.selectedLanguageId,
             lessons = s.navigation.lessons
         )
+
+        // Update chapter progress when cards are shown (mastery changes)
+        s.navigation.selectedLessonId?.let { lessonId ->
+            updateChapterProgress(lessonId.value)
+        }
     }
+
     private fun checkAndMarkLessonCompleted() {
         val s = _coreState.value
         progressTracker.checkAndMarkLessonCompleted(
@@ -1387,6 +1412,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             selectedLessonId = s.navigation.selectedLessonId,
             selectedLanguageId = s.navigation.selectedLanguageId
         )
+
+        // Update chapter progress when lesson completion status changes
+        s.navigation.selectedLessonId?.let { lessonId ->
+            updateChapterProgress(lessonId.value)
+        }
     }
     private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
     private fun updateStreak(forcedPracticeType: PracticeType? = null) {
@@ -1684,4 +1714,287 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    // ── Grammar Story Roadmap Methods ───────────────────────────────────────────
+
+    /**
+     * Get chapter cards for the current pack with progress and status.
+     * Returns an empty list if the pack has no chapters.
+     */
+    fun getChapterCards(): List<ChapterCardUi> {
+        val activePackId = _coreState.value.navigation.activePackId?.value ?: return emptyList()
+        val selectedLanguageId = _coreState.value.navigation.selectedLanguageId.value
+
+        if (!lessonStore.hasChapters(activePackId)) {
+            return emptyList()
+        }
+
+        val chapters = lessonStore.getChapters(activePackId)
+        val chapterProgressStore = container.chapterProgressStore(activePackId)
+
+        // Get mastery states for all lessons in the pack
+        val allLessonMasteryStates = mutableMapOf<String, LessonMasteryState>()
+        for (lessonId in lessonStore.getLessonIdsForPack(activePackId)) {
+            val masteryState = masteryStore.get(lessonId, selectedLanguageId) ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
+            allLessonMasteryStates[lessonId] = masteryState
+        }
+
+        return chapters.mapIndexed { index, chapter ->
+            val progress = chapterProgressStore.getProgress(chapter.chapterId) ?: ChapterProgress.forChapter(chapter.chapterId)
+            val status = calculateChapterStatus(chapter, progress, allLessonMasteryStates, index)
+
+            ChapterCardUi(
+                chapter = chapter,
+                progress = progress,
+                status = status
+            )
+        }
+    }
+
+    /**
+     * Calculate the status of a chapter based on progress.
+     * All chapters are accessible - no locks. Users can learn at their own pace.
+     */
+    private fun calculateChapterStatus(
+        chapter: com.alexpo.grammermate.data.Chapter,
+        progress: com.alexpo.grammermate.data.ChapterProgress,
+        masteryStates: Map<String, LessonMasteryState>,
+        chapterIndex: Int
+    ): ChapterStatus {
+        return when {
+            progress.lessonsCompleted >= chapter.lessons.size -> ChapterStatus.DONE
+            else -> ChapterStatus.ACTIVE // All chapters are accessible
+        }
+    }
+
+    /**
+     * Load story content from a story file with automatic language detection.
+     * Returns null if the file doesn't exist or cannot be read.
+     *
+     * This method uses the story file name to automatically detect the appropriate
+     * story file based on the UI language setting (Russian/English).
+     *
+     * Language detection logic:
+     * - If UI language is "ru", prefer Russian versions (*_original.md)
+     * - If UI language is "en" or "system", prefer English versions
+     * - Falls back to available version if preferred doesn't exist
+     */
+    fun loadStoryContent(storyFile: String?): String? {
+        if (storyFile == null) return null
+
+        return try {
+            val activePackId = _coreState.value.navigation.activePackId?.value ?: return null
+            val uiLanguage = currentUiLanguage
+
+            // Determine if we should prefer Russian or English stories
+            val preferRussian = when (uiLanguage.lowercase()) {
+                "ru" -> true
+                "system" -> {
+                    // Check system locale
+                    val systemLang = java.util.Locale.getDefault().language
+                    systemLang == "ru"
+                }
+                else -> false
+            }
+
+            // Generate candidates based on language preference
+            val candidates = when {
+                storyFile.contains("_original") && preferRussian -> {
+                    // Already have Russian file and prefer Russian - use as is
+                    listOf(storyFile)
+                }
+                storyFile.contains("_original") && !preferRussian -> {
+                    // Have Russian file but prefer English - try English fallback
+                    val baseName = storyFile.replace("_original", "")
+                    listOf(baseName, storyFile) // Try English first, then Russian
+                }
+                !storyFile.contains("_original") && preferRussian -> {
+                    // Have English file but prefer Russian - try Russian fallback
+                    val russianName = storyFile.replace(".md", "_original.md")
+                    listOf(russianName, storyFile) // Try Russian first, then English
+                }
+                else -> {
+                    // Have English file and prefer English - use as is
+                    listOf(storyFile)
+                }
+            }
+
+            // Try each candidate until one works
+            for (candidate in candidates) {
+                val content = lessonStore.getChapterStory(activePackId, candidate)
+                if (content != null) {
+                    return content
+                }
+            }
+
+            null
+        } catch (e: Exception) {
+            Log.e(logTag, "Failed to load story content: $storyFile", e)
+            null
+        }
+    }
+
+    /**
+     * Get the first incomplete lesson ID in a chapter.
+     * Returns null if all lessons are completed or chapter is empty.
+     */
+    fun getFirstIncompleteLesson(chapter: com.alexpo.grammermate.data.Chapter): String? {
+        val selectedLanguageId = _coreState.value.navigation.selectedLanguageId.value
+
+        for (lessonId in chapter.lessons) {
+            val masteryState = masteryStore.get(lessonId, selectedLanguageId) ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
+            // Consider lesson incomplete if intervalStepIndex < 3 (learned threshold)
+            if (masteryState.intervalStepIndex < 3) {
+                return lessonId
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Load chapters for the current pack into TrainingUiState.
+     * Call this when the app starts or when switching packs.
+     */
+    private fun loadChapters() {
+        val activePackId = _coreState.value.navigation.activePackId?.value ?: run {
+            // Clear chapter state if no pack is active
+            _coreState.update {
+                it.copy(
+                    chapters = emptyList(),
+                    chapterProgresses = emptyMap(),
+                    activeChapterId = null
+                )
+            }
+            return
+        }
+
+        if (!lessonStore.hasChapters(activePackId)) {
+            // Pack has no chapters - clear chapter state
+            _coreState.update {
+                it.copy(
+                    chapters = emptyList(),
+                    chapterProgresses = emptyMap(),
+                    activeChapterId = null
+                )
+            }
+            return
+        }
+
+        val chapters = lessonStore.getChapters(activePackId)
+        val chapterProgressStore = container.chapterProgressStore(activePackId)
+        val chapterProgresses = chapterProgressStore.loadAll()
+
+        // Determine active chapter ID (first incomplete or first chapter)
+        val activeChapterId = determineActiveChapter(chapters, chapterProgresses)
+
+        _coreState.update {
+            it.copy(
+                chapters = chapters,
+                chapterProgresses = chapterProgresses,
+                activeChapterId = activeChapterId
+            )
+        }
+    }
+
+    /**
+     * Determine the active chapter ID based on progress.
+     * Returns the first incomplete chapter, or the last chapter if all are complete.
+     */
+    private fun determineActiveChapter(
+        chapters: List<Chapter>,
+        chapterProgresses: Map<String, ChapterProgress>
+    ): String? {
+        if (chapters.isEmpty()) return null
+
+        // Find first incomplete chapter
+        for (chapter in chapters) {
+            val progress = chapterProgresses[chapter.chapterId]
+            if (progress == null || progress.lessonsCompleted < chapter.lessons.size) {
+                return chapter.chapterId
+            }
+        }
+
+        // All chapters complete - return the last one
+        return chapters.lastOrNull()?.chapterId
+    }
+
+    /**
+     * Update chapter progress for a specific lesson.
+     * Call this when lesson mastery changes (card practiced, lesson completed).
+     *
+     * @param lessonId The lesson ID that was updated
+     */
+    private fun updateChapterProgress(lessonId: String) {
+        val activePackId = _coreState.value.navigation.activePackId?.value ?: return
+        val selectedLanguageId = _coreState.value.navigation.selectedLanguageId.value
+
+        if (!lessonStore.hasChapters(activePackId)) {
+            return
+        }
+
+        val chapters = lessonStore.getChapters(activePackId)
+        val chapterProgressStore = container.chapterProgressStore(activePackId)
+
+        // Find which chapter(s) contain this lesson
+        val affectedChapters = chapters.filter { chapter ->
+            lessonId in chapter.lessons
+        }
+
+        if (affectedChapters.isEmpty()) {
+            return
+        }
+
+        // Get mastery states for all lessons in the pack
+        val allLessonMasteryStates = mutableMapOf<String, LessonMasteryState>()
+        for (lid in lessonStore.getLessonIdsForPack(activePackId)) {
+            val masteryState = masteryStore.get(lid, selectedLanguageId) ?: LessonMasteryState(LessonId(lid), LanguageId(selectedLanguageId))
+            allLessonMasteryStates[lid] = masteryState
+        }
+
+        // Update progress for each affected chapter
+        for (chapter in affectedChapters) {
+            val newProgress = ChapterProgressCalculator.calculateChapterProgress(
+                chapter = chapter,
+                masteryStates = allLessonMasteryStates
+            )
+
+            // Persist to store atomically
+            chapterProgressStore.upsertProgress(newProgress)
+
+            // Update in-memory state
+            _coreState.update {
+                it.copy(
+                    chapterProgresses = it.chapterProgresses.toMutableMap().apply {
+                        put(newProgress.chapterId, newProgress)
+                    }
+                )
+            }
+        }
+    }
+
+    /**
+     * Get chapter progress for a specific chapter.
+     * Returns null if chapter has no progress data.
+     */
+    fun getChapterProgress(chapterId: String): ChapterProgress? {
+        return _coreState.value.chapterProgresses[chapterId]
+    }
+}
+
+/**
+ * UI model for a chapter card in the roadmap.
+ */
+data class ChapterCardUi(
+    val chapter: com.alexpo.grammermate.data.Chapter,
+    val progress: com.alexpo.grammermate.data.ChapterProgress,
+    val status: ChapterStatus
+)
+
+/**
+ * Status of a chapter in the roadmap.
+ */
+enum class ChapterStatus {
+    ACTIVE,     // Started but not completed
+    DONE        // All lessons completed
 }
