@@ -365,9 +365,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                     it.isFile && it.name.endsWith(".csv")
                 }?.toTypedArray() ?: emptyArray()
             } else {
-                // Old format: root directory
+                // Old format: root directory, exclude drill files
+                val drillPrefix = "${languageId}_drill_"
                 packDir.listFiles()?.filter {
-                    it.isFile && it.name.endsWith(".csv")
+                    it.isFile && it.name.endsWith(".csv") && !it.name.startsWith(drillPrefix)
                 }?.toTypedArray() ?: emptyArray()
             }
 
