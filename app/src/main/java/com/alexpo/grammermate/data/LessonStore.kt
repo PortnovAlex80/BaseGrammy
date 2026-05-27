@@ -629,10 +629,15 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
         // List all available story files for this chapter
         val availableFiles = storiesDir.listFiles()?.filter { file ->
-            file.name.startsWith("chapter_${chapterBase}") && file.name.endsWith(".md")
+            file.name.startsWith("chapter_$chapterBase") && file.name.endsWith(".md")
         } ?: emptyList()
 
-        android.util.Log.d("LessonStore", "Available story files for chapter $chapterBase: ${availableFiles.map { it.name }}")
+        android.util.Log.d("LessonStore", "Available story files for chapter_$chapterBase: ${availableFiles.map { it.name }}")
+
+        if (availableFiles.isEmpty()) {
+            android.util.Log.w("LessonStore", "No story files found for chapter_$chapterBase")
+            return null
+        }
 
         // Prioritize based on language preference
         // _original.md files are Russian, others are English translations
@@ -654,7 +659,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             }
         }
 
-        android.util.Log.w("LessonStore", "No story file found for $chapterId in pack $packId")
+        android.util.Log.w("LessonStore", "No suitable story file found for chapter: $chapterId")
         return null
     }
 
