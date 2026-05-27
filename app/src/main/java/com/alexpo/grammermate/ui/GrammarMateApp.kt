@@ -115,8 +115,7 @@ private data class DialogState(
     val pendingDailyLevel: Int = 0,
     val isLoadingDaily: Boolean = false,
     val storyReaderChapterTitle: String? = null,
-    val storyReaderContent: String? = null,
-    val storyReaderIsPlaying: Boolean = false
+    val storyReaderContent: String? = null
 )
 
 // ── Main composable ──────────────────────────────────────────────────────────
@@ -394,7 +393,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 },
                                 hasVerbDrill = state.navigation.hasVerbDrill,
                                 hasVocabDrill = state.navigation.hasVocabDrill,
-                                showBackButton = true  // Show back button to return to pack selection
+                                showBackButton = true,  // Show back button to return to pack selection
+                                isStoryPlaying = state.audio.ttsState == TtsState.Speaking,
+                                onStopStory = remember { { vm.stopStoryNarration() } }
                             )
                         } else {
                             // Show Classic Home Screen for v1 packs without chapters
@@ -781,13 +782,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             },
                             hasVerbDrill = state.navigation.hasVerbDrill,
-                            hasVocabDrill = state.navigation.hasVocabDrill
+                            hasVocabDrill = state.navigation.hasVocabDrill,
+                            isStoryPlaying = state.audio.ttsState == TtsState.Speaking,
+                            onStopStory = remember { { vm.stopStoryNarration() } }
                         )
                     }
 
                     composable(Routes.STORY_READER) {
                         val chapterTitle = dialogs.storyReaderChapterTitle ?: "Unknown Chapter"
                         val content = dialogs.storyReaderContent ?: ""
+                        val isCurrentlyPlaying = state.audio.ttsState == TtsState.Speaking
 
                         StoryReaderScreen(
                             chapterTitle = chapterTitle,
@@ -795,13 +799,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onBack = remember {
                                 {
                                     // Stop TTS if playing
-                                    if (dialogs.storyReaderIsPlaying) {
+                                    if (isCurrentlyPlaying) {
                                         vm.stopStoryNarration()
                                     }
                                     dialogs = dialogs.copy(
                                         storyReaderChapterTitle = null,
-                                        storyReaderContent = null,
-                                        storyReaderIsPlaying = false
+                                        storyReaderContent = null
                                     )
                                     onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
                                 }
@@ -822,17 +825,15 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     if (plainText.isNotEmpty()) {
                                         // Stories are in Russian - use Russian TTS
                                         vm.speakStoryText(plainText, "ru")
-                                        dialogs = dialogs.copy(storyReaderIsPlaying = true)
                                     }
                                 }
                             },
                             onStopStory = remember {
                                 {
                                     vm.stopStoryNarration()
-                                    dialogs = dialogs.copy(storyReaderIsPlaying = false)
                                 }
                             },
-                            isPlaying = dialogs.storyReaderIsPlaying
+                            isPlaying = isCurrentlyPlaying
                         )
                     }
 

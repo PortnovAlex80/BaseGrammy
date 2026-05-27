@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Card
 import androidx.compose.material3.TopAppBarDefaults
@@ -58,7 +59,9 @@ fun GrammarStoryRoadmapScreen(
     onOpenSettings: () -> Unit = {},
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
-    showBackButton: Boolean = false  // Default to false - shown on HOME route
+    showBackButton: Boolean = false,  // Default to false - shown on HOME route
+    isStoryPlaying: Boolean = false,
+    onStopStory: () -> Unit = {}
 ) {
     @OptIn(ExperimentalMaterial3Api::class)
     Scaffold(
@@ -73,6 +76,12 @@ fun GrammarStoryRoadmapScreen(
                     }
                 },
                 actions = {
+                    // Show stop button if story is playing
+                    if (isStoryPlaying) {
+                        IconButton(onClick = onStopStory) {
+                            Icon(Icons.Default.Stop, contentDescription = "Stop story")
+                        }
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }

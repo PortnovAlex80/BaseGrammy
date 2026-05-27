@@ -112,22 +112,30 @@ class TtsEngine(private val context: Context) {
 
         withContext(Dispatchers.Default) {
             try {
-                // Phase 1: Check files (70-75%) - for both KOKORO and VITS_PIPER
+                // Phase 1: Check files (70-75%) - only for KOKORO models
                 emitInitializing(InitPhase.CHECKING_FILES, 70)
                 val modelDir = File(context.filesDir, "tts/${spec.modelDirName}")
                 val missingFiles = spec.requiredFiles.filter { !File(modelDir, it).exists() || File(modelDir, it).length() == 0L }
-                if (missingFiles.isNotEmpty()) {
+
+                // Only KOKORO requires offline files, VITS_PIPER can use system TTS fallback
+                if (missingFiles.isNotEmpty() && spec.modelType == TtsModelType.KOKORO) {
                     throw IllegalStateException("Missing or empty model files: $missingFiles")
+                }
+
+                if (missingFiles.isNotEmpty() && spec.modelType == TtsModelType.VITS_PIPER) {
+                    Log.d(TAG, "VITS_PIPER model files not found for $languageId, falling back to system TTS")
                 }
                 emitInitializing(InitPhase.CHECKING_FILES, 75)
 
-                // Phase 2: Load Sherpa-ONNX offline TTS engine (75-95%)
+                // Phase 2: Load engine (75-95%). Use Android's system TTS to avoid
+                // native Sherpa TTS crashes observed on some tablets during OfflineTts init.
                 System.gc()
                 emitInitializing(InitPhase.LOADING_MODEL, 75)
 
-                val config = buildConfig(spec, modelDir)
-                val tts = OfflineTts(config)
-                offlineTts = tts
+                val systemReady = initSystemTts(languageId)
+                if (!systemReady) {
+                    throw IllegalStateException("Android system TTS engine is unavailable for $languageId")
+                }
                 emitInitializing(InitPhase.LOADING_MODEL, 95)
 
                 // Phase 3: Finalize (95-100%)
@@ -185,6 +193,34 @@ class TtsEngine(private val context: Context) {
                     val ready = availability != TextToSpeech.LANG_MISSING_DATA &&
                         availability != TextToSpeech.LANG_NOT_SUPPORTED
                     if (ready) {
+                        // Add utterance progress listener to track playback completion
+                        val utteranceListener = object : android.speech.tts.UtteranceProgressListener() {
+                            override fun onStart(utteranceId: String?) {
+                                _state.value = TtsState.Speaking
+                            }
+
+                            override fun onDone(utteranceId: String?) {
+                                if (_state.value == TtsState.Speaking) {
+                                    _state.value = TtsState.Ready
+                                    abandonAudioFocus()
+                                }
+                            }
+
+                            override fun onError(utteranceId: String?) {
+                                if (_state.value == TtsState.Speaking) {
+                                    _state.value = TtsState.Error("System TTS playback error")
+                                    abandonAudioFocus()
+                                }
+                            }
+
+                            override fun onStop(utteranceId: String?, interrupted: Boolean) {
+                                if (_state.value == TtsState.Speaking) {
+                                    _state.value = TtsState.Ready
+                                    abandonAudioFocus()
+                                }
+                            }
+                        }
+                        tts.setOnUtteranceProgressListener(utteranceListener)
                         systemTts = tts
                     } else {
                         tts.shutdown()
@@ -251,6 +287,52 @@ class TtsEngine(private val context: Context) {
                 if (oldJob != null) {
                     oldJob.cancel()
                     oldJob.join()
+                }
+
+                val system = systemTts
+                if (system != null) {
+                    requestAudioFocus()
+
+                    // Split long text into sentences for Google TTS (limit ~4000 chars)
+                    val maxChunkLength = 4000
+                    if (text.length <= maxChunkLength) {
+                        // Short text - speak directly
+                        val params = android.os.Bundle().apply {
+                            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
+                        }
+                        system.setSpeechRate(safeSpeed)
+                        val utteranceId = "tts-${generation.incrementAndGet()}"
+                        val result = system.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+                        if (result != TextToSpeech.SUCCESS) {
+                            _state.value = TtsState.Error("System TTS playback failed")
+                            abandonAudioFocus()
+                        }
+                        // Don't set state to Ready here - let OnUtteranceProgressListener handle it
+                        return
+                    } else {
+                        // Long text - split by sentence boundaries and play sequentially
+                        val sentences = text.split(Regex("""(?<=[.!?])\s+"""))
+                        var lastResult = TextToSpeech.SUCCESS
+                        for ((index, sentence) in sentences.withIndex()) {
+                            if (sentence.isBlank()) continue
+                            val params = android.os.Bundle().apply {
+                                putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
+                            }
+                            system.setSpeechRate(safeSpeed)
+                            val utteranceId = "tts-${generation.incrementAndGet()}-part-$index"
+                            val queueMode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
+                            val result = system.speak(sentence.trim(), queueMode, params, utteranceId)
+                            if (result != TextToSpeech.SUCCESS) {
+                                lastResult = result
+                            }
+                        }
+                        if (lastResult != TextToSpeech.SUCCESS) {
+                            _state.value = TtsState.Error("System TTS playback failed")
+                            abandonAudioFocus()
+                        }
+                        // Don't set state to Ready here - let OnUtteranceProgressListener handle it
+                        return
+                    }
                 }
 
                 val tts = offlineTts
@@ -346,8 +428,8 @@ class TtsEngine(private val context: Context) {
             val oldJob = speakJob
             oldJob?.cancel()
             oldJob?.join()
-            if (offlineTts != null && _state.value == TtsState.Speaking) {
-                _state.value = TtsState.Ready
+            if (_state.value == TtsState.Speaking) {
+                _state.value = if (offlineTts != null || systemTts != null) TtsState.Ready else TtsState.Idle
             }
         }
     }
