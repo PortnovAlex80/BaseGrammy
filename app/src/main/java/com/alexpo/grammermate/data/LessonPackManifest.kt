@@ -51,7 +51,8 @@ data class LessonPackManifest(
                 } else {
                     emptyList()
                 }
-                lessons.add(LessonPackLesson(lessonId, order, title, file, type, tenses))
+                val grammarChip = entry.optString("grammarChip").trim().ifBlank { null }
+                lessons.add(LessonPackLesson(lessonId, order, title, file, type, tenses, grammarChip))
 
             }
             val displayName = json.optString("displayName").trim().ifBlank { null }
@@ -144,5 +145,6 @@ data class LessonPackLesson(
     val title: String?,
     val file: String,
     val type: String = "standard",
-    val tenses: List<String> = emptyList()
+    val tenses: List<String> = emptyList(),
+    val grammarChip: String? = null
 )

@@ -1,0 +1,25 @@
+{
+  "key": "C05",
+  "title": "C05 - Indirect Speech: Past Main Verb",
+  "essence": "With a past reporting verb, Italian often shifts the dependent tense backward.",
+  "formula": null,
+  "base": null,
+  "dontConfuse": "Future-in-the-past uses condizionale composto.",
+  "examples": [
+    {
+      "it": "Dice che lavora -> Ha detto che lavorava.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dice che ha finito -> Ha detto che aveva finito.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dice che verrà -> Ha detto che sarebbe venuto.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

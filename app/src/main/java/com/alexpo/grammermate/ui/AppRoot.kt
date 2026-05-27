@@ -2,6 +2,7 @@ package com.alexpo.grammermate.ui
 
 import android.content.Context
 import android.util.Log
+import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +25,14 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.AppConfigStoreImpl
 import com.alexpo.grammermate.data.AppVersions
+import com.alexpo.grammermate.data.GrammarChipStore
 import com.alexpo.grammermate.data.PackDailyCursorStoreImpl
 import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ProgressStoreImpl
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.data.RestoreStatus
+import kotlinx.coroutines.launch
 
 private fun checkAndMigrate(context: Context) {
     val configStore = AppConfigStoreImpl(context)
@@ -94,6 +97,12 @@ fun AppRoot() {
     // Trigger migration on app launch
     LaunchedEffect(Unit) {
         checkAndMigrate(context)
+
+        // Initialize GrammarChipStore to load grammar chips from installed packs
+        launch {
+            val packsDir = File(context.filesDir, "grammarmate/packs")
+            GrammarChipStore.initialize(context, packsDir)
+        }
     }
 
     val vm: TrainingViewModel = viewModel()

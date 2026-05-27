@@ -1,0 +1,25 @@
+{
+  "key": "B02",
+  "title": "B02 - Participio Passato",
+  "essence": "Participio passato is the Italian V3.",
+  "formula": "- `parlare -> parlato`\n- `vedere -> veduto / visto`\n- `finire -> finito`\n- `fare -> fatto`\n- `dire -> detto`\n- `scrivere -> scritto`\n- `aprire -> aperto`",
+  "base": null,
+  "dontConfuse": "As an adjective it agrees: `porta aperta`, `libri letti`.",
+  "examples": [
+    {
+      "it": "un lavoro fatto",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "una porta aperta",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "una lettera scritta",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

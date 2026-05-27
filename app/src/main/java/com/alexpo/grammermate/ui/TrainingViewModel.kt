@@ -402,6 +402,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // via TrainingUiState.isLoading until this coroutine completes.
         viewModelScope.launch(Dispatchers.IO) {
             lessonStore.ensureSeedData()
+            // Automatically seed/update default packs if needed
+            lessonStore.updateDefaultPacksIfNeeded()
             badSentenceStore.migrateIfNeeded(lessonStore)
             val progress = progressStore.load()
             val config = configStore.load()

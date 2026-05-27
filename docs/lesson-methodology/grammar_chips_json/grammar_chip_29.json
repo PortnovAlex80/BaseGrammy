@@ -1,0 +1,30 @@
+{
+  "key": "B13",
+  "title": "B13 - Verbi Riflessivi",
+  "essence": "The subject acts on itself.",
+  "formula": "`mi, ti, si, ci, vi, si + verb`",
+  "base": null,
+  "dontConfuse": "With modals: `Devo alzarmi` or `Mi devo alzare`.",
+  "examples": [
+    {
+      "it": "Mi alzo presto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ti lavi le mani.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Si veste.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ci svegliamo alle sette.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

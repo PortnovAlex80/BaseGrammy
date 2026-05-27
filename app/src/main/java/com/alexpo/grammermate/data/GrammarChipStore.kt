@@ -4,56 +4,91 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 
 /**
- * Store for loading and caching grammar chip content from markdown files.
+ * Store for loading and caching grammar chip content from pack directories.
  *
- * Grammar chips are loaded from `docs/lesson-methodology/grammar_chips/GRAMMAR_CHIP_*.md`.
- * The parser supports the short English chip format and the legacy Russian section names.
+ * Grammar chips are loaded from installed pack directories at:
+ * `filesDir/grammarmate/packs/{packId}/grammar_chips/grammar_chip_*.json`
+ *
+ * Each lesson can reference a grammar chip file via the manifest's `grammarChip` field.
  */
 object GrammarChipStore {
     private val cache = mutableMapOf<String, GrammarChip>()
-    private val lessonToChipKey = mutableMapOf<String, String>()
+    private val lessonToChipFile = mutableMapOf<String, Pair<String, String>>() // lessonId -> (packId, chipFile)
     private var initialized = false
 
     private const val TAG = "GrammarChipStore"
-    private const val GRAMMAR_CHIPS_DIR = "docs/lesson-methodology/grammar_chips"
 
-    suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
+    /**
+     * Initialize grammar chip store by scanning all installed packs.
+     * This should be called after packs are imported/installed.
+     */
+    suspend fun initialize(@Suppress("UNUSED_PARAMETER") context: Context, packsDir: File) = withContext(Dispatchers.IO) {
         if (initialized) return@withContext
 
         try {
-            val chipsDir = File(context.filesDir, GRAMMAR_CHIPS_DIR)
-            if (!chipsDir.exists()) {
-                Log.w(TAG, "Grammar chips directory not found: ${chipsDir.absolutePath}")
-                initialized = true
-                return@withContext
-            }
+            cache.clear()
+            lessonToChipFile.clear()
 
-            val chipFiles = chipsDir.listFiles { file ->
-                file.isFile && file.name.startsWith("GRAMMAR_CHIP_") && file.name.endsWith(".md")
-            } ?: emptyArray()
+            // Scan all installed pack directories
+            val packDirectories = packsDir.listFiles()?.filter { it.isDirectory } ?: emptyList()
 
-            Log.d(TAG, "Found ${chipFiles.size} grammar chip files")
+            Log.d(TAG, "Scanning ${packDirectories.size} pack directories for grammar chips")
 
-            chipFiles.forEach { file ->
+            packDirectories.forEach { packDir ->
+                val manifestFile = File(packDir, "manifest.json")
+                if (!manifestFile.exists()) {
+                    Log.d(TAG, "No manifest.json found in ${packDir.name}, skipping")
+                    return@forEach
+                }
+
                 try {
-                    val chip = parseGrammarChipFile(file)
-                    cache[chip.key] = chip
+                    @Suppress("UNUSED_VARIABLE") val manifest = LessonPackManifest.fromJson(manifestFile.readText())
+                    val packId = manifest.packId
 
-                    val lessonPattern = chip.key.lowercase()
-                    lessonToChipKey[lessonPattern] = chip.key
-                    lessonToChipKey["lesson_01_$lessonPattern"] = chip.key
-                    lessonToChipKey["lesson_02_$lessonPattern"] = chip.key
-                    lessonToChipKey["lesson_03_$lessonPattern"] = chip.key
+                    // Build lesson -> chip file mapping from manifest
+                    manifest.lessons.forEach { lesson ->
+                        val chipFile = lesson.grammarChip
+                        if (chipFile != null) {
+                            lessonToChipFile[lesson.lessonId] = Pair(packId, chipFile)
+                            Log.d(TAG, "Mapped ${lesson.lessonId} -> $packId/$chipFile")
+                        }
+                    }
+
+                    // Check if grammar_chips directory exists
+                    val gcDir = File(packDir, "grammar_chips")
+                    if (!gcDir.exists()) {
+                        Log.d(TAG, "No grammar_chips directory in $packId")
+                        return@forEach
+                    }
+
+                    // Load and cache grammar chip JSON files
+                    val chipFiles = gcDir.listFiles()?.filter {
+                        it.isFile && it.name.endsWith(".json")
+                    } ?: emptyList()
+
+                    Log.d(TAG, "Found ${chipFiles.size} grammar chip files in $packId")
+
+                    chipFiles.forEach { chipFile ->
+                        try {
+                            val chip = parseGrammarChipFromJson(chipFile)
+                            cache[chip.key] = chip
+                            Log.d(TAG, "Loaded grammar chip: ${chip.key}")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to parse grammar chip file: ${chipFile.name}", e)
+                        }
+                    }
+
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to parse grammar chip file: ${file.name}", e)
+                    Log.e(TAG, "Failed to process pack ${packDir.name}", e)
                 }
             }
 
             initialized = true
-            Log.d(TAG, "Initialized with ${cache.size} grammar chips")
+            Log.d(TAG, "Initialized with ${cache.size} grammar chips and ${lessonToChipFile.size} lesson mappings")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize GrammarChipStore", e)
             initialized = true
@@ -62,112 +97,98 @@ object GrammarChipStore {
 
     fun getChipByKey(key: String): GrammarChip? = cache[key.uppercase()]
 
+    /**
+     * Get grammar chip for a lesson ID.
+     * This looks up the lesson in the manifest mappings and returns the appropriate chip.
+     */
     fun getChipForLesson(lessonId: String): GrammarChip? {
-        val normalizedId = lessonId.lowercase()
+        val mapping = lessonToChipFile[lessonId] ?: return null
+        val (packId, chipFile) = mapping
 
-        lessonToChipKey[normalizedId]?.let { key -> return cache[key] }
+        // Extract chip key from filename (grammar_chip_01.json -> A01)
+        val chipNumber = chipFile.removePrefix("grammar_chip_").removeSuffix(".json")
+        val chipKey = getChipKeyFromNumber(chipNumber)
 
-        val chipKey = when {
-            normalizedId.contains("_") -> normalizedId.substringAfterLast("_")
-            else -> normalizedId
-        }
-
-        return cache[chipKey.uppercase()]
+        return cache[chipKey]
     }
 
     fun hasChipForLesson(lessonId: String): Boolean = getChipForLesson(lessonId) != null
 
     fun getAllChipKeys(): Set<String> = cache.keys
 
-    private fun parseGrammarChipFile(file: File): GrammarChip {
-        val lines = file.readText().lines()
+    /**
+     * Parse grammar chip from JSON file.
+     * JSON format matches the GrammarChip data class structure.
+     */
+    private fun parseGrammarChipFromJson(jsonFile: File): GrammarChip {
+        val jsonText = jsonFile.readText()
+        val json = JSONObject(jsonText)
 
-        val title = lines.firstOrNull { it.startsWith("# ") }?.removePrefix("# ")?.trim()
-            ?: throw IllegalArgumentException("No title found in ${file.name}")
-        val key = title.substringBefore("-").trim().uppercase()
+        val key = json.getString("key")
+        val title = json.getString("title")
+        val essence = json.getString("essence")
+        val formula = json.optString("formula").ifBlank { null }
+        val base = json.optString("base").ifBlank { null }
+        val dontConfuse = json.optString("dontConfuse").ifBlank { null }
 
-        var currentSection: String? = null
-        var essence: String? = null
-        var formula: StringBuilder? = null
-        var base: StringBuilder? = null
-        val examples = mutableListOf<GrammarExample>()
-        var dontConfuse: StringBuilder? = null
-        val otherSections = mutableMapOf<String, StringBuilder>()
+        // Parse examples array
+        val examplesArray = json.optJSONArray("examples")
+        val examples = if (examplesArray != null) {
+            (0 until examplesArray.length()).map { i ->
+                val exampleObj = examplesArray.getJSONObject(i)
+                GrammarExample(
+                    it = exampleObj.getString("it"),
+                    ru = exampleObj.optString("ru", ""),
+                    note = exampleObj.optString("note", "")
+                )
+            }
+        } else {
+            emptyList()
+        }
 
-        lines.forEach { line ->
-            when {
-                line.startsWith("## ") -> {
-                    val sectionName = line.removePrefix("## ").trim()
-                    currentSection = when (sectionName) {
-                        "Core Idea", "Суть", "РЎСѓС‚СЊ" -> "essence"
-                        "Form", "Formula", "Формула", "Р¤РѕСЂРјСѓР»Р°" -> "formula"
-                        "Base", "База", "Р‘Р°Р·Р°" -> "base"
-                        "Examples", "Примеры", "РџСЂРёРјРµСЂС‹" -> "examples"
-                        "Watch Out", "Don't Confuse", "Не путать", "РќРµ РїСѓС‚Р°С‚СЊ" -> "dontConfuse"
-                        else -> "other:$sectionName"
-                    }
-
-                    if (currentSection?.startsWith("other:") == true) {
-                        otherSections.getOrPut(currentSection!!.substringAfter(":")) { StringBuilder() }
-                    }
-                }
-                line.isNotBlank() && currentSection != null -> {
-                    when (currentSection) {
-                        "essence" -> essence = if (essence == null) line else "$essence\n$line"
-                        "formula" -> formula = appendLine(formula, line)
-                        "base" -> base = appendLine(base, line)
-                        "examples" -> {
-                            val trimmedLine = line.trim()
-                            val translatedExample =
-                                Regex("""^- `([^`]+)`\s*-\s*(.+?)\s*$""").find(trimmedLine)
-                            val italianOnlyExample = Regex("""^- `([^`]+)`\s*$""").find(trimmedLine)
-
-                            when {
-                                translatedExample != null -> {
-                                    val (itText, ruText) = translatedExample.destructured
-                                    examples.add(GrammarExample(itText, ruText.trim()))
-                                }
-                                italianOnlyExample != null -> {
-                                    examples.add(
-                                        GrammarExample(
-                                            it = italianOnlyExample.groupValues[1],
-                                            ru = ""
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                        "dontConfuse" -> dontConfuse = appendLine(dontConfuse, line)
-                        else -> {
-                            val sectionTitle = currentSection!!.substringAfter(":")
-                            otherSections[sectionTitle]!!.appendLine(line)
-                        }
-                    }
-                }
+        // Parse notes if present
+        val notes = mutableMapOf<String, String>()
+        val keys = json.keys()
+        keys?.forEach { noteKey ->
+            if (noteKey !in listOf("key", "title", "essence", "formula", "base", "examples", "dontConfuse")) {
+                notes[noteKey] = json.getString(noteKey)
             }
         }
 
         return GrammarChip(
             key = key,
             title = title,
-            essence = essence ?: throw IllegalArgumentException("No Core Idea section found in ${file.name}"),
-            formula = formula?.toString()?.trim(),
-            base = base?.toString()?.trim(),
+            essence = essence,
+            formula = formula,
+            base = base,
             examples = examples,
-            dontConfuse = dontConfuse?.toString()?.trim(),
-            notes = otherSections.mapValues { it.value.toString().trim() }
+            dontConfuse = dontConfuse,
+            notes = notes
         )
     }
 
-    private fun appendLine(builder: StringBuilder?, line: String): StringBuilder {
-        val target = builder ?: StringBuilder()
-        target.appendLine(line)
-        return target
+    /**
+     * Convert chip number to chip key (e.g., "01" -> "A01", "18" -> "B02").
+     * This is a simplified mapping - in production this should come from the chip data itself.
+     */
+    private fun getChipKeyFromNumber(number: String): String {
+        val num = number.toIntOrNull() ?: return number.uppercase()
+
+        // Map lesson numbers to grammar chip keys based on the curriculum structure
+        // A01-A16: lessons 1-16
+        // B01-B27: lessons 17-43
+        // C01-C20: lessons 44-63
+        return when {
+            num <= 16 -> "A$num.toString().padStart(2, '0')"
+            num <= 43 -> "B${(num - 16).toString().padStart(2, '0')}"
+            num <= 63 -> "C${(num - 43).toString().padStart(2, '0')}"
+            else -> number.uppercase()
+        }
     }
 
     fun clearCache() {
         cache.clear()
-        lessonToChipKey.clear()
+        lessonToChipFile.clear()
         initialized = false
     }
 }

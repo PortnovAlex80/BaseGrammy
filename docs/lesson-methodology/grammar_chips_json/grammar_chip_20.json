@@ -1,0 +1,30 @@
+{
+  "key": "B04",
+  "title": "B04 - Passato Prossimo with Essere",
+  "essence": "Movement, arrival/departure, and state change often use `essere`.",
+  "formula": "`essere + participio passato`",
+  "base": null,
+  "dontConfuse": "Transitive movement can use `avere`: `Ha attraversato la strada`.",
+  "examples": [
+    {
+      "it": "Sono andato a scuola.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "È arrivata a casa.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Siamo usciti.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Sono nato nel 1990.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}
