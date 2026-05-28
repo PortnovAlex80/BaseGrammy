@@ -4,13 +4,13 @@
 
 There is a kind of sentence that does something remarkable. It doesn't describe the world. It doesn't narrate events. It doesn't express facts or opinions or desires. It builds a world that doesn't exist — a world of *might have been*, of *could be*, of *if only*.
 
-This is the hypothetical sentence, the conditional construction, the *periodo ipotetico*. And it is one of the most sophisticated tools language has for expressing the complexity of human thought.
+This is the hypothetical sentence, the conditional construction, the {it}*periodo ipotetico*{/it}. And it is one of the most sophisticated tools language has for expressing the complexity of human thought.
 
 Italian approaches the hypothetical with a systematic clarity that reveals how the human mind constructs possibilities. The language doesn't just have a way to say "if." It has a map of the entire territory of what-might-be.
 
 ---
 
-The simplest hypothetical is the real condition — the *periodo ipotetico della realtà*.
+The simplest hypothetical is the real condition — the {it}*periodo ipotetico della realtà*{/it}.
 
 *Se piove, resto a casa.* — If it rains, I'll stay home.
 
@@ -26,7 +26,7 @@ This is the hypothetical at its simplest. It doesn't require any special grammar
 
 ---
 
-But the human mind doesn't just contemplate real possibilities. We also contemplate unreal ones. We imagine different worlds. We regret past mistakes. We dream of alternatives. And for this, Italian has the unreal hypothetical — the *periodo ipotetico dell'irrealtà*.
+But the human mind doesn't just contemplate real possibilities. We also contemplate unreal ones. We imagine different worlds. We regret past mistakes. We dream of alternatives. And for this, Italian has the unreal hypothetical — the {it}*periodo ipotetico dell'irrealtà*{/it}.
 
 There are two kinds: present unreal and past unreal.
 
@@ -84,7 +84,7 @@ The hypothetical is not just about regret. It is also about possibility — abou
 
 *Dovremmo partire.* — We should leave.
 
-These are not conditionals with explicit *se* clauses. They are implicit hypotheticals. *Potrebbe* is the conditional of *potere* — could. *Mi piacerebbe* is the conditional of *piacere* — would please (I would like). *Dovremmo* is the conditional of *dovere* — should (we would have to).
+These are not conditionals with explicit *se* clauses. They are implicit hypotheticals. *Potrebbe* is the conditional of {it}*potere*{/it} — could. *Mi piacerebbe* is the conditional of *piacere* — would please (I would like). *Dovremmo* is the conditional of {it}*dovere*{/it} — should (we would have to).
 
 The conditional mood is the mood of the possible, the polite, the tentative. It is how Italian speakers soften requests, express desires without demanding, suggest without insisting.
 

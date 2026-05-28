@@ -32,11 +32,11 @@ One of the smallest words in Italian. It opens a condition. Everything that foll
 
 Two words doing one job. Take them apart.
 
-*Saputo* — the past participle of *sapere*. Strip it back further: *sapere* — to know. The atom. The raw concept, without time, without person, without anything. *Sapere*: to know.
+*Saputo* — the past participle of {it}*sapere*{/it}. Strip it back further: {it}*sapere*{/it} — to know. The atom. The raw concept, without time, without person, without anything. *Sapere*: to know.
 
-*Avessi* — a form of *avere*. Literally: to have. Not "to have" as possession. "To have" as scaffolding — the auxiliary that holds *saputo* in time. Together: *avessi saputo* — I had known. But not simply "had known." The form of *avere* here marks a past that didn't happen. A past that existed only in the condition.
+*Avessi* — a form of {it}*avere*{/it}. Literally: to have. Not "to have" as possession. "To have" as scaffolding — the auxiliary that holds *saputo* in time. Together: *avessi saputo* — I had known. But not simply "had known." The form of {it}*avere*{/it} here marks a past that didn't happen. A past that existed only in the condition.
 
-Underneath these two words: *sapere* and *avere*. Two infinitives. Two atoms.
+Underneath these two words: {it}*sapere*{/it} and {it}*avere*{/it}. Two infinitives. Two atoms.
 
 ---
 
@@ -48,25 +48,25 @@ A pointer. It reaches backward to a specific moment. One atom, no decomposition 
 
 *Che saresti sparita.*
 
-*Sparita* — from *sparire*. To disappear. The atom. The pure concept of disappearing, unanchored, owned by no one.
+*Sparita* — from {it}*sparire*{/it}. To disappear. The atom. The pure concept of disappearing, unanchored, owned by no one.
 
-*Saresti* — a form of *essere*. Literally: to be. Here the scaffolding is doing something remarkable: it projects a future from a point in the past.
+*Saresti* — a form of {it}*essere*{/it}. Literally: to be. Here the scaffolding is doing something remarkable: it projects a future from a point in the past.
 
 *Saresti sparita* — not simply "you would have disappeared" in isolation, but "that you were going to disappear." A future viewed from the moment of *allora*.
 
-Underneath: *sparire* and *essere*. Disappearing, and being, shaped into a future viewed from the past.
+Underneath: {it}*sparire*{/it} and {it}*essere*{/it}. Disappearing, and being, shaped into a future viewed from the past.
 
 ---
 
 *Sarei rimasto accanto a te.*
 
-*Rimasto* — from *rimanere*. To remain. To stay. The atom: staying, pure and simple, belonging to no one yet.
+*Rimasto* — from {it}*rimanere*{/it}. To remain. To stay. The atom: staying, pure and simple, belonging to no one yet.
 
-*Sarei* — *essere* again. To be. This time holding *rimasto* in consequence: *sarei rimasto* — I would have stayed. The thing that would have happened, in the world where *se* was true.
+*Sarei* — {it}*essere*{/it} again. To be. This time holding *rimasto* in consequence: *sarei rimasto* — I would have stayed. The thing that would have happened, in the world where *se* was true.
 
 *Accanto a te* — beside you. Three words that place one person in space, near another.
 
-Underneath *sarei rimasto*: *rimanere* and *essere*. Staying, and being.
+Underneath *sarei rimasto*: {it}*rimanere*{/it} and {it}*essere*{/it}. Staying, and being.
 
 ---
 
@@ -76,23 +76,23 @@ Underneath *sarei rimasto*: *rimanere* and *essere*. Staying, and being.
 
 *Che* — which, that. A bridge between two clauses, a connector that lets one sentence enter another.
 
-*Vedevamo* — from *vedere*. To see. But look at the form: *vedevamo* is not simply "we saw." It is "we were seeing" — a past that was ongoing, a shared state rather than a single event. We used to see. We kept seeing. The world we were in the habit of seeing together.
+*Vedevamo* — from {it}*vedere*{/it}. To see. But look at the form: *vedevamo* is not simply "we saw." It is "we were seeing" — a past that was ongoing, a shared state rather than a single event. We used to see. We kept seeing. The world we were in the habit of seeing together.
 
 *Insieme* — together. The sign of shared action.
 
-Underneath *vedevamo*: *vedere*. Seeing.
+Underneath *vedevamo*: {it}*vedere*{/it}. Seeing.
 
 ---
 
 *Non si sarebbe spento.*
 
-*Spento* — from *spegnersi*. To go out. To extinguish. The atom: a light going dark, from within.
+*Spento* — from {it}*spegnersi*{/it}. To go out. To extinguish. The atom: a light going dark, from within.
 
 *Si* — a small particle that changes the behavior of the verb. It does not mean an external force turns it off, nor does the world actively extinguish itself. It marks a change of state from within. The light simply goes dark.
 
-*Sarebbe* — *essere* one more time. To be. Holding *spento* in the unrealized consequence. *Si sarebbe spento* — it would have gone out.
+*Sarebbe* — {it}*essere*{/it} one more time. To be. Holding *spento* in the unrealized consequence. *Si sarebbe spento* — it would have gone out.
 
-Underneath: *spegnersi* and *essere*. Extinguishing, and being.
+Underneath: {it}*spegnersi*{/it} and {it}*essere*{/it}. Extinguishing, and being.
 
 ---
 
@@ -116,11 +116,11 @@ Look at what surrounds them. *Se* — the word that opens a condition, that make
 
 These are logical connectors. They determine the architecture of the sentence — what depends on what, what cancels what, what opens and what closes.
 
-But there is another kind of material. *Il*, the article that shapes *mondo* into something specific and known. *Te*, the form *tu* takes after a preposition — not the subject, but the object in space, the person being approached. *Accanto a*, a relation: not just nearness, but the precise geometry of beside.
+But there is another kind of material. *Il*, the article that shapes *mondo* into something specific and known. *Te*, the form {it}*tu*{/it} takes after a preposition — not the subject, but the object in space, the person being approached. *Accanto a*, a relation: not just nearness, but the precise geometry of beside.
 
 These carry grammatical information — definiteness, gender, number, role, relation. They tell you not only what the words mean, but what they are doing in the sentence.
 
-And then there is *si*, which is neither a connector nor an article. *Si* changes the behavior of the verb itself. It folds the action inward. *Spegnersi* is not the same as *spegnere*. The particle transforms the verb's relationship to its subject. And *insieme* does something similar in meaning: it doesn't describe an action but colors it, adds the dimension of shared experience.
+And then there is {it}*si*{/it}, which is neither a connector nor an article. *Si* changes the behavior of the verb itself. It folds the action inward. *Spegnersi* is not the same as *spegnere*. The particle transforms the verb's relationship to its subject. And *insieme* does something similar in meaning: it doesn't describe an action but colors it, adds the dimension of shared experience.
 
 This is what the sentence is made of: atoms, mortar, and hidden joints.
 

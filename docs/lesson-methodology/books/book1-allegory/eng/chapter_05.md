@@ -10,71 +10,71 @@ What remained was not new grammar, exactly. It was the ability to carry complexi
 
 It began with Ua's voice from the past.
 
-*Mi avevi detto che saresti tornato,* Iro said.
+*{it}Mi avevi detto che saresti tornato{/it}*, Iro said.
 
 You had told me that you would return.
 
 This was discorso indiretto — indirect speech. The art of carrying someone else's words through your own voice, in your own moment.
 
-Ua had said, once, in a moment that had passed: *Tornerò.* — I will return.
+Ua had said, once, in a moment that had passed: *{it}Tornerò{/it}.* — I will return.
 
-Iro, now, in a different moment, was carrying those words forward. But in the carrying, the words changed. *Tornerò* — future, indicative, first person — became *saresti tornato* — conditional, second person. The tense shifted. The person shifted. The meaning remained, but the form adapted to the new context.
+Iro, now, in a different moment, was carrying those words forward. But in the carrying, the words changed. *{it}Tornerò{/it}* — future, indicative, first person — became *{it}saresti tornato{/it}* — conditional, second person. The tense shifted. The person shifted. The meaning remained, but the form adapted to the new context.
 
 Iro understood: when you report speech, you are not just quoting. You are translating someone else's words from their moment into yours. And the translation requires grammatical shifts.
 
-Present becomes imperfect. *Dico che è qui* — I say that he is here becomes *Diceva che era qui* — He said that he was here.
+Present becomes imperfect. *{it}Dico che è qui{/it}* — I say that he is here becomes *{it}Diceva che era qui{/it}* — He said that he was here.
 
-Future becomes conditional perfect. *Tornerò* becomes *sarei tornato* — I will return becomes you would return (or you would have returned, depending on how you read the time relationship).
+Future becomes conditional perfect. *{it}Tornerò{/it}* becomes *{it}sarei tornato{/it}* — I will return becomes you would return (or you would have returned, depending on how you read the time relationship).
 
-Passato prossimo becomes trapassato prossimo. *Ho visto* becomes *aveva visto* — I have seen becomes he had seen.
+Passato prossimo becomes trapassato prossimo. *{it}Ho visto{/it}* becomes *{it}aveva visto{/it}* — I have seen becomes he had seen.
 
 The tense agreement is rigorous. Every tense in direct speech has a corresponding tense in indirect speech. The language has a map for this.
 
 ---
 
-*Mi hai detto che mi amavi,* Ua said.
+*{it}Mi hai detto che mi amavi{/it}*, Ua said.
 
 You told me that you loved me.
 
-In direct speech, this would have been: *Ti amo.* — I love you. Present indicative.
+In direct speech, this would have been: *{it}Ti amo{/it}.* — I love you. Present indicative.
 
-In indirect speech, reported later: *Mi hai detto che mi amavi.* — You told me that you loved me. Imperfect indicative.
+In indirect speech, reported later: *{it}Mi hai detto che mi amavi{/it}.* — You told me that you loved me. Imperfect indicative.
 
 The love was present in the original moment. In the reporting moment, it's past. The grammar marks the time distance.
 
-*Mi hai promesso che saresti rimasto,* Iro said.
+*{it}Mi hai promesso che saresti rimasto{/it}*, Iro said.
 
 You promised me that you would stay.
 
-Direct: *Rimarrò.* — I will stay. Future simple.
+Direct: *{it}Rimarrò{/it}.* — I will stay. Future simple.
 
-Indirect: *Saresti rimasto.* — You would stay. Conditional perfect as future-in-the-past.
+Indirect: *{it}Saresti rimasto{/it}.* — You would stay. Conditional perfect as future-in-the-past.
 
 The promise was about the future, from the perspective of the original moment. From the perspective of the reporting moment, looking back at that future-that-was, it becomes conditional.
 
-Iro understood: this is the same mechanism they had learned in Chapter 2, with *avevi detto che saresti tornato* — you had said that you would return. But now they were using it systematically, carrying whole speeches through time, shifting every tense, marking every relationship.
+Iro understood: this is the same mechanism they had learned in Chapter 2, with *{it}avevi detto che saresti tornato{/it}* — you had said that you would return. But now they were using it systematically, carrying whole speeches through time, shifting every tense, marking every relationship.
 
 ---
 
 Then came the agreement of the subjunctive in indirect speech — the way the language handles subjective truth across time.
 
-*Volevo che tu restassi,* Iro said.
+*{it}Volevo che tu restassi{/it}*, Iro said.
 
 I wanted you to stay.
 
-Direct speech would have been: *Resta.* — Stay. Imperative. Or: *Voglio che tu resti.* — I want you to stay. Present subjunctive.
+Direct speech would have been: *{it}Resta{/it}.* — Stay. Imperative. Or: *{it}Voglio che tu resti{/it}.* — I want you to stay. Present subjunctive.
 
-Indirect speech, reported later: *Volevo che tu restassi.* — I wanted you to stay. Imperfect subjunctive.
+Indirect speech, reported later: *{it}Volevo che tu restassi{/it}.* — I wanted you to stay. Imperfect subjunctive.
 
 The wanting was in the past. The staying — which was never about fact, but about desire, about wish, about subjective wanting — is also in the past. The mood remains subjunctive, because the relationship is still subjective. But the tense shifts to imperfect to match the main clause.
 
-*Volevo che tu fossi rimasto,* Ua said.
+*{it}Volevo che tu fossi rimasto{/it}*, Ua said.
 
 I wanted you to have stayed.
 
-Direct: *Voglio che tu sia rimasto.* — I want you to have stayed. Present subjunctive perfect.
+Direct: *{it}Voglio che tu sia rimasto{/it}.* — I want you to have stayed. Present subjunctive perfect.
 
-Indirect: *Volevo che tu fossi rimasto.* — I wanted you to have stayed. Pluperfect subjunctive.
+Indirect: *{it}Volevo che tu fossi rimasto{/it}.* — I wanted you to have stayed. Pluperfect subjunctive.
 
 The wanting was in the past. The staying — the completed staying, the staying that never happened — is also in the past relative to that wanting. The subjunctive perfect becomes subjunctive pluperfect.
 
@@ -86,37 +86,37 @@ Then came the remote past — Passato Remoto and Trapassato Remoto.
 
 These were not tenses for conversation. They were tenses for stories, for literature, for the deep past that has no connection to the present.
 
-*Fece,* Iro said. He did/made.
+*{it}Fece{/it}*, Iro said. He did/made.
 
-*Disse,* Ua said. He said.
+*{it}Disse{/it}*, Ua said. He said.
 
-*Andò,* Iro said. He went.
+*{it}Andò{/it}*, Iro said. He went.
 
-*Ebbe,* Ua said. He had.
+*{it}Ebbe{/it}*, Ua said. He had.
 
-*Fu,* Iro said. He was.
+*{it}Fu{/it}*, Iro said. He was.
 
-*Vide,* Ua said. He saw.
+*{it}Vide{/it}*, Ua said. He saw.
 
-*Scrisse,* Iro said. He wrote.
+*{it}Scrisse{/it}*, Iro said. He wrote.
 
-*Venne,* Ua said. He came.
+*{it}Venne{/it}*, Ua said. He came.
 
-*Nacque,* Iro said. He was born.
+*{it}Nacque{/it}*, Iro said. He was born.
 
-*Morì,* Ua said. He died.
+*{it}Morì{/it}*, Ua said. He died.
 
 These were the forms of Passato Remoto — the remote past. The simple past of literature. The tense you use when you're telling a story that has no connection to the present moment, no continuing relevance. It happened. It ended. It's done.
 
-*Quando fu giunto a casa, scoprì che era stato tradito,* Iro said.
+*{it}Quando fu giunto a casa, scoprì che era stato tradito{/it}*, Iro said.
 
 When he arrived (remoto) home, he discovered (remoto) that he had been betrayed (trapassato prossimo).
 
-*Appena ebbe finito, se ne andò,* Ua said.
+*{it}Appena ebbe finito, se ne andò{/it}*, Ua said.
 
 As soon as he had finished (trapassato remoto), he went away (remoto).
 
-The Trapassato Remoto — *ebbe finito, fu andato* — is the literary counterpart of Trapassato Prossimo. It's the past-of-the-past for the remote past. It only appears after *quando, appena, dopo che* + Passato Remoto in the main clause. It's a specialized form for a specialized context.
+The Trapassato Remoto — *{it}ebbe finito, fu andato{/it}* — is the literary counterpart of Trapassato Prossimo. It's the past-of-the-past for the remote past. It only appears after *{it}quando, appena, dopo che{/it}* + Passato Remoto in the main clause. It's a specialized form for a specialized context.
 
 Iro understood: these tenses are for reading. For literature. For the Italian of Calvino, of Eco, of Pirandello. For the stories that live in books, not in conversation. They are beautiful, but they are not for everyday speech. They are for the deep past of fiction.
 
@@ -124,37 +124,37 @@ Iro understood: these tenses are for reading. For literature. For the Italian of
 
 Then came the advanced passives — the ways the language can speak of action without naming the actor.
 
-*La porta viene aperta,* Iro said.
+*{it}La porta viene aperta{/it}*, Iro said.
 
 The door is being opened.
 
-Not *è aperta* — is opened (stative passive, the door is in an opened state). *Viene aperta* — is being opened (dynamic passive, the door is undergoing the action of opening right now). The auxiliary *venire* marks the process, not the state.
+Not *{it}è aperta{/it}* — is opened (stative passive, the door is in an opened state). *{it}Viene aperta{/it}* — is being opened (dynamic passive, the door is undergoing the action of opening right now). The auxiliary *{it}venire{/it}* marks the process, not the state.
 
-*Va fatto subito,* Ua said.
+*{it}Va fatto subito{/it}*, Ua said.
 
 It must be done immediately.
 
-Not *deve essere fatto* — it must be done. *Va fatto* — it goes done, it requires doing. The auxiliary *andare* marks necessity, obligation.
+Not *{it}deve essere fatto{/it}* — it must be done. *{it}Va fatto{/it}* — it goes done, it requires doing. The auxiliary *{it}andare{/it}* marks necessity, obligation.
 
-Iro understood: the passive voice has shades. *Essere* for states and facts. *Venire* for processes and actions. *Andare* for necessities and obligations. The meaning shifts with the auxiliary.
+Iro understood: the passive voice has shades. *{it}Essere{/it}* for states and facts. *{it}Venire{/it}* for processes and actions. *{it}Andare{/it}* for necessities and obligations. The meaning shifts with the auxiliary.
 
 ---
 
-Then came *stare per* — the about-to.
+Then came *{it}stare per{/it}* — the about-to.
 
-*Stavo per dirtelo quando sei arrivato,* Iro said.
+*{it}Stavo per dirtelo quando sei arrivato{/it}*, Iro said.
 
 I was about to tell you when you arrived.
 
-*Stare per* + infinitive: to be about to do something. The very near future. The thing that is almost happening, is on the verge of happening.
+*{it}Stare per{/it}* + infinitive: to be about to do something. The very near future. The thing that is almost happening, is on the verge of happening.
 
-*Stavo per uscire quando ha telefonato,* Ua said.
+*{it}Stavo per uscire quando ha telefonato{/it}*, Ua said.
 
 I was about to go out when he called.
 
-*Stavo per* — I was about to. The imperfect of *stare* + *per* + infinitive. The future-that-almost-was.
+*{it}Stavo per{/it}* — I was about to. The imperfect of *{it}stare{/it}* + *{it}per{/it}* + infinitive. The future-that-almost-was.
 
-Iro understood: this is another way the language marks proximity in time. Not just *stare + gerundio* for what's happening right now. But *stare per + infinito* for what's about to happen right now. The immediate future, hovering on the edge of the present.
+Iro understood: this is another way the language marks proximity in time. Not just *{it}stare + gerundio{/it}* for what's happening right now. But *{it}stare per + infinito{/it}* for what's about to happen right now. The immediate future, hovering on the edge of the present.
 
 ---
 

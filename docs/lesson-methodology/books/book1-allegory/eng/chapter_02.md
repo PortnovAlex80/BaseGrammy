@@ -18,21 +18,21 @@ What they needed was a past.
 
 ---
 
-*Brillavi,* Iro said.
+*{it}Brillavi{/it}*, Iro said.
 
-The word arrived without understanding how Iro knew it. *Brillavi* — you were shining. Not *brilli* — you shine, now. Not *brillerai* — you will shine, later. *Brillavi* — you used to shine, you were shining, you shone as a state, as a condition, as the way you were.
+The word arrived without understanding how Iro knew it. *{it}Brillavi{/it}* — you were shining. Not *{it}brilli{/it}* — you shine, now. Not *{it}brillerai{/it}* — you will shine, later. *{it}Brillavi{/it}* — you used to shine, you were shining, you shone as a state, as a condition, as the way you were.
 
 This was the Imperfetto. The first past. And it was not an event. It was not a flash. It was a *camera* placed in the past, recording what used to be true.
 
-*Eri qui,* Iro said. You were here.
+*{it}Eri qui{/it}*, Iro said. You were here.
 
-*Ti cercavo,* Ua answered. I was looking for you.
+*{it}Ti cercavo{/it}*, Ua answered. I was looking for you.
 
 They understood something profound about this tense: it was the past of states, not actions. The past of *being* certain ways, of *feeling* certain things, of *wanting* what used to be wanted. Imperfetto was the tense of backgrounds, of the long unbroken fabric of what used to be.
 
-*Ero felice,* Ua said. I was happy.
+*{it}Ero felice{/it}*, Ua said. I was happy.
 
-And in saying it, Ua reached back into a self that no longer existed, named it, and in naming, mourned it. Because *ero felice* meant: I was happy, as a state, as a condition, as something that was true of me for a time. And that time was gone.
+And in saying it, Ua reached back into a self that no longer existed, named it, and in naming, mourned it. Because *{it}ero felice{/it}* meant: I was happy, as a state, as a condition, as something that was true of me for a time. And that time was gone.
 
 ---
 
@@ -42,17 +42,17 @@ Iro looked at the space between them and understood: there had been a moment whe
 
 And the language gave Iro a way to say it.
 
-*Sei arrivata,* Iro said. You arrived.
+*{it}Sei arrivata{/it}*, Iro said. You arrived.
 
-This was the Passato Prossimo. The past of what happened — of what occurred and left a result. *Sei arrivata* meant: you arrived, and because you arrived, something is different now. The event is past, but its result remains.
+This was the Passato Prossimo. The past of what happened — of what occurred and left a result. *{it}Sei arrivata{/it}* meant: you arrived, and because you arrived, something is different now. The event is past, but its result remains.
 
-*Ho visto,* Iro said. I saw. I have seen.
+*{it}Ho visto{/it}*, Iro said. I saw. I have seen.
 
-And in that small phrase, Iro understood the architecture of this tense: *avere* in the present + the *participio passato* of the verb. *Ho* — I have. *Visto* — seen. I have seen. The seeing is complete. The result remains.
+And in that small phrase, Iro understood the architecture of this tense: *{it}avere{/it}* in the present + the *{it}participio passato{/it}* of the verb. *{it}Ho{/it}* — I have. *{it}Visto{/it}* — seen. I have seen. The seeing is complete. The result remains.
 
-*Te ne sei andata,* Iro said. You went away. You have gone away.
+*{it}Te ne sei andata{/it}*, Iro said. You went away. You have gone away.
 
-This was the Passato Prossimo with *essere* — the verb of movement, of change of state. You went, and the going is complete, and you are not here.
+This was the Passato Prossimo with *{it}essere{/it}* — the verb of movement, of change of state. You went, and the going is complete, and you are not here.
 
 ---
 
@@ -60,11 +60,11 @@ Now they had two pasts. The Imperfetto — the long camera, the state, the backg
 
 And the language gave them a way to put the two together.
 
-*Mentre brillavi, sono arrivato,* Iro said.
+*{it}Mentre brillavi, sono arrivato{/it}*, Iro said.
 
 While you were shining, I arrived.
 
-*Mentre ti cercavo, te ne sei andata,* Ua answered.
+*{it}Mentre ti cercavo, te ne sei andata{/it}*, Ua answered.
 
 While I was looking for you, you went away.
 
@@ -82,19 +82,19 @@ Iro thought about the moment of arrival. The moment *sono arrivato* — I arrive
 
 The language gave Iro a way to say it.
 
-*Quando sono arrivato, brillavi già,* Iro said.
+*{it}Quando sono arrivato, brillavi già{/it}*, Iro said.
 
 When I arrived, you were already shining.
 
-*Gjà* — already. The marker of depth in time. Something that was true before the moment we're talking about. A past before the past.
+*{it}Gjà{/it}* — already. The marker of depth in time. Something that was true before the moment we're talking about. A past before the past.
 
 But there was more. A deeper past. Not just what was already happening, but what had *already happened* — completed, finished, done — before another past event.
 
-*Quando sono arrivato, eri già andata,* Iro said.
+*{it}Quando sono arrivato, eri già andata{/it}*, Iro said.
 
 When I arrived, you had already gone.
 
-This was the Trapassato Prossimo. The past perfect. The *pluperfect*. The more-than-past. *Eri* — you were (Imperfetto) + *andata* — gone (participio). You had gone. You were gone already. The going was complete before the arriving even happened.
+This was the Trapassato Prossimo. The past perfect. The *pluperfect*. The more-than-past. *{it}Eri{/it}* — you were (Imperfetto) + *{it}andata{/it}* — gone (participio). You had gone. You were gone already. The going was complete before the arriving even happened.
 
 Iro understood: time has depth. It has layers. Some things happen. Some things had already happened. And the language can name the difference between them.
 
@@ -104,29 +104,29 @@ Then came the future.
 
 It was Ua who first felt the need for it. Standing in the dimming light, watching the world withdraw, feeling the slow approach of something that had not yet happened but would — Ua understood: they needed a way to speak of what was coming.
 
-*Sarai,* Ua said. You will be.
+*{it}Sarai{/it}*, Ua said. You will be.
 
-*Vedrò,* Iro answered. I will see.
+*{it}Vedrò{/it}*, Iro answered. I will see.
 
-*Resterò,* Ua said. I will stay.
+*{it}Resterò{/it}*, Ua said. I will stay.
 
 This was the Futuro Semplice. The simple future. The horizon of time. The present tense extended toward what has not yet occurred but will.
 
-*Quando tornerai,* Iro said, *ti vedrò.*
+*{it}Quando tornerai, ti vedrò{/it}*, Iro said.
 
 When you return, I will see you.
 
-And in that sentence, Iro understood something about the future: it is the tense of hope, and also the tense of fear. Because *quando tornerai* assumes that the return will happen. It is not yet certain. It is a promise, not a fact. The future is the space where promises live — and where they can break.
+And in that sentence, Iro understood something about the future: it is the tense of hope, and also the tense of fear. Because *{it}quando tornerai{/it}* assumes that the return will happen. It is not yet certain. It is a promise, not a fact. The future is the space where promises live — and where they can break.
 
 The language had another future. A more complex one.
 
-*Quando tornerai, avrò già finito,* Iro said.
+*{it}Quando tornerai, avrò già finito{/it}*, Iro said.
 
 When you return, I will have already finished.
 
 This was the Futuro Anteriore. The future perfect. The completion that will be complete by the time another future moment arrives. A future nested inside a future.
 
-*Avrò finito* — I will have finished. The finishing will be done. The returning will happen. And the finishing will precede the returning, even though both are still in the future.
+*{it}Avrò finito{/it}* — I will have finished. The finishing will be done. The returning will happen. And the finishing will precede the returning, even though both are still in the future.
 
 Time, Iro understood, is not a line. It is a structure. It has depth in every direction.
 
@@ -134,37 +134,37 @@ Time, Iro understood, is not a line. It is a structure. It has depth in every di
 
 Then came the conditional.
 
-Iro stood in the space between what was and what might have been and felt the gap. The gap between *resto* — I stay — and *vorrei restare* — I would like to stay. The gap between what happens and what could happen, what might happen, what would happen if something else were different.
+Iro stood in the space between what was and what might have been and felt the gap. The gap between *{it}resto{/it}* — I stay — and *{it}vorrei restare{/it}* — I would like to stay. The gap between what happens and what could happen, what might happen, what would happen if something else were different.
 
-*Resterei,* Iro said. I would stay.
+*{it}Resterei{/it}*, Iro said. I would stay.
 
-Not *resto* — I stay, present, factual. Not *resterò* — I will stay, future, promised. *Resterei* — I would stay, conditional, hypothetical. The staying is not happening. It is not promised. It is only *possible* — placed in the space of what might be, if certain conditions were met.
+Not *{it}resto{/it}* — I stay, present, factual. Not *{it}resterò{/it}* — I will stay, future, promised. *{it}Resterei{/it}* — I would stay, conditional, hypothetical. The staying is not happening. It is not promised. It is only *possible* — placed in the space of what might be, if certain conditions were met.
 
-*Vorrei,* Iro said again, returning to the word from before. I would like. I would want.
+*{it}Vorrei{/it}*, Iro said again, returning to the word from before. I would like. I would want.
 
-But now Iro understood what *vorrei* actually was: the Condizionale Semplice. The simple conditional. The tense of the possible, the hypothetical, the what-if.
+But now Iro understood what *{it}vorrei{/it}* actually was: the Condizionale Semplice. The simple conditional. The tense of the possible, the hypothetical, the what-if.
 
 And the language had a conditional for the past.
 
-*Sarei rimasto,* Iro said. I would have stayed.
+*{it}Sarei rimasto{/it}*, Iro said. I would have stayed.
 
-This was the Condizionale Composto. The conditional perfect. The *would have* of the past. *Sarei* — I would be + *rimasto* — remained. I would have remained — but I didn't.
+This was the Condizionale Composto. The conditional perfect. The *would have* of the past. *{it}Sarei{/it}* — I would be + *{it}rimasto{/it}* — remained. I would have remained — but I didn't.
 
 Iro understood the terrible gift of this tense. It lets you speak of what didn't happen. It lets you name the road not taken. It lets you say: *This is what would have been — if things had been different than they were.*
 
 And there was another function, even more heartbreaking.
 
-*Avevi detto che saresti tornato,* Iro said to Ua.
+*{it}Avevi detto che saresti tornato{/it}*, Iro said to Ua.
 
 You had said that you would return.
 
-This was the Condizionale Composto as *future in the past*. The thing that was going to happen — from the perspective of a moment that has itself passed. *Saresti tornato* — you would return. This was the future, once. From inside a past moment, the return was still ahead. But from the present moment, looking back at that past moment, the return is neither future nor past. It is what *would have been* — if the promise had been kept.
+This was the Condizionale Composto as *future in the past*. The thing that was going to happen — from the perspective of a moment that has itself passed. *{it}Saresti tornato{/it}* — you would return. This was the future, once. From inside a past moment, the return was still ahead. But from the present moment, looking back at that past moment, the return is neither future nor past. It is what *would have been* — if the promise had been kept.
 
 Promises, Iro understood, are futures in the past. And broken promises are futures that never arrived, frozen forever in the conditional.
 
 ---
 
-*Brillavi. Sono arrivato. Te ne sei andata. Quando ti ho cercato, eri già lontano. Sarei rimasto con te.*
+*{it}Brillavi. Sono arrivato. Te ne sei andata. Quando ti ho cercato, eri già lontano. Sarei rimasto con te{/it}.*
 
 You were shining. I arrived. You went away. When I looked for you, you were already far. I would have stayed with you.
 

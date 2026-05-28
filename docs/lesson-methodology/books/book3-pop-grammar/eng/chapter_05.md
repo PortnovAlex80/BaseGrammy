@@ -4,7 +4,7 @@
 
 There is a strange thing that language does: it can contain other language inside it. I can tell you what someone said. I can report not just their words, but their questions, their commands, their thoughts. Language becomes a vessel for other language.
 
-This is indirect discourse — *discorso indiretto* — and it is one of the most complex achievements of human communication. When you report someone else's speech, you are not merely repeating their words. You are embedding their consciousness in your own sentence, and the grammar must mark every point where one mind ends and another begins.
+This is indirect discourse — {it}*discorso indiretto*{/it} — and it is one of the most complex achievements of human communication. When you report someone else's speech, you are not merely repeating their words. You are embedding their consciousness in your own sentence, and the grammar must mark every point where one mind ends and another begins.
 
 Italian approaches this challenge with a sophisticated system of temporal shifts, pronoun changes, and mood transformations that make explicit the relationship between the original speaker and the reporter.
 
@@ -31,7 +31,7 @@ Now *domani* has become *oggi* (today) because the "tomorrow" Marco was talking 
 
 ---
 
-This is the sequence of tenses (*concordanza dei tempi*) in action. Italian has explicit rules for how tenses shift when you move from direct speech to indirect speech.
+This is the sequence of tenses ({it}*concordanza dei tempi*{/it}) in action. Italian has explicit rules for how tenses shift when you move from direct speech to indirect speech.
 
 When the main verb is present (no shift needed):
 
@@ -61,7 +61,7 @@ The shift from future to conditional is particularly important. Italian does not
 
 This is not arbitrary. The conditional is the mood of the hypothetical, the non-actual. When you report someone's statement about the future from a past perspective, you are describing a future that is now hypothetical from the reporter's standpoint. It may or may not have happened. The conditional marks this uncertainty.
 
-This is why the conditional perfect (*condizionale composto*) has a dual function: it is both the hypothetical past ("I would have done") and the future-in-the-past ("he said he would do"). The same form serves both purposes, and context tells you which is meant.
+This is why the conditional perfect ({it}*condizionale composto*{/it}) has a dual function: it is both the hypothetical past ("I would have done") and the future-in-the-past ("he said he would do"). The same form serves both purposes, and context tells you which is meant.
 
 ---
 
@@ -73,8 +73,8 @@ Pronouns also shift in indirect discourse. The original speaker's *I* becomes th
 
 Multiple shifts:
 
-* *Io* (I, the speaker) → *mi* (me, the reporter)
-* *Ti* (you, the person addressed) → *mi* (me, the reporter)
+* *Io* (I, the speaker) → {it}*mi*{/it} (me, the reporter)
+* *Ti* (you, the person addressed) → {it}*mi*{/it} (me, the reporter)
 * *Amo* (present, first person) → *amava* (imperfect, third person)
 
 Every element of the sentence that depends on perspective must be recalibrated. This is not merely mechanical. It is the grammar of perspective-taking. To report someone's speech is to adopt their perspective and then translate it into your own.
@@ -195,7 +195,7 @@ Italian also has special constructions for reporting ongoing actions in the past
 
 *Stava dicendo che...* — He was saying that...
 
-These use *stare* + gerundio or *stare per* + infinitive to mark actions in progress or about to happen at a specific past moment. They are the past equivalents of the present continuous (*sto mangiando* — I am eating) and the immediate future (*sto per mangiare* — I am about to eat).
+These use {it}*stare*{/it} + gerundio or *stare per* + infinitive to mark actions in progress or about to happen at a specific past moment. They are the past equivalents of the present continuous (*sto mangiando* — I am eating) and the immediate future (*sto per mangiare* — I am about to eat).
 
 ---
 
