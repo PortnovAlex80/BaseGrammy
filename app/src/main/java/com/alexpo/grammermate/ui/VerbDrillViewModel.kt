@@ -642,7 +642,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun setSessionSize(size: Int) {
-        sessionSize = size.coerceIn(3, 20)
+        sessionSize = size.coerceIn(3, 1000)
     }
 
     fun nextBatch() {

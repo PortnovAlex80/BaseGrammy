@@ -96,7 +96,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val themeModeStr = data["themeMode"] as? String ?: "SYSTEM"
         val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
         val rawSessionSize = (data["sessionSize"] as? Number)?.toInt() ?: 10
-        val sessionSize = rawSessionSize.coerceIn(3, 20)
+        val sessionSize = rawSessionSize.coerceIn(3, 1000)
         val appVersion = (data["appVersion"] as? Number)?.toInt() ?: 0
         val clickableWordHints = data["clickableWordHints"] as? Boolean ?: true  // Новая настройка
         return AppConfig(
