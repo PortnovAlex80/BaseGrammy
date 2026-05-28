@@ -1,0 +1,30 @@
+{
+  "key": "B09",
+  "title": "B09 - Condizionale Semplice",
+  "essence": "Would, polite requests, advice, and hypothetical results.",
+  "formula": "- `vorrei`\n- `potrei`\n- `dovrei`\n- `sarei`\n- `avrei`",
+  "base": null,
+  "dontConfuse": "A15 gave formulas. B09 gives the system.",
+  "examples": [
+    {
+      "it": "Vorrei un caffè.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Potrei venire domani.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dovresti studiare.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Sarei felice.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

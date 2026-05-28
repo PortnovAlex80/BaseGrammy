@@ -1,0 +1,30 @@
+{
+  "key": "B03",
+  "title": "B03 - Passato Prossimo with Avere",
+  "essence": "Completed past action with a result.",
+  "formula": "`avere + participio passato`",
+  "base": null,
+  "dontConfuse": "With `avere`, the participle normally does not agree with the subject.",
+  "examples": [
+    {
+      "it": "Ho comprato il pane.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ha scritto una lettera.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Abbiamo studiato.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Hanno visto il film.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

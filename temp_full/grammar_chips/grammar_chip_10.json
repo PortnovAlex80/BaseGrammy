@@ -1,0 +1,30 @@
+{
+  "key": "A10",
+  "title": "A10 - Possessivi",
+  "essence": "Possessivo согласуется с предметом, а не с владельцем.",
+  "formula": null,
+  "base": null,
+  "dontConfuse": null,
+  "examples": [
+    {
+      "it": "il mio libro",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "la mia casa",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "i miei amici",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "le mie cose",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

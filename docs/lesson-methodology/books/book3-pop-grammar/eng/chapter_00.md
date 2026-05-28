@@ -2,136 +2,140 @@
 
 ---
 
-Consider, for a moment, what exists before language.
+Start here.
 
-Not the absence of speech — animals communicate, after all. Consider what exists before *structure*. Before there is a who, a when, a where. Before there is anyone to do anything anywhere.
+*Se avessi saputo allora che saresti sparita, sarei rimasto accanto a te. E il mondo che vedevamo insieme non si sarebbe spento.*
 
-What you have, in that space, are infinitives.
+Read it again. You don't understand it yet. That is the point.
 
-Pure, floating, unmoored actions. *Essere* — to be. *Vedere* — to see. *Sapere* — to know. *Andare* — to go. These are the atoms of meaning, the smallest units of human experience that can be named. And they are profoundly, fundamentally incomplete.
-
-This is not a flaw. It is architecture.
+By the end of this course, you will. Not just understand it — you will feel exactly why every word is the shape it is, why no word could be replaced, why the whole thing holds together the way it does. But right now, it is a locked room. So let's find out what's inside.
 
 ---
 
-The infinitive is the most honest form language has. It doesn't pretend to be happening anywhere or anytime or by anyone. *Andare* simply *is* — the concept of going itself, abstract and perfect and complete in its abstraction. When you say *andare*, you are not claiming that anyone is going anywhere. You are holding up the idea of movement and saying: this exists. This is a thing minds can do.
+The first thing to do with a locked sentence is take it apart.
 
-There is a profound philosophical clarity here. The infinitive acknowledges that before you can talk about someone doing something, you need to be able to talk about the doing itself. You need the concept before the instance. The category before the example.
+Not randomly. Carefully. The way a watchmaker takes apart a watch — looking for the mechanism underneath the surface, the simple parts that combine into something that moves.
 
-Every verb in Italian exists first as an infinitive. This is not an accident. It is the language saying: before we can talk about me walking, you walking, them walking tomorrow or yesterday or right now — we must first agree on what walking *is*.
+*Se avessi saputo allora che saresti sparita, sarei rimasto accanto a te. E il mondo che vedevamo insieme non si sarebbe spento.*
 
-The infinitive is the shared reference point, the dictionary definition, the Platonic ideal against which all actual instances of walking are measured.
-
----
-
-You encounter infinitives constantly in everyday Italian, often in ways that reveal their unique status.
-
-*Vuole andare?*
-
-Does she want to go?
-
-Notice something crucial about this sentence: *andare* has no person, no time. It is the same *andare* you would find in a dictionary. The person is carried by *vuole* — she wants. The tense is carried by *vuole* — she wants right now. *Andare* itself remains untouched, pure potential, the thing that is wanted rather than the thing that is happening.
-
-This is the infinitive's power: it can slot into any grammatical context without losing its essential nature. After *volere* (to want), after *potere* (to be able to), after *dovere* (to have to) — the infinitive remains itself. It is the content of desire, ability, necessity. The container changes. The content does not.
-
-*Posso venire.* — I can come.
-
-*Devo partire.* — I must leave.
-
-*Voglio sapere.* — I want to know.
-
-In each case, the infinitive holds steady while the modal verb provides the person, the tense, the attitude toward the action. This division of labor is elegant: the modal tells you how the action sits in the world of possibility and obligation. The infinitive tells you what the action actually is.
+Let's go word by word.
 
 ---
 
-But infinitives do something even more interesting in Italian: they function as nouns.
+*Se.* — If.
 
-*Il vedere.* — The seeing.
-
-*Il sapere.* — The knowing.
-
-*Il mangiare.* — The eating.
-
-By placing the definite article *il* before an infinitive, Italian turns the verb itself into a concept, something that can be discussed, analyzed, held at arm's length. This is not a trivial capability. It allows Italian speakers to talk about actions as objects of thought, to treat processes as things.
-
-*Il mangiare è un piacere.* — Eating is a pleasure.
-
-*Il viaggiare apre la mente.* — Traveling opens the mind.
-
-*Lo studiare richiede tempo.* — Studying requires time.
-
-English does this too, but differently — we use the *-ing* form. Italian uses the infinitive, and the article makes the transformation explicit. *Il mangiare* is not quite "eating" and not quite "to eat." It is "the eating" — the activity itself, considered as an entity.
-
-This matters because it reveals something about how Italian thinks about language. An action is not fundamentally different from a noun. Both can be subjects, objects, things we talk about. The boundary between doing and being is porous.
+One of the smallest words in Italian. It opens a condition. Everything that follows depends on it.
 
 ---
 
-There is another place where infinitives shine: in instructions and impersonal statements.
+*Avessi saputo.*
 
-*Premere per aprire.* — Press to open.
+Two words doing one job. Take them apart.
 
-*Non toccare.* — Do not touch.
+*Saputo* — the past participle of *sapere*. Strip it back further: *sapere* — to know. The atom. The raw concept, without time, without person, without anything. *Sapere*: to know.
 
-*Vietato fumare.* — Forbidden to smoke.
+*Avessi* — a form of *avere*. Literally: to have. Not "to have" as possession. "To have" as scaffolding — the auxiliary that holds *saputo* in time. Together: *avessi saputo* — I had known. But not simply "had known." The form of *avere* here marks a past that didn't happen. A past that existed only in the condition.
 
-In each case, the infinitive works because there is no need to specify who is doing the acting. The instruction applies to everyone. The prohibition applies to no one in particular and therefore to everyone. The infinitive, with its deliberate lack of person, is the perfect grammatical tool for universal statements.
-
-When you see *Premere per aprire* on a door, you are not being told who should press. You are being told what pressing does. *Press* — and the result is *open*. The causal connection is clear. The identity of the presser is irrelevant.
+Underneath these two words: *sapere* and *avere*. Two infinitives. Two atoms.
 
 ---
 
-Perhaps the most poetic use of infinitives in Italian is in expressions of feeling and sensation.
+*Allora.* — Then. At that time.
 
-*Mi piace fare una passeggiata.* — I like to take a walk.
-
-*Mi piace leggere.* — I like to read.
-
-Literally: *To me is pleasing to walk/to read.* The structure places the infinitive at the center of what pleases. What pleases me is not *you* walking or *them* walking — it is the walking itself. The pure, unowned activity.
-
-This is not a small difference. *Mi piace camminare* does not mean "I like that I walk." It means something closer to "The activity of walking pleases me." The walking itself, as an abstract possibility, is what I enjoy. The fact that I am the one doing it is secondary.
-
-Italian has another construction for that: *Mi piace camminare* vs. *Mi piace quando cammino* — "I like to walk" vs. "I like it when I walk." The first mentions the activity. The second mentions the instance. The distinction is real, and Italian captures it.
+A pointer. It reaches backward to a specific moment. One atom, no decomposition needed.
 
 ---
 
-The infinitive also carries a crucial function in Italian's system of temporal sequencing. When you want to express that one action must happen before another, the infinitive is often the tool you reach for.
+*Che saresti sparita.*
 
-*Prima di partire, devo finire.* — Before leaving, I must finish.
+*Sparita* — from *sparire*. To disappear. The atom. The pure concept of disappearing, unanchored, owned by no one.
 
-* Dopo aver mangiato, sono uscito.* — After having eaten, I went out.
+*Saresti* — a form of *essere*. Literally: to be. Here the scaffolding is doing something remarkable: it projects a future from a point in the past.
 
-The infinitive *partire* and the past infinitive *aver mangiato* serve as temporal markers. They sit in relation to the main verb, indicating sequence without requiring full subordinate clauses. They are the language's way of saying: first this, then that — efficiently, without fuss.
+*Saresti sparita* — not simply "you would have disappeared" in isolation, but "that you were going to disappear." A future viewed from the moment of *allora*.
 
-Notice the past infinitive: *aver mangiato* or *essere andato* or *aver visto*. This is a compound form — auxiliary plus past participle — that allows the infinitive to carry completed meaning. *After having eaten.* Not just eating in the abstract, but eating as a completed action, something that is now done.
-
-The fact that Italian can do this — that the infinitive can be present or past, simple or compound — tells you something about the language's commitment to precision even at the most abstract levels. Even actions without actors, even verbs without persons, even infinitives — even they can be placed in time.
+Underneath: *sparire* and *essere*. Disappearing, and being, shaped into a future viewed from the past.
 
 ---
 
-Why does any of this matter? Because the infinitive is the foundation. Everything else in Italian verb conjugation builds on this base.
+*Sarei rimasto accanto a te.*
 
-Every present tense form, every past tense, every conditional, every subjunctive — they all exist in relation to the infinitive. The infinitive is the root from which all these forms grow. When you learn *parlare*, *finire*, *capire*, *essere*, *avere* — you are not just learning five random verbs. You are learning the patterns that will generate thousands of verb forms across the entire language.
+*Rimasto* — from *rimanere*. To remain. To stay. The atom: staying, pure and simple, belonging to no one yet.
 
-The infinitive tells you the conjugation pattern (-are, -ere, -ire). It tells you whether the verb is regular or irregular. It is the form you look up in dictionaries. It is the form you use when you want to talk about the action itself, stripped of all context.
+*Sarei* — *essere* again. To be. This time holding *rimasto* in consequence: *sarei rimasto* — I would have stayed. The thing that would have happened, in the world where *se* was true.
 
-*Parlare è importante.* — Speaking is important.
+*Accanto a te* — beside you. Three words that place one person in space, near another.
 
-*Ho deciso di partire.* — I decided to leave.
-
-*Spero di vedere.* — I hope to see.
-
-In each case, the infinitive does its quiet work: providing the pure concept of the action while other elements of the sentence provide context, person, time, attitude.
+Underneath *sarei rimasto*: *rimanere* and *essere*. Staying, and being.
 
 ---
 
-There is a profound beauty to this architecture. The infinitive is language's way of saying: before there can be instances, there must be the thing instantiated. Before there can be history, there must be action. Before there can be a story, there must be verbs.
+*Il mondo che vedevamo insieme.*
 
-And so Italian begins, in a sense, with the infinitive. Not with *io*, *tu*, *lui* — those come later. First comes the doing itself. The being itself. The seeing itself. The knowing itself.
+*Il mondo* — the world. A noun shaped by an article.
 
-Pure. Unowned. Timeless.
+*Che* — which, that. A bridge between two clauses, a connector that lets one sentence enter another.
 
-Waiting, like a seed waiting for soil, for someone to pick it up and say: *I do this. You do that. We did it yesterday. They will do it tomorrow.*
+*Vedevamo* — from *vedere*. To see. But look at the form: *vedevamo* is not simply "we saw." It is "we were seeing" — a past that was ongoing, a shared state rather than a single event. We used to see. We kept seeing. The world we were in the habit of seeing together.
 
-The infinitive is the patient zero of meaning. Everything else is the outbreak.
+*Insieme* — together. The sign of shared action.
 
-*In Chapter 1, we will meet the present tense — the moment when infinitives acquire persons and the timeless becomes now.*
+Underneath *vedevamo*: *vedere*. Seeing.
+
+---
+
+*Non si sarebbe spento.*
+
+*Spento* — from *spegnersi*. To go out. To extinguish. The atom: a light going dark, from within.
+
+*Si* — a small particle that changes the behavior of the verb. It does not mean an external force turns it off, nor does the world actively extinguish itself. It marks a change of state from within. The light simply goes dark.
+
+*Sarebbe* — *essere* one more time. To be. Holding *spento* in the unrealized consequence. *Si sarebbe spento* — it would have gone out.
+
+Underneath: *spegnersi* and *essere*. Extinguishing, and being.
+
+---
+
+Now stop and look at what we have found.
+
+Under the finished sentence there are verbs in their unbuilt form:
+
+*Sapere.* To know.
+*Avere.* To have.
+*Sparire.* To disappear.
+*Essere.* To be.
+*Rimanere.* To stay.
+*Vedere.* To see.
+*Spegnersi.* To go out.
+
+These are the atoms. The raw material of action, stripped of every context. This is where every Italian verb lives before it enters a sentence.
+
+But the sentence is not made of verbs alone.
+
+Look at what surrounds them. *Se* — the word that opens a condition, that makes everything that follows hypothetical. *Allora* — a pointer aimed at a specific moment in the past. *Che* — a connector that lets one clause enter another, that makes complex thought possible. *Non* — the mark of negation, the word that reverses direction.
+
+These are logical connectors. They determine the architecture of the sentence — what depends on what, what cancels what, what opens and what closes.
+
+But there is another kind of material. *Il*, the article that shapes *mondo* into something specific and known. *Te*, the form *tu* takes after a preposition — not the subject, but the object in space, the person being approached. *Accanto a*, a relation: not just nearness, but the precise geometry of beside.
+
+These carry grammatical information — definiteness, gender, number, role, relation. They tell you not only what the words mean, but what they are doing in the sentence.
+
+And then there is *si*, which is neither a connector nor an article. *Si* changes the behavior of the verb itself. It folds the action inward. *Spegnersi* is not the same as *spegnere*. The particle transforms the verb's relationship to its subject. And *insieme* does something similar in meaning: it doesn't describe an action but colors it, adds the dimension of shared experience.
+
+This is what the sentence is made of: atoms, mortar, and hidden joints.
+
+And the mortar is not all one thing. Some of it is logical, some grammatical, some relational, some behavioral. Each kind does a different job. Each kind will take time to learn.
+
+At the beginning of the course, we can name these pieces. We can translate many of them. But we cannot yet make the sentence. To make it, Italian must give the material form: person, time, mood, relation, agreement, memory, sequence.
+
+That is what the course is for.
+
+---
+
+With each lesson, you will gain one more tool. Not a rule to memorize — a new atom, a new piece of mortar, or a new way of fitting them together. A way to anchor an infinitive to a person. A way to place it in time. A way to mark it as fact or opinion or desire or impossibility. A way to make it turn back on itself, or reach toward another clause, or carry the weight of something that didn't happen.
+
+By the time you reach the final chapter, you will return to this sentence. And you will not just read it. You will understand every choice — why *avessi* and not *ho*, why *sarebbe* and not *è*, why *vedevamo* and not *abbiamo visto*. You will feel the weight of what the sentence is carrying.
+
+But first: the atoms.
+
+*In Chapter 1, we meet the present tense — the moment when infinitives acquire persons and the timeless becomes now.*

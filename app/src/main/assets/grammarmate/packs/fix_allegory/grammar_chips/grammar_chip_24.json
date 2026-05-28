@@ -1,0 +1,25 @@
+{
+  "key": "B08",
+  "title": "B08 - Futuro Anteriore",
+  "essence": "\"Will have done\" before a future moment.",
+  "formula": "`future of avere/essere + participio passato`",
+  "base": null,
+  "dontConfuse": "It depends on participio and auxiliary choice.",
+  "examples": [
+    {
+      "it": "Avrò finito entro le otto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Saremo arrivati prima di cena.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Quando arriverai, avrò già preparato tutto.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

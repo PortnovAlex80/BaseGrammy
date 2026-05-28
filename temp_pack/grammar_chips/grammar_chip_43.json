@@ -1,0 +1,30 @@
+{
+  "key": "B27",
+  "title": "B27 - Congiuntivo Imperfetto",
+  "essence": "Used after past main clauses and in hypothetical `se` clauses.",
+  "formula": "- `essere -> fossi`\n- `avere -> avessi`\n- `parlare -> parlassi`\n- `vedere -> vedessi`\n- `dormire -> dormissi`",
+  "base": null,
+  "dontConfuse": "In `se` hypotheticals, pair with condizionale: `Se avessi tempo, verrei`.",
+  "examples": [
+    {
+      "it": "Pensavo che tu fossi a casa.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Volevo che venissi.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Speravo che capissi.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Se fossi ricco, viaggerei.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

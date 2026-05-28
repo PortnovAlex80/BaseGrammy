@@ -18,6 +18,7 @@ import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -135,20 +136,10 @@ class TtsEngine(private val context: Context) {
                 emitInitializing(InitPhase.LOADING_MODEL, 75)
 
                 if (missingFiles.isEmpty()) {
-                    // Russian and English: use System TTS (VITS_PIPER models generate only 85ms audio)
-                    // TODO: Debug VITS_PIPER models - all files present (60MB) but output is silent
-                    if (spec.languageId == "ru" || spec.languageId == "en") {
-                        Log.d(TAG, "${spec.displayName} language: forcing System TTS (VITS_PIPER models broken)")
-                        val systemReady = initSystemTts(languageId)
-                        if (!systemReady) {
-                            throw IllegalStateException("System TTS unavailable for $languageId")
-                        }
-                    } else {
-                        // Model files available - use Sherpa-ONNX offline TTS
-                        val config = buildConfig(spec, modelDir)
-                        val tts = OfflineTts(null, config)  // null = load from filesystem, not assets
-                        offlineTts = tts
-                    }
+                    Log.d(TAG, "Loading offline TTS model for ${spec.displayName}")
+                    val config = buildConfig(spec, modelDir)
+                    val tts = OfflineTts(null, config)  // null = load from filesystem, not assets
+                    offlineTts = tts
                 } else if (spec.modelType == TtsModelType.VITS_PIPER) {
                     // VITS_PIPER files missing - fallback to System TTS
                     Log.d(TAG, "VITS_PIPER model files not found for $languageId, falling back to system TTS")
@@ -386,10 +377,9 @@ class TtsEngine(private val context: Context) {
 
                 val myGeneration = generation.incrementAndGet()
                 isStopped.set(false)
+                _state.value = TtsState.Speaking
 
                 speakJob = ttsScope.launch {
-                    _state.value = TtsState.Speaking
-
                     requestAudioFocus()
 
                     val sampleRate = tts.sampleRate()
@@ -421,10 +411,20 @@ class TtsEngine(private val context: Context) {
                     audioTrack.play()
 
                     try {
+                        val genStart = System.currentTimeMillis()
+                        Log.d(TAG, "Starting VITS_PIPER generation: text=\"$text\", speed=$safeSpeed")
+                        var callbackCalled = false
+                        var totalSamples = 0
+
                         tts.generateWithConfigAndCallback(
                             text = text,
                             config = GenerationConfig(sid = speakerId, speed = safeSpeed),
                             callback = { samples ->
+                                if (!callbackCalled) {
+                                    callbackCalled = true
+                                    Log.d(TAG, "VITS_PIPER callback FIRST CALL: samples.size=${samples.size}")
+                                }
+                                totalSamples += samples.size
                                 if (!isStopped.get()) {
                                     audioTrack.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
                                     1
@@ -433,6 +433,25 @@ class TtsEngine(private val context: Context) {
                                 }
                             }
                         )
+
+                        val genDuration = System.currentTimeMillis() - genStart
+                        Log.d(TAG, "VITS_PIPER generation FINISHED: duration=${genDuration}ms, callbackCalled=$callbackCalled, totalSamples=$totalSamples")
+
+                        if (!callbackCalled) {
+                            Log.e(TAG, "VITS_PIPER WARNING: callback NEVER called! Model returned without generating audio.")
+                        }
+
+                        val maxDrainMs = ((totalSamples.toLong() * 1000L) / sampleRate + 750L)
+                            .coerceAtLeast(750L)
+                            .coerceAtMost(30_000L)
+                        val drainStart = System.currentTimeMillis()
+                        while (!isStopped.get() &&
+                            audioTrack.playbackHeadPosition < totalSamples &&
+                            System.currentTimeMillis() - drainStart < maxDrainMs
+                        ) {
+                            delay(20)
+                        }
+                        Log.d(TAG, "AudioTrack drain: played=${audioTrack.playbackHeadPosition}, written=$totalSamples")
                     } catch (e: Throwable) {
                         if (e is kotlinx.coroutines.CancellationException) throw e
                         Log.e(TAG, "Playback failed", e)

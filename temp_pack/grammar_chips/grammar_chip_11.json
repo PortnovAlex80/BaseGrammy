@@ -1,0 +1,30 @@
+{
+  "key": "A11",
+  "title": "A11 - Numeri, Ora, Data",
+  "essence": "Числа нужны для количества, времени и дат.",
+  "formula": null,
+  "base": null,
+  "dontConfuse": "Для времени часто нужен `a`: `alle nove`.",
+  "examples": [
+    {
+      "it": "Ho due fratelli.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Sono le sei.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "La lezione è alle otto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Oggi è lunedì.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}
