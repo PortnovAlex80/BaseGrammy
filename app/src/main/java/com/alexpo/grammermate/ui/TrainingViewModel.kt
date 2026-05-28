@@ -621,15 +621,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun selectLesson(lessonId: String) {
+    fun selectLesson(lessonId: String, packId: String? = null) {
         sessionRunner.pauseTimer()
         vocabSession = emptyList()
         sessionRunner.clearAllCards()
 
-        // Resolve the pack for this lesson and set as active
-        val packId = lessonStore.getPackIdForLesson(lessonId)
-        val packLessonIds = packId?.let { lessonStore.getLessonIdsForPack(it) }
-        rebindWordMasteryStore(packId)
+        // Use provided packId, or resolve from lesson if not specified
+        val resolvedPackId = packId ?: lessonStore.getPackIdForLesson(lessonId)
+        val packLessonIds = resolvedPackId?.let { lessonStore.getLessonIdsForPack(it) }
+        rebindWordMasteryStore(resolvedPackId)
 
         // Rebuild schedules BEFORE reading them
         rebuildSchedules(_coreState.value.navigation.lessons)
@@ -648,7 +648,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = packId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null, hintSessionOffset = Random.nextInt(0, 100)))
+            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = resolvedPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null, hintSessionOffset = Random.nextInt(0, 100)))
         }
         // Reset feature-owned state for session change
         bossOrchestrator.resetState()
@@ -692,7 +692,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (packLessonIds.isNotEmpty()) {
             val currentLessonId = _coreState.value.navigation.selectedLessonId
             val lessonId = if (currentLessonId != null && currentLessonId.value in packLessonIds) currentLessonId.value else packLessonIds.first()
-            selectLesson(lessonId)
+            // Pass packId explicitly to avoid relying on getPackIdForLesson()
+            selectLesson(lessonId, packId)
         } else {
             // Drill-only pack — set activePackId without selecting a lesson
             rebindWordMasteryStore(packId)
@@ -1786,6 +1787,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val activePackId = _coreState.value.navigation.activePackId?.value ?: return emptyList()
         val selectedLanguageId = _coreState.value.navigation.selectedLanguageId.value
 
+        Log.d(logTag, "getChapterCards: activePackId=$activePackId, selectedLanguageId=$selectedLanguageId")
+
         if (!lessonStore.hasChapters(activePackId)) {
             return emptyList()
         }
@@ -1915,6 +1918,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     activeChapterId = null
                 )
             }
+            Log.d(logTag, "loadChapters: no active pack, clearing chapters")
             return
         }
 
@@ -1927,15 +1931,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     activeChapterId = null
                 )
             }
+            Log.d(logTag, "loadChapters: pack $activePackId has no chapters, clearing")
             return
         }
 
+        Log.d(logTag, "loadChapters: loading chapters for pack $activePackId")
         val chapters = lessonStore.getChapters(activePackId)
         val chapterProgressStore = container.chapterProgressStore(activePackId)
         val chapterProgresses = chapterProgressStore.loadAll()
 
         // Determine active chapter ID (first incomplete or first chapter)
         val activeChapterId = determineActiveChapter(chapters, chapterProgresses)
+
+        Log.d(logTag, "loadChapters: updating state with ${chapters.size} chapters, activeChapterId=$activeChapterId")
 
         _coreState.update {
             it.copy(

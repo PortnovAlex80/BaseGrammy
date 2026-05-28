@@ -530,7 +530,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun getChapters(packId: String): List<Chapter> {
         val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
-        return manifest.chapters.sortedBy { it.order }
+        val chapters = manifest.chapters.sortedBy { it.order }
+        Log.d("LessonStore", "getChapters($packId): returning ${chapters.size} chapters")
+        chapters.forEach { Log.d("LessonStore", "  - ${it.chapterId}: ${it.title}") }
+        return chapters
     }
 
     override fun getChapterStory(packId: String, storyFile: String): String? {

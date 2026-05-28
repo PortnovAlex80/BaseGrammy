@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,6 +142,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
         // Track previous screen for LADDER back navigation
         var previousRoute by remember { mutableStateOf(Routes.HOME) }
+
+        // Story reader state - saved across screen rotations
+        var storyReaderChapterTitle by rememberSaveable { mutableStateOf<String?>(null) }
+        var storyReaderContent by rememberSaveable { mutableStateOf<String?>(null) }
+
         var dialogs by remember { mutableStateOf(DialogState()) }
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
@@ -320,10 +326,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onReadStory = remember { { chapter ->
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
                                     if (storyContent != null) {
-                                        dialogs = dialogs.copy(
-                                            storyReaderChapterTitle = chapter.title,
-                                            storyReaderContent = storyContent
-                                        )
+                                        storyReaderChapterTitle = chapter.title
+                                        storyReaderContent = storyContent
                                         onNavigate(Routes.STORY_READER)
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -789,8 +793,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.STORY_READER) {
-                        val chapterTitle = dialogs.storyReaderChapterTitle ?: "Unknown Chapter"
-                        val content = dialogs.storyReaderContent ?: ""
+                        val chapterTitle = storyReaderChapterTitle ?: "Unknown Chapter"
+                        val content = storyReaderContent ?: ""
                         val isCurrentlyPlaying = state.audio.ttsState == TtsState.Speaking
 
                         StoryReaderScreen(
@@ -802,10 +806,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     if (isCurrentlyPlaying) {
                                         vm.stopStoryNarration()
                                     }
-                                    dialogs = dialogs.copy(
-                                        storyReaderChapterTitle = null,
-                                        storyReaderContent = null
-                                    )
+                                    storyReaderChapterTitle = null
+                                    storyReaderContent = null
                                     onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
                                 }
                             },
