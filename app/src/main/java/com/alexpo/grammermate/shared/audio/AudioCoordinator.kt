@@ -195,6 +195,77 @@ class AudioCoordinator(
         ttsEngine.stop()
     }
 
+    /**
+     * Play multilingual story content with language switching.
+     * Parses text segments and plays them sequentially with appropriate language.
+     *
+     * @param content Story content with {it}...{/it} markers
+     * @param defaultLanguageId Default language for unmarked text
+     */
+    fun playMultilingualStory(content: String, defaultLanguageId: String = "en") {
+        coroutineScope.launch {
+            ttsMutex.withLock {
+                try {
+                    val segments = com.alexpo.grammermate.data.MultilingualStoryParser.parseStory(
+                        content,
+                        defaultLanguageId
+                    )
+
+                    Log.d(TAG, "Playing ${segments.size} segments with languages: ${segments.map { it.languageId }}")
+
+                    for ((index, segment) in segments.withIndex()) {
+                        val cleanText = com.alexpo.grammermate.data.MultilingualStoryParser.cleanMarkdown(segment.text)
+                        val previewText = cleanText.take(50).replace("\n", "\\n")
+
+                        Log.d(TAG, "════════════════════════════════════════")
+                        Log.d(TAG, "Segment $index/${segments.size} | Language: ${segment.languageId.uppercase()}")
+                        Log.d(TAG, "Text preview: \"$previewText...\"")
+
+                        // Initialize TTS for this segment's language if needed
+                        if (ttsEngine.state.value != TtsState.Ready
+                            || ttsEngine.activeLanguageId != segment.languageId
+                        ) {
+                            Log.d(TAG, "→ Initializing TTS for: ${segment.languageId}")
+                            ttsEngine.initialize(segment.languageId)
+                        }
+
+                        // Wait for TTS to be ready (increased timeout for VITS_PIPER)
+                        var retries = 0
+                        while (ttsEngine.state.value != TtsState.Ready && retries < 50) {
+                            delay(100)
+                            retries++
+                            if (retries % 10 == 0) {
+                                Log.d(TAG, "→ Still waiting for TTS initialization... (${retries * 100}ms)")
+                            }
+                        }
+
+                        if (ttsEngine.state.value == TtsState.Ready) {
+                            Log.d(TAG, "→ Speaking segment $index...")
+                            Log.d(TAG, "→ Text length: ${cleanText.length}, full text: \"$cleanText\"")
+                            ttsEngine.speak(cleanText, languageId = segment.languageId)
+
+                            // Wait for this segment to finish playing
+                            // TTS uses UtteranceProgressListener which sets state back to Ready when done
+                            var waitRetries = 0
+                            while (ttsEngine.state.value == TtsState.Speaking && waitRetries < 300) {
+                                delay(100)
+                                waitRetries++
+                            }
+
+                            Log.d(TAG, "✓ Segment $index finished (${segment.languageId.uppercase()})")
+                        } else {
+                            Log.w(TAG, "⚠ TTS not ready for segment $index, skipping")
+                        }
+                    }
+
+                    Log.d(TAG, "All segments played successfully")
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Multilingual story playback failed", e)
+                }
+            }
+        }
+    }
+
     fun setTtsSpeed(speed: Float) {
         _audioState.update { it.copy(ttsSpeed = speed.coerceIn(0.5f, 1.5f)) }
     }
@@ -374,13 +445,26 @@ class AudioCoordinator(
 
     fun startBackgroundTtsDownload() {
         val languages = stateAccess.uiState.value.navigation.languages
-        if (languages.isEmpty()) return
+        Log.d(TAG, "startBackgroundTtsDownload: languages count = ${languages.size}")
+
+        if (languages.isEmpty()) {
+            Log.w(TAG, "startBackgroundTtsDownload: no languages configured")
+            return
+        }
 
         val missingLanguages = languages.map { it.id.value }
             .filter { !ttsModelManager.isModelReady(it) }
 
-        if (missingLanguages.isEmpty()) return
-        if (bgDownloadJob?.isActive == true) return
+        Log.d(TAG, "startBackgroundTtsDownload: missingLanguages = $missingLanguages")
+
+        if (missingLanguages.isEmpty()) {
+            Log.d(TAG, "startBackgroundTtsDownload: all models ready")
+            return
+        }
+        if (bgDownloadJob?.isActive == true) {
+            Log.d(TAG, "startBackgroundTtsDownload: background download already active")
+            return
+        }
 
         bgDownloadJob = coroutineScope.launch(Dispatchers.IO) {
             if (ttsDownloadJob?.isActive == true) return@launch // Manual download takes priority

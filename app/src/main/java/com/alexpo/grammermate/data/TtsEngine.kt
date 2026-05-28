@@ -130,14 +130,35 @@ class TtsEngine(private val context: Context) {
                 }
                 emitInitializing(InitPhase.CHECKING_FILES, 75)
 
-                // Phase 2: Load engine (75-95%). Use Android's system TTS to avoid
-                // native Sherpa TTS crashes observed on some tablets during OfflineTts init.
+                // Phase 2: Load engine (75-95%)
                 System.gc()
                 emitInitializing(InitPhase.LOADING_MODEL, 75)
 
-                val systemReady = initSystemTts(languageId)
-                if (!systemReady) {
-                    throw IllegalStateException("Android system TTS engine is unavailable for $languageId")
+                if (missingFiles.isEmpty()) {
+                    // Russian and English: use System TTS (VITS_PIPER models generate only 85ms audio)
+                    // TODO: Debug VITS_PIPER models - all files present (60MB) but output is silent
+                    if (spec.languageId == "ru" || spec.languageId == "en") {
+                        Log.d(TAG, "${spec.displayName} language: forcing System TTS (VITS_PIPER models broken)")
+                        val systemReady = initSystemTts(languageId)
+                        if (!systemReady) {
+                            throw IllegalStateException("System TTS unavailable for $languageId")
+                        }
+                    } else {
+                        // Model files available - use Sherpa-ONNX offline TTS
+                        val config = buildConfig(spec, modelDir)
+                        val tts = OfflineTts(null, config)  // null = load from filesystem, not assets
+                        offlineTts = tts
+                    }
+                } else if (spec.modelType == TtsModelType.VITS_PIPER) {
+                    // VITS_PIPER files missing - fallback to System TTS
+                    Log.d(TAG, "VITS_PIPER model files not found for $languageId, falling back to system TTS")
+                    val systemReady = initSystemTts(languageId)
+                    if (!systemReady) {
+                        throw IllegalStateException("System TTS unavailable for $languageId")
+                    }
+                } else {
+                    // KOKORO always requires offline files
+                    throw IllegalStateException("Missing or empty model files: $missingFiles")
                 }
                 emitInitializing(InitPhase.LOADING_MODEL, 95)
 
@@ -203,6 +224,7 @@ class TtsEngine(private val context: Context) {
                             }
 
                             override fun onDone(utteranceId: String?) {
+                                Log.d(TAG, "System TTS onDone: utteranceId=$utteranceId")
                                 if (_state.value == TtsState.Speaking && utteranceId == systemFinalUtteranceId) {
                                     systemFinalUtteranceId = null
                                     _state.value = TtsState.Ready
@@ -310,6 +332,7 @@ class TtsEngine(private val context: Context) {
                         system.setSpeechRate(safeSpeed)
                         val utteranceId = "tts-${generation.incrementAndGet()}"
                         systemFinalUtteranceId = utteranceId
+                        Log.d(TAG, "System TTS speaking: text.length=${text.length}, text=\"$text\", speed=$safeSpeed, utteranceId=$utteranceId")
                         val result = system.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
                         if (result != TextToSpeech.SUCCESS) {
                             systemFinalUtteranceId = null

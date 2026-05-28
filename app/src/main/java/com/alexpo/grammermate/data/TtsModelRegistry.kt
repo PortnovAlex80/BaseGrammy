@@ -49,14 +49,14 @@ object TtsModelRegistry {
             languageId = "ru",
             displayName = "Russian",
             modelType = TtsModelType.VITS_PIPER,
-            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-dmitry-medium.tar.bz2",
-            archivePrefix = "vits-piper-ru_RU-dmitry-medium/",
-            modelDirName = "vits-piper-ru_RU-dmitry-medium",
+            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-irina-medium.tar.bz2",
+            archivePrefix = "vits-piper-ru_RU-irina-medium/",
+            modelDirName = "vits-piper-ru_RU-irina-medium",
             fallbackDownloadSize = 65L * 1024 * 1024,
             minRequiredBytes = 150L * 1024 * 1024,
-            requiredFiles = listOf("ru_RU-dmitry-medium.onnx", "tokens.txt"),
+            requiredFiles = listOf("ru_RU-irina-medium.onnx", "tokens.txt"),
             requiredDirs = listOf("espeak-ng-data"),
-            modelFileName = "ru_RU-dmitry-medium.onnx"
+            modelFileName = "ru_RU-irina-medium.onnx"
         )
     )
 

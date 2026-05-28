@@ -330,21 +330,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onPlayChapterStory = remember { { chapter ->
                                     // Quick play from roadmap - load story and play immediately
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
-                                    if (storyContent != null) {
-                                        val plainText = storyContent
-                                            .replace(Regex("""^#+\s+.*$"""), "")
-                                            .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
-                                            .replace(Regex("""\*([^*]+)\*"""), "$1")
-                                            .replace(Regex("""```[^`]*```"""), "")
-                                            .replace(Regex("""```"""), "")
-                                            .replace(Regex("""[-*]\s+"""), "")
-                                            .replace(Regex("""\n\n+"""), "\n")
-                                            .trim()
-
-                                        if (plainText.isNotEmpty()) {
-                                            // Stories are in Russian - use Russian TTS
-                                            vm.speakStoryText(plainText, "ru")
-                                        }
+                                    if (storyContent != null && storyContent.isNotBlank()) {
+                                        // Use multilingual TTS with Italian markers {it}...{/it}
+                                        // ALLEGORY_PACK stories are in Russian with Italian insertions
+                                        vm.speakMultilingualStory(storyContent, defaultLanguageId = "ru")
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                     }
@@ -727,23 +716,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onNavigate(Routes.CHAPTER_LESSONS)
                             } },
                             onPlayChapterStory = remember { { chapter ->
-                                // Quick play from roadmap - load story and play immediately
+                                // Quick play from roadmap - use multilingual TTS
                                 val storyContent = vm.loadStoryContent(chapter.storyFile)
                                 if (storyContent != null) {
-                                    val plainText = storyContent
-                                        .replace(Regex("""^#+\s+.*$"""), "")
-                                        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1")
-                                        .replace(Regex("""\*([^*]+)\*"""), "$1")
-                                        .replace(Regex("""```[^`]*```"""), "")
-                                        .replace(Regex("""```"""), "")
-                                        .replace(Regex("""[-*]\s+"""), "")
-                                        .replace(Regex("""\n\n+"""), "\n")
-                                        .trim()
-
-                                    if (plainText.isNotEmpty()) {
-                                        // Stories are in Russian - use Russian TTS
-                                        vm.speakStoryText(plainText, "ru")
-                                    }
+                                    vm.speakMultilingualStory(storyContent, defaultLanguageId = "ru")
                                 } else {
                                     Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                 }
@@ -805,20 +781,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             onPlayStory = remember {
                                 {
-                                    // Extract plain text from markdown for TTS
-                                    val plainText = content
-                                        .replace(Regex("""^#+\s+.*$"""), "") // Remove headers
-                                        .replace(Regex("""\*\*([^*]+)\*\*"""), "$1") // Remove bold markdown
-                                        .replace(Regex("""\*([^*]+)\*"""), "$1") // Remove italic markdown
-                                        .replace(Regex("""```[^`]*```"""), "") // Remove code blocks
-                                        .replace(Regex("""```"""), "") // Remove remaining code markers
-                                        .replace(Regex("""[-*]\s+"""), "") // Remove list markers
-                                        .replace(Regex("""\n\n+"""), "\n") // Normalize line breaks
-                                        .trim()
-
-                                    if (plainText.isNotEmpty()) {
-                                        // Stories are in Russian - use Russian TTS
-                                        vm.speakStoryText(plainText, "ru")
+                                    // Use multilingual TTS for story narration
+                                    if (content.isNotEmpty()) {
+                                        vm.speakMultilingualStory(content, defaultLanguageId = "ru")
                                     }
                                 }
                             },
