@@ -63,6 +63,9 @@ class TtsEngine(private val context: Context) {
     @Volatile
     private var currentTrack: AudioTrack? = null
 
+    @Volatile
+    private var systemFinalUtteranceId: String? = null
+
     private val isStopped = AtomicBoolean(false)
 
     private val generation = AtomicInteger(0)
@@ -200,7 +203,8 @@ class TtsEngine(private val context: Context) {
                             }
 
                             override fun onDone(utteranceId: String?) {
-                                if (_state.value == TtsState.Speaking) {
+                                if (_state.value == TtsState.Speaking && utteranceId == systemFinalUtteranceId) {
+                                    systemFinalUtteranceId = null
                                     _state.value = TtsState.Ready
                                     abandonAudioFocus()
                                 }
@@ -208,6 +212,7 @@ class TtsEngine(private val context: Context) {
 
                             override fun onError(utteranceId: String?) {
                                 if (_state.value == TtsState.Speaking) {
+                                    systemFinalUtteranceId = null
                                     _state.value = TtsState.Error("System TTS playback error")
                                     abandonAudioFocus()
                                 }
@@ -215,6 +220,7 @@ class TtsEngine(private val context: Context) {
 
                             override fun onStop(utteranceId: String?, interrupted: Boolean) {
                                 if (_state.value == TtsState.Speaking) {
+                                    systemFinalUtteranceId = null
                                     _state.value = TtsState.Ready
                                     abandonAudioFocus()
                                 }
@@ -292,6 +298,7 @@ class TtsEngine(private val context: Context) {
                 val system = systemTts
                 if (system != null) {
                     requestAudioFocus()
+                    _state.value = TtsState.Speaking
 
                     // Split long text into sentences for Google TTS (limit ~4000 chars)
                     val maxChunkLength = 4000
@@ -302,8 +309,10 @@ class TtsEngine(private val context: Context) {
                         }
                         system.setSpeechRate(safeSpeed)
                         val utteranceId = "tts-${generation.incrementAndGet()}"
+                        systemFinalUtteranceId = utteranceId
                         val result = system.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
                         if (result != TextToSpeech.SUCCESS) {
+                            systemFinalUtteranceId = null
                             _state.value = TtsState.Error("System TTS playback failed")
                             abandonAudioFocus()
                         }
@@ -312,21 +321,32 @@ class TtsEngine(private val context: Context) {
                     } else {
                         // Long text - split by sentence boundaries and play sequentially
                         val sentences = text.split(Regex("""(?<=[.!?])\s+"""))
+                            .map { it.trim() }
+                            .filter { it.isNotBlank() }
+                        if (sentences.isEmpty()) {
+                            systemFinalUtteranceId = null
+                            _state.value = TtsState.Ready
+                            abandonAudioFocus()
+                            return
+                        }
                         var lastResult = TextToSpeech.SUCCESS
                         for ((index, sentence) in sentences.withIndex()) {
-                            if (sentence.isBlank()) continue
                             val params = android.os.Bundle().apply {
                                 putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
                             }
                             system.setSpeechRate(safeSpeed)
                             val utteranceId = "tts-${generation.incrementAndGet()}-part-$index"
+                            if (index == sentences.lastIndex) {
+                                systemFinalUtteranceId = utteranceId
+                            }
                             val queueMode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
-                            val result = system.speak(sentence.trim(), queueMode, params, utteranceId)
+                            val result = system.speak(sentence, queueMode, params, utteranceId)
                             if (result != TextToSpeech.SUCCESS) {
                                 lastResult = result
                             }
                         }
                         if (lastResult != TextToSpeech.SUCCESS) {
+                            systemFinalUtteranceId = null
                             _state.value = TtsState.Error("System TTS playback failed")
                             abandonAudioFocus()
                         }
@@ -449,6 +469,7 @@ class TtsEngine(private val context: Context) {
         val systemToFree = systemTts
         offlineTts = null
         systemTts = null
+        systemFinalUtteranceId = null
         activeLanguageId = null
         initFailed = false
         _state.value = TtsState.Idle
@@ -459,6 +480,7 @@ class TtsEngine(private val context: Context) {
 
     private fun doStop() {
         isStopped.set(true)
+        systemFinalUtteranceId = null
         systemTts?.stop()
         currentTrack?.let {
             try {
