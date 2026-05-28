@@ -114,9 +114,7 @@ private data class DialogState(
     val showTtsDownloadDialog: Boolean = false,
     val showProfileStats: Boolean = false,
     val pendingDailyLevel: Int = 0,
-    val isLoadingDaily: Boolean = false,
-    val storyReaderChapterTitle: String? = null,
-    val storyReaderContent: String? = null
+    val isLoadingDaily: Boolean = false
 )
 
 // ── Main composable ──────────────────────────────────────────────────────────
@@ -143,10 +141,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         // Track previous screen for LADDER back navigation
         var previousRoute by remember { mutableStateOf(Routes.HOME) }
 
-        // Story reader state - saved across screen rotations
-        var storyReaderChapterTitle by rememberSaveable { mutableStateOf<String?>(null) }
-        var storyReaderContent by rememberSaveable { mutableStateOf<String?>(null) }
-
+        // Story reader state managed in ViewModel (state.storyReaderChapterTitle, state.storyReaderContent)
         var dialogs by remember { mutableStateOf(DialogState()) }
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
@@ -326,8 +321,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onReadStory = remember { { chapter ->
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
                                     if (storyContent != null) {
-                                        storyReaderChapterTitle = chapter.title
-                                        storyReaderContent = storyContent
+                                        vm.setStoryReader(chapter.title, storyContent)
                                         onNavigate(Routes.STORY_READER)
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -714,10 +708,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onReadStory = remember { { chapter ->
                                 val storyContent = vm.loadStoryContent(chapter.storyFile)
                                 if (storyContent != null) {
-                                    dialogs = dialogs.copy(
-                                        storyReaderChapterTitle = chapter.title,
-                                        storyReaderContent = storyContent
-                                    )
+                                    vm.setStoryReader(chapter.title, storyContent)
                                     onNavigate(Routes.STORY_READER)
                                 } else {
                                     Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -793,8 +784,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.STORY_READER) {
-                        val chapterTitle = storyReaderChapterTitle ?: "Unknown Chapter"
-                        val content = storyReaderContent ?: ""
+                        val chapterTitle = state.storyReaderChapterTitle ?: "Unknown Chapter"
+                        val content = state.storyReaderContent
                         val isCurrentlyPlaying = state.audio.ttsState == TtsState.Speaking
 
                         StoryReaderScreen(
@@ -806,9 +797,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     if (isCurrentlyPlaying) {
                                         vm.stopStoryNarration()
                                     }
-                                    storyReaderChapterTitle = null
-                                    storyReaderContent = null
+                                    // Navigate first, then clear state to avoid flicker
                                     onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
+                                    // Clear state after navigation completes
+                                    vm.clearStoryReader()
                                 }
                             },
                             onPlayStory = remember {

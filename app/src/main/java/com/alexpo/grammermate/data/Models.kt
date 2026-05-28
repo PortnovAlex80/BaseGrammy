@@ -595,6 +595,10 @@ data class TrainingUiState(
     val chapterProgresses: Map<String, ChapterProgress> = emptyMap(),
     /** Grammar Story Roadmap: active chapter ID (null if no chapters) */
     val activeChapterId: String? = null,
+    /** Story Reader: chapter title being displayed (null if no story) */
+    val storyReaderChapterTitle: String? = null,
+    /** Story Reader: story content being displayed (empty if no story) */
+    val storyReaderContent: String = "",
     /** True while background init (file I/O) is in progress. UI shows a spinner. */
     val isLoading: Boolean = false,
     /** Parse errors collected during import operations */

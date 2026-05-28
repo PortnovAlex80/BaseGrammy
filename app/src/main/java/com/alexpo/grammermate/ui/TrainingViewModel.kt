@@ -382,6 +382,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         audioCoordinator.stopTts()
     }
 
+    fun setStoryReader(chapterTitle: String, content: String) {
+        _coreState.update {
+            it.copy(
+                storyReaderChapterTitle = chapterTitle,
+                storyReaderContent = content
+            )
+        }
+    }
+
+    fun clearStoryReader() {
+        _coreState.update {
+            it.copy(
+                storyReaderChapterTitle = null,
+                storyReaderContent = ""
+            )
+        }
+    }
+
     private fun savePomodoroHistory(
         stats: PomodoroSessionStats,
         remainingSeconds: Int,
