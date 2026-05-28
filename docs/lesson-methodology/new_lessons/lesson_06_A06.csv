@@ -1,60 +1,60 @@
 A06 - Essere vs Avere (states vs sensations)
-Я студент.;Io sono studente.
-Ты уставший.;Tu sei stanco.
-Он счастливый человек.;Lui è una persona felice.
-Она дома.;Lei è a casa.
-Мы друзья.;Noi siamo amici.
-Вы в Италии.;Voi siete in Italia.
-Они из России.;Loro sono della Russia.
-Это моя книга.;Questo è il mio libro.
-Я итальянский.;Io sono italiano.
-Ты высокий.;Tu sei alto.
-Она красивая.;Lei è bella.
-Мы молодые.;Siamo giovani.
-Вы грустные.;Siete tristi.
-Они богатые.;Loro sono ricchi.
-Я счастлив.;Sono felice.
-Ты болен.;Sei malato.
-Я врач.;Io sono dottore.
-Ты учитель.;Tu sei insegnante.
-Она домохозяйка.;Lei è casalinga.
-Мы учителя.;Siamo insegnanti.
-Вы студенты.;Siete studenti.
-Они врачи.;Loro sono medici.
-Мне 20 лет.;Ho 20 anni.
-У тебя есть брат?;Hai un fratello?
-У него есть машина.;Lui ha una macchina.
-У неё есть время.;Lei ha tempo.
-У нас есть проблема.;Abbiamo un problema.
-У вас есть вопросы?;Avete domande?
-У них есть дети.;Loro hanno figli.
-Я голоден.;Ho fame.
-Ты хочешь пить.;Hai sete.
-Ему холодно.;Lui ha freddo.
-Ей страшно.;Lei ha paura.
-Мы хотим спать.;Abbiamo sonno.
-Я спешу.;Ho fretta.
-Тебе повезло.;Hai fortuna.
-Он прав.;Lui ha ragione.
-Она неправа.;Lei ha torto.
-Мне 25 лет.;Ho 25 anni.
-Ему 30 лет.;Lui ha 30 anni.
-У меня болит голова.;Ho mal di testa.
-У тебя болят зубы.;Hai mal di denti.
-Я не студент.;Non sono studente.
-Ты не уставший.;Non sei stanco.
-Он не счастливый.;Lui non è felice.
-Она не дома.;Lei non è a casa.
-Мы не друзья.;Non siamo amici.
-Я не голоден.;Non ho fame.
-Ты не хочешь пить.;Non hai sete.
-У меня нет времени.;Non ho tempo.
-У тебя нет машины.;Non hai una macchina.
-Ему не холодно.;Lui non ha freddo.
-Ей не страшно.;Lei non ha paura.
-Мы не хотим спать.;Non abbiamo sonno.
-Я не спешу.;Non ho fretta.
-Тебе не повезло.;Non hai fortuna.
-Он не прав.;Lui non ha ragione.
-Она не ошибается.;Lei non ha torto.
-У меня не болит голова.;Non ho mal di testa.
+Я студент. (studente);Io sono studente.
+Ты уставший. (stanco);Tu sei stanco.
+Он счастливый человек. (persona, felice);Lui è una persona felice.
+Она дома. (casa);Lei è a casa.
+Мы друзья. (amici);Noi siamo amici.
+Вы в Италии. (italia);Voi siete in Italia.
+Они из России. (russia);Loro sono della Russia.
+Это моя книга. (libro);Questo è il mio libro.
+Я итальянский. (italiano);Io sono italiano.
+Ты высокий. (alto);Tu sei alto.
+Она красивая. (bella);Lei è bella.
+Мы молодые. (giovani);Siamo giovani.
+Вы грустные. (tristi);Siete tristi.
+Они богатые. (ricchi);Loro sono ricchi.
+Я счастлив. (felice);Sono felice.
+Ты болен. (malato);Sei malato.
+Я врач. (dottore);Io sono dottore.
+Ты учитель. (insegnante);Tu sei insegnante.
+Она домохозяйка. (casalinga);Lei è casalinga.
+Мы учителя. (insegnanti);Siamo insegnanti.
+Вы студенты. (studenti);Siete studenti.
+Они врачи. (medici);Loro sono medici.
+Мне 20 лет. (anni);Ho 20 anni.
+У тебя есть брат? (fratello);Hai un fratello?
+У него есть машина. (macchina);Lui ha una macchina.
+У неё есть время. (tempo);Lei ha tempo.
+У нас есть проблема. (problema);Abbiamo un problema.
+У вас есть вопросы? (domande);Avete domande?
+У них есть дети. (figli);Loro hanno figli.
+Я голоден. (fame);Ho fame.
+Ты хочешь пить. (sete);Hai sete.
+Ему холодно. (freddo);Lui ha freddo.
+Ей страшно. (paura);Lei ha paura.
+Мы хотим спать. (sonno);Abbiamo sonno.
+Я спешу. (fretta);Ho fretta.
+Тебе повезло. (fortuna);Hai fortuna.
+Он прав. (ragione);Lui ha ragione.
+Она неправа. (torto);Lei ha torto.
+Мне 25 лет. (anni);Ho 25 anni.
+Ему 30 лет. (anni);Lui ha 30 anni.
+У меня болит голова. (mal, testa);Ho mal di testa.
+У тебя болят зубы. (mal, denti);Hai mal di denti.
+Я не студент. (studente);Non sono studente.
+Ты не уставший. (stanco);Non sei stanco.
+Он не счастливый. (felice);Lui non è felice.
+Она не дома. (casa);Lei non è a casa.
+Мы не друзья. (amici);Non siamo amici.
+Я не голоден. (fame);Non ho fame.
+Ты не хочешь пить. (sete);Non hai sete.
+У меня нет времени. (tempo);Non ho tempo.
+У тебя нет машины. (macchina);Non hai una macchina.
+Ему не холодно. (freddo);Lui non ha freddo.
+Ей не страшно. (paura);Lei non ha paura.
+Мы не хотим спать. (sonno);Non abbiamo sonno.
+Я не спешу. (fretta);Non ho fretta.
+Тебе не повезло. (fortuna);Non hai fortuna.
+Он не прав. (ragione);Lui non ha ragione.
+Она не ошибается. (torto);Lei non ha torto.
+У меня не болит голова. (mal, testa);Non ho mal di testa.
