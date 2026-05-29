@@ -391,6 +391,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun stopStoryNarration() {
         audioCoordinator.stopTts()
+        // Force UI state update to reflect stop immediately
+        _coreState.update { it }
     }
 
     fun setStoryReader(chapterTitle: String, content: String) {
@@ -925,6 +927,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /** Set the route to navigate back to when the training session ends. */
     fun setReturnTo(route: String) {
         _coreState.update { it.copy(cardSession = it.cardSession.copy(returnTo = route)) }
+    }
+
+    /** Set return route based on pack type (chapter-based or classic). */
+    fun setReturnToForLesson() {
+        val activePackId = _coreState.value.navigation.activePackId?.value
+        val hasChapters = activePackId != null && hasPackChapters(activePackId)
+        val returnRoute = when {
+            hasChapters -> "chapter_lessons"
+            else -> "lesson"
+        }
+        setReturnTo(returnRoute)
     }
 
     fun importLesson(uri: Uri) {

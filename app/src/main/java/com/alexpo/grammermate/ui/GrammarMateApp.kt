@@ -446,25 +446,35 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     composable(Routes.LESSON) {
                         LessonRoadmapScreen(
                             state = state,
-                            onBack = remember { { onNavigate(Routes.HOME) } },
+                            onBack = remember(state.navigation.activePackId) {
+                                {
+                                    val activePackId = state.navigation.activePackId?.value
+                                    val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                                    if (hasChapters) {
+                                        onNavigate(Routes.CHAPTER_LESSONS)
+                                    } else {
+                                        onNavigate(Routes.HOME)
+                                    }
+                                }
+                            },
                             onStartSubLesson = remember { { index: Int ->
                                 vm.selectSubLesson(index)
-                                vm.setReturnTo(Routes.LESSON)
+                                vm.setReturnToForLesson()
                                 onNavigate(Routes.TRAINING)
                             } },
                             onStartBossLesson = remember { {
                                 vm.startBossLesson()
-                                vm.setReturnTo(Routes.LESSON)
+                                vm.setReturnToForLesson()
                                 onNavigate(Routes.TRAINING)
                             } },
                             onStartBossMega = remember { {
                                 vm.startBossMega()
-                                vm.setReturnTo(Routes.LESSON)
+                                vm.setReturnToForLesson()
                                 onNavigate(Routes.TRAINING)
                             } },
                             onReview = remember { { hintLevel: HintLevel ->
                                 vm.startReview(hintLevel)
-                                vm.setReturnTo(Routes.LESSON)
+                                vm.setReturnToForLesson()
                                 onNavigate(Routes.TRAINING)
                             } },
                             onNextLesson = remember(state.navigation.lessons, state.navigation.selectedLessonId) {
@@ -624,6 +634,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         returnTo == Routes.DAILY_PRACTICE -> {
                                             vm.daily.onBlockComplete()
                                             onNavigate(Routes.DAILY_PRACTICE)
+                                        }
+                                        returnTo == Routes.CHAPTER_LESSONS -> {
+                                            onNavigate(Routes.CHAPTER_LESSONS)
+                                        }
+                                        returnTo == Routes.LESSON -> {
+                                            onNavigate(Routes.LESSON)
                                         }
                                         else -> onNavigate(Routes.HOME)
                                     }
