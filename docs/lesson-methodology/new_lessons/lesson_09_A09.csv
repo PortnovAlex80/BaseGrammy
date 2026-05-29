@@ -1,46 +1,85 @@
 A09 - Preposizioni semplici e articolate (di/a/da/in/su/con/per + articoli)
-Это книга моего друга.;È il libro del mio amico.
-Это тетрадь студента.;È il quaderno dello studente.
-Это дом учителя.;È la casa dell'insegnante.
-Это машина моей сестры.;È la macchina di mia sorella.
-Я иду в школу.;Vado a scuola.
-Мы идем в театр.;Andiamo a teatro.
-Она идет на работу.;Lei va al lavoro.
-Он идет на рынок.;Lui va al mercato.
-Я приезжаю из Рима.;Vengo da Roma.
-Мы приходим из Милана.;Veniamo da Milano.
-Она приезжает из Неаполя.;Lei viene da Napoli.
-Он приходит из Флоренции.;Lui viene da Firenze.
-Я живу в Италии.;Vivo in Italia.
-Она живет в Риме.;Lei vive a Roma.
-Мы живем в Милане.;Viviamo a Milano.
-Они живут в Неаполе.;Loro vivono a Napoli.
-Я нахожусь в гостинице.;Sono in albergo.
-Она в больнице.;Lei è in ospedale.
-Мы в школе.;Siamo a scuola.
-Они в церкви.;Loro sono in chiesa.
-Книга на столе.;Il libro è sul tavolo.
-Телефон на стуле.;Il telefono è sulla sedia.
-Ключи в сумке.;Le chiavi sono nella borsa.
-Ручка в кармане.;La penna è in tasca.
-Я иду с другом.;Vado con un amico.
-Мы работаем с коллегой.;Lavoriamo con un collega.
-Она говорит с сестрой.;Lei parla con sua sorella.
-Он встречает брата.;Lui incontra suo fratello.
-Я иду для тебя.;Vado per te.
-Мы делаем это для всех.;Facciamo questo per tutti.
-Она работает для семьи.;Lei lavora per la famiglia.
-Он живет для страсти.;Lui vive per la passione.
-Я работаю в офисе.;Lavoro in ufficio.
-Она работает на фабрике.;Lei lavora in fabbrica.
-Мы работаем в магазине.;Lavoriamo in negozio.
-Они работают в компании.;Loro lavorano in azienda.
-Я иду к врачу.;Vado dal dottore.
-Она идет к стоматологу.;Lei va dal dentista.
-Мы идем к учителю.;Andiamo dall'insegnante.
-Они идут к адвокату.;Loro vanno dall'avvocato.
-Это для меня.;È per me.
-Это для тебя.;È per te.
-Это для нас.;È per noi.
-Это для вас.;È per voi.
-Это для них.;È per loro.
+Книга Марко. (libro, Marco);È il libro di Marco.
+Тетрадь студента. (quaderno, studente);È il quaderno dello studente.
+Дом учителя. (casa, dell'insegnante);È la casa dell'insegnante.
+Машина Анны. (macchina, Anna);È la macchina di Anna.
+Цвет города. (colore, città);È il colore della città.
+Название книги. (nome, libro);È il nome del libro.
+Столовая студентов. (mensa, studenti);È la mensa degli studenti.
+Парта девочки. (banco, ragazza);È il banco della ragazza.
+Город Рима. (città, Roma);È la città di Roma.
+Проблема денег. (problema, soldi);È un problema di soldi.
+Иду в школу. (vado, scuola);Vado a scuola.
+Идем в театр. (andiamo, teatro);Andiamo a teatro.
+Иду на работу. (lavoro);Vado al lavoro.
+Идет на рынок. (mercato);Va al mercato.
+Идем к студенту. (andiamo, studente);Andiamo allo studente.
+Идет к актрисе. (attrice);Va all'attrice.
+Приезжаю из Рима. (vengo, roma);Vengo da Roma.
+Приходим из Милана. (veniamo, milano);Veniamo da Milano.
+Приезжает из Неаполя. (viene, napoli);Viene da Napoli.
+Приходит из Флоренции. (viene, firenze);Viene da Firenze.
+Живу в Италии. (vivo, italia);Vivo in Italia.
+Живет в Риме. (vive, roma);Vive a Roma.
+Живем в Милане. (viviamo, milano);Viviamo a Milano.
+Живут в Неаполе. (vivono, napoli);Vivono a Napoli.
+В гостинице. (albergo);Sono in albergo.
+В больнице. (ospedale);È in ospedale.
+В школе. (scuola);Siamo a scuola.
+В церкви. (chiesa);Sono in chiesa.
+В театре. (teatro);Siamo in teatro.
+В саду. (giardino);Sono in giardino.
+Книга на столе. (libro, tavolo);Il libro è sul tavolo.
+Телефон на стуле. (telefono, sedia);Il telefono è sulla sedia.
+Ключи на полке. (chiavi, scaffale);Le chiavi sono sullo scaffale.
+Кошка на окне. (gatto, finestra);Il gatto è sulla finestra.
+Ручка на столе. (penna, tavolo);La penna è sul tavolo.
+Сумка на кровати. (borsa, letto);La borsa è sul letto.
+Иду с другом. (vado, amico);Vado con un amico.
+Работаем с коллегой. (lavoriamo, collega);Lavoriamo con un collega.
+Говорит с сестрой. (parla, sorella);Parla con la sorella.
+Пишу ручкой. (scrivo, penna);Scrivo con la penna.
+Едим вилкой. (mangiamo, forchetta);Mangiamo con la forchetta.
+Это для тебя. (per te);È per te.
+Делаем это для всех. (facciamo);Facciamo questo per tutti.
+Работает для семьи. (lavora, famiglia);Lavora per la famiglia.
+Это для меня. (per me);È per me.
+Это для нас. (per noi);È per noi.
+Это для вас. (per voi);È per voi.
+Это для них. (per loro);È per loro.
+Работаю в офисе. (lavoro, ufficio);Lavoro in ufficio.
+Работает на фабрике. (lavora, fabbrica);Lavora in fabbrica.
+Работаем в магазине. (lavoriamo, negozio);Lavoriamo in negozio.
+Работают в компании. (lavorano, azienda);Lavorano in azienda.
+Иду к врачу. (vado, dottore);Vado dal dottore.
+Идет к стоматологу. (dentista);Va dal dentista.
+Идем к учителю. (andiamo, dall'insegnante);Andiamo dall'insegnante.
+Идут к адвокату. (vanno, dall'avvocato);Vanno dall'avvocato.
+Идем к другу. (andiamo, amico);Andiamo dall'amico.
+Идет к инженеру. (ingegnere);Va dall'ingegnere.
+Пишу в тетради. (scrivo, quaderno);Scrivo nel quaderno.
+Пишу в блокноте. (scrivo, taccuino);Scrivo nel taccuino.
+Студент в классе. (studente, classe);Lo studente è nella classe.
+Кот в сумке. (gatto, borsa);Il gatto è nella borsa.
+Цветы в вазе. (fiori, vaso);I fiori sono nel vaso.
+Книги в библиотеке. (libri, biblioteca);I libri sono nella biblioteca.
+Студенты в университете. (studenti, università);Gli studenti sono nell'università.
+Девушки в школе. (ragazze, scuola);Le ragazze sono nella scuola.
+Говорим о книгах. (parliamo, libri);Parliamo dei libri.
+Книги студентов. (libri, studenti);Sono i libri degli studenti.
+Письма девушек. (lettere, ragazze);Sono le lettere delle ragazze.
+Идем к студентам. (andiamo, studenti);Andiamo agli studenti.
+Даем книги девушкам. (diamo, libri, ragazze);Diamo i libri alle ragazze.
+Пишем в тетрадях. (scriviamo, quaderni);Scriviamo nei quaderni.
+Студенты в школах. (studenti, scuole);Gli studenti sono nelle scuole.
+Книги на полках. (libri, scaffali);I libri sono sugli scaffali.
+Цветы на окнах. (fiori, finestre);I fiori sono sulle finestre.
+Кошки на столах. (gatti, tavoli);I gatti sono sui tavoli.
+Идем в школу пешком. (andiamo, scuola, piedi);Andiamo a scuola a piedi.
+Пишу карандашом. (scrivo, matita);Scrivo con la matita.
+Готовит с любовью. (cucina, amore);Cucina con amore.
+Письмо от Марии. (lettera, Maria);È una lettera da Maria.
+Подарок от Анны. (regalo, Anna);È un regalo da Anna.
+Прихожу от учителя. (vengo, insegnante);Vengo dall'insegnante.
+Идем по улице. (andiamo, strada);Andiamo per la strada.
+Проходим через парк. (passiamo, parco);Passiamo per il parco.

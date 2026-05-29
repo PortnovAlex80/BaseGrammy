@@ -1,0 +1,20 @@
+{
+  "key": "C09",
+  "title": "C09 - Trapassato Remoto",
+  "essence": "Trapassato remoto marks an action completed immediately before another remote past action.",
+  "formula": "`passato remoto of avere/essere + participio passato`",
+  "base": null,
+  "dontConfuse": "This is literary and mostly receptive.",
+  "examples": [
+    {
+      "it": "Dopo che ebbe finito, uscì.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Appena fu arrivato, parlò.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

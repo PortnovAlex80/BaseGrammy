@@ -10,7 +10,7 @@ Italian's approach to time is not merely grammatical. It is conceptual. The lang
 
 ---
 
-The first past tense Italian introduces is the *imperfetto* — the imperfect. And the name is not an accident. The imperfetto is not a broken version of the past. It is the past of states, habits, backgrounds. It is the past that was ongoing, that didn't have a clear beginning or end.
+The first past tense Italian introduces is the {it}*imperfetto*{/it} — the imperfect. And the name is not an accident. The imperfetto is not a broken version of the past. It is the past of states, habits, backgrounds. It is the past that was ongoing, that didn't have a clear beginning or end.
 
 *Andavo a scuola.* — I was going to school / I used to go to school.
 
@@ -46,7 +46,7 @@ This becomes clear in the classic Italian narrative pattern: imperfetto for the 
 
 ---
 
-The *passato prossimo* — literally "near past" — is the event tense. It is for actions that happened and completed. It is the flash, the pop, the thing that occurred.
+The {it}*passato prossimo*{/it} — literally "near past" — is the event tense. It is for actions that happened and completed. It is the flash, the pop, the thing that occurred.
 
 *Ho visto.* — I saw / I have seen.
 
@@ -54,13 +54,13 @@ The *passato prossimo* — literally "near past" — is the event tense. It is f
 
 *Abbiamo finito.* — We finished / We have finished.
 
-Notice the structure: *avere* or *essere* (to have or to be) plus the *participio passato* (past participle). Italian builds its recent past the same way English does: with an auxiliary verb and a past participle. *Ho visto* is structurally identical to "I have seen."
+Notice the structure: {it}*avere*{/it} or {it}*essere*{/it} (to have or to be) plus the {it}*participio passato*{/it} (past participle). Italian builds its recent past the same way English does: with an auxiliary verb and a past participle. *Ho visto* is structurally identical to "I have seen."
 
-But the meaning is slightly different. English uses the present perfect for recent past with current relevance. Italian uses the passato prossimo for any completed recent event, regardless of current relevance. And Italian splits the auxiliary: some verbs use *avere*, some use *essere*.
+But the meaning is slightly different. English uses the present perfect for recent past with current relevance. Italian uses the passato prossimo for any completed recent event, regardless of current relevance. And Italian splits the auxiliary: some verbs use {it}*avere*{/it}, some use {it}*essere*{/it}.
 
-The logic is transparent. Verbs of motion and state change use *essere*: *andare* (to go) → *sono andato*, *venire* (to come) → *sono venuto*, *partire* (to leave) → *sono partito*, *nascere* (to be born) → *sono nato*, *morire* (to die) → *è morto*. These verbs change your state or location, so they use the verb of being.
+The logic is transparent. Verbs of motion and state change use {it}*essere*{/it}: {it}*andare*{/it} (to go) → *sono andato*, {it}*venire*{/it} (to come) → *sono venuto*, {it}*partire*{/it} (to leave) → *sono partito*, {it}*nascere*{/it} (to be born) → *sono nato*, {it}*morire*{/it} (to die) → *è morto*. These verbs change your state or location, so they use the verb of being.
 
-Other verbs use *avere*: *mangiare* (to eat) → *ho mangiato*, *vedere* (to see) → *ho visto*, *fare* (to do) → *ho fatto*, *dire* (to say) → *ho detto*. These are things you do, not states you enter, so they use the verb of having.
+Other verbs use {it}*avere*{/it}: {it}*mangiare*{/it} (to eat) → *ho mangiato*, {it}*vedere*{/it} (to see) → *ho visto*, {it}*fare*{/it} (to do) → *ho fatto*, {it}*dire*{/it} (to say) → *ho detto*. These are things you do, not states you enter, so they use the verb of having.
 
 This is not arbitrary. It is conceptual.
 
@@ -68,7 +68,7 @@ This is not arbitrary. It is conceptual.
 
 The past participle itself — *visto, detto, fatto, andato, venuto, scritto, letto, aperto, chiuso* — is a crucial building block. It is the form that gets reused in every compound tense in Italian. Passato prossimo, trapassato prossimo, futuro anteriore, condizionale composto, congiuntivo passato, congiuntivo trapassato — all of them are built from this single building block.
 
-This is why Italian learners spend so much time memorizing irregular past participles. *Fatto* (from *fare*), *detto* (from *dire*), *visto* (from *vedere*), *letto* (from *leggere*), *messo* (from *mettere*), *preso* (from *prendere*), *scritto* (from *scrivere*), *chiuso* (from *chiudere*), *aperto* (from *aprire*). These are not random exceptions. They are the most frequently used verbs, and their past participles have been worn down by centuries of use.
+This is why Italian learners spend so much time memorizing irregular past participles. *Fatto* (from {it}*fare*{/it}), *detto* (from {it}*dire*{/it}), *visto* (from {it}*vedere*{/it}), *letto* (from {it}*leggere*{/it}), *messo* (from {it}*mettere*{/it}), *preso* (from {it}*prendere*{/it}), *scritto* (from {it}*scrivere*{/it}), *chiuso* (from {it}*chiudere*{/it}), *aperto* (from {it}*aprire*{/it}). These are not random exceptions. They are the most frequently used verbs, and their past participles have been worn down by centuries of use.
 
 Learn them once, use them everywhere. The past participle is the atom of Italian time.
 
@@ -80,7 +80,7 @@ The relationship between imperfetto and passato prossimo is not merely about pas
 
 *Ho saputo che sei venuto.* — I found out that you came.
 
-The first: *sapevo* (imperfetto) — I was in a state of knowing. The second: *ho saputo* (passato prossimo) — the moment when I learned. The same verb (*sapere* — to know), two different pasts, two different meanings.
+The first: *sapevo* (imperfetto) — I was in a state of knowing. The second: *ho saputo* (passato prossimo) — the moment when I learned. The same verb ({it}*sapere*{/it} — to know), two different pasts, two different meanings.
 
 *Avevo fame.* — I was hungry (state).
 
@@ -94,13 +94,13 @@ Italian doesn't just mark when something happened. It marks *how it happened in 
 
 ---
 
-Then there is the *trapassato prossimo* — the "past of the past."
+Then there is the {it}*trapassato prossimo*{/it} — the "past of the past."
 
 *Avevo già mangiato quando sei arrivato.* — I had already eaten when you arrived.
 
 *Era partito prima che arrivassi.* — He had left before you arrived.
 
-This is the tense of precedence — of things that happened before other past things. It is built from the imperfetto of *avere* or *essere* plus the past participle. *Avevo mangiato* — I had eaten. *Era partito* — he had left.
+This is the tense of precedence — of things that happened before other past things. It is built from the imperfetto of {it}*avere*{/it} or {it}*essere*{/it} plus the past participle. *Avevo mangiato* — I had eaten. *Era partito* — he had left.
 
 The trapassato is not pedantry. It is the language's way of establishing sequence. When you tell a story, events don't all happen at once. Some happen before others. The trapassato allows you to mark this precedence explicitly.
 
@@ -110,7 +110,7 @@ My arrival is passato prossimo (*sono arrivato*) — it's the main event of the 
 
 ---
 
-Italian also has a remote past — the *passato remoto* — for events that belong to a different time zone entirely.
+Italian also has a remote past — the {it}*passato remoto*{/it} — for events that belong to a different time zone entirely.
 
 *Dante nacque a Firenze nel 1265.* — Dante was born in Florence in 1265.
 
@@ -124,7 +124,7 @@ But the concept is clear: some pasts feel close, and some feel distant. Italian 
 
 ---
 
-The future in Italian — the *futuro semplice* — works differently from the past. It is not built from an auxiliary plus a participle. It is a single word, formed by adding endings to the verb stem.
+The future in Italian — the {it}*futuro semplice*{/it} — works differently from the past. It is not built from an auxiliary plus a participle. It is a single word, formed by adding endings to the verb stem.
 
 *Andrò.* — I will go.
 
@@ -146,7 +146,7 @@ This is not actual future. It is epistemic future — future tense used to expre
 
 ---
 
-Then there is the *futuro anteriore* — the "future of the past," also called the future perfect.
+Then there is the {it}*futuro anteriore*{/it} — the "future of the past," also called the future perfect.
 
 *Quando arriverai, avrò finito.* — When you arrive, I will have finished.
 
@@ -164,7 +164,7 @@ The same tense that means "will have done" can also mean "must have done." The c
 
 ---
 
-Perhaps the most philosophically interesting addition in this chapter is the *condizionale* — the conditional mood.
+Perhaps the most philosophically interesting addition in this chapter is the {it}*condizionale*{/it} — the conditional mood.
 
 *Andrei.* — I would go.
 
@@ -184,7 +184,7 @@ These are softer, more tentative versions of *voglio*, *posso*, *devo*. The cond
 
 ---
 
-The *condizionale composto* — the conditional perfect — takes this into the past.
+The {it}*condizionale composto*{/it} — the conditional perfect — takes this into the past.
 
 *Sarei andato.* — I would have gone.
 
@@ -208,11 +208,11 @@ English does this too ("He said he would come"), but English speakers often don'
 
 What emerges from this chapter is not merely a set of verb forms. It is an entire map of human time.
 
-Italian distinguishes between the recent past (*passato prossimo*) and the distant past (*passato remoto*). Between the past as state (*imperfetto*) and the past as event (*passato prossimo*). Between the past that happened and the past that happened before another past (*trapassato*).
+Italian distinguishes between the recent past ({it}*passato prossimo*{/it}) and the distant past ({it}*passato remoto*{/it}). Between the past as state ({it}*imperfetto*{/it}) and the past as event ({it}*passato prossimo*{/it}). Between the past that happened and the past that happened before another past (*trapassato*).
 
-It distinguishes between the future as prediction (*futuro semplice*) and the future as guess (*futuro semplice* epistemico). Between the future that will happen and the future that will have happened first (*futuro anteriore*).
+It distinguishes between the future as prediction ({it}*futuro semplice*{/it}) and the future as guess ({it}*futuro semplice*{/it} epistemico). Between the future that will happen and the future that will have happened first ({it}*futuro anteriore*{/it}).
 
-It distinguishes between the actual and the possible (*condizionale*). Between the possible now and the possible in the past (*condizionale composto*). Between the future and the future in the past (*futuro* vs. *condizionale* as reported speech).
+It distinguishes between the actual and the possible ({it}*condizionale*{/it}). Between the possible now and the possible in the past ({it}*condizionale composto*{/it}). Between the future and the future in the past (*futuro* vs. {it}*condizionale*{/it} as reported speech).
 
 These are not grammatical gimmicks. They are the language's way of tracking the complexity of human experience. We live in time. We remember. We plan. We regret. We guess. We hope. Italian has forms for all of these.
 

@@ -66,3 +66,5 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [DONE-TASK-086](DONE-TASK-086-flower-size-completion-card.md) | Flower Size Inconsistency — Completion Card Too Large | DONE | UC-02, UC-06, scenario-01 | 2026-05-21 |
 | [TASK-087](TASK-087-remove-drill-submode.md) | Remove Drill Sub-mode Completely | OPEN | 01, 02, 08, 15, 22, scenario-16 | 2026-05-21 |
 | [TASK-088](TASK-088-grammar-story-roadmap.md) | Grammar Story Roadmap Implementation | OPEN | 01, 02, 22, acceptance-criteria-grammar-roadmap | 2026-05-25 |
+| [DONE-TASK-089](DONE-TASK-089-staircase-navigation-after-training.md) | Staircase Navigation After Training Completion | DONE | 13-app-entry-and-navigation, 24-grammar-story-roadmap | 2026-05-29 |
+| [DONE-TASK-090](DONE-TASK-090-stop-story-button-ui-state-fix.md) | Stop Story Button UI State Update Bug | DONE | 24-grammar-story-roadmap | 2026-05-29 |

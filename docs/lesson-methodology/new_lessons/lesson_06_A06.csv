@@ -1,60 +1,55 @@
-A06 - Essere vs Avere (states vs sensations)
-Я студент.;Io sono studente.
-Ты уставший.;Tu sei stanco.
-Он счастливый человек.;Lui è una persona felice.
-Она дома.;Lei è a casa.
-Мы друзья.;Noi siamo amici.
-Вы в Италии.;Voi siete in Italia.
-Они из России.;Loro sono della Russia.
-Это моя книга.;Questo è il mio libro.
-Я итальянский.;Io sono italiano.
-Ты высокий.;Tu sei alto.
-Она красивая.;Lei è bella.
-Мы молодые.;Siamo giovani.
-Вы грустные.;Siete tristi.
-Они богатые.;Loro sono ricchi.
-Я счастлив.;Sono felice.
-Ты болен.;Sei malato.
-Я врач.;Io sono dottore.
-Ты учитель.;Tu sei insegnante.
-Она домохозяйка.;Lei è casalinga.
-Мы учителя.;Siamo insegnanti.
-Вы студенты.;Siete studenti.
-Они врачи.;Loro sono medici.
-Мне 20 лет.;Ho 20 anni.
-У тебя есть брат?;Hai un fratello?
-У него есть машина.;Lui ha una macchina.
-У неё есть время.;Lei ha tempo.
-У нас есть проблема.;Abbiamo un problema.
-У вас есть вопросы?;Avete domande?
-У них есть дети.;Loro hanno figli.
-Я голоден.;Ho fame.
-Ты хочешь пить.;Hai sete.
-Ему холодно.;Lui ha freddo.
-Ей страшно.;Lei ha paura.
-Мы хотим спать.;Abbiamo sonno.
-Я спешу.;Ho fretta.
-Тебе повезло.;Hai fortuna.
-Он прав.;Lui ha ragione.
-Она неправа.;Lei ha torto.
-Мне 25 лет.;Ho 25 anni.
-Ему 30 лет.;Lui ha 30 anni.
-У меня болит голова.;Ho mal di testa.
-У тебя болят зубы.;Hai mal di denti.
-Я не студент.;Non sono studente.
-Ты не уставший.;Non sei stanco.
-Он не счастливый.;Lui non è felice.
-Она не дома.;Lei non è a casa.
-Мы не друзья.;Non siamo amici.
-Я не голоден.;Non ho fame.
-Ты не хочешь пить.;Non hai sete.
-У меня нет времени.;Non ho tempo.
-У тебя нет машины.;Non hai una macchina.
-Ему не холодно.;Lui non ha freddo.
-Ей не страшно.;Lei non ha paura.
-Мы не хотим спать.;Non abbiamo sonno.
-Я не спешу.;Non ho fretta.
-Тебе не повезло.;Non hai fortuna.
-Он не прав.;Lui non ha ragione.
-Она не ошибается.;Lei non ha torto.
-У меня не болит голова.;Non ho mal di testa.
+A06 - Essere vs Avere (состояния)
+ESSERE — свойство, «быть каким-то»:
+Я уставший. (stanco);Sono stanco.
+Ты уставшая. (stanca);Sei stanca.
+Он счастливый. (felice);È felice.
+Она красивая. (bella);È bella.
+Мы молодые. (giovani);Siamo giovani.
+Вы грустные. (tristi);Siete tristi.
+Они богатые. (ricchi);Sono ricchi.
+Я студент. (studente);Sono studente.
+Ты врач. (dottore);Sei dottore.
+Она домохозяйка. (casalinga);È casalinga.
+Мы друзья. (amici);Siamo amici.
+Вы в Италии. (italia);Siete in Italia.
+Она дома. (casa);È a casa.
+Я итальянец. (italiano);Sono italiano.
+Он старый. (vecchio);È vecchio.
+Она старая. (vecchia);È vecchia.
+Я доволен. (contento);Sono contento.
+Мы довольны. (contenti);Siamo contenti.
+Я готов. (pronto);Sono pronto.
+Вы готовы? (pronti);Siete pronti?
+Я не уставший. (stanco);Non sono stanco.
+Ты не грустный. (triste);Non sei triste.
+Он не счастливый. (felice);Non è felice.
+Мы не друзья. (amici);Non siamo amici.
+AVERE — ощущение, «иметь что-то» (физическое состояние):
+Я голоден. (fame);Ho fame.
+Ты хочешь пить. (sete);Hai sete.
+Ему холодно. (freddo);Ha freddo.
+Мне тепло. (caldo);Ho caldo.
+Мы хотим спать. (sonno);Abbiamo sonno.
+Вам страшно. (paura);Avete paura.
+Они спешат. (fretta);Hanno fretta.
+Я прав. (ragione);Ho ragione.
+Ты неправ. (torto);Hai torto.
+Мне 20 лет. (anni);Ho 20 anni.
+Ему 30 лет. (anni);Ha 30 anni.
+У меня болит голова. (mal, testa);Ho mal di testa.
+У тебя болят зубы. (mal, denti);Hai mal di denti.
+Я не голоден. (fame);Non ho fame.
+Ты не хочешь пить. (sete);Non hai sete.
+Ему не холодно. (freddo);Non ha freddo.
+Нам не страшно. (paura);Non abbiamo paura.
+Я не спешу. (fretta);Non ho fretta.
+Он не прав. (ragione);Non ha ragione.
+Она не ошибается. (torto);Non ha torto.
+У меня не болит голова. (mal, testa);Non ho mal di testa.
+КОНТРАСТ — essere vs avere:
+Я уставший. (stanco) → Я голоден. (fame);Sono stanco. → Ho fame.
+Ему холодно. (freddo) → Ему тепло. (caldo);Ha freddo. → Ha caldo.
+Ты грустный. (triste) → Ты хочешь пить. (sete);Sei triste. → Hai sete.
+Мы молодые. (giovani) → Мы хотим спать. (sonno);Siamo giovani. → Abbiamo sonno.
+Вы готовы? (pronti) → Вам страшно? (paura);Siete pronti? → Avete paura?
+Я доволен. (contento) → Я прав. (ragione);Sono contento. → Ho ragione.

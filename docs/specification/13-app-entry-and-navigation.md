@@ -329,7 +329,28 @@ There is no formal back stack. Navigation is flat — each screen knows its pare
 
 All `BackHandler` registrations check `!showSettings` to avoid conflict with the settings sheet overlay.
 
-### 13.3.6 Settings sheet overlay
+### 13.3.6 Staircase navigation for chapter-based packs
+
+For packs with chapters (manifest v2, `hasPackChapters() == true`), the app implements **staircase navigation** after training completion. This ensures users see the full context path back to the pack selection screen.
+
+**Staircase flow for chapter packs:**
+```
+TRAINING → LESSON → CHAPTER_LESSONS → GRAMMAR_STORY_ROADMAP → HOME
+```
+
+**Implementation via `returnTo` chain:**
+1. When entering TRAINING from CHAPTER_LESSONS: `setReturnTo(Routes.CHAPTER_LESSONS)`
+2. When entering CHAPTER_LESSONS from GRAMMAR_STORY_ROADMAP: implicit in navigation path
+3. Sub-lesson/boss completion: `subLessonFinishedToken` / `bossFinishedToken` → navigate to `returnTo` → LESSON
+4. From LESSON: back button → HOME (classic behavior preserved)
+
+**Scope:** Applies to ALL packs universally, regardless of chapter presence. The navigation path automatically shortens for non-chapter packs (TRAINING → LESSON → HOME).
+
+**Verification task:** [TASK-089: Staircase Navigation After Training Completion](tasks/TASK-089-staircase-navigation-after-training.md)
+
+---
+
+### 13.3.7 Settings sheet overlay
 
 The `SettingsSheet` is not a screen — it is an overlay (a `ModalBottomSheet` or similar) that can be opened from any screen. When opened:
 1. `previousScreen` is saved to the current `screen` value.
@@ -337,11 +358,11 @@ The `SettingsSheet` is not a screen — it is an overlay (a `ModalBottomSheet` o
 3. On dismiss: if the previous screen was `TRAINING` and a card is active, `vm.resumeFromSettings()` is called.
 4. The settings sheet has its own `openLadder` callback that sets `screen = AppScreen.LADDER`.
 
-### 13.3.7 Deep link handling
+### 13.3.8 Deep link handling
 
 **There are no deep links.** The manifest contains only the standard launcher intent-filter. The app does not register for any URL schemes, custom intents, or App Links. All navigation is internally driven.
 
-### 13.3.8 Deprecated screens
+### 13.3.9 Deprecated screens
 
 `AppScreen.ELITE` and `AppScreen.VOCAB` are kept in the enum for backward compatibility. If either is somehow restored (e.g., from a stale `initialScreen` value), the `when` block immediately redirects to HOME:
 

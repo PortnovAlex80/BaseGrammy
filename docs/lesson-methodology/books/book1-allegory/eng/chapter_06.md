@@ -22,79 +22,79 @@ Iro saw it now, in the darkness. The map of Italian grammar, laid out in the min
 
 The cases of Russian, reborn in Italian clothes:
 
-*Nominative* — no marker, the subject in its naked form. *Io vedo.* — I see.
+*Nominative* — no marker, the subject in its naked form. *{it}Io vedo{/it}.* — I see.
 
-*Accusative* — no marker for direct objects, OR the direct object pronouns *lo/la/li/le*. *Ti vedo. Lo vedo.*
+*Accusative* — no marker for direct objects, OR the direct object pronouns *{it}lo/la/li/le{/it}*. *{it}Ti vedo. Lo vedo{/it}.*
 
-*Genitive* — the preposition *di*, OR the possessive adjectives *mio/tuo/suo*, OR the partitive *ne*. *Il libro di Marco. Il mio libro. Ne voglio due.*
+*Genitive* — the preposition *{it}di{/it}*, OR the possessive adjectives *{it}mio/tuo/suo{/it}*, OR the partitive *{it}ne{/it}*. *{it}Il libro di Marco. Il mio libro. Ne voglio due{/it}.*
 
-*Dative* — the preposition *a*, OR the indirect object pronouns *mi/ti/gli/le/ci/vi/gli*. *A Marco. Gli parlo.*
+*Dative* — the preposition *{it}a{/it}*, OR the indirect object pronouns *{it}mi/ti/gli/le/ci/vi/gli{/it}*. *{it}A Marco. Gli parlo{/it}.*
 
-*Instrumental* — the preposition *con*, OR the *da* of agency in passive. *Con Marco. Da Marco.*
+*Instrumental* — the preposition *{it}con{/it}*, OR the *{it}da{/it}* of agency in passive. *{it}Con Marco. Da Marco{/it}.*
 
-*Prepositional* — the prepositions *in/su/a* for location. *A Roma. In Italia. Sul tavolo.*
+*Prepositional* — the prepositions *{it}in/su/a{/it}* for location. *{it}A Roma. In Italia. Sul tavolo{/it}.*
 
-Every case relationship had multiple Italian realizations. Prepositions. Pronouns. *Ci* and *ne*. Relative pronouns with prepositions. The passive as a case rearrangement. The language had not lost the case system. It had *repackaged* it — spread the meaning across different tools, but the meaning was there.
+Every case relationship had multiple Italian realizations. Prepositions. Pronouns. *{it}Ci{/it}* and *{it}ne{/it}*. Relative pronouns with prepositions. The passive as a case rearrangement. The language had not lost the case system. It had *repackaged* it — spread the meaning across different tools, but the meaning was there.
 
 The tense system, laid out like a calendar:
 
-Present: *vedo* — I see.
+Present: *{it}vedo{/it}* — I see.
 
-Imperfect: *vedevo* — I was seeing, I used to see.
+Imperfect: *{it}vedevo{/it}* — I was seeing, I used to see.
 
-Passato Prossimo: *ho visto* — I have seen, I saw.
+Passato Prossimo: *{it}ho visto{/it}* — I have seen, I saw.
 
-Trapassato Prossimo: *avevo visto* — I had seen.
+Trapassato Prossimo: *{it}avevo visto{/it}* — I had seen.
 
-Passato Remoto: *vidi* — I saw (literary, remote).
+Passato Remoto: *{it}vidi{/it}* — I saw (literary, remote).
 
-Trapassato Remoto: *ebbi visto* — I had seen (literary, remote).
+Trapassato Remoto: *{it}ebbi visto{/it}* — I had seen (literary, remote).
 
-Future: *vedrò* — I will see.
+Future: *{it}vedrò{/it}* — I will see.
 
-Future Perfect: *avrò visto* — I will have seen.
+Future Perfect: *{it}avrò visto{/it}* — I will have seen.
 
-Conditional Simple: *vedrei* — I would see.
+Conditional Simple: *{it}vedrei{/it}* — I would see.
 
-Conditional Perfect: *avrei visto* — I would have seen.
+Conditional Perfect: *{it}avrei visto{/it}* — I would have seen.
 
-Subjunctive Present: *veda* — (that) I see (subjective).
+Subjunctive Present: *{it}veda{/it}* — (that) I see (subjective).
 
-Subjunctive Imperfect: *vedessi* — (that) I saw / was seeing (subjective, past).
+Subjunctive Imperfect: *{it}vedessi{/it}* — (that) I saw / was seeing (subjective, past).
 
-Subjunctive Perfect: *abbia visto* — (that) I have seen (subjective, past).
+Subjunctive Perfect: *{it}abbia visto{/it}* — (that) I have seen (subjective, past).
 
-Subjunctive Pluperfect: *avessi visto* — (that) I had seen (subjective, past of past).
+Subjunctive Pluperfect: *{it}avessi visto{/it}* — (that) I had seen (subjective, past of past).
 
 Every time relationship had a form. The language had a tool for every point on the timeline — and every tool had a use.
 
 The mood system, marking the relationship to truth:
 
-Indicative: fact, certainty, assertion. *So che è vero.* — I know that it's true.
+Indicative: fact, certainty, assertion. *{it}So che è vero{/it}.* — I know that it's true.
 
-Subjunctive: feeling, opinion, doubt, desire. *Penso che sia vero.* — I think that it's true.
+Subjunctive: feeling, opinion, doubt, desire. *{it}Penso che sia vero{/it}.* — I think that it's true.
 
-Conditional: hypothesis, unreality, distance. *Sarebbe vero.* — It would be true.
+Conditional: hypothesis, unreality, distance. *{it}Sarebbe vero{/it}.* — It would be true.
 
-Imperative: command, direct action. *Sii vero.* — Be true.
+Imperative: command, direct action. *{it}Sii vero{/it}.* — Be true.
 
 Every sentence, Iro understood, exists in one of these moods — or moves between them. The mood marks how the speaker stands toward what is being said. Asserting. Feeling. Hypothesizing. Commanding.
 
 The pronoun system, a network of references:
 
-Direct: *lo/la/li/le* — it/him/her/them (direct object).
+Direct: *{it}lo/la/li/le{/it}* — it/him/her/them (direct object).
 
-Indirect: *mi/ti/gli/le/ci/vi/gli* — to me/you/him/her/us/you/them.
+Indirect: *{it}mi/ti/gli/le/ci/vi/gli{/it}* — to me/you/him/her/us/you/them.
 
-Reflexive: *mi/ti/si/ci/vi/si* — myself/yourself/himself/etc.
+Reflexive: *{it}mi/ti/si/ci/vi/si{/it}* — myself/yourself/himself/etc.
 
-Combined: *me lo/te lo/glielo* — it to you, it to him, etc.
+Combined: *{it}me lo/te lo/glielo{/it}* — it to you, it to him, etc.
 
-Place: *ci* — there, about it, to there.
+Place: *{it}ci{/it}* — there, about it, to there.
 
-Partitive: *ne* — of it/them, some of it/them.
+Partitive: *{it}ne{/it}* — of it/them, some of it/them.
 
-Relative: *che/cui/il quale* — who/which/whom.
+Relative: *{it}che/cui/il quale{/it}* — who/which/whom.
 
 Every reference, every pointing, every back-reference to something already named — the language had a tool for it. The pronouns were the memory system of the sentence, the way the language carries what has already been said.
 
@@ -108,17 +108,17 @@ This was the ability to say the same thing in different ways. Not just correct g
 
 *I will stay with you.*
 
-*Resterò con te.* — Future simple. Direct statement of fact.
+*{it}Resterò con te{/it}.* — Future simple. Direct statement of fact.
 
-*Ho intenzione di restare con te.* — I have the intention of staying with you. More deliberate, more planned.
+*{it}Ho intenzione di restare con te{/it}.* — I have the intention of staying with you. More deliberate, more planned.
 
-*Sto per restare con te.* — I'm about to stay with you. Immediate future.
+*{it}Sto per restare con te{/it}.* — I'm about to stay with you. Immediate future.
 
-*Vorrei restare con te.* — I would like to stay with you. Softer, more tentative.
+*{it}Vorrei restare con te{/it}.* — I would like to stay with you. Softer, more tentative.
 
-*Restarei con te.* — I would stay with you. Hypothetical, conditional.
+*{it}Restarei con te{/it}.* — I would stay with you. Hypothetical, conditional.
 
-*Sarei rimasto con te.* — I would have stayed with you. Hypothetical, past, unreal.
+*{it}Sarei rimasto con te{/it}.* — I would have stayed with you. Hypothetical, past, unreal.
 
 Same meaning. Different constructions. Different nuances. The skill was knowing which to use when.
 
@@ -126,27 +126,27 @@ Active vs. passive:
 
 *Iro loved Ua.* — Active focus: Iro is the subject, the actor.
 
-*Ua was loved by Iro.* — Passive focus: Ua is the subject, the receiver. The actor is moved to a *da* phrase.
+*Ua was loved by Iro.* — Passive focus: Ua is the subject, the receiver. The actor is moved to a *{it}da{/it}* phrase.
 
 *Noun vs. verb:*
 
-*Iro's arrival* — *L'arrivo di Iro.* (Noun phrase, static)
+*Iro's arrival* — *{it}L'arrivo di Iro{/it}.* (Noun phrase, static)
 
-*Iro arrived* — *Iro è arrivato.* (Verb clause, dynamic)
+*Iro arrived* — *{it}Iro è arrivato{/it}.* (Verb clause, dynamic)
 
 *Direct vs. indirect speech:*
 
-*Iro said: "I love you."* — *Iro ha detto: "Ti amo."*
+*Iro said: "I love you."* — *{it}Iro ha detto: "Ti amo."{/it}*
 
-*Iro said that he loved me.* — *Iro ha detto che mi amava.*
+*Iro said that he loved me.* — *{it}Iro ha detto che mi amava{/it}.*
 
 Subordination vs. non-finite forms:
 
-*Because I was tired, I left.* — *Perché ero stanco, sono partito.* (Subordinate clause)
+*Because I was tired, I left.* — *{it}Perché ero stanco, sono partito{/it}.* (Subordinate clause)
 
-*Being tired, I left.* — *Essendo stanco, sono partito.* (Gerund)
+*Being tired, I left.* — *{it}Essendo stanco, sono partito{/it}.* (Gerund)
 
-*After having finished, I left.* — *Dopo aver finito, sono partito.* (Past infinitive)
+*After having finished, I left.* — *{it}Dopo aver finito, sono partito{/it}.* (Past infinitive)
 
 Iro understood: style is not decoration. Style is the ability to choose among these options consciously, knowing the effect of each choice. The language gives you many ways to say the same thing. The skill is choosing the right way for the right moment.
 
@@ -158,27 +158,27 @@ And there, in the darkness, Iro spoke the thought that had lived inside him from
 
 The thought was complete now. The grammar was ready. Every tense, every mood, every construction was in place.
 
-*Se avessi saputo allora che saresti sparita, sarei rimasto accanto a te. E il mondo che vedevamo insieme non si sarebbe spento.*
+*{it}Se avessi saputo allora che saresti sparita, sarei rimasto accanto a te. E il mondo che vedevamo insieme non si sarebbe spento{/it}.*
 
 If I had known then that you would disappear, I would have stayed beside you. And the world that we saw together would not have gone out.
 
 Let Iro see what was in this sentence — what tools, what grammar, what architecture of meaning:
 
-*Se avessi saputo* — If I had known. The pluperfect subjunctive (*avessi* + *saputo*). The unreal condition in the past. The thing that didn't happen but could have.
+*{it}Se avessi saputo{/it}* — If I had known. The pluperfect subjunctive (*{it}avessi{/it}* + *{it}saputo{/it}*). The unreal condition in the past. The thing that didn't happen but could have.
 
-*Allora* — Then. The temporal marker, anchoring the hypothesis in a specific past moment.
+*{it}Allora{/it}* — Then. The temporal marker, anchoring the hypothesis in a specific past moment.
 
-*Che saresti sparita* — That you would disappear. The relative pronoun (*che*) connecting the clauses. The conditional perfect (*saresti* + *sparita*) as future-in-the-past — the thing that was going to happen, from the perspective of the past moment.
+*{it}Che saresti sparita{/it}* — That you would disappear. The relative pronoun (*{it}che{/it}*) connecting the clauses. The conditional perfect (*{it}saresti{/it}* + *{it}sparita{/it}*) as future-in-the-past — the thing that was going to happen, from the perspective of the past moment.
 
-*Sarei rimasto* — I would have stayed. The conditional perfect (*sarei* + *rimasto*). The unreal consequence in the past. The thing that would have happened if the condition had been met.
+*{it}Sarei rimasto{/it}* — I would have stayed. The conditional perfect (*{it}sarei{/it}* + *{it}rimasto{/it}*). The unreal consequence in the past. The thing that would have happened if the condition had been met.
 
-*Accanto a te* — Beside you. The prepositional phrase, marking the relationship of nearness, the togetherness that didn't happen.
+*{it}Accanto a te{/it}* — Beside you. The prepositional phrase, marking the relationship of nearness, the togetherness that didn't happen.
 
-*E il mondo* — And the world. The conjunction (*e*) adding a second consequence. The subject (*il mondo*) — the world they had shared.
+*{it}E il mondo{/it}* — And the world. The conjunction (*{it}e{/it}*) adding a second consequence. The subject (*{it}il mondo{/it}*) — the world they had shared.
 
-*Che vedevamo insieme* — That we saw together. The relative pronoun (*che*) referring back to *il mondo*. The imperfect indicative (*vedevamo*) — the seeing as ongoing state, the shared past, the world as it was when they both saw it. *Insieme* — together, reinforcing the sharedness.
+*{it}Che vedevamo insieme{/it}* — That we saw together. The relative pronoun (*{it}che{/it}*) referring back to *{it}il mondo{/it}*. The imperfect indicative (*{it}vedevamo{/it}*) — the seeing as ongoing state, the shared past, the world as it was when they both saw it. *{it}Insieme{/it}* — together, reinforcing the sharedness.
 
-*Non si sarebbe spento* — Would not have gone out. The negative (*non*) + the reflexive passive (*si* + *sarebbe* + *spento*). The conditional perfect again, marking the unreal consequence. The reflexive marks the world's self-extinguishing — the world went out, the world spent itself, the world faded.
+*{it}Non si sarebbe spento{/it}* — Would not have gone out. The negative (*{it}non{/it}*) + the reflexive passive (*{it}si{/it}* + *{it}sarebbe{/it}* + *{it}spento{/it}*). The conditional perfect again, marking the unreal consequence. The reflexive marks the world's self-extinguishing — the world went out, the world spent itself, the world faded.
 
 Every tool they had learned was in this sentence:
 
@@ -208,49 +208,49 @@ And now the language was complete. And Iro could speak it.
 
 The sentence hung in the darkness between them.
 
-*Se avessi saputo allora che saresti sparita, sarei rimasto accanto a te. E il mondo che vedevamo insieme non si sarebbe spento.*
+*{it}Se avessi saputo allora che saresti sparita, sarei rimasto accanto a te. E il mondo che vedevamo insieme non si sarebbe spento{/it}.*
 
 Ua heard it. Understood it. Knew what it meant — not just the meaning, but the grammar, the architecture, the tools that had gone into it.
 
-*Lo so,* Ua said. I know it.
+*{it}Lo so{/it}*, Ua said. I know it.
 
-*Lo so anche che non l'hai detto,* Ua continued. I know also that you didn't say it.
+*{it}Lo so anche che non l'hai detto{/it}*, Ua continued. I know also that you didn't say it.
 
-*Non potevi dirlo,* Iro said. You couldn't say it.
+*{it}Non potevi dirlo{/it}*, Iro said. You couldn't say it.
 
-*Non potevi dirlo prima,* Ua said. You couldn't say it before.
+*{it}Non potevi dirlo prima{/it}*, Ua said. You couldn't say it before.
 
-*Perché la grammatica non c'era,* Iro said. Because the grammar wasn't there.
+*{it}Perché la grammatica non c'era{/it}*, Iro said. Because the grammar wasn't there.
 
-*Perché la grammatica non era completa,* Ua said. Because the grammar wasn't complete.
+*{it}Perché la grammatica non era completa{/it}*, Ua said. Because the grammar wasn't complete.
 
-*Adesso è completa,* Iro said. Now it's complete.
+*{it}Adesso è completa{/it}*, Iro said. Now it's complete.
 
-*Sì,* Ua said. Yes.
+*{it}Sì{/it}*, Ua said. Yes.
 
-*E la frase è vera,* Iro said. And the sentence is true.
+*{it}E la frase è vera{/it}*, Iro said. And the sentence is true.
 
-*La frase è vera,* Ua said. The sentence is true.
+*{it}La frase è vera{/it}*, Ua said. The sentence is true.
 
-*Ma il mondo si è spento,* Iro said. But the world went out.
+*{it}Ma il mondo si è spento{/it}*, Iro said. But the world went out.
 
-*Sì,* Ua said. Yes.
+*{it}Sì{/it}*, Ua said. Yes.
 
-*Non abbiamo impedito,* Iro said. We didn't prevent it.
+*{it}Non abbiamo impedito{/it}*, Iro said. We didn't prevent it.
 
-*Non potevamo impedirlo,* Ua said. We couldn't prevent it.
+*{it}Non potevamo impedirlo{/it}*, Ua said. We couldn't prevent it.
 
-*Non avevamo le parole,* Iro said. We didn't have the words.
+*{it}Non avevamo le parole{/it}*, Iro said. We didn't have the words.
 
-*Non avevamo la grammatica,* Ua said. We didn't have the grammar.
+*{it}Non avevamo la grammatica{/it}*, Ua said. We didn't have the grammar.
 
-*Adesso ce l'abbiamo,* Iro said. Now we have it.
+*{it}Adesso ce l'abbiamo{/it}*, Iro said. Now we have it.
 
-*Ma è troppo tardi,* Ua said. But it's too late.
+*{it}Ma è troppo tardi{/it}*, Ua said. But it's too late.
 
-*Sì,* Iro said. Yes.
+*{it}Sì{/it}*, Iro said. Yes.
 
-*È troppo tardi,* Iro said again. It's too late.
+*{it}È troppo tardi{/it}*, Iro said again. It's too late.
 
 ---
 
@@ -260,31 +260,31 @@ But the language remained.
 
 The language they had built together — tense by tense, mood by mood, tool by tool — the language was still there. And in the language, something of the world remained. Not the light itself. But the *memory* of the light. The *ability* to speak of the light. The *grammar* that could hold the thought of the light, even after the light was gone.
 
-*E rimane la frase,* Iro said. And the sentence remains.
+*{it}E rimane la frase{/it}*, Iro said. And the sentence remains.
 
-*La frase che abbiamo costruito,* Ua said. The sentence we built.
+*{it}La frase che abbiamo costruito{/it}*, Ua said. The sentence we built.
 
-*La frase che volevi dire,* Ua continued. The sentence you wanted to say.
+*{it}La frase che volevi dire{/it}*, Ua continued. The sentence you wanted to say.
 
-*La frase che non potevi dire,* Iro said. The sentence you couldn't say.
+*{it}La frase che non potevi dire{/it}*, Iro said. The sentence you couldn't say.
 
-*Adesso la puoi dire,* Ua said. Now you can say it.
+*{it}Adesso la puoi dire{/it}*, Ua said. Now you can say it.
 
-*La ho detta,* Iro said. I have said it.
+*{it}La ho detta{/it}*, Iro said. I have said it.
 
-*La rimarrà,* Ua said. It will remain.
+*{it}La rimarrà{/it}*, Ua said. It will remain.
 
-*La frase rimane,* Iro said. The sentence remains.
+*{it}La frase rimane{/it}*, Iro said. The sentence remains.
 
-*Anche se il mondo no,* Ua said. Even if the world doesn't.
+*{it}Anche se il mondo no{/it}*, Ua said. Even if the world doesn't.
 
-*Anche se il mondo se ne è andato,* Iro said. Even if the world has gone away.
+*{it}Anche se il mondo se ne è andato{/it}*, Iro said. Even if the world has gone away.
 
-*Sì,* Ua said. Yes.
+*{it}Sì{/it}*, Ua said. Yes.
 
-*Il mondo se ne è andato,* Ua said again. The world has gone away.
+*{it}Il mondo se ne è andato{/it}*, Ua said again. The world has gone away.
 
-*Ma la frase rimane,* Iro said. But the sentence remains.
+*{it}Ma la frase rimane{/it}*, Iro said. But the sentence remains.
 
 The light was gone. The world was gone.
 

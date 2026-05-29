@@ -1,0 +1,25 @@
+{
+  "key": "B26",
+  "title": "B26 - Congiuntivo Presente: Irregulars",
+  "essence": "Common congiuntivo presente forms are irregular.",
+  "formula": null,
+  "base": null,
+  "dontConfuse": "Some plural forms look like indicativo: `che siamo`, `che possiamo`.",
+  "examples": [
+    {
+      "it": "Voglio che tu sia qui.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Spero che lei venga.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Bisogna che tu lo faccia.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

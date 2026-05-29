@@ -30,7 +30,7 @@ These are not snapshots. They are states of being. The present tense in Italian 
 
 There is a deeper philosophical point here. The present tense, in Italian as in any language, is an act of existential courage. To say *studio* or *vivo* or *parlo* is to claim your own existence as a current, ongoing fact. You are placing yourself in the world of verbs, of actions and states, and saying: I am here, and this is what I am doing.
 
-The infinitive *studiare* belongs to no one. The present form *studio* belongs to me. The transformation from one to the other is the transformation from possibility to actuality, from the abstract to the concrete, from the world of concepts to the world of lived experience.
+The infinitive {it}*studiare*{/it} belongs to no one. The present form *studio* belongs to me. The transformation from one to the other is the transformation from possibility to actuality, from the abstract to the concrete, from the world of concepts to the world of lived experience.
 
 Italian makes this transformation explicit through verb endings. Every verb form carries its subject inside it, folded into the very structure of the word. *Studio* can only mean *I study*. *Studi* can only mean *you study*. *Studia* can only mean *he/she studies*. The pronoun is optional because the ending already does the work.
 
@@ -40,13 +40,13 @@ This is not merely efficient. It is a way of saying that personhood is not an ad
 
 The present tense is also the first place where Italian reveals its commitment to precision. Verbs are grouped into three conjugations (-are, -ere, -ire), and each group follows its own pattern. But within those patterns, there is endless variation.
 
-Regular verbs follow predictable rules. Irregular verbs — *essere*, *avere*, *andare*, *fare*, *venire* — break those rules in ways that must be memorized. *Sono*, *hai*, *vado*, *faccio*, *vengo*. These are not lazy exceptions. They are the ancient core of the language, the most frequently used verbs, worn smooth by centuries of use.
+Regular verbs follow predictable rules. Irregular verbs — {it}*essere*{/it}, {it}*avere*{/it}, {it}*andare*{/it}, {it}*fare*{/it}, {it}*venire*{/it} — break those rules in ways that must be memorized. *Sono*, *hai*, *vado*, *faccio*, *vengo*. These are not lazy exceptions. They are the ancient core of the language, the most frequently used verbs, worn smooth by centuries of use.
 
 Why do the most important verbs tend to be irregular? Because frequency itself erodes regularity. The words we use most often are the words we abbreviate, simplify, reshape to fit our mouths. Irregularity is a fossil record of usage. *Sono* is not weird. *Sono* is what happens when everyone says *sono* a thousand times a day for a thousand years.
 
 ---
 
-But the present tense does more than place action in time and person. It also establishes the distinction between two kinds of being: *essere* and *avere*.
+But the present tense does more than place action in time and person. It also establishes the distinction between two kinds of being: {it}*essere*{/it} and {it}*avere*{/it}.
 
 *Sono stanco.* — I am tired.
 
@@ -64,7 +64,7 @@ This is not mere pedantry. It is a way of thinking about experience. Fear, in It
 
 ---
 
-The present tense also introduces the article system — *il* and *la*, *un* and *una* — and this is where things get interesting.
+The present tense also introduces the article system — *il* and {it}*la*{/it}, *un* and *una* — and this is where things get interesting.
 
 *Un libro.* — A book.
 
@@ -72,7 +72,7 @@ The present tense also introduces the article system — *il* and *la*, *un* and
 
 What is the difference? The difference is memory. *Un libro* is a book we have not mentioned before, a book new to our conversation. *Il libro* is a book we already know about, a book that exists in the shared space of our discussion.
 
-The definite article is not a grammatical decoration. It is a marker of shared attention. Every time you say *il* or *la* or *lo* or *i* or *le*, you are implicitly saying: we both know what I'm talking about. We have been here together long enough to have things in common. The definite article is proof that you are not alone in the linguistic universe.
+The definite article is not a grammatical decoration. It is a marker of shared attention. Every time you say *il* or {it}*la*{/it} or {it}*lo*{/it} or *i* or {it}*le*{/it}, you are implicitly saying: we both know what I'm talking about. We have been here together long enough to have things in common. The definite article is proof that you are not alone in the linguistic universe.
 
 This becomes clear in Italian's approach to introduction vs. continuation:
 
@@ -80,7 +80,7 @@ This becomes clear in Italian's approach to introduction vs. continuation:
 
 *La stella brillava.* — The star was shining.
 
-First introduction: *una*. Second mention: *la*. The transformation from unknown to known, from outside our shared world to inside it, is grammatically marked. Italian tracks for you what we know together.
+First introduction: *una*. Second mention: {it}*la*{/it}. The transformation from unknown to known, from outside our shared world to inside it, is grammatically marked. Italian tracks for you what we know together.
 
 ---
 
@@ -132,7 +132,7 @@ These contractions (*al, dalla, nel, sul, dai*) are not casual. They are the lan
 
 ---
 
-The present tense is also when Italian introduces the modal verbs — *volere* (to want), *potere* (to be able to), *dovere* (to have to) — and these reveal something profound about how language thinks about action.
+The present tense is also when Italian introduces the modal verbs — {it}*volere*{/it} (to want), {it}*potere*{/it} (to be able to), {it}*dovere*{/it} (to have to) — and these reveal something profound about how language thinks about action.
 
 *Voglio partire.* — I want to leave.
 
@@ -154,17 +154,17 @@ Perhaps the most subtle introduction in the present tense is the conditional *vo
 
 *Vorrei chiedere qualcosa.* — I would like to ask something.
 
-This is not the present tense of *volere* (*voglio*). It is the conditional, used here as a softener. *Voglio* is direct: "I want." *Vorrei* is tentative: "I would like, if that's okay."
+This is not the present tense of {it}*volere*{/it} (*voglio*). It is the conditional, used here as a softener. *Voglio* is direct: "I want." *Vorrei* is tentative: "I would like, if that's okay."
 
 The distinction is social. Italian has different registers for different situations, and *vorrei* belongs to the polite register. It is the language's way of saying: I am making a request, not a demand. I am acknowledging your autonomy. I am asking, not taking.
 
-This social dimension continues with the formal *Lei* — the use of the third-person singular as a second-person formal address.
+This social dimension continues with the formal {it}*Lei*{/it} — the use of the third-person singular as a second-person formal address.
 
 *Come sta?* — How are you? (formal)
 
 *Come stai?* — How are you? (informal)
 
-The distinction is not merely grammatical. It is a recognition that relationships have different levels of intimacy, and language should reflect that. With strangers, with authority figures, in professional contexts — you use *Lei*. With friends, family, children — you use *tu*. The grammar tracks the sociology.
+The distinction is not merely grammatical. It is a recognition that relationships have different levels of intimacy, and language should reflect that. With strangers, with authority figures, in professional contexts — you use {it}*Lei*{/it}. With friends, family, children — you use {it}*tu*{/it}. The grammar tracks the sociology.
 
 ---
 
@@ -180,7 +180,7 @@ The present tense is also when Italian introduces the imperative — the mood of
 
 The imperative is the most direct form of language. It assumes a relationship where one person can tell another what to do. It assumes urgency. It assumes the listener's willingness or obligation to comply.
 
-But notice: Italian has different imperative forms for *tu* (informal) and *Lei* (formal), and the formal form uses what looks like the subjunctive. *Parli!* instead of *Parla!*. The formality of the request pushes the grammar away from the straightforward imperative toward the more tentative subjunctive. Even commands have degrees of politeness.
+But notice: Italian has different imperative forms for {it}*tu*{/it} (informal) and {it}*Lei*{/it} (formal), and the formal form uses what looks like the subjunctive. *Parli!* instead of *Parla!*. The formality of the request pushes the grammar away from the straightforward imperative toward the more tentative subjunctive. Even commands have degrees of politeness.
 
 ---
 

@@ -9,6 +9,12 @@ A11 - Numerali | ora | data
 Урок в восемь часов (otto).;La lezione è alle otto.
 Начинаем в девять часов (nove).;Iniziamo alle nove.
 Заканчиваем в десять часов (dieci).;Finiamo alle dieci.
+Сейчас час дня.;È l'una.
+Сейчас полдень.;È mezzogiorno.
+Сейчас полночь.;È mezzanotte.
+В полдень мы едим.;A mezzogiorno mangiamo.
+В полночь я сплю.;A mezzanotte dormo.
+В котором часе?;A che ora?
 Понедельник - первый день недели (lunedì).;Il lunedì è il primo giorno della settimana.
 Вторник - второй день (martedì).;Il martedì è il secondo giorno.
 Среда - третий день (mercoledì).;Il mercoledì è il terzo giorno.
@@ -16,18 +22,18 @@ A11 - Numerali | ora | data
 Пятница - пятый день (venerdì).;Il venerdì è il quinto giorno.
 Суббота - шестой день (sabato).;Il sabato è il sesto giorno.
 Воскресенье - седьмой день (domenica).;La domenica è il settimo giorno.
-Январь - первый месяц (gennaio).;Gennaio è il primo mese.
-Февраль - второй месяц (febbraio).;Febbraio è il secondo mese.
-Март - третий месяц (marzo).;Marzo è il terzo mese.
-Апрель - четвертый месяц (aprile).;Aprile è il quarto mese.
-Май - пятый месяц (maggio).;Maggio è il quinto mese.
-Июнь - шестой месяц (giugno).;Giugno è il sesto mese.
-Июль - седьмой месяц (luglio).;Luglio è il settimo mese.
-Август - восьмой месяц (agosto).;Agosto è l'ottavo mese.
-Сентябрь - девятый месяц (settembre).;Settembre è il nono mese.
-Октябрь - десятый месяц (ottobre).;Ottobre è il decimo mese.
-Ноябрь - одиннадцатый месяц (novembre).;Novembre è l'undicesimo mese.
-Декабрь - двенадцатый месяц (dicembre).;Dicembre è il dodicesimo mese.
+Первый месяц года - январь (gennaio).;Il primo mese dell'anno è gennaio.
+Второй месяц - февраль (febbraio).;Il secondo mese è febbraio.
+Третий месяц - март (marzo).;Il terzo mese è marzo.
+Четвертый месяц - апрель (aprile).;Il quarto mese è aprile.
+Пятый месяц - май (maggio).;Il quinto mese è maggio.
+Шестой месяц - июнь (giugno).;Il sesto mese è giugno.
+Седьмой месяц - июль (luglio).;Il settimo mese è luglio.
+Восьмой месяц - август (agosto).;L'ottavo mese è agosto.
+Девятый месяц - сентябрь (settembre).;Il nono mese è settembre.
+Десятый месяц - октябрь (ottobre).;Il decimo mese è ottobre.
+Одиннадцатый месяц - ноябрь (novembre).;L'undicesimo mese è novembre.
+Двенадцатый месяц - декабрь (dicembre).;Il dodicesimo mese è dicembre.
 Сегодня понедельник (lunedì).;Oggi è lunedì.
 Завтра вторник (martedì).;Domani è martedì.
 Послезавтра среда (mercoledì).;Dopodomani è mercoledì.
@@ -39,3 +45,18 @@ A11 - Numerali | ora | data
 Праздник пятнадцатого июля (luglio).;La festa è il quindici luglio.
 Который час (ora)?;Che ore sono?
 Сейчас ровно двенадцать (dodici).;Sono le dodici in punto.
+Жарко летом.;Fa caldo in estate.
+Холодно зимой.;Fa freddo in inverno.
+Дождь осенью.;Piove in autunno.
+Растения растут весной.;Le piante crescono in primavera.
+Не работаю по воскресеньям.;Non lavoro di domenica.
+Занимаюсь спортом по утрам.;Faccio sport di mattina.
+По понедельникам мы работаем.;Di lunedì lavoriamo.
+В 2024 году путешествуем.;Nel 2024 viaggiamo.
+В январе холодно.;In gennaio fa freddo.
+Мне тридцать лет.;Ho trenta anni.
+Сто студентов в группе.;Ci sono cento studenti.
+Тринадцать - это число.;Tredici è un numero.
+Двадцать книг на полке.;Ci sono venti libri sullo scaffale.
+Тысяча страниц в книге.;Ci sono mille pagine nel libro.
+Книга стоит пятьдесят евро.;Il libro costa cinquanta euro.

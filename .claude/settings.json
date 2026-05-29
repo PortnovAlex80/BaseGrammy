@@ -6,6 +6,11 @@
     "bgIsolation": "none"
   },
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  }
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "GLM-4-Plus",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5-turbo",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1"
+  },
+  "model": "glm-5.1",
+  "autoCompactEnabled": true
 }

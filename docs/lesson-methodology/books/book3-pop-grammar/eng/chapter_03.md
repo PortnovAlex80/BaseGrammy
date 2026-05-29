@@ -24,7 +24,7 @@ The direct object pronouns are the first layer of this system. They replace the 
 
 These are not random variations. They are a complete system: *mi, ti, lo, la, ci, vi, li, le*. Each one corresponds to a person and a number. *Mi* is me. *Ti* is you. *Lo/la* are him/her/it. *Ci* is us. *Vi* is you plural. *Li/le* are them.
 
-The crucial thing is what these pronouns *do*. They let you drop information from the sentence once it has been established. You don't have to keep saying "Marco, Marco, Marco." You say "Marco" once, then *lo*. You don't have to keep saying "Maria, Maria, Maria." You say "Maria" once, then *la*.
+The crucial thing is what these pronouns *do*. They let you drop information from the sentence once it has been established. You don't have to keep saying "Marco, Marco, Marco." You say "Marco" once, then {it}*lo*{/it}. You don't have to keep saying "Maria, Maria, Maria." You say "Maria" once, then {it}*la*{/it}.
 
 This is the essence of pronouns: they are the language's memory system. They track what has been said so it doesn't have to be said again.
 
@@ -56,7 +56,7 @@ Then there are the indirect object pronouns — the shortcuts for the recipient 
 
 *Ci telefonano.* — They call us.
 
-These are distinct from the direct object pronouns. *Ti* can be direct or indirect — context tells you which. But *gli* (to him) and *le* (to her) are only indirect. *Lo* and *la* are only direct.
+These are distinct from the direct object pronouns. *Ti* can be direct or indirect — context tells you which. But {it}*gli*{/it} (to him) and {it}*le*{/it} (to her) are only indirect. *Lo* and {it}*la*{/it} are only direct.
 
 The distinction matters. *Lo vedo* — I see him (direct). *Gli parlo* — I speak to him (indirect). *La vedo* — I see her (direct). *Le scrivo* — I write to her (indirect). Italian marks the difference between doing something *to* someone and doing something *for* or *at* someone.
 
@@ -86,7 +86,7 @@ These are not just vocabulary items. They are a different way of thinking about 
 
 ---
 
-Then there are the mysterious *ci* and *ne* — particles that don't map cleanly to English pronouns.
+Then there are the mysterious {it}*ci*{/it} and {it}*ne*{/it} — particles that don't map cleanly to English pronouns.
 
 *Ci* can mean "us" as a direct object (*ci vedi* — you see us). But more often, it means "there" or "about it" or "with it" or various other prepositional meanings.
 
@@ -112,7 +112,7 @@ Then there are the mysterious *ci* and *ne* — particles that don't map cleanly
 
 *Ne ho mangiati tre.* — I ate three of them.
 
-This last use is the most striking. *Ne* can stand for a quantity that has been mentioned. If we're talking about apples, *ne voglio due* means "I want two of them." The *ne* carries both the "of them" meaning and the fact that we're counting. It is doing a lot of work in two letters.
+This last use is the most striking. *Ne* can stand for a quantity that has been mentioned. If we're talking about apples, *ne voglio due* means "I want two of them." The {it}*ne*{/it} carries both the "of them" meaning and the fact that we're counting. It is doing a lot of work in two letters.
 
 ---
 
@@ -174,7 +174,7 @@ In each case, the gerundio carries its own subject (implied, same as the main cl
 
 ---
 
-The *infinito passato* — the past infinitive — is another clause-compressing tool.
+The {it}*infinito passato*{/it} — the past infinitive — is another clause-compressing tool.
 
 *Dopo aver mangiato, sono uscito.* — After having eaten, I went out.
 
@@ -186,7 +186,7 @@ This is a compound form: *aver* or *esser* plus the past participle. It allows a
 
 ---
 
-Then there is the *participio assoluto* — the absolute participle, a distinctly literary construction.
+Then there is the {it}*participio assoluto*{/it} — the absolute participle, a distinctly literary construction.
 
 *Finita la cena, siamo usciti.* — Dinner finished, we went out (literally: finished the dinner, we went out).
 
@@ -230,13 +230,13 @@ The passive voice is another way of shifting perspective.
 
 The passive transforms the object of an action into the grammatical subject. Instead of "Marco wrote the book," you get "The book was written by Marco." This is useful when you want to emphasize the result rather than the actor, or when the actor is unknown.
 
-Italian has multiple ways to form the passive. The standard way is *essere* plus the past participle. But there is also *venire* for emphasis on process, *andare* for necessity, and the impersonal *si* construction.
+Italian has multiple ways to form the passive. The standard way is {it}*essere*{/it} plus the past participle. But there is also {it}*venire*{/it} for emphasis on process, {it}*andare*{/it} for necessity, and the impersonal {it}*si*{/it} construction.
 
 *Si parla italiano.* — Italian is spoken (literally: one speaks Italian).
 
 *Si vendono case.* — Houses are sold (literally: one sells houses).
 
-The *si passivante* (passive *si*) is a special construction where the verb agrees with the object, not the impersonal subject. *Si parlano le lingue* — languages are spoken. The *si* is not the subject. It is a grammatical marker of passivity.
+The {it}*si passivante*{/it} (passive {it}*si*{/it}) is a special construction where the verb agrees with the object, not the impersonal subject. *Si parlano le lingue* — languages are spoken. The {it}*si*{/it} is not the subject. It is a grammatical marker of passivity.
 
 ---
 
@@ -266,7 +266,7 @@ This sounds complex, but it follows the same logic as the indicative tenses. Pre
 
 What emerges from this chapter is a picture of language as a compression system.
 
-Pronouns compress repeated nouns. *Ci* and *ne* compress prepositional phrases. Gerunds and infinites compress entire clauses. Relative pronouns compress two sentences into one. The passive voice compresses out the actor. The subjunctive compresses the speaker's attitude into the verb form itself.
+Pronouns compress repeated nouns. *Ci* and {it}*ne*{/it} compress prepositional phrases. Gerunds and infinites compress entire clauses. Relative pronouns compress two sentences into one. The passive voice compresses out the actor. The subjunctive compresses the speaker's attitude into the verb form itself.
 
 Every one of these tools is a way of fitting more meaning into fewer words. And every one of them is necessary for real communication. Without pronouns, you cannot refer back. Without relative pronouns, you cannot build complex sentences. Without the subjunctive, you cannot mark subjectivity.
 

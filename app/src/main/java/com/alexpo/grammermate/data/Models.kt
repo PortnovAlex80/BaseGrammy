@@ -570,7 +570,8 @@ data class AudioState(
     val asrDownloadState: DownloadState = DownloadState.Idle,
     val asrMeteredNetwork: Boolean = false,
     val asrErrorMessage: String? = null,
-    val audioPermissionDenied: Boolean = false
+    val audioPermissionDenied: Boolean = false,
+    val isStoryPlaybackActive: Boolean = false
 )
 
 data class DailyPracticeState(

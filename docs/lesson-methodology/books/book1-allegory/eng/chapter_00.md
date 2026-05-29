@@ -38,13 +38,13 @@ Ua had words. Of a kind.
 
 Not sentences — sentences require a speaker and a moment and a direction. What Ua had were infinitives. Pure, undated, unowned actions floating in the air like seeds that haven't found soil.
 
-*Vedere.* To see.
+*{it}Vedere{/it}.* To see.
 
-*Sapere.* To know.
+*{it}Sapere{/it}.* To know.
 
-*Restare.* To stay.
+*{it}Restare{/it}.* To stay.
 
-Ua held these the way you hold stones in your hand — aware of their weight, uncertain what to build with them. *Restare* was the one Ua returned to most often. It had a quality the others didn't. A kind of resistance. A refusal of movement. To stay. To remain. To be-here-rather-than-gone.
+Ua held these the way you hold stones in your hand — aware of their weight, uncertain what to build with them. *{it}Restare{/it}* was the one Ua returned to most often. It had a quality the others didn't. A kind of resistance. A refusal of movement. To stay. To remain. To be-here-rather-than-gone.
 
 Ua didn't know yet what it meant to stay for someone. Only what it meant to stay.
 
@@ -52,19 +52,19 @@ When Iro and Ua first became aware of each other — across the dimming space of
 
 Iro sent a word across the space.
 
-*Sparire.*
+*{it}Sparire{/it}.*
 
 To disappear.
 
-Ua received it. Understood it the way you understand cold — immediately, in the body, without translation. *Sparire*. Yes. That was what was happening. The word named the motion of the light, the direction of things, the quality of this particular fear.
+Ua received it. Understood it the way you understand cold — immediately, in the body, without translation. *{it}Sparire{/it}*. Yes. That was what was happening. The word named the motion of the light, the direction of things, the quality of this particular fear.
 
-But *sparire* was an infinitive. It had no subject. It didn't say *what* was disappearing, or *when*, or whether there was anything to be done about it. An infinitive is a fact without a frame. You know something is true inside it. You don't know where to put it.
+But *{it}sparire{/it}* was an infinitive. It had no subject. It didn't say *what* was disappearing, or *when*, or whether there was anything to be done about it. An infinitive is a fact without a frame. You know something is true inside it. You don't know where to put it.
 
-Ua sent back: *Restare.*
+Ua sent back: *{it}Restare{/it}.*
 
 To stay.
 
-Iro held this word. Felt its weight. *Restare* — yes. That was the response to *sparire*. That was the shape of what was needed. But *restare* was also frameless, subjectless, timeless. It didn't say *who* should stay, or *where*, or *when it was still possible*.
+Iro held this word. Felt its weight. *{it}Restare{/it}* — yes. That was the response to *{it}sparire{/it}*. That was the shape of what was needed. But *{it}restare{/it}* was also frameless, subjectless, timeless. It didn't say *who* should stay, or *where*, or *when it was still possible*.
 
 They stood in the fading light, these two beings, trading infinitives like people passing stones across a distance. The stones arrived. Nothing was built.
 
@@ -84,9 +84,9 @@ The light continued its slow withdrawal.
 
 Ua stayed on one side of the darkness. Iro on the other. Between them: two infinitives, insufficient for everything that mattered, and the long work of building a language complex enough to hold the truth.
 
-*Sparire.*
+*{it}Sparire{/it}.*
 
-*Restare.*
+*{it}Restare{/it}.*
 
 The world said nothing.
 

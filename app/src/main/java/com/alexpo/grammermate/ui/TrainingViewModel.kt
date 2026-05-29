@@ -374,8 +374,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── TTS playback for story narration ───────────────────────────────────────
 
-    fun speakStoryText(text: String, languageId: String = "ru") {
+    fun speakStoryText(text: String, languageId: String = "en") {
         audioCoordinator.onTtsSpeak(text, languageId = languageId)
+    }
+
+    /**
+     * Play multilingual story with automatic language switching.
+     * Use this for stories with Italian insertions marked with {it}...{/it}
+     *
+     * @param content Story content with language markers
+     * @param defaultLanguageId Default language (e.g., "en" for English stories, "ru" for Russian)
+     */
+    fun speakMultilingualStory(content: String, defaultLanguageId: String = "en") {
+        audioCoordinator.playMultilingualStory(content, defaultLanguageId)
     }
 
     fun stopStoryNarration() {
@@ -507,6 +518,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 audioCoordinator.checkAllTtsModels()
                 audioCoordinator.checkAsrModel()
                 audioCoordinator.startBackgroundTtsDownload()
+                // TEMP: Download Russian TTS model for multilingual story testing
+                audioCoordinator.startTtsDownloadForLanguage("ru")
                 audioCoordinator.startTtsStateCollection()
             }
 
@@ -912,6 +925,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /** Set the route to navigate back to when the training session ends. */
     fun setReturnTo(route: String) {
         _coreState.update { it.copy(cardSession = it.cardSession.copy(returnTo = route)) }
+    }
+
+    /** Set return route based on pack type (chapter-based or classic). */
+    fun setReturnToForLesson() {
+        val activePackId = _coreState.value.navigation.activePackId?.value
+        val hasChapters = activePackId != null && hasPackChapters(activePackId)
+        val returnRoute = when {
+            hasChapters -> "chapter_lessons"
+            else -> "lesson"
+        }
+        setReturnTo(returnRoute)
     }
 
     fun importLesson(uri: Uri) {
