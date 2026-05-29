@@ -228,8 +228,16 @@ fun StoryReaderScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
+            val hasMarkers = com.alexpo.grammermate.data.MultilingualStoryParser.hasMarkers(markdownContent)
+            val displayContent = if (hasMarkers) {
+                android.util.Log.d("StoryReader", "Stripping markers: ${markdownContent.length} chars")
+                com.alexpo.grammermate.data.MultilingualStoryParser.stripMarkers(markdownContent)
+            } else {
+                markdownContent
+            }
+            android.util.Log.d("StoryReader", "render: hasMarkers=$hasMarkers, final=${displayContent.length} chars")
             SimpleMarkdownParser.RenderMarkdown(
-                markdown = markdownContent,
+                markdown = displayContent,
                 modifier = Modifier.fillMaxWidth()
             )
         }
