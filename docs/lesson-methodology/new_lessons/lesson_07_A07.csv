@@ -23,9 +23,9 @@ A07 - Domande (W-questions: chi/che/cosa/a-chi/di-chi/con-chi/dove/quando/come/p
 Сколько тебе лет? (quanti, anni);Quanti anni hai?
 Сколько это стоит? (costa);Quanto costa?
 Сколько времени? (ore);Che ore sono?
-Какой твой адрес? (qual, indirizzo);Qual è il tuo indirizzo?
-Какая твоя профессия? (qual, professione);Qual è la tua professione?
-Кто ваш учитель? (insegnante);Chi è il vostro insegnante?
+Где ресторан? (qual, ristorante);Qual è il ristorante?
+Какая профессия? (qual, professione);Qual è la professione?
+Кто учитель? (insegnante);Chi è l'insegnante?
 Что вы изучаете? (studiate);Cosa studiate?
 О ком вы думаете? (pensate);A chi pensate?
 Чья это машина? (macchina);Di chi è questa macchina?
@@ -35,13 +35,13 @@ A07 - Domande (W-questions: chi/che/cosa/a-chi/di-chi/con-chi/dove/quando/come/p
 Как вы сюда приходите? (arrivate);Come arrivate qui?
 Почему вы опаздываете? (ritardo);Perché siete in ritardo?
 Сколько вы зарабатываете? (guadagnate);Quanto guadagnate?
-Какой ваш любимый цвет? (qual, colore, preferito);Qual è il tuo colore preferito?
-Кто твой друг? (amico);Chi è il tuo amico?
-Что ты хочешь на ужин? (vuoi, cena);Cosa vuoi per cena?
-Где ближайшая станция? (stazione, vicina);Dove è la stazione più vicina?
-Кто твой брат? (fratello);Chi è tuo fratello?
+Какой это цвет? (qual, colore);Qual è il colore?
+Кто этот парень? (ragazzo);Chi è questo ragazzo?
+Что ты ешь вечером? (mangi, stasera);Cosa mangi stasera?
+Где станция? (stazione);Dov'è la stazione?
+Кто этот парень? (ragazzo);Chi è questo ragazzo?
 Что ты читаешь? (leggi);Cosa leggi?
-Где твоя сестра? (sorella);Dove è tua sorella?
+Где девушка? (ragazza);Dov'è la ragazza?
 Когда ты обедаешь? (pranzi);Quando pranzi?
 Как ты пишешь? (scrivi);Come scrivi?
 Почему ты учишься? (studi);Perché studi?
@@ -49,5 +49,5 @@ A07 - Domande (W-questions: chi/che/cosa/a-chi/di-chi/con-chi/dove/quando/come/p
 Какой сегодня день? (giorno);Che giorno è oggi?
 Кто этот человек? (persona);Chi è questa persona?
 Что происходит? (succede);Cosa succede?
-Где мой телефон? (telefono);Dove è il mio telefono?
+Где телефон? (telefono);Dov'è il telefono?
 Когда выходной? (giorno, libero);Quando è il giorno libero?

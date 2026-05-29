@@ -231,7 +231,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     modifier = Modifier.fillMaxWidth().height(2.dp),
                 )
             }
-            TtsDownloadStatusBanner(downloadState = selectedTtsDownloadState)
+            if (!state.audio.isStoryPlaybackActive) {
+                TtsDownloadStatusBanner(downloadState = selectedTtsDownloadState)
+            }
 
             Box(modifier = Modifier.weight(1f)) {
                 NavBackHandlers(
