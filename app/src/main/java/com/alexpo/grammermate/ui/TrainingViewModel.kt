@@ -391,8 +391,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun stopStoryNarration() {
         audioCoordinator.stopTts()
-        // Force UI state update to reflect stop immediately
-        _coreState.update { it }
     }
 
     fun setStoryReader(chapterTitle: String, content: String) {

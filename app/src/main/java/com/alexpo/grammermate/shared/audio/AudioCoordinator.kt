@@ -96,6 +96,7 @@ class AudioCoordinator(
     private var ttsDownloadJob: Job? = null
     private var asrDownloadJob: Job? = null
     private var bgDownloadJob: Job? = null
+    private var storyPlaybackJob: Job? = null
 
     // ── TTS serialization mutex ────────────────────────────────────────────
     // Prevents concurrent TTS initialize/speak sequences from colliding at
@@ -192,6 +193,8 @@ class AudioCoordinator(
     }
 
     fun stopTts() {
+        storyPlaybackJob?.cancel()
+        storyPlaybackJob = null
         ttsEngine.stop()
     }
 
@@ -203,7 +206,8 @@ class AudioCoordinator(
      * @param defaultLanguageId Default language for unmarked text
      */
     fun playMultilingualStory(content: String, defaultLanguageId: String = "en") {
-        coroutineScope.launch {
+        storyPlaybackJob?.cancel()
+        storyPlaybackJob = coroutineScope.launch {
             ttsMutex.withLock {
                 try {
                     val segments = com.alexpo.grammermate.data.MultilingualStoryParser.parseStory(
