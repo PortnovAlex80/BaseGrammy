@@ -1,20 +1,40 @@
 {
   "key": "A13",
-  "title": "A13 - Comparativi",
-  "essence": "Сравнение: больше/меньше и самый.",
-  "formula": "- `più ... di`\n- `meno ... di`\n- `il/la più ... di`",
+  "title": "A13 - Comparativi e Superlativi",
+  "essence": "Сравнение: больше/меньше и самый. di = Род.п. сравнения.",
+  "formula": "**Сравнительная:**\n- `più/meno + прил. + di` — сравниваем два объекта\n- `più/meno + прил. + che` — сравниваем два свойства одного объекта / перед глаголом\n\n**Превосходная:**\n- `il/la/i/le + più/meno + прил. + di` — самый... из группы\n\n**Нерегулярные:**\n| Положительная | Сравнительная | Превосходная |\n|---------------|---------------|--------------|\n| buono | migliore | il migliore |\n| cattivo | peggiore | il peggiore |\n| grande | maggiore | il maggiore |\n| piccolo | minore | il minore |",
   "base": null,
-  "dontConfuse": "",
+  "dontConfuse": "`di` — когда сравниваем два объекта: `più grande di te` (больше тебя).\n`che` — когда сравниваем два свойства одного объекта: `più intelligente che bello`.\nПревосходная ТРЕБУЕТ артикль: `il più grande`, не просто `più grande`.\n`maggiore` ≠ `più grande`: maggiore = возраст/значимость, più grande = физический размер.",
   "examples": [
     {
-      "it": "Più facile del russo.",
-      "ru": "",
-      "note": ""
+      "it": "Roma è più grande di Milano.",
+      "ru": "Рим больше Милана",
+      "note": "di = объект"
     },
     {
-      "it": "Il mio migliore amico.",
-      "ru": "",
-      "note": ""
+      "it": "È più intelligente che bello.",
+      "ru": "Он скорее умный, чем красивый",
+      "note": "che = два свойства"
+    },
+    {
+      "it": "È il più bel libro della biblioteca.",
+      "ru": "Самая красивая книга в библиотеке",
+      "note": "превосходная с артиклем"
+    },
+    {
+      "it": "Questo è il mio migliore amico.",
+      "ru": "Это мой лучший друг",
+      "note": "нерегулярное migliore"
+    },
+    {
+      "it": "È meno costoso del previsto.",
+      "ru": "Менее дорого, чем ожидалось",
+      "note": "meno + di"
+    },
+    {
+      "it": "Meglio andare che restare.",
+      "ru": "Лучше пойти, чем остаться",
+      "note": "che + глаголы"
     }
   ]
 }

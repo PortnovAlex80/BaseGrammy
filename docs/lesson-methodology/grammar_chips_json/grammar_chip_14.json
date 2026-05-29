@@ -2,9 +2,9 @@
   "key": "A14",
   "title": "A14 - Verbi Modali",
   "essence": "Модальный глагол + чистый инфинитив.",
-  "formula": "`dovere / potere / volere / sapere + infinito`",
+  "formula": "`dovere / potere / volere / sapere + infinito`\n\n**Спряжение:**\n| | dovere | potere | volere | sapere |\n|---|--------|--------|--------|--------|\n| io | devo | posso | voglio | so |\n| tu | devi | puoi | vuoi | sai |\n| lui/lei | deve | può | vuole | sa |\n| noi | dobbiamo | possiamo | vogliamo | sappiamo |\n| voi | dovete | potete | volete | sapete |\n| loro | devono | possono | vogliono | sanno |",
   "base": null,
-  "dontConfuse": "Без местоимений и возвратных инфинитивов.",
+  "dontConfuse": "Без местоимений и возвратных инфинитивов.\n`so nuotare` = умею (навык), `posso nuotare` = могу сейчас (возможность). Sapere = умение, potere = возможность.",
   "examples": [
     {
       "it": "Devo lavorare.",
@@ -25,6 +25,26 @@
       "it": "So cucinare.",
       "ru": "",
       "note": ""
+    },
+    {
+      "it": "Puoi venire?",
+      "ru": "Ты можешь прийти?",
+      "note": ""
+    },
+    {
+      "it": "Deve studiare.",
+      "ru": "Он должен учиться",
+      "note": ""
+    },
+    {
+      "it": "Vogliamo partire.",
+      "ru": "Мы хотим уехать",
+      "note": ""
+    },
+    {
+      "it": "Sa parlare italiano.",
+      "ru": "Он умеет говорить по-итальянски",
+      "note": "sapere = навык"
     }
   ]
 }

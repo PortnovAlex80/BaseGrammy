@@ -1,9 +1,67 @@
 {
   "key": "A16",
   "title": "A16 - Imperativo",
-  "essence": "Команды, просьбы, предложения \"давай\".",
-  "formula": null,
+  "essence": "Команды, просьбы, предложения «давай». Формы tu/voi/noi/Lei.",
+  "formula": [
+    "tu: основа глагола. Для -are инверсия: parla (не parli). Для -ere/-ire = indicativo: scrivi, dormi",
+    "voi: = 2 л. мн.ч. indicativo: parlate, scrivete",
+    "noi: = 1 л. мн.ч. indicativo: andiamo, facciamo = «давай пойдём!»",
+    "Lei: = Congiuntivo Presente: Parli!, Venga!, Legga! (первый «след» Congiuntivo)",
+    "Отрицание tu: non + инфинитив — Non parlare! (не *Non parla!)",
+    "Отрицание voi/noi/Lei: non + императив — Non parlate!, Non andiamo!"
+  ],
   "base": null,
-  "dontConfuse": "Местоимения с императивом будут в B16.",
-  "examples": []
+  "dontConfuse": "Отрицание tu = non + инфинитив (Non parlare!), не форма императива (не *Non parla!). Lei-форма = Congiuntivo Presente — первый «след» Congiuntivo. Теория — в Блоке B. Местоимения с императивом (dammi, prendilo) — в B16.",
+  "examples": [
+    {
+      "it": "Parla più forte!",
+      "ru": "Говори громче!",
+      "note": "tu — -are инверсия"
+    },
+    {
+      "it": "Non parlare!",
+      "ru": "Не говори!",
+      "note": "tu отрицание = non + инфинитив"
+    },
+    {
+      "it": "Scrivi il tuo nome.",
+      "ru": "Напиши своё имя",
+      "note": "tu — -ire = indicativo"
+    },
+    {
+      "it": "Andiamo!",
+      "ru": "Пойдём! / Давай пойдём!",
+      "note": "noi = «давай!»"
+    },
+    {
+      "it": "Facciamo una pausa.",
+      "ru": "Давайте сделаем перерыв",
+      "note": "noi — предложение"
+    },
+    {
+      "it": "Parlate più lentamente.",
+      "ru": "Говорите медленнее",
+      "note": "voi"
+    },
+    {
+      "it": "Non fate rumore!",
+      "ru": "Не шумите!",
+      "note": "voi отрицание"
+    },
+    {
+      "it": "Mi dica.",
+      "ru": "Слушаю вас / Скажите",
+      "note": "Lei = Congiuntivo (dicere → dica)"
+    },
+    {
+      "it": "Legga questo documento.",
+      "ru": "Прочитайте документ",
+      "note": "Lei = Congiuntivo (leggere → legga)"
+    },
+    {
+      "it": "Non si preoccupi.",
+      "ru": "Не волнуйтесь",
+      "note": "Lei отрицание = Congiuntivo (preoccuparsi → si preoccupi)"
+    }
+  ]
 }

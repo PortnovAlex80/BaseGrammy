@@ -1,30 +1,45 @@
 {
   "key": "A11",
   "title": "A11 - Numeri, Ora, Data",
-  "essence": "Числа нужны для количества, времени и дат.",
-  "formula": null,
+  "essence": "Числа для количества, время суток и даты. Каждая группа требует своей предложной упаковки.",
+  "formula": "Числительные: zero–dieci, undici–venti, десятки (trenta–cento), составные (ventuno с усечением)\nВремя: Che ore sono? / È l'una / Sono le N / È mezzogiorno / alle otto (a + l'ora)\nУпаковка времени: a (точка: alle nove, a Natale) | di (повторяемость: di lunedì, di mattina) | in (период: in estate, nel 2024)\nДаты: il 25 dicembre (кардин., не орд.) / il primo maggio (1-е = порядковое)",
   "base": null,
-  "dontConfuse": "Для времени часто нужен `a`: `alle nove`.",
+  "dontConfuse": "`uno` усекается перед гласной: `ventun anno` (но `ventuno giorni`).\nДни недели — с маленькой буквы: `lunedì`, не `Lunedì`.\nВ датах — кардинальное число: `il 25 dicembre`, но `il primo maggio` (1-е = порядковое).",
   "examples": [
     {
-      "it": "Ho due fratelli.",
-      "ru": "",
-      "note": ""
+      "it": "Ho trentadue anni.",
+      "ru": "Мне 32 года.",
+      "note": "Возраст — глагол avere, не essere"
     },
     {
-      "it": "Sono le sei.",
-      "ru": "",
-      "note": ""
+      "it": "Che ore sono? — Sono le sette e mezza.",
+      "ru": "Который час? — Половина восьмого.",
+      "note": "Sono le + мн.ч.; e mezza = половина"
     },
     {
-      "it": "La lezione è alle otto.",
-      "ru": "",
-      "note": ""
+      "it": "Il mio compleanno è il 15 marzo.",
+      "ru": "Мой день рождения 15 марта.",
+      "note": "il + кардинальное число + месяц"
     },
     {
-      "it": "Oggi è lunedì.",
-      "ru": "",
-      "note": ""
+      "it": "Di sabato non lavoro.",
+      "ru": "По субботам не работаю.",
+      "note": "di + день недели = повторяемость"
+    },
+    {
+      "it": "In estate fa caldo.",
+      "ru": "Летом жарко.",
+      "note": "in + время года"
+    },
+    {
+      "it": "A mezzogiorno pranziamo.",
+      "ru": "В полдень обедаем.",
+      "note": "a + точка на оси времени"
+    },
+    {
+      "it": "È il primo giorno di scuola.",
+      "ru": "Первый день школы.",
+      "note": "primo — единственное порядковое в датах"
     }
   ]
 }
