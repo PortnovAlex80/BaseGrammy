@@ -20,7 +20,8 @@
 
 ✅ **APK файл существует:** `app/build/outputs/apk/debug/grammermate.apk` (119MB)
 ✅ **Python 3.13.7 доступен** - можно использовать HTTP server
-❌ **ADB не установлен** - нужно установить или использовать альтернативные методы
+✅ **ADB установлен:** `C:/Users/user/AppData/Local/Android/Sdk/platform-tools/adb.exe`
+✅ **Устройство подключено:** KN99XGX8OZMZWKGQ
 
 ### Рекомендуемые методы (в порядке приоритета):
 

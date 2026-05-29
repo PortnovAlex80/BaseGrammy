@@ -85,6 +85,7 @@ import com.alexpo.grammermate.ui.components.TtsDownloadDialog
 import com.alexpo.grammermate.ui.components.MeteredNetworkDialog
 import com.alexpo.grammermate.ui.components.AsrMeteredNetworkDialog
 import com.alexpo.grammermate.ui.components.ProfileStatsPopup
+import android.util.Log
 
 // ── Route constants ──────────────────────────────────────────────────────────
 
@@ -166,6 +167,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
             vm.settings.onScreenChanged(currentScreen.name)
         }
 
+        LaunchedEffect(currentRoute) {
+            Log.d("NavDebug", "ROUTE_CHANGED: currentRoute=$currentRoute, activePackId=${state.navigation.activePackId?.value}")
+        }
+
         // Observe Activity lifecycle to pause/resume Pomodoro timer
         val lifecycleOwner = LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
@@ -203,6 +208,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         // Navigation helper — replaces direct onScreenChange calls
         val onNavigate: (String) -> Unit = remember(navController) {
             { route: String ->
+                Log.d("NavDebug", "NAVIGATE: from=${navController.currentBackStackEntry?.destination?.route} to=$route")
                 val actual = navController.currentBackStackEntry?.destination?.route
                 if (route != actual) {
                     previousRoute = actual ?: Routes.HOME
@@ -450,9 +456,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 {
                                     val activePackId = state.navigation.activePackId?.value
                                     val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                                    Log.d("NavDebug", "LESSON onBack: hasChapters=$hasChapters")
                                     if (hasChapters) {
+                                        Log.d("NavDebug", "LESSON onBack → CHAPTER_LESSONS")
                                         onNavigate(Routes.CHAPTER_LESSONS)
                                     } else {
+                                        Log.d("NavDebug", "LESSON onBack → HOME")
                                         onNavigate(Routes.HOME)
                                     }
                                 }
@@ -488,6 +497,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             }
                         )
+                        // Local back handler for LESSON — staircase navigation
+                        BackHandler(!dialogs.showSettings) {
+                            val activePackId = state.navigation.activePackId?.value
+                            val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                            Log.d("NavDebug", "BACK: LESSON inside NavHost, hasChapters=$hasChapters")
+                            if (hasChapters) {
+                                onNavigate(Routes.CHAPTER_LESSONS)
+                            } else {
+                                onNavigate(Routes.HOME)
+                            }
+                        }
                     }
 
                     // Backward compat: ELITE redirects to HOME
@@ -630,18 +650,33 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onSessionDone = remember(state.cardSession.returnTo) {
                                 {
                                     val returnTo = state.cardSession.returnTo
+                                    Log.d("NavDebug", "SESSION_DONE: returnTo=$returnTo")
                                     when {
                                         returnTo == Routes.DAILY_PRACTICE -> {
+                                            Log.d("NavDebug", "SESSION_DONE: → DAILY_PRACTICE")
                                             vm.daily.onBlockComplete()
                                             onNavigate(Routes.DAILY_PRACTICE)
                                         }
                                         returnTo == Routes.CHAPTER_LESSONS -> {
+                                            Log.d("NavDebug", "SESSION_DONE: → CHAPTER_LESSONS")
                                             onNavigate(Routes.CHAPTER_LESSONS)
                                         }
                                         returnTo == Routes.LESSON -> {
-                                            onNavigate(Routes.LESSON)
+                                            val activePackId = state.navigation.activePackId?.value
+                                            val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                                            Log.d("NavDebug", "SESSION_DONE: returnTo=LESSON, hasChapters=$hasChapters")
+                                            if (hasChapters) {
+                                                Log.d("NavDebug", "SESSION_DONE: → CHAPTER_LESSONS (chapter pack)")
+                                                onNavigate(Routes.CHAPTER_LESSONS)
+                                            } else {
+                                                Log.d("NavDebug", "SESSION_DONE: → LESSON (classic pack)")
+                                                onNavigate(Routes.LESSON)
+                                            }
                                         }
-                                        else -> onNavigate(Routes.HOME)
+                                        else -> {
+                                            Log.d("NavDebug", "SESSION_DONE: → HOME (default)")
+                                            onNavigate(Routes.HOME)
+                                        }
                                     }
                                 }
                             },
@@ -650,9 +685,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                         // Local back handler for VERB_DRILL return path
                         BackHandler(enabled = state.cardSession.returnTo == Routes.VERB_DRILL && !dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: TRAINING VERB_DRILL return path")
                             verbDrillVm.persistSessionState()
                             vm.exitVerbDrillSession()
                             onNavigate(Routes.VERB_DRILL)
+                        }
+                        // Local back handler for TRAINING — staircase navigation
+                        BackHandler(enabled = state.cardSession.returnTo != Routes.VERB_DRILL && !dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: TRAINING staircase → LESSON")
+                            vm.finishSession()
+                            onNavigate(Routes.LESSON)
                         }
                     }
 
@@ -773,6 +815,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             isStoryPlaying = state.audio.ttsState == TtsState.Speaking,
                             onStopStory = remember { { vm.stopStoryNarration() } }
                         )
+                        // Local back handler for GRAMMAR_STORY_ROADMAP — staircase navigation
+                        BackHandler(!dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: GRAMMAR_STORY_ROADMAP inside NavHost → HOME (clearActivePack)")
+                            vm.clearActivePack()
+                            onNavigate(Routes.HOME)
+                        }
                     }
 
                     composable(Routes.STORY_READER) {
@@ -839,6 +887,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                             }
                         }
+                        // Local back handler for CHAPTER_LESSONS — staircase navigation
+                        BackHandler(!dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: CHAPTER_LESSONS inside NavHost → GRAMMAR_STORY_ROADMAP")
+                            onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
+                        }
                     }
                 }
 
@@ -890,12 +943,23 @@ private fun NavBackHandlers(
     onShowExitDialog: () -> Unit
 ) {
     BackHandler(enabled = currentRoute == Routes.TRAINING && !showSettings) {
+        Log.d("NavDebug", "BACK: TRAINING BackHandler fired! showSettings=$showSettings, currentRoute=$currentRoute")
         onShowExitDialog()
     }
     BackHandler(enabled = currentRoute == Routes.LESSON && !showSettings) {
-        navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
+        Log.d("NavDebug", "BACK: LESSON BackHandler fired, currentRoute=$currentRoute")
+        val activePackId = state.navigation.activePackId?.value
+        val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+        Log.d("NavDebug", "BACK: LESSON activePackId=$activePackId, hasChapters=$hasChapters")
+        if (hasChapters) {
+            Log.d("NavDebug", "BACK: LESSON → CHAPTER_LESSONS")
+            navController.navigate(Routes.CHAPTER_LESSONS)
+        } else {
+            Log.d("NavDebug", "BACK: LESSON → HOME")
+            navController.navigate(Routes.HOME) {
+                popUpTo(Routes.HOME) { inclusive = false }
+                launchSingleTop = true
+            }
         }
     }
     BackHandler(enabled = currentRoute == Routes.DAILY_PRACTICE && !showSettings) {
@@ -926,9 +990,22 @@ private fun NavBackHandlers(
     // GRAMMAR_STORY_ROADMAP is shown on HOME route when pack has chapters
     // Back handler clears the active pack to return to pack selection
     BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && vm.hasPackChapters(state.navigation.activePackId.value) && !showSettings) {
+        Log.d("NavDebug", "BACK: HOME+chapters → clearActivePack → HOME")
         // Clear active pack to show pack selection
         vm.clearActivePack()
         // Force recomposition by navigating to HOME
+        navController.navigate(Routes.HOME) {
+            popUpTo(Routes.HOME) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+    BackHandler(enabled = currentRoute == Routes.CHAPTER_LESSONS && !showSettings) {
+        Log.d("NavDebug", "BACK: CHAPTER_LESSONS → GRAMMAR_STORY_ROADMAP")
+        navController.navigate(Routes.GRAMMAR_STORY_ROADMAP)
+    }
+    BackHandler(enabled = currentRoute == Routes.GRAMMAR_STORY_ROADMAP && !showSettings) {
+        Log.d("NavDebug", "BACK: GRAMMAR_STORY_ROADMAP → HOME (clearActivePack)")
+        vm.clearActivePack()
         navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = true }
             launchSingleTop = true
@@ -1185,6 +1262,7 @@ private fun NavDialogs(
     // Token-based navigation: sub-lesson finished — unified via returnTo
     if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
+        Log.d("NavDebug", "TOKEN_NAV: subLessonFinished, pomodoroComplete=${state.pomodoro.isComplete}, hasCards=${state.cardSession.currentCard != null}, returnTo=${state.cardSession.returnTo}")
         // Pomodoro: track session completion for timer stats
         vm.onTrainingSessionCompleted()
         val hasCards = state.cardSession.currentCard != null
@@ -1195,9 +1273,11 @@ private fun NavDialogs(
                 if (returnTo == Routes.DAILY_PRACTICE) {
                     vm.daily.onBlockComplete()
                 }
+                Log.d("NavDebug", "TOKEN_NAV: → $returnTo")
                 onNavigate(returnTo)
             } else {
                 // Default: sub-lesson from LESSON screen — more sub-lessons available
+                Log.d("NavDebug", "TOKEN_NAV: → LESSON (default)")
                 onNavigate(Routes.LESSON)
             }
         }
@@ -1395,6 +1475,7 @@ private fun ExitConfirmDialog(
                     return@TextButton
                 }
                 vm.finishSession()
+                Log.d("NavDebug", "EXIT_DIALOG: confirm exit → LESSON")
                 onNavigate(Routes.LESSON)
             }) {
                 Text(text = stringResource(R.string.dialog_exit_confirm))
