@@ -1,4 +1,4 @@
-A02 - Articoli in contesto
+A02 - Articoli (det. + indet.)
 Это книга (libro);Questo è il libro
 Это один ученик (studente);Questo è uno studente
 Это одна проблема (problema);Questo è un problema
@@ -40,3 +40,30 @@ A02 - Articoli in contesto
 Это один сад (giardino);Questo è un giardino
 Это ванная комната (bagno);Questo è il bagno
 Это одна ванная комната (bagno);Questo è un bagno
+Это не книга (libro);Questo non è il libro
+Это не дом (casa);Questa non è la casa
+Это не мальчик (ragazzo);Questo non è un ragazzo
+Это не девочка (ragazza);Questa non è una ragazza
+Это не зеркало (specchio);Questo non è lo specchio
+Это не вода (l'acqua);Questa non è l'acqua
+Это не друг (l'amico);Questo non è l'amico
+Это книга? (libro);È il libro?
+Это один ученик? (studente);È uno studente?
+Это дом? (casa);È la casa?
+Это один стул? (sedia);È una sedia?
+Это вода? (l'acqua);È l'acqua?
+Это женщина? (donna);È la donna?
+Это спагетти (spaghetti);Questi sono gli spaghetti
+Это очки (occhiali);Questi sono gli occhiali
+Это ключи (chiavi);Queste sono le chiavi
+Это родители (genitori);Questi sono i genitori
+Это туфли (scarpe);Queste sono le scarpe
+Это брюки (pantaloni);Questi sono i pantaloni
+Это ножницы (forbici);Queste sono le forbici
+Это не спагетти (spaghetti);Questi non sono gli spaghetti
+Это не очки (occhiali);Questi non sono gli occhiali
+Это не ключи (chiavi);Queste non sono le chiavi
+Это спагетти? (spaghetti);Sono gli spaghetti?
+Это очки? (occhiali);Sono gli occhiali?
+Это ключи? (chiavi);Sono le chiavi?
+Это родители? (genitori);Sono i genitori?
