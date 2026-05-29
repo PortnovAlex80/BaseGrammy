@@ -1,6 +1,6 @@
 # TASK-089: Staircase Navigation After Training Completion
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-29
 **Branch:** feature/staircase-navigation (from feature/multilingual-story-tts)
 **Spec:** 13-app-entry-and-navigation#13.3.6, 24-grammar-story-roadmap#navigation-flow

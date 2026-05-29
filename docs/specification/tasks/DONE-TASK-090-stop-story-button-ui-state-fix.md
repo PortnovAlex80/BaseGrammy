@@ -1,6 +1,6 @@
 # TASK-090: Stop Story Button UI State Update Bug
 
-**Status:** OPEN
+**Status:** DONE
 **Created:** 2026-05-29
 **Branch:** feature/stop-story-button-fix (from feature/multilingual-story-tts)
 **Spec:** 24-grammar-story-roadmap#story-reader
