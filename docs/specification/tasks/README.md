@@ -67,3 +67,4 @@ Mini task tracker linked to specs. Each task is a self-contained file with statu
 | [TASK-087](TASK-087-remove-drill-submode.md) | Remove Drill Sub-mode Completely | OPEN | 01, 02, 08, 15, 22, scenario-16 | 2026-05-21 |
 | [TASK-088](TASK-088-grammar-story-roadmap.md) | Grammar Story Roadmap Implementation | OPEN | 01, 02, 22, acceptance-criteria-grammar-roadmap | 2026-05-25 |
 | [TASK-089](TASK-089-staircase-navigation-after-training.md) | Staircase Navigation After Training Completion | OPEN | 13-app-entry-and-navigation, 24-grammar-story-roadmap | 2026-05-29 |
+| [TASK-090](TASK-090-stop-story-button-ui-state-fix.md) | Stop Story Button UI State Update Bug | OPEN | 24-grammar-story-roadmap | 2026-05-29 |
