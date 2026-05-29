@@ -195,6 +195,7 @@ class AudioCoordinator(
     fun stopTts() {
         storyPlaybackJob?.cancel()
         storyPlaybackJob = null
+        _audioState.update { it.copy(isStoryPlaybackActive = false) }
         ttsEngine.stop()
     }
 
@@ -207,6 +208,7 @@ class AudioCoordinator(
      */
     fun playMultilingualStory(content: String, defaultLanguageId: String = "en") {
         storyPlaybackJob?.cancel()
+        _audioState.update { it.copy(isStoryPlaybackActive = true) }
         storyPlaybackJob = coroutineScope.launch {
             ttsMutex.withLock {
                 try {
@@ -265,6 +267,8 @@ class AudioCoordinator(
                     Log.d(TAG, "All segments played successfully")
                 } catch (e: Throwable) {
                     Log.e(TAG, "Multilingual story playback failed", e)
+                } finally {
+                    _audioState.update { it.copy(isStoryPlaybackActive = false) }
                 }
             }
         }
@@ -535,15 +539,20 @@ class AudioCoordinator(
     fun startTtsStateCollection() {
         coroutineScope.launch {
             ttsEngine.state.collect { ttsState ->
-                _audioState.update {
-                    it.copy(
-                        ttsState = ttsState,
-                        ttsDownloadState = when (ttsState) {
-                            is TtsState.Error -> DownloadState.Error(ttsState.reason ?: "Voice engine error")
-                            is TtsState.Ready -> if (it.ttsDownloadState is DownloadState.Initializing) DownloadState.Done else it.ttsDownloadState
-                            else -> it.ttsDownloadState
-                        }
-                    )
+                _audioState.update { current ->
+                    // During story playback, suppress intermediate TTS state updates to prevent UI flicker
+                    if (current.isStoryPlaybackActive && ttsState !is TtsState.Speaking && ttsState !is TtsState.Error) {
+                        current // no-op: don't update UI during model switches
+                    } else {
+                        current.copy(
+                            ttsState = ttsState,
+                            ttsDownloadState = when (ttsState) {
+                                is TtsState.Error -> DownloadState.Error(ttsState.reason ?: "Voice engine error")
+                                is TtsState.Ready -> if (current.ttsDownloadState is DownloadState.Initializing) DownloadState.Done else current.ttsDownloadState
+                                else -> current.ttsDownloadState
+                            }
+                        )
+                    }
                 }
             }
         }

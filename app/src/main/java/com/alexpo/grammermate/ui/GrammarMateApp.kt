@@ -224,8 +224,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         Column(modifier = Modifier.fillMaxSize()) {
             val selectedTtsDownloadState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
                 ?: state.audio.ttsDownloadState
-            // Persistent TTS download progress bar
-            AnimatedVisibility(visible = state.audio.bgTtsDownloading) {
+            // Persistent TTS download progress bar — hidden during story playback
+            AnimatedVisibility(visible = state.audio.bgTtsDownloading && !state.audio.isStoryPlaybackActive) {
                 LinearProgressIndicator(
                     progress = { calcBgDownloadProgress(state.audio.bgTtsDownloadStates) },
                     modifier = Modifier.fillMaxWidth().height(2.dp),
@@ -387,7 +387,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 hasVerbDrill = state.navigation.hasVerbDrill,
                                 hasVocabDrill = state.navigation.hasVocabDrill,
                                 showBackButton = true,  // Show back button to return to pack selection
-                                isStoryPlaying = state.audio.ttsState == TtsState.Speaking,
+                                isStoryPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking,
                                 onStopStory = remember { { vm.stopStoryNarration() } }
                             )
                         } else {
@@ -812,7 +812,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             hasVerbDrill = state.navigation.hasVerbDrill,
                             hasVocabDrill = state.navigation.hasVocabDrill,
-                            isStoryPlaying = state.audio.ttsState == TtsState.Speaking,
+                            isStoryPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking,
                             onStopStory = remember { { vm.stopStoryNarration() } }
                         )
                         // Local back handler for GRAMMAR_STORY_ROADMAP — staircase navigation
@@ -826,7 +826,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     composable(Routes.STORY_READER) {
                         val chapterTitle = state.storyReaderChapterTitle ?: "Unknown Chapter"
                         val content = state.storyReaderContent
-                        val isCurrentlyPlaying = state.audio.ttsState == TtsState.Speaking
+                        val isCurrentlyPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking
 
                         StoryReaderScreen(
                             chapterTitle = chapterTitle,
