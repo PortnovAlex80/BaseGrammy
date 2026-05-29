@@ -119,7 +119,7 @@ def create_manifest(pack_name: str, config: Dict[str, str], story_dir: Path) -> 
         chapter = {
             "chapterId": chapter_id,
             "order": i,
-            "title": f"Chapter {i} - {title}",
+            "title": "Intro" if i == 0 else f"Chapter {i} - {title}",
             "subtitle": CHAPTER_SUBTITLES.get(chapter_id, ""),
             "storyFile": story_file,
             "lessons": CHAPTER_LESSONS.get(chapter_id, [])

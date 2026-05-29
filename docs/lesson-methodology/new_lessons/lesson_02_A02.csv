@@ -1,7 +1,7 @@
 A02 - Articoli (det. + indet.)
 Это та книга (libro);Questo è il libro
 Это один ученик (studente);Questo è uno studente
-Это одна проблема (problema);Questo è un problema
+Это проблема (un problema);Questo è un problema
 Это одна учительница (un'insegnante);Questa è un'insegnante
 Это тот друг (l'amico);Questo è l'amico
 Это один друг (amico);Questo è un amico
@@ -40,6 +40,17 @@ A02 - Articoli (det. + indet.)
 Это один сад (giardino);Questo è un giardino
 Это тот санузел (bagno);Questo è il bagno
 Это один санузел (bagno);Questo è un bagno
+Я студент (studente);Sono studente
+Ты учитель (insegnante);Sei insegnante
+Он врач (medico);È medico
+Она инженер (ingegnere);È ingegnere
+Мы студенты (studenti);Siamo studenti
+Вы учителя (insegnanti);Siete insegnanti
+Они врачи (medici);Sono medici
+Книга здесь (libro, qui);Il libro è qui
+Я читаю одну книгу (leggo, un libro);Leggo un libro
+Мальчик дома (ragazzo, casa);Il ragazzo è a casa
+У меня есть один ключ (ho, una chiave);Ho una chiave
 Это не та книга (libro);Questo non è il libro
 Это не тот дом (casa);Questa non è la casa
 Это не мальчик (ragazzo);Questo non è un ragazzo

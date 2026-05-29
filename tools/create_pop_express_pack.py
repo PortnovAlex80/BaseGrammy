@@ -49,7 +49,7 @@ def main():
         {
             "chapterId": "POP_00",
             "order": 0,
-            "title": "Chapter 0 - Introduction",
+            "title": "Intro",
             "subtitle": "Введение в популярную грамматику",
             "storyFile": "chapter_00.md",
             "lessons": ["lesson_01_A01", "lesson_02_A02"]

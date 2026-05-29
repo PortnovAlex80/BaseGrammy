@@ -9,7 +9,7 @@
     {
       "chapterId": "chapter_0",
       "order": 0,
-      "title": "Chapter 0 - До языка",
+      "title": "Intro",
       "subtitle": "До языка",
       "storyFile": "chapter_00.md",
       "lessons": []
