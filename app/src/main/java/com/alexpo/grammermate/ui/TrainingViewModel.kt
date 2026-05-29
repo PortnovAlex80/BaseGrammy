@@ -844,6 +844,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun pauseSession() = handleSessionEvents(sessionRunner.pauseSession())
 
     fun finishSession() {
+        audioCoordinator.stopAsr()
         if (bossOrchestrator.stateFlow.value.bossActive) {
             finishBoss()
             return
@@ -870,6 +871,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Call when the user exits the verb drill from TrainingScreen.
      */
     fun exitVerbDrillSession() {
+        audioCoordinator.stopAsr()
         val events = sessionRunner.exitCardSession()
         handleSessionEvents(events)
     }
@@ -911,6 +913,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Call when the user finishes or exits a daily practice block.
      */
     fun exitDailySession() {
+        audioCoordinator.stopAsr()
         val events = sessionRunner.exitCardSession()
         handleSessionEvents(events)
     }

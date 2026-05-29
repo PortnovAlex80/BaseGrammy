@@ -330,13 +330,15 @@ class AsrEngine(private val context: Context) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 Log.e(TAG, "Recording/transcription failed", e)
                 errorMessage = "Recording/transcription failed: ${e.message}"
-                try {
-                    audioRecord?.stop()
-                    audioRecord?.release()
-                } catch (_: Exception) {}
-                audioRecord = null
                 _state.value = AsrState.ERROR
                 ""
+            } finally {
+                // Always clean up AudioRecord, even on cancellation.
+                // stopAsr() calls stopRecording() which may have already released it —
+                // the try-catch handles that case gracefully.
+                try { audioRecord?.stop() } catch (_: Exception) {}
+                try { audioRecord?.release() } catch (_: Exception) {}
+                audioRecord = null
             }
         }
     }

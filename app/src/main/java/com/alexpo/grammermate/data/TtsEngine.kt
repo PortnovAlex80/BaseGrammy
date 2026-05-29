@@ -22,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -484,26 +483,29 @@ class TtsEngine(private val context: Context) {
         }
     }
 
-    fun stop() = runBlocking {
-        mutex.withLock {
-            doStop()
-            val oldJob = speakJob
-            oldJob?.cancel()
-            oldJob?.join()
-            if (_state.value == TtsState.Speaking) {
-                _state.value = if (offlineTts != null || systemTts != null) TtsState.Ready else TtsState.Idle
-            }
+    fun stop() {
+        // Non-blocking stop: set isStopped flag and cancel job without joining.
+        // The speak coroutine checks isStopped in its audio callback (returns 0)
+        // and drain loop, so it exits quickly. The coroutine's finally block
+        // handles AudioTrack cleanup. Previously used runBlocking + join() which
+        // blocked the main thread causing ANR (5s timeout).
+        generation.incrementAndGet()  // invalidate running speak's generation check
+        doStop()
+        val oldJob = speakJob
+        oldJob?.cancel()
+        speakJob = null
+        if (_state.value == TtsState.Speaking) {
+            _state.value = if (offlineTts != null || systemTts != null) TtsState.Ready else TtsState.Idle
         }
     }
 
-    fun release() = runBlocking {
-        mutex.withLock {
-            doStop()
-            val oldJob = speakJob
-            oldJob?.cancel()
-            oldJob?.join()
-            doRelease()
-        }
+    fun release() {
+        // Non-blocking release: same rationale as stop() — avoid runBlocking on main thread.
+        doStop()
+        val oldJob = speakJob
+        oldJob?.cancel()
+        speakJob = null
+        doRelease()
     }
 
     private fun doRelease() {

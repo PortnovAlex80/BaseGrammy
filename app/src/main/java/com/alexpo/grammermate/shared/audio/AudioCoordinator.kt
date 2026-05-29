@@ -97,6 +97,7 @@ class AudioCoordinator(
     private var asrDownloadJob: Job? = null
     private var bgDownloadJob: Job? = null
     private var storyPlaybackJob: Job? = null
+    private var asrRecognitionJob: Job? = null
 
     // ── TTS serialization mutex ────────────────────────────────────────────
     // Prevents concurrent TTS initialize/speak sequences from colliding at
@@ -266,7 +267,9 @@ class AudioCoordinator(
 
                     Log.d(TAG, "All segments played successfully")
                 } catch (e: Throwable) {
-                    Log.e(TAG, "Multilingual story playback failed", e)
+                    if (e !is kotlinx.coroutines.CancellationException) {
+                        Log.e(TAG, "Multilingual story playback failed", e)
+                    }
                 } finally {
                     _audioState.update { it.copy(isStoryPlaybackActive = false) }
                 }
@@ -391,19 +394,27 @@ class AudioCoordinator(
     // ── ASR ────────────────────────────────────────────────────────────────
 
     fun startOfflineRecognition(onResult: (String) -> Unit) {
-        coroutineScope.launch {
+        // Cancel any previous recognition before starting new one
+        asrRecognitionJob?.cancel()
+        asrRecognitionJob = coroutineScope.launch {
             try {
                 val result = transcribeWithOfflineAsr()
                 if (result.isNotBlank()) {
                     onResult(result)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Offline recognition failed", e)
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    Log.e(TAG, "Offline recognition failed", e)
+                }
+            } finally {
+                asrRecognitionJob = null
             }
         }
     }
 
     fun stopAsr() {
+        asrRecognitionJob?.cancel()
+        asrRecognitionJob = null
         asrEngine?.stopRecording()
     }
 
@@ -562,6 +573,8 @@ class AudioCoordinator(
 
     fun release() {
         bgDownloadJob?.cancel()
+        asrRecognitionJob?.cancel()
+        asrRecognitionJob = null
         ttsEngine.release()
         asrEngine?.release()
         soundPool.release()
