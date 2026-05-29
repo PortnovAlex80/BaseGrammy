@@ -10,8 +10,11 @@ A05 - Forma di cortesia (Lei)
 Ты работаешь здесь (qui)?;Tu lavori qui?
 А Вы работаете здесь (qui)?;Lei lavora qui?
 Ты устал (stanco)?;Tu sei stanco?
-А Вы устали? (stanco);Lei è stanco?
-А Вы устали? (stanca);Lei è stanca?
+А Вы устали? (к мужчине, stanco);Lei è stanco?
+А Вы устали? (к женщине, stanca);Lei è stanca?
+Ты готов? (pronto);Tu sei pronto?
+А Вы готовы? (к мужчине, pronto);Lei è pronto?
+А Вы готовы? (к женщине, pronta);Lei è pronta?
 Ты хочешь есть (fame)?;Tu hai fame?
 А Вы хотите есть (fame)?;Lei ha fame?
 Ты учишь итальянский (italiano)?;Tu studi italiano?
