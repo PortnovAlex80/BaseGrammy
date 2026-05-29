@@ -10,13 +10,14 @@ A05 - Forma di cortesia (Lei)
 Ты работаешь здесь (qui)?;Tu lavori qui?
 А Вы работаете здесь (qui)?;Lei lavora qui?
 Ты устал (stanco)?;Tu sei stanco?
-А Вы устали (stanco)?;Lei è stanco?
+А Вы устали? (stanco);Lei è stanco?
+А Вы устали? (stanca);Lei è stanca?
 Ты хочешь есть (fame)?;Tu hai fame?
 А Вы хотите есть (fame)?;Lei ha fame?
 Ты учишь итальянский (italiano)?;Tu studi italiano?
 А Вы учите итальянский (italiano)?;Lei studia italiano?
-Ты из Милана (Milano)?;Tu vieni da Milano?
-А Вы приезжаете из Милана? (Lei, viene, Milano);Lei viene da Milano?
+Ты из Милана (Milano)?;Tu sei di Milano?
+А Вы из Милана? (Milano);Lei è di Milano?
 Как Ваши дела? (sta);Come sta?
 Хорошо, спасибо. А у Вас? (bene, grazie);Bene, grazie. E Lei?
 Вы из Рима (Roma)?;Lei è di Roma?
@@ -27,18 +28,11 @@ A05 - Forma di cortesia (Lei)
 До свидания, до скорой. (arrivederci, presto);Arrivederci, a presto
 Хорошего дня (giornata).;Buona giornata
 Очень приятно. (piacere);Piacere
-Как Ваша фамилия (cognome)?;Qual è il Suo cognome?
-Вы живёте в Италии (Italia)?;Lei abita in Italia?
-Вы работаете здесь (qui)?;Lei lavora qui?
+Как Ваша фамилия (cognome)?;Come si chiama di cognome?
 Вы говорите по-английски (inglese)?;Lei parla inglese?
-Вы понимаете по-итальянски (italiano)?;Lei capisce l'italiano?
-Вы живёте в Риме (Roma)?;Lei vive a Roma?
 Как Вы? (sta);Come sta Lei?
 У Вас есть время (tempo)?;Lei ha tempo?
-Вы из какого города (di quale città);Di quale città è?
 Вы откуда? (Lei, di dov'è);Di dov'è?
 Пожалуйста / будьте добры. (per favore);Per favore.
 Спасибо. (grazie);Grazie
 Пожалуйста. (prego);Prego
-Вы учите итальянский (italiano)?;Lei studia italiano?
-Вы живёте в Италии (Italia)?;Lei vive in Italia?
