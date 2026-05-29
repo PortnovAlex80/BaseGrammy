@@ -4,7 +4,7 @@
   "essence": "Possessivo согласуется с предметом, а не с владельцем.",
   "formula": null,
   "base": null,
-  "dontConfuse": null,
+  "dontConfuse": "⚠️ loro ВСЕГДА с артиклем, даже с родственниками: il loro padre, la loro madre.",
   "examples": [
     {
       "it": "il mio libro",

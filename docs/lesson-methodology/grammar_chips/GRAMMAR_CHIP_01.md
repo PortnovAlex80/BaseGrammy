@@ -4,6 +4,12 @@
 Настоящее время: факты, привычки, действия сейчас.
 
 ## Формула
+-are: parlo, parli, parla, parliamo, parlate, parlano
+-ere: scrivo, scrivi, scrive, scriviamo, scrivete, scrivono
+-ire: dormo, dormi, dorme, dormiamo, dormite, dormono
+
+Неправильные: sono (essere), ho (avere), vado (andare), faccio (fare)
+
 `non + verbo` для отрицания.
 
 ## Примеры

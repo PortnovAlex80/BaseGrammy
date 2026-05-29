@@ -13,3 +13,6 @@ Possessivo согласуется с предметом, а не с владел
 - `mio padre`
 - `mia madre`
 - `i miei genitori`
+
+## Не путать
+- ⚠️ `loro` ВСЕГДА с артиклем, даже с родственниками: `il loro padre`, `la loro madre`.

@@ -9,7 +9,7 @@
 
 ## Примеры
 - `C'è una scuola qui.`
-- `Ci sono libri sul tavolo.`
+- `Ci sono libri in classe.`
 
 ## Не путать
 `Il libro è sul tavolo` описывает известную книгу.

@@ -1,15 +1,30 @@
 {
   "key": "A09",
-  "title": "A09 - Preposizioni",
-  "essence": "Предлоги выражают отношения: чей, куда, где, с кем, для кого.\n\n## Основные\n- `di` - принадлежность\n- `a` - направление/адресат\n- `da` - откуда/к человеку\n- `in` - место\n- `con` - с\n- `per` - для",
-  "formula": "",
+  "title": "A09 - Preposizioni semplici e articolate",
+  "essence": "Предлоги упаковывают русские падежи в итальянские конструкции.",
+  "formula": "## Карта предлогов\n- `di` (Род.: принадлежность, тема, материал)\n- `a` (Дат.: адресат, направление)\n- `da` (Род.: происхождение; Твор.: агент)\n- `in` (Предл.: место в)\n- `su` (Предл.: на)\n- `con` (Твор.: с, совместность)\n- `per` (цель, бенефициар)\n\n## Слитные (articolate)\nПредлог + Артикль = Одно слово:\n- `di + il = del`, `di + la = della`, `di + i = dei`\n- `a + il = al`, `a + la = alla`, `a + i = ai`\n- `in + il = nel`, `in + la = nella`, `in + i = nei`\n- `su + il = sul`, `su + la = sulla`, `su + i = sui`\n- `da + il = dal`, `da + la = dalla`",
   "base": null,
-  "dontConfuse": "",
+  "dontConfuse": "`in` + город/страна без артикля: `in Italia`, `a Roma` (не *in la Italia).",
   "examples": [
     {
-      "it": "È il libro del mio amico.",
+      "it": "Vado al cinema.",
       "ru": "",
-      "note": ""
+      "note": "a + il"
+    },
+    {
+      "it": "Il libro di Marco.",
+      "ru": "",
+      "note": "принадлежность"
+    },
+    {
+      "it": "Sono nella stanza.",
+      "ru": "",
+      "note": "in + la"
+    },
+    {
+      "it": "Vengo da Roma.",
+      "ru": "",
+      "note": "происхождение"
     }
   ]
 }

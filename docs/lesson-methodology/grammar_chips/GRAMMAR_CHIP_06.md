@@ -8,6 +8,7 @@
 - `Sono a casa.`
 - `Ho fame.`
 - `Ho freddo.`
+- `Ho 20 anni.` (Не *Sono 20 anni.)
 
 ## Не путать
 По-итальянски `ho freddo`, буквально "имею холод".

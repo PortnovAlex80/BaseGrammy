@@ -14,4 +14,6 @@
 - `una lezione / lezioni`
 
 ## Не путать
-`città` не меняется во множественном числе.
+`città` не меняется: una città — due città.
+
+Род не всегда по окончанию: `il problema` (муж., на -a), `l'artista` (общий: l'artista / la violinista).
