@@ -460,6 +460,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
                                     Log.d("NavDebug", "LESSON onBack: hasChapters=$hasChapters")
                                     if (hasChapters) {
+                                        // Restore selectedChapter so CHAPTER_LESSONS doesn't show spinner
+                                        val currentLessonId = state.navigation.selectedLessonId?.value
+                                        if (currentLessonId != null) {
+                                            val chapter = vm.findChapterForLesson(currentLessonId)
+                                            if (chapter != null) vm.selectChapter(chapter)
+                                        }
                                         Log.d("NavDebug", "LESSON onBack → CHAPTER_LESSONS")
                                         onNavigate(Routes.CHAPTER_LESSONS)
                                     } else {

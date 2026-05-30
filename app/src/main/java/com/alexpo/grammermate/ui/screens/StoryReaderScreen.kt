@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
@@ -18,6 +19,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.platform.LocalContext
+import com.alexpo.grammermate.data.MultilingualStoryParser
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -26,6 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 /**
  * Simple markdown parser for story content.
@@ -199,6 +208,7 @@ fun StoryReaderScreen(
     onStopStory: () -> Unit = {},
     isPlaying: Boolean = false
 ) {
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -209,6 +219,19 @@ fun StoryReaderScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val cleanText = MultilingualStoryParser.stripMarkers(markdownContent)
+                            clipboard.setPrimaryClip(ClipData.newPlainText("story", cleanText))
+                            Toast.makeText(context, "Скопировано", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.ContentCopy,
+                            contentDescription = "Copy story to clipboard"
+                        )
+                    }
                     IconButton(onClick = if (isPlaying) onStopStory else onPlayStory) {
                         Icon(
                             if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,

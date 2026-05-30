@@ -1,0 +1,940 @@
+A01 - Presente Indicativo
+Я говорю по-итальянски (parlo, italiano);Parlo italiano
+Ты понимаешь итальянский? (capisci, italiano);Capisci italiano?
+Вы изучаете итальянский? (studiate, italiano);Studiate italiano?
+Мы учимся в Риме (studiamo, roma);Studiamo a Roma
+Они говорят по-русски (parlano, russo);Parlano russo
+Я не понимаю (capisco);Non capisco
+Ты не говоришь по-английски (parli, inglese);Non parli inglese
+Мы не изучаем испанский (studiamo, spagnolo);Non studiamo spagnolo
+Она не работает здесь (lavora);Non lavora qui
+Они не живут в Милане (vivono, milano);Non vivono a Milano
+Я читаю книгу (leggo, libro);Leggo un libro
+Ты читаешь книгу (leggi, libro);Leggi un libro
+Он читает книгу (legge, libro);Legge un libro
+Мы читаем книгу (leggiamo, libro);Leggiamo un libro
+Вы читаете книгу (leggete, libro);Leggete un libro
+Они читают книгу (leggono, libro);Leggono un libro
+Я не читаю книгу (leggo, libro);Non leggo un libro
+Ты не читаешь книгу (leggi, libro);Non leggi un libro
+Он не читает книгу (legge, libro);Non legge un libro
+Мы не читаем книгу (leggiamo, libro);Non leggiamo un libro
+Вы не читаете книгу (leggete, libro);Non leggete un libro
+Они не читают книгу (leggono, libro);Non leggono un libro
+Я сплю дома (dormo, casa);Dormo a casa
+Ты спишь дома (dormi, casa);Dormi a casa
+Он спит дома (dorme, casa);Dorme a casa
+Мы спим дома (dormiamo, casa);Dormiamo a casa
+Вы спите дома (dormite, casa);Dormite a casa
+Они спят дома (dormono, casa);Dormono a casa
+Я не сплю дома (dormo, casa);Non dormo a casa
+Ты не спишь дома (dormi, casa);Non dormi a casa
+Он не спит дома (dorme, casa);Non dorme a casa
+Мы не спим дома (dormiamo, casa);Non dormiamo a casa
+Вы не спите дома (dormite, casa);Non dormite a casa
+Они не спят дома (dormono, casa);Non dormono a casa
+Я студент (studente);Sono studente
+Ты учитель (insegnante);Sei insegnante
+Он врач (dottore);È dottore
+Она инженер (ingegnere);È ingegnere
+Мы студенты (studenti);Siamo studenti
+Вы учителя (insegnanti);Siete insegnanti
+Они врачи (medici);Sono medici
+Я не студент (studente);Non sono studente
+Ты не учитель (insegnante);Non sei insegnante
+Он не врач (dottore);Non è dottore
+Она не инженер (ingegnere);Non è ingegnere
+Мы не студенты (studenti);Non siamo studenti
+Вы не учителя (insegnanti);Non siete insegnanti
+Они не врачи (medici);Non sono medici
+У меня есть время (tempo);Ho tempo
+У тебя есть время? (tempo);Hai tempo?
+У него есть время (tempo);Ha tempo
+У неё есть время (tempo);Ha tempo
+У нас есть время (tempo);Abbiamo tempo
+У вас есть время? (tempo);Avete tempo?
+У них есть время (tempo);Hanno tempo
+У меня нет времени (tempo);Non ho tempo
+У тебя нет времени (tempo);Non hai tempo
+У него нет времени (tempo);Non ha tempo
+У неё нет времени (tempo);Non ha tempo
+У нас нет времени (tempo);Non abbiamo tempo
+У вас нет времени (tempo);Non avete tempo
+У них нет времени (tempo);Non hanno tempo
+Я иду домой (vado, casa);Vado a casa
+Ты идешь в школу (vai, scuola);Vai a scuola
+Он идет в театр (teatro);Va a teatro
+Она идет домой (casa);Va a casa
+Мы идем в школу (andiamo, scuola);Andiamo a scuola
+Вы идете в театр (teatro);Andate a teatro
+Они идут домой (vanno, casa);Vanno a casa
+Я не иду домой (vado, casa);Non vado a casa
+Ты не идешь в школу (vai, scuola);Non vai a scuola
+Он не идет в театр (teatro);Non va a teatro
+Она не идет домой (casa);Non va a casa
+Мы не идем в школу (andiamo, scuola);Non andiamo a scuola
+Вы не идете в театр (teatro);Non andate a teatro
+Они не идут домой (vanno, casa);Non vanno a casa
+Я делаю зарядку (faccio, ginnastica);Faccio ginnastica
+Ты завтракаешь (fai, colazione);Fai colazione
+Он занимается спортом (sport);Fa sport
+Она завтракает (colazione);Fa colazione
+Мы делаем зарядку (facciamo, ginnastica);Facciamo ginnastica
+Вы занимаетесь спортом (fate, sport);Fate sport
+Они завтракают (fanno, colazione);Fanno colazione
+Я не делаю зарядку (faccio, ginnastica);Non faccio ginnastica
+Ты не завтракаешь (fai, colazione);Non fai colazione
+Он не занимается спортом (sport);Non fa sport
+Она не завтракает (colazione);Non fa colazione
+Мы не делаем зарядку (facciamo, ginnastica);Non facciamo ginnastica
+Вы не занимаетесь спортом (fate, sport);Non fate sport
+Они не завтракают (fanno, colazione);Non fanno colazione
+Меня зовут Марко (mi chiamo);Mi chiamo Marco
+Как тебя зовут? (come, ti chiami);Come ti chiami?
+Мне хорошо (mi sento, bene);Mi sento bene
+Мне нехорошо (mi sento, bene);Non mi sento bene
+Очень приятно (piacere);Piacere
+A02 - Articoli (det. + indet.)
+Это та книга (libro);Questo è il libro
+Это один ученик (studente);Questo è uno studente
+Это проблема (un problema);Questo è un problema
+Это одна учительница (un'insegnante);Questa è un'insegnante
+Это тот друг (l'amico);Questo è l'amico
+Это один друг (amico);Questo è un amico
+Это та подруга (l'amica);Questa è l'amica
+Это одна подруга (un'amica);Questa è un'amica
+Это тот дом (casa);Questa è la casa
+Это один дом (casa);Questa è una casa
+Это тот мальчик (ragazzo);Questo è il ragazzo
+Это один мальчик (ragazzo);Questo è un ragazzo
+Это та девочка (ragazza);Questa è la ragazza
+Это одна девочка (ragazza);Questa è una ragazza
+Это тот мужчина (l'uomo);Questo è l'uomo
+Это один мужчина (uomo);Questo è un uomo
+Это та женщина (donna);Questa è la donna
+Это одна женщина (donna);Questa è una donna
+Это та вода (l'acqua);Questa è l'acqua
+Это тот год (l'anno);Questo è l'anno
+Это один год (anno);Questo è un anno
+Это то зеркало (specchio);Questo è lo specchio
+Это одно зеркало (specchio);Questo è uno specchio
+Это тот дядя (zio);Questo è lo zio
+Это один дядя (zio);Questo è uno zio
+Это тот стул (sedia);Questa è la sedia
+Это один стул (sedia);Questa è una sedia
+Это тот стол (tavolo);Questo è il tavolo
+Это один стол (tavolo);Questo è un tavolo
+Это тот поезд (treno);Questo è il treno
+Это один поезд (treno);Questo è un treno
+Это та собака (cane);Questo è il cane
+Это одна собака (cane);Questo è un cane
+Это то яблоко (mela);Questa è la mela
+Это одно яблоко (mela);Questa è una mela
+Это тот ключ (chiave);Questa è la chiave
+Это один ключ (chiave);Questa è una chiave
+Это тот сад (giardino);Questo è il giardino
+Это один сад (giardino);Questo è un giardino
+Это тот санузел (bagno);Questo è il bagno
+Это один санузел (bagno);Questo è un bagno
+Я студент (studente);Sono studente
+Ты учитель (insegnante);Sei insegnante
+Он врач (medico);È medico
+Она инженер (ingegnere);È ingegnere
+Мы студенты (studenti);Siamo studenti
+Вы учителя (insegnanti);Siete insegnanti
+Они врачи (medici);Sono medici
+Книга здесь (libro, qui);Il libro è qui
+Я читаю одну книгу (leggo, un libro);Leggo un libro
+Мальчик дома (ragazzo, casa);Il ragazzo è a casa
+У меня есть один ключ (ho, una chiave);Ho una chiave
+Это не та книга (libro);Questo non è il libro
+Это не тот дом (casa);Questa non è la casa
+Это не мальчик (ragazzo);Questo non è un ragazzo
+Это не девочка (ragazza);Questa non è una ragazza
+Это не то зеркало (specchio);Questo non è lo specchio
+Это не та вода (l'acqua);Questa non è l'acqua
+Это не тот друг (l'amico);Questo non è l'amico
+Это та книга? (libro);È il libro?
+Это один ученик? (studente);È uno studente?
+Это тот дом? (casa);È la casa?
+Это один стул? (sedia);È una sedia?
+Это та вода? (l'acqua);È l'acqua?
+Это та женщина? (donna);È la donna?
+Это те спагетти (spaghetti);Questi sono gli spaghetti
+Это те очки (occhiali);Questi sono gli occhiali
+Это те ключи (chiavi);Queste sono le chiavi
+Это те родители (genitori);Questi sono i genitori
+Это те туфли (scarpe);Queste sono le scarpe
+Это те брюки (pantaloni);Questi sono i pantaloni
+Это те ножницы (forbici);Queste sono le forbici
+Это не те спагетти (spaghetti);Questi non sono gli spaghetti
+Это не те очки (occhiali);Questi non sono gli occhiali
+Это не те ключи (chiavi);Queste non sono le chiavi
+Это те спагетти? (spaghetti);Sono gli spaghetti?
+Это те очки? (occhiali);Sono gli occhiali?
+Это те ключи? (chiavi);Sono le chiavi?
+Это те родители? (genitori);Sono i genitori?
+A03 - Sostantivi: genere e numero
+Это мальчик (ragazzo);Questo è un ragazzo.
+Это девочка (ragazza);Questa è una ragazza.
+Это мальчики (ragazzi);Questi sono ragazzi.
+Это девочки (ragazze);Queste sono ragazze.
+Это кот (gatto);Questo è un gatto.
+Это кошка (gatta);Questa è una gatta.
+Это коты (gatti);Questi sono gatti.
+Это кошки (gatte);Queste sono gatte.
+Это друг (amico);Questo è un amico.
+Это подруга (amica);Questa è un'amica.
+Это друзья (amici);Questi sono amici.
+Это подруги (amiche);Queste sono amiche.
+Это книга (libro);Questo è un libro.
+Это книги (libri);Questi sono libri.
+Это ручка (penna);Questa è una penna.
+Это ручки (penne);Queste sono penne.
+Это стол (tavolo);Questo è un tavolo.
+Это столы (tavoli);Questi sono tavoli.
+Это стул (sedia);Questa è una sedia.
+Это стулья (sedie);Queste sono sedie.
+Это день (giorno);Questo è un giorno.
+Это дни (giorni);Questi sono giorni.
+Это ночь (notte);Questa è una notte.
+Это ночи (notti);Queste sono notti.
+Это подарок (regalo);Questo è un regalo.
+Это подарки (regali);Questi sono regali.
+Это вещь (cosa);Questa è una cosa.
+Это вещи (cose);Queste sono cose.
+Это мужчина (uomo);Questo è un uomo.
+Это мужчины (uomini);Questi sono uomini.
+Это женщина (donna);Questa è una donna.
+Это женщины (donne);Queste sono donne.
+Это дом (casa);Questa è una casa.
+Это дома (case);Queste sono case.
+Это момент (momento);Questo è un momento.
+Это моменты (momenti);Questi sono momenti.
+Это турист (turista);Questo è un turista.
+Это туристка (turista);Questa è una turista.
+Это туристы (turisti);Questi sono turisti.
+Это туристки (turiste);Queste sono turiste.
+Это проблема (problema);Questo è un problema.
+Это проблемы (problemi);Questi sono problemi.
+Это город (città);Questa è una città.
+Это города (città);Queste sono città.
+Это рука (mano);Questa è una mano.
+Это руки (mani);Queste sono mani.
+Это автор (autore);Questo è un autore.
+Это авторы (autori);Questi sono autori.
+Это врач (dottore);Questo è un dottore.
+Это врач-женщина (dottoressa);Questa è una dottoressa.
+Это урок (lezione);Questa è una lezione.
+Это уроки (lezioni);Queste sono lezioni.
+Это не мальчик (ragazzo);Questo non è un ragazzo.
+Это не девочка (ragazza);Questa non è una ragazza.
+Это не кот? (gatto);Non è un gatto?
+Это не книга? (libro);Non è un libro?
+Это мужчина? (uomo);È un uomo?
+Это женщина? (donna);È una donna?
+Это проблема? (problema);È un problema?
+Это город? (città);È una città?
+A04 - Aggettivi
+Это красивая девушка (bella, ragazza);Questa è una bella ragazza.
+Это красивые девочки (belle, ragazze);Queste sono belle ragazze.
+Это красивый парень (bel ragazzo);Questo è un bel ragazzo.
+Это красивый момент (bel momento);Questo è un bel momento.
+Это красивый студент (bello studente);Questo è un bello studente.
+Это красивый друг (bell'amico);Questo è un bell'amico.
+Это красивый человек (bell'uomo);Questo è un bell'uomo.
+Это красивые мальчики (bei ragazzi);Questi sono bei ragazzi.
+Это хорошая девушка (brava, ragazza);Questa è una brava ragazza.
+Это хорошие мужчины (bravi, uomini);Questi sono bravi uomini.
+Это хороший студент (buono studente);Questo è un buono studente.
+Это хороший отец (buon, padre);Questo è un buon padre.
+Это хорошая мать (buona, madre);Questa è una buona madre.
+Это хорошие родители (buoni, genitori);Questi sono buoni genitori.
+Это хорошие подруги (buone amiche);Queste sono buone amiche.
+Это новый друг (nuovo, amico);Questo è un nuovo amico.
+Это новая подруга (nuova, amica);Questa è una nuova amica.
+Это новые друзья (nuovi, amici);Questi sono nuovi amici.
+Это новые подруги (nuove, amiche);Queste sono nuove amiche.
+Это маленький ребёнок (piccolo, bambino);Questo è un piccolo bambino.
+Это маленькие дети (piccoli, bambini);Questi sono piccoli bambini.
+Это маленькая девочка (piccola, bambina);Questa è una piccola bambina.
+Это молодой мужчина (giovane, uomo);Questo è un giovane uomo.
+Это молодые женщины (giovani, donne);Queste sono giovani donne.
+Это старый отец (vecchio, padre);Questo è un vecchio padre.
+Это старая мать (vecchia, madre);Questa è una vecchia madre.
+Это счастливая семья (famiglia felice);Questa è una famiglia felice.
+Это счастливые люди (persone felici);Queste sono persone felici.
+Это важная часть (parte importante);Questa è una parte importante.
+Это сильный мужчина (uomo forte);Questo è un uomo forte.
+Это сильные женщины (donne forti);Queste sono donne forti.
+Мальчик высокий (ragazzo alto);Il ragazzo è alto.
+Мальчики высокие (ragazzi alti);I ragazzi sono alti.
+Девушка высокая (ragazza alta);La ragazza è alta.
+Дома большие (case grandi);Le case sono grandi.
+Книга интересная (libro interessante);Il libro è interessante.
+Комната чистая (stanza pulita);La stanza è pulita.
+Улица грязная (strada sporca);La strada è sporca.
+День трудный (giorno difficile);Il giorno è difficile.
+Несчастный человек — бедняга (povero uomo);Questo è un povero uomo.
+Человек без денег — бедный (uomo povero);Questo è un uomo povero.
+Великий человек (grande uomo);Questo è un grande uomo.
+Крупный, высокий человек (uomo grande);Questo è un uomo grande.
+Давний друг (vecchio amico);Questo è un vecchio amico.
+Старый по возрасту друг (amico vecchio);Questo è un amico vecchio.
+Красавица (bella donna);Questa è una bella donna.
+Женщина приятной внешности (donna bella);Questa è una donna bella.
+Хороший, способный парень (bravo ragazzo);Questo è un bravo ragazzo.
+Хороший парень (ragazzo bravo);Questo è un ragazzo bravo.
+Это не красивая девушка (bella ragazza);Questa non è una bella ragazza.
+Это не хороший отец (buon padre);Questo non è un buon padre.
+Это не новая подруга (nuova amica);Questa non è una nuova amica.
+Это не счастливая семья (famiglia felice);Questa non è una famiglia felice.
+Это не высокий парень (ragazzo alto);Questo non è un ragazzo alto.
+Это красивая девушка? (bella ragazza);Questa è una bella ragazza?
+Это новый друг? (nuovo amico);Questo è un nuovo amico?
+Это счастливая семья? (famiglia felice);Questa è una famiglia felice?
+Это сильный мужчина? (uomo forte);Questo è un uomo forte?
+Это красивый студент? (bello studente);Questo è un bello studente?
+Это красивый друг? (bell'amico);Questo è un bell'amico?
+A05 - Forma di cortesia (Lei)
+Как тебя зовут? (chiami);Come ti chiami?
+Как Вас зовут? (chiama);Come si chiama?
+Ты говоришь по-итальянски (italiano)?;Tu parli italiano?
+А Вы говорите по-итальянски (italiano)?;Lei parla italiano?
+Ты понимаешь итальянский (italiano)?;Tu capisci l'italiano?
+А Вы понимаете итальянский (italiano)?;Lei capisce l'italiano?
+Ты живёшь в Риме (Roma)?;Tu abiti a Roma?
+А Вы живёте в Риме (Roma)?;Lei abita a Roma?
+Ты работаешь здесь (qui)?;Tu lavori qui?
+А Вы работаете здесь (qui)?;Lei lavora qui?
+Ты устал (stanco)?;Tu sei stanco?
+А Вы устали? (к мужчине, stanco);Lei è stanco?
+А Вы устали? (к женщине, stanca);Lei è stanca?
+Ты готов? (pronto);Tu sei pronto?
+А Вы готовы? (к мужчине, pronto);Lei è pronto?
+А Вы готовы? (к женщине, pronta);Lei è pronta?
+Ты хочешь есть (fame)?;Tu hai fame?
+А Вы хотите есть (fame)?;Lei ha fame?
+Ты учишь итальянский (italiano)?;Tu studi italiano?
+А Вы учите итальянский (italiano)?;Lei studia italiano?
+Ты из Милана (Milano)?;Tu sei di Milano?
+А Вы из Милана? (Milano);Lei è di Milano?
+Как Ваши дела? (sta);Come sta?
+Хорошо, спасибо. А у Вас? (bene, grazie);Bene, grazie. E Lei?
+Вы из Рима (Roma)?;Lei è di Roma?
+Вам нужна помощь (aiuto)?;Ha bisogno di aiuto?
+Вы хотите кофе (caffè)?;Desidera un caffè?
+Пожалуйста, как Вас зовут? (favore, chiama);Per favore, come si chiama?
+Спасибо, Вы очень любезны (molto gentile).;Grazie, è molto gentile.
+До свидания, до скорой. (arrivederci, presto);Arrivederci, a presto
+Хорошего дня (giornata).;Buona giornata
+Очень приятно. (piacere);Piacere
+Как Ваша фамилия (cognome)?;Come si chiama di cognome?
+Вы говорите по-английски (inglese)?;Lei parla inglese?
+Как Вы? (sta);Come sta Lei?
+У Вас есть время (tempo)?;Lei ha tempo?
+Вы откуда? (Lei, di dov'è);Di dov'è?
+Пожалуйста / будьте добры. (per favore);Per favore.
+Спасибо. (grazie);Grazie
+Пожалуйста. (prego);Prego
+A06 - Essere vs Avere (состояния)
+ESSERE — свойство, «быть каким-то»:
+Я уставший. (stanco);Sono stanco.
+Ты уставшая. (stanca);Sei stanca.
+Он счастливый. (felice);È felice.
+Она красивая. (bella);È bella.
+Мы молодые. (giovani);Siamo giovani.
+Вы грустные. (tristi);Siete tristi.
+Они богатые. (ricchi);Sono ricchi.
+Я студент. (studente);Sono studente.
+Ты врач. (dottore);Sei dottore.
+Она домохозяйка. (casalinga);È casalinga.
+Мы друзья. (amici);Siamo amici.
+Я итальянец. (italiano);Sono italiano.
+Он старый. (vecchio);È vecchio.
+Она старая. (vecchia);È vecchia.
+Я доволен. (contento);Sono contento.
+Мы довольны. (contenti);Siamo contenti.
+Я готов. (pronto);Sono pronto.
+Вы готовы? (pronti);Siete pronti?
+Я не уставший. (stanco);Non sono stanco.
+Ты не грустный. (triste);Non sei triste.
+Он не счастливый. (felice);Non è felice.
+Мы не друзья. (amici);Non siamo amici.
+AVERE — ощущение, «иметь что-то» (физическое состояние):
+Я голоден. (fame);Ho fame.
+Ты хочешь пить. (sete);Hai sete.
+Ему холодно. (freddo);Ha freddo.
+Мне тепло. (caldo);Ho caldo.
+Мы хотим спать. (sonno);Abbiamo sonno.
+Вам страшно. (paura);Avete paura.
+Они спешат. (fretta);Hanno fretta.
+Я прав. (ragione);Ho ragione.
+Ты неправ. (torto);Hai torto.
+Мне 20 лет. (anni);Ho 20 anni.
+Ему 30 лет. (anni);Ha 30 anni.
+У меня болит голова. (mal, testa);Ho mal di testa.
+У тебя болят зубы. (mal, denti);Hai mal di denti.
+Я не голоден. (fame);Non ho fame.
+Ты не хочешь пить. (sete);Non hai sete.
+Ему не холодно. (freddo);Non ha freddo.
+Нам не страшно. (paura);Non abbiamo paura.
+Я не спешу. (fretta);Non ho fretta.
+Он не прав. (ragione);Non ha ragione.
+Она не права. (torto);Ha torto.
+Она не ошибается. (torto);Non ha torto.
+У меня не болит голова. (mal, testa);Non ho mal di testa.
+КОНТРАСТ — essere vs avere:
+Я уставший. (stanco) → Я голоден. (fame);Sono stanco. → Ho fame.
+Ему холодно. (freddo) → Ему тепло. (caldo);Ha freddo. → Ha caldo.
+Ты грустный. (triste) → Ты хочешь пить. (sete);Sei triste. → Hai sete.
+Мы молодые. (giovani) → Мы хотим спать. (sonno);Siamo giovani. → Abbiamo sonno.
+Вы готовы? (pronti) → Вам страшно? (paura);Siete pronti? → Avete paura?
+Я доволен. (contento) → Я прав. (ragione);Sono contento. → Ho ragione.
+A07 - Domande (W-questions: chi/che/cosa/a-chi/di-chi/con-chi/dove/quando/come/perché/quanto/quale)
+Кто ты? (chi);Chi sei?
+Кто это? (chi);Chi è questo?
+Что ты делаешь? (fai);Cosa fai?
+Что это? (cos'è);Cos'è questo?
+Кому ты говоришь? (a chi, parli);A chi parli?
+Кому ты говоришь по-итальянски? (a chi, parli italiano);A chi parli italiano?
+Чья это книга? (libro);Di chi è questo libro?
+О ком ты говоришь? (parli);Di chi parli?
+С кем ты идешь? (vai);Con chi vai?
+С кем ты работаешь? (lavori);Con chi lavori?
+Где ты живешь? (dove-где, vivi);Dove vivi?
+Где ты работаешь? (dove-где, lavori);Dove lavori?
+Куда ты идешь? (dove-куда, vai);Dove vai?
+Откуда ты? (di dove);Di dove sei?
+Откуда вы? (di dove, siete);Di dove siete?
+Когда ты работаешь? (quando, lavori);Quando lavori?
+Когда ты учишься? (quando, studi);Quando studi?
+Как тебя зовут? (chiami);Come ti chiami?
+Как ты? (stai);Come stai?
+Как ты учишься? (come, studi);Come studi?
+Почему ты учишься? (perché, studi);Perché studi?
+Почему ты здесь? (perché, qui);Perché sei qui?
+Сколько тебе лет? (quanti, anni);Quanti anni hai?
+Сколько у тебя времени? (quanto, tempo);Quanto tempo hai?
+Сколько времени? (che ore);Che ore sono?
+Где ресторан? (dove, ristorante);Dov'è il ristorante?
+Какой номер? (qual, numero);Qual è il numero?
+Кто учитель? (insegnante);Chi è l'insegnante?
+Что вы изучаете? (studiate);Cosa studiate?
+Кому вы говорите? (a chi, parlate);A chi parlate?
+Чья это машина? (macchina);Di chi è questa macchina?
+С кем вы разговариваете? (parlate);Con chi parlate?
+Где вы живете? (dove-где, abitate);Dove abitate?
+Когда вы работаете? (quando, lavorate);Quando lavorate?
+Как вы учитесь? (come, studiate);Come studiate?
+Почему вы работаете? (perché, lavorate);Perché lavorate?
+Сколько у вас времени? (quanto, tempo);Quanto tempo avete?
+Какой это цвет? (colore);Che colore è?
+Кто эта девушка? (ragazza);Chi è questa ragazza?
+Что ты делаешь вечером? (fai, stasera);Cosa fai stasera?
+Где станция? (stazione);Dov'è la stazione?
+Кто этот парень? (ragazzo);Chi è questo ragazzo?
+Что ты читаешь? (leggi);Cosa leggi?
+Где девушка? (ragazza);Dov'è la ragazza?
+Когда ты читаешь? (quando, leggi);Quando leggi?
+Как ты говоришь? (come, parli);Come parli?
+Почему ты работаешь? (perché, lavori);Perché lavori?
+Сколько языков ты изучаешь? (quante, lingue, studi);Quante lingue studi?
+Какой сегодня день? (giorno);Che giorno è oggi?
+Кто этот человек? (persona);Chi è questa persona?
+Что вы делаете? (cosa, fate);Cosa fate?
+Где телефон? (telefono);Dov'è il telefono?
+Когда выходной? (giorno, libero);Quando è il giorno libero?
+A08 - C'è e Ci sono (existence)
+Есть ли здесь школа? (c'è, scuola);C'è una scuola qui?
+Есть ли там банк? (c'è, banca);C'è una banca lì?
+Есть ли здесь театр? (c'è, teatro);C'è un teatro qui?
+Есть ли в этом городе музеи? (musei, città);Ci sono musei in questa città?
+Есть ли в этом парке деревья? (alberi, parco);Ci sono alberi in questo parco?
+На улице есть люди. (persone, strada);Ci sono persone per strada.
+Здесь есть стол. (c'è, tavolo, qui);C'è un tavolo qui.
+Здесь есть стулья. (sedie, qui);Ci sono sedie qui.
+В классе есть учитель. (c'è, insegnante, classe);C'è un insegnante in classe.
+В классе есть вопрос. (c'è, domanda, classe);C'è una domanda in classe.
+В классе есть студенты. (studenti, classe);Ci sono studenti in classe.
+В офисе есть компьютеры. (computer, ufficio);Ci sono computer in ufficio.
+В библиотеке есть книги. (libri, biblioteca);Ci sono libri in biblioteca.
+В гостиной есть диван. (c'è, divano, soggiorno);C'è un divano in soggiorno.
+На кухне есть холодильник. (c'è, frigorifero, cucina);C'è un frigorifero in cucina.
+В ванной есть душ. (c'è, doccia, bagno);C'è una doccia in bagno.
+В гараже есть машина. (c'è, macchina, garage);C'è una macchina in garage.
+В школе есть классы. (classi, scuola);Ci sono classi a scuola.
+Здесь есть цветы. (fiori, qui);Ci sono fiori qui.
+Там есть деревья. (alberi, lì);Ci sono alberi lì.
+Снаружи есть облака. (nuvole, fuori);Ci sono nuvole fuori.
+Здесь есть животные. (animali, qui);Ci sono animali qui.
+Здесь есть вода. (c'è, acqua, qui);C'è acqua qui.
+Там есть песок. (c'è, sabbia, lì);C'è sabbia lì.
+В городе есть магазины. (negozi, città);Ci sono negozi in città.
+В саду есть цветы. (fiori, giardino);Ci sono fiori in giardino.
+Там есть вода. (c'è, acqua, lì);C'è acqua lì.
+Книга здесь. (libro, qui);Il libro è qui.
+Здесь есть книга. (c'è, libro, qui);C'è un libro qui.
+Школа в городе. (scuola, città);La scuola è in città.
+В городе есть школа. (c'è, scuola);C'è una scuola in città.
+Магазин здесь. (negozio, qui);Il negozio è qui.
+Здесь есть магазин. (c'è, negozio, qui);C'è un negozio qui.
+Сколько студентов в классе? (quanti, studenti, ci sono);Quanti studenti ci sono in classe?
+В классе три студента. (tre, studenti);Ci sono tre studenti in classe.
+Сколько книг здесь? (quanti, libri, ci sono);Quanti libri ci sono qui?
+Здесь две книги. (due, libri);Ci sono due libri qui.
+Сколько стульев здесь? (quante, sedie, ci sono);Quante sedie ci sono qui?
+Здесь один стул. (una, sedia);C'è una sedia qui.
+Есть ли студенты в классе? (ci sono, studenti);Ci sono studenti in classe?
+Да, есть. (sì, ci sono);Sì, ci sono.
+Нет, нет. (no, non ci sono);No, non ci sono.
+Здесь нет парты. (non c'è, banco);Non c'è un banco qui.
+В классе нет студентов. (non ci sono, studenti, classe);Non ci sono studenti in classe.
+Здесь нет воды. (non c'è, acqua);Non c'è acqua qui.
+Там нет денег. (non ci sono, soldi);Non ci sono soldi lì.
+Здесь нет ответа. (non c'è, risposta);Non c'è una risposta qui.
+В баре нет клиентов. (non ci sono, clienti, bar);Non ci sono clienti al bar.
+Телефон здесь. (telefono, qui);Il telefono è qui.
+Ключи здесь. (chiavi, qui);Le chiavi sono qui.
+A09 - Preposizioni semplici e articolate (di/a/da/in/su/con/per + articoli)
+Книга Марко. (libro, Marco);Il libro di Marco.
+Тетрадь студента. (quaderno, studente);Il quaderno dello studente.
+Дом учителя. (casa, insegnante);La casa dell'insegnante.
+Машина Анны. (macchina, Anna);La macchina di Anna.
+Цвет города. (colore, città);Il colore della città.
+Название книги. (nome, libro);Il nome del libro.
+Столовая студентов. (mensa, studenti);La mensa degli studenti.
+Парта девочки. (banco, ragazza);Il banco della ragazza.
+Город Рим. (città, Roma);La città di Roma.
+Проблема денег. (problema, soldi);Un problema di soldi.
+Подарок от Анны. (regalo, Anna);È un regalo di Anna.
+Говорим о книгах. (parliamo, libri);Parliamo dei libri.
+Книги студентов. (libri, studenti);Sono i libri degli studenti.
+Письма девушек. (lettere, ragazze);Sono le lettere delle ragazze.
+Я из Рима. (sono, roma);Sono di Roma.
+Иду в школу. (vado, scuola);Vado a scuola.
+Идем в театр. (andiamo, teatro);Andiamo a teatro.
+Иду на работу. (lavoro);Vado al lavoro.
+Идет на рынок. (mercato);Va al mercato.
+Идем к студентам. (andiamo, studenti);Andiamo agli studenti.
+Несём книги девушкам. (portiamo, libri, ragazze);Portiamo i libri alle ragazze.
+Живет в Риме. (vive, roma);Vive a Roma.
+Живем в Милане. (viviamo, milano);Viviamo a Milano.
+Студенты в университете. (studenti, università);Gli studenti sono all'università.
+Приезжаю из Рима. (vengo, roma);Vengo da Roma.
+Прихожу от учителя. (vengo, insegnante);Vengo dall'insegnante.
+Иду к врачу. (vado, dottore);Vado dal dottore.
+Идет к стоматологу. (dentista);Va dal dentista.
+Идем к учителю. (andiamo, insegnante);Andiamo dall'insegnante.
+Идем к другу. (andiamo, amico);Andiamo dall'amico.
+Идем к студенту. (andiamo, studente);Andiamo dallo studente.
+Живу в Италии. (vivo, italia);Vivo in Italia.
+Я в гостинице. (albergo);Sono in albergo.
+Он в больнице. (ospedale);È in ospedale.
+Они в саду. (giardino);Sono in giardino.
+Работаю в офисе. (lavoro, ufficio);Lavoro in ufficio.
+Работает на фабрике. (lavora, fabbrica);Lavora in fabbrica.
+Мы в школе. (scuola);Siamo a scuola.
+Марко в офисе. (Marco, ufficio);Marco è nell'ufficio.
+Кот в сумке. (gatto, borsa);Il gatto è nella borsa.
+Цветы в вазе. (fiori, vaso);I fiori sono nel vaso.
+Пишу в тетради. (scrivo, quaderno);Scrivo nel quaderno.
+Пишем в тетрадях. (scriviamo, quaderni);Scriviamo nei quaderni.
+Студенты в школах. (studenti, scuole);Gli studenti sono nelle scuole.
+Студенты в офисах. (studenti, uffici);Gli studenti sono negli uffici.
+Книга на столе. (libro, tavolo);Il libro è sul tavolo.
+Телефон на стуле. (telefono, sedia);Il telefono è sulla sedia.
+Ключи на полке. (chiavi, scaffale);Le chiavi sono sullo scaffale.
+Птица на дереве. (uccello, albero);L'uccello è sull'albero.
+Книги на полках. (libri, scaffali);I libri sono sugli scaffali.
+Кошки на столах. (gatti, tavoli);I gatti sono sui tavoli.
+Кошки на стульях. (gatti, sedie);I gatti sono sulle sedie.
+Иду с другом. (vado, amico);Vado con un amico.
+Говорит с сестрой. (parla, sorella);Parla con la sorella.
+Пишу ручкой. (scrivo, penna);Scrivo con la penna.
+Едим вилкой. (mangiamo, forchetta);Mangiamo con la forchetta.
+Готовит с любовью. (cucina, amore);Cucina con amore.
+Это для тебя. (te);È per te.
+Этот подарок для меня. (regalo, io);Questo regalo è per me.
+Этот подарок для них. (regalo, loro);Questo regalo è per loro.
+Работает для семьи. (lavora, famiglia);Lavora per la famiglia.
+Идем по улице. (andiamo, strada);Andiamo per la strada.
+Идем через парк. (andiamo, parco);Andiamo per il parco.
+Идем в школу пешком. (andiamo, scuola, piedi);Andiamo a scuola a piedi.
+Пишу карандашом. (scrivo, matita);Scrivo con la matita.
+A10 - Possessivi
+Это мой отец (padre).;Questo è mio padre.
+Это моя мать (madre).;Questa è mia madre.
+Это мои родители (genitori).;Questi sono i miei genitori.
+Это мои братья (fratelli).;Questi sono i miei fratelli.
+Это мои сестры (sorelle).;Queste sono le mie sorelle.
+Это мои подруги (amiche).;Queste sono le mie amiche.
+Это твой друг (amico).;Questo è il tuo amico.
+Это твоя подруга (amica).;Questa è la tua amica.
+Это твои друзья (amici).;Questi sono i tuoi amici.
+Это твои книги (libri).;Questi sono i tuoi libri.
+Это твои сестры (sorelle).;Queste sono le tue sorelle.
+Это его дом (casa).;Questa è la sua casa.
+Это ее телефон (telefono).;Questo è il suo telefono.
+Это ее сумка (borsa).;Questa è la sua borsa.
+Это его книги (libri).;Questi sono i suoi libri.
+Это ее идеи (idee).;Queste sono le sue idee.
+Это его или её книга. (libro);Questo è il suo libro.
+Его книга (уточнение). (libro, lui);È il libro di lui.
+Её книга (уточнение). (libro, lei);È il libro di lei.
+Это наш проект (progetto).;Questo è il nostro progetto.
+Это наша школа (scuola).;Questa è la nostra scuola.
+Это наши учителя (insegnanti).;Questi sono i nostri insegnanti.
+Это наши идеи (idee).;Queste sono le nostre idee.
+Это ваша школа (scuola).;Questa è la vostra scuola.
+Это ваш друг (amico).;Questo è il vostro amico.
+Это ваши книги (libri).;Questi sono i vostri libri.
+Это их книга (libro).;Questo è il loro libro.
+Это их дети (figli).;Questi sono i loro figli.
+Это их сестры (sorelle).;Queste sono le loro sorelle.
+Книга Марко → Это его книга.;Il libro di Marco → È il suo libro.
+Дом Марии → Это ее дом.;La casa di Maria → È la sua casa.
+Дети Паоло → Это его дети.;I figli di Paolo → Sono i suoi figli.
+Школа Анны → Это ее школа.;La scuola di Anna → È la sua scuola.
+Их машина → Это их машина.;La loro macchina → È la loro macchina.
+Это Ваша книга (формально). (libro);Questo è il Suo libro.
+Чья это книга (libro)?;Di chi è questo libro?
+Чья это машина (macchina)?;Di chi è questa macchina?
+Чьи это дети (figli)?;Di chi sono questi figli?
+Чьи это идеи (idee)?;Di chi sono queste idee?
+Кто твой друг (amico)?;Chi è il tuo amico?
+Это не мой телефон (telefono).;Non è il mio telefono.
+Это не моя сумка (borsa).;Non è la mia borsa.
+Это не наш проект (progetto).;Non è il nostro progetto.
+Это не ваша школа (scuola).;Non è la vostra scuola.
+Это не их дом (casa).;Non è la loro casa.
+Это не ее идеи (idee).;Non sono le sue idee.
+Мой отец дома (casa).;Mio padre è a casa.
+Моя мать работает (lavorare).;Mia madre lavora.
+Их мать работает. (loro, madre);La loro madre lavora.
+Мой брат учится (studiare).;Mio fratello studia.
+Моя сестра говорит по-итальянски (italiano).;Mia sorella parla italiano.
+Твой брат здесь (qui).;Tuo fratello è qui.
+Ее сестра читает (leggere).;Sua sorella legge.
+Наш учитель говорит (parlare).;Il nostro insegnante parla.
+Мой дорогой отец работает. (caro, padre);Il mio caro padre lavora.
+A11 - Numerali | ora | data
+У меня есть одна книга (libro).;Ho un libro.
+У меня два брата (fratelli).;Ho due fratelli.
+У меня три сестры (sorelle).;Ho tre sorelle.
+У нас четыре комнаты (stanze).;Abbiamo quattro stanze.
+У меня пять друзей (amici).;Ho cinque amici.
+Сейчас шесть часов (sei).;Sono le sei.
+Сейчас семь часов (sette).;Sono le sette.
+Урок в восемь часов (otto).;La lezione è alle otto.
+Начинаем в девять часов (nove).;Iniziamo alle nove.
+Заканчиваем в десять часов (dieci).;Finiamo alle dieci.
+Сейчас час дня.;È l'una.
+Сейчас полдень.;È mezzogiorno.
+Сейчас полночь.;È mezzanotte.
+Половина третьего (mezza).;Sono le due e mezza.
+Четверть третьего (quarto).;Sono le due e un quarto.
+В полдень мы едим.;A mezzogiorno mangiamo.
+В полночь я сплю.;A mezzanotte dormo.
+Во сколько?;A che ora?
+Понедельник - первый день недели (lunedì).;Il lunedì è il primo giorno della settimana.
+Среда - третий день (mercoledì).;Il mercoledì è il terzo giorno.
+Воскресенье - седьмой день (domenica).;La domenica è il settimo giorno.
+Сегодня понедельник (lunedì).;Oggi è lunedì.
+Завтра вторник (martedì).;Domani è martedì.
+Послезавтра среда (mercoledì).;Dopodomani è mercoledì.
+После субботы идет воскресенье (domenica).;Dopo sabato viene domenica.
+Не работаю по воскресеньям.;Non lavoro di domenica.
+По понедельникам мы работаем.;Di lunedì lavoriamo.
+Занимаюсь спортом по утрам.;Faccio sport di mattina.
+Первый месяц года - январь (gennaio).;Il primo mese dell'anno è gennaio.
+Третий месяц - март (marzo).;Il terzo mese è marzo.
+Шестой месяц - июнь (giugno).;Il sesto mese è giugno.
+Восьмой месяц - август (agosto).;L'ottavo mese è agosto.
+Десятый месяц - октябрь (ottobre).;Il decimo mese è ottobre.
+Двенадцатый месяц - декабрь (dicembre).;Il dodicesimo mese è dicembre.
+Какая сегодня дата (data)?;Qual è la data di oggi?
+Сегодня двадцать пятое мая (maggio).;Oggi è il venticinque maggio.
+Мой день рождения первого мая (primo, maggio).;Il mio compleanno è il primo maggio.
+Мой день рождения десятого июня (giugno).;Il mio compleanno è il dieci giugno.
+Праздник пятнадцатого июля (luglio).;La festa è il quindici luglio.
+Который час (ora)?;Che ore sono?
+Сейчас ровно двенадцать (dodici).;Sono le dodici in punto.
+Жарко летом.;Fa caldo in estate.
+Холодно зимой.;Fa freddo in inverno.
+Дождь осенью.;Piove in autunno.
+Весной солнечно.;C'è il sole in primavera.
+В январе холодно.;A gennaio fa freddo.
+В 2025 году мы в Италии (duemilaventicinque).;Nel 2025 siamo in Italia.
+У нас тринадцать студентов (tredici).;Abbiamo tredici studenti.
+У меня четырнадцать книг (quattordici).;Ho quattordici libri.
+Ей шестнадцать лет (sedici).;Ha sedici anni.
+В группе семнадцать студентов (diciassette).;Ci sono diciassette studenti.
+У меня восемнадцать евро (diciotto).;Ho diciotto euro.
+Ему девятнадцать лет (diciannove).;Ha diciannove anni.
+Двадцать книг на полке.;Ci sono venti libri sullo scaffale.
+Мне двадцать один год (ventuno).;Ho ventun anni.
+В феврале двадцать восемь дней (ventotto, febbraio).;Ci sono ventotto giorni a febbraio.
+Мне тридцать лет.;Ho trent'anni.
+Книга стоит пятьдесят евро.;Il libro costa cinquanta euro.
+Сто студентов в группе.;Ci sono cento studenti nel gruppo.
+Тысяча страниц в книге.;Ci sono mille pagine nel libro.
+A12 - Avverbi di frequenza | quantità
+Я всегда говорю правду (dico, verità);Dico sempre la verità
+Я всегда начинаю рано (inizio, presto);Inizio sempre presto
+Я всегда завтракаю дома (faccio, colazione, casa);Faccio sempre colazione a casa
+Она всегда пьёт чай (beve, tè);Beve sempre il tè
+Он часто ходит в кино (cinema);Va spesso al cinema
+Мы часто работаем вместе (lavoriamo, insieme);Lavoriamo spesso insieme
+Я часто читаю книги (leggo, libri);Leggo spesso libri
+Они часто играют в футбол (giocano, calcio);Giocano spesso a calcio
+Я иногда опаздываю (volte, arrivo, ritardo);A volte arrivo in ritardo
+Иногда я работаю допоздна (volte, lavoro, fino, tardi);A volte lavoro fino a tardi
+Иногда мы ходим в ресторан (volte, andiamo, ristorante);A volte andiamo al ristorante
+Иногда мы играем в футбол (qualche, volta, calcio);Qualche volta giochiamo a calcio
+Я редко смотрю телевизор (guardo, raramente, televisione);Guardo raramente la televisione
+Они редко готовят дома (cucinano, raramente, casa);Cucinano raramente a casa
+Я всегда пью кофе (caffè);Bevo sempre il caffè
+Я никогда не пью чай (tè);Non bevo mai il tè
+Я никогда не сплю днём (dormo, giorno);Non dormo mai di giorno
+Я никогда не курю (fumo);Non fumo mai
+Мы никогда не опаздываем (arriviamo, ritardo);Non arriviamo mai in ritardo
+Она никогда не пьёт вино (beve, vino);Non beve mai vino
+Обычно я хожу пешком (solito, vado, piedi);Di solito vado a piedi
+Обычно я обедаю в час (solito, pranzo, all'una);Di solito pranzo all'una
+Обычно я иду домой поздно (solito, vado, casa, tardi);Di solito vado a casa tardi
+Я ем много хлеба (mangio, pane);Mangio molto pane
+Я пью много воды (bevo, molta, acqua);Bevo molta acqua
+У меня много друзей (amici);Ho molti amici
+У меня много времени (tempo);Ho molto tempo
+Я мало ем (mangio, poco);Mangio poco
+Я мало сплю (dormo, poco);Dormo poco
+У меня мало денег (pochi, soldi);Ho pochi soldi
+У меня мало работы (poco, lavoro);Ho poco lavoro
+Мало воды в бутылке (poca, acqua, bottiglia);C'è poca acqua nella bottiglia
+Мало идей (poche, idee);Ho poche idee
+Я слишком много работаю (lavoro, troppo);Lavoro troppo
+Это слишком дорого (costa, troppo);Costa troppo
+Слишком много людей на улице (troppa, gente, strada);C'è troppa gente per strada
+Я очень люблю итальянский (amo, l'italiano);Amo molto l'italiano
+Я очень хорошо готовлю (cucino, bene);Cucino molto bene
+Я очень устал (stanco);Sono molto stanco
+Это очень важно (importante);È molto importante
+У меня достаточно воды (abbastanza, acqua);Ho abbastanza acqua
+У меня достаточно времени (abbastanza, tempo);Ho abbastanza tempo
+Я достаточно хорошо говорю по-итальянски (parlo, abbastanza, bene, italiano);Parlo abbastanza bene l'italiano
+Это достаточно легко (abbastanza, facile);È abbastanza facile
+Больше времени, меньше работы (più, tempo, meno, lavoro);Più tempo, meno lavoro
+Меньше слов, больше дела (meno, parole, più, azione);Meno parole, più azione
+Я пью меньше кофе (meno, caffè);Bevo meno caffè
+Я больше не живу в Риме (abitare, Roma);Non abito più a Roma
+Она больше не моя девушка (essere, ragazza);Non è più la mia ragazza
+Я больше не пью кофе (bere, caffè);Non bevo più caffè
+У меня больше нет времени (avere, tempo);Non ho più tempo
+Я больше не ем мясо (mangiare, carne);Non mangio più carne
+A13 - Comparativi e Superlativi (più/meno + aggettivi/avverbi)
+Я старше тебя (grande);Sono più grande di te.
+Этот дом меньше того (casa, piccola);Questa casa è più piccola di quella.
+Моя книга интереснее твоей (libro, interessante);Il mio libro è più interessante del tuo.
+Итальянский легче русского (facile);L'italiano è più facile del russo.
+Сегодня теплее, чем вчера (caldo, ieri);Oggi è più caldo di ieri.
+Твоя машина быстрее моей (macchina, veloce);La tua macchina è più veloce della mia.
+Я ем больше тебя (mangiare);Mangio più di te.
+Он пьет меньше меня (bere);Beve meno di me.
+Фильм менее интересен, чем книга (film, interessante, libro);Il film è meno interessante del libro.
+Я счастливее, чем раньше (felice, prima);Sono più felice di prima.
+Твоя проблема серьезнее моей (problema, serio);Il tuo problema è più serio del mio.
+Этот город менее шумный, чем Рим (rumorosa, Roma);Questa città è meno rumorosa di Roma.
+Эта дорога длиннее другой (strada, lunga);Questa strada è più lunga dell'altra.
+Кофе стоит больше, чем чай (costare, tè);Il caffè costa più del tè.
+Кофе скорее горячий, чем холодный (caldo, freddo);Il caffè è più caldo che freddo.
+Этот город больше Рима (città, grande);Questa città è più grande di Roma.
+Этот город скорее красивый, чем большой (bella, grande);Questa città è più bella che grande.
+Этот парень скорее умный, чем красивый (intelligente, bello);Questo ragazzo è più intelligente che bello.
+Важнее учиться, чем спать (importante, dormire);È più importante studiare che dormire.
+Сегодня скорее холодно, чем тепло (freddo, caldo);Oggi fa più freddo che caldo.
+Я больше учусь, чем работаю (studiare, lavorare);Studio più che lavoro.
+Говорить легко, делать сложно (facile, fare);È più facile parlare che fare.
+Эта книга скорее длинная, чем интересная (lungo, interessante);Questo libro è più lungo che interessante.
+Это самый большой город в Италии (città, grande);Questa è la città più grande d'Italia.
+Это самый интересный фильм в библиотеке (film, biblioteca);Questo è il film più interessante della biblioteca.
+Это самый важный день моей жизни (giorno, vita);Questo è il giorno più importante della mia vita.
+Это самый красивый язык в мире (lingua, mondo);Questa è la lingua più bella del mondo.
+Это самый дорогой ресторан в городе (ristorante, caro);Questo è il ristorante più caro della città.
+Это наименее серьезная проблема в мире (problema, serio);Questo è il problema meno serio del mondo.
+Это наименее эффективное решение из всех (soluzione, efficace);Questa è la soluzione meno efficace di tutte.
+Этот город очень красивый (molto, bello);Questa città è molto bella.
+Этот город потрясающе красивый (bellissimo);Questa città è bellissima.
+Еда очень вкусная (cibo, molto, buono);Il cibo è molto buono.
+Еда восхитительная (buonissimo);Il cibo è buonissimo.
+Я очень устал (stanchissimo);Sono stanchissimo.
+Итальянский такой же трудный, как русский (tanto, quanto);L'italiano è tanto difficile quanto il russo.
+Эта книга такая же интересная, как та (tanto, quanto);Questo libro è tanto interessante quanto quello.
+Я работаю столько же, сколько ты (tanto, quanto);Lavoro tanto quanto te.
+Она такая же умная, как он (tanto, quanto);È tanto intelligente quanto lui.
+Рим такой же красивый, как Флоренция (così, come);Roma è così bella come Firenze.
+Эта пицца лучше той (migliore);Questa pizza è migliore di quella.
+Фильм лучше книги (migliore, film);Il film è migliore del libro.
+Читать лучше, чем смотреть ТВ (meglio, leggere);È meglio leggere che guardare la televisione.
+Это мой лучший друг (miglior amico);Questo è il mio miglior amico.
+Это худший день в году (peggiore, anno);Questo è il giorno peggiore dell'anno.
+Хуже ждать, чем работать (peggio);È peggio aspettare che lavorare.
+Главная проблема — время (maggiore);Il problema maggiore è il tempo.
+Моя старшая сестра учится (sorella maggiore);Mia sorella maggiore studia.
+Меньшая часть работы здесь (minore);La parte minore del lavoro è qui.
+Я больше всего люблю свою семью (amare, famiglia);Amo più di tutto la mia famiglia.
+Я работаю больше обычного (lavorare);Lavoro più del solito.
+Вечером я ем меньше (mangiare, sera);Di sera mangio meno.
+A14 - Verbi Modali
+Я должен работать (devo, lavorare);Devo lavorare
+Я должен начать рано (devo, iniziare, presto);Devo iniziare presto
+Я должен учиться (devo, studiare);Devo studiare
+Я должен пойти домой (devo, andare, casa);Devo andare a casa
+Я должен купить хлеб (devo, comprare, pane);Devo comprare il pane
+Я могу говорить по-итальянски (posso, parlare, italiano);Posso parlare italiano
+Я могу прийти завтра (posso, venire);Posso venire domani
+Я могу помочь (posso, aiutare);Posso aiutare
+Я могу приготовить ужин (posso, preparare, cena);Posso preparare la cena
+Я могу прочитать эту книгу (posso, leggere, libro);Posso leggere questo libro
+Я хочу есть (voglio, mangiare);Voglio mangiare
+Я хочу пить (voglio, bere);Voglio bere
+Я хочу поехать в Италию (voglio, andare, italia);Voglio andare in Italia
+Я хочу выучить итальянский (voglio, imparare, l'italiano);Voglio imparare l'italiano
+Я хочу встретить Марко (voglio, incontrare, marco);Voglio incontrare Marco
+Я умею говорить по-итальянски (so, parlare, italiano);So parlare italiano
+Я умею готовить (so, cucinare);So cucinare
+Я умею писать (so, scrivere);So scrivere
+Я умею водить машину (so, guidare);So guidare
+Я умею читать (so, leggere);So leggere
+Я умею плавать — навык (so, nuotare);So nuotare
+Я могу поплавать здесь — разрешение (posso, nuotare, qui);Posso nuotare qui
+Он должен работать (deve, lavorare);Lui deve lavorare
+Она должна учиться (deve, studiare);Lei deve studiare
+Он может прийти завтра (può, venire);Lui può venire domani
+Она может помочь (può, aiutare);Lei può aiutare
+Он хочет есть (vuole, mangiare);Lui vuole mangiare
+Она хочет уехать (vuole, partire);Lei vuole partire
+Он умеет готовить (sa, cucinare);Lui sa cucinare
+Она умеет плавать (sa, nuotare);Lei sa nuotare
+Они должны учиться (devono, studiare);Loro devono studiare
+Они могут помочь (possono, aiutare);Loro possono aiutare
+Они хотят есть (vogliono, mangiare);Loro vogliono mangiare
+Они умеют говорить по-итальянски (sanno, parlare, italiano);Loro sanno parlare italiano
+Тебе не нужно работать — нет необходимости (devi, lavorare);Non devi lavorare
+Тебе нельзя приходить — запрет (puoi, venire);Non puoi venire
+Ты не должен бояться (devi, avere, paura);Non devi avere paura
+Ты не должен опаздывать (devi, arrivare, ritardo);Non devi arrivare in ritardo
+Ты не можешь сказать это (puoi, dire);Non puoi dire questo
+Ты не хочешь есть (vuoi, mangiare);Non vuoi mangiare
+Ты не хочешь пить (vuoi, bere);Non vuoi bere
+Я не умею делать это (so, fare);Non so fare questo
+Я не умею плавать (so, nuotare);Non so nuotare
+Мы должны учиться (dobbiamo, studiare);Dobbiamo studiare
+Мы должны поесть (dobbiamo, mangiare);Dobbiamo mangiare
+Мы можем встретить Марко (possiamo, incontrare, marco);Possiamo incontrare Marco
+Мы можем говорить по-итальянски (possiamo, parlare, italiano);Possiamo parlare italiano
+Мы хотим путешествовать (vogliamo, viaggiare);Vogliamo viaggiare
+Мы хотим спать (vogliamo, dormire);Vogliamo dormire
+Мы умеем говорить правду (sappiamo, dire, verità);Sappiamo dire la verità
+Мы умеем готовить (sappiamo, cucinare);Sappiamo cucinare
+Вы должны быть здесь (dovete);Dovete essere qui
+Вы должны учиться (dovete, studiare);Dovete studiare
+Вы можете помочь (potete, aiutare);Potete aiutare
+Вы можете прийти (potete, venire);Potete venire
+Вы хотите выпить кофе? (volete, bere, caffè);Volete bere un caffè?
+Вы хотите есть? (volete, mangiare);Volete mangiare?
+Вы умеете говорить по-английски? (sapete, parlare, inglese);Sapete parlare inglese?
+Вы умеете готовить? (sapete, cucinare);Sapete cucinare?
+Куда он хочет пойти? (vuole, andare);Dove vuole andare?
+Что она может сделать? (può, fare);Cosa può fare?
+Когда он должен прийти? (deve, venire);Quando deve venire?
+Что они хотят есть? (vogliono, mangiare);Cosa vogliono mangiare?
+Куда ты хочешь пойти? (vuoi, andare);Dove vuoi andare?
+Что ты можешь сделать? (puoi, fare);Cosa puoi fare?
+Когда ты можешь прийти? (puoi, venire);Quando puoi venire?A15 - Condizionale di cortesia
+Я хочу кофе → прямая форма (voglio, caffè);Voglio un caffè
+Я хотел бы кофе → вежливая форма (vorrei, caffè);Vorrei un caffè
+Я могу помочь? → прямая (posso, aiutare);Posso aiutare?
+Я мог бы помочь? → вежливая (potrei, aiutare);Potrei aiutare?
+Я хочу воду → прямая (voglio, acqua);Voglio dell'acqua
+Я хотел бы воду → вежливая (vorrei, dell'acqua);Vorrei dell'acqua
+Я хочу пиццу → прямая (voglio, pizza);Voglio una pizza
+Я хотел бы пиццу → вежливая (vorrei, pizza);Vorrei una pizza
+Я хотел бы меню (vorrei, menù);Vorrei il menù
+Я хотел бы заплатить (vorrei, pagare);Vorrei pagare
+Я хотел бы стол (vorrei, tavolo);Vorrei un tavolo
+Я мог бы прийти завтра (potrei, venire);Potrei venire domani
+Я мог бы сделать это (potrei, fare);Potrei fare questo
+Я мог бы остаться здесь (potrei, restare);Potrei restare qui
+Я мог бы работать (potrei, lavorare);Potrei lavorare
+Мне следует учиться (dovrei, studiare);Dovrei studiare
+Мне следует работать (dovrei, lavorare);Dovrei lavorare
+Мне следует пойти домой (dovrei, andare, casa);Dovrei andare a casa
+Мне следует начать рано (dovrei, iniziare, presto);Dovrei iniziare presto
+Мне следует сказать правду (dovrei, dire, verità);Dovrei dire la verità
+Что бы вы хотели? (vorrebbe);Cosa vorrebbe?
+Что бы Вы хотели выпить? (vorrebbe, bere);Che cosa vorrebbe bere?
+Вы хотели бы стол на двоих? (vorrebbe, tavolo, due);Vorrebbe un tavolo per due?
+Вы хотели бы вина? (vorrebbe, vino);Vorrebbe del vino?
+Вы могли бы помочь? (potrebbe, aiutare);Potrebbe aiutare?
+Вы могли бы сказать это? (potrebbe, dire);Potrebbe dire questo?
+Вы могли бы подождать? (potrebbe, aspettare);Potrebbe aspettare?
+Вы могли бы повторить? (potrebbe, ripetere);Potrebbe ripetere?
+Вам следует заполнить эту форму (dovrebbe, riempire, modulo);Dovrebbe riempire questo modulo
+Вам следует расписаться здесь (dovrebbe, firmare);Dovrebbe firmare qui
+Мне бы это понравилось (piacerebbe);Mi piacerebbe
+Мне бы хотелось посмотреть это (piacerebbe, vedere);Mi piacerebbe vedere questo
+Мне бы хотелось поехать в Италию (piacerebbe, andare, Italia);Mi piacerebbe andare in Italia
+(mi piacerebbe = vorrei, глагол «смотрит» на говорящего);Mi piacerebbe molto
+Это было бы хорошо (andrebbe, bene);Andrebbe bene
+Это было бы лучше (sarebbe, meglio);Sarebbe meglio
+Это было бы прекрасно (sarebbe, bellissimo);Sarebbe bellissimo
+Это было бы возможно (sarebbe, possibile);Sarebbe possibile
+Это было бы идеально (sarebbe, ideale);Sarebbe ideale
+Это было бы удобно (sarebbe, comodo);Sarebbe comodo
+A16 - Imperativo (tu/voi/noi/Lei commands)
+Слушай внимательно! (ascolta, attentamente);Ascolta attentamente!
+Открой окно, пожалуйста! (apri, finestra, favore);Apri la finestra, per favore!
+Приходи к нам завтра! (vieni);Vieni da noi domani!
+Делай это сейчас же! (fa', subito);Fa' questo subito!
+Пей воду каждый день! (bevi, acqua, giorno);Bevi acqua ogni giorno!
+Пиши чаще! (scrivi);Scrivi più spesso!
+Смотри на доску! (guarda, lavagna);Guarda la lavagna!
+Скажи правду! (verità);Di' la verità!
+Дай книгу Марко! (libro, Marco);Da' il libro a Marco!
+Иди домой! (va', casa);Va' a casa!
+Стой смирно! (sta', fermo);Sta' fermo!
+Будь честным! (sii, onesto);Sii onesto!
+Не говори так громко! (parlare, così, forte);Non parlare così forte!
+Не делай этого! (fare);Non fare questo!
+Не приходи слишком поздно! (venire, troppo, tardi);Non venire troppo tardi!
+Не кури здесь! (fumare);Non fumare qui!
+Читайте этот текст! (leggete, testo);Leggete questo testo!
+Слушайте учителя! (ascoltate, l'insegnante);Ascoltate l'insegnante!
+Откройте тетради! (aprite, quaderni);Aprite i quaderni!
+Пишите аккуратно! (scrivete, accuratamente);Scrivete accuratamente!
+Делайте домашнее задание! (fate, compiti);Fate i compiti!
+Приходите вовремя! (venite, orario);Venite in orario!
+Говорите по-итальянски! (parlate, italiano);Parlate italiano!
+Ответьте на вопрос! (rispondete, domanda);Rispondete alla domanda!
+Не говорите так громко! (voi, parlare, così);Non parlate così!
+Не курите здесь! (voi, fumare);Non fumate qui!
+Пойдём домой! (andiamo, casa);Andiamo a casa!
+Давайте поедим! (mangiamo);Mangiamo!
+Начнём урок! (iniziamo, lezione);Iniziamo la lezione!
+Сделаем работу вместе! (facciamo, lavoro, insieme);Facciamo il lavoro insieme!
+Посмотрим фильм! (guardiamo, film);Guardiamo un film!
+Поём песни! (cantiamo, canzoni);Cantiamo delle canzoni!
+Поговорим о погоде! (parliamo, tempo);Parliamo del tempo!
+Сделаем перерыв! (facciamo, pausa);Facciamo una pausa!
+Lei-форма = Congiuntivo Presente (→ B25 Congiuntivo);Parli! Venga! Mi dica!
+Читайте (формально, одному) медленно! (legga, lentamente);Legga lentamente!
+Говорите (формально, одному) чётко! (parli, chiaramente);Parli chiaramente!
+Войдите (формально, одному)! (entri);Entri!
+Простите (формально, одному)! (scusi);Scusi!
+Подождите (формально, одному) минуту! (aspetti, minuto);Aspetti un minuto!
+Останьтесь (формально, одному) здесь, пожалуйста! (resti, favore);Resti qui, per favore!
+Послушайте (формально, одному) совет! (ascolti, consiglio);Ascolti il consiglio!
+Будьте (формально, одному) любезны! (sia, gentile);Sia gentile!
+Не говорите (формально, одному) так громко! (parli, così);Non parli così!
+Не беспокойтесь (формально, одному)! (preoccuparsi);Non si preoccupi!

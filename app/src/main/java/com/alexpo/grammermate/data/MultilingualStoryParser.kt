@@ -124,19 +124,22 @@ object MultilingualStoryParser {
         for ((paraIndex, paragraph) in paragraphs.withIndex()) {
             if (paragraph.isBlank()) continue
 
-            // Detect paragraph language
-            val paraLang = detectLanguage(paragraph, defaultLanguageId)
-            Log.d(TAG, "Paragraph $paraIndex: detected language='$paraLang', preview=${paragraph.take(30).replace("\n", "\\n")}...")
-
             // Find all language markers within this paragraph
             val matches = languagePattern.findAll(paragraph).toList()
 
             if (matches.isEmpty()) {
-                // No markers - entire paragraph is detected language
+                // No markers - detect language for entire paragraph
+                val paraLang = detectLanguage(paragraph, defaultLanguageId)
+                Log.d(TAG, "Paragraph $paraIndex: detected language='$paraLang', preview=${paragraph.take(30).replace("\n", "\\n")}...")
                 Log.d(TAG, "  → No markers, using detected language: $paraLang")
                 segments.add(TextSegment(paragraph.trim(), paraLang))
                 globalSegmentIndex++
             } else {
+                // Markers present — non-marked text is in defaultLanguageId.
+                // detectLanguage() on raw paragraph with {it} tags skews toward Italian.
+                val paraLang = defaultLanguageId
+                Log.d(TAG, "Paragraph $paraIndex: has ${matches.size} markers, using defaultLanguage='$paraLang'")
+
                 // Process paragraph with markers
                 var lastIndex = 0
 

@@ -700,6 +700,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Find the chapter that contains a given lesson ID.
+     * Used when navigating back from LESSON to CHAPTER_LESSONS to restore selectedChapter.
+     */
+    fun findChapterForLesson(lessonId: String): Chapter? {
+        return _coreState.value.chapters.firstOrNull { chapter ->
+            lessonId in chapter.lessons
+        }
+    }
+
     fun getLessonsForChapter(chapter: Chapter): List<Lesson> {
         val packId = _coreState.value.navigation.activePackId?.value
             ?: return emptyList()
