@@ -23,7 +23,7 @@ A16 - Imperativo (tu/voi/noi/Lei commands)
 Приходите вовремя! (venite, orario);Venite in orario!
 Говорите по-итальянски! (parlate, italiano);Parlate italiano!
 Ответьте на вопрос! (rispondete, domanda);Rispondete alla domanda!
-Не говорите так громко! (voi, parlare, così);Non parlate così!
+Не говорите так громко! (voi, parlare, così, forte);Non parlate così forte!
 Не курите здесь! (voi, fumare);Non fumate qui!
 Пойдём домой! (andiamo, casa);Andiamo a casa!
 Давайте поедим! (mangiamo);Mangiamo!
@@ -33,14 +33,16 @@ A16 - Imperativo (tu/voi/noi/Lei commands)
 Поём песни! (cantiamo, canzoni);Cantiamo delle canzoni!
 Поговорим о погоде! (parliamo, tempo);Parliamo del tempo!
 Сделаем перерыв! (facciamo, pausa);Facciamo una pausa!
-Lei-форма = Congiuntivo Presente (→ B25 Congiuntivo);Parli! Venga! Mi dica!
-Читайте (формально, одному) медленно! (legga, lentamente);Legga lentamente!
-Говорите (формально, одному) чётко! (parli, chiaramente);Parli chiaramente!
-Войдите (формально, одному)! (entri);Entri!
-Простите (формально, одному)! (scusi);Scusi!
-Подождите (формально, одному) минуту! (aspetti, minuto);Aspetti un minuto!
-Останьтесь (формально, одному) здесь, пожалуйста! (resti, favore);Resti qui, per favore!
-Послушайте (формально, одному) совет! (ascolti, consiglio);Ascolti il consiglio!
-Будьте (формально, одному) любезны! (sia, gentile);Sia gentile!
-Не говорите (формально, одному) так громко! (parli, così);Non parli così!
-Не беспокойтесь (формально, одному)! (preoccuparsi);Non si preoccupi!
+Читайте медленно! (legga, lentamente);Legga lentamente!
+Простите! (scusi);Scusi!
+Подождите минуту! (aspetti, minuto);Aspetti un minuto!
+Будьте любезны! (sia, gentile);Sia gentile!
+Подойдите, пожалуйста! (venga, venire);Venga qui, per favore!
+Скажите ваше имя! (dica, dire);Mi dica il Suo nome!
+Напишите ваш адрес! (scriva, scrivere);Scriva il Suo indirizzo!
+Возьмите документ! (prenda, prendere);Prenda questo documento!
+Послушайте, есть минута? (senta, sentire);Senta, ha un momento?
+Отправляйтесь немедленно! (parta, partire);Parta subito!
+Не опаздывайте! (non arrivi, ritardo);Non arrivi in ritardo!
+Не говорите так громко! (non parli, così, forte);Non parli così forte!
+Не беспокойтесь! (preoccuparsi);Non si preoccupi!

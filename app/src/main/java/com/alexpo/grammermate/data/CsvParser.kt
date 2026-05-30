@@ -102,16 +102,6 @@ object CsvParser {
 
     private fun extractTitle(raw: String): String? {
         val trimmed = raw.trim().trim('"').trimStart('\uFEFF')
-        if (trimmed.isBlank()) return null
-        val builder = StringBuilder()
-        for (ch in trimmed) {
-            if (ch.isLetterOrDigit() || ch == ' ' || ch == '-' || ch == '.' || ch == ',') {
-                builder.append(ch)
-            } else {
-                break
-            }
-            if (builder.length >= 160) break
-        }
-        return builder.toString().trim().ifBlank { null }
+        return trimmed.take(160).trim().ifBlank { null }
     }
 }
