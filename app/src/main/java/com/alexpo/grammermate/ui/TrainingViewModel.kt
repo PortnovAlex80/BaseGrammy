@@ -498,7 +498,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
                 dailyPracticeCoordinator.initializeCursor(progress.dailyCursor)
                 refreshDrillVisibility()
-                rebuildSchedules(lessons)
+                rebuildSchedules(filterLessonsForActivePack(lessons))
                 buildSessionCards()
                 refreshFlowerStates()
                 loadChapters()
@@ -559,7 +559,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     dailyPracticeCoordinator.resetState()
                     dailyPracticeCoordinator.initializeCursor()
                     val updatedLessons = lessonStore.getLessons(_coreState.value.navigation.selectedLanguageId.value)
-                    rebuildSchedules(updatedLessons)
+                    rebuildSchedules(filterLessonsForActivePack(updatedLessons))
                     buildSessionCards()
                     refreshFlowerStates()
                     loadChapters()
@@ -638,7 +638,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         dailyPracticeCoordinator.resetState()
         dailyPracticeCoordinator.initializeCursor()
         refreshDrillVisibility()
-        rebuildSchedules(lessons)
+        rebuildSchedules(filterLessonsForActivePack(lessons))
         buildSessionCards()
         refreshFlowerStates()
         loadChapters()
@@ -662,8 +662,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val packLessonIds = resolvedPackId?.let { lessonStore.getLessonIdsForPack(it) }
         rebindWordMasteryStore(resolvedPackId)
 
-        // Rebuild schedules BEFORE reading them
-        rebuildSchedules(_coreState.value.navigation.lessons)
+        // Rebuild schedules BEFORE reading them (filtered to active pack)
+        rebuildSchedules(filterLessonsForActivePack(_coreState.value.navigation.lessons))
 
         // Calculate active sub-lesson index based on completed count
         val typedLessonId = com.alexpo.grammermate.data.LessonId(lessonId)
@@ -940,15 +940,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update { it.copy(cardSession = it.cardSession.copy(returnTo = route)) }
     }
 
-    /** Set return route based on pack type (chapter-based or classic). */
+    /** Set return route to lesson screen (sub-lesson list) after session completion. */
     fun setReturnToForLesson() {
-        val activePackId = _coreState.value.navigation.activePackId?.value
-        val hasChapters = activePackId != null && hasPackChapters(activePackId)
-        val returnRoute = when {
-            hasChapters -> "chapter_lessons"
-            else -> "lesson"
-        }
-        setReturnTo(returnRoute)
+        // Always return to the lesson/sub-lesson screen — Back on that screen
+        // already navigates correctly to CHAPTER_LESSONS for chapter packs.
+        setReturnTo("lesson")
     }
 
     fun importLesson(uri: Uri) {
@@ -983,7 +979,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             vocabSprintRunner.resetState()
             dailyPracticeCoordinator.resetState()
             refreshDrillVisibility()
-            rebuildSchedules(lessons)
+            rebuildSchedules(filterLessonsForActivePack(lessons))
             buildSessionCards()
             loadChapters()
             saveProgress()
@@ -1058,7 +1054,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         vocabSprintRunner.resetState()
         dailyPracticeCoordinator.resetState()
         refreshDrillVisibility()
-        rebuildSchedules(lessons)
+        rebuildSchedules(filterLessonsForActivePack(lessons))
         buildSessionCards()
         loadChapters()
         saveProgress()
@@ -1330,7 +1326,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setSessionSize(size: Int) {
-        val safe = size.coerceIn(3, 20)
+        val safe = size.coerceIn(3, 1000)
         sessionSize = safe
         cardProvider.setSubLessonSize(safe)
         sessionRunner.setSubLessonSize(safe)
@@ -1486,7 +1482,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 }
                 is SessionEvent.GetMastery -> event.callback(masteryStore.get(event.lessonId, event.langId))
                 is SessionEvent.GetSchedule -> event.callback(lessonSchedules[com.alexpo.grammermate.data.LessonId(event.lessonId)])
-                is SessionEvent.RebuildSchedules -> rebuildSchedules(event.lessons)
+                is SessionEvent.RebuildSchedules -> rebuildSchedules(filterLessonsForActivePack(event.lessons))
                 is SessionEvent.AdvanceBossProgress -> {
                     val (advanceResult, bossCommands) = bossOrchestrator.advanceBossProgressOnNextCard(event.nextIndex, event.totalCards)
                     handleBossCommands(bossCommands)
@@ -1663,6 +1659,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         lessonSchedules = cardProvider.buildSchedules(lessons, lessonSchedules)
     }
 
+    /**
+     * Filter lessons to only include those belonging to the active pack.
+     * Prevents MixedReviewScheduler from pulling review cards across packs.
+     */
+    private fun filterLessonsForActivePack(lessons: List<Lesson>): List<Lesson> {
+        val packLessonIds = _coreState.value.navigation.activePackLessonIds
+        return if (packLessonIds != null && packLessonIds.isNotEmpty()) {
+            lessons.filter { it.id.value in packLessonIds }
+        } else {
+            lessons
+        }
+    }
+
     // -- BossCommand handler --
     private fun handleBossCommands(commands: List<BossCommand>) {
         for (command in commands) {
@@ -1698,7 +1707,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         dailyPracticeCoordinator.resetState()
-        rebuildSchedules(lessons)
+        rebuildSchedules(filterLessonsForActivePack(lessons))
         buildSessionCards()
         saveProgress()
     }
@@ -1812,7 +1821,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun handleProgressResults(results: List<ProgressResult>) {
         for (result in results) {
             when (result) {
-                is ProgressResult.RebuildSchedules -> rebuildSchedules(result.lessons)
+                is ProgressResult.RebuildSchedules -> rebuildSchedules(filterLessonsForActivePack(result.lessons))
                 is ProgressResult.BuildSessionCards -> buildSessionCards()
                 is ProgressResult.RefreshFlowerStates -> refreshFlowerStates()
                 is ProgressResult.NormalizeEliteSpeeds -> {

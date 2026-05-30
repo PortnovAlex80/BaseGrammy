@@ -34,7 +34,8 @@
       "Bash(java -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain compileDebugKotlin --no-daemon)",
       "Bash(java -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain assembleDebug)",
       "Bash(java -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain compileDebugKotlin)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(\"C:\\\\Program Files\\\\JetBrains\\\\IntelliJ IDEA Community Edition 2025.2.1\\\\jbr\\\\bin\\\\java.exe\" -cp \"gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar\" org.gradle.wrapper.GradleWrapperMain assembleDebug)"
     ]
   }
 }
