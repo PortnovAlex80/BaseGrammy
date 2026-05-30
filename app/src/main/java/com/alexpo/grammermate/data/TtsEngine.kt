@@ -42,6 +42,30 @@ sealed class TtsState {
 
 class TtsEngine(private val context: Context) {
 
+    /**
+     * True if running on 32-bit ARM (armeabi-v7a) where Sherpa-ONNX VITS models
+     * crash with SIGBUS (unaligned memory access). On these devices we fall back
+     * to Android system TTS instead of loading the native model.
+     */
+    private val is32BitArm: Boolean by lazy {
+        try {
+            // Build.SUPPORTED_ABIS is available from API 21
+            val abis = Build.SUPPORTED_ABIS
+            val isArm32 = abis.contains("armeabi-v7a") && !abis.contains("arm64-v8a")
+            if (isArm32) {
+                Log.w(TAG, "32-bit ARM detected (${abis.joinToString()}) — VITS native TTS disabled to prevent SIGBUS")
+            }
+            isArm32
+        } catch (e: Exception) {
+            // Fallback: check CPU ABI fields available on all API levels
+            val isArm32 = Build.CPU_ABI == "armeabi-v7a" && Build.CPU_ABI2 != "arm64-v8a"
+            if (isArm32) {
+                Log.w(TAG, "32-bit ARM detected (legacy check: ${Build.CPU_ABI}) — VITS native TTS disabled")
+            }
+            isArm32
+        }
+    }
+
     private val _state = MutableStateFlow<TtsState>(TtsState.Idle)
     val state: StateFlow<TtsState> = _state
 
@@ -134,12 +158,16 @@ class TtsEngine(private val context: Context) {
                 System.gc()
                 emitInitializing(InitPhase.LOADING_MODEL, 75)
 
-                if (missingFiles.isEmpty()) {
+                if (missingFiles.isEmpty() && !(spec.modelType == TtsModelType.VITS_PIPER && is32BitArm)) {
                     Log.d(TAG, "Loading offline TTS model for ${spec.displayName}")
                     val config = buildConfig(spec, modelDir)
                     val tts = OfflineTts(null, config)  // null = load from filesystem, not assets
                     offlineTts = tts
                 } else if (spec.modelType == TtsModelType.VITS_PIPER) {
+                    // VITS_PIPER files missing OR 32-bit ARM (SIGBUS risk) — fallback to System TTS
+                    if (is32BitArm && missingFiles.isEmpty()) {
+                        Log.w(TAG, "VITS_PIPER native model skipped on 32-bit ARM to prevent SIGBUS crash")
+                    }
                     // VITS_PIPER files missing - fallback to System TTS
                     Log.d(TAG, "VITS_PIPER model files not found for $languageId, falling back to system TTS")
                     val systemReady = initSystemTts(languageId)
