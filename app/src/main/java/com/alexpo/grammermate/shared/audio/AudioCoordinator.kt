@@ -136,6 +136,7 @@ class AudioCoordinator(
                 useOfflineAsr = config.useOfflineAsr,
                 ruTextScale = config.ruTextScale,
                 voiceAutoStart = config.voiceAutoStart,
+                ttsSpeed = config.ttsSpeed,
                 asrModelReady = asrModelManager.isReady()
             )
         }
@@ -249,7 +250,7 @@ class AudioCoordinator(
                         if (ttsEngine.state.value == TtsState.Ready) {
                             Log.d(TAG, "→ Speaking segment $index...")
                             Log.d(TAG, "→ Text length: ${cleanText.length}, full text: \"$cleanText\"")
-                            ttsEngine.speak(cleanText, languageId = segment.languageId)
+                            ttsEngine.speak(cleanText, languageId = segment.languageId, speed = _audioState.value.ttsSpeed)
 
                             // Wait for this segment to finish playing
                             // TTS uses UtteranceProgressListener which sets state back to Ready when done
@@ -278,7 +279,10 @@ class AudioCoordinator(
     }
 
     fun setTtsSpeed(speed: Float) {
-        _audioState.update { it.copy(ttsSpeed = speed.coerceIn(0.5f, 1.5f)) }
+        val coerced = speed.coerceIn(0.5f, 1.5f)
+        _audioState.update { it.copy(ttsSpeed = coerced) }
+        val config = configStore.load()
+        configStore.save(config.copy(ttsSpeed = coerced))
     }
 
     fun setRuTextScale(scale: Float) {

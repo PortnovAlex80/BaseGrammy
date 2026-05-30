@@ -105,14 +105,17 @@ object MultilingualStoryParser {
     fun parseStory(content: String, defaultLanguageId: String = "en"): List<TextSegment> {
         if (content.isBlank()) return emptyList()
 
+        // Normalize CRLF to LF for consistent paragraph splitting
+        val normalized = content.replace("\r\n", "\n")
+
         Log.d(TAG, "=== parseStory START ===")
-        Log.d(TAG, "Content length: ${content.length}, defaultLanguageId: $defaultLanguageId")
+        Log.d(TAG, "Content length: ${normalized.length}, defaultLanguageId: $defaultLanguageId")
 
         val segments = mutableListOf<TextSegment>()
 
         // Split into paragraphs (double newline or markdown headers)
         val paragraphSplitRegex = Regex("""(\n\n+|^#{1,6}\s+.*$)""", RegexOption.MULTILINE)
-        val paragraphs = content.split(paragraphSplitRegex)
+        val paragraphs = normalized.split(paragraphSplitRegex)
 
         Log.d(TAG, "Found ${paragraphs.size} paragraphs")
 
@@ -211,7 +214,8 @@ object MultilingualStoryParser {
      * @return Clean text suitable for TTS
      */
     fun cleanMarkdown(markdown: String): String {
-        return markdown
+        val normalized = markdown.replace("\r\n", "\n")
+        return normalized
             .replace(Regex("""^#+\s+.*$"""), "") // Headers
             .replace(Regex("""\*\*([^*]+)\*\*"""), "$1") // Bold
             .replace(Regex("""\*([^*]+)\*"""), "$1") // Italic

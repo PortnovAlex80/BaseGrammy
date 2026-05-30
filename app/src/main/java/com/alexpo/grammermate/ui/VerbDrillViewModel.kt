@@ -997,12 +997,13 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     val ttsState: StateFlow<TtsState> = ttsEngine.state
 
-    fun speakTts(text: String, speed: Float = 0.67f) {
+    fun speakTts(text: String, speed: Float? = null) {
         if (text.isBlank()) return
         val langId = _uiState.value.loadedLanguageId ?: "it"
+        val effectiveSpeed = speed ?: container.configStore.load().ttsSpeed
         viewModelScope.launch {
             try {
-                ttsEngine.speak(text, languageId = langId, speed = speed)
+                ttsEngine.speak(text, languageId = langId, speed = effectiveSpeed)
             } catch (e: Throwable) {
                 Log.e(logTag, "speakTts failed", e)
             }

@@ -199,7 +199,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     val text = state.cardSession.answerText
                         ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
                     if (text != null) {
-                        vm.audio.onTtsSpeak(text, speed = 0.67f)
+                        vm.audio.onTtsSpeak(text)
                     }
                 }
             }
@@ -1125,7 +1125,7 @@ private fun DailyPracticeScreenContent(
         } },
         onSpeak = remember(state.audio.ttsModelReady) { { text: String ->
             if (state.audio.ttsModelReady) {
-                vm.audio.onTtsSpeak(text, speed = 0.67f)
+                vm.audio.onTtsSpeak(text)
             }
         } },
         onStopTts = remember { { vm.audio.stopTts() } },
@@ -1223,7 +1223,7 @@ private fun NavDialogs(
             onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
             vm.audio.dismissTtsDownloadDialog()
             val text = state.cardSession.answerText ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
-            if (text != null) vm.audio.onTtsSpeak(text, speed = 0.67f)
+            if (text != null) vm.audio.onTtsSpeak(text)
         }
         if (dialogs.showTtsDownloadDialog) {
             TtsDownloadDialog(

@@ -13,6 +13,7 @@ data class AppConfig(
     val useOfflineAsr: Boolean = false,
     val hintLevel: HintLevel = HintLevel.EASY,
     val ruTextScale: Float = 1.0f,
+    val ttsSpeed: Float = 1.0f,
     val voiceAutoStart: Boolean = true,
     val uiLanguage: String = "system",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -46,6 +47,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "useOfflineAsr" to config.useOfflineAsr,
             "hintLevel" to config.hintLevel.name,
             "ruTextScale" to config.ruTextScale,
+            "ttsSpeed" to config.ttsSpeed,
             "voiceAutoStart" to config.voiceAutoStart,
             "uiLanguage" to config.uiLanguage,
             "themeMode" to config.themeMode.name,
@@ -99,6 +101,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val sessionSize = rawSessionSize.coerceIn(3, 1000)
         val appVersion = (data["appVersion"] as? Number)?.toInt() ?: 0
         val clickableWordHints = data["clickableWordHints"] as? Boolean ?: true  // Новая настройка
+        val ttsSpeed = ((data["ttsSpeed"] as? Number)?.toFloat()?.coerceIn(0.5f, 1.5f)) ?: 1.0f
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
@@ -106,6 +109,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             useOfflineAsr = useOfflineAsr,
             hintLevel = hintLevel,
             ruTextScale = ruTextScale,
+            ttsSpeed = ttsSpeed,
             voiceAutoStart = voiceAutoStart,
             uiLanguage = uiLanguage,
             themeMode = themeMode,
