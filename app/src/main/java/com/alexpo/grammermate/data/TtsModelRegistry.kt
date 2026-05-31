@@ -70,6 +70,32 @@ object TtsModelRegistry {
             requiredFiles = listOf("el_GR-rapunzelina-low.onnx", "tokens.txt"),
             requiredDirs = listOf("espeak-ng-data"),
             modelFileName = "el_GR-rapunzelina-low.onnx"
+        ),
+        "de" to TtsModelSpec(
+            languageId = "de",
+            displayName = "German",
+            modelType = TtsModelType.VITS_PIPER,
+            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-medium.tar.bz2",
+            archivePrefix = "vits-piper-de_DE-thorsten-medium/",
+            modelDirName = "vits-piper-de_DE-thorsten-medium",
+            fallbackDownloadSize = 60L * 1024 * 1024,
+            minRequiredBytes = 150L * 1024 * 1024,
+            requiredFiles = listOf("de_DE-thorsten-medium.onnx", "tokens.txt"),
+            requiredDirs = listOf("espeak-ng-data"),
+            modelFileName = "de_DE-thorsten-medium.onnx"
+        ),
+        "zh" to TtsModelSpec(
+            languageId = "zh",
+            displayName = "Chinese",
+            modelType = TtsModelType.VITS_PIPER,
+            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2",
+            archivePrefix = "vits-piper-zh_CN-huayan-medium/",
+            modelDirName = "vits-piper-zh_CN-huayan-medium",
+            fallbackDownloadSize = 65L * 1024 * 1024,
+            minRequiredBytes = 150L * 1024 * 1024,
+            requiredFiles = listOf("zh_CN-huayan-medium.onnx", "tokens.txt"),
+            requiredDirs = listOf("espeak-ng-data"),
+            modelFileName = "zh_CN-huayan-medium.onnx"
         )
     )
 

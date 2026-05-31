@@ -230,6 +230,8 @@ class TtsEngine(private val context: Context) {
                         "it" -> Locale.ITALIAN
                         "en" -> Locale.US
                         "ru" -> Locale("ru", "RU")
+                        "de" -> Locale.GERMAN
+                        "zh" -> Locale.CHINESE
                         else -> Locale(languageId)
                     }
                     val availability = tts.setLanguage(locale)

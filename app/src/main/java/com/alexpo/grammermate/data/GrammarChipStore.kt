@@ -205,17 +205,45 @@ object GrammarChipStore {
         val base = json.optString("base").ifBlank { null }
         val dontConfuse = json.optString("dontConfuse").ifBlank { null }
 
-        // Parse examples array
+        // Parse examples — supports two formats:
+        // 1. Array of objects (Italian): [{"it": "Parlo.", "ru": "", "note": ""}, ...]
+        // 2. Object with language keys (German/Chinese): {"de": ["Der Tisch."], "ru": ["Стол."]}
         val examplesArray = json.optJSONArray("examples")
+        val examplesObj = json.optJSONObject("examples")
         val examples = if (examplesArray != null) {
+            // Format 1: array of example objects
             (0 until examplesArray.length()).map { i ->
                 val exampleObj = examplesArray.getJSONObject(i)
+                val targetText = exampleObj.optString("target", "").ifBlank {
+                    val langKeys = listOf("it", "de", "zh", "el", "en", "ru_target")
+                    langKeys.firstNotNullOfOrNull { key ->
+                        exampleObj.optString(key, "").ifBlank { null }
+                    } ?: ""
+                }
                 GrammarExample(
-                    it = exampleObj.getString("it"),
+                    target = targetText,
                     ru = exampleObj.optString("ru", ""),
                     note = exampleObj.optString("note", "")
                 )
             }
+        } else if (examplesObj != null) {
+            // Format 2: object with language-keyed arrays
+            val targetLangKeys = listOf("it", "de", "zh", "el", "en", "ru_target")
+            val targetKey = targetLangKeys.firstOrNull { examplesObj.has(it) }
+            val ruKey = "ru"
+            if (targetKey != null) {
+                val targetArr = examplesObj.optJSONArray(targetKey)
+                val ruArr = examplesObj.optJSONArray(ruKey)
+                if (targetArr != null) {
+                    (0 until targetArr.length()).map { i ->
+                        GrammarExample(
+                            target = targetArr.getString(i),
+                            ru = ruArr?.optString(i, "") ?: "",
+                            note = ""
+                        )
+                    }
+                } else emptyList()
+            } else emptyList()
         } else {
             emptyList()
         }

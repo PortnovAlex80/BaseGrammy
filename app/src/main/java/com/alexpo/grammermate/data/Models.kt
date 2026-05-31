@@ -762,16 +762,16 @@ data class GrammarChip(
 /**
  * Single grammar example with Italian text and Russian translation.
  *
- * @param it Italian example text
+ * @param target Target language example text (language-agnostic: de, zh, it, etc.)
  * @param ru Russian translation
  * @param note Optional additional note
  */
 data class GrammarExample(
-    val it: String,
+    val target: String,
     val ru: String,
     val note: String = ""
 ) {
     init {
-        require(it.isNotBlank()) { "Italian text must not be blank" }
+        require(target.isNotBlank()) { "Target text must not be blank" }
     }
 }

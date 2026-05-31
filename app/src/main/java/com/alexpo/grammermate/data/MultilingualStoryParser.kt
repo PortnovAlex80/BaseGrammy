@@ -33,9 +33,9 @@ object MultilingualStoryParser {
 
     /**
      * Language marker pattern: {lang}content{/lang}
-     * Supported languages: it (Italian), en (English), ru (Russian), el (Greek)
+     * Supported languages: it, en, ru, el, de (German), zh (Chinese)
      */
-    private val languagePattern = Regex("""\{(it|en|ru|el)\}(.+?)\{/\1\}""", RegexOption.DOT_MATCHES_ALL)
+    private val languagePattern = Regex("""\{(it|en|ru|el|de|zh)\}(.+?)\{/\1\}""", RegexOption.DOT_MATCHES_ALL)
 
     /**
      * Detect the language of a text sample by character analysis and word patterns.
@@ -49,6 +49,8 @@ object MultilingualStoryParser {
         val enChars = sample.count { it in 'a'..'z' || it in 'A'..'Z' }
         val itChars = sample.count { it in "àèéìòùÀÈÉÌÒÙ" } // Common Italian accented chars
         val elChars = sample.count { it in 'Ͱ'..'Ͽ' || it in 'ἀ'..'῿' } // Greek and Coptic / Greek Extended
+        val deChars = sample.count { it in "äöüßÄÖÜ" } // German specific chars
+        val zhChars = sample.count { it.code in 0x4E00..0x9FFF } // CJK Unified Ideographs
 
         // Count common Italian words for better detection
         val italianWords = listOf("questo", "quella", "questa", "essere", "avere", "per", "con", "da", "il", "lo", "la", "le", "un", "uno", "una", "in", "su", "a", "ad", "da", "di", "del", "dello", "della", "dei", "degli", "delle", "su", "sul", "sullo", "sulla", "sui", "sugli", "sulle", "tra", "fra", "anche", "ancora", "caso", "cosa", "fare", "dire", "vedere", "parlare", "essere")
@@ -58,11 +60,15 @@ object MultilingualStoryParser {
         val greekWords = listOf("είμαι", "έχω", "είναι", "αυτό", "αυτή", "αυτός", "που", "με", "σε", "για", "το", "η", "τα", "τις", "τα", "και", "δεν", "στα", "στην", "στον", "μια", "ένα", "να", "με", "θα", "είναι", "μπορώ", "πρέπει", "ελληνικά")
         val greekWordMatches = greekWords.count { word -> sample.contains(word, ignoreCase = true) }
 
+        // German common words
+        val germanWords = listOf("und", "der", "die", "das", "ist", "ein", "eine", "nicht", "ich", "mit", "auf", "für", "sich", "auch", "als", "nach", "wie", "noch", "werden", "haben", "sein", "dieser", "welche", "mich", "dich", "sich", "uns", "euch", "mein", "dein", "kein", "werden", "wurde", "worden", "konnte", "gemacht", "gegangen")
+        val germanWordMatches = germanWords.count { word -> sample.contains(word, ignoreCase = true) }
+
         // Common English words to exclude Italian
         val englishWords = listOf("this", "that", "with", "from", "have", "been", "will", "would", "could", "should", "about", "which", "their", "there", "where", "when", "what", "how", "then", "than", "more", "some", "such", "only", "into", "over", "after", "before", "being", "under", "while", "because", "though", "until", "again", "where", "through", "each", "much", "own", "same", "so", "good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high", "different", "small", "large", "next", "early", "young", "important", "public", "bad", "able", "free", "best", "better", "during", "enough", "both", "full", "tonight", "always", "anything", "anywhere", "being", "beautiful", "before", "believe", "between", "both", "bring", "build", "business", "but", "by", "call", "came", "can", "come", "could", "course", "develop", "different", "do", "does", "done", "don", "down", "during", "early", "education", "enough", "even", "ever", "every", "example", "face", "family", "far", "fast", "field", "fight", "find", "first", "for", "from", "get", "give", "go", "good", "great", "group", "grow", "had", "has", "have", "he", "head", "help", "her", "here", "high", "history", "home", "how", "however", "if", "important", "in", "include", "into", "is", "it", "its", "just", "keep", "know", "large", "last", "late", "learn", "leave", "life", "like", "line", "little", "long", "look", "make", "man", "many", "may", "me", "member", "might", "mile", "million", "miss", "more", "most", "much", "music", "must", "my", "name", "never", "new", "news", "next", "night", "no", "not", "now", "of", "off", "often", "old", "on", "once", "one", "only", "or", "other", "our", "out", "over", "own", "part", "people", "place", "play", "point", "political", "possible", "present", "president", "problem", "program", "provide", "public", "purpose", "question", "rather", "really", "result", "return", "right", "run", "same", "say", "school", "second", "see", "seem", "see", "service", "set", "several", "should", "since", "small", "so", "social", "some", "something", "special", "start", "statement", "still", "such", "system", "take", "talk", "teach", "tell", "than", "that", "the", "their", "them", "then", "there", "these", "they", "thing", "think", "this", "those", "though", "three", "through", "time", "to", "today", "together", "too", "toward", "travel", "try", "turn", "two", "under", "understand", "unit", "until", "up", "upon", "use", "usually", "value", "very", "want", "way", "we", "week", "well", "west", "what", "whatever", "when", "where", "whether", "which", "while", "white", "who", "whole", "whose", "why", "will", "with", "within", "without", "word", "work", "world", "would", "write", "year", "you", "your", "yours")
         val englishWordMatches = englishWords.count { word -> sample.contains(word, ignoreCase = true) }
 
-        val total = ruChars + enChars + itChars + elChars
+        val total = ruChars + enChars + itChars + elChars + deChars + zhChars
         if (total == 0) {
             Log.d(TAG, "detectLanguage: no alphabetic chars, using default: $defaultLanguageId")
             return defaultLanguageId
@@ -72,9 +78,13 @@ object MultilingualStoryParser {
         val enRatio = enChars.toFloat() / total
         val itRatio = itChars.toFloat() / total
         val elRatio = elChars.toFloat() / total
+        val deRatio = deChars.toFloat() / total
 
         // Enhanced detection with word analysis
         val detected = when {
+            // Chinese detection (CJK characters are distinctive)
+            zhChars >= 3 -> "zh"
+
             // Greek detection (Greek script is very distinctive)
             elChars >= 3 && greekWordMatches >= 1 -> "el"
             greekWordMatches >= 3 -> "el"
@@ -86,6 +96,11 @@ object MultilingualStoryParser {
             italianWordMatches >= 5 -> "it"
             itChars >= 3 && italianWordMatches >= 1 -> "it"
             itRatio > 0.2f && itChars >= 2 -> "it"
+
+            // German detection (umlauts + common German words)
+            deChars >= 2 && germanWordMatches >= 2 -> "de"
+            germanWordMatches >= 5 -> "de"
+            deRatio > 0.15f && deChars >= 2 -> "de"
 
             // Russian detection (Cyrillic is very distinctive)
             ruRatio > 0.1f && ruChars > 10 -> "ru"
