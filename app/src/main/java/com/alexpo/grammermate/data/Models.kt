@@ -453,6 +453,16 @@ data class NavigationState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
+/** Describes what action is available after a sub-lesson completes. */
+enum class CompletionNextAction {
+    /** More sub-lessons remain in the current lesson. */
+    NEXT_SUB_LESSON,
+    /** Current lesson done, but more lessons in the chapter. */
+    NEXT_LESSON,
+    /** All lessons done or single-lesson pack — no "next" available. */
+    NONE
+}
+
 data class CardSessionState(
     val sessionState: SessionState = SessionState.ACTIVE,
     val currentIndex: Int = 0,
@@ -493,6 +503,7 @@ data class CardSessionState(
     val todayFireCount: Int = 0,
     val screenMode: TrainingScreenMode = TrainingScreenMode.NORMAL,
     val returnTo: String = "",
+    val completionNextAction: CompletionNextAction = CompletionNextAction.NONE,
     val verbConjugationCards: List<VerbDrillCard> = emptyList()
 ) {
     /** Whether the session can accept an answer submission. */

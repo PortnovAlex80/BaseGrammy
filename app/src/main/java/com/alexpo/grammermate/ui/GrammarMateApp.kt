@@ -16,11 +16,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -55,6 +58,7 @@ import androidx.navigation.compose.rememberNavController
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AppScreen
 import com.alexpo.grammermate.data.BossReward
+import com.alexpo.grammermate.data.CompletionNextAction
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.DownloadState
@@ -148,6 +152,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
         val lastBossFinishedToken = remember { mutableStateOf(state.boss.bossFinishedToken) }
+        val completionNextAction = remember { mutableStateOf(CompletionNextAction.NONE) }
 
         // VerbDrillViewModel shared between TRAINING and VERB_DRILL routes for session persistence.
         // Hoisted to outer scope so TRAINING composable can call persistSessionState() on exit.
@@ -954,6 +959,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     dailyScope = dailyScope,
                     lastFinishedToken = lastFinishedToken,
                     lastBossFinishedToken = lastBossFinishedToken,
+                    completionNextAction = completionNextAction,
                     onDialogsChange = remember { { dialogs = it } },
                     onNavigate = onNavigate
                 )
@@ -1231,6 +1237,7 @@ private fun NavDialogs(
     dailyScope: kotlinx.coroutines.CoroutineScope,
     lastFinishedToken: androidx.compose.runtime.MutableState<Int>,
     lastBossFinishedToken: androidx.compose.runtime.MutableState<Int>,
+    completionNextAction: androidx.compose.runtime.MutableState<CompletionNextAction>,
     onDialogsChange: (DialogState) -> Unit,
     onNavigate: (String) -> Unit
 ) {
@@ -1320,30 +1327,148 @@ private fun NavDialogs(
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
     }
 
-    // Token-based navigation: sub-lesson finished — unified via returnTo
+    // Token-based navigation: sub-lesson finished — show completion dialog or auto-navigate
     if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
         lastFinishedToken.value = state.cardSession.subLessonFinishedToken
         Log.d("NavDebug", "TOKEN_NAV: subLessonFinished, pomodoroComplete=${state.pomodoro.isComplete}, hasCards=${state.cardSession.currentCard != null}, returnTo=${state.cardSession.returnTo}")
         // Pomodoro: track session completion for timer stats
         vm.onTrainingSessionCompleted()
         val hasCards = state.cardSession.currentCard != null
-        // If pomodoro completed OR no cards left (session finished), stay on TrainingScreen for summary/completion
+
         if (!state.pomodoro.isComplete && hasCards) {
             val returnTo = state.cardSession.returnTo
-            if (returnTo.isNotEmpty()) {
-                if (returnTo == Routes.DAILY_PRACTICE) {
-                    vm.daily.onBlockComplete()
-                }
-                Log.d("NavDebug", "TOKEN_NAV: → $returnTo")
+
+            // Special flows (daily practice, verb drill) — keep original auto-navigate behavior
+            if (returnTo == Routes.DAILY_PRACTICE) {
+                vm.daily.onBlockComplete()
+                Log.d("NavDebug", "TOKEN_NAV: → DAILY_PRACTICE")
+                onNavigate(returnTo)
+            } else if (returnTo == Routes.VERB_DRILL) {
+                Log.d("NavDebug", "TOKEN_NAV: → VERB_DRILL")
                 onNavigate(returnTo)
             } else {
-                // Default: sub-lesson from LESSON screen — more sub-lessons available
-                Log.d("NavDebug", "TOKEN_NAV: → LESSON (default)")
-                onNavigate(Routes.LESSON)
+                // Lesson-based training — compute what's next and show dialog
+                val nextAction = vm.computeCompletionNextAction()
+                Log.d("NavDebug", "TOKEN_NAV: completion dialog, nextAction=$nextAction")
+                completionNextAction.value = nextAction
             }
         }
         // If !hasCards: SessionCompletionContent will render via TrainingScreen early-return
         // User presses OK → onSessionDone → navigate HOME or DAILY_PRACTICE
+    }
+
+    // Sub-lesson completion dialog
+    if (completionNextAction.value != CompletionNextAction.NONE) {
+        val correctCount = state.cardSession.correctCount
+        val incorrectCount = state.cardSession.incorrectCount
+        val total = correctCount + incorrectCount
+        val rate = if (total > 0) correctCount * 100 / total else 0
+
+        val continueLabel = when (completionNextAction.value) {
+            CompletionNextAction.NEXT_SUB_LESSON -> "Следующее упражнение"
+            CompletionNextAction.NEXT_LESSON -> "Следующий урок"
+            CompletionNextAction.NONE -> ""
+        }
+
+        val returnTo = state.cardSession.returnTo
+
+        AlertDialog(
+            onDismissRequest = {
+                completionNextAction.value = CompletionNextAction.NONE
+                // Exit: navigate back to lesson list
+                val activePackId = state.navigation.activePackId?.value
+                val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                if (returnTo == Routes.CHAPTER_LESSONS || hasChapters) {
+                    onNavigate(Routes.CHAPTER_LESSONS)
+                } else {
+                    onNavigate(Routes.LESSON)
+                }
+            },
+            title = {
+                Text(
+                    text = "Упражнение завершено! 🎉",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "$correctCount правильно / $incorrectCount ошибок ($rate%)",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    if (completionNextAction.value == CompletionNextAction.NEXT_LESSON) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Урок пройден! Доступен следующий.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val action = completionNextAction.value
+                    completionNextAction.value = CompletionNextAction.NONE
+                    ScreenLogger.tap("completion_continue", "action=$action")
+                    when (action) {
+                        CompletionNextAction.NEXT_SUB_LESSON -> {
+                            // Start next sub-lesson in current lesson
+                            val nextIdx = state.cardSession.activeSubLessonIndex + 1
+                            vm.selectSubLesson(nextIdx)
+                            // Stay on TRAINING — cards will be rebuilt by ViewModel
+                        }
+                        CompletionNextAction.NEXT_LESSON -> {
+                            // Find and start next lesson in chapter/pack
+                            val activePackId = state.navigation.activePackId?.value
+                            val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                            val currentLessonId = state.navigation.selectedLessonId
+
+                            if (hasChapters) {
+                                val chapter = state.navigation.selectedChapter
+                                if (chapter != null) {
+                                    val currentIdx = chapter.lessons.indexOf(currentLessonId?.value)
+                                    val nextLessonId = chapter.lessons.getOrNull(currentIdx + 1)
+                                    if (nextLessonId != null) {
+                                        vm.selectLesson(nextLessonId)
+                                        // Rebuild session for new lesson and stay on TRAINING
+                                        vm.selectSubLesson(0)
+                                    }
+                                }
+                            } else {
+                                val lessons = state.navigation.lessons
+                                val currentIdx = lessons.indexOfFirst { it.id == currentLessonId }
+                                val nextLesson = lessons.getOrNull(currentIdx + 1)
+                                if (nextLesson != null) {
+                                    vm.selectLesson(nextLesson.id.value)
+                                    vm.selectSubLesson(0)
+                                }
+                            }
+                            // Stay on TRAINING — cards will be rebuilt
+                        }
+                        CompletionNextAction.NONE -> { /* no-op */ }
+                    }
+                }) {
+                    Text(continueLabel)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = {
+                    completionNextAction.value = CompletionNextAction.NONE
+                    ScreenLogger.tap("completion_exit")
+                    // Navigate back to lesson list
+                    val activePackId = state.navigation.activePackId?.value
+                    val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                    if (returnTo == Routes.CHAPTER_LESSONS || hasChapters) {
+                        onNavigate(Routes.CHAPTER_LESSONS)
+                    } else {
+                        onNavigate(Routes.LESSON)
+                    }
+                }) {
+                    Text("Выход")
+                }
+            }
+        )
     }
 
     // Token-based navigation: boss finished

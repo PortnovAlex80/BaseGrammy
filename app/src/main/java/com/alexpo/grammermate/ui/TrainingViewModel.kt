@@ -33,6 +33,7 @@ import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
 import com.alexpo.grammermate.data.CefrCalculator
+import com.alexpo.grammermate.data.CompletionNextAction
 import com.alexpo.grammermate.data.PracticeType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -1106,6 +1107,57 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun resumeFromSettings() = handleSessionEvents(sessionRunner.resumeFromSettings())
 
     fun selectSubLesson(index: Int) = handleSessionEvents(sessionRunner.selectSubLesson(index))
+
+    /**
+     * Compute what "next" action is available after a sub-lesson completes.
+     * Called from GrammarMateApp when subLessonFinishedToken changes.
+     *
+     * Logic:
+     * 1. If returnTo is DAILY_PRACTICE or VERB_DRILL → NONE (special flows handle their own nav)
+     * 2. If completedSubLessonCount < subLessonCount → NEXT_SUB_LESSON
+     * 3. If pack has chapters, find next lesson in current chapter → NEXT_LESSON
+     * 4. If no chapters, find next lesson in pack lesson list → NEXT_LESSON
+     * 5. Otherwise → NONE
+     */
+    fun computeCompletionNextAction(): CompletionNextAction {
+        val state = _coreState.value
+        val returnTo = state.cardSession.returnTo
+
+        // Daily practice and verb drill have their own completion flows
+        if (returnTo == "daily_practice" || returnTo == "verb_drill") {
+            return CompletionNextAction.NONE
+        }
+
+        // Check if more sub-lessons remain in current lesson
+        val completed = state.cardSession.completedSubLessonCount
+        val total = state.cardSession.subLessonCount
+        if (completed < total) {
+            return CompletionNextAction.NEXT_SUB_LESSON
+        }
+
+        // Check if more lessons remain
+        val packId = state.navigation.activePackId?.value ?: return CompletionNextAction.NONE
+        val hasChapters = lessonStore.hasChapters(packId)
+
+        if (hasChapters) {
+            val chapter = state.navigation.selectedChapter ?: return CompletionNextAction.NONE
+            val currentLessonId = state.navigation.selectedLessonId?.value ?: return CompletionNextAction.NONE
+            val lessonsInChapter = chapter.lessons
+            val currentIdx = lessonsInChapter.indexOf(currentLessonId)
+            if (currentIdx >= 0 && currentIdx < lessonsInChapter.lastIndex) {
+                return CompletionNextAction.NEXT_LESSON
+            }
+        } else {
+            val lessons = state.navigation.lessons
+            val currentLessonId = state.navigation.selectedLessonId
+            val currentIdx = lessons.indexOfFirst { it.id == currentLessonId }
+            if (currentIdx >= 0 && currentIdx < lessons.lastIndex) {
+                return CompletionNextAction.NEXT_LESSON
+            }
+        }
+
+        return CompletionNextAction.NONE
+    }
 
     /**
      * Start a lesson review session with the given difficulty level.
