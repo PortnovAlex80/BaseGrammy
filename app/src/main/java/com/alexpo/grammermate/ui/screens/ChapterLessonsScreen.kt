@@ -6,14 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -114,19 +115,30 @@ fun ChapterLessonsScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Lessons grid
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            // Lessons grid — rows of 2 with equal height per row
+            LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(lessons) { lesson ->
-                    LessonGridCard(
-                        lesson = lesson,
-                        isCompleted = lesson.id.value in completedLessonIds,
-                        onClick = { onLessonClick(lesson) }
-                    )
+                items(lessons.chunked(2)) { rowLessons ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min)
+                    ) {
+                        rowLessons.forEach { lesson ->
+                            LessonGridCard(
+                                lesson = lesson,
+                                isCompleted = lesson.id.value in completedLessonIds,
+                                onClick = { onLessonClick(lesson) },
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            )
+                        }
+                        if (rowLessons.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -137,11 +149,11 @@ fun ChapterLessonsScreen(
 private fun LessonGridCard(
     lesson: Lesson,
     isCompleted: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
