@@ -57,6 +57,19 @@ object TtsModelRegistry {
             requiredFiles = listOf("ru_RU-irina-medium.onnx", "tokens.txt"),
             requiredDirs = listOf("espeak-ng-data"),
             modelFileName = "ru_RU-irina-medium.onnx"
+        ),
+        "el" to TtsModelSpec(
+            languageId = "el",
+            displayName = "Greek",
+            modelType = TtsModelType.VITS_PIPER,
+            downloadUrl = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-el_GR-rapunzelina-low.tar.bz2",
+            archivePrefix = "vits-piper-el_GR-rapunzelina-low/",
+            modelDirName = "vits-piper-el_GR-rapunzelina-low",
+            fallbackDownloadSize = 20L * 1024 * 1024,
+            minRequiredBytes = 100L * 1024 * 1024,
+            requiredFiles = listOf("el_GR-rapunzelina-low.onnx", "tokens.txt"),
+            requiredDirs = listOf("espeak-ng-data"),
+            modelFileName = "el_GR-rapunzelina-low.onnx"
         )
     )
 

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 2,
+  "packId": "ITALIAN_EXPRESS",
+  "packVersion": "v1",
+  "language": "it",
+  "displayName": "Italian Express",
+  "description": "Italian course: chapters 0-1, lessons A01-A16",
+  "chapters": [
+    {
+      "chapterId": "chapter_0",
+      "order": 0,
+      "title": "Введение — Архитектура языка",
+      "subtitle": "До языка",
+      "storyFile": "chapter_00.md",
+      "lessons": []
+    },
+    {
+      "chapterId": "chapter_1",
+      "order": 1,
+      "title": "Глава 1 — Настоящее: я и мир здесь",
+      "subtitle": "Настоящее",
+      "storyFile": "chapter_01.md",
+      "lessons": [
+        "lesson_01_A01",
+        "lesson_02_A02",
+        "lesson_03_A03",
+        "lesson_04_A04",
+        "lesson_05_A05",
+        "lesson_06_A06",
+        "lesson_07_A07",
+        "lesson_08_A08",
+        "lesson_09_A09",
+        "lesson_10_A10",
+        "lesson_11_A11",
+        "lesson_12_A12",
+        "lesson_13_A13",
+        "lesson_14_A14",
+        "lesson_15_A15",
+        "lesson_16_A16"
+      ]
+    }
+  ],
+  "verbDrill": {
+    "files": [
+      "it_verb_groups_all.csv"
+    ]
+  },
+  "vocabDrill": {
+    "files": [
+      "it_drill_nouns.csv",
+      "it_drill_verbs.csv",
+      "it_drill_adjectives.csv",
+      "it_drill_adverbs.csv",
+      "it_drill_numbers.csv",
+      "it_drill_pronouns.csv"
+    ]
+  }
+}
