@@ -17,8 +17,8 @@ object Normalizer {
         val builder = StringBuilder()
         for (ch in lower) {
             when (ch) {
-                '.', ',', '?', '!', ':', ';', '"', '<', '>', '(', ')', '[', ']', '{', '}' -> {
-                    // Skip punctuation.
+                '\'', '`', '´', '’', '‘', '.', ',', '?', '!', ':', ';', '"', '<', '>', '(', ')', '[', ']', '{', '}' -> {
+                    // Skip punctuation and apostrophe variants.
                 }
                 '-' -> {
                     builder.append(ch)
