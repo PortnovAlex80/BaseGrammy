@@ -327,8 +327,13 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
 
                         if (hasChapters) {
-                            // Show Grammar Story Roadmap for packs with chapters
-                            val chapterCards = remember(activePackId) { vm.getChapterCards() }
+                            // Rebuild chapter cards when pack changes OR chapter progress updates.
+                            // Lightweight string key — only changes when actual progress values change,
+                            // not on every _coreState.update (timer, etc).
+                            val progressKey = state.chapterProgresses.values
+                                .sortedBy { it.chapterId }
+                                .joinToString(",") { "${it.chapterId}:${it.lessonsCompleted}/${it.lessonsStarted}" }
+                            val chapterCards = remember(activePackId, progressKey) { vm.getChapterCards() }
                             GrammarStoryRoadmapScreen(
                                 chapters = chapterCards,
                                 onBack = remember {
@@ -801,8 +806,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.GRAMMAR_STORY_ROADMAP) {
+                        val progressKey = state.chapterProgresses.values
+                            .sortedBy { it.chapterId }
+                            .joinToString(",") { "${it.chapterId}:${it.lessonsCompleted}/${it.lessonsStarted}" }
                         GrammarStoryRoadmapScreen(
-                            chapters = vm.getChapterCards(),
+                            chapters = remember(state.navigation.activePackId?.value, progressKey) { vm.getChapterCards() },
                             onBack = remember { { onNavigate(Routes.HOME) } },
                             showBackButton = true,  // Show back button when accessed via direct route
                             onReadStory = remember { { chapter ->

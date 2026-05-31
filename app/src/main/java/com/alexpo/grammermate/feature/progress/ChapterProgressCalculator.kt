@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.feature.progress
 
+import android.util.Log
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.data.LessonMasteryState
@@ -13,7 +14,9 @@ import com.alexpo.grammermate.data.LessonMasteryState
  *
  * Computation rules:
  * - lessonsStarted: Count of lessons where uniqueCardShows > 0
- * - lessonsCompleted: Count of lessons where intervalStepIndex >= 3 (learned threshold)
+ * - lessonsCompleted: Count of lessons where EITHER:
+ *   - intervalStepIndex >= LEARNED_THRESHOLD (3) — advanced via Daily Review SRS
+ *   - OR uniqueCardShows >= MASTERY_THRESHOLD (150) — completed all cards
  * - lastAccessedMs: Maximum lastShowDateMs from all lessons in the chapter
  *
  * Edge cases:
@@ -22,6 +25,8 @@ import com.alexpo.grammermate.data.LessonMasteryState
  * - Lessons without mastery data: Treated as not started (uniqueCardShows = 0)
  */
 object ChapterProgressCalculator {
+
+    private const val TAG = "ChapterProgressCalc"
 
     /**
      * Calculate progress for a chapter based on lesson mastery states.
@@ -55,8 +60,11 @@ object ChapterProgressCalculator {
                 startedCount++
             }
 
-            // Count as completed if intervalStepIndex >= 3 (learned threshold)
-            if (mastery != null && mastery.intervalStepIndex >= 3) {
+            // Count as completed if the lesson was explicitly marked completed
+            // (via markLessonCompleted after user finishes all sub-lessons).
+            // This is separate from mastery/flower which tracks card repetition.
+            val isCompleted = mastery?.completedAtMs != null
+            if (isCompleted) {
                 completedCount++
             }
 
@@ -65,6 +73,8 @@ object ChapterProgressCalculator {
                 lastAccessedMs = mastery.lastShowDateMs
             }
         }
+
+        Log.d(TAG, "calculate: chapter=${chapter.chapterId} started=$startedCount completed=$completedCount total=${chapter.lessons.size}")
 
         return ChapterProgress(
             chapterId = chapter.chapterId,

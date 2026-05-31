@@ -1954,17 +1954,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val chapters = lessonStore.getChapters(activePackId)
-        val chapterProgressStore = container.chapterProgressStore(activePackId)
 
         // Get mastery states for all lessons in the pack
         val allLessonMasteryStates = mutableMapOf<String, LessonMasteryState>()
         for (lessonId in lessonStore.getLessonIdsForPack(activePackId)) {
             val masteryState = masteryStore.get(lessonId, selectedLanguageId) ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
             allLessonMasteryStates[lessonId] = masteryState
+            if (masteryState.uniqueCardShows > 0 || masteryState.intervalStepIndex > 0) {
+                Log.d(logTag, "getChapterCards: $lessonId -> uniqueShows=${masteryState.uniqueCardShows}, stepIndex=${masteryState.intervalStepIndex}")
+            }
         }
 
         return chapters.mapIndexed { index, chapter ->
-            val progress = chapterProgressStore.getProgress(chapter.chapterId) ?: ChapterProgress.forChapter(chapter.chapterId)
+            // Calculate progress LIVE from mastery data instead of relying on
+            // chapterProgressStore which may be stale/empty on app start.
+            val progress = ChapterProgressCalculator.calculateChapterProgress(chapter, allLessonMasteryStates)
+            Log.d(logTag, "getChapterCards: chapter=${chapter.chapterId} started=${progress.lessonsStarted} completed=${progress.lessonsCompleted}/${chapter.lessons.size}")
             val status = calculateChapterStatus(chapter, progress, allLessonMasteryStates, index)
 
             ChapterCardUi(
@@ -2202,7 +2207,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val languageId = _coreState.value.navigation.selectedLanguageId.value
         return chapter.lessons.filter { lessonId ->
             val mastery = masteryStore.get(lessonId, languageId)
-            mastery?.intervalStepIndex ?: 0 >= 3 // Learned threshold
+            mastery?.completedAtMs != null // Lesson explicitly completed
         }.toSet()
     }
 }
