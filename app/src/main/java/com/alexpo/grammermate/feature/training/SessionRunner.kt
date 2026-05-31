@@ -297,7 +297,7 @@ class SessionRunner(
         val state = stateAccess.uiState.value
         if (state.cardSession.inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val card = currentCard() ?: return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
-        val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode)
+        val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode, state.cardSession.inputMode)
         val accepted = validationResult.isCorrect
         val voiceStartMs = if (state.cardSession.inputMode == InputMode.VOICE) state.cardSession.voicePromptStartMs else null
         val voiceDurationMs = voiceStartMs?.let { SystemClock.elapsedRealtime() - it }

@@ -31,6 +31,29 @@ object Normalizer {
 
 
     /**
+     * Aggressive normalization for voice input.
+     * Strips ALL special characters (punctuation, apostrophes, hyphens, quotes, etc.)
+     * keeping only letters, digits, and spaces. Voice input cannot produce special
+     * characters, so this ensures "va a casa" matches "va' a casa", "perche" matches
+     * "perché", etc.
+     */
+    fun normalizeForVoice(input: String): String {
+        val trimmed = input.trim().replace(WHITESPACE_REGEX, " ")
+        // NFD decomposition + strip combining diacritical marks
+        val decomposed = java.text.Normalizer.normalize(trimmed, java.text.Normalizer.Form.NFD)
+        val noDiacritics = decomposed.replace(DIACRITICAL_MARKS_REGEX, "")
+        val lower = noDiacritics.lowercase()
+        // Keep ONLY letters, digits, and spaces — strip everything else
+        val builder = StringBuilder()
+        for (ch in lower) {
+            if (ch.isLetterOrDigit() || ch == ' ') {
+                builder.append(ch)
+            }
+        }
+        return builder.toString().replace(WHITESPACE_REGEX, " ").trim()
+    }
+
+    /**
      * Check whether [input] is a complete, exact match against any of [acceptedAnswers]
      * after normalization. Used for auto-submit: only returns true when the user has
      * typed the full answer (not just a prefix).
