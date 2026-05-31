@@ -483,14 +483,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(progress.eliteBestSpeeds)
             val restoredScreen = "HOME"
             val streakData = streakStore.getCurrentStreak(selectedLanguageId.value)
-            // Resolve activePackId: prefer saved value if pack still exists,
+            // Resolve activePackId: prefer saved value if pack still exists AND language matches,
             // then derive from lessonId, then fall back to first pack for language.
             val savedPackId = progress.activePackId
             val allPackIds = packs.map { it.packId }.toSet()
-            val initialActivePackId = if (savedPackId != null && savedPackId in allPackIds) {
+            val savedPackMatchesLanguage = savedPackId != null && savedPackId in allPackIds &&
+                packs.firstOrNull { it.packId == savedPackId }?.languageId == selectedLanguageId
+            val initialActivePackId = if (savedPackMatchesLanguage) {
                 savedPackId
             } else {
+                // Saved pack doesn't match language or doesn't exist — derive from lesson or language
                 selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
+                    ?: packs.firstOrNull { it.languageId == selectedLanguageId }?.packId
             }
             val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
 
@@ -739,6 +743,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Cancel any active daily session before switching packs
         if (_coreState.value.daily.dailySession.active) {
             cancelDailySession()
+        }
+
+        // Sync language to match the selected pack's language
+        val packLanguageId = lessonStore.getInstalledPacks()
+            .firstOrNull { it.packId.value == packId }?.languageId?.value
+        if (packLanguageId != null && packLanguageId != _coreState.value.navigation.selectedLanguageId.value) {
+            // Switch language to match pack — this also updates lessons and activePackId
+            selectLanguage(packLanguageId)
+            // selectLanguage already calls loadChapters + saveProgress, but we need to
+            // ensure the correct pack is selected (selectLanguage derives pack from lessons)
+            val derivedPackId = _coreState.value.navigation.activePackId?.value
+            if (derivedPackId != packId) {
+                // Fallback: explicitly set the requested pack
+                val packLessonIds = lessonStore.getLessonIdsForPack(packId)
+                if (packLessonIds.isNotEmpty()) {
+                    selectLesson(packLessonIds.first(), packId)
+                }
+            }
+            return
         }
 
         val packLessonIds = lessonStore.getLessonIdsForPack(packId)
