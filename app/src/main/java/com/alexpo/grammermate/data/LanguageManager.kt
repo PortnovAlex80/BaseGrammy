@@ -37,6 +37,40 @@ internal class LanguageManager(
                 languagesStore.write(filtered)
             }
         }
+        // Remove packs that are no longer in the default packs list
+        cleanupStalePacks()
+    }
+
+    /**
+     * Remove packs that are no longer in the current defaultPacks list.
+     * Only cleans packs for active languages (it, en).
+     */
+    private fun cleanupStalePacks() {
+        val entries = packsStore.read()
+        if (entries.isEmpty()) return
+
+        val validPackIds = defaultPacks.map { it.packId }.toSet()
+        val activeLanguages = setOf("it", "en")
+
+        val remaining = entries.filterNot { entry ->
+            val packId = entry["packId"] as? String ?: return@filterNot false
+            val languageId = entry["languageId"] as? String ?: return@filterNot false
+            // Only remove stale packs for active languages
+            if (packId !in validPackIds && languageId in activeLanguages) {
+                // Delete pack directory and drills
+                val packDir = File(packsDir, packId)
+                if (packDir.exists()) packDir.deleteRecursively()
+                val drillsDir = File(baseDir, "drills/$packId")
+                if (drillsDir.exists()) drillsDir.deleteRecursively()
+                true
+            } else {
+                false
+            }
+        }
+
+        if (remaining.size != entries.size) {
+            packsStore.write(remaining)
+        }
     }
 
     fun hasLessonContent(): Boolean {

@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -54,7 +55,8 @@ object SimpleMarkdownParser {
     @Composable
     fun RenderMarkdown(
         markdown: String,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        textScale: Float = 1.0f
     ) {
         val lines = markdown.split("\n")
         Column(
@@ -70,7 +72,7 @@ object SimpleMarkdownParser {
                     line.trim().startsWith("```") -> {
                         if (inCodeBlock) {
                             // End code block
-                            CodeBlock(text = codeContent.toString())
+                            CodeBlock(text = codeContent.toString(), textScale = textScale)
                             codeContent.clear()
                             inCodeBlock = false
                         } else {
@@ -83,17 +85,17 @@ object SimpleMarkdownParser {
                     }
                     // Headers
                     line.startsWith("# ") -> {
-                        Header1(text = line.substring(2).trim())
+                        Header1(text = line.substring(2).trim(), textScale = textScale)
                     }
                     line.startsWith("## ") -> {
-                        Header2(text = line.substring(3).trim())
+                        Header2(text = line.substring(3).trim(), textScale = textScale)
                     }
                     line.startsWith("### ") -> {
-                        Header3(text = line.substring(4).trim())
+                        Header3(text = line.substring(4).trim(), textScale = textScale)
                     }
                     // Lists
                     line.trim().startsWith("* ") || line.trim().startsWith("- ") -> {
-                        ListItem(text = line.trim().substring(2).trim())
+                        ListItem(text = line.trim().substring(2).trim(), textScale = textScale)
                     }
                     // Empty line
                     line.isBlank() -> {
@@ -101,68 +103,68 @@ object SimpleMarkdownParser {
                     }
                     // Regular text
                     else -> {
-                        Paragraph(text = line)
+                        Paragraph(text = line, textScale = textScale)
                     }
                 }
             }
 
             // Handle unclosed code block
             if (inCodeBlock && codeContent.isNotEmpty()) {
-                CodeBlock(text = codeContent.toString())
+                CodeBlock(text = codeContent.toString(), textScale = textScale)
             }
         }
     }
 
     @Composable
-    private fun Header1(text: String) {
+    private fun Header1(text: String, textScale: Float = 1.0f) {
         Text(
             text = parseInlineMarkdown(text),
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(fontSize = (24f * textScale).sp),
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 8.dp)
         )
     }
 
     @Composable
-    private fun Header2(text: String) {
+    private fun Header2(text: String, textScale: Float = 1.0f) {
         Text(
             text = parseInlineMarkdown(text),
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = (20f * textScale).sp),
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 6.dp)
         )
     }
 
     @Composable
-    private fun Header3(text: String) {
+    private fun Header3(text: String, textScale: Float = 1.0f) {
         Text(
             text = parseInlineMarkdown(text),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = (18f * textScale).sp),
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 4.dp)
         )
     }
 
     @Composable
-    private fun Paragraph(text: String) {
+    private fun Paragraph(text: String, textScale: Float = 1.0f) {
         Text(
             text = parseInlineMarkdown(text),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = (16f * textScale).sp),
             modifier = Modifier.padding(vertical = 2.dp)
         )
     }
 
     @Composable
-    private fun ListItem(text: String) {
+    private fun ListItem(text: String, textScale: Float = 1.0f) {
         Text(
             text = "• ${parseInlineMarkdown(text)}",
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = (16f * textScale).sp),
             modifier = Modifier.padding(vertical = 2.dp, horizontal = 16.dp)
         )
     }
 
     @Composable
-    private fun CodeBlock(text: String) {
+    private fun CodeBlock(text: String, textScale: Float = 1.0f) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -172,7 +174,7 @@ object SimpleMarkdownParser {
         ) {
             Text(
                 text = text.trim(),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = (14f * textScale).sp),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 modifier = Modifier.padding(12.dp)
             )
@@ -205,6 +207,7 @@ object SimpleMarkdownParser {
 fun StoryReaderScreen(
     chapterTitle: String,
     markdownContent: String,
+    textScale: Float = 1.0f,
     onBack: () -> Unit,
     onPlayStory: () -> Unit = {},
     onStopStory: () -> Unit = {},
@@ -308,7 +311,8 @@ fun StoryReaderScreen(
             android.util.Log.d("StoryReader", "render: hasMarkers=$hasMarkers, final=${displayContent.length} chars")
             SimpleMarkdownParser.RenderMarkdown(
                 markdown = displayContent,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                textScale = textScale
             )
         }
     }

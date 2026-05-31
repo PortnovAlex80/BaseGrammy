@@ -328,8 +328,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                         if (hasChapters) {
                             // Show Grammar Story Roadmap for packs with chapters
+                            val chapterCards = remember(activePackId) { vm.getChapterCards() }
                             GrammarStoryRoadmapScreen(
-                                chapters = vm.getChapterCards(),
+                                chapters = chapterCards,
                                 onBack = remember {
                                     {
                                         // Clear active pack to show pack selection
@@ -379,6 +380,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onDailyPractice = remember(dialogs) {
                                     {
                                         val level = vm.getProgressLessonLevel()
+                                        Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
                                         if (vm.daily.hasResumableDailySession()) {
                                             dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
                                         } else {
@@ -433,6 +435,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onOpenElite = remember(dialogs) {
                                     {
                                         val level = vm.getProgressLessonLevel()
+                                        Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
                                         if (vm.daily.hasResumableDailySession()) {
                                             dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
                                         } else {
@@ -551,6 +554,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.DAILY_PRACTICE) {
+                        LaunchedEffect(Unit) { Log.d("GrammarMate", "Screen: DAILY_PRACTICE shown") }
                         DailyPracticeScreenContent(state, vm, remember { { route: String -> onNavigate(route) } })
                     }
 
@@ -684,6 +688,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     when {
                                         returnTo == Routes.DAILY_PRACTICE -> {
                                             Log.d("NavDebug", "SESSION_DONE: → DAILY_PRACTICE")
+                                            Log.d("GrammarMate", "DailyPractice: navigating after block, returnTo=DAILY_PRACTICE")
                                             vm.daily.onBlockComplete()
                                             onNavigate(Routes.DAILY_PRACTICE)
                                         }
@@ -721,8 +726,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             vm.exitVerbDrillSession()
                             onNavigate(Routes.VERB_DRILL)
                         }
-                        // Local back handler for TRAINING — staircase navigation
-                        BackHandler(enabled = state.cardSession.returnTo != Routes.VERB_DRILL && !dialogs.showSettings) {
+                        // Local back handler for TRAINING — staircase navigation (only for lesson-based training)
+                        BackHandler(enabled = state.cardSession.returnTo != Routes.VERB_DRILL && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: TRAINING staircase → LESSON")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
                             vm.finishSession()
@@ -731,6 +736,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.VERB_DRILL) {
+                        // Force reload when entering verb drill screen — ensures cards are loaded
+                        // even if the outer LaunchedEffect didn't fire (e.g. packId didn't change)
+                        val vdPackId = state.navigation.activePackId
+                        LaunchedEffect(vdPackId, state.navigation.selectedLanguageId) {
+                            if (vdPackId != null) {
+                                verbDrillVm.reloadForPack(vdPackId.value)
+                            } else {
+                                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                            }
+                        }
                         val verbDrillExit = remember(verbDrillVm) {
                             {
                                 verbDrillVm.exitSession()
@@ -826,6 +841,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onDailyPractice = remember(dialogs) {
                                 {
                                     val level = vm.getProgressLessonLevel()
+                                    Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
                                     if (vm.daily.hasResumableDailySession()) {
                                         dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
                                     } else {
@@ -875,6 +891,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         StoryReaderScreen(
                             chapterTitle = chapterTitle,
                             markdownContent = content,
+                            textScale = state.audio.ruTextScale,
                             onBack = remember {
                                 {
                                     // Stop TTS if playing or paused
@@ -1107,9 +1124,11 @@ private fun TrainingScreenContent(
 ) {
     val pomodoroRemainingSeconds by vm.pomodoroRemainingSeconds.collectAsStateWithLifecycle()
 
-    // Get lesson title for header — suppress during daily practice mode
+    // Get lesson title for header — suppress during daily practice and verb drill modes
     val lessonTitle = if (state.cardSession.returnTo == Routes.DAILY_PRACTICE) {
         null  // Daily practice: don't show lesson title
+    } else if (state.cardSession.returnTo == Routes.VERB_DRILL) {
+        null  // Verb drill: don't show lesson title (drill CSV titles are technical)
     } else {
         state.navigation.lessons
             .firstOrNull { it.id == state.navigation.selectedLessonId }?.title
@@ -1174,6 +1193,7 @@ private fun DailyPracticeScreenContent(
     val currentBlock = vm.daily.getCurrentBlock()
     val dailyTask = vm.daily.getDailyCurrentTask()
     val dailyProgress = vm.daily.getDailyBlockProgress()
+    Log.d("GrammarMate", "DailyPractice: DailyPracticeScreenContent active=${dailyState.active}, finishedToken=${dailyState.finishedToken}, blockType=${currentBlock?.type}, blockIndex=${dailyState.blockIndex}")
     DailyPracticeScreen(
         state = dailyState,
         blockProgress = dailyProgress,
@@ -1184,6 +1204,7 @@ private fun DailyPracticeScreenContent(
         onShowVerbAnswer = vm.daily::getDailyVerbAnswer,
         onRateVocabCard = remember { { rating: com.alexpo.grammermate.data.SrsRating -> vm.daily.rateVocabCard(rating) } },
         onStartCardBlock = remember(onNavigate) { { blockType: DailyBlockType, cards: List<com.alexpo.grammermate.data.SessionCard> ->
+            Log.d("GrammarMate", "DailyPractice: startCardBlock type=$blockType, cards=${cards.size}, returnTo=DAILY_PRACTICE")
             when (blockType) {
                 DailyBlockType.TRANSLATE -> vm.startDailyTranslateSession(cards)
                 DailyBlockType.VERBS -> vm.startDailyVerbsSession(cards)
@@ -1200,6 +1221,7 @@ private fun DailyPracticeScreenContent(
         onStopTts = remember { { vm.audio.stopTts() } },
         ttsState = state.audio.ttsState,
         onExit = remember(onNavigate) { {
+            Log.d("GrammarMate", "DailyPractice: session exit, navigating HOME")
             vm.cancelDailySession()
             onNavigate(Routes.HOME)
         } },
@@ -1209,6 +1231,7 @@ private fun DailyPracticeScreenContent(
             if (nextBlock == null) {
                 // All blocks done — coordinator already called endSession()
                 // The finishedToken will be set and DailyPracticeScreen shows completion
+                Log.d("GrammarMate", "DailyPractice: session finished, all blocks done")
             }
             // If nextBlock is non-null, the UI will re-render with the new block
         } },
@@ -1344,6 +1367,7 @@ private fun NavDialogs(
 
             // Special flows (daily practice, verb drill) — keep original auto-navigate behavior
             if (returnTo == Routes.DAILY_PRACTICE) {
+                Log.d("GrammarMate", "DailyPractice: navigating after block, returnTo=DAILY_PRACTICE")
                 vm.daily.onBlockComplete()
                 Log.d("NavDebug", "TOKEN_NAV: → DAILY_PRACTICE")
                 onNavigate(returnTo)

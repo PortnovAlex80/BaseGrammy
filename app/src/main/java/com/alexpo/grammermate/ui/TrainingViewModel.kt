@@ -1188,14 +1188,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     @Suppress("UNUSED_PARAMETER")
     suspend fun startDailyPractice(lessonLevel: Int): Boolean {
+        Log.d(logTag, "DailyPractice: VM.startDailyPractice level=$lessonLevel")
         // Save lesson selection before daily practice so we can restore on exit
         preDailySelectedLessonId = _coreState.value.navigation.selectedLessonId
-        return dailyPracticeCoordinator.startDailyPractice(
+        val started = dailyPracticeCoordinator.startDailyPractice(
             resolveProgressLessonInfo = { resolveProgressLessonInfo() },
             onStoreFirstSessionCardIds = { sentenceIds, verbIds ->
                 storeFirstSessionCardIds(sentenceIds, verbIds)
             }
         )
+        Log.d(logTag, "DailyPractice: VM.startDailyPractice result=$started")
+        return started
     }
 
     /**
@@ -1228,14 +1231,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     suspend fun repeatDailyPractice(lessonLevel: Int): Boolean {
+        Log.d(logTag, "DailyPractice: VM.repeatDailyPractice level=$lessonLevel")
         // Save lesson selection before daily practice so we can restore on exit
         if (preDailySelectedLessonId == null) {
             preDailySelectedLessonId = _coreState.value.navigation.selectedLessonId
         }
-        return dailyPracticeCoordinator.repeatDailyPractice(
+        val started = dailyPracticeCoordinator.repeatDailyPractice(
             lessonLevel = lessonLevel,
             resolveProgressLessonInfo = { resolveProgressLessonInfo() }
         )
+        Log.d(logTag, "DailyPractice: VM.repeatDailyPractice result=$started")
+        return started
     }
 
     /**
@@ -1268,6 +1274,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun cancelDailySession() {
+        Log.d(logTag, "DailyPractice: VM.cancelDailySession")
         val sentenceCount = dailyPracticeCoordinator.cancelDailySession()
         // Orchestrator: if coordinator signals cursor advancement, delegate to ProgressTracker
         if (sentenceCount != null) {
@@ -1783,15 +1790,26 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         dailyPracticeCoordinator.resetState()
         rebuildSchedules(filterLessonsForActivePack(lessons))
         buildSessionCards()
+        loadChapters() // reload chapter progress from disk (cleared after reset)
         saveProgress()
     }
     private fun resetStores(app: Application) {
         progressTracker.resetStores(app)
         vocabProgressStore.clear()
+        // Clear chapter progress for all packs
+        lessonStore.getInstalledPacks().forEach { pack ->
+            container.chapterProgressStore(pack.packId.value).clear()
+        }
     }
     private fun resetStoresForLanguage(app: Application, languageId: String) {
         progressTracker.resetStoresForLanguage(app, languageId)
         vocabProgressStore.clearLanguage(languageId)
+        // Clear chapter progress for packs matching this language
+        lessonStore.getInstalledPacks()
+            .filter { it.languageId.value == languageId }
+            .forEach { pack ->
+                container.chapterProgressStore(pack.packId.value).clear()
+            }
     }
     private fun resetDrillFiles(app: Application) {
         progressTracker.resetDrillFiles(app)

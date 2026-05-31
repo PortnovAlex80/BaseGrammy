@@ -1,6 +1,8 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.util.Log
+import org.json.JSONObject
 import java.io.File
 
 /**
@@ -133,6 +135,16 @@ internal class DrillFileManager(
      */
     fun getVerbDrillFiles(packId: String, languageId: String): List<File> {
         val drillDir = File(baseDir, "drills/$packId/verb_drill")
+        if (drillDir.exists()) {
+            val files = drillDir.listFiles()
+                ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
+                ?: emptyList()
+            if (files.isNotEmpty()) return files
+        }
+        // Lazy extraction: drill files may not have been extracted if the pack
+        // was imported before verbDrill/vocabDrill sections were added to the manifest.
+        // Try to extract from the pack directory now.
+        extractDrillsFromPack(packId, "verb_drill")
         if (!drillDir.exists()) return emptyList()
         return drillDir.listFiles()
             ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
@@ -179,6 +191,14 @@ internal class DrillFileManager(
      */
     fun getVocabDrillFiles(packId: String, languageId: String): List<File> {
         val drillDir = File(baseDir, "drills/$packId/vocab_drill")
+        if (drillDir.exists()) {
+            val files = drillDir.listFiles()
+                ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
+                ?: emptyList()
+            if (files.isNotEmpty()) return files
+        }
+        // Lazy extraction (same as verb drill)
+        extractDrillsFromPack(packId, "vocab_drill")
         if (!drillDir.exists()) return emptyList()
         return drillDir.listFiles()
             ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
@@ -296,6 +316,54 @@ internal class DrillFileManager(
     @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
     fun hasVerbDrillLessons(languageId: String): Boolean {
         return getVerbDrillFilesLegacy(languageId).isNotEmpty()
+    }
+
+    // ── Lazy drill extraction from pack directory ────────────────────────
+
+    /**
+     * Extract drill files from the pack directory if the drill target directory is empty.
+     *
+     * When a pack was imported before `verbDrill`/`vocabDrill` sections were added
+     * to the manifest, the drill files were never copied to `drills/{packId}/`.
+     * This method reads the manifest from `packs/{packId}/manifest.json`, finds the
+     * listed drill files, and copies them to the correct drill directory.
+     *
+     * @param packId Pack identifier
+     * @param drillType "verb_drill" or "vocab_drill"
+     */
+    private fun extractDrillsFromPack(packId: String, drillType: String) {
+        val packDir = File(baseDir, "packs/$packId")
+        if (!packDir.exists()) return
+
+        val manifestFile = File(packDir, "manifest.json")
+        if (!manifestFile.exists()) return
+
+        try {
+            val manifestJson = JSONObject(manifestFile.readText())
+            val drillSection = manifestJson.optJSONObject(
+                if (drillType == "verb_drill") "verbDrill" else "vocabDrill"
+            ) ?: return
+            val filesArray = drillSection.optJSONArray("files") ?: return
+
+            val targetDir = File(baseDir, "drills/$packId/$drillType")
+            targetDir.mkdirs()
+
+            for (i in 0 until filesArray.length()) {
+                val fileName = filesArray.getString(i)
+                val source = File(packDir, fileName)
+                if (!source.exists()) {
+                    Log.w("DrillFileManager", "Lazy extract: source file not found: ${source.absolutePath}")
+                    continue
+                }
+                val target = File(targetDir, source.name)
+                if (!target.exists()) {
+                    AtomicFileWriter.writeText(target, source.readText())
+                    Log.i("DrillFileManager", "Lazy extract: copied $fileName to ${target.absolutePath}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("DrillFileManager", "Lazy extract failed for pack=$packId drillType=$drillType", e)
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
