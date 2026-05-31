@@ -137,6 +137,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var subLessonCount: Int = 0
     private var lessonSchedules: Map<com.alexpo.grammermate.data.LessonId, LessonSchedule> = emptyMap()
     private var forceBackupOnSave: Boolean = false
+
+    /** Saved lesson ID before daily practice started, for restoration on exit. */
+    private var preDailySelectedLessonId: com.alexpo.grammermate.data.LessonId? = null
     private val subLessonSizeMin = TrainingConfig.SUB_LESSON_SIZE_MIN
     private val subLessonSizeMax = TrainingConfig.SUB_LESSON_SIZE_MAX
     private var sessionSize: Int = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
@@ -1185,6 +1188,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     @Suppress("UNUSED_PARAMETER")
     suspend fun startDailyPractice(lessonLevel: Int): Boolean {
+        // Save lesson selection before daily practice so we can restore on exit
+        preDailySelectedLessonId = _coreState.value.navigation.selectedLessonId
         return dailyPracticeCoordinator.startDailyPractice(
             resolveProgressLessonInfo = { resolveProgressLessonInfo() },
             onStoreFirstSessionCardIds = { sentenceIds, verbIds ->
@@ -1223,6 +1228,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     suspend fun repeatDailyPractice(lessonLevel: Int): Boolean {
+        // Save lesson selection before daily practice so we can restore on exit
+        if (preDailySelectedLessonId == null) {
+            preDailySelectedLessonId = _coreState.value.navigation.selectedLessonId
+        }
         return dailyPracticeCoordinator.repeatDailyPractice(
             lessonLevel = lessonLevel,
             resolveProgressLessonInfo = { resolveProgressLessonInfo() }
@@ -1263,6 +1272,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Orchestrator: if coordinator signals cursor advancement, delegate to ProgressTracker
         if (sentenceCount != null) {
             advanceCursor(sentenceCount)
+        }
+        // Restore lesson selection that was active before daily practice
+        preDailySelectedLessonId?.let { savedLessonId ->
+            _coreState.update { it.copy(navigation = it.navigation.copy(selectedLessonId = savedLessonId)) }
+            preDailySelectedLessonId = null
         }
     }
 

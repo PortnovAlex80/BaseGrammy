@@ -1107,9 +1107,13 @@ private fun TrainingScreenContent(
 ) {
     val pomodoroRemainingSeconds by vm.pomodoroRemainingSeconds.collectAsStateWithLifecycle()
 
-    // Get lesson title for header
-    val lessonTitle = state.navigation.lessons
-        .firstOrNull { it.id == state.navigation.selectedLessonId }?.title
+    // Get lesson title for header — suppress during daily practice mode
+    val lessonTitle = if (state.cardSession.returnTo == Routes.DAILY_PRACTICE) {
+        null  // Daily practice: don't show lesson title
+    } else {
+        state.navigation.lessons
+            .firstOrNull { it.id == state.navigation.selectedLessonId }?.title
+    }
 
     // Load grammar chip for current lesson
     val grammarChip = state.navigation.selectedLessonId?.let { lessonId ->
