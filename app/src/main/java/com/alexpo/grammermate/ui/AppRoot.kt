@@ -32,6 +32,7 @@ import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ProgressStoreImpl
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.data.RestoreStatus
+import com.alexpo.grammermate.shared.ScreenLogger
 import kotlinx.coroutines.launch
 
 private fun checkAndMigrate(context: Context) {
@@ -93,6 +94,12 @@ private fun checkAndMigrate(context: Context) {
 @Composable
 fun AppRoot() {
     val context = LocalContext.current
+
+    // Start session logging
+    LaunchedEffect(Unit) {
+        ScreenLogger.startSession("1.7")
+        ScreenLogger.screenShown("STARTUP")
+    }
 
     // Trigger migration on app launch
     LaunchedEffect(Unit) {

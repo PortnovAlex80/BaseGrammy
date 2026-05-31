@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -61,13 +63,12 @@ fun PomodoroSelectorSheet(
                             contentDescription = if (showStats) "Back to timer" else "Pomodoro stats"
                         )
                     }
-                    Icon(
-                        painter = painterResource(R.drawable.ic_tomato),
+                    Image(
+                        painter = painterResource(R.drawable.ic_pomodoro_timer),
                         contentDescription = null,
                         modifier = Modifier
                             .size(48.dp)
-                            .align(Alignment.Center),
-                        tint = MaterialTheme.colorScheme.primary
+                            .align(Alignment.Center)
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -160,8 +161,8 @@ fun PomodoroSelectorSheet(
                     onClick = { onStart(selectedMinutes) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_tomato),
+                    Image(
+                        painter = painterResource(R.drawable.ic_pomodoro_timer),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )

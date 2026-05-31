@@ -56,6 +56,7 @@ import androidx.compose.ui.res.stringResource
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
+import com.alexpo.grammermate.shared.ScreenLogger
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonPack
@@ -63,6 +64,8 @@ import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.ui.components.PomodoroSelectorSheet
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
 enum class LessonTileState {
@@ -222,11 +225,10 @@ fun HomeScreen(
                     onSelect = onSelectLanguage
                 )
                 IconButton(onClick = { showPomodoroSheet = true }) {
-                    Icon(
-                        painter = painterResource(com.alexpo.grammermate.R.drawable.ic_tomato),
+                    Image(
+                        painter = painterResource(R.drawable.ic_pomodoro_timer),
                         contentDescription = "Pomodoro Timer",
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 IconButton(onClick = onOpenSettings) {
@@ -258,6 +260,7 @@ fun HomeScreen(
                 packs = languagePacks,
                 currentPackId = state.navigation.activePackId?.value,
                 onPackSelected = { packId ->
+                    ScreenLogger.tap("pack_select", details = "pack=$packId")
                     onSelectPack(packId)
                     showPackageList = false
                 },
@@ -293,6 +296,7 @@ fun HomeScreen(
                         flower = flower,
                         onSelect = {
                             val lessonId = tile.lessonId ?: return@LessonTile
+                            ScreenLogger.tap("lesson_tap", details = "lesson=$lessonId")
                             onSelectLesson(lessonId)
                         },
                         onLockedClick = {
@@ -316,13 +320,19 @@ fun HomeScreen(
                 if (hasVerbDrill) {
                     VerbDrillEntryTile(
                         modifier = Modifier.weight(1f),
-                        onClick = onOpenVerbDrill
+                        onClick = {
+                            ScreenLogger.tap("drill_start", details = "type=verb")
+                            onOpenVerbDrill()
+                        }
                     )
                 }
                 if (hasVocabDrill) {
                     VocabDrillEntryTile(
                         modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth(),
-                        onClick = onOpenVocabDrill,
+                        onClick = {
+                            ScreenLogger.tap("drill_start", details = "type=vocab")
+                            onOpenVocabDrill()
+                        },
                         masteredCount = state.vocabSprint.vocabMasteredCount
                     )
                 }
@@ -331,7 +341,10 @@ fun HomeScreen(
         }
         if (state.navigation.activePackId != null) {
             DailyPracticeEntryTile(
-                onClick = onOpenElite
+                onClick = {
+                    ScreenLogger.tap("daily_practice")
+                    onOpenElite()
+                }
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -691,15 +704,48 @@ fun LanguageSelector(
 ) {
     var expanded by remember { mutableStateOf(false) }
     TextButton(onClick = { expanded = true }) {
-        Text(text = label)
+        Image(
+            painter = painterResource(
+                when (selectedLanguageId.lowercase()) {
+                    "it", "italian" -> R.drawable.ic_flag_it
+                    "en", "english" -> R.drawable.ic_flag_en
+                    "ru", "russian" -> R.drawable.ic_flag_ru
+                    else -> R.drawable.ic_flag_en
+                }
+            ),
+            contentDescription = label,
+            modifier = Modifier.size(24.dp, 18.dp),
+            contentScale = ContentScale.Fit
+        )
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         languages.forEach { language ->
             DropdownMenuItem(
-                text = { Text(text = language.displayName) },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(
+                                when (language.id.value.lowercase()) {
+                                    "it", "italian" -> R.drawable.ic_flag_it
+                                    "en", "english" -> R.drawable.ic_flag_en
+                                    "ru", "russian" -> R.drawable.ic_flag_ru
+                                    else -> R.drawable.ic_flag_en
+                                }
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp, 15.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = language.displayName)
+                    }
+                },
                 onClick = {
                     expanded = false
-                    if (language.id.value != selectedLanguageId) onSelect(language.id.value)
+                    if (language.id.value != selectedLanguageId) {
+                        ScreenLogger.tap("language_select", details = "lang=${language.id.value}")
+                        onSelect(language.id.value)
+                    }
                 }
             )
         }

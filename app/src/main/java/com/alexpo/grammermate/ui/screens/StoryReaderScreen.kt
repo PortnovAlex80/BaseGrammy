@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.platform.LocalContext
 import com.alexpo.grammermate.data.MultilingualStoryParser
+import com.alexpo.grammermate.shared.ScreenLogger
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -218,13 +219,17 @@ fun StoryReaderScreen(
             TopAppBar(
                 title = { Text(chapterTitle) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        ScreenLogger.tap("story_back")
+                        onBack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back to Roadmap")
                     }
                 },
                 actions = {
                     IconButton(
                         onClick = {
+                            ScreenLogger.tap("story_copy")
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val cleanText = MultilingualStoryParser.stripMarkers(markdownContent)
                             clipboard.setPrimaryClip(ClipData.newPlainText("story", cleanText))
@@ -239,13 +244,19 @@ fun StoryReaderScreen(
                     // 3-state playback controls: idle / playing / paused
                     if (isPlaying && isStoryPaused) {
                         // Paused state: show Resume + Stop
-                        IconButton(onClick = onResumeStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_resume")
+                            onResumeStory()
+                        }) {
                             Icon(
                                 Icons.Default.VolumeUp,
                                 contentDescription = "Resume story"
                             )
                         }
-                        IconButton(onClick = onStopStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_stop")
+                            onStopStory()
+                        }) {
                             Icon(
                                 Icons.Default.Stop,
                                 contentDescription = "Stop story"
@@ -253,7 +264,10 @@ fun StoryReaderScreen(
                         }
                     } else if (isPlaying) {
                         // Playing state: show Pause
-                        IconButton(onClick = onPauseStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_pause")
+                            onPauseStory()
+                        }) {
                             Icon(
                                 Icons.Default.Pause,
                                 contentDescription = "Pause story"
@@ -261,7 +275,10 @@ fun StoryReaderScreen(
                         }
                     } else {
                         // Idle state: show Play
-                        IconButton(onClick = onPlayStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_play")
+                            onPlayStory()
+                        }) {
                             Icon(
                                 Icons.Default.VolumeUp,
                                 contentDescription = "Play story"

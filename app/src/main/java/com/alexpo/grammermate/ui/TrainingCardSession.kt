@@ -3,6 +3,7 @@ package com.alexpo.grammermate.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +30,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AnswerResult
@@ -303,7 +307,12 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = stringResource(R.string.card_label_ru), style = MaterialTheme.typography.labelMedium)
+                Image(
+                    painter = painterResource(R.drawable.ic_flag_ru),
+                    contentDescription = "Russian",
+                    modifier = Modifier.size(16.dp, 12.dp),
+                    contentScale = ContentScale.Fit
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = HintCalculator.calculateEffectiveHints(

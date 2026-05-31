@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="18dp"
+    android:viewportWidth="24"
+    android:viewportHeight="18">
+    <!-- Blue background -->
+    <path android:pathData="M1,0.5L23,0.5A0.5,0.5 0,0 1,23.5 1L23.5,17A0.5,0.5 0,0 1,23 17.5L1,17.5A0.5,0.5 0,0 1,0.5 17L0.5,1A0.5,0.5 0,0 1,1 0.5z"
+        android:fillColor="#012169"/>
+    <!-- White diagonal cross -->
+    <path android:pathData="M0.5,1L23.5,17M23.5,1L0.5,17"
+        android:strokeColor="#FFFFFF" android:strokeWidth="3.6"/>
+    <!-- Red diagonal cross (St Patrick's) -->
+    <path android:pathData="M0.5,1L23.5,17"
+        android:strokeColor="#C8102E" android:strokeWidth="1.2"/>
+    <path android:pathData="M23.5,1L0.5,17"
+        android:strokeColor="#C8102E" android:strokeWidth="1.2"/>
+    <!-- White vertical/horizontal cross -->
+    <path android:pathData="M12,0.5L12,17.5M0.5,9L23.5,9"
+        android:strokeColor="#FFFFFF" android:strokeWidth="5"/>
+    <!-- Red vertical/horizontal cross -->
+    <path android:pathData="M12,0.5L12,17.5M0.5,9L23.5,9"
+        android:strokeColor="#C8102E" android:strokeWidth="2.8"/>
+    <!-- Border -->
+    <path android:pathData="M1,0.5L23,0.5A0.5,0.5 0,0 1,23.5 1L23.5,17A0.5,0.5 0,0 1,23 17.5L1,17.5A0.5,0.5 0,0 1,0.5 17L0.5,1A0.5,0.5 0,0 1,1 0.5z"
+        android:strokeColor="#E0E0E0" android:strokeWidth="0.5"/>
+</vector>

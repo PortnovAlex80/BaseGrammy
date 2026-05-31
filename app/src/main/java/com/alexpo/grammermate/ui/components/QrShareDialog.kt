@@ -5,8 +5,11 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -17,9 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.alexpo.grammermate.R
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 
 @Composable
@@ -51,15 +57,39 @@ fun QrShareDialog(
         },
         title = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "RU: $promptRu",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "$langLabel: $answerText",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_flag_ru),
+                        contentDescription = "RU",
+                        modifier = Modifier.size(14.dp, 10.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = promptRu,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(
+                            when (targetLanguage.lowercase()) {
+                                "it", "italian" -> R.drawable.ic_flag_it
+                                "en", "english" -> R.drawable.ic_flag_en
+                                else -> R.drawable.ic_flag_en
+                            }
+                        ),
+                        contentDescription = langLabel,
+                        modifier = Modifier.size(14.dp, 10.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = answerText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         },
         text = {

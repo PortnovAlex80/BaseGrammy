@@ -40,6 +40,7 @@ import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.ui.ChapterCardUi
 import com.alexpo.grammermate.ui.ChapterStatus
 import com.alexpo.grammermate.ui.MasteryGreen
+import com.alexpo.grammermate.shared.ScreenLogger
 
 /**
  * Screen displaying the grammar story roadmap with chapters.
@@ -83,18 +84,30 @@ fun GrammarStoryRoadmapScreen(
                     // Story playback controls in top bar
                     if (isStoryPlaying && isStoryPaused) {
                         // Paused: show Resume + Stop
-                        IconButton(onClick = onResumeStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_resume")
+                            onResumeStory()
+                        }) {
                             Icon(Icons.Default.VolumeUp, contentDescription = "Resume story")
                         }
-                        IconButton(onClick = onStopStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_stop")
+                            onStopStory()
+                        }) {
                             Icon(Icons.Default.Stop, contentDescription = "Stop story")
                         }
                     } else if (isStoryPlaying) {
                         // Playing: show Pause + Stop
-                        IconButton(onClick = onPauseStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_pause")
+                            onPauseStory()
+                        }) {
                             Icon(Icons.Default.Pause, contentDescription = "Pause story")
                         }
-                        IconButton(onClick = onStopStory) {
+                        IconButton(onClick = {
+                            ScreenLogger.tap("story_stop")
+                            onStopStory()
+                        }) {
                             Icon(Icons.Default.Stop, contentDescription = "Stop story")
                         }
                     }
@@ -132,7 +145,10 @@ fun GrammarStoryRoadmapScreen(
                         ) {
                             if (hasVerbDrill) {
                                 OutlinedButton(
-                                    onClick = onVerbPractice,
+                                    onClick = {
+                                        ScreenLogger.tap("drill_start", details = "type=verb")
+                                        onVerbPractice()
+                                    },
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text("Verb Practice")
@@ -140,7 +156,10 @@ fun GrammarStoryRoadmapScreen(
                             }
                             if (hasVocabDrill) {
                                 OutlinedButton(
-                                    onClick = onFlashcards,
+                                    onClick = {
+                                        ScreenLogger.tap("drill_start", details = "type=vocab")
+                                        onFlashcards()
+                                    },
                                     modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth()
                                 ) {
                                     Text("Flashcards")
@@ -150,7 +169,10 @@ fun GrammarStoryRoadmapScreen(
                     }
 
                     OutlinedButton(
-                        onClick = onDailyPractice,
+                        onClick = {
+                            ScreenLogger.tap("daily_practice")
+                            onDailyPractice()
+                        },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Daily Practice")
@@ -162,9 +184,18 @@ fun GrammarStoryRoadmapScreen(
             items(chapters) { chapterUi ->
                 ChapterCard(
                     chapterUi = chapterUi,
-                    onReadStory = { onReadStory(chapterUi.chapter) },
-                    onContinue = { onContinue(chapterUi.chapter) },
-                    onPlayStory = { onPlayChapterStory(chapterUi.chapter) }
+                    onReadStory = {
+                        ScreenLogger.tap("read_story", details = "chapter=${chapterUi.chapter.title}")
+                        onReadStory(chapterUi.chapter)
+                    },
+                    onContinue = {
+                        ScreenLogger.tap("continue_lesson", details = "chapter=${chapterUi.chapter.chapterId}")
+                        onContinue(chapterUi.chapter)
+                    },
+                    onPlayStory = {
+                        ScreenLogger.tap("story_play", details = "chapter=${chapterUi.chapter.chapterId}")
+                        onPlayChapterStory(chapterUi.chapter)
+                    }
                 )
             }
         }
