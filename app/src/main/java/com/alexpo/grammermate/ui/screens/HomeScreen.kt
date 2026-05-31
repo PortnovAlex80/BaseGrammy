@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -136,7 +137,9 @@ fun HomeScreen(
         ?.displayName
     val continueLearningText = stringResource(R.string.home_continue_learning)
     val startLearningText = stringResource(R.string.home_start_learning)
+    val hasActivePack = state.navigation.activePackId != null
     val primaryLabel = when {
+        !hasActivePack -> stringResource(R.string.home_choose_pack)
         state.cardSession.sessionState == SessionState.ACTIVE -> activePackDisplayName ?: continueLearningText
         isFirstLaunch -> activePackDisplayName ?: startLearningText
         else -> activePackDisplayName ?: startLearningText
@@ -360,10 +363,10 @@ fun HomeScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Button(
-            onClick = onPrimaryAction,
+            onClick = if (hasActivePack) onPrimaryAction else ({ showPackageList = true }),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = stringResource(R.string.home_continue_learning))
+            Text(text = primaryLabel)
         }
     }
 

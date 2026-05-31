@@ -4,6 +4,7 @@
     <string name="home_settings">Settings</string>
     <string name="home_continue_learning">Continue Learning</string>
     <string name="home_start_learning">Start learning</string>
+    <string name="home_choose_pack">Выберите пакет</string>
     <string name="home_grammar_roadmap">Grammar Roadmap</string>
     <string name="home_legend">Legend:</string>
     <string name="home_legend_seed_growing_bloom">seed • growing • bloom</string>
