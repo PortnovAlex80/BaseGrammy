@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Card
@@ -61,7 +62,10 @@ fun GrammarStoryRoadmapScreen(
     hasVocabDrill: Boolean = false,
     showBackButton: Boolean = false,  // Default to false - shown on HOME route
     isStoryPlaying: Boolean = false,
-    onStopStory: () -> Unit = {}
+    isStoryPaused: Boolean = false,
+    onStopStory: () -> Unit = {},
+    onPauseStory: () -> Unit = {},
+    onResumeStory: () -> Unit = {}
 ) {
     @OptIn(ExperimentalMaterial3Api::class)
     Scaffold(
@@ -76,8 +80,20 @@ fun GrammarStoryRoadmapScreen(
                     }
                 },
                 actions = {
-                    // Show stop button if story is playing
-                    if (isStoryPlaying) {
+                    // Story playback controls in top bar
+                    if (isStoryPlaying && isStoryPaused) {
+                        // Paused: show Resume + Stop
+                        IconButton(onClick = onResumeStory) {
+                            Icon(Icons.Default.VolumeUp, contentDescription = "Resume story")
+                        }
+                        IconButton(onClick = onStopStory) {
+                            Icon(Icons.Default.Stop, contentDescription = "Stop story")
+                        }
+                    } else if (isStoryPlaying) {
+                        // Playing: show Pause + Stop
+                        IconButton(onClick = onPauseStory) {
+                            Icon(Icons.Default.Pause, contentDescription = "Pause story")
+                        }
                         IconButton(onClick = onStopStory) {
                             Icon(Icons.Default.Stop, contentDescription = "Stop story")
                         }

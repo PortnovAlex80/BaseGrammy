@@ -390,7 +390,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 hasVocabDrill = state.navigation.hasVocabDrill,
                                 showBackButton = true,  // Show back button to return to pack selection
                                 isStoryPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking,
-                                onStopStory = remember { { vm.stopStoryNarration() } }
+                                isStoryPaused = state.audio.isStoryPlaybackPaused,
+                                onStopStory = remember { { vm.stopStoryNarration() } },
+                                onPauseStory = remember { { vm.pauseStoryPlayback() } },
+                                onResumeStory = remember { { vm.resumeStoryPlayback() } }
                             )
                         } else {
                             // Show Classic Home Screen for v1 packs without chapters
@@ -821,7 +824,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             hasVerbDrill = state.navigation.hasVerbDrill,
                             hasVocabDrill = state.navigation.hasVocabDrill,
                             isStoryPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking,
-                            onStopStory = remember { { vm.stopStoryNarration() } }
+                            isStoryPaused = state.audio.isStoryPlaybackPaused,
+                            onStopStory = remember { { vm.stopStoryNarration() } },
+                            onPauseStory = remember { { vm.pauseStoryPlayback() } },
+                            onResumeStory = remember { { vm.resumeStoryPlayback() } }
                         )
                         // Local back handler for GRAMMAR_STORY_ROADMAP — staircase navigation
                         BackHandler(!dialogs.showSettings) {
@@ -835,14 +841,15 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         val chapterTitle = state.storyReaderChapterTitle ?: "Unknown Chapter"
                         val content = state.storyReaderContent
                         val isCurrentlyPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking
+                        val isStoryPaused = state.audio.isStoryPlaybackPaused
 
                         StoryReaderScreen(
                             chapterTitle = chapterTitle,
                             markdownContent = content,
                             onBack = remember {
                                 {
-                                    // Stop TTS if playing
-                                    if (isCurrentlyPlaying) {
+                                    // Stop TTS if playing or paused
+                                    if (isCurrentlyPlaying || isStoryPaused) {
                                         vm.stopStoryNarration()
                                     }
                                     // Navigate first, then clear state to avoid flicker
@@ -864,7 +871,18 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     vm.stopStoryNarration()
                                 }
                             },
-                            isPlaying = isCurrentlyPlaying
+                            onPauseStory = remember {
+                                {
+                                    vm.pauseStoryPlayback()
+                                }
+                            },
+                            onResumeStory = remember {
+                                {
+                                    vm.resumeStoryPlayback()
+                                }
+                            },
+                            isPlaying = isCurrentlyPlaying,
+                            isStoryPaused = isStoryPaused
                         )
                     }
 

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -206,7 +207,10 @@ fun StoryReaderScreen(
     onBack: () -> Unit,
     onPlayStory: () -> Unit = {},
     onStopStory: () -> Unit = {},
-    isPlaying: Boolean = false
+    onPauseStory: () -> Unit = {},
+    onResumeStory: () -> Unit = {},
+    isPlaying: Boolean = false,
+    isStoryPaused: Boolean = false
 ) {
     val context = LocalContext.current
     Scaffold(
@@ -232,11 +236,37 @@ fun StoryReaderScreen(
                             contentDescription = "Copy story to clipboard"
                         )
                     }
-                    IconButton(onClick = if (isPlaying) onStopStory else onPlayStory) {
-                        Icon(
-                            if (isPlaying) Icons.Default.Stop else Icons.Default.VolumeUp,
-                            contentDescription = if (isPlaying) "Stop story" else "Play story"
-                        )
+                    // 3-state playback controls: idle / playing / paused
+                    if (isPlaying && isStoryPaused) {
+                        // Paused state: show Resume + Stop
+                        IconButton(onClick = onResumeStory) {
+                            Icon(
+                                Icons.Default.VolumeUp,
+                                contentDescription = "Resume story"
+                            )
+                        }
+                        IconButton(onClick = onStopStory) {
+                            Icon(
+                                Icons.Default.Stop,
+                                contentDescription = "Stop story"
+                            )
+                        }
+                    } else if (isPlaying) {
+                        // Playing state: show Pause
+                        IconButton(onClick = onPauseStory) {
+                            Icon(
+                                Icons.Default.Pause,
+                                contentDescription = "Pause story"
+                            )
+                        }
+                    } else {
+                        // Idle state: show Play
+                        IconButton(onClick = onPlayStory) {
+                            Icon(
+                                Icons.Default.VolumeUp,
+                                contentDescription = "Play story"
+                            )
+                        }
                     }
                 }
             )

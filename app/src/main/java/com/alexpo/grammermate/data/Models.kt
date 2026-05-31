@@ -571,7 +571,8 @@ data class AudioState(
     val asrMeteredNetwork: Boolean = false,
     val asrErrorMessage: String? = null,
     val audioPermissionDenied: Boolean = false,
-    val isStoryPlaybackActive: Boolean = false
+    val isStoryPlaybackActive: Boolean = false,
+    val isStoryPlaybackPaused: Boolean = false
 )
 
 data class DailyPracticeState(

@@ -393,6 +393,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         audioCoordinator.stopTts()
     }
 
+    fun pauseStoryPlayback() {
+        audioCoordinator.pauseStoryPlayback()
+    }
+
+    fun resumeStoryPlayback() {
+        audioCoordinator.resumeStoryPlayback()
+    }
+
     fun setStoryReader(chapterTitle: String, content: String) {
         _coreState.update {
             it.copy(

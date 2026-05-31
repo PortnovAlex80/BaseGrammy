@@ -197,8 +197,32 @@ class AudioCoordinator(
     fun stopTts() {
         storyPlaybackJob?.cancel()
         storyPlaybackJob = null
-        _audioState.update { it.copy(isStoryPlaybackActive = false) }
+        _audioState.update { it.copy(isStoryPlaybackActive = false, isStoryPlaybackPaused = false) }
         ttsEngine.stop()
+    }
+
+    /**
+     * Pause story playback. Immediately stops audio output via ttsEngine.stop().
+     * The coordinator loop detects the paused state and waits for resume,
+     * then re-speaks the current segment from the beginning.
+     */
+    fun pauseStoryPlayback() {
+        if (storyPlaybackJob?.isActive == true && audioState.value.isStoryPlaybackActive) {
+            _audioState.update { it.copy(isStoryPlaybackPaused = true) }
+            ttsEngine.stop()  // Immediately stop all audio — reliable for both offline and system TTS
+            Log.d(TAG, "Story playback paused — audio stopped, waiting for resume")
+        }
+    }
+
+    /**
+     * Resume story playback after a pause.
+     * Clears the paused flag; the coordinator loop will re-speak the current segment.
+     */
+    fun resumeStoryPlayback() {
+        if (audioState.value.isStoryPlaybackPaused) {
+            _audioState.update { it.copy(isStoryPlaybackPaused = false) }
+            Log.d(TAG, "Story playback resumed — coordinator will re-speak current segment")
+        }
     }
 
     /**
@@ -210,7 +234,7 @@ class AudioCoordinator(
      */
     fun playMultilingualStory(content: String, defaultLanguageId: String = "en") {
         storyPlaybackJob?.cancel()
-        _audioState.update { it.copy(isStoryPlaybackActive = true) }
+        _audioState.update { it.copy(isStoryPlaybackActive = true, isStoryPlaybackPaused = false) }
         storyPlaybackJob = coroutineScope.launch {
             ttsMutex.withLock {
                 try {
@@ -221,12 +245,14 @@ class AudioCoordinator(
 
                     Log.d(TAG, "Playing ${segments.size} segments with languages: ${segments.map { it.languageId }}")
 
-                    for ((index, segment) in segments.withIndex()) {
+                    var currentSegmentIdx = 0
+                    while (currentSegmentIdx < segments.size) {
+                        val segment = segments[currentSegmentIdx]
                         val cleanText = com.alexpo.grammermate.data.MultilingualStoryParser.cleanMarkdown(segment.text)
                         val previewText = cleanText.take(50).replace("\n", "\\n")
 
                         Log.d(TAG, "════════════════════════════════════════")
-                        Log.d(TAG, "Segment $index/${segments.size} | Language: ${segment.languageId.uppercase()}")
+                        Log.d(TAG, "Segment $currentSegmentIdx/${segments.size} | Language: ${segment.languageId.uppercase()}")
                         Log.d(TAG, "Text preview: \"$previewText...\"")
 
                         // Initialize TTS for this segment's language if needed
@@ -248,22 +274,35 @@ class AudioCoordinator(
                         }
 
                         if (ttsEngine.state.value == TtsState.Ready) {
-                            Log.d(TAG, "→ Speaking segment $index...")
+                            Log.d(TAG, "→ Speaking segment $currentSegmentIdx...")
                             Log.d(TAG, "→ Text length: ${cleanText.length}, full text: \"$cleanText\"")
                             ttsEngine.speak(cleanText, languageId = segment.languageId, speed = _audioState.value.ttsSpeed)
 
                             // Wait for this segment to finish playing
-                            // TTS uses UtteranceProgressListener which sets state back to Ready when done
                             var waitRetries = 0
-                            while (ttsEngine.state.value == TtsState.Speaking && waitRetries < 300) {
+                            while (ttsEngine.state.value == TtsState.Speaking && waitRetries < 3000) {
                                 delay(100)
                                 waitRetries++
                             }
 
-                            Log.d(TAG, "✓ Segment $index finished (${segment.languageId.uppercase()})")
+                            Log.d(TAG, "✓ Segment $currentSegmentIdx finished (${segment.languageId.uppercase()})")
                         } else {
-                            Log.w(TAG, "⚠ TTS not ready for segment $index, skipping")
+                            Log.w(TAG, "⚠ TTS not ready for segment $currentSegmentIdx, skipping")
                         }
+
+                        // After segment finishes, check if we were paused during playback
+                        if (_audioState.value.isStoryPlaybackPaused) {
+                            Log.d(TAG, "⏸ Paused after segment $currentSegmentIdx — waiting for resume to re-speak this segment")
+                            // Wait for resume
+                            while (_audioState.value.isStoryPlaybackPaused) {
+                                delay(100)
+                            }
+                            // Re-speak the current segment (don't advance index)
+                            Log.d(TAG, "▶ Resuming — re-speaking segment $currentSegmentIdx")
+                            continue
+                        }
+
+                        currentSegmentIdx++
                     }
 
                     Log.d(TAG, "All segments played successfully")

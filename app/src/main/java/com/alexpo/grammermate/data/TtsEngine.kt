@@ -37,6 +37,7 @@ sealed class TtsState {
     object Initializing : TtsState()
     object Ready : TtsState()
     object Speaking : TtsState()
+    object Paused : TtsState()
     data class Error(val reason: String? = null) : TtsState()
 }
 
@@ -472,10 +473,25 @@ class TtsEngine(private val context: Context) {
                             .coerceAtLeast(750L)
                             .coerceAtMost(30_000L)
                         val drainStart = System.currentTimeMillis()
+                        var pauseAccumulatedMs = 0L
+                        var pauseStartMs = 0L
                         while (!isStopped.get() &&
-                            audioTrack.playbackHeadPosition < totalSamples &&
-                            System.currentTimeMillis() - drainStart < maxDrainMs
+                            audioTrack.playbackHeadPosition < totalSamples
                         ) {
+                            if (_state.value == TtsState.Paused) {
+                                // While paused, accumulate pause duration to exclude from drain timeout
+                                if (pauseStartMs == 0L) {
+                                    pauseStartMs = System.currentTimeMillis()
+                                    Log.d(TAG, "AudioTrack drain: paused, excluding time from timeout")
+                                }
+                                delay(100)
+                                continue
+                            }
+                            if (pauseStartMs > 0L) {
+                                pauseAccumulatedMs += System.currentTimeMillis() - pauseStartMs
+                                pauseStartMs = 0L
+                            }
+                            if (System.currentTimeMillis() - drainStart - pauseAccumulatedMs > maxDrainMs) break
                             delay(20)
                         }
                         Log.d(TAG, "AudioTrack drain: played=${audioTrack.playbackHeadPosition}, written=$totalSamples")
@@ -489,7 +505,7 @@ class TtsEngine(private val context: Context) {
                             } catch (_: IllegalStateException) {}
                             audioTrack.release()
                             currentTrack = null
-                            if (_state.value == TtsState.Speaking) {
+                            if (_state.value == TtsState.Speaking || _state.value == TtsState.Paused) {
                                 _state.value = TtsState.Ready
                             }
                         } else {
@@ -524,6 +540,29 @@ class TtsEngine(private val context: Context) {
         speakJob = null
         if (_state.value == TtsState.Speaking) {
             _state.value = if (offlineTts != null || systemTts != null) TtsState.Ready else TtsState.Idle
+        }
+    }
+
+    fun pause() {
+        currentTrack?.let { track ->
+            if (track.state == AudioTrack.PLAYSTATE_PLAYING) {
+                track.pause()
+                _state.value = TtsState.Paused
+            }
+        }
+        // For system TTS: stop and let coordinator handle re-speak
+        if (currentTrack == null && _state.value is TtsState.Speaking) {
+            systemTts?.stop()
+            _state.value = TtsState.Paused
+        }
+    }
+
+    fun resume() {
+        currentTrack?.let { track ->
+            if (track.state == AudioTrack.PLAYSTATE_PAUSED) {
+                track.play()
+                _state.value = TtsState.Speaking
+            }
         }
     }
 
