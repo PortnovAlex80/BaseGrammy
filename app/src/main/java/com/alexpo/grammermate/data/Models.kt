@@ -371,6 +371,7 @@ data class DailyCursorState(
     val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
     val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
     val firstSessionVerbCardIds: List<String> = emptyList(),      // card IDs from first session's block 3
+    val firstSessionLessonId: String = "",  // lessonId when cards were stored — detects stale IDs on repeat
     val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
 )
 
@@ -388,6 +389,7 @@ data class PackDailyCursorState(
     val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
     val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
     val firstSessionVerbCardIds: List<String> = emptyList(),      // card IDs from first session's block 3
+    val firstSessionLessonId: String = "",  // lessonId when first session cards were stored — used to detect stale IDs
     val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
 ) {
     companion object {

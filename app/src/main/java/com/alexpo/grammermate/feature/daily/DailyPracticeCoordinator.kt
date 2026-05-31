@@ -142,6 +142,7 @@ class DailyPracticeCoordinator(
             firstSessionDate = firstSessionDate,
             firstSessionSentenceCardIds = firstSessionSentenceCardIds,
             firstSessionVerbCardIds = firstSessionVerbCardIds,
+            firstSessionLessonId = firstSessionLessonId,
             verbOffset = verbOffset
         )
     }
@@ -496,8 +497,11 @@ class DailyPracticeCoordinator(
         composer.invalidateCache()
 
         // Reconstruct from stored first-session card IDs
+        // Validate: stored lessonId must match current lesson, otherwise IDs are stale
+        val cursorMatchesLesson = cursor.firstSessionLessonId == lessonId && lessonId.isNotEmpty()
         if (cursor.firstSessionDate == today &&
-            (cursor.firstSessionSentenceCardIds.isNotEmpty() || cursor.firstSessionVerbCardIds.isNotEmpty())
+            (cursor.firstSessionSentenceCardIds.isNotEmpty() || cursor.firstSessionVerbCardIds.isNotEmpty()) &&
+            cursorMatchesLesson
         ) {
             val cumulativeTenses = lessonStore.getCumulativeTenses(packId.value, lessonLevel)
             val blocks = composer.buildRepeatBlocks(
@@ -528,6 +532,8 @@ class DailyPracticeCoordinator(
                 return true
             }
             Log.i(logTag, "Stored repeat card ids do not match pack ${packId.value}; rebuilding daily session from cursor.")
+        } else if (!cursorMatchesLesson && cursor.firstSessionDate == today) {
+            Log.w(logTag, "DailyPractice: stored lessonId='${cursor.firstSessionLessonId}' != current='$lessonId', stale IDs discarded, rebuilding fresh")
         }
 
         // Last resort: build fresh with cursor at position 0 (start of day)
@@ -831,6 +837,12 @@ class DailyPracticeCoordinator(
         prebuiltSessionPackId = null
         dailyPracticeAnsweredCounts.clear()
         _state.update { DailyPracticeState() }
+        // Delete pack cursor from disk so stale card IDs don't resurface on restart
+        val packId = stateAccess.uiState.value.navigation.activePackId?.value
+        if (packId != null) {
+            packDailyCursorStore.deletePackCursor(packId)
+            packDailyCursorStore.invalidateCache()
+        }
     }
 
     /**
@@ -856,6 +868,7 @@ class DailyPracticeCoordinator(
             firstSessionDate = cursor.firstSessionDate,
             firstSessionSentenceCardIds = cursor.firstSessionSentenceCardIds,
             firstSessionVerbCardIds = cursor.firstSessionVerbCardIds,
+            firstSessionLessonId = cursor.firstSessionLessonId,
             verbOffset = cursor.verbOffset
         )
         saveCurrentPackCursor(packCursor)

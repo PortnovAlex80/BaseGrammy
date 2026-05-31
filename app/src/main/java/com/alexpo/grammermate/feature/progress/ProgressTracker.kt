@@ -373,13 +373,15 @@ class ProgressTracker(
     fun storeFirstSessionCardIds(
         currentCursor: DailyCursorState,
         sentenceIds: List<String>,
-        verbIds: List<String>
+        verbIds: List<String>,
+        lessonId: String = ""
     ): DailyCursorState {
         val today = java.time.LocalDate.now().toString()
         return currentCursor.copy(
             firstSessionDate = today,
             firstSessionSentenceCardIds = sentenceIds,
-            firstSessionVerbCardIds = verbIds
+            firstSessionVerbCardIds = verbIds,
+            firstSessionLessonId = lessonId
         )
     }
 

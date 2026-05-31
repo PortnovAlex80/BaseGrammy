@@ -1206,10 +1206,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * This allows Repeat to reconstruct the exact same cards even after restart.
      */
     private fun storeFirstSessionCardIds(sentenceIds: List<String>, verbIds: List<String>) {
+        val lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
         val updatedCursor = progressTracker.storeFirstSessionCardIds(
             currentCursor = dailyPracticeCoordinator.getCursor(),
             sentenceIds = sentenceIds,
-            verbIds = verbIds
+            verbIds = verbIds,
+            lessonId = lessonId
         )
         dailyPracticeCoordinator.updateCursor(updatedCursor)
         saveProgress()
@@ -1796,6 +1798,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun resetStores(app: Application) {
         progressTracker.resetStores(app)
         vocabProgressStore.clear()
+        packDailyCursorStore.invalidateCache() // prevent stale cursor reads after disk deletion
         // Clear chapter progress for all packs
         lessonStore.getInstalledPacks().forEach { pack ->
             container.chapterProgressStore(pack.packId.value).clear()
@@ -1804,6 +1807,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun resetStoresForLanguage(app: Application, languageId: String) {
         progressTracker.resetStoresForLanguage(app, languageId)
         vocabProgressStore.clearLanguage(languageId)
+        packDailyCursorStore.invalidateCache() // prevent stale cursor reads after disk deletion
         // Clear chapter progress for packs matching this language
         lessonStore.getInstalledPacks()
             .filter { it.languageId.value == languageId }
