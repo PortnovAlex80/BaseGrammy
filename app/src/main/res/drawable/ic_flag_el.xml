@@ -1,0 +1,45 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="18dp"
+    android:viewportWidth="24"
+    android:viewportHeight="18">
+    <!-- Blue stripe 1 (top) -->
+    <path android:pathData="M1,0.5L23,0.5A0.5,0.5 0,0 1,23.5 1L23.5,2L0.5,2L0.5,1A0.5,0.5 0,0 1,1 0.5z"
+        android:fillColor="#0D5EAF"/>
+    <!-- White stripe 2 -->
+    <path android:pathData="M0.5,2L23.5,2L23.5,4L0.5,4z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Blue stripe 3 -->
+    <path android:pathData="M0.5,4L23.5,4L23.5,6L0.5,6z"
+        android:fillColor="#0D5EAF"/>
+    <!-- White stripe 4 -->
+    <path android:pathData="M0.5,6L23.5,6L23.5,8L0.5,8z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Blue stripe 5 -->
+    <path android:pathData="M0.5,8L23.5,8L23.5,10L0.5,10z"
+        android:fillColor="#0D5EAF"/>
+    <!-- White stripe 6 -->
+    <path android:pathData="M0.5,10L23.5,10L23.5,12L0.5,12z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Blue stripe 7 -->
+    <path android:pathData="M0.5,12L23.5,12L23.5,14L0.5,14z"
+        android:fillColor="#0D5EAF"/>
+    <!-- White stripe 8 -->
+    <path android:pathData="M0.5,14L23.5,14L23.5,16L0.5,16z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Blue stripe 9 (bottom) -->
+    <path android:pathData="M0.5,16L23.5,16L23.5,17A0.5,0.5 0,0 1,23 17.5L1,17.5A0.5,0.5 0,0 1,0.5 17z"
+        android:fillColor="#0D5EAF"/>
+    <!-- Canton: blue square covering left half, top 5 stripes -->
+    <path android:pathData="M0.5,0.5L9.5,0.5L9.5,10L0.5,10z"
+        android:fillColor="#0D5EAF"/>
+    <!-- White cross horizontal bar -->
+    <path android:pathData="M0.5,4L9.5,4L9.5,6L0.5,6z"
+        android:fillColor="#FFFFFF"/>
+    <!-- White cross vertical bar -->
+    <path android:pathData="M4,0.5L6,0.5L6,10L4,10z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Border -->
+    <path android:pathData="M1,0.5L23,0.5A0.5,0.5 0,0 1,23.5 1L23.5,17A0.5,0.5 0,0 1,23 17.5L1,17.5A0.5,0.5 0,0 1,0.5 17L0.5,1A0.5,0.5 0,0 1,1 0.5z"
+        android:strokeColor="#E0E0E0" android:strokeWidth="0.5"/>
+</vector>

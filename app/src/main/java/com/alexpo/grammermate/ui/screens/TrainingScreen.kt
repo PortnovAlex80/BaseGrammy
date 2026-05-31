@@ -671,6 +671,8 @@ private fun launchVoiceRecognition(
 ) {
     val languageTag = when (languageId) {
         "it" -> "it-IT"
+        "el" -> "el-GR"
+        "ru" -> "ru-RU"
         else -> "en-US"
     }
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
