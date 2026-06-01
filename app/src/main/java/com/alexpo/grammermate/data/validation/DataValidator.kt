@@ -107,12 +107,13 @@ object DataValidator {
             ))
         }
 
-        // Validate completedAtMs
-        val completedAtMs = (data["completedAtMs"] as? Number)?.toLong()
-        if (completedAtMs != null && completedAtMs < 0) {
+        // Validate completedAtMs — treat 0 as null (legacy data stored null as 0)
+        val completedAtMsRaw = (data["completedAtMs"] as? Number)?.toLong()
+        val completedAtMs = if (completedAtMsRaw != null && completedAtMsRaw > 0) completedAtMsRaw else null
+        if (completedAtMsRaw != null && completedAtMsRaw < 0) {
             errors.add(ValidationError(
                 field = "completedAtMs",
-                message = "Negative completion timestamp: $completedAtMs"
+                message = "Negative completion timestamp: $completedAtMsRaw"
             ))
         }
         if (completedAtMs != null && completedAtMs > System.currentTimeMillis() + 86400000L) {

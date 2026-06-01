@@ -65,7 +65,10 @@ object ChapterProgressCalculator {
             // This is separate from mastery/flower which tracks card repetition.
             val isCompleted = mastery?.completedAtMs != null
             if (isCompleted) {
+                Log.d(TAG, "  lesson=$lessonId COMPLETED: completedAtMs=${mastery?.completedAtMs}, uniqueShows=${mastery?.uniqueCardShows}, stepIndex=${mastery?.intervalStepIndex}")
                 completedCount++
+            } else {
+                Log.d(TAG, "  lesson=$lessonId NOT completed: mastery=${mastery != null}, completedAtMs=${mastery?.completedAtMs}, uniqueShows=${mastery?.uniqueCardShows}")
             }
 
             // Track the most recent activity across all lessons in the chapter

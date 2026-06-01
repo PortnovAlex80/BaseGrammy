@@ -315,7 +315,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                     "totalCardShows" to mastery.totalCardShows,
                     "lastShowDateMs" to mastery.lastShowDateMs,
                     "intervalStepIndex" to mastery.intervalStepIndex,
-                    "completedAtMs" to (mastery.completedAtMs ?: 0L),
+                    "completedAtMs" to mastery.completedAtMs,
                     "shownCardIds" to mastery.shownCardIds.toList(),
                     "cardEncounterCounts" to mastery.cardEncounterCounts
                 )

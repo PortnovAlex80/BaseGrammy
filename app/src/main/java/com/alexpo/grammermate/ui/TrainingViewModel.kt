@@ -2020,6 +2020,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         chapterIndex: Int
     ): ChapterStatus {
         return when {
+            chapter.lessons.isEmpty() -> ChapterStatus.ACTIVE // Empty chapter is never DONE
             progress.lessonsCompleted >= chapter.lessons.size -> ChapterStatus.DONE
             else -> ChapterStatus.ACTIVE // All chapters are accessible
         }
