@@ -31,11 +31,25 @@ object Normalizer {
 
 
     /**
-     * Aggressive normalization for voice input.
-     * Strips ALL special characters (punctuation, apostrophes, hyphens, quotes, etc.)
-     * keeping only letters, digits, and spaces. Voice input cannot produce special
-     * characters, so this ensures "va a casa" matches "va' a casa", "perche" matches
-     * "perché", etc.
+     * Universal normalization for voice input.
+     *
+     * Voice recognition can ONLY produce letters, digits, and spaces — never
+     * apostrophes, hyphens, dashes, or any punctuation. So any special character
+     * in the expected answer must become a space before comparison.
+     *
+     * Algorithm:
+     * 1. NFD decomposition + strip diacritical marks (é → e)
+     * 2. Lowercase
+     * 3. Replace EVERY non-letter/non-digit with a space (universal — handles
+     *    apostrophes, hyphens, dashes, quotes, any Unicode punctuation)
+     * 4. Collapse multiple spaces, trim
+     *
+     * Examples:
+     *   "un'insegnante" → "un insegnante"
+     *   "va' a casa"    → "va  a casa" → "va a casa"
+     *   "l'italiano"    → "l italiano"
+     *   "perché"        → "perche"
+     *   "state-attento" → "state attento"
      */
     fun normalizeForVoice(input: String): String {
         val trimmed = input.trim().replace(WHITESPACE_REGEX, " ")
@@ -43,11 +57,13 @@ object Normalizer {
         val decomposed = java.text.Normalizer.normalize(trimmed, java.text.Normalizer.Form.NFD)
         val noDiacritics = decomposed.replace(DIACRITICAL_MARKS_REGEX, "")
         val lower = noDiacritics.lowercase()
-        // Keep ONLY letters, digits, and spaces — strip everything else
+        // Replace ALL non-letter/non-digit with space — universal for any language
         val builder = StringBuilder()
         for (ch in lower) {
-            if (ch.isLetterOrDigit() || ch == ' ') {
+            if (ch.isLetterOrDigit()) {
                 builder.append(ch)
+            } else {
+                builder.append(' ')
             }
         }
         return builder.toString().replace(WHITESPACE_REGEX, " ").trim()

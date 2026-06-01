@@ -350,7 +350,8 @@ fun TrainingScreen(
                 onStartOfflineRecognition,
                 hintLevel,
                 clickableWordHints,
-                baseDir
+                baseDir,
+                onTogglePause
             )
             ResultBlock(state)
             UnifiedNavigationRow(
@@ -468,7 +469,8 @@ fun AnswerBox(
     onStartOfflineRecognition: () -> Unit = {},
     hintLevel: HintLevel = HintLevel.EASY,
     clickableWordHints: Boolean = false,
-    baseDir: java.io.File? = null
+    baseDir: java.io.File? = null,
+    onTogglePause: () -> Unit = {}
 ) {
     val latestState by rememberUpdatedState(state)
     val clipboardManager = LocalClipboardManager.current
@@ -611,7 +613,7 @@ fun AnswerBox(
             override fun isCurrentCardFlagged(): Boolean = isBadSentence()
             override fun hideCurrentCard() = onHideCard()
             override fun exportFlaggedCards(): String? = onExportBadSentences()
-            override fun togglePause() {}
+            override fun togglePause() = onTogglePause()
             override fun requestExit() {}
         }
     }

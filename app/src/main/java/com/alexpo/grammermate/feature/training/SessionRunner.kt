@@ -293,12 +293,29 @@ class SessionRunner(
      * Submit the current answer. Orchestrates validation, state updates,
      * and signals the ViewModel for cross-module actions via [SubmitResult].
      */
+    /** Dedup guard: prevents double-submit within short time window (race from two speech launchers). */
+    private var lastSubmitInputText = ""
+    private var lastSubmitTimeMs = 0L
+
     fun submitAnswer(): Pair<SubmitResult, List<SessionEvent>> {
         val state = stateAccess.uiState.value
-        if (state.cardSession.inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
+        val inputText = state.cardSession.inputText
+        // Dedup: skip if same text submitted within 300ms (two speech launchers race)
+        val now = SystemClock.elapsedRealtime()
+        if (inputText == lastSubmitInputText && now - lastSubmitTimeMs < 300) {
+            Log.w(logTag, "submitAnswer() DEDUP skipped: same text='$inputText' within ${now - lastSubmitTimeMs}ms")
+            return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
+        }
+        lastSubmitInputText = inputText
+        lastSubmitTimeMs = now
+        if (inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val card = currentCard() ?: return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
-        val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode, state.cardSession.inputMode)
+        val validationResult = answerValidator.validate(inputText, card.acceptedAnswers, state.cardSession.testMode, state.cardSession.inputMode)
         val accepted = validationResult.isCorrect
+        val normalizedAnswers = card.acceptedAnswers.flatMap { it.split("+") }.map {
+            if (state.cardSession.inputMode == InputMode.VOICE) Normalizer.normalizeForVoice(it) else Normalizer.normalize(it)
+        }
+        Log.d(logTag, "Answer check: input='$inputText', normalized='${validationResult.normalizedInput}', normalizedAnswers=$normalizedAnswers, mode=${state.cardSession.inputMode}, accepted=$accepted")
         val voiceStartMs = if (state.cardSession.inputMode == InputMode.VOICE) state.cardSession.voicePromptStartMs else null
         val voiceDurationMs = voiceStartMs?.let { SystemClock.elapsedRealtime() - it }
         val voiceWords = if (voiceStartMs != null) countMetricWords(state.cardSession.inputText) else 0
@@ -368,7 +385,7 @@ class SessionRunner(
                             incorrectAttemptsForCard = 0,
                             lastResult = false,
                             answerText = smResult.answer,
-                            inputText = if (state.cardSession.inputMode == InputMode.VOICE) "" else it.cardSession.inputText,
+                            inputText = it.cardSession.inputText,
                             sessionState = SessionState.HINT_SHOWN,
                             voicePromptStartMs = null
                         ))
@@ -381,7 +398,7 @@ class SessionRunner(
                             incorrectCount = it.cardSession.incorrectCount + 1,
                             incorrectAttemptsForCard = stateMachine.incorrectAttempts,
                             lastResult = false,
-                            inputText = if (state.cardSession.inputMode == InputMode.VOICE) "" else it.cardSession.inputText,
+                            inputText = it.cardSession.inputText,
                             voiceTriggerToken = stateMachine.voiceTriggerToken,
                             voicePromptStartMs = null
                         ))
@@ -825,7 +842,7 @@ class SessionRunner(
         pauseTimer()
         val answer = stateMachine.showAnswer(card)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(answerText = answer, sessionState = SessionState.HINT_SHOWN, inputText = if (it.cardSession.inputMode == InputMode.VOICE) "" else it.cardSession.inputText, hintCount = it.cardSession.hintCount + 1, incorrectAttemptsForCard = stateMachine.incorrectAttempts, voicePromptStartMs = null))
+            it.copy(cardSession = it.cardSession.copy(answerText = answer, sessionState = SessionState.HINT_SHOWN, inputText = it.cardSession.inputText, hintCount = it.cardSession.hintCount + 1, incorrectAttemptsForCard = stateMachine.incorrectAttempts, voicePromptStartMs = null))
         }
         return listOf(SessionEvent.SaveProgress)
     }
