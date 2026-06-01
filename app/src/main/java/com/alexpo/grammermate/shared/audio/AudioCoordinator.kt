@@ -195,6 +195,7 @@ class AudioCoordinator(
     }
 
     fun stopTts() {
+        Log.d(TAG, "stopTts() called — storyPlaybackJob=${storyPlaybackJob?.isActive}, isStoryPlaybackActive=${_audioState.value.isStoryPlaybackActive}")
         storyPlaybackJob?.cancel()
         storyPlaybackJob = null
         _audioState.update { it.copy(isStoryPlaybackActive = false, isStoryPlaybackPaused = false) }
@@ -207,10 +208,13 @@ class AudioCoordinator(
      * then re-speaks the current segment from the beginning.
      */
     fun pauseStoryPlayback() {
+        Log.d(TAG, "pauseStoryPlayback() called — job=${storyPlaybackJob?.isActive}, active=${audioState.value.isStoryPlaybackActive}")
         if (storyPlaybackJob?.isActive == true && audioState.value.isStoryPlaybackActive) {
             _audioState.update { it.copy(isStoryPlaybackPaused = true) }
             ttsEngine.stop()  // Immediately stop all audio — reliable for both offline and system TTS
             Log.d(TAG, "Story playback paused — audio stopped, waiting for resume")
+        } else {
+            Log.w(TAG, "pauseStoryPlayback() ignored — job not active or playback not active")
         }
     }
 
