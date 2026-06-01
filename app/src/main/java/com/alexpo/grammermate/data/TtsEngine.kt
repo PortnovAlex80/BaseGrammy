@@ -93,6 +93,14 @@ class TtsEngine(private val context: Context) {
 
     private val isStopped = AtomicBoolean(false)
 
+    /**
+     * Guard against stale Android system TTS callbacks.
+     * Set to true in [stop], cleared when a new speak starts.
+     * Prevents [UtteranceProgressListener.onStart] from overriding Ready state
+     * after the user pressed stop.
+     */
+    private val wasStopped = AtomicBoolean(false)
+
     private val generation = AtomicInteger(0)
     private var speakJob: Job? = null
 
@@ -241,11 +249,18 @@ class TtsEngine(private val context: Context) {
                         // Add utterance progress listener to track playback completion
                         val utteranceListener = object : android.speech.tts.UtteranceProgressListener() {
                             override fun onStart(utteranceId: String?) {
+                                Log.d(TAG, "System TTS onStart: utteranceId=$utteranceId, wasStopped=${wasStopped.get()}, state=${_state.value}")
+                                // Guard: if stop() was called after system.speak() queued the utterance,
+                                // don't let this stale callback override the Ready state.
+                                if (wasStopped.get()) {
+                                    Log.d(TAG, "System TTS onStart: suppressed — wasStopped=true")
+                                    return
+                                }
                                 _state.value = TtsState.Speaking
                             }
 
                             override fun onDone(utteranceId: String?) {
-                                Log.d(TAG, "System TTS onDone: utteranceId=$utteranceId")
+                                Log.d(TAG, "System TTS onDone: utteranceId=$utteranceId, expected=$systemFinalUtteranceId, state=${_state.value}")
                                 if (_state.value == TtsState.Speaking && utteranceId == systemFinalUtteranceId) {
                                     systemFinalUtteranceId = null
                                     _state.value = TtsState.Ready
@@ -254,6 +269,7 @@ class TtsEngine(private val context: Context) {
                             }
 
                             override fun onError(utteranceId: String?) {
+                                Log.d(TAG, "System TTS onError: utteranceId=$utteranceId, state=${_state.value}")
                                 if (_state.value == TtsState.Speaking) {
                                     systemFinalUtteranceId = null
                                     _state.value = TtsState.Error("System TTS playback error")
@@ -262,6 +278,7 @@ class TtsEngine(private val context: Context) {
                             }
 
                             override fun onStop(utteranceId: String?, interrupted: Boolean) {
+                                Log.d(TAG, "System TTS onStop: utteranceId=$utteranceId, interrupted=$interrupted, state=${_state.value}")
                                 if (_state.value == TtsState.Speaking) {
                                     systemFinalUtteranceId = null
                                     _state.value = TtsState.Ready
@@ -341,6 +358,7 @@ class TtsEngine(private val context: Context) {
                 val system = systemTts
                 if (system != null) {
                     requestAudioFocus()
+                    wasStopped.set(false)  // clear stop flag before starting new speak
                     _state.value = TtsState.Speaking
 
                     // Split long text into sentences for Google TTS (limit ~4000 chars)
@@ -535,6 +553,8 @@ class TtsEngine(private val context: Context) {
         // and drain loop, so it exits quickly. The coroutine's finally block
         // handles AudioTrack cleanup. Previously used runBlocking + join() which
         // blocked the main thread causing ANR (5s timeout).
+        Log.d(TAG, "stop() called — state=${_state.value}, hasSystemTts=${systemTts != null}, hasOfflineTts=${offlineTts != null}")
+        wasStopped.set(true)
         generation.incrementAndGet()  // invalidate running speak's generation check
         doStop()
         val oldJob = speakJob
@@ -543,6 +563,7 @@ class TtsEngine(private val context: Context) {
         if (_state.value == TtsState.Speaking) {
             _state.value = if (offlineTts != null || systemTts != null) TtsState.Ready else TtsState.Idle
         }
+        Log.d(TAG, "stop() done — state=${_state.value}")
     }
 
     fun pause() {
