@@ -16,12 +16,15 @@ import java.io.File
  * Each lesson can reference a grammar chip file via the manifest's `grammarChip` field.
  */
 object GrammarChipStore {
-    private val cache = mutableMapOf<String, GrammarChip>()
-    private val lessonToChipFile = mutableMapOf<String, Pair<String, String>>() // lessonId -> (packId, chipFile)
+    private val cache = mutableMapOf<String, GrammarChip>()            // "packId::chipKey" -> GrammarChip
+    private val lessonToChipFile = mutableMapOf<String, Pair<String, String>>() // "packId::lessonId" -> (packId, chipFile)
     private var initialized = false
     private var initializing = false
 
     private const val TAG = "GrammarChipStore"
+
+    private fun packChipKey(packId: String, chipKey: String) = "${packId}::${chipKey}"
+    private fun packLessonKey(packId: String, lessonId: String) = "${packId}::${lessonId}"
 
     /**
      * Check if the store has been initialized.
@@ -74,16 +77,17 @@ object GrammarChipStore {
                     @Suppress("UNUSED_VARIABLE") val manifest = LessonPackManifest.fromJson(manifestFile.readText())
                     val packId = manifest.packId
 
-                    // Build lesson -> chip file mapping from manifest
+                    // Build lesson -> chip file mapping from manifest (pack-scoped)
                     manifest.lessons.forEach { lesson ->
                         val chipFile = lesson.grammarChip
                         if (chipFile != null) {
-                            lessonToChipFile[lesson.lessonId] = Pair(packId, chipFile)
+                            val pKey = packLessonKey(packId, lesson.lessonId)
+                            lessonToChipFile[pKey] = Pair(packId, chipFile)
                             Log.d(TAG, "Mapped ${lesson.lessonId} -> $packId/$chipFile")
                         }
                     }
 
-                    // Also build mappings for chapter-level lessons (schema v2)
+                    // Also build mappings for chapter-level lessons (schema v2, pack-scoped)
                     manifest.chapters.forEach { chapter ->
                         chapter.lessons.forEach { lessonId ->
                             // Extract level from lesson ID (e.g., "A01" from "lesson_01_A01")
@@ -98,7 +102,8 @@ object GrammarChipStore {
                                     else -> 1
                                 }
                                 val chipFileName = "grammar_chip_${chipNumber.toString().padStart(2, '0')}.json"
-                                lessonToChipFile[lessonId] = Pair(packId, chipFileName)
+                                val pKey = packLessonKey(packId, lessonId)
+                                lessonToChipFile[pKey] = Pair(packId, chipFileName)
                                 Log.d(TAG, "Mapped chapter lesson $lessonId -> $packId/$chipFileName (level: $level)")
                             }
                         }
@@ -122,8 +127,8 @@ object GrammarChipStore {
                         try {
                             val chip = parseGrammarChipFromJson(chipFile)
                             val chipKey = chip.key.uppercase() // Normalize to uppercase
-                            cache[chipKey] = chip
-                            Log.d(TAG, "Loaded grammar chip: $chipKey (from ${chipFile.name})")
+                            cache[packChipKey(packId, chipKey)] = chip
+                            Log.d(TAG, "Loaded grammar chip: $chipKey (from $packId/${chipFile.name})")
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to parse grammar chip file: ${chipFile.name}", e)
                         }
@@ -143,52 +148,69 @@ object GrammarChipStore {
         }
     }
 
-    fun getChipByKey(key: String): GrammarChip? = cache[key.uppercase()]
+    fun getChipByKey(key: String): GrammarChip? {
+        // Search all packs for backwards compatibility
+        val upperKey = key.uppercase()
+        return cache.entries.firstOrNull { it.key.endsWith("::$upperKey") }?.value
+    }
 
     /**
-     * Get grammar chip for a lesson ID.
+     * Get grammar chip by key for a specific pack.
+     */
+    fun getChipByKey(key: String, packId: String): GrammarChip? = cache[packChipKey(packId, key.uppercase())]
+
+    /**
+     * Get grammar chip for a lesson ID in a specific pack.
      * This looks up the lesson in the manifest mappings and returns the appropriate chip.
      */
-    fun getChipForLesson(lessonId: String): GrammarChip? {
+    fun getChipForLesson(lessonId: String, packId: String? = null): GrammarChip? {
         if (!initialized) {
             Log.w(TAG, "GrammarChipStore not initialized yet! Cannot get chip for lesson: $lessonId")
             Log.d(TAG, "Cache size: ${cache.size}, Mappings size: ${lessonToChipFile.size}")
             return null
         }
 
-        val mapping = lessonToChipFile[lessonId]
+        val mapping = if (packId != null) {
+            lessonToChipFile[packLessonKey(packId, lessonId)]
+        } else {
+            // Fallback: search all packs (returns first match)
+            lessonToChipFile.entries.firstOrNull { it.key.endsWith("::$lessonId") }?.value
+        }
+
         if (mapping == null) {
-            Log.d(TAG, "No grammar chip mapping for lesson: $lessonId")
+            Log.d(TAG, "No grammar chip mapping for lesson: $lessonId (packId=$packId)")
             Log.d(TAG, "Available mappings: ${lessonToChipFile.keys.take(10)}...")
             return null
         }
 
-        val (packId, chipFile) = mapping
-        Log.d(TAG, "Found mapping for $lessonId -> $packId/$chipFile")
+        val (resolvedPackId, chipFile) = mapping
+        Log.d(TAG, "Found mapping for $lessonId -> $resolvedPackId/$chipFile")
 
         // Extract chip number from filename and get key
         val chipNumber = chipFile.removePrefix("grammar_chip_").removeSuffix(".json")
         val chipKey = getChipKeyFromNumber(chipNumber)
 
-        Log.d(TAG, "Looking for chip with key: $chipKey (from file: $chipFile, lesson: $lessonId)")
+        Log.d(TAG, "Looking for chip with key: $chipKey (from file: $chipFile, lesson: $lessonId, pack: $resolvedPackId)")
 
-        // Try both uppercase and lowercase keys
-        val chip = cache[chipKey] ?: cache[chipKey.uppercase()] ?: cache[chipKey.lowercase()]
+        // Pack-scoped lookup with case fallbacks
+        val chip = cache[packChipKey(resolvedPackId, chipKey)]
+            ?: cache[packChipKey(resolvedPackId, chipKey.uppercase())]
+            ?: cache[packChipKey(resolvedPackId, chipKey.lowercase())]
 
         if (chip == null) {
-            Log.w(TAG, "Chip not found in cache for key: $chipKey")
+            Log.w(TAG, "Chip not found in cache for key: $chipKey (pack: $resolvedPackId)")
             Log.d(TAG, "Available keys in cache: ${cache.keys.take(10)}...")
             Log.d(TAG, "Total cache size: ${cache.size}")
         } else {
-            Log.d(TAG, "Successfully loaded chip: ${chip.key} (for lesson: $lessonId)")
+            Log.d(TAG, "Successfully loaded chip: ${chip.key} (for lesson: $lessonId, pack: $resolvedPackId)")
         }
 
         return chip
     }
 
-    fun hasChipForLesson(lessonId: String): Boolean = getChipForLesson(lessonId) != null
+    fun hasChipForLesson(lessonId: String, packId: String? = null): Boolean = getChipForLesson(lessonId, packId) != null
 
-    fun getAllChipKeys(): Set<String> = cache.keys
+    fun getAllChipKeys(): Set<String> = cache.keys.map { it.substringAfter("::") }.toSet()
 
     /**
      * Parse grammar chip from JSON file.
@@ -205,17 +227,45 @@ object GrammarChipStore {
         val base = json.optString("base").ifBlank { null }
         val dontConfuse = json.optString("dontConfuse").ifBlank { null }
 
-        // Parse examples array
+        // Parse examples — supports two formats:
+        // 1. Array of objects (Italian): [{"it": "Parlo.", "ru": "", "note": ""}, ...]
+        // 2. Object with language keys (German/Chinese): {"de": ["Der Tisch."], "ru": ["Стол."]}
         val examplesArray = json.optJSONArray("examples")
+        val examplesObj = json.optJSONObject("examples")
         val examples = if (examplesArray != null) {
+            // Format 1: array of example objects
             (0 until examplesArray.length()).map { i ->
                 val exampleObj = examplesArray.getJSONObject(i)
+                val targetText = exampleObj.optString("target", "").ifBlank {
+                    val langKeys = listOf("it", "de", "zh", "el", "en", "ru_target")
+                    langKeys.firstNotNullOfOrNull { key ->
+                        exampleObj.optString(key, "").ifBlank { null }
+                    } ?: ""
+                }
                 GrammarExample(
-                    it = exampleObj.getString("it"),
+                    target = targetText,
                     ru = exampleObj.optString("ru", ""),
                     note = exampleObj.optString("note", "")
                 )
             }
+        } else if (examplesObj != null) {
+            // Format 2: object with language-keyed arrays
+            val targetLangKeys = listOf("it", "de", "zh", "el", "en", "ru_target")
+            val targetKey = targetLangKeys.firstOrNull { examplesObj.has(it) }
+            val ruKey = "ru"
+            if (targetKey != null) {
+                val targetArr = examplesObj.optJSONArray(targetKey)
+                val ruArr = examplesObj.optJSONArray(ruKey)
+                if (targetArr != null) {
+                    (0 until targetArr.length()).map { i ->
+                        GrammarExample(
+                            target = targetArr.getString(i),
+                            ru = ruArr?.optString(i, "") ?: "",
+                            note = ""
+                        )
+                    }
+                } else emptyList()
+            } else emptyList()
         } else {
             emptyList()
         }

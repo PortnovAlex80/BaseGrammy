@@ -1,30 +1,30 @@
 {
   "key": "A01",
-  "title": "A01 - Presente Indicativo",
-  "essence": "Настоящее время: факты, привычки, действия сейчас.",
-  "formula": "-are: parlo, parli, parla, parliamo, parlate, parlano\n-ere: scrivo, scrivi, scrive, scriviamo, scrivete, scrivono\n-ire: dormo, dormi, dorme, dormiamo, dormite, dormono\n\nНеправильные: sono (essere), ho (avere), vado (andare), faccio (fare)\n\n`non + verbo` для отрицания.",
+  "title": "A01 - Род существительных: der, die, das",
+  "essence": "В немецком три рода: мужской (der), женский (die), средний (das). Род — свойство слова, его нужно запоминать.",
+  "formula": "der Mann (муж.)\ndie Frau (жен.)\ndas Kind (ср.)\n\nРод — не пол! das Madchen (девочка — ср.), das Weib (женщина — ср.)",
   "base": null,
-  "dontConfuse": "Личное местоимение часто опускается: `Parlo`, не обязательно `Io parlo`.",
+  "dontConfuse": "Род не совпадает с русским: die Kartoffel (картошка — жен. в DE, жен. в RU — совпало), но das Madchen (девочка — ср. в DE, жен. в RU). Каждый раз учи слово ВМЕСТЕ с артиклем.",
   "examples": [
     {
-      "it": "Parlo italiano.",
-      "ru": "",
-      "note": ""
+      "it": "der Tisch",
+      "ru": "стол (муж.)",
+      "note": "окончание -er часто муж."
     },
     {
-      "it": "Non capisco.",
-      "ru": "",
-      "note": ""
+      "it": "die Lampe",
+      "ru": "лампа (жен.)",
+      "note": "окончание -e часто жен."
     },
     {
-      "it": "Ho tempo.",
-      "ru": "",
-      "note": ""
+      "it": "das Buch",
+      "ru": "книга (ср.)",
+      "note": "окончание -ung, -heit, -keit всегда жен."
     },
     {
-      "it": "Vado a casa.",
-      "ru": "",
-      "note": ""
+      "it": "das Madchen",
+      "ru": "девочка (ср.!)",
+      "note": "-chen всегда средний род (уменьшительное)"
     }
   ]
 }

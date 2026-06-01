@@ -46,6 +46,21 @@ class FlowerRefresher(
         val lessons = state.navigation.lessons
         val nowMs = System.currentTimeMillis()
 
+        // No language selected yet (zero state) — skip flower computation
+        if (languageId == null) {
+            _state.update {
+                it.copy(
+                    lessonFlowers = emptyMap(),
+                    currentLessonFlower = null,
+                    currentLessonShownCount = 0
+                )
+            }
+            stateAccess.updateState {
+                it.copy(navigation = it.navigation.copy(ladderRows = emptyList()))
+            }
+            return
+        }
+
         val masteryMap = lessons.associate { lesson ->
             lesson.id to masteryStore.get(lesson.id.value, languageId.value)
         }

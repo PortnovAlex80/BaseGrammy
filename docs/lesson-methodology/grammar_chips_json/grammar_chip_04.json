@@ -1,25 +1,35 @@
 {
   "key": "A04",
-  "title": "A04 - Aggettivi",
-  "essence": "Прилагательное согласуется с существительным.",
-  "formula": "- `bello, bella, belli, belle`\n- `grande, grandi`\n- `felice, felici`",
+  "title": "A04 - Род по окончаниям: суффиксы-маркеры",
+  "essence": "Род можно угадать по окончанию слова. Есть надёжные суффиксы-маркеры для каждого рода.",
+  "formula": "Мужской: -er, -ismus, -ant, -ling, -ich, -ner\nЖенский: -e, -ung, -heit, -keit, -schaft, -ion, -tat, -ik, -enz\nСредний: -chen, -lein, -ment, -um, -tum, -nis",
   "base": null,
-  "dontConfuse": "Сначала определи род/число существительного.\n\n`bello` перед существительным работает как артикль: `il ragazzo → bel ragazzo`, `i ragazzi → bei ragazzi`.",
+  "dontConfuse": "Есть исключения: der Name (муж. на -e), das Ende (ср. на -e), die Oma (жен. без типичного суфф.). Суффиксы — ориентир, не правило без исключений. Учи каждое новое слово вместе с артиклем.",
   "examples": [
     {
-      "it": "una bella ragazza",
-      "ru": "",
-      "note": ""
+      "it": "die Freiheit",
+      "ru": "свобода",
+      "note": "-heit всегда жен."
     },
     {
-      "it": "bei ragazzi",
-      "ru": "",
-      "note": ""
+      "it": "das Madchen",
+      "ru": "девочка",
+      "note": "-chen всегда ср."
     },
     {
-      "it": "un libro interessante",
-      "ru": "",
-      "note": ""
+      "it": "der Lehrer",
+      "ru": "учитель",
+      "note": "-er часто муж."
+    },
+    {
+      "it": "die Musik",
+      "ru": "музыка",
+      "note": "-ik всегда жен."
+    },
+    {
+      "it": "die Information",
+      "ru": "информация",
+      "note": "-ion всегда жен."
     }
   ]
 }

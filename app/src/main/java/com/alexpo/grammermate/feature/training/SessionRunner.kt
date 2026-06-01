@@ -297,7 +297,7 @@ class SessionRunner(
         val state = stateAccess.uiState.value
         if (state.cardSession.inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val card = currentCard() ?: return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
-        val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode)
+        val validationResult = answerValidator.validate(state.cardSession.inputText, card.acceptedAnswers, state.cardSession.testMode, state.cardSession.inputMode)
         val accepted = validationResult.isCorrect
         val voiceStartMs = if (state.cardSession.inputMode == InputMode.VOICE) state.cardSession.voicePromptStartMs else null
         val voiceDurationMs = voiceStartMs?.let { SystemClock.elapsedRealtime() - it }
@@ -486,7 +486,7 @@ class SessionRunner(
         stateAccess.updateState {
             val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
             val lessonId = it.navigation.selectedLessonId
-            val mastery = lessonId?.let { id -> getMastery(id.value, it.navigation.selectedLanguageId.value) }
+            val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
             val schedule = lessonId?.let { id -> getSchedule(id.value) }
             val subLessons = schedule?.subLessons.orEmpty()
             val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)
@@ -647,7 +647,7 @@ class SessionRunner(
             stateAccess.updateState {
                 val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
                 val lessonId = it.navigation.selectedLessonId
-                val mastery = lessonId?.let { id -> getMastery(id.value, it.navigation.selectedLanguageId.value) }
+                val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
                 val schedule = lessonId?.let { id -> getSchedule(id.value) }
                 val subLessons = schedule?.subLessons.orEmpty()
                 val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)

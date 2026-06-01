@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.feature.training
 
+import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.Normalizer
 import com.alexpo.grammermate.data.TrainingConfig
 
@@ -62,14 +63,24 @@ class AnswerValidator(
     fun validate(
         input: String,
         acceptedAnswers: List<String>,
-        testMode: Boolean = false
+        testMode: Boolean = false,
+        inputMode: InputMode = InputMode.KEYBOARD
     ): ValidationResult {
-        val normalizedInput = normalizer.normalize(input)
+        val normalizedInput = if (inputMode == InputMode.VOICE) {
+            normalizer.normalizeForVoice(input)
+        } else {
+            normalizer.normalize(input)
+        }
 
         val isCorrect = testMode || acceptedAnswers.any { answer ->
             // Split on `+` to handle the CSV multi-answer format (e.g. "ciao+salve").
             answer.split("+").any { alternative ->
-                normalizer.normalize(alternative) == normalizedInput
+                val normalizedAnswer = if (inputMode == InputMode.VOICE) {
+                    normalizer.normalizeForVoice(alternative)
+                } else {
+                    normalizer.normalize(alternative)
+                }
+                normalizedAnswer == normalizedInput
             }
         }
 

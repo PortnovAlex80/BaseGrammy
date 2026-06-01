@@ -29,7 +29,7 @@ class BadSentenceHelper(
         badSentenceStore.addBadSentence(
             packId = packId.value,
             cardId = card.id,
-            languageId = state.navigation.selectedLanguageId.value,
+            languageId = state.navigation.selectedLanguageId?.value ?: return BadSentenceResult.None,
             sentence = card.promptRu,
             translation = card.acceptedAnswers.joinToString(" / "),
             mode = "training"

@@ -76,6 +76,7 @@ fun QrShareDialog(
                             when (targetLanguage.lowercase()) {
                                 "it", "italian" -> R.drawable.ic_flag_it
                                 "en", "english" -> R.drawable.ic_flag_en
+                                "el", "greek" -> R.drawable.ic_flag_el
                                 else -> R.drawable.ic_flag_en
                             }
                         ),

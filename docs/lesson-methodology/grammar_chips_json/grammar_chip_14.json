@@ -1,50 +1,35 @@
 {
   "key": "A14",
-  "title": "A14 - Verbi Modali",
-  "essence": "Модальный глагол + чистый инфинитив.",
-  "formula": "`dovere / potere / volere / sapere + infinito`\n\n**Спряжение:**\n| | dovere | potere | volere | sapere |\n|---|--------|--------|--------|--------|\n| io | devo | posso | voglio | so |\n| tu | devi | puoi | vuoi | sai |\n| lui/lei | deve | può | vuole | sa |\n| noi | dobbiamo | possiamo | vogliamo | sappiamo |\n| voi | dovete | potete | volete | sapete |\n| loro | devono | possono | vogliono | sanno |",
-  "base": null,
-  "dontConfuse": "Без местоимений и возвратных инфинитивов.\n`so nuotare` = умею (навык), `posso nuotare` = могу сейчас (возможность). Sapere = умение, potere = возможность.",
+  "title": "A14 - Сильные глаголы: Ablaut (чередование гласных)",
+  "essence": "Сильные глаголы меняют корневую гласную в du- и er/sie/es- формах. Это не исключения — это регулярное чередование (Ablaut).",
+  "formula": "e -> i: sprechen (ich spreche, du sprichst, er spricht)\ne -> ie: sehen (ich sehe, du siehst, er sieht)\na -> a: fahren (ich fahre, du fahrst, er fahrt)\na -> a: laden (ich lade, du ladst, er ladet)\n\nТолько du (2 л. ед.) и er/sie/es (3 л. ед.)!",
+  "base": "Распространённые сильные глаголы с Ablaut: sprechen, sehen, fahren, geben, essen, lesen, nehmen, schlafen, tragen, waschen, fallen, halten, laufen, raten, braten.",
+  "dontConfuse": "Ablaut затрагивает только 2 формы (du и er/sie/es). Wir, ihr, sie/Sie остаются регулярными: wir sehen, ihr seht, sie sehen. Базовая форма (ich) тоже регулярна: ich spreche, ich sehe.",
   "examples": [
     {
-      "it": "Devo lavorare.",
-      "ru": "",
-      "note": ""
+      "it": "Ich spreche Deutsch. / Du sprichst Deutsch. / Er spricht Deutsch.",
+      "ru": "Я говорю по-немецки. / Ты говоришь. / Он говорит.",
+      "note": "e -> i (sprechen)"
     },
     {
-      "it": "Posso venire.",
-      "ru": "",
-      "note": ""
+      "it": "Ich sehe den Film. / Du siehst den Film.",
+      "ru": "Я вижу фильм. / Ты видишь фильм.",
+      "note": "e -> ie (sehen)"
     },
     {
-      "it": "Voglio mangiare.",
-      "ru": "",
-      "note": ""
+      "it": "Wir fahren nach Munchen. / Er fahrt nach Munchen.",
+      "ru": "Мы едем в Мюнхен. / Он едет в Мюнхен.",
+      "note": "a -> a (fahren)"
     },
     {
-      "it": "So cucinare.",
-      "ru": "",
-      "note": ""
+      "it": "Du isst Pizza. / Sie isst Pizza.",
+      "ru": "Ты ешь пиццу. / Она ест пиццу.",
+      "note": "e -> i (essen)"
     },
     {
-      "it": "Puoi venire?",
-      "ru": "Ты можешь прийти?",
-      "note": ""
-    },
-    {
-      "it": "Deve studiare.",
-      "ru": "Он должен учиться",
-      "note": ""
-    },
-    {
-      "it": "Vogliamo partire.",
-      "ru": "Мы хотим уехать",
-      "note": ""
-    },
-    {
-      "it": "Sa parlare italiano.",
-      "ru": "Он умеет говорить по-итальянски",
-      "note": "sapere = навык"
+      "it": "Ich lese ein Buch. / Er liest ein Buch.",
+      "ru": "Я читаю книгу. / Он читает книгу.",
+      "note": "e -> ie (lesen)"
     }
   ]
 }

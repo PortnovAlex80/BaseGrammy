@@ -1,45 +1,40 @@
 {
   "key": "A10",
-  "title": "A10 - Possessivi",
-  "essence": "Possessivo согласуется с предметом, а не с владельцем.",
-  "formula": null,
+  "title": "A10 - Предлоги с фиксированным Akkusativ",
+  "essence": "Некоторые предлоги ВСЕГДА требуют Akkusativ: durch, fur, gegen, ohne, um. Выбора нет — только Akkusativ.",
+  "formula": "durch (через, по) | fur (для) | gegen (против, около) | ohne (без) | um (вокруг, в/о)\n\nПредлог + Akk. артикль:\nfur den Mann, fur die Frau, fur das Kind, fur die Kinder",
   "base": null,
-  "dontConfuse": "⚠️ loro ВСЕГДА с артиклем, даже с родственниками: il loro padre, la loro madre.",
+  "dontConfuse": "gegen может означать «против» (gegen den Feind) и «около/примерно» (gegen 8 Uhr). um — «вокруг» (um den Tisch) и «в» для времени (um 8 Uhr).",
   "examples": [
     {
-      "it": "il mio libro",
-      "ru": "",
-      "note": ""
+      "it": "Das Geschenk ist fur dich.",
+      "ru": "Подарок для тебя.",
+      "note": "fur + Akk."
     },
     {
-      "it": "la mia casa",
-      "ru": "",
-      "note": ""
+      "it": "Wir gehen durch den Park.",
+      "ru": "Мы идём через парк.",
+      "note": "durch + Akk."
     },
     {
-      "it": "i miei amici",
-      "ru": "",
-      "note": ""
+      "it": "Ich spiele gegen ihn.",
+      "ru": "Я играю против него.",
+      "note": "gegen + Akk."
     },
     {
-      "it": "le mie cose",
-      "ru": "",
-      "note": ""
+      "it": "Ohne euch ist es langweilig.",
+      "ru": "Без вас скучно.",
+      "note": "ohne + Akk."
     },
     {
-      "it": "mio padre",
-      "ru": "",
-      "note": ""
+      "it": "Der Termin ist um 10 Uhr.",
+      "ru": "Встреча в 10 часов.",
+      "note": "um + Akk. (время)"
     },
     {
-      "it": "mia madre",
-      "ru": "",
-      "note": ""
-    },
-    {
-      "it": "i miei genitori",
-      "ru": "",
-      "note": ""
+      "it": "Wir sitzen um den Tisch.",
+      "ru": "Мы сидим вокруг стола.",
+      "note": "um + Akk. (вокруг)"
     }
   ]
 }

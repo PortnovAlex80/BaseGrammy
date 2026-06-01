@@ -300,7 +300,7 @@ class ProgressTracker(
         // Save other progress fields to global store (NOT lesson progress)
         progressStore.save(
             TrainingProgress(
-                languageId = state.navigation.selectedLanguageId,
+                languageId = state.navigation.selectedLanguageId ?: LanguageId(""),
                 mode = state.navigation.mode,
                 lessonId = state.navigation.selectedLessonId?.value,
                 currentIndex = 0,  // Legacy fields - no longer used
@@ -373,13 +373,15 @@ class ProgressTracker(
     fun storeFirstSessionCardIds(
         currentCursor: DailyCursorState,
         sentenceIds: List<String>,
-        verbIds: List<String>
+        verbIds: List<String>,
+        lessonId: String = ""
     ): DailyCursorState {
         val today = java.time.LocalDate.now().toString()
         return currentCursor.copy(
             firstSessionDate = today,
             firstSessionSentenceCardIds = sentenceIds,
-            firstSessionVerbCardIds = verbIds
+            firstSessionVerbCardIds = verbIds,
+            firstSessionLessonId = lessonId
         )
     }
 

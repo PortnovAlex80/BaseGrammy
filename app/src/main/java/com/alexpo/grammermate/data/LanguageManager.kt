@@ -26,16 +26,59 @@ internal class LanguageManager(
         if (!languagesFile.exists()) {
             val defaults = listOf(
                 mapOf("id" to "en", "name" to "English"),
-                mapOf("id" to "it", "name" to "Italian")
+                mapOf("id" to "it", "name" to "Italian"),
+                mapOf("id" to "de", "name" to "German"),
+                mapOf("id" to "zh", "name" to "Chinese"),
+                mapOf("id" to "ru", "name" to "Russian")
             )
             languagesStore.write(defaults)
         } else {
-            // Remove Russian language if it exists (cleanup from old versions)
-            val entries = languagesStore.read()
-            val filtered = entries.filterNot { it["id"] == "ru" }
-            if (filtered.size != entries.size) {
-                languagesStore.write(filtered)
+            // Ensure new languages are present in existing config
+            val entries = languagesStore.read().toMutableList()
+            val existingIds = entries.map { it["id"] as? String }.toSet()
+            val newLangs = listOf(
+                mapOf("id" to "de", "name" to "German"),
+                mapOf("id" to "zh", "name" to "Chinese"),
+                mapOf("id" to "ru", "name" to "Russian")
+            ).filterNot { it["id"] in existingIds }
+            if (newLangs.isNotEmpty()) {
+                entries.addAll(newLangs)
+                languagesStore.write(entries)
             }
+        }
+        // Remove packs that are no longer in the default packs list
+        cleanupStalePacks()
+    }
+
+    /**
+     * Remove packs that are no longer in the current defaultPacks list.
+     * Only cleans packs for active languages (it, en).
+     */
+    private fun cleanupStalePacks() {
+        val entries = packsStore.read()
+        if (entries.isEmpty()) return
+
+        val validPackIds = defaultPacks.map { it.packId }.toSet()
+        val activeLanguages = setOf("it", "en", "de", "zh", "ru", "el")
+
+        val remaining = entries.filterNot { entry ->
+            val packId = entry["packId"] as? String ?: return@filterNot false
+            val languageId = entry["languageId"] as? String ?: return@filterNot false
+            // Only remove stale packs for active languages
+            if (packId !in validPackIds && languageId in activeLanguages) {
+                // Delete pack directory and drills
+                val packDir = File(packsDir, packId)
+                if (packDir.exists()) packDir.deleteRecursively()
+                val drillsDir = File(baseDir, "drills/$packId")
+                if (drillsDir.exists()) drillsDir.deleteRecursively()
+                true
+            } else {
+                false
+            }
+        }
+
+        if (remaining.size != entries.size) {
+            packsStore.write(remaining)
         }
     }
 
@@ -133,14 +176,14 @@ internal class LanguageManager(
         val normalized = languageId.lowercase().trim()
         if (normalized.isBlank()) return
 
-        // Skip Russian language - it's the UI language, not a learning target
-        if (normalized == "ru") return
-
         val existing = getLanguages()
         if (existing.any { it.id.value == normalized }) return
         val displayName = when (normalized) {
             "en" -> "English"
             "it" -> "Italian"
+            "de" -> "German"
+            "zh" -> "Chinese"
+            "ru" -> "Russian"
             else -> normalized.uppercase()
         }
         val newEntry = mapOf("id" to normalized, "name" to displayName)

@@ -35,12 +35,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.os.Handler
+import android.os.Looper
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.ui.ChapterCardUi
 import com.alexpo.grammermate.ui.ChapterStatus
 import com.alexpo.grammermate.ui.MasteryGreen
 import com.alexpo.grammermate.shared.ScreenLogger
+
+/** Wraps onClick with a 150 ms delay so the Material ripple animation completes before navigation. */
+private fun delayedClick(onClick: () -> Unit): () -> Unit = {
+    Handler(Looper.getMainLooper()).postDelayed(onClick, 150)
+}
 
 /**
  * Screen displaying the grammar story roadmap with chapters.
@@ -75,7 +82,7 @@ fun GrammarStoryRoadmapScreen(
                 title = { Text("Grammar Story Roadmap") },
                 navigationIcon = {
                     if (showBackButton) {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = delayedClick(onBack)) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     }
@@ -111,7 +118,7 @@ fun GrammarStoryRoadmapScreen(
                             Icon(Icons.Default.Stop, contentDescription = "Stop story")
                         }
                     }
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(onClick = delayedClick(onOpenSettings)) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
@@ -300,7 +307,7 @@ private fun ChapterCard(
                 // "Read Story" button (only if story file exists)
                 if (chapterUi.chapter.storyFile != null) {
                     OutlinedButton(
-                        onClick = onReadStory,
+                        onClick = delayedClick(onReadStory),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Read Story")

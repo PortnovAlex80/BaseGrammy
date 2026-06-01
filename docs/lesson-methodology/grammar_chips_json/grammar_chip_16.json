@@ -1,67 +1,40 @@
 {
   "key": "A16",
-  "title": "A16 - Imperativo",
-  "essence": "Команды, просьбы, предложения «давай». Формы tu/voi/noi/Lei.",
-  "formula": [
-    "tu: основа глагола. Для -are инверсия: parla (не parli). Для -ere/-ire = indicativo: scrivi, dormi",
-    "voi: = 2 л. мн.ч. indicativo: parlate, scrivete",
-    "noi: = 1 л. мн.ч. indicativo: andiamo, facciamo = «давай пойдём!»",
-    "Lei: = Congiuntivo Presente: Parli!, Venga!, Legga! (первый «след» Congiuntivo)",
-    "Отрицание tu: non + инфинитив — Non parlare! (не *Non parla!)",
-    "Отрицание voi/noi/Lei: non + императив — Non parlate!, Non andiamo!"
-  ],
+  "title": "A16 - Модальные глаголы + инфинитив",
+  "essence": "Модальные глаголы выражают долженствование, возможность, желание. Спрягаемый модальный глагол на 2-м месте + инфинитив в конце предложения.",
+  "formula": "mussen (должен) | konnen (мочь) | wollen (хотеть)\ndurfen (можно) | sollen (следовать) | mögen (нравиться)\n\nich  muss  kann  will  darf  soll  mag\ndu   musst kannst willst darfst sollst magst\ner/sie/es muss kann will darf soll mag\nwir  mussen konnen wollen durfen sollen mögen\nihr  musst konnt wollt durft sollt mögt\nsie/Sie mussen konnen wollen durfen sollen mögen\n\nИнфинитив основного глагола -> в КОНЕЦ предложения!",
   "base": null,
-  "dontConfuse": "Отрицание tu = non + инфинитив (Non parlare!), не форма императива (не *Non parla!). Lei-форма = Congiuntivo Presente — первый «след» Congiuntivo. Теория — в Блоке B. Местоимения с императивом (dammi, prendilo) — в B16.",
+  "dontConfuse": "ich/er/sie/es формы совпадают у muss, kann, will, darf, soll, mag (без окончания). Модальный глагол на 2-м месте — инфинитив в конце: Ich muss heute arbeiten (не: Ich heute arbeiten muss).",
   "examples": [
     {
-      "it": "Parla più forte!",
-      "ru": "Говори громче!",
-      "note": "tu — -are инверсия"
+      "it": "Ich muss heute arbeiten.",
+      "ru": "Я должен сегодня работать.",
+      "note": "muss на 2-м, arbeiten в конце"
     },
     {
-      "it": "Non parlare!",
-      "ru": "Не говори!",
-      "note": "tu отрицание = non + инфинитив"
+      "it": "Kannst du mir helfen?",
+      "ru": "Ты можешь мне помочь?",
+      "note": "kannst + helfen в конце"
     },
     {
-      "it": "Scrivi il tuo nome.",
-      "ru": "Напиши своё имя",
-      "note": "tu — -ire = indicativo"
+      "it": "Wir wollen ins Kino gehen.",
+      "ru": "Мы хотим пойти в кино.",
+      "note": "wollen + gehen в конце"
     },
     {
-      "it": "Andiamo!",
-      "ru": "Пойдём! / Давай пойдём!",
-      "note": "noi = «давай!»"
+      "it": "Hier darf man nicht rauchen.",
+      "ru": "Здесь нельзя курить.",
+      "note": "darf + rauchen в конце"
     },
     {
-      "it": "Facciamo una pausa.",
-      "ru": "Давайте сделаем перерыв",
-      "note": "noi — предложение"
+      "it": "Du sollst mehr schlafen.",
+      "ru": "Тебе следует больше спать.",
+      "note": "sollst + schlafen в конце"
     },
     {
-      "it": "Parlate più lentamente.",
-      "ru": "Говорите медленнее",
-      "note": "voi"
-    },
-    {
-      "it": "Non fate rumore!",
-      "ru": "Не шумите!",
-      "note": "voi отрицание"
-    },
-    {
-      "it": "Mi dica.",
-      "ru": "Слушаю вас / Скажите",
-      "note": "Lei = Congiuntivo (dicere → dica)"
-    },
-    {
-      "it": "Legga questo documento.",
-      "ru": "Прочитайте документ",
-      "note": "Lei = Congiuntivo (leggere → legga)"
-    },
-    {
-      "it": "Non si preoccupi.",
-      "ru": "Не волнуйтесь",
-      "note": "Lei отрицание = Congiuntivo (preoccuparsi → si preoccupi)"
+      "it": "Ich mag Pizza.",
+      "ru": "Мне нравится пицца.",
+      "note": "mögen может быть без инфинитива"
     }
   ]
 }

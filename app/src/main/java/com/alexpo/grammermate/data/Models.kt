@@ -371,6 +371,7 @@ data class DailyCursorState(
     val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
     val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
     val firstSessionVerbCardIds: List<String> = emptyList(),      // card IDs from first session's block 3
+    val firstSessionLessonId: String = "",  // lessonId when cards were stored — detects stale IDs on repeat
     val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
 )
 
@@ -388,6 +389,7 @@ data class PackDailyCursorState(
     val firstSessionDate: String = "",  // ISO date (yyyy-MM-dd) of the first session of the day
     val firstSessionSentenceCardIds: List<String> = emptyList(),  // card IDs from first session's block 1
     val firstSessionVerbCardIds: List<String> = emptyList(),      // card IDs from first session's block 3
+    val firstSessionLessonId: String = "",  // lessonId when first session cards were stored — used to detect stale IDs
     val verbOffset: Int = 0             // verb cards shown in current lesson (0, 10, 20, ...)
 ) {
     companion object {
@@ -435,7 +437,7 @@ data class SubmitResult(
 data class NavigationState(
     val languages: List<Language> = emptyList(),
     val installedPacks: List<LessonPack> = emptyList(),
-    val selectedLanguageId: LanguageId = LanguageId("en"),
+    val selectedLanguageId: LanguageId? = null,
     val activePackId: PackId? = null,
     val activePackLessonIds: List<String>? = null,
     val lessons: List<Lesson> = emptyList(),
@@ -760,16 +762,16 @@ data class GrammarChip(
 /**
  * Single grammar example with Italian text and Russian translation.
  *
- * @param it Italian example text
+ * @param target Target language example text (language-agnostic: de, zh, it, etc.)
  * @param ru Russian translation
  * @param note Optional additional note
  */
 data class GrammarExample(
-    val it: String,
+    val target: String,
     val ru: String,
     val note: String = ""
 ) {
     init {
-        require(it.isNotBlank()) { "Italian text must not be blank" }
+        require(target.isNotBlank()) { "Target text must not be blank" }
     }
 }

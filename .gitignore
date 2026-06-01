@@ -42,6 +42,13 @@ SESSION_REPORT_*.md
 TEAM.md
 generate_*.py
 
+# Generated output directories
+/output_de/
+/output_ru/
+/output_zh/
+nav_logs.txt
+*.bak
+
 # Build cache directories (local Gradle artifacts)
 /.docker-build/
 /.docker-gradle-cache/

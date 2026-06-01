@@ -167,7 +167,7 @@ fun GrammarInfoBottomSheet(
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Text(
-                                    text = example.it,
+                                    text = example.target,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium
                                 )

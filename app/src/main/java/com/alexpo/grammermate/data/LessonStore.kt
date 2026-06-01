@@ -132,14 +132,18 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     private val vocabStore = YamlListStore(yaml, vocabIndexFile)
 
     // In-memory cache for getLessons() — invalidated on pack import/delete/reload
-    private var lessonsCache: Map<String, List<Lesson>> = emptyMap()
+    private val lessonsCache = java.util.concurrent.ConcurrentHashMap<String, List<Lesson>>()
 
     private val defaultPacks = listOf(
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1_DRILLS", "grammarmate/packs/EN_WORD_ORDER_A1_DRILLS.zip"),
         // TODO: re-enable when Italian verb groups pack is needed
         // LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip"),
-        LanguageManager.DefaultPack("ITALIAN_EXPRESS", "grammarmate/packs/ITALIAN_EXPRESS.zip")
+        LanguageManager.DefaultPack("ITALIAN_EXPRESS", "grammarmate/packs/ITALIAN_EXPRESS.zip"),
+        LanguageManager.DefaultPack("GREEK_EXPRESS", "grammarmate/packs/GREEK_EXPRESS.zip"),
+        LanguageManager.DefaultPack("GERMAN_EXPRESS", "grammarmate/packs/GERMAN_EXPRESS.zip"),
+        LanguageManager.DefaultPack("CHINESE_EXPRESS", "grammarmate/packs/CHINESE_EXPRESS.zip"),
+        LanguageManager.DefaultPack("RUSSIAN_EXPRESS", "grammarmate/packs/RUSSIAN_EXPRESS.zip")
     )
 
     private val languageManager = LanguageManager(
@@ -329,17 +333,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun getLessons(languageId: String): List<Lesson> {
         ensureSeedData()
-        // Return cached result if available
-        lessonsCache[languageId]?.let {
-            Log.d("LessonStore", "Returning cached lessons for language: $languageId, count: ${it.size}")
-            return it
+        return lessonsCache.getOrPut(languageId) {
+            Log.d("LessonStore", "Cache miss for language: $languageId, loading from disk")
+            loadLessonsFromDisk(languageId)
         }
-        // Cache miss: read from disk
-        Log.d("LessonStore", "Cache miss for language: $languageId, loading from disk")
-        val lessons = loadLessonsFromDisk(languageId)
-        lessonsCache = lessonsCache + (languageId to lessons)
-        Log.d("LessonStore", "Loaded ${lessons.size} lessons for language: $languageId")
-        return lessons
     }
 
     /**
@@ -347,7 +344,11 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
      * or null to clear the entire cache.
      */
     fun invalidateLessonsCache(languageId: String? = null) {
-        lessonsCache = if (languageId != null) lessonsCache - languageId else emptyMap()
+        if (languageId != null) {
+            lessonsCache.remove(languageId)
+        } else {
+            lessonsCache.clear()
+        }
     }
 
     private fun loadLessonsFromDisk(languageId: String): List<Lesson> {

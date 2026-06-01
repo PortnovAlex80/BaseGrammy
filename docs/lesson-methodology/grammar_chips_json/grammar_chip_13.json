@@ -1,40 +1,40 @@
 {
   "key": "A13",
-  "title": "A13 - Comparativi e Superlativi",
-  "essence": "Сравнение: больше/меньше и самый. di = Род.п. сравнения.",
-  "formula": "**Сравнительная:**\n- `più/meno + прил. + di` — сравниваем два объекта\n- `più/meno + прил. + che` — сравниваем два свойства одного объекта / перед глаголом\n\n**Превосходная:**\n- `il/la/i/le + più/meno + прил. + di` — самый... из группы\n\n**Нерегулярные:**\n| Положительная | Сравнительная | Превосходная |\n|---------------|---------------|--------------|\n| buono | migliore | il migliore |\n| cattivo | peggiore | il peggiore |\n| grande | maggiore | il maggiore |\n| piccolo | minore | il minore |",
+  "title": "A13 - Prasens: регулярное спряжение",
+  "essence": "Настоящее время. Регулярные глаголы спрягаются по одной схеме: отнимаем -en от инфинитива, добавляем личные окончания.",
+  "formula": "Основа = инфинитив - (e)n\n\nich  mach-e     wir  mach-en\ndu   mach-st    ihr  mach-t\ner/sie/es mach-t  sie/Sie mach-en\n\nОкончания: -e, -st, -t, -en, -t, -en",
   "base": null,
-  "dontConfuse": "`di` — когда сравниваем два объекта: `più grande di te` (больше тебя).\n`che` — когда сравниваем два свойства одного объекта: `più intelligente che bello`.\nПревосходная ТРЕБУЕТ артикль: `il più grande`, не просто `più grande`.\n`maggiore` ≠ `più grande`: maggiore = возраст/значимость, più grande = физический размер.",
+  "dontConfuse": "Глаголы на -t, -d, -chn, -ffn добавляют -e перед -st и -t: arbeiten -> du arbeitest, er arbeitet. Глаголы на -eln/-ern могут опускать e: sammeln -> ich sammle.",
   "examples": [
     {
-      "it": "Roma è più grande di Milano.",
-      "ru": "Рим больше Милана",
-      "note": "di = объект"
+      "it": "Ich mache Hausaufgaben.",
+      "ru": "Я делаю домашнее задание.",
+      "note": "machen -> mach- + -e"
     },
     {
-      "it": "È più intelligente che bello.",
-      "ru": "Он скорее умный, чем красивый",
-      "note": "che = два свойства"
+      "it": "Du lernst Deutsch.",
+      "ru": "Ты учишь немецкий.",
+      "note": "lernen -> lern- + -st"
     },
     {
-      "it": "È il più bel libro della biblioteca.",
-      "ru": "Самая красивая книга в библиотеке",
-      "note": "превосходная с артиклем"
+      "it": "Er spielt Fussball.",
+      "ru": "Он играет в футбол.",
+      "note": "spielen -> spiel- + -t"
     },
     {
-      "it": "Questo è il mio migliore amico.",
-      "ru": "Это мой лучший друг",
-      "note": "нерегулярное migliore"
+      "it": "Wir wohnen in Berlin.",
+      "ru": "Мы живём в Берлине.",
+      "note": "wohnen -> wohn- + -en"
     },
     {
-      "it": "È meno costoso del previsto.",
-      "ru": "Менее дорого, чем ожидалось",
-      "note": "meno + di"
+      "it": "Ihr arbeitet viel.",
+      "ru": "Вы много работаете.",
+      "note": "arbeiten -> -e- вставка"
     },
     {
-      "it": "Meglio andare che restare.",
-      "ru": "Лучше пойти, чем остаться",
-      "note": "che + глаголы"
+      "it": "Sie trinken Kaffee.",
+      "ru": "Они пьют кофе.",
+      "note": "trinken -> trink- + -en"
     }
   ]
 }

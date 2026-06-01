@@ -36,7 +36,7 @@ data class TenseInfo(
 )
 
 data class TenseExample(
-    val it: String,
+    val target: String,
     val ru: String,
     val note: String
 )
@@ -134,6 +134,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /** Tense reference info keyed by full tense name (e.g. "Passato Prossimo") */
     private var tenseInfoMap: Map<String, TenseInfo> = emptyMap()
 
+    /** Active loadCards coroutine — cancelled on re-entry to prevent double-loading */
+    private var loadJob: kotlinx.coroutines.Job? = null
+
     init {
         sessionSize = container.configStore.load().sessionSize
         // Don't load cards in init — wait for reloadForPack() to set up pack-scoped store
@@ -172,7 +175,8 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch { loadCards(languageId) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { loadCards(languageId) }
     }
 
     /**
@@ -202,17 +206,27 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             Log.d(logTag, "reloadForPack: created new pack-scoped store for packId=$packId")
         }
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch { loadCards() }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { loadCards() }
     }
 
     /**
      * Refresh lastSessionContext from YAML file.
+     * If a loadCards() job is running, waits for it to complete first.
      * Called on VerbDrillScreen entry to ensure SessionCard shows accurate data.
      */
     fun refreshLastSessionContext() {
-        val lastSession = loadValidLastSession()
-        _uiState.update {
-            it.copy(lastSessionContext = lastSession)
+        val job = loadJob
+        if (job != null && job.isActive) {
+            // Cards not ready yet — wait for load to finish, then refresh
+            viewModelScope.launch {
+                job.join()
+                val lastSession = loadValidLastSession()
+                _uiState.update { it.copy(lastSessionContext = lastSession) }
+            }
+        } else {
+            val lastSession = loadValidLastSession()
+            _uiState.update { it.copy(lastSessionContext = lastSession) }
         }
     }
 
@@ -392,7 +406,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             val examplesList = entry["examples"] as? List<Map<String, String>> ?: emptyList()
             val examples = examplesList.map { ex ->
                 TenseExample(
-                    it = ex["it"] ?: "",
+                    target = ex["target"] ?: ex["it"] ?: "",
                     ru = ex["ru"] ?: "",
                     note = ex["note"] ?: ""
                 )

@@ -168,6 +168,19 @@ fun HomeScreen(
         null
     }
 
+    // Zero state: no language and no pack selected yet — show full-screen language picker
+    val isZeroState = state.navigation.activePackId == null &&
+        state.navigation.selectedLanguageId == null
+
+    if (isZeroState) {
+        ZeroStateLanguageSelector(
+            languages = state.navigation.languages,
+            onLanguageSelected = { langId ->
+                ScreenLogger.tap("language_select", details = "lang=$langId zero_state=true")
+                onSelectLanguage(langId)
+            }
+        )
+    } else {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -224,7 +237,7 @@ fun HomeScreen(
                 LanguageSelector(
                     label = languageCode,
                     languages = state.navigation.languages,
-                    selectedLanguageId = state.navigation.selectedLanguageId.value,
+                    selectedLanguageId = state.navigation.selectedLanguageId?.value ?: "",
                     onSelect = onSelectLanguage
                 )
                 IconButton(onClick = { showPomodoroSheet = true }) {
@@ -369,6 +382,7 @@ fun HomeScreen(
             Text(text = primaryLabel)
         }
     }
+    } // end else (normal home content)
 
     if (showMethod) {
         AlertDialog(
@@ -432,6 +446,78 @@ fun HomeScreen(
         lastDuration = pomodoroLastDuration,
         history = pomodoroHistory
     )
+}
+
+@Composable
+fun ZeroStateLanguageSelector(
+    languages: List<Language>,
+    onLanguageSelected: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = stringResource(R.string.home_choose_language),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            userScrollEnabled = false
+        ) {
+            itemsIndexed(languages) { _, language ->
+                val flagIcon = when (language.id.value.lowercase()) {
+                    "it", "italian" -> R.drawable.ic_flag_it
+                    "en", "english" -> R.drawable.ic_flag_en
+                    "ru", "russian" -> R.drawable.ic_flag_ru
+                    "el", "greek" -> R.drawable.ic_flag_el
+                    "de", "german" -> R.drawable.ic_flag_de
+                    "zh", "chinese" -> R.drawable.ic_flag_zh
+                    else -> R.drawable.ic_flag_en
+                }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .clickable { onLanguageSelected(language.id.value) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(flagIcon),
+                            contentDescription = language.displayName,
+                            modifier = Modifier.size(48.dp, 36.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = language.displayName,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -713,6 +799,9 @@ fun LanguageSelector(
                     "it", "italian" -> R.drawable.ic_flag_it
                     "en", "english" -> R.drawable.ic_flag_en
                     "ru", "russian" -> R.drawable.ic_flag_ru
+                    "el", "greek" -> R.drawable.ic_flag_el
+                    "de", "german" -> R.drawable.ic_flag_de
+                    "zh", "chinese" -> R.drawable.ic_flag_zh
                     else -> R.drawable.ic_flag_en
                 }
             ),
@@ -732,6 +821,9 @@ fun LanguageSelector(
                                     "it", "italian" -> R.drawable.ic_flag_it
                                     "en", "english" -> R.drawable.ic_flag_en
                                     "ru", "russian" -> R.drawable.ic_flag_ru
+                                    "el", "greek" -> R.drawable.ic_flag_el
+                                    "de", "german" -> R.drawable.ic_flag_de
+                                    "zh", "chinese" -> R.drawable.ic_flag_zh
                                     else -> R.drawable.ic_flag_en
                                 }
                             ),

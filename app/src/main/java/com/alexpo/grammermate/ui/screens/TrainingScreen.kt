@@ -511,7 +511,7 @@ fun AnswerBox(
             if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
-                launchVoiceRecognition(state.navigation.selectedLanguageId.value, state.cardSession.currentCard?.promptRu, speechLauncher, context)
+                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", state.cardSession.currentCard?.promptRu, speechLauncher, context)
             }
         }
     }
@@ -541,7 +541,7 @@ fun AnswerBox(
         QrShareDialog(
             promptRu = reportCard.promptRu,
             answerText = reportCard.acceptedAnswers.firstOrNull() ?: "",
-            targetLanguage = state.navigation.selectedLanguageId.value,
+            targetLanguage = state.navigation.selectedLanguageId?.value ?: "en",
             onDismiss = { showQrDialog = false }
         )
     }
@@ -572,7 +572,7 @@ fun AnswerBox(
             override val currentInputMode: InputMode
                 get() = state.cardSession.inputMode
             override val languageId: String
-                get() = state.navigation.selectedLanguageId.value
+                get() = state.navigation.selectedLanguageId?.value ?: "en"
             override val inputModeConfig: com.alexpo.grammermate.data.InputModeConfig
                 get() = com.alexpo.grammermate.data.InputModeConfig(
                     availableModes = setOf(InputMode.VOICE, InputMode.KEYBOARD, InputMode.WORD_BANK),
@@ -671,6 +671,8 @@ private fun launchVoiceRecognition(
 ) {
     val languageTag = when (languageId) {
         "it" -> "it-IT"
+        "el" -> "el-GR"
+        "ru" -> "ru-RU"
         else -> "en-US"
     }
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {

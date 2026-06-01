@@ -1,35 +1,35 @@
 {
-  "key": "B06",
-  "title": "B06 - Trapassato Prossimo",
-  "essence": "\"Had done\": действие, завершённое до другого момента в прошлом.",
-  "formula": "`imperfetto of avere/essere + participio passato`",
+  "key": "A22",
+  "title": "A22 - Порядок слов: модальный + отделяемая приставка",
+  "essence": "Когда модальный глагол стоит с отделяемоприставочным глаголом, инфинитивная группа (основа + приставка) уходит в конец целиком.",
+  "formula": "Модальный глагол на 2-м месте -> ... -> инфинитив с приставкой в конце.\n\nIch muss heute aufstehen.\n-> muss (поз. 2) ... aufstehen (конец)\n\nПорядок при нескольких элементах в конце:\nспрягаемый глагол ... инфинитив + приставка",
   "base": null,
-  "dontConfuse": "Используй `essere` и согласование, когда глагол требует `essere`.",
+  "dontConfuse": "В инфинитиве приставка НЕ отделяется!aufstehen — один инфинитив, не *auf stehen. Только в Prasens (без модального) приставка уходит в конец отдельно: Ich stehe um 7 Uhr auf. С модальным: Ich muss um 7 Uhr aufstehen.",
   "examples": [
     {
-      "it": "Avevo già finito.",
-      "ru": "",
-      "note": ""
+      "it": "Ich muss heute aufstehen.",
+      "ru": "Я должен сегодня встать.",
+      "note": "muss ... aufstehen (инфинитив целиком)"
     },
     {
-      "it": "Era già uscito.",
-      "ru": "",
-      "note": ""
+      "it": "Kannst du mich anrufen?",
+      "ru": "Ты можешь мне позвонить?",
+      "note": "kannst ... anrufen"
     },
     {
-      "it": "Avevamo visto il film.",
-      "ru": "",
-      "note": ""
+      "it": "Wir wollen zusammen einkaufen gehen.",
+      "ru": "Мы хотим вместе пойти за покупками.",
+      "note": "wollen ... einkaufen gehen (два инфинитива)"
     },
     {
-      "it": "Erano già partiti.",
-      "ru": "",
-      "note": ""
+      "it": "Du sollst deine Mutter anrufen.",
+      "ru": "Тебе следует позвонить маме.",
+      "note": "sollst ... anrufen"
     },
     {
-      "it": "Quando sono arrivato, lui era già uscito.",
-      "ru": "",
-      "note": ""
+      "it": "Er kann nicht gut Deutsch sprechen.",
+      "ru": "Он не может хорошо говорить по-немецки.",
+      "note": "kann ... sprechen (неотделяемый глагол)"
     }
   ]
 }

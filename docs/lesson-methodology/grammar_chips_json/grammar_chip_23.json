@@ -1,35 +1,40 @@
 {
-  "key": "B06",
-  "title": "B06 - Trapassato Prossimo",
-  "essence": "\"Had done\": действие, завершённое до другого момента в прошлом.",
-  "formula": "`imperfetto of avere/essere + participio passato`",
+  "key": "A23",
+  "title": "A23 - Неправильные глаголы: wissen, werden, tun",
+  "essence": "Эти глаголы не следуют регулярному шаблону и не являются сильными с Ablaut — их формы нужно запомнить.",
+  "formula": "wissen (знать факт):\nich weiss | du weisst | er/sie/es weiss | wir wissen | ihr wisst | sie/Sie wissen\n\nwerden (становиться):\nich werde | du wirst | er/sie/es wird | wir werden | ihr werdet | sie/Sie werden\n\ntun (делать):\nich tue | du tust | er/sie/es tut | wir tun | ihr tut | sie/Sie tun",
   "base": null,
-  "dontConfuse": "Используй `essere` и согласование, когда глагол требует `essere`.",
+  "dontConfuse": "wissen (знать факт) vs kennen (знать кого-то/что-то): Ich weiss, wo er wohnt. (Я знаю, где он живёт.) Ich kenne ihn. (Я его знаю.). werden = «становиться» (Ich werde Arzt), а НЕ «мир» (Welt)!",
   "examples": [
     {
-      "it": "Avevo già finito.",
-      "ru": "",
-      "note": ""
+      "it": "Ich weiss die Antwort.",
+      "ru": "Я знаю ответ.",
+      "note": "wissen = факт"
     },
     {
-      "it": "Era già uscito.",
-      "ru": "",
-      "note": ""
+      "it": "Weisst du, wo er ist?",
+      "ru": "Ты знаешь, где он?",
+      "note": "wissen + придаточное"
     },
     {
-      "it": "Avevamo visto il film.",
-      "ru": "",
-      "note": ""
+      "it": "Er wird Lehrer.",
+      "ru": "Он становится учителем.",
+      "note": "werden = становиться"
     },
     {
-      "it": "Erano già partiti.",
-      "ru": "",
-      "note": ""
+      "it": "Wir werden mude.",
+      "ru": "Мы устаём.",
+      "note": "werden + прилагательное"
     },
     {
-      "it": "Quando sono arrivato, lui era già uscito.",
-      "ru": "",
-      "note": ""
+      "it": "Was tust du da?",
+      "ru": "Что ты там делаешь?",
+      "note": "tun = делать"
+    },
+    {
+      "it": "Ich kenne diesen Mann.",
+      "ru": "Я знаю этого мужчину.",
+      "note": "kennen = быть знакомым с"
     }
   ]
 }

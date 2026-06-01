@@ -74,6 +74,8 @@ object AsrModelRegistry {
         "en" -> "en"
         "it" -> "it"
         "ru" -> "ru"
+        "de" -> "de"
+        "zh" -> "zh"
         else -> languageId // Whisper uses ISO 639-1 codes directly
     }
 }

@@ -29,6 +29,9 @@ interface PackDailyCursorStore {
     /** Load all pack cursor states. Returns map of packId -> cursor state. */
     fun loadAllPackCursors(): Map<String, PackDailyCursorState>
 
+    /** Invalidate in-memory cache. Called after progress reset to prevent stale reads. */
+    fun invalidateCache()
+
     /** Flush any pending writes to disk immediately. */
     fun flush()
 }
@@ -90,6 +93,7 @@ class PackDailyCursorStoreImpl(context: Context) : PackDailyCursorStore {
                     "firstSessionDate" to cursor.firstSessionDate,
                     "firstSessionSentenceCardIds" to cursor.firstSessionSentenceCardIds,
                     "firstSessionVerbCardIds" to cursor.firstSessionVerbCardIds,
+                    "firstSessionLessonId" to cursor.firstSessionLessonId,
                     "verbOffset" to cursor.verbOffset
                 )
                 val yaml = Yaml()
@@ -155,6 +159,13 @@ class PackDailyCursorStoreImpl(context: Context) : PackDailyCursorStore {
         }
     }
 
+    override fun invalidateCache() {
+        mutex.withLock {
+            cursorCache = null
+            Log.d("PackDailyCursorStore", "Cache invalidated")
+        }
+    }
+
     override fun flush() {
         // All writes are immediate (AtomicFileWriter), so this is a no-op
         // Kept for interface consistency
@@ -169,6 +180,7 @@ class PackDailyCursorStoreImpl(context: Context) : PackDailyCursorStore {
             firstSessionDate = (map["firstSessionDate"] as? String) ?: "",
             firstSessionSentenceCardIds = (map["firstSessionSentenceCardIds"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             firstSessionVerbCardIds = (map["firstSessionVerbCardIds"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            firstSessionLessonId = (map["firstSessionLessonId"] as? String) ?: "",
             verbOffset = (map["verbOffset"] as? Int) ?: 0
         )
     }
