@@ -338,13 +338,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 chapters = chapterCards,
                                 onBack = remember {
                                     {
-                                        // Clear active pack to show pack selection
+                                        // Clear active pack to show pack selection.
+                                        // State change triggers recomposition - no navigation needed
+                                        // since we are already on the HOME route.
                                         vm.clearActivePack()
-                                        // Force recomposition by navigating to HOME
-                                        navController.navigate(Routes.HOME) {
-                                            popUpTo(Routes.HOME) { inclusive = true }
-                                            launchSingleTop = true
-                                        }
                                     }
                                 },
                                 onReadStory = remember { { chapter ->
@@ -499,7 +496,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         onNavigate(Routes.CHAPTER_LESSONS)
                                     } else {
                                         Log.d("NavDebug", "LESSON onBack → HOME")
-                                        onNavigate(Routes.HOME)
+                                        navController.popBackStack(Routes.HOME, inclusive = false)
                                     }
                                 }
                             },
@@ -534,18 +531,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             }
                         )
-                        // Local back handler for LESSON — staircase navigation
-                        BackHandler(!dialogs.showSettings) {
-                            ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            val activePackId = state.navigation.activePackId?.value
-                            val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
-                            Log.d("NavDebug", "BACK: LESSON inside NavHost, hasChapters=$hasChapters")
-                            if (hasChapters) {
-                                onNavigate(Routes.CHAPTER_LESSONS)
-                            } else {
-                                onNavigate(Routes.HOME)
-                            }
-                        }
+                        // Back handled by outer NavBackHandlers - no inner handler needed.
+                        // The outer handler restores selectedChapter for CHAPTER_LESSONS context.
                     }
 
                     // Backward compat: ELITE redirects to HOME
@@ -811,7 +798,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             .joinToString(",") { "${it.chapterId}:${it.lessonsCompleted}/${it.lessonsStarted}" }
                         GrammarStoryRoadmapScreen(
                             chapters = remember(state.navigation.activePackId?.value, progressKey) { vm.getChapterCards() },
-                            onBack = remember { { onNavigate(Routes.HOME) } },
+                            onBack = remember { { vm.clearActivePack(); navController.popBackStack(Routes.HOME, inclusive = false) } },
                             showBackButton = true,  // Show back button when accessed via direct route
                             onReadStory = remember { { chapter ->
                                 val storyContent = vm.loadStoryContent(chapter.storyFile)
@@ -881,13 +868,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onPauseStory = remember { { vm.pauseStoryPlayback() } },
                             onResumeStory = remember { { vm.resumeStoryPlayback() } }
                         )
-                        // Local back handler for GRAMMAR_STORY_ROADMAP — staircase navigation
-                        BackHandler(!dialogs.showSettings) {
-                            Log.d("NavDebug", "BACK: GRAMMAR_STORY_ROADMAP inside NavHost → HOME (clearActivePack)")
-                            ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            vm.clearActivePack()
-                            onNavigate(Routes.HOME)
-                        }
+                        // Back handler removed — handled by outer NavBackHandlers to avoid double-fire
                     }
 
                     composable(Routes.STORY_READER) {
@@ -906,10 +887,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     if (isCurrentlyPlaying || isStoryPaused) {
                                         vm.stopStoryNarration()
                                     }
-                                    // Navigate first, then clear state to avoid flicker
-                                    onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
-                                    // Clear state after navigation completes
                                     vm.clearStoryReader()
+                                    // Pop back to whatever launched STORY_READER
+                                    // (HOME showing roadmap, or GRAMMAR_STORY_ROADMAP route)
+                                    navController.popBackStack()
                                 }
                             },
                             onPlayStory = remember {
@@ -956,10 +937,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 chapterProgress = chapterProgress,
                                 completedLessonIds = completedLessonIds,
                                 onLessonClick = remember { { lesson ->
-                                    vm.selectLesson(lesson.id.value)
+                                    vm.selectLesson(lesson.id.value, packId.value)
                                     onNavigate(Routes.LESSON)
                                 } },
-                                onBack = remember { { onNavigate(Routes.GRAMMAR_STORY_ROADMAP) } }
+                                onBack = remember { { navController.popBackStack(Routes.HOME, inclusive = false) } }
                             )
                         } else {
                             // Fallback if no chapter selected
@@ -967,12 +948,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                             }
                         }
-                        // Local back handler for CHAPTER_LESSONS — staircase navigation
-                        BackHandler(!dialogs.showSettings) {
-                            Log.d("NavDebug", "BACK: CHAPTER_LESSONS inside NavHost → GRAMMAR_STORY_ROADMAP")
-                            ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            onNavigate(Routes.GRAMMAR_STORY_ROADMAP)
-                        }
+                        // Back handler removed — handled by outer NavBackHandlers to avoid double-fire
                     }
                 }
 
@@ -1013,6 +989,20 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
 }
 
 // ── Back handlers ────────────────────────────────────────────────────────────
+//
+// Architecture note:
+//   GrammarStoryRoadmapScreen is rendered INSIDE the HOME composable when
+//   `hasChapters == true`.  The separate GRAMMAR_STORY_ROADMAP route exists
+//   only for direct entry from STORY_READER.  This means the "grammar roadmap"
+//   that appears after selecting a chapters pack IS the HOME screen.
+//
+//   Therefore, back from CHAPTER_LESSONS must go to HOME (which shows the
+//   roadmap), NOT to the GRAMMAR_STORY_ROADMAP route.  Using popBackStack()
+//   is correct here because the stack naturally contains HOME at the base.
+//
+//   BackHandler priority in Compose: the LAST registered (innermost) handler
+//   with enabled=true intercepts the back press first.  Inner handlers
+//   (inside NavHost composables) take priority over outer handlers (here).
 
 @Composable
 private fun NavBackHandlers(
@@ -1024,11 +1014,27 @@ private fun NavBackHandlers(
     navController: androidx.navigation.NavHostController,
     onShowExitDialog: () -> Unit
 ) {
-    BackHandler(enabled = currentRoute == Routes.TRAINING && !showSettings) {
-        Log.d("NavDebug", "BACK: TRAINING BackHandler fired! showSettings=$showSettings, currentRoute=$currentRoute")
+    // ── CHAPTER_LESSONS back → pop to HOME (which renders GrammarStoryRoadmapScreen) ──
+    // Use popBackStack instead of navigate().  The stack is [HOME, CHAPTER_LESSONS]
+    // so popping lands on HOME, which renders the roadmap for chapters packs.
+    BackHandler(enabled = currentRoute == Routes.CHAPTER_LESSONS && !showSettings) {
+        Log.d("NavDebug", "BACK: CHAPTER_LESSONS → pop to HOME (roadmap)")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        onShowExitDialog()
+        navController.popBackStack(Routes.HOME, inclusive = false)
     }
+
+    // ── HOME with chapters pack back → clear pack, stay on HOME ──
+    // When HOME renders GrammarStoryRoadmapScreen (active chapters pack),
+    // back should clear the pack and show pack selection (also on HOME).
+    BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && vm.hasPackChapters(state.navigation.activePackId.value) && !showSettings) {
+        Log.d("NavDebug", "BACK: HOME+chapters → clearActivePack")
+        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        vm.clearActivePack()
+        // No navigation needed — HOME recomposes with pack selection when activePackId becomes null
+    }
+
+    // ── LESSON back → CHAPTER_LESSONS (chapters) or HOME (classic) ──
+    // Uses onNavigate-style popUpTo+singleTop to keep stack clean.
     BackHandler(enabled = currentRoute == Routes.LESSON && !showSettings) {
         Log.d("NavDebug", "BACK: LESSON BackHandler fired, currentRoute=$currentRoute")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
@@ -1036,20 +1042,39 @@ private fun NavBackHandlers(
         val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
         Log.d("NavDebug", "BACK: LESSON activePackId=$activePackId, hasChapters=$hasChapters")
         if (hasChapters) {
+            // Restore selectedChapter so CHAPTER_LESSONS has context
+            val currentLessonId = state.navigation.selectedLessonId?.value
+            if (currentLessonId != null) {
+                val chapter = vm.findChapterForLesson(currentLessonId)
+                if (chapter != null) vm.selectChapter(chapter)
+            }
             Log.d("NavDebug", "BACK: LESSON → CHAPTER_LESSONS")
-            navController.navigate(Routes.CHAPTER_LESSONS)
-        } else {
-            Log.d("NavDebug", "BACK: LESSON → HOME")
-            navController.navigate(Routes.HOME) {
+            navController.navigate(Routes.CHAPTER_LESSONS) {
                 popUpTo(Routes.HOME) { inclusive = false }
                 launchSingleTop = true
             }
+        } else {
+            Log.d("NavDebug", "BACK: LESSON → HOME")
+            navController.popBackStack(Routes.HOME, inclusive = false)
         }
     }
+
+    // ── TRAINING back (lesson-based) → show exit dialog ──
+    // Note: inner TRAINING BackHandlers (verb_drill return, staircase) have
+    // higher priority and will intercept first when applicable.
+    BackHandler(enabled = currentRoute == Routes.TRAINING && !showSettings) {
+        Log.d("NavDebug", "BACK: TRAINING BackHandler fired! showSettings=$showSettings, currentRoute=$currentRoute")
+        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        onShowExitDialog()
+    }
+
+    // ── DAILY_PRACTICE back → exit dialog ──
     BackHandler(enabled = currentRoute == Routes.DAILY_PRACTICE && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         onShowExitDialog()
     }
+
+    // ── STORY back → LESSON ──
     BackHandler(enabled = currentRoute == Routes.STORY && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         navController.navigate(Routes.LESSON) {
@@ -1057,6 +1082,8 @@ private fun NavBackHandlers(
             launchSingleTop = true
         }
     }
+
+    // ── LADDER back → previous route ──
     BackHandler(enabled = currentRoute == Routes.LADDER && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         navController.navigate(previousRoute) {
@@ -1067,47 +1094,37 @@ private fun NavBackHandlers(
             vm.resumeFromSettings()
         }
     }
+
+    // ── TRAINING with daily-practice return → cancel daily, go HOME ──
     BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.DAILY_PRACTICE && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         vm.cancelDailySession()
         navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
-    }
-    // GRAMMAR_STORY_ROADMAP is shown on HOME route when pack has chapters
-    // Back handler clears the active pack to return to pack selection
-    BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && vm.hasPackChapters(state.navigation.activePackId.value) && !showSettings) {
-        Log.d("NavDebug", "BACK: HOME+chapters → clearActivePack → HOME")
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        // Clear active pack to show pack selection
-        vm.clearActivePack()
-        // Force recomposition by navigating to HOME
-        navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = true }
             launchSingleTop = true
         }
     }
-    BackHandler(enabled = currentRoute == Routes.CHAPTER_LESSONS && !showSettings) {
-        Log.d("NavDebug", "BACK: CHAPTER_LESSONS → GRAMMAR_STORY_ROADMAP")
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        navController.navigate(Routes.GRAMMAR_STORY_ROADMAP)
-    }
+
+    // ── GRAMMAR_STORY_ROADMAP route back → HOME (clearActivePack) ──
+    // This route is only reached from STORY_READER.  Clear pack and go to HOME.
     BackHandler(enabled = currentRoute == Routes.GRAMMAR_STORY_ROADMAP && !showSettings) {
         Log.d("NavDebug", "BACK: GRAMMAR_STORY_ROADMAP → HOME (clearActivePack)")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         vm.clearActivePack()
-        navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = true }
-            launchSingleTop = true
-        }
+        navController.popBackStack(Routes.HOME, inclusive = false)
     }
+
+    // ── STORY_READER back → GRAMMAR_STORY_ROADMAP or HOME ──
+    // STORY_READER is entered from either the HOME roadmap or the
+    // GRAMMAR_STORY_ROADMAP route.  Pop back to whichever is underneath.
     BackHandler(enabled = currentRoute == Routes.STORY_READER && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        navController.navigate(Routes.GRAMMAR_STORY_ROADMAP) {
-            popUpTo(Routes.GRAMMAR_STORY_ROADMAP) { inclusive = false }
-            launchSingleTop = true
-        }
+        // Pop back one step — returns to whatever launched STORY_READER
+        // (HOME showing roadmap, or GRAMMAR_STORY_ROADMAP direct route).
+        // Also stop TTS if playing.
+        vm.stopStoryNarration()
+        vm.clearStoryReader()
+        navController.popBackStack()
     }
 }
 
