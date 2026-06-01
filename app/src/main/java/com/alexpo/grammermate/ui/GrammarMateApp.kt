@@ -53,6 +53,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.alexpo.grammermate.R
@@ -141,7 +142,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         } else {
 
         val navController = rememberNavController()
-        val currentRoute = navController.currentBackStackEntry?.destination?.route ?: Routes.HOME
+        // Use currentBackStackEntryAsState() for proper Compose state observation.
+        // Direct property access does NOT trigger recomposition on navigate/popBackStack.
+        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route ?: Routes.HOME
         val context = LocalContext.current
 
         // Track previous screen for LADDER back navigation
@@ -531,8 +534,25 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             }
                         )
-                        // Back handled by outer NavBackHandlers - no inner handler needed.
-                        // The outer handler restores selectedChapter for CHAPTER_LESSONS context.
+                        // Inner BackHandler — has higher priority than NavController's internal
+                        // handler, so system back gesture works correctly on Android 14+.
+                        // Uses the same logic as the UI back button (onNavigate).
+                        val lessonActivePackId = state.navigation.activePackId?.value
+                        val lessonHasChapters = lessonActivePackId != null && vm.hasPackChapters(lessonActivePackId)
+                        BackHandler(enabled = !dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: LESSON inner handler, hasChapters=$lessonHasChapters")
+                            ScreenLogger.nav("lesson", "BACK", trigger = "back_press")
+                            if (lessonHasChapters) {
+                                val currentLessonId = state.navigation.selectedLessonId?.value
+                                if (currentLessonId != null) {
+                                    val chapter = vm.findChapterForLesson(currentLessonId)
+                                    if (chapter != null) vm.selectChapter(chapter)
+                                }
+                                onNavigate(Routes.CHAPTER_LESSONS)
+                            } else {
+                                navController.popBackStack(Routes.HOME, inclusive = false)
+                            }
+                        }
                     }
 
                     // Backward compat: ELITE redirects to HOME
@@ -948,7 +968,13 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                             }
                         }
-                        // Back handler removed — handled by outer NavBackHandlers to avoid double-fire
+                        // Inner BackHandler — higher priority than NavController, so system back
+                        // works correctly on Android 14+ predictive back.
+                        BackHandler(enabled = !dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: CHAPTER_LESSONS inner handler → HOME")
+                            ScreenLogger.nav("chapter_lessons", "BACK", trigger = "back_press")
+                            navController.popBackStack(Routes.HOME, inclusive = false)
+                        }
                     }
                 }
 
@@ -1014,14 +1040,9 @@ private fun NavBackHandlers(
     navController: androidx.navigation.NavHostController,
     onShowExitDialog: () -> Unit
 ) {
-    // ── CHAPTER_LESSONS back → pop to HOME (which renders GrammarStoryRoadmapScreen) ──
-    // Use popBackStack instead of navigate().  The stack is [HOME, CHAPTER_LESSONS]
-    // so popping lands on HOME, which renders the roadmap for chapters packs.
-    BackHandler(enabled = currentRoute == Routes.CHAPTER_LESSONS && !showSettings) {
-        Log.d("NavDebug", "BACK: CHAPTER_LESSONS → pop to HOME (roadmap)")
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        navController.popBackStack(Routes.HOME, inclusive = false)
-    }
+    // NOTE: CHAPTER_LESSONS and LESSON back are handled by INNER BackHandlers
+    // inside their composable() blocks — they have higher priority than NavController's
+    // internal handler and thus work correctly with Android 14+ predictive back.
 
     // ── HOME with chapters pack back → clear pack, stay on HOME ──
     // When HOME renders GrammarStoryRoadmapScreen (active chapters pack),
@@ -1031,32 +1052,6 @@ private fun NavBackHandlers(
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         vm.clearActivePack()
         // No navigation needed — HOME recomposes with pack selection when activePackId becomes null
-    }
-
-    // ── LESSON back → CHAPTER_LESSONS (chapters) or HOME (classic) ──
-    // Uses onNavigate-style popUpTo+singleTop to keep stack clean.
-    BackHandler(enabled = currentRoute == Routes.LESSON && !showSettings) {
-        Log.d("NavDebug", "BACK: LESSON BackHandler fired, currentRoute=$currentRoute")
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        val activePackId = state.navigation.activePackId?.value
-        val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
-        Log.d("NavDebug", "BACK: LESSON activePackId=$activePackId, hasChapters=$hasChapters")
-        if (hasChapters) {
-            // Restore selectedChapter so CHAPTER_LESSONS has context
-            val currentLessonId = state.navigation.selectedLessonId?.value
-            if (currentLessonId != null) {
-                val chapter = vm.findChapterForLesson(currentLessonId)
-                if (chapter != null) vm.selectChapter(chapter)
-            }
-            Log.d("NavDebug", "BACK: LESSON → CHAPTER_LESSONS")
-            navController.navigate(Routes.CHAPTER_LESSONS) {
-                popUpTo(Routes.HOME) { inclusive = false }
-                launchSingleTop = true
-            }
-        } else {
-            Log.d("NavDebug", "BACK: LESSON → HOME")
-            navController.popBackStack(Routes.HOME, inclusive = false)
-        }
     }
 
     // ── TRAINING back (lesson-based) → show exit dialog ──
