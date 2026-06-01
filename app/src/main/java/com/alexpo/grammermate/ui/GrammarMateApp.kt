@@ -1159,9 +1159,10 @@ private fun TrainingScreenContent(
             .firstOrNull { it.id == state.navigation.selectedLessonId }?.title
     }
 
-    // Load grammar chip for current lesson
+    // Load grammar chip for current lesson (pack-scoped to avoid wrong-pack data)
+    val activePackId = state.navigation.activePackId?.value
     val grammarChip = state.navigation.selectedLessonId?.let { lessonId ->
-        GrammarChipStore.getChipForLesson(lessonId.value)
+        GrammarChipStore.getChipForLesson(lessonId.value, packId = activePackId)
     }
 
     TrainingScreen(
