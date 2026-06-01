@@ -714,6 +714,8 @@ fun LanguageSelector(
                     "en", "english" -> R.drawable.ic_flag_en
                     "ru", "russian" -> R.drawable.ic_flag_ru
                     "el", "greek" -> R.drawable.ic_flag_el
+                    "de", "german" -> R.drawable.ic_flag_de
+                    "zh", "chinese" -> R.drawable.ic_flag_zh
                     else -> R.drawable.ic_flag_en
                 }
             ),
@@ -734,6 +736,8 @@ fun LanguageSelector(
                                     "en", "english" -> R.drawable.ic_flag_en
                                     "ru", "russian" -> R.drawable.ic_flag_ru
                                     "el", "greek" -> R.drawable.ic_flag_el
+                                    "de", "german" -> R.drawable.ic_flag_de
+                                    "zh", "chinese" -> R.drawable.ic_flag_zh
                                     else -> R.drawable.ic_flag_en
                                 }
                             ),

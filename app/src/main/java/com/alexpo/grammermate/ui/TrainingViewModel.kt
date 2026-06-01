@@ -623,14 +623,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         vocabSession = emptyList()
         sessionRunner.clearAllCards()
         val lessons = lessonStore.getLessons(languageId)
-        val selectedLessonId = lessons.firstOrNull()?.id
-        // Derive activePackId for the new language from the selected lesson.
-        val newPackId = selectedLessonId?.let { lessonStore.getPackIdForLesson(it.value) }
-            ?: lessonStore.getInstalledPacks().firstOrNull { it.languageId.value == languageId }?.packId?.value
-        val newPackLessonIds = newPackId?.let { lessonStore.getLessonIdsForPack(it) }
-        rebindWordMasteryStore(newPackId)
+        // Clear activePackId so user sees pack selection for the new language.
+        // Previously auto-selected first pack — caused pack confusion.
+        rebindWordMasteryStore(null)
         _coreState.update {
-            it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = selectedLessonId, activePackId = newPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = newPackLessonIds), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+            it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = null, activePackId = null, activePackLessonIds = emptyList()), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
         // Load streak for the new language (resetAllSessionState zeroes streak data)
         val streakData = streakStore.getCurrentStreak(languageId)
@@ -739,6 +736,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // Cancel any active daily session before switching packs
         if (_coreState.value.daily.dailySession.active) {
             cancelDailySession()
+        }
+
+        // Sync language to match the pack's language (fixes voice input language)
+        val packLanguageId = lessonStore.getInstalledPacks()
+            .firstOrNull { it.packId.value == packId }?.languageId?.value
+        if (packLanguageId != null && packLanguageId != _coreState.value.navigation.selectedLanguageId.value) {
+            // Update language-dependent audio before continuing
+            audioCoordinator.ttsModelManager.currentLanguageId = packLanguageId
+            audioCoordinator.checkTtsModel()
+            if (audioCoordinator.asrEngine?.isReady == true) {
+                audioCoordinator.asrEngine.setLanguage(packLanguageId)
+            }
+            _coreState.update {
+                it.copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(packLanguageId)))
+            }
         }
 
         val packLessonIds = lessonStore.getLessonIdsForPack(packId)

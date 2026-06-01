@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="18dp"
+    android:viewportWidth="24"
+    android:viewportHeight="18">
+    <!-- Black stripe (top) -->
+    <path android:pathData="M1,0.5L23,0.5A0.5,0.5 0,0 1,23.5 1L23.5,6L0.5,6L0.5,1A0.5,0.5 0,0 1,1 0.5z"
+        android:fillColor="#000000"/>
+    <!-- Red stripe (middle) -->
+    <path android:pathData="M0.5,6L23.5,6L23.5,12L0.5,12z"
+        android:fillColor="#DD0000"/>
+    <!-- Gold stripe (bottom) -->
+    <path android:pathData="M0.5,12L23.5,12L23.5,17A0.5,0.5 0,0 1,23 17.5L1,17.5A0.5,0.5 0,0 1,0.5 17z"
+        android:fillColor="#FFCC00"/>
+    <!-- Border -->
+    <path android:pathData="M1,0.5L23,0.5A0.5,0.5 0,0 1,23.5 1L23.5,17A0.5,0.5 0,0 1,23 17.5L1,17.5A0.5,0.5 0,0 1,0.5 17L0.5,1A0.5,0.5 0,0 1,1 0.5z"
+        android:strokeColor="#E0E0E0" android:strokeWidth="0.5"/>
+</vector>

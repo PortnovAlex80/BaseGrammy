@@ -36,7 +36,7 @@ data class TenseInfo(
 )
 
 data class TenseExample(
-    val it: String,
+    val target: String,
     val ru: String,
     val note: String
 )
@@ -406,7 +406,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             val examplesList = entry["examples"] as? List<Map<String, String>> ?: emptyList()
             val examples = examplesList.map { ex ->
                 TenseExample(
-                    it = ex["it"] ?: "",
+                    target = ex["target"] ?: ex["it"] ?: "",
                     ru = ex["ru"] ?: "",
                     note = ex["note"] ?: ""
                 )
