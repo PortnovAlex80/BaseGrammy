@@ -1,25 +1,35 @@
 {
   "key": "A03",
-  "title": "A03 - Genere e Numero",
-  "essence": "Род и число существительного управляют остальными словами рядом.",
-  "formula": "- `-o -> -i`\n- `-a -> -e`\n- `-e -> -i`",
+  "title": "A03 - Неопределённый артикль: Nominativ",
+  "essence": "Неопределённый артикль вводит новый, неизвестный предмет. В Nominativ: ein/eine/ein. Отрицание: kein/keine/kein.",
+  "formula": "Ед.ч.: ein (муж.) | eine (жен.) | ein (ср.)\nМн.ч.: (нет неопр. артикля) | keine (отрицание)\n\nkein = не + неопределённый артикль",
   "base": null,
-  "dontConfuse": "`città` не меняется: una città — due città.\n\nРод не всегда по окончанию: `il problema` (муж., на -a), `l'artista` (общий: l'artista / la violinista).",
+  "dontConfuse": "ein совпадает для муж. и ср. — различие появится в Akkusativ (einen vs ein). Во множественном нет неопределённого артикля, но отрицание keine есть.",
   "examples": [
     {
-      "it": "un ragazzo / ragazzi",
-      "ru": "",
-      "note": ""
+      "it": "Das ist ein Tisch.",
+      "ru": "Это стол.",
+      "note": "ein — муж., вводим новый предмет"
     },
     {
-      "it": "una ragazza / ragazze",
-      "ru": "",
-      "note": ""
+      "it": "Das ist eine Lampe.",
+      "ru": "Это лампа.",
+      "note": "eine — жен."
     },
     {
-      "it": "una lezione / lezioni",
-      "ru": "",
-      "note": ""
+      "it": "Das ist ein Buch.",
+      "ru": "Это книга.",
+      "note": "ein — ср."
+    },
+    {
+      "it": "Das ist kein Stuhl.",
+      "ru": "Это не стул.",
+      "note": "kein — отрицание"
+    },
+    {
+      "it": "Das sind keine Bucher.",
+      "ru": "Это не книги.",
+      "note": "keine — отрицание мн.ч."
     }
   ]
 }

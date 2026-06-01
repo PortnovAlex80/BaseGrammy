@@ -1,25 +1,30 @@
 {
   "key": "A02",
-  "title": "A02 - Articoli",
-  "essence": "Артикль показывает статус существительного: новое/любое или конкретное.",
-  "formula": "- `un, uno, una, un'`\n- `il, lo, la, l', i, gli, le`\n  > Множественные (`i, gli, le`) — когда предметов много. Правило окончаний — в A03.",
+  "title": "A02 - Определённый артикль: Nominativ",
+  "essence": "Определённый артикль указывает на конкретный, известный предмет. В Nominativ: der/die/das/die.",
+  "formula": "Ед.ч.: der (муж.) | die (жен.) | das (ср.)\nМн.ч.: die (для всех родов)\n\nNominativ = подлежащее (кто? что? делает действие)",
   "base": null,
-  "dontConfuse": "`problema` мужского рода: `un problema`, `il problema`.",
+  "dontConfuse": "die в ед.ч. = женский род. die во мн.ч. = все роды. Контекст определяет: die Frauen (жен. мн.), die Tische (муж. мн.), die Bucher (ср. мн.).",
   "examples": [
     {
-      "it": "Questo è un libro.",
-      "ru": "",
-      "note": ""
+      "it": "Der Tisch ist gross.",
+      "ru": "Стол большой.",
+      "note": "der — муж., Nominativ, подлежащее"
     },
     {
-      "it": "Questo è il libro.",
-      "ru": "",
-      "note": ""
+      "it": "Die Lampe ist an.",
+      "ru": "Лампа включена.",
+      "note": "die — жен., Nominativ"
     },
     {
-      "it": "Questo è uno zio.",
-      "ru": "",
-      "note": ""
+      "it": "Das Buch ist interessant.",
+      "ru": "Книга интересная.",
+      "note": "das — ср., Nominativ"
+    },
+    {
+      "it": "Die Bucher sind neu.",
+      "ru": "Книги новые.",
+      "note": "die — мн.ч., Nominativ"
     }
   ]
 }

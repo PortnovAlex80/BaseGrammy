@@ -1,20 +1,40 @@
 {
   "key": "A08",
-  "title": "A08 - C'è / Ci Sono",
-  "essence": "Конструкция существования: \"есть/имеется\".",
-  "formula": "- `c'è` для одного\n- `ci sono` для нескольких",
+  "title": "A08 - Предлоги с фиксированным Dativ",
+  "essence": "Некоторые предлоги ВСЕГДА требуют Dativ: aus, bei, mit, nach, seit, von, zu, gegenuber. Выбора нет — только Dativ.",
+  "formula": "aus (из) | bei (у, при) | mit (с) | nach (после, в)\nseit (с тех пор как) | von (от, из) | zu (к) | gegenuber (напротив)\n\nПредлог + Dativ артикль:\nmit dem Mann, mit der Frau, mit dem Kind, mit den Kindern",
   "base": null,
-  "dontConfuse": "`Il libro è sul tavolo` описывает известную книгу.",
+  "dontConfuse": "nach может быть предлогом (nach Berlin, nach Hause) и наречием (nachste Woche). zu Hause = дома (устойчивое), nach Hause = домой.",
   "examples": [
     {
-      "it": "C'è una scuola qui.",
-      "ru": "",
-      "note": ""
+      "it": "Ich komme aus Deutschland.",
+      "ru": "Я из Германии.",
+      "note": "aus + Dat."
     },
     {
-      "it": "Ci sono libri in classe.",
-      "ru": "",
-      "note": ""
+      "it": "Ich wohne bei meiner Freundin.",
+      "ru": "Я живу у своей подруги.",
+      "note": "bei + Dat."
+    },
+    {
+      "it": "Ich fahre mit dem Auto.",
+      "ru": "Я еду на машине.",
+      "note": "mit + Dat."
+    },
+    {
+      "it": "Seit einem Jahr lerne ich Deutsch.",
+      "ru": "Уже год я учу немецкий.",
+      "note": "seit + Dat."
+    },
+    {
+      "it": "Ich gehe zu dem Arzt.",
+      "ru": "Я иду к врачу.",
+      "note": "zu + Dat. (zum = zu + dem)"
+    },
+    {
+      "it": "Das ist ein Geschenk von meinem Bruder.",
+      "ru": "Это подарок от моего брата.",
+      "note": "von + Dat."
     }
   ]
 }

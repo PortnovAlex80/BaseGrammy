@@ -1,30 +1,30 @@
 {
-  "key": "B04",
-  "title": "B04 - Passato Prossimo with Essere",
-  "essence": "Движение, прибытие/отбытие и изменение состояния часто используют `essere`.",
-  "formula": "`essere + participio passato`",
+  "key": "A17",
+  "title": "A17 - Порядок слов: V2-правило",
+  "essence": "В немецком главном предложении спрягаемый глагол ВСЕГДА на втором месте. Первое место может занимать подлежащее, дополнение, обстоятельство или придаточное.",
+  "formula": "Позиция 1        | Позиция 2 (глагол) | Позиция 3+ (остальное)\n\nIch              | lerne              | heute Deutsch.\nHeute            | lerne              | ich Deutsch.\nDeutsch          | lerne              | ich heute.\n\nВажно: Позиция 1 меняется, но глагол остаётся на 2-м месте!",
   "base": null,
-  "dontConfuse": "Переходное движение может использовать `avere`: `Ha attraversato la strada`.",
+  "dontConfuse": "«Второе место» — это второе по счёту = позиция 2, а не «второе слово». Если позиция 1 = heute Nachmittag (два слова), глагол всё равно на позиции 2 (сразу после первой смысловой группы).",
   "examples": [
     {
-      "it": "Sono andato a scuola.",
-      "ru": "",
-      "note": ""
+      "it": "Ich lerne jeden Tag Deutsch.",
+      "ru": "Я учу немецкий каждый день.",
+      "note": "ich = поз. 1, lerne = поз. 2"
     },
     {
-      "it": "È arrivata a casa.",
-      "ru": "",
-      "note": ""
+      "it": "Jeden Tag lerne ich Deutsch.",
+      "ru": "Каждый день я учу немецкий.",
+      "note": "Jeden Tag = поз. 1, lerne = поз. 2, ich = поз. 3"
     },
     {
-      "it": "Siamo usciti.",
-      "ru": "",
-      "note": ""
+      "it": "Morgen gehen wir ins Kino.",
+      "ru": "Завтра мы идём в кино.",
+      "note": "Morgen = поз. 1, gehen = поз. 2"
     },
     {
-      "it": "Sono nato nel 1990.",
-      "ru": "",
-      "note": ""
+      "it": "Am Wochenende lese ich ein Buch.",
+      "ru": "На выходных я читаю книгу.",
+      "note": "Am Wochenende = поз. 1, lese = поз. 2"
     }
   ]
 }

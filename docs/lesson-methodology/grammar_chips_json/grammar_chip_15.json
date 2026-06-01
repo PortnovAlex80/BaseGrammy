@@ -1,52 +1,40 @@
 {
   "key": "A15",
-  "title": "A15 - Condizionale di Cortesia",
-  "essence": "Готовые мягкие формулы вежливости. Не парадигма — survival-набор.",
-  "formula": [
-    "vorrei + сущ. / инфинитив — я бы хотел",
-    "potrei + инфинитив — могу я? (вопрос-просьба)",
-    "potrebbe + инфинитив — не могли бы вы?",
-    "dovrei + инфинитив — мне бы следовало",
-    "mi piacerebbe + инфинитив — мне бы хотелось",
-    "sarebbe + прил. — было бы..."
-  ],
+  "title": "A15 - sein и haben: спряжение",
+  "essence": "sein (быть) и haben (иметь) — два важнейших неправильных глагола.sein — для идентичности, описания, местоположения. haben — для обладания, возраста, ощущений.",
+  "formula": "sein:\nich bin | du bist | er/sie/es ist | wir sind | ihr seid | sie/Sie sind\n\nhaben:\nich habe | du hast | er/sie/es hat | wir haben | ihr habt | sie/Sie haben",
   "base": null,
-  "dontConfuse": "vorrei ≠ volevo — vorrei это вежливое желание сейчас, volevo это «я хотел» (прошлое). Здесь только готовые формулы для просьб. Полную парадигму спряжения (io parlerei, tu parleresti...) учим в B09.",
+  "dontConfuse": "Возраст в немецком = haben: Ich habe Zeit (у меня есть время), Ich bin 20 Jahre alt (мне 20 лет — здесь sein + alt). Ich habe Hunger (я голоден = у меня есть голод).",
   "examples": [
     {
-      "it": "Vorrei un caffè.",
-      "ru": "Я бы хотел кофе",
-      "note": "vorrei + существительное"
+      "it": "Ich bin Student.",
+      "ru": "Я студент.",
+      "note": "sein = идентичность"
     },
     {
-      "it": "Vorrei prenotare un tavolo.",
-      "ru": "Я бы хотел забронировать столик",
-      "note": "vorrei + инфинитив"
+      "it": "Du bist mude.",
+      "ru": "Ты устал(а).",
+      "note": "sein = состояние"
     },
     {
-      "it": "Potrei avere il menù?",
-      "ru": "Могу я получить меню?",
-      "note": "potrei + инфинитив — вопрос-просьба"
+      "it": "Er ist zu Hause.",
+      "ru": "Он дома.",
+      "note": "sein = местоположение"
     },
     {
-      "it": "Potrebbe ripetere, per favore?",
-      "ru": "Не могли бы вы повторить?",
-      "note": "potrebbe + инфинитив — вежливая просьба к Lei"
+      "it": "Wir haben Zeit.",
+      "ru": "У нас есть время.",
+      "note": "haben = обладание"
     },
     {
-      "it": "Dovrei parlare con il direttore.",
-      "ru": "Мне нужно бы поговорить с директором",
-      "note": "dovrei + инфинитив"
+      "it": "Hast du Hunger?",
+      "ru": "Ты голоден?",
+      "note": "haben = ощущение (букв. имеешь голод)"
     },
     {
-      "it": "Mi piacerebbe visitare Roma.",
-      "ru": "Мне бы хотелось посетить Рим",
-      "note": "mi piacerebbe + инфинитив"
-    },
-    {
-      "it": "Sarebbe meglio domani.",
-      "ru": "Было бы лучше завтра",
-      "note": "sarebbe + прилагательное"
+      "it": "Sie hat Recht.",
+      "ru": "Она права.",
+      "note": "haben = Recht haben (быть правым)"
     }
   ]
 }

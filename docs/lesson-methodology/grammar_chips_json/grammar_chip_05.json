@@ -1,40 +1,35 @@
 {
   "key": "A05",
-  "title": "A05 - Lei di Cortesia",
-  "essence": "Вежливое `Lei` использует 3-е лицо единственного числа.",
-  "formula": null,
-  "base": null,
-  "dontConfuse": "Здесь только Indicativo. Вежливые команды будут в A16.",
+  "title": "A05 - Akkusativ: прямое дополнение",
+  "essence": "Akkusativ = прямое дополнение (кого? что?). Только мужской род меняет артикль: der -> den, ein -> einen.",
+  "formula": "Муж.: den | einen | keinen\nЖен.: die | eine | keine\nСр.: das | ein | kein\nМн.: die | — | keine\n\nТолько мужской род отличается от Nominativ!",
+  "base": "После глаголов: haben, sehen, kaufen, essen, trinken, lesen, nehmen, brauchen, finden, machen...",
+  "dontConfuse": "Женский и средний в Akkusativ совпадают с Nominativ. Множественное тоже совпадает. Только мужской der->den, ein->einen.",
   "examples": [
     {
-      "it": "Come ti chiami?",
-      "ru": "",
-      "note": ""
+      "it": "Ich sehe den Mann.",
+      "ru": "Я вижу мужчину.",
+      "note": "den — муж., Akk."
     },
     {
-      "it": "Come si chiama?",
-      "ru": "",
-      "note": ""
+      "it": "Ich sehe die Frau.",
+      "ru": "Я вижу женщину.",
+      "note": "die — жен., Akk. = Nom."
     },
     {
-      "it": "Tu parli italiano?",
-      "ru": "",
-      "note": ""
+      "it": "Ich sehe das Kind.",
+      "ru": "Я вижу ребёнка.",
+      "note": "das — ср., Akk. = Nom."
     },
     {
-      "it": "Lei parla italiano?",
-      "ru": "",
-      "note": ""
+      "it": "Ich kaufe einen Tisch.",
+      "ru": "Я покупаю стол.",
+      "note": "einen — муж., Akk."
     },
     {
-      "it": "Lei è stanco? / Tu sei stanco?",
-      "ru": "",
-      "note": ""
-    },
-    {
-      "it": "Lei ha fame? / Tu hai fame?",
-      "ru": "",
-      "note": ""
+      "it": "Ich habe kein Buch.",
+      "ru": "У меня нет книги.",
+      "note": "kein — ср., Akk. = Nom."
     }
   ]
 }
