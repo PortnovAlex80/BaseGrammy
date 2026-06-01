@@ -172,7 +172,7 @@ class AudioCoordinator(
             ttsEngine.state.value != TtsState.Idle &&
             ttsEngine.state.value !is TtsState.Error
         ) return
-        val langId = languageId ?: stateAccess.uiState.value.navigation.selectedLanguageId.value
+        val langId = languageId ?: stateAccess.uiState.value.navigation.selectedLanguageId?.value ?: "en"
         val effectiveSpeed = speed ?: _audioState.value.ttsSpeed
         coroutineScope.launch {
             ttsMutex.withLock {
@@ -380,7 +380,7 @@ class AudioCoordinator(
                 _audioState.update { current ->
                     val updatedBgStates = current.bgTtsDownloadStates + (languageId to downloadState)
                     // For the selected language, also update the primary ttsDownloadState
-                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId?.value
                     val downloadStateOverride = if (languageId == selectedLangId
                         && downloadState !is DownloadState.Idle
                         && current.ttsDownloadState !is DownloadState.Done
@@ -396,7 +396,7 @@ class AudioCoordinator(
                 }
 
                 if (downloadState is DownloadState.Done) {
-                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId?.value
                     _audioState.update {
                         it.copy(
                             ttsModelsReady = it.ttsModelsReady + (languageId to true),
@@ -417,7 +417,7 @@ class AudioCoordinator(
     // ── TTS model checks ──────────────────────────────────────────────────
 
     fun checkTtsModel() {
-        val langId = stateAccess.uiState.value.navigation.selectedLanguageId
+        val langId = stateAccess.uiState.value.navigation.selectedLanguageId ?: return
         val filesReady = ttsModelManager.isModelReady(langId.value)
         val engineState = ttsEngine.state.value
         val engineReady = engineState == TtsState.Ready
@@ -545,7 +545,7 @@ class AudioCoordinator(
                 }.keys
 
                 _audioState.update { current ->
-                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                    val selectedLangId = stateAccess.uiState.value.navigation.selectedLanguageId?.value
                     val selectedBgState = stateMap[selectedLangId]
                     val downloadStateOverride = if (selectedBgState != null
                         && selectedBgState !is DownloadState.Idle
@@ -571,7 +571,7 @@ class AudioCoordinator(
                 }
 
                 if (newlyCompleted.isNotEmpty()) {
-                    val selectedLang = stateAccess.uiState.value.navigation.selectedLanguageId.value
+                    val selectedLang = stateAccess.uiState.value.navigation.selectedLanguageId?.value
                     if (newlyCompleted.contains(selectedLang)) {
                         _audioState.update { it.copy(ttsModelReady = true) }
                     }
@@ -631,7 +631,7 @@ class AudioCoordinator(
             return
         }
         bgDownloadJob?.cancel() // Cancel any competing background download
-        val langId = stateAccess.uiState.value.navigation.selectedLanguageId
+        val langId = stateAccess.uiState.value.navigation.selectedLanguageId ?: return
         if (ttsModelManager.isModelReady(langId.value)) {
             _audioState.update { it.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done) }
             return
@@ -680,7 +680,7 @@ class AudioCoordinator(
                             // Extract complete, now initialize engine
                             try {
                                 delay(500) // Let filesystem buffers flush
-                                asrEngine?.initialize(stateAccess.uiState.value.navigation.selectedLanguageId.value)
+                                stateAccess.uiState.value.navigation.selectedLanguageId?.value?.let { asrEngine?.initialize(it) }
                                 Log.d(TAG, "Auto-initialized ASR engine after download")
                                 _audioState.update {
                                     it.copy(asrDownloadState = DownloadState.Done, asrModelReady = true)
@@ -710,7 +710,7 @@ class AudioCoordinator(
             return ""
         }
         if (!engine.isReady) {
-            engine.initialize(stateAccess.uiState.value.navigation.selectedLanguageId.value)
+            stateAccess.uiState.value.navigation.selectedLanguageId?.value?.let { engine.initialize(it) }
         }
 
         // Check if initialization failed

@@ -486,7 +486,7 @@ class SessionRunner(
         stateAccess.updateState {
             val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
             val lessonId = it.navigation.selectedLessonId
-            val mastery = lessonId?.let { id -> getMastery(id.value, it.navigation.selectedLanguageId.value) }
+            val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
             val schedule = lessonId?.let { id -> getSchedule(id.value) }
             val subLessons = schedule?.subLessons.orEmpty()
             val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)
@@ -647,7 +647,7 @@ class SessionRunner(
             stateAccess.updateState {
                 val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
                 val lessonId = it.navigation.selectedLessonId
-                val mastery = lessonId?.let { id -> getMastery(id.value, it.navigation.selectedLanguageId.value) }
+                val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
                 val schedule = lessonId?.let { id -> getSchedule(id.value) }
                 val subLessons = schedule?.subLessons.orEmpty()
                 val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)

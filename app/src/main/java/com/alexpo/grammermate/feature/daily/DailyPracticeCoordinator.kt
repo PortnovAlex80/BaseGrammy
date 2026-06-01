@@ -195,7 +195,7 @@ class DailyPracticeCoordinator(
 
     fun endSession() {
         val ds = _state.value.dailySession
-        val languageId = stateAccess.uiState.value.navigation.selectedLanguageId.value
+        val languageId = stateAccess.uiState.value.navigation.selectedLanguageId?.value ?: return
         val blockTypes = ds.blocks.map { it.type }.toSet()
         val blockTypeToPracticeType = mapOf(
             DailyBlockType.TRANSLATE to PracticeType.TRANSLATION,
@@ -365,7 +365,7 @@ class DailyPracticeCoordinator(
 
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return false
-        val langId = state.navigation.selectedLanguageId
+        val langId = state.navigation.selectedLanguageId ?: return false
 
         val packLessonIds = state.navigation.activePackLessonIds?.toSet().orEmpty()
         val packLessons = lessonStore.getLessons(langId.value)
@@ -467,7 +467,7 @@ class DailyPracticeCoordinator(
         Log.d(logTag, "DailyPractice: repeatDailyPractice level=$lessonLevel")
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return false
-        val langId = state.navigation.selectedLanguageId
+        val langId = state.navigation.selectedLanguageId ?: return false
 
         val progressInfo = resolveProgressLessonInfo()
         val lessonId = progressInfo?.first ?: return false
@@ -573,7 +573,7 @@ class DailyPracticeCoordinator(
             val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return
             val card = task.card
             val lessonId = resolveCardLessonId(card)
-            val languageId = stateAccess.uiState.value.navigation.selectedLanguageId
+            val languageId = stateAccess.uiState.value.navigation.selectedLanguageId ?: return
             masteryStore.recordCardShow(lessonId, languageId.value, card.id)
         }
     }
@@ -606,7 +606,7 @@ class DailyPracticeCoordinator(
         if (!ds.active) return false
         val blockType = getCurrentBlockType() ?: return false
         val packId = state.navigation.activePackId ?: return false
-        val langId = state.navigation.selectedLanguageId
+        val langId = state.navigation.selectedLanguageId ?: return false
 
         val progressInfo = resolveProgressLessonInfo()
         val lessonId = progressInfo?.first ?: return false

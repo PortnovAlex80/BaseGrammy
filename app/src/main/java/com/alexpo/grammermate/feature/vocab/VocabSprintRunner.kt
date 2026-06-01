@@ -59,7 +59,7 @@ class VocabSprintRunner(
     fun openSprint(resume: Boolean = false): VocabResult {
         val state = stateAccess.uiState.value
         val lessonId = state.navigation.selectedLessonId ?: return VocabResult.None
-        val languageId = state.navigation.selectedLanguageId
+        val languageId = state.navigation.selectedLanguageId ?: return VocabResult.None
         val allEntries = lessonStore.getVocabEntries(lessonId.value, languageId.value)
 
         // Sort using SRS prioritization: overdue first, then new, then not due
@@ -177,14 +177,16 @@ class VocabSprintRunner(
         if (accepted) {
             // Save progress: record correct answer and completed index
             val lessonId = state.navigation.selectedLessonId ?: return VocabSubmitResult(VocabSoundResult.PlaySuccess, VocabResult.None)
-            vocabProgressStore.recordCorrect(entry.id, lessonId.value, state.navigation.selectedLanguageId.value)
-            vocabProgressStore.addCompletedIndex(lessonId.value, state.navigation.selectedLanguageId.value, vocabState.vocabIndex)
+            val langId = state.navigation.selectedLanguageId ?: return VocabSubmitResult(VocabSoundResult.PlaySuccess, VocabResult.None)
+            vocabProgressStore.recordCorrect(entry.id, lessonId.value, langId.value)
+            vocabProgressStore.addCompletedIndex(lessonId.value, langId.value, vocabState.vocabIndex)
             val nextResult = moveToNextVocab()
             return VocabSubmitResult(VocabSoundResult.PlaySuccess, nextResult)
         }
         // Record incorrect answer for SRS tracking
         val lessonId = state.navigation.selectedLessonId ?: return VocabSubmitResult(VocabSoundResult.PlayError, VocabResult.None)
-        vocabProgressStore.recordIncorrect(entry.id, lessonId.value, state.navigation.selectedLanguageId.value)
+        val langId = state.navigation.selectedLanguageId ?: return VocabSubmitResult(VocabSoundResult.PlayError, VocabResult.None)
+        vocabProgressStore.recordIncorrect(entry.id, lessonId.value, langId.value)
         val nextAttempts = vocabState.vocabAttempts + 1
         if (nextAttempts >= 3) {
             _state.update {
@@ -235,8 +237,9 @@ class VocabSprintRunner(
         if (nextIndex >= vocabSession.size) {
             // All vocab entries completed - clear sprint progress
             val lessonId = state.navigation.selectedLessonId
-            if (lessonId != null) {
-                vocabProgressStore.clearSprintProgress(lessonId.value, state.navigation.selectedLanguageId.value)
+            val langId = state.navigation.selectedLanguageId
+            if (lessonId != null && langId != null) {
+                vocabProgressStore.clearSprintProgress(lessonId.value, langId.value)
             }
             _state.update {
                 it.copy(
@@ -309,7 +312,7 @@ class VocabSprintRunner(
 
         // If not enough distractors, supplement from all lessons
         if (distractors.size < 4) {
-            val languageId = state.navigation.selectedLanguageId
+            val languageId = state.navigation.selectedLanguageId ?: return listOf(correctOption)
             val allVocabFromLessons = state.navigation.lessons
                 .flatMap { lesson ->
                     lessonStore.getVocabEntries(lesson.id.value, languageId.value)

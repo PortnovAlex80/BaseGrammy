@@ -39,7 +39,7 @@ class StoryRunner(
     fun openStory(phase: StoryPhase): StoryResult {
         val state = stateAccess.uiState.value
         val lessonId = state.navigation.selectedLessonId ?: return StoryResult.None
-        val languageId = state.navigation.selectedLanguageId
+        val languageId = state.navigation.selectedLanguageId ?: return StoryResult.None
         val story = lessonStore.getStoryQuizzes(lessonId.value, phase, languageId.value).firstOrNull()
         if (story == null) {
             _state.update { it.copy(storyErrorMessage = "Story not found. Please import the pack again.") }

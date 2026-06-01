@@ -24,6 +24,7 @@
     <string name="home_daily_practice">Daily Practice</string>
     <string name="home_practice_all_sublessons">Practice all sub-lessons</string>
     <string name="home_start">Start</string>
+    <string name="home_choose_language">Choose your language</string>
 
     <!-- LessonRoadmapScreen -->
     <string name="roadmap_back">Back</string>

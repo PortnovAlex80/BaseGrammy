@@ -437,7 +437,7 @@ data class SubmitResult(
 data class NavigationState(
     val languages: List<Language> = emptyList(),
     val installedPacks: List<LessonPack> = emptyList(),
-    val selectedLanguageId: LanguageId = LanguageId("en"),
+    val selectedLanguageId: LanguageId? = null,
     val activePackId: PackId? = null,
     val activePackLessonIds: List<String>? = null,
     val lessons: List<Lesson> = emptyList(),

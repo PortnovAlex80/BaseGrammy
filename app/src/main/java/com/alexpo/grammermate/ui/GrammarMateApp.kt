@@ -162,7 +162,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
             if (verbDrillActivePackId != null) {
                 verbDrillVm.reloadForPack(verbDrillActivePackId.value)
             } else {
-                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                state.navigation.selectedLanguageId?.let { verbDrillVm.reloadForLanguage(it.value) }
             }
         }
 
@@ -199,7 +199,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 if (state.audio.ttsState == TtsState.Speaking) {
                     vm.audio.stopTts()
                 } else if (!state.audio.ttsModelReady) {
-                    val bgState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
+                    val bgState = state.navigation.selectedLanguageId?.let { state.audio.bgTtsDownloadStates[it.value] }
                     if (bgState != null && bgState !is DownloadState.Idle) {
                         vm.audio.setTtsDownloadStateFromBackground(bgState)
                     }
@@ -232,7 +232,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
-            val selectedTtsDownloadState = state.audio.bgTtsDownloadStates[state.navigation.selectedLanguageId.value]
+            val selectedTtsDownloadState = state.navigation.selectedLanguageId?.let { state.audio.bgTtsDownloadStates[it.value] }
                 ?: state.audio.ttsDownloadState
             // Persistent TTS download progress bar — hidden during story playback
             AnimatedVisibility(visible = state.audio.bgTtsDownloading && !state.audio.isStoryPlaybackActive) {
@@ -312,7 +312,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     sessionSize = vm.currentSessionSize,
                     clickableWordHints = vm.settings.getClickableWordHints(),
                     uiLanguage = vm.currentUiLanguage,
-                    languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId.value
+                    languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId?.value ?: ""
                 )
 
                 NavHost(
@@ -595,7 +595,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             if (activePackIdForTenses != null) {
                                 verbTenseInfoVm.reloadForPack(activePackIdForTenses.value)
                             } else {
-                                verbTenseInfoVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                                verbTenseInfoVm.reloadForLanguage(state.navigation.selectedLanguageId?.value ?: "en")
                             }
                         }
                         TrainingScreenContent(
@@ -735,7 +735,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             if (vdPackId != null) {
                                 verbDrillVm.reloadForPack(vdPackId.value)
                             } else {
-                                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId?.value ?: "en")
                             }
                         }
                         val verbDrillExit = remember(verbDrillVm) {
@@ -765,9 +765,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         val packId = state.navigation.activePackId
                         LaunchedEffect(packId, state.navigation.selectedLanguageId) {
                             if (packId != null) {
-                                vocabDrillVm.reloadForPack(packId.value, state.navigation.selectedLanguageId.value)
+                                vocabDrillVm.reloadForPack(packId.value, state.navigation.selectedLanguageId?.value ?: "en")
                             } else {
-                                vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId.value)
+                                vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId?.value ?: "en")
                             }
                         }
                         val vocabExit = remember(vocabDrillVm) {
@@ -1224,7 +1224,7 @@ private fun DailyPracticeScreenContent(
         blockProgress = dailyProgress,
         currentBlock = currentBlock,
         currentTask = dailyTask,
-        languageId = state.navigation.selectedLanguageId.value,
+        languageId = state.navigation.selectedLanguageId?.value ?: "en",
         onShowSentenceAnswer = vm.daily::getDailySentenceAnswer,
         onShowVerbAnswer = vm.daily::getDailyVerbAnswer,
         onRateVocabCard = remember { { rating: com.alexpo.grammermate.data.SrsRating -> vm.daily.rateVocabCard(rating) } },
@@ -1346,7 +1346,7 @@ private fun NavDialogs(
         if (dialogs.showTtsDownloadDialog) {
             TtsDownloadDialog(
                 downloadState = state.audio.ttsDownloadState,
-                languageId = state.navigation.selectedLanguageId.value,
+                languageId = state.navigation.selectedLanguageId?.value ?: "en",
                 onConfirm = { vm.audio.startTtsDownload() },
                 onDismiss = {
                     vm.audio.dismissTtsDownloadDialog()

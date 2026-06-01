@@ -13,6 +13,8 @@ interface ProgressStore {
 
     fun load(): TrainingProgress
 
+    fun exists(): Boolean
+
     fun save(progress: TrainingProgress)
 
     fun clear()
@@ -50,6 +52,8 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
     private val file = File(baseDir, "progress.yaml")
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
+
+    override fun exists(): Boolean = mutex.withLock { file.exists() && file.length() > 0L }
 
     override fun load(): TrainingProgress = mutex.withLock {
         if (!file.exists() || file.length() == 0L) return TrainingProgress()
