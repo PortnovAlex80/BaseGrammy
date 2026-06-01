@@ -614,6 +614,7 @@ fun AnswerBox(
             override fun hideCurrentCard() = onHideCard()
             override fun exportFlaggedCards(): String? = onExportBadSentences()
             override fun togglePause() = onTogglePause()
+            override val voiceAutoStart: Boolean get() = state.audio.voiceAutoStart
             override fun requestExit() {}
         }
     }

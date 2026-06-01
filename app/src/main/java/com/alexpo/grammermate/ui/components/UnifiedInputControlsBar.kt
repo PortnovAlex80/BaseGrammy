@@ -233,7 +233,9 @@ fun UnifiedInputControlsBar(
                                     contract.togglePause()
                                 }
                                 contract.setInputMode(InputMode.VOICE)
-                                launchVoice()
+                                if (!contract.voiceAutoStart) {
+                                    launchVoice()
+                                }
                             }
                         },
                         enabled = canLaunchVoice
@@ -289,13 +291,13 @@ fun UnifiedInputControlsBar(
                     FilledTonalIconButton(
                         onClick = {
                             if (canLaunchVoice) {
-                                // When voiceAutoStart is on, mic also acts as "play":
-                                // resume the session if paused/hint-shown, then start voice.
                                 if (!contract.isActive) {
                                     contract.togglePause()
                                 }
                                 contract.setInputMode(InputMode.VOICE)
-                                launchVoice()
+                                if (!contract.voiceAutoStart) {
+                                    launchVoice()
+                                }
                             }
                         },
                         enabled = canLaunchVoice

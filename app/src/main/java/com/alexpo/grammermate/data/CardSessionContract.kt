@@ -134,6 +134,9 @@ interface CardSessionContract : CardSessionCapabilities, CardSessionStateModel {
     /** Set the current input mode. */
     fun setInputMode(mode: InputMode) {}
 
+    /** Whether voice auto-start is enabled. When true, mic button only switches mode (LaunchedEffect handles launch). */
+    val voiceAutoStart: Boolean get() = false
+
     /** Get the currently selected word bank words (in order). */
     fun getSelectedWords(): List<String> = emptyList()
 
