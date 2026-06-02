@@ -1,0 +1,85 @@
+schemaVersion: 1
+data:
+  it:
+    lesson_02_A02:
+      uniqueCardShows: 79
+      totalCardShows: 172
+      lastShowDateMs: 1780420247857
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_5, card_6, card_2, card_3, card_4, card_7, card_8, card_9,
+        card_10, card_11, card_12, card_13, card_14, card_15, card_16, card_17, card_18,
+        card_19, card_20, card_21, card_22, card_23, card_24, card_25, card_32, card_33,
+        card_34, card_35, card_36, card_37, card_38, card_39, card_40, card_41, card_42,
+        card_43, card_44, card_45, card_46, card_67, card_29, card_28, card_26, card_27,
+        card_30, card_31, card_57, card_58, card_59, card_60, card_61, card_62, card_63,
+        card_64, card_65, card_66, card_68, card_69, card_70, card_71, card_78, card_53,
+        card_56, card_72, card_73, card_74, card_75, card_76, card_77, card_79, card_80,
+        card_47, card_48, card_49, card_50, card_51, card_52, card_54, card_55]
+      cardEncounterCounts: {card_77: 1}
+    lesson_01_A01:
+      uniqueCardShows: 95
+      totalCardShows: 102
+      lastShowDateMs: 1780421475109
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_2, card_3, card_4, card_5, card_6, card_7, card_8, card_9,
+        card_10, card_11, card_12, card_13, card_14, card_15, card_16, card_17, card_18,
+        card_19, card_20, card_21, card_22, card_23, card_24, card_25, card_26, card_27,
+        card_28, card_29, card_30, card_31, card_32, card_33, card_34, card_35, card_36,
+        card_37, card_38, card_39, card_40, card_41, card_42, card_43, card_44, card_45,
+        card_46, card_47, card_48, card_49, card_50, card_51, card_52, card_53, card_54,
+        card_55, card_56, card_57, card_58, card_59, card_60, card_61, card_62, card_63,
+        card_64, card_65, card_66, card_67, card_68, card_69, card_70, card_71, card_72,
+        card_73, card_74, card_75, card_76, card_77, card_78, card_79, card_80, card_81,
+        card_82, card_83, card_84, card_85, card_86, card_87, card_88, card_89, card_90,
+        card_91, card_92, card_93, card_94, card_95, card_96]
+      cardEncounterCounts: {card_73: 1}
+    it_drill_pronouns:
+      uniqueCardShows: 1
+      totalCardShows: 1
+      lastShowDateMs: 1780419185901
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_91]
+      cardEncounterCounts: {card_91: 1}
+    it_drill_numbers:
+      uniqueCardShows: 3
+      totalCardShows: 3
+      lastShowDateMs: 1780421391135
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_94, card_68, card_74]
+      cardEncounterCounts: {card_74: 1}
+    lesson_03_A03:
+      uniqueCardShows: 60
+      totalCardShows: 84
+      lastShowDateMs: 1780421482156
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_2, card_3, card_4, card_5, card_6, card_7, card_8, card_9,
+        card_10, card_11, card_12, card_13, card_14, card_15, card_16, card_17, card_18,
+        card_19, card_20, card_21, card_22, card_23, card_24, card_25, card_26, card_27,
+        card_28, card_29, card_30, card_31, card_32, card_33, card_34, card_35, card_36,
+        card_37, card_38, card_39, card_40, card_41, card_42, card_43, card_44, card_45,
+        card_46, card_57, card_52, card_61, card_60, card_47, card_48, card_49, card_50,
+        card_51, card_53, card_54, card_55, card_56, card_58, card_59]
+      cardEncounterCounts: {card_4: 1}
+    lesson_04_A04:
+      uniqueCardShows: 10
+      totalCardShows: 10
+      lastShowDateMs: 1780421681052
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_2, card_3, card_4, card_5, card_6, card_7, card_8, card_9,
+        card_10, card_11]
+      cardEncounterCounts: {card_11: 1}
+  zh:
+    lesson_01_A01:
+      uniqueCardShows: 1
+      totalCardShows: 2
+      lastShowDateMs: 1780375959300
+      intervalStepIndex: 0
+      completedAtMs: null
+      shownCardIds: [card_2]
+      cardEncounterCounts: {card_2: 1}

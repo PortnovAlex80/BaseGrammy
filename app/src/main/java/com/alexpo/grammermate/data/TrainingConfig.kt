@@ -6,6 +6,7 @@ object TrainingConfig {
     const val SUB_LESSON_SIZE_MAX = 12
     const val ELITE_STEP_COUNT = 7
     const val BOSS_UNLOCK_SUB_LESSONS = 15
+    const val LESSON_COMPLETION_CARD_THRESHOLD = 150
     const val HINT_THRESHOLD = 3
     const val MAX_BOSS_CARDS = 300
     const val REVIEW_LIMIT = 300

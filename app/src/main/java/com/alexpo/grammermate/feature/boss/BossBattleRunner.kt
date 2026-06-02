@@ -72,14 +72,16 @@ class BossBattleRunner {
      * Validate and start a boss battle session.
      *
      * Receives pre-built cards from [CardProvider.buildBossCards] and validates
-     * eligibility based on [completedSubLessonCount], [selectedLessonId], and
+     * eligibility based on [uniqueCardShows], [selectedLessonId], and
      * card availability. Returns a [BossStartResult] for the ViewModel to apply.
      *
      * @param type                     boss type (LESSON, MEGA, ELITE)
      * @param cards                    pre-built card pool from CardProvider
      * @param selectedLessonId         currently selected lesson (required for LESSON/MEGA)
-     * @param completedSubLessonCount  completed sub-lessons for unlock check
-     * @param testMode                 skips the 15-sublesson unlock requirement
+     * @param completedSubLessonCount  completed sub-lessons (kept for logging/compatibility)
+     * @param subLessonCount           total sub-lessons in lesson
+     * @param testMode                 skips the unlock requirement
+     * @param uniqueCardShows          unique cards shown for the lesson (from mastery state)
      */
     fun startBoss(
         type: BossType,
@@ -87,15 +89,16 @@ class BossBattleRunner {
         selectedLessonId: String?,
         completedSubLessonCount: Int,
         subLessonCount: Int,
-        testMode: Boolean
+        testMode: Boolean,
+        uniqueCardShows: Int = 0
     ): BossStartResult {
-        // Unlock guard: require min(15, total) completed sub-lessons (unless test mode or elite)
-        val threshold = minOf(TrainingConfig.BOSS_UNLOCK_SUB_LESSONS, subLessonCount)
-        if (type != BossType.ELITE && completedSubLessonCount < threshold && !testMode) {
+        // Unlock guard: require 150 unique card shows (unless test mode or elite)
+        if (type != BossType.ELITE && uniqueCardShows < TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD && !testMode) {
+            val needed = TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD - uniqueCardShows
             return BossStartResult(
                 success = false,
                 cards = emptyList(),
-                errorMessage = "Complete at least $threshold exercises first"
+                errorMessage = "Show $needed more cards first"
             )
         }
 

@@ -563,12 +563,13 @@ class DailyPracticeCoordinator(
 
     fun recordDailyCardPracticed(
         blockType: DailyBlockType,
-        resolveCardLessonId: (card: com.alexpo.grammermate.data.SentenceCard) -> String
+        resolveCardLessonId: (card: com.alexpo.grammermate.data.SentenceCard) -> String,
+        accepted: Boolean = true
     ) {
         val count = dailyPracticeAnsweredCounts[blockType] ?: 0
         dailyPracticeAnsweredCounts[blockType] = count + 1
 
-        if (blockType == DailyBlockType.TRANSLATE) {
+        if (blockType == DailyBlockType.TRANSLATE && accepted) {
             val block = getCurrentBlock() ?: return
             val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return
             val card = task.card

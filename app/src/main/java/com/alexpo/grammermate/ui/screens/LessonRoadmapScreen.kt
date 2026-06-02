@@ -125,8 +125,7 @@ fun LessonRoadmapScreen(
     val shownCards = state.flowerDisplay.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.navigation.selectedLessonId?.let { state.boss.bossLessonRewards[it.value] }
     val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it.value] }
-    val bossThreshold = minOf(15, total)
-    val bossUnlocked = state.cardSession.completedSubLessonCount >= bossThreshold || state.cardSession.testMode
+    val bossUnlocked = state.flowerDisplay.currentLessonShownCount >= 150 || state.cardSession.testMode
     val noOp: () -> Unit = { }
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart)
     val isLessonComplete = completed >= total

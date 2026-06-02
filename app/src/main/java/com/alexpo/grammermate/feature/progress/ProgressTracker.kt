@@ -104,16 +104,25 @@ class ProgressTracker(
     // ── Lesson completion ────────────────────────────────────────────
 
     /**
-     * Check and mark a lesson as completed when completedSubLessonCount >= 15.
-     * The 15-sublesson threshold represents the first full cycle through the lesson.
+     * Check and mark a lesson as completed when uniqueCardShows >= min(totalCardsInLesson, 150).
+     * - For lessons with < 150 cards: complete when ALL cards are shown.
+     * - For lessons with >= 150 cards: complete when 150 cards are shown.
      */
     fun checkAndMarkLessonCompleted(
         completedSubLessonCount: Int,
         selectedLessonId: LessonId?,
-        selectedLanguageId: LanguageId
+        selectedLanguageId: LanguageId,
+        uniqueCardShows: Int = 0,
+        totalCardsInLesson: Int = 0
     ) {
-        val completedFirstCycle = completedSubLessonCount >= TrainingConfig.BOSS_UNLOCK_SUB_LESSONS
-        if (completedFirstCycle && selectedLessonId != null) {
+        val threshold = minOf(totalCardsInLesson, TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
+        val isComplete = if (threshold > 0) {
+            uniqueCardShows >= threshold
+        } else {
+            // Fallback: use legacy sub-lesson count if card data unavailable
+            completedSubLessonCount >= TrainingConfig.BOSS_UNLOCK_SUB_LESSONS
+        }
+        if (isComplete && selectedLessonId != null) {
             masteryStore.markLessonCompleted(selectedLessonId.value, selectedLanguageId.value)
         }
     }

@@ -464,6 +464,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             GrammarChipStore.initialize(getApplication(), packsDir)
 
             badSentenceStore.migrateIfNeeded(lessonStore)
+
             val progress = progressStore.load()
             val config = configStore.load()
             val profile = profileStore.load()
@@ -523,7 +524,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
                     sessionRunner.resumeTimer()
                     (_coreState.value.cardSession.currentCard as? SentenceCard)?.let {
-                        recordCardShowForMastery(it)
+                        // Skip mastery recording for daily sessions on restore to avoid double-counting.
+                        // Daily sessions record card shows via recordDailyCardPracticed() on each
+                        // accepted answer, so re-recording here would inflate totalCardShows on
+                        // every app restart.
+                        if (!isDailySession()) {
+                            recordCardShowForMastery(it)
+                        }
                         recordCardEncounter(it)
                     }
                     if (_coreState.value.cardSession.inputMode == InputMode.VOICE) {
@@ -1285,9 +1292,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * for non-WORD_BANK modes). Used to track per-block completion for cursor advancement.
      */
     fun recordDailyCardPracticed(blockType: DailyBlockType) {
+        // Caller already guards on result.accepted, so accepted=true here.
         dailyPracticeCoordinator.recordDailyCardPracticed(
             blockType = blockType,
-            resolveCardLessonId = { card -> resolveCardLessonId(card) }
+            resolveCardLessonId = { card -> resolveCardLessonId(card) },
+            accepted = true
         )
     }
 
@@ -1630,10 +1639,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun checkAndMarkLessonCompleted() {
         val s = _coreState.value
         val langId = s.navigation.selectedLanguageId ?: return
+        val lessonId = s.navigation.selectedLessonId
+        val mastery = lessonId?.let { masteryStore.get(lessonId.value, langId.value) }
+        val uniqueCardShows = mastery?.uniqueCardShows ?: 0
+        val totalCardsInLesson = lessonId?.let { lid ->
+            s.navigation.lessons.find { it.id == lid }?.cards?.size ?: 0
+        } ?: 0
         progressTracker.checkAndMarkLessonCompleted(
             completedSubLessonCount = s.cardSession.completedSubLessonCount,
             selectedLessonId = s.navigation.selectedLessonId,
-            selectedLanguageId = langId
+            selectedLanguageId = langId,
+            uniqueCardShows = uniqueCardShows,
+            totalCardsInLesson = totalCardsInLesson
         )
 
         // Update chapter progress when lesson completion status changes

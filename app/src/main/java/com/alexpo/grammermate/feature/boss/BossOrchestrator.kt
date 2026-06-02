@@ -59,13 +59,19 @@ class BossOrchestrator(
         val selectedId = state.navigation.selectedLessonId
         val selectedIndex = lessons.indexOfFirst { it.id == selectedId }
         val cards = cardProvider.buildBossCards(lessons, type, selectedId, selectedIndex)
+        val uniqueCardShows = selectedId?.let { lid ->
+            state.navigation.selectedLanguageId?.let { langId ->
+                masteryStore.get(lid.value, langId.value)?.uniqueCardShows ?: 0
+            }
+        } ?: 0
         val result = bossBattleRunner.startBoss(
             type = type,
             cards = cards,
             selectedLessonId = selectedId?.value,
             completedSubLessonCount = state.cardSession.completedSubLessonCount,
             subLessonCount = state.cardSession.subLessonCount,
-            testMode = state.cardSession.testMode
+            testMode = state.cardSession.testMode,
+            uniqueCardShows = uniqueCardShows
         )
         if (!result.success) {
             _state.update { it.copy(bossErrorMessage = result.errorMessage) }
