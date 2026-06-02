@@ -29,7 +29,8 @@ internal class LanguageManager(
                 mapOf("id" to "it", "name" to "Italian"),
                 mapOf("id" to "de", "name" to "German"),
                 mapOf("id" to "zh", "name" to "Chinese"),
-                mapOf("id" to "ru", "name" to "Russian")
+                mapOf("id" to "ru", "name" to "Russian"),
+                mapOf("id" to "el", "name" to "Greek")
             )
             languagesStore.write(defaults)
         } else {
@@ -39,7 +40,8 @@ internal class LanguageManager(
             val newLangs = listOf(
                 mapOf("id" to "de", "name" to "German"),
                 mapOf("id" to "zh", "name" to "Chinese"),
-                mapOf("id" to "ru", "name" to "Russian")
+                mapOf("id" to "ru", "name" to "Russian"),
+                mapOf("id" to "el", "name" to "Greek")
             ).filterNot { it["id"] in existingIds }
             if (newLangs.isNotEmpty()) {
                 entries.addAll(newLangs)
@@ -184,6 +186,7 @@ internal class LanguageManager(
             "de" -> "German"
             "zh" -> "Chinese"
             "ru" -> "Russian"
+            "el" -> "Greek"
             else -> normalized.uppercase()
         }
         val newEntry = mapOf("id" to normalized, "name" to displayName)

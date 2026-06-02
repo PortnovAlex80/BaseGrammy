@@ -1,6 +1,9 @@
 {
-  "currentLine": 15493,
+  "currentLine": 38042,
   "batchSize": 10,
-  "fixesCount": 3602,
-  "totalLines": 56665
+  "fixesCount": 12318,
+  "totalLines": 56665,
+  "note": "Fixes in C:\\Users\\user\\verb-fixes\\",
+  "lastWave": "R506",
+  "linesPerWave": 80
 }
