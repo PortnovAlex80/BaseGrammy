@@ -109,17 +109,20 @@ object GrammarChipStore {
                         }
                     }
 
-                    // Check if grammar_chips directory exists
+                    // Check for grammar chips in grammar_chips/ subdir OR pack root
                     val gcDir = File(packDir, "grammar_chips")
-                    if (!gcDir.exists()) {
-                        Log.d(TAG, "No grammar_chips directory in $packId")
-                        return@forEach
-                    }
+                    val gcDirFiles = if (gcDir.exists()) {
+                        gcDir.listFiles()?.filter {
+                            it.isFile && it.name.endsWith(".json")
+                        } ?: emptyList()
+                    } else emptyList()
 
-                    // Load and cache grammar chip JSON files
-                    val chipFiles = gcDir.listFiles()?.filter {
-                        it.isFile && it.name.endsWith(".json")
+                    // Also check pack root for grammar_chip_*.json files
+                    val rootChipFiles = packDir.listFiles()?.filter {
+                        it.isFile && it.name.startsWith("grammar_chip_") && it.name.endsWith(".json")
                     } ?: emptyList()
+
+                    val chipFiles = gcDirFiles + rootChipFiles
 
                     Log.d(TAG, "Found ${chipFiles.size} grammar chip files in $packId")
 
