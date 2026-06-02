@@ -125,10 +125,10 @@ fun LessonRoadmapScreen(
     val shownCards = state.flowerDisplay.currentLessonShownCount.coerceAtMost(totalCards)
     val bossLessonReward = state.navigation.selectedLessonId?.let { state.boss.bossLessonRewards[it.value] }
     val bossMegaReward = state.navigation.selectedLessonId?.let { state.boss.bossMegaRewards[it.value] }
-    val bossUnlocked = state.flowerDisplay.currentLessonShownCount >= 150 || state.cardSession.testMode
     val noOp: () -> Unit = { }
     val entries = buildRoadmapEntries(visibleTrainingTypes, hasMegaBoss, cycleStart)
     val isLessonComplete = completed >= total
+    val bossUnlocked = isLessonComplete || state.cardSession.testMode
     var showDifficultyDialog by remember { mutableStateOf(false) }
 
     // Next lesson info
@@ -284,14 +284,7 @@ fun LessonRoadmapScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        if (isLessonComplete) {
-            Button(
-                onClick = { showDifficultyDialog = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(R.string.roadmap_repeat_lesson))
-            }
-        } else {
+        if (!isLessonComplete) {
             Button(
                 onClick = { onStartSubLesson(currentIndex) },
                 modifier = Modifier.fillMaxWidth()
@@ -409,20 +402,20 @@ private fun CompletionCard(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedButton(
-                onClick = onReview,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(R.string.roadmap_repeat))
-            }
             if (onNextLesson != null) {
-                Spacer(modifier = Modifier.height(8.dp))
                 FilledTonalButton(
                     onClick = onNextLesson,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = stringResource(R.string.roadmap_next_lesson))
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            OutlinedButton(
+                onClick = onReview,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(R.string.roadmap_repeat))
             }
         }
     }

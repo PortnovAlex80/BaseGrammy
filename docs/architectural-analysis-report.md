@@ -479,3 +479,218 @@ BossBattleRunner, or GrammarMateApp:
 **Причина ломания не в отсутствии регрессионных проверок — а в god-object на 2277 строк с 12 ответственностями, 6 конкурирующими flow, и shotgun-surgery reset-каскадом в 7 местах, при нулевом тестовом покрытии ViewModel и навигации.** Pipelines и acceptance criteria не помогают потому, что хрупкость структурная — нет стен между доменами, и любое изменение каскадом идёт через весь god-object.
 
 **Следующий шаг:** установить `maestro-mcp` плагин и написать YAML-флоу для критических user journeys — это даст реальные кликабельные автотесты, которые агент не сможет "пропустить".
+
+---
+
+## Пайплайн языкового пака: анализ и паттерны проектирования
+
+### Текущее состояние: все EXPRESS-паки идентичны
+
+| Компонент | GERMAN | CHINESE | RUSSIAN | GREEK | ITALIAN |
+|-----------|--------|---------|---------|-------|---------|
+| schemaVersion | 2 | 2 | 2 | 2 | 2 |
+| Главы | 3 | 3 | 3 | 3 | 3 |
+| Уроков | 24 (12+12) | 24 | 24 | 24 | 24 |
+| Verb drill | 1 файл | 1 | 1 | 1 | 1 |
+| Vocab drill | 6 файлов | 6 | 6 | 6 | 6 |
+| Stories | 3 md | 3 md | 3 md | 3 md | 3 md |
+
+Единственная разница — **содержание CSV файлов** (текст на целевом языке). Конструкт — 100% одинаковый.
+
+### Текущий pipeline загрузки пака
+
+```
+ZIP → unpack → manifest.json → validate → copy files → parse CSV → register → activate
+```
+
+**3 дыры в стандартизации:**
+1. `pack_validator.py` не поддерживает schema v2 — бесполезен для всех EXPRESS-паков
+2. Drill CSV не валидируются при импорте — ошибки всплывают только при использовании
+3. Нет темплейта/скаффолда — каждый пак создаётся копированием и ручной правкой
+
+### Полная карта pipeline: от "сырые файлы" до "работающий пак"
+
+```
+[1] ИСТОЧНИК
+    ZIP файл (assets или SAF URI)
+         |
+[2] РАСПАКОВКА (PackImporter.extractZipToTemp)
+    ZIP -> tmp_UUID/ с path traversal защитой
+         |
+[3] MANIFEST ВАЛИДАЦИЯ (LessonPackManifest.fromJson)
+    - schemaVersion: 1|2
+    - packId, packVersion, language: непустые
+    - lessons/chapters: минимальный контент
+    -> error() при невалидном -- загрузка прерывается
+         |
+[4] ПОДГОТОВКА ОКРУЖЕНИЯ
+    - languageEnsurer(languageId) -> создаёт язык если нет
+    - removePacksForLanguage(packId, langId) -> удаляет старую версию
+    - Очистка packDir если существует
+         |
+[5] КОПИРОВАНИЕ ФАЙЛОВ
+    tempDir -> packs/PACK_ID/ (включая stories/, CSV, manifest.json)
+         |
+[6] ИМПОРТ УРОКОВ (importLessonFromFile x N)
+    Для каждого CSV:
+    - AtomicFileWriter -> lessons/LANG/lesson_ID.csv
+    - CsvParser.parseLesson() -> SentenceCard list
+    - replaceById() или replaceByTitle() -> дедупликация
+    - lessonIndexWriter() -> LANG_index.yaml
+    - Ошибки логируются, не прерывают импорт
+         |
+[7] ИМПОРТ DRILLS (importPackDrills)
+    verbDrill.files -> drills/PACK_ID/verb_drill/
+    vocabDrill.files -> drills/PACK_ID/vocab_drill/
+    - Содержимое НЕ валидируется
+         |
+[8] ИМПОРТ STORIES (importStoriesFromPack)
+    JSON файлы (!= manifest.json) -> stories/
+    - StoryQuizParser.parse() -> валидация
+         |
+[9] ИМПОРТ VOCAB (importVocabFromPack)
+    vocab_*.csv -> vocab/LANG/
+         |
+[10] РЕГИСТРАЦИЯ ПАКА
+    packs.yaml += { packId, packVersion, languageId, importedAt }
+         |
+[11] АКТИВАЦИЯ (TrainingViewModel.selectPack)
+    - Синхронизация TTS/ASR языка
+    - selectLesson() или drill-only path
+    - rebindWordMasteryStore(packId)
+    - refreshDrillVisibility()
+    - loadChapters()
+    - saveProgress()
+```
+
+### Применение паттернов GoF и TOGAF
+
+#### Паттерн #1: Template Method (GoF) — "Один pipeline, разный контент"
+
+Прямой hit для ситуации "один алгоритм, разный контент". Сейчас pipeline размазан по `PackImporter` с if-ами на `schemaVersion`. Template Method делает шаги явными и незабываемыми.
+
+```
+┌─────────────────────────────────┐
+│  PackPipeline (abstract)        │
+│─────────────────────────────────│
+│ + importPack()  ← template      │
+│   1. validateManifest()         │
+│   2. extractContent()           │
+│   3. parseLessons()             │
+│   4. parseDrills()              │
+│   5. parseStories()             │
+│   6. validate()                 │
+│   7. register()                 │
+│   8. activate()                 │
+│─────────────────────────────────│
+│ # validateManifest()  ← hook    │
+│ # extractContent()   ← hook    │
+│ # parseLessons()     ← hook    │
+└────────┬────────────────────────┘
+         │
+    ┌────┴────┬────────────┬───────────┐
+    ▼         ▼            ▼           ▼
+ SchemaV1  SchemaV2    DrillOnly   FullPack
+Pipeline   Pipeline    Pipeline    Pipeline
+```
+
+#### Паттерн #2: Mediator (GoF) — "Забыл добавить reset в одно из 7 мест"
+
+Сейчас TrainingViewModel вручную орkestрирует 16 модулей. Mediator централизует рассылку событий. Новый модуль = новый подписчик, не нужно трогать 7 мест.
+
+```
+СЕЙЧАС (Shotgun Surgery):
+═══════════════════════════
+selectPack() → boss.reset()
+             → story.reset()
+             → vocab.reset()
+             → daily.reset()
+             → refreshDrillVisibility()
+             → rebuildSchedules()
+             → buildSessionCards()
+             → refreshFlowerStates()
+             → loadChapters()
+             → saveProgress()
+   ↑ этот же блок в 7 местах ↑
+
+С MEDIATOR:
+═══════════
+selectPack() → PackMediator.onPackChanged(packId)
+                   → сам рассылает всем подписчикам
+```
+
+#### Паттерн #3: Chain of Responsibility (GoF) — "Валидация — дырявая"
+
+Проверка пака — цепочка независимых валидаторов. Каждый валидатор — один класс, одна ответственность. Легко добавить новый.
+
+```
+manifest.json → SchemaValidator → ContentValidator → CSVValidator → DrillValidator → StoryValidator
+                      │                  │                 │              │                │
+                   skip?             skip?             skip?          skip?            skip?
+                      │                  │                 │              │                │
+                      ▼                  ▼                 ▼              ▼                ▼
+                   errors            errors            errors         errors           errors
+                      │                  │                 │              │                │
+                      └──────────────────┴─────────────────┴──────────────┴────────────────┘
+                                              │
+                                         ValidationResult
+                                    (pass / warn / fail)
+```
+
+#### Паттерн #4: Prototype + Builder (GoF) — "Создание пака — ручное копирование"
+
+```
+PackBuilder.create("FRENCH_EXPRESS")
+    .fromTemplate(ExpressPackTemplate)     // Prototype — клонирует структуру
+    .language("fr")
+    .lessons(loadFrom("french_lessons.csv"))
+    .verbDrill(loadFrom("fr_verbs.csv"))
+    .vocabDrill(loadFrom("fr_nouns.csv"), loadFrom("fr_adjectives.csv"))
+    .build()                                // Builder — пошаговая сборка
+    .validate(ChainOfValidators)            // Chain of Responsibility
+    .exportTo("FRENCH_EXPRESS.zip")         // готовый пак
+```
+
+#### Паттерн #5: Pipeline / Gates (TOGAF) — "Активация пака — хрупкая"
+
+Из TOGAF — паттерн Architecture Continuum с validation gates. Каждый Gate — checkpoint. Если валидация не прошла — pipeline останавливается, состояние откатывается.
+
+```
+[Phase A]      [Phase B]       [Phase C]       [Phase D]
+ CREATION  →   VALIDATION →   IMPORT     →    ACTIVATION
+                GATE ▼          GATE ▼          GATE ▼
+             schema ok?      CSV parsed?     stores bound?
+                │                │                │
+              FAIL → стоп     FAIL → стоп     FAIL → откат
+```
+
+Сейчас fallback на "пак создаётся даже с ошибками" — это опасно. Gates гарантируют: не прошёл валидацию — не активируем.
+
+### Сводная таблица паттернов
+
+| Боль | Паттерн | Источник | Что даёт |
+|------|---------|----------|----------|
+| Один pipeline, разный контент | **Template Method** | GoF | Шаги явные, незабываемые |
+| Reset cascade в 7 местах | **Mediator** | GoF | Новый модуль = новый подписчик |
+| Дырявая валидация пака | **Chain of Responsibility** | GoF | Каждый валидатор — отдельный класс |
+| Ручное создание пака | **Prototype + Builder** | GoF | Клонирование шаблона + пошаговая сборка |
+| Хрупкая активация | **Pipeline / Gates** | TOGAF | Checkpoint → откат при ошибке |
+
+**Приоритет внедрения:** Template Method + Mediator решают 80% боли. Остальное наращивается постепенно.
+
+### Ключевые файлы pipeline
+
+| Файл | Назначение |
+|------|-----------|
+| `data/LessonStore.kt` | Фасад, координация делегатов, загрузка уроков |
+| `data/PackImporter.kt` | ZIP-распаковка, импорт manifest/lessons/drills/stories/vocab |
+| `data/LanguageManager.kt` | Языки, packs.yaml, seed/default packs |
+| `data/LessonPackManifest.kt` | Manifest модель + парсинг + валидация |
+| `data/CsvParser.kt` | Парсинг lesson CSV (semicolon-delimited) |
+| `data/DrillFileManager.kt` | Drill/stories/vocab queries |
+| `data/CsvLineParser.kt` | Общий semicolon-delimited line parser |
+| `data/ItalianDrillVocabParser.kt` | Парсинг drill CSV (comma-delimited) |
+| `data/VocabCsvParser.kt` | Парсинг vocab CSV |
+| `data/Models.kt` | Все data модели (Lesson, Pack, Chapter, SentenceCard...) |
+| `data/ParseResult.kt` | Generic parse result + ParseError sealed class |
+| `tools/pack_validator/pack_validator.py` | Внешний валидатор (устарел для v2) |

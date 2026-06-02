@@ -82,6 +82,7 @@ class BossBattleRunner {
      * @param subLessonCount           total sub-lessons in lesson
      * @param testMode                 skips the unlock requirement
      * @param uniqueCardShows          unique cards shown for the lesson (from mastery state)
+     * @param totalCardsInLesson       total cards in the lesson (for min threshold)
      */
     fun startBoss(
         type: BossType,
@@ -90,11 +91,13 @@ class BossBattleRunner {
         completedSubLessonCount: Int,
         subLessonCount: Int,
         testMode: Boolean,
-        uniqueCardShows: Int = 0
+        uniqueCardShows: Int = 0,
+        totalCardsInLesson: Int = 0
     ): BossStartResult {
-        // Unlock guard: require 150 unique card shows (unless test mode or elite)
-        if (type != BossType.ELITE && uniqueCardShows < TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD && !testMode) {
-            val needed = TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD - uniqueCardShows
+        // Unlock guard: uniqueCardShows >= min(totalCards, 150) — same as lesson completion
+        val threshold = minOf(totalCardsInLesson, TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD).coerceAtLeast(1)
+        if (type != BossType.ELITE && uniqueCardShows < threshold && !testMode) {
+            val needed = threshold - uniqueCardShows
             return BossStartResult(
                 success = false,
                 cards = emptyList(),

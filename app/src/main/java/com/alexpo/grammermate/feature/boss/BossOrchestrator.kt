@@ -64,6 +64,7 @@ class BossOrchestrator(
                 masteryStore.get(lid.value, langId.value)?.uniqueCardShows ?: 0
             }
         } ?: 0
+        val totalCardsInLesson = lessons.firstOrNull { it.id == selectedId }?.cards?.size ?: 0
         val result = bossBattleRunner.startBoss(
             type = type,
             cards = cards,
@@ -71,7 +72,8 @@ class BossOrchestrator(
             completedSubLessonCount = state.cardSession.completedSubLessonCount,
             subLessonCount = state.cardSession.subLessonCount,
             testMode = state.cardSession.testMode,
-            uniqueCardShows = uniqueCardShows
+            uniqueCardShows = uniqueCardShows,
+            totalCardsInLesson = totalCardsInLesson
         )
         if (!result.success) {
             _state.update { it.copy(bossErrorMessage = result.errorMessage) }
