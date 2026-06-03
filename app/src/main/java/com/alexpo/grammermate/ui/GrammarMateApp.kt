@@ -91,6 +91,7 @@ import com.alexpo.grammermate.ui.components.MeteredNetworkDialog
 import com.alexpo.grammermate.ui.components.AsrMeteredNetworkDialog
 import com.alexpo.grammermate.ui.components.ProfileStatsPopup
 import android.util.Log
+import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.ScreenLogger
 
 // ── Route constants ──────────────────────────────────────────────────────────
@@ -181,6 +182,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
             val backStackEntry = navController.currentBackStackEntry
             ScreenLogger.nav(backStackEntry?.destination?.route ?: "?", currentRoute, trigger = "route_changed")
             ScreenLogger.screenShown(currentRoute.uppercase())
+            AuditLogger.getInstanceOrNull()?.screenOpen(
+                from = backStackEntry?.destination?.route ?: "?",
+                to = currentRoute,
+                trigger = "route_changed"
+            )
         }
 
         // Observe Activity lifecycle to pause/resume Pomodoro timer
@@ -223,6 +229,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 Log.d("NavDebug", "NAVIGATE: from=${navController.currentBackStackEntry?.destination?.route} to=$route")
                 val actual = navController.currentBackStackEntry?.destination?.route
                 ScreenLogger.nav(actual ?: "?", route, trigger = "navigate")
+                AuditLogger.getInstanceOrNull()?.screenOpen(
+                    from = actual ?: "?",
+                    to = route,
+                    trigger = "navigate"
+                )
                 if (route != actual) {
                     previousRoute = actual ?: Routes.HOME
                     navController.navigate(route) {
@@ -542,6 +553,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         BackHandler(enabled = !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: LESSON inner handler, hasChapters=$lessonHasChapters")
                             ScreenLogger.nav("lesson", "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("lesson", "back_to_${if (lessonHasChapters) "chapter_lessons" else "home"}")
                             if (lessonHasChapters) {
                                 val currentLessonId = state.navigation.selectedLessonId?.value
                                 if (currentLessonId != null) {
@@ -734,6 +746,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         BackHandler(enabled = state.cardSession.returnTo == Routes.VERB_DRILL && !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: TRAINING VERB_DRILL return path")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("training", "verb_drill_return")
                             verbDrillVm.persistSessionState()
                             vm.exitVerbDrillSession()
                             onNavigate(Routes.VERB_DRILL)
@@ -742,6 +755,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         BackHandler(enabled = state.cardSession.returnTo != Routes.VERB_DRILL && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: TRAINING staircase → LESSON")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("training", "staircase_to_lesson")
                             vm.finishSession()
                             onNavigate(Routes.LESSON)
                         }
@@ -767,6 +781,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         BackHandler {
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("verb_drill", "exit_to_home")
                             verbDrillExit()
                         }
                         VerbDrillScreen(
@@ -801,6 +816,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         BackHandler {
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("vocab_drill", "exit_to_home")
                             vocabExit()
                         }
                         VocabDrillScreen(
@@ -953,6 +969,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             ChapterLessonsScreen(
                                 chapterTitle = selectedChapter.title,
                                 chapterSubtitle = selectedChapter.subtitle ?: "",
+                                chapterId = selectedChapter.chapterId,
                                 lessons = lessons,
                                 chapterProgress = chapterProgress,
                                 completedLessonIds = completedLessonIds,
@@ -973,6 +990,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         BackHandler(enabled = !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: CHAPTER_LESSONS inner handler → HOME")
                             ScreenLogger.nav("chapter_lessons", "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("chapter_lessons", "back_to_home")
                             navController.popBackStack(Routes.HOME, inclusive = false)
                         }
                     }
@@ -1050,6 +1068,7 @@ private fun NavBackHandlers(
     BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && vm.hasPackChapters(state.navigation.activePackId.value) && !showSettings) {
         Log.d("NavDebug", "BACK: HOME+chapters → clearActivePack")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("home", "clear_active_pack")
         vm.clearActivePack()
         // No navigation needed — HOME recomposes with pack selection when activePackId becomes null
     }
@@ -1060,18 +1079,21 @@ private fun NavBackHandlers(
     BackHandler(enabled = currentRoute == Routes.TRAINING && !showSettings) {
         Log.d("NavDebug", "BACK: TRAINING BackHandler fired! showSettings=$showSettings, currentRoute=$currentRoute")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("training", "show_exit_dialog")
         onShowExitDialog()
     }
 
     // ── DAILY_PRACTICE back → exit dialog ──
     BackHandler(enabled = currentRoute == Routes.DAILY_PRACTICE && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("daily_practice", "show_exit_dialog")
         onShowExitDialog()
     }
 
     // ── STORY back → LESSON ──
     BackHandler(enabled = currentRoute == Routes.STORY && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("story", "back_to_lesson")
         navController.navigate(Routes.LESSON) {
             popUpTo(Routes.HOME) { inclusive = false }
             launchSingleTop = true
@@ -1081,6 +1103,7 @@ private fun NavBackHandlers(
     // ── LADDER back → previous route ──
     BackHandler(enabled = currentRoute == Routes.LADDER && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("ladder", "back_to_$previousRoute")
         navController.navigate(previousRoute) {
             popUpTo(Routes.HOME) { inclusive = false }
             launchSingleTop = true
@@ -1093,6 +1116,7 @@ private fun NavBackHandlers(
     // ── TRAINING with daily-practice return → cancel daily, go HOME ──
     BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.DAILY_PRACTICE && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("training", "daily_cancel_to_home")
         vm.cancelDailySession()
         navController.navigate(Routes.HOME) {
             popUpTo(Routes.HOME) { inclusive = true }
@@ -1105,6 +1129,7 @@ private fun NavBackHandlers(
     BackHandler(enabled = currentRoute == Routes.GRAMMAR_STORY_ROADMAP && !showSettings) {
         Log.d("NavDebug", "BACK: GRAMMAR_STORY_ROADMAP → HOME (clearActivePack)")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("grammar_story_roadmap", "clear_active_pack_to_home")
         vm.clearActivePack()
         navController.popBackStack(Routes.HOME, inclusive = false)
     }
@@ -1114,6 +1139,7 @@ private fun NavBackHandlers(
     // GRAMMAR_STORY_ROADMAP route.  Pop back to whichever is underneath.
     BackHandler(enabled = currentRoute == Routes.STORY_READER && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
+        AuditLogger.getInstanceOrNull()?.backPress("story_reader", "pop_back")
         // Pop back one step — returns to whatever launched STORY_READER
         // (HOME showing roadmap, or GRAMMAR_STORY_ROADMAP direct route).
         // Also stop TTS if playing.
@@ -1460,6 +1486,7 @@ private fun NavDialogs(
                     val action = completionNextAction.value
                     completionNextAction.value = CompletionNextAction.NONE
                     ScreenLogger.tap("completion_continue", "action=$action")
+                    AuditLogger.getInstanceOrNull()?.dialogClose("completion", "continue_$action")
                     when (action) {
                         CompletionNextAction.NEXT_SUB_LESSON -> {
                             // Start next sub-lesson in current lesson
@@ -1505,6 +1532,7 @@ private fun NavDialogs(
                 OutlinedButton(onClick = {
                     completionNextAction.value = CompletionNextAction.NONE
                     ScreenLogger.tap("completion_exit")
+                    AuditLogger.getInstanceOrNull()?.dialogClose("completion", "exit")
                     // Navigate back to lesson list
                     val activePackId = state.navigation.activePackId?.value
                     val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
@@ -1694,6 +1722,7 @@ private fun ExitConfirmDialog(
         confirmButton = {
             TextButton(onClick = {
                 onDismiss()
+                AuditLogger.getInstanceOrNull()?.dialogAction("exit_confirm", "yes")
                 if (isPomodoroActive) {
                     vm.confirmPomodoroExit()
                     onNavigate(Routes.HOME)
@@ -1717,7 +1746,10 @@ private fun ExitConfirmDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = {
+                AuditLogger.getInstanceOrNull()?.dialogAction("exit_confirm", "no")
+                onDismiss()
+            }) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
         },

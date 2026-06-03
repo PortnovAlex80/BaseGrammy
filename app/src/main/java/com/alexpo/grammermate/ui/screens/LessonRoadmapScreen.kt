@@ -51,6 +51,7 @@ import com.alexpo.grammermate.data.FlowerVisual
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.SubLessonType
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.shared.AuditLogger
 
 sealed class RoadmapEntry {
     data class Training(val index: Int, val type: SubLessonType) : RoadmapEntry()
@@ -143,7 +144,7 @@ fun LessonRoadmapScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = { AuditLogger.getInstanceOrNull()?.backPress("lesson_roadmap"); onBack() }) {
                 Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.roadmap_back))
             }
             Text(text = lessonTitle, fontWeight = FontWeight.SemiBold)
@@ -175,8 +176,8 @@ fun LessonRoadmapScreen(
             // ── CompletionCard ──
             CompletionCard(
                 flower = state.flowerDisplay.currentLessonFlower,
-                onNextLesson = if (nextLessonExists) onNextLesson else null,
-                onReview = { showDifficultyDialog = true }
+                onNextLesson = if (nextLessonExists) ({ AuditLogger.getInstanceOrNull()?.lessonSelect(state.navigation.lessons.getOrNull(lessonIndex + 1)?.id?.value ?: "", state.activeChapterId ?: ""); onNextLesson() }) else null,
+                onReview = { AuditLogger.getInstanceOrNull()?.dialogAction("repeat_lesson", "open"); showDifficultyDialog = true }
             )
         } else {
             LazyVerticalGrid(
@@ -212,6 +213,7 @@ fun LessonRoadmapScreen(
                                     .height(72.dp)
                                     .clickable {
                                         if (canEnter) {
+                                            AuditLogger.getInstanceOrNull()?.lessonSelect("${index + 1}", state.activeChapterId ?: "")
                                             onStartSubLesson(index)
                                         } else {
                                             earlyStartSubLessonIndex = index
@@ -237,7 +239,7 @@ fun LessonRoadmapScreen(
                                 enabled = bossUnlocked,
                                 reward = if (bossUnlocked) bossLessonReward else null,
                                 locked = !bossUnlocked,
-                                onClick = if (bossUnlocked) onStartBossLesson else noOp
+                                onClick = if (bossUnlocked) ({ AuditLogger.getInstanceOrNull()?.bossStart("lesson", state.navigation.selectedLessonId?.value ?: ""); onStartBossLesson() }) else noOp
                             )
                         }
                         is RoadmapEntry.BossMega -> {
@@ -246,7 +248,7 @@ fun LessonRoadmapScreen(
                                 enabled = bossUnlocked,
                                 reward = if (bossUnlocked) bossMegaReward else null,
                                 locked = !bossUnlocked,
-                                onClick = if (bossUnlocked) onStartBossMega else noOp
+                                onClick = if (bossUnlocked) ({ AuditLogger.getInstanceOrNull()?.bossStart("mega", state.navigation.selectedLessonId?.value ?: ""); onStartBossMega() }) else noOp
                             )
                         }
                         // StoryCheckIn/StoryCheckOut kept for backward compat but no longer rendered
@@ -269,7 +271,7 @@ fun LessonRoadmapScreen(
                     enabled = bossUnlocked,
                     reward = if (bossUnlocked) bossLessonReward else null,
                     locked = !bossUnlocked,
-                    onClick = if (bossUnlocked) onStartBossLesson else noOp
+                    onClick = if (bossUnlocked) ({ AuditLogger.getInstanceOrNull()?.bossStart("lesson", state.navigation.selectedLessonId?.value ?: ""); onStartBossLesson() }) else noOp
                 )
                 if (hasMegaBoss) {
                     BossTile(
@@ -277,7 +279,7 @@ fun LessonRoadmapScreen(
                         enabled = bossUnlocked,
                         reward = if (bossUnlocked) bossMegaReward else null,
                         locked = !bossUnlocked,
-                        onClick = if (bossUnlocked) onStartBossMega else noOp
+                        onClick = if (bossUnlocked) ({ AuditLogger.getInstanceOrNull()?.bossStart("mega", state.navigation.selectedLessonId?.value ?: ""); onStartBossMega() }) else noOp
                     )
                 }
             }
@@ -286,7 +288,7 @@ fun LessonRoadmapScreen(
         Spacer(modifier = Modifier.height(16.dp))
         if (!isLessonComplete) {
             Button(
-                onClick = { onStartSubLesson(currentIndex) },
+                onClick = { AuditLogger.getInstanceOrNull()?.lessonSelect("${currentIndex + 1}", state.activeChapterId ?: ""); onStartSubLesson(currentIndex) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = if (completed == 0) stringResource(R.string.roadmap_start_lesson) else stringResource(R.string.roadmap_continue_lesson))
@@ -300,6 +302,7 @@ fun LessonRoadmapScreen(
             onDismissRequest = { earlyStartSubLessonIndex = null },
             confirmButton = {
                 TextButton(onClick = {
+                    AuditLogger.getInstanceOrNull()?.dialogAction("early_start", "yes")
                     earlyStartSubLessonIndex = null
                     onStartSubLesson(idx)
                 }) {
@@ -307,7 +310,7 @@ fun LessonRoadmapScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { earlyStartSubLessonIndex = null }) {
+                TextButton(onClick = { AuditLogger.getInstanceOrNull()?.dialogAction("early_start", "no"); earlyStartSubLessonIndex = null }) {
                     Text(text = stringResource(R.string.home_no))
                 }
             },
@@ -319,6 +322,7 @@ fun LessonRoadmapScreen(
     if (showDifficultyDialog) {
         DifficultySelectionDialog(
             onConfirm = { hintLevel ->
+                AuditLogger.getInstanceOrNull()?.dialogAction("difficulty_select", hintLevel.name)
                 showDifficultyDialog = false
                 onReview(hintLevel)
             },

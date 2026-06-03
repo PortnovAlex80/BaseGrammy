@@ -1,6 +1,7 @@
 package com.alexpo.grammermate
 
 import android.app.Application
+import com.alexpo.grammermate.shared.AuditLogger
 
 /**
  * Custom Application class that holds the AppContainer for dependency injection.
@@ -10,4 +11,10 @@ import android.app.Application
  */
 class GrammarMateApplication : Application() {
     val container: AppContainer by lazy { AppContainer(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        AuditLogger.initialize(this)
+        AuditLogger.getInstance().startSession(appVersion = "1.7")
+    }
 }

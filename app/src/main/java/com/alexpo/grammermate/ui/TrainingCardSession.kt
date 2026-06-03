@@ -360,6 +360,7 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
         SharedReportSheet(
             onDismiss = { showReportSheet = false },
             cardPromptText = reportCard?.promptRu,
+            cardId = reportCard?.id,
             isFlagged = contract.isCurrentCardFlagged(),
             onFlag = { contract.flagCurrentCard() },
             onUnflag = { contract.unflagCurrentCard() },

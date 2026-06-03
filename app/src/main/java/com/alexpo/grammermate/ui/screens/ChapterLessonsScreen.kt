@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.ui.MasteryGreen
 
 /**
@@ -49,6 +50,7 @@ import com.alexpo.grammermate.ui.MasteryGreen
 fun ChapterLessonsScreen(
     chapterTitle: String,
     chapterSubtitle: String,
+    chapterId: String = "",
     lessons: List<Lesson>,
     chapterProgress: ChapterProgress?,
     completedLessonIds: Set<String> = emptySet(),
@@ -60,7 +62,10 @@ fun ChapterLessonsScreen(
             TopAppBar(
                 title = { Text(chapterTitle) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        AuditLogger.getInstanceOrNull()?.backPress("chapter_lessons")
+                        onBack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -131,7 +136,10 @@ fun ChapterLessonsScreen(
                             LessonGridCard(
                                 lesson = lesson,
                                 isCompleted = lesson.id.value in completedLessonIds,
-                                onClick = { onLessonClick(lesson) },
+                                onClick = {
+                                    AuditLogger.getInstanceOrNull()?.lessonSelect(lesson.id.value, chapterId)
+                                    onLessonClick(lesson)
+                                },
                                 modifier = Modifier.weight(1f).fillMaxHeight()
                             )
                         }

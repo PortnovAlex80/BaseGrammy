@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.PomodoroPreset
+import com.alexpo.grammermate.shared.AuditLogger
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +97,10 @@ fun PomodoroSelectorSheet(
                         Card(
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { selectedMinutes = preset.minutes }
+                                .clickable {
+                                    AuditLogger.getInstanceOrNull()?.pomodoroSelector(preset.minutes, "preset")
+                                    selectedMinutes = preset.minutes
+                                }
                                 .then(
                                     if (isSelected) Modifier.border(
                                         2.dp,
@@ -158,7 +162,10 @@ fun PomodoroSelectorSheet(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { onStart(selectedMinutes) },
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.pomodoroSelector(selectedMinutes, "start")
+                        onStart(selectedMinutes)
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Image(

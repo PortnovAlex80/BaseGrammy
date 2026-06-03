@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
+import com.alexpo.grammermate.shared.AuditLogger
 
 /**
  * Shared 4-option report bottom sheet: flag/unflag bad sentence, hide card,
@@ -36,6 +37,7 @@ import com.alexpo.grammermate.R
  *
  * @param onDismiss Called when the sheet should be dismissed.
  * @param cardPromptText Optional subtitle text shown below the title (e.g. card prompt).
+ * @param cardId Optional card identifier used for audit logging.
  * @param isFlagged Whether the current card is already flagged as a bad sentence.
  * @param onFlag Called when the user flags the card as a bad sentence.
  * @param onUnflag Called when the user removes the card from bad sentences.
@@ -55,6 +57,7 @@ import com.alexpo.grammermate.R
 fun SharedReportSheet(
     onDismiss: () -> Unit,
     cardPromptText: String?,
+    cardId: String? = null,
     isFlagged: Boolean,
     onFlag: () -> Unit,
     onUnflag: () -> Unit,
@@ -95,6 +98,7 @@ fun SharedReportSheet(
             if (isFlagged) {
                 TextButton(
                     onClick = {
+                        AuditLogger.getInstanceOrNull()?.reportSheetAction("unflag", cardId ?: "")
                         onUnflag()
                         onDismiss()
                     },
@@ -107,6 +111,7 @@ fun SharedReportSheet(
             } else {
                 TextButton(
                     onClick = {
+                        AuditLogger.getInstanceOrNull()?.reportSheetAction("flag", cardId ?: "")
                         onFlag()
                         onDismiss()
                     },
@@ -119,6 +124,7 @@ fun SharedReportSheet(
             }
             TextButton(
                 onClick = {
+                    AuditLogger.getInstanceOrNull()?.reportSheetAction("hide", cardId ?: "")
                     onHideCard()
                     onDismiss()
                 },
@@ -130,6 +136,7 @@ fun SharedReportSheet(
             }
             TextButton(
                 onClick = {
+                    AuditLogger.getInstanceOrNull()?.reportSheetAction("export", cardId ?: "")
                     val path = onExportBadSentences()
                     if (exportResult != null) {
                         exportResult(path)
@@ -145,7 +152,10 @@ fun SharedReportSheet(
                 Text(stringResource(R.string.report_export))
             }
             TextButton(
-                onClick = onCopyText,
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.reportSheetAction("copy", cardId ?: "")
+                    onCopyText()
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.ContentCopy, contentDescription = null)
@@ -155,6 +165,7 @@ fun SharedReportSheet(
             if (shareText != null && onShareQr != null) {
                 TextButton(
                     onClick = {
+                        AuditLogger.getInstanceOrNull()?.reportSheetAction("share_qr", cardId ?: "")
                         onShareQr()
                         onDismiss()
                     },

@@ -86,6 +86,7 @@ import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.GrammarInfoBottomSheet
+import com.alexpo.grammermate.shared.AuditLogger
 
 /** Pre-compiled regex to strip parenthetical hints from card prompts. */
 private val ParentheticalRegex = Regex("\\s*\\([^)]+\\)")
@@ -277,7 +278,10 @@ fun TrainingScreen(
             if (mode == TrainingScreenMode.NORMAL && grammarChip != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 SuggestionChip(
-                    onClick = { showGrammarSheet = true },
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.grammarChipClick(grammarChip.key, state.navigation.selectedLessonId?.value ?: "")
+                        showGrammarSheet = true
+                    },
                     label = {
                         Text(
                             text = "📖 ${grammarChip.key}",
@@ -443,7 +447,14 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
             TtsSpeakerButton(
                 ttsState = state.audio.ttsState,
                 enabled = state.cardSession.currentCard != null,
-                onClick = onSpeak
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.ttsSpeak(
+                        state.cardSession.currentCard?.id ?: "",
+                        state.cardSession.currentCard?.promptRu ?: "",
+                        "training"
+                    )
+                    onSpeak()
+                }
             )
         }
     }
@@ -492,6 +503,7 @@ fun AnswerBox(
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
+                AuditLogger.getInstanceOrNull()?.voiceResult(spoken)
                 onInputChange(spoken)
                 onSubmit()
             }
@@ -509,6 +521,10 @@ fun AnswerBox(
             state.cardSession.currentCard != null
         ) {
             kotlinx.coroutines.delay(200)
+            AuditLogger.getInstanceOrNull()?.voiceStart(
+                state.navigation.selectedLanguageId?.value ?: "en",
+                state.audio.voiceAutoStart
+            )
             onVoicePromptStarted()
             if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
@@ -522,6 +538,7 @@ fun AnswerBox(
         SharedReportSheet(
             onDismiss = { showReportSheet = false },
             cardPromptText = reportCard?.promptRu,
+            cardId = reportCard?.id,
             isFlagged = cardIsBad,
             onFlag = onFlagBadSentence,
             onUnflag = onUnflagBadSentence,

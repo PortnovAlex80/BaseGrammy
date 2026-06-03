@@ -54,6 +54,7 @@ import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.InitPhase
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.TrainingUiState
+import com.alexpo.grammermate.shared.AuditLogger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,7 +154,10 @@ fun SettingsSheet(
                 languageOptions.forEach { (code, label) ->
                     FilterChip(
                         selected = uiLanguage == code,
-                        onClick = { onSetUiLanguage(code) },
+                        onClick = {
+                            AuditLogger.getInstanceOrNull()?.settingsChange("uiLanguage", code)
+                            onSetUiLanguage(code)
+                        },
                         label = { Text(text = label) },
                         modifier = Modifier.weight(1f)
                     )
@@ -174,7 +178,10 @@ fun SettingsSheet(
                 Text(text = stringResource(R.string.settings_test_mode), style = MaterialTheme.typography.bodyLarge)
                 Switch(
                     checked = state.cardSession.testMode,
-                    onCheckedChange = { onToggleTestMode() }
+                    onCheckedChange = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("testMode", (!state.cardSession.testMode).toString())
+                        onToggleTestMode()
+                    }
                 )
             }
             Text(
@@ -210,7 +217,10 @@ fun SettingsSheet(
                     }
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onSetThemeMode(mode) },
+                        onClick = {
+                            AuditLogger.getInstanceOrNull()?.settingsChange("themeMode", mode.name)
+                            onSetThemeMode(mode)
+                        },
                         label = { Text(text = label) },
                         modifier = Modifier.weight(1f)
                     )
@@ -241,7 +251,10 @@ fun SettingsSheet(
                     }
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onSetHintLevel(level) },
+                        onClick = {
+                            AuditLogger.getInstanceOrNull()?.settingsChange("hintLevel", level.name)
+                            onSetHintLevel(level)
+                        },
                         label = { Text(text = label) },
                         modifier = Modifier.weight(1f)
                     )
@@ -272,7 +285,10 @@ fun SettingsSheet(
                 )
                 Switch(
                     checked = clickableWordHints,
-                    onCheckedChange = { onSetClickableWordHints(it) }
+                    onCheckedChange = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("clickableWordHints", it.toString())
+                        onSetClickableWordHints(it)
+                    }
                 )
             }
             Text(
@@ -290,8 +306,10 @@ fun SettingsSheet(
                     vocabLimitText = cleaned
                     val parsed = cleaned.toIntOrNull()
                     if (parsed != null) {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("vocabLimit", parsed.toString())
                         onUpdateVocabLimit(parsed)
                     } else if (cleaned.isEmpty()) {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("vocabLimit", "0")
                         onUpdateVocabLimit(0)
                     }
                 },
@@ -310,6 +328,7 @@ fun SettingsSheet(
                     sessionSizeText = cleaned
                     val parsed = cleaned.toIntOrNull()
                     if (parsed != null) {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("sessionSize", parsed.toString())
                         onSetSessionSize(parsed)
                     }
                 },
@@ -336,7 +355,10 @@ fun SettingsSheet(
                 Text(text = "0.5x", style = MaterialTheme.typography.bodySmall)
                 Slider(
                     value = state.audio.ttsSpeed,
-                    onValueChange = onSetTtsSpeed,
+                    onValueChange = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("ttsSpeed", it.toString())
+                        onSetTtsSpeed(it)
+                    },
                     valueRange = 0.5f..1.5f,
                     steps = 3,
                     modifier = Modifier.weight(1f)
@@ -368,6 +390,7 @@ fun SettingsSheet(
                 Switch(
                     checked = state.audio.useOfflineAsr,
                     onCheckedChange = { enabled ->
+                        AuditLogger.getInstanceOrNull()?.settingsChange("offlineAsr", enabled.toString())
                         onSetUseOfflineAsr(enabled)
                         if (enabled && !state.audio.asrModelReady) {
                             onStartAsrDownload()
@@ -444,7 +467,10 @@ fun SettingsSheet(
                 }
                 Switch(
                     checked = state.audio.voiceAutoStart,
-                    onCheckedChange = onSetVoiceAutoStart
+                    onCheckedChange = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("voiceAutoStart", it.toString())
+                        onSetVoiceAutoStart(it)
+                    }
                 )
             }
             Text(
@@ -471,7 +497,10 @@ fun SettingsSheet(
                 Text(text = "1x", style = MaterialTheme.typography.bodySmall)
                 Slider(
                     value = state.audio.ruTextScale,
-                    onValueChange = onSetRuTextScale,
+                    onValueChange = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("ruTextScale", it.toString())
+                        onSetRuTextScale(it)
+                    },
                     valueRange = 1.0f..2.0f,
                     steps = 3,
                     modifier = Modifier.weight(1f)
@@ -497,6 +526,7 @@ fun SettingsSheet(
                 onClick = {
                     val name = newLanguageName.trim()
                     if (name.isNotEmpty()) {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("addLanguage", name)
                         onAddLanguage(name)
                         newLanguageName = ""
                     }
@@ -507,6 +537,7 @@ fun SettingsSheet(
             }
             OutlinedButton(
                 onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("importPack", "")
                     packImportLauncher.launch(
                         arrayOf(
                             "application/zip",
@@ -522,7 +553,10 @@ fun SettingsSheet(
                 Text(text = stringResource(R.string.settings_import_lesson_pack))
             }
             OutlinedButton(
-                onClick = { importLauncher.launch(arrayOf("text/*", "text/csv")) },
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("importCsv", "")
+                    importLauncher.launch(arrayOf("text/*", "text/csv"))
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
@@ -547,6 +581,7 @@ fun SettingsSheet(
                 onClick = {
                     val title = newLessonTitle.trim()
                     if (title.isNotEmpty()) {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("createEmptyLesson", "")
                         onCreateEmptyLesson(title)
                         newLessonTitle = ""
                     }
@@ -556,7 +591,10 @@ fun SettingsSheet(
                 Text(text = stringResource(R.string.settings_create_empty_lesson))
             }
             OutlinedButton(
-                onClick = { onDeleteAllLessons() },
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("deleteAllLessons", "confirmed")
+                    onDeleteAllLessons()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
@@ -584,6 +622,7 @@ fun SettingsSheet(
                         TextButton(
                             onClick = {
                                 showResetConfirmDialog = false
+                                AuditLogger.getInstanceOrNull()?.settingsChange("resetProgress", "confirmed")
                                 onResetAllProgress()
                             }
                         ) {
@@ -667,7 +706,10 @@ fun SettingsSheet(
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { onDeletePack(pack.packId.value) }) {
+                        IconButton(onClick = {
+                            AuditLogger.getInstanceOrNull()?.settingsChange("deletePack", pack.packId.value)
+                            onDeletePack(pack.packId.value)
+                        }) {
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.settings_delete_pack))
                         }
                     }
@@ -695,6 +737,7 @@ fun SettingsSheet(
                 onClick = {
                     val trimmed = userNameInput.trim()
                     if (trimmed.isNotEmpty() && trimmed != state.navigation.userName) {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("userName", trimmed)
                         onUpdateUserName(trimmed)
                     }
                 },
@@ -719,7 +762,10 @@ fun SettingsSheet(
             )
 
             OutlinedButton(
-                onClick = onSaveProgress,
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("saveProgress", "")
+                    onSaveProgress()
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
@@ -730,7 +776,10 @@ fun SettingsSheet(
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
-                onClick = { restoreBackupLauncher.launch(null) },
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("restoreBackup", "")
+                    restoreBackupLauncher.launch(null)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Download, contentDescription = null)
@@ -801,7 +850,10 @@ fun LanguageLessonColumn(
             selected = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName
                 ?: "-",
             items = state.navigation.languages.map { it.displayName to it.id.value },
-            onSelect = onSelectLanguage
+            onSelect = { langId ->
+                AuditLogger.getInstanceOrNull()?.settingsChange("language", langId)
+                onSelectLanguage(langId)
+            }
         )
         DropdownSelector(
             title = stringResource(R.string.settings_pack),
@@ -809,7 +861,10 @@ fun LanguageLessonColumn(
             items = languagePacks.map { pack ->
                 (pack.displayName ?: "${pack.packId.value} (${pack.packVersion})") to pack.packId.value
             },
-            onSelect = onSelectPack
+            onSelect = { packId ->
+                AuditLogger.getInstanceOrNull()?.settingsChange("pack", packId)
+                onSelectPack(packId)
+            }
         )
     }
 }

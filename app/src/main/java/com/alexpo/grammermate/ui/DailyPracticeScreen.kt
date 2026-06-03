@@ -66,6 +66,7 @@ import com.alexpo.grammermate.data.VocabDrillDirection
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.feature.daily.BlockProgress
+import com.alexpo.grammermate.shared.AuditLogger
 
 @Composable
 fun DailyPracticeScreen(
@@ -102,7 +103,7 @@ fun DailyPracticeScreen(
                 onDismiss = { hasShownCompletionSparkle = true }
             )
         } else {
-            DailyPracticeCompletionScreen(onExit = onExit)
+            DailyPracticeCompletionScreen(onExit = { AuditLogger.getInstanceOrNull()?.dailyExit(blockProgress.globalPosition); onExit() })
         }
         return
     }
@@ -201,12 +202,12 @@ private fun DailyPracticeHeader(blockProgress: BlockProgress, onExit: () -> Unit
             onDismissRequest = { showExitDialog = false },
             title = { Text(stringResource(R.string.daily_exit_title)) },
             text = { Text(stringResource(R.string.daily_exit_message)) },
-            confirmButton = { TextButton(onClick = { showExitDialog = false; onExit() }) { Text(stringResource(R.string.button_exit)) } },
-            dismissButton = { TextButton(onClick = { showExitDialog = false }) { Text(stringResource(R.string.button_stay)) } }
+            confirmButton = { TextButton(onClick = { AuditLogger.getInstanceOrNull()?.dialogAction("daily_exit", "confirm"); AuditLogger.getInstanceOrNull()?.dailyExit(blockProgress.globalPosition); showExitDialog = false; onExit() }) { Text(stringResource(R.string.button_exit)) } },
+            dismissButton = { TextButton(onClick = { AuditLogger.getInstanceOrNull()?.dialogAction("daily_exit", "cancel"); showExitDialog = false }) { Text(stringResource(R.string.button_stay)) } }
         )
     }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { showExitDialog = true }) { Icon(Icons.Default.ArrowBack, stringResource(R.string.content_desc_back)) }
+        IconButton(onClick = { AuditLogger.getInstanceOrNull()?.dialogOpen("daily_exit", "daily"); showExitDialog = true }) { Icon(Icons.Default.ArrowBack, stringResource(R.string.content_desc_back)) }
         Spacer(modifier = Modifier.width(8.dp))
         Text(stringResource(R.string.daily_header), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
         Spacer(modifier = Modifier.weight(1f))
@@ -282,9 +283,9 @@ private fun ColumnScope.VocabFlashcardBlock(
             Text(promptText, fontSize = (28f * textScale).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { onSpeak(promptText) }) { Icon(Icons.Default.VolumeUp, stringResource(R.string.content_desc_listen)) }
+                IconButton(onClick = { AuditLogger.getInstanceOrNull()?.ttsSpeak(task.word.id, promptText, "daily"); onSpeak(promptText) }) { Icon(Icons.Default.VolumeUp, stringResource(R.string.content_desc_listen)) }
                 Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = { showReportSheet = true }) {
+                IconButton(onClick = { AuditLogger.getInstanceOrNull()?.dialogOpen("report_sheet", "daily"); showReportSheet = true }) {
                     Icon(Icons.Default.ReportProblem, stringResource(R.string.content_desc_report_word), tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -306,6 +307,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     FilledTonalIconButton(
         onClick = {
             if (!isVoiceActive) {
+                AuditLogger.getInstanceOrNull()?.voiceStart(languageId, false)
                 isVoiceActive = true
                 val langTag = when (task.direction) { VocabDrillDirection.IT_TO_RU -> "ru-RU"; VocabDrillDirection.RU_TO_IT -> "it-IT" }
                 speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -331,6 +333,7 @@ private fun ColumnScope.VocabFlashcardBlock(
                 OutlinedButton(
                     onClick = {
                         if (!isRated) {
+                            AuditLogger.getInstanceOrNull()?.dialogAction("daily_rate", rating.toString())
                             isRated = true
                             onRate(rating)
                         }
@@ -344,6 +347,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     } else {
         Button(
             onClick = {
+                AuditLogger.getInstanceOrNull()?.dialogAction("daily_flip", "show_answer")
                 showAnswer = true
                 onFlip()
             },
@@ -358,6 +362,7 @@ private fun ColumnScope.VocabFlashcardBlock(
         SharedReportSheet(
             onDismiss = { showReportSheet = false },
             cardPromptText = "${word.word} — ${word.meaningRu ?: ""}",
+            cardId = word.id,
             isFlagged = isDailyBadSentence(word.id),
             onFlag = { onFlagDailyBadSentence(word.id, languageId, word.meaningRu ?: word.word, word.word, "daily_vocab") },
             onUnflag = { onUnflagDailyBadSentence(word.id) },

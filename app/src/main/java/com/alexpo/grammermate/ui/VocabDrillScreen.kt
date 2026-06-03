@@ -83,6 +83,7 @@ import com.alexpo.grammermate.data.VocabDrillUiState
 import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.shared.AuditLogger
 import kotlinx.coroutines.delay
 
 @Composable
@@ -161,13 +162,44 @@ fun VocabDrillScreen(
                 voiceAutoStart = voiceAutoStart,
                 isVoiceActive = isVoiceActive,
                 ttsState = viewModel.ttsState.collectAsStateWithLifecycle().value,
-                onFlip = viewModel::flipCard,
-                onAnswer = viewModel::answerRating,
-                onSpeak = viewModel::speakTts,
-                onStartVoice = onStartVoice,
+                onFlip = {
+                    val currentCard = session.cards.getOrNull(session.currentIndex)
+                    if (currentCard != null) {
+                        AuditLogger.getInstanceOrNull()?.vocabCardFlip(
+                            currentCard.word.id,
+                            session.direction.name
+                        )
+                    }
+                    viewModel.flipCard()
+                },
+                onAnswer = { rating ->
+                    val currentCard = session.cards.getOrNull(session.currentIndex)
+                    if (currentCard != null) {
+                        AuditLogger.getInstanceOrNull()?.vocabCardRate(currentCard.word.id, rating.ordinal + 1)
+                    }
+                    viewModel.answerRating(rating)
+                },
+                onSpeak = { text ->
+                    val currentCard = session.cards.getOrNull(session.currentIndex)
+                    if (currentCard != null) {
+                        AuditLogger.getInstanceOrNull()?.ttsSpeak(currentCard.word.id, text, "vocab")
+                    }
+                    viewModel.speakTts(text)
+                },
+                onStartVoice = {
+                    val lang = when (session.direction) {
+                        VocabDrillDirection.IT_TO_RU -> "ru-RU"
+                        VocabDrillDirection.RU_TO_IT -> "it-IT"
+                    }
+                    AuditLogger.getInstanceOrNull()?.voiceStart(lang, false)
+                    onStartVoice()
+                },
                 onAutoStartVoice = onStartVoice,
                 onSkipVoice = viewModel::skipVoice,
-                onExit = viewModel::exitSession,
+                onExit = {
+                    AuditLogger.getInstanceOrNull()?.backPress("vocab_drill")
+                    viewModel.exitSession()
+                },
                 onFlagBadSentence = viewModel::flagBadSentence,
                 onUnflagBadSentence = viewModel::unflagBadSentence,
                 isBadSentence = viewModel::isBadSentence,
@@ -182,7 +214,14 @@ fun VocabDrillScreen(
             onSelectPos = viewModel::selectPos,
             onSetRankRange = viewModel::setRankRange,
             onSetDirection = viewModel::setDirection,
-            onStart = viewModel::startSession,
+            onStart = {
+                AuditLogger.getInstanceOrNull()?.vocabDrillStart(
+                    state.drillDirection.name,
+                    state.selectedPos ?: "",
+                    "${state.rankMin}-${state.rankMax}"
+                )
+                viewModel.startSession()
+            },
             onBack = onBack
         )
     }
@@ -205,7 +244,10 @@ private fun VocabDrillSelectionScreen(
     ) {
         // Header
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.vocab_content_desc_back)) }
+            IconButton(onClick = {
+                AuditLogger.getInstanceOrNull()?.backPress("vocab_drill")
+                onBack()
+            }) { Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.vocab_content_desc_back)) }
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = stringResource(R.string.vocab_title), fontWeight = FontWeight.SemiBold)
         }
@@ -216,12 +258,18 @@ private fun VocabDrillSelectionScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             FilterChip(
                 selected = state.drillDirection == VocabDrillDirection.IT_TO_RU,
-                onClick = { onSetDirection(VocabDrillDirection.IT_TO_RU) },
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("vocab_direction", "IT_TO_RU")
+                    onSetDirection(VocabDrillDirection.IT_TO_RU)
+                },
                 label = { Text(stringResource(R.string.vocab_direction_it_ru)) }
             )
             FilterChip(
                 selected = state.drillDirection == VocabDrillDirection.RU_TO_IT,
-                onClick = { onSetDirection(VocabDrillDirection.RU_TO_IT) },
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("vocab_direction", "RU_TO_IT")
+                    onSetDirection(VocabDrillDirection.RU_TO_IT)
+                },
                 label = { Text(stringResource(R.string.vocab_direction_ru_it)) }
             )
         }
@@ -236,7 +284,10 @@ private fun VocabDrillSelectionScreen(
         ) {
             FilterChip(
                 selected = state.selectedPos == null,
-                onClick = { onSelectPos(null) },
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("vocab_pos", "all")
+                    onSelectPos(null)
+                },
                 label = { Text(stringResource(R.string.vocab_filter_all)) }
             )
             state.availablePos.forEach { pos ->
@@ -251,7 +302,10 @@ private fun VocabDrillSelectionScreen(
                 }
                 FilterChip(
                     selected = state.selectedPos == pos,
-                    onClick = { onSelectPos(pos) },
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("vocab_pos", pos)
+                        onSelectPos(pos)
+                    },
                     label = { Text(label) }
                 )
             }
@@ -603,6 +657,7 @@ private fun VocabDrillCardScreen(
         SharedReportSheet(
             onDismiss = { showReportSheet = false },
             cardPromptText = "${card.word.word} — ${card.word.meaningRu ?: ""}",
+            cardId = card.word.id,
             isFlagged = isBadSentence(),
             onFlag = onFlagBadSentence,
             onUnflag = onUnflagBadSentence,

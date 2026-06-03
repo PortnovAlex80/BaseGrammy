@@ -42,6 +42,7 @@ import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.ui.ChapterCardUi
 import com.alexpo.grammermate.ui.ChapterStatus
 import com.alexpo.grammermate.ui.MasteryGreen
+import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.ScreenLogger
 
 /** Wraps onClick with a 150 ms delay so the Material ripple animation completes before navigation. */
@@ -82,7 +83,10 @@ fun GrammarStoryRoadmapScreen(
                 title = { Text("Grammar Story Roadmap") },
                 navigationIcon = {
                     if (showBackButton) {
-                        IconButton(onClick = delayedClick(onBack)) {
+                        IconButton(onClick = delayedClick {
+                            AuditLogger.getInstanceOrNull()?.backPress("story_roadmap")
+                            onBack()
+                        }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     }
@@ -118,7 +122,10 @@ fun GrammarStoryRoadmapScreen(
                             Icon(Icons.Default.Stop, contentDescription = "Stop story")
                         }
                     }
-                    IconButton(onClick = delayedClick(onOpenSettings)) {
+                    IconButton(onClick = delayedClick {
+                        AuditLogger.getInstanceOrNull()?.settingsOpen("story_roadmap")
+                        onOpenSettings()
+                    }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
@@ -193,10 +200,13 @@ fun GrammarStoryRoadmapScreen(
                     chapterUi = chapterUi,
                     onReadStory = {
                         ScreenLogger.tap("read_story", details = "chapter=${chapterUi.chapter.title}")
+                        AuditLogger.getInstanceOrNull()?.storyRead(chapterUi.chapter.chapterId, chapterUi.chapter.title)
                         onReadStory(chapterUi.chapter)
                     },
                     onContinue = {
                         ScreenLogger.tap("continue_lesson", details = "chapter=${chapterUi.chapter.chapterId}")
+                        val nextLessonId = chapterUi.chapter.lessons.firstOrNull() ?: ""
+                        AuditLogger.getInstanceOrNull()?.lessonSelect(nextLessonId, chapterUi.chapter.chapterId)
                         onContinue(chapterUi.chapter)
                     },
                     onPlayStory = {

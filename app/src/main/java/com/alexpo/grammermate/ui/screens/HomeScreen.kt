@@ -57,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerVisual
+import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.ScreenLogger
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.Lesson
@@ -177,6 +178,7 @@ fun HomeScreen(
             languages = state.navigation.languages,
             onLanguageSelected = { langId ->
                 ScreenLogger.tap("language_select", details = "lang=$langId zero_state=true")
+                AuditLogger.getInstanceOrNull()?.langSelect(langId, "", zeroState = true)
                 onSelectLanguage(langId)
             }
         )
@@ -195,7 +197,10 @@ fun HomeScreen(
                 com.alexpo.grammermate.ui.components.InitialsAvatar(
                     name = state.navigation.userName,
                     size = 40.dp,
-                    onClick = onProfileClick
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.profileOpen()
+                        onProfileClick()
+                    }
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
@@ -247,7 +252,10 @@ fun HomeScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                IconButton(onClick = onOpenSettings) {
+                IconButton(onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsOpen("home")
+                    onOpenSettings()
+                }) {
                     Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.home_settings))
                 }
             }
@@ -277,6 +285,8 @@ fun HomeScreen(
                 currentPackId = state.navigation.activePackId?.value,
                 onPackSelected = { packId ->
                     ScreenLogger.tap("pack_select", details = "pack=$packId")
+                    val packName = languagePacks.firstOrNull { it.packId.value == packId }?.displayName ?: ""
+                    AuditLogger.getInstanceOrNull()?.packSelect(packId, packName)
                     onSelectPack(packId)
                     showPackageList = false
                 },
@@ -313,6 +323,7 @@ fun HomeScreen(
                         onSelect = {
                             val lessonId = tile.lessonId ?: return@LessonTile
                             ScreenLogger.tap("lesson_tap", details = "lesson=$lessonId")
+                            AuditLogger.getInstanceOrNull()?.lessonSelect(lessonId, "")
                             onSelectLesson(lessonId)
                         },
                         onLockedClick = {
@@ -338,6 +349,7 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f),
                         onClick = {
                             ScreenLogger.tap("drill_start", details = "type=verb")
+                            AuditLogger.getInstanceOrNull()?.verbDrillStart(0)
                             onOpenVerbDrill()
                         }
                     )
@@ -347,6 +359,7 @@ fun HomeScreen(
                         modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth(),
                         onClick = {
                             ScreenLogger.tap("drill_start", details = "type=vocab")
+                            AuditLogger.getInstanceOrNull()?.vocabDrillStart("")
                             onOpenVocabDrill()
                         },
                         masteredCount = state.vocabSprint.vocabMasteredCount
@@ -369,7 +382,10 @@ fun HomeScreen(
         Text(text = "🥀 ${stringResource(R.string.home_legend_wilting_wilted_forgotten)}")
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
-            onClick = { showMethod = true },
+            onClick = {
+                AuditLogger.getInstanceOrNull()?.methodInfo()
+                showMethod = true
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = stringResource(R.string.home_how_training_works))
@@ -404,7 +420,10 @@ fun HomeScreen(
         AlertDialog(
             onDismissRequest = { showLockedLessonHint = false },
             confirmButton = {
-                TextButton(onClick = { showLockedLessonHint = false }) {
+                TextButton(onClick = {
+                    AuditLogger.getInstanceOrNull()?.dialogAction("locked_lesson", "ok")
+                    showLockedLessonHint = false
+                }) {
                     Text(text = stringResource(R.string.home_ok))
                 }
             },
@@ -420,6 +439,7 @@ fun HomeScreen(
                     val lessonId = earlyStartLessonId
                     earlyStartLessonId = null
                     if (lessonId != null) {
+                        AuditLogger.getInstanceOrNull()?.dialogAction("early_start", "yes")
                         onSelectLesson(lessonId)
                     }
                 }) {
@@ -427,7 +447,10 @@ fun HomeScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { earlyStartLessonId = null }) {
+                TextButton(onClick = {
+                    AuditLogger.getInstanceOrNull()?.dialogAction("early_start", "no")
+                    earlyStartLessonId = null
+                }) {
                     Text(text = stringResource(R.string.home_no))
                 }
             },
@@ -839,6 +862,7 @@ fun LanguageSelector(
                     expanded = false
                     if (language.id.value != selectedLanguageId) {
                         ScreenLogger.tap("language_select", details = "lang=${language.id.value}")
+                        AuditLogger.getInstanceOrNull()?.langSelect(language.id.value, language.displayName, zeroState = false)
                         onSelect(language.id.value)
                     }
                 }

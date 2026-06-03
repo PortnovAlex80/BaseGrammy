@@ -51,6 +51,7 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillLastSessionState
 import com.alexpo.grammermate.data.VerbDrillUiState
+import com.alexpo.grammermate.shared.AuditLogger
 
 /**
  * Verb Drill selection screen.
@@ -103,12 +104,17 @@ fun VerbDrillScreen(
                 // Read session immediately (synchronous read after startSession)
                 val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
                 if (sessionCards.isNotEmpty()) {
+                    AuditLogger.getInstanceOrNull()?.verbDrillStart(
+                        sessionCards.size,
+                        viewModel.uiState.value.selectedTense ?: ""
+                    )
                     onStartSession(sessionCards)
                 }
             },
             onBack = onBack,
             onRepeat = {
                 // VD-51: Repeat mode - replay the last saved card order.
+                AuditLogger.getInstanceOrNull()?.dialogAction("verb_session_card", "repeat")
                 viewModel.onRepeatSession()
                 val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
                 if (sessionCards.isNotEmpty()) {
@@ -116,6 +122,7 @@ fun VerbDrillScreen(
                 }
             },
             onContinue = {
+                AuditLogger.getInstanceOrNull()?.dialogAction("verb_session_card", "continue")
                 viewModel.onResumeSession()
                 val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
                 if (sessionCards.isNotEmpty()) {
@@ -123,6 +130,7 @@ fun VerbDrillScreen(
                 }
             },
             onReset = {
+                AuditLogger.getInstanceOrNull()?.dialogAction("verb_session_card", "reset")
                 viewModel.onStartFresh()
             }
         )
@@ -151,6 +159,7 @@ fun VerbDrillScreen(
                     onBack()
                 },
                 onResume = {
+                    AuditLogger.getInstanceOrNull()?.dialogAction("verb_fresh_resume", "resume")
                     viewModel.onResumeSession()
                     // After resume, read the session cards and start the session
                     val sessionCards = viewModel.uiState.value.session?.cards ?: emptyList()
@@ -159,6 +168,7 @@ fun VerbDrillScreen(
                     }
                 },
                 onStartFresh = {
+                    AuditLogger.getInstanceOrNull()?.dialogAction("verb_fresh_resume", "start_fresh")
                     viewModel.onStartFresh()
                 }
             )
@@ -196,7 +206,10 @@ private fun VerbDrillSelectionScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = {
+                AuditLogger.getInstanceOrNull()?.backPress("verb_drill")
+                onBack()
+            }) {
                 Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.verb_content_desc_back))
             }
             Spacer(modifier = Modifier.width(8.dp))
