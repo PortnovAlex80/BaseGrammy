@@ -70,6 +70,7 @@ import com.alexpo.grammermate.feature.training.WordBankGenerator
 import com.alexpo.grammermate.feature.vocab.VocabResult
 import com.alexpo.grammermate.feature.vocab.VocabSoundResult
 import com.alexpo.grammermate.feature.vocab.VocabSprintRunner
+import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.SettingsActionHandler
 import com.alexpo.grammermate.shared.SettingsResult
 import com.alexpo.grammermate.shared.audio.AudioCoordinator
@@ -116,6 +117,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         override val uiState: StateFlow<TrainingUiState> get() = this@TrainingViewModel.uiState
         override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
             _coreState.update(transform)
+            AuditLogger.getInstanceOrNull()?.updateContext(_coreState.value)
         }
         override fun saveProgress() = this@TrainingViewModel.saveProgress()
     }
@@ -331,14 +333,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         pomodoroSettingsStore.save(durationMinutes)
         _pomodoroRemainingSeconds.value = durationMinutes * 60
         pomodoroHelper.startPomodoro(durationMinutes)
+        AuditLogger.getInstanceOrNull()?.pomodoroStart(
+            durationMin = durationMinutes,
+            lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
+        )
     }
 
     fun pausePomodoro() {
         pomodoroHelper.pausePomodoro()
+        val pomo = _coreState.value.pomodoro
+        val elapsedMs = (pomo.totalSeconds - _pomodoroRemainingSeconds.value).toLong() * 1000
+        AuditLogger.getInstanceOrNull()?.pomodoroPause(elapsedMs)
     }
 
     fun resumePomodoro() {
         pomodoroHelper.resumePomodoro()
+        val pomo = _coreState.value.pomodoro
+        val elapsedMs = (pomo.totalSeconds - _pomodoroRemainingSeconds.value).toLong() * 1000
+        AuditLogger.getInstanceOrNull()?.pomodoroResume(elapsedMs)
     }
 
     fun cancelPomodoro() {
@@ -348,6 +360,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun onTrainingSessionCompleted() {
         pomodoroHelper.onTrainingSessionCompleted()
+        val pomo = _coreState.value.pomodoro
+        val cs = _coreState.value.cardSession
+        if (pomo.isComplete) {
+            val shown = (cs.correctCount - pomo.baselineCorrect).coerceAtLeast(0) +
+                (cs.incorrectCount - pomo.baselineIncorrect).coerceAtLeast(0)
+            val correct = (cs.correctCount - pomo.baselineCorrect).coerceAtLeast(0)
+            val incorrect = (cs.incorrectCount - pomo.baselineIncorrect).coerceAtLeast(0)
+            AuditLogger.getInstanceOrNull()?.pomodoroComplete(
+                durationMin = pomo.selectedDurationMinutes,
+                cardsShown = shown,
+                correct = correct,
+                incorrect = incorrect
+            )
+        }
     }
 
     fun rateCardDifficulty(rating: CardDifficultyRating) {
@@ -451,6 +477,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     init {
+        AuditLogger.getInstanceOrNull()?.startWriter(viewModelScope)
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
 
         // All file I/O moved to a background thread to avoid blocking the main thread
@@ -705,10 +732,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lessons = _coreState.value.navigation.lessons,
             hiddenCardIds = hiddenIds
         )
-        val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
+        // If lesson is mastery-completed (completedAtMs set), clamp completedCount to total
+        // so LessonRoadmapScreen shows CompletionCard instead of sub-lesson grid with locks.
+        // This handles the case where uniqueCardShows meets the threshold but some
+        // sub-lessons have cards not yet shown (sequential check stops early).
+        val isMasteryCompleted = mastery?.completedAtMs != null
+        val effectiveCompletedCount = if (isMasteryCompleted) {
+            subLessons.size
+        } else {
+            completedCount
+        }
+        val nextActiveIndex = effectiveCompletedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = resolvedPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = completedCount, currentCard = null, hintSessionOffset = Random.nextInt(0, 100)))
+            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = resolvedPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = effectiveCompletedCount, currentCard = null, hintSessionOffset = Random.nextInt(0, 100)))
         }
         // Reset feature-owned state for session change
         bossOrchestrator.resetState()
@@ -929,6 +966,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun startVerbDrillSession(cards: List<com.alexpo.grammermate.data.VerbDrillCard>) {
         val events = sessionRunner.startCardSession(cards, com.alexpo.grammermate.data.TrainingScreenMode.VERB_DRILL)
         handleSessionEvents(events)
+        AuditLogger.getInstanceOrNull()?.verbDrillStart(cardCount = cards.size, tense = "")
     }
 
     /**
@@ -948,6 +986,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun replaceVerbDrillCards(cards: List<com.alexpo.grammermate.data.VerbDrillCard>) {
         val events = sessionRunner.replaceCards(cards)
         handleSessionEvents(events)
+        AuditLogger.getInstanceOrNull()?.verbDrillMore(newCardCount = cards.size)
     }
 
     /** Whether the current session is in VERB_DRILL screen mode. */
@@ -962,6 +1001,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun startDailyTranslateSession(cards: List<com.alexpo.grammermate.data.SessionCard>) {
         val events = sessionRunner.startCardSession(cards, com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE)
         handleSessionEvents(events)
+        AuditLogger.getInstanceOrNull()?.dailyBlockStart("translate")
     }
 
     /**
@@ -971,6 +1011,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun startDailyVerbsSession(cards: List<com.alexpo.grammermate.data.SessionCard>) {
         val events = sessionRunner.startCardSession(cards, com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS)
         handleSessionEvents(events)
+        AuditLogger.getInstanceOrNull()?.dailyBlockStart("verbs")
     }
 
     /**
@@ -1234,6 +1275,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         Log.d(logTag, "DailyPractice: VM.startDailyPractice level=$lessonLevel")
         // Save lesson selection before daily practice so we can restore on exit
         preDailySelectedLessonId = _coreState.value.navigation.selectedLessonId
+        val progressInfo = resolveProgressLessonInfo()
+        AuditLogger.getInstanceOrNull()?.dailyStart(
+            lessonId = progressInfo?.first ?: _coreState.value.navigation.selectedLessonId?.value ?: "",
+            level = lessonLevel
+        )
         val started = dailyPracticeCoordinator.startDailyPractice(
             resolveProgressLessonInfo = { resolveProgressLessonInfo() },
             onStoreFirstSessionCardIds = { sentenceIds, verbIds ->
@@ -1282,6 +1328,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (preDailySelectedLessonId == null) {
             preDailySelectedLessonId = _coreState.value.navigation.selectedLessonId
         }
+        val progressInfo = resolveProgressLessonInfo()
+        AuditLogger.getInstanceOrNull()?.dailyStart(
+            lessonId = progressInfo?.first ?: _coreState.value.navigation.selectedLessonId?.value ?: "",
+            level = lessonLevel
+        )
         val started = dailyPracticeCoordinator.repeatDailyPractice(
             lessonLevel = lessonLevel,
             resolveProgressLessonInfo = { resolveProgressLessonInfo() }
@@ -1298,7 +1349,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * @return the next block to render, or null if all blocks are done.
      */
     fun onDailyBlockComplete(): com.alexpo.grammermate.data.DailyBlock? {
-        return dailyPracticeCoordinator.onBlockComplete()
+        // Snapshot current block info before it's marked complete
+        val ds = _coreState.value.daily.dailySession
+        val currentBlock = ds.currentBlock
+        val blockType = currentBlock?.type?.name?.lowercase() ?: ""
+        val cardCount = currentBlock?.tasks?.size ?: 0
+        val nextBlock = dailyPracticeCoordinator.onBlockComplete()
+        AuditLogger.getInstanceOrNull()?.dailyBlockComplete(blockType, cardCount)
+        return nextBlock
     }
 
     /**
@@ -1324,6 +1382,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun cancelDailySession() {
         Log.d(logTag, "DailyPractice: VM.cancelDailySession")
         val sentenceCount = dailyPracticeCoordinator.cancelDailySession()
+        AuditLogger.getInstanceOrNull()?.dailyExit(sentenceCount ?: 0)
         // Orchestrator: if coordinator signals cursor advancement, delegate to ProgressTracker
         if (sentenceCount != null) {
             advanceCursor(sentenceCount)
@@ -1400,13 +1459,41 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
 
-    fun startBossLesson() = handleBossCommands(bossOrchestrator.startBossLesson())
+    fun startBossLesson() {
+        AuditLogger.getInstanceOrNull()?.bossStart(
+            type = "LESSON",
+            lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
+        )
+        handleBossCommands(bossOrchestrator.startBossLesson())
+    }
 
-    fun startBossMega() = handleBossCommands(bossOrchestrator.startBossMega())
+    fun startBossMega() {
+        AuditLogger.getInstanceOrNull()?.bossStart(
+            type = "MEGA",
+            lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
+        )
+        handleBossCommands(bossOrchestrator.startBossMega())
+    }
 
-    fun startBossElite() = handleBossCommands(bossOrchestrator.startBossElite())
+    fun startBossElite() {
+        AuditLogger.getInstanceOrNull()?.bossStart(
+            type = "ELITE",
+            lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
+        )
+        handleBossCommands(bossOrchestrator.startBossElite())
+    }
 
-    fun finishBoss() = handleBossCommands(bossOrchestrator.finishBoss())
+    fun finishBoss() {
+        val bossState = _coreState.value.boss
+        val bossType = bossState.bossType?.name ?: bossState.bossLastType?.name ?: ""
+        val reward = bossState.bossReward?.name ?: "NONE"
+        AuditLogger.getInstanceOrNull()?.bossFinish(
+            type = bossType,
+            result = reward,
+            lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
+        )
+        handleBossCommands(bossOrchestrator.finishBoss())
+    }
 
     fun clearBossRewardMessage() = handleBossCommands(bossOrchestrator.clearBossRewardMessage())
 
@@ -1473,6 +1560,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     override fun onCleared() {
+        AuditLogger.getInstanceOrNull()?.stopWriter()
         saveProgress()
         masteryStore.flush()
         audioCoordinator.release()
@@ -1572,6 +1660,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun flagBadSentence() {
+        val card = _coreState.value.cardSession.currentCard
+        if (card != null) {
+            AuditLogger.getInstanceOrNull()?.badSentenceFlag(
+                cardId = card.id,
+                ru = card.promptRu,
+                it = card.acceptedAnswers.joinToString(" / ")
+            )
+        }
         when (val result = badSentenceHelper.flagBadSentence()) {
             is BadSentenceResult.SkipToNextCard -> sessionRunner.skipToNextCard()
             is BadSentenceResult.None -> {}
@@ -1579,6 +1675,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun hideCurrentCard() {
+        val card = _coreState.value.cardSession.currentCard
+        if (card != null) {
+            AuditLogger.getInstanceOrNull()?.cardHidden(cardId = card.id)
+        }
         when (val result = badSentenceHelper.hideCurrentCard()) {
             is BadSentenceResult.SkipToNextCard -> sessionRunner.skipToNextCard()
             is BadSentenceResult.None -> {}
@@ -1672,6 +1772,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             uniqueCardShows = uniqueCardShows,
             totalCardsInLesson = totalCardsInLesson,
             hiddenCardCount = hiddenCardCount
+        )
+        AuditLogger.getInstanceOrNull()?.lessonComplete(
+            lessonId = lessonId?.value ?: "",
+            uniqueShows = uniqueCardShows,
+            totalCards = totalCardsInLesson
         )
 
         // Update chapter progress when lesson completion status changes

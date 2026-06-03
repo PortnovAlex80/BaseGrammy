@@ -23,6 +23,7 @@ import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.StreakManager
+import com.alexpo.grammermate.shared.AuditLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -63,6 +64,7 @@ class SessionRunner(
     private val sessionTimerMsSink: ((Long) -> Unit)? = null
 ) : CardSessionStateModel {
     private val logTag = "SessionRunner"
+    private val audit get() = AuditLogger.getInstanceOrNull()
 
     // ── Retry/hint state machine (shared with VerbDrill, DailyPractice) ──
 
@@ -202,6 +204,15 @@ class SessionRunner(
         // Without this, regular lesson sessions start with wordBankWords=empty,
         // hiding the word bank toggle button (supportsWordBank checks isNotEmpty).
         updateWordBank()
+        // Audit: session started
+        val startedState = stateAccess.uiState.value
+        audit?.sessionStart(
+            startedState.navigation.selectedLessonId?.value ?: "",
+            startedState.cardSession.inputMode.name,
+            startedState.cardSession.subLessonCount,
+            startedState.cardSession.subLessonTotal,
+            startedState.cardSession.screenMode.name
+        )
         events.add(SessionEvent.SaveProgress)
         return events
     }
@@ -224,10 +235,29 @@ class SessionRunner(
         val rating = if (minutes <= 0.0) 0.0 else flushedState.cardSession.correctCount / minutes
         val firstCard = sessionCards.firstOrNull()
         stateMachine.reset()
+        // Recalculate completedSubLessonCount for the lesson (not review/boss mode)
+        // so LessonRoadmapScreen shows correct state after staircase navigation
+        val lessonId = flushedState.navigation.selectedLessonId
+        val langId = flushedState.navigation.selectedLanguageId
+        val mastery = lessonId?.let { lid -> langId?.let { getMastery(lid.value, it.value) } }
+        val schedule = lessonId?.let { getSchedule(it.value) }
+        val subLessons = schedule?.subLessons.orEmpty()
+        val hiddenIds = getHiddenCardIds()
+        val rawCompleted = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, hiddenIds)
+        val isMasteryCompleted = mastery?.completedAtMs != null
+        val lessonCompletedCount = if (isMasteryCompleted) subLessons.size else rawCompleted
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, lastRating = rating, incorrectAttemptsForCard = 0, lastResult = null, answerText = null, currentIndex = 0, currentCard = firstCard, inputText = "", voicePromptStartMs = null))
+            it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, lastRating = rating, incorrectAttemptsForCard = 0, lastResult = null, answerText = null, currentIndex = 0, currentCard = firstCard, inputText = "", voicePromptStartMs = null, completedSubLessonCount = lessonCompletedCount, activeSubLessonIndex = lessonCompletedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0)), subLessonCount = subLessons.size, subLessonTypes = subLessons.map { sl -> sl.type }))
         }
         Log.d(logTag, "Session finished. Rating=$rating")
+        // Audit: session ended
+        audit?.sessionEnd(
+            rating,
+            flushedState.cardSession.correctCount,
+            flushedState.cardSession.incorrectCount,
+            flushedState.cardSession.activeTimeMs,
+            flushedState.cardSession.hintCount
+        )
         return SessionFinishResult.Completed(rating) to listOf(SessionEvent.SaveProgress, SessionEvent.RefreshFlowerStates)
     }
 
@@ -261,6 +291,7 @@ class SessionRunner(
     }
 
     fun setInputMode(mode: InputMode) {
+        val previousMode = stateAccess.uiState.value.cardSession.inputMode
         // Pomodoro hint level guard: auto-switch to VOICE when Word Bank is unavailable
         if (mode == InputMode.WORD_BANK && stateAccess.uiState.value.cardSession.hintLevel != HintLevel.EASY) {
             stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(inputMode = InputMode.VOICE)) }
@@ -286,6 +317,11 @@ class SessionRunner(
         }
 
         Log.d(logTag, "Input mode changed: $mode")
+        // Audit: input mode change
+        audit?.inputModeChange(
+            previousMode.name, mode.name,
+            currentCard()?.id ?: ""
+        )
     }
 
     // ── Answer submission ───────────────────────────────────────────────
@@ -305,6 +341,8 @@ class SessionRunner(
         val now = SystemClock.elapsedRealtime()
         if (inputText == lastSubmitInputText && now - lastSubmitTimeMs < 300) {
             Log.w(logTag, "submitAnswer() DEDUP skipped: same text='$inputText' within ${now - lastSubmitTimeMs}ms")
+            // Audit: dedup guard triggered
+            currentCard()?.let { audit?.answerDedup(it.id) }
             return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         }
         lastSubmitInputText = inputText
@@ -325,6 +363,13 @@ class SessionRunner(
 
         if (accepted) {
             val events = mutableListOf<SessionEvent>(SessionEvent.PlaySuccess)
+
+            // Audit: correct answer
+            audit?.answerCorrect(
+                card.id, inputText, validationResult.normalizedInput,
+                card.promptRu, card.acceptedAnswers.firstOrNull() ?: "",
+                state.cardSession.inputMode.name, stateMachine.incorrectAttempts
+            )
 
             // Correct answer while not ACTIVE: resume to ACTIVE so the normal advance logic runs.
             // Both PAUSED and HINT_SHOWN states allow submission via canSubmit, and the user
@@ -372,6 +417,12 @@ class SessionRunner(
             return result to events
         } else {
             val events = mutableListOf<SessionEvent>(SessionEvent.PlayError, SessionEvent.SaveProgress)
+            // Audit: wrong answer
+            audit?.answerWrong(
+                card.id, inputText, validationResult.normalizedInput,
+                card.promptRu, card.acceptedAnswers.firstOrNull() ?: "",
+                state.cardSession.inputMode.name, stateMachine.incorrectAttempts + 1
+            )
             val smResult = stateMachine.onSubmit(
                 isCorrect = false,
                 card = card,
@@ -380,6 +431,11 @@ class SessionRunner(
             when (smResult) {
                 is CardSessionStateMachine.OnSubmitResult.HintShown -> {
                     hintShown = true
+                    // Audit: auto-hint after max failures
+                    audit?.hintAuto(
+                        card.id, card.promptRu, card.acceptedAnswers.firstOrNull() ?: "",
+                        stateMachine.incorrectAttempts, state.cardSession.hintCount + 1
+                    )
                     stateAccess.updateState {
                         it.copy(cardSession = it.cardSession.copy(
                             incorrectCount = it.cardSession.incorrectCount + 1,
@@ -483,6 +539,8 @@ class SessionRunner(
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.PAUSED, currentIndex = 0), elite = it.elite.copy(eliteActive = false, eliteStepIndex = nextStep, eliteBestSpeeds = nextSpeeds, eliteFinishedToken = it.elite.eliteFinishedToken + 1))
         }
+        // Audit: elite step finish
+        audit?.eliteStepFinish(stepIndex, speed, currentBest, state.elite.eliteFinishedToken + 1)
         return SubmitResult(
             accepted = true,
             hintShown = false,
@@ -515,6 +573,9 @@ class SessionRunner(
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.PAUSED, currentIndex = 0, activeSubLessonIndex = finalActiveIndex, completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount), subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1))
         }
         Log.d(logTag, "Answer submitted: accepted=true (last card)")
+        // Audit: sub-lesson completed
+        val cs = stateAccess.uiState.value.cardSession
+        audit?.subLessonComplete(cs.activeSubLessonIndex, cs.completedSubLessonCount, cs.subLessonCount)
         return SubmitResult(
             accepted = true,
             hintShown = false,
@@ -636,6 +697,7 @@ class SessionRunner(
 
     private fun nextCardInternal(triggerVoice: Boolean): List<SessionEvent> {
         val state = stateAccess.uiState.value
+        val fromIdx = state.cardSession.currentIndex
         val wasHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN || stateMachine.hintAnswer != null
         stateMachine.reset()
         val lastIndex = sessionCards.lastIndex
@@ -717,17 +779,24 @@ class SessionRunner(
         if (wasHintShown) {
             resumeTimer()
         }
+        // Audit: card navigation next
+        val toIdx = stateAccess.uiState.value.cardSession.currentIndex
+        audit?.cardNav("next", fromIdx, toIdx, "submit")
         events.add(SessionEvent.SaveProgress)
         return events
     }
 
     fun prevCard(): List<SessionEvent> {
-        val prevIndex = (stateAccess.uiState.value.cardSession.currentIndex - 1).coerceAtLeast(0)
+        val state = stateAccess.uiState.value
+        val fromIdx = state.cardSession.currentIndex
+        val prevIndex = (state.cardSession.currentIndex - 1).coerceAtLeast(0)
         val prevCard = sessionCards.getOrNull(prevIndex)
         stateMachine.reset()
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
         }
+        // Audit: card navigation prev
+        audit?.cardNav("prev", fromIdx, prevIndex, "manual")
         val events = mutableListOf<SessionEvent>()
         events.add(SessionEvent.SaveProgress)
         return events
@@ -748,11 +817,14 @@ class SessionRunner(
         // Advance card but leave PAUSED
         stateMachine.reset()
         val state = stateAccess.uiState.value
+        val fromIdx = state.cardSession.currentIndex
         val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
         val nextCard = sessionCards.getOrNull(nextIndex)
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
         }
+        // Audit: card navigation next (manual)
+        audit?.cardNav("next", fromIdx, nextIndex, "manual")
         // Update word bank if in WORD_BANK mode
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
             updateWordBank()
@@ -774,11 +846,15 @@ class SessionRunner(
         }
         // Go back but leave PAUSED
         stateMachine.reset()
-        val prevIndex = (stateAccess.uiState.value.cardSession.currentIndex - 1).coerceAtLeast(0)
+        val state = stateAccess.uiState.value
+        val fromIdx = state.cardSession.currentIndex
+        val prevIndex = (state.cardSession.currentIndex - 1).coerceAtLeast(0)
         val prevCard = sessionCards.getOrNull(prevIndex)
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
         }
+        // Audit: card navigation prev (manual)
+        audit?.cardNav("prev", fromIdx, prevIndex, "manual")
         events.add(SessionEvent.SaveProgress)
         return events
     }
@@ -786,9 +862,14 @@ class SessionRunner(
     fun selectSubLesson(index: Int): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
+        val prevState = stateAccess.uiState.value
+        val fromSub = prevState.cardSession.activeSubLessonIndex
+        val fromIdx = prevState.cardSession.currentIndex
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(activeSubLessonIndex = index.coerceAtLeast(0), currentIndex = 0, inputText = "", lastResult = null, answerText = null, sessionState = SessionState.PAUSED))
         }
+        // Audit: sub-lesson transition
+        audit?.subLessonTransition(fromSub, index, prevState.cardSession.subLessonCount, fromIdx, 0)
         return listOf(SessionEvent.BuildSessionCards, SessionEvent.SaveProgress)
     }
 
@@ -800,6 +881,8 @@ class SessionRunner(
             // Active → pause
             stateMachine.pause()
             pauseTimer()
+            // Audit: session paused
+            audit?.sessionPause(stateAccess.uiState.value.cardSession.activeTimeMs)
             stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, voicePromptStartMs = null)) }
             return listOf(SessionEvent.SaveProgress)
         }
@@ -823,10 +906,14 @@ class SessionRunner(
                 ))
             }
             resumeTimer()
+            // Audit: session resumed (from hint)
+            audit?.sessionResume(stateAccess.uiState.value.cardSession.activeTimeMs)
             return listOf(SessionEvent.SaveProgress)
         }
         // Manual pause → resume
         stateMachine.resume()
+        // Audit: session resumed (from manual pause)
+        audit?.sessionResume(stateAccess.uiState.value.cardSession.activeTimeMs)
         return startSession()
     }
 
@@ -842,8 +929,11 @@ class SessionRunner(
         val card = currentCard() ?: return emptyList()
         pauseTimer()
         val answer = stateMachine.showAnswer(card)
+        val newHintCount = stateAccess.uiState.value.cardSession.hintCount + 1
+        // Audit: manual hint
+        audit?.hintManual(card.id, card.promptRu, card.acceptedAnswers.firstOrNull() ?: "", newHintCount)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(answerText = answer, sessionState = SessionState.HINT_SHOWN, inputText = it.cardSession.inputText, hintCount = it.cardSession.hintCount + 1, incorrectAttemptsForCard = stateMachine.incorrectAttempts, voicePromptStartMs = null))
+            it.copy(cardSession = it.cardSession.copy(answerText = answer, sessionState = SessionState.HINT_SHOWN, inputText = it.cardSession.inputText, hintCount = newHintCount, incorrectAttemptsForCard = stateMachine.incorrectAttempts, voicePromptStartMs = null))
         }
         return listOf(SessionEvent.SaveProgress)
     }
@@ -854,7 +944,8 @@ class SessionRunner(
         val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
         val newSelected = currentSelected + word
         val inputText = newSelected.joinToString(" ")
-
+        // Audit: word bank select
+        audit?.wordBankSelect(word, newSelected.size, currentCard()?.id ?: "")
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(selectedWords = newSelected, inputText = inputText))
         }
@@ -866,7 +957,8 @@ class SessionRunner(
 
         val newSelected = currentSelected.dropLast(1)
         val inputText = newSelected.joinToString(" ")
-
+        // Audit: word bank remove
+        audit?.wordBankRemove(newSelected.size, currentCard()?.id ?: "")
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(selectedWords = newSelected, inputText = inputText))
         }
@@ -876,12 +968,15 @@ class SessionRunner(
 
     fun skipToNextCard() {
         val state = stateAccess.uiState.value
+        val fromIdx = state.cardSession.currentIndex
         val nextIndex = state.cardSession.currentIndex + 1
         if (nextIndex < sessionCards.size) {
             stateMachine.reset()
             stateAccess.updateState {
                 it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = sessionCards[nextIndex], inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0))
             }
+            // Audit: skip to next card
+            audit?.cardNav("skip", fromIdx, nextIndex, "manual")
         } else {
             pauseTimer()
             stateAccess.updateState {
@@ -903,6 +998,8 @@ class SessionRunner(
         stateAccess.updateState {
             it.copy(elite = it.elite.copy(eliteActive = true, eliteStepIndex = stepIndex), cardSession = it.cardSession.copy(currentIndex = 0, currentCard = firstCard, inputText = "", lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, subLessonTotal = cards.size, subLessonCount = eliteStepCount, activeSubLessonIndex = stepIndex, completedSubLessonCount = 0))
         }
+        // Audit: elite step start
+        audit?.eliteStepStart(stepIndex, eliteStepCount, cards.size)
         return listOf(SessionEvent.SaveProgress)
     }
 
@@ -1063,6 +1160,11 @@ class SessionRunner(
         stateMachine.reset()
         sessionCards = cards
         val firstCard = cards.firstOrNull()
+        // Audit: review started
+        audit?.reviewStart(
+            stateAccess.uiState.value.navigation.selectedLessonId?.value ?: "",
+            hintLevel.name
+        )
         val defaultInputMode = when (hintLevel) {
             HintLevel.EASY -> InputMode.WORD_BANK
             HintLevel.MEDIUM -> InputMode.KEYBOARD
@@ -1165,6 +1267,8 @@ class SessionRunner(
             resumeTimer()
             updateWordBank()
         }
+        // Audit: cards replaced
+        audit?.cardsReplaced(cards.size, "more")
         return listOf(SessionEvent.SaveProgress)
     }
 

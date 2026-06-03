@@ -129,7 +129,8 @@ class CardProvider(
             subLessonTotal = block.size,
             subLessonCount = subCount,
             activeSubLessonIndex = activeIdx,
-            completedSubLessonCount = 0,
+            // Clamp to total for completed lessons so roadmap shows CompletionCard
+            completedSubLessonCount = if (mastery?.completedAtMs != null) subCount else 0,
             subLessonTypes = emptyList()
         )
     }
@@ -211,10 +212,12 @@ class CardProvider(
         val subLessons = schedule?.subLessons.orEmpty()
         val subCount = subLessons.size
 
-        val completedCount = progressTracker?.calculateCompletedSubLessons(
+        val rawCompletedCount = progressTracker?.calculateCompletedSubLessons(
             subLessons, mastery, selectedLessonId, lessons, hiddenCardIds
         ) ?: 0
-
+        // If lesson is mastery-completed, clamp to total so UI shows CompletionCard
+        // instead of sub-lesson grid with locks on completed lessons.
+        val completedCount = if (mastery?.completedAtMs != null) subCount else rawCompletedCount
         val activeIdx = activeSubLessonIndex.coerceIn(
             0, (subCount - 1).coerceAtLeast(0)
         )
