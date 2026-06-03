@@ -57,7 +57,8 @@ class SessionRunner(
     private val streakManager: StreakManager,
     private val getMastery: (String, String) -> LessonMasteryState?,
     private val getSchedule: (String) -> LessonSchedule?,
-    private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?) -> Int,
+    private val getHiddenCardIds: () -> Set<String>,
+    private val calculateCompletedSubLessons: (List<ScheduledSubLesson>, LessonMasteryState?, String?, Set<String>) -> Int,
     private val onTimerSaveProgress: () -> Unit,
     private val sessionTimerMsSink: ((Long) -> Unit)? = null
 ) : CardSessionStateModel {
@@ -506,7 +507,7 @@ class SessionRunner(
             val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
             val schedule = lessonId?.let { id -> getSchedule(id.value) }
             val subLessons = schedule?.subLessons.orEmpty()
-            val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)
+            val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, getHiddenCardIds())
 
             val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
             val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
@@ -667,7 +668,7 @@ class SessionRunner(
                 val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
                 val schedule = lessonId?.let { id -> getSchedule(id.value) }
                 val subLessons = schedule?.subLessons.orEmpty()
-                val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value)
+                val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, getHiddenCardIds())
                 val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
                 val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
 

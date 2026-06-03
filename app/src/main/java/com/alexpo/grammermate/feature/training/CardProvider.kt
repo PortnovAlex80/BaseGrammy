@@ -212,7 +212,7 @@ class CardProvider(
         val subCount = subLessons.size
 
         val completedCount = progressTracker?.calculateCompletedSubLessons(
-            subLessons, mastery, selectedLessonId, lessons
+            subLessons, mastery, selectedLessonId, lessons, hiddenCardIds
         ) ?: 0
 
         val activeIdx = activeSubLessonIndex.coerceIn(

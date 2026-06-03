@@ -177,12 +177,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         streakManager = streakManager,
         getMastery = { lessonId, langId -> masteryStore.get(lessonId, langId) },
         getSchedule = { lessonId -> lessonSchedules[com.alexpo.grammermate.data.LessonId(lessonId)] },
-        calculateCompletedSubLessons = { subLessons, mastery, lessonId ->
+        getHiddenCardIds = { hiddenCardStore.getHiddenCardIds() },
+        calculateCompletedSubLessons = { subLessons, mastery, lessonId, hiddenIds ->
             progressTracker.calculateCompletedSubLessons(
                 subLessons = subLessons,
                 mastery = mastery,
                 lessonId = lessonId?.let { com.alexpo.grammermate.data.LessonId(it) },
-                lessons = _coreState.value.navigation.lessons
+                lessons = _coreState.value.navigation.lessons,
+                hiddenCardIds = hiddenIds
             )
         },
         onTimerSaveProgress = { saveProgress() },
@@ -695,11 +697,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val schedule = lessonSchedules[typedLessonId]
         val subLessons = schedule?.subLessons.orEmpty()
         val mastery = _coreState.value.navigation.selectedLanguageId?.let { masteryStore.get(lessonId, it.value) }
+        val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val completedCount = progressTracker.calculateCompletedSubLessons(
             subLessons = subLessons,
             mastery = mastery,
             lessonId = typedLessonId,
-            lessons = _coreState.value.navigation.lessons
+            lessons = _coreState.value.navigation.lessons,
+            hiddenCardIds = hiddenIds
         )
         val nextActiveIndex = completedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
@@ -767,6 +771,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _coreState.update {
                 it.copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(packLanguageId)))
             }
+        }
+
+        // Migration: recalculate lesson completions excluding hidden/bad cards
+        if (packLanguageId != null) {
+            val allLessons = lessonStore.getLessons(packLanguageId)
+            val hiddenIds = hiddenCardStore.getHiddenCardIds()
+            progressTracker.recalculateCompletionsExcludingHidden(
+                lessons = allLessons,
+                languageId = com.alexpo.grammermate.data.LanguageId(packLanguageId),
+                hiddenCardIds = hiddenIds
+            )
         }
 
         val packLessonIds = lessonStore.getLessonIdsForPack(packId)
@@ -1589,11 +1604,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is SessionEvent.MarkSubLessonCardsShown -> markSubLessonCardsShown(event.cards)
                 is SessionEvent.CheckAndMarkLessonCompleted -> checkAndMarkLessonCompleted()
                 is SessionEvent.CalculateCompletedSubLessons -> {
+                    val hiddenIds = hiddenCardStore.getHiddenCardIds()
                     val count = progressTracker.calculateCompletedSubLessons(
                         subLessons = event.subLessons,
                         mastery = event.mastery,
                         lessonId = event.lessonId?.let { com.alexpo.grammermate.data.LessonId(it) },
-                        lessons = _coreState.value.navigation.lessons
+                        lessons = _coreState.value.navigation.lessons,
+                        hiddenCardIds = hiddenIds
                     )
                     event.callback(count)
                 }
@@ -1642,15 +1659,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessonId = s.navigation.selectedLessonId
         val mastery = lessonId?.let { masteryStore.get(lessonId.value, langId.value) }
         val uniqueCardShows = mastery?.uniqueCardShows ?: 0
-        val totalCardsInLesson = lessonId?.let { lid ->
-            s.navigation.lessons.find { it.id == lid }?.cards?.size ?: 0
-        } ?: 0
+        val allCardIds = lessonId?.let { lid ->
+            s.navigation.lessons.find { it.id == lid }?.cards?.map { it.id }?.toSet()
+        } ?: emptySet()
+        val hiddenIds = hiddenCardStore.getHiddenCardIds()
+        val hiddenCardCount = allCardIds.count { it in hiddenIds }
+        val totalCardsInLesson = allCardIds.size
         progressTracker.checkAndMarkLessonCompleted(
             completedSubLessonCount = s.cardSession.completedSubLessonCount,
             selectedLessonId = s.navigation.selectedLessonId,
             selectedLanguageId = langId,
             uniqueCardShows = uniqueCardShows,
-            totalCardsInLesson = totalCardsInLesson
+            totalCardsInLesson = totalCardsInLesson,
+            hiddenCardCount = hiddenCardCount
         )
 
         // Update chapter progress when lesson completion status changes

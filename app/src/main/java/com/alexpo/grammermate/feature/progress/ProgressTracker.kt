@@ -113,9 +113,11 @@ class ProgressTracker(
         selectedLessonId: LessonId?,
         selectedLanguageId: LanguageId,
         uniqueCardShows: Int = 0,
-        totalCardsInLesson: Int = 0
+        totalCardsInLesson: Int = 0,
+        hiddenCardCount: Int = 0
     ) {
-        val threshold = minOf(totalCardsInLesson, TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
+        val effectiveCardCount = totalCardsInLesson - hiddenCardCount
+        val threshold = minOf(effectiveCardCount.coerceAtLeast(0), TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
         val isComplete = if (threshold > 0) {
             uniqueCardShows >= threshold
         } else {
@@ -124,6 +126,32 @@ class ProgressTracker(
         }
         if (isComplete && selectedLessonId != null) {
             masteryStore.markLessonCompleted(selectedLessonId.value, selectedLanguageId.value)
+        }
+    }
+
+    /**
+     * Re-evaluate lesson completion for all lessons in a pack.
+     * Accounts for hidden/bad cards that were not previously excluded from the threshold.
+     * Called once on pack selection to retroactively mark lessons as completed
+     * where the user has shown enough non-hidden cards.
+     */
+    fun recalculateCompletionsExcludingHidden(
+        lessons: List<Lesson>,
+        languageId: LanguageId,
+        hiddenCardIds: Set<String>
+    ) {
+        for (lesson in lessons) {
+            val mastery = masteryStore.get(lesson.id.value, languageId.value)
+            if (mastery == null || mastery.completedAtMs != null) continue  // Skip already completed or no data
+
+            val lessonCardIds = lesson.cards.map { it.id }.toSet()
+            val hiddenInLesson = lessonCardIds.count { it in hiddenCardIds }
+            val effectiveCardCount = lesson.cards.size - hiddenInLesson
+            val threshold = minOf(effectiveCardCount.coerceAtLeast(0), TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
+
+            if (threshold > 0 && mastery.uniqueCardShows >= threshold) {
+                masteryStore.markLessonCompleted(lesson.id.value, languageId.value)
+            }
         }
     }
 
@@ -138,7 +166,8 @@ class ProgressTracker(
         subLessons: List<ScheduledSubLesson>,
         mastery: LessonMasteryState?,
         lessonId: LessonId?,
-        lessons: List<Lesson>
+        lessons: List<Lesson>,
+        hiddenCardIds: Set<String> = emptySet()
     ): Int {
         if (lessonId == null || mastery == null || mastery.shownCardIds.isEmpty()) return 0
 
@@ -151,7 +180,13 @@ class ProgressTracker(
 
         var completed = 0
         for (subLesson in subLessons) {
-            val allCardsShown = subLesson.cards.all { card ->
+            // Exclude hidden/bad cards from completion check — they are never delivered to the user
+            val deliverableCards = subLesson.cards.filter { it.id !in hiddenCardIds }
+            if (deliverableCards.isEmpty()) {
+                completed++  // All cards hidden = auto-complete this sub-lesson
+                continue
+            }
+            val allCardsShown = deliverableCards.all { card ->
                 !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
             }
             if (allCardsShown) {
