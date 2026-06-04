@@ -204,8 +204,8 @@ fun UnifiedInputControlsBar(
             onValueChange = { newText ->
                 if (showIncorrectFeedback) onClearIncorrectFeedback()
                 onInputChanged(newText)
-                // Auto-submit in keyboard mode when typed text matches accepted answer
-                if (contract.currentInputMode == InputMode.KEYBOARD &&
+                // Auto-submit when typed text exactly matches an accepted answer
+                if (contract.currentInputMode != InputMode.WORD_BANK &&
                     contract.canSubmit &&
                     hasCards &&
                     contract.currentCard != null &&
