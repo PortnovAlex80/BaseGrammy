@@ -260,7 +260,7 @@ fun TrainingScreen(
                         ) {
                             if (hasTense) {
                                 Text(
-                                    text = cardTense,
+                                    text = cardTense!!,
                                     fontSize = 13.sp,
                                     color = if (isDrillStyle) CorrectGreen else MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.SemiBold,
@@ -272,12 +272,12 @@ fun TrainingScreen(
                             if (showChip) {
                                 SuggestionChip(
                                     onClick = {
-                                        AuditLogger.getInstanceOrNull()?.grammarChipClick(grammarChip.key, state.navigation.selectedLessonId?.value ?: "")
+                                        AuditLogger.getInstanceOrNull()?.grammarChipClick(grammarChip?.key ?: "", state.navigation.selectedLessonId?.value ?: "")
                                         showGrammarSheet = true
                                     },
                                     label = {
                                         Text(
-                                            text = "📖 ${grammarChip.key}",
+                                            text = "📖 ${grammarChip?.key ?: ""}",
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium
                                         )
