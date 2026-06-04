@@ -239,7 +239,7 @@ fun TrainingScreen(
                 )
             }
 
-            // ── Header subtitle: varies by mode ────────────────────────
+            // ── Header subtitle + grammar chip (same row for NORMAL) ──
             when (mode) {
                 TrainingScreenMode.BOSS, TrainingScreenMode.BOSS_MEGA -> {
                     Text(text = stringResource(R.string.training_review_session), fontWeight = FontWeight.SemiBold)
@@ -248,49 +248,46 @@ fun TrainingScreen(
                     Text(text = stringResource(R.string.training_refresh_session), fontWeight = FontWeight.SemiBold)
                 }
                 else -> {
-                    // NORMAL, DRILL, VERB_DRILL — tense label + prompt
                     val sentenceCard = state.cardSession.currentCard as? SentenceCard
                     val cardTense = sentenceCard?.tense
                     val isDrillStyle = mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
-                    if (!cardTense.isNullOrBlank()) {
-                        if (isDrillStyle) {
-                            Text(
-                                text = cardTense,
-                                fontSize = 13.sp,
-                                color = CorrectGreen,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            Text(
-                                text = cardTense,
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                    val showChip = mode == TrainingScreenMode.NORMAL && grammarChip != null
+                    val hasTense = !cardTense.isNullOrBlank()
+                    if (hasTense || showChip) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (hasTense) {
+                                Text(
+                                    text = cardTense,
+                                    fontSize = 13.sp,
+                                    color = if (isDrillStyle) CorrectGreen else MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            if (showChip) {
+                                SuggestionChip(
+                                    onClick = {
+                                        AuditLogger.getInstanceOrNull()?.grammarChipClick(grammarChip.key, state.navigation.selectedLessonId?.value ?: "")
+                                        showGrammarSheet = true
+                                    },
+                                    label = {
+                                        Text(
+                                            text = "📖 ${grammarChip.key}",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    },
+                                    icon = { Icon(Icons.Default.MenuBook, null, modifier = Modifier.size(16.dp)) }
+                                )
+                            }
                         }
                     }
                 }
-            }
-
-            // ── Grammar chip for NORMAL mode ────────────────────────────
-            if (mode == TrainingScreenMode.NORMAL && grammarChip != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                SuggestionChip(
-                    onClick = {
-                        AuditLogger.getInstanceOrNull()?.grammarChipClick(grammarChip.key, state.navigation.selectedLessonId?.value ?: "")
-                        showGrammarSheet = true
-                    },
-                    label = {
-                        Text(
-                            text = "📖 ${grammarChip.key}",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    },
-                    icon = { Icon(Icons.Default.MenuBook, null, modifier = Modifier.size(16.dp)) }
-                )
             }
 
             // ── Prompt text ────────────────────────────────────────────
