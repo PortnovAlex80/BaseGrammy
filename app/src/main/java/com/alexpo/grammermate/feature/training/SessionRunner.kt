@@ -1166,7 +1166,7 @@ class SessionRunner(
             hintLevel.name
         )
         val defaultInputMode = when (hintLevel) {
-            HintLevel.EASY -> InputMode.WORD_BANK
+            HintLevel.EASY -> InputMode.KEYBOARD
             HintLevel.MEDIUM -> InputMode.KEYBOARD
             HintLevel.HARD -> InputMode.VOICE
         }
