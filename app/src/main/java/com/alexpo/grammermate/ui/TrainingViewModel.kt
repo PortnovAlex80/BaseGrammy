@@ -1191,7 +1191,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleTestMode() = handleSettingsResults(settingsActionHandler.toggleTestMode())
 
-    fun resumeFromSettings() = handleSessionEvents(sessionRunner.resumeFromSettings())
+    fun resumeFromSettings() {
+        val state = _coreState.value
+        if (state.cardSession.isReviewMode) {
+            // Rebuild review cards with updated hidden cards after settings change
+            val hintLevel = state.cardSession.hintLevel
+            val hiddenIds = hiddenCardStore.getHiddenCardIds()
+            val cards = cardProvider.buildReviewCards(
+                lessons = state.navigation.lessons,
+                selectedLessonId = state.navigation.selectedLessonId,
+                hiddenCardIds = hiddenIds
+            )
+            if (cards.isEmpty()) return
+            handleSessionEvents(sessionRunner.startReview(cards, hintLevel))
+        } else {
+            handleSessionEvents(sessionRunner.resumeFromSettings())
+        }
+    }
 
     fun selectSubLesson(index: Int) = handleSessionEvents(sessionRunner.selectSubLesson(index))
 

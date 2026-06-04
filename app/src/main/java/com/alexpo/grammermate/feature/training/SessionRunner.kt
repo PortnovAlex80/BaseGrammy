@@ -262,7 +262,8 @@ class SessionRunner(
     }
 
     fun resumeFromSettings(): List<SessionEvent> {
-        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) return emptyList()
+        val state = stateAccess.uiState.value
+        if (state.cardSession.sessionState == SessionState.ACTIVE) return emptyList()
         return startSession()
     }
 
