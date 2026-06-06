@@ -270,7 +270,7 @@ class ChapterProgressCalculatorTest {
     }
 
     @Test
-    fun `calculateChapterProgress maintains started >= completed invariant`() {
+    fun calculateChapterProgress_maintainsStartedGeqCompleted_invariant() {
         // Arrange: Chapter with various lesson states
         val chapter = Chapter(
             chapterId = "chapter_1",

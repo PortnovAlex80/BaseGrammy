@@ -41,13 +41,7 @@ class DailySessionComposer(
     private var cachedVerbDrillCards: Pair<String, List<VerbDrillCard>>? = null
 
     private fun getPackLessons(packId: String, languageId: String): List<Lesson> {
-        val packLessonIds = lessonStore.getLessonIdsForPack(packId).toSet()
-        val languageLessons = lessonStore.getLessons(languageId)
-        return if (packLessonIds.isEmpty()) {
-            languageLessons
-        } else {
-            languageLessons.filter { it.id.value in packLessonIds }
-        }
+        return lessonStore.getLessons(packId, languageId)
     }
 
     companion object {

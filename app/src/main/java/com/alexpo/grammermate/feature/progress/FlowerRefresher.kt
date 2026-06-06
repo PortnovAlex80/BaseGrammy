@@ -61,8 +61,13 @@ class FlowerRefresher(
             return
         }
 
-        val masteryMap = lessons.associate { lesson ->
-            lesson.id to masteryStore.get(lesson.id.value, languageId.value)
+        val packId = state.navigation.activePackId?.value
+        val masteryMap = if (packId != null) {
+            lessons.associate { lesson ->
+                lesson.id to masteryStore.getForPack(packId, lesson.id.value)
+            }
+        } else {
+            emptyMap()
         }
 
         val flowerStates = lessons.associate { lesson ->

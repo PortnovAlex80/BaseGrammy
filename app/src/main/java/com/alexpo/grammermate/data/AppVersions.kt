@@ -18,4 +18,7 @@ object AppVersions {
 
     /** TASK-081: Lesson progress isolation - migrate lesson progress from global to pack-scoped */
     const val VERSION_081_LESSON_PROGRESS_ISOLATION = 81
+
+    /** TASK-082: Mastery isolation - migrate mastery from language-scoped to pack-scoped keys */
+    const val VERSION_082_MASTERY_PACK_SCOPED = 82
 }

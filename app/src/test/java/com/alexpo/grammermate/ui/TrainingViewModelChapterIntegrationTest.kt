@@ -2,6 +2,8 @@ package com.alexpo.grammermate.ui
 
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
+import com.alexpo.grammermate.data.LanguageId
+import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.feature.progress.ChapterProgressCalculator
 import org.junit.Assert.assertEquals
@@ -28,13 +30,17 @@ class TrainingViewModelChapterIntegrationTest {
         // And: Mastery states where lesson_1 is completed, lesson_2 is started, lesson_3 is not started
         val masteryStates = mapOf(
             "lesson_1" to LessonMasteryState(
+                lessonId = LessonId("lesson_1"),
+                languageId = LanguageId("it"),
                 uniqueCardShows = 10,
-                intervalStepIndex = 5, // >= 3 means completed
+                intervalStepIndex = 5,
                 lastShowDateMs = 1000L
             ),
             "lesson_2" to LessonMasteryState(
+                lessonId = LessonId("lesson_2"),
+                languageId = LanguageId("it"),
                 uniqueCardShows = 5,
-                intervalStepIndex = 2, // < 3 means started but not completed
+                intervalStepIndex = 2,
                 lastShowDateMs = 2000L
             )
             // lesson_3 has no mastery state (not started)
@@ -85,11 +91,15 @@ class TrainingViewModelChapterIntegrationTest {
 
         val masteryStates = mapOf(
             "lesson_1" to LessonMasteryState(
+                lessonId = LessonId("lesson_1"),
+                languageId = LanguageId("it"),
                 uniqueCardShows = 10,
                 intervalStepIndex = 5,
                 lastShowDateMs = 1000L
             ),
             "lesson_2" to LessonMasteryState(
+                lessonId = LessonId("lesson_2"),
+                languageId = LanguageId("it"),
                 uniqueCardShows = 15,
                 intervalStepIndex = 8,
                 lastShowDateMs = 2000L

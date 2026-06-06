@@ -26,6 +26,8 @@ import com.alexpo.grammermate.data.AppConfigStore
 import com.alexpo.grammermate.data.AppConfigStoreImpl
 import com.alexpo.grammermate.data.AppVersions
 import com.alexpo.grammermate.data.GrammarChipStore
+import com.alexpo.grammermate.data.LessonStoreImpl
+import com.alexpo.grammermate.data.MasteryStoreImpl
 import com.alexpo.grammermate.data.PackDailyCursorStoreImpl
 import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
 import com.alexpo.grammermate.data.ProgressStore
@@ -88,7 +90,37 @@ private fun checkAndMigrate(context: Context) {
         configStore.setLastVersion(AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION)
     }
 
-    // Future migrations: TASK-082, etc.
+    // Migrate mastery from language-scoped to pack-scoped keys (TASK-082)
+    if (lastVersion < AppVersions.VERSION_082_MASTERY_PACK_SCOPED) {
+        try {
+            val masteryStore = MasteryStoreImpl(context)
+            val lessonStore = LessonStoreImpl(context)
+
+            val migrated = masteryStore.runV1ToV2Migration(
+                getInstalledPacks = { lessonStore.getInstalledPacks() },
+                getPackIdForLesson = { languageId, lessonId ->
+                    // Find which pack contains this lesson
+                    lessonStore.getInstalledPacks()
+                        .filter { it.languageId.value == languageId }
+                        .firstOrNull { pack ->
+                            lessonStore.getLessons(pack.packId.value, languageId)
+                                .any { it.id.value == lessonId }
+                        }
+                        ?.packId?.value
+                }
+            )
+            if (migrated) {
+                Log.i("AppRoot", "Successfully migrated mastery to pack-scoped keys")
+            } else {
+                Log.d("AppRoot", "Mastery already at pack-scoped schema, no migration needed")
+            }
+        } catch (e: Exception) {
+            Log.e("AppRoot", "Failed to migrate mastery to pack-scoped", e)
+            // Continue anyway - don't block app launch
+        }
+
+        configStore.setLastVersion(AppVersions.VERSION_082_MASTERY_PACK_SCOPED)
+    }
 }
 
 @Composable

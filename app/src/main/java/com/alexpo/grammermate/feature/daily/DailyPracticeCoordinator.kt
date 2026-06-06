@@ -367,9 +367,7 @@ class DailyPracticeCoordinator(
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId ?: return false
 
-        val packLessonIds = state.navigation.activePackLessonIds?.toSet().orEmpty()
-        val packLessons = lessonStore.getLessons(langId.value)
-            .let { lessons -> if (packLessonIds.isEmpty()) lessons else lessons.filter { it.id.value in packLessonIds } }
+        val packLessons = lessonStore.getLessons(packId.value, langId.value)
         val effectiveLevel: Int
         val lessonId: String
         val levelFromCursor: Boolean
@@ -574,8 +572,9 @@ class DailyPracticeCoordinator(
             val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return
             val card = task.card
             val lessonId = resolveCardLessonId(card)
-            val languageId = stateAccess.uiState.value.navigation.selectedLanguageId ?: return
-            masteryStore.recordCardShow(lessonId, languageId.value, card.id)
+            val nav = stateAccess.uiState.value.navigation
+            val packIdStr = nav.activePackId?.value ?: return
+            masteryStore.recordCardShowForPack(packIdStr, lessonId, card.id)
         }
     }
 
@@ -907,10 +906,14 @@ class DailyPracticeCoordinator(
     ): DailyCursorState {
         val cursor = getCursor()
         _state.update { it.copy(dailyCursor = cursor) }
-        val packLessonIds = stateAccess.uiState.value.navigation.activePackLessonIds?.toSet().orEmpty()
+        val nav = stateAccess.uiState.value.navigation
+        val packId = nav.activePackId
         Log.d(logTag, "DailyPractice: advanceDailyCursor sentenceCount=$sentenceCount, currentLessonIndex=${cursor.currentLessonIndex}, sentenceOffset=${cursor.sentenceOffset}, verbOffset=${cursor.verbOffset}")
-        val lessons = lessonStore.getLessons(languageId)
-            .let { allLessons -> if (packLessonIds.isEmpty()) allLessons else allLessons.filter { it.id.value in packLessonIds } }
+        val lessons = if (packId != null) {
+            lessonStore.getLessons(packId.value, languageId)
+        } else {
+            emptyList()
+        }
         if (lessons.isEmpty()) return cursor
 
         var sentenceOffset = cursor.sentenceOffset + sentenceCount
@@ -927,11 +930,11 @@ class DailyPracticeCoordinator(
 
         // Advance verbOffset with cycling
         val state = stateAccess.uiState.value
-        val packId = state.navigation.activePackId?.value
-        val newVerbOffset = if (packId != null) {
+        val activePackIdStr = state.navigation.activePackId?.value
+        val newVerbOffset = if (activePackIdStr != null) {
             val effectiveLevel = currentLessonIndex + 1
-            val cumulativeTenses = lessonStore.getCumulativeTenses(packId, effectiveLevel)
-            val totalVerbPoolSize = getTotalVerbPoolSize(packId, languageId, cumulativeTenses)
+            val cumulativeTenses = lessonStore.getCumulativeTenses(activePackIdStr, effectiveLevel)
+            val totalVerbPoolSize = getTotalVerbPoolSize(activePackIdStr, languageId, cumulativeTenses)
             val incremented = cursor.verbOffset + sessionSize
             if (totalVerbPoolSize > 0 && incremented >= totalVerbPoolSize) 0 else incremented
         } else {

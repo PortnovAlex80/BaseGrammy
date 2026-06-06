@@ -135,7 +135,9 @@ class ProgressRestorer(
             val progress = progressStore.load()
             val profile = profileStore.load()
             val selectedLanguageId = if (progress.languageId.value.isNotEmpty()) progress.languageId else LanguageId("en")
-            val lessons = lessonStore.getLessons(selectedLanguageId.value)
+            val lessons = progress.activePackId?.let { pid ->
+                lessonStore.getLessons(pid.value, selectedLanguageId.value)
+            } ?: emptyList()
             val selectedLessonId = progress.lessonId?.let { id ->
                 lessons.firstOrNull { it.id.value == id }?.id
             } ?: lessons.firstOrNull()?.id
@@ -179,7 +181,9 @@ class ProgressRestorer(
         val selectedLanguageId = languages.firstOrNull { it.id == progress.languageId }?.id
             ?: languages.firstOrNull()?.id
             ?: LanguageId("en")
-        val lessons = lessonStore.getLessons(selectedLanguageId.value)
+        val lessons = progress.activePackId?.let { pid ->
+            lessonStore.getLessons(pid.value, selectedLanguageId.value)
+        } ?: emptyList()
         val selectedLessonId = progress.lessonId?.let { id ->
             lessons.firstOrNull { it.id.value == id }?.id
         } ?: lessons.firstOrNull()?.id

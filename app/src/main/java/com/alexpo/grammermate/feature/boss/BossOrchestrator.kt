@@ -60,9 +60,9 @@ class BossOrchestrator(
         val selectedIndex = lessons.indexOfFirst { it.id == selectedId }
         val cards = cardProvider.buildBossCards(lessons, type, selectedId, selectedIndex)
         val uniqueCardShows = selectedId?.let { lid ->
-            state.navigation.selectedLanguageId?.let { langId ->
-                masteryStore.get(lid.value, langId.value)?.uniqueCardShows ?: 0
-            }
+            state.navigation.activePackId?.let { pid ->
+                masteryStore.getForPack(pid.value, lid.value)?.uniqueCardShows ?: 0
+            } ?: 0
         } ?: 0
         val totalCardsInLesson = lessons.firstOrNull { it.id == selectedId }?.cards?.size ?: 0
         val result = bossBattleRunner.startBoss(
