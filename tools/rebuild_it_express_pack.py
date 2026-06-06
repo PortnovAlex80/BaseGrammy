@@ -77,8 +77,8 @@ LESSON_TO_CHIP = {
 
 def main():
     pack_dir = Path('temp_pack')
-    zip_path = Path('app/src/main/assets/grammarmate/packs/IT_EXPRESS.zip')
-    chips_json_dir = Path('docs/lesson-methodology/grammar_chips_json')
+    zip_path = Path('app/src/main/assets/grammarmate/packs/ITALIAN_EXPRESS.zip')
+    chips_json_dir = Path('docs/lesson-methodology/italian/grammar_chips_json')
 
     # Clean and create temp directory
     if pack_dir.exists():
@@ -162,6 +162,22 @@ def main():
         copied_count += 1
 
     print(f"Copied {copied_count} grammar chip files")
+
+    # Copy updated lesson CSVs (exclude German A17-A24 if present)
+    lessons_dir = Path('docs/lesson-methodology/italian/lessons')
+    german_ids = {f'lesson_{n}_A{n}.csv' for n in range(17, 25)}
+    if lessons_dir.exists():
+        print(f"\nCopying updated lesson CSVs...")
+        csv_copied = 0
+        for csv_file in lessons_dir.glob('lesson_*.csv'):
+            if csv_file.name in german_ids:
+                print(f"  SKIP (German): {csv_file.name}")
+                continue
+            dest = pack_dir / csv_file.name
+            shutil.copy(csv_file, dest)
+            print(f"  Updated {csv_file.name}")
+            csv_copied += 1
+        print(f"Copied {csv_copied} lesson CSV files")
 
     # Backup original ZIP
     backup_path = zip_path.with_suffix('.zip.bak')

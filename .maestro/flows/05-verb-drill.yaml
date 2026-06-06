@@ -1,9 +1,0 @@
-appId: com.alexpo.grammermate
-tags:
-  - drill
-  - verb
----
-- launchApp
-- tapOn: "Verb Drill"
-- assertVisible: "Verb Drill"
-- assertVisible: "Start"

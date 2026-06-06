@@ -96,8 +96,8 @@ def parse_grammar_chip(md_content):
     }
 
 def main():
-    chips_dir = Path('docs/lesson-methodology/grammar_chips')
-    output_dir = Path('docs/lesson-methodology/grammar_chips_json')
+    chips_dir = Path('docs/lesson-methodology/italian/grammar_chips')
+    output_dir = Path('docs/lesson-methodology/italian/grammar_chips_json')
 
     output_dir.mkdir(exist_ok=True)
 
