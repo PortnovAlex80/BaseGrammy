@@ -1,0 +1,19 @@
+appId: com.alexpo.grammermate
+name: 02 - Select Pack and enter Roadmap
+tags:
+  - navigation
+  - roadmap
+---
+- launchApp
+- assertVisible: "Select Pack"
+
+# Tap on the pack selector area to see available packs
+- tapOn: "Select Pack"
+
+# Wait for pack options or roadmap to appear
+- extendedWaitUntil:
+    visible:
+      text: "Italian"
+    timeout: 5000
+
+- takeScreenshot: 02_pack_list_or_roadmap

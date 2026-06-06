@@ -1,0 +1,35 @@
+appId: com.alexpo.grammermate
+name: 03 - Enter Roadmap and open Story Reader
+tags:
+  - navigation
+  - story-reader
+---
+- launchApp
+- assertVisible: "Select Pack"
+
+# Tap Select Pack to enter pack/roadmap
+- tapOn: "Select Pack"
+
+# Should see Roadmap or pack list
+- extendedWaitUntil:
+    visible: "Grammar Story Roadmap"
+    timeout: 5000
+
+# Tap "Read Story" on first chapter
+- tapOn: "Read Story"
+
+# Story reader should open
+- extendedWaitUntil:
+    visible:
+      text: "До языка"
+    timeout: 5000
+
+- takeScreenshot: 03_story_reader
+
+# Go back to roadmap
+- pressKey: back
+- extendedWaitUntil:
+    visible: "Grammar Story Roadmap"
+    timeout: 5000
+
+- takeScreenshot: 03b_back_to_roadmap

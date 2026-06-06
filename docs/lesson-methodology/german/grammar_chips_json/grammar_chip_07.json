@@ -1,0 +1,35 @@
+{
+  "key": "A07",
+  "title": "A07 - Личные местоимения: Nominativ / Akkusativ / Dativ",
+  "essence": "Местоимения заменяют существительные и склоняются по падежам. Nominativ — подлежащее, Akkusativ — прямое дополнение, Dativ — косвенное.",
+  "formula": "Nom: ich | du | er | sie | es | wir | ihr | sie/Sie\nAkk: mich | dich | ihn | sie | es | uns | euch | sie/Sie\nDat: mir | dir | ihm | ihr | ihm | uns | euch | ihnen/Ihnen\n\n3-е лицо: er=муж., sie=жен., es=ср.",
+  "base": null,
+  "dontConfuse": "sie (с маленькой) = она / они. Sie (с большой) = Вы (вежливо). Контекст и глагол различают. ihm = ему (муж./ср. Dat.), ihr = ей (жен. Dat.) — не путать с ihm/her.",
+  "examples": [
+    {
+      "it": "Ich sehe ihn.",
+      "ru": "Я вижу его.",
+      "note": "ihn — муж., Akk."
+    },
+    {
+      "it": "Sie hilft mir.",
+      "ru": "Она помогает мне.",
+      "note": "mir — Dat."
+    },
+    {
+      "it": "Wir geben ihnen das Buch.",
+      "ru": "Мы даём им книгу.",
+      "note": "ihnen — мн.ч., Dat."
+    },
+    {
+      "it": "Er gibt dir einen Stift.",
+      "ru": "Он даёт тебе ручку.",
+      "note": "dir — Dat.; einen — муж., Akk."
+    },
+    {
+      "it": "Kennt ihr mich?",
+      "ru": "Вы (мн.) меня знаете?",
+      "note": "mich — Akk."
+    }
+  ]
+}

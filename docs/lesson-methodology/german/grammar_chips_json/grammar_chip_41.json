@@ -1,0 +1,25 @@
+{
+  "key": "B26",
+  "title": "B26 - Congiuntivo Presente: Irregulars",
+  "essence": "Распространённые формы congiuntivo presente — неправильные.",
+  "formula": "- `essere -> sia`\n- `avere -> abbia`\n- `andare -> vada`\n- `venire -> venga`\n- `fare -> faccia`\n- `dire -> dica`\n- `potere -> possa`\n- `dovere -> debba`\n- `sapere -> sappia`",
+  "base": null,
+  "dontConfuse": "Некоторые формы множественного числа совпадают с indicativo: `che siamo`, `che possiamo`.",
+  "examples": [
+    {
+      "it": "Voglio che tu sia qui.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Spero che lei venga.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Bisogna che tu lo faccia.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "key": "C03",
+  "title": "C03 - Mixed Hypotheticals",
+  "essence": "Смешанные условные предложения связывают прошедшее условие с настоящим результатом, или настоящее условие с прошедшим результатом.",
+  "formula": null,
+  "base": null,
+  "dontConfuse": "Отслеживайте время в обеих частях отдельно.",
+  "examples": [
+    {
+      "it": "Se avessi studiato, ora sapresti tutto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Se fossi più attento, non avresti fatto l'errore.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

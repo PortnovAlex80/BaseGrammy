@@ -1,0 +1,30 @@
+{
+  "key": "B27",
+  "title": "B27 - Congiuntivo Imperfetto",
+  "essence": "Используется после главных предложений в прошедшем времени и в гипотетических конструкциях с se.",
+  "formula": "",
+  "base": null,
+  "dontConfuse": "В гипотетических конструкциях с se сочетается с condizionale: Se avessi tempo, verrei.",
+  "examples": [
+    {
+      "it": "Pensavo che tu fossi a casa.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Volevo che venissi.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Speravo che capissi.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Se fossi ricco, viaggerei.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

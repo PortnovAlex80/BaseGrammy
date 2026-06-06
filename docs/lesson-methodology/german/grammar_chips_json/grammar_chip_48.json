@@ -1,0 +1,9 @@
+{
+  "key": "C02",
+  "title": "C02 - Periodo Ipotetico",
+  "essence": "В итальянском языке есть три основных типа условных предложений: реальные, возможные и нереальные.",
+  "formula": "- реальный: `Se ho tempo, vengo.`\n- возможный: `Se avessi tempo, verrei.`\n- нереальный (прошедшее): `Se avessi avuto tempo, sarei venuto.`",
+  "base": null,
+  "dontConfuse": "В стандартных условных предложениях после `se` не используется condizionale.",
+  "examples": []
+}

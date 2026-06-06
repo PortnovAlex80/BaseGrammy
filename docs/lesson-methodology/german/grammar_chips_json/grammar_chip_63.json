@@ -1,0 +1,25 @@
+{
+  "key": "C20",
+  "title": "C20 - Style and Paraphrase",
+  "essence": "Продвинутое владение — это умение выразить одну идею разными способами.",
+  "formula": "",
+  "base": null,
+  "dontConfuse": "При перефразировании нужно сохранять смысл, регистр и логику времён.",
+  "examples": [
+    {
+      "it": "Marco ha aperto la porta.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "La porta è stata aperta da Marco.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Aperta la porta, Marco è entrato.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

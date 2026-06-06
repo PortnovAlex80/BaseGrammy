@@ -1,0 +1,35 @@
+{
+  "key": "A24",
+  "title": "A24 - Союзы: und, aber, oder, denn, sondern",
+  "essence": "Пять координирующих союзов (und, aber, oder, denn, sondern) соединяют предложения без изменения порядка слов. Глагол остаётся на 2-м месте после союза.",
+  "formula": "und (и) — перечисление, дополнение\naber (но) — противопоставление\noder (или) — выбор\ndenn (потому что) — причина\nsondern (а) — исправление неверного (не X, а Y)\n\nПозиция: Satz 1 + , + Konjunktion + Satz 2\nПорядок слов НЕ меняется! V2 сохраняется.\n\nНулевой субъект: при und/aber/oder можно опустить подлежащее,\nесли оно совпадает: Ich trinke Kaffee und lese ein Buch.",
+  "base": null,
+  "dontConfuse": "denn vs weil: denn + главное предложение (V2), weil + придаточное (глагол в конце). Ich bleibe hier, denn es regnet. (denn + V2) Ich bleibe hier, weil es regnet. (weil + глагол в конце).\nsondern требует предшествующего отрицания: Ich trinke nicht Kaffee, sondern Tee.",
+  "examples": [
+    {
+      "it": "Ich trinke Kaffee und lese ein Buch.",
+      "ru": "Я пью кофе и читаю книгу.",
+      "note": "und + опущен ich"
+    },
+    {
+      "it": "Es ist kalt, aber die Sonne scheint.",
+      "ru": "Холодно, но солнце светит.",
+      "note": "aber = противопоставление"
+    },
+    {
+      "it": "Möchtest du Tee oder Kaffee?",
+      "ru": "Хочешь чай или кофе?",
+      "note": "oder = выбор"
+    },
+    {
+      "it": "Ich bleibe zu Hause, denn ich bin krank.",
+      "ru": "Я остаюсь дома, потому что болен.",
+      "note": "denn + V2 порядок"
+    },
+    {
+      "it": "Er heisst nicht Thomas, sondern Stefan.",
+      "ru": "Его зовут не Томас, а Штефан.",
+      "note": "sondern = исправление (не X, а Y)"
+    }
+  ]
+}

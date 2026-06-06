@@ -1,0 +1,25 @@
+{
+  "key": "B24",
+  "title": "B24 - Text Connectors",
+  "essence": "Коннекторы выражают противопоставление, причину, следствие, время и условие.",
+  "formula": "",
+  "base": null,
+  "dontConfuse": "Некоторые коннекторы могут требовать congiuntivo.",
+  "examples": [
+    {
+      "it": "Sono stanco, ma continuo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Resto a casa perché piove.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non ho capito, quindi chiedo.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

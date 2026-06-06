@@ -1,0 +1,35 @@
+{
+  "key": "A11",
+  "title": "A11 - Numeri, Ora, Data",
+  "essence": "Числа называют количество, время отвечает на Che ore sono?, даты строятся через il + число + месяц. Время и даты требуют устойчивых предлогов: alle otto, di lunedì, in estate, nel 2024.",
+  "formula": "Возраст:\nHo trentadue anni. = Мне 32 года.\n\nВремя:\nChe ore sono? = Который час?\nÈ l'una. = Час.\nSono le tre. = Три часа.\nSono le sette e mezza. = Половина восьмого.\nA che ora? Alle otto. = Во сколько? В восемь.\n\nДата:\nil 25 dicembre = 25 декабря\nil primo maggio = 1 мая\n\nПредлоги времени:\na = точка: alle nove, a mezzogiorno\n di = повторяемость: di lunedì, di mattina\nin = период: in estate, nel 2024",
+  "base": null,
+  "dontConfuse": "Возраст выражается через avere: ho 20 anni, не sono 20 anni. В датах обычно кардинальное число: il 25 marzo, но первое число месяца - il primo. Дни недели пишутся с маленькой буквы.",
+  "examples": [
+    {
+      "it": "Ho trentadue anni.",
+      "ru": "Мне 32 года.",
+      "note": "возраст -> avere."
+    },
+    {
+      "it": "Sono le sette e mezza.",
+      "ru": "Половина восьмого.",
+      "note": "sono le + часы."
+    },
+    {
+      "it": "Il mio compleanno è il 15 marzo.",
+      "ru": "Мой день рождения 15 марта.",
+      "note": "дата с il."
+    },
+    {
+      "it": "Di sabato non lavoro.",
+      "ru": "По субботам не работаю.",
+      "note": "di = повторяемость."
+    },
+    {
+      "it": "A mezzogiorno pranziamo.",
+      "ru": "В полдень обедаем.",
+      "note": "a = точка времени."
+    }
+  ]
+}

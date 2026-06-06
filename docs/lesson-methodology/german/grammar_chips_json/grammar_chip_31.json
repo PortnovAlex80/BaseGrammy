@@ -1,0 +1,30 @@
+{
+  "key": "B15",
+  "title": "B15 - Pronomi Combinati",
+  "essence": "Косвенные + прямые местоимения могут объединяться.",
+  "formula": "- `me lo`\n- `te la`\n- `glielo`\n- `ce li`\n- `ve le`\n- `gliene`",
+  "base": null,
+  "dontConfuse": "`Te lo dico` = Я говорю это тебе.",
+  "examples": [
+    {
+      "it": "Te lo dico.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Me la dai?",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Glielo porto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ce ne sono due.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

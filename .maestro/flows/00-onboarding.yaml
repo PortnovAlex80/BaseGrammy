@@ -1,0 +1,21 @@
+appId: com.alexpo.grammermate
+name: 00 - Onboarding welcome dialog
+tags:
+  - onboarding
+  - smoke
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Добро пожаловать"
+    timeout: 10000
+
+# Tap the input field
+- tapOn: "Введите имя"
+
+# Type name
+- inputText: "TestUser"
+
+# Tap Continue
+- tapOn: "Продолжить"
+
+- takeScreenshot: 00_after_onboarding

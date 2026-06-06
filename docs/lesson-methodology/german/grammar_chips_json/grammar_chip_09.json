@@ -1,0 +1,40 @@
+{
+  "key": "A09",
+  "title": "A09 - Предлоги с двухсторонним управлением: Wechselprapositionen",
+  "essence": "9 предлогов требуют Akkusativ при направлении (куда?) и Dativ при местоположении (где?): an, auf, hinter, in, neben, uber, unter, vor, zwischen.",
+  "formula": "КУДА? (движение) -> Akkusativ\nГДЕ? (положение) -> Dativ\n\nan (на/у вертикали), auf (на горизонтали), in (в), hinter (за),\nneben (рядом), uber (над), unter (под), vor (перед), zwischen (между)",
+  "base": null,
+  "dontConfuse": "Глагол решает: legen/stecken/setzen (куда? -> Akk.) vs liegen/stehen/sein (где? -> Dat.). Не все глаголы движения требуют Akk. — только если меняется положение: Ich laufe in dem Park (где?) vs Ich laufe in den Park (куда?).",
+  "examples": [
+    {
+      "it": "Ich gehe in die Stadt. (куда? -> Akk.)",
+      "ru": "Я иду в город.",
+      "note": "направление = Akk."
+    },
+    {
+      "it": "Ich bin in der Stadt. (где? -> Dat.)",
+      "ru": "Я в городе.",
+      "note": "положение = Dat."
+    },
+    {
+      "it": "Das Buch liegt auf dem Tisch.",
+      "ru": "Книга лежит на столе.",
+      "note": "liegen = положение, auf + Dat."
+    },
+    {
+      "it": "Ich lege das Buch auf den Tisch.",
+      "ru": "Я кладу книгу на стол.",
+      "note": "legen = направление, auf + Akk."
+    },
+    {
+      "it": "Er hangt das Bild an die Wand.",
+      "ru": "Он вешает картину на стену.",
+      "note": "кудап + Akk."
+    },
+    {
+      "it": "Das Bild hangt an der Wand.",
+      "ru": "Картина висит на стене.",
+      "note": "где? + Dat."
+    }
+  ]
+}

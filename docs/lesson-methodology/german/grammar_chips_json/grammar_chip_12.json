@@ -1,0 +1,30 @@
+{
+  "key": "A12",
+  "title": "A12 - Обзор 4 падежей: таблица артиклей",
+  "essence": "Все 4 падежа в одной таблице — основной инструмент для ориентации в немецкой грамматике.",
+  "formula": "Определённый артикль:\n        Муж.   Жен.   Ср.    Мн.\nNom     der     die    das    die\nGen     des     der    des    der\nDat     dem     der    dem    den(+n)\nAkk     den     die    das    die\n\nНеопределённый артикль:\n        Муж.   Жен.   Ср.\nNom     ein     eine   ein\nGen     eines   einer  eines\nDat     einem   einer  einem\nAkk     einen   eine   ein",
+  "base": null,
+  "dontConfuse": "Genitiv (кого? чего? чей?) используется редко в разговорной речи, часто заменяется на von + Dativ: das Buch von dem Mann вместо das Buch des Mannes. Но в письменном немецком Genitiv обязателен.",
+  "examples": [
+    {
+      "it": "Der Hund sieht den Mann. (Nom -> Akk)",
+      "ru": "Собака видит мужчину.",
+      "note": "der -> den (муж. Nom. -> Akk.)"
+    },
+    {
+      "it": "Ich gebe dem Kind das Buch. (Dat -> Akk)",
+      "ru": "Я даю ребёнку книгу.",
+      "note": "dem (ср. Dat.), das (ср. Akk.)"
+    },
+    {
+      "it": "Das Auto der Frau ist rot. (Nom -> Gen)",
+      "ru": "Машина женщины красная.",
+      "note": "der (жен. Gen.)"
+    },
+    {
+      "it": "Wir helfen den Kindern. (Dat мн.)",
+      "ru": "Мы помогаем детям.",
+      "note": "den + -n (мн.ч. Dat.)"
+    }
+  ]
+}

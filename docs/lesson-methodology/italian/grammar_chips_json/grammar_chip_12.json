@@ -1,0 +1,35 @@
+{
+  "key": "A12",
+  "title": "A12 - Frequenza e Quantità",
+  "essence": "Наречия частоты отвечают «как часто», слова количества отвечают «сколько/насколько много». Отрицательные частоты в итальянском обычно собираются парой: non...mai, non...più.",
+  "formula": "Частота:\nsempre = всегда\nspesso = часто\nqualche volta = иногда\nraramente = редко\nnon...mai = никогда не\nnon...più = больше не\n\nКоличество:\nmolto = много/очень\npoco = мало\n troppo = слишком много/слишком\nabbastanza = достаточно\npiù = больше\nmeno = меньше\n\nПозиция:\nобычно после глагола: Mangio spesso.\nс essere часто после essere: È sempre occupato.",
+  "base": null,
+  "dontConfuse": "non...mai требует оба элемента: Non bevo mai caffè. По-русски «никогда» уже отрицательное, а в итальянском mai без non не дает обычного отрицания. Troppo имеет оттенок чрезмерности, molto нейтральнее.",
+  "examples": [
+    {
+      "it": "Vado spesso al cinema.",
+      "ru": "Я часто хожу в кино.",
+      "note": "spesso после глагола."
+    },
+    {
+      "it": "È sempre occupato.",
+      "ru": "Он всегда занят.",
+      "note": "после essere."
+    },
+    {
+      "it": "Non bevo mai caffè.",
+      "ru": "Я никогда не пью кофе.",
+      "note": "non...mai."
+    },
+    {
+      "it": "Non fumo più.",
+      "ru": "Я больше не курю.",
+      "note": "non...più."
+    },
+    {
+      "it": "Mangio troppo.",
+      "ru": "Я слишком много ем.",
+      "note": "troppo = чрезмерно."
+    }
+  ]
+}

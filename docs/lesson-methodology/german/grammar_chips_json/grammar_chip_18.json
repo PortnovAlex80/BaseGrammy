@@ -1,0 +1,40 @@
+{
+  "key": "A18",
+  "title": "A18 - Вопросы: глагол на первом месте",
+  "essence": "Да/нет вопросы: глагол на 1-м месте. W-вопросы: вопросительное слово на 1-м, глагол на 2-м.",
+  "formula": "Ja/Nein-вопрос:  Verb + Subjekt + ...\nW-Frage:          W-Wort + Verb + Subjekt + ...\n\nВопросительные слова:\nwer (кто) | was (что) | wo (где) | wohin (куда) | woher (откуда)\nwan (когда) | warum (почему) | wie (как) | welcher (какой) | was fur (что за)",
+  "base": null,
+  "dontConfuse": "Wo (где?) vs wohin (куда?) vs woher (откуда?): Wo wohnst du? (Где живёшь?) Wohin gehst du? (Куда идёшь?) Woher kommst du? (Откуда приехал?). Не путай с косвенным вопросом (отдельная тема).",
+  "examples": [
+    {
+      "it": "Trinkst du Kaffee?",
+      "ru": "Ты пьёшь кофе?",
+      "note": "Ja/Nein: глагол на 1-м месте"
+    },
+    {
+      "it": "Was trinkst du?",
+      "ru": "Что ты пьёшь?",
+      "note": "W-Frage: was на 1-м, trinkst на 2-м"
+    },
+    {
+      "it": "Wo wohnst du?",
+      "ru": "Где ты живёшь?",
+      "note": "wo + wohnst"
+    },
+    {
+      "it": "Wohin gehst du?",
+      "ru": "Куда ты идёшь?",
+      "note": "wohin + gehst"
+    },
+    {
+      "it": "Wann kommst du?",
+      "ru": "Когда ты придёшь?",
+      "note": "wann + kommst"
+    },
+    {
+      "it": "Wie heisst du?",
+      "ru": "Как тебя зовут?",
+      "note": "wie + heisst"
+    }
+  ]
+}

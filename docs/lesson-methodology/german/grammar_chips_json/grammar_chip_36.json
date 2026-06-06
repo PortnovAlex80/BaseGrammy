@@ -1,0 +1,25 @@
+{
+  "key": "B19",
+  "title": "B19 - Infinito Passato",
+  "essence": "Сделать, часто после dopo.",
+  "formula": "aver/essere + participio passato",
+  "base": null,
+  "dontConfuse": "Используй essere там, где сложные времена используют essere.",
+  "examples": [
+    {
+      "it": "Dopo aver mangiato, sono uscito.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dopo aver letto, ho risposto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dopo essere arrivato, ho telefonato.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "key": "A19",
+  "title": "A19 - Отделяемые приставки (Trennbare Verben)",
+  "essence": "Глаголы с отделяемыми приставками: в главном предложении приставка отрывается и уходит в конец. На 2-м месте — только основа глагола.",
+  "formula": "Приставка + инфинитив -> в предложении: основа на 2-м месте, приставка в конце.\n\nОтделяемые приставки: ab-, an-, auf-, aus-, bei-, ein-, fest-, her-, hin-, los-, mit-, nach-, vor-, weg-, zu-, zuruck-, zusammen-\n\nan|rufen: Ich rufe dich an. (Не: Ich anrufe dich.)",
+  "base": null,
+  "dontConfuse": "Не все приставки отделяемые! Неотделяемые: be-, emp-, ent-, er-, ge-, miss-, ver-, zer- (bezahlen, verstehen — НЕ разделяются). Признак: ударение. Ударение на приставке = отделяемая (AUfrufen), на основе = неотделяемая (beZAHlen).",
+  "examples": [
+    {
+      "it": "Ich stehe um 7 Uhr auf.",
+      "ru": "Я встаю в 7 часов.",
+      "note": "aufstehen: auf в конце"
+    },
+    {
+      "it": "Er ruft seine Mutter an.",
+      "ru": "Он звонит своей маме.",
+      "note": "anrufen: an в конце"
+    },
+    {
+      "it": "Wir kommen morgen an.",
+      "ru": "Мы приедем завтра.",
+      "note": "ankommen: an в конце"
+    },
+    {
+      "it": "Sie nimmt den Mantel mit.",
+      "ru": "Она берёт пальто с собой.",
+      "note": "mitnehmen: mit в конце"
+    },
+    {
+      "it": "Ich kaufe ein Buch ein.",
+      "ru": "Я покупаю книгу.",
+      "note": "einkaufen: ein в конце"
+    },
+    {
+      "it": "Der Zug fahrt ab.",
+      "ru": "Поезд отходит.",
+      "note": "abfahren: ab в конце"
+    }
+  ]
+}

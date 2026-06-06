@@ -1,0 +1,40 @@
+{
+  "key": "A21",
+  "title": "A21 - Отрицание: nicht и kein",
+  "essence": "kein отрицает существительное (нет чего-то). nicht отрицает глагол/всё предложение (не делаю, не так). Выбор зависит от того, ЧТО отрицается.",
+  "formula": "kein + существительное (отрицает обладание/наличие):\nIch habe kein Buch. (У меня нет книги.)\nkein склоняется как неопределённый артикль.\n\nnicht + глагол/прилагательное/наречие/всё предложение:\nIch arbeite nicht. (Я не работаю.)\nDas ist nicht gut. (Это не хорошо.)\n\nnicht перед предлогом/местом: Ich fahre nicht nach Berlin.",
+  "base": null,
+  "dontConfuse": "kein — только перед существительным БЕЗ артикля (или вместо ein). nicht — перед прилагательными, наречиями, предлогами, или в конце предложения. Das ist kein Problem (нет проблемы) vs Das ist nicht das Problem (это не та проблема, о которой речь).",
+  "examples": [
+    {
+      "it": "Ich habe keine Zeit.",
+      "ru": "У меня нет времени.",
+      "note": "kein + сущ."
+    },
+    {
+      "it": "Ich trinke nicht.",
+      "ru": "Я не пью.",
+      "note": "nicht + глагол (в конце)"
+    },
+    {
+      "it": "Das ist nicht mein Buch.",
+      "ru": "Это не моя книга.",
+      "note": "nicht + притяжательное"
+    },
+    {
+      "it": "Er kommt nicht aus Deutschland.",
+      "ru": "Он не из Германии.",
+      "note": "nicht + предлог"
+    },
+    {
+      "it": "Ich kaufe kein Auto.",
+      "ru": "Я не покупаю (никакую) машину.",
+      "note": "kein + Akk. сущ."
+    },
+    {
+      "it": "Ich kaufe das Auto nicht.",
+      "ru": "Я не покупаю (эту) машину.",
+      "note": "nicht = конкретную не покупаю"
+    }
+  ]
+}

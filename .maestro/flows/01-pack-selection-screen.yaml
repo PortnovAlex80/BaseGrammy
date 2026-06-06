@@ -1,0 +1,18 @@
+appId: com.alexpo.grammermate
+name: 01 - Pack Selection screen
+tags:
+  - smoke
+  - pack-selection
+---
+# Start from scratch - launch app
+- launchApp
+
+# Pack Selection screen should show "Select Pack"
+- assertVisible: "Select Pack"
+
+# Verify key UI elements exist
+- assertVisible: "Grammar Roadmap"
+- assertVisible: "How This Training Works"
+- assertVisible: "Settings"
+
+- takeScreenshot: 01_pack_selection

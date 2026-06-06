@@ -1,0 +1,25 @@
+{
+  "key": "B20",
+  "title": "B20 - Participio Assoluto",
+  "essence": "Завершённое действие, сжатое с собственным существительным.",
+  "formula": "participio + noun, main clause",
+  "base": null,
+  "dontConfuse": "Это более книжный/формальный стиль, чем повседневная речь.",
+  "examples": [
+    {
+      "it": "Finito il pranzo, siamo usciti.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Scritta la lettera, è andato alla posta.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Partiti gli ospiti, abbiamo sparecchiato.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

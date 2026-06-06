@@ -1,0 +1,25 @@
+{
+  "key": "B17",
+  "title": "B17 - Stare + Gerundio",
+  "essence": "Действие происходит прямо сейчас.",
+  "formula": "sto/stai/sta/stiamo/state/stanno + gerundio",
+  "base": null,
+  "dontConfuse": "Не используй это для будущих планов.",
+  "examples": [
+    {
+      "it": "Sto mangiando.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Sta scrivendo una lettera.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Stiamo lavorando.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

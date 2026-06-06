@@ -1,0 +1,30 @@
+{
+  "key": "B14",
+  "title": "B14 - Ci e Ne",
+  "essence": "`ci` и `ne` заменяют целые предложные конструкции.",
+  "formula": "",
+  "base": null,
+  "dontConfuse": "Ищи скрытый предлог: `a/in` часто становится `ci`; `di/количество` часто становится `ne`.",
+  "examples": [
+    {
+      "it": "Vado a Roma -> Ci vado.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Penso a questo -> Ci penso.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Parlo di questo -> Ne parlo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Voglio due mele -> Ne voglio due.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

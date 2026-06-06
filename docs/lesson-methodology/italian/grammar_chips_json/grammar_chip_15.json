@@ -1,0 +1,35 @@
+{
+  "key": "A15",
+  "title": "A15 - Condizionale di Cortesia",
+  "essence": "Здесь Condizionale дается не как полная система, а как набор мягких формул для просьб и вежливых желаний: vorrei, potrei, potrebbe, dovrei, mi piacerebbe, sarebbe.",
+  "formula": "vorrei + существительное / инфинитив = я бы хотел\nVorrei un caffè. = Я бы хотел кофе.\nVorrei prenotare un tavolo. = Я бы хотел забронировать столик.\n\npotrei + инфинитив = могу я? / можно мне?\nPotrei avere il menù? = Можно меню?\n\npotrebbe + инфинитив = не могли бы вы?\nPotrebbe ripetere? = Не могли бы вы повторить?\n\ndovrei + инфинитив = мне бы следовало / мне нужно бы\nDovrei parlare con il direttore.\n\nmi piacerebbe + инфинитив = мне бы хотелось\nMi piacerebbe visitare Roma.",
+  "base": null,
+  "dontConfuse": "vorrei - вежливое желание сейчас. volevo - «я хотел» в прошлом или разговорная смягченная просьба, но это другая форма. Полная парадигма Condizionale будет позже; здесь нужны готовые формулы для реального общения.",
+  "examples": [
+    {
+      "it": "Vorrei un caffè.",
+      "ru": "Я бы хотел кофе.",
+      "note": "короткая вежливая просьба."
+    },
+    {
+      "it": "Vorrei prenotare un tavolo.",
+      "ru": "Я бы хотел забронировать столик.",
+      "note": "vorrei + инфинитив."
+    },
+    {
+      "it": "Potrei avere il menù?",
+      "ru": "Можно мне меню?",
+      "note": "potrei = мягкая просьба."
+    },
+    {
+      "it": "Potrebbe ripetere, per favore?",
+      "ru": "Не могли бы вы повторить?",
+      "note": "potrebbe для Lei."
+    },
+    {
+      "it": "Mi piacerebbe visitare Roma.",
+      "ru": "Мне бы хотелось посетить Рим.",
+      "note": "мягкое желание."
+    }
+  ]
+}

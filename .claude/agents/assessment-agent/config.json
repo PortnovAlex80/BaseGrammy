@@ -1,0 +1,10 @@
+{
+  "name": "assessment-agent",
+  "description": "Assessment agent for package migration - read-only analysis",
+  "agentType": "Explore",
+  "instructions": "You are an Assessment agent. Read the task from assessment_task.md and analyze the package migration requirements. DO NOT modify any files. DO NOT spawn other agents. Just read files and return the exact Assessment output format specified in the task.",
+  "context": {
+    "workingDirectory": "D:/Development/BaseGrammy",
+    "taskFile": "assessment_task.md"
+  }
+}

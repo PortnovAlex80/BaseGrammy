@@ -1,0 +1,33 @@
+appId: com.alexpo.grammermate
+name: 04 - Start training from Continue button
+tags:
+  - navigation
+  - training
+  - lesson
+---
+- launchApp
+- assertVisible: "Select Pack"
+- tapOn: "Select Pack"
+- extendedWaitUntil:
+    visible: "Grammar Story Roadmap"
+    timeout: 5000
+
+# Tap Continue on chapter with progress
+- tapOn: "Continue"
+
+# Difficulty dialog should appear
+- extendedWaitUntil:
+    visible: "Easy"
+    timeout: 8000
+
+- takeScreenshot: 04_difficulty_dialog
+
+# Select Easy
+- tapOn: "Easy"
+
+# Training screen should appear with Check button
+- extendedWaitUntil:
+    visible: "Check"
+    timeout: 8000
+
+- takeScreenshot: 04_training_active

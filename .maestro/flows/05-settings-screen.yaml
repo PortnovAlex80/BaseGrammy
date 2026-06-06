@@ -1,0 +1,19 @@
+appId: com.alexpo.grammermate
+name: 05 - Settings screen
+tags:
+  - navigation
+  - settings
+---
+- launchApp
+- assertVisible: "Select Pack"
+
+# Tap Settings icon
+- tapOn: "Settings"
+
+# Wait for settings content
+- extendedWaitUntil:
+    visible:
+      text: "Language"
+    timeout: 5000
+
+- takeScreenshot: 05_settings

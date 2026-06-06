@@ -1,0 +1,35 @@
+{
+  "key": "A03",
+  "title": "A03 - Неопределённый артикль: Nominativ",
+  "essence": "Неопределённый артикль вводит новый, неизвестный предмет. В Nominativ: ein/eine/ein. Отрицание: kein/keine/kein.",
+  "formula": "Ед.ч.: ein (муж.) | eine (жен.) | ein (ср.)\nМн.ч.: (нет неопр. артикля) | keine (отрицание)\n\nkein = не + неопределённый артикль",
+  "base": null,
+  "dontConfuse": "ein совпадает для муж. и ср. — различие появится в Akkusativ (einen vs ein). Во множественном нет неопределённого артикля, но отрицание keine есть.",
+  "examples": [
+    {
+      "it": "Das ist ein Tisch.",
+      "ru": "Это стол.",
+      "note": "ein — муж., вводим новый предмет"
+    },
+    {
+      "it": "Das ist eine Lampe.",
+      "ru": "Это лампа.",
+      "note": "eine — жен."
+    },
+    {
+      "it": "Das ist ein Buch.",
+      "ru": "Это книга.",
+      "note": "ein — ср."
+    },
+    {
+      "it": "Das ist kein Stuhl.",
+      "ru": "Это не стул.",
+      "note": "kein — отрицание"
+    },
+    {
+      "it": "Das sind keine Bucher.",
+      "ru": "Это не книги.",
+      "note": "keine — отрицание мн.ч."
+    }
+  ]
+}

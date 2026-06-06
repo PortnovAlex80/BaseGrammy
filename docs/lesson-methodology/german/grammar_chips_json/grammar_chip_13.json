@@ -1,0 +1,40 @@
+{
+  "key": "A13",
+  "title": "A13 - Prasens: регулярное спряжение",
+  "essence": "Настоящее время. Регулярные глаголы спрягаются по одной схеме: отнимаем -en от инфинитива, добавляем личные окончания.",
+  "formula": "Основа = инфинитив - (e)n\n\nich  mach-e     wir  mach-en\ndu   mach-st    ihr  mach-t\ner/sie/es mach-t  sie/Sie mach-en\n\nОкончания: -e, -st, -t, -en, -t, -en",
+  "base": null,
+  "dontConfuse": "Глаголы на -t, -d, -chn, -ffn добавляют -e перед -st и -t: arbeiten -> du arbeitest, er arbeitet. Глаголы на -eln/-ern могут опускать e: sammeln -> ich sammle.",
+  "examples": [
+    {
+      "it": "Ich mache Hausaufgaben.",
+      "ru": "Я делаю домашнее задание.",
+      "note": "machen -> mach- + -e"
+    },
+    {
+      "it": "Du lernst Deutsch.",
+      "ru": "Ты учишь немецкий.",
+      "note": "lernen -> lern- + -st"
+    },
+    {
+      "it": "Er spielt Fussball.",
+      "ru": "Он играет в футбол.",
+      "note": "spielen -> spiel- + -t"
+    },
+    {
+      "it": "Wir wohnen in Berlin.",
+      "ru": "Мы живём в Берлине.",
+      "note": "wohnen -> wohn- + -en"
+    },
+    {
+      "it": "Ihr arbeitet viel.",
+      "ru": "Вы много работаете.",
+      "note": "arbeiten -> -e- вставка"
+    },
+    {
+      "it": "Sie trinken Kaffee.",
+      "ru": "Они пьют кофе.",
+      "note": "trinken -> trink- + -en"
+    }
+  ]
+}

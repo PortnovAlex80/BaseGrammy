@@ -1,0 +1,35 @@
+{
+  "key": "B22",
+  "title": "B22 - Pronomi Relativi",
+  "essence": "Относительные местоимения соединяют два предложения вокруг общего элемента.",
+  "formula": "",
+  "base": null,
+  "dontConfuse": "Выбор зависит от грамматической роли, а не от перевода \"который\".",
+  "examples": [
+    {
+      "it": "Il ragazzo che vedo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "La donna che lavora qui.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "La casa in cui vivo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "L'amico a cui telefono.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Il tema di cui parliamo.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

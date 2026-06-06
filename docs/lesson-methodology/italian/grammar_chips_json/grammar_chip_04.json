@@ -1,0 +1,140 @@
+{
+  "key": "A04",
+  "title": "A04 - Aggettivi: согласование и позиция",
+  "essence": "Прилагательное в итальянском обязано согласовываться с существительным в роде и числе. Но самое важное: позиция прилагательного ПЕРЕД или ПОСЛЕ существительного меняет смысл фразы. Перед существительным = субъективная оценка, эмоциональный оттенок, устоявшееся выражение. После существительного = объективное, буквальное описание. Кроме того, прилагательные buono и bello имеют особые формы перед существительным — они подстраиваются так же, как артикли.",
+  "formula": "=== 1. СОГЛАСОВАНИЕ: род и число прилагательного ===\n\nПрилагательное «подстраивается» под существительное.\n\nПаттерн A: -o / -a / -i / -e (четыре формы)\n  Муж.ед.: bell-o, piccol-o, nuov-o\n  Жен.ед.: bell-a, piccol-a, nuov-a\n  Муж.мн.: bell-i, piccol-i, nuov-i\n  Жен.мн.: bell-e, piccol-e, nuov-e\n  Пример: un bel gatto / una bella gatta / bei gatti / belle gatte\n\nПаттерн B: -e / -i (только две формы)\n  Ед.ч. (и муж. и жен.): grand-e, interessant-e, fort-e, giovan-e\n  Мн.ч. (и муж. и жен.): grand-i, interessant-i, fort-i, giovan-i\n  Пример: un grande libro / una grande casa / grandi libri / grandi case\n\nЗапомнить: если ед.ч. оканчивается на -o -> это паттерн A (4 формы).\n           если ед.ч. оканчивается на -e -> это паттерн B (2 формы).\n\n=== 2. ПОЗИЦИЯ МЕНЯЕТ СМЫСЛ ===\n\n| Перед сущ. (оценка/эмоция)        | После сущ. (буквальное описание) |\n|------------------------------------|------------------------------------|\n| un povero uomo = бедняжка,         | un uomo povero = бедный человек    |\n|   несчастный (жалко его)           |   (без денег)                      |\n| un grande uomo = великий человек   | un uomo grande = крупный/высокий   |\n|                                    |   человек                          |\n| un vecchio amico = давний,         | un amico vecchio = старый по       |\n|   старый друг (много лет знаем)    |   возрасту друг                    |\n| una bella donna = красавица        | una donna bella = женщина приятной  |\n|   (тип, впечатление)               |   внешности (объективно)           |\n| un bravo ragazzo = молодец,        | un ragazzo bravo = хороший парень  |\n|   способный, умница                |   (буквально хороший)              |\n\nПРИНЦИП: перед существительным = говорящий ВЫНОСИТ СУЖДЕНИЕ, выражает отношение.\n         Это субъективная, эмоциональная окраска или устоявшееся сочетание.\n         После существительного = нейтральное, объективное свойство,\n         которое можно проверить или измерить.\n\n=== 3. ПОЛНАЯ ПАРАДИГМА BUONO ===\n\nBuono (хороший) перед существительным ведёт себя КАК неопределённый артикль (un/uno/una).\nСравни:\n  un padre -> un buon padre (buon перед согласной)\n  uno studente -> un buono studente (buono перед st-)\n  una madre -> una buona madre (buona жен.)\n\nПолная таблица:\n  buon + согласная:       un buon padre, un buon amico, un buon libro\n  buono + s+согл/z/gn/ps: un buono studente, un buono zio, un buono gnocco\n  buona + женский:        una buona madre, una buona idea\n  buoni + муж.мн.:        dei buoni libri (редко, чаще buon перед мн. перед согл.)\n                          но: buoni studenti (перед s+согл. во мн.ч.)\n  buone + жен.мн.:        delle buone amiche, delle buone idee\n\nПосле существительного — всегда полная форма: un padre buono, un amico buono.\nРазница: un buon padre = хороший отец (оценка), un padre buono = отец, который хороший (описание).\n\n=== 4. ПОЛНАЯ ПАРАДИГМА BELLO ===\n\nBello (красивый) перед существительным ведёт себя КАК определённый артикль (il/lo/l'/i/gli).\nСравни:\n  il ragazzo -> bel ragazzo (bel перед согласной)\n  lo studente -> bello studente (bello перед st-)\n  l'amico -> bell'amico (bell' перед гласной)\n  l'uomo -> bell'uomo (bell' перед гласной)\n\nПолная таблица:\n  bel + согласная:         un bel ragazzo, un bel momento, un bel gatto\n  bello + s+согл./z/gn/ps: un bello studente, un bello specchio\n  bell' + гласная:         un bell'amico, un bell'uomo, un bell'orso\n  bei + муж.мн. перед согл.: bei ragazzi, bei gatti, bei momenti\n  begli + муж.мн. перед гл./s+согл.: begli amici, begli studenti, begli uomini\n  belle + жен.мн.:         belle ragazze, belle case, belle amiche\n\nПосле существительного — всегда полная форма: un ragazzo bello, un amico bello.\n\n=== 5. ШАБЛОН «QUESTO È UN...» ===\n\nУрок A04 использует рамку Questo è un / Questa è una / Questi sono / Queste sono\nдля каждой карточки. Это ОДИНАКОВАЯ рамка во всех примерах.\n\nНе пытайся понять рамку — она здесь просто как «поднос», на котором лежит пример.\nСосредоточься на том, что МЕНЯЕТСЯ внутри:\n  - форма прилагательного (bel/bello/bell'/bei/begli)\n  - позиция (перед или после существительного)\n  - род и число (bella/belle/bravo/brava/bravi)\n\nНапример:\n  Questo è un bel ragazzo. -> фокус на bel (перед согласной)\n  Questo è un bello studente. -> фокус на bello (перед st-)\n  Questo è un bell'amico. -> фокус на bell' (перед гласной)\n  Рамка «Questo è un» одна и та же. Меняется ТОЛЬКО форма bello.\n\n=== 6. ОТРИЦАНИЕ И ВОПРОС ===\n\nОтрицание: non ставится после Questo/Questi и перед è/sono:\n  Questo non è un bel ragazzo. = Это не красивый парень.\n  Questa non è una bella ragazza. = Это не красивая девушка.\n  Questi non sono bei ragazzi. = Это не красивые парни.\n\nВопрос: та же фраза с вопросительной интонацией / знаком вопроса:\n  Questo è un bel ragazzo? = Это красивый парень?\n  Questa è una bella ragazza? = Это красивая девушка?\n  Questo è un buono studente? = Это хороший студент?",
+  "base": null,
+  "dontConfuse": "1. НЕ СОГЛАСУЙ ПРИЛАГАТЕЛЬНОЕ С РУССКИМ ПЕРЕВОДОМ — согласовывай с ИТАЛЬЯНСКИМ существительным!\n   libro (муж.) -> un libro interessante (ПРАВИЛЬНО)\n   libro (муж.) -> un libro interessanta (ОШИБКА — «интересная» по-русски, но libro муж.рода)\n   casa (жен.) -> una casa grande (ПРАВИЛЬНО)\n   casa (жен.) -> una casa grande -> una casa granda (ОШИБКА — grande не меняется по роду в ед.ч.)\n\n2. «buono studente» — это НЕ ошибка! Это ПРАВИЛЬНАЯ форма.\n   studente начинается с st- (s+согласная), поэтому buono не усекается:\n   un buono studente (как uno studente)\n   Ошибкой было бы «un buon studente».\n\n3. Не путай bello (особые формы перед существительным) с обычными прилагательными.\n   Обычное прилагательное НЕ меняет форму от позиции:\n   un nuovo amico / un amico nuovo — nuovo остаётся nuovo.\n   Но bello: bel ragazzo / ragazzo bello — меняется bel -> bello.\n\n4. Позиция прилагательного — это не украшательство, она меняет СМЫСЛ.\n   un povero uomo ≠ un uomo povero\n   un grande uomo ≠ un uomo grande\n   Перед существительным = субъективная оценка; после = буквальное описание.\n\n5. Во множественном числе неопределённый артикль исчезает, но прилагательное всё равно согласуется:\n   un bel ragazzo -> bei ragazzi (не «un bei ragazzi»)\n   una bella ragazza -> belle ragazze (не «una belle ragazze»)",
+  "examples": [
+    {
+      "it": "Questa è una bella ragazza.",
+      "ru": "Это красивая девушка.",
+      "note": "bella: паттерн -o/-a/-i/-e, жен.ед. после ragazza (жен.). Согласование: ragazza (жен.ед.) -> bella (жен.ед.)."
+    },
+    {
+      "it": "Queste sono belle ragazze.",
+      "ru": "Это красивые девочки.",
+      "note": "belle: жен.мн. после ragazze (жен.мн.). Паттерн -o/-a/-i/-e. Обрати внимание: нет артикля во мн.ч. — просто belle ragazze."
+    },
+    {
+      "it": "Questo è un bel ragazzo.",
+      "ru": "Это красивый парень.",
+      "note": "bel: особая форма bello перед согласной (r). Как il ragazzo -> bel ragazzo."
+    },
+    {
+      "it": "Questo è un bello studente.",
+      "ru": "Это красивый студент.",
+      "note": "bello: особая форма перед s+согласная (st). Как lo studente -> bello studente. НЕ «un bel studente»!"
+    },
+    {
+      "it": "Questo è un bell'amico.",
+      "ru": "Это красивый друг.",
+      "note": "bell': особая форма перед гласной (a). Как l'amico -> bell'amico. Апостроф обязателен."
+    },
+    {
+      "it": "Questo è un bell'uomo.",
+      "ru": "Это красивый человек.",
+      "note": "bell': перед гласной (u). Как l'uomo -> bell'uomo."
+    },
+    {
+      "it": "Questi sono bei ragazzi.",
+      "ru": "Это красивые мальчики.",
+      "note": "bei: муж.мн. перед согласной. Как i ragazzi -> bei ragazzi."
+    },
+    {
+      "it": "Questo è un buono studente.",
+      "ru": "Это хороший студент.",
+      "note": "buono: перед s+согласная (st) полная форма сохраняется. Как uno studente -> un buono studente. Это ПРАВИЛЬНО, не «buon studente»!"
+    },
+    {
+      "it": "Questo è un buon padre.",
+      "ru": "Это хороший отец.",
+      "note": "buon: усечённая форма перед согласной (p). Как un padre -> un buon padre."
+    },
+    {
+      "it": "Questa è una buona madre.",
+      "ru": "Это хорошая мать.",
+      "note": "buona: женская форма. Как una madre -> una buona madre."
+    },
+    {
+      "it": "Questi sono buoni genitori.",
+      "ru": "Это хорошие родители.",
+      "note": "buoni: муж.мн. (genitori — муж.род мн.ч.). Паттерн -o/-a/-i/-e."
+    },
+    {
+      "it": "Queste sono buone amiche.",
+      "ru": "Это хорошие подруги.",
+      "note": "buone: жен.мн. (amiche — жен.род мн.ч.)."
+    },
+    {
+      "it": "Questo è un povero uomo.",
+      "ru": "Это бедняжка, несчастный человек.",
+      "note": "povero ПЕРЕД uomo = субъективная оценка: вызывает сочувствие, «бедняжка». НЕ про деньги."
+    },
+    {
+      "it": "Questo è un uomo povero.",
+      "ru": "Это бедный человек (без денег).",
+      "note": "povero ПОСЛЕ uomo = буквальное описание: у него нет денег. Объективный факт."
+    },
+    {
+      "it": "Questo è un grande uomo.",
+      "ru": "Это великий человек.",
+      "note": "grande ПЕРЕД uomo = великий, выдающийся. Субъективная оценка заслуг."
+    },
+    {
+      "it": "Questo è un uomo grande.",
+      "ru": "Это крупный/высокий человек.",
+      "note": "grande ПОСЛЕ uomo = крупный, большого размера. Буквальное физическое описание."
+    },
+    {
+      "it": "Questo è un vecchio amico.",
+      "ru": "Это давний друг.",
+      "note": "vecchio ПЕРЕД amico = давний, мы дружим давно. Устоявшееся сочетание."
+    },
+    {
+      "it": "Questo è un amico vecchio.",
+      "ru": "Это старый по возрасту друг.",
+      "note": "vecchio ПОСЛЕ amico = старый по возрасту. Буквальное описание."
+    },
+    {
+      "it": "Questa è una famiglia felice.",
+      "ru": "Это счастливая семья.",
+      "note": "felice: паттерн -e/-i, ед.ч. (одна форма для муж. и жен.). famiglia (жен.) + felice (не меняется)."
+    },
+    {
+      "it": "Queste sono persone felici.",
+      "ru": "Это счастливые люди.",
+      "note": "felici: паттерн -e/-i, мн.ч. persone (жен.мн.) + felici (одна форма для обоих родов во мн.)."
+    },
+    {
+      "it": "Questo è un ragazzo alto.",
+      "ru": "Мальчик высокий.",
+      "note": "alto после существительного — стандартная позиция для физического описания. alto: паттерн -o/-a/-i/-e, муж.ед."
+    },
+    {
+      "it": "Il libro è interessante.",
+      "ru": "Книга интересная.",
+      "note": "interessante: паттерн -e/-i, ед.ч. В именном сказуемом (после è) прилагательное всегда в полной форме, согласуется с подлежащим."
+    },
+    {
+      "it": "Questo non è un buon padre.",
+      "ru": "Это не хороший отец.",
+      "note": "Отрицание: non стоит между это (Questo) и è. buon перед согласной (p)."
+    },
+    {
+      "it": "Questa non è una nuova amica.",
+      "ru": "Это не новая подруга.",
+      "note": "nuova: паттерн -o/-a/-i/-e, жен.ед. Отрицание non перед è."
+    },
+    {
+      "it": "Questo è un bello studente?",
+      "ru": "Это красивый студент?",
+      "note": "Вопрос: та же фраза с вопросительным знаком. bello перед st- (s+согласная)."
+    },
+    {
+      "it": "Questo è un bell'amico?",
+      "ru": "Это красивый друг?",
+      "note": "Вопрос: bell' перед гласной (a). Апостроф обязателен."
+    }
+  ]
+}

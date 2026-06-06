@@ -1,0 +1,30 @@
+{
+  "key": "B11",
+  "title": "B11 - Pronomi Diretti",
+  "essence": "Прямые местоимения заменяют прямые дополнения: кто/что, без предлога.",
+  "formula": "`mi, ti, lo, la, ci, vi, li, le`",
+  "base": null,
+  "dontConfuse": "В passato prossimo: `L'ho vista`, `Li ho comprati`.",
+  "examples": [
+    {
+      "it": "Vedo Marco -> Lo vedo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Vedo Maria -> La vedo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Compro i libri -> Li compro.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Leggo le lettere -> Le leggo.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

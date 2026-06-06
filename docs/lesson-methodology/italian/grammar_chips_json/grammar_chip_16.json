@@ -1,0 +1,40 @@
+{
+  "key": "A16",
+  "title": "A16 - Imperativo",
+  "essence": "Imperativo нужен для просьб, команд и предложений действия: говори, не говори, пойдем, прочитайте. Формы зависят от адресата: tu, voi, noi, Lei.",
+  "formula": "tu:\n-are: parla! = говори!\n-ere/-ire: scrivi!, dormi!\nОтрицание tu: non + infinito\nNon parlare! = Не говори!\n\nvoi:\nparlate!, scrivete!, dormite!\nNon parlate! = Не говорите!\n\nnoi:\nandiamo! = пойдем!\nfacciamo una pausa! = давайте сделаем перерыв!\n\nLei:\nформа как Congiuntivo Presente\nParli! = Говорите!\nVenga! = Приходите!\nLegga! = Прочитайте!\nMi dica. = Скажите / слушаю вас.",
+  "base": null,
+  "dontConfuse": "Главная ловушка: отрицание для tu строится через non + инфинитив: Non parlare!, не Non parla. Lei-форма императива выглядит как Congiuntivo; теорию Congiuntivo не разворачиваем здесь, просто узнаем форму.",
+  "examples": [
+    {
+      "it": "Parla più forte!",
+      "ru": "Говори громче!",
+      "note": "tu, -are."
+    },
+    {
+      "it": "Non parlare!",
+      "ru": "Не говори!",
+      "note": "tu отрицание = non + инфинитив."
+    },
+    {
+      "it": "Scrivi il tuo nome.",
+      "ru": "Напиши свое имя.",
+      "note": "tu, -ire."
+    },
+    {
+      "it": "Andiamo!",
+      "ru": "Пойдем!",
+      "note": "noi = давай/давайте."
+    },
+    {
+      "it": "Parlate più lentamente.",
+      "ru": "Говорите медленнее.",
+      "note": "voi."
+    },
+    {
+      "it": "Mi dica.",
+      "ru": "Скажите / слушаю вас.",
+      "note": "Lei-форма."
+    }
+  ]
+}
