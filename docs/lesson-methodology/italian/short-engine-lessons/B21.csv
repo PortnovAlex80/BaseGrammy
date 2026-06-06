@@ -1,14 +1,12 @@
-B21 - Negazione estesa
-Я ничего не купил (non, comprare, niente);Non ho comprato niente
-Никто не работает (non, lavorare, nessuno);Non lavora nessuno
-Он даже не купил книгу (non, comprare, libro, nemmeno);Non ha comprato nemmeno un libro
-Я даже не готовлю (non, cucinare, neanche);Non cucino neanche
-Я не покупаю ни дом ни машину (non, comprare, casa, macchina, né...né);Non compro né una casa né una macchina
-Мы вообще не работаем (non, lavorare, affatto);Non lavoriamo affatto
-Она ничего не читает (non, leggere, niente);Non legge niente
-Ты ничего не делаешь (non, fare, niente);Non fai niente
-Мы не убрали даже кухню (non, pulire, cucina, neanche);Non abbiamo pulito neanche la cucina
-Та самая книга не красивая вовсе (non, libro, bello, affatto);Il libro non è bello affatto
-Он не купил ни большой дом ни маленькую машину (non, comprare, casa grande, macchina piccola, né...né);Non ha comprato né una casa grande né una macchina piccola
-Никто не покупает ту самую книгу (non, comprare, libro, nessuno);Non compra il libro nessuno
-Мы вообще ничего не приготовили (non, cucinare, niente, affatto);Non abbiamo cucinato niente affatto
+1	B21 - Negazione estesa
+2	Я ничего не купил (non, comprare, niente);Non ho comprato niente
+3	Он даже не идёт домой (non, andare, casa, nemmeno);Non va a casa nemmeno
+4	Я даже подарок не сделал (non, fare, regalo, nemmeno);Non ho fatto nemmeno un regalo
+5	Никто не работает (non, lavorare, nessuno);Non lavora nessuno
+6	Мы не покупаем ни дом ни машину (non, comprare, casa, macchina, noi, né...né);Non compriamo né una casa né una macchina
+7	Она вообще не готовит (non, cucinare, affatto);Non cucina affatto
+8	Они ничего не убрали (non, pulire, niente);Non hanno pulito niente
+9	Мы даже кухню не убрали (non, pulire, cucina, neanche);Non abbiamo pulito neanche la cucina
+10	Та самая книга не красивая вовсе (non, libro, bello, affatto);Il libro non è bello affatto
+11	Он не купил ни большой дом ни маленькую машину (non, comprare, casa, grande, macchina, piccolo, né...né);Non ha comprato né una casa grande né una macchina piccola
+12	Никто не делает подарок (non, fare, regalo, nessuno);Non fa un regalo nessuno
