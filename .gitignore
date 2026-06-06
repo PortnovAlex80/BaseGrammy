@@ -87,3 +87,10 @@ nav_logs.txt
 # Local Gradle config
 /gradle.properties.local
 /CACHEDIR.TAG
+
+# Temp scratch files (loose CSVs, previews, device screenshots)
+device_screens/
+lesson_packs/
+.maestro/output/
+pairs_preview.txt
+lesson_*.csv
