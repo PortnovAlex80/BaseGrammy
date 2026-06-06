@@ -19,7 +19,7 @@
 
 ## Лексика знаменательных слов (источник: it_content_words_top20.md)
 
-Глаголы: comprare, pulire, cucinare, abitare, lavorare
+Глаголы: comprare, pulire, cucinare, abitare, lavorare, partire, arrivare
 Существительные: casa, cucina, stanza, famiglia, lavoro, armadio, macchina, libro, regalo, cena, tavolo, fratello, sorella
 Прилагательные: grande, bello, nuovo, piccolo, pulito, caldo, freddo, buono
 Наречия: spesso, sempre, insieme, tardi, oggi
