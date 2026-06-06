@@ -1,16 +1,15 @@
-C19 - Мета-карта: русские падежи → итальянские конструкции
-ВИН.П. = я вижу дом (vedere, casa);Vedo la casa
-ВИН.П. = я вижу его (il libro);Lo vedo
-ВИН.П. = дом, который я вижу (casa, che, vedere, io);La casa che vedo
-ДАТ.П. = я пишу семье (scrivere, famiglia);Scrivo alla famiglia
-ДАТ.П. = я пишу ей (scrivere, lei);Le scrivo
-ДАТ.П. = семья, которой я пишу (famiglia, a cui, scrivere, io);La famiglia a cui scrivo
-ДАТ.П. = я покупаю его для него (comprare, lui, libro);Glielo compro
-ТВОР.П. = та самая семья работает с ним (famiglia, lavorare, lui);La famiglia lavora con lui
-ТВОР.П. = семья, с которой я работаю (famiglia, con cui, lavorare, io);La famiglia con cui lavoro
-РОД.П. = я говорю о доме (parlare, casa);Parlo della casa
-РОД.П. = я говорю о нём — о книге (parlare, ne, libro);Ne parlo
-РОД.П. = книга, о которой она думает (libro, di cui, pensare, lei);Il libro di cui pensa
-ПАССИВ = дом куплен семьёй (casa, comprare, famiglia, PP);La casa è comprata dalla famiglia
-ПЕРЕУПАКОВКА = подарок, который я купил (regalo, che, comprare, io, PP);Il regalo che ho comprato
-ПЕРЕУПАКОВКА = я его купил (il regalo, PP);L'ho comprato
+C19 - Мета-карта: русские падежи
+покупаю дом: ВИН.П. прямой объект (comprare, casa);Compro una casa
+иду домой: направление a + дом (andare, a, casa);Vado a casa
+делаю подарок брату: ВИН.П. подарок, ДАТ.П. брату (fare, regalo, a, fratello);Faccio un regalo al fratello
+ВИН.П.: вижу дом (vedere, casa);Vedo la casa
+ВИН.П.: прямое местоимение, покупаю его, дом (comprare, lo, casa);Lo compro
+ДАТ.П.: готовлю ужин для семьи (cucinare, cena, a, famiglia);Cucino la cena alla famiglia
+ДАТ.П.: косвенное местоимение, готовлю ужин, брату (cucinare, gli, cena);Gli cucino la cena
+ТВОР.П.: дом куплен семьёй (casa, comprare, da, famiglia, PP);La casa è stata comprata dalla famiglia
+ТВОР.П.: работаю с братом (lavorare, con, fratello);Lavoro con il fratello
+РОД.П.: говорю о книге (parlare, di, libro);Parlo del libro
+РОД.П.: ne, говорю о ней, о машине (parlare, ne, macchina);Ne parlo
+ПАССИВ: подарок сделан (regalo, fare, essere, PP);Il regalo è stato fatto
+ВИН.П. + ДАТ.П.: покупаю ему подарок, брату (comprare, regalo, fratello);Gli compro un regalo
+РОД.П.: книга, о которой думаем (libro, di cui, pensare);Il libro di cui pensiamo

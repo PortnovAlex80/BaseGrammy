@@ -53,6 +53,9 @@ interface LessonStore {
 
     fun getLessons(languageId: String): List<Lesson>
 
+    /** Pack-scoped lesson loading. Only loads lessons from the specified pack. */
+    fun getLessons(packId: String, languageId: String): List<Lesson>
+
     fun deleteAllLessons(languageId: String)
 
     fun deleteLesson(languageId: String, lessonId: String)
@@ -139,8 +142,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1_DRILLS", "grammarmate/packs/EN_WORD_ORDER_A1_DRILLS.zip"),
         // TODO: re-enable when Italian verb groups pack is needed
         // LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip"),
-        // TODO: pack-scoped loading needed to support multiple packs per language
-        // LanguageManager.DefaultPack("ITALIAN_EXPRESS", "grammarmate/packs/ITALIAN_EXPRESS.zip"),
+        LanguageManager.DefaultPack("ITALIAN_EXPRESS", "grammarmate/packs/ITALIAN_EXPRESS.zip"),
         LanguageManager.DefaultPack("ITALIAN_SHORT", "grammarmate/packs/ITALIAN_EXPRESS_SHORT.zip"),
         LanguageManager.DefaultPack("GREEK_EXPRESS", "grammarmate/packs/GREEK_EXPRESS.zip"),
         LanguageManager.DefaultPack("GREEK_EXPRESS_IT", "grammarmate/packs/GREEK_EXPRESS_IT.zip"),
@@ -342,6 +344,15 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         }
     }
 
+    override fun getLessons(packId: String, languageId: String): List<Lesson> {
+        ensureSeedData()
+        val cacheKey = "$packId:$languageId"
+        return lessonsCache.getOrPut(cacheKey) {
+            Log.d("LessonStore", "Cache miss for pack:language: $cacheKey, loading from disk")
+            loadLessonsFromDisk(languageId, packId)
+        }
+    }
+
     /**
      * Invalidate the lessons cache. Call with a specific languageId to evict one entry,
      * or null to clear the entire cache.
@@ -435,6 +446,70 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
         Log.d("LessonStore", "Loaded ${legacyLessons.size} lessons from legacy structure for language: $languageId")
         return legacyLessons
+    }
+
+    /**
+     * Load lessons from disk filtered to a single pack.
+     * Only loads lessons from the pack directory matching [packId].
+     */
+    private fun loadLessonsFromDisk(languageId: String, packId: String): List<Lesson> {
+        val installedPacks = getInstalledPacks()
+
+        // Find the specific pack
+        val pack = installedPacks.find {
+            it.packId.value == packId && it.languageId.value == languageId
+        } ?: run {
+            Log.w("LessonStore", "Pack not found or language mismatch: packId=$packId, languageId=$languageId")
+            return emptyList()
+        }
+
+        val packDir = File(packsDir, pack.packId.value)
+        if (!packDir.exists()) {
+            Log.w("LessonStore", "Pack directory does not exist: ${packDir.absolutePath}")
+            return emptyList()
+        }
+
+        val lessonFiles = packDir.listFiles()?.filter {
+            it.isFile && it.name.endsWith(".csv")
+        } ?: return emptyList()
+
+        val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
+        val lessons = mutableListOf<Lesson>()
+
+        Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}, schema: ${manifest?.schemaVersion}")
+
+        for (lessonFile in lessonFiles) {
+            try {
+                val parseResult = CsvParser.parseLesson(lessonFile.inputStream())
+                val (parsedTitle, cards) = parseResult.data ?: continue
+
+                val lessonId = if (manifest?.schemaVersion == 1) {
+                    val fileName = lessonFile.name
+                    val lessonEntry = manifest.lessons.find { it.file == fileName }
+                    if (lessonEntry != null) {
+                        Log.d("LessonStore", "Mapped file '$fileName' to lessonId '${lessonEntry.lessonId}'")
+                        lessonEntry.lessonId
+                    } else {
+                        Log.w("LessonStore", "No manifest entry for file: $fileName, using filename as ID")
+                        fileName.removeSuffix(".csv")
+                    }
+                } else {
+                    lessonFile.name.removeSuffix(".csv")
+                }
+
+                lessons.add(Lesson(
+                    id = LessonId(lessonId),
+                    languageId = LanguageId(languageId),
+                    title = parsedTitle ?: lessonId,
+                    cards = cards
+                ))
+            } catch (e: Exception) {
+                Log.e("LessonStore", "Failed to parse lesson file: ${lessonFile.name}", e)
+            }
+        }
+
+        Log.d("LessonStore", "Loaded ${lessons.size} lessons from pack: $packId for language: $languageId")
+        return lessons
     }
 
     override fun deleteAllLessons(languageId: String) {

@@ -13,7 +13,6 @@ import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.ScheduledSubLesson
-import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
@@ -62,7 +61,6 @@ class ProgressTracker(
         if (bossActive) return
 
         val lessonId = resolveCardLessonId(card, selectedLessonId, lessons)
-        val languageId = selectedLanguageId
 
         // Word Bank mode: does NOT count for mastery (flower growth)
         // Only voice and keyboard input count for skill formation
@@ -72,8 +70,10 @@ class ProgressTracker(
         }
 
         Log.d(logTag, "Recording card show: lessonId=${lessonId.value}, cardId=${card.id}, mode=$inputMode")
-        masteryStore.recordCardShow(lessonId.value, languageId.value, card.id)
-        val mastery = masteryStore.get(lessonId.value, languageId.value)
+        val packId = stateAccess.uiState.value.navigation.activePackId?.value
+            ?: return  // Pack-scoped mastery only; no pack = no-op
+        masteryStore.recordCardShowForPack(packId, lessonId.value, card.id)
+        val mastery = masteryStore.getForPack(packId, lessonId.value)
         Log.d(logTag, "After record: uniqueCardShows=${mastery?.uniqueCardShows}, totalShows=${mastery?.totalCardShows}")
     }
 
@@ -87,10 +87,12 @@ class ProgressTracker(
         inputMode: InputMode,
         selectedLessonId: LessonId?,
         selectedLanguageId: LanguageId,
-        lessons: List<Lesson>
+        lessons: List<Lesson>,
+        packId: String? = null
     ) {
         if (inputMode != InputMode.WORD_BANK || cards.isEmpty()) return
         val lessonId = selectedLessonId ?: return
+        val pid = packId ?: return  // Pack-scoped mastery only; no pack = no-op
         val lessonCardIds = lessons
             .firstOrNull { it.id == lessonId }
             ?.cards
@@ -98,7 +100,7 @@ class ProgressTracker(
             ?.toSet()
             ?: return
         val cardIds = cards.map { it.id }.filter { lessonCardIds.contains(it) }
-        masteryStore.markCardsShownForProgress(lessonId.value, selectedLanguageId.value, cardIds)
+        masteryStore.markCardsShownForProgressForPack(pid, lessonId.value, cardIds)
     }
 
     // ── Lesson completion ────────────────────────────────────────────
@@ -114,7 +116,8 @@ class ProgressTracker(
         selectedLanguageId: LanguageId,
         uniqueCardShows: Int = 0,
         totalCardsInLesson: Int = 0,
-        hiddenCardCount: Int = 0
+        hiddenCardCount: Int = 0,
+        packId: String? = null
     ) {
         val effectiveCardCount = totalCardsInLesson - hiddenCardCount
         val threshold = minOf(effectiveCardCount.coerceAtLeast(0), TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
@@ -125,7 +128,8 @@ class ProgressTracker(
             completedSubLessonCount >= TrainingConfig.BOSS_UNLOCK_SUB_LESSONS
         }
         if (isComplete && selectedLessonId != null) {
-            masteryStore.markLessonCompleted(selectedLessonId.value, selectedLanguageId.value)
+            val pid = packId ?: return  // Pack-scoped mastery only; no pack = no-op
+            masteryStore.markLessonCompletedForPack(pid, selectedLessonId.value)
         }
     }
 
@@ -138,10 +142,12 @@ class ProgressTracker(
     fun recalculateCompletionsExcludingHidden(
         lessons: List<Lesson>,
         languageId: LanguageId,
-        hiddenCardIds: Set<String>
+        hiddenCardIds: Set<String>,
+        packId: String? = null
     ) {
+        val pid = packId ?: return  // Pack-scoped mastery only; no pack = no-op
         for (lesson in lessons) {
-            val mastery = masteryStore.get(lesson.id.value, languageId.value)
+            val mastery = masteryStore.getForPack(pid, lesson.id.value)
             if (mastery == null || mastery.completedAtMs != null) continue  // Skip already completed or no data
 
             val lessonCardIds = lesson.cards.map { it.id }.toSet()
@@ -150,7 +156,7 @@ class ProgressTracker(
             val threshold = minOf(effectiveCardCount.coerceAtLeast(0), TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
 
             if (threshold > 0 && mastery.uniqueCardShows >= threshold) {
-                masteryStore.markLessonCompleted(lesson.id.value, languageId.value)
+                masteryStore.markLessonCompletedForPack(pid, lesson.id.value)
             }
         }
     }
@@ -252,7 +258,7 @@ class ProgressTracker(
         // Find the highest lesson with any progress (mastery > 0)
         var lastLessonWithProgress = -1
         for (i in orderedLessons.indices) {
-            val mastery = masteryStore.get(orderedLessons[i].id.value, langId.value)
+            val mastery = masteryStore.getForPack(activePackId.value, orderedLessons[i].id.value)
             val flower = FlowerCalculator.calculate(mastery, orderedLessons[i].cards.size)
             if (flower.masteryPercent > 0f) {
                 lastLessonWithProgress = i
@@ -389,10 +395,12 @@ class ProgressTracker(
     fun advanceCursor(
         currentCursor: DailyCursorState,
         sentenceCount: Int,
-        selectedLanguageId: LanguageId
+        selectedLanguageId: LanguageId,
+        packId: String? = null
     ): DailyCursorState {
         val newOffset = currentCursor.sentenceOffset + sentenceCount
-        val lessons = lessonStore.getLessons(selectedLanguageId.value)
+        if (packId == null) return currentCursor  // Pack-scoped only; no pack = no change
+        val lessons = lessonStore.getLessons(packId, selectedLanguageId.value)
         val currentLesson = lessons.getOrNull(currentCursor.currentLessonIndex)
         val lessonSize = currentLesson?.cards?.size ?: 0
 
@@ -487,13 +495,14 @@ class ProgressTracker(
      */
     fun resetStoresForLanguage(context: android.content.Context, languageId: String) {
         progressStore.clear()
-        masteryStore.clearLanguage(languageId)
+        // Pack-scoped clearing: iterate packs for this language and clear each one
         lessonStore.getInstalledPacks()
             .filter { it.languageId.value == languageId }
             .forEach { pack ->
-                val packId = pack.packId.value
-                packLessonProgressStore.deletePackProgress(packId)
-                packDailyCursorStore.deletePackCursor(packId)
+                val pid = pack.packId.value
+                masteryStore.clearPack(pid)
+                packLessonProgressStore.deletePackProgress(pid)
+                packDailyCursorStore.deletePackCursor(pid)
             }
     }
 
