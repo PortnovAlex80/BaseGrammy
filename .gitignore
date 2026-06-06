@@ -88,6 +88,9 @@ nav_logs.txt
 /gradle.properties.local
 /CACHEDIR.TAG
 
+# Hiddify (pulled from device)
+Hiddify-Windows-Portable-x64/
+
 # Temp scratch files (loose CSVs, previews, device screenshots)
 device_screens/
 lesson_packs/
