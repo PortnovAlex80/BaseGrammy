@@ -1,0 +1,22 @@
+{
+  "key": "C18",
+  "title": "C18 - Idiomatica e Collocazioni: идиомы и устойчивые сочетания",
+  "essence": "Коллокации и идиоматические выражения — это устойчивые сочетания, которые нельзя переводить дословно: dare per scontato (принимать как должное), far finta di (притворяться), rendersi conto (осознавать), tenere conto (учитывать), venire in mente (приходить в голову), mettersi d'accordo (договариваться), avere a che fare (иметь отношение), mettere a fuoco (сосредоточиться), prendere atto (констатировать).",
+  "formula": "### Dare per scontato (принимать как должное)\n`Compro una casa e do per scontato che è nuova` — Покупаю дом и принимаю как должное, что он новый.\n`Diamo per scontato che la famiglia lavora` — Принимаем как должное, что семья работает.\n\n### Far finta di (притворяться)\n`Vado a casa e faccio finta di lavorare` — Иду домой и притворяюсь, что работаю.\n`Fa finta di comprare il libro` — Притворяется, что покупает книгу.\n\n### Rendersi conto (осознавать)\n`Faccio un regalo e mi rendo conto del problema` — Делаю подарок и осознаю проблему.\n`Si rende conto che il libro è nuovo` — Осознаёт, что книга новая.\n\n### Tenere conto (учитывать)\n`Tengo conto del lavoro` — Учитываю работу.\n\n### Venire in mente (приходить в голову)\n`Mi viene in mente un'idea sulla famiglia` — Приходит в голову идея о семье.\n\n### Mettersi d'accordo (договариваться)\n`Ci mettiamo d'accordo sulla macchina` — Договариваемся о покупке машины.\n\n### Avere a che fare (иметь отношение)\n`Non ha a che fare con la casa` — Не имеет отношения к дому.",
+  "base": null,
+  "dontConfuse": "Rendersi conto (осознавать, возвратное) vs Tenere conto (учитывать, невозвратное). Far finta di + infinito, не far finta che. Dare per scontato che + indicativo, не congiuntivo. Mettere a fuoco в переносном смысле = сосредоточить внимание, не 'фотографировать'.",
+  "examples": [
+    {"it": "Compro una casa e do per scontato che è nuova", "ru": "Покупаю дом и принимаю как должное, что он новый", "note": "dare per scontato che + indicativo"},
+    {"it": "Vado a casa e faccio finta di lavorare", "ru": "Иду домой и притворяюсь, что работаю", "note": "far finta di + infinito"},
+    {"it": "Faccio un regalo e mi rendo conto del problema", "ru": "Делаю подарок и осознаю проблему", "note": "rendersi conto di + сущ."},
+    {"it": "Dà per scontato la cena", "ru": "Принимает как должное ужин", "note": "3-е лицо: dà (с ударением)"},
+    {"it": "Facciamo finta di pulire la cucina", "ru": "Притворяемся, что убираем кухню", "note": "far finta di + infinito"},
+    {"it": "Tengo conto del lavoro", "ru": "Учитываю работу", "note": "tenere conto di + сущ."},
+    {"it": "Si rende conto che il libro è nuovo", "ru": "Осознаёт, что книга новая", "note": "rendersi conto che + indicativo"},
+    {"it": "Mi viene in mente un'idea sulla famiglia", "ru": "Приходит в голову идея о семье", "note": "venire in mente: mi viene"},
+    {"it": "Ci mettiamo d'accordo sulla macchina", "ru": "Договариваемся о покупке машины", "note": "mettersi d'accordo su + сущ."},
+    {"it": "Non ha a che fare con la casa", "ru": "Не имеет отношения к дому", "note": "avere a che fare con + сущ."},
+    {"it": "Prendiamo atto che la cena è pronta", "ru": "Констатируем, что ужин готов", "note": "prendere atto che + indicativo"},
+    {"it": "Fa finta di comprare il libro", "ru": "Притворяется, что покупает книгу", "note": "3-е лицо: fa finta di"}
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "key": "A12",
+  "title": "A12 - Frequenza e Quantità",
+  "essence": "Наречия частоты и количества + базовая отрицательная частотность.",
+  "formula": "### Частота\n`sempre` → `spesso` → `qualche volta` → `raramente` → `non...mai`\n\n### Количество\n`molto` / `poco` / `troppo` / `abbastanza` / `più` / `meno`\n\n### Отрицательная частотность\n- `non + глагол + mai` = никогда не\n- `non + глагол + più` = больше не\n\n### Позиция\nНаречие частоты стоит **после** спрягаемого глагола:\n`Mangio sempre la pasta.` (не *Sempre mangio...)\nИСКЛЮЧЕНИЕ: после `essere` — `È sempre felice.`",
+  "base": null,
+  "dontConfuse": "`non...mai` — нужны ОБА элемента. По-русски «никогда» уже содержит отрицание, по-итальянски — нет.\n`molto` перед существительным = прилагательное (`molto tempo`), после глагола = наречие (`mangio molto`).\n`troppo` = чрезмерно (негативный оттенок), `molto` = очень (нейтральный).",
+  "examples": [
+    {
+      "it": "Vado spesso al cinema.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "È sempre occupato.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Qualche volta leggo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ho molto lavoro.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "C'è poco tempo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non bevo mai caffè.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non fumo più.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Mangio troppo.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

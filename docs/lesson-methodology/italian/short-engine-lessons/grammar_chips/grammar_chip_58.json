@@ -1,0 +1,22 @@
+{
+  "key": "C15",
+  "title": "C15 - Congiuntivo dopo Congiunzioni: конъюнктив после союзов",
+  "essence": "Ряд союзов и союзных выражений всегда требует congiuntivo: prima che (прежде чем), senza che (без того чтобы), a meno che non (если только не), purché (при условии что), benché/sebbene (хотя), affinché (чтобы), nonostante (несмотря на), qualora (в случае если), come se (как если бы).",
+  "formula": "### Временные: prima che\n`Prima che compri una casa` — Прежде чем купить дом.\nПодлежащее придаточного != подлежащее главного -> congiuntivo обязателен.\n\n### Отсутствия: senza che\n`Senza che lavoriamo insieme` — Без того чтобы мы работали вместе.\n\n### Исключения: a meno che non\n`A meno che non venga a casa` — Если только он не придёт домой.\nОбратите внимание: двойное отрицание non после a meno che — норма в итальянском.\n\n### Условные: purché, qualora\n`Purché abiti nella casa grande` — При условии что она живёт в большом доме.\n`Qualora compri una macchina nuova` — В случае если будет куплена новая машина.\n\n### Уступки: benché, sebbene, nonostante\n`Benché la casa sia grande` — Хотя дом большой.\n`Sebbene la macchina sia bella` — Хотя машина красивая.\n\n### Сравнения: come se + congiuntivo imperfetto\n`Come se comprasse la macchina` — Как если бы он покупал машину.\n`Come se abitasse nella casa` — Как если бы она жила в доме.",
+  "base": null,
+  "dontConfuse": "Come se требует congiuntivo imperfetto (не presente!): 'come se fosse', не 'come se è'. A meno che non содержит обязательное non (в отличие от русского 'если только не', где 'не' — по смыслу). Prima che всегда congiuntivo, даже если действия последовательны.",
+  "examples": [
+    {"it": "Prima che compri una casa", "ru": "Прежде чем купить дом", "note": "prima che + congiuntivo presente"},
+    {"it": "Prima che vada a casa", "ru": "Прежде чем пойти домой", "note": "vada = andare cong."},
+    {"it": "Senza che lavoriamo insieme", "ru": "Без того чтобы мы работали вместе", "note": "senza che + cong. presente"},
+    {"it": "Senza che pulisca la cucina", "ru": "Без того чтобы она убирала кухню", "note": "pulisca = pulire cong."},
+    {"it": "A meno che non venga a casa", "ru": "Если только он не придёт домой", "note": "a meno che non + cong."},
+    {"it": "Purché abiti nella casa grande", "ru": "При условии что она живёт в том самом большом доме", "note": "purché + congiuntivo"},
+    {"it": "Benché la casa sia grande", "ru": "Хотя тот самый дом и большой", "note": "benché + sia (essere cong.)"},
+    {"it": "Sebbene la macchina sia bella", "ru": "Хотя та самая машина и красивая", "note": "sebbene = benché"},
+    {"it": "Affinché compri un regalo", "ru": "Чтобы он купил подарок", "note": "affinché + cong. presente"},
+    {"it": "Come se comprasse la macchina", "ru": "Как если бы он покупал ту самую машину", "note": "come se + congiuntivo imperfetto"},
+    {"it": "Come se abitasse nella casa", "ru": "Как если бы она жила в том самом доме", "note": "come se + imperfetto"},
+    {"it": "Purché la cucina sia pulita", "ru": "При условии что кухня будет чистой", "note": "purché + congiuntivo presente"}
+  ]
+}

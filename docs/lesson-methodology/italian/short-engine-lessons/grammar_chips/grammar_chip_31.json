@@ -1,0 +1,22 @@
+{
+  "key": "B15",
+  "title": "B15 - Pronomi Combinati: двойные местоимения",
+  "essence": "Когда в предложении есть и косвенное, и прямое дополнение-местоимение, они сливаются в одну форму: me lo, te la, glielo, ce li, ve le, gliene.",
+  "formula": "### Образование\nКосвенная форма (изменённая) + прямая:\n- mi + lo → me lo\n- ti + la → te la\n- gli + lo → glielo (gli + la → gliela, gli + li → glieli)\n- ci + li → ce li\n- vi + le → ve le\n\n### Особые формы\n- gli + ne → gliene (о ней, из них — ему)\n- ci + ne → ce ne (о них — нам)\n\n### Порядок\nВсегда: косвенное + прямое. Me lo do = Я тебе его даю.",
+  "base": null,
+  "dontConfuse": "При слиянии mi→me, ti→te, ci→ce, vi→ve перед другим местоимением. Glielo/gliela/glieli = ему/ей это. Не путай порядок: косвенное всегда перед прямым.",
+  "examples": [
+    {"it": "Gliela compro", "ru": "Я покупаю ему его — дом", "note": "gli + la = gliela, ему + её (casa)"},
+    {"it": "Te la vado a comprare", "ru": "Схожу купить тебе ту самую машину", "note": "te + la = te la, тебе + её"},
+    {"it": "Ve la diamo", "ru": "Мы даём вам её — ту самую машину", "note": "vi + la = ve la, вам + её"},
+    {"it": "Te lo faccio", "ru": "Я делаю тебе его — подарок", "note": "ti + lo = te lo, тебе + его"},
+    {"it": "Me la compri", "ru": "Ты покупаешь мне её — машину", "note": "mi + la = me la, мне + её"},
+    {"it": "Ce li dà", "ru": "Он даёт нам их — книги", "note": "ci + li = ce li, нам + их"},
+    {"it": "Ve la regaliamo", "ru": "Мы дарим вам её — ту самую машину", "note": "vi + la = ve la, вам + её"},
+    {"it": "Glielo compra", "ru": "Она покупает ему его — подарок", "note": "gli + lo = glielo, ему + его"},
+    {"it": "Te lo do", "ru": "Я тебе его даю", "note": "ti + lo = te lo"},
+    {"it": "Me li regala", "ru": "Он мне их дарит — книги", "note": "mi + li = me li, мне + их"},
+    {"it": "Gliene scrivo", "ru": "Я ему пишу о ней — о машине", "note": "gli + ne = gliene, ему + о ней"},
+    {"it": "Ce ne parli", "ru": "Ты рассказываешь нам о них — о книгах", "note": "ci + ne = ce ne, нам + о них"}
+  ]
+}

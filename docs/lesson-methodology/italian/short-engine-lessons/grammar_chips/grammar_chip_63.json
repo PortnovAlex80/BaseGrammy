@@ -1,0 +1,22 @@
+{
+  "key": "C20",
+  "title": "C20 - Stile: парафраз, синонимия и переформулирование",
+  "essence": "Продвинутое владение — умение выразить одну и ту же мысль разными способами. Основные инструменты: актив/пассив (compro / è comprato da me), местоименная замена (una casa / la compro -> lo compro), прогрессив (sto comprando), кондиционал (comprerei), imperfetto для фона (andavo).",
+  "formula": "### Актив -> Пассив\n`Compro una casa` -> `La casa è comprata da me`\nДействие: переходный глагол, меняется фокус с деятеля на объект.\n\n### Полная форма -> Местоимение\n`Compro una casa` -> `Lo compro` (прямой объект: lo)\n`Vado a casa` -> `Ci vado a casa` (ci = туда)\n`Faccio un regalo` -> `Lo faccio` (lo = его, подарок)\n\n### Presente -> Прогрессив\n`Compro una casa` -> `Sto comprando una casa`\nstare + gerundio = процесс в данный момент.\n\n### Presente -> Volere + infinito\n`Compro una casa` -> `Voglio comprare una casa`\nВыражение намерения через volere.\n\n### Presente -> Condizionale\n`Compro una casa` -> `Comprerei una casa`\nГипотетическое или мягкое высказывание.\n\n### Passato prossimo -> Imperfetto (фон)\n`Sono andato a casa` -> `Andavo a casa quando hanno chiamato`\nimperfetto для фонового длительного действия.\n\n### Пассив результативный\n`Il regalo è fatto` — Подарок сделан (состояние).",
+  "base": null,
+  "dontConfuse": "При перефразировании нужно сохранять время и смысл оригинала. 'Lo compro' = я его покупаю (прямой объект, м.р.), а не 'я покупаю туда'. 'Ci vado' = я туда иду, ci = место, не объект. Пассив 'è comprato' = куплен (состояние), не 'покупается' (процесс = viene comprato).",
+  "examples": [
+    {"it": "Compro una casa", "ru": "Я покупаю дом", "note": "Актив, presente"},
+    {"it": "La casa è comprata da me", "ru": "Дом покупается мной", "note": "Пассив: essere + participio + da + агент"},
+    {"it": "Sto comprando una casa", "ru": "Покупаю дом прямо сейчас", "note": "Прогрессив: stare + gerundio"},
+    {"it": "Lo compro", "ru": "Я его покупаю — тот дом", "note": "Местоимение lo = прямое дополнение"},
+    {"it": "Voglio comprare una casa", "ru": "Хочу купить дом", "note": "volere + infinito"},
+    {"it": "Comprerei una casa", "ru": "Купил бы дом", "note": "Condizionale presente"},
+    {"it": "Vado a casa", "ru": "Иду домой", "note": "Presente, актив"},
+    {"it": "Ci vado a casa", "ru": "Дом — туда я иду", "note": "ci = туда, местное местоимение"},
+    {"it": "Andavo a casa quando hanno chiamato", "ru": "Шёл домой, когда позвонили", "note": "Imperfetto для фона + passato prossimo"},
+    {"it": "Sono andato a casa", "ru": "Пошёл домой", "note": "Passato prossimo"},
+    {"it": "Faccio un regalo", "ru": "Делаю подарок", "note": "Presente, актив"},
+    {"it": "Il regalo è fatto", "ru": "Подарок делается", "note": "Пассив результативный"}
+  ]
+}

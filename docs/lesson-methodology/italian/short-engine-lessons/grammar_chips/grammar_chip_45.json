@@ -1,0 +1,20 @@
+{
+  "key": "C02",
+  "title": "C02 - Periodo Ipotetico: три типа условных предложений",
+  "essence": "В итальянском три типа условных предложений: реальный (se + indicativo presente, результат в presente), возможный (se + congiuntivo imperfetto, результат в condizionale presente), нереальный в прошедшем (se + congiuntivo trapassato, результат в condizionale composto).",
+  "formula": "### 1. Реальный (certezza)\nSe + indicativo presente -> indicativo presente.\n`Se compro una casa, lavoro` — Если я покупаю дом, работаю.\n\n### 2. Возможный (вероятность)\nSe + congiuntivo imperfetto -> condizionale presente.\n`Se comprassi una casa, lavorerei` — Если бы я покупал дом, работал бы.\n`Se la famiglia partisse, lavoreremmo` — Если бы семья уезжала, мы бы работали.\n\n### 3. Нереальный прошедший (невозможность)\nSe + congiuntivo trapassato -> condizionale composto.\n`Se avessi comprato una casa, avrei lavorato` — Если бы я купил дом, я работал бы.\n`Se fossi andato a casa, avrei cucinato` — Если бы я пошёл домой, я приготовил бы.\n\n### Condizionale presente самостоятельно\n`Comprerei una casa` — Я купил бы дом (самостоятельное желание).\n`Andrei a casa` — Я пошёл бы домой.",
+  "base": null,
+  "dontConfuse": "После se НИКОГДА не ставится condizionale. Ошибка: 'Se comprerei'. Правильно: 'Se compro' (реальный) или 'Se comprassi' (возможный). Разница между возможным (imperfetto + condizionale) и нереальным (trapassato + condizionale composto) — в завершённости условия.",
+  "examples": [
+    {"it": "Se compro una casa, lavoro", "ru": "Если я покупаю дом, работаю", "note": "Реальный тип: se + presente"},
+    {"it": "Se la famiglia cucina, la cena è pronta", "ru": "Если та самая семья готовит, ужин готов", "note": "Реальный тип, результат в presente"},
+    {"it": "Comprerei una casa", "ru": "Я купил бы дом", "note": "Condizionale presente: желание/гипотеза"},
+    {"it": "Se comprassi una casa, lavorerei", "ru": "Если бы я покупал дом, работал бы", "note": "Возможный тип: congiuntivo imperfetto + condizionale"},
+    {"it": "Se pulissimo la cucina, cucineremmo insieme", "ru": "Если бы мы убирали кухню, готовили бы вместе", "note": "Возможный тип, 1-е лицо мн.ч."},
+    {"it": "Se avessi comprato una casa, avrei lavorato", "ru": "Если бы я купил дом, я работал бы", "note": "Нереальный прошедший: trapassato + condizionale composto"},
+    {"it": "Se fossi andato a casa, avrei cucinato", "ru": "Если бы я пошёл домой, я приготовил бы", "note": "Нереальный, essere + andato"},
+    {"it": "Se avessi fatto un regalo, la famiglia sarebbe stata a casa", "ru": "Если бы я сделал подарок, та самая семья была бы дома", "note": "Нереальный, essere в condizionale composto"},
+    {"it": "Se avessimo pulito la cucina, avremmo cucinato", "ru": "Если бы мы убрали кухню, мы приготовили бы ужин", "note": "Нереальный, 1-е лицо мн.ч."},
+    {"it": "Se la cucina fosse stata pulita, avremmo lavorato lì", "ru": "Если бы та самая кухня была чистая, мы работали бы там", "note": "Нереальный, описательное trapassato"}
+  ]
+}

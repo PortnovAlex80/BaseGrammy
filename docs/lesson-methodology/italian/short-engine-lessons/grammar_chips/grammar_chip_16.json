@@ -1,0 +1,60 @@
+{
+  "key": "A16",
+  "title": "A16 - Imperativo",
+  "essence": "Команды, просьбы, предложения «давай». Формы tu/voi/noi/Lei.",
+  "formula": "### Правило образования\n- **tu**: основа глагола. Для -are инверсия: parla (не parli). Для -ere/-ire = как indicativo: scrivi, dormi\n- **voi**: = 2 л. мн.ч. indicativo: parlate, scrivete\n- **noi**: = 1 л. мн.ч. indicativo: andiamo, facciamo = «давай пойдём!»\n- **Lei**: = Congiuntivo Presente: Parli!, Venga!, Legga! (первый «след» Congiuntivo)\n\n### Отрицание\n- tu: `non + инфинитив` — `Non parlare!` (не *Non parla!)\n- voi/noi/Lei: `non + императив` — `Non parlate!`, `Non andiamo!`",
+  "base": null,
+  "dontConfuse": "Отрицание tu = `non + инфинитив` (Non parlare!), не форма императива (не *Non parla!).\nLei-форма = Congiuntivo Presente — это первый «след» Congiuntиво. Почему Parli! а не Parла!? Потому что для Lei мы «переключаемся» на Congiuntivo. Теория — в Блоке B.\nМестоимения с императивом (dammi, prendilo) — в B16.",
+  "examples": [
+    {
+      "it": "Parla più forte!",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non parlare!",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Scrivi il tuo nome.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Andiamo!",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Facciamo una pausa.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Parlate più lentamente.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non fate rumore!",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Mi dica.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Legga questo documento.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non si preoccupi.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

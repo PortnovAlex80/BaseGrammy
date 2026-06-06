@@ -1,0 +1,45 @@
+{
+  "key": "A15",
+  "title": "A15 - Condizionale di Cortesia",
+  "essence": "Готовые мягкие формулы вежливости. Не парадигма — а survival-набор.",
+  "formula": "### Формулы\n- `vorrei` + сущ. / инфинитив — я бы хотел\n- `potrei` + инфинитив — могу я? (вопрос-просьба)\n- `potrebbe` + инфинитив — не могли бы вы?\n- `dovrei` + инфинитив — мне бы следовало\n- `mi piacerebbe` + инфинитив — мне бы хотелось\n- `sarebbe` + прил. — было бы...",
+  "base": null,
+  "dontConfuse": "`vorrei` ≠ `volevo` — vorrei это вежливое желание сейчас, volevo это «я хотел» (прошлое).\nЗдесь только готовые формулы для просьб. Полную парадигму спряжения (io parlerei, tu parleresti...) учим в B09.",
+  "examples": [
+    {
+      "it": "Vorrei un caffè.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Vorrei prenotare un tavolo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Potrei avere il menù?",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Potrebbe ripetere, per favore?",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dovrei parlare con il direttore.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Mi piacerebbe visitare Roma.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Sarebbe meglio domani.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

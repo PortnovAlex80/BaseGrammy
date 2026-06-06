@@ -1,0 +1,21 @@
+{
+  "key": "C01",
+  "title": "C01 - Congiuntivo Trapassato: сослагательное предпрошедшее",
+  "essence": "Congiuntivo trapassato выражает действие, которое произошло до другого действия в прошлом, в подчинённых предложениях после глаголов мнения, мысли, чувства (pensare, credere, sperare). Образуется: congiuntivo imperfetto вспомогательного (avessi, fossi) + participio passato.",
+  "formula": "### Образование\nCongiuntivo imperfetto avere/essere + participio passato смыслового глагола.\n\n### С avessere\n`avessi comprato, avessi fatto, avessimo pulito, avessero abitato`\n- Вспомогательный avere для переходных глаголов.\n\n### С essere\n`fossi andato/a, fosse andata, fossimo partiti`\n- Вспомогательный essere для глаголов движения и состояния.\n- Согласование рода и числа с подлежащим.\n\n### Употребление с se (ирреальное прошедшее)\n`Se avessi comprato una casa` — Если бы я купил дом.\n`Se fosse andata al lavoro` — Если бы она пошла на работу.\n\n### Употребление после pensare/credere (главное в прошедшем)\n`Pensavo che avessi comprato una casa` — Я думал, что ты купил дом.\n`Credeva che la cucina fosse stata pulita` — Он верил, что кухня была чистая.",
+  "base": null,
+  "dontConfuse": "Congiuntivo trapassato (= предпрошедшее сослагательное) vs Congiuntivo imperfetto (= прошедшее сослагательное). Trapassato — действие завершилось до другого прошедшего: 'Pensavo che avesse comprato' (он уже купил до того, как я думал). Imperfetto — одновременность: 'Pensavo che comprasse' (покупал в тот момент).",
+  "examples": [
+    {"it": "Se avessi comprato una casa", "ru": "Если бы я купил дом", "note": "avere + participio, переходный глагол"},
+    {"it": "Se fossi andato a casa", "ru": "Если бы я пошёл домой", "note": "essere + participio, глагол движения"},
+    {"it": "Se avessi fatto un regalo", "ru": "Если бы я сделал подарок", "note": "avere + participio passato от fare (fatto)"},
+    {"it": "Se avessimo pulito la cucina", "ru": "Если бы мы убрали кухню", "note": "1-е лицо мн.ч., avere"},
+    {"it": "Se la famiglia avesse cucinato", "ru": "Если бы та самая семья приготовила ужин", "note": "3-е лицо ед.ч., avere"},
+    {"it": "Se fosse andata al lavoro", "ru": "Если бы она пошла на работу", "note": "essere + andata, ж.р."},
+    {"it": "Se avessero abitato nella casa", "ru": "Если бы они жили в том самом доме", "note": "3-е лицо мн.ч., avere"},
+    {"it": "Se la cucina fosse stata pulita", "ru": "Если бы та самая кухня была чистая", "note": "essere дважды: fosse + stata + pulita"},
+    {"it": "Pensavo che avessi comprato una casa", "ru": "Я думал, что ты купил дом", "note": "Главное pensavo + che + congiuntivo trapassato"},
+    {"it": "La famiglia pensava che fossimo partiti", "ru": "Та самая семья думала, что мы уехали", "note": "essere + partiti, мн.ч."},
+    {"it": "Credeva che la cucina fosse stata pulita", "ru": "Он верил, что та самая кухня была чистая", "note": "essere + stata + pulita, описательное прошедшее"}
+  ]
+}

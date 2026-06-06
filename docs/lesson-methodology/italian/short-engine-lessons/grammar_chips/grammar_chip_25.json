@@ -1,0 +1,22 @@
+{
+  "key": "B09",
+  "title": "B09 - Condizionale Semplice: «бы сделал» и вероятность",
+  "essence": "Condizionale semplice выражает гипотетическое действие («я бы купил»), вероятность/предположение и вежливые формулировки. Образуется от основы будущего + окончания condizionale.",
+  "formula": "### Образование\n- -are: comprerei, compreresti, comprerebbe, compreremmo, comprereste, comprerebbero\n- -ere: farei, faresti, farebbe...\n- -ire: pulirei, puliresti, pulirebbe...\n\n### Неправильные основы\n- essere → sarei\n- avere → avrei\n- andare → andrei\n- fare → farei\n\n### Употребления\n1. Гипотетическое действие: Comprerei una casa\n2. Вероятность: La cucina sarebbe piccola\n3. Вежливость: Vorrei... (я бы хотел)",
+  "base": null,
+  "dontConfuse": "Condizionale presente ≠ futuro. «Comprerei» = я бы купил (гипотеза), «comprerò» = я куплю (план). Также condizionale может выражать вероятность: Sarebbe a casa = Должно быть, он дома (менее уверенно, чем futuro semplice).",
+  "examples": [
+    {"it": "Comprerei una casa", "ru": "Я купил бы дом", "note": "condizionale от comprare, 1 л. ед.ч."},
+    {"it": "Andrei a casa", "ru": "Я пошёл бы домой", "note": "andrei — неправильная основа от andare"},
+    {"it": "Farei un regalo", "ru": "Я сделал бы подарок", "note": "farei — от fare"},
+    {"it": "Puliremmo la cucina", "ru": "Мы убрали бы кухню", "note": "puliremmo — 1 л. мн.ч."},
+    {"it": "Comprerebbe la macchina", "ru": "Он купил бы ту самую машину", "note": "3 л. ед.ч., гипотетическое действие"},
+    {"it": "Lavorerebbero insieme", "ru": "Они работали бы вместе", "note": "3 л. мн.ч."},
+    {"it": "Fareste il regalo", "ru": "Вы сделали бы тот самый подарок", "note": "fareste — 2 л. мн.ч."},
+    {"it": "Sarei a casa", "ru": "Я был бы дома", "note": "sarei — condizionale от essere"},
+    {"it": "Avremmo una macchina nuova", "ru": "У нас была бы новая машина", "note": "avremmo — condizionale от avere"},
+    {"it": "La cucina sarebbe piccola", "ru": "Должно быть, та самая кухня маленькая", "note": "вероятностное употребление"},
+    {"it": "La famiglia cucinerebbe oggi", "ru": "Та самая семья готовила бы сегодня", "note": "гипотетическое действие семьи"},
+    {"it": "Compreremmo la casa e la macchina", "ru": "Мы купили бы и дом, и машину", "note": "condizionale для двух объектов"}
+  ]
+}

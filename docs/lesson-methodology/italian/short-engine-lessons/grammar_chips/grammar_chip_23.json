@@ -1,0 +1,22 @@
+{
+  "key": "B07",
+  "title": "B07 - Futuro Semplice: будущее и вероятность",
+  "essence": "Futuro semplice выражает будущие действия, планы и намерения. Также используется для вероятностных предположений о настоящем («должно быть, это так»).",
+  "formula": "### Образование\n- -are: comprerò, comprerai, comprerà, compreremo, comprerete, compreranno\n- -ere: farò, farai, farà... (неправильные основы!)\n- -ire: pulirò, pulirai, pulirà...\n\n### Неправильные основы\n- andare → andrò\n- fare → farò\n- essere → sarò\n- avere → avrò\n\n### Вероятность в настоящем\nSaranno le tre = Должно быть, три часа\nLa cucina sarà piccola = Должно быть, та самая кухня маленькая",
+  "base": null,
+  "dontConfuse": "Futuro может выражать не только будущее, но и вероятность/предположение о настоящем: «Sarà a casa» = «Должно быть, он дома». Не путай с condizionale: condizionale = гипотеза/вежливость, futuro = план или уверенное предположение.",
+  "examples": [
+    {"it": "Comprerò una casa", "ru": "Я куплю дом", "note": "будущее от comprare, 1 л. ед.ч."},
+    {"it": "Andrò a casa", "ru": "Я пойду домой", "note": "andrò — неправильная основа от andare"},
+    {"it": "Farò un regalo", "ru": "Я сделаю подарок", "note": "farò — неправильная основа от fare"},
+    {"it": "La famiglia cucinerà oggi", "ru": "Та самая семья будет готовить сегодня", "note": "cucinerà — 3 л. ед.ч., регулярное"},
+    {"it": "Lavoreremo insieme", "ru": "Мы будем работать вместе", "note": "lavoreremo — 1 л. мн.ч."},
+    {"it": "Pulirai la cucina", "ru": "Ты будешь убирать кухню", "note": "pulirai — 2 л. ед.ч. от pulire"},
+    {"it": "Comprerà una macchina nuova", "ru": "Он купит новую машину", "note": "comprerà — 3 л. ед.ч."},
+    {"it": "Sarò a casa", "ru": "Я буду дома", "note": "sarò — будущее от essere"},
+    {"it": "Avremo una macchina nuova", "ru": "У нас будет новая машина", "note": "avremo — будущее от avere"},
+    {"it": "Faremo il regalo", "ru": "Мы сделаем тот самый подарок", "note": "faremo — 1 л. мн.ч. от fare"},
+    {"it": "Saranno le tre", "ru": "Должно быть, три часа", "note": "вероятностное употребление futuro"},
+    {"it": "Cucineremo e puliremo la cucina", "ru": "Мы приготовим и уберём ту самую кухню", "note": "два глагола в будущем времени"}
+  ]
+}

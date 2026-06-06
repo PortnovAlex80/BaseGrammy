@@ -1,0 +1,20 @@
+{
+  "key": "B18",
+  "title": "B18 - Gerundio: другие функции и Gerundio Passato",
+  "essence": "Gerundio сжимает придаточные предложения: одновременность («покупая дом, мы...»), причина, условие. Gerundio passato (avendo/essendo + participio) выражает предшествование.",
+  "formula": "### Gerundio presente = одновременность/причина\nComprando una casa, abbiamo conosciuto la famiglia\n= Покупая дом, мы узнали ту самую семью\n\n### Gerundio passato = предшествование\nAvendo comprato una casa, abbiamo lavorato oggi\n= Имея купленный дом, мы поработали сегодня\n\n### Essendo + прилагательное/существительное\nEssendo grande, la famiglia ha comprato una casa\n= Будучи большой, семья купила дом\n\n### Правило подлежащего\nПодлежащее герундия = подлежащее главного предложения!\nНельзя: *Andando a casa, ha piovuto (дождь не ходит)",
+  "base": null,
+  "dontConfuse": "Подлежащее герундия обязано совпадать с подлежащим главного предложения: «Идя домой, я прочитал» = корректно (я = подлежащее обоих). Нельзя: «Идя домой, пошёл дождь» — дождь не ходит. Essendo + прилагательное = «будучи...».",
+  "examples": [
+    {"it": "Comprando una casa, abbiamo conosciuto la famiglia", "ru": "Покупая дом, мы узнали ту самую семью", "note": "gerundio presente: одновременность"},
+    {"it": "Andando a casa, ho letto il libro", "ru": "Идя домой, я прочитал ту самую книгу", "note": "gerundio presente: процесс + результат"},
+    {"it": "Facendo un regalo, la famiglia ha lavorato", "ru": "Делая подарок, та самая семья поработала", "note": "одновременное действие"},
+    {"it": "Pulendo la cucina, ha cucinato", "ru": "Убирая кухню, она приготовила", "note": "gerundio: «пока убирала»"},
+    {"it": "Cucinando, lavoriamo sempre insieme", "ru": "Готовя, мы всегда работаем вместе", "note": "gerundio presente: привычка"},
+    {"it": "Avendo comprato una casa, abbiamo lavorato oggi", "ru": "Имея купленный дом, мы поработали сегодня", "note": "gerundio passato: avendo + comprato"},
+    {"it": "Essendo andata a casa, la famiglia ha letto il libro", "ru": "Уйдя домой, та самая семья прочитала ту самую книгу", "note": "essendo + andata (ж.р.)"},
+    {"it": "Avendo fatto un regalo, ha comprato una macchina nuova", "ru": "Имея сделанный подарок, он купил новую машину", "note": "avendo + fatto, предшествование"},
+    {"it": "Essendo grande, la famiglia ha comprato una casa", "ru": "Будучи большой, та самая семья купила дом", "note": "essendo + прилагательное"},
+    {"it": "Pulendo la casa, abbiamo lavorato oggi", "ru": "Убирая тот самый дом, мы поработали сегодня", "note": "gerundio presente с объектом"}
+  ]
+}

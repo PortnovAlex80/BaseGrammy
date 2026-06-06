@@ -1,0 +1,20 @@
+{
+  "key": "A08",
+  "title": "A08 - C'è / Ci Sono",
+  "essence": "Конструкция существования: \"есть/имеется\".",
+  "formula": "### Формула\n- `c'è` для одного\n- `ci sono` для нескольких",
+  "base": null,
+  "dontConfuse": "`Il libro è sul tavolo` описывает известную книгу.",
+  "examples": [
+    {
+      "it": "C'è una scuola qui.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ci sono libri in classe.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

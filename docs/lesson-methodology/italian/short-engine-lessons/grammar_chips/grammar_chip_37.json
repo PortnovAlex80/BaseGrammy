@@ -1,0 +1,21 @@
+{
+  "key": "B21",
+  "title": "B21 - Negazione estesa: расширенное отрицание",
+  "essence": "В итальянском двойное отрицание — норма. «Non + niente/nessuno/né...né/nemmeno/affatto» усиливают, а не отменяют отрицание. Каждый отрицательный элемент требует non перед глаголом.",
+  "formula": "### Основные шаблоны\n- non ... niente = ничего не...\n- non ... nessuno = никто не...\n- non ... nemmeno/neanche = даже не...\n- non ... né ... né = ни ... ни ...\n- non ... affatto = вовсе не...\n\n### Порядок\nNon + глагол + отрицательное слово:\nNon ho comprato niente = Я ничего не купил\nNon lavora nessuno = Никто не работает\n\n### Nemmeno / Neanche\nNon va a casa nemmeno = Он даже не идёт домой\nNon abbiamo pulito neanche la cucina = Мы даже кухню не убрали",
+  "base": null,
+  "dontConfuse": "Двойное отрицание в итальянском — это НОРМА, не усиление. «Non ho comprato niente» = «Я ничего не купил» (не «я не купил ничего» как в русском книжном). Niente/nessuno всегда требуют non перед глаголом.",
+  "examples": [
+    {"it": "Non ho comprato niente", "ru": "Я ничего не купил", "note": "non + niente = ничего не"},
+    {"it": "Non va a casa nemmeno", "ru": "Он даже не идёт домой", "note": "nemmeno = даже не"},
+    {"it": "Non ho fatto nemmeno un regalo", "ru": "Я даже подарок не сделал", "note": "nemmeno перед дополнением"},
+    {"it": "Non lavora nessuno", "ru": "Никто не работает", "note": "nessuno = никто, после глагола"},
+    {"it": "Non compriamo né una casa né una macchina", "ru": "Мы не покупаем ни дом ни машину", "note": "né ... né = ни ... ни"},
+    {"it": "Non cucina affatto", "ru": "Она вообще не готовит", "note": "affatto = вовсе / вообще"},
+    {"it": "Non hanno pulito niente", "ru": "Они ничего не убрали", "note": "PP + niente"},
+    {"it": "Non abbiamo pulito neanche la cucina", "ru": "Мы даже кухню не убрали", "note": "neanche = даже"},
+    {"it": "Il libro non è bello affatto", "ru": "Та самая книга не красивая вовсе", "note": "affatto с essere"},
+    {"it": "Non ha comprato né una casa grande né una macchina piccola", "ru": "Он не купил ни большой дом ни маленькую машину", "note": "né ... né с прилагательными"},
+    {"it": "Non fa un regalo nessuno", "ru": "Никто не делает подарок", "note": "nessuno после глагола"}
+  ]
+}

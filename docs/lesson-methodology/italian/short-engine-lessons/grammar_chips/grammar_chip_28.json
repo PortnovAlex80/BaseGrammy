@@ -1,0 +1,21 @@
+{
+  "key": "B12",
+  "title": "B12 - Pronomi Indiretti: косвенные местоимения",
+  "essence": "Косвенные местоимения (mi, ti, gli, le, ci, vi) заменяют дополнение с предлогом a — «кому?»: «я ему покупаю» = gli compro.",
+  "formula": "### Формы\nmi (мне), ti (тебе), gli (ему), le (ей)\nci (нам), vi (вам), gli (им)\n\n### Перед глаголом\nGli compro una casa = Я покупаю ему дом\nLe compro una macchina = Я покупаю ей машину\n\n### Отличие от прямых\nПрямое: Lo vedo = Я его вижу (без предлога)\nКосвенное: Gli dico = Я ему говорю (a + лицо)\n\n### Частые глаголы с косвенными\ndire (сказать), rispondere (ответить), scrivere (написать)\nregalare (подарить), comprare (купить для кого-то)",
+  "base": null,
+  "dontConfuse": "Прямое lo vs косвенное gli: «Я его вижу» = Lo vedo (прямое), «Я ему говорю» = Gli dico (косвенное). Le может быть и прямым (их, ж.р. мн.ч.) и косвенным (ей) — различай по контексту.",
+  "examples": [
+    {"it": "Gli compro una casa", "ru": "Я покупаю ему дом", "note": "gli = ему (косвенное)"},
+    {"it": "Gli arrivo a casa", "ru": "Я прихожу к нему — домой", "note": "gli = к нему (a + lui)"},
+    {"it": "Gli faccio un regalo", "ru": "Я делаю ему подарок", "note": "gli = ему, faccio от fare"},
+    {"it": "Le compro una macchina", "ru": "Я покупаю ей машину", "note": "le = ей (косвенное, a + lei)"},
+    {"it": "Gli dico", "ru": "Я ему говорю", "note": "dire + косвенное местоимение"},
+    {"it": "Mi risponde", "ru": "Она мне отвечает", "note": "rispondere a → mi"},
+    {"it": "Vi scriviamo", "ru": "Мы вам пишем", "note": "scrivere a → vi"},
+    {"it": "Le regali un libro", "ru": "Ты ей даришь книгу", "note": "regalare a → le"},
+    {"it": "Mi dice", "ru": "Он мне говорит", "note": "dire a → mi"},
+    {"it": "Ci rispondono", "ru": "Они нам отвечают", "note": "rispondere a → ci"},
+    {"it": "Lo vedo / Gli dico", "ru": "Я его вижу (прямое) vs я ему говорю (косвенное)", "note": "Сравнение прямого и косвенного"}
+  ]
+}

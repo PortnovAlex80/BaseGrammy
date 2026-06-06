@@ -1,0 +1,22 @@
+{
+  "key": "B26",
+  "title": "B26 - Congiuntivo Presente: неправильные глаголы",
+  "essence": "Самые частые глаголы в congiuntivo presente — неправильные: essere → sia, avere → abbia, andare → vada, fare → faccia, venire → venga, potere → possa, volere → voglia, sapere → sappia, dovere → debba.",
+  "formula": "### Полный список неправильных форм\n- essere → sia (я есть / он есть)\n- avere → abbia (я имею / он имеет)\n- andare → vada\n- fare → faccia\n- venire → venga\n- dare → dia\n- stare → stia\n- potere → possa\n- volere → voglia\n- sapere → sappia\n- dovere → debba\n\n### Спряжение (все лица)\nsia, sia, sia, siamo, siate, siano\nabbia, abbia, abbia, abbiamo, abbiate, abbiano\n\n### Все глаголы на -are: -i, -i, -i, -iamo, -iate, -ino\ncomprare → compri, compri, compri, compriamo, compriate, comprino",
+  "base": null,
+  "dontConfuse": "Некоторые формы множественного числа совпадают с presente indicativo: «che siamo» (coniugativo = indicativo), «che possiamo» (совпадает). Контекст (che + главное предложение с триггером) определяет наклонение. Dia (dare) и dica (dire) — два разных глагола!",
+  "examples": [
+    {"it": "Credo che compri una casa", "ru": "Я думаю, что он покупает дом", "note": "comprare → compri (регулярный -are)"},
+    {"it": "Credo che faccia un regalo", "ru": "Я думаю, что делает подарок", "note": "fare → faccia (неправильный)"},
+    {"it": "Voglio che vada a casa", "ru": "Я хочу, чтобы шли домой", "note": "andare → vada"},
+    {"it": "Credo che sia a casa", "ru": "Я думаю, что она есть дома", "note": "essere → sia"},
+    {"it": "Credo che abbia una macchina nuova", "ru": "Я думаю, что у него есть новая машина", "note": "avere → abbia"},
+    {"it": "È importante che venga", "ru": "Важно, чтобы пришли", "note": "venire → venga"},
+    {"it": "Credo che possa lavorare oggi", "ru": "Я думаю, что может работать сегодня", "note": "potere → possa"},
+    {"it": "Voglio che mi dia il libro", "ru": "Я хочу, чтобы дал мне книгу", "note": "dare → dia"},
+    {"it": "È importante che stia a casa", "ru": "Важно, чтобы оставалась дома", "note": "stare → stia"},
+    {"it": "Credo che voglia comprare una casa", "note": "volere → voglia (хочет)", "ru": "Я думаю, что хочет купить дом"},
+    {"it": "Credo che sappia cucinare", "ru": "Я думаю, что умеет готовить", "note": "sapere → sappia"},
+    {"it": "Credo che debba lavorare oggi", "ru": "Я думаю, что должен работать сегодня", "note": "dovere → debba"}
+  ]
+}

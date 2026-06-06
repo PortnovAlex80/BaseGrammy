@@ -1,0 +1,22 @@
+{
+  "key": "C04",
+  "title": "C04 - Discorso Indiretto: главное в настоящем",
+  "essence": "Косвенная речь с главным глаголом в настоящем (dice, chiede) сохраняет исходное время. Структуры: dice che + изъявительное наклонение (утверждения), chiede se + изъявительное (вопросы), dice di + инфинитив (приказы/просьбы).",
+  "formula": "### Утверждения: dice che + indicativo\nИсходное время не меняется, потому что главное в настоящем.\n`Dice che compra una casa` — Говорит, что покупает дом.\n`Dice che la cucina è pulita` — Говорит, что кухня чистая.\n\n### Вопросы: chiede se + indicativo\n`Chiede se compro una casa` — Спрашивает, покупаю ли я дом.\n`Chiede se ho un libro` — Спрашивает, есть ли у меня книга.\n\n### Приказы: dice di + infinito\n`Mi dice di comprare una casa` — Говорит мне купить дом.\n`Mi dice di cucinare la cena` — Говорит мне приготовить ужин.\n\n### Отрицательный приказ: dice di non + infinito\n`Mi dice di non pulire la cucina` — Говорит мне не убирать кухню.",
+  "base": null,
+  "dontConfuse": "dice che vs dice di: 'dice che' вводит целое предложение с подлежащим, 'dice di' + инфинитив — когда подлежащее подчинённого = объект главного (mi dice di...). Не путать 'chiede se' (да/нет вопрос) с 'chiede dove/come' (вопрос со словом).",
+  "examples": [
+    {"it": "Dice che compra una casa", "ru": "Говорит, что покупает дом", "note": "dice che + presente"},
+    {"it": "Dice che va a casa", "ru": "Говорит, что идёт домой", "note": "va = andare presente"},
+    {"it": "Dice che fa un regalo", "ru": "Говорит, что делает подарок", "note": "fa = fare presente"},
+    {"it": "Dice che compra una macchina nuova", "ru": "Говорит, что покупает новую машину", "note": "Прилагательное после существительного"},
+    {"it": "Chiede se compro una casa", "ru": "Спрашивает, покупаю ли я дом", "note": "chiede se + presente"},
+    {"it": "Chiede se ho un libro", "ru": "Спрашивает, есть ли у меня книга", "note": "ho = avere presente"},
+    {"it": "Chiede se lavoro oggi", "ru": "Спрашивает, работаю ли я сегодня", "note": "Ли-вопрос без инверсии"},
+    {"it": "Mi dice di comprare una casa", "ru": "Говорит мне купить дом", "note": "dice di + infinito (приказ)"},
+    {"it": "Mi dice di venire a casa", "ru": "Говорит мне прийти домой", "note": "venire, не andare (движение к говорящему)"},
+    {"it": "Mi dice di cucinare la cena", "ru": "Говорит мне приготовить ужин", "note": "di + infinito"},
+    {"it": "Dice che la cucina è pulita", "ru": "Говорит, что кухня чистая", "note": "è = essere presente"},
+    {"it": "Dice che abita nella casa grande", "ru": "Говорит, что живёт в том самом большом доме", "note": "abitare + in + определённый артикль"}
+  ]
+}

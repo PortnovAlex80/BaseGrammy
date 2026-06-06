@@ -1,0 +1,22 @@
+{
+  "key": "B03",
+  "title": "B03 - Passato Prossimo con Avere: завершённое прошедшее",
+  "essence": "Passato prossimo с вспомогательным avere выражает завершённое действие в прошлом с результатом в настоящем. Большинство переходных глаголов используют avere.",
+  "formula": "### Формула\navere (спряжённое) + participio passato\n\n### Спряжение avere\nho, hai, ha, abbiamo, avete, hanno\n\n### Маркеры времени\n- già — уже: Ho già comprato una casa\n- appena — только что: Abbiamo appena cucinato\n- non...ancora — ещё не: Non ho ancora fatto\n- finora — до сих пор: Finora abbiamo comprato i libri\n\n### Особенность\nС avere participio обычно НЕ согласуется с подлежащим:\nIo ho comprato (не comprata), lei ha comprato (не comprata)",
+  "base": null,
+  "dontConfuse": "С avere participio не согласуется с подлежащим: «она купила» = lei ha comprato (не ha comprata). Согласование возможно только с прямым дополнением с предшествующим местоимением: l'ho compratA.",
+  "examples": [
+    {"it": "Ho comprato una casa", "ru": "Я купил дом", "note": "ho + comprato, стандартный PP с avere"},
+    {"it": "Ho fatto un regalo", "ru": "Я сделал подарок", "note": "fare → fatto, неправильное participio"},
+    {"it": "Hai pulito la cucina", "ru": "Ты убрал кухню", "note": "2 л. ед.ч.: hai + pulito"},
+    {"it": "Ha cucinato una cena", "ru": "Она приготовила ужин", "note": "3 л. ед.ч.: ha + cucinato"},
+    {"it": "Abbiamo lavorato oggi", "ru": "Мы поработали сегодня", "note": "1 л. мн.ч.: abbiamo + lavorato"},
+    {"it": "Hanno comprato una macchina nuova", "ru": "Они купили новую машину", "note": "3 л. мн.ч.: hanno + comprato"},
+    {"it": "Ho già comprato una casa", "ru": "Я уже купил дом", "note": "già стоит между avere и participio"},
+    {"it": "Hai già pulito la cucina?", "ru": "Ты уже убрал кухню?", "note": "Вопросительная форма, già перед participio"},
+    {"it": "Abbiamo appena cucinato", "ru": "Мы только что приготовили", "note": "appena = только что"},
+    {"it": "Non ho ancora fatto", "ru": "Я ещё не сделал", "note": "non...ancora = ещё не"},
+    {"it": "Non abbiamo ancora comprato una macchina", "ru": "Мы ещё не купили машину", "note": "Разделённая отрицательная конструкция"},
+    {"it": "Finora abbiamo comprato i libri", "ru": "До сих пор мы покупали книги", "note": "finora = до сих пор, маркер PP"}
+  ]
+}

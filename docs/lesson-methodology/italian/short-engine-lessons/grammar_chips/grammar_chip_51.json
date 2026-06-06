@@ -1,0 +1,22 @@
+{
+  "key": "C08",
+  "title": "C08 - Passato Remoto: полная парадигма (продуктивно)",
+  "essence": "Полная парадигма passato remoto для всех лиц: правильные глаголы имеют окончания -ai, -asti, -ò, -ammo, -aste, -arono (1-е спр.). Неправильные глаголы (essere, avere, fare, venire, andare) имеют особые формы для каждого лица.",
+  "formula": "### Правильные глаголы (1-е спряжение: -are)\ncomprare: comprai, comprasti, comprò, comprammo, compraste, comprarono\n\n### Неправильные глаголы\nessere: fui, fosti, fu, fummo, foste, furono\navere: ebbi, avesti, ebbe, avemmo, aveste, ebbero\nfare: feci, facesti, fece, facemmo, faceste, fecero\nandare: andai, andasti, andò, andammo, andaste, andarono\nvenire: venni, venisti, venne, venimmo, veniste, vennero\nscrivere: scrissi, scrivesti, scrisse, scrivemmo, scriveste, scrissero\n\n### Употребление в речи\nНа юге Италии используется в повседневной речи. На севере — в основном в письме. В любом случае нужно уметь образовывать все формы для полноценного владения.",
+  "base": null,
+  "dontConfuse": "Не путать 1-е лицо ед.ч. (-ai для правильных, -i/-ei для неправильных) и 3-е лицо ед.ч. (-ò). Особо внимательно: fui (я был) vs fu (он был), feci (я сделал) vs fece (он сделал), scrissi (я написал) vs scrisse (он написал).",
+  "examples": [
+    {"it": "Comprai una casa", "ru": "Я купил дом", "note": "1-е лицо ед.ч., правильный глагол"},
+    {"it": "Andai a casa", "ru": "Я пошёл домой", "note": "1-е лицо, andare"},
+    {"it": "Feci un regalo", "ru": "Я сделал подарок", "note": "1-е лицо, fare: feci"},
+    {"it": "Comprasti il libro", "ru": "Ты купил ту самую книгу", "note": "2-е лицо ед.ч."},
+    {"it": "Comprò la macchina nuova", "ru": "Он купил новую машину", "note": "3-е лицо ед.ч."},
+    {"it": "Comprammo le case grandi", "ru": "Мы купили те самые большие дома", "note": "1-е лицо мн.ч."},
+    {"it": "Veniste nella casa nuova", "ru": "Вы пришли в тот самый новый дом", "note": "2-е лицо мн.ч., venire"},
+    {"it": "Fecero i regali belli", "ru": "Они сделали красивые подарки", "note": "3-е лицо мн.ч., fare: fecero"},
+    {"it": "Fui a casa, fosti al lavoro", "ru": "Я был дома, ты был на работе", "note": "essere: fui, fosti"},
+    {"it": "Avemmo il libro", "ru": "У нас была та самая книга", "note": "avere: avemmo"},
+    {"it": "Furono nella casa grande", "ru": "Они были в том самом большом доме", "note": "essere: furono"},
+    {"it": "Scrissi un libro, comprarono la casa", "ru": "Я написал книгу, они купили тот самый дом", "note": "Два разных подлежащих, два remoto"}
+  ]
+}

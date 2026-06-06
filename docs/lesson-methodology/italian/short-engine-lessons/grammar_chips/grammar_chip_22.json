@@ -1,0 +1,21 @@
+{
+  "key": "B06",
+  "title": "B06 - Trapassato Prossimo: предпрошедшее",
+  "essence": "Trapassato prossimo выражает действие, которое произошло ДО другого действия в прошлом. Русский аналог — «уже сделал к тому моменту».",
+  "formula": "### Формула\nimperfetto от avere/essere + participio passato\n\n### С avere\navevo comprato, avevi fatto, aveva cucinato...\n\n### С essere (согласование!)\nero andato/andata, eri partito/partita...\n\n### Типичные контексты\n- Когда я пришёл, она уже приготовила\n- Dopo che aveva pulito, abbiamo cucinato\n\n### Маркеры\nquando, dopo che + trapassato в придаточном\nглавное предложение — imperfetto или passato prossimo",
+  "base": null,
+  "dontConfuse": "Trapassato = предпрошедшее (до другого момента в прошлом), а не просто «давно». Не путай с imperfetto: imperfetto = фон, trapassato = завершённость до другого прошлого. С essere participio согласуется: era partitA (она), erano partitI (они м.р.).",
+  "examples": [
+    {"it": "Avevo già comprato una casa", "ru": "Я уже купил дом", "note": "avevo + comprato, предпрошедшее с avere"},
+    {"it": "Ero già andato a casa", "ru": "Я уже пошёл домой", "note": "ero + andato, предпрошедшее с essere"},
+    {"it": "Avevo già fatto un regalo", "ru": "Я уже сделал подарок", "note": "avevo + fatto, fatto от fare"},
+    {"it": "Avevamo già abitato nella casa grande", "ru": "Мы уже жили в том самом большом доме", "note": "avevamo + abitato, 1 л. мн.ч."},
+    {"it": "La famiglia aveva già cucinato", "ru": "Та самая семья уже приготовила ужин", "note": "aveva + cucinato, 3 л. ед.ч."},
+    {"it": "Quando sono arrivato, aveva già cucinato", "ru": "Когда я пришёл, она уже приготовила", "note": "quando + PP, trapassato в главном"},
+    {"it": "Quando la famiglia è arrivata, avevamo già comprato una casa", "ru": "Когда та самая семья приехала, мы уже купили дом", "note": "сложная временная цепочка"},
+    {"it": "Quando è arrivato, avevo già pulito la cucina", "ru": "Когда он пришёл, я уже убрал ту самую кухню", "note": "trapassato = действие до прихода"},
+    {"it": "Quando siamo arrivati, era già partito", "ru": "Когда мы пришли, он уже уехал", "note": "era partito — essere + согласование"},
+    {"it": "La cucina era pulita perché avevo pulito", "ru": "Та самая кухня была чистой, потому что я убрал", "note": "причина в trapassato"},
+    {"it": "Dopo che aveva pulito la cucina, abbiamo cucinato", "ru": "После того как он убрал кухню, мы приготовили", "note": "dopo che + trapassato"}
+  ]
+}

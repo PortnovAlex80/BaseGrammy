@@ -1,0 +1,21 @@
+{
+  "key": "B25",
+  "title": "B25 - Congiuntivo Presente: концепция и употребление",
+  "essence": "Congiuntivo presente используется после выражений сомнения, желания, необходимости, эмоции и оценки. Главное: факт = indicativo, мнение/сомнение = congiuntivo.",
+  "formula": "### Контраст: факт vs мнение\n- So che la cucina è grande = Я ЗНАЮ (факт → indicativo)\n- Penso che la cucina sia grande = Я ДУМАЮ (мнение → congiuntivo)\n\n### Триггеры congiuntivo\n- penso che... = я думаю, что...\n- credo che... = я верю/считаю, что...\n- voglio che... = я хочу, чтобы...\n- è possibile che... = возможно, что...\n- ho paura che... = я боюсь, что...\n- è importante che... = важно, чтобы...\n\n### Образование (регулярные)\n- -are: -i, -i, -i, -iamo, -iate, -ino\n  comprare → che io compri\n- -ere/-ire: -a, -a, -a, -iamo, -iate, -ano\n  fare → che io faccia\n\n### Неправильные\nessere → sia, avere → abbia",
+  "base": null,
+  "dontConfuse": "Не после каждого «che» нужен congiuntivo! «So che...» = уверенность → indicativo. «Penso che...» = мнение → congiuntivo. Ключ: главный глагол выражает сомнение/желание/эмоцию → congiuntivo; факт/уверенность → indicativo.",
+  "examples": [
+    {"it": "Penso che compri una casa", "ru": "Я думаю, что покупает дом", "note": "penso che → congiuntivo: compri"},
+    {"it": "Penso che vada a casa", "ru": "Я думаю, что идёт домой", "note": "vada = congiuntivo от andare"},
+    {"it": "Penso che faccia un regalo", "ru": "Я думаю, что делает подарок", "note": "faccia = congiuntivo от fare"},
+    {"it": "Credo che lavori oggi", "ru": "Я верю, что работает сегодня", "note": "credo che → congiuntivo"},
+    {"it": "Credo che il libro sia nuovo", "ru": "Я верю, что та самая книга новая", "note": "sia = congiuntivo от essere"},
+    {"it": "Voglio che la cucina sia pulita", "ru": "Я хочу, чтобы кухня была чистая", "note": "voglio che → congiuntivo"},
+    {"it": "È possibile che la macchina sia piccola", "ru": "Возможно, что та самая машина маленькая", "note": "è possibile che → congiuntivo"},
+    {"it": "Ho paura che parta tardi", "ru": "Я боюсь, что уезжает поздно", "note": "ho paura che → congiuntivo"},
+    {"it": "So che la cucina è grande", "ru": "Я знаю, что та самая кухня большая", "note": "so che → INDICATIVO (факт!)"},
+    {"it": "Penso che la cucina sia grande", "ru": "Я думаю, что та самая кухня большая", "note": "penso che → CONGIUNTIVO (мнение!)"},
+    {"it": "Crediamo che le case siano nuove", "ru": "Мы верим, что те самые дома новые", "note": "1 л. мн.ч. + congiuntivo мн.ч."}
+  ]
+}

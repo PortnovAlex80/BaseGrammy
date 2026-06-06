@@ -1,0 +1,20 @@
+{
+  "key": "C09",
+  "title": "C09 - Trapassato Remoto: предпрошедшее в книжной речи",
+  "essence": "Trapassato remoto обозначает действие, завершившееся непосредственно перед другим действием в далёком прошлом (passato remoto). Образуется: passato remoto вспомогательного (ebbe, fu, furono) + participio passato. Используется только в литературе, после quando, dopo che, appena.",
+  "formula": "### Образование\nPassato remoto avere/essere + participio passato.\n\n### С avere (переходные глаголы)\n`ebbe comprato`, `ebbe fatto`, `ebbero pulito`, `ebbe cucinato`\n\n### С essere (глаголы движения)\n`fu venuto`, `furono venuti`, `furono partiti`\n\n### Триггеры (только после этих союзов)\n- `quando` + trapassato remoto -> passato remoto: `Quando ebbe comprato la casa, lavorò`\n- `dopo che` + trapassato remoto -> passato remoto: `Dopo che ebbe scritto il libro, comprò la casa`\n- `appena` + trapassato remoto -> passato remoto: `Appena ebbe comprato la macchina, partì`\n\n### Смысл\nДействие trapassato remoto завершено ДО действия в passato remoto. Это аналог trapassato prossimo, но в книжном стиле с passato remoto вместо prossimo.",
+  "base": null,
+  "dontConfuse": "Trapassato remoto vs Trapassato prossimo: оба обозначают предпрошедшее, но trapassato remoto сочетается с passato remoto (книжный стиль), а trapassato prossimo — с passato prossimo/imperfetto (разговорный стиль). 'Aveva comprato' (разговорный) vs 'ebbe comprato' (литературный).",
+  "examples": [
+    {"it": "Quando ebbe comprato la casa, lavorò", "ru": "Когда купил дом, стал работать", "note": "ebbe comprato = avere в remoto + participio"},
+    {"it": "Quando fu venuto a casa, vide il regalo", "ru": "Когда пришёл домой, увидел подарок", "note": "fu venuto = essere в remoto + participio"},
+    {"it": "Quando ebbe fatto il regalo, andò al lavoro", "ru": "Когда сделал подарок, пошёл на работу", "note": "ebbe fatto (fare: participio = fatto)"},
+    {"it": "Appena ebbe comprato la macchina, partì", "ru": "Как только купил ту самую машину, уехал", "note": "appena = как только"},
+    {"it": "Dopo che ebbe scritto il libro, comprò la casa grande", "ru": "Когда написал книгу, купил тот самый большой дом", "note": "dopo che + trapassato remoto"},
+    {"it": "Quando la famiglia ebbe comprato la casa nuova, abitò lì", "ru": "Когда та самая семья купила новый дом, стала жить там", "note": "3-е лицо: ebbe comprato"},
+    {"it": "Appena furono venuti, cucinarono la cena", "ru": "Как только пришли, приготовили ужин", "note": "furono venuti = мн.ч., essere"},
+    {"it": "Dopo che ebbero pulito la cucina, lavorarono", "ru": "Когда убрали ту самую кухню, стали работать", "note": "ebbero = avere 3 л. мн.ч. remoto"},
+    {"it": "Quando ebbe cucinato, chiamò la famiglia", "ru": "Когда приготовила, позвала семью", "note": "ebbe cucinato -> chiamò"},
+    {"it": "Appena furono partiti, la casa grande fu vuota", "ru": "Как только уехали, тот самый большой дом был пустой", "note": "furono partiti, затем fu (был) в remoto"}
+  ]
+}

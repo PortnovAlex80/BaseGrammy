@@ -1,0 +1,22 @@
+{
+  "key": "C13",
+  "title": "C13 - Verbi Pronominali Idiomatici: идиоматические местоименные глаголы",
+  "essence": "Местоименные глаголы (verbi pronominali) с идиоматическим значением: farcela (справляться), andarsene (уходить), cavarsela (выкручиваться), mettercela tutta (выкладываться), prendersela (обижаться), metterci (тратить время), volerci (требоваться). Их нельзя переводить буквально по частям.",
+  "formula": "### Farcela (справляться)\n`Ce la faccio a comprare la casa` — Я справляюсь с покупкой дома.\n`Ce la facciamo con il lavoro` — Мы справляемся с работой.\n\n### Andarsene (уходить)\n`Me ne vado a casa` — Я ухожу домой.\n`Se ne vanno da casa` — Они уходят из дома.\n\n### Cavarsela (выкручиваться)\n`Me la cavo con la cucina piccola` — Я выкручиваюсь с маленькой кухней.\n`Te la cavi con la macchina` — Ты выкручиваешься с той самой машиной.\n\n### Mettercela tutta (выкладываться)\n`Ce la mettiamo tutta per la casa nuova` — Мы выкладываемся для нового дома.\n\n### Prendersela (обижаться)\n`Se la prende per il libro` — Он обижается из-за той самой книги.\n\n### Metterci / Volerci (время)\n`Ci metto due ore per il lavoro` — Я трачу два часа на работу.\n`Ci vuole molto tempo per il libro` — Требуется много времени для книги.",
+  "base": null,
+  "dontConfuse": "Не переводите местоименные компоненты отдельно: farcela != 'делать это', ce la != 'это туда'. Metterci (кто-то тратит время, спрягается) vs volerci (безличное, требуется время, 3-е лицо): 'ci metto' (я трачу) vs 'ci vuole' (нужно).",
+  "examples": [
+    {"it": "Ce la faccio a comprare la casa", "ru": "Я справляюсь с покупкой дома", "note": "farcela: ce la + faccio"},
+    {"it": "Me ne vado a casa", "ru": "Я ухожу домой", "note": "andarsene: me ne + vado"},
+    {"it": "Ce la faccio a fare un regalo", "ru": "Я справляюсь с подарком", "note": "farcela + fare"},
+    {"it": "Ce la fai con la cucina nuova", "ru": "Ты справляешься с новой кухней", "note": "2-е лицо: ce la fai"},
+    {"it": "Se ne va dal lavoro", "ru": "Она уходит с работы", "note": "andarsene: se ne + va"},
+    {"it": "Se ne vanno da casa", "ru": "Они уходят из дома", "note": "andarsene: se ne + vanno"},
+    {"it": "Me la cavo con la cucina piccola", "ru": "Я выкручиваюсь с маленькой кухней", "note": "cavarsela: me la + cavo"},
+    {"it": "Ce la mettiamo tutta per la casa nuova", "ru": "Мы выкладываемся для нового дома", "note": "mettercela tutta: ce la + mettiamo"},
+    {"it": "Se la prende per il libro", "ru": "Он обижается из-за той самой книги", "note": "prendersela: se la + prende"},
+    {"it": "Ci metto due ore per il lavoro", "ru": "Я трачу два часа на работу", "note": "metterci: ci + metto"},
+    {"it": "Ci vogliono tre giorni per il lavoro", "ru": "Требуются три дня для работы", "note": "volerci: мн.ч. ci vogliono"},
+    {"it": "Ce la mette tutta ma non ce la fa", "ru": "Он выкладывается, но не справляется", "note": "Два местоименных глагола в одном предложении"}
+  ]
+}

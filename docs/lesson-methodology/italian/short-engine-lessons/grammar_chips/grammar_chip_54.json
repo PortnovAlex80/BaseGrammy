@@ -1,0 +1,22 @@
+{
+  "key": "C11",
+  "title": "C11 - Forma Passiva: venire и andare",
+  "essence": "Пассивный залог в итальянском использует essere (состояние/результат), venire (процесс, действие) и andare (долженствование, необходимость). Выбор вспомогательного меняет оттенок: venire подчёркивает действие, essere — результат, andare — должен быть сделан.",
+  "formula": "### Essere + participio (состояние/результат)\n`La casa è comprata` — Дом куплен (состояние).\n`La cucina è pulita` — Кухня убрана.\n\n### Venire + participio (процесс/действие)\n`Viene comprata una casa` — Дом покупается (процесс).\n`La cucina viene pulita` — Кухня убирается (действие происходит).\n`La macchina viene comprata dalla famiglia` — Машина покупается семьёй.\n\n### Andare + participio (долженствование)\n`Va comprata una casa` — Нужно купить дом.\n`Va fatto un regalo` — Нужно сделать подарок.\n`Vanno letti i libri nuovi` — Нужно прочитать новые книги.\n\n### Согласование\nParticipio всегда согласуется с подлежащим в роде и числе:\ncasa -> comprata, macchina -> comprata, case -> comprate, libri -> letti.",
+  "base": null,
+  "dontConfuse": "essere passivo (результат) vs venire passivo (процесс): 'La casa è comprata' = дом уже куплен, 'La casa viene comprata' = дом покупается (прямо сейчас/регулярно). andare passivo НЕ обозначает движение: 'Va comprata' = нужно купить, а не 'идёт покупать'.",
+  "examples": [
+    {"it": "Viene comprata una casa", "ru": "Дом покупается", "note": "venire + participio: процесс"},
+    {"it": "La casa è comprata", "ru": "Дом куплен — состояние", "note": "essere + participio: результат"},
+    {"it": "Viene fatto un regalo", "ru": "Подарок делается", "note": "venire + fatto"},
+    {"it": "La cucina viene pulita", "ru": "Кухня убирается — процесс", "note": "venire подчёркивает действие"},
+    {"it": "La cucina è pulita", "ru": "Кухня убрана — состояние", "note": "essere подчёркивает результат"},
+    {"it": "Va comprata una casa", "ru": "Нужно купить дом", "note": "andare + participio: долженствование"},
+    {"it": "Va fatto un regalo", "ru": "Нужно сделать подарок", "note": "andare + fatto"},
+    {"it": "Vanno letti i libri nuovi", "ru": "Нужно прочитать те самые новые книги", "note": "мн.ч.: vanno + letti"},
+    {"it": "Va pulita la cucina", "ru": "Нужно убрать ту самую кухню", "note": "andare + pulita, ж.р."},
+    {"it": "La macchina viene comprata dalla famiglia", "ru": "Та самая машина покупается семьёй", "note": "venire + da + агент"},
+    {"it": "Le case grandi vengono comprate", "ru": "Большие дома покупаются — процесс", "note": "venire, мн.ч.: vengono"},
+    {"it": "Quei libri vengono comprati, poi vengono letti", "ru": "Те самые книги покупаются, а потом читаются", "note": "Два venire passivo последовательно"}
+  ]
+}
