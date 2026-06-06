@@ -56,6 +56,51 @@ interface LessonStore {
     /** Pack-scoped lesson loading. Only loads lessons from the specified pack. */
     fun getLessons(packId: String, languageId: String): List<Lesson>
 
+    /**
+     * Get lightweight lesson metadata (ID + title only) for UI display.
+     * Does NOT load cards - use getLesson() for full lesson data.
+     */
+    fun getLessonMetadata(packId: String, languageId: String): List<LessonMetadata> {
+        // STUB - will be implemented
+        return emptyList()
+    }
+
+    /**
+     * Load full lesson data (including cards) for a single lesson.
+     * Called when user opens a lesson.
+     */
+    fun getLesson(packId: String, languageId: String, lessonId: String): Lesson? {
+        // STUB - will be implemented
+        return null
+    }
+
+    /**
+     * Get total lesson count for pack without loading lesson data.
+     * Uses manifest chapters to count.
+     */
+    fun getLessonCount(packId: String, languageId: String): Int {
+        // STUB - will be implemented
+        return 0
+    }
+
+    /**
+     * Get lesson ID at specific index in pack (for daily practice cursor).
+     * Uses manifest chapter order, no lesson loading.
+     */
+    fun getLessonIdAtIndex(packId: String, languageId: String, index: Int): String? {
+        // STUB - will be implemented
+        return null
+    }
+
+    /**
+     * Get cards for a single lesson (for daily practice).
+     * Loads ONLY the requested lesson, not all lessons.
+     */
+    fun getCardsForLesson(packId: String, languageId: String, lessonId: String): List<SentenceCard> {
+        // STUB - will be implemented
+        return emptyList()
+    }
+
     fun deleteAllLessons(languageId: String)
 
     fun deleteLesson(languageId: String, lessonId: String)
@@ -136,6 +181,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // In-memory cache for getLessons() — invalidated on pack import/delete/reload
     private val lessonsCache = java.util.concurrent.ConcurrentHashMap<String, List<Lesson>>()
+    private val metadataCache = java.util.concurrent.ConcurrentHashMap<String, List<LessonMetadata>>()
 
     private val defaultPacks = listOf(
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
@@ -353,6 +399,38 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         }
     }
 
+    override fun getLessonMetadata(packId: String, languageId: String): List<LessonMetadata> {
+        ensureSeedData()
+        val cacheKey = "meta:$packId:$languageId"
+        return metadataCache.getOrPut(cacheKey) {
+            Log.d("LessonStore", "Loading lesson metadata for $cacheKey")
+            loadLessonMetadataFromDisk(languageId, packId)
+        }
+    }
+
+    override fun getLesson(packId: String, languageId: String, lessonId: String): Lesson? {
+        ensureSeedData()
+        // Check if already in lessons cache
+        val cacheKey = "$packId:$languageId"
+        lessonsCache[cacheKey]?.find { it.id.value == lessonId }?.let { return it }
+        // Load single lesson from disk
+        return loadSingleLessonFromDisk(languageId, packId, lessonId)
+    }
+
+    override fun getLessonCount(packId: String, languageId: String): Int {
+        ensureSeedData()
+        return getOrderedLessonIdsFromManifest(packId).size
+    }
+
+    override fun getLessonIdAtIndex(packId: String, languageId: String, index: Int): String? {
+        ensureSeedData()
+        return getOrderedLessonIdsFromManifest(packId).getOrNull(index)
+    }
+
+    override fun getCardsForLesson(packId: String, languageId: String, lessonId: String): List<SentenceCard> {
+        return getLesson(packId, languageId, lessonId)?.cards ?: emptyList()
+    }
+
     /**
      * Invalidate the lessons cache. Call with a specific languageId to evict one entry,
      * or null to clear the entire cache.
@@ -363,6 +441,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         } else {
             lessonsCache.clear()
         }
+        metadataCache.clear()
     }
 
     private fun loadLessonsFromDisk(languageId: String): List<Lesson> {
@@ -918,4 +997,76 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         val fileName: String,
         val drillFileName: String? = null
     )
+
+    // ── Lazy loading private helpers ───────────────────────────────────
+
+    private fun getOrderedLessonIdsFromManifest(packId: String): List<String> {
+        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
+        return if (manifest.schemaVersion == 2) {
+            manifest.chapters.sortedBy { it.order }.flatMap { it.lessons }
+        } else {
+            manifest.lessons.sortedBy { it.order }.map { it.lessonId }
+        }
+    }
+
+    private fun findPack(packId: String, languageId: String): LessonPack? {
+        return getInstalledPacks().find {
+            it.packId.value == packId && it.languageId.value == languageId
+        }
+    }
+
+    private fun loadLessonMetadataFromDisk(languageId: String, packId: String): List<LessonMetadata> {
+        val pack = findPack(packId, languageId) ?: return emptyList()
+        val packDir = File(packsDir, pack.packId.value)
+        if (!packDir.exists()) return emptyList()
+
+        val lessonIds = getOrderedLessonIdsFromManifest(packId)
+        if (lessonIds.isEmpty()) return emptyList()
+
+        val result = mutableListOf<LessonMetadata>()
+        for (lessonId in lessonIds) {
+            val csvFile = File(packDir, "$lessonId.csv")
+            if (!csvFile.exists()) continue
+            try {
+                val title = CsvParser.parseLessonTitle(csvFile.inputStream()) ?: lessonId
+                result.add(LessonMetadata(
+                    id = LessonId(lessonId),
+                    languageId = LanguageId(languageId),
+                    title = title
+                ))
+            } catch (e: Exception) {
+                Log.e("LessonStore", "Failed to parse title for $lessonId", e)
+                result.add(LessonMetadata(
+                    id = LessonId(lessonId),
+                    languageId = LanguageId(languageId),
+                    title = lessonId
+                ))
+            }
+        }
+        Log.d("LessonStore", "Loaded ${result.size} lesson metadata entries for $packId")
+        return result
+    }
+
+    private fun loadSingleLessonFromDisk(languageId: String, packId: String, lessonId: String): Lesson? {
+        val pack = findPack(packId, languageId) ?: return null
+        val packDir = File(packsDir, pack.packId.value)
+        val csvFile = File(packDir, "$lessonId.csv")
+        if (!csvFile.exists()) {
+            Log.w("LessonStore", "Lesson file not found: ${csvFile.absolutePath}")
+            return null
+        }
+        try {
+            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
+            val (title, cards) = parseResult.data ?: return null
+            return Lesson(
+                id = LessonId(lessonId),
+                languageId = LanguageId(languageId),
+                title = title ?: lessonId,
+                cards = cards
+            )
+        } catch (e: Exception) {
+            Log.e("LessonStore", "Failed to load lesson $lessonId", e)
+            return null
+        }
+    }
 }

@@ -367,13 +367,13 @@ class DailyPracticeCoordinator(
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId ?: return false
 
-        val packLessons = lessonStore.getLessons(packId.value, langId.value)
+        val totalLessonCount = lessonStore.getLessonCount(packId.value, langId.value)
         val effectiveLevel: Int
         val lessonId: String
         val levelFromCursor: Boolean
 
-        if (cursor.currentLessonIndex in packLessons.indices) {
-            lessonId = packLessons[cursor.currentLessonIndex].id.value
+        if (cursor.currentLessonIndex >= 0 && cursor.currentLessonIndex < totalLessonCount) {
+            lessonId = lessonStore.getLessonIdAtIndex(packId.value, langId.value, cursor.currentLessonIndex) ?: return false
             effectiveLevel = cursor.currentLessonIndex + 1
             levelFromCursor = true
         } else {
@@ -909,22 +909,29 @@ class DailyPracticeCoordinator(
         val nav = stateAccess.uiState.value.navigation
         val packId = nav.activePackId
         Log.d(logTag, "DailyPractice: advanceDailyCursor sentenceCount=$sentenceCount, currentLessonIndex=${cursor.currentLessonIndex}, sentenceOffset=${cursor.sentenceOffset}, verbOffset=${cursor.verbOffset}")
-        val lessons = if (packId != null) {
-            lessonStore.getLessons(packId.value, languageId)
+        val totalLessonCount = if (packId != null) {
+            lessonStore.getLessonCount(packId.value, languageId)
         } else {
-            emptyList()
+            0
         }
-        if (lessons.isEmpty()) return cursor
+        if (totalLessonCount == 0) return cursor
 
         var sentenceOffset = cursor.sentenceOffset + sentenceCount
         var currentLessonIndex = cursor.currentLessonIndex
 
-        val currentLesson = lessons.getOrNull(currentLessonIndex)
-        if (currentLesson != null && sentenceOffset >= currentLesson.cards.size) {
-            currentLessonIndex++
-            sentenceOffset = 0
-            if (currentLessonIndex >= lessons.size) {
-                currentLessonIndex = 0
+        val currentLessonId = if (packId != null) {
+            lessonStore.getLessonIdAtIndex(packId.value, languageId, currentLessonIndex)
+        } else {
+            null
+        }
+        if (currentLessonId != null && packId != null) {
+            val cardCount = lessonStore.getCardsForLesson(packId.value, languageId, currentLessonId).size
+            if (sentenceOffset >= cardCount) {
+                currentLessonIndex++
+                sentenceOffset = 0
+                if (currentLessonIndex >= totalLessonCount) {
+                    currentLessonIndex = 0
+                }
             }
         }
 

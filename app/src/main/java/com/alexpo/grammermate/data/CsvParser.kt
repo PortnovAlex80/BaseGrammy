@@ -100,6 +100,19 @@ object CsvParser {
         return result
     }
 
+    /**
+     * Parse ONLY the lesson title from line 1 of CSV.
+     * Does NOT read or parse any card data - for lazy loading.
+     * Returns null if file is empty or title is blank.
+     */
+    fun parseLessonTitle(inputStream: InputStream): String? {
+        inputStream.bufferedReader().useLines { lines ->
+            val firstLine = lines.firstOrNull()?.trim() ?: return null
+            if (firstLine.isBlank()) return null
+            return extractTitle(firstLine)
+        }
+    }
+
     private fun extractTitle(raw: String): String? {
         val trimmed = raw.trim().trim('"').trimStart('\uFEFF')
         return trimmed.take(160).trim().ifBlank { null }

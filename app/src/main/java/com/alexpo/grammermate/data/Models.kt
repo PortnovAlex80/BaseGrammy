@@ -9,6 +9,17 @@ data class Language(
     val displayName: String
 )
 
+/**
+ * Lightweight lesson descriptor for UI display.
+ * Contains only ID + title, no card data.
+ * Used for lazy loading: display tiles without parsing full lessons.
+ */
+data class LessonMetadata(
+    val id: LessonId,
+    val languageId: LanguageId,
+    val title: String
+)
+
 data class Lesson(
     val id: LessonId,
     val languageId: LanguageId,
