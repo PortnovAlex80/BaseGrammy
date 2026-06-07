@@ -23,7 +23,7 @@ class StoreFactory private constructor(private val appContext: Application) {
     private val lessonCache: LessonStoreImpl by lazy { LessonStoreImpl(appContext) }
     private val appConfigCache: AppConfigStoreImpl by lazy { AppConfigStoreImpl(appContext) }
     private val hiddenCardCache: HiddenCardStoreImpl by lazy { HiddenCardStoreImpl(appContext) }
-    private val vocabProgressCache: VocabProgressStoreImpl by lazy { VocabProgressStoreImpl(appContext) }
+    private val vocabProgressCache = mutableMapOf<String?, VocabProgressStoreImpl>()
     private val profileCache: ProfileStoreImpl by lazy { ProfileStoreImpl(appContext) }
     private val drillProgressCache: DrillProgressStoreImpl by lazy { DrillProgressStoreImpl(appContext) }
 
@@ -62,7 +62,12 @@ class StoreFactory private constructor(private val appContext: Application) {
 
     fun getHiddenCardStore(): HiddenCardStore = hiddenCardCache
 
-    fun getVocabProgressStore(): VocabProgressStore = vocabProgressCache
+    @Synchronized
+    fun getVocabProgressStore(packId: String?): VocabProgressStore {
+        return vocabProgressCache.getOrPut(packId) {
+            VocabProgressStoreImpl(appContext, packId = packId)
+        }
+    }
 
     fun getProfileStore(): ProfileStore = profileCache
 
@@ -78,6 +83,7 @@ class StoreFactory private constructor(private val appContext: Application) {
     fun evict(packId: String?) {
         wordMasteryCache.remove(packId)
         verbDrillCache.remove(packId)
+        vocabProgressCache.remove(packId)
     }
 
     /**
@@ -87,6 +93,7 @@ class StoreFactory private constructor(private val appContext: Application) {
     fun clearCache() {
         wordMasteryCache.clear()
         verbDrillCache.clear()
+        vocabProgressCache.clear()
     }
 
     companion object {

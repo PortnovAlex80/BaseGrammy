@@ -51,14 +51,23 @@ interface VocabProgressStore {
     }
 }
 
-class VocabProgressStoreImpl(private val context: Context) : VocabProgressStore {
+class VocabProgressStoreImpl(private val context: Context, private val packId: String? = null) : VocabProgressStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
-    private val file = File(baseDir, "vocab_progress.yaml")
+    private val file: File = if (packId != null) {
+        File(baseDir, "drills/$packId/vocab_progress.yaml")
+    } else {
+        File(baseDir, "vocab_progress.yaml")
+    }
     private val mutex = ReentrantLock()
 
     private var cache: MutableMap<String, MutableMap<String, VocabProgressStore.LessonVocabProgress>> = mutableMapOf()
     private var cacheLoaded = false
+
+    fun invalidateCache() = mutex.withLock {
+        cache = mutableMapOf()
+        cacheLoaded = false
+    }
 
     override fun loadAll(): Map<String, Map<String, VocabProgressStore.LessonVocabProgress>> = mutex.withLock {
         loadAllInternal()

@@ -471,6 +471,9 @@ class ProgressTracker(
 
             val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session_$languageId.yaml")
             if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+
+            val globalVocabFile = java.io.File(baseDir, "vocab_progress_$languageId.yaml")
+            if (globalVocabFile.exists()) globalVocabFile.delete()
         }
 
         for (pack in packs) {
@@ -483,6 +486,9 @@ class ProgressTracker(
 
             val verbDrillLastSessionFile = java.io.File(packDir, "verb_drill_last_session.yaml")
             if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
+
+            val vocabProgressFile = java.io.File(packDir, "vocab_progress.yaml")
+            if (vocabProgressFile.exists()) vocabProgressFile.delete()
         }
     }
 
@@ -538,5 +544,8 @@ class ProgressTracker(
 
         val packVerbDrillLastSessionFile = java.io.File(packDir, "verb_drill_last_session.yaml")
         if (packVerbDrillLastSessionFile.exists()) packVerbDrillLastSessionFile.delete()
+
+        val vocabProgressFile = java.io.File(packDir, "vocab_progress.yaml")
+        if (vocabProgressFile.exists()) vocabProgressFile.delete()
     }
 }

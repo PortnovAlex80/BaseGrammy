@@ -67,10 +67,6 @@ class VerbDrillStoreImpl(
     private val schemaVersion = 1
     private val mutex = ReentrantLock()
 
-    init {
-        migrateLegacyFiles()
-    }
-
     // In-memory cache for progress data — invalidated on progress save
     private var progressCache: Map<String, VerbDrillComboProgress>? = null
 
@@ -85,53 +81,6 @@ class VerbDrillStoreImpl(
             val parts = it.split("-")
             if (parts.size >= 2) parts[1] else "en"
         } ?: "en"
-    }
-
-    // Migrate legacy files to the active store path. New pack-scoped stores use
-    // drills/{packId}/ files; legacy global stores keep language-scoped files.
-    private fun migrateLegacyFiles() {
-        try {
-            val legacyProgressFile = File(baseDir, "verb_drill_progress.yaml")
-            val legacySessionFile = File(baseDir, "verb_drill_last_session.yaml")
-            val languageProgressFile = File(baseDir, "verb_drill_progress_${languageId}.yaml")
-            val languageSessionFile = File(baseDir, "verb_drill_last_session_${languageId}.yaml")
-
-            packDir?.mkdirs()
-
-            // Migrate progress file. For pack-scoped stores, prefer the newer
-            // language-scoped source over the oldest global source.
-            val progressSource = when {
-                file.exists() -> null
-                packId != null && languageProgressFile.exists() -> languageProgressFile
-                legacyProgressFile.exists() -> legacyProgressFile
-                else -> null
-            }
-            if (progressSource != null) {
-                Log.i("VerbDrillStore", "Migrating progress file ${progressSource.name} -> ${file.path}")
-                AtomicFileWriter.writeText(file, progressSource.readText())
-                if (packId == null || progressSource == legacyProgressFile) {
-                    progressSource.delete()
-                }
-                Log.i("VerbDrillStore", "Progress file migrated")
-            }
-
-            val sessionSource = when {
-                lastSessionFile.exists() -> null
-                packId != null && languageSessionFile.exists() -> languageSessionFile
-                legacySessionFile.exists() -> legacySessionFile
-                else -> null
-            }
-            if (sessionSource != null) {
-                Log.i("VerbDrillStore", "Migrating last session file ${sessionSource.name} -> ${lastSessionFile.path}")
-                AtomicFileWriter.writeText(lastSessionFile, sessionSource.readText())
-                if (packId == null || sessionSource == legacySessionFile) {
-                    sessionSource.delete()
-                }
-                Log.i("VerbDrillStore", "Last session file migrated")
-            }
-        } catch (e: Exception) {
-            Log.e("VerbDrillStore", "Error migrating legacy files: ${e.message}", e)
-        }
     }
 
     override fun loadProgress(): Map<String, VerbDrillComboProgress> {

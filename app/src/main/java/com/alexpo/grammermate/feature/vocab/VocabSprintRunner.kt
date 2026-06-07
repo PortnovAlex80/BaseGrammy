@@ -35,9 +35,10 @@ data class VocabSubmitResult(
 class VocabSprintRunner(
     private val stateAccess: TrainingStateAccess,
     private val lessonStore: LessonStore,
-    private val vocabProgressStore: VocabProgressStore,
+    private val vocabProgressStoreProvider: () -> VocabProgressStore,
     private val answerValidator: AnswerValidator
 ) {
+    private val vocabProgressStore: VocabProgressStore get() = vocabProgressStoreProvider()
     private val logTag = "VocabSprintRunner"
 
     // ── Owned state flow ─────────────────────────────────────────────────

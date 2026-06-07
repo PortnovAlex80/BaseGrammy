@@ -1,8 +1,5 @@
 package com.alexpo.grammermate.ui
 
-import android.content.Context
-import android.util.Log
-import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,120 +18,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alexpo.grammermate.R
-import com.alexpo.grammermate.data.AppConfigStore
-import com.alexpo.grammermate.data.AppConfigStoreImpl
-import com.alexpo.grammermate.data.AppVersions
-import com.alexpo.grammermate.data.GrammarChipStore
-import com.alexpo.grammermate.data.LessonStoreImpl
-import com.alexpo.grammermate.data.MasteryStoreImpl
-import com.alexpo.grammermate.data.PackDailyCursorStoreImpl
-import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
-import com.alexpo.grammermate.data.ProgressStore
-import com.alexpo.grammermate.data.ProgressStoreImpl
 import com.alexpo.grammermate.data.RestoreNotifier
 import com.alexpo.grammermate.data.RestoreStatus
 import com.alexpo.grammermate.shared.ScreenLogger
-import kotlinx.coroutines.launch
-
-private fun checkAndMigrate(context: Context) {
-    val configStore = AppConfigStoreImpl(context)
-    val progressStore = ProgressStoreImpl(context)
-    val packCursorStore = PackDailyCursorStoreImpl(context)
-    val packProgressStore = PackLessonProgressStoreImpl(context)
-    val lastVersion = configStore.getLastVersion()
-
-    // Migrate daily cursor from global to pack-scoped (TASK-080)
-    if (lastVersion < AppVersions.VERSION_080_STATE_ISOLATION) {
-        val progress = progressStore.load()
-        val activePackId = progress.activePackId?.value
-
-        try {
-            val migrated = progressStore.migrateGlobalDailyCursorToPackScoped(
-                activePackId = activePackId,
-                packCursorStore = packCursorStore
-            )
-            if (migrated) {
-                Log.i("AppRoot", "Successfully migrated daily cursor to pack-scoped for pack: $activePackId")
-            } else {
-                Log.d("AppRoot", "No daily cursor data to migrate")
-            }
-        } catch (e: Exception) {
-            Log.e("AppRoot", "Failed to migrate daily cursor", e)
-            // Continue anyway - don't block app launch
-        }
-
-        configStore.setLastVersion(AppVersions.VERSION_080_STATE_ISOLATION)
-    }
-
-    // Migrate lesson progress from global to pack-scoped (TASK-081)
-    if (lastVersion < AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION) {
-        val progress = progressStore.load()
-        val activePackId = progress.activePackId?.value
-
-        try {
-            val migrated = progressStore.migrateGlobalLessonProgressToPackScoped(
-                activePackId = activePackId,
-                packProgressStore = packProgressStore
-            )
-            if (migrated) {
-                Log.i("AppRoot", "Successfully migrated lesson progress to pack-scoped for pack: $activePackId")
-            } else {
-                Log.d("AppRoot", "No lesson progress data to migrate")
-            }
-        } catch (e: Exception) {
-            Log.e("AppRoot", "Failed to migrate lesson progress", e)
-            // Continue anyway - don't block app launch
-        }
-
-        configStore.setLastVersion(AppVersions.VERSION_081_LESSON_PROGRESS_ISOLATION)
-    }
-
-    // Migrate mastery from language-scoped to pack-scoped keys (TASK-082)
-    if (lastVersion < AppVersions.VERSION_082_MASTERY_PACK_SCOPED) {
-        try {
-            val masteryStore = MasteryStoreImpl(context)
-            val lessonStore = LessonStoreImpl(context)
-
-            val migrated = masteryStore.runV1ToV2Migration(
-                getInstalledPacks = { lessonStore.getInstalledPacks() },
-                getPackIdForLesson = { languageId, lessonId ->
-                    // Find which pack contains this lesson
-                    lessonStore.getInstalledPacks()
-                        .filter { it.languageId.value == languageId }
-                        .firstOrNull { pack ->
-                            lessonStore.getLessons(pack.packId.value, languageId)
-                                .any { it.id.value == lessonId }
-                        }
-                        ?.packId?.value
-                }
-            )
-            if (migrated) {
-                Log.i("AppRoot", "Successfully migrated mastery to pack-scoped keys")
-            } else {
-                Log.d("AppRoot", "Mastery already at pack-scoped schema, no migration needed")
-            }
-        } catch (e: Exception) {
-            Log.e("AppRoot", "Failed to migrate mastery to pack-scoped", e)
-            // Continue anyway - don't block app launch
-        }
-
-        configStore.setLastVersion(AppVersions.VERSION_082_MASTERY_PACK_SCOPED)
-    }
-}
 
 @Composable
 fun AppRoot() {
-    val context = LocalContext.current
-
     // Start session logging
     LaunchedEffect(Unit) {
         ScreenLogger.startSession("1.7")
         ScreenLogger.screenShown("STARTUP")
-    }
-
-    // Trigger migration on app launch
-    LaunchedEffect(Unit) {
-        checkAndMigrate(context)
     }
 
     val vm: TrainingViewModel = viewModel()

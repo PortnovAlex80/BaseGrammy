@@ -97,7 +97,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val streakStore = container.streakStore
     private val badSentenceStore = container.badSentenceStore
     private val hiddenCardStore = container.hiddenCardStore
-    private val vocabProgressStore = container.vocabProgressStore
+    private var vocabProgressStore = container.vocabProgressStore(null)
     private var wordMasteryStore = container.wordMasteryStore(null)
     private val packLessonProgressStore = container.packLessonProgressStore
     private val packDailyCursorStore = container.packDailyCursorStore()
@@ -125,10 +125,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     // ── Feature instances (declared before uiState combine chain) ──────────
 
     private val answerValidator = AnswerValidator()
-    private val vocabSprintRunner = VocabSprintRunner(
+    private var vocabSprintRunner = VocabSprintRunner(
         stateAccess = stateAccess,
         lessonStore = lessonStore,
-        vocabProgressStore = vocabProgressStore,
+        vocabProgressStoreProvider = { vocabProgressStore },
         answerValidator = answerValidator
     )
 
@@ -550,6 +550,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 // Initialize feature-owned state from persisted progress
                 bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
                 rebindWordMasteryStore(initialActivePackId?.value)
+                rebindVocabProgressStore(initialActivePackId?.value)
                 vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
                 dailyPracticeCoordinator.initializeCursor(progress.dailyCursor)
                 refreshDrillVisibility()
@@ -623,6 +624,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     }
                     refreshDrillVisibility()
                     rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
+                    rebindVocabProgressStore(_coreState.value.navigation.activePackId?.value)
                     vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
                     dailyPracticeCoordinator.resetState()
                     dailyPracticeCoordinator.initializeCursor()
@@ -687,6 +689,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // No pack selected yet — user must pick a pack before lessons load.
         // Previously auto-selected first pack — caused pack confusion.
         rebindWordMasteryStore(null)
+        rebindVocabProgressStore(null)
         _coreState.update {
             it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = null, activePackId = null, activePackLessonIds = emptyList()), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
@@ -731,6 +734,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val resolvedPackId = packId ?: lessonStore.getPackIdForLesson(lessonId)
         val packLessonIds = resolvedPackId?.let { lessonStore.getLessonIdsForPack(it) }
         rebindWordMasteryStore(resolvedPackId)
+        rebindVocabProgressStore(resolvedPackId)
 
         // Rebuild schedules BEFORE reading them (filtered to active pack)
         rebuildSchedules(filterLessonsForActivePack(_coreState.value.navigation.lessons))
@@ -866,6 +870,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         } else {
             // Drill-only pack — set activePackId without selecting a lesson
             rebindWordMasteryStore(packId)
+            rebindVocabProgressStore(packId)
             _coreState.update {
                 it.copy(navigation = it.navigation.copy(activePackId = com.alexpo.grammermate.data.PackId(packId), activePackLessonIds = emptyList(), selectedLessonId = null))
             }
@@ -1677,6 +1682,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Re-scope vocabProgressStore to the given packId.
+     * Must be called whenever activePackId changes so that vocab progress reads/writes
+     * go to the pack-scoped file. VocabSprintRunner uses a lambda provider so it
+     * automatically picks up the new store reference.
+     */
+    private fun rebindVocabProgressStore(packId: String?) {
+        vocabProgressStore = container.vocabProgressStore(packId)
+    }
+
+    /**
      * Refresh the vocab mastered count from the store.
      * Called when returning from VocabDrill to reflect updated mastery.
      */
@@ -2034,7 +2049,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
     private fun resetStores(app: Application) {
         progressTracker.resetStores(app)
-        vocabProgressStore.clear()
+        container.clearCache() // invalidate all cached stores including vocabProgressStore
         packDailyCursorStore.invalidateCache() // prevent stale cursor reads after disk deletion
         // Clear chapter progress for all packs
         lessonStore.getInstalledPacks().forEach { pack ->
@@ -2043,7 +2058,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
     private fun resetStoresForLanguage(app: Application, languageId: String) {
         progressTracker.resetStoresForLanguage(app, languageId)
-        vocabProgressStore.clearLanguage(languageId)
+        container.clearCache() // invalidate all cached stores including vocabProgressStore
         packDailyCursorStore.invalidateCache() // prevent stale cursor reads after disk deletion
         // Clear chapter progress for packs matching this language
         lessonStore.getInstalledPacks()
@@ -2056,11 +2071,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         progressTracker.resetDrillFiles(app)
         container.clearCache()
         rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
+        rebindVocabProgressStore(_coreState.value.navigation.activePackId?.value)
     }
     private fun resetDrillFilesForPack(app: Application, packId: String) {
         progressTracker.resetDrillFilesForPack(app, packId)
         container.clearCache()
         rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
+        rebindVocabProgressStore(_coreState.value.navigation.activePackId?.value)
     }
     private fun clearWordMastery() {
         wordMasteryStore.saveAll(emptyMap())

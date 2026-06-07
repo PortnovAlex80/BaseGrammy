@@ -20,7 +20,7 @@ class AppContainer(private val application: Application) {
     val streakStore: StreakStore by lazy { storeFactory.getStreakStore() }
     val badSentenceStore: BadSentenceStore by lazy { storeFactory.getBadSentenceStore() }
     val hiddenCardStore: HiddenCardStore by lazy { storeFactory.getHiddenCardStore() }
-    val vocabProgressStore: VocabProgressStore by lazy { storeFactory.getVocabProgressStore() }
+    fun vocabProgressStore(packId: String?): VocabProgressStore = storeFactory.getVocabProgressStore(packId)
     val profileStore: ProfileStore by lazy { storeFactory.getProfileStore() }
     val backupManager: BackupManager by lazy { BackupManagerImpl(application) }
     val ttsEngine: TtsEngine by lazy { TtsProvider.getInstance(application).ttsEngine }
