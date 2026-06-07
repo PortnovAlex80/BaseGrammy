@@ -543,7 +543,18 @@ fun AnswerBox(
             if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
-                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", state.cardSession.currentCard?.promptRu, speechLauncher, context, onBluetoothSetup, scope)
+                val rawPrompt = state.cardSession.currentCard?.promptRu
+                val cleanPrompt = rawPrompt?.let {
+                    HintCalculator.calculateEffectiveHints(
+                        promptRu = it,
+                        encounterCount = state.cardSession.encounterCount,
+                        hintLevel = state.cardSession.hintLevel,
+                        sessionOffset = state.cardSession.hintSessionOffset,
+                        isBossBattle = state.boss?.bossActive == true,
+                        isReviewMode = state.cardSession.isReviewMode
+                    )
+                }
+                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", cleanPrompt, speechLauncher, context, onBluetoothSetup, scope)
             }
         }
     }
