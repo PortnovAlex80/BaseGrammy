@@ -97,7 +97,9 @@ fun VocabDrillScreen(
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true,
     onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {}
+    onBluetoothCleanup: () -> Unit = {},
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -212,7 +214,9 @@ fun VocabDrillScreen(
                 isBadSentence = viewModel::isBadSentence,
                 onExportBadSentences = viewModel::exportBadSentences,
                 hintLevel = hintLevel,
-                textScale = textScale
+                textScale = textScale,
+                onClearBadSentences = onClearBadSentences,
+                badSentenceCount = badSentenceCount
             )
         }
     } else {
@@ -436,7 +440,9 @@ private fun VocabDrillCardScreen(
     isBadSentence: () -> Boolean = { false },
     onExportBadSentences: () -> String? = { null },
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    textScale: Float = 1.0f
+    textScale: Float = 1.0f,
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0
 ) {
     val card = session.cards.getOrElse(session.currentIndex) { return }
     val totalCards = session.cards.size
@@ -683,7 +689,9 @@ private fun VocabDrillCardScreen(
             },
             title = stringResource(R.string.vocab_word_options),
             shareText = reportText,
-            onShareQr = { showQrDialog = true }
+            onShareQr = { showQrDialog = true },
+            onClearBadSentences = onClearBadSentences,
+            badSentenceCount = badSentenceCount
         )
     }
     if (exportMessage != null) {

@@ -116,7 +116,9 @@ fun TrainingCardSession(
     hintLevel: HintLevel = HintLevel.EASY,
     isReviewMode: Boolean = false,
     clickableWordHints: Boolean = false,
-    baseDir: java.io.File? = null
+    baseDir: java.io.File? = null,
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0
 ) {
     // Local input text state managed by the composable
     var localInputText by remember { mutableStateOf("") }
@@ -229,7 +231,7 @@ fun TrainingCardSession(
             if (inputControls != null) {
                 scope.inputControls()
             } else {
-                DefaultInputControls(scope)
+                DefaultInputControls(scope, onClearBadSentences, badSentenceCount)
             }
         }
 
@@ -341,7 +343,7 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
  * across all card session modes (Training, VerbDrill, DailyPractice).
  */
 @Composable
-private fun DefaultInputControls(scope: TrainingCardSessionScope) {
+private fun DefaultInputControls(scope: TrainingCardSessionScope, onClearBadSentences: (() -> Unit)? = null, badSentenceCount: Int = 0) {
     val contract = scope.contract
     val hasCards = scope.currentCard != null
     val clipboardManager = LocalClipboardManager.current
@@ -372,7 +374,9 @@ private fun DefaultInputControls(scope: TrainingCardSessionScope) {
                 }
             },
             shareText = reportCard?.let { "${it.promptRu} — ${it.acceptedAnswers.joinToString(" / ")}" },
-            onShareQr = { showQrDialog = true }
+            onShareQr = { showQrDialog = true },
+            onClearBadSentences = onClearBadSentences,
+            badSentenceCount = badSentenceCount
         )
     }
     if (showQrDialog && reportCard != null) {

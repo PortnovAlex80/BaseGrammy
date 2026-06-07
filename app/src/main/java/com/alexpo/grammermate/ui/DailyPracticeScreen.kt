@@ -94,7 +94,9 @@ fun DailyPracticeScreen(
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true,
     onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {}
+    onBluetoothCleanup: () -> Unit = {},
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0
 ) {
     var hasShownCompletionSparkle by remember { mutableStateOf(false) }
     val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
@@ -188,7 +190,9 @@ fun DailyPracticeScreen(
                     textScale = textScale,
                     onComplete = onComplete,
                     onBluetoothSetup = onBluetoothSetup,
-                    onBluetoothCleanup = onBluetoothCleanup
+                    onBluetoothCleanup = onBluetoothCleanup,
+                    onClearBadSentences = onClearBadSentences,
+                    badSentenceCount = badSentenceCount
                 )
             }
         }
@@ -250,7 +254,9 @@ private fun ColumnScope.VocabFlashcardBlock(
     textScale: Float = 1.0f,
     onComplete: () -> Unit = {},
     onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {}
+    onBluetoothCleanup: () -> Unit = {},
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
     var showAnswer by remember(task.id) { mutableStateOf(false) }
@@ -388,7 +394,9 @@ private fun ColumnScope.VocabFlashcardBlock(
                 exportMessage = if (path != null) "Exported to $path" else "No bad sentences to export"
             },
             shareText = "${word.meaningRu ?: word.word} — ${word.word}",
-            onShareQr = { showQrDialog = true }
+            onShareQr = { showQrDialog = true },
+            onClearBadSentences = onClearBadSentences,
+            badSentenceCount = badSentenceCount
         )
     }
     if (showQrDialog) {

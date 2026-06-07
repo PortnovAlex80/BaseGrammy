@@ -856,7 +856,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             textScale = state.audio.ruTextScale,
                             voiceAutoStart = state.audio.voiceAutoStart,
                             onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
-                            onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded
+                            onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded,
+                            onClearBadSentences = vocabDrillVm::clearBadSentences,
+                            badSentenceCount = vocabDrillVm.getBadSentenceCount()
                         )
                     }
 
@@ -1334,7 +1336,9 @@ private fun DailyPracticeScreenContent(
         textScale = state.audio.ruTextScale,
         voiceAutoStart = state.audio.voiceAutoStart,
         onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
-        onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded
+        onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded,
+        onClearBadSentences = vm::clearPackBadSentences,
+        badSentenceCount = state.cardSession.badSentenceCount
     )
 }
 

@@ -534,6 +534,16 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         return file.absolutePath
     }
 
+    fun clearBadSentences() {
+        val packId = activePackId ?: return
+        badSentenceStore.clearPack(packId)
+    }
+
+    fun getBadSentenceCount(): Int {
+        val packId = activePackId ?: return 0
+        return badSentenceStore.getBadSentenceCount(packId)
+    }
+
     override fun onCleared() {
         super.onCleared()
     }
