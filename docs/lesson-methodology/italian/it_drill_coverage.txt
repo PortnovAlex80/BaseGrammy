@@ -1,0 +1,12499 @@
+
+2	non	adverbs	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+23	no	adverbs	
+
+
+
+
+
+
+
+
+
+
+34	bene	adverbs	
+35	qui	adverbs	
+
+
+
+39	solo	adverbs	
+
+
+
+
+
+
+
+
+
+
+50	fare	verbs	делать/выполнять/заставлять
+51	essere	verbs	быть/являться/существовать
+
+
+54	sì	adverbs	
+55	ora	adverbs	
+
+
+
+
+
+
+
+
+
+
+66	mai	adverbs	
+
+
+69	anche	adverbs	
+
+
+
+
+
+
+
+77	molto	adverbs	
+78	più	adverbs	
+
+
+
+
+
+
+
+
+
+
+
+90	prima	adverbs	
+
+
+
+
+
+
+
+
+99	davvero	adverbs	
+100	ancora	adverbs	
+
+
+
+
+105	così	adverbs	
+106	casa	nouns	дом/жилище/семья
+
+
+109	su	adverbs	
+
+
+
+
+
+115	dicere	verbs	говорить/сказать
+
+
+
+119	sempre	adverbs	
+
+
+122	andare	verbs	идти/ходить/отправляться
+
+
+
+
+
+128	forse	adverbs	
+
+130	proprio	adverbs	
+131	certo	adverbs	
+132	tempo	nouns	время/погода
+
+134	poi	adverbs	
+
+
+137	vita	nouns	жизнь
+
+
+
+
+142	fuori	adverbs	
+
+
+
+
+147	parte	nouns	часть/доля
+
+
+
+151	lavoro	nouns	работа/труд
+
+
+
+155	volta	nouns	раз/свод
+156	dopo	adverbs	
+157	adesso	adverbs	
+
+159	uomo	nouns	человек/мужчина
+160	padre	nouns	отец
+
+162	bisogno	nouns	нужда/потребность
+
+164	amico	nouns	друг/подруга
+
+
+
+
+
+
+171	signore	nouns	господин/синьор
+172	meglio	adverbs	
+173	cazzo	nouns	хуй/член
+
+
+
+
+178	giorno	nouns	день
+
+180	modo	nouns	способ/манера
+
+182	vedere	verbs	видеть/смотреть/понимать
+
+
+
+
+
+
+189	parlare	verbs	говорить/разговаривать/беседовать
+
+191	mamma	nouns	мама/мамочка
+192	già	adverbs	
+
+
+195	troppo	adverbs	
+
+
+
+
+200	male	adverbs	
+201	madre	nouns	мать
+
+203	tanto	adverbs	
+204	favore	nouns	одолжение/услуга/польза
+205	successo	nouns	успех
+
+
+
+
+
+
+212	avere	verbs	иметь/обладать
+
+
+
+
+
+218	momento	nouns	момент/мгновение
+
+
+
+
+
+
+225	tipo	nouns	тип/парень
+
+
+
+
+230	appena	adverbs	
+
+
+
+234	sapere	verbs	знать/уметь
+
+236	oggi	adverbs	
+
+
+239	idea	nouns	идея/мысль
+
+
+
+243	figlio	nouns	сын/дочь/ребёнок
+244	accordo	nouns	соглашение/аккорд
+245	gente	nouns	люди/народ
+
+
+
+
+250	dentro	adverbs	
+
+
+253	caso	nouns	случай/падеж
+254	forza	nouns	сила/войска
+
+
+
+
+
+260	nome	nouns	имя/название
+
+262	problema	nouns	проблема
+
+
+
+266	mondo	nouns	мир/свет
+
+
+
+
+271	donna	nouns	женщина/жена
+272	stare	verbs	стоять/находиться/оставаться
+
+274	insieme	adverbs	
+
+276	ragazza	nouns	девушка/девочка
+277	subito	adverbs	
+278	famiglia	nouns	семья
+279	ragazzo	nouns	парень/девушка/ребёнок
+
+
+
+
+
+285	ragione	nouns	разум/причина/правота
+
+
+
+289	notte	nouns	ночь
+
+291	testa	nouns	голова
+
+293	tesoro	nouns	сокровище/клад
+
+
+
+
+
+
+
+
+
+
+
+
+306	prendere	verbs	брать/взять/принимать
+
+
+
+310	moglie	nouns	жена
+
+312	storia	nouns	история/рассказ
+
+
+
+
+317	persona	nouns	человек/личность/лицо
+
+319	meno	adverbs	
+
+321	avanti	adverbs	
+
+
+324	venire	verbs	приходить/прибывать/наступать
+325	polizia	nouns	полиция
+326	lì	adverbs	
+
+
+329	mentre	adverbs	
+
+
+
+
+334	fine	nouns	конец/цель
+335	aiuto	nouns	помощь
+336	paura	nouns	страх
+337	fratello	nouns	брат
+
+
+
+341	domani	adverbs	
+
+343	abbastanza	adverbs	
+344	capo	nouns	голова/начальник/шеф
+345	amore	nouns	любовь
+
+
+
+349	piano	nouns	план/этаж/пианино
+350	macchina	nouns	машина/автомобиль
+351	trovare	verbs	находить/обнаруживать/отыскивать
+352	comunque	adverbs	
+
+
+355	nemmeno	adverbs	
+356	mano	nouns	рука
+
+358	presto	adverbs	
+
+360	merda	nouns	дерьмо/говно
+
+362	bambino	nouns	ребёнок/мальчик/девочка
+
+
+365	tornare	verbs	возвращаться/вернуться
+
+
+
+
+370	neanche	adverbs	
+371	sera	nouns	вечер
+372	giro	nouns	круг/прогулка/оборот
+
+
+375	qua	adverbs	
+
+
+378	anno	nouns	год
+
+380	diavolo	nouns	чёрт/дьявол
+381	quasi	adverbs	
+
+
+
+
+
+
+
+389	colpa	nouns	вина
+390	punto	nouns	точка/пункт
+
+
+
+
+
+396	invece	adverbs	
+
+
+
+
+
+
+403	Papa	nouns	папа/Папа Римский
+404	almeno	adverbs	
+
+
+
+
+
+410	magari	adverbs	
+
+412	terra	nouns	земля
+
+414	strada	nouns	дорога/улица
+
+
+
+
+
+420	settimana	nouns	неделя
+
+422	uscire	verbs	выходить/покидать
+
+424	papà	nouns	папа/папочка
+
+
+
+
+
+
+
+432	scuola	nouns	школа
+
+
+
+
+
+
+
+440	importare	verbs	импортировать/ввозить
+441	indietro	adverbs	
+
+443	sangue	nouns	кровь
+
+
+
+447	traduzione	nouns	перевод
+448	tardi	adverbs	
+449	cuore	nouns	сердце
+
+
+
+453	ieri	adverbs	
+
+
+
+
+
+
+
+
+
+
+
+
+
+467	pensare	verbs	думать/мыслить/обдумывать
+
+
+470	numero	nouns	номер/число
+471	veramente	adverbs	
+
+
+
+
+
+477	entrare	verbs	входить/поступать
+
+
+
+
+482	acqua	nouns	вода
+
+484	stanza	nouns	комната
+
+
+
+
+
+490	roba	nouns	вещь/штука
+491	agente	nouns	агент
+
+493	corpo	nouns	тело,корпус
+494	pare	verbs	казаться/представляться
+495	sentire	verbs	чувствовать/слышать/ощущать
+496	foto	nouns	фото/фотография
+497	telefono	nouns	телефон
+
+499	poco	adverbs	
+
+
+502	vicino	adverbs	
+
+504	sacco	nouns	мешок/сумка
+
+506	capire	verbs	понимать/соображать/осознавать
+
+
+
+
+
+
+
+
+
+516	festa	nouns	праздник/вечеринка
+517	senso	nouns	смысл/чувство/направление
+
+
+520	dare	verbs	давать/отдавать/передавать
+521	attimo	nouns	мгновение/момент
+522	sorella	nouns	сестра
+
+
+525	film	nouns	фильм
+
+527	ufficio	nouns	офис/контора
+
+
+
+
+532	morire	verbs	умирать/погибать
+
+
+535	domandare	verbs	спрашивать/просить
+
+537	guerra	nouns	война
+538	dottore	nouns	доктор/врач
+
+
+541	vivere	verbs	жить/проживать/существовать
+
+543	prova	nouns	проба/испытание/доказательство
+
+545	ricordo	nouns	воспоминание/память
+
+
+
+549	paio	nouns	пара
+550	conto	nouns	счёт/учёт
+551	perdere	verbs	терять/утратить/проигрывать
+
+
+
+555	mezzo	nouns	средство/половина
+556	lavorare	verbs	работать/трудиться
+
+558	esattamente	adverbs	
+559	squadra	nouns	команда
+
+
+
+563	faro	nouns	маяк/фара
+
+
+566	parola	nouns	слово
+
+
+569	motivo	nouns	причина/мотив
+
+571	cavolo	nouns	капуста/чёрт
+572	capitano	nouns	капитан
+
+
+
+
+577	gioco	nouns	игра
+
+
+580	mente	nouns	разум/ум
+581	mangiare	verbs	есть/кушать/поедать
+582	resto	nouns	остаток/сдача
+583	credere	verbs	верить/полагать/доверять
+584	fortuna	nouns	удача/счастье/фортуна
+
+
+
+588	là	adverbs	
+
+
+591	passare	verbs	проходить/проводить/миновать
+592	cena	nouns	ужин
+
+
+595	controllo	nouns	контроль/проверка
+
+
+
+
+
+
+
+603	tizio	nouns	тип/парень
+
+605	sicurezza	nouns	безопасность/уверенность
+
+
+
+609	matrimonio	nouns	брак/свадьба
+
+
+
+613	culo	nouns	задница/удача
+614	fuoco	nouns	огонь/пожар
+615	cercare	verbs	искать/разыскивать/стремиться
+616	pistola	nouns	пистолет
+
+618	re	nouns	король
+619	mandato	nouns	мандат/полномочие
+
+
+
+623	inizio	nouns	начало
+
+625	causa	nouns	причина/дело/повод
+626	voglia	nouns	желание/охота
+627	mettere	verbs	класть/ставить/помещать
+
+629	uccidere	verbs	убивать/умерщвлять
+
+
+
+
+634	sesso	nouns	пол/секс
+
+
+
+638	presidente	nouns	президент/председатель
+639	città	nouns	город
+640	citta	nouns	город
+
+642	ospedale	nouns	больница
+
+
+
+
+
+648	attenzione	nouns	внимание
+
+650	bere	verbs	пить/выпивать
+651	situazione	nouns	ситуация/положение
+652	omicidio	nouns	убийство
+653	revisione	nouns	ревизия/пересмотр/проверка
+
+
+656	cura	nouns	забота/уход/лечение
+657	durante	adverbs	
+
+
+660	lasciare	verbs	оставлять/покидать/позволять
+
+
+
+
+
+666	paese	nouns	страна/деревня
+
+
+
+
+671	pace	nouns	мир
+
+673	musica	nouns	музыка
+
+
+
+677	libro	nouns	книга
+
+
+680	divenire	verbs	становиться/стать
+
+682	sbagliato	adjectives	неправильный/ошибочный
+
+
+
+
+
+688	scelta	nouns	выбор
+
+690	portare	verbs	носить/нести/привозить
+691	assolutamente	adverbs	
+
+
+
+
+
+
+
+
+700	prigione	nouns	тюрьма
+
+
+
+704	aspettare	verbs	ждать/ожидать/дожидаться
+
+706	arrivare	verbs	прибывать/приходить/достигать
+
+
+709	avvocato	nouns	адвокат
+
+
+712	messaggio	nouns	сообщение
+713	dormire	verbs	спать/дремать
+
+
+716	usare	verbs	использовать/применять/употреблять
+
+718	cielo	nouns	небо
+719	guardare	verbs	смотреть/глядеть/рассматривать
+720	bagno	nouns	ванна/баня/купание
+721	aria	nouns	воздух/вид
+722	voce	nouns	голос/слух
+
+
+725	giù	adverbs	
+
+
+
+
+730	cane	nouns	собака
+731	restare	verbs	оставаться/остаться
+732	chiamare	verbs	звать/называть/вызывать
+
+734	campo	nouns	поле/лагерь
+735	luce	nouns	свет
+
+
+738	giovane	adjectives	молодой
+
+
+741	provare	verbs	испытывать/пробовать/чувствовать
+742	minuto	nouns	минута
+
+744	lontano	adverbs	
+745	gruppo	nouns	группа
+
+747	arrivo	nouns	прибытие/приход
+
+749	realta	nouns	реальность/действительность
+
+751	passo	nouns	шаг
+
+
+
+
+
+
+758	onore	nouns	честь
+759	aiutare	verbs	помогать/способствовать
+760	verità	nouns	правда/истина
+
+
+
+
+
+
+
+
+
+770	cibo	nouns	еда/пища
+771	fretta	nouns	спешка/торопливость
+
+
+
+
+776	solito	adjectives	обычный/привычный
+
+
+779	incidente	nouns	инцидент/происшествие/авария
+
+
+782	intenzione	nouns	намерение
+
+784	cambiare	verbs	менять/изменять/переменить
+
+786	Camera	nouns	комната/палата
+
+
+
+790	riguardo	nouns	отношение/уважение/касательно
+
+792	aspetto	nouns	аспект/внешность/вид
+793	viaggio	nouns	путешествие/поездка
+
+
+796	bocca	nouns	рот
+
+
+
+800	giocare	verbs	играть/сыграть
+801	ordine	nouns	порядок/приказ
+
+
+804	finire	verbs	заканчивать/завершать/кончать
+
+
+
+
+
+810	occhio	nouns	глаз
+
+
+813	mattina	nouns	утро
+
+
+816	sistema	nouns	система
+
+818	fondo	nouns	фонд/дно/основа
+
+
+
+
+
+
+825	potere	verbs	мочь/иметь возможность
+
+
+
+
+
+831	mese	nouns	месяц
+832	chiedere	verbs	спрашивать/просить/запрашивать
+
+
+
+836	controllare	verbs	контролировать/проверять
+837	appuntamento	nouns	встреча/свидание/приём
+
+
+
+841	detective	nouns	детектив/сыщик
+
+
+844	grado	nouns	степень/звание/градус
+
+846	nave	nouns	корабль/судно
+
+
+
+
+851	stronzo	nouns	подонок/мудак
+
+853	pezzo	nouns	кусок/часть
+854	segreto	adjectives	секретный/тайный
+855	colpo	nouns	удар
+
+
+858	porto	nouns	порт
+
+860	completamente	adverbs	
+
+
+
+
+
+
+
+
+869	ormai	adverbs	
+870	interessare	verbs	интересовать/занимать
+871	generale	adjectives	общий/главный
+
+873	tenere	verbs	держать/удерживать/сохранять
+874	pazzo	adjectives	сумасшедший/безумный
+875	vittima	nouns	жертва
+
+877	consiglio	nouns	совет
+
+
+
+881	zio	nouns	дядя
+882	centro	nouns	центр/середина
+883	specie	nouns	вид/порода
+
+885	sogno	nouns	сон/мечта
+
+
+
+
+
+
+
+893	sole	nouns	солнце
+
+895	legge	nouns	закон
+896	spesso	adverbs	
+
+
+899	scena	nouns	сцена
+
+
+
+
+
+
+
+
+908	incontro	nouns	встреча
+
+
+911	rapporto	nouns	отношение/отчёт/связь
+912	errore	nouns	ошибка
+
+
+915	pagare	verbs	платить/оплачивать/уплачивать
+
+
+918	risposta	nouns	ответ
+
+920	servizio	nouns	служба/сервис/услуга
+921	medico	nouns	врач
+
+
+
+925	schifo	nouns	отвращение/мерзость
+
+927	dolore	nouns	боль/страдание
+
+
+
+
+
+933	addio	nouns	прощание
+
+
+
+
+
+
+
+941	realtà	nouns	реальность/действительность
+
+
+
+
+946	programma	nouns	программа
+
+
+
+
+
+
+
+954	posizione	nouns	позиция/положение
+
+956	rimanere	verbs	оставаться/пребывать
+957	compagnia	nouns	компания/общество
+
+
+
+
+
+
+
+
+
+
+
+969	ritardo	nouns	задержка/опоздание
+
+971	bar	nouns	бар
+
+973	fallo	nouns	нарушение/фол
+
+
+
+
+978	studio	nouns	изучение/студия/исследование
+
+980	arma	nouns	оружие
+
+
+
+
+
+
+
+
+
+
+991	video	nouns	видео
+
+
+994	grosso	adverbs	
+
+
+997	chiave	nouns	ключ/клавиша/гайк
+998	cervello	nouns	мозг
+999	coraggio	nouns	храбрость/смелость/мужество
+
+1001	peccato	nouns	грех/жаль
+1002	questione	nouns	вопрос/проблема/дел
+1003	adorare	verbs	обожать/поклоняться
+1004	aereo	nouns	самолёт
+
+
+1007	salare	verbs	солить/подсаливать
+1008	base	nouns	база/основа/баз
+
+
+
+
+1013	compleanno	nouns	день рождения
+
+1015	relazione	nouns	отношения/связь/доклад
+1016	cliente	nouns	клиент/покупатель
+
+
+
+
+
+1022	diritto	nouns	право/правая сторон
+
+1024	appartamento	nouns	квартира
+1025	pranzo	nouns	обед
+
+1027	denaro	nouns	деньги
+
+1029	continuare	verbs	продолжать/продолжаться
+
+
+1032	vestito	nouns	платье/одежда
+1033	carta	nouns	бумага/карта/карт
+
+1035	dottoresse	nouns	врач/докторша
+1036	bastardo	nouns	ублюдок/бастард
+
+1038	iniziare	verbs	начинать/приступать
+
+
+
+1042	zona	nouns	зона/район
+
+1044	intendere	verbs	понимать/иметь в виду/намереваться
+1045	negozio	nouns	магазин
+
+
+
+1049	tv	nouns	телевизор
+1050	spazio	nouns	пространство/мест
+
+1052	notizia	nouns	новость
+
+1054	linea	nouns	линия/строка
+
+1056	riguardare	verbs	касаться/относиться к/рассматривать
+
+
+
+1060	poliziotto	nouns	полицейский
+1061	scappare	verbs	убегать/сбежать/ускользать
+1062	fronte	nouns	фронт/лоб
+
+
+
+1066	silenzio	nouns	тишина/молчание
+
+
+
+
+1071	calma	nouns	спокойствие
+1072	santo	nouns	святой
+1073	ricerca	nouns	поиск/исследование
+1074	pena	nouns	наказание/страдание/жаль
+
+
+
+1078	scoprire	verbs	открывать/обнаруживать/раскрывать
+
+
+1081	luogo	nouns	место
+1082	lettera	nouns	письмо/буква
+
+1084	salvare	verbs	спасать/сохранять/спасаться
+1085	canzone	nouns	песня
+
+
+
+
+
+1091	regalo	nouns	подарок
+
+
+
+
+
+
+1098	missione	nouns	миссия/задание
+1099	test	nouns	тест/проверка
+1100	salute	nouns	здоровье
+
+
+
+1104	computer	nouns	компьютер
+
+
+
+1108	contatto	nouns	контакт
+1109	pericolo	nouns	опасность
+
+
+
+
+
+
+
+
+
+
+
+1121	guardia	nouns	охрана/стража/караул
+
+
+1124	possibilita	nouns	возможность
+
+
+1127	casino	nouns	путаница/бардак/бордель
+1128	buonanotte	nouns	спокойной ночи
+
+
+
+
+
+
+
+
+
+
+1139	ballo	nouns	танец
+
+1141	birra	nouns	пиво
+
+1143	club	nouns	клуб
+
+
+1146	governo	nouns	правительство
+
+1148	oro	nouns	золото
+
+1150	cucina	nouns	кухня
+1151	decisione	nouns	решение
+1152	anima	nouns	душа
+
+
+1155	esempio	nouns	пример
+
+1157	occasione	nouns	случай/возможность/повод
+1158	stanotte	adverbs	
+
+1160	droga	nouns	наркотик
+1161	possibilità	nouns	возможность
+
+
+
+
+1166	borsa	nouns	сумка/биржа/стипендия
+
+
+1169	nonno	nouns	дедушка
+
+1171	attacco	nouns	атака/приступ
+
+
+
+
+
+
+1178	comprare	verbs	покупать/купить/приобретать
+1179	inferno	nouns	ад
+
+
+1182	regina	nouns	королева
+
+
+
+1186	braccio	nouns	рука/ветвь
+
+
+1189	crimine	nouns	преступление
+
+1191	chiesa	nouns	церковь
+
+1193	tenente	nouns	лейтенант
+
+1195	scrivere	verbs	писать/написать
+
+1197	paziente	nouns	пациент/больной
+
+
+1200	livello	nouns	уровень
+
+
+
+
+
+1206	spettacolo	nouns	спектакль/зрелище
+
+1208	visita	nouns	визит/посещение
+
+
+
+
+
+1214	sinistra	nouns	лево/левая сторона
+
+1216	processo	nouns	процесс/суд/судебный процесс
+
+1218	direttore	nouns	директор/руководитель
+
+
+
+
+1223	classe	nouns	класс
+
+1225	cambio	nouns	смена/обмен
+
+
+
+1229	tavolo	nouns	стол
+1230	stagione	nouns	сезон/время года
+
+
+1233	dannazione	nouns	проклятие/погибель
+1234	cavallo	nouns	лошадь/конь
+1235	sergente	nouns	сержант
+
+1237	rotto	adjectives	сломанный
+
+1239	episodio	nouns	эпизод
+1240	rispondere	verbs	отвечать/ответить/реагировать
+
+1242	conoscere	verbs	знать/познакомиться/узнавать
+1243	inglese	adjectives	английский
+1244	volo	nouns	полёт/рейс
+
+
+1247	differenza	nouns	разница/различие
+
+
+
+
+1252	codice	nouns	код
+
+1254	hotel	nouns	отель/гостиница
+
+
+
+
+
+1260	carne	nouns	мясо
+
+
+
+
+
+
+
+
+
+
+
+
+1273	pelle	nouns	кожа
+
+
+1276	leggere	verbs	читать/прочитывать
+1277	comandante	nouns	командир
+
+
+1280	pomeriggio	nouns	вечер/после обеда
+
+
+1283	giudice	nouns	судья
+1284	mostro	nouns	монстр/чудовище
+
+1286	luna	nouns	луна
+
+
+
+
+1291	affare	nouns	дело/сделка/бизнес
+1292	figliolo	nouns	сынок/сын
+
+1294	vino	nouns	вино
+
+
+
+
+1299	caffè	nouns	кофе
+1300	barca	nouns	лодка
+1301	maledizione	nouns	проклятие
+
+
+1304	lezione	nouns	урок/лекция
+
+
+1307	partire	verbs	уезжать/отправляться/уходить
+
+
+
+
+1312	nord	nouns	север
+
+
+
+
+1317	congratulazione	nouns	поздравление
+
+
+
+1321	sembrare	verbs	казаться/представляться
+1322	treno	nouns	поезд
+1323	radio	nouns	радио
+
+
+1326	cattivo	adjectives	плохой/злой
+
+1328	smettere	verbs	прекращать/переставать/бросать
+
+
+
+
+
+
+
+1336	farcela	verbs	справляться/успевать/выдерживать
+1337	bomba	nouns	бомба
+
+
+
+
+
+
+1344	periodo	nouns	период/срок
+1345	energia	nouns	энергия
+1346	segno	nouns	знак/признак/отметина
+
+
+
+
+
+
+
+
+
+1356	speranza	nouns	надежда
+1357	rischio	nouns	риск
+
+
+1360	soprattutto	adverbs	
+1361	combattere	verbs	бороться/сражаться/воевать
+
+1363	operazione	nouns	операция
+1364	zia	nouns	тётя
+
+1366	gamba	nouns	нога
+1367	biglietto	nouns	билет
+
+1369	ufficiale	adjectives	официальный
+
+1371	vincere	verbs	побеждать/выигрывать
+
+1373	pressione	nouns	давление
+
+
+1376	nascosto	adjectives	спрятанный/скрытый
+1377	maestro	nouns	учитель/мастер
+
+
+
+
+1382	offerta	nouns	предложение/оферта
+
+
+
+
+1387	finta	adjectives	поддельный/фальшивый
+1388	testimone	nouns	свидетель
+
+
+1391	aprire	verbs	открывать/открыть/начинать
+
+
+1394	indirizzo	nouns	адрес
+
+1396	ottenere	verbs	получать/достигать/добиваться
+
+
+1399	esperienza	nouns	опыт
+
+
+
+1403	piangere	verbs	плакать/рыдать/горевать
+
+
+
+
+
+
+1410	sud	nouns	юг
+
+
+
+1414	pianeta	nouns	планета
+
+1416	inoltre	adverbs	
+1417	serie	nouns	серия/ряд
+
+
+
+
+
+
+1424	prezzo	nouns	цена
+
+
+
+
+
+
+1431	ritorno	nouns	возвращение/возврат
+
+
+
+
+
+1437	passaggio	nouns	проход/переход
+1438	imparare	verbs	учить/учиться/изучать
+1439	progetto	nouns	проект
+1440	danno	nouns	ущерб,вред,повреждение
+
+
+1443	ragazzino	nouns	мальчик/девочка/ребёнок
+
+
+
+1447	mossare	verbs	двигать/шевелить
+1448	finestra	nouns	окно
+1449	supporre	verbs	предполагать/допускать/полагать
+1450	destino	nouns	судьба/рок
+
+1452	saltare	verbs	прыгать/пропускать/прыгнуть
+1453	correre	verbs	бежать/бегать/течь
+
+1455	edificio	nouns	здание
+1456	colazione	nouns	завтрак
+1457	collo	nouns	шея/горлышко
+1458	difesa	nouns	защита
+
+
+1461	fiducia	nouns	доверие
+
+
+
+
+
+1467	ristorante	nouns	ресторан
+
+1469	laboratorio	nouns	лаборатория
+1470	scegliere	verbs	выбирать/подбирать
+1471	comando	nouns	команда/управление
+
+1473	arte	nouns	искусство
+1474	meta	nouns	цель/финиш
+1475	discorso	nouns	речь/выступление
+
+
+1478	segnale	nouns	сигнал/знак
+
+
+
+1482	carriera	nouns	карьера
+
+1484	cominciare	verbs	начинать/начать/приступать
+1485	muro	nouns	стена
+
+
+
+1489	proteggere	verbs	защищать/охранять/оберегать
+
+1491	dubbio	nouns	сомнение
+
+1493	stazione	nouns	станция
+1494	emergenza	nouns	чрезвычайная ситуация
+1495	giustiziare	verbs	казнить/приводить в исполнение приговор
+
+1497	odore	nouns	запах
+
+
+1500	ascoltere	verbs	слушать/прослушивать
+
+
+1503	preoccupare	verbs	беспокоить/волновать/тревожить
+
+
+
+1507	battaglia	nouns	битва/сражение
+
+
+
+
+1512	sceriffo	nouns	шериф
+
+1514	evitare	verbs	избегать/уклоняться/миновать
+1515	spirito	nouns	дух
+
+
+
+1519	lingua	nouns	язык
+1520	dipartimento	nouns	департамент/отдел
+
+
+
+1524	riunione	nouns	собрание/встреча
+
+1526	rumore	nouns	шум
+1527	torta	nouns	торт/пирог
+
+
+
+1531	eroe	nouns	герой
+1532	turno	nouns	очередь/смена
+
+
+
+
+
+
+
+
+
+
+
+1544	furgone	nouns	фургон
+
+1546	coppia	nouns	пара/супружеская пара
+1547	ridere	verbs	смеяться/засмеяться/хохотать
+
+1549	pausa	nouns	пауза/перерыв
+
+
+
+1553	memoria	nouns	память
+
+
+
+
+1558	naso	nouns	нос
+
+1560	nemico	nouns	враг/неприятель
+
+1562	chiudere	verbs	закрывать/закрывать на ключ
+
+1564	colonnello	nouns	полковник
+1565	palla	nouns	мяч/шар
+
+
+
+1569	costare	verbs	стоить/обходиться
+
+
+1572	scatola	nouns	коробка
+
+1574	albero	nouns	дерево
+
+1576	tribunale	nouns	суд/трибунал
+1577	razza	nouns	порода/раса
+1578	anello	nouns	кольцо
+
+
+1581	piede	nouns	нога/ступня
+1582	ferita	adjectives	раненый/повреждённый
+
+
+
+
+
+1588	arresto	nouns	арест/остановка
+
+
+
+1592	soldato	nouns	солдат
+1593	natura	nouns	природа
+
+
+
+
+1598	colore	nouns	цвет
+
+1600	uso	nouns	использование/употребление
+1601	don	nouns	дон/господин
+1602	anzi	adverbs	
+
+
+
+1606	preferire	verbs	предпочитать/отдавать предпочтение
+
+1608	utile	adjectives	полезный
+
+
+1611	sparare	verbs	стрелять/выстрелить
+
+
+
+1615	ascoltare	verbs	слушать/прослушивать
+
+1617	decidere	verbs	решать/определять
+1618	professore	nouns	профессор/преподаватель
+1619	fidanzare	verbs	обручаться/помолвиться
+1620	sensazione	nouns	ощущение/чувство
+
+
+
+1624	compito	nouns	задание/задача
+
+
+
+
+
+
+
+1632	pesce	nouns	рыба
+
+
+1635	obiettivo	nouns	цель
+1636	incontrare	verbs	встречать/встретиться/сталкиваться
+
+
+
+
+1641	accesso	nouns	доступ
+
+1643	risolvere	verbs	решать/разрешать/улаживать
+1644	isola	nouns	остров
+
+
+
+1648	affrontare	verbs	сталкиваться/противостоять/решаться
+
+1650	opera	nouns	произведение/опера/труд
+
+
+1653	ballare	verbs	танцевать/плясать
+1654	bacio	nouns	поцелуй
+
+
+1657	bordo	nouns	край/бортик
+1658	sbaglio	nouns	ошибка
+
+1660	verde	adjectives	зелёный
+
+
+
+
+1665	fianco	nouns	бок/бедро
+
+1667	accettare	verbs	принимать/принять/соглашаться
+1668	metà	nouns	половина
+
+1670	peso	nouns	вес
+
+1672	stile	nouns	стиль
+1673	corsa	nouns	бег/забег
+
+1675	soluzione	nouns	решение
+
+
+
+
+1680	fermare	verbs	останавливать/остановить/задерживать
+1681	retro	nouns	задняя часть/ретро
+
+1683	guidare	verbs	водить/управлять/руководить
+
+1685	mandare	verbs	посылать/отправлять/направлять
+
+
+
+
+
+
+
+1693	dipendere	verbs	зависеть/находиться в зависимости
+
+1695	scopo	nouns	цель/намерение
+1696	coltello	nouns	нож
+
+1698	fila	nouns	очередь/ряд
+1699	magia	nouns	магия/волшебство
+1700	effetto	nouns	эффект/действие
+1701	procuratore	nouns	прокурор/поверенный
+1702	ricordare	verbs	помнить/вспоминать/напоминать
+
+1704	dna	nouns	ДНК
+1705	vendere	verbs	продавать/продать/торговать
+1706	pantalone	nouns	брюки/штаны
+
+
+1709	azione	nouns	действие/акция/доля
+1710	principe	nouns	принц
+1711	cadavere	nouns	труп
+
+1713	fede	nouns	вера/кольцо
+1714	nipote	nouns	внук/внучка/племянник
+
+
+
+
+
+
+
+1722	stampare	verbs	печатать/распечатывать
+
+1724	assistente	nouns	помощник
+
+
+
+
+1729	ridicolo	adjectives	смешной/нелепый
+
+
+
+
+
+
+
+
+
+
+
+1741	taxi	nouns	такси
+
+1743	creare	verbs	создавать/создать/творить
+
+
+
+1747	angolo	nouns	угол/уголок
+
+
+
+1751	malattia	nouns	болезнь
+1752	gatto	nouns	кот
+
+
+
+1756	estate	nouns	лето
+1757	scomparsa	nouns	исчезновение/пропажа
+
+
+
+
+
+
+
+1765	schiena	nouns	спина
+1766	sindaco	nouns	мэр
+
+
+1769	campagna	nouns	деревня/кампания
+
+
+
+1773	seguire	verbs	следовать/сопровождать/преследовать
+
+
+1776	coglione	nouns	дурак/придурок
+
+
+
+
+
+
+
+
+1785	importanza	nouns	важность
+
+
+1788	particolare	adjectives	особенный/отдельный
+
+
+1791	mantenere	verbs	поддерживать/сохранять/содержать
+
+1793	richiesta	nouns	запрос/просьба
+1794	parecchio	adverbs	
+
+
+
+
+1799	faccenda	nouns	дело/вопрос
+1800	vento	nouns	ветер
+1801	immaginare	verbs	воображать/представлять
+1802	dimenticare	verbs	забывать/позабыть
+1803	matto	nouns	сумасшедший/безумный
+
+
+1806	campione	nouns	чемпион/образец
+
+
+
+
+
+
+
+
+
+
+
+
+1819	valore	nouns	ценность/значение
+
+1821	salire	verbs	подниматься/взбираться/заходить
+
+1823	riuscire	verbs	удаваться/преуспевать/смочь
+1824	spiegare	verbs	объяснять/пояснять/разъяснять
+
+
+
+
+1829	zitta	adjectives	тихий/молчаливый
+
+
+1832	bellezza	nouns	красота
+
+
+
+1836	rilassare	verbs	расслаблять/расслабиться/успокаивать
+1837	buco	nouns	дыра/дырка
+1838	conversazione	nouns	беседа
+
+
+
+1842	pensiero	nouns	мысль/мышление
+
+
+1845	conoscenza	nouns	знание/знакомство
+
+1847	malato	adjectives	больной
+
+1849	sedia	nouns	стул
+
+
+
+
+
+1855	sistemare	verbs	устраивать/налаживать/размещать
+
+
+1858	succedere	verbs	случаться/происходить/преемствовать
+
+
+1861	ghiaccio	nouns	лёд
+
+1863	bottiglia	nouns	бутылка
+
+1865	indagine	nouns	расследование/исследование
+
+
+
+
+
+
+1872	tiro	nouns	выстрел/бросок
+1873	cadere	verbs	падать/упасть/выпадать
+
+
+1876	sguardo	nouns	взгляд
+
+1878	milione	nouns	миллион
+1879	camminare	verbs	идти пешком/гулять/шагать
+
+
+1882	pratica	nouns	практика/дело
+
+
+1885	villaggio	nouns	деревня
+
+1887	fantasma	nouns	призрак
+
+
+
+
+1892	ispettore	nouns	инспектор
+1893	teoria	nouns	теория
+
+1895	dovere	verbs	долженствовать/быть должным
+1896	camion	nouns	грузовик
+1897	parco	nouns	парк/стоянка
+1898	palazzo	nouns	дворец/здание
+1899	privare	verbs	лишать/отнимать/обделять
+
+
+
+
+
+
+
+1907	area	nouns	область/зона
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1923	pista	nouns	трасса/дорожка
+
+1925	desiderio	nouns	желание/мечта
+
+1927	mentere	verbs	лгать/врать/обманывать
+1928	ubriaco	adjectives	пьяный
+1929	angelo	nouns	ангел
+1930	tradurre	verbs	переводить/перевести/толмачить
+
+1932	popolo	nouns	народ
+
+
+
+
+1937	infermiera	nouns	медсестра
+1938	altezza	nouns	высота
+
+
+1941	età	nouns	возраст/эпоха
+
+
+1944	genio	nouns	гений/гений
+
+
+1947	cinema	nouns	кино/кинотеатр
+
+
+1950	tetto	nouns	крыша/потолок
+
+1952	stella	nouns	звезда/звёздочка
+
+
+
+
+1957	suono	nouns	звук/звучание
+
+
+
+
+
+1963	internet	nouns	интернет
+
+
+1966	occupato	adjectives	занятый
+
+1968	cancro	nouns	рак/опухоль
+
+
+
+1972	compagno	nouns	товарищ/спутник
+1973	merito	nouns	заслуга/достоинство
+1974	società	nouns	общество/компания
+
+
+1977	spada	nouns	меч
+
+1979	scendere	verbs	спускаться/сходить/понижаться
+
+
+
+
+
+
+
+
+
+
+
+
+1992	autobus	nouns	автобус
+
+1994	vuoto	adjectives	пустой
+
+
+
+1998	azienda	nouns	фирма/предприятие
+
+2000	pollo	nouns	курица
+2001	spiaggia	nouns	пляж/берег
+
+2003	rotta	nouns	маршрут/курс
+
+2005	telefonata	nouns	звонок/телефонный вызов
+
+
+
+
+2010	liceo	nouns	лицей
+2011	rosa	adjectives	розовый
+
+2013	innamorare	verbs	влюблять/влюбляться/очаровывать
+2014	doccia	nouns	душ
+
+
+2017	stancare	verbs	утомлять/уставать/надоедать
+
+
+
+
+2022	gara	nouns	соревнование/гонка
+
+2024	orologio	nouns	часы/часы
+
+
+2027	erba	nouns	трава/зелень
+2028	viso	nouns	лицо/лик
+
+
+
+
+2033	distanza	nouns	расстояние
+
+2035	maledire	verbs	проклинать/проклясть/хулить
+
+
+2038	universo	nouns	вселенная
+2039	esame	nouns	экзамен/обследование
+
+
+
+
+
+
+
+2047	cappello	nouns	шляпа
+2048	pagina	nouns	страница
+
+2050	giardino	nouns	сад
+
+
+
+2054	taglio	nouns	разрез/стрижка
+
+
+2057	killer	nouns	киллер
+
+
+
+2061	Paradiso	nouns	рай
+2062	rabbia	nouns	гнев/ярость
+2063	fuga	nouns	побег/бегство
+
+
+2066	toccare	verbs	трогать/касаться/прикасаться
+2067	termine	nouns	срок/термин
+
+2069	vittoria	nouns	победа
+
+
+2072	giornale	nouns	газета/журнал
+
+2074	insegnante	nouns	учитель/преподаватель
+
+2076	talento	nouns	талант/дарование
+
+
+
+
+
+
+2083	figo	nouns	крутой/классный
+
+
+
+2087	girare	verbs	поворачивать/крутить/снимать
+
+
+2090	libertà	nouns	свобода
+2091	rubare	verbs	красть/воровать/похищать
+
+
+2094	immagine	nouns	образ/изображение
+
+
+
+2098	allarme	nouns	тревога/сигнал
+
+
+2101	padrone	nouns	хозяин,владелец,господин
+
+
+
+
+2106	sveglio	adjectives	сообразительный/умный
+2107	amor	nouns	любовь,чувство
+
+
+2110	direzione	nouns	направление,руководство,управление
+
+
+2113	vendetta	nouns	месть,вендетта
+2114	cantare	verbs	петь/запеть/распевать
+2115	distruggere	verbs	разрушать/уничтожать/разорять
+
+2117	funzionare	verbs	работать/функционировать/действовать
+
+
+2120	regola	nouns	правило
+
+
+
+2124	ruolo	nouns	роль,функция
+
+
+2127	mattino	nouns	утро
+
+2129	funerale	nouns	похороны,погребение
+
+
+2132	ministro	nouns	министр
+
+
+
+
+
+2138	domenica	nouns	воскресенье
+
+
+
+
+
+
+2145	partner	nouns	партнёр,союзник
+2146	dritto	adjectives	прямой
+2147	presenza	nouns	присутствие,презентация
+2148	eta	nouns	возраст
+
+
+
+
+2153	atto	nouns	акт,поступок,действие
+
+2155	discutere	verbs	обсуждать/дискутировать/спорить
+2156	mentare	verbs	лгать/обманывать
+2157	gestire	verbs	управлять/руководить/заведовать
+
+
+
+
+
+
+
+
+
+
+2168	vacanza	nouns	отпуск,каникулы,отдых
+
+2170	medicina	nouns	медицина,лекарство
+
+
+
+
+
+2176	informazione	nouns	информация/сведение
+
+2178	sposare	verbs	жениться/выходить замуж/бракосочетаться
+
+
+
+2182	violenza	nouns	насилие
+2183	articolo	nouns	статья,товар,артикль
+2184	crescere	verbs	расти/выращивать/увеличиваться
+2185	suonare	verbs	звонить/играть/звучать
+
+
+
+
+
+2191	cugino	nouns	кузен,двоюродный брат,двоюродная сестра
+
+
+
+
+
+
+2198	sospetto	nouns	подозрение
+
+
+2201	trappola	nouns	ловушка,капкан
+
+
+
+
+2206	criminale	adjectives	преступный/криминальный
+
+2208	giacca	nouns	пиджак,куртка
+
+
+
+
+
+
+
+
+2217	pugno	nouns	кулак,горсть
+2218	opinione	nouns	мнение
+
+
+
+2222	interesse	nouns	интерес,выгода
+
+
+
+2226	sig	nouns	подпись,аббревиатура
+
+2228	ossa	nouns	кости
+
+2230	carico	nouns	груз,нагрузка,заряд
+2231	fastidio	nouns	беспокойство,неудобство,досада
+
+2233	premio	nouns	премия,награда,приз
+
+2235	sopravvivere	verbs	выживать/пережить
+
+2237	battuta	nouns	шутка,реплика
+
+
+2240	tè	nouns	чай
+
+
+
+2244	cella	nouns	камера,келья,ячейка
+
+2246	membro	nouns	член,участник
+2247	lupo	nouns	волк
+2248	gas	nouns	газ
+
+
+
+
+
+
+2255	moto	nouns	мотоцикл,движение
+2256	percento	nouns	процент
+
+
+
+
+2261	amicizia	nouns	дружба
+
+
+2264	protezione	nouns	защита,охрана
+2265	disturbo	nouns	нарушение,расстройство,беспокойство
+
+
+
+
+2270	pane	nouns	хлеб
+
+
+
+2274	aeroporto	nouns	аэропорт
+2275	gloria	nouns	слава
+
+
+
+2279	terapia	nouns	терапия,лечение
+
+
+2282	disastro	nouns	катастрофа,бедствие
+
+
+
+2286	sedere	verbs	сидеть/садиться/рассаживаться
+
+2288	preparare	verbs	готовить/подготавливать/приготавливать
+2289	versione	nouns	версия
+2290	costruire	verbs	строить/создавать/возводить
+2291	rete	nouns	сеть,сетка
+
+
+
+2295	puzza	nouns	вонь,запах
+
+
+
+2299	gola	nouns	горло,ущелье
+2300	fumo	nouns	дым
+2301	crisi	nouns	кризис
+
+2303	raggiungere	verbs	достигать/догонять/добиваться
+
+2305	minimo	nouns	минимум,наименьший
+
+2307	traccia	nouns	след/отпечаток
+
+2309	albergo	nouns	гостиница,отель
+
+2311	incendio	nouns	пожар
+
+
+
+
+
+2317	gioia	nouns	радость
+2318	fucile	nouns	ружьё,винтовка
+2319	maniera	nouns	манера,способ
+
+
+2322	orecchia	nouns	ухо
+
+2324	tentativo	nouns	попытка
+2325	weekend	nouns	выходные,уикенд
+
+
+
+
+
+
+
+
+2334	trucco	nouns	трюк,макияж
+
+
+
+
+2339	nascondere	verbs	прятать/скрывать/прятаться
+
+
+2342	rendere	verbs	делать/возвращать/отдавать
+2343	urla	nouns	крик
+
+
+
+
+2348	ambulanza	nouns	скорая помощь,амбуланс
+
+
+
+2352	volare	verbs	летать/лететь
+
+
+
+2356	proprietario	nouns	владелец,собственник
+
+
+2359	ospite	nouns	гость,постоялец
+
+
+
+
+
+
+
+2367	pizza	nouns	пицца
+
+2369	amato	adjectives	любимый
+
+
+
+
+
+2375	movimento	nouns	движение
+2376	regno	nouns	королевство,царство
+
+2378	stomacare	verbs	надоедать/тошнить/вызывать отвращение
+
+
+
+2382	tirare	verbs	тянуть/тащить/вытягивать
+
+2384	analisi	nouns	анализ
+
+2386	meritare	verbs	заслуживать/стоить
+
+2388	promessa	nouns	обещание
+
+
+
+
+2393	dannare	verbs	проклинать/обрекать/осуждать
+
+
+
+
+
+
+
+2401	attorno	adverbs	
+
+
+
+2405	sospettare	verbs	подозревать/сомневаться
+
+
+2408	cinese	adjectives	китайский
+
+
+2411	fonte	nouns	источник
+
+
+2414	studiare	verbs	учить/изучать/учиться
+
+2416	amante	nouns	любовник,любитель
+2417	risultato	nouns	результат
+
+
+2420	societa	nouns	общество,компания
+2421	neppure	adverbs	
+
+
+
+
+
+
+2428	pavimento	nouns	пол
+
+
+
+
+
+2434	traffico	nouns	трафик,движение
+
+
+2437	contare	verbs	считать/подсчитывать/рассчитывать
+
+
+
+
+
+2443	sorriso	nouns	улыбка
+
+
+
+2447	proiettile	nouns	пуля,снаряд
+2448	motore	nouns	двигатель,мотор
+
+
+
+
+
+2454	ingresso	nouns	вход
+
+
+
+
+
+
+
+2462	piatto	nouns	тарелка,блюдо
+
+2464	proposta	nouns	предложение
+
+
+2467	cazzare	verbs	говорить чушь/косячить/трепаться
+
+2469	virus	nouns	вирус
+2470	liberta	nouns	свобода
+
+
+2473	carter	nouns	картер
+
+
+
+
+2478	sterlina	nouns	стерлинг,фунт стерлингов
+
+
+
+2482	banda	nouns	банда,группа,полоса
+2483	esplosione	nouns	взрыв
+
+2485	calcio	nouns	футбол,удар ногой
+
+
+
+2489	ascolto	nouns	прослушивание/аудитория
+2490	teatro	nouns	театр
+
+2492	ladro	nouns	вор
+
+
+
+
+2497	sorprendere	verbs	удивлять/застать врасплох/поражать
+2498	pioggia	nouns	дождь
+2499	debito	nouns	долг
+
+
+2502	taglia	nouns	размер,рост
+
+
+2505	pietra	nouns	камень
+2506	uccello	nouns	птица
+
+
+
+2510	parcheggio	nouns	парковка/стоянка
+
+2512	camicia	nouns	рубашка/рубаха
+2513	comportamento	nouns	поведение
+
+2515	montagna	nouns	гора
+2516	respirare	verbs	дышать
+
+
+
+
+2521	formaggio	nouns	сыр
+
+2523	sparo	nouns	выстрел
+
+
+
+
+
+
+2530	spazzatura	nouns	мусор
+2531	divorzio	nouns	развод/расторжение брака
+
+
+
+
+
+2537	tazza	nouns	чашка
+2538	agenzia	nouns	агентство
+
+
+2541	intervento	nouns	вмешательство/операция/выступление
+
+2543	mucchio	nouns	куча
+2544	permettere	verbs	разрешать/позволять/допускать
+2545	salto	nouns	прыжок/прыжок
+
+
+
+
+
+2551	soccorso	nouns	помощь/спасение
+2552	respiro	nouns	дыхание
+2553	giuria	nouns	жюри/присяжные
+2554	modello	nouns	модель/образец
+2555	panico	nouns	паника
+
+
+2558	ombra	nouns	тень
+2559	piscina	nouns	бассейн
+2560	Marina	nouns	военно-морской флот/побережье
+
+
+2563	tavola	nouns	стол/доска/поверхность
+
+
+2566	carica	nouns	должность/заряд/атака
+
+2568	pensione	nouns	пенсия
+2569	copia	nouns	копия
+2570	pilota	nouns	пилот/лётчик
+2571	sorveglianza	nouns	наблюдение/надзор
+2572	dichiarazione	nouns	заявление/декларация/объявление
+2573	costringere	verbs	заставлять/принуждать
+
+
+2576	limite	nouns	предел/граница/лимит
+
+2578	bugia	nouns	ложь,враньё
+
+
+
+2582	affitto	nouns	аренда/наём
+2583	appartenere	verbs	принадлежать/относиться
+
+2585	evento	nouns	событие/мероприятие
+2586	bugiardo	adjectives	лживый
+2587	governatore	nouns	губернатор
+
+
+
+
+2592	dono	nouns	дар/подарок/талант
+
+2594	moda	nouns	мода
+2595	petto	nouns	грудь
+2596	custodia	nouns	опека/хранение/футляр
+
+
+2599	impressione	nouns	впечатление
+2600	strega	nouns	ведьма/колдунья
+
+
+2603	malare	verbs	болеть/хворать
+2604	dimostrare	verbs	доказывать/демонстрировать/показывать
+2605	terreno	nouns	земля/участок/почва
+
+2607	neve	nouns	снег
+
+2609	impegnare	verbs	занимать/обязывать/заложить
+
+
+
+
+
+
+
+
+
+2619	perfino	adverbs	
+
+
+
+2623	vergognare	verbs	стыдиться/стесняться
+
+
+
+2627	castello	nouns	замок
+
+2629	pazienza	nouns	терпение
+
+2631	sonno	nouns	сон
+
+
+
+2635	malapena	adverbs	
+
+
+
+2639	maschio	nouns	самец/мужчина
+
+
+
+2643	festeggiare	verbs	праздновать/отмечать
+2644	indovinare	verbs	угадывать/отгадывать/догадываться
+
+
+2647	tolgere	verbs	снимать/убирать/отнимать
+
+
+
+
+
+
+
+
+
+2657	miracolo	nouns	чудо
+2658	epoca	nouns	эпоха
+2659	vicenda	nouns	событие/история/дело
+2660	divertimento	nouns	развлечение
+
+2662	volere	verbs	хотеть/желать
+
+2664	anticipo	nouns	аванс/предоплата/заблаговременно
+
+
+2667	rapina	nouns	ограбление/налёт
+
+
+2670	nazione	nouns	нация/государство
+
+2672	argomento	nouns	тема/аргумент/довод
+
+2674	artista	nouns	художник/артист
+
+
+
+
+2679	alba	nouns	рассвет/заря
+2680	telecamera	nouns	камера,видеокамера
+2681	augurio	nouns	пожелание/привет
+
+2683	fase	nouns	фаза/этап
+2684	abito	nouns	платье/костюм/одежда
+2685	suicidio	nouns	самоубийство
+
+
+
+
+2690	ginocchio	nouns	колено
+2691	galera	nouns	тюрьма/каторга
+
+
+
+2695	familiare	adjectives	семейный/знакомый
+
+
+
+
+
+
+
+2703	sparire	verbs	исчезать/пропадать
+
+
+2706	fuggire	verbs	бежать/убегать/спасаться
+
+
+
+
+2711	università	nouns	университет
+
+
+
+
+
+
+2718	patto	nouns	пакт/договор/соглашение
+
+2720	ovest	nouns	запад
+2721	bestia	nouns	зверь/скотина
+
+2723	socio	nouns	партнёр/совладелец/член
+
+
+2726	magazzino	nouns	склад/магазин/унвермаг
+
+2728	commissione	nouns	комиссия/комиссионный сбор
+
+
+2731	coach	nouns	тренер/коуч
+
+2733	vantaggio	nouns	преимущество/выгода
+
+2735	mezzanotte	nouns	полночь
+2736	contante	nouns	наличные
+
+
+
+
+
+2742	indossare	verbs	надевать/носить/одевать
+
+2744	esperto	nouns	эксперт/специалист
+
+2746	onda	nouns	волна
+
+
+
+
+
+2752	firmare	verbs	подписывать/ставить подпись
+
+2754	incubo	nouns	кошмар/кошмарный сон
+
+2756	fattoria	nouns	ферма
+
+2758	senatore	nouns	сенатор
+
+2760	tasca	nouns	карман
+2761	secolo	nouns	век
+2762	cima	nouns	вершина/макушка
+
+2764	corridoio	nouns	коридор
+2765	bersaglio	nouns	мишень/цель
+
+
+
+
+2770	superare	verbs	преодолевать/проходить/превышать
+
+
+
+
+
+2776	sopportare	verbs	терпеть/выносить/сносить
+
+
+
+
+
+
+
+
+2785	riposo	nouns	отдых/покой
+
+
+2788	esterno	adjectives	внешний
+
+2790	muovere	verbs	двигать/шевелить/побуждать
+
+2792	concerto	nouns	концерт
+
+
+2795	clinica	nouns	клиника
+
+2797	maestà	nouns	величие/величество
+
+
+
+2801	tecnologia	nouns	технология
+
+2803	firma	nouns	подпись
+
+
+
+2807	riposare	verbs	отдыхать/покоиться
+2808	furto	nouns	кража/воровство
+
+
+
+
+
+2814	voto	nouns	оценка/голос/обет
+
+
+
+2818	tomba	nouns	могила/гробница
+2819	legame	nouns	связь/узы/связующее звено
+2820	mostrare	verbs	показывать/продемонстрировать/являть
+2821	mancanza	nouns	недостаток/нехватка/отсутствие
+
+2823	materiale	nouns	материал
+
+
+
+
+2828	impazzire	verbs	сходить с ума/безумствовать
+
+
+2831	opportunità	nouns	возможность/перспектива
+
+
+2834	follia	nouns	безумие/сумасшествие/безрассудство
+2835	attività	nouns	деятельность/занятие/бизнес
+
+
+
+
+2840	leader	nouns	лидер/руководитель/вождь
+
+2842	unità	nouns	единица/подразделение/единство
+
+
+2845	supporto	nouns	поддержка/опора
+
+
+
+2849	giornalista	nouns	журналист/репортёр
+
+2851	scala	nouns	лестница,шкала
+
+
+2854	scienza	nouns	наука
+2855	costume	nouns	костюм/обычай,традиция
+2856	rompere	verbs	ломать/разбить/нарушать
+
+
+
+
+
+
+
+2864	passione	nouns	страсть/увлечение/привязанность
+
+
+2867	autista	nouns	водитель/шофёр
+
+
+
+2871	coscienza	nouns	совесть/сознание
+2872	discussione	nouns	обсуждение/дискуссия/спор
+
+2874	profilo	nouns	профиль/профиль (лицо)
+2875	prete	nouns	священник/поп/кюре
+
+
+
+2879	gusto	nouns	вкус
+
+
+
+
+2884	tunnel	nouns	туннель
+
+
+
+2888	assicurazione	nouns	страховка/страхование
+2889	foresta	nouns	лес/роща
+
+
+
+2893	mappa	nouns	карта
+2894	palco	nouns	сцена/помост
+
+
+
+2898	filo	nouns	нить/провод/верёвка
+
+
+
+
+
+
+2905	figurare	verbs	фигурировать/значиться/казаться
+
+2907	fabbrica	nouns	фабрика/завод
+
+2909	cieco	adjectives	слепой
+2910	responsabilità	nouns	ответственность/обязанность
+
+2912	lancio	nouns	запуск/бросок
+2913	titolo	nouns	заголовок/титул/звание
+
+2915	assegno	nouns	чек
+
+
+
+
+2920	grazia	nouns	грация,милость/помилование
+
+
+
+
+
+
+
+
+2929	istante	nouns	мгновение/момент
+
+2931	amare	verbs	любить/обожать
+
+2933	sorgere	verbs	всходить/возникать/подниматься
+2934	sincero	adjectives	искренний
+2935	ammettere	verbs	признавать/допускать/принимать
+2936	retta	nouns	плата (за обучение)/взнос
+
+2938	pulire	verbs	чистить/убирать/мыть
+
+2940	tempesta	nouns	буря/шторм/гроза
+
+
+
+
+
+
+
+
+2949	maschera	nouns	маска
+2950	visione	nouns	видение/зрение/визия
+
+
+
+2954	reazione	nouns	реакция
+
+
+
+
+
+2960	oggetto	nouns	предмет/объект/вещь
+
+
+
+
+
+2966	sport	nouns	спорт
+
+
+
+
+2971	sezione	nouns	секция/раздел/отделение
+
+
+
+2975	ascensore	nouns	лифт
+
+
+2978	rifugio	nouns	убежище/приют/укрытие
+
+
+
+
+2983	rischiare	verbs	рисковать/подвергать риску
+2984	profumo	nouns	духи/аромат
+2985	coincidenza	nouns	совпадение
+
+2987	alcol	nouns	алкоголь/спирт
+2988	ricevere	verbs	получать/принимать
+
+2990	impegno	nouns	обязательство,занятость/усилие
+
+2992	zucchero	nouns	сахар
+
+2994	giudizio	nouns	суждение/суд/приговор
+
+
+2997	personaggio	nouns	персонаж/деятель/фигура
+2998	lacrima	nouns	слеза
+
+
+
+
+3003	scemo	adjectives	глупый/дурацкий
+3004	reparto	nouns	отделение/отдел/палата
+
+3006	pazzesco	adjectives	безумный/сумасшедший
+
+
+
+
+3011	creatura	nouns	существо/творение
+3012	fumare	verbs	курить/коптить
+
+
+
+3016	raccontare	verbs	рассказывать/поведать
+3017	ambiente	nouns	окружающая среда/среда/обстановка
+
+
+
+
+
+3023	garage	nouns	гараж
+3024	spiegazione	nouns	объяснение/разъяснение
+3025	disposto	adjectives	готовый/расположенный
+
+
+
+
+3030	confine	nouns	граница/предел
+
+
+
+
+
+3036	televisione	nouns	телевидение
+
+3038	baseball	nouns	бейсбол
+
+
+3041	struttura	nouns	структура
+
+
+
+3045	specchio	nouns	зеркало
+
+
+
+3049	dosso	nouns	бугор/холм/кочка
+3050	cambiamento	nouns	изменение/перемена
+
+3052	proprieta	nouns	собственность/имущество
+
+3054	reputazione	nouns	репутация
+3055	partenza	nouns	отправление/отъезд
+
+3057	punizione	nouns	наказание/кара
+3058	convenire	verbs	подходить/договариваться/выгодно
+
+
+3061	organizzare	verbs	организовывать/устраивать
+
+
+3064	fico	nouns	инжир/смоковница
+3065	influenza	nouns	грипп/влияние
+
+
+
+
+
+3071	scambio	nouns	обмен
+3072	distretto	nouns	район/округ/дистрикт
+3073	Fiera	nouns	ярмарка/выставка
+
+3075	palestra	nouns	спортзал/гимнастика
+
+
+
+
+
+
+
+
+
+
+
+
+3088	oceano	nouns	океан
+3089	tagliare	verbs	резать/отрезать/сокращать
+3090	servire	verbs	служить/обслуживать/годиться
+
+
+
+
+
+3096	rovinare	verbs	портить/разрушать/губить
+
+
+
+
+3101	urlare	verbs	кричать/орать/вопить
+3102	dolcezza	nouns	сладость/нежность/мягкость
+
+
+
+3106	documento	nouns	документ
+
+
+
+3110	soffrire	verbs	страдать/мучиться/терпеть
+3111	labbro	nouns	губа
+
+3113	stronzio	nouns	мудак/подонок
+
+
+
+
+
+
+3120	biblioteca	nouns	библиотека
+
+3122	settore	nouns	сектор/отрасль
+3123	robot	nouns	робот
+
+
+
+3127	veleno	nouns	яд/отрава
+
+3129	Diario	nouns	дневник
+
+3131	proprietà	nouns	собственность/имущество/свойство
+
+
+
+
+
+
+
+
+3140	offesa	nouns	оскорбление/обида
+
+
+
+
+
+3146	incarico	nouns	поручение/задание/должность
+3147	ricominciare	verbs	начинать заново/возобновлять
+
+3149	inverno	nouns	зима
+
+3151	maglietta	nouns	футболка
+
+
+
+3155	recuperare	verbs	восстанавливать/возвращать/навёрстывать
+3156	organizzazione	nouns	организация
+3157	frase	nouns	фраза/предложение
+
+
+3160	esplodere	verbs	взрываться/вспыхивать
+
+
+
+
+3165	guadagnare	verbs	зарабатывать/завоёвывать/выигрывать
+3166	attore	nouns	актёр
+
+
+3169	sigaretta	nouns	сигарета
+3170	grasso	nouns	жир
+
+
+
+
+3175	umore	nouns	настроение
+
+
+
+
+
+
+3182	levare	verbs	снимать/поднимать/устранять
+3183	convincere	verbs	убеждать/уговаривать/доказывать
+3184	condividere	verbs	делить/разделять/делиться
+3185	riso	nouns	рис
+3186	russo	adjectives	русский
+3187	consegna	nouns	доставка/вручение
+
+
+3190	colpire	verbs	поражать/ударять/попадать
+3191	legno	nouns	дерево/древесина
+
+
+
+3195	ferro	nouns	железо
+
+
+3198	studente	nouns	студент,ученик
+
+
+
+
+
+3204	raggio	nouns	луч/радиус
+
+
+
+3208	resistenza	nouns	сопротивление/выносливость
+3209	partecipare	verbs	участвовать/принимать участие
+
+
+
+3213	richiamo	nouns	зов/призыв/напоминание
+3214	agire	verbs	действовать/поступать
+3215	cerimonia	nouns	церемония
+
+
+
+
+3220	imbarazzo	nouns	смущение/затруднение
+
+3222	sfida	nouns	вызов/испытание
+
+3224	fermata	nouns	остановка
+
+
+
+
+
+3230	stop	nouns	остановка/стоп
+
+
+
+
+
+
+
+
+
+3240	siedere	verbs	сидеть/восседать
+
+3242	orso	nouns	медведь
+
+3244	istinto	nouns	инстинкт
+
+
+
+
+
+
+
+
+
+
+
+
+3257	golf	nouns	гольф
+
+3259	ringraziamento	nouns	благодарность
+
+
+
+3263	blocco	nouns	блок/блокировка/кусок
+
+
+3266	metro	nouns	метр/метро
+
+
+
+
+
+
+
+
+
+
+
+3278	zombie	nouns	зомби
+
+
+
+
+3283	fingere	verbs	притворяться/делать вид/симулировать
+
+
+3286	quadro	nouns	картина/картина (живопись)/ситуация
+3287	circostanza	nouns	обстоятельство
+
+
+
+
+
+3293	preside	nouns	директор школы
+
+3295	becco	nouns	клюв
+
+
+3298	delitto	nouns	преступление
+
+
+3301	febbre	nouns	жар/лихорадка/температура
+
+
+
+
+
+3307	armadio	nouns	шкаф
+3308	battere	verbs	бить/стучать/побеждать
+3309	olio	nouns	масло
+
+3311	mutanda	nouns	трусы
+
+
+3314	professionista	nouns	профессионал
+
+3316	rinforzo	nouns	подкрепление/усиление/армирование
+
+
+
+
+
+3322	aggressione	nouns	нападение/агрессия
+
+3324	vetro	nouns	стекло
+3325	falla	nouns	брешь/пробоина/изъян
+
+
+
+
+3330	stupere	verbs	удивлять/поражать/изумлять
+3331	elicottero	nouns	вертолёт
+
+3333	mistero	nouns	тайна/загадка
+
+3335	nastro	nouns	лента/скотч/кассета
+
+3337	gigante	nouns	гигант/великан
+
+
+3340	resistere	verbs	сопротивляться/устоять/терпеть
+
+
+3343	penna	nouns	ручка
+
+
+
+
+3348	cameriera	nouns	официантка/горничная
+3349	dannata	adjectives	проклятый
+
+
+3352	condizione	nouns	условие/состояние
+
+3354	alibi	nouns	алиби
+
+
+
+
+3359	disco	nouns	диск/пластинка
+
+
+
+
+
+
+
+3367	valigia	nouns	чемодан
+
+
+3370	coda	nouns	хвост/очередь
+
+
+
+
+
+
+
+
+
+
+3381	cassetta	nouns	коробка/ящик/кассета
+
+
+3384	sottofondo	nouns	фон
+
+
+
+
+
+
+
+
+3393	litigare	verbs	ссориться/драться/спорить
+
+
+
+
+
+
+
+
+
+3403	tour	nouns	тур/экскурсия
+3404	puttane	nouns	шлюхи
+
+3406	velocità	nouns	скорость
+3407	marcia	nouns	марш/передача/ходьба
+3408	orario	nouns	расписание
+
+3410	commissario	nouns	комиссар
+
+
+
+
+
+
+3417	saggio	nouns	эссе/мудрец
+
+
+
+
+3422	miele	nouns	мёд
+
+
+
+
+3427	conferenza	nouns	конференция/лекция
+3428	straordinario	adjectives	чрезвычайный/ выдающийся
+3429	sciocco	adjectives	глупый/пустой
+
+3431	prigioniero	adjectives	пленный/узник
+
+
+
+
+3436	folla	nouns	толпа
+3437	stress	nouns	стресс
+
+
+3440	segretario	nouns	секретарь
+
+3442	demone	nouns	демон
+
+
+3445	junior	adjectives	младший
+
+
+
+
+
+3451	cucinare	verbs	готовить/варить
+
+
+3454	eroina	nouns	героиня/героин
+
+3456	scritta	nouns	надпись
+
+
+3459	mirare	verbs	целиться/стремиться/нацеливаться
+3460	salsa	nouns	соус
+3461	torto	adjectives	кривой/искривлённый
+
+
+
+
+
+
+
+
+3470	teddy	nouns	плюшевый мишка
+
+
+
+
+3475	orecchio	nouns	ухо
+
+
+
+
+
+3481	nudo	adjectives	голый/обнажённый
+
+
+
+3485	tragedia	nouns	трагедия/трагедия (пьеса)
+
+3487	ritornare	verbs	возвращаться
+
+
+
+
+3492	disposizione	nouns	расположение/распоряжение
+
+
+
+
+
+3498	territorio	nouns	территория
+3499	raccogliere	verbs	собирать/собирать урожай
+3500	chef	nouns	шеф-повар
+3501	combattimento	nouns	бой/сражение
+
+
+
+
+
+
+
+
+
+
+3512	cretino	nouns	кретин/идиот
+3513	vasca	nouns	ванна/бассейн
+
+
+3516	stronzare	verbs	говорить чушь/нести бред
+3517	arrabbiare	verbs	злить/сердить/злиться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3532	potenza	nouns	мощь/держава/мощность
+3533	costo	nouns	стоимость
+
+3535	canale	nouns	канал/пролив
+3536	uniforme	adjectives	однородный/равномерный
+3537	barba	nouns	борода
+
+
+
+
+3542	primavera	nouns	весна
+
+
+
+
+
+
+3549	salutare	verbs	приветствовать/прощаться
+
+
+
+3553	figa	nouns	красотка/телка
+
+
+
+
+3558	sconosciuto	adjectives	неизвестный/незнакомый
+
+
+
+3562	argento	nouns	серебро
+
+
+
+3566	incantesimo	nouns	заклинание
+3567	maesta	nouns	величество/величие
+
+3569	colloquio	nouns	собеседование/беседа
+3570	udienza	nouns	аудиенция/заседание суда
+
+
+3573	presentare	verbs	представлять/подавать/знакомить
+
+3575	tappeto	nouns	ковёр
+
+3577	miseria	nouns	нищета/убожество
+3578	accadere	verbs	случаться/происходить/произойти
+
+3580	cognome	nouns	фамилия
+
+
+
+
+
+
+3587	esistenza	nouns	существование
+
+3589	giocatore	nouns	игрок
+
+
+3592	manager	nouns	менеджер
+
+
+3595	novità	nouns	новость/новинка
+3596	vampiro	nouns	вампир
+
+
+
+
+
+
+
+3604	rivista	nouns	журнал
+
+3606	museo	nouns	музей
+
+
+3609	appassionare	verbs	увлекать/привязывать/воспламенять
+
+
+
+
+
+
+
+
+
+
+
+
+3622	equipaggio	nouns	экипаж
+3623	cassa	nouns	ящик/касса
+
+
+
+
+3628	zuppa	nouns	суп
+
+3630	lottare	verbs	бороться
+
+3632	matematica	nouns	математика
+3633	orgoglio	nouns	гордость
+3634	volontà	nouns	воля
+3635	succo	nouns	сок
+
+3637	massa	nouns	масса/толпа
+3638	patatina	nouns	чипсы/картошка фри
+
+3640	Cintura	nouns	ремень/пояс
+
+3642	traditore	nouns	предатель
+
+
+
+
+
+
+
+3650	cavo	nouns	кабель/провод
+
+3652	offrire	verbs	предлагать/предложить/угощать
+3653	collegamento	nouns	соединение/связь
+
+3655	aggiungere	verbs	добавлять/прибавлять
+
+
+
+
+
+3661	annuncio	nouns	объявление/анонс
+3662	panino	nouns	бутерброд
+
+
+
+3666	tradimento	nouns	предательство/измена
+3667	accorto	adjectives	осторожный/осмотрительный
+3668	cartello	nouns	знак/табличка/плакат
+3669	mosca	nouns	муха
+3670	fisico	nouns	телосложение/физик
+
+
+
+3674	divisione	nouns	деление/разделение/раздел
+3675	pancia	nouns	живот/брюхо
+3676	veicolo	nouns	транспортное средство/машина
+
+3678	rinunciare	verbs	отказываться
+
+
+3681	autorità	nouns	власть/авторитет
+
+
+
+
+
+3687	gesto	nouns	жест/поступок
+
+
+3690	email	nouns	электронная почта/имейл
+
+3692	meraviglia	nouns	удивление/чудо
+
+3694	arrestare	verbs	арестовывать/останавливать/задерживать
+3695	largo	adjectives	широкий
+
+3697	adulto	nouns	взрослый
+
+3699	augurare	verbs	желать
+3700	infanzia	nouns	детство
+
+
+3703	gabbia	nouns	клетка
+
+
+
+3707	avventura	nouns	приключение
+
+3709	intervista	nouns	интервью
+
+
+
+
+
+3715	serpente	nouns	змея
+3716	appunto	adverbs	
+
+
+
+
+
+3722	sabbia	nouns	песок
+
+
+
+
+3727	possesso	nouns	владение/обладание
+3728	capitolo	nouns	глава
+
+3730	osso	nouns	кость
+
+
+
+
+3735	notare	verbs	замечать/отмечать/подмечать
+
+
+
+
+3740	frutta	nouns	фрукты
+
+
+
+
+
+
+3747	superficie	nouns	поверхность
+
+
+
+3751	motel	nouns	мотель
+
+
+3754	volentieri	adverbs	
+
+
+
+
+3759	felicità	nouns	счастье
+
+3761	album	nouns	альбом
+3762	pasto	nouns	приём пищи/еда
+
+
+
+
+
+
+3769	denuncia	nouns	заявление/жалоба/донос
+
+
+
+3773	sospendere	verbs	приостанавливать/отменять
+3774	canto	nouns	пение/песня
+3775	pacco	nouns	посылка/пакет
+
+3777	riservare	verbs	резервировать/зарезервировать
+
+3779	cammino	nouns	путь/дорога
+3780	registrazione	nouns	запись/регистрация
+
+
+
+3784	leggenda	nouns	легенда
+
+
+3787	telefilm	nouns	телесериал
+3788	egoista	adjectives	эгоистичный
+
+
+3791	busta	nouns	конверт/пакет
+
+
+
+3795	alzare	verbs	поднимать/поднять/возвышать
+
+
+3798	scopare	verbs	подметать/трахаться
+3799	danza	nouns	танец
+
+3801	scorta	nouns	запас/сопровождение
+3802	parto	nouns	роды
+3803	cancello	nouns	ворота/калитка
+
+3805	riprendere	verbs	возобновлять/снимать/забрать обратно
+
+
+3808	viaggiare	verbs	путешествовать
+
+
+
+3812	ipotesi	nouns	гипотеза/предположение
+
+3814	giudicare	verbs	судить/оценивать
+
+
+
+3818	bibbia	nouns	библия
+
+3820	conte	nouns	граф
+
+3822	perdonare	verbs	прощать
+3823	confessione	nouns	признание/исповедь
+
+
+
+
+
+
+3830	aula	nouns	аудитория/зал/класс
+3831	burro	nouns	масло/сливочное масло
+3832	venerdì	nouns	пятница
+
+
+
+3836	produzione	nouns	производство
+3837	abbandonare	verbs	бросать/покидать/оставлять
+3838	impresa	nouns	предприятие/компания/предприятие
+3839	ringraziare	verbs	благодарить/поблагодарить
+
+
+
+
+3844	scrittore	nouns	писатель
+
+3846	addirittura	adverbs	
+3847	poesia	nouns	стихотворение/поэзия
+
+
+
+
+
+3853	croce	nouns	крест
+3854	calore	nouns	тепло/жара
+
+
+
+3858	buttare	verbs	бросать/выбрасывать/швырять
+
+3860	truppa	nouns	войско/войска
+
+3862	sposo	nouns	жених/супруг
+
+
+
+3866	comportare	verbs	влечь за собой/предполагать
+
+
+
+
+3871	pesca	nouns	рыбалка/рыболовство/персик
+
+
+
+
+
+
+
+
+
+
+
+3883	tassa	nouns	налог/пошлина
+
+
+
+
+
+
+
+
+3892	plastica	nouns	пластик
+
+3894	dispositivo	nouns	устройство/прибор
+
+
+
+
+
+
+3901	espressione	nouns	выражение
+3902	sapore	nouns	вкус
+
+
+
+3906	branco	nouns	стая
+3907	tocco	nouns	прикосновение/штрих
+
+
+3910	mister	nouns	тренер/господин
+3911	disagio	nouns	дискомфорт/неудобство
+
+
+3914	coma	nouns	кома
+
+3916	disegno	nouns	рисунок/чертёж/дизайн
+
+3918	atmosfera	nouns	атмосфера
+
+3920	fatica	nouns	усталость/усилие
+3921	volante	nouns	руль
+
+
+
+
+
+
+3928	impero	nouns	империя
+3929	temperatura	nouns	температура
+
+3931	scimmia	nouns	обезьяна
+
+
+3934	topo	nouns	мышь
+3935	bimbo	nouns	ребёнок/малыш
+
+
+3938	catena	nouns	цепь/цепочка
+
+
+3941	femmina	nouns	самка
+3942	sete	nouns	жажда
+
+
+
+
+3947	regista	nouns	режиссёр
+
+3949	ruota	nouns	колесо
+
+3951	rifiuto	nouns	отходы/мусор/отказ
+
+
+3954	ammazzare	verbs	убивать/умерщвлять
+
+
+3957	flotta	nouns	флот
+
+3959	rivedere	verbs	пересматривать/увидеть снова
+
+3961	spostare	verbs	перемещать/сдвигать/переносить
+3962	imbecille	nouns	имбецил/дурак
+3963	attaccare	verbs	атаковать/прикреплять/приклеивать
+3964	allenamento	nouns	тренировка
+
+
+
+
+
+3970	infarto	nouns	инфаркт
+
+3972	ossigeno	nouns	кислород
+
+3974	affetto	nouns	привязанность/нежность
+
+
+
+3978	buca	nouns	яма/дыра
+
+
+
+3982	testimoniare	verbs	свидетельствовать
+
+
+
+3986	trauma	nouns	травма
+
+
+
+3990	indizio	nouns	улика/признак
+
+
+
+
+
+
+
+
+3999	shock	nouns	шок
+4000	migliorare	verbs	улучшать
+
+
+
+4004	condannare	verbs	осуждать/приговорить
+
+
+
+
+
+
+4011	identità	nouns	личность/идентичность
+
+
+
+4015	ministero	nouns	министерство
+
+
+4018	tubo	nouns	труба/трубка
+4019	badare	verbs	заботиться/присматривать/обращать внимание
+4020	cabina	nouns	кабина/кабинка
+
+
+
+
+
+
+4027	pietà	nouns	жалость/милосердие
+
+
+
+4031	tempio	nouns	храм/храм
+
+
+4034	mago	nouns	маг/волшебник
+4035	pugna	nouns	кулак
+4036	carro	nouns	телега/повозка/танк
+4037	tema	nouns	тема/сюжет
+
+4039	riportare	verbs	сообщать/приводить обратно/получить
+4040	fiore	nouns	цветок
+
+4042	esperimento	nouns	эксперимент/опыт
+
+4044	gomma	nouns	резина/шина/ластик
+
+4046	tatuaggio	nouns	татуировка
+4047	whisky	nouns	виски
+4048	qualità	nouns	качество
+4049	dollaro	nouns	доллар
+
+
+4052	dipinto	adjectives	нарисованный/раскрашенный
+
+
+
+4056	vicolo	nouns	переулок/проулок
+4057	capacità	nouns	способность/вместимость/ёмкость
+4058	noto	adjectives	известный/заметный
+4059	patente	nouns	водительское удостоверение/патент
+
+
+
+4063	anniversario	nouns	годовщина/юбилей
+
+
+
+
+4068	stupro	nouns	изнасилование
+
+
+
+
+
+4074	testimonianza	nouns	показание/свидетельство
+4075	standard	nouns	стандарт
+
+
+4078	nuotare	verbs	плавать
+
+4080	tendere	verbs	склоняться/натягивать/стремиться
+
+4082	cortesia	nouns	вежливость/любезность
+
+
+4085	strategia	nouns	стратегия
+4086	Cultura	nouns	культура
+
+
+
+4090	confusione	nouns	путаница/замешательство/растерянность
+4091	obiezione	nouns	возражение
+
+
+
+
+4096	simbolo	nouns	символ
+4097	linguaggio	nouns	язык
+4098	tradizione	nouns	традиция
+
+4100	schermo	nouns	экран
+
+4102	fantasia	nouns	фантазия/воображение
+
+4104	bastone	nouns	палка/трость/посох
+
+
+4107	polso	nouns	запястье/пульс
+
+
+
+4111	armato	adjectives	вооружённый
+
+4113	settembre	nouns	сентябрь
+
+4115	sostegno	nouns	поддержка/опора
+
+
+
+
+4120	gentiluomo	nouns	джентльмен
+
+
+4123	chirurgo	nouns	хирург
+
+
+
+
+4128	eliminare	verbs	устранять/ликвидировать/исключать
+
+
+
+
+
+
+
+4136	ripetere	verbs	повторять/дублировать
+
+
+
+
+
+
+
+4144	spinta	nouns	толчок/побуждение
+4145	difficoltà	nouns	трудность/затруднение
+
+4147	licenza	nouns	лицензия/разрешение
+
+
+4150	cappotto	nouns	пальто
+
+
+4153	caos	nouns	хаос
+
+
+
+
+
+
+
+4161	tono	nouns	тон
+4162	spesa	nouns	расход/трата/покупка
+
+
+
+4166	insegnare	verbs	учить/преподавать/обучать
+
+4168	coprire	verbs	покрывать/накрывать
+4169	rapimento	nouns	похищение
+4170	collezione	nouns	коллекция/собрание
+4171	trattamento	nouns	лечение/обращение/обработка
+
+
+4174	sopravvissere	verbs	выживать
+
+4176	aumento	nouns	повышение/увеличение
+
+4178	cassaforte	nouns	сейф
+4179	targa	nouns	номерной знак/табличка
+
+
+4182	sperare	verbs	надеяться/уповать
+
+
+
+
+4187	coperto	adjectives	закрытый/крытый
+4188	saluto	nouns	приветствие/привет
+4189	riavere	verbs	получить обратно/вернуть себе
+
+
+
+
+
+
+4196	considerazione	nouns	соображение/внимание
+
+
+
+
+
+
+
+
+4205	lana	nouns	шерсть
+4206	seno	nouns	грудь/пазуха
+
+
+
+
+
+
+4213	atteggiamento	nouns	отношение/поведение
+
+
+
+
+
+4219	rovina	nouns	разрушение/гибель/руины
+
+
+
+
+4224	leone	nouns	лев
+
+
+4227	corona	nouns	корона/венок
+
+
+
+4231	comunicazione	nouns	общение/коммуникация
+
+
+4234	boom	nouns	бум
+4235	segreteria	nouns	секретариат/автоответчик
+4236	coca	nouns	кока/кокаин
+4237	unione	nouns	союз/объединение
+4238	fidare	verbs	доверять/доверяться/полагаться
+
+
+4241	ideale	adjectives	идеальный
+
+4243	batteria	nouns	батарея/аккумулятор
+
+
+4246	portalare	verbs	приносить/доставлять
+
+
+4249	uovo	nouns	яйцо
+4250	ritmo	nouns	ритм
+
+
+
+
+4255	impatto	nouns	влияние/столкновение
+4256	consulente	nouns	консультант
+4257	accento	nouns	акцент
+
+
+4260	condanna	nouns	приговор/осуждение
+
+
+4263	ricompensa	nouns	награда/вознаграждение
+
+
+
+
+4268	fotografia	nouns	фотография/фото
+4269	sms	nouns	смс/сообщение
+4270	stipendio	nouns	зарплата/оклад
+
+
+
+
+
+
+4277	pazzia	nouns	безумие/сумасшествие
+
+
+4280	addestramento	nouns	обучение/дрессировка
+
+
+
+
+4285	crema	nouns	крем
+
+
+
+
+4290	sparatoria	nouns	перестрелка
+
+
+
+4294	dettaglio	nouns	деталь/подробность
+
+4296	botte	nouns	бочка/побои
+4297	politico	adjectives	политический
+
+
+
+
+4302	Segretaria	nouns	секретарь
+
+
+4305	scherzare	verbs	шутить/подшучивать
+4306	aggredire	verbs	нападать
+4307	tumore	nouns	опухоль
+
+4309	complice	nouns	сообщник/соучастник
+
+4311	assumere	verbs	принимать/брать на себя/нанимать
+4312	boss	nouns	босс/глава
+
+
+4315	procedere	verbs	продолжать/действовать/продвигаться
+
+
+
+4319	cancellare	verbs	отменять/стирать/удалять
+4320	immaginazione	nouns	воображение
+4321	metodo	nouns	метод
+
+
+
+
+
+
+4328	raccolta	nouns	сбор/урожай
+
+4330	trasferimento	nouns	перевод/перемещение/перевод
+
+
+4333	pastore	nouns	пастух/пастырь
+4334	attraversare	verbs	пересекать/переходить
+
+
+
+4338	misura	nouns	мера/размер
+
+
+
+
+
+
+
+
+4347	consegnare	verbs	доставлять/вручать/сдавать
+4348	pregare	verbs	молиться/просить/умолять
+
+4350	coniglio	nouns	кролик
+
+4352	confronto	nouns	сравнение/противостояние
+
+4354	assistenza	nouns	помощь/обслуживание
+
+4356	benedire	verbs	благословлять
+
+4358	roccia	nouns	скала/порода
+4359	cravatta	nouns	галстук
+
+
+
+
+4364	movente	nouns	мотив
+
+4366	difendere	verbs	защищать
+
+
+
+
+4371	spaziale	adjectives	космический/пространственный
+4372	cocaina	nouns	кокаин
+
+4374	unghia	nouns	ноготь
+
+4376	cantina	nouns	подвал/винный погреб
+
+
+
+
+
+
+4383	fallimento	nouns	провал/банкротство
+
+4385	temere	verbs	бояться/опасаться/страшиться
+4386	liberare	verbs	освобождать
+4387	interrogatorio	nouns	допрос
+
+
+
+
+
+
+
+4395	vincitore	nouns	победитель
+4396	dose	nouns	доза
+4397	abitare	verbs	жить/обитать
+4398	curare	verbs	лечить/ухаживать/заниматься
+4399	mollare	verbs	бросать/отпускать/сдаваться
+4400	cerchio	nouns	круг
+4401	trattare	verbs	обращаться/лечить/обсуждать
+4402	catturare	verbs	ловить/захватывать/поймать
+
+
+
+
+4407	assomigliare	verbs	походить/быть похожим
+
+
+4410	cimitero	nouns	кладбище
+4411	abitudine	nouns	привычка
+
+4413	cauzione	nouns	залог/поручительство
+
+4415	campeggio	nouns	кемпинг/лагерь
+4416	banco	nouns	прилавок/скамья/банк
+
+4418	euro	nouns	евро
+
+
+
+4422	monte	nouns	гора
+
+
+
+4426	ostaggio	nouns	заложник
+4427	asta	nouns	аукцион
+
+
+
+4431	tina	nouns	чан/кадка/бочка
+4432	sofferenza	nouns	страдание
+
+4434	considerare	verbs	рассматривать/считать/обдумывать
+
+
+
+
+4439	contattare	verbs	связываться/контактировать
+
+
+
+
+
+4445	registro	nouns	реестр/журнал
+4446	cortile	nouns	двор
+
+
+
+
+
+
+
+
+4455	vomitare	verbs	блевать/рвать
+4456	sforzo	nouns	усилие
+
+
+
+4460	cowboy	nouns	ковбой
+
+4462	emorragia	nouns	кровотечение
+
+4464	protocollo	nouns	протокол
+
+
+4467	rintracciare	verbs	выслеживать/отыскивать/разыскивать
+4468	imperatore	nouns	император
+
+
+
+
+4473	sacrificio	nouns	жертва
+
+
+4476	educazione	nouns	воспитание/образование
+
+4478	rivoluzione	nouns	революция
+4479	compagna	nouns	подруга/спутница/товарищ
+4480	vodka	nouns	водка
+
+
+
+
+
+
+
+
+
+
+
+
+4493	tensione	nouns	напряжение
+
+
+
+
+4498	collana	nouns	ожерелье/колье
+
+
+
+
+
+4504	indagare	verbs	расследовать
+
+4506	giallo	adjectives	жёлтый
+
+
+
+
+
+4512	chitarra	nouns	гитара
+4513	generazione	nouns	поколение/генерация
+
+
+
+
+
+
+
+
+4522	distruzione	nouns	разрушение
+
+
+4525	piazza	nouns	площадь
+4526	autopsia	nouns	вскрытие/аутопсия
+
+
+
+
+
+
+
+
+4535	rottura	nouns	разрыв/поломка
+
+
+4538	rispettare	verbs	уважать/соблюдать
+4539	ansia	nouns	тревога/беспокойство
+
+
+
+
+
+
+4546	rimediare	verbs	исправлять/возмещать
+
+
+4549	bambola	nouns	кукла
+4550	hamburger	nouns	гамбургер
+
+4552	avviso	nouns	уведомление/предупреждение
+
+
+4555	cittadino	adjectives	городской/гражданский
+
+
+
+4559	portafoglio	nouns	кошелёк/портфель
+
+
+4562	comunità	nouns	сообщество
+
+4564	comunicare	verbs	сообщать/коммуницировать
+
+
+4567	beneficenza	nouns	благотворительность
+
+4569	ordinare	verbs	заказывать/приказывать/упорядочивать
+
+
+
+4573	genitore	nouns	родитель
+4574	bruciare	verbs	гореть/сжигать/обжигать
+
+
+
+
+
+
+4581	mezzogiorno	nouns	полдень/юг
+
+4583	romanzo	nouns	роман
+
+
+4586	ambasciatore	nouns	посол
+
+
+
+
+
+
+4593	giungere	verbs	прибывать/приходить/достигать
+
+
+
+
+4598	religione	nouns	религия
+
+
+4601	promozione	nouns	повышение/акция
+4602	merce	nouns	товар
+
+
+
+
+
+
+4609	passaporto	nouns	паспорт
+
+
+
+
+4614	cacca	nouns	какашка/дерьмо
+
+
+4617	disperare	verbs	отчаиваться/терять надежду
+
+
+
+
+
+4623	regalare	verbs	дарить/подарить
+
+
+
+
+
+
+4630	privacy	nouns	конфиденциальность/личная жизнь
+
+
+4633	fratellino	nouns	братик/младший брат
+
+
+4636	vedovo	adjectives	овдовевший
+
+
+4639	lanciare	verbs	бросать/запускать
+
+
+
+
+
+
+
+
+
+
+4650	Mammina	nouns	мамочка
+4651	accendere	verbs	включать/зажигать
+
+
+
+
+
+
+
+
+
+
+
+
+4664	fascicolo	nouns	папка/досье
+
+4666	interrompere	verbs	прерывать
+
+
+
+4670	bandiera	nouns	флаг
+
+4672	chip	nouns	чип
+
+
+4675	autorizzazione	nouns	авторизация/разрешение
+
+4677	pubblicità	nouns	реклама
+
+4679	eccellenza	nouns	превосходство/отличие
+
+
+
+4683	riconoscere	verbs	узнавать/признавать
+
+
+4686	trasmissione	nouns	передача/трансмиссия
+4687	record	nouns	рекорд
+4688	lusso	nouns	роскошь
+
+
+
+
+4693	tentare	verbs	пытаться/испытывать/соблазнять
+
+
+4696	apertura	nouns	открытие
+
+4698	spina	nouns	шип/шишка/вилка
+
+4700	visitare	verbs	посещать/навещать
+
+
+
+
+
+
+
+4708	infezione	nouns	инфекция
+
+
+4711	impronta	nouns	отпечаток/след
+
+4713	rientrare	verbs	возвращаться/входить
+
+
+
+
+4718	congresso	nouns	конгресс/съезд
+
+
+4721	economia	nouns	экономика
+
+
+
+4725	violazione	nouns	нарушение
+
+4727	metallo	nouns	металл
+
+
+4730	pelo	nouns	шерсть/волос
+
+
+
+4734	scommettere	verbs	держать пари/ставить
+4735	opzione	nouns	опция/вариант
+4736	trasporto	nouns	транспорт/перевозка
+4737	asilo	nouns	убежище/детский сад
+
+4739	drago	nouns	дракон
+
+4741	ammiraglio	nouns	адмирал
+
+
+4744	acciaio	nouns	сталь
+4745	parere	verbs	казаться/полагать/мнение
+4746	amministrazione	nouns	администрация/управление
+
+
+4749	suolo	nouns	почва/грунт
+
+
+4752	associazione	nouns	ассоциация
+
+
+4755	impedire	verbs	мешать/препятствовать/воспрепятствовать
+
+
+4758	cucciolo	nouns	щенок/детёныш
+
+
+
+
+
+4764	capitale	nouns	столица/капитал
+4765	pacchetto	nouns	пакет/упаковка
+4766	macchia	nouns	пятно
+
+
+
+
+
+
+4773	codardo	adjectives	трусливый
+
+
+4776	principio	nouns	принцип
+
+4778	abituare	verbs	приучать/привыкать
+
+
+4781	produttore	nouns	производитель
+4782	scommessa	nouns	ставка/пари
+
+4784	imputare	verbs	вменять/приписывать/обвинять
+4785	bus	nouns	автобус
+4786	luglio	nouns	июль
+
+
+
+
+4791	certezza	nouns	уверенность/достоверность
+4792	cifra	nouns	цифра/сумма
+
+
+4795	appello	nouns	апелляция/призыв
+
+4797	kit	nouns	набор/комплект
+
+
+
+4801	puntata	nouns	выпуск/серия/ставка
+
+
+4804	lama	nouns	лезвие
+
+4806	origine	nouns	происхождение/исток
+
+
+
+4810	isolamento	nouns	изоляция
+
+4812	lunedì	nouns	понедельник
+
+
+
+
+
+4818	cacciatore	nouns	охотник
+4819	sollievo	nouns	облегчение
+
+
+
+
+4824	armadietto	nouns	шкафчик
+
+
+
+4828	tramonto	nouns	закат
+
+
+
+4832	impiegato	adjectives	служащий
+4833	connessione	nouns	связь/подключение
+4834	tecnico	adjectives	технический
+
+
+
+4838	miniera	nouns	шахта/рудник
+
+4840	fidanzamento	nouns	помолвка
+
+4842	spegnere	verbs	выключать/тушить/гасить
+
+
+
+
+
+
+
+
+4851	stadio	nouns	стадион/стадия
+4852	baciare	verbs	целовать
+
+
+
+
+
+
+
+
+
+
+
+
+4865	pasta	nouns	паста/макароны
+
+4867	sede	nouns	штаб-квартира/местонахождение
+
+
+
+
+4872	cantante	nouns	певец/певица
+
+
+4875	schema	nouns	схема
+
+4877	posteriore	adjectives	задний
+
+
+4880	Estero	nouns	заграница/зарубежье
+4881	concedere	verbs	даровать/предоставлять/уступать
+
+
+
+
+
+
+
+
+
+4891	collina	nouns	холм/холмик
+
+4893	risultare	verbs	оказываться/получаться/значиться
+
+
+
+4897	babysitter	nouns	няня/сиделка
+
+
+
+4901	forno	nouns	печь/духовка
+
+
+
+
+4906	cartella	nouns	папка/портфель/папка
+4907	sorridere	verbs	улыбаться
+
+4909	sbirro	nouns	коп/полицейский
+
+
+
+
+
+4915	tigre	nouns	тигр
+4916	corrispondere	verbs	соответствовать/отвечать/переписываться
+
+
+
+
+4921	cronaca	nouns	хроника/отчёт
+
+
+
+
+
+
+4928	servo	nouns	слуга
+
+
+
+
+
+
+
+
+
+
+4939	manuale	nouns	руководство/справочник
+4940	attrezzo	nouns	инструмент/орудие
+4941	allenatore	nouns	тренер
+4942	materia	nouns	материя/вещество/предмет
+
+4944	scavare	verbs	копать/рыть/выкапывать
+
+
+
+4948	password	nouns	пароль
+
+
+
+4952	alternativa	adjectives	альтернативный
+
+
+
+
+
+
+
+
+
+4962	abitante	nouns	житель/обитатель
+
+
+
+
+
+
+
+
+4971	parente	nouns	родственник
+
+
+
+4975	assenza	nouns	отсутствие
+4976	avvertimento	nouns	предупреждение/предостережение
+
+
+
+
+4981	identificare	verbs	идентифицировать/опознавать
+4982	sviluppo	nouns	развитие
+4983	bara	nouns	гроб
+4984	basket	nouns	баскетбол
+4985	tristezza	nouns	грусть/печаль
+4986	mela	nouns	яблоко
+4987	osservazione	nouns	наблюдение/замечание
+
+
+
+
+
+
+4994	incazzare	verbs	злить(ся)/бесить(ся)
+4995	ricetta	nouns	рецепт
+
+4997	umanità	nouns	человечество/гуманность
+
+
+
+
+
+
+
+5005	maggio	nouns	май
+
+
+
+5009	fascino	nouns	очарование/обаяние/шарм
+
+
+5012	recitare	verbs	играть/исполнять/декламировать
+
+
+
+5016	accademia	nouns	академия
+
+
+
+
+
+
+5023	sconvogliere	verbs	потрясать/расстраивать/нарушать
+5024	gravidanza	nouns	беременность
+
+
+
+5028	portatile	adjectives	портативный
+
+
+
+5032	cazzone	nouns	враньё/чушь
+
+
+5035	guerriero	nouns	воин
+
+
+
+
+
+
+5042	investigatore	nouns	следователь/сыщик
+5043	avvertare	verbs	ощущать/чувствовать/замечать
+
+
+
+
+
+
+
+
+5052	somma	nouns	сумма
+
+5054	pagamento	nouns	платёж/оплата
+
+5056	coinvolgere	verbs	вовлекать/затрагивать/вмешивать
+
+
+5059	spingire	verbs	толкать/двигать/подталкивать
+5060	esecuzione	nouns	выполнение/казнь
+
+
+
+
+
+5066	riparare	verbs	чинить/ремонтировать/исправлять
+
+
+
+
+
+
+
+5074	guadagno	nouns	заработок/прибыль
+
+5076	irruzione	nouns	вторжение/налёт
+
+
+
+
+
+
+
+
+
+5086	strumento	nouns	инструмент/средство
+5087	impianto	nouns	установка/сооружение/предприятие
+
+5089	medaglia	nouns	медаль
+
+5091	flash	nouns	вспышка
+
+5093	terrore	nouns	ужас/террор
+
+5095	ala	nouns	крыло
+
+
+5098	modulo	nouns	форма/бланк
+
+
+5101	recupero	nouns	восстановление/спасение
+5102	videocamera	nouns	видеокамера
+5103	cardiaco	adjectives	сердечный
+5104	bicicletta	nouns	велосипед
+
+
+5107	confessare	verbs	признаваться/исповедовать
+
+5109	spostato	adjectives	сдвинутый/перемещённый
+
+5111	esercizio	nouns	упражнение
+5112	complicare	verbs	усложнять/запутывать
+
+
+
+5116	drogare	verbs	наркотизировать/подкармливать наркотиками
+
+
+
+
+5121	coordinare	verbs	координировать/согласовывать
+
+5123	intelligenza	nouns	интеллект/ум
+5124	chimica	nouns	химия
+
+5126	spacciatore	nouns	наркоторговец/дилер
+
+
+
+
+5131	munizione	nouns	боеприпас/патрон
+
+
+
+
+5136	norma	nouns	норма/правило
+
+
+5139	laser	nouns	лазер
+
+5141	circolo	nouns	кружок/клуб
+5142	scontro	nouns	столкновение/конфликт
+
+
+5145	gonna	nouns	юбка
+
+
+
+
+
+
+
+
+5154	presentazione	nouns	презентация/представление
+
+5156	cranio	nouns	череп
+
+
+5159	descrizione	nouns	описание
+5160	pallottola	nouns	пуля
+
+
+
+5164	indiano	adjectives	индийский
+
+5166	ritiro	nouns	отзыв/уход/снятие
+
+
+
+
+5171	cuscino	nouns	подушка
+5172	piante	nouns	растения
+
+
+5175	Laurea	nouns	степень/диплом
+
+
+5178	gps	nouns	GPS/навигация
+
+5180	mafia	nouns	мафия
+5181	difficolta	nouns	трудность/затруднение
+5182	scarpa	nouns	ботинок/туфля
+
+5184	giugno	nouns	июнь
+
+
+5187	abbassare	verbs	опускать/понижать
+
+
+
+
+
+5193	tregua	nouns	перемирие/передышка
+
+
+
+5197	ottobre	nouns	октябрь
+
+5199	nascere	verbs	рождаться/родиться/возникать
+5200	lesbica	adjectives	лесбийский
+
+
+
+
+5205	autorizzare	verbs	разрешать/уполномочивать/авторизовать
+5206	spasso	nouns	прогулка/развлечение
+5207	giuramento	nouns	клятва/присяга
+5208	terrorista	nouns	террорист
+
+5210	popolazione	nouns	население
+
+
+
+
+
+5216	barista	nouns	бариста/бармен
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+5236	circo	nouns	цирк
+
+5238	sepolto	adjectives	похороненный
+
+
+
+
+
+
+
+5246	testamento	nouns	завещание
+
+5248	moneta	nouns	монета/валюта
+
+5250	stabilire	verbs	устанавливать/определять/закреплять
+
+
+
+
+
+
+
+
+
+
+5261	poker	nouns	покер
+
+5263	preda	nouns	добыча/жертва
+
+5265	petrolio	nouns	нефть
+
+
+
+5269	rissa	nouns	драка/потасовка
+
+
+5272	rivolgere	verbs	обращать/направлять/адресовать
+
+
+5275	campanello	nouns	звонок
+
+
+
+5279	zoo	nouns	зоопарк
+
+
+
+
+
+5285	obbligare	verbs	обязывать/заставлять/принуждать
+5286	conclusione	nouns	заключение/вывод
+5287	logica	nouns	логика
+
+
+
+
+5292	lavare	verbs	мыть/стирать/промывать
+
+
+5295	gene	nouns	ген
+
+
+5298	sorellino	nouns	сестрёнка/младшая сестра
+
+
+5301	aprile	nouns	апрель
+
+
+5304	informatore	nouns	информатор/осведомитель
+5305	volume	nouns	объём/громкость/том
+
+
+
+
+
+5311	galleria	nouns	галерея/туннель
+
+
+5314	interroggere	verbs	допрашивать/опросить/экзаменовать
+5315	straniero	nouns	иностранец/чужак
+
+
+
+5319	squalo	nouns	акула
+5320	spingere	verbs	толкать/подталкивать/давить
+
+
+
+5324	martello	nouns	молоток/молот
+
+5326	scandalo	nouns	скандал
+
+
+
+
+5331	mazza	nouns	дубинка/клюшка/бита
+
+
+5334	viola	nouns	альт/фиолетовый цвет/фиалка
+
+5336	custode	nouns	сторож/хранитель/консьерж
+5337	sostanza	nouns	вещество/сущность/суть
+
+
+
+5341	pillola	nouns	таблетка/пилюля
+5342	campus	nouns	кампус/университетский городок
+5343	riflettere	verbs	отражать/размышлять/обдумывать
+
+
+5346	confermare	verbs	подтверждать
+
+
+
+
+
+
+
+5354	scontare	verbs	отбывать/скидывать/считать само собой разумеющимся
+5355	cassetto	nouns	ящик
+
+
+5358	causare	verbs	вызывать/причинять/порождать
+5359	concetto	nouns	концепция/понятие
+
+
+
+
+5364	sostenere	verbs	поддерживать/утверждать/выдерживать
+5365	cenare	verbs	ужинать
+
+
+
+
+5370	equilibrio	nouns	равновесие/баланс
+5371	abilità	nouns	способность/умение/навык
+5372	tacchino	nouns	индейка/индюк
+
+5374	pub	nouns	паб/бар
+5375	aumentare	verbs	увеличивать/повышать/возрастать
+
+5377	svelto	adjectives	быстрый/проворный
+
+5379	compromettere	verbs	компрометировать/подрывать/ставить под угрозу
+
+
+5382	risparmiare	verbs	экономить/беречь/откладывать
+5383	malvagio	adjectives	злодейство/злой
+
+5385	vagina	nouns	влагалище
+5386	zaino	nouns	рюкзак
+5387	umorismo	nouns	юммор
+
+
+
+
+5392	scioccare	verbs	шокировать/поражать
+5393	microfono	nouns	микрофон
+
+5395	attrezzatura	nouns	оборудование/снаряжение
+5396	spendere	verbs	тратить/расходовать
+
+
+5399	sprecare	verbs	тратить впустую/растрачивать/расточать
+
+5401	chiusura	nouns	закрытие/застёжка
+
+
+5404	industria	nouns	промышленность/индустрия
+
+
+
+
+5409	sorte	nouns	судьба/участь/доля
+
+5411	includere	verbs	включать/охватывать/содержать
+5412	funzione	nouns	функция/роль
+
+
+5415	ciclo	nouns	цикл/круговорот
+5416	opposto	adjectives	противоположный
+5417	fottere	verbs	трахать/облажать/погубить
+5418	sentiero	nouns	тропинка/тропа/дорожка
+
+
+5421	preoccupazione	nouns	беспокойство/тревога/озабоченность
+5422	scotch	nouns	скотч/клейкая лента
+
+
+
+
+5427	bagagliaio	nouns	багажник
+
+
+
+
+
+5433	acido	nouns	кислота
+
+
+5436	accedere	verbs	получать доступ/входить/подключаться
+5437	attirare	verbs	привлекать/притягивать/завлекать
+
+
+
+5441	alcool	nouns	алкоголь/спирт
+5442	benedizione	nouns	благословение
+
+
+
+5446	adolescente	nouns	подросток
+5447	copione	nouns	сценарий
+
+5449	tortura	nouns	пытка/мучение
+5450	talpa	nouns	крот/родинка
+
+5452	eccezione	nouns	исключение
+5453	maglia	nouns	футболка/кофта/петля
+
+
+
+
+
+
+
+
+
+
+
+5465	collaborazione	nouns	сотрудничество
+
+5467	radiazione	nouns	излучение/радиация
+5468	festival	nouns	фестиваль
+
+5470	soddisfatto	adjectives	удовлетворённый
+
+
+5473	pozzo	nouns	колодец/скважина
+
+5475	sindrome	nouns	синдром
+
+5477	assegnare	verbs	назначать/распределять/присваивать
+5478	dipendente	nouns	сотрудник/зависимый
+
+5480	coro	nouns	хор
+
+5482	dieta	nouns	диета
+
+
+5485	debolezza	nouns	слабость
+
+
+5488	Patria	nouns	родина/отечество
+5489	compassione	nouns	сострадание/жалость
+
+
+
+5493	truffa	nouns	мошенничество/обман/афёра
+
+
+5496	ira	nouns	гнев/ярость
+
+
+
+5500	cacchio	nouns	чёрт/фиг
+5501	pervertire	verbs	извращать/совращать/развращать
+
+
+
+
+
+
+5508	parete	nouns	стена/стенка
+
+
+
+
+5513	Repubblica	nouns	республика
+5514	mucca	nouns	корова
+
+
+5517	pianta	nouns	растение/план/чертёж
+
+
+
+
+5522	noia	nouns	скука/тоска
+
+
+
+
+5527	apparire	verbs	появляться/казаться/возникать
+
+
+
+5531	conflitto	nouns	конфликт
+
+5533	guarire	verbs	исцелять/вылечивать/заживлять
+
+
+
+
+
+
+5540	realizzare	verbs	реализовывать/осуществлять/создавать
+5541	immobiliare	adjectives	недвижимый/недвижимость
+
+
+
+
+
+
+
+
+
+
+
+
+5554	quinta	adjectives	пятый
+
+
+
+
+
+
+
+
+5563	cesso	nouns	туалет/сортир
+5564	licenziare	verbs	увольнять/уволить
+
+
+
+5568	guaio	nouns	беда/неприятность
+
+5570	giungla	nouns	джунгли
+
+
+
+
+
+5576	gridare	verbs	кричать/орать/выкрикивать
+
+
+5579	elenco	nouns	список/перечень
+5580	sopravvivenza	nouns	выживание
+
+5582	canna	nouns	тростник/удочка/трубка
+
+5584	baffo	nouns	усы
+
+
+5587	calibro	nouns	калибр/уровень
+
+
+
+5591	salotto	nouns	гостиная/салон
+
+
+5594	bucare	verbs	прокалывать/пробивать/дырявить
+5595	cacciare	verbs	гнать/выгонять/охотиться
+
+
+
+
+
+
+
+
+5604	autore	nouns	автор
+
+
+
+
+
+5610	padrona	nouns	хозяйка/владелица
+5611	ago	nouns	игла/иголка
+
+
+
+5615	sperma	nouns	сперма
+
+
+5618	prospettiva	nouns	перспектива
+5619	riempire	verbs	заполнять/наполнять
+
+
+
+
+
+5625	combinazione	nouns	комбинация/сочетание
+
+
+5628	sega	nouns	пила
+
+
+
+5632	jeans	nouns	джинсы
+5633	conseguenza	nouns	последствие/результат
+
+
+
+
+
+5639	lettura	nouns	чтение
+
+
+5642	molla	nouns	пружина
+5643	condotta	nouns	поведение/проводка
+5644	scienziato	nouns	учёный
+
+
+5647	vaso	nouns	ваза/горшок
+
+5649	fagiolo	nouns	фасоль/боб
+
+
+
+
+
+5655	anziano	adjectives	пожилой/старший
+5656	assistere	verbs	присутствовать/помогать/ассистировать
+5657	jet	nouns	реактивный самолёт/джет
+5658	perfezione	nouns	совершенство
+
+5660	soggiorno	nouns	пребывание/гостиная
+
+5662	carburante	nouns	топливо
+
+5664	decesso	nouns	кончина/смерть
+
+
+
+5668	tempismo	nouns	своевременность/чувство времени
+5669	trasformare	verbs	преобразовывать/трансформировать
+
+5671	esprimere	verbs	выражать/проявлять/излагать
+5672	clown	nouns	клоун
+
+5674	verme	nouns	червь
+
+5676	centesimo	nouns	цент/сантим
+
+5678	rotella	nouns	колёсико/ролик/шестерёнка
+5679	soldo	nouns	деньги/монета
+
+
+
+
+5684	autostrada	nouns	автострада/шоссе
+
+5686	complimento	nouns	комплимент
+
+5688	bingo	nouns	бинго
+
+
+
+
+
+5694	chiarire	verbs	прояснять/разъяснять/уточнять
+
+
+5697	duca	nouns	герцог
+
+
+
+
+
+
+
+
+
+
+
+5709	addormentare	verbs	усыплять/успокаивать
+
+
+5712	frequenza	nouns	частота
+
+
+5715	biancheria	nouns	бельё
+
+
+
+
+5720	massaggio	nouns	массаж
+
+
+
+
+
+
+
+
+5729	novembre	nouns	ноябрь
+
+5731	amministratore	nouns	администратор/управляющий
+
+
+
+5735	mensa	nouns	столовая
+
+
+
+
+5740	mail	nouns	письмо/имейл
+5741	ispirazione	nouns	вдохновение
+5742	chirurgia	nouns	хирургия
+
+
+5745	esaminare	verbs	рассматривать/исследовать/экзаменовать
+
+
+
+5749	sentenza	nouns	приговор/решение суда
+
+
+5752	marchio	nouns	бренд/марка/клеймо
+
+5754	scopa	nouns	метла/веник
+
+5756	incazzato	adjectives	злой/раздражённый
+5757	collaborare	verbs	сотрудничать
+5758	sfuggire	verbs	ускользать/избегать/бежать
+
+5760	annullare	verbs	аннулировать/отменять/упразднять
+
+
+5763	rifiutare	verbs	отказывать/отвергать/отклонять
+5764	vietare	verbs	запрещать/воспрещать
+5765	shopping	nouns	шоппинг
+
+5767	formazione	nouns	образование/подготовка/формирование
+5768	torneo	nouns	турнир
+5769	papino	nouns	папочка/батюшка
+5770	continuazione	nouns	продолжение
+
+
+
+
+5775	alieno	adjectives	чужой/инопланетный
+
+5777	fossa	nouns	яма/ров/могила
+
+
+
+
+
+
+
+5785	premere	verbs	нажимать/давить/настаивать
+5786	valigetta	nouns	портфель/дипломат/чемоданчик
+5787	affidamento	nouns	опека/передача на воспитание/доверие
+5788	copertina	nouns	обложка/одеяло/покрывало
+
+
+
+5792	assassinare	verbs	убивать/умерщвлять/ликвидировать
+
+5794	nido	nouns	гнездо/гнёздышко
+
+
+5797	condoglianza	nouns	соболезнование
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+5815	valutazione	nouns	оценка
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+5834	carrozza	nouns	карета/вагон
+
+
+
+5838	dente	nouns	зуб
+
+5840	pulsante	nouns	кнопка
+
+
+
+
+
+
+
+5848	dentista	nouns	стоматолог/зубной врач
+
+5850	routine	nouns	рутина/распорядок
+
+5852	porre	verbs	ставить/помещать/задавать
+
+
+5855	monaco	nouns	монах
+5856	avversario	nouns	противник/соперник
+5857	psichiatra	nouns	психиатр
+
+
+
+
+
+
+5864	ritirare	verbs	забирать/снимать/отзывать
+
+
+
+5868	agosto	nouns	август
+
+5870	appoggio	nouns	поддержка/опора
+
+
+5873	quota	nouns	взнос/доля/квота
+5874	perimetro	nouns	периметр
+5875	menu	nouns	меню
+5876	toro	nouns	бык
+
+5878	frutto	nouns	плод/фрукт
+
+
+
+5882	schiavo	nouns	раб
+
+
+
+
+
+5888	oscurità	nouns	темнота/мрак
+
+
+
+
+
+
+5895	autunno	nouns	осень
+
+
+
+
+
+
+
+
+
+
+5906	riparo	nouns	укрытие/приют
+
+
+
+5910	depressione	nouns	депрессия
+5911	pieta	nouns	милосердие/сострадание/благочестие
+
+5913	consenso	nouns	согласие
+
+
+
+
+
+
+
+
+5922	rene	nouns	почка
+5923	rappresentante	nouns	представитель
+
+5925	tennis	nouns	теннис
+
+
+
+
+
+5931	concorrere	verbs	содействовать/участвовать/конкурировать
+5932	regolare	verbs	регулировать/настраивать/упорядочивать
+
+5934	investimento	nouns	инвестиция/вложение
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+5949	sconfiggere	verbs	побеждать/разбивать/одолевать
+
+
+
+
+
+
+5956	salvezza	nouns	спасение
+
+5958	programmare	verbs	программировать/планировать
+
+5960	satellite	nouns	спутник
+5961	marzo	nouns	март
+
+
+
+5965	giovedì	nouns	четверг
+
+5967	dvd	nouns	ДВД/диск
+5968	rinchiudere	verbs	запирать/заключать/заточать
+5969	bastare	verbs	достаточно/хватать
+
+
+
+
+5974	giocattolo	nouns	игрушка
+
+
+
+
+
+
+
+
+5983	corruzione	nouns	коррупция
+5984	lenzuolo	nouns	простыня
+5985	scout	nouns	скаут/разведчик
+
+
+5988	fissare	verbs	устанавливать/закреплять/назначать
+
+
+5991	sentimento	nouns	чувство
+5992	atterraggio	nouns	посадка
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6015	diamante	nouns	алмаз/бриллиант
+
+
+6018	fiamma	nouns	пламя
+
+
+
+
+
+
+
+6026	concludere	verbs	заключать/завершать/заканчивать
+
+
+
+
+
+6032	comprendere	verbs	понимать/осознавать/включать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6061	attendere	verbs	ждать/ожидать/дожидаться
+
+
+
+
+6066	selvaggio	adjectives	дикий
+
+
+
+
+
+
+
+6074	modella	nouns	модель/манекенщица
+
+
+6077	puntare	verbs	целиться/направлять/нацеливаться
+6078	commettere	verbs	совершать/допускать
+
+
+6081	osservare	verbs	наблюдать/соблюдать/рассматривать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6104	votare	verbs	голосовать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6124	rimuovere	verbs	удалять/устранять/снимать
+6125	rimettere	verbs	возвращать/ставить на место/возобновлять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6146	tacere	verbs	молчать/умалчивать
+
+
+
+
+6151	ritrarre	verbs	изображать/рисовать/портретировать
+
+
+
+
+
+
+
+
+
+
+
+
+6164	scaricare	verbs	разгружать/скачивать/разряжать
+
+
+
+
+
+
+
+6172	dedicare	verbs	посвящать/уделять
+
+
+6175	scadere	verbs	истекать/заканчиваться/просрочиваться
+
+6177	registrare	verbs	регистрировать/записывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6204	invitare	verbs	приглашать/пригласить/звать
+6205	farmaco	nouns	лекарство/препарат
+
+
+
+
+
+6211	circondare	verbs	окружать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6233	alcolico	adjectives	алкогольный
+
+6235	compiere	verbs	совершать/выполнять/исполнять
+6236	intervenire	verbs	вмешиваться/участвовать/происходить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6253	dividere	verbs	делить/разделять/разделяться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6278	istruzione	nouns	образование/инструкция
+
+
+6281	avvelenare	verbs	отравлять/ядовить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6305	ossessionare	verbs	одерживать/преследовать/мучить
+
+
+
+
+6310	ignorare	verbs	игнорировать/пренебрегать
+
+6312	somigliare	verbs	походить/быть похожим
+
+
+
+
+
+6318	condurre	verbs	вести/управлять/проводить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6339	spaventare	verbs	пугать/испугать/напугать
+6340	sognare	verbs	мечтать/видеть во сне
+
+
+
+6344	pisciare	verbs	мочиться/писать
+
+
+6347	verificare	verbs	проверять/удостоверяться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6369	amichevole	adjectives	дружелюбный
+
+
+
+
+
+
+
+6377	ridare	verbs	возвращать/отдавать обратно
+
+
+
+
+
+
+6384	elemento	nouns	элемент
+
+
+6387	razzista	adjectives	расистский
+
+
+
+
+6392	emozione	nouns	эмоция/чувство
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6408	aggiustare	verbs	чинить/поправлять/настраивать
+
+
+
+
+
+
+6415	rimandare	verbs	откладывать/переносить
+
+
+
+
+
+
+
+
+6424	progettare	verbs	проектировать/планировать
+
+
+
+
+
+
+
+
+
+
+
+6436	appropriare	verbs	присваивать/завладевать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6456	avvicinare	verbs	приближать/сближать
+
+
+
+
+
+
+
+
+
+
+
+
+
+6470	frequentare	verbs	посещать/бывать/общаться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6494	incolpare	verbs	обвинять/винить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6509	eccitare	verbs	возбуждать/волновать
+
+
+
+
+
+
+
+
+
+
+
+6521	sbattere	verbs	хлопать/бить/швырять
+6522	pescare	verbs	ловить рыбу/выуживать
+
+6524	formulare	verbs	формулировать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6548	tare	verbs	тари́ровать/вычитать вес тары
+6549	biscotto	nouns	печенье/бисквит
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6569	scattare	verbs	щёлкать/фотографировать/срабатывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6586	negare	verbs	отрицать/отказывать
+
+6588	occorrere	verbs	требоваться/быть нужным
+
+
+
+6592	ricercare	verbs	исследовать/разыскивать/искать
+
+
+
+6596	calcolare	verbs	вычислять/рассчитывать/подсчитывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6615	disturbare	verbs	беспокоить/мешать/нарушать
+6616	ingannare	verbs	обманывать/обмануть
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6633	incasinare	verbs	запутывать/путать/усложнять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6660	analizzare	verbs	анализировать
+
+
+
+
+
+
+
+
+6669	rivelare	verbs	раскрывать/обнаруживать/разоблачать
+
+6671	risata	nouns	смех
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6689	rituale	adjectives	ритуальный
+
+
+
+
+
+
+
+
+
+6699	valere	verbs	стоить/иметь ценность
+6700	trasportare	verbs	транспортировать/перевозить
+
+
+
+
+
+
+
+
+
+
+6711	soffiare	verbs	дуть/сдувать
+
+
+6714	ferire	verbs	ранить/обидеть/уязвить
+
+
+
+
+
+
+
+
+
+6724	centinaio	nouns	сотня
+
+6726	ripulire	verbs	очищать/убирать
+
+6728	detenere	verbs	содержать под стражей/владеть/удерживать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6743	conquistare	verbs	завоёвывать/покорять/завоевать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6763	segnare	verbs	отмечать/знаменовать/записывать
+
+
+6766	risorsa	nouns	ресурс
+
+
+
+
+
+
+
+
+
+
+
+6778	garantire	verbs	гарантировать/обеспечивать/ручаться
+
+
+
+
+
+
+
+6786	nominare	verbs	назначать/называть/выдвигать
+6787	inviare	verbs	отправлять/посылать/пересылать
+
+
+6790	proseguire	verbs	продолжать/продолжаться
+
+
+
+6794	desiderare	verbs	желать/хотеть/стремиться
+
+
+
+6798	ridurre	verbs	сокращать/уменьшать/снижать
+
+
+
+
+
+
+6805	trasferire	verbs	переносить/переводить/перемещать
+
+
+
+
+
+
+
+
+6814	bussare	verbs	стучать/постучать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6841	peggiorare	verbs	ухудшать/ухудшаться
+
+
+
+
+
+
+
+
+
+6851	negoziare	verbs	вести переговоры/договариваться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6886	ritrovare	verbs	обрести снова/найти вновь
+
+
+
+6890	dipingere	verbs	рисовать/писать красками
+
+
+
+
+
+
+
+
+6899	sfruttare	verbs	эксплуатировать/использовать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6915	fregare	verbs	обманывать/надуть/наплевать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6934	eseguire	verbs	выполнять/исполнять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6953	atterrare	verbs	приземляться/сажать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6998	cagare	verbs	какать/срать
+
+
+
+
+7003	esagerare	verbs	преувеличивать/сгущать краски
+7004	reagire	verbs	реагировать/откликаться
+
+
+
+
+
+7010	ragionare	verbs	рассуждать/размышлять
+
+
+
+
+
+
+
+
+
+7020	comparire	verbs	появляться
+
+
+7023	esistere	verbs	существовать
+
+
+7026	rimottere	verbs	устранять/снимать/перемещать
+
+
+
+
+
+
+
+
+
+
+
+7038	visuale	adjectives	зрительный
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7057	gettare	verbs	бросать/выбрасывать
+
+
+
+7061	picchiare	verbs	бить
+
+
+
+
+7066	appendere	verbs	вешать/подвешивать
+
+7068	precisamente	adverbs	
+
+
+
+
+
+
+
+
+
+
+7079	fallire	verbs	терпеть неудачу/проваливаться/разоряться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7094	progresso	nouns	прогресс
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7121	bloccare	verbs	блокировать/останавливать/замораживать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7136	mancare	verbs	не хватать/отсутствовать/пропускать
+
+
+
+
+
+
+
+
+
+
+7147	intrappolare	verbs	ловить в ловушку/запирать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7168	dimensione	nouns	размер/измерение/величина
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7190	elettrico	adjectives	электрический
+
+7192	produrre	verbs	производить/вырабатывать/создавать
+
+7194	destinare	verbs	предназначать/направлять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7215	vigilare	verbs	бдить/охранять/наблюдать
+
+
+7218	terrorizzare	verbs	терроризировать/устрашать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7253	inserire	verbs	вставлять/включать/вводить
+
+
+7256	onorevole	adjectives	почётный/честный
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7303	operare	verbs	оперировать/действовать/работать
+
+
+
+7307	rifare	verbs	переделывать/заново делать
+
+
+
+
+
+
+7314	ritardare	verbs	задерживать/замедлять
+
+
+7317	sbagliare	verbs	ошибаться/промахиваться
+
+
+
+
+
+
+
+
+
+
+
+
+7330	rilasciare	verbs	выпускать/выдавать/освобождать
+
+
+
+
+
+
+
+
+
+
+
+
+
+7344	derivare	verbs	происходить/вытекать/производить
+
+
+7347	insistere	verbs	настаивать/упорствовать
+
+
+7350	avvertire	verbs	предупреждать/чувствовать/ощущать
+
+
+
+
+
+
+
+
+
+
+7361	imboscare	verbs	устраивать засаду/прятать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7379	franco	adjectives	искренний/откровенный
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7401	osare	verbs	осмеливаться/решаться/дерзать
+
+
+
+7405	tradire	verbs	предавать/изменять/выдавать
+
+
+
+
+
+
+
+
+
+
+
+7417	svizzero	adjectives	швейцарский
+7418	riunito	adjectives	собранный/объединённый
+
+7420	approvare	verbs	одобрять/утверждать
+
+
+
+
+
+
+
+
+
+7430	caviglia	nouns	лодыжка/голеностоп
+
+
+
+
+
+
+
+
+
+7440	pesare	verbs	взвешивать/весить
+
+
+
+
+7445	iniziale	adjectives	начальный/исходный
+
+
+
+7449	eleggere	verbs	избирать/выбирать
+
+7451	frenare	verbs	тормозить/сдерживать/останавливать
+
+
+
+
+
+
+
+
+
+
+
+
+7464	dirigere	verbs	направлять/руководить/дирижировать
+
+
+
+7468	stimare	verbs	оценивать/ценивать
+
+
+7471	offendere	verbs	оскорблять/обижать/нарушать
+
+
+
+
+7476	cedere	verbs	уступать/сдаваться/передавать
+
+
+
+7480	disegnare	verbs	рисовать/чертить/проектировать
+
+
+
+
+
+
+7487	iscritto	adjectives	зарегистрированный/записанный
+
+
+
+
+
+7493	stufare	verbs	надоедать/докучать/утомлять
+
+
+
+
+7498	accompagnare	verbs	сопровождать
+7499	interrogare	verbs	допрашивать/спрашивать
+
+
+
+
+
+
+7506	odiare	verbs	ненавидеть/испытывать отвращение
+
+7508	ciccione	adjectives	толстый/полненький
+
+
+
+7512	rallentare	verbs	замедлять
+7513	fornire	verbs	предоставлять/снабжать/обеспечивать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7535	scambiare	verbs	обменивать/менять/путать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7554	impiccare	verbs	вешать/удавить
+7555	procurare	verbs	доставать/приобретать/причинять
+
+
+
+
+
+7561	scomparire	verbs	исчезать/пропадать
+
+
+
+
+
+
+
+
+
+7571	comporre	verbs	составлять/сочинять/компоновать
+
+
+
+
+
+
+
+
+
+7581	precisare	verbs	уточнять/разъяснять/определять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7628	pugnalare	verbs	закалывать/наносить удар ножом
+
+
+
+
+
+
+
+
+
+
+
+
+
+7642	addestrare	verbs	обучать/тренировать/дрессировать
+
+
+
+
+
+
+7649	afferrare	verbs	хватать/хвататься/понимать
+
+7651	comunista	adjectives	коммунистический
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7666	cavare	verbs	извлекать/вынимать/добывать
+
+
+
+
+
+
+
+7674	significare	verbs	означать/значить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7690	contrattare	verbs	торговаться/договариваться/обсуждать условия
+
+
+
+
+
+
+
+
+7699	derubare	verbs	грабить/обворовывать
+
+
+
+
+
+
+
+
+
+7709	miglio	nouns	миля
+
+
+
+
+
+
+
+
+
+
+
+
+
+7723	sostituire	verbs	заменять/замещать/подменять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7750	basare	verbs	основывать/базировать
+
+
+
+
+
+7756	pulizia	nouns	уборка/чистка/очистка
+
+
+
+7760	esporre	verbs	излагать/выставлять/подвергать
+
+
+
+
+
+
+7767	cristiano	adjectives	христианский
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7782	sciocchezza	nouns	глупость/чушь
+
+
+
+
+
+
+7789	protestare	verbs	протестовать/возражать
+
+7791	telefonare	verbs	звонить/телефонировать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7812	insetto	nouns	насекомое
+
+
+
+
+
+7818	scusare	verbs	извинять/прощать
+
+
+
+
+
+7824	investire	verbs	инвестировать/вкладывать
+
+
+
+
+
+
+
+7832	raramente	adverbs	
+
+
+
+
+7837	completare	verbs	завершать/заканчивать/дополнять
+
+
+
+
+
+
+
+7845	celebrare	verbs	праздновать/отмечать/совершать
+7846	disciplinare	verbs	дисциплинировать/регламентировать/воспитывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7867	richiamare	verbs	вызывать/перезванивать/призывать
+
+
+
+
+
+
+
+
+7876	condizionare	verbs	обусловливать/кондиционировать/влиять
+
+
+
+
+
+
+
+
+
+
+7887	durare	verbs	длиться/продолжаться
+
+
+
+
+
+
+
+
+7896	crollare	verbs	рушиться/падать/обрушиваться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7923	utilizzare	verbs	использовать/применять/утилизировать
+7924	descrivere	verbs	описывать/описать
+
+
+
+
+
+
+
+
+7933	stendere	verbs	расстилать/раскладывать/вытягивать
+
+
+
+
+
+7939	affermare	verbs	утверждать/заявлять/подтверждать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7961	provvedere	verbs	обеспечивать/снабжать/принимать меры
+7962	voltare	verbs	поворачивать/переворачивать
+
+
+7965	valutare	verbs	оценивать/расценивать
+
+
+
+
+
+
+7972	passeggero	nouns	пассажир
+
+
+
+7976	sbrigare	verbs	ускорять/решать/улаживать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7999	medicinale	adjectives	лекарственный/медицинский
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8020	convivere	verbs	сосуществовать/уживаться/проживать вместе
+
+
+
+
+
+
+8027	critico	adjectives	критический
+
+
+
+
+
+
+
+
+
+
+
+
+8040	livido	adjectives	синеватый/багровый
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8057	prestare	verbs	одалживать/оказывать/обращать
+
+
+
+
+
+
+
+
+
+
+
+8069	definire	verbs	определять/уточнять/давать определение
+
+
+
+
+8074	competere	verbs	соревноваться/конкурировать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8096	provocare	verbs	провоцировать/вызывать
+
+
+
+
+
+
+8103	scoppiare	verbs	взрываться/разразиться/лопнуть
+
+
+
+
+
+
+
+8111	soddisfare	verbs	удовлетворять/исполнять/выполнять
+
+
+
+
+8116	risalire	verbs	подниматься/восходить/прослеживать
+
+
+
+
+
+
+8123	chilo	nouns	килограмм
+
+
+
+8127	legare	verbs	связывать/привязывать/соединять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8145	necessitare	verbs	нуждаться/требовать
+
+
+
+
+
+
+
+
+
+
+
+
+
+8159	chiacchierare	verbs	болтать/разговаривать/щебетать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8193	udire	verbs	слышать/услышать
+
+
+8196	pranzare	verbs	обедать
+
+
+
+
+
+
+
+
+
+
+
+8208	seppellire	verbs	хоронить/погребать/зарывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8224	combattire	verbs	сражаться/бороться
+
+
+
+8228	parcheggiato	verbs	припаркованный
+
+
+
+
+
+
+
+
+8237	assicurare	verbs	обеспечивать/застраховать/уверять
+8238	delegare	verbs	делегировать/поручать
+
+8240	psichiatrico	adjectives	психиатрический
+
+
+8243	brindire	verbs	тостовать/произносить тост
+
+
+
+
+
+
+
+
+8252	avvisare	verbs	предупреждать/уведомлять
+
+
+
+
+
+
+
+8260	affidare	verbs	вверять/поручать/доверять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8288	rimordere	verbs	грызть/мучить/терзать
+
+
+
+
+8293	suicidare	verbs	покончить с собой/совершить самоубийство
+
+8295	chilometro	nouns	километр
+
+
+
+
+
+
+
+
+8304	assaggiare	verbs	пробовать/отведать/дегустировать
+
+
+
+8308	dimentichare	verbs	забывать/позабыть
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8333	occupare	verbs	занимать/занять/оккупировать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8354	svegliare	verbs	будить/пробуждать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8371	ricostruire	verbs	восстанавливать/реконструировать/отстраивать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8432	miliardo	nouns	миллиард
+
+8434	incastrare	verbs	вставлять/подгонять/подставить
+
+
+8437	abbattere	verbs	сбивать/валить/сокрушать
+
+8439	emozionare	verbs	волновать/поражать/трогать
+
+
+
+
+
+
+8446	promettere	verbs	обещать/сулить
+
+8448	esaurire	verbs	исчерпывать/истощать/заканчиваться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8464	unire	verbs	объединять/соединять/сливать
+8465	evacuare	verbs	эвакуировать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8486	menzionare	verbs	упоминать/ссылаться на
+
+
+
+8490	turbare	verbs	тревожить/нарушать/волновать
+
+8492	aggiornare	verbs	обновлять/модернизировать
+
+8494	stringere	verbs	сжимать/затягивать/заключать
+
+8496	dichiarare	verbs	заявлять/объявлять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8520	caricare	verbs	загружать/заряжать/нагружать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8540	esplorare	verbs	исследовать/изучать/разведывать
+
+
+8543	narcotico	adjectives	наркотический
+
+
+
+
+
+
+
+
+
+
+
+8555	trascorrere	verbs	проводить/протекать/проходить
+
+
+
+
+
+
+
+
+
+8565	divertire	verbs	развлекать/забавлять/веселиться
+
+
+
+
+
+8571	bentornare	verbs	добро пожаловать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8586	allontanare	verbs	отдалять/отгонять/отстранять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8611	ingaggiare	verbs	нанимать/завербовать/привлекать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8637	capitare	verbs	случаться/происходить/попадаться
+
+
+
+
+
+8643	vicinare	verbs	приближать/сближать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8665	staccare	verbs	отрывать/отключать/отделять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8699	nazista	adjectives	нацистский
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8717	sacrificare	verbs	приносить в жертву/жертвовать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8739	ripartire	verbs	отправляться снова/начинать сначала/выезжать
+
+
+
+
+
+
+
+
+
+
+
+8751	reggere	verbs	держать/выдерживать/удерживать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8776	apprezzare	verbs	ценить/оценивать/признавать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8823	beccare	verbs	клевать/поймать/получить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8840	misero	adjectives	жалкий/несчастный
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8867	giurare	verbs	клясться/присягать
+
+
+
+
+
+8873	buffa	adjectives	смешной/забавный
+
+
+8876	interferire	verbs	вмешиваться/вторгаться
+
+
+
+
+
+
+
+8884	determinare	verbs	определять/устанавливать/решать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8913	trattenere	verbs	удерживать/сдерживать/задерживать
+
+
+
+
+8918	chimico	adjectives	химический
+
+
+
+
+8923	logico	adjectives	логический
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8954	sollevare	verbs	поднимать/облегчать
+
+8956	capello	nouns	волос
+8957	piovere	verbs	идти/лить
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8982	rapire	verbs	похищать/порабощать/увлекать
+
+
+
+
+
+
+
+
+8991	circolare	verbs	циркулировать/обращаться/распространяться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9042	inseguire	verbs	преследовать/гнаться/догонять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9064	comandare	verbs	командовать/управлять/приказывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9082	cellula	nouns	клетка
+
+
+
+
+
+9088	cavalcare	verbs	скакать/ездить верхом/оседлать
+
+
+
+
+
+
+
+
+9097	interpretare	verbs	интерпретировать/играть/толковать
+
+
+
+
+
+
+
+
+
+9107	attivare	verbs	активировать/включать/запускать
+
+
+
+
+
+
+
+
+
+
+
+
+9120	estrarre	verbs	извлекать/добывать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9144	formare	verbs	формировать/составлять/образовывать
+
+9146	denunciare	verbs	заявлять/обвинять/доносить
+
+
+
+
+
+
+9153	prescindere	verbs	абстрагироваться/не учитывать/отвлекаться от
+
+9155	migliaio	nouns	тысяча
+
+
+
+
+
+9161	immobile	adjectives	неподвижный/недвижимый
+
+
+
+
+
+
+
+
+
+
+
+9173	sviluppare	verbs	развивать/разрабатывать
+
+
+
+
+
+
+
+
+
+9183	guanto	nouns	перчатка
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9231	escludere	verbs	исключать/устранять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9256	prevedere	verbs	предвидеть/предусматривать/прогнозировать
+
+
+
+9260	espulso	adjectives	изгнанный/высланный
+
+
+
+
+
+
+
+
+9269	ebrea	adjectives	еврейский
+
+9271	richiedere	verbs	требовать/запрашивать
+9272	cogliere	verbs	срывать/ловить/уловлять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9301	annunciare	verbs	объявлять/сообщать/анонсировать
+9302	contenere	verbs	содержать/вмещать/сдерживать
+
+
+
+
+
+9308	provenire	verbs	происходить/поступать
+
+
+
+
+
+
+9315	pubblicare	verbs	публиковать/издавать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9335	calmare	verbs	успокаивать/утихомиривать
+
+
+
+
+
+
+9342	informare	verbs	информировать/уведомлять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9370	bagaglio	nouns	багаж
+
+
+
+
+
+
+
+
+
+
+9381	trascinare	verbs	тащить/волочить/затягивать
+
+
+
+9385	dubitare	verbs	сомневаться/ставить под сомнение
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9414	distinguere	verbs	различать/отличать/выделять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9451	godere	verbs	наслаждаться/пользоваться/радоваться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9482	divorziare	verbs	разводиться
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9498	donare	verbs	дарить/жертвовать/донорствовать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9517	marcire	verbs	гнить/тлеть
+
+9519	inventare	verbs	изобретать/придумывать/выдумывать
+
+9521	spedire	verbs	отправлять/посылать/пересылать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9539	patata	nouns	картофель/картошка
+
+
+
+
+
+
+
+
+
+
+
+
+
+9553	accusare	verbs	обвинять/обвинить/осуждать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9602	ictus	nouns	инсульт/удар
+
+
+
+9606	subire	verbs	подвергаться/терпеть/переносить
+9607	maratona	nouns	марафон
+
+
+9610	padrino	nouns	крёстный/кум
+
+
+
+
+
+
+9617	fischio	nouns	свист
+
+
+
+
+
+
+
+
+
+
+
+
+
+9631	pittura	nouns	живопись/краска
+
+
+
+
+9636	dirigente	nouns	руководитель/управляющий
+
+9638	battaglione	nouns	батальон
+
+
+
+
+
+9644	citazione	nouns	цитата
+
+
+9647	giovinezza	nouns	юность/молодость
+
+
+
+9651	continente	nouns	континент/материк
+9652	labirinto	nouns	лабиринт
+9653	traghetto	nouns	паром
+
+
+
+9657	teschio	nouns	череп
+
+9659	nottata	nouns	ночевка/ночь
+
+
+
+9663	esercitazione	nouns	учение/тренировка/упражнение
+9664	sfidare	verbs	бросать вызов/оспаривать/дерзнуть
+
+
+9667	rappresentare	verbs	представлять
+9668	giurisdizione	nouns	юрисдикция
+
+
+9671	profondita	nouns	глубина
+
+
+
+
+
+
+
+
+
+
+
+
+9684	facoltà	nouns	факультет/способность
+
+9686	recitazione	nouns	игра/исполнение/декламация
+
+
+
+
+
+
+
+9694	guscio	nouns	скорлупа/раковина/панцирь
+
+
+
+9698	convento	nouns	монастырь
+
+9700	barbiere	nouns	парикмахер/цирюльник
+
+9702	chiarezza	nouns	ясность
+9703	intestino	nouns	кишечник
+
+
+9706	coreano	adjectives	корейский
+9707	calo	nouns	снижение/падение/спад
+
+9709	casetta	nouns	домик
+
+
+
+
+
+
+
+
+
+
+
+
+9722	centimetro	nouns	сантиметр
+
+9724	sonda	nouns	зонд
+9725	reception	nouns	рецепция/администратор
+9726	prenotazione	nouns	бронирование/резервация
+
+
+9729	montare	verbs	собирать/монтировать/устанавливать
+
+
+9732	nostalgia	nouns	ностальгия/тоска
+
+
+
+
+
+9738	stoffa	nouns	ткань
+9739	ombrello	nouns	зонт
+9740	occupazione	nouns	оккупация/занятость/занятие
+
+
+9743	box	nouns	бокс/коробка/гараж
+
+9745	nodo	nouns	узел
+9746	utero	nouns	матка
+
+
+
+
+
+
+
+9754	pentola	nouns	кастрюля/горшок
+
+
+
+
+
+
+
+
+
+9764	automobile	nouns	автомобиль/машина
+
+9766	facolta	nouns	факультет/способность
+
+9768	grana	nouns	зерно/фактура
+9769	cartolina	nouns	открытка
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9791	localizzare	verbs	локализовать/определять местонахождение
+
+
+
+
+
+9797	poverino	nouns	бедняжка/бедолага
+
+9799	mimo	nouns	мим
+
+
+
+
+9804	rimettire	verbs	возвращать/ставить на место/восстанавливать
+
+
+
+9808	coinquilina	nouns	соседка/соквартирантка
+
+9810	corsia	nouns	полоса/палата
+9811	competenza	nouns	компетенция/компетентность
+
+9813	onorare	verbs	чтить/удостаивать/выполнять
+
+
+
+
+
+9819	accendino	nouns	зажигалка
+
+
+9822	organo	nouns	орган
+
+9824	cimice	nouns	клоп
+
+
+9827	stalla	nouns	хлев/стойло/конюшня
+9828	documentazione	nouns	документация
+
+9830	matita	nouns	карандаш
+
+
+
+9834	organismo	nouns	организм/организация
+
+9836	detenzione	nouns	содержание под стражей/задержание
+
+9838	Karate	nouns	каратэ
+9839	manovra	nouns	манёвр
+9840	scintilla	nouns	искра
+
+
+
+
+
+
+
+
+9849	truffatore	nouns	мошенник/обманщик
+9850	tiratore	nouns	стрелок
+
+
+9853	granchio	nouns	краб
+
+
+
+
+
+
+
+
+
+
+9864	giardiniere	nouns	садовник
+9865	bibita	nouns	напиток
+
+
+
+9869	finocchio	nouns	фенхель/укроп
+
+
+
+
+
+
+9876	microonda	nouns	микроволновка
+
+9878	celibato	nouns	целибат/безбрачие
+9879	avvicinamento	nouns	приближение/сближение
+
+9881	possedere	verbs	владеть/обладать
+
+
+
+
+
+
+
+
+9890	mascalzone	nouns	негодяй/мерзавец/подлец
+
+
+9893	istruttore	nouns	инструктор
+
+9895	igienico	adjectives	гигиенический
+
+
+
+
+
+9901	pc	nouns	компьютер
+
+
+
+
+
+
+
+
+
+
+
+
+9914	mozione	nouns	модицирование/резолюция
+9915	eco	nouns	эхо/отголосок
+
+
+
+
+
+
+
+9923	elezione	nouns	выборы
+
+9925	vizio	nouns	порок/недостаток/изъян
+
+
+
+9929	ernia	nouns	грыжа
+
+9931	celebrità	nouns	знаменитость/селебрити
+
+
+
+
+9936	recinzione	nouns	ограда/забор/изгородь
+
+9938	modus	nouns	способ/метод
+
+
+
+9942	svenire	verbs	падать в обморок/терять сознание
+
+9944	bacchetta	nouns	палочка/жезл/волшебная палочка
+
+9946	sbronza	nouns	опьянение/пьянка
+9947	scoiattolo	nouns	белка
+
+
+
+
+9952	gelatina	nouns	желе/желатин
+9953	guardaroba	nouns	гардероб/платяной шкаф
+
+
+
+
+
+
+
+
+9962	spezzare	verbs	ломать/разрывать
+
+
+
+
+9967	indicare	verbs	указывать/показывать/обозначать
+
+
+
+
+
+9973	fritta	adjectives	жареный
+
+9975	noleggio	nouns	аренда/прокат
+
+
+
+9979	congedo	nouns	отпуск/отгул/увольнение
+
+9981	schifezza	nouns	гадость/дрянь/мерзость
+
+
+9984	imbroglione	nouns	мошенник/обманщик/плут
+
+
+
+
+9989	ordinanza	nouns	постановление/приказ/распоряжение
+
+
+
+
+
+
+
+
+9998	armonia	nouns	гармония
+
+10000	fascia	nouns	полоса/повязка/диапазон
+
+
+
+
+
+
+
+10008	svolgere	verbs	выполнять/осуществлять/проводить
+
+10010	amichetto	nouns	дружок/приятель
+
+10012	conservare	verbs	сохранять/хранить/сберегать
+
+
+10015	avanzo	nouns	остаток/остатки еды
+10016	distribuzione	nouns	распределение
+
+
+
+
+
+
+10023	buffet	nouns	буфет/шведский стол
+
+
+
+
+
+10029	jeep	nouns	джип
+
+
+
+
+10034	macello	nouns	бойня/резня/кровопролитие
+
+
+
+
+10039	urina	nouns	моча
+
+
+
+
+10044	ingegneria	nouns	инженерия/инженерное дело
+
+
+
+
+10049	stento	nouns	затруднение/нужда
+10050	risveglio	nouns	пробуждение
+
+
+
+
+10055	gioiello	nouns	украшение/драгоценность
+10056	lamentela	nouns	жалоба
+
+10058	troupe	nouns	труппа
+10059	cotone	nouns	хлопок
+
+
+
+10063	trasmettere	verbs	передавать/транслировать/переносить
+
+10065	rabbino	nouns	раввин
+
+
+
+
+10070	scatto	nouns	рывок/щелчок/снимок
+
+
+10073	snack	nouns	перекус/снек
+
+
+
+
+10078	rame	nouns	медь
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+10095	misericordia	nouns	милосердие
+
+
+
+10099	aglio	nouns	чеснок
+10100	agitare	verbs	волновать/встряхивать/тревожить
+
+
+10103	stupratore	nouns	насильник
+
+
+
+
+
+
+
+
+
+10113	marketing	nouns	маркетинг
+
+
+
+
+
+
+
+10121	discoteca	nouns	дискотека/ночной клуб
+
+
+
+
+10126	tassista	nouns	таксист
+
+
+
+
+
+
+
+10134	carbonio	nouns	углерод
+10135	prudenza	nouns	осторожность/осмотрительность
+
+
+
+10139	abbracciare	verbs	обнимать/объять/приветствовать
+10140	cotto	adjectives	варёный/готовый
+10141	invio	nouns	отправка/посылка
+
+
+10144	tutore	nouns	опекун/наставник
+
+
+
+10148	alleato	adjectives	союзный
+10149	pila	nouns	куча/стопка/батарейка
+
+
+
+10153	commissariato	nouns	полицейский участок/комиссариат
+
+
+
+10157	triangolo	nouns	треугольник
+10158	volantino	nouns	листовка/флаер
+
+10160	emendamento	nouns	поправка
+10161	videogioco	nouns	видеоигра
+
+
+10164	antibiotico	nouns	антибиотик
+
+
+10167	infrangere	verbs	нарушать/сокрушать/ломать
+10168	cesto	nouns	корзина
+
+10170	interpretazione	nouns	трактовка/интерпретация
+
+10172	registratore	nouns	диктофон/регистратор
+
+
+
+
+
+10178	fax	nouns	факс
+
+
+
+
+
+
+
+
+
+10188	residuo	adjectives	остаточный
+10189	montaggio	nouns	монтаж/сборка
+
+
+
+
+
+
+
+
+
+
+10200	segnalazione	nouns	сигнал/сообщение/заявление
+
+
+10203	astronauta	nouns	астронавт/космонавт
+10204	messaggero	nouns	посланник/гонец/курьер
+
+10206	accompagnatore	nouns	сопровождающий/аккомпаниатор
+
+
+
+
+
+10212	inventario	nouns	инвентарь/опись
+
+
+
+
+
+
+10219	flora	nouns	флора
+
+10221	collegare	verbs	связывать/соединять/подключать
+
+
+10224	presidenza	nouns	председательство/президентство
+
+
+10227	supereroe	nouns	супергерой
+
+
+10230	pronunciare	verbs	произносить/выговаривать/объявлять
+10231	liquore	nouns	ликёр
+
+10233	regime	nouns	режим
+
+
+
+10237	umiliazione	nouns	унижение
+
+
+
+
+10242	marchese	nouns	маркиз
+
+
+
+
+
+
+
+
+
+10252	punire	verbs	наказывать/карать
+10253	trasformazione	nouns	преобразование/трансформация
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+10269	specialità	nouns	специальность/фирменное блюдо
+
+10271	mattone	nouns	кирпич
+10272	postino	nouns	почтальон
+
+
+10275	parcheggiare	verbs	парковать/ставить на стоянку
+
+
+10278	caratteristica	nouns	характеристика/особенность
+10279	invidia	nouns	зависть
+
+
+10282	statistica	nouns	статистика
+
+
+10285	separare	verbs	разделять/отделять/расставаться
+
+
+
+
+
+10291	modificare	verbs	изменять/модифицировать/менять
+
+
+
+
+
+
+
+
+
+
+10302	sequestro	nouns	похищение/арест/конфискация
+
+
+
+
+
+
+
+
+
+
+
+
+10315	souvenir	nouns	сувенир
+
+
+
+
+
+
+10322	formica	nouns	муравей
+10323	partorire	verbs	рожать/производить на свет
+
+10325	risarcimento	nouns	возмещение/компенсация
+
+
+
+
+10330	felpa	nouns	толстовка/худи
+10331	intento	nouns	намерение/цель
+
+
+10334	schiuma	nouns	пена
+
+
+10337	arcobaleno	nouns	радуга
+
+
+
+
+10342	trama	nouns	сюжет/интрига
+
+
+
+10346	ciglio	nouns	ресница/бровь
+
+
+
+
+
+10352	buffone	nouns	шут/паяц
+
+
+
+
+10357	alimento	nouns	пищевой продукт/еда
+
+10359	selezione	nouns	отбор/выбор
+
+
+
+
+10364	cappuccio	nouns	капюшон/куколь
+10365	dinamite	nouns	динамит
+
+
+
+
+10370	blackout	nouns	блэкаут/отключение
+
+
+
+
+
+
+
+
+
+10380	picco	nouns	пик/вершина
+
+
+
+
+10385	brunch	nouns	бранч/поздний завтрак
+
+10387	spuntino	nouns	перекус
+
+
+
+10391	ribellione	nouns	восстание/бунт/мятеж
+
+10393	budino	nouns	пудинг
+
+
+10396	scia	nouns	след/шлейф
+
+
+
+
+10401	ritenere	verbs	считать/полагать/удерживать
+
+
+
+10405	bussola	nouns	компас
+
+
+10408	decollo	nouns	взлёт
+
+10410	striscia	nouns	полоса
+10411	sanguinare	verbs	кровоточить/истекать кровью
+
+10413	operatore	nouns	оператор/работник
+
+
+
+
+
+
+
+10421	eccesso	nouns	избыток/излишек/чрезмерность
+
+
+
+
+10426	artiglio	nouns	коготь
+
+
+
+
+10431	simulazione	nouns	симуляция
+
+
+10434	onestà	nouns	честность
+10435	impostore	nouns	самозванец/обманщик
+
+
+
+
+10440	ricostruzione	nouns	реконструкция/восстановление
+
+
+
+
+10445	trafficante	nouns	торговец/контрабандист
+
+
+10448	individuare	verbs	выявлять/обнаруживать/определять
+
+
+
+
+
+10454	matricola	nouns	табельный номер/регистрационный номер/первокурсник
+10455	prostituzione	nouns	проституция
+
+
+
+
+
+
+10462	sportello	nouns	окошко/окно обслуживания
+10463	piccione	nouns	голубь
+
+
+10466	rima	nouns	рифма
+
+
+
+
+10471	raduno	nouns	сбор/сборище/митинг
+
+
+
+10475	uccisione	nouns	убийство/умерщвление
+
+10477	masticare	verbs	жевать
+10478	insultare	verbs	оскорблять/поносить
+10479	rivelazione	nouns	откровение/разоблачение
+
+
+
+
+
+
+
+
+10488	scivolare	verbs	скользить/соскальзывать/поскользнуться
+
+
+
+10492	tango	nouns	танго
+
+
+
+
+
+
+
+
+
+
+
+
+10505	artiglieria	nouns	артиллерия
+
+
+
+10509	pugile	nouns	боксёр
+
+
+
+
+
+10515	lavagna	nouns	доска/классная доска
+
+
+
+
+
+10521	seguace	nouns	последователь/приверженец
+
+
+
+
+
+
+
+10529	covo	nouns	логово/берлога
+
+10531	sacerdote	nouns	священник
+
+
+
+
+10536	vassoio	nouns	поднос
+
+
+
+10540	parassita	nouns	паразит
+
+10542	muscolo	nouns	мышца
+10543	inseguimento	nouns	погоня
+10544	scanner	nouns	сканер
+
+
+
+10548	rimpianto	nouns	сожаление
+
+
+10551	ingrediente	nouns	ингредиент
+
+
+
+
+
+10557	fedeltà	nouns	верность/преданность
+
+
+10560	baita	nouns	шале/горный домик
+
+
+
+
+
+
+
+10568	barbone	nouns	бобтейл/собака
+
+
+
+10572	giustificare	verbs	оправдывать/обосновывать
+
+10574	aggeggio	nouns	штука/штуковина/приспособление
+
+
+
+
+10579	sopracciglia	nouns	брови
+
+
+
+10583	sicario	nouns	наёмный убийца/киллер
+10584	ballerino	nouns	танцор/балетный танцовщик
+10585	piuma	nouns	перо
+
+10587	obbedire	verbs	повиноваться/подчиняться/слушаться
+
+10589	mance	nouns	чаевые
+
+
+10592	gatta	nouns	кошка/кошечка
+10593	catastrofe	nouns	катастрофа
+
+
+
+
+
+10599	lavatore	nouns	стиральная машина
+
+
+
+
+10604	ondata	nouns	волна
+
+10606	governare	verbs	управлять/править/руководить
+
+10608	arena	nouns	арена
+
+
+
+
+
+10614	culetto	nouns	попка/седушко
+10615	prof	nouns	профессор/препод
+
+10617	reattore	nouns	реактор
+
+
+
+
+10622	riferire	verbs	сообщать/докладывать
+
+
+
+10626	tasto	nouns	клавиша/кнопка
+
+
+
+
+
+10632	salmone	nouns	лосось/сёмга
+10633	sorgente	nouns	источник/родник
+
+10635	lattina	nouns	банка/ жестяная банка
+
+10637	dignita	nouns	достоинство
+
+
+10640	sfogo	nouns	выход эмоций/разрядка/высыпание
+
+
+
+
+
+
+
+
+
+10650	proteina	nouns	белок/протеин
+
+
+10653	genetico	adjectives	генетический
+10654	tela	nouns	ткань/холст
+
+
+
+10658	dialogo	nouns	диалог
+
+
+
+
+
+
+
+
+
+10668	compilare	verbs	заполнять/составлять/оформлять
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+10687	guinzaglio	nouns	поводок
+10688	tendenza	nouns	тенденция/склонность
+
+
+10691	orizzonte	nouns	горизонт
+
+
+
+10695	adottare	verbs	принимать/усыновлять/усваивать
+10696	virtù	nouns	добродетель
+
+
+10699	cascata	nouns	водопад/каскад
+10700	acquistare	verbs	приобретать/покупать
+
+
+
+
+
+
+10707	Locanda	nouns	постоялый двор/гостиница
+
+
+
+
+
+10713	freezer	nouns	морозилка/морозильная камера
+
+
+10716	cognata	nouns	невестка/золовка/свояченица
+
+
+
+
+
+
+
+
+10725	tronco	nouns	ствол/бревно
+
+10727	acceleratore	nouns	ускоритель/акселератор
+10728	elettricita	nouns	электричество
+
+
+10731	spettro	nouns	призрак/спектр
+10732	checca	nouns	шишка/кукла/фигурка
+
+
+
+
+
+
+
+
+10741	stallone	nouns	жеребец
+
+
+
+
+
+10747	scenata	nouns	сцена/скандал
+10748	vaniglia	nouns	ваниль
+
+
+10751	bevanda	nouns	напиток
+
+10753	incisione	nouns	гравюра/нарезка/гравировка
+
+
+
+
+
+
+10760	lode	nouns	похвала
+
+
+
+
+
+
+
+
+10769	sovrintendente	nouns	надзиратель/суперинтендант
+10770	salario	nouns	зарплата/жалование
+
+
+10773	diffondere	verbs	распространять/рассеивать/диффундировать
+
+
+10776	terminare	verbs	заканчивать/завершать
+10777	scansione	nouns	сканирование
+
+
+
+10781	duchessa	nouns	герцогиня
+10782	serra	nouns	теплица/оранжерея
+
+
+
+
+10787	posticino	nouns	местечко/укромное место
+
+10789	snob	nouns	сноб
+10790	catering	nouns	кейтеринг
+
+10792	reclamo	nouns	жалоба/претензия
+
+
+
+
+
+
+
+
+
+10802	soia	nouns	соя
+
+
+
+
+
+10808	gemello	nouns	близнец/двойняшка
+
+10810	esito	nouns	исход/результат
+10811	genero	nouns	жанр/род/пол
+
+
+
+
+
+
+10818	forchetta	nouns	вилка
+
+10820	palloncino	nouns	воздушный шарик/шар
+10821	sorvegliare	verbs	наблюдать/охранять/присматривать
+
+
+
+10825	strato	nouns	слой/пласт
+
+
+
+10829	pargolo	nouns	ребёнок/малыш/чадо
+
+10831	spiare	verbs	шпионить/подглядывать/выслеживать
+10832	penitenziario	nouns	тюрьма/исправительное учреждение/пенитенциарный
+
+10834	previsione	nouns	прогноз/предсказание
+
+
+
+
+
+10840	scorrere	verbs	протекать/прокручивать/течь
+
+
+
+10844	bilancio	nouns	бюджет/баланс
+
+
+
+
+
+10850	pneumatico	nouns	шина/покрышка
+10851	skipper	nouns	шкипер/капитан яхты
+10852	diabete	nouns	диабет
+
+
+
+
+
+
+10859	mascella	nouns	челюсть
+
+10861	vestire	verbs	одевать/носить/костюмировать
+
+
+
+
+
+
+
+
+
+10871	millimetro	nouns	миллиметр
+10872	slogan	nouns	лозунг/слоган
+
+
+
+
+
+
+
+
+10881	aurora	nouns	заря/рассвет/аврора
+
+
+10884	connesso	adjectives	подключённый/связанный
+
+10886	polmone	nouns	лёгкое
+10887	console	nouns	консоль/приставка
+10888	finanza	nouns	финансы
+
+10890	stagno	nouns	пруд/стоячий водоём
+
+
+
+10894	evasione	nouns	уклонение/побег/вымогательство
+
+
+
+
+10899	funzionario	nouns	чиновник/должностное лицо
+
+
+10902	influenzare	verbs	влиять/оказывать влияние
+
+
+
+10906	abbondanza	nouns	изобилие/обильность
+10907	rubrica	nouns	рубрика/колонка/записная книжка
+
+
+
+10911	rimorchiare	verbs	буксировать/тащить
+
+
+10914	traiettoria	nouns	траектория
+
+10916	motivazione	nouns	мотивация
+
+10918	pozione	nouns	зелье/настойка
+
+10920	bontà	nouns	доброта/благость
+
+
+
+10924	caramella	nouns	конфета/карамель
+
+10926	proporre	verbs	предлагать/выдвигать
+
+10928	chiavetta	nouns	флешка/ключ-брелок
+
+
+
+
+
+
+
+10936	poveretto	nouns	бедняга/бедняжка
+
+
+10939	musulmano	adjectives	мусульманский
+
+
+
+10943	prototipo	nouns	прототип
+
+
+10946	chemio	nouns	химиотерапия/химия
+
+
+
+10950	aiutante	nouns	помощник
+
+10952	informatico	adjectives	информатический/компьютерный
+
+
+
+
+10957	prevenire	verbs	предотвращать/предупреждать
+10958	fiocco	nouns	бант/хлопье
+
+
+10961	contribuire	verbs	вносить вклад/способствовать/содействовать
+
+
+
+10965	scheletro	nouns	скелет/каркас
+
+10967	elettore	nouns	избиратель
+
+
+
+
+
+
+
+10975	dogana	nouns	таможня
+
+
+10978	carota	nouns	морковь
+
+10980	accorgere	verbs	заметить/осознать/почувствовать
+10981	cofano	nouns	капот
+
+
+10984	respirazione	nouns	дыхание
+
+
+10987	cometa	nouns	комета
+
+10989	riformatorio	nouns	реформаторий/воспитательная колония
+
+10991	scantinare	verbs	спустить в подвал/переместить в подвал
+
+10993	fotocamera	nouns	фотоаппарат/камера
+
+
+10996	trionfo	nouns	триумф/победа
+10997	tormento	nouns	мука/страдание/терзание
+
+
+
+
+11002	golfo	nouns	залив
+
+11004	manipolare	verbs	манипулировать/управлять/обманывать
+
+
+11007	dottorato	nouns	докторантура/степень доктора
+
+
+
+11011	precauzione	nouns	мера предосторожности/предосторожность
+
+11013	effrazione	nouns	взлом
+11014	colpevolezza	nouns	виновность
+
+
+11017	muta	nouns	гидрокостюм/линька/смена
+
+
+
+11021	goblin	nouns	гоблин
+11022	caffetteria	nouns	кофейня
+
+11024	intuizione	nouns	интуиция
+
+
+
+
+11029	pannello	nouns	панель/щит
+
+11031	aragosta	nouns	омар/лангуст
+11032	avviare	verbs	запускать/начинать/завести
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+11049	brodo	nouns	бульон
+
+
+
+
+
+
+
+
+
+
+11060	bidone	nouns	мусорный бак/бочка/контейнер
+
+11062	clone	nouns	клон
+
+
+
+
+
+
+
+11070	cookie	nouns	печенье/куки
+
+
+
+
+
+
+
+11078	ecografia	nouns	УЗИ/эхография
+
+
+
+11082	accelerare	verbs	ускорять/ускориться
+
+11084	lavoratore	nouns	работник/трудящийся
+
+
+
+
+
+
+
+11092	omega	nouns	омега
+
+
+
+11096	gattino	nouns	котёнок
+
+
+
+
+
+11102	evadere	verbs	уклоняться/выполнять/бежать
+11103	polpetta	nouns	тефтелька/фрикаделька
+
+
+
+
+11108	avanzare	verbs	выдвигать/продвигаться/наступать
+
+11110	lettore	nouns	читатель
+11111	scorciatoia	nouns	ярлык/короткий путь
+
+11113	tragitto	nouns	маршрут/путь
+
+11115	fotografico	adjectives	фотографический
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+11133	rivivere	verbs	пережить заново/возродить/ожить
+
+
+
+
+
+
+
+
+
+
+11144	fattorino	nouns	курьер/посыльный
+11145	succhiare	verbs	сосать/высасывать
+11146	camerino	nouns	гримёрная/примерочная
+
+
+
+
+
+11152	imbarazzare	verbs	смущать/ставить в неловкое положение
+11153	brillare	verbs	сиять/блестеть/сверкать
+
+
+
+11157	gong	nouns	гонг
+11158	perquisire	verbs	обыскивать/досматривать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+11173	convinzione	nouns	убеждение/уверенность
+
+
+
+
+11178	soccorrere	verbs	помогать/спасать/приходить на помощь
+
+11180	quotidiano	nouns	ежедневная газета/ежедневник
+
+
+
+
+11185	esaurimento	nouns	истощение/исчерпание
+
+11187	astinenza	nouns	воздержание/абстиненция
+
+
+
+
+
+11193	testare	verbs	тестировать/проверять/испытывать
+
+
+11196	coscia	nouns	бедро
+
+
+
+11200	problemino	nouns	проблемка/маленькая проблема
+
+
+
+
+
+
+
+11208	pannolino	nouns	подгузник/пелёнка
+
+
+
+
+
+
+
+
+
+
+11219	gioventù	nouns	молодость/юность/молодёжь
+
+
+
+
+
+
+
+11227	tremare	verbs	дрожать/трястись
+
+
+
+11231	orientamento	nouns	ориентация/ориентирование
+11232	ripostiglio	nouns	кладовка/чулан
+
+
+
+
+11237	parrucchiere	nouns	парикмахер
+
+11239	installare	verbs	устанавливать/монтировать
+
+
+
+
+
+
+
+11247	status	nouns	статус/положение
+
+
+
+
+
+
+
+11255	blues	nouns	блюз
+
+11257	cessare	verbs	прекращать/останавливать
+
+
+
+
+11262	sci	nouns	лыжи
+
+
+
+
+11267	scottare	verbs	обжигать/жечь
+
+
+
+11271	vociare	verbs	кричать/шуметь/голосить
+
+
+11274	stereo	nouns	стерео/магнитола
+
+
+11277	illuminazione	nouns	освещение
+
+
+
+
+
+
+
+11285	approfittare	verbs	пользоваться/воспользоваться
+
+
+
+
+
+
+
+
+
+
+11296	crepa	nouns	трещина/щель
+
+
+11299	fregatura	nouns	надувательство/обман
+
+
+
+11303	piantare	verbs	сажать/вбивать/бросить
+
+
+11306	novellino	nouns	новичок
+11307	volontariato	nouns	волонтёрство/добровольчество
+
+
+
+
+
+
+
+
+
+11317	balia	nouns	кормилица/няня
+11318	manifestazione	nouns	демонстрация/проявление/митинг
+11319	filmare	verbs	снимать/фильмировать
+
+
+
+11323	disarmare	verbs	разоружать
+11324	vetrina	nouns	витрина
+
+
+11327	miglioramento	nouns	улучшение
+11328	cautela	nouns	осторожность/осмотрительность
+
+11330	portavoce	nouns	представитель/пресс-секретарь
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+11346	polizza	nouns	полис/страховка
+
+11348	pappagallo	nouns	попугай
+
+11350	decorazione	nouns	украшение/декорация
+
+
+
+11354	vertigine	nouns	головокружение
+
+
+
+
+
+
+
+
+11363	avvelenamento	nouns	отравление
+
+
+11366	qualificare	verbs	квалифицировать/определять
+11367	fondatore	nouns	основатель/учредитель
+11368	presumere	verbs	предполагать/допускать
+
+11370	rapitore	nouns	похититель
+
+
+11373	affittare	verbs	арендовать/снимать
+
+11375	ketchup	nouns	кетчуп
+
+
+
+
+11380	tradere	verbs	предавать/изменять
+11381	spaccare	verbs	разбивать/раскалывать/ломать
+
+
+
+11385	rifornimento	nouns	снабжение/заправка
+
+11387	addire	verbs	назначать/определять
+11388	accoglienza	nouns	приём/гостеприимство
+
+
+
+
+
+11394	concorrente	nouns	конкурент/соперник
+
+
+
+
+11399	infilare	verbs	всовывать/просовывать/вставлять
+
+
+11402	pentire	verbs	каяться/раскаиваться/сожалеть
+11403	pallina	nouns	шарик/мячик
+
+
+
+
+11408	spogliatoio	nouns	раздевалка
+11409	collare	verbs	надевать ошейник/окольцовывать
+
+
+
+11413	imbrogliare	verbs	обманывать/мошенничать
+
+11415	pizzico	nouns	щепотка/ущип
+
+
+
+11419	commozione	nouns	волнение/умиление/сотрясение
+
+11421	imitazione	nouns	подражание/имитация
+
+
+
+
+
+
+11428	apprendista	nouns	ученик/подмастерье
+
+
+
+
+
+
+
+11436	rap	nouns	рэп
+
+11438	sierra	nouns	пила
+
+
+
+
+11443	detonatore	nouns	детонатор
+
+
+
+
+
+
+
+11451	ignoranza	nouns	невежество/незнание
+
+11453	fornitore	nouns	поставщик
+
+
+11456	shampoo	nouns	шампунь
+
+11458	incidere	verbs	вырезать/гравировать/надрезать
+
+
+11461	combinare	verbs	сочетать/комбинировать/натворить
+
+
+
+
+
+
+11468	parametro	nouns	параметр
+
+
+11471	rovere	nouns	дуб
+
+11473	borghese	nouns	буржуа/мещанин
+
+
+
+
+11478	televisore	nouns	телевизор
+
+
+
+11482	implicare	verbs	подразумевать/влечь за собой
+
+
+
+11486	pala	nouns	лопата/лопасть
+
+11488	gambero	nouns	креветка/рак
+
+
+
+11492	coyote	nouns	койот
+
+11494	divieto	nouns	запрет
+11495	condividire	verbs	делить/делиться/разделять
+
+
+
+11499	combaciare	verbs	совпадать/соответствовать
+
+11501	prenotare	verbs	бронировать/резервировать/заказывать
+
+
+
+
+11506	riservatezza	nouns	конфиденциальность
+11507	vitamina	nouns	витамин
+
+
+
+11511	sovrano	nouns	суверен/правитель
+11512	magistrato	nouns	магистрат/судья
+
+
+
+
+
+
+
+
+
+
+
+
+11525	carogna	nouns	падаль/мерзавец
+
+11527	scordare	verbs	забывать/позабыть
+
+
+11530	protettore	nouns	защитник/покровитель
+
+
+
+11534	siringa	nouns	шприц
+11535	flirtare	verbs	флиртовать/кокетничать
+
+11537	scarafaggio	nouns	таракан
+
+11539	gemere	verbs	стонать/охать
+11540	confezione	nouns	упаковка
+11541	travestire	verbs	переодевать/маскировать
+
+
+11544	imbattere	verbs	наталкиваться/сталкиваться
+
+11546	determinazione	nouns	решимость/определение
+
+
+11549	forzare	verbs	заставлять/взломать/принуждать
+
+
+
+
+
+
+
+11557	negligenza	nouns	халатность/небрежность
+11558	pescatore	nouns	рыбак/рыболов
+
+
+11561	scampo	nouns	лангуст
+
+11563	fuorilegge	nouns	преступник/бандит
+
+
+
+
+
+
+
+
+
+
+11574	arrendere	verbs	сдаваться/подчиняться
+
+
+
+11578	cricket	nouns	крикет
+
+
+
+
+11583	sintomo	nouns	симптом
+11584	brivido	nouns	дрожь/озноб/трепет
+
+
+
+11588	sudare	verbs	потеть/испариной покрываться
+
+
+11591	citare	verbs	цитировать/ссылаться
+
+
+11594	margine	nouns	предел/запас/край
+11595	effettuare	verbs	осуществлять/производить/выполнять
+
+
+
+
+
+
+
+11603	sputare	verbs	плевать/выплёвывать
+11604	compratore	nouns	покупатель
+11605	sottoporre	verbs	подвергать/представлять на рассмотрение
+
+11607	oculare	adjectives	глазной/зрительный
+
+
+
+
+
+
+
+
+11616	partecipazione	nouns	участие
+11617	ingiustizia	nouns	несправедливость
+
+
+11620	apparenza	nouns	видимость/внешность
+
+
+
+
+
+
+11627	tonto	adjectives	глупый/дурачок
+11628	miliardario	nouns	миллиардер
+
+
+11631	arrendire	verbs	сдаваться/подчиняться
+
+
+11634	consolare	verbs	утешать/успокаивать
+
+
+
+
+
+
+11641	fratellanza	nouns	братство
+
+
+
+
+
+11647	parolaccia	nouns	ругательство/скверное слово
+
+
+11650	stronze	nouns	суки
+
+11652	barella	nouns	носилки
+
+
+
+
+
+
+
+11660	assurdità	nouns	абсурд/нелепость
+11661	distrarre	verbs	отвлекать/рассеивать внимание
+
+11663	cavarsela	verbs	выкручиваться/справляться/обходиться
+
+
+
+11667	testicolo	nouns	яичко
+
+
+11670	fardello	nouns	бремя/ноша
+
+
+11673	fondamento	nouns	основание/основа
+
+
+
+
+11678	sedare	verbs	утишать/подавлять/успокаивать
+
+
+
+
+
+
+
+11686	timone	nouns	руль/штурвал
+
+
+
+11690	stagista	nouns	стажёр
+11691	toilette	nouns	туалет
+
+
+
+
+
+
+
+
+11700	barile	nouns	бочка/баррель
+
+
+
+
+
+
+
+11708	iscrizione	nouns	запись/регистрация
+11709	fondare	verbs	основывать/учреждать/создавать
+
+
+
+
+
+11715	veranda	nouns	веранда
+
+
+
+
+11720	abbaiare	verbs	лаять
+11721	vendicare	verbs	мстить/отомстить
+
+
+
+
+
+
+
+
+
+
+
+11733	fragola	nouns	клубника/земляника
+
+
+11736	dorare	verbs	позолотить/подрумянивать
+
+
+11739	lobo	nouns	доля/мочка
+
+
+
+
+
+11745	cespuglio	nouns	куст
+
+11747	oltrepassare	verbs	превышать/переходить/переступать
+
+11749	casella	nouns	ячейка/окно/абонентский ящик
+
+
+
+
+11754	dino	nouns	динозавр
+11755	annoiare	verbs	наскучить/надоесть
+
+11757	oltretutto	adverbs	
+
+
+11760	trasmettitore	nouns	передатчик
+11761	intrusione	nouns	вторжение/вмешательство
+
+
+
+
+
+
+
+11769	tormentare	verbs	мучить/терзать/истязать
+
+11771	enigma	nouns	загадка/головоломка
+11772	angoscia	nouns	тоска/мука/страдание
+
+11774	normalita	nouns	нормальность/норма
+11775	fattura	nouns	счёт-фактура/счёт
+
+
+
+
+
+
+
+
+11784	pianificare	verbs	планировать
+11785	gesso	nouns	гипс
+
+
+
+11789	intervallo	nouns	интервал/перерыв
+
+
+
+
+
+
+
+
+
+11799	spacciare	verbs	сбывать/выдавать за
+
+
+11802	cenno	nouns	знак/жест/кивок
+
+11804	gala	nouns	гала/торжество
+11805	investigare	verbs	расследовать/исследовать
+
+
+11808	sistemazione	nouns	размещение/устройство
+11809	mordere	verbs	кусать/грызть
+
+
+
+
+
+
+
+
+
+
+
+
+
+11823	viaggiatore	nouns	путешественник
+
+11825	procedimento	nouns	процедура/процесс
+
+
+
+
+
+
+
+
+
+11835	riflettore	nouns	прожектор
+
+
+
+11839	cannella	nouns	корица
+
+
+
+
+
+
+
+
+11848	tappo	nouns	пробка/заглушка
+11849	socia	nouns	участница/компаньонка/член
+
+11851	coop	nouns	кооператив
+
+
+
+
+11856	vagone	nouns	вагон
+
+11858	filtro	nouns	фильтр
+11859	cipolla	nouns	лук
+
+11861	intralcio	nouns	препятствие/помеха
+
+
+
+
+
+11867	aviazione	nouns	авиация
+11868	manifesto	nouns	манифест/плакат
+
+11870	implorare	verbs	умолять/заклинать
+
+
+
+
+11875	seccatura	nouns	досада/неприятность
+11876	fratellone	nouns	старший брат
+
+
+
+
+
+
+
+
+
+11886	ghetto	nouns	гетто
+11887	versare	verbs	наливать/лить/выплачивать
+
+11889	wrestling	nouns	реслинг/борьба
+
+
+
+
+11894	lucifero	nouns	люцифер/дьявол
+11895	mirtillo	nouns	черника/голубика
+11896	minacciare	verbs	угрожать/грозить/запугивать
+
+
+
+11900	vela	nouns	парус
+
+
+
+11904	trucchetto	nouns	трюк/хитрость
+
+
+
+
+
+
+11911	immaginario	adjectives	воображаемый
+11912	servitore	nouns	слуга
+
+
+11915	grassone	nouns	толстяк
+
+
+
+
+
+
+
+
+
+
+11926	arruolare	verbs	вербовать/зачислять на службу
+
+11928	dinosauro	nouns	динозавр
+
+
+
+
+
+11934	schizzo	nouns	эскиз/набросок
+
+
+
+11938	affondare	verbs	топить/погружаться/утопать
+
+
+
+
+
+
+
+11946	amnesia	nouns	амнезия
+11947	spilla	nouns	брошь/булавка
+
+
+11950	avvolgere	verbs	заворачивать/обёртывать/укутывать
+
+11952	tesserino	nouns	удостоверение/бейдж
+
+
+11955	sdraiare	verbs	ложить/укладывать/класть
+11956	quadrante	nouns	циферблат/квадрант
+
+11958	asse	nouns	ось
+
+
+
+
+
+11964	vibrazione	nouns	вибрация/колебание
+
+
+
+11968	nascondire	verbs	прятать/скрывать/укрывать
+
+
+11971	barra	nouns	панель/полоса/перекладина
+
+
+
+
+
+
+11978	cresta	nouns	гребень/хохолок/вершина
+11979	consulenza	nouns	консультация
+
+11981	orma	nouns	след
+11982	ammiratore	nouns	поклонник/почитатель
+
+
+
+
+
+
+11989	quadrato	nouns	квадрат
+
+11991	argo	nouns	арго/жаргон
+
+
+
+
+
+
+
+
+
+
+
+12003	coniglietto	nouns	крольчонок/зайчик
+12004	suocero	nouns	свёкор/тесть
+12005	propaganda	nouns	пропаганда
+12006	melodia	nouns	мелодия
+
+
+
+
+
+12012	font	nouns	шрифт
+
+
+
+12016	cosmo	nouns	космос/вселенная
+12017	dote	nouns	дар/талант/приданое
+12018	estinzione	nouns	вымирание/прекращение
+
+12020	fiasco	nouns	провал/фиаско
+
+
+
+
+
+
+
+12028	rubinetto	nouns	кран
+
+
+12031	nossignore	nouns	господин/синьор
+12032	supervisione	nouns	надзор/контроль
+
+
+
+
+12037	sbattare	verbs	хлопать/бить/швырять
+
+12039	disperdere	verbs	рассеивать/растрачивать
+
+
+12042	pappa	nouns	каша/пюре/детское питание
+
+
+
+
+
+
+12049	prelevare	verbs	снимать/извлекать/брать
+
+
+12052	semaforo	nouns	светофор
+
+
+12055	delfino	nouns	дельфин
+
+12057	allergia	nouns	аллергия
+12058	finzione	nouns	вымысел/фикция
+
+
+12061	travaglio	nouns	роды/схватки
+
+12063	rifaggere	verbs	восстанавливать/перестраивать
+12064	scosso	adjectives	потрясённый/встряхнутый
+
+
+
+12068	proiezione	nouns	проекция/показ
+
+12070	calligrafia	nouns	каллиграфия/почерк
+12071	ammirare	verbs	восхищаться/любоваться
+
+
+
+
+
+
+12078	poveraccio	nouns	бедняга/бедняк
+
+
+12081	predatore	nouns	хищник
+
+
+
+
+
+
+
+12089	repubblicano	adjectives	республиканский
+12090	lisina	nouns	лизин
+
+
+12093	oltraggio	nouns	оскорбление/поругание
+
+12095	hangar	nouns	ангар
+
+
+12098	paesaggio	nouns	пейзаж/ландшафт
+
+12100	benda	nouns	повязка/бинт/повязка на глаза
+
+
+
+
+
+12106	suggerire	verbs	предлагать/подсказывать/советовать
+
+
+
+12110	tavoletta	nouns	дощечка/таблетка/планшет
+
+
+
+
+12115	esilio	nouns	изгнание/ссылка
+
+12117	puntura	nouns	укус/укол
+
+12119	smarrire	verbs	терять/заблудиться
+12120	strappare	verbs	рвать/оторвать/вырывать
+
+
+
+
+
+
+
+
+
+
+
+
+12133	concentrare	verbs	концентрировать/сосредотачивать
+
+
+
+
+
+
+
+
+12142	trimestre	nouns	квартал/триместр
+12143	danneggiare	verbs	повреждать/наносить ущерб
+
+12145	gancio	nouns	крюк/крючок
+
+
+
+
+
+
+
+12153	sfamare	verbs	кормить/насыщать
+
+
+12156	quaderno	nouns	тетрадь
+
+12158	scaccare	verbs	прогонять/отгонять
+
+12160	curry	nouns	карри
+12161	bottega	nouns	лавка/мастерская
+
+
+
+
+
+
+
+
+
+12171	convulsione	nouns	судорога/конвульсия
+12172	espansione	nouns	расширение/экспансия
+
+
+12175	dotare	verbs	оснащать/наделять
+
+12177	devozione	nouns	преданность/набожность
+
+
+
+
+
+
+
+
+12186	lampadina	nouns	лампочка
+12187	rilevare	verbs	выявлять/обнаруживать/регистрировать
+
+
+
+
+
+
+
+
+
+
+
+
+
+12201	intrattenimento	nouns	развлечение
+
+
+
+
+12206	rapinare	verbs	грабить/обокрасть
+
+
+
+
+12211	avvenire	verbs	происходить/случаться
+12212	playboy	nouns	плейбой
+
+12214	azzardare	verbs	рисковать/отважиться
+
+12216	gru	nouns	подъёмный кран/журавль
+
+
+
+
+12221	dedurre	verbs	выводить/умозаключать/дедуцировать
+
+12223	frullare	verbs	взбивать/перемешивать
+
+
+
+
+12228	parrocchia	nouns	приход
+12229	piaga	nouns	рана/язва/бич
+
+
+
+
+
+12235	riparazione	nouns	ремонт/починка
+
+
+
+
+
+12241	plancia	nouns	мостик/панель управления
+12242	invecchiare	verbs	стареть/состариться
+
+
+12245	morsa	nouns	тиски/хватка
+12246	culto	nouns	культ/поклонение
+
+12248	percepire	verbs	воспринимать/ощущать/чувствовать
+
+12250	maschietto	nouns	мальчик/малыш
+12251	imprenditore	nouns	предприниматель
+
+
+
+12255	sfondare	verbs	пробивать/ломать/проламывать
+
+12257	cobra	nouns	кобра
+
+
+
+12261	somiglianza	nouns	сходство
+
+
+
+
+
+12267	percorrere	verbs	проходить/преодолевать/пробегать
+
+
+
+12271	ripensare	verbs	передумывать/обдумывать заново
+
+12273	eccitazione	nouns	возбуждение/волнение
+
+12275	leccare	verbs	лизать
+
+
+
+12279	hostess	nouns	стюардесса/хостес
+
+
+12282	pregiudizio	nouns	предубеждение/предрассудок
+
+
+
+12286	squartatore	nouns	потрошитель
+
+
+12289	trarre	verbs	извлекать/тянуть/выводить
+12290	rampa	nouns	пандус/рампа/съезд
+
+12292	allenare	verbs	тренировать/натаскивать
+
+
+12295	facciata	nouns	фасад
+
+
+12298	sarcasmo	nouns	сарказм
+
+
+
+
+
+
+
+12306	fluido	nouns	жидкость/флюид
+12307	pipistrello	nouns	летучая мышь
+
+
+
+
+12312	scalare	verbs	восхождать/лазить/штурмовать
+
+
+12315	timer	nouns	таймер
+
+
+
+12319	sepoltura	nouns	погребение/захоронение
+12320	finanziare	verbs	финансировать/спонсировать
+
+
+
+12324	convoglio	nouns	конвой/караван
+
+
+12327	cercatore	nouns	искатель
+
+
+12330	boia	nouns	палач
+12331	mulo	nouns	мул/упрямец
+
+
+
+12335	associare	verbs	ассоциировать/связывать
+12336	sensitivo	adjectives	чувствительный
+12337	simpatia	nouns	симпатия/сочувствие
+
+12339	inno	nouns	гимн
+
+12341	tappa	nouns	этап/остановка
+
+
+12344	emettere	verbs	выпускать/издавать/выдавать
+
+
+
+
+
+
+12351	fibra	nouns	волокно/фибра
+
+12353	ricoverare	verbs	госпитализировать/помещать в больницу
+
+
+12356	consultare	verbs	консультироваться/спрашивать/обращаться
+
+
+
+
+12361	lusingare	verbs	льстить/обольщать
+
+
+
+
+
+
+12368	igiene	nouns	гигиена
+
+
+
+
+
+12374	romanticismo	nouns	романтизм
+
+
+
+
+12379	sciogliere	verbs	растворять/развязывать/растапливать
+
+
+
+12383	cattiveria	nouns	злость/злоба
+12384	monastero	nouns	монастырь
+
+
+
+
+12389	veterano	nouns	ветеран
+
+
+
+
+
+
+
+12397	eminenza	nouns	преосвященство/высота
+
+
+12400	vitello	nouns	телёнок/телятина
+12401	quiz	nouns	викторина/квиз
+
+
+
+12405	ripagare	verbs	возмещать/отплачивать/возвращать долг
+12406	paralizzare	verbs	парализовать/обездвиживать
+
+
+
+12410	acquario	nouns	аквариум
+
+
+
+12414	canestro	nouns	корзина
+
+12416	menù	nouns	меню
+
+
+
+
+
+12422	confidare	verbs	доверять/полагаться/признаваться
+
+
+
+
+12427	anestesia	nouns	анестезия/наркоз
+
+
+12430	sondaggio	nouns	опрос
+12431	collaterale	adjectives	побочный/боковой
+
+
+
+
+12436	recensione	nouns	рецензия/отзыв
+12437	minatore	nouns	шахтёр
+
+
+12440	passeggiare	verbs	гулять/прогуливаться
+
+
+
+
+
+12446	anticipare	verbs	предвосхищать/опережать
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+12461	delirio	nouns	бред/делирий
+12462	nuca	nouns	затылок
+12463	chat	nouns	чат
+12464	inversione	nouns	инверсия/разворот
+
+
+12467	consumare	verbs	потреблять/расходовать/израсходовать
+
+
+12470	violare	verbs	нарушать
+
+12472	agonia	nouns	агония
+
+12474	pinguino	nouns	пингвин
+
+
+
+
+
+
+
+
+
+
+
+12486	tram	nouns	трамвай
+
+
+12489	confondere	verbs	путать/смешивать/смущать
+12490	licenziamento	nouns	увольнение
+
+12492	alunno	nouns	ученик
+12493	correggere	verbs	исправлять/корректировать
+
+
+
+
+
+12499	incoraggiamento	nouns	ободрение/поощрение
