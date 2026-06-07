@@ -475,7 +475,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 },
                                 onPrimaryAction = remember { { onNavigate(Routes.LESSON) } },
                                 onSelectLesson = remember { { lessonId: String ->
-                                    vm.selectLesson(lessonId)
+                                    val currentPackId = state.navigation.activePackId?.value
+                                    vm.selectLesson(lessonId, currentPackId)
                                     onNavigate(Routes.LESSON)
                                 } },
                                 onOpenElite = remember(dialogs) {
@@ -536,6 +537,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             val chapter = vm.findChapterForLesson(currentLessonId)
                                             if (chapter != null) vm.selectChapter(chapter)
                                         }
+                                        // Refresh chapter progress from disk (mastery may have changed)
+                                        vm.loadChapters()
                                         Log.d("NavDebug", "LESSON onBack → CHAPTER_LESSONS")
                                         onNavigate(Routes.CHAPTER_LESSONS)
                                     } else {
@@ -569,7 +572,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     val currentIdx = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
                                     val nextLessonId = state.navigation.lessons.getOrNull(currentIdx + 1)?.id
                                     if (nextLessonId != null) {
-                                        vm.selectLesson(nextLessonId.value)
+                                        val currentPackId = state.navigation.activePackId?.value
+                                        vm.selectLesson(nextLessonId.value, currentPackId)
                                         onNavigate(Routes.LESSON)
                                     }
                                 }
@@ -1548,7 +1552,7 @@ private fun NavDialogs(
                                     val currentIdx = chapter.lessons.indexOf(currentLessonId?.value)
                                     val nextLessonId = chapter.lessons.getOrNull(currentIdx + 1)
                                     if (nextLessonId != null) {
-                                        vm.selectLesson(nextLessonId)
+                                        vm.selectLesson(nextLessonId, activePackId)
                                         // Rebuild session for new lesson and stay on TRAINING
                                         vm.selectSubLesson(0)
                                     }
@@ -1558,7 +1562,7 @@ private fun NavDialogs(
                                 val currentIdx = lessons.indexOfFirst { it.id == currentLessonId }
                                 val nextLesson = lessons.getOrNull(currentIdx + 1)
                                 if (nextLesson != null) {
-                                    vm.selectLesson(nextLesson.id.value)
+                                    vm.selectLesson(nextLesson.id.value, activePackId)
                                     vm.selectSubLesson(0)
                                 }
                             }

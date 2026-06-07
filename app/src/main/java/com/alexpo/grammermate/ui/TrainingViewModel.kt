@@ -2344,7 +2344,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Load chapters for the current pack into TrainingUiState.
      * Call this when the app starts or when switching packs.
      */
-    private fun loadChapters() {
+    fun loadChapters() {
         val activePackId = _coreState.value.navigation.activePackId?.value ?: run {
             // Clear chapter state if no pack is active
             _coreState.update {
