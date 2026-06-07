@@ -1,0 +1,25 @@
+{
+  "key": "A04",
+  "title": "A04 - Aggettivi",
+  "essence": "Прилагательное согласуется с существительным.",
+  "formula": "### Формы\n- `bello, bella, belli, belle`\n- `grande, grandi`\n- `felice, felici`",
+  "base": null,
+  "dontConfuse": "Сначала определи род/число существительного.\n\n`bello` перед существительным работает как артикль: `il ragazzo → bel ragazzo`, `i ragazzi → bei ragazzi`.",
+  "examples": [
+    {
+      "it": "una bella ragazza",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "bei ragazzi",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "un libro interessante",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

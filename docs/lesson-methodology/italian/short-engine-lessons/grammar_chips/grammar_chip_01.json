@@ -1,0 +1,30 @@
+{
+  "key": "A01",
+  "title": "A01 - Presente Indicativo",
+  "essence": "Настоящее время: факты, привычки, действия сейчас.",
+  "formula": "### Формула\n-are: parlo, parli, parla, parliamo, parlate, parlano\n-ere: scrivo, scrivi, scrive, scriviamo, scrivete, scrivono\n-ire: dormo, dormi, dorme, dormiamo, dormite, dormono\n\nНеправильные: sono (essere), ho (avere), vado (andare), faccio (fare)\n\n`non + verbo` для отрицания.",
+  "base": null,
+  "dontConfuse": "Личное местоимение часто опускается: `Parlo`, не обязательно `Io parlo`.",
+  "examples": [
+    {
+      "it": "Parlo italiano.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Non capisco.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Ho tempo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Vado a casa.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

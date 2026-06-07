@@ -1,0 +1,22 @@
+{
+  "key": "B04",
+  "title": "B04 - Passato Prossimo con Essere: движение и состояния",
+  "essence": "Глаголы движения, прибытия/отбытия и изменения состояния используют essere как вспомогательный в passato prossimo. Participio согласуется с подлежащим.",
+  "formula": "### Формула\nessere (спряжённое) + participio passato (согласовано!)\n\n### Спряжение essere\nsono, sei, è, siamo, siete, sono\n\n### Основные глаголы с essere\nandare, venire, partire, arrivare, essere, stare\n\n### Согласование participio\n- Lui è andato (м.р.) / Lei è andata (ж.р.)\n- Noi siamo andati (м.р. мн.ч.) / Noi siamo andate (ж.р. мн.ч.)\n\n### Два вспомогательных в одном предложении\nHa fatto un regalo ed è andato a casa\n— avere для переходного, essere для движения",
+  "base": null,
+  "dontConfuse": "Не все глаголы движения «чистые»: una famiglia è partitA (ж.р. подлежащее семья). Participio обязан согласоваться: andato/andata/andati/andate.混合анные предложения: Ha fatto... ed è andato — два разных вспомогательных.",
+  "examples": [
+    {"it": "È andato a casa", "ru": "Он пошёл домой", "note": "andato — м.р., подлежащее «он»"},
+    {"it": "È andata a casa", "ru": "Она пошла домой", "note": "andata — ж.р., подлежащее «она»"},
+    {"it": "Siamo andati a casa", "ru": "Мы пошли домой", "note": "andati — м.р. мн.ч."},
+    {"it": "Ha fatto un regalo ed è andato a casa", "ru": "Он сделал подарок и пошёл домой", "note": "avere + essere в одном предложении"},
+    {"it": "È venuto al lavoro", "ru": "Он пришёл на работу", "note": "venuto — м.р. от venire"},
+    {"it": "È venuta al lavoro", "ru": "Она пришла на работу", "note": "venuta — ж.р., согласование"},
+    {"it": "Siamo venuti nella cucina nuova", "ru": "Мы пришли в ту самую новую кухню", "note": "venuti — м.р. мн.ч."},
+    {"it": "La famiglia è partita", "ru": "Та самая семья уехала", "note": "famiglia — ж.р., partita — ж.р."},
+    {"it": "È partito dalla casa grande", "ru": "Он уехал из того самого большого дома", "note": "partito — м.р."},
+    {"it": "Siamo arrivati alla casa grande", "ru": "Мы прибыли в тот самый большой дом", "note": "arrivati — м.р. мн.ч."},
+    {"it": "È arrivato al lavoro oggi", "ru": "Он прибыл на работу сегодня", "note": "arrivato — м.р., oggi — маркер времени"},
+    {"it": "È arrivata al lavoro oggi", "ru": "Она прибыла на работу сегодня", "note": "arrivata — ж.р., та же фраза для «она»"}
+  ]
+}

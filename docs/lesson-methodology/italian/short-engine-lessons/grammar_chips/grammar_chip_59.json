@@ -1,0 +1,22 @@
+{
+  "key": "C16",
+  "title": "C16 - Alterati: уменьшительные, увеличительные и пейоративные суффиксы",
+  "essence": "Суффиксы существительных (alterati) меняют эмоциональный оттенок слова: -ino/-etta (маленький/милый), -one/-ona (большой), -accio/-accia (плохой), -uccio (миленький). Суффикс присоединяется к корню и заменяет финальную гласную (или усекает основу).",
+  "formula": "### Уменьшительные (diminutivi)\n- `-ino / -ina`: casetta -> маленький дом, regalino -> маленький подарок\n- `-etto / -etta`: casetta, cucinetta\n- Значение: маленький, милый, ласковый\n\n### Увеличительные (accrescitivi)\n- `-one / -ona`: casone -> большущий дом, regalone -> большущий подарок\n- macchinona -> большущая машина, cucinona -> большущая кухня\n- Значение: большой, внушительный\n\n### Пейоративные (spregiativi)\n- `-accio / -accia`: macchinaccia -> плохая машина, libraccio -> плохая книга\n- tavolaccio -> плохой стол\n- Значение: плохой, некачественный, негативный\n\n### Ласковые (vezzeggiativi)\n- `-uccio / -uccia`: regaluccio -> миленький подарочек\n- Значение: милый, симпатичный\n\n### Нейтральные размерные\n- `-etto`: libretto -> маленькая книжечка",
+  "base": null,
+  "dontConfuse": "Суффикс заменяет финальную гласную, а не добавляется к ней: casa + -etta = casetta (не 'casaetta'). Libro + -accio = libraccio. Macchina + -ona = macchinona (усекается основа). Regalo + -one = regalone. Обратите внимание: libretto может означать 'брошюра' или 'либретто', не только 'маленькая книга'.",
+  "examples": [
+    {"it": "Compro una casetta", "ru": "Я покупаю домик", "note": "-ino: casa -> casetta"},
+    {"it": "Vado a casa, nella casetta", "ru": "Я иду домой, в свой маленький домик", "note": "casetta = diminutivo"},
+    {"it": "Faccio un regalino", "ru": "Делаю подарочек", "note": "-ino: regalo -> regalino"},
+    {"it": "Il regalone è per la famiglia", "ru": "Большущий подарок для семьи", "note": "-one: regalo -> regalone"},
+    {"it": "La macchinona è lì", "ru": "Большущая машина стоит там", "note": "-ona: macchina -> macchinona"},
+    {"it": "La macchinaccia è rotta", "ru": "Плохая машина сломалась", "note": "-accia: macchina -> macchinaccia (пейоратив)"},
+    {"it": "Il libricino è nuovo", "ru": "Маленькая книжечка новая", "note": "-ino: libro -> libricino"},
+    {"it": "Il libraccio è piccolo", "ru": "Плохая книга маленькая", "note": "-accio: libro -> libraccio (пейоратив)"},
+    {"it": "Il regaluccio è da lei", "ru": "Миленький подарочек от неё", "note": "-uccio: vezzeggiativo"},
+    {"it": "La cucinetta è pulita", "ru": "Маленькая кухонька чистая", "note": "-etta: cucina -> cucinetta"},
+    {"it": "Il casone è lì", "ru": "Большущий дом стоит там", "note": "-one: casa -> casone"},
+    {"it": "Il tavolaccio è piccolo", "ru": "Плохой стол маленький", "note": "-accio: tavolo -> tavolaccio"}
+  ]
+}

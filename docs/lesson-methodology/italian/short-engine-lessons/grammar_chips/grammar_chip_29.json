@@ -1,0 +1,22 @@
+{
+  "key": "B13",
+  "title": "B13 - Verbi Riflessivi: возвратные глаголы",
+  "essence": "Возвратные глаголы показывают, что подлежащее действует на себя: mi compro (я покупаю себе), mi alzo (я встаю). В passato prossimo всегда используют essere.",
+  "formula": "### Возвратные местоимения\nmi, ti, si, ci, vi, si + глагол\n\n### Типы\n- Собственно возвратные: mi compro una casa (покупаю себе)\n- Возвратно-взаимные: ci vediamo (видимся)\n- Возвратно-переходные: mi preparo la cena (готовлю себе ужин)\n\n### Passato Prossimo\nВсегда essere + participio (согласовано!):\nSi sono alzati presto = Они встали рано\nSi è svegliata e si è preparata la cena\n\n### С модальными глаголами\nDevo alzarmi / Mi devo alzare (оба варианта верны)",
+  "base": null,
+  "dontConfuse": "В PP возвратные глаголы всегда с essere: Si sono alzati (не hanno alzato). С модальными: Devo alzarmi (местоимение в конце инфинитива) или Mi devo alzare (перед глаголом) — оба верны.",
+  "examples": [
+    {"it": "Mi compro una casa", "ru": "Я покупаю себе дом", "note": "mi + compro, возвратное"},
+    {"it": "Me ne vado a casa", "ru": "Я ухожу домой", "note": "andarsene = уходить, возвратная форма"},
+    {"it": "Mi preparo la cena", "ru": "Я готовлю себе ужин", "note": "mi + preparo, готовлю себе"},
+    {"it": "Mi faccio un regalo", "ru": "Я делаю себе подарок", "note": "mi + faccio, себе подарок"},
+    {"it": "Mi pulisco", "ru": "Я убираюсь", "note": "mi + pulisco, возвратное"},
+    {"it": "Ti pulisci", "ru": "Ты убираешься", "note": "ti + pulisci, 2 л. ед.ч."},
+    {"it": "Ci puliamo", "ru": "Мы убираемся", "note": "ci + puliamo, 1 л. мн.ч."},
+    {"it": "Mi alzo presto", "ru": "Я встаю рано", "note": "alzarsi = вставать"},
+    {"it": "Ti svegli", "ru": "Ты просыпаешься", "note": "svegliarsi = просыпаться"},
+    {"it": "Devo alzarmi", "ru": "Я должен встать", "note": "модальный + возвратное: alzarmi"},
+    {"it": "Si sono alzati presto", "ru": "Они встали рано", "note": "PP: essere + alzati (м.р. мн.ч.)"},
+    {"it": "Si è svegliata e si è preparata la cena", "ru": "Она проснулась и приготовила себе ужин", "note": "PP: два возвратных подряд"}
+  ]
+}

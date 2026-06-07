@@ -1,0 +1,22 @@
+{
+  "key": "B17",
+  "title": "B17 - Stare + Gerundio: действие происходит сейчас",
+  "essence": "Конструкция stare + gerundio описывает действие, происходящее в данный момент: «я сейчас покупаю» = sto comprando. Образуется от presente глагола stare + gerundio основного глагола.",
+  "formula": "### Спряжение stare\nsto, stai, sta, stiamo, state, stanno\n\n### Образование gerundio\n- -are → -ando: comprare → comprando\n- -ere → -endo: fare → facendo\n- -ire → -endo: dormire → dormendo\n\n### Формула\nsto comprando = я сейчас покупаю\nstiamo pulendo = мы сейчас убираем\nstanno lavorando = они сейчас работают\n\n### Отрицание\nNon sto comprando = Я сейчас не покупаю",
+  "base": null,
+  "dontConfuse": "Stare + gerundio = происходящее ПРЯМО СЕЙЧАС. Не используй для будущих планов (нужен futuro) или привычек (нужен presente). Не путай с presente indicativo: «compro» = покупаю (вообще), «sto comprando» = покупаю (сейчас, в данный момент).",
+  "examples": [
+    {"it": "Sto comprando una casa", "ru": "Я сейчас покупаю дом", "note": "sto + comprando, 1 л. ед.ч."},
+    {"it": "Sta andando a casa", "ru": "Он сейчас идёт домой", "note": "sta + andando, 3 л. ед.ч."},
+    {"it": "Sto facendo un regalo", "ru": "Я сейчас делаю подарок", "note": "sto + facendo (fare → facendo)"},
+    {"it": "Sta cucinando", "ru": "Она сейчас готовит", "note": "sta + cucinando"},
+    {"it": "Stiamo pulendo la cucina", "ru": "Мы сейчас убираем кухню", "note": "stiamo + pulendo, 1 л. мн.ч."},
+    {"it": "Stanno lavorando", "ru": "Они сейчас работают", "note": "stanno + lavorando, 3 л. мн.ч."},
+    {"it": "Stai comprando una macchina nuova", "ru": "Ты сейчас покупаешь новую машину", "note": "stai + comprando, 2 л. ед.ч."},
+    {"it": "Stiamo andando a casa", "ru": "Мы сейчас идём домой", "note": "stiamo + andando"},
+    {"it": "Stanno facendo un regalo grande", "ru": "Они сейчас делают большой подарок", "note": "stanno + facendo"},
+    {"it": "Non sto comprando una casa", "ru": "Я сейчас не покупаю дом", "note": "отрицание: non + stare + gerundio"},
+    {"it": "Non sta andando a casa", "ru": "Он сейчас не идёт домой", "note": "отрицание 3 л. ед.ч."},
+    {"it": "Non stiamo facendo un regalo", "ru": "Мы сейчас не делаем подарок", "note": "отрицание 1 л. мн.ч."}
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "key": "A13",
+  "title": "A13 - Comparativi e Superlativi",
+  "essence": "Сравнение: больше/меньше и самый. `di` = Род.п. сравнения (русское «больше КОГО/ЧЕГО»).",
+  "formula": "### Формулы\n**Сравнительная:**\n- `più/meno + прил. + di` — сравниваем два объекта\n- `più/meno + прил. + che` — сравниваем два свойства одного объекта / перед глаголом\n\n**Превосходная:**\n- `il/la/i/le + più/meno + прил. + di` — самый... из группы\n\n### Нерегулярные\n| Положительная | Сравнительная | Превосходная |\n|---------------|---------------|--------------|\n| buono | migliore | il migliore |\n| cattivo | peggiore | il peggiore |\n| grande | maggiore | il maggiore |\n| piccolo | minore | il minore |",
+  "base": null,
+  "dontConfuse": "`di` — когда сравниваем два объекта: `più grande di te` (больше тебя).\n`che` — когда сравниваем два свойства одного объекта: `più intelligente che bello`.\nПревосходная ТРЕБУЕТ артикль: `il più grande`, не просто `più grande`.\n`maggiore` ≠ `più grande`: maggiore = возраст/значимость, più grande = физический размер.",
+  "examples": [
+    {
+      "it": "Roma è più grande di Milano.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "È più intelligente che bello.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "È il più bel libro della biblioteca.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Questo è il mio migliore amico.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "È meno costoso del previsto.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Meglio andare che restare.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

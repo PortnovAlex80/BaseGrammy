@@ -1,0 +1,25 @@
+{
+  "key": "A07",
+  "title": "A07 - Domande",
+  "essence": "Вопросительное слово показывает роль элемента.",
+  "formula": "### Карта\n- `chi` - кто\n- `cosa` - что\n- `a chi` - кому\n- `di chi` - чей\n- `dove` - где/куда\n- `quando` - когда\n- `con chi` - с кем / Твор.п.\n- `quanto` - сколько\n- `quale` - какой",
+  "base": null,
+  "dontConfuse": "В итальянском нет вспомогательного глагола (как do/does). Вопрос = инверсия или интонация: `Mangi la pizza?`",
+  "examples": [
+    {
+      "it": "Chi sei?",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Cosa fai?",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Dove vai?",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

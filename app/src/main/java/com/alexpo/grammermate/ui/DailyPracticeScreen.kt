@@ -43,7 +43,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,7 +92,9 @@ fun DailyPracticeScreen(
     onExportDailyBadSentences: () -> String? = { null },
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
-    voiceAutoStart: Boolean = true
+    voiceAutoStart: Boolean = true,
+    onBluetoothSetup: suspend () -> Boolean = { true },
+    onBluetoothCleanup: () -> Unit = {}
 ) {
     var hasShownCompletionSparkle by remember { mutableStateOf(false) }
     val showCompletionSparkle = state.finishedToken && !hasShownCompletionSparkle
@@ -182,7 +186,9 @@ fun DailyPracticeScreen(
                     onExportDailyBadSentences = onExportDailyBadSentences,
                     languageId = languageId,
                     textScale = textScale,
-                    onComplete = onComplete
+                    onComplete = onComplete,
+                    onBluetoothSetup = onBluetoothSetup,
+                    onBluetoothCleanup = onBluetoothCleanup
                 )
             }
         }
@@ -242,7 +248,9 @@ private fun ColumnScope.VocabFlashcardBlock(
     languageId: String = "en",
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
-    onComplete: () -> Unit = {}
+    onComplete: () -> Unit = {},
+    onBluetoothSetup: suspend () -> Boolean = { true },
+    onBluetoothCleanup: () -> Unit = {}
 ) {
     var isRated by remember(task.id) { mutableStateOf(false) }
     var showAnswer by remember(task.id) { mutableStateOf(false) }
@@ -252,6 +260,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     var showQrDialog by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val clipboardManager = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
 
     val promptText = when (task.direction) {
         VocabDrillDirection.IT_TO_RU -> task.word.word
@@ -310,6 +319,7 @@ private fun ColumnScope.VocabFlashcardBlock(
                 AuditLogger.getInstanceOrNull()?.voiceStart(languageId, false)
                 isVoiceActive = true
                 val langTag = when (task.direction) { VocabDrillDirection.IT_TO_RU -> "ru-RU"; VocabDrillDirection.RU_TO_IT -> "it-IT" }
+                scope.launch { onBluetoothSetup() }
                 speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)

@@ -1,0 +1,21 @@
+{
+  "key": "B19",
+  "title": "B19 - Infinito Passato: «после того как сделал»",
+  "essence": "Infinito passato (aver/essere + participio) используется после dopo, prima di и других предлогов для выражения завершённого действия: «после покупки» = dopo aver comprato.",
+  "formula": "### Формула\n- dopo + aver + participio (с avere-глаголами)\n- dopo + essere + participio (с essere-глаголами)\n\n### Примеры\nDopo aver comprato una casa = После покупки дома\nDopo essere andato a casa = После того как ушёл домой\n\n### Aver vs essere\nВыбор как в сложных временах:\n- переходные глаголы → aver: aver fatto, aver cucinato\n- движение/состояние → essere: essere andato, essere venuto\n\n### Согласование\nС essere participio согласуется:\nessere andato/andata, essere partito/partita",
+  "base": null,
+  "dontConfuse": "После dopo используется infinito passato, не indicativo: «dopo aver comprato» (не «dopo ho comprato»). Выбор aver/essere тот же, что и в passato prossimo: движение → essere, остальные → aver.",
+  "examples": [
+    {"it": "Dopo aver comprato una casa, ho pulito la cucina", "ru": "после покупки дома, я убрал кухню", "note": "dopo + aver + comprato (avere-глагол)"},
+    {"it": "Dopo essere andato a casa, ha comprato la macchina", "ru": "после того как ушёл домой, он купил ту самую машину", "note": "dopo + essere + andato (движение)"},
+    {"it": "Dopo aver fatto un regalo, ha cucinato", "ru": "после того как сделал подарок, она приготовила", "note": "aver + fatto от fare"},
+    {"it": "Dopo aver cucinato, abbiamo pulito la cucina", "ru": "после того как мы приготовили, мы убрали кухню", "note": "последовательность действий"},
+    {"it": "Dopo essere venuto, abbiamo lavorato insieme", "ru": "после того как он пришёл, мы поработали вместе", "note": "essere + venuto (venire = essere-глагол)"},
+    {"it": "Dopo essere andata, ha letto un libro nuovo", "ru": "после того как она ушла, он прочитал новую книгу", "note": "essere + andata (ж.р.)"},
+    {"it": "Dopo aver fatto il lavoro, abbiamo cucinato", "ru": "после того как мы сделали ту самую работу, мы приготовили", "note": "aver + fatto"},
+    {"it": "Dopo essere partiti, la famiglia ha comprato una casa", "ru": "после того как они уехали, та самая семья купила дом", "note": "essere + partiti (м.р. мн.ч.)"},
+    {"it": "Dopo aver pulito la cucina, ha fatto un regalo", "ru": "после того как она убрала кухню, она сделала подарок", "note": "aver + pulito"},
+    {"it": "Dopo essere venuto, ha lavorato oggi", "ru": "после того как пришёл, он поработал сегодня", "note": "essere + venuto"},
+    {"it": "Dopo aver letto il libro, l'abbiamo comprato", "ru": "после того как мы прочитали ту самую книгу, мы её купили", "note": "aver + letto + прямое местоимение"}
+  ]
+}

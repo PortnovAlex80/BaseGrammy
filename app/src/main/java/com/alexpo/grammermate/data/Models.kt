@@ -9,6 +9,17 @@ data class Language(
     val displayName: String
 )
 
+/**
+ * Lightweight lesson descriptor for UI display.
+ * Contains only ID + title, no card data.
+ * Used for lazy loading: display tiles without parsing full lessons.
+ */
+data class LessonMetadata(
+    val id: LessonId,
+    val languageId: LanguageId,
+    val title: String
+)
+
 data class Lesson(
     val id: LessonId,
     val languageId: LanguageId,
@@ -578,6 +589,8 @@ data class AudioState(
     val ruTextScale: Float = 1.0f,
     val voiceAutoStart: Boolean = true,
     val useOfflineAsr: Boolean = false,
+    val useBluetoothMic: Boolean = false,
+    val bluetoothMicConnected: Boolean = false,
     val asrState: AsrState = AsrState.IDLE,
     val asrModelReady: Boolean = false,
     val asrDownloadState: DownloadState = DownloadState.Idle,

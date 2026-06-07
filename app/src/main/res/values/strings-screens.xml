@@ -89,6 +89,9 @@
     <string name="settings_using_on_device">Using on-device recognition (no internet required)</string>
     <string name="settings_model_not_downloaded">Model not downloaded yet</string>
     <string name="settings_using_google_recognition">Using Google speech recognition (requires internet)</string>
+    <string name="settings_bluetooth_microphone">Bluetooth microphone</string>
+    <string name="settings_bluetooth_mic_on">Audio routed through connected Bluetooth device</string>
+    <string name="settings_bluetooth_mic_off">Using device built-in microphone</string>
     <string name="settings_auto_start_voice">Auto-start voice input</string>
     <string name="settings_voice_auto_start_on">Voice recognition starts automatically when a new card appears</string>
     <string name="settings_voice_auto_start_off">Voice recognition starts only when you tap the microphone</string>

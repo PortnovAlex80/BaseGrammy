@@ -1,0 +1,22 @@
+{
+  "key": "C10",
+  "title": "C10 - Si Passivante Avanzato: продвинутый безличный пассив",
+  "essence": "Si passivante — конструкция с безличным si, где глагол согласуется с дополнением в числе и роде. Также существует форма ci si для возвратно-безличного значения. Время может быть любым, включая futuro.",
+  "formula": "### Базовое si passivante\n`Si + глагол (согласование с объектом)`\nЕдинственное: `Si è comprata una casa` — Дом был куплен.\nМножественное: `Si sono comprate le case` — Дома были куплены.\n\n### Согласование\nГлагол в прошедшем времени согласуется с объектом:\n- casa (ж.р. ед.) -> comprata\n- case (ж.р. мн.) -> comprate\n- libri (м.р. мн.) -> letti\n\n### Ci si (возвратно-безличное)\n`Ci si compra una casa` — Покупают себе дом.\n`Ci si va a casa` — Идут себе домой.\nЧастица ci + si = возвратное безличное действие.\n\n### В будущем времени\n`Si compreranno le case nuove` — Новые дома будут куплены.",
+  "base": null,
+  "dontConfuse": "Si passivante vs Si impersonale: в si passivante глагол согласуется с объектом ('Si comprano case'), в si impersonale — всегда 3-е лицо ед.ч. ('Si lavora bene'). Не путать ci si с ci (там/нам): 'ci si compra' = себе покупают, а не 'там покупают'.",
+  "examples": [
+    {"it": "Si è comprata una casa", "ru": "Дом был куплен", "note": "casa (ж.р. ед.) -> comprata"},
+    {"it": "Si è andati a casa", "ru": "Домой пошли", "note": "andati = м.р. мн.ч., согласование с подразумеваемым"},
+    {"it": "Si è fatto un regalo", "ru": "Подарок был сделан", "note": "regalo (м.р. ед.) -> fatto"},
+    {"it": "Si sono comprate le case", "ru": "Дома были куплены", "note": "case (ж.р. мн.) -> comprate"},
+    {"it": "Si è comprata la casa grande", "ru": "Был куплен тот самый большой дом", "note": "casa grande (ж.р. ед.)"},
+    {"it": "Si sono comprate le macchine nuove", "ru": "Были куплены те самые новые машины", "note": "macchine (ж.р. мн.) -> comprate"},
+    {"it": "Si sono letti i libri", "ru": "Те самые книги были прочитаны", "note": "libri (м.р. мн.) -> letti"},
+    {"it": "Ci si compra una casa", "ru": "Покупают себе дом", "note": "ci si = возвратно-безличное"},
+    {"it": "Ci si va a casa", "ru": "Идут себе домой", "note": "ci si + andare"},
+    {"it": "Si è pulita la cucina", "ru": "Та самая кухня была убрана", "note": "cucina (ж.р. ед.) -> pulita"},
+    {"it": "Si è cucinata la cena in quella cucina", "ru": "Был приготовлен ужин на той самой кухне", "note": "cena (ж.р. ед.) -> cucinata"},
+    {"it": "Si compreranno le case nuove", "ru": "Те самые новые дома будут куплены", "note": "futuro: compreranno"}
+  ]
+}

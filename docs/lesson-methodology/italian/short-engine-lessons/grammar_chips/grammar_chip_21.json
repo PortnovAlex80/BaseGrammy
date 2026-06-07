@@ -1,0 +1,20 @@
+{
+  "key": "B05",
+  "title": "B05 - PP vs Imperfetto: событие vs фон",
+  "essence": "Passato prossimo фиксирует точечное событие, imperfetto рисует фон. В одном предложении они часто работают вместе: фон (imperfetto) прерывается событием (PP).",
+  "formula": "### Ключевые слова-подсказки\n- poi (потом) → PP: Compravo una casa, poi l'ho comprata\n- mentre (пока) → imperfetto + PP: Mentre compravo, è partita\n- quando (когда) → оба возможны, зависит от роли\n\n### Правило нарратива\n- Фон/процесс → imperfetto: compravo, facevo, andavo\n- Результат/событие → PP: ho comprato, ho fatto, sono andato\n\n### Типичные пары\n- Я покупал (imp), а потом купил (PP)\n- Пока я шёл (imp), она приготовила (PP)\n- Кухня была чистой (imp/состояние), потом семья приготовила (PP)",
+  "base": null,
+  "dontConfuse": "Оба времени переводятся русским прошедшим. Разница — в нарративной функции: фон (imperfetto) или событие (PP). «Пока я покупал» — imperfetto, «она уехала» — PP.",
+  "examples": [
+    {"it": "Compravo una casa, poi l'ho comprata", "ru": "Я покупал дом, а потом купил", "note": "imperfetto (фон) + poi + PP (результат)"},
+    {"it": "Facevo un regalo, poi l'ho fatto", "ru": "Я делал подарок, а потом сделал", "note": "фон → завершённое действие"},
+    {"it": "Andavo a casa, poi sono andato a casa", "ru": "Я шёл домой, а потом пошёл", "note": "движение: фон vs событие"},
+    {"it": "Mentre compravo una casa, è partita", "ru": "Пока я покупал дом, она уехала", "note": "mentre + imperfetto, главное = PP"},
+    {"it": "Mentre facevo un regalo, ha comprato la macchina", "ru": "Пока я делал подарок, он купил ту самую машину", "note": "mentre + imperfetto (длительный фон)"},
+    {"it": "Mentre andavo a casa, ha cucinato una cena", "ru": "Пока я шёл домой, она приготовила ужин", "note": "одновременность: фон + событие"},
+    {"it": "Pulivo la cucina quando la famiglia ha comprato una casa", "ru": "Я убирал кухню, когда семья купила дом", "note": "quando: фоновое прерывается событием"},
+    {"it": "Mentre abitavamo insieme, è partito", "ru": "Пока мы жили вместе, он уехал", "note": "abitavamo — длительное состояние (imp)"},
+    {"it": "Quando è arrivata, pulivo la cucina", "ru": "Когда она прибыла, я убирал кухню", "note": "quando + PP, затем imperfetto как фон"},
+    {"it": "La cucina era pulita, poi la famiglia ha cucinato", "ru": "Кухня была чистой, потом семья приготовила", "note": "состояние (imp) → действие (PP)"}
+  ]
+}

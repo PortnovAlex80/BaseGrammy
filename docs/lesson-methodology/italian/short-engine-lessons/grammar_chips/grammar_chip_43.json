@@ -1,0 +1,22 @@
+{
+  "key": "B27",
+  "title": "B27 - Congiuntivo Imperfetto: сослагательное в прошедшем",
+  "essence": "Congiuntivo imperfetto используется после главных предложений в прошедшем времени (credevo che..., pensavo che...) и в гипотетических конструкциях. Образуется от основы инфинитива + -ssi.",
+  "formula": "### Образование\n- -are: comprare → comprassi, comprassi, comprasse, comprassimo, compraste, comprassero\n- -ere: fare → facessi, facesse, facessero\n- -ire: dormire → dormissi, dormisse\n\n### Неправильные\n- essere → fossi, fosse, fossimo, fossero\n- avere → avessi, avesse, avessimo, avessero\n\n### Триггеры (главное предложение в прошедшем!)\n- credevo che... = я думал, что...\n- pensavo che... = я считал, что...\n- volevo che... = я хотел, чтобы...\n- sapevo che... = я знал, что... (факт → indicativo imperfetto!)\n\n### Важное правило\nSapevo che la cucina era grande = Я ЗНАЛ (факт → indicativo)\nCredevo che la cucina fosse grande = я ДУМАЛ (мнение → congiuntivo)",
+  "base": null,
+  "dontConfuse": "Sapevo che (знал → indicativo) vs credevo/pensavo che (думал → congiuntivo). Знание = факт, мнение = congiuntivo. Также не путай congiuntivo imperfetto с indicativo imperfetto: «era» = indicativo, «fosse» = congiuntivo.",
+  "examples": [
+    {"it": "Credevo che comprasse una casa", "ru": "Я думал, что покупает дом", "note": "credevo che → congiuntivo: comprasse"},
+    {"it": "Pensavo che andasse a casa", "ru": "Я думал, что идёт домой", "note": "andasse = congiuntivo imperfetto от andare"},
+    {"it": "Credevo che facesse un regalo", "ru": "Я думал, что делает подарок", "note": "facesse = от fare"},
+    {"it": "Credevo che il libro fosse nuovo", "ru": "Я думал, что та самая книга новая", "note": "fosse = congiuntivo от essere"},
+    {"it": "Pensavo che la cucina fosse pulita", "ru": "Я думал, что кухня была чистая", "note": "fosse + pulita (состояние)"},
+    {"it": "Credevo che avesse una macchina grande", "ru": "Я думал, что у него есть большая машина", "note": "avesse = congiuntivo от avere"},
+    {"it": "Credevo che abitassero nella casa", "ru": "Я думал, что они живут в том самом доме", "note": "abitassero = 3 л. мн.ч."},
+    {"it": "Volevo che tu comprassi un regalo bello", "ru": "Я хотел, чтобы ты купил красивый подарок", "note": "volevo che + tu + congiuntivo"},
+    {"it": "Volevo che la cucina fosse pulita", "ru": "Я хотел, чтобы кухня была чистая", "note": "volere + che → congiuntivo"},
+    {"it": "Pensavo che gli desse il libro", "ru": "Я думал, что даёт ему книгу", "note": "desse = congiuntivo от dare"},
+    {"it": "Credevo che stesse a casa", "ru": "Я думал, что остаётся дома", "note": "stesse = congiuntivo от stare"},
+    {"it": "Sapevo che la cucina era grande", "ru": "Я знал, что та самая кухня большая", "note": "sapevo che → INDICATIVO (факт!)"}
+  ]
+}

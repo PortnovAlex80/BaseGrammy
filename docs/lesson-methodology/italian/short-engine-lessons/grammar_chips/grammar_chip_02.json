@@ -1,0 +1,25 @@
+{
+  "key": "A02",
+  "title": "A02 - Articoli",
+  "essence": "Артикль показывает статус существительного: новое/любое или конкретное.",
+  "formula": "### Формы\n- `un, uno, una, un'`\n- `il, lo, la, l', i, gli, le`\n  > Множественные (`i, gli, le`) — когда предметов много. Правило окончаний — в A03.",
+  "base": null,
+  "dontConfuse": "`problema` мужского рода: `un problema`, `il problema`.",
+  "examples": [
+    {
+      "it": "Questo è un libro.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Questo è il libro.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Questo è uno zio.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

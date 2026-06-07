@@ -1,0 +1,45 @@
+{
+  "key": "A11",
+  "title": "A11 - Numeri, Ora, Data",
+  "essence": "Числа для количества, время суток и даты. Каждая группа требует своей предложной упаковки.",
+  "formula": "### Числительные\n**0-10:** zero, uno, due, tre, quattro, cinque, sei, sette, otto, nove, dieci\n**11-20:** undici, dodici, tredici, quattordici, quindici, sedici, diciassette, diciotto, diciannove, venti\n**Десятки:** venti, trenta, quaranta, cinquanta, sessanta, settanta, ottanta, novanta, cento\n**Составные:** ventuno (усечение), trentadue, centouno\n\n### Время\n- `Che ore sono? / Che ora è?`\n- `È l'una.` / `Sono le tre.` / `È mezzogiorno.` / `È mezzanotte.`\n- `alle otto` (в восемь — a + l'ora)\n\n### Дни и месяцы\n- Дни (не с большой): lunedì, martedì, mercoledì, giovedì, venerdì, sabato, domenica\n- Месяцы: gennaio, febbraio, marzo... dicembre\n- Даты: `il 25 dicembre` (cardinale, не ordinale!) / `il primo maggio` (исключение: 1-е)\n\n### Упаковка времени\n| Предлог | Значение | Пример |\n|---------|----------|--------|\n| `a` | Точка на оси | `a mezzogiorno`, `a Natale`, `alle nove` |\n| `di` | Повторяемость / Род.п. | `di lunedì` (по понедельникам), `di mattina` |\n| `in` | Период / Предл.п. | `in estate`, `in inverno`, `nel 2024` |",
+  "base": null,
+  "dontConfuse": "`uno` усекается перед гласной: `ventun anno` (но `ventuno giorni`).\nДни недели — с маленькой буквы: `lunedì`, не `Lunedì`.\nВ датах — кардинальное число: `il 25 dicembre`, но `il primo maggio` (1-е = порядковое).",
+  "examples": [
+    {
+      "it": "Ho trentadue anni.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Che ore sono? — Sono le sette e mezza.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Il mio compleanno è il 15 marzo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "Di sabato non lavoro.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "In estate fa caldo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "A mezzogiorno pranziamo.",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "È il primo giorno di scuola.",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "key": "C06",
+  "title": "C06 - Concordanza dei Tempi: согласование с конъюнктивом",
+  "essence": "Время конъюнктива (congiuntivo) зависит от времени главного глагола и отношения одновременности. Главное в настоящем -> congiuntivo presente (одновременность) или congiuntivo passato (предшествование). Главное в прошедшем -> congiuntivo imperfetto (одновременность) или congiuntivo trapassato (предшествование).",
+  "formula": "### Главное в настоящем (penso, credo, spero)\nОдновременность -> congiuntivo presente:\n`Penso che compri una casa` — Думаю, что покупает дом.\n`Credo che la famiglia lavori oggi` — Верю, что семья работает сегодня.\n\nПредшествование -> congiuntivo passato:\n`Penso che abbia già comprato una casa` — Думаю, что уже купил дом.\n`Credo che la famiglia abbia già cucinato` — Верю, что семья уже приготовила.\n\n### Главное в прошедшем (pensavo, credevo)\nОдновременность -> congiuntivo imperfetto:\n`Credevo che comprasse una casa` — Думал, что покупает дом.\n`La famiglia credeva che partisse tardi` — Семья думала, что уезжает поздно.\n\nПредшествование -> congiuntivo trapassato:\n`Credevo che avesse già comprato una macchina` — Думал, что уже купил машину.\n`Credevo che il regalo fosse stato bello` — Думал, что подарок был красивый.",
+  "base": null,
+  "dontConfuse": "Не путать congiuntivo passato (abbia comprato) с trapassato (avesse comprato). Congiuntivo passato = предшествование при настоящем главном. Congiuntivo trapassato = предшествование при прошедшем главном. Также essere-глаголы в congiuntivo trapassato: 'fosse stato/a/i/e' + прилагательное или participio.",
+  "examples": [
+    {"it": "Penso che compri una casa", "ru": "Думаю, что покупает дом", "note": "Главное в presente + congiuntivo presente"},
+    {"it": "Penso che vada a casa", "ru": "Думаю, что идёт домой", "note": "vada = andare congiuntivo presente"},
+    {"it": "Penso che faccia un regalo", "ru": "Думаю, что делает подарок", "note": "faccia = fare congiuntivo presente"},
+    {"it": "Penso che abbia già comprato una casa", "ru": "Думаю, что уже купил дом", "note": "Главное в presente + congiuntivo passato"},
+    {"it": "Credo che la famiglia lavori oggi", "ru": "Верю, что семья работает сегодня", "note": "lavori = lavorare cong. presente"},
+    {"it": "Credo che la famiglia abbia già cucinato", "ru": "Верю, что семья уже приготовила ужин", "note": "abbià cucinato = cong. passato"},
+    {"it": "Credevo che comprasse una casa", "ru": "Думал, что покупает дом", "note": "Главное в passato + congiuntivo imperfetto"},
+    {"it": "Credevo che avesse già comprato una macchina", "ru": "Думал, что уже купил машину", "note": "Главное в passato + congiuntivo trapassato"},
+    {"it": "Credevo che il libro fosse nuovo", "ru": "Думал, что та самая книга новая", "note": "essere в congiuntivo imperfetto + прилагательное"},
+    {"it": "Credevo che il regalo fosse stato bello", "ru": "Думал, что тот самый подарок был красивый", "note": "essere в congiuntivo trapassato"},
+    {"it": "Pensavo che la cucina fosse pulita", "ru": "Думал, что кухня была чистая", "note": "fosse + pulita, описательное"},
+    {"it": "La famiglia credeva che fosse già partita", "ru": "Та самая семья думала, что уже уехала", "note": "essere + partita, cong. trapassato"}
+  ]
+}

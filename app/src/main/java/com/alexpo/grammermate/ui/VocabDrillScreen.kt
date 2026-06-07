@@ -85,6 +85,9 @@ import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.shared.AuditLogger
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
 
 @Composable
 fun VocabDrillScreen(
@@ -92,9 +95,12 @@ fun VocabDrillScreen(
     onBack: () -> Unit,
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
-    voiceAutoStart: Boolean = true
+    voiceAutoStart: Boolean = true,
+    onBluetoothSetup: suspend () -> Boolean = { true },
+    onBluetoothCleanup: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     // Track whether RecognizerIntent is currently active (to prevent double-launch)
     var isVoiceActive by remember { mutableStateOf(false) }
@@ -126,6 +132,7 @@ fun VocabDrillScreen(
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
                 putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
             }
+            scope.launch { onBluetoothSetup() }
             speechLauncher.launch(intent)
         }
     }

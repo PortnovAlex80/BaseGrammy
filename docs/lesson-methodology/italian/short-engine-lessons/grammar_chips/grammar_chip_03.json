@@ -1,0 +1,25 @@
+{
+  "key": "A03",
+  "title": "A03 - Genere e Numero",
+  "essence": "Род и число существительного управляют остальными словами рядом.",
+  "formula": "### Формула\n- `-o -> -i`\n- `-a -> -e`\n- `-e -> -i`",
+  "base": null,
+  "dontConfuse": "`città` не меняется: una città — due città.\n\nРод не всегда по окончанию: `il problema` (муж., на -a), `l'artista` (общий: l'artista / la violinista).",
+  "examples": [
+    {
+      "it": "un ragazzo / ragazzi",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "una ragazza / ragazze",
+      "ru": "",
+      "note": ""
+    },
+    {
+      "it": "una lezione / lezioni",
+      "ru": "",
+      "note": ""
+    }
+  ]
+}

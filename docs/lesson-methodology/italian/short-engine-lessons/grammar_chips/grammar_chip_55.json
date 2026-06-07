@@ -1,0 +1,22 @@
+{
+  "key": "C12",
+  "title": "C12 - Stare per + Infinito / Stare + Gerundio: намерение и длительность",
+  "essence": "Конструкция stare per + infinito выражает действие, вот-вот произойдущее ('собираюсь'). В прошедшем (stavo per) — собирался, но не обязательно сделал. Stare + gerundio в imperfetto описывает длительное действие в прошлом ('в тот момент делал').",
+  "formula": "### Stare per + infinito (ближайшее будущее)\nНастоящее: `Sto per comprare una casa` — Вот-вот куплю дом.\nПрошедшее (imperfetto): `Stavo per comprare una casa` — Собирался купить дом.\nМножественное: `Stavamo per fare un regalo` — Собирались сделать подарок.\n\n### Stare + gerundio (длительность в прошлом)\nImperfetto: `Stavo comprando una casa` — Покупал дом (в тот момент).\n`Stavamo andando a casa` — Шли домой (в тот момент).\n\n### Сочетание с quando\n`Stava pulendo la cucina quando è venuta la famiglia` — Убирала кухню, когда пришла семья.\nStare + gerundio = фоновое длительное действие, quando + passato prossimo = прерывающее событие.\n\n### Разница значений\n- stare per = собираюсь, вот-вот (результат ещё не наступил)\n- stare + gerundio = в процессе делаю/делал (длительность)",
+  "base": null,
+  "dontConfuse": "Stare per vs Stare + gerundio: 'Sto per comprare' = вот-вот куплю (ещё не начал), 'Sto comprando' = покупаю прямо сейчас (уже в процессе). В прошедшем: 'Stavo per comprare' = собирался (возможно не купил), 'Stavo comprando' = покупал в тот момент (процесс был).",
+  "examples": [
+    {"it": "Sto per comprare una casa", "ru": "Вот-вот куплю дом", "note": "stare per + infinito, настоящее"},
+    {"it": "Sto per andare a casa", "ru": "Вот-вот пойду домой", "note": "stare per + andare"},
+    {"it": "Sto per fare un regalo", "ru": "Вот-вот сделаю подарок", "note": "stare per + fare"},
+    {"it": "Stavo per comprare una casa", "ru": "Собирался купить дом", "note": "stare per в imperfetto: намерение в прошлом"},
+    {"it": "Stava per andare a casa", "ru": "Собиралась пойти домой", "note": "3-е лицо ж.р."},
+    {"it": "Stavamo per fare un regalo", "ru": "Собирались сделать подарок", "note": "1-е лицо мн.ч."},
+    {"it": "Stanno per comprare una macchina nuova", "ru": "Вот-вот купят ту самую новую машину", "note": "3-е лицо мн.ч."},
+    {"it": "Stavo comprando una casa", "ru": "Покупал дом — в тот момент", "note": "stare + gerundio в imperfetto"},
+    {"it": "Stavamo andando a casa", "ru": "Шли домой — в тот момент", "note": "stare + gerundio, 1-е лицо мн.ч."},
+    {"it": "Stava pulendo la cucina quando è venuta la famiglia", "ru": "Убирала кухню, когда пришла семья", "note": "gerundio (фон) + quando (прерывание)"},
+    {"it": "Stavo leggendo un libro quando è stata cucinata la cena", "ru": "Читал книгу, когда приготовили ужин", "note": "gerundio + quando + пассив"},
+    {"it": "Stiamo per partire al lavoro", "ru": "Вот-вот уйдём на работу", "note": "stare per + partire"}
+  ]
+}

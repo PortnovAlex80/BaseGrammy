@@ -795,11 +795,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun getLessonsForChapter(chapter: Chapter): List<Lesson> {
-        val packId = _coreState.value.navigation.activePackId?.value
-            ?: return emptyList()
-
+        val packId = _coreState.value.navigation.activePackId?.value ?: return emptyList()
+        val allNavLessons = _coreState.value.navigation.lessons
+        if (allNavLessons.isEmpty()) {
+            Log.w(logTag, "getLessonsForChapter: navLessons is empty for pack $packId — lessons not loaded yet?")
+        }
         return chapter.lessons.mapNotNull { lessonId ->
-            _coreState.value.navigation.lessons.firstOrNull { it.id.value == lessonId }
+            allNavLessons.firstOrNull { it.id.value == lessonId }
         }
     }
 
