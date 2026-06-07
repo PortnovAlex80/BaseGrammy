@@ -459,15 +459,16 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                 continue
             }
 
-            // Load lessons from pack directory
+            // Read manifest to determine which files are actual lessons
+            val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
+            val manifestLessonFiles = getManifestLessonFileNames(manifest)
+
+            // Load ONLY files declared in manifest — exclude drill/vocab CSVs
             val lessonFiles = packDir.listFiles()?.filter {
-                it.isFile && it.name.endsWith(".csv")
+                it.isFile && it.name.endsWith(".csv") && it.name in manifestLessonFiles
             } ?: continue
 
-            // Read manifest to get lesson IDs for schema v1
-            val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
-
-            Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}, schema: ${manifest?.schemaVersion}")
+            Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value} (filtered from ${packDir.listFiles()?.count { it.isFile && it.name.endsWith(".csv") } ?: 0} CSVs), schema: ${manifest?.schemaVersion}")
 
             for (lessonFile in lessonFiles) {
                 try {
@@ -548,14 +549,16 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             return emptyList()
         }
 
+        val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
+        val manifestLessonFiles = getManifestLessonFileNames(manifest)
+
         val lessonFiles = packDir.listFiles()?.filter {
-            it.isFile && it.name.endsWith(".csv")
+            it.isFile && it.name.endsWith(".csv") && it.name in manifestLessonFiles
         } ?: return emptyList()
 
-        val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
         val lessons = mutableListOf<Lesson>()
 
-        Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value}, schema: ${manifest?.schemaVersion}")
+        Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value} (filtered from ${packDir.listFiles()?.count { it.isFile && it.name.endsWith(".csv") } ?: 0} CSVs), schema: ${manifest?.schemaVersion}")
 
         for (lessonFile in lessonFiles) {
             try {
@@ -999,6 +1002,26 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     )
 
     // ── Lazy loading private helpers ───────────────────────────────────
+
+    /**
+     * Extract the set of CSV filenames declared as lessons in the manifest.
+     * v1: lessons[].file  |  v2: chapter lessonIds → "{lessonId}.csv"
+     * Only these files are loaded as lessons — drill/vocab CSVs are excluded.
+     */
+    private fun getManifestLessonFileNames(manifest: LessonPackManifest?): Set<String> {
+        if (manifest == null) return emptySet()
+        return if (manifest.schemaVersion == 2) {
+            // v2: chapters contain lessonIds; filename = "{lessonId}.csv"
+            // If manifest.lessons has explicit file mappings, use those
+            val lessonIdToFile = manifest.lessons.associate { it.lessonId to it.file }
+            manifest.chapters.flatMap { it.lessons }.map { lessonId ->
+                lessonIdToFile[lessonId] ?: "$lessonId.csv"
+            }.toSet()
+        } else {
+            // v1: lessons directly list file names
+            manifest.lessons.map { it.file }.toSet()
+        }
+    }
 
     private fun getOrderedLessonIdsFromManifest(packId: String): List<String> {
         val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
