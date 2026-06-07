@@ -1,0 +1,112 @@
+C11 - Forma passiva: venire e andare
+Дом покупается — процесс (venire, comprare, casa);La casa viene comprata
+Книга читается — процесс (venire, leggere, libro);Il libro viene letto
+Ужин готовится — процесс (venire, cucinare, cena);La cena viene cucinata
+Подарок делается — процесс (venire, fare, regalo);Il regalo viene fatto
+Работа выполняется — процесс (venire, fare, lavoro);Il lavoro viene fatto
+Машина продаётся — процесс (venire, vendere, macchina);La macchina viene venduta
+Письмо пишется — процесс (venire, scrivere, lettera);La lettera viene scritta
+Дверь открывается — процесс (venire, aprire, porta);La porta viene aperta
+Окно закрывается — процесс (venire, chiudere, finestra);La finestra viene chiusa
+Ключ находится — процесс (venire, trovare, chiave);La chiave viene trovata
+Проблема решается — процесс (venire, risolvere, problema);Il problema viene risolto
+Решение принимается — процесс (venire, prendere, decisione);La decisione viene presa
+Дом куплен — состояние (essere, comprare, casa);La casa è comprata
+Книга прочитана — состояние (essere, leggere, libro);Il libro è letto
+Ужин приготовлен — состояние (essere, cucinare, cena);La cena è cucinata
+Подарок сделан — состояние (essere, fare, regalo);Il regalo è fatto
+Машина продана — состояние (essere, vendere, macchina);La macchina è venduta
+Письмо написано — состояние (essere, scrivere, lettera);La lettera è scritta
+Дверь открыта — состояние (essere, aprire, porta);La porta è aperta
+Окно закрыто — состояние (essere, chiudere, finestra);La finestra è chiusa
+Нужно купить дом (andare, comprare, casa);La casa va comprata
+Нужно прочитать книгу (andare, leggere, libro);Il libro va letto
+Нужно приготовить ужин (andare, cucinare, cena);La cena va cucinata
+Нужно сделать подарок (andare, fare, regalo);Il regalo va fatto
+Нужно продать машину (andare, vendere, macchina);La macchina va venduta
+Нужно написать письмо (andare, scrivere, lettera);La lettera va scritta
+Нужно открыть дверь (andare, aprire, porta);La porta va aperta
+Нужно закрыть окно (andare, chiudere, finestra);La finestra va chiusa
+Нужно найти ключ (andare, trovare, chiave);La chiave va trovata
+Нужно решить проблему (andare, risolvere, problema);Il problema va risolto
+Нужно принять решение (andare, prendere, decisione);La decisione va presa
+Дом покупается семьёй (venire, comprare, casa, da, famiglia);La casa viene comprata dalla famiglia
+Книга читается студентами (venire, leggere, libro, da, studenti);Il libro viene letto dagli studenti
+Ужин готовится мамой (venire, cucinare, cena, da, madre);La cena viene cucinata dalla madre
+Подарок делается отцом (venire, fare, regalo, da, padre);Il regalo viene fatto dal padre
+Письмо пишется другом (venire, scrivere, lettera, da, amico);La lettera viene scritta dall'amico
+Машина продаётся продавцом (venire, vendere, macchina, da, commesso);La macchina viene venduta dal commesso
+Ключ находится полицией (venire, trovare, chiave, da, polizia);La chiave viene trovata dalla polizia
+Проблема решается инженером (venire, risolvere, problema, da, ingegnere);Il problema viene risolto dall'ingegnere
+Эти книги покупаются, а потом читаются (venire, comprare, poi, leggere, libri);Questi libri vengono comprati, poi vengono letti
+Те дома строятся и продаются (venire, costruire, vendere, case);Quelle case vengono costruite e vengono vendute
+Новые машины производятся и продаются (venire, produrre, vendere, macchine, nuovo);Le macchine nuove vengono prodotte e vengono vendute
+Старые книги находятся и читаются (venire, trovare, leggere, libri, vecchio);I libri vecchi vengono trovati e vengono letti
+Красивые подарки делаются и дарятся (venire, fare, regalare, regali, bello);I regali belli vengono fatti e vengono regalati
+Эти письма пишутся и отправляются (venire, scrivere, spedire, lettere);Queste lettere vengono scritte e vengono spedite
+Тот стол ремонтируется и красится (venire, riparare, dipingere, tavolo);Quel tavolo viene riparato e viene dipinto
+Те двери закрываются и запираются (venire, chiudere, bloccare, porte);Quelle porte vengono chiuse e vengono bloccate
+Нужно купить эти новые книги (andare, comprare, libri, nuovo);I libri nuovi vanno comprati
+Нужно приготовить тот большой ужин (andare, cucinare, cena, grande);La cena grande va cucinata
+Нужно решить те сложные проблемы (andare, risolvere, problemi, difficile);I problemi difficili vanno risolti
+Нужно написать длинное письмо (andare, scrivere, lettera, lungo);La lettera lunga va scritta
+Нужно продать все старые машины (andare, vendere, macchine, vecchio);Le macchine vecchie vanno vendute
+Нужно открыть те закрытые двери (andare, aprire, porte, chiuso);Le porte chiuse vanno aperte
+Нужно найти потерянные ключи (andare, trovare, chiavi, perso);Le chiavi perse vanno trovate
+Дом покупается — в процессе (venire, comprare, casa);La casa viene comprata
+Дом куплен — результат налицо (essere, comprare, casa);La casa è comprata
+Дом нужно купить — необходимость (andare, comprare, casa);La casa va comprata
+Книга читается — она в руках у студента (venire, leggere, libro, studente);Il libro viene letto dallo studente
+Книга прочитана — она на полке (essere, leggere, libro, scaffale);Il libro è letto, è sullo scaffale
+Книгу нужно прочитать — она обязательна (andare, leggere, libro);Il libro va letto
+Урок проводится учителем (venire, fare, lezione, da, insegnante);La lezione viene fatta dall'insegnante
+Урок проведён — можно идти домой (essere, fare, lezione);La lezione è fatta
+Урок нужно провести — завтра экзамен (andare, fare, lezione, domani, esame);La lezione va fatta, domani c'è l'esame
+Песня поётся детьми (venire, cantare, canzone, da, bambini);La canzone viene cantata dai bambini
+Песня спета — концерт окончен (essere, cantare, canzone);La canzone è cantata
+Песню нужно спеть — это обязательно (andare, cantare, canzone);La canzone va cantata
+Еда покупается и готовится каждый день (venire, comprare, cucinare, cibo, ogni giorno);Il cibo viene comprato e viene cucinato ogni giorno
+Еда куплена — ужин на столе (essere, comprare, cibo);Il cibo è comprato
+Еду нужно купить — холодильник пустой (andare, comprare, cibo, frigorifero, vuoto);Il cibo va comprato, il frigorifero è vuoto
+Город строится и растёт (venire, costruire, città, crescere);La città viene costruita e cresce
+Мост ремонтируется рабочими (venire, riparare, ponte, da, operai);Il ponte viene riparato dagli operai
+Мост отремонтирован — дорога открыта (essere, riparare, ponte, strada, aperto);Il ponte è riparato, la strada è aperta
+Мост нужно отремонтировать — он старый (andare, riparare, ponte, vecchio);Il ponte va riparato, è vecchio
+Фильм снимается известным режиссёром (venire, girare, film, da, regista, famoso);Il film viene girato da un regista famoso
+Фильм снят — его можно смотреть (essere, girare, film);Il film è girato, si può vedere
+Фильм нужно снять — сценарий готов (andare, girare, film, sceneggiatura, pronto);Il film va girato, la sceneggiatura è pronta
+Цветы сажаются в саду (venire, piantare, fiori, in, giardino);I fiori vengono piantati nel giardino
+Цветы посажены — сад красивый (essere, piantare, fiori, giardino, bello);I fiori sono piantati, il giardino è bello
+Цветы нужно посадить — весна пришла (andare, piantare, fiori, primavera);I fiori vanno piantati, è arrivata la primavera
+Дом строится уже год (venire, costruire, casa, già, anno);La casa viene costruita da già un anno
+Дом построен — мы можем въехать (essere, costruire, casa, potere, entrare);La casa è costruita, possiamo entrare
+Дом нужно построить — семья растёт (andare, costruire, casa, famiglia, crescere);La casa va costruita, la famiglia cresce
+История рассказывается дедушкой (venire, raccontare, storia, da, nonno);La storia viene raccontata dal nonno
+История рассказана — дети слушали внимательно (essere, raccontare, storia, bambini);La storia è raccontata, i bambini hanno ascoltato attentamente
+Историю нужно рассказать — они должны знать (andare, raccontare, storia, dovere, sapere);La storia va raccontata, devono saperlo
+Встреча организуется коллегой (venire, organizzare, incontro, da, collega);L'incontro viene organizzato dal collega
+Встреча организована — все пришли (essere, organizzare, incontro, tutti, arrivare);L'incontro è organizzato, tutti sono arrivati
+Встречу нужно организовать — время пришло (andare, organizzare, incontro, tempo);L'incontro va organizzato, è tempo
+Ошибки исправляются учителем (venire, correggere, errori, da, insegnante);Gli errori vengono corretti dall'insegnante
+Ошибки исправлены — работа закончена (essere, correggere, errori, lavoro, finito);Gli errori sono corretti, il lavoro è finito
+Ошибки нужно исправить — экзамен завтра (andare, correggere, errori, esame, domani);Gli errori vanno corretti, l'esame è domani
+Документы подписываются директором (venire, firmare, documenti, da, direttore);I documenti vengono firmati dal direttore
+Документы подписаны — можно отправлять (essere, firmare, documenti, potere, spedire);I documenti sono firmati, si possono spedire
+Документы нужно подписать — срочно (andare, firmare, documenti, urgente);I documenti vanno firmati, è urgente
+Музыка играет — концерт начинается (musica, suonare, concerto, iniziare);La musica viene suonata, il concerto inizia
+План обсуждается командой (venire, discutere, piano, da, squadra);Il piano viene discusso dalla squadra
+План обсуждён — приступаем к работе (essere, discutere, piano, iniziare, lavoro);Il piano è discusso, iniziamo il lavoro
+План нужно обсудить — есть проблемы (andare, discutere, piano, esserci, problemi);Il piano va discusso, ci sono problemi
+Новость сообщается по телевидению (venire, comunicare, notizia, in televisione);La notizia viene comunicata in televisione
+Новость сообщена — все знают (essere, comunicare, notizia, tutti, sapere);La notizia è comunicata, tutti sanno
+Новость нужно сообщить — это важно (andare, comunicare, notizia, essere, importante);La notizia va comunicata, è importante
+Машина покупается и регистрируется (venire, comprare, registrare, macchina);La macchina viene comprata e viene registrata
+Тот самый дом продаётся риелтором (venire, vendere, casa, da, agente);La casa viene venduta dall'agente
+Билеты покупаются онлайн (venire, comprare, biglietti, online);I biglietti vengono comprati online
+Деньги переводятся в банк (venire, trasferire, soldi, in banca);I soldi vengono trasferiti in banca
+Приглашение отправляется по почте (venire, spedire, invito, per posta);L'invito viene spedito per posta
+Задание выполняется студентами вовремя (venire, completare, compito, studenti, in tempo);Il compito viene completato dagli studenti in tempo
+Пароль меняется каждый месяц (venire, cambiare, password, ogni mese);La password viene cambiata ogni mese
+Одежда стираётся в машине (venire, lavare, vestiti, in lavatrice);I vestiti vengono lavati in lavatrice
+Ваза разбивается ребёнком (venire, rompere, vaso, da, bambino);Il vaso viene rotto dal bambino
+Тот самый вопрос обсуждается министром (venire, discutere, domanda, da, ministro);La domanda viene discussa dal ministro

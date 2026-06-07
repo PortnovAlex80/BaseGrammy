@@ -1,0 +1,162 @@
+A02 - Articoli
+Я покупаю дом (compro, una casa);Compro una casa
+Я покупаю тот самый дом (compro, la casa);Compro la casa
+Я покупаю книгу (compro, un libro);Compro un libro
+Я покупаю ту самую книгу (compro, il libro);Compro il libro
+Я покупаю подарок (compro, un regalo);Compro un regalo
+Я покупаю тот самый подарок (compro, il regalo);Compro il regalo
+Ты покупаешь машину (compri, una macchina);Compri una macchina
+Ты покупаешь ту самую машину (compri, la macchina);Compri la macchina
+Он покупает шкаф (compra, un armadio);Compra un armadio
+Он покупает тот самый шкаф (compra, l'armadio);Compra l'armadio
+Мы покупаем дверь (compriamo, una porta);Compriamo una porta
+Мы покупаем ту самую дверь (compriamo, la porta);Compriamo la porta
+Вы покупаете окно (comprate, una finestra);Comprate una finestra
+Вы покупаете то самое окно (comprate, la finestra);Comprate la finestra
+Они покупают стену (comprano, un muro);Comprano un muro
+Они покупают ту самую стену (comprano, il muro);Comprano il muro
+Я открываю дверь (apro, la porta);Apro la porta
+Я открываю окно (apro, la finestra);Apro la finestra
+Ты закрываешь шкаф (chiudi, l'armadio);Chiudi l'armadio
+Ты закрываешь книгу (chiudi, il libro);Chiudi il libro
+Он открывает газету (apre, il giornale);Apre il giornale
+Она закрывает дверь (chiude, la porta);Chiude la porta
+Мы начинаем урок (iniziamo, la lezione);Iniziamo la lezione
+Мы заканчиваем работу (finiamo, il lavoro);Finiamo il lavoro
+Вы покупаете еду (comprate, il cibo);Comprate il cibo
+Они продают дом (vendono, la casa);Vendono la casa
+Я вижу мужчину (vedo, un uomo);Vedo un uomo
+Я вижу того самого мужчину (vedo, l'uomo);Vedo l'uomo
+Ты видишь женщину (vedi, una donna);Vedi una donna
+Ты видишь ту самую женщину (vedi, la donna);Vedi la donna
+Он видит ребёнка (vede, un bambino);Vede un bambino
+Он видит того самого ребёнка (vede, il bambino);Vede il bambino
+Мы видим друга (vediamo, un amico);Vediamo un amico
+Мы видим того самого друга (vediamo, l'amico);Vediamo l'amico
+Вы видите учителя (vedete, un insegnante);Vedete un insegnante
+Вы видите того самого учителя (vedete, l'insegnante);Vedete l'insegnante
+Они видят врача (vedono, un medico);Vedono un medico
+Они видят того самого врача (vedono, il medico);Vedono il medico
+Я иду в школу (vado, a scuola);Vado a scuola
+Ты идёшь в офис (vai, in ufficio);Vai in ufficio
+Он идёт в больницу (va, in ospedale);Va in ospedale
+Она идёт в магазин (va, al negozio);Va al negozio
+Мы идём в ресторан (andiamo, al ristorante);Andiamo al ristorante
+Вы идёте в бар (andate, al bar);Andate al bar
+Они идут в кино (vanno, al cinema);Vanno al cinema
+Я слушаю музыку (ascolto, la musica);Ascolto la musica
+Ты слушаешь песню (ascolti, la canzone);Ascolti la canzone
+Он слушает радио (ascolta, la radio);Ascolta la radio
+Мы слушаем учителя (ascoltiamo, l'insegnante);Ascoltiamo l'insegnante
+Вы слушаете концерт (ascoltate, il concerto);Ascoltate il concerto
+Они слушают новости (ascoltano, le notizie);Ascoltano le notizie
+Я читаю газету (leggo, il giornale);Leggo il giornale
+Ты читаешь книгу (leggi, il libro);Leggi il libro
+Он читает письмо (legge, la lettera);Legge la lettera
+Мы читаем журнал (leggiamo, la rivista);Leggiamo la rivista
+Вы читаете статью (leggete, l'articolo);Leggete l'articolo
+Они читают роман (leggono, il romanzo);Leggono il romanzo
+Я пью кофе (bevo, il caffè);Bevo il caffè
+Ты пьёшь чай (bevi, il tè);Bevi il tè
+Он пьёт воду (beve, l'acqua);Beve l'acqua
+Мы пьём вино (beviamo, il vino);Beviamo il vino
+Вы пьёте молоко (bevete, il latte);Bevete il latte
+Они пьют пиво (bevono, la birra);Bevono la birra
+Я ем хлеб (mangio, il pane);Mangio il pane
+Ты ешь рыбу (mangi, il pesce);Mangi il pesce
+Он ест мясо (mangia, la carne);Mangia la carne
+Мы едим pasta (mangiamo, la pasta);Mangiamo la pasta
+Вы едите сыр (mangiate, il formaggio);Mangiate il formaggio
+Они едят фрукты (mangiano, la frutta);Mangiano la frutta
+Я готовлю обед (cucino, il pranzo);Cucino il pranzo
+Ты готовишь ужин (cucini, la cena);Cucini la cena
+Он готовит завтрак (cucina, la colazione);Cucina la colazione
+Мы готовим торт (cuciniamo, la torta);Cuciniamo la torta
+Вы готовите суп (cucinate, la zuppa);Cucinate la zuppa
+Они готовят пиццу (cucinano, la pizza);Cucinano la pizza
+Я работаю в городе (lavoro, in città);Lavoro in città
+Ты работаешь в школе (lavori, a scuola);Lavori a scuola
+Он работает в больнице (lavora, in ospedale);Lavora in ospedale
+Мы работаем в офисе (lavoriamo, in ufficio);Lavoriamo in ufficio
+Вы работаете в ресторане (lavorate, al ristorante);Lavorate al ristorante
+Они работают на рынке (lavorano, al mercato);Lavorano al mercato
+Я ищу ключ (cerco, la chiave);Cerco la chiave
+Ты ищешь работу (cerchi, il lavoro);Cerchi il lavoro
+Он ищет дом (cerca, la casa);Cerca la casa
+Мы ищем отель (cerchiamo, l'hotel);Cerchiamo l'hotel
+Вы ищете станцию (cercate, la stazione);Cercate la stazione
+Они ищут аэропорт (cercano, l'aeroporto);Cercano l'aeroporto
+Я даю совет (do, un consiglio);Do un consiglio
+Ты даёшь подарок (dai, un regalo);Dai un regalo
+Он даёт ответ (dà, una risposta);Dà una risposta
+Мы даём время (diamo, il tempo);Diamo il tempo
+Вы даёте деньги (date, i soldi);Date i soldi
+Они дают надежду (danno, la speranza);Danno la speranza
+Я плачу за билет (pago, il biglietto);Pago il biglietto
+Ты платишь за ужин (paghi, la cena);Paghi la cena
+Он платит за кофе (paga, il caffè);Paga il caffè
+Мы платим за комнату (paghiamo, la stanza);Paghiamo la stanza
+Вы платите за поезд (pagate, il treno);Pagate il treno
+Они платят за автобус (pagano, l'autobus);Pagano l'autobus
+Я нахожу мост (trovo, il ponte);Trovo il ponte
+Ты находишь площадь (trovi, la piazza);Trovi la piazza
+Он находит банк (trova, la banca);Trova la banca
+Мы находим вокзал (troviamo, la stazione);Troviamo la stazione
+Вы находите телефон (trovate, il telefono);Trovate il telefono
+Они находят компьютер (trovano, il computer);Trovano il computer
+Я беру зонт (prendo, l'ombrello);Prendo l'ombrello
+Ты берёшь такси (prendi, il taxi);Prendi il taxi
+Он берёт автобус (prende, l'autobus);Prende l'autobus
+Мы берём поезд (prendiamo, il treno);Prendiamo il treno
+Вы берёте велосипед (prendete, la bicicletta);Prendete la bicicletta
+Они берут корабль (prendono, la nave);Prendono la nave
+Я смотрю телевизор (guardo, la televisione);Guardo la televisione
+Ты смотришь фильм (guardi, il film);Guardi il film
+Он смотрит фото (guarda, la foto);Guarda la foto
+Мы смотрим картину (guardiamo, il quadro);Guardiamo il quadro
+Вы смотрите матч (guardate, la partita);Guardate la partita
+Они смотрят телевизор (guardano, la televisione);Guardano la televisione
+Я пишу письмо (scrivo, una lettera);Scrivo una lettera
+Ты пишешь номер (scrivi, il numero);Scrivi il numero
+Он пишет имя (scrive, il nome);Scrive il nome
+Мы пишем адрес (scriviamo, l'indirizzo);Scriviamo l'indirizzo
+Вы пишете слово (scrivete, la parola);Scrivete la parola
+Они пишут текст (scrivono, il testo);Scrivono il testo
+Я люблю женщину (amo, una donna);Amo una donna
+Ты любишь мужчину (ami, un uomo);Ami un uomo
+Он любит мать (ama, la madre);Ama la madre
+Она любит отца (ama, il padre);Ama il padre
+Мы любим семью (amiamo, la famiglia);Amiamo la famiglia
+Вы любите ребёнка (amate, il bambino);Amate il bambino
+Они любят друзей (amano, gli amici);Amano gli amici
+Я знаю учителя (conosco, l'insegnante);Conosco l'insegnante
+Ты знаешь врача (conosci, il medico);Conosci il medico
+Он знает город (conosce, la città);Conosce la città
+Мы знаем дорогу (conosciamo, la strada);Conosciamo la strada
+Вы знаете ресторан (conoscete, il ristorante);Conoscete il ristorante
+Они знают школу (conoscono, la scuola);Conoscono la scuola
+Я помню день (ricordo, il giorno);Ricordo il giorno
+Ты помнишь ночь (ricordi, la notte);Ricordi la notte
+Он помнит год (ricorda, l'anno);Ricorda l'anno
+Мы помним время (ricordiamo, il tempo);Ricordiamo il tempo
+Вы помните момент (ricordate, il momento);Ricordate il momento
+Они помнят жизнь (ricordano, la vita);Ricordano la vita
+Я хочу машину (voglio, una macchina);Voglio una macchina
+Ты хочешь велосипед (vuoi, una bicicletta);Vuoi una bicicletta
+Он хочет телефон (vuole, un telefono);Vuole un telefono
+Она хочет компьютер (vuole, un computer);Vuole un computer
+Мы хотим дом (vogliamo, una casa);Vogliamo una casa
+Вы хотите книгу (volete, un libro);Volete un libro
+Они хотят работу (vogliono, un lavoro);Vogliono un lavoro
+Я покупаю велосипед (compro, una bicicletta);Compro una bicicletta
+Ты продаёшь корабль (vendi, una nave);Vendi una nave
+Он покупает самолёт (compra, un aereo);Compra un aereo
+Мы покупаем автобус (compriamo, un autobus);Compriamo un autobus
+Вы покупаете поезд (comprate, un treno);Comprate un treno
+Они покупают машину (comprano, una macchina);Comprano una macchina
+Я чувствую запах (sento, l'odore);Sento l'odore
+Ты чувствуешь вкус (senti, il sapore);Senti il sapore
+Он чувствует боль (sente, il dolore);Sente il dolore
+Мы чувствуем холод (sentiamo, il freddo);Sentiamo il freddo
+Вы чувствуете тепло (sentite, il caldo);Sentite il caldo
+Они чувствуют страх (sentono, la paura);Sentono la paura

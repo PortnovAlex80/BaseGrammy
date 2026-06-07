@@ -1,0 +1,162 @@
+A08 - C'è / Ci sono
+Есть дом (casa);C'è una casa
+Есть книга (libro);C'è un libro
+Есть машина (macchina);C'è una macchina
+Есть подарок (regalo);C'è un regalo
+Есть шкаф (armadio);C'è un armadio
+Есть друг (amico);C'è un amico
+Есть ребёнок (bambino);C'è un bambino
+Есть женщина (donna);C'è una donna
+Есть мужчина (uomo);C'è un uomo
+Есть студент (studente);C'è uno studente
+Есть работа (lavoro);C'è un lavoro
+Есть время (tempo);C'è tempo
+Есть проблема (problema);C'è un problema
+Есть причина (ragione);C'è una ragione
+Есть возможность (possibilità);C'è una possibilità
+Есть риск (rischio);C'è un rischio
+Есть опасность (pericolo);C'è un pericolo
+Есть секрет (segreto);C'è un segreto
+Есть сомнение (dubbio);C'è un dubbio
+Есть ответ (risposta);C'è una risposta
+Есть вопрос (domanda);C'è una domanda
+Есть правило (regola);C'è una regola
+Есть закон (legge);C'è una legge
+Есть ошибка (errore);C'è un errore
+Есть решение (soluzione);C'è una soluzione
+Есть большой дом (casa, grande);C'è una casa grande
+Есть маленькая комната (stanza, piccolo);C'è una stanza piccola
+Есть новая машина (macchina, nuovo);C'è una macchina nuova
+Есть красивый подарок (regalo, bello);C'è un regalo bello
+Есть чистая кухня (cucina, pulito);C'è una cucina pulita
+Есть хороший ресторан (ristorante, buono);C'è un ristorante buono
+Есть интересная книга (libro, interessante);C'è un libro interessante
+Есть старая церковь (chiesa, vecchio);C'è una chiesa vecchia
+Есть длинный мост (ponte, lungo);C'è un ponte lungo
+Есть высокая гора (montagna, alto);C'è una montagna alta
+Есть красивый парк (parco, bello);C'è un parco bello
+Есть новый офис (ufficio, nuovo);C'è un ufficio nuovo
+Есть красный цветок (fiore, rosso);C'è un fiore rosso
+Есть белый дом (casa, bianco);C'è una casa bianca
+Есть чёрный шкаф (armadio, nero);C'è un armadio nero
+Нет дома (casa);Non c'è una casa
+Нет книги (libro);Non c'è un libro
+Нет машины (macchina);Non c'è una macchina
+Нет подарка (regalo);Non c'è un regalo
+Нет времени (tempo);Non c'è tempo
+Нет проблемы (problema);Non c'è un problema
+Нет работы (lavoro);Non c'è un lavoro
+Нет друга (amico);Non c'è un amico
+Нет ответа (risposta);Non c'è una risposta
+Нет сомнения (dubbio);Non c'è un dubbio
+Нет ошибки (errore);Non c'è un errore
+Нет большого дома (casa, grande);Non c'è una casa grande
+Нет новой машины (macchina, nuovo);Non c'è una macchina nuova
+Нет чистой воды (acqua, pulito);Non c'è acqua pulita
+Нет хорошего ресторана (ristorante, buono);Non c'è un ristorante buono
+Есть ли дом? (casa);C'è una casa?
+Есть ли книга? (libro);C'è un libro?
+Есть ли машина? (macchina);C'è una macchina?
+Есть ли подарок? (regalo);C'è un regalo?
+Есть ли друг? (amico);C'è un amico?
+Есть ли работа? (lavoro);C'è un lavoro?
+Есть ли время? (tempo);C'è tempo?
+Есть ли проблема? (problema);C'è un problema?
+Есть ли большой дом? (casa, grande);C'è una casa grande?
+Есть ли новая машина? (macchina, nuovo);C'è una macchina nuova?
+Есть ли хороший ресторан? (ristorante, buono);C'è un ristorante buono?
+Есть те самые дома (case);Ci sono le case
+Есть те самые книги (libri);Ci sono i libri
+Есть те самые машины (macchine);Ci sono le macchine
+Есть те самые подарки (regali);Ci sono i regali
+Есть те самые шкафы (armadi);Ci sono gli armadi
+Есть те самые друзья (amici);Ci sono gli amici
+Есть те самые студенты (studenti);Ci sono gli studenti
+Есть те самые дети (bambini);Ci sono i bambini
+Есть те самые женщины (donne);Ci sono le donne
+Есть те самые мужчины (uomini);Ci sono gli uomini
+Есть те самые учителя (insegnanti);Ci sono gli insegnanti
+Есть те самые книги на столе (libri, tavolo);Ci sono i libri sul tavolo
+Есть те самые деньги в машине (soldi, macchina);Ci sono i soldi nella macchina
+Есть те самые студенты в школе (studenti, scuola);Ci sono gli studenti nella scuola
+Есть те самые большие дома (case, grandi);Ci sono le case grandi
+Есть те самые маленькие комнаты (stanze, piccole);Ci sono le stanze piccole
+Есть те самые новые книги (libri, nuovi);Ci sono i libri nuovi
+Есть те самые красивые цветы (fiori, belli);Ci sono i fiori belli
+Есть те самые хорошие друзья (amici, buoni);Ci sono gli amici buoni
+Есть те самые интересные фильмы (film, interessanti);Ci sono i film interessanti
+Есть те самые длинные мосты (ponti, lunghi);Ci sono i ponti lunghi
+Нет те самые дома (case);Non ci sono le case
+Нет те самые книги (libri);Non ci sono i libri
+Нет те самые машины (macchine);Non ci sono le macchine
+Нет те самые друзья (amici);Non ci sono gli amici
+Нет те самые деньги (soldi);Non ci sono i soldi
+Нет те самые студенты (studenti);Non ci sono gli studenti
+Нет те самые большие дома (case, grandi);Non ci sono le case grandi
+Нет те самые новые книги (libri, nuovi);Non ci sono i libri nuovi
+Нет те самые чистые комнаты (stanze, pulite);Non ci sono le stanze pulite
+Есть ли те самые дома? (case);Ci sono le case?
+Есть ли те самые книги? (libri);Ci sono i libri?
+Есть ли те самые машины? (macchine);Ci sono le macchine?
+Есть ли те самые друзья? (amici);Ci sono gli amici?
+Есть ли те самые студенты? (studenti);Ci sono gli studenti?
+Есть ли те самые большие дома? (case, grandi);Ci sono le case grandi?
+Есть ли те самые новые книги? (libri, nuovi);Ci sono i libri nuovi?
+Есть ли те самые хорошие рестораны? (ristoranti, buoni);Ci sono i ristoranti buoni?
+Есть место (posto);C'è un posto
+Есть пространство (spazio);C'è uno spazio
+Есть угол (angolo);C'è un angolo
+Есть центр (centro);C'è un centro
+Нет места (posto);Non c'è un posto
+Нет пространства (spazio);Non c'è spazio
+Есть ли место? (posto);C'è un posto?
+В том самом месте есть дом (posto, casa);In quel posto c'è una casa
+В том самом городе есть школа (città, scuola);In quella città c'è una scuola
+В том самом саду есть красивый цветок (giardino, fiore, bello);In quel giardino c'è un fiore bello
+На той самой площади есть ресторан (piazza, ristorante);In quella piazza c'è un ristorante
+В том самом лесу есть высокое дерево (foresta, albero, alto);In quella foresta c'è un albero alto
+На том самом берегу есть большой дом (spiaggia, casa, grande);Su quella spiaggia c'è una casa grande
+На той самой горе есть снег (montagna, neve);Su quella montagna c'è la neve
+В том самом море есть рыба (mare, pesce);In quel mare c'è il pesce
+В том самом городе нет больницы (città, ospedale);In quella città non c'è un ospedale
+В том самом доме нет кухни (casa, cucina);In quella casa non c'è una cucina
+На том самом столе нет книги (tavolo, libro);Su quel tavolo non c'è un libro
+В той самой комнате нет окна (stanza, finestra);In quella stanza non c'è una finestra
+В том самом лесу есть деревья? (foresta, alberi);In quella foresta ci sono gli alberi?
+В том самом городе есть рестораны? (città, ristoranti);In quella città ci sono i ristoranti?
+На той самой горе есть цветы? (montagna, fiori);Su quella montagna ci sono i fiori?
+В том самом парке есть дети? (parco, bambini);In quel parco ci sono i bambini?
+Тот самый город — есть ли там большая площадь? (città, piazza, grande);In quella città c'è una piazza grande?
+Тот самый дом — есть ли там чистая кухня? (casa, cucina, pulito);In quella casa c'è una cucina pulita?
+Тот самый лес — есть ли там высокие деревья? (foresta, alberi, alti);In quella foresta ci sono gli alberi alti?
+Та самая школа — есть ли там хорошие учителя? (scuola, insegnanti, buoni);In quella scuola ci sono gli insegnanti buoni?
+Тот самый парк — есть ли там красивые цветы? (parco, fiori, belli);In quel parco ci sono i fiori belli?
+В том самом магазине есть хлеб (negozio, pane);In quel negozio c'è il pane
+В том самом ресторане есть хорошая еда (ristorante, cibo, buono);In quel ristorante c'è il cibo buono
+В том самом баре есть кофе? (bar, caffè);In quel bar c'è il caffè?
+В том самом кино есть хороший фильм? (cinema, film, buono);In quel cinema c'è un film buono?
+На том самом рынке есть свежая рыба (mercato, pesce, fresco);In quel mercato c'è il pesce fresco
+В том самом офисе есть новый компьютер (ufficio, computer, nuovo);In quell'ufficio c'è un computer nuovo
+В той самой комнате есть большой шкаф (stanza, armadio, grande);In quella stanza c'è un armadio grande
+На том самом столе есть красная книга (tavolo, libro, rosso);Su quel tavolo c'è un libro rosso
+В той самой машине есть телефон (macchina, telefono);In quella macchina c'è un telefono
+В том самом доме есть семья (casa, famiglia);In quella casa c'è una famiglia
+Есть кто-то в том самом доме? (qualcuno, casa);C'è qualcuno in quella casa?
+Есть что-то на том самом столе (qualcosa, tavolo);C'è qualcosa su quel tavolo
+Нет никого в том самом офисе (nessuno, ufficio);Non c'è nessuno in quell'ufficio
+Нет ничего в той самой комнате (niente, stanza);Non c'è niente in quella stanza
+Есть достаточно времени (abbastanza, tempo);C'è abbastanza tempo
+Есть ли достаточно места? (abbastanza, posto);C'è abbastanza posto?
+Есть много людей в том самом ресторане (molta, gente, ristorante);C'è molta gente in quel ristorante
+Есть много студентов в той самой школе (molti, studenti, scuola);Ci sono molti studenti in quella scuola
+Есть достаточно денег для того самого подарка? (abbastanza, soldi, regalo);Ci sono abbastanza soldi per quel regalo?
+В том самом месте нет никакого опасности (nessun, pericolo, posto);In quel posto non c'è nessun pericolo
+Есть только один дом в том самом месте (solo, uno, casa, posto);In quel posto c'è solo una casa
+Есть ещё один друг в той самой школе (un altro, amico, scuola);In quella scuola c'è un altro amico
+Есть ли ещё время? (ancora, tempo);C'è ancora tempo?
+Есть ли ещё место в том самом ресторане? (ancora, posto, ristorante);C'è ancora un posto in quel ristorante?
+В том самом городе есть музей — он большой (città, museo, grande);In quella città c'è un museo — è grande
+В том самом доме есть сад — он красивый (casa, giardino, bello);In quella casa c'è un giardino — è bello
+В той самой школе есть библиотека — она маленькая (scuola, biblioteca, piccolo);In quella scuola c'è una biblioteca — è piccola
+В том самом парке есть озеро — оно чистое (parco, lago, pulito);In quel parco c'è un lago — è pulito
+На той самой горе есть замок — он старый (montagna, castello, vecchio);Su quella montagna c'è un castello — è vecchio
