@@ -80,6 +80,7 @@ fun SettingsSheet(
     onSetTtsSpeed: (Float) -> Unit,
     onSetRuTextScale: (Float) -> Unit,
     onSetUseOfflineAsr: (Boolean) -> Unit,
+    onSetUseBluetoothMic: (Boolean) -> Unit = {},
     onStartAsrDownload: () -> Unit,
     onResetAllProgress: () -> Unit,
     onSetHintLevel: (HintLevel) -> Unit,
@@ -455,6 +456,36 @@ fun SettingsSheet(
                     )
                 }
             }
+
+            // Bluetooth microphone toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.settings_bluetooth_microphone),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Switch(
+                    checked = state.audio.useBluetoothMic,
+                    onCheckedChange = { enabled ->
+                        AuditLogger.getInstanceOrNull()?.settingsChange("bluetoothMic", enabled.toString())
+                        onSetUseBluetoothMic(enabled)
+                    }
+                )
+            }
+            Text(
+                text = if (state.audio.useBluetoothMic) {
+                    stringResource(R.string.settings_bluetooth_mic_on)
+                } else {
+                    stringResource(R.string.settings_bluetooth_mic_off)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
 
             // Voice auto-start toggle
             Row(

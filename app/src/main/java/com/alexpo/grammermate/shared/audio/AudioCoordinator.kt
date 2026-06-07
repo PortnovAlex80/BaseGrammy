@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.alexpo.grammermate.shared.audio.BluetoothAudioRouter
 
 /**
  * Stateful module managing all audio: TTS playback, ASR recognition, SoundPool effects.
@@ -90,6 +91,7 @@ class AudioCoordinator(
     val ttsModelManager = ttsModelManagerProvider(appContext)
     val asrModelManager = asrModelManagerProvider(appContext)
     val asrEngine: AsrEngine? = asrEngineProvider(appContext)
+    val bluetoothRouter = BluetoothAudioRouter(appContext, coroutineScope)
 
     // ── Download jobs ──────────────────────────────────────────────────────
 
@@ -134,6 +136,7 @@ class AudioCoordinator(
         _audioState.update {
             it.copy(
                 useOfflineAsr = config.useOfflineAsr,
+                useBluetoothMic = config.useBluetoothMic,
                 ruTextScale = config.ruTextScale,
                 voiceAutoStart = config.voiceAutoStart,
                 ttsSpeed = config.ttsSpeed,
@@ -479,6 +482,26 @@ class AudioCoordinator(
         }
     }
 
+    fun setUseBluetoothMic(enabled: Boolean) {
+        _audioState.update { it.copy(useBluetoothMic = enabled) }
+        val config = configStore.load()
+        configStore.save(config.copy(useBluetoothMic = enabled))
+    }
+
+    suspend fun startBluetoothMicIfNeeded(): Boolean {
+        if (!_audioState.value.useBluetoothMic) return true
+        val connected = bluetoothRouter.startBluetoothAudio()
+        _audioState.update { it.copy(bluetoothMicConnected = connected) }
+        return connected
+    }
+
+    fun stopBluetoothMicIfNeeded() {
+        if (_audioState.value.useBluetoothMic) {
+            bluetoothRouter.stopBluetoothAudio()
+            _audioState.update { it.copy(bluetoothMicConnected = false) }
+        }
+    }
+
     fun checkAsrModel() {
         val ready = asrModelManager.isReady()
         _audioState.update { it.copy(asrModelReady = ready) }
@@ -624,6 +647,7 @@ class AudioCoordinator(
         asrRecognitionJob = null
         ttsEngine.release()
         asrEngine?.release()
+        bluetoothRouter.release()
         soundPool.release()
     }
 
@@ -734,8 +758,15 @@ class AudioCoordinator(
             }
         }
 
+        // Route to Bluetooth microphone if enabled
+        try {
+            startBluetoothMicIfNeeded()
+        } catch (_: Exception) {}
+
         val result = engine.recordAndTranscribe()
         stateJob.cancel()
+
+        stopBluetoothMicIfNeeded()
 
         // Check for errors after recording/transcription
         val finalState = engine.state.value

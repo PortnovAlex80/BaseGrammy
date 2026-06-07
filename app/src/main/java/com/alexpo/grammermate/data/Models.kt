@@ -589,6 +589,8 @@ data class AudioState(
     val ruTextScale: Float = 1.0f,
     val voiceAutoStart: Boolean = true,
     val useOfflineAsr: Boolean = false,
+    val useBluetoothMic: Boolean = false,
+    val bluetoothMicConnected: Boolean = false,
     val asrState: AsrState = AsrState.IDLE,
     val asrModelReady: Boolean = false,
     val asrDownloadState: DownloadState = DownloadState.Idle,

@@ -68,7 +68,14 @@ import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.data.GrammarChipStore
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -270,6 +277,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onShowExitDialog = remember(dialogs) { { dialogs = dialogs.copy(showExitDialog = true) } }
                 )
 
+                // Bluetooth mic permission launcher — handles BLUETOOTH_CONNECT on API 31+
+                val btPermissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    if (granted) {
+                        vm.audio.setUseBluetoothMic(true)
+                    } else {
+                        vm.audio.setUseBluetoothMic(false)
+                    }
+                }
+
                 SettingsSheet(
                     show = dialogs.showSettings,
                     state = state,
@@ -310,6 +328,18 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onSetTtsSpeed = vm.audio::setTtsSpeed,
                     onSetRuTextScale = vm::setRuTextScale,
                     onSetUseOfflineAsr = vm.audio::setUseOfflineAsr,
+                    onSetUseBluetoothMic = { enabled ->
+                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val hasPermission = context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                vm.audio.setUseBluetoothMic(true)
+                            } else {
+                                btPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                            }
+                        } else {
+                            vm.audio.setUseBluetoothMic(enabled)
+                        }
+                    },
                     onStartAsrDownload = remember { { vm.audio.startAsrDownload() } },
                     onResetAllProgress = vm::resetLanguageProgress,
                     onSetHintLevel = vm.settings::setHintLevel,
@@ -824,7 +854,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onBack = vocabExit,
                             hintLevel = state.cardSession.hintLevel,
                             textScale = state.audio.ruTextScale,
-                            voiceAutoStart = state.audio.voiceAutoStart
+                            voiceAutoStart = state.audio.voiceAutoStart,
+                            onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
+                            onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded
                         )
                     }
 
@@ -1224,7 +1256,9 @@ private fun TrainingScreenContent(
         clickableWordHints = vm.settings.getClickableWordHints(),
         baseDir = LocalContext.current.filesDir,
         grammarChip = grammarChip,
-        lessonTitle = lessonTitle
+        lessonTitle = lessonTitle,
+        onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
+        onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded
     )
 }
 
@@ -1296,7 +1330,9 @@ private fun DailyPracticeScreenContent(
         } },
         hintLevel = state.cardSession.hintLevel,
         textScale = state.audio.ruTextScale,
-        voiceAutoStart = state.audio.voiceAutoStart
+        voiceAutoStart = state.audio.voiceAutoStart,
+        onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
+        onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded
     )
 }
 

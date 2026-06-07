@@ -36,8 +36,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -99,10 +101,13 @@ fun UnifiedInputControlsBar(
     reportCard: com.alexpo.grammermate.data.SessionCard? = null,
     hintLevel: HintLevel = HintLevel.EASY,
     clickableWordHints: Boolean = false,
-    baseDir: java.io.File? = null
+    baseDir: java.io.File? = null,
+    onBluetoothSetup: suspend () -> Boolean = { true },
+    onBluetoothCleanup: () -> Unit = {}
 ) {
     val canLaunchVoice = hasCards && contract.canSubmit
     val canSelectInputMode = hasCards && contract.canSubmit
+    val scope = rememberCoroutineScope()
 
     // Word info cache for clickable hints (only when feature is enabled)
     val context = LocalContext.current
@@ -153,6 +158,7 @@ fun UnifiedInputControlsBar(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
         }
+        scope.launch { onBluetoothSetup() }
         speechLauncher.launch(intent)
     }
 

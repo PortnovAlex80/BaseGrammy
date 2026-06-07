@@ -48,6 +48,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -130,7 +134,9 @@ fun TrainingScreen(
     clickableWordHints: Boolean = false,
     baseDir: java.io.File? = null,
     grammarChip: com.alexpo.grammermate.data.GrammarChip? = null,
-    lessonTitle: String? = null
+    lessonTitle: String? = null,
+    onBluetoothSetup: suspend () -> Boolean = { true },
+    onBluetoothCleanup: () -> Unit = {}
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -352,7 +358,9 @@ fun TrainingScreen(
                 hintLevel,
                 clickableWordHints,
                 baseDir,
-                onTogglePause
+                onTogglePause,
+                onBluetoothSetup,
+                onBluetoothCleanup
             )
             ResultBlock(state)
             UnifiedNavigationRow(
@@ -478,9 +486,12 @@ fun AnswerBox(
     hintLevel: HintLevel = HintLevel.EASY,
     clickableWordHints: Boolean = false,
     baseDir: java.io.File? = null,
-    onTogglePause: () -> Unit = {}
+    onTogglePause: () -> Unit = {},
+    onBluetoothSetup: suspend () -> Boolean = { true },
+    onBluetoothCleanup: () -> Unit = {}
 ) {
     val latestState by rememberUpdatedState(state)
+    val scope = rememberCoroutineScope()
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var showReportSheet by remember { mutableStateOf(false) }
@@ -526,7 +537,7 @@ fun AnswerBox(
             if (state.audio.useOfflineAsr && state.audio.asrModelReady) {
                 onStartOfflineRecognition()
             } else {
-                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", state.cardSession.currentCard?.promptRu, speechLauncher, context)
+                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", state.cardSession.currentCard?.promptRu, speechLauncher, context, onBluetoothSetup, scope)
             }
         }
     }
@@ -644,7 +655,9 @@ fun AnswerBox(
         reportCard = state.cardSession.currentCard,
         hintLevel = hintLevel,
         clickableWordHints = clickableWordHints,
-        baseDir = baseDir
+        baseDir = baseDir,
+        onBluetoothSetup = onBluetoothSetup,
+        onBluetoothCleanup = onBluetoothCleanup
     )
 
     // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)
@@ -684,8 +697,12 @@ private fun launchVoiceRecognition(
     languageId: String,
     prompt: String?,
     launcher: ActivityResultLauncher<Intent>,
-    context: android.content.Context
+    context: android.content.Context,
+    bluetoothSetup: suspend () -> Boolean = { true },
+    scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
+    // Fire-and-forget: start SCO in background, don't block speech recognizer launch
+    scope.launch { bluetoothSetup() }
     val languageTag = when (languageId) {
         "it" -> "it-IT"
         "el" -> "el-GR"
