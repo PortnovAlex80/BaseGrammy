@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.ReportProblem
@@ -68,9 +69,12 @@ fun SharedReportSheet(
     title: String = "Card options",
     showExportConfirmation: Boolean = true,
     shareText: String? = null,
-    onShareQr: (() -> Unit)? = null
+    onShareQr: (() -> Unit)? = null,
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0
 ) {
     var exportMessage by remember { mutableStateOf<String?>(null) }
+    var showClearConfirm by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss
@@ -176,6 +180,16 @@ fun SharedReportSheet(
                     Text(stringResource(R.string.report_share_translation))
                 }
             }
+            if (onClearBadSentences != null && badSentenceCount > 0) {
+                TextButton(
+                    onClick = { showClearConfirm = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.report_clear_bad_sentences, badSentenceCount), color = MaterialTheme.colorScheme.error)
+                }
+            }
         }
     }
 
@@ -188,6 +202,30 @@ fun SharedReportSheet(
             text = { Text(exportMessage!!) },
             confirmButton = {
                 TextButton(onClick = { exportMessage = null }) { Text(stringResource(R.string.button_ok)) }
+            }
+        )
+    }
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text(stringResource(R.string.report_clear_bad_sentences_title)) },
+            text = { Text(stringResource(R.string.report_clear_bad_sentences_confirm, badSentenceCount)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearConfirm = false
+                        AuditLogger.getInstanceOrNull()?.reportSheetAction("clear_bad_sentences", cardId ?: "")
+                        onClearBadSentences?.invoke()
+                        onDismiss()
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_reset), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
             }
         )
     }

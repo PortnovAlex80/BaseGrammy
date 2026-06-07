@@ -1741,6 +1741,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun clearPackBadSentences() {
+        val packId = _coreState.value.navigation.activePackId?.value ?: return
+        badSentenceStore.clearPack(packId)
+        hiddenCardStore.clearAll()
+        _coreState.update {
+            it.copy(cardSession = it.cardSession.copy(badSentenceCount = 0))
+        }
+    }
+
     fun hideCurrentCard() {
         val card = _coreState.value.cardSession.currentCard
         if (card != null) {

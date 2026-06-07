@@ -121,6 +121,8 @@ fun TrainingScreen(
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
     isBadSentence: () -> Boolean = { false },
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0,
     onStartOfflineRecognition: () -> Unit = {},
     hintLevel: HintLevel = HintLevel.EASY,
     onPausePomodoro: () -> Unit = {},
@@ -354,6 +356,8 @@ fun TrainingScreen(
                 onHideCard,
                 onExportBadSentences,
                 isBadSentence,
+                onClearBadSentences,
+                badSentenceCount,
                 onStartOfflineRecognition,
                 hintLevel,
                 clickableWordHints,
@@ -482,6 +486,8 @@ fun AnswerBox(
     onHideCard: () -> Unit = {},
     onExportBadSentences: () -> String? = { null },
     isBadSentence: () -> Boolean = { false },
+    onClearBadSentences: (() -> Unit)? = null,
+    badSentenceCount: Int = 0,
     onStartOfflineRecognition: () -> Unit = {},
     hintLevel: HintLevel = HintLevel.EASY,
     clickableWordHints: Boolean = false,
@@ -561,7 +567,9 @@ fun AnswerBox(
                 exportMessage = if (path != null) context.getString(R.string.training_exported_to, path) else context.getString(R.string.training_no_bad_sentences)
             },
             shareText = reportCard?.let { "${it.promptRu} — ${it.acceptedAnswers.joinToString(" / ")}" },
-            onShareQr = { showQrDialog = true }
+            onShareQr = { showQrDialog = true },
+            onClearBadSentences = onClearBadSentences,
+            badSentenceCount = badSentenceCount
         )
     }
     if (showQrDialog && reportCard != null) {

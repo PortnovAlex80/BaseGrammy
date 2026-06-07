@@ -27,6 +27,9 @@
     <string name="report_copy_text">Copy text</string>
     <string name="report_export_dialog_title">Export</string>
     <string name="report_share_translation">Share translation</string>
+    <string name="report_clear_bad_sentences">Clear all bad sentences (%d)</string>
+    <string name="report_clear_bad_sentences_title">Clear bad sentences</string>
+    <string name="report_clear_bad_sentences_confirm">Remove all %d bad sentence flags for this pack?\n\nCards will be unhidden and return to lessons.</string>
 
     <!-- QrShareDialog -->
     <string name="qr_share_title">Translation</string>

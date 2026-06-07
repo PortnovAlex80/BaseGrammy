@@ -1241,6 +1241,8 @@ private fun TrainingScreenContent(
         onHideCard = vm::hideCurrentCard,
         onExportBadSentences = vm.reports::exportBadSentences,
         isBadSentence = vm.reports::isBadSentence,
+        onClearBadSentences = vm::clearPackBadSentences,
+        badSentenceCount = vm.reports.getBadSentenceCount(),
         onStartOfflineRecognition = vm::startOfflineRecognition,
         hintLevel = hintLevel,
         onPausePomodoro = vm::pausePomodoro,
