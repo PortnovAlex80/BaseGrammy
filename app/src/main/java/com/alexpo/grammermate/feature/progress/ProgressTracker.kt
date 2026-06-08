@@ -500,7 +500,16 @@ class ProgressTracker(
      * @param languageId the language to reset
      */
     fun resetStoresForLanguage(context: android.content.Context, languageId: String) {
-        progressStore.clear()
+        // Reset daily-related fields in progress.yaml without deleting activePackId
+        val current = progressStore.load()
+        progressStore.save(current.copy(
+            dailyLevel = 0,
+            dailyTaskIndex = 0,
+            dailyCursor = DailyCursorState(),
+            bossLessonRewards = emptyMap(),
+            bossMegaReward = null,
+            bossMegaRewards = emptyMap()
+        ))
         // Pack-scoped clearing: iterate packs for this language and clear each one
         lessonStore.getInstalledPacks()
             .filter { it.languageId.value == languageId }
