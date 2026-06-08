@@ -178,11 +178,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             // Calculate pack-level flower using PackProgressCalculator
             val packFlower = PackProgressCalculator.calculatePackFlower(lessonIds, masteryMap)
 
+            // No flower for untouched packs (0 cards shown)
+            val hasFlower = totalCards > 0
+
             PackTileUi(
                 packId = packIdStr,
                 displayName = pack.displayName ?: packIdStr,
                 languageId = langIdStr,
-                flowerEmoji = FlowerCalculator.getEmoji(packFlower.flowerState),
+                flowerEmoji = if (hasFlower) FlowerCalculator.getEmoji(packFlower.flowerState) else "",
                 flowerState = packFlower.flowerState,
                 depth = packFlower.depth,
                 healthPercent = packFlower.healthPercent,
