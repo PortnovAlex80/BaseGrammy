@@ -54,14 +54,14 @@ class WriteVerificationTest {
             lastShowDateMs = System.currentTimeMillis(),
             intervalStepIndex = 2
         )
-        store.save(state)
+        store.saveForPack(state, "test-pack")
 
         // Verify file exists and is not empty
         assertTrue("Mastery file should exist", file.exists())
         assertTrue("Mastery file should not be empty", file.length() > 0)
 
         // Verify data can be read back
-        val loaded = store.get("test-lesson", "en")
+        val loaded = store.getForPack("test-pack", "test-lesson")
         assertNotNull("Should be able to load saved data", loaded)
         assertEquals(5, loaded?.uniqueCardShows)
         assertEquals(10, loaded?.totalCardShows)
