@@ -1,0 +1,4556 @@
+rank	original	lemma	POS
+21	cosa	cosa	NOUN
+29	come	come	ADV
+59	oh	oh	ADV
+64	perche	perche	ADV
+74	grazie	grazie	NOUN
+82	beh	beh	ADV
+86	allora	allora	ADV
+88	piu	piu	ADV
+95	sai	sai	VERB
+98	cosi	cosi	VERB
+110	vero	vero	ADJ
+114	quindi	quindi	ADV
+153	ciao	ciao	VERB
+154	dio	Dio	NOUN
+163	gia	gia	ADV
+168	via	via	ADV
+186	dispiace	dispiacere	VERB
+188	ecco	ecco	ADV
+199	nuovo	nuovo	ADJ
+206	vai	vai	VERB
+208	giusto	giusto	ADJ
+214	farlo	fare lo	VERB
+227	grande	grande	ADJ
+238	piace	piacere	VERB
+246	sicuro	sicuro	ADJ
+247	vieni	vieni	VERB
+255	dov'	dov	VERB
+264	puo	puo	VERB
+281	okay	okay	NOUN
+284	stesso	stesso	ADJ
+294	sotto	sotto	ADV
+297	vado	vado	VERB
+298	sara	sara	VERB
+301	bella	bello	ADJ
+307	buona	buono	ADJ
+316	dici	dici	VERB
+318	pronto	pronto	ADJ
+331	fino	fino	ADV
+373	morte	morto	NOUN
+382	piacere	piacere	NOUN
+383	bel	belo	ADJ
+384	dovrei	dovrei	VERB
+388	felice	felice	ADJ
+398	migliore	migliore	ADJ
+402	dovresti	dovresti	VERB
+417	importante	importante	ADJ
+419	salve	salvo	ADJ
+425	stasera	stasera	ADV
+426	scusi	scusi	ADV
+430	ultima	ultimo	ADJ
+431	possibile	possibile	ADJ
+439	eri	erio	VERB
+442	riesco	riesco	VERB
+446	piccolo	piccolo	ADJ
+450	marito	marito	NOUN
+460	difficile	difficile	ADJ
+462	auto	auto	NOUN
+468	fantastico	fantastico	ADJ
+473	com'	com	NOUN
+474	serio	serio	ADJ
+476	fossi	fosso	NOUN
+486	forte	forte	ADJ
+492	dietro	dietro	ADV
+509	strano	strano	ADJ
+514	bravo	bravo	ADJ
+518	genere	genere	NOUN
+523	pure	pure	ADV
+524	probabilmente	probabilmente	ADV
+530	farti	fare ti	VERB
+531	unica	unico	ADJ
+533	signorina	signorino	NOUN
+534	vecchio	vecchio	ADJ
+546	divertente	divertente	ADJ
+552	dimmi	dimmi	VERB
+553	farmi	fare mi	VERB
+560	esatto	esatto	ADJ
+568	sopra	sopra	ADV
+570	avevi	avevi	VERB
+576	potresti	potresti	VERB
+578	perfetto	perfetto	ADJ
+579	be	be	NOUN
+580	mente	menta	NOUN
+586	chiamo	chare	VERB
+590	avresti	avresti	VERB
+594	sarei	sarei	VERB
+597	spiace	spiacere	VERB
+599	facile	facile	ADJ
+601	buongiorno	Buongiorno	VERB
+602	davanti	davanti	ADV
+604	dammi	dammi	VERB
+608	dica	dica	VERB
+620	puttana	puttano	ADJ
+622	cioe	cioe	NOUN
+628	fammi	fammi	NOUN
+632	però	però	ADV
+637	vivo	vivo	ADJ
+646	smettila	smettila	NOUN
+655	ottimo	ottimo	ADJ
+663	prossima	prossimo	ADJ
+670	capisci	capiscre	VERB
+672	immagino	immagino	VERB
+674	tieni	tienere	VERB
+675	oddio	oddio	ADJ
+676	jack	Jack	NOUN
+683	dirmi	dire mi	VERB
+684	wow	wow	NOUN
+685	farai	farare	VERB
+698	dirlo	dire lo	VERB
+701	giornata	giornata	NOUN
+702	piuttosto	piuttosto	ADV
+707	lungo	lungo	ADJ
+711	sarai	sarai	VERB
+715	stupido	stupido	ADJ
+729	verita	verita	NOUN
+743	saperlo	sapere lo	VERB
+753	insomma	insomma	ADV
+764	alto	alto	ADJ
+765	giu	giue	NOUN
+767	futuro	futuro	ADJ
+768	preoccuparti	preoccuparre ti	VERB
+769	idiota	idiota	ADV
+772	cara	caro	ADJ
+773	finalmente	finalmente	ADV
+778	é	é	VERB
+781	dev'	dev	NOUN
+783	speciale	speciale	ADJ
+787	oltre	oltre	ADV
+788	semplice	semplice	ADJ
+789	dirti	dire ti	VERB
+794	chiaro	chiaro	ADJ
+802	circa	circa	ADV
+803	ovviamente	ovviamente	ADV
+806	natale	Natale	ADJ
+812	scusami	scusami	NOUN
+827	soltanto	soltanto	ADV
+830	fermo	fermo	ADJ
+833	cristo	cristo	NOUN
+842	pero	pero	NOUN
+848	perche'	perche	NOUN
+850	libero	libero	ADJ
+861	vederti	vedere ti	VERB
+862	lista	listare	NOUN
+864	veloce	veloce	ADV
+865	assassino	assassino	ADJ
+880	semplicemente	semplicemente	ADV
+886	lasci	lascare	VERB
+887	carino	carino	ADJ
+889	brutto	brutto	ADJ
+892	incredibile	incredibile	ADJ
+900	volevi	volevi	VERB
+902	lasciami	lasciare mi	NOUN
+903	gentile	gentile	ADJ
+904	rispetto	rispetto	ADV
+907	zitto	ziggere	NOUN
+917	occhiata	occhiare	NOUN
+923	hey	hey	NOUN
+928	saresti	saresto	NOUN
+929	personale	personale	ADJ
+931	saro	saro	VERB
+932	peggio	peggio	ADV
+934	addosso	addosso	ADV
+937	pieno	pieno	ADJ
+938	diverso	diverso	ADJ
+942	do	do	ADV
+944	normale	normale	ADJ
+945	fame	fama	NOUN
+948	sappia	sappia	VERB
+953	riesci	riesci	VERB
+958	proposito	proposito	NOUN
+959	farci	fare ci	VERB
+962	frank	frank	NOUN
+968	terribile	terribile	ADJ
+970	attento	attento	ADJ
+975	bisogna	bisognare	VERB
+976	impossibile	impossibile	ADJ
+977	cioè	cioè	ADV
+982	uscita	uscita	NOUN
+983	ii	ii	ADJ
+987	vattene	vattene	VERB
+990	intorno	intorno	ADV
+993	esserci	essere ci	VERB
+996	dolce	dolce	ADJ
+1000	interessante	interessante	ADJ
+1017	spalle	spalla	NOUN
+1023	sicuramente	sicuramente	ADV
+1026	saremo	saremo	VERB
+1030	serata	serata	NOUN
+1031	nero	nero	ADJ
+1034	ex	ex	ADJ
+1043	stavi	stavi	VERB
+1051	andra	andra	VERB
+1059	uh	uhre	VERB
+1064	averlo	avere lo	VERB
+1065	tranquillo	tranquillo	ADJ
+1069	simile	simile	ADJ
+1079	altrimenti	altrimenti	ADV
+1087	pubblico	pubblico	ADJ
+1097	stamattina	stamattina	ADV
+1107	aiutarti	aiutare ti	VERB
+1113	freddo	freddo	ADJ
+1114	triste	triste	ADJ
+1116	esercito	esercito	NOUN
+1120	dunque	dunque	ADV
+1123	infatti	infatti	ADV
+1125	intendi	intendi	VERB
+1126	fbi	fbi	NOUN
+1130	gay	gay	ADJ
+1134	certamente	certamente	ADV
+1137	dovrai	dovrai	VERB
+1140	ascoltami	ascoltami	VERB
+1142	ovunque	ovunque	ADV
+1149	duro	duro	ADJ
+1162	cellulare	cellulare	ADJ
+1163	necessario	necessario	ADJ
+1167	prometto	promettare	VERB
+1173	affatto	affatto	ADV
+1176	siediti	siedire	VERB
+1177	reale	reale	ADJ
+1180	parlarne	parlare ne	VERB
+1194	sapevi	sapevere	VERB
+1196	scommetto	scommettare	VERB
+1199	danny	danny	NOUN
+1202	ia	ia	VERB
+1211	precedenti	precedente	ADJ
+1213	mica	mica	ADV
+1215	percio	percio	ADV
+1217	mare	mare	NOUN
+1219	intelligente	intelligente	ADJ
+1224	ehm	ehm	VERB
+1226	scorsa	scorso	ADJ
+1228	bianco	Bianco	ADJ
+1232	nick	nick	NOUN
+1236	incinta	incinto	ADJ
+1241	contento	contento	ADJ
+1253	lato	lato	NOUN
+1255	maggiore	maggiore	ADJ
+1256	farsi	fare si	VERB
+1259	eccolo	eccolo	ADV
+1263	umano	umano	ADJ
+1266	averti	avere ti	VERB
+1272	caldo	caldo	ADJ
+1274	interno	interno	ADJ
+1285	destra	destro	ADJ
+1289	pericoloso	pericoloso	ADJ
+1296	presente	presente	ADJ
+1298	arrivederci	arrivedere ci	VERB
+1303	vederlo	vedere lo	VERB
+1305	intero	intero	ADJ
+1308	venuti	venere	VERB
+1315	parlarti	parlare ti	VERB
+1316	perciò	perciò	ADV
+1320	gliel'	gliel	NOUN
+1325	comune	comune	ADJ
+1330	aiutarmi	aiutare mi	VERB
+1331	ama	amira	VERB
+1333	responsabile	responsabile	ADJ
+1340	m'	m	NOUN
+1350	posti	posto	NOUN
+1351	accidenti	accidento	NOUN
+1358	caffe	Caffe	NOUN
+1359	rosso	rosso	ADJ
+1365	sexy	sexy	ADJ
+1370	vorresti	vorresti	VERB
+1374	farle	fare le	VERB
+1379	benvenuto	benvenuto	NOUN
+1390	banca	bancare	NOUN
+1393	stronzate	stronzata	NOUN
+1397	potessi	potessi	VERB
+1404	bill	bill	NOUN
+1407	tony	tony	NOUN
+1409	andremo	andremo	VERB
+1412	darmi	dare mi	VERB
+1415	darti	dare ti	VERB
+1418	esci	esci	VERB
+1419	ray	ray	NOUN
+1422	porca	porco	ADJ
+1426	arrabbiato	arrabbiato	ADJ
+1429	orribile	orribile	ADJ
+1433	animali	animale	NOUN
+1434	enorme	enorme	ADJ
+1441	naturalmente	naturalmente	ADV
+1442	colpevole	colpevole	ADJ
+1449	suppongo	suppongo	VERB
+1459	diro	diro	VERB
+1464	avermi	avere mi	VERB
+1465	saprei	sapre	VERB
+1477	avra	avra	VERB
+1480	fortunato	fortunato	ADJ
+1483	blu	blu	ADJ
+1486	will	will	NOUN
+1488	bob	bob	NOUN
+1492	dati	dato	NOUN
+1496	immediatamente	immediatamente	ADV
+1499	college	college	NOUN
+1501	contrario	contrario	ADJ
+1504	locale	locale	ADJ
+1508	aiutarla	aiutare la	VERB
+1511	chiamate	chiamata	NOUN
+1522	massimo	massimo	ADJ
+1523	praticamente	praticamente	ADV
+1528	guardami	guardamo	NOUN
+1529	dirò	diere	VERB
+1530	accanto	accanto	ADV
+1536	potrai	potrai	VERB
+1541	vederla	vedere la	VERB
+1542	persino	persino	ADV
+1543	ovvio	ovvio	ADJ
+1545	amy	amy	NOUN
+1550	billy	Billy	NOUN
+1551	grave	grave	ADJ
+1554	dovevi	dovevi	VERB
+1555	aiutami	aiutami	VERB
+1567	richard	richard	NOUN
+1570	laggiù	laggiù	ADV
+1582	ferita	ferito	ADJ
+1585	preoccupato	preoccupato	ADJ
+1586	verra	verrae	NOUN
+1589	project	projecte	ADV
+1590	averla	avere la	VERB
+1595	inutile	inutile	ADJ
+1599	basso	basso	ADJ
+1604	digli	diglio	NOUN
+1607	dirle	dire le	VERB
+1621	andartene	andare te ne	VERB
+1622	legale	legale	ADJ
+1625	srt	srt	ADJ
+1630	corte	corto	ADJ
+1639	show	show	NOUN
+1642	breve	breve	ADJ
+1645	povero	povero	ADJ
+1646	stavolta	stavolta	ADV
+1661	saremmo	saremmo	VERB
+1662	aperta	aperto	ADJ
+1663	improvviso	improvviso	ADJ
+1669	continuo	continuo	ADJ
+1682	meraviglioso	meraviglioso	ADJ
+1689	ultimamente	ultimamente	ADV
+1691	prendermi	prendere mi	VERB
+1694	innocente	innocente	ADJ
+1708	centrale	centrale	ADJ
+1715	andro	andro	NOUN
+1727	debole	debole	ADJ
+1730	sii	sii	VERB
+1731	vaffanculo	vaffanculo	NOUN
+1732	andarci	andare ci	VERB
+1734	dirtelo	dirtelo	VERB
+1735	grandioso	grandioso	ADJ
+1736	americano	americano	ADJ
+1738	francese	francese	ADJ
+1739	chiederti	chiedere ti	VERB
+1740	faresti	farestare	NOUN
+1742	sottotitoli	sottotitole	NOUN
+1744	peggiore	peggiore	ADJ
+1748	latte	latta	NOUN
+1749	buio	buio	ADJ
+1750	siate	siate	VERB
+1758	fargli	farge li	VERB
+1761	muoviti	muovire	VERB
+1763	angeles	angeles	VERB
+1770	andrai	andrai	VERB
+1774	cerchiamo	cerchere	VERB
+1775	scott	scott	VERB
+1778	bobby	bobby	NOUN
+1780	chiaramente	chiaramente	ADV
+1782	capace	capace	ADJ
+1789	stanco	stanco	ADJ
+1796	principale	principale	ADJ
+1804	convinto	convinto	ADJ
+1810	decisamente	decisamente	ADV
+1816	andrò	andere	VERB
+1817	pensarci	pensare ci	VERB
+1818	mercato	mercato	NOUN
+1822	drink	drink	NOUN
+1827	avro	avro	VERB
+1831	andy	Andy	NOUN
+1844	benvenuti	benvenuto	ADJ
+1846	ponte	Ponte	NOUN
+1853	finale	finale	ADJ
+1868	super	super	ADJ
+1877	perdita	perdita	NOUN
+1880	eccoci	eccoci	ADV
+1886	scuse	scusa	NOUN
+1888	trovarlo	trovare lo	VERB
+1889	potevi	potevi	VERB
+1891	scusatemi	scusatema	NOUN
+1894	chiamami	chiamami	VERB
+1900	dovreste	dovreste	VERB
+1903	volessi	volessi	VERB
+1904	purtroppo	purtroppo	ADV
+1905	eccola	eccolare	VERB
+1909	prenderti	prendere ti	VERB
+1911	crederci	credere ci	VERB
+1914	direttamente	direttamente	ADV
+1915	ie	ie	NOUN
+1920	fidanzata	fidanzato	NOUN
+1921	andarmene	andare me ne	VERB
+1922	seriamente	seriamente	ADV
+1926	preoccupi	preoccupire	VERB
+1934	grace	grace	NOUN
+1935	dita	dito	NOUN
+1943	nazionale	nazionale	ADJ
+1946	corri	corro	VERB
+1949	passati	passato	ADJ
+1953	josh	Josh	NOUN
+1954	media	media	ADJ
+1959	copertura	coperturare	NOUN
+1962	piaci	piae ci	VERB
+1971	credimi	credimi	ADJ
+1976	nient'	nient	NOUN
+1978	vedermi	vedere mi	VERB
+1982	dirgli	dire gli	VERB
+1985	facevo	facere	VERB
+1989	perfettamente	perfettamente	ADV
+1991	bicchiere	bicchiere	VERB
+1993	dargli	darge li	VERB
+1995	porte	porta	NOUN
+1996	animale	animale	ADJ
+2007	completo	completo	ADJ
+2016	matt	matt	NOUN
+2025	eravate	eravate	VERB
+2026	fan	fan	NOUN
+2029	bevi	bevere	VERB
+2034	alice	aole	ADJ
+2036	chiamarmi	chiamare mi	VERB
+2037	magnifico	magnifico	ADJ
+2040	quartiere	quartiere	NOUN
+2041	uccidermi	uccidere mi	VERB
+2042	andarsene	andare se ne	VERB
+2045	lascialo	lasciae lo	VERB
+2055	velocemente	velocemente	ADV
+2056	potente	potente	ADJ
+2070	assurdo	assurdo	ADJ
+2071	mr	mr	NOUN
+2073	dimmelo	dimmelo	ADJ
+2075	annie	annia	NOUN
+2079	naturale	naturale	ADJ
+2089	corrente	corrente	ADJ
+2096	conoscerti	conoscere ti	VERB
+2097	tantissimo	tantissimo	ADV
+2100	militare	militare	ADJ
+2102	prenderlo	prendere lo	VERB
+2111	gratis	gratis	ADV
+2126	c	c	NOUN
+2137	abbiate	abbiate	VERB
+2139	tette	tetta	NOUN
+2140	vorrà	vorere	VERB
+2146	dritto	drittare	VERB
+2150	succedera	succedee ro	VERB
+2151	son	son	VERB
+2161	lasciarmi	lasciare mi	VERB
+2163	street	street	NOUN
+2165	domattina	domattina	ADV
+2166	lasciatemi	Lasciatemi	VERB
+2167	pensavi	pensavi	VERB
+2172	sali	sale	NOUN
+2179	andarcene	andare ce ne	VERB
+2180	est	Est	NOUN
+2187	caduta	caduta	NOUN
+2188	calmo	calmo	ADJ
+2190	parlarle	parlare le	VERB
+2192	fossimo	essime	VERB
+2202	dirai	dirai	VERB
+2203	starai	stare ai	VERB
+2207	lady	Lady	NOUN
+2214	entrate	entrata	NOUN
+2215	sarete	sarete	VERB
+2238	dappertutto	dappertutto	ADV
+2239	dave	dave	VERB
+2242	profondo	profondo	ADJ
+2245	finora	finora	ADV
+2257	jeff	Jeff	NOUN
+2258	vorra	vorrare	VERB
+2263	pulito	pulito	ADJ
+2267	assieme	assieme	ADV
+2268	dicevo	dicevo	VERB
+2271	pesante	pesante	ADJ
+2273	park	park	NOUN
+2276	scusarmi	scusare mi	VERB
+2280	santa	Santa	ADJ
+2281	dirci	dire ci	VERB
+2293	potra	potra	VERB
+2296	ricco	ricco	ADJ
+2302	dirmelo	dirmelo	VERB
+2304	nervoso	nervoso	ADJ
+2308	inghilterra	inghilterra	ADJ
+2312	falso	falso	ADJ
+2313	dirglielo	dirglielo	VERB
+2314	ucciderlo	uccidere lo	VERB
+2315	polvere	polvere	NOUN
+2321	sessuale	sessuale	ADJ
+2323	privata	privato	ADJ
+2326	totale	totale	ADJ
+2329	sentirmi	sentire mi	VERB
+2333	scherzi	scherzo	NOUN
+2335	lord	Lord	NOUN
+2340	aiutarci	aiutare ci	VERB
+2347	dovessi	dovessi	VERB
+2349	superiore	superiore	ADJ
+2357	piaccia	piacciere	VERB
+2360	dovro	dovro	VERB
+2361	dovrò	dovrò	VERB
+2362	dillo	dillo	VERB
+2364	credito	credito	NOUN
+2365	recente	recente	ADJ
+2368	fatemi	fatemi	NOUN
+2370	kyle	kyle	NOUN
+2381	preferirei	preferirei	VERB
+2385	muoversi	muovere si	VERB
+2390	farvi	fare vi	VERB
+2392	sissignore	sissignore	NOUN
+2395	baby	baby	NOUN
+2397	assicuro	assicuro	ADJ
+2399	facilmente	facilmente	ADV
+2402	darò	daere	VERB
+2403	smetterla	smettere la	VERB
+2418	accuse	accusa	NOUN
+2425	scrivania	scrivaniare	NOUN
+2426	complicato	complicato	ADJ
+2431	famoso	famoso	ADJ
+2432	desideri	desidero	NOUN
+2433	lily	lily	NOUN
+2436	eccoti	eccoe ti	VERB
+2439	prestito	prestito	NOUN
+2440	potreste	potreste	VERB
+2441	solamente	solamente	ADV
+2442	chissà	chissà	ADV
+2449	specialmente	specialmente	ADV
+2451	darle	dare le	VERB
+2457	mettiti	mettire	VERB
+2460	roger	roger	NOUN
+2463	folle	folle	ADJ
+2466	tuttavia	tuttavia	ADV
+2468	affascinante	affascinare	ADJ
+2472	jenny	Jenny	NOUN
+2474	prenderla	prendere la	VERB
+2479	trovarmi	trovare mi	VERB
+2480	frattempo	frattempo	ADV
+2487	lago	Lago	NOUN
+2488	barry	barry	NOUN
+2495	facciamolo	facciamolo	VERB
+2500	occhiali	occhialo	NOUN
+2501	conoscete	conoscete	VERB
+2504	resynch	resynch	NOUN
+2507	sito	sito	NOUN
+2508	maiale	maiale	ADJ
+2509	dubito	dubire	VERB
+2514	comodo	comodo	ADJ
+2526	sapessi	sapessare	VERB
+2527	facevi	facevi	VERB
+2528	diretta	diretta	ADJ
+2529	averne	avere ne	VERB
+2534	maggie	maggia	NOUN
+2539	volto	volgere	NOUN
+2556	darci	dare ci	VERB
+2564	mezz'	mezz	NOUN
+2565	trovarla	trovare la	VERB
+2574	smetti	smettare	VERB
+2577	portarlo	portare lo	VERB
+2579	mettermi	mettere mi	VERB
+2580	elizabeth	elizabeth	NOUN
+2584	idioti	idioto	ADJ
+2591	daro	daro	VERB
+2593	amanda	amandare	VERB
+2597	dovra	dovra	VERB
+2598	farne	fare ne	VERB
+2602	coso	coso	ADJ
+2615	molly	molly	NOUN
+2616	portarti	portare ti	VERB
+2618	gelato	gelato	ADJ
+2621	lentamente	lentamente	ADV
+2622	metterti	mettere ti	VERB
+2624	adorabile	adorabile	ADJ
+2625	iniziamo	inizere	VERB
+2626	chloe	Chloe	NOUN
+2633	colleghi	collega	NOUN
+2638	conoscerla	conoscere la	VERB
+2648	risolto	risogliere	VERB
+2649	sporco	sporco	ADJ
+2650	pari	pari	ADJ
+2652	sentirti	sentire ti	VERB
+2656	nathan	nae th an	VERB
+2671	band	band	NOUN
+2686	uguale	uguale	ADJ
+2694	veloci	veloce	ADJ
+2696	interessato	interessato	ADJ
+2699	positivo	positivo	ADJ
+2700	muovetevi	muovetevi	VERB
+2701	andiamocene	andiamocena	NOUN
+2702	diamine	diamine	NOUN
+2705	onesto	onesto	ADJ
+2707	portami	portami	VERB
+2710	tenerlo	tenere lo	VERB
+2714	stara	Stara	VERB
+2715	patrick	patrick	NOUN
+2716	provarci	provare ci	VERB
+2725	personalmente	personalmente	ADV
+2727	b	b	NOUN
+2737	morale	morale	ADJ
+2739	caspita	caspitare	VERB
+2743	occupo	occupo	VERB
+2747	rendi	rendi	VERB
+2748	preciso	preciso	ADJ
+2753	totalmente	totalmente	ADV
+2755	babbo	babboo	NOUN
+2766	parlarmi	parlare mi	VERB
+2772	eccellente	eccellente	ADJ
+2773	originale	originale	ADJ
+2774	muoverti	muovere ti	VERB
+2775	stammi	stamma	NOUN
+2778	probabile	probabile	ADJ
+2779	lasciala	Lasciala	VERB
+2781	jones	Jones	NOUN
+2789	stan	stan	VERB
+2793	yo	yo	NOUN
+2796	champagne	champagna	NOUN
+2800	troverai	trovere ai	VERB
+2805	oliver	oliver	NOUN
+2806	calmi	calmi	VERB
+2809	vendita	venditare	NOUN
+2810	togliti	toglire	VERB
+2813	carcere	carcere	NOUN
+2815	rock	rock	NOUN
+2817	arthur	arthuro	NOUN
+2822	single	singlee	ADJ
+2827	passeggiata	passeggiata	NOUN
+2829	amen	amen	ADV
+2830	lasciarlo	lasciare lo	VERB
+2833	lasciarti	lasciare ti	VERB
+2836	dirvi	dire vi	VERB
+2838	trovarti	trovare ti	VERB
+2841	football	football	NOUN
+2844	charlotte	charlotte	ADJ
+2852	aiutarvi	aiutare vi	VERB
+2853	opportunita	opportunita	NOUN
+2857	pò	pò	ADV
+2858	scendi	scendi	VERB
+2859	episode	episode	NOUN
+2860	sembro	sembro	NOUN
+2869	essermi	essere mi	VERB
+2870	terry	terry	NOUN
+2876	sinceramente	sinceramente	ADV
+2877	vorremmo	vorremmo	VERB
+2881	ross	ross	VERB
+2883	esca	ere	VERB
+2885	attivita	attivita	NOUN
+2891	ucciderti	uccidere ti	VERB
+2895	lieto	lieto	ADJ
+2896	confuso	confuso	ADJ
+2900	portarla	portare la	VERB
+2908	federale	federale	ADJ
+2911	messico	Messico	ADJ
+2921	red	red	NOUN
+2922	dicessi	dicessare	VERB
+2924	sufficiente	sufficiente	ADJ
+2925	oscar	oscar	NOUN
+2926	farete	farere	VERB
+2927	calci	calca	NOUN
+2939	uscendo	uscere	VERB
+2941	penny	penny	NOUN
+2943	vice	vice	ADJ
+2944	rebecca	rebecca	NOUN
+2951	cominciamo	comincere	VERB
+2956	dormendo	dormere	VERB
+2957	eccomi	eccomi	VERB
+2961	jay	jay	NOUN
+2963	esco	escare	VERB
+2965	west	West	NOUN
+2967	vederci	vedere ci	VERB
+2968	sfortunatamente	sfortunatamente	ADV
+2973	onestamente	onestamente	ADV
+2979	casey	casey	NOUN
+2980	fiero	fiero	ADJ
+2981	spalla	spallo	ADJ
+2986	portarmi	portare mi	VERB
+2993	chiedermi	chiedere mi	VERB
+2995	spari	spario	NOUN
+2996	pochino	pochare	ADV
+3007	corda	Corda	NOUN
+3008	benzina	benzinare	NOUN
+3009	dissi	dissi	VERB
+3010	rick	ricko	NOUN
+3014	king	King	NOUN
+3020	capite	capite	ADJ
+3026	lascero	lascero	VERB
+3027	andrew	Andrew	VERB
+3033	letteralmente	letteralmente	ADV
+3035	ione	ione	NOUN
+3037	frankie	frankie	VERB
+3039	sociale	sociale	ADJ
+3043	prendero	prenderare	VERB
+3044	disgustoso	disgustoso	ADJ
+3046	venerdi	venerdo	NOUN
+3048	perdonami	perdonami	VERB
+3058	conviene	convenere	VERB
+3059	jamie	Jamie	ADJ
+3066	tedesco	tedesco	ADJ
+3070	nascita	nascita	NOUN
+3078	universita	universito	NOUN
+3080	illegale	illegale	ADJ
+3081	man	man	NOUN
+3082	on	on	NOUN
+3083	big	big	NOUN
+3087	piacevole	piacevole	ADJ
+3091	chiederle	chiedere le	VERB
+3092	cioccolato	cioccolare	NOUN
+3093	farli	fare li	VERB
+3099	talmente	talmente	ADV
+3100	ricky	ricky	NOUN
+3104	esserne	essere ne	VERB
+3114	mangi	mangare	VERB
+3116	potrò	potrò	VERB
+3118	ethan	ethan	NOUN
+3119	jackie	Jackie	NOUN
+3121	tornerò	tornerò	VERB
+3125	cooper	cooper	NOUN
+3128	ufficialmente	ufficialmente	ADV
+3136	stiano	stiano	VERB
+3138	jesse	Jesse	ADJ
+3141	online	online	NOUN
+3143	fred	fred	NOUN
+3144	metterci	mettere ci	VERB
+3150	agio	agio	ADJ
+3153	orgoglioso	orgoglioso	ADJ
+3161	civile	civile	ADJ
+3162	betty	Betty	NOUN
+3168	aiutatemi	aiutatemi	VERB
+3173	pago	pago	ADJ
+3174	verrai	verrai	VERB
+3176	mondiale	mondiale	ADJ
+3179	avreste	avreste	VERB
+3180	parlargli	parlarge li	VERB
+3181	accada	accada	VERB
+3192	doc	doc	NOUN
+3200	mac	mac	NOUN
+3201	aiutarlo	aiutare lo	VERB
+3203	divertendo	divertere	VERB
+3205	scientifica	scientifico	ADJ
+3210	disponibile	disponibile	ADJ
+3211	estremamente	estremamente	ADV
+3216	fegato	fegato	NOUN
+3217	stretto	stretto	ADJ
+3218	torre	torrere	NOUN
+3219	pessima	pessima	ADJ
+3221	todd	todd	VERB
+3226	cole	cola	NOUN
+3228	porno	porno	ADV
+3229	professionale	professionale	ADJ
+3231	doug	doug	ADJ
+3233	adatto	adatto	ADJ
+3235	dille	dille	VERB
+3237	brillante	brillante	ADJ
+3243	darsi	dare si	VERB
+3245	vegas	vegas	NOUN
+3247	lascerò	Lascerò	VERB
+3248	harvey	Harvey	NOUN
+3251	tornera	tornerare	NOUN
+3252	chiacchiere	chiacchiera	NOUN
+3254	scoprirlo	scoprire lo	VERB
+3255	maledetta	maledetto	ADJ
+3256	deserto	deserto	ADJ
+3258	mando	mandere	VERB
+3260	ricordati	ricordare ti	VERB
+3262	staro	Staro	VERB
+3268	splendida	splendido	ADJ
+3269	gliene	glieno	VERB
+3270	intanto	intanto	ADV
+3275	prenderò	prendeere	VERB
+3284	prendilo	prendie lo	VERB
+3288	lassù	lassù	ADV
+3294	crudele	crudele	ADJ
+3299	catherine	catherina	NOUN
+3300	linda	linda	VERB
+3302	owen	owen	NOUN
+3304	sentirlo	sentire lo	VERB
+3305	averci	avere ci	VERB
+3313	sally	sally	NOUN
+3320	capirlo	capire lo	VERB
+3327	miller	Miller	NOUN
+3329	racconti	racconto	NOUN
+3336	black	black	NOUN
+3338	datemi	datemi	VERB
+3339	negativo	negativo	ADJ
+3345	jess	jess	NOUN
+3347	prenditi	prendire	VERB
+3351	viviamo	vivare	VERB
+3355	assassini	assassino	NOUN
+3357	poterlo	potere lo	VERB
+3360	shawn	shawn	NOUN
+3362	prendersi	prendere si	VERB
+3363	offro	offrore	VERB
+3365	tornero	tornero	VERB
+3366	caroline	carolina	ADJ
+3368	smettetela	smettetele	VERB
+3369	house	house	NOUN
+3371	fidarti	fidare ti	VERB
+3372	urgente	urgente	ADJ
+3375	potro	potro	VERB
+3380	rivederti	rivedere ti	VERB
+3382	improvvisamente	improvviso	ADV
+3401	synch	synch	NOUN
+3402	connor	connor	VERB
+3405	giovanotto	giovanurre	NOUN
+3409	steven	steven	NOUN
+3412	deluso	deluso	ADJ
+3413	ditemi	ditemi	VERB
+3418	avevate	avevate	VERB
+3421	sposarmi	sposare mi	VERB
+3423	romantico	romantico	ADJ
+3430	tecnicamente	tecnicamente	ADV
+3432	finto	finto	ADJ
+3433	noioso	noioso	ADJ
+3435	justin	Justin	NOUN
+3439	piantala	piantae la	VERB
+3441	gia'	gia	VERB
+3444	bevo	bevo	VERB
+3448	buffo	buffo	ADJ
+3455	oscuro	oscuro	ADJ
+3458	gang	gang	NOUN
+3462	geniale	geniale	ADJ
+3466	chiamarti	chiamare ti	VERB
+3471	extra	extra	NOUN
+3482	fermarlo	fermare lo	VERB
+3488	responsabilita	responsabilita	NOUN
+3489	preoccuparsi	preoccupare si	VERB
+3493	mettilo	mettilo	VERB
+3504	morso	morsare	NOUN
+3508	nina	nina	NOUN
+3510	realmente	realmente	ADV
+3514	contea	Contea	NOUN
+3519	entriamo	entrere	VERB
+3521	ron	ron	NOUN
+3522	simpatico	simpatico	ADJ
+3524	delizioso	delizioso	ADJ
+3525	fottiti	fottito	ADJ
+3526	coraggioso	coraggioso	ADJ
+3529	assicurarmi	assicurare mi	VERB
+3540	gibbs	Gibbs	VERB
+3543	sophie	sophie	NOUN
+3547	lasciarla	lasciare la	VERB
+3548	dylan	dylan	VERB
+3555	nancy	Nancy	NOUN
+3560	dennis	dennis	NOUN
+3564	geloso	geloso	ADJ
+3565	randy	randy	ADJ
+3572	dicevi	dicevi	VERB
+3576	eccitante	eccitante	ADJ
+3579	han	han	VERB
+3583	dacci	daccio	NOUN
+3585	commerciale	commerciale	ADJ
+3588	furbo	furbo	ADJ
+3590	set	set	NOUN
+3597	davis	davis	NOUN
+3599	chissa	chisso	ADJ
+3600	chiamarlo	chiamare lo	VERB
+3601	grant	grant	NOUN
+3602	odi	odi	VERB
+3607	troverò	troverò	VERB
+3610	brav'	brav	ADJ
+3613	passiamo	passere	VERB
+3614	pessimo	pessimo	ADJ
+3617	uccido	uccidare	VERB
+3618	trovero	trovero	VERB
+3620	mmm	mmm	ADV
+3621	servira	servirare	VERB
+3624	diglielo	diglielo	NOUN
+3626	essersi	essere si	VERB
+3629	metterlo	mettere lo	VERB
+3643	ebrei	ebreo	ADJ
+3645	andranno	annide	VERB
+3646	brown	Brown	NOUN
+3648	guardarmi	guardare mi	VERB
+3649	procedura	procedurare	NOUN
+3651	mentale	mentale	ADJ
+3658	party	party	NOUN
+3660	spencer	spencer	NOUN
+3663	attraente	attraente	ADJ
+3665	dira	dirare	VERB
+3667	accorto	accriro	VERB
+3672	madame	madama	NOUN
+3673	carol	Carol	NOUN
+3682	vergine	vergine	ADJ
+3683	ubriaca	ubriacare	ADJ
+3688	dopotutto	dopotutto	ADV
+3691	pura	puro	ADJ
+3693	fatelo	fatelo	VERB
+3710	fidarmi	fidare mi	VERB
+3720	tornerai	tornerai	VERB
+3721	fiato	fiato	NOUN
+3723	margaret	margaret	ADJ
+3726	wayne	Wayne	NOUN
+3731	jules	Jules	NOUN
+3733	foste	foste	VERB
+3738	giapponese	giapponese	ADJ
+3739	evan	evan	VERB
+3743	spagnolo	spagnolo	ADJ
+3744	apposta	apposta	ADV
+3752	eli	eli	NOUN
+3753	sin	sino	ADV
+3756	curioso	curioso	ADJ
+3760	fresca	fresco	ADJ
+3764	abbi	abbi	VERB
+3765	nozze	nozza	NOUN
+3770	novita	novita	NOUN
+3781	incredibilmente	incredibilmente	ADV
+3782	concentrati	concentrato	ADJ
+3786	eccezionale	eccezionale	ADJ
+3789	sano	sano	ADJ
+3790	identita	identire	NOUN
+3793	femminile	femminile	ADJ
+3796	grato	grato	ADJ
+3800	arrivera	arrivera	NOUN
+3804	riley	riley	VERB
+3806	chiamarla	chiamare la	VERB
+3807	martha	martha	VERB
+3815	preparati	preparato	ADJ
+3817	spetta	spettare	VERB
+3821	bici	bico	NOUN
+3824	singolo	singolo	ADJ
+3825	persi	perso	ADJ
+3827	piaccio	piacciare	VERB
+3829	cavaliere	cavaliere	NOUN
+3833	italiano	italiano	ADJ
+3834	mettersi	mettere si	VERB
+3835	top	top	ADJ
+3841	bonnie	bonnia	NOUN
+3842	whoa	Whoa	NOUN
+3845	velocita	velocitare	NOUN
+3848	marie	mario	ADJ
+3850	sinistro	sinistro	ADJ
+3855	deposito	deposito	NOUN
+3857	walker	Walker	NOUN
+3861	nobile	nobile	ADJ
+3863	spieghi	spieghi	VERB
+3868	booth	booth	NOUN
+3870	travis	travis	VERB
+3872	muori	muorere	ADJ
+3873	reverendo	reverere	VERB
+3887	scrivi	scrivare	VERB
+3888	jenna	Jenna	NOUN
+3890	stavate	stavare	VERB
+3893	verrò	verrò	VERB
+3895	edward	edward	NOUN
+3896	giappone	Giappone	NOUN
+3903	starò	starò	VERB
+3905	versi	verso	NOUN
+3909	conosca	conore	VERB
+3912	parlami	parlami	VERB
+3913	ken	ken	NOUN
+3915	inquietante	inquietante	ADJ
+3917	tenerla	tenere la	VERB
+3922	chance	chance	NOUN
+3926	hill	Hill	NOUN
+3927	esagerato	esagerato	ADJ
+3936	andatevene	andatevene	VERB
+3939	elegante	elegante	ADJ
+3940	quinn	quinn	ADJ
+3945	fermarmi	fermare mi	VERB
+3952	battito	battito	NOUN
+3960	ahi	ahi	VERB
+3966	sodo	sodo	ADV
+3980	leslie	Leslie	NOUN
+3984	fermarti	fermare ti	VERB
+3997	ann	ann	ADJ
+3998	vent'	vent	ADJ
+4001	lunedi	lunede	NOUN
+4002	ucciderla	uccidere la	VERB
+4003	subspedia	subspedio	ADJ
+4006	miles	miles	NOUN
+4009	perdoni	perdoni	VERB
+4010	sentirsi	sentire si	VERB
+4014	potrete	potrete	VERB
+4017	morirai	morirai	VERB
+4024	vedervi	vedere vi	VERB
+4030	accompagno	accompagno	NOUN
+4033	mortale	mortale	ADJ
+4038	francisco	francisco	ADJ
+4041	occupi	occupi	VERB
+4045	muoviamoci	muoviamore ci	VERB
+4050	reato	reato	NOUN
+4053	carrie	carria	NOUN
+4055	white	White	NOUN
+4060	riuscirai	riuscire ai	VERB
+4061	villa	Villa	NOUN
+4062	giochiamo	giochare	VERB
+4064	finisci	finise ci	VERB
+4069	potenziale	potenziale	ADJ
+4076	tienilo	tienilo	VERB
+4084	comitato	comitato	NOUN
+4089	diversamente	diversamente	ADV
+4092	april	april	VERB
+4099	minore	minore	ADJ
+4101	cameriere	cameriere	NOUN
+4106	portatelo	portatelo	VERB
+4110	earl	earl	NOUN
+4112	j	j	NOUN
+4114	mancata	mancato	ADJ
+4117	neanch'	neanch	ADJ
+4121	dara	darare	VERB
+4122	classico	classico	ADJ
+4124	istituto	istituto	NOUN
+4126	magico	magico	ADJ
+4130	clay	clay	NOUN
+4134	fedele	fedele	ADJ
+4135	vacci	vaccio	NOUN
+4138	natalie	natalia	ADJ
+4139	spiego	spiegire	VERB
+4140	trovarci	trovare ci	VERB
+4141	mandi	mandi	VERB
+4143	matthew	matthew	NOUN
+4146	taci	taci	ADJ
+4148	diane	diano	ADJ
+4149	profondamente	profondamente	ADV
+4151	funzionera	funzionera	NOUN
+4152	staff	staff	NOUN
+4157	evviva	evvivare	VERB
+4167	prostituta	prostituta	NOUN
+4181	sparisci	spariscre	VERB
+4185	janet	Janet	NOUN
+4190	brindisi	Brindisi	NOUN
+4192	piaciuta	piaciutare	VERB
+4193	porterò	porterò	VERB
+4194	temporale	temporale	ADJ
+4197	ringraziarti	ringraziare ti	VERB
+4204	ammetterlo	ammettere lo	VERB
+4209	violento	violento	ADJ
+4210	isolato	isolato	ADJ
+4212	beve	beve	VERB
+4214	frigo	Frigo	NOUN
+4217	chiederlo	chiedere lo	VERB
+4218	megan	megan	ADJ
+4220	popolare	popolare	ADJ
+4221	logan	Logan	ADV
+4222	dispiaciuto	dispiaciere	VERB
+4232	insalata	insalata	NOUN
+4240	spiacente	spiacente	ADJ
+4242	resisti	resistare	VERB
+4244	occuparmi	occupare mi	VERB
+4245	continuamente	continuamente	ADV
+4252	evidente	evidente	ADJ
+4259	eccome	eccome	ADV
+4261	baci	baco	NOUN
+4262	filmato	filmato	NOUN
+4264	alicia	aliciare	NOUN
+4266	storto	storto	ADJ
+4272	esserti	essere ti	VERB
+4274	spento	spento	VERB
+4278	ellie	ellie	NOUN
+4279	spaventoso	spaventoso	ADJ
+4284	nucleare	nucleare	ADJ
+4286	antica	antico	ADJ
+4289	dammelo	dammelo	ADJ
+4291	verro	Verro	NOUN
+4295	sbirri	sbirra	NOUN
+4299	attentamente	attento	ADV
+4300	notevole	notevole	ADJ
+4310	proteggerti	proteggere ti	VERB
+4318	halloween	Halloween	NOUN
+4331	tenerti	tenere ti	VERB
+4344	autorita	autorito	NOUN
+4346	sederti	sedere ti	VERB
+4351	serial	serial	NOUN
+4355	metterla	mettere la	VERB
+4356	benedica	benedica	VERB
+4361	sapremo	sapremo	VERB
+4365	fottuti	fottuto	ADJ
+4367	little	Little	NOUN
+4375	chiamero	chiamero	NOUN
+4381	lois	Lois	NOUN
+4382	normalmente	normalmente	ADV
+4388	felix	felix	NOUN
+4393	carattere	carattere	NOUN
+4403	ragionevole	ragionevole	ADJ
+4405	prodotti	prodotto	NOUN
+4406	altrove	altrove	ADV
+4409	finira	finira	NOUN
+4421	patetico	patetico	ADJ
+4424	matta	mattare	ADJ
+4428	lassu	Lassu	NOUN
+4433	seguo	seguare	VERB
+4435	attuale	attuale	ADJ
+4444	peggior	peggior	ADJ
+4448	mettila	mettilare	VERB
+4449	mestiere	mestiere	NOUN
+4451	bionda	biondo	ADJ
+4453	maya	maya	NOUN
+4458	sparate	sparata	NOUN
+4469	stivali	stivale	NOUN
+4472	feci	feci	NOUN
+4477	piacerà	piacare	VERB
+4485	grilletto	grillettare	NOUN
+4486	eccoli	eccolo	ADJ
+4490	portero	portero	VERB
+4497	uccidera	uccidero	NOUN
+4499	distintivo	distintivo	ADJ
+4500	operatoria	operatoria	NOUN
+4502	erica	erico	NOUN
+4503	negro	negroe	NOUN
+4505	capacita	capacitare	NOUN
+4507	internazionale	internazionale	ADJ
+4508	fatevi	fatevi	VERB
+4509	chiudo	chiudo	VERB
+4511	one	one	NOUN
+4516	shane	shane	ADJ
+4517	neil	neil	ADJ
+4528	sentirai	sentirai	VERB
+4531	cotta	cottare	NOUN
+4532	volerlo	volere lo	VERB
+4533	tutt'	tutt	ADV
+4541	toccarmi	toccare mi	VERB
+4543	secco	secco	ADJ
+4544	dick	dick	ADJ
+4551	presumo	presumo	NOUN
+4553	dea	dee	NOUN
+4554	piacera	piacerare	VERB
+4556	qualita	qualita	NOUN
+4558	green	green	NOUN
+4561	iscrew	iscrew	NOUN
+4565	stupenda	stupendo	ADJ
+4566	mitchell	mitchell	NOUN
+4572	complesso	complesso	ADJ
+4577	altrettanto	altrettanto	ADV
+4578	infelice	infelice	ADJ
+4579	tenermi	tenere mi	VERB
+4585	usarlo	usare lo	VERB
+4587	fermatevi	fermatevi	VERB
+4592	neal	neal	VERB
+4594	yeah	yeah	NOUN
+4595	prezioso	prezioso	ADJ
+4600	harold	Harold	VERB
+4603	pensassi	pensassare	VERB
+4605	apra	aprere	VERB
+4607	riuscite	riuscito	ADJ
+4610	vanessa	vanessa	ADJ
+4611	zitti	zitto	ADJ
+4612	pubblicita	pubblicita	NOUN
+4613	sareste	sareste	VERB
+4617	disperato	disperato	ADJ
+4620	mickey	mickey	NOUN
+4621	particolarmente	particolarmente	ADV
+4622	serena	sereno	ADJ
+4625	riconosco	riconoscare	VERB
+4627	comunita	comunire	NOUN
+4629	trono	trono	VERB
+4635	figata	figato	NOUN
+4642	wade	Wade	NOUN
+4643	pipi	pipio	NOUN
+4645	jill	Jill	NOUN
+4646	senz'	senz	NOUN
+4649	tipa	tipare	ADJ
+4653	sedetevi	sedetevi	VERB
+4655	poterti	potere ti	VERB
+4657	consigliere	consigliere	NOUN
+4658	feriti	ferito	NOUN
+4659	sacro	sacro	ADJ
+4665	prenderci	prendere ci	VERB
+4669	raccomando	raccomandere	VERB
+4673	malcolm	malcolm	NOUN
+4674	stabile	stabile	ADJ
+4682	facce	faccia	NOUN
+4685	tracy	tracy	NOUN
+4691	sfortuna	sfortuno	NOUN
+4694	mobili	mobile	ADJ
+4697	spegni	spegno	NOUN
+4701	damon	damon	ADJ
+4702	fango	fango	ADV
+4706	anthony	anthony	ADJ
+4707	ehila	ehila	NOUN
+4715	parlero	parlerare	VERB
+4719	accomodi	accomodare	ADJ
+4722	entusiasta	entusiasta	ADJ
+4723	prendila	prendie la	VERB
+4738	ronnie	ronnia	NOUN
+4740	is	is	VERB
+4750	nora	nora	NOUN
+4754	shh	Shh	ADJ
+4759	morira	moriro	NOUN
+4762	barney	Barney	NOUN
+4767	marine	marino	ADJ
+4774	volonta	volontare	VERB
+4777	aiutera	aiuterare	VERB
+4783	dale	dale	ADJ
+4787	abilita	abilire	VERB
+4788	amber	amber	NOUN
+4789	candidato	candidare	NOUN
+4790	subsfactory	subsfactory	NOUN
+4793	out	out	NOUN
+4794	duramente	duramente	ADV
+4798	dozzina	dozzinare	NOUN
+4803	tipico	tipico	ADJ
+4807	colin	Colin	NOUN
+4811	chiese	chiendere	VERB
+4820	eun	eun	NOUN
+4821	schifoso	schifoso	ADJ
+4826	vidi	vidre	VERB
+4837	leggo	leggo	VERB
+4841	cominci	cominci	VERB
+4845	nervi	nervo	ADJ
+4846	cercarlo	cercare lo	VERB
+4847	raymond	Raymond	ADJ
+4849	cameron	cameron	NOUN
+4853	sensibile	sensibile	ADJ
+4857	chiacchierata	chiacchierata	NOUN
+4858	parlerò	parleere	VERB
+4859	cam	cam	NOUN
+4862	aiuterà	aiutere	VERB
+4863	appetito	appetito	NOUN
+4869	pam	pam	NOUN
+4870	sembrerebbe	sembreere	VERB
+4874	invisibile	invisibile	ADJ
+4876	darvi	dare vi	VERB
+4884	norman	norman	NOUN
+4886	accadra	accadra	VERB
+4888	guardalo	guardae lo	VERB
+4889	rendo	rere	VERB
+4890	diretti	diretto	ADJ
+4894	portera	porterare	VERB
+4899	indossi	indossi	VERB
+4900	mitch	mitchre	VERB
+4905	dog	dog	NOUN
+4910	partite	partita	NOUN
+4911	lance	lancia	NOUN
+4918	manette	manetta	NOUN
+4922	drew	drew	NOUN
+4925	time	time	NOUN
+4926	averli	avere li	VERB
+4927	assoluto	assoluto	ADJ
+4929	capirai	capire ai	VERB
+4932	datti	datto	ADJ
+4933	hunter	hunter	NOUN
+4935	girl	girl	NOUN
+4936	preghiera	preghierare	NOUN
+4938	tuta	tuta	NOUN
+4943	servirebbe	servirebbe	VERB
+4945	stefan	stefan	NOUN
+4949	martedi	martedi	NOUN
+4953	dannatamente	dannatamente	ADV
+4954	avervi	avere vi	VERB
+4955	terribilmente	terribilmente	ADV
+4957	aspettami	aspettame	NOUN
+4960	daisy	daisy	NOUN
+4961	leggero	leggero	ADJ
+4963	desiderato	desiderato	ADJ
+4965	boy	Boy	NOUN
+4969	bugiarda	Bugiarda	VERB
+4970	stufo	stufore	NOUN
+4973	lasciarci	lasciare ci	VERB
+4977	hot	hot	ADJ
+4978	trevor	trevorre	VERB
+4980	klaus	Klaus	NOUN
+4991	troverete	troverete	VERB
+4992	debbie	debbie	VERB
+4993	stone	stone	NOUN
+4996	lento	lento	ADJ
+5001	minacce	minaccia	NOUN
+5008	grata	grare	NOUN
+5010	blue	blue	NOUN
+5013	tessuto	tessuto	ADJ
+5015	francamente	francamente	ADV
+5018	risponda	rispondare	VERB
+5019	diresti	diredere	VERB
+5020	infine	infine	ADV
+5022	passami	passami	VERB
+5027	maledetti	maledetti	VERB
+5034	ruth	ruth	NOUN
+5036	quartier	quartier	NOUN
+5037	mettero	metterere	VERB
+5038	database	databasa	NOUN
+5040	nicole	nicolo	ADJ
+5044	funzionerà	funzionerà	VERB
+5055	venissi	venise si	VERB
+5057	sposarti	sposare ti	VERB
+5058	indipendente	indipendente	ADJ
+5083	bravissimo	brave	ADJ
+5085	ambasciata	ambasciare	NOUN
+5097	pattuglia	pattugliare	NOUN
+5105	salvarti	salvare ti	VERB
+5110	perdente	perdente	ADJ
+5113	perdiamo	perdire	VERB
+5114	metterò	metterò	VERB
+5115	seguitemi	seguitemi	VERB
+5118	melissa	melissa	NOUN
+5120	lydia	Lydia	ADJ
+5122	shaw	shawe	ADV
+5127	giovedi	giovedio	NOUN
+5128	east	east	NOUN
+5129	dwight	dwight	VERB
+5133	impressionante	impressionare	ADJ
+5134	solare	solare	ADJ
+5135	ribelli	ribelle	ADJ
+5140	scuso	scusere	VERB
+5143	sedile	sedile	ADJ
+5146	sorridi	sorridare	VERB
+5147	sposarsi	sposare si	VERB
+5148	vedro	vedrare	VERB
+5149	lasciatelo	lasciatelo	VERB
+5150	ragae'	ragaee	VERB
+5161	sapra	saprare	VERB
+5162	gita	gita	NOUN
+5167	katherine	Katherine	NOUN
+5169	tara	taro	NOUN
+5173	passera	passera	VERB
+5179	domestica	domestico	ADJ
+5185	christine	Christine	NOUN
+5186	uscirne	uscire ne	VERB
+5189	robbie	robbie	VERB
+5190	carmen	carmen	ADJ
+5192	cerebrale	cerebrale	ADJ
+5195	carini	carine	NOUN
+5196	salvatore	salvatore	NOUN
+5201	bishop	bishop	NOUN
+5202	sconvolta	sconvolre	VERB
+5203	perdo	perdare	VERB
+5209	seguimi	seguimi	VERB
+5211	nascosti	nascorre	VERB
+5219	preoccuparmi	preoccupare mi	VERB
+5220	cellulari	cellulare	NOUN
+5222	andre	Andre	NOUN
+5226	stuart	stuart	NOUN
+5232	brooklyn	brooklyn	NOUN
+5233	angel	angel	NOUN
+5241	miranda	mirando	ADJ
+5242	chase	chase	NOUN
+5247	doyle	doyle	VERB
+5253	post	post	NOUN
+5255	seminterrato	Seminterrato	NOUN
+5258	won	won	NOUN
+5259	beviamo	bevare	VERB
+5262	ascoltatemi	ascoltatemi	VERB
+5266	valentino	valentino	VERB
+5267	chiappe	chiappa	NOUN
+5274	muoio	muoio	NOUN
+5276	monsieur	monsieur	NOUN
+5277	felicita	Felicita	NOUN
+5281	fondamentale	fondamentale	ADJ
+5282	turner	turner	NOUN
+5288	pat	pat	NOUN
+5291	guardarti	guardare ti	VERB
+5294	svelta	sveltare	VERB
+5297	boschi	bosco	NOUN
+5302	gina	Gina	NOUN
+5303	flynn	flynn	NOUN
+5307	generoso	generoso	ADJ
+5309	veronica	veronica	ADJ
+5312	beach	beach	NOUN
+5313	brandon	Brandon	VERB
+5316	misterioso	misterioso	ADJ
+5321	muoia	muoiere	VERB
+5327	graham	graham	NOUN
+5328	occuparsi	occupare si	VERB
+5332	chiuse	chiuso	ADJ
+5335	avery	avery	ADV
+5339	varie	vario	ADJ
+5340	lutto	luttare	NOUN
+5347	bevendo	bevire	VERB
+5348	medio	medio	ADJ
+5349	pablo	pablo	VERB
+5351	prometti	prometti	VERB
+5352	divertirsi	divertire si	VERB
+5353	cocktail	cocktailo	NOUN
+5356	permetti	permetti	VERB
+5362	psicopatico	psicopatico	ADJ
+5367	sbrigatevi	sbrigatee vi	VERB
+5376	dicci	diccio	VERB
+5377	svelto	svegliere	VERB
+5378	incontrarci	incontrare ci	VERB
+5379	compro	compro	VERB
+5381	rimango	rimangere	VERB
+5389	prenderli	prendere li	VERB
+5390	jen	jen	NOUN
+5391	tac	tac	NOUN
+5394	consapevole	consapevole	ADJ
+5402	provarlo	provare lo	VERB
+5405	mcgee	mcgee	NOUN
+5407	preoccupatevi	preoccupateve	VERB
+5408	vederli	vedere li	VERB
+5410	ni	ni	VERB
+5414	eterno	eterno	ADJ
+5419	arriveremo	arrivere	VERB
+5420	collins	collins	NOUN
+5426	mostrarti	mostrare ti	VERB
+5429	lire	lira	NOUN
+5431	supermercato	supermercato	NOUN
+5438	mori	more	NOUN
+5439	evvai	evvai	NOUN
+5443	cassie	cassia	NOUN
+5445	senzatetto	senzatettere	NOUN
+5457	andassi	andassi	VERB
+5460	divertitevi	divertiteve	ADJ
+5466	seattle	seattle	NOUN
+5469	vacca	Vacca	NOUN
+5472	banche	banca	NOUN
+5476	costoso	costoso	ADJ
+5483	garcia	Garcia	NOUN
+5490	up	up	NOUN
+5503	permettermi	permettere mi	VERB
+5505	decidi	decidare	VERB
+5507	credevi	credevi	VERB
+5509	cal	cale	NOUN
+5518	kitty	Kitty	NOUN
+5519	corrotto	corrotto	ADJ
+5523	dee	dee	VERB
+5524	ando	are	VERB
+5529	sfigato	sfigato	ADJ
+5530	harper	Harper	NOUN
+5532	stanley	stanley	VERB
+5534	jin	jin	NOUN
+5537	ingegnere	ingegnere	NOUN
+5542	finirai	finire ai	VERB
+5547	connie	connie	NOUN
+5549	bada	Bada	VERB
+5550	wallace	Wallace	NOUN
+5556	lindsay	lindsay	VERB
+5557	muovi	muovi	VERB
+5558	effettivamente	effettivamente	ADV
+5559	manny	manny	NOUN
+5560	violet	violet	NOUN
+5561	lascerai	lascere ai	VERB
+5573	bicchieri	bicchiere	NOUN
+5577	doloroso	doloroso	ADJ
+5578	andrei	andrei	VERB
+5586	tess	tess	NOUN
+5598	carla	care la	VERB
+5601	specifico	specifico	ADJ
+5605	caleb	caleb	NOUN
+5606	tucker	tucker	NOUN
+5608	indosso	indosso	ADV
+5613	promettimi	promettimi	ADJ
+5616	prenderai	prenderai	VERB
+5617	riconosci	riconoscire	VERB
+5620	diventerai	diventere ai	VERB
+5621	curtis	curtis	NOUN
+5623	recentemente	recentemente	ADV
+5626	usarla	usare la	VERB
+5627	rischioso	rischioso	ADJ
+5631	aveste	aveste	VERB
+5634	troy	troy	NOUN
+5638	phoebe	phoebe	VERB
+5640	farebbero	farebbero	VERB
+5661	garantisco	garantisco	VERB
+5670	offrirti	offrire ti	VERB
+5681	fagli	fa il	NOUN
+5682	partiti	partito	NOUN
+5683	guardarlo	guardare lo	VERB
+5687	riuscirci	riuscire ci	VERB
+5691	tieniti	tienire	VERB
+5696	sorprese	sorpresa	NOUN
+5698	fortunatamente	fortunatamente	ADV
+5702	preghiere	preghiera	NOUN
+5704	elementare	elementare	ADJ
+5705	grey	grey	NOUN
+5710	statua	Statua	NOUN
+5721	rapidamente	rapidamente	ADV
+5722	liquido	liquido	ADJ
+5723	crederai	crederaire	VERB
+5730	clyde	clyde	ADV
+5732	segua	seguere	VERB
+5734	donald	Donald	VERB
+5737	rory	roryo	NOUN
+5753	chiedero	chiederere	VERB
+5755	vomito	vomire	NOUN
+5759	mettetevi	mettetevi	VERB
+5761	sappi	sapre pi	VERB
+5771	parlarci	parlare ci	VERB
+5779	g	g	NOUN
+5780	evidentemente	evidentemente	ADV
+5782	benny	Benny	NOUN
+5784	conoscevi	conoscevi	VERB
+5789	sorprendente	sorprendente	ADJ
+5790	sharon	Sharon	NOUN
+5798	finisco	finiscere	VERB
+5802	saperne	sapere ne	VERB
+5803	spie	spia	NOUN
+5806	night	night	NOUN
+5807	world	World	NOUN
+5809	raro	raro	ADJ
+5818	roman	roman	ADJ
+5819	nascondersi	nascondere si	VERB
+5820	vorrebbero	vorrebbero	VERB
+5822	angie	angia	NOUN
+5823	obitorio	obitorio	ADJ
+5826	pigiama	pigiama	VERB
+5831	corsi	corso	NOUN
+5832	sedermi	sedere mi	VERB
+5833	sire	sire	VERB
+5836	preferiti	preferito	ADJ
+5843	portarci	portare ci	VERB
+5846	trovera	troverare	VERB
+5847	certificato	certificato	ADJ
+5851	detesto	detestare	NOUN
+5854	facci	faccio	ADJ
+5858	parliamone	parliamone	NOUN
+5859	bell	Bell	ADJ
+5860	attivo	attivo	ADJ
+5861	coperte	coperre	VERB
+5863	anderson	andersono	NOUN
+5865	lex	lex	VERB
+5869	irlandese	irlandese	ADJ
+5871	forme	forma	NOUN
+5877	cercherò	cerchare	VERB
+5879	lloyd	Lloyd	NOUN
+5885	mick	mick	ADJ
+5886	lemon	Lemon	NOUN
+5887	fermarci	fermare ci	VERB
+5890	ned	nedo	NOUN
+5893	vivente	vivente	ADJ
+5896	preoccupo	preoccupo	VERB
+5901	patty	Patty	NOUN
+5902	finiamo	finare	VERB
+5903	denise	denise	NOUN
+5912	joy	joy	NOUN
+5915	nuovamente	nuovamente	ADV
+5917	aspettavi	aspettavi	VERB
+5918	long	long	NOUN
+5919	sid	sid	NOUN
+5920	chiederò	chiederò	VERB
+5921	fidarsi	fidare si	VERB
+5926	porteremo	portere	VERB
+5928	vadano	vadano	VERB
+5933	proibito	proibire	ADJ
+5936	terro	terro	NOUN
+5938	vitale	vitale	ADJ
+5941	degno	degno	ADJ
+5944	eve	eve	NOUN
+5945	presentarti	presentare ti	VERB
+5946	leggermente	leggermente	ADV
+5947	fermarsi	fermare si	VERB
+5950	clan	Clan	NOUN
+5951	louise	Louise	NOUN
+5952	quì	quì	ADV
+5953	avenue	Avenue	NOUN
+5966	alec	alec	ADJ
+5970	rivoglio	rivoglio	NOUN
+5972	maestra	Maestra	NOUN
+5973	capra	capra	ADJ
+5975	brick	brick	NOUN
+5980	isaac	isaac	ADJ
+5987	credermi	credere mi	VERB
+5989	provaci	provaci	VERB
+5996	diranno	dari	VERB
+5997	solitario	solitario	ADJ
+5998	fisicamente	fisicamente	ADV
+6000	alquanto	alquanto	ADV
+6001	manco	manco	NOUN
+6002	penale	penale	ADJ
+6008	favola	favola	NOUN
+6012	becky	Becky	NOUN
+6013	server	server	NOUN
+6014	salvarlo	salvare lo	VERB
+6016	risparmi	risparmio	NOUN
+6017	gemma	gemma	NOUN
+6022	color	color	NOUN
+6024	orleans	orleans	NOUN
+6025	togliermi	togliere mi	VERB
+6027	diploma	diploma	NOUN
+6028	contenuto	contenuto	NOUN
+6030	riga	riga	NOUN
+6034	prendetelo	prendetelo	VERB
+6035	prenderanno	prendare	VERB
+6037	divento	divento	VERB
+6038	botta	botto	ADJ
+6041	preparatevi	preparatee vi	VERB
+6044	goccia	goccia	NOUN
+6045	insolito	insolito	ADJ
+6046	vena	vena	NOUN
+6048	alfa	alfa	NOUN
+6049	fidanzati	fidanzato	VERB
+6050	foglie	foglia	NOUN
+6052	lampada	lampada	NOUN
+6056	sconfitta	sconfitta	NOUN
+6057	durata	durata	NOUN
+6058	salvataggio	salvataggio	NOUN
+6059	scortese	scortesa	ADJ
+6060	lavanderia	lavanderia	NOUN
+6062	vedra	vedra	VERB
+6065	competizione	competizione	NOUN
+6067	compri	comprio	VERB
+6068	vernice	vernice	NOUN
+6069	round	round	NOUN
+6070	freccia	freccia	NOUN
+6071	gentilezza	gentilezza	NOUN
+6073	spreco	spreco	NOUN
+6076	commercio	commercio	NOUN
+6080	paraggi	paraggio	NOUN
+6082	assassinio	assassinio	NOUN
+6083	miguel	miguel	VERB
+6084	suite	suite	NOUN
+6085	mancherai	manchere ai	VERB
+6086	vendite	vendita	NOUN
+6088	riabilitazione	riabilitazione	NOUN
+6089	rancore	rancore	NOUN
+6091	flusso	flusso	NOUN
+6092	musicale	musicale	ADJ
+6093	insistito	insistire	VERB
+6095	quantità	quantità	NOUN
+6096	scusarti	scusare ti	VERB
+6098	cercarla	cercare la	VERB
+6100	mm	mm	NOUN
+6101	foglio	foglio	NOUN
+6105	vinci	vincio	NOUN
+6110	sedersi	sedere si	VERB
+6111	note	nota	NOUN
+6118	diagnosi	diagnosi	NOUN
+6122	sappiate	sappiare	VERB
+6127	diamoci	diamoci	VERB
+6128	queen	queen	NOUN
+6135	codici	codico	NOUN
+6136	muoverci	muovere ci	VERB
+6137	satana	satana	NOUN
+6141	ucciderci	uccidere ci	VERB
+6142	astronave	astronave	NOUN
+6144	conoscerlo	conoscere lo	VERB
+6145	vie	via	NOUN
+6148	verdetto	verdettere	VERB
+6149	saggezza	saggezza	NOUN
+6150	approvazione	approvazione	NOUN
+6155	nuvole	nuvola	NOUN
+6160	unite	Unite	ADJ
+6161	web	web	NOUN
+6162	tosta	tosto	ADJ
+6163	candele	candela	NOUN
+6165	bistecca	bisteccare	NOUN
+6169	diventera	diventee ra	VERB
+6173	alexander	alexander	NOUN
+6176	leale	leale	ADJ
+6179	letti	letto	NOUN
+6180	telefonica	telefonico	ADJ
+6181	riscontro	riscontro	NOUN
+6183	stiate	stiate	VERB
+6184	palmer	palmer	NOUN
+6186	cristallo	Cristallo	NOUN
+6188	applauso	applauso	NOUN
+6191	cicatrice	cicatore	NOUN
+6192	dallas	dallas	ADJ
+6194	riferimento	riferimento	NOUN
+6195	infermeria	infermeria	NOUN
+6196	riconoscimento	riconoscimento	NOUN
+6198	molo	molo	NOUN
+6199	erede	erede	NOUN
+6200	apro	apro	VERB
+6207	meccanico	meccanico	ADJ
+6209	protagonista	protagonista	NOUN
+6210	letale	letale	ADJ
+6213	force	force	NOUN
+6215	animo	animo	NOUN
+6217	arrogante	arrogante	ADJ
+6218	impazzendo	impazzere	VERB
+6219	impulso	impulso	NOUN
+6222	scomparsi	scompare si	VERB
+6223	unirsi	unire si	VERB
+6225	oscurita	oscurire	NOUN
+6227	costante	costante	ADJ
+6230	ascoltarmi	ascoltare mi	VERB
+6231	perderai	perdere ai	VERB
+6232	lena	lenare	VERB
+6237	commenti	commento	NOUN
+6238	sensori	sensore	NOUN
+6245	salvarla	salvare la	VERB
+6248	volevate	volevare	VERB
+6250	seguirmi	seguire mi	VERB
+6254	svenuto	svenere	VERB
+6255	ego	ego	NOUN
+6257	andarvene	andare ve ne	VERB
+6258	judy	Judy	NOUN
+6260	curriculum	curriculum	NOUN
+6262	budget	budget	NOUN
+6263	priorita	priorito	NOUN
+6264	nerd	nerd	NOUN
+6266	sindacato	sindacato	NOUN
+6267	haley	Haley	VERB
+6269	dimissioni	dimissione	NOUN
+6270	spedizione	spedizione	NOUN
+6272	multa	multa	NOUN
+6274	probabilita	probabilita	NOUN
+6276	solitudine	solitudine	NOUN
+6277	mento	mento	NOUN
+6282	cat	cat	ADJ
+6283	gentilmente	gentilmento	ADV
+6284	elvis	elvis	NOUN
+6285	successivo	successivo	ADJ
+6286	nolan	Nolan	VERB
+6287	permetterò	permetterò	VERB
+6288	andrete	andrete	NOUN
+6289	improbabile	improbabile	ADJ
+6290	professione	professione	NOUN
+6291	commedia	commedia	NOUN
+6294	scacchi	scacco	NOUN
+6297	calzini	calzino	NOUN
+6300	scordatelo	scordatelo	VERB
+6302	detenuti	detenuto	NOUN
+6303	yang	yang	NOUN
+6304	omar	omar	NOUN
+6306	lawrence	Lawrence	NOUN
+6309	valido	valido	ADJ
+6311	business	business	NOUN
+6313	salite	salita	NOUN
+6314	tremendo	tremendo	ADJ
+6315	ari	ari	ADJ
+6316	f	f	NOUN
+6317	quantita	quantita	NOUN
+6319	presentarvi	presentare vi	VERB
+6320	accettarlo	accettare lo	VERB
+6321	randall	randall	ADJ
+6323	campionato	campionato	NOUN
+6324	prepari	prepari	VERB
+6325	dawn	dawn	NOUN
+6327	nicky	nicky	NOUN
+6330	volontario	volontario	NOUN
+6331	innanzitutto	innanzitutto	ADV
+6335	raccontami	raccontae mi	VERB
+6338	ginnastica	ginnastica	NOUN
+6341	yoga	yoga	NOUN
+6342	pipì	pipì	NOUN
+6348	ranger	ranger	NOUN
+6349	ulteriori	ulteriore	ADJ
+6350	colonna	colonna	NOUN
+6352	terrò	terrò	VERB
+6353	conforto	conforto	NOUN
+6355	vicepresidente	vicepresidente	NOUN
+6357	emozionante	emozionante	ADJ
+6358	caporale	caporale	ADJ
+6360	distrettuale	distrettuale	ADJ
+6362	bollente	bollente	ADJ
+6364	sgualdrina	sgualdrino	ADJ
+6366	supervisore	supervisore	NOUN
+6367	fui	fui	VERB
+6368	vergogno	vergogno	VERB
+6370	ninja	ninja	NOUN
+6371	gwen	gwen	NOUN
+6374	cereali	cereale	NOUN
+6376	comportarti	comportare ti	VERB
+6378	delicato	delicato	ADJ
+6379	fisso	fisso	ADV
+6383	missili	missile	NOUN
+6388	riuscissi	riuscise si	VERB
+6389	affamato	affamato	ADJ
+6390	cambiera	cambierare	NOUN
+6391	rispondimi	rispondimi	VERB
+6395	infinito	infinito	ADJ
+6396	beverly	beverlye	VERB
+6398	conoscervi	conoscere vi	VERB
+6402	cd	cd	NOUN
+6403	crescita	crescita	NOUN
+6405	radar	radar	NOUN
+6406	curva	curva	VERB
+6407	trovarsi	trovare si	VERB
+6409	nebbia	nebbia	NOUN
+6410	maschile	maschile	ADJ
+6411	sconto	sconto	NOUN
+6412	metropolitana	metropolitano	ADJ
+6413	portale	portale	NOUN
+6416	etichetta	etichetta	NOUN
+6420	entusiasmo	entusiasmo	NOUN
+6423	e'a	e'	VERB
+6428	probabilità	probabilità	NOUN
+6433	fisher	fisher	NOUN
+6434	regione	regione	NOUN
+6438	iniezione	iniezione	NOUN
+6440	woo	woo	NOUN
+6441	grano	grano	NOUN
+6443	happy	happy	ADJ
+6448	stevie	stevia	NOUN
+6450	deposizione	deposizione	NOUN
+6451	galassia	galassia	NOUN
+6452	economico	economico	ADJ
+6454	assicurarsi	assicurare si	VERB
+6455	stark	stark	NOUN
+6460	barbecue	barbecue	NOUN
+6461	archivio	archivio	NOUN
+6462	scolastico	scolastico	ADJ
+6464	jared	Jared	NOUN
+6465	intesi	intese	NOUN
+6466	xena	xena	NOUN
+6468	bagnato	bagnato	ADJ
+6472	cercarti	cercare ti	VERB
+6475	overdose	overdoso	ADJ
+6477	sequenza	sequenza	NOUN
+6478	colonia	colonia	NOUN
+6480	esplosivo	esplosivo	NOUN
+6481	alleanza	alleanza	NOUN
+6482	fenomeno	fenomeno	NOUN
+6483	south	south	NOUN
+6485	pop	pop	NOUN
+6488	fetta	fetta	NOUN
+6489	obbligo	obbligo	NOUN
+6490	artie	artia	NOUN
+6491	cuoco	cuoco	NOUN
+6493	testo	testo	NOUN
+6495	panni	panno	NOUN
+6496	ehilà	ehilà	VERB
+6497	gabinetto	Gabinetto	NOUN
+6500	hammond	hammond	NOUN
+6502	incontrarti	incontrare ti	VERB
+6503	moriranno	morari	VERB
+6504	provero	provero	NOUN
+6510	perdonatemi	perdonatemi	VERB
+6511	circuito	circuito	NOUN
+6512	sappiano	sappiere	VERB
+6514	pianoforte	pianoforte	NOUN
+6515	orbita	orbita	NOUN
+6518	spirituale	spirituale	ADJ
+6520	preavviso	preavviso	NOUN
+6523	adolescenti	adolescento	ADJ
+6525	laurel	laurelre	NOUN
+6527	douglas	douglas	NOUN
+6528	delicata	delicare	ADJ
+6529	costruzione	costruzione	NOUN
+6531	riuscirò	riuscirò	VERB
+6533	casco	casco	NOUN
+6535	pirata	pirata	NOUN
+6536	richie	richia	NOUN
+6537	scudo	scudo	NOUN
+6539	jeffrey	Jeffrey	NOUN
+6540	freddie	freddie	ADJ
+6546	mikey	mikey	NOUN
+6550	willie	Willie	NOUN
+6555	riva	riva	NOUN
+6556	brody	Brody	VERB
+6557	prato	prato	NOUN
+6558	assalto	assalto	NOUN
+6560	salvarmi	salvare mi	VERB
+6561	finiscila	finiscilare	VERB
+6562	butto	buttere	VERB
+6563	guardiano	guardiano	NOUN
+6566	stellare	stellare	ADJ
+6567	tesi	tesi	NOUN
+6568	orrore	orrore	NOUN
+6570	urlo	urlo	NOUN
+6571	stranamente	stranamente	ADV
+6572	bowling	bowling	NOUN
+6573	vulnerabile	vulnerabile	ADJ
+6577	incapace	incapace	ADJ
+6578	cecchino	cecchino	NOUN
+6579	messicano	messicano	ADJ
+6580	affidabile	affidabile	ADJ
+6582	chiedergli	chiedere gli	VERB
+6583	scarico	scarico	NOUN
+6587	barone	barone	NOUN
+6590	mercoledi	mercoledi	NOUN
+6591	pallone	pallone	NOUN
+6593	reggiseno	reggiseno	NOUN
+6595	hobby	hobby	NOUN
+6596	calcoli	calcolo	NOUN
+6598	accompagni	accompagnire	VERB
+6599	ranch	ranch	NOUN
+6601	prenderne	prendere ne	VERB
+6602	jazz	jazz	NOUN
+6604	asso	asso	NOUN
+6605	peggy	peggyo	VERB
+6606	omaggio	omaggio	NOUN
+6608	lotteria	lotteria	NOUN
+6609	bottone	bottone	NOUN
+6610	favoloso	favoloso	ADJ
+6611	accendi	accendire	VERB
+6612	sottile	sottile	ADJ
+6614	callie	callio	ADJ
+6617	moderna	moderno	ADJ
+6618	liscia	liscio	ADJ
+6623	starei	staere	VERB
+6626	dramma	dramma	NOUN
+6627	serratura	serratura	NOUN
+6628	dannati	dannato	NOUN
+6629	attentato	attentato	NOUN
+6631	zampe	zampa	NOUN
+6632	latino	latino	NOUN
+6634	hockey	hockey	NOUN
+6637	umanita	umanitare	NOUN
+6638	bancone	bancone	NOUN
+6639	look	look	NOUN
+6644	pro	pro	NOUN
+6645	verbale	verbale	ADJ
+6646	innocenza	innocenza	NOUN
+6647	inferiore	inferiore	ADJ
+6648	pensai	pense ai	VERB
+6649	rilascio	rilascio	NOUN
+6650	quaggiù	quaggiù	ADV
+6654	scomparse	scomparse	VERB
+6659	prudente	prudente	ADJ
+6661	supplico	supplico	NOUN
+6662	sordo	sordo	ADJ
+6665	destinazione	destinazione	NOUN
+6674	abigail	abigail	ADJ
+6675	postale	postale	ADJ
+6678	maniaco	maniaco	NOUN
+6680	baker	Baker	NOUN
+6681	iris	iris	NOUN
+6683	italian	italian	ADJ
+6684	dammela	dammela	VERB
+6687	soffitto	soffirre	NOUN
+6688	statale	statale	ADJ
+6690	colpisci	colpiscire	VERB
+6691	senato	senato	NOUN
+6692	schmidt	schmidt	NOUN
+6693	brividi	brividio	NOUN
+6695	permettero	permettero	ADJ
+6696	banana	bananare	NOUN
+6697	fermarli	fermare li	VERB
+6698	venditore	venditore	NOUN
+6702	mattinata	mattinata	NOUN
+6704	riscatto	riscatto	NOUN
+6707	aiuterai	aiuteere	VERB
+6709	hard	hard	ADJ
+6710	sapevate	sapevare	VERB
+6712	penseranno	penseere	VERB
+6713	cha	cha	NOUN
+6715	sasha	sasha	NOUN
+6719	menzogna	menzogna	NOUN
+6721	foster	foster	NOUN
+6722	fotografo	fotografo	NOUN
+6723	fulmine	fulmine	NOUN
+6727	porter	porter	NOUN
+6730	calmatevi	calmatevi	VERB
+6731	mandarmi	mandare mi	VERB
+6733	marijuana	marijuana	NOUN
+6734	vogliano	vogliano	VERB
+6735	manicomio	manicomio	NOUN
+6736	pompieri	pompiere	NOUN
+6737	unirti	unire ti	VERB
+6738	decente	decente	ADJ
+6740	verrebbe	verere	VERB
+6741	apparentemente	apparentemente	ADV
+6742	illusione	illusione	NOUN
+6747	eccetera	eccetera	ADV
+6749	grigio	grigio	ADJ
+6756	demonio	demonio	NOUN
+6757	asciugamano	asciugamano	NOUN
+6760	tienila	tienila	VERB
+6765	frattura	frattura	NOUN
+6767	penserai	pensere ai	VERB
+6768	stephanie	stephania	NOUN
+6772	proteggerla	proteggere la	VERB
+6773	negri	negre	NOUN
+6775	estranei	estraneo	ADJ
+6777	etero	etero	ADV
+6780	roulotte	roulotte	NOUN
+6783	bellissime	bellissimo	ADJ
+6784	riscaldamento	riscaldamento	NOUN
+6788	sosta	sosta	NOUN
+6789	cannone	cannone	NOUN
+6791	allucinazioni	allucinazione	NOUN
+6793	comportarsi	comportare si	VERB
+6795	prepararsi	preparare si	VERB
+6796	personalità	personalità	NOUN
+6797	dipendenza	dipendenza	NOUN
+6800	inevitabile	inevitabile	ADJ
+6801	uccellino	uccellino	NOUN
+6802	matty	matty	NOUN
+6803	efficace	efficace	ADJ
+6806	theo	theo	ADJ
+6807	reggie	reggie	VERB
+6808	batman	batman	NOUN
+6810	campana	campana	NOUN
+6813	sciopero	sciopero	NOUN
+6815	toast	toast	NOUN
+6821	secca	seccare	ADJ
+6822	rivedremo	rivedremo	VERB
+6825	operai	operaio	NOUN
+6826	min	min	NOUN
+6829	lenny	lenny	NOUN
+6830	murray	Murray	NOUN
+6831	agenda	agenda	NOUN
+6832	blog	blog	NOUN
+6835	kara	Kara	NOUN
+6836	jonah	jonah	NOUN
+6837	aspettarti	aspettare ti	VERB
+6844	goditi	goditire	VERB
+6845	gavin	gavin	VERB
+6846	occupero	occupero	NOUN
+6849	salita	salitare	NOUN
+6852	provino	provino	NOUN
+6853	femminuccia	Femminuccia	NOUN
+6855	prenderle	prendere le	VERB
+6856	sheila	sheilae	NOUN
+6858	precisione	precisione	NOUN
+6860	dj	dj	NOUN
+6861	preghiamo	preghere	VERB
+6862	trovarli	trovare li	VERB
+6863	possiate	posseia	VERB
+6864	melanie	melania	NOUN
+6868	central	central	NOUN
+6871	karma	Karma	NOUN
+6873	proteggermi	proteggere mi	VERB
+6874	ossessione	ossessione	NOUN
+6875	dimenticarti	dimenticare ti	VERB
+6878	sirena	sirenare	NOUN
+6880	aspettarmi	aspettare mi	NOUN
+6883	concentrarmi	concentrare mi	VERB
+6885	reynolds	reynoldso	NOUN
+6887	vermi	verma	NOUN
+6888	silenzioso	silenzioso	ADJ
+6894	juliette	Juliette	NOUN
+6896	comprensione	comprensione	NOUN
+6897	vendo	vere	VERB
+6901	dimostrazione	dimostrazione	NOUN
+6903	tasso	tasso	NOUN
+6904	axl	axl	NOUN
+6905	gangster	gangster	NOUN
+6909	vogliate	vogliare	VERB
+6912	palo	palo	NOUN
+6913	tattica	tattica	NOUN
+6916	val	val	NOUN
+6917	aiuterò	aiuterò	VERB
+6918	finendo	finere	VERB
+6920	fidarci	fidare ci	VERB
+6921	incontrarla	incontrare la	VERB
+6923	convincente	convincente	ADJ
+6924	brenda	brendere	VERB
+6925	api	ape	NOUN
+6926	marinaio	marinaio	NOUN
+6928	cavalieri	cavaliero	NOUN
+6929	esperta	espertare	NOUN
+6931	intimo	intimo	ADJ
+6932	fata	fato	NOUN
+6938	sacchetto	sacchetto	NOUN
+6941	garanzia	garanzia	NOUN
+6943	mona	Mona	NOUN
+6944	approccio	approccio	NOUN
+6945	ragno	ragno	NOUN
+6946	combatti	combatti	VERB
+6947	ivy	ivy	NOUN
+6948	cathy	cathy	ADJ
+6949	spiegarmi	spiegare mi	VERB
+6954	papi	papo	NOUN
+6957	pierre	pierrere	VERB
+6958	legalmente	legalmente	ADV
+6959	salone	salone	NOUN
+6960	chiedervi	chiedere vi	VERB
+6961	cercarmi	cercare mi	VERB
+6962	omicida	omicida	NOUN
+6963	massacro	massacro	NOUN
+6964	ballerina	ballerina	NOUN
+6965	stessero	stere	VERB
+6967	semi	seme	NOUN
+6968	june	june	ADJ
+6969	sherlock	sherlock	NOUN
+6970	piangi	piangi	VERB
+6971	gestione	gestione	NOUN
+6972	toglierti	togliere ti	VERB
+6973	torcia	torcia	NOUN
+6975	marea	marea	NOUN
+6976	legittima	legittimo	ADJ
+6977	piper	piper	NOUN
+6978	marrone	marrone	ADJ
+6980	costole	costola	NOUN
+6981	disgrazia	disgrazia	NOUN
+6982	renderlo	rendere lo	VERB
+6983	hacker	hacker	NOUN
+6989	funghi	fungo	NOUN
+6991	rex	rex	NOUN
+6992	riusciro	riusciro	VERB
+6995	reese	reese	ADJ
+6997	antenati	antenato	NOUN
+6999	silver	silver	NOUN
+7000	portiere	portiere	NOUN
+7001	carità	carità	NOUN
+7002	leggerlo	leggere lo	VERB
+7007	greco	greco	ADJ
+7008	arrivarci	arrivare ci	VERB
+7011	software	software	NOUN
+7012	hei	hei	ADJ
+7013	fragile	fragile	ADJ
+7014	elefante	elefante	NOUN
+7016	scheda	schedare	NOUN
+7018	audizione	audizione	NOUN
+7024	mostrami	mostrame	VERB
+7028	donovan	donovan	VERB
+7029	georgia	georgia	NOUN
+7030	epidemia	epidemia	NOUN
+7031	volerci	volere ci	VERB
+7032	rospo	rospo	NOUN
+7036	trent'	trent	VERB
+7040	pompa	pompa	NOUN
+7041	poiche	poica	ADJ
+7043	volti	volto	NOUN
+7045	sadie	sadie	VERB
+7049	intelligence	intelligence	NOUN
+7050	ash	ash	NOUN
+7051	discuterne	discutere ne	VERB
+7052	giochetti	giochetto	NOUN
+7053	disordine	disordine	NOUN
+7054	priorità	priorità	NOUN
+7056	instabile	instabile	ADJ
+7058	aiutero	aiutero	VERB
+7059	clarke	Clarke	NOUN
+7065	limousine	limousine	NOUN
+7069	rimarrà	rimarre	VERB
+7070	cheerleader	cheerleader	NOUN
+7072	piccoletto	piccoletto	ADJ
+7073	carbone	carbone	NOUN
+7074	pugnale	pugnale	NOUN
+7076	sapone	sapone	NOUN
+7077	gin	gin	NOUN
+7078	cattura	cattura	VERB
+7080	parlavi	parlavare	VERB
+7081	posa	posa	NOUN
+7083	chen	chen	NOUN
+7085	hugh	Hugh	NOUN
+7092	valerie	valerie	ADJ
+7095	rapido	rapido	ADJ
+7096	dibattito	dibattito	NOUN
+7098	ring	ring	NOUN
+7099	occidentale	occidentale	ADJ
+7101	spaghetti	spaghetto	NOUN
+7103	terremo	terremo	VERB
+7104	rivederla	rivedere lo	VERB
+7106	candidati	candidato	NOUN
+7107	ward	Ward	NOUN
+7109	cerchero	cerchee ro	VERB
+7110	creazione	creazione	NOUN
+7111	sceneggiatura	sceneggiatura	NOUN
+7115	offrendo	offrere	VERB
+7118	crane	crana	NOUN
+7119	ohio	ohio	NOUN
+7122	are	are	ADV
+7124	delusione	delusione	NOUN
+7125	mettiamoci	mettiamoci	VERB
+7126	scossa	scossa	VERB
+7127	scappi	scape pi	VERB
+7128	disperazione	disperazione	NOUN
+7129	distante	distante	ADJ
+7131	digitali	digitale	ADJ
+7132	raffreddore	raffreddore	NOUN
+7133	permanente	permanente	ADJ
+7134	schianto	schianto	NOUN
+7137	scelgo	scelgere	VERB
+7141	categoria	categoria	NOUN
+7143	filosofia	filosofia	NOUN
+7145	chang	Chang	NOUN
+7146	co	co	NOUN
+7151	sopportarlo	sopportare lo	VERB
+7156	firmi	firmi	VERB
+7157	tacchi	tacco	NOUN
+7159	scopriamo	scoprere	VERB
+7160	dominio	dominio	NOUN
+7162	invasione	invasione	NOUN
+7163	attualmente	attualmente	ADV
+7165	dirla	dire la	VERB
+7167	calvin	calvin	ADV
+7170	democrazia	democrazia	NOUN
+7171	trapianto	trapianto	NOUN
+7172	moore	Moore	NOUN
+7173	guardala	guardala	VERB
+7176	volpe	volpe	NOUN
+7177	dossier	dossier	NOUN
+7178	altamente	altamente	ADV
+7179	peste	pesta	NOUN
+7181	seguente	seguente	ADJ
+7182	inchiesta	inchiesta	NOUN
+7184	soprannome	soprannome	NOUN
+7187	sobrio	sobrio	ADJ
+7189	musical	musical	NOUN
+7195	cemento	cemento	NOUN
+7196	prendimi	prendimere	VERB
+7197	frode	frode	NOUN
+7199	dovessimo	dovessimo	ADV
+7200	inganno	inganno	NOUN
+7201	finanziario	finanziario	ADJ
+7204	sung	sung	NOUN
+7205	bernie	bernia	VERB
+7206	renderti	rendere ti	VERB
+7207	yen	yen	NOUN
+7208	globale	globale	ADJ
+7209	permetterci	permettere ci	VERB
+7211	radici	radice	NOUN
+7214	fusione	fusione	NOUN
+7216	generatore	generatore	NOUN
+7217	daphne	daphne	ADJ
+7219	alpha	alpha	ADV
+7228	tequila	tequila	NOUN
+7229	squali	squale	NOUN
+7230	sposarci	sposare ci	VERB
+7231	acquisto	acquisto	NOUN
+7236	jasper	Jasper	NOUN
+7240	ciambelle	ciambella	NOUN
+7241	stupidaggini	stupidaggine	NOUN
+7243	prosciutto	prosciutto	NOUN
+7244	edizione	edizione	NOUN
+7245	eleanor	eleanor	VERB
+7246	cenere	cenere	NOUN
+7247	iniziativa	iniziativa	NOUN
+7248	mindy	Mindy	NOUN
+7249	porterai	porterai	VERB
+7250	useremo	usere	VERB
+7252	divertirci	divertire ci	VERB
+7254	alimentare	alimentare	ADJ
+7255	contessa	contesse	NOUN
+7260	mancia	mancia	NOUN
+7263	donnie	donnia	NOUN
+7264	nascondiglio	nascondiglio	NOUN
+7266	fermarla	fermare la	VERB
+7268	incontrarlo	incontrare lo	VERB
+7269	limone	limone	NOUN
+7270	barriera	barriera	NOUN
+7271	finestrino	finestrino	NOUN
+7273	perderti	perdere ti	VERB
+7276	presentimento	presentimento	NOUN
+7277	gratitudine	gratitudina	NOUN
+7278	suprema	Suprema	ADJ
+7279	apparecchio	apparecchio	NOUN
+7280	avvicinarsi	avvicinare si	VERB
+7282	panchina	panchina	NOUN
+7286	ji	ji	NOUN
+7288	contadino	contadino	NOUN
+7289	incontreremo	incontrere	VERB
+7290	fondazione	fondazione	NOUN
+7291	sbarre	sbarra	NOUN
+7293	edgar	edgar	VERB
+7294	mito	mito	NOUN
+7296	end	end	NOUN
+7298	adozione	adozione	NOUN
+7300	garrett	garrett	VERB
+7304	seta	seta	NOUN
+7305	ditta	ditta	NOUN
+7310	liberarsi	liberare si	VERB
+7315	credetemi	credetemi	VERB
+7316	accomodatevi	accomodatevere	VERB
+7318	stradale	stradale	ADJ
+7319	chelsea	chelsea	ADJ
+7322	jun	Jun	NOUN
+7325	parlarvi	parlare vi	VERB
+7326	allerta	allerta	NOUN
+7327	volgare	volgare	ADJ
+7328	basato	basato	ADJ
+7332	spiegarti	spiegare ti	VERB
+7339	pollice	pollice	NOUN
+7340	ostacolo	ostacolo	NOUN
+7342	timido	timido	ADJ
+7345	finch	finch	VERB
+7346	quassu	quassu	ADJ
+7348	malinteso	malintendere	VERB
+7349	chiederglielo	chiedergliee lo	VERB
+7352	poeta	poeta	NOUN
+7353	high	high	ADJ
+7354	polo	polo	NOUN
+7356	mutandine	mutandina	NOUN
+7358	know	know	NOUN
+7359	incantevole	incantevole	ADJ
+7362	can	can	NOUN
+7365	resterai	restere ai	VERB
+7368	piccolina	piccolino	ADJ
+7371	necessariamente	necessariamente	ADV
+7372	squillo	squillo	NOUN
+7373	piccante	piccante	ADJ
+7374	country	country	NOUN
+7376	bunker	bunker	NOUN
+7381	alloggio	alloggio	NOUN
+7383	poltrona	poltrona	NOUN
+7385	ritrovo	ritrovo	ADJ
+7390	sufficienza	sufficienza	NOUN
+7391	gray	gray	NOUN
+7393	american	american	NOUN
+7395	grandezza	grandezza	NOUN
+7396	percy	percy	NOUN
+7397	tenerli	tenere li	VERB
+7398	rocky	Rocky	NOUN
+7399	ammettilo	ammettilare	ADV
+7400	definizione	definizione	NOUN
+7402	sudore	sudore	NOUN
+7403	bud	bud	NOUN
+7404	alzarsi	alzare si	VERB
+7406	shepherd	shepherd	NOUN
+7407	pancake	pancake	NOUN
+7408	gelosia	gelosia	NOUN
+7409	gallina	gallina	NOUN
+7410	aquila	aquila	NOUN
+7411	bestiame	Bestiame	NOUN
+7413	lite	Lite	NOUN
+7416	ometto	ometto	NOUN
+7419	muso	muso	NOUN
+7423	bè	bè	ADV
+7424	benone	benone	NOUN
+7425	esclusiva	esclusivo	ADJ
+7426	broadway	broadway	NOUN
+7427	infantile	infantile	ADJ
+7428	pacifico	pacifico	ADJ
+7433	enterprise	enterprise	NOUN
+7434	giubbotto	giubbotto	NOUN
+7436	frocio	frocio	ADJ
+7439	residenza	residenza	NOUN
+7441	rossetto	rossettare	ADJ
+7443	aspettative	aspettativa	NOUN
+7446	pecore	pecora	NOUN
+7448	kirk	Kirk	NOUN
+7454	emotivo	emotivo	ADJ
+7456	cervo	cervo	NOUN
+7457	rimarra	rimarra	VERB
+7462	fica	ficare	NOUN
+7465	pensero	pensero	VERB
+7466	maglione	maglione	NOUN
+7467	sponsor	sponsor	NOUN
+7468	stima	stima	NOUN
+7469	bacon	bacon	NOUN
+7472	rivisto	rivirre	VERB
+7473	sentimentale	sentimentale	ADJ
+7474	tana	tana	NOUN
+7475	seo	seo	NOUN
+7477	convincerlo	convincere lo	VERB
+7481	punteggio	punteggio	NOUN
+7482	toccarlo	toccare lo	VERB
+7483	soo	soo	NOUN
+7484	vigilia	vigilia	NOUN
+7486	sasso	sasso	NOUN
+7488	sottomarino	sottomarino	NOUN
+7489	umile	umile	ADJ
+7492	vescovo	vescovo	NOUN
+7494	lupin	Lupin	NOUN
+7495	fottutamente	fottutamente	ADV
+7496	disperatamente	disperatamente	ADV
+7502	libretto	libretto	NOUN
+7503	litri	litro	NOUN
+7505	farmacia	farmacia	NOUN
+7510	politiche	politica	NOUN
+7511	cognato	cognare	NOUN
+7514	portarli	portare li	VERB
+7515	liberarmi	liberare mi	VERB
+7516	bridget	Bridget	VERB
+7517	piega	piegare	NOUN
+7518	discrezione	discrezione	NOUN
+7519	propongo	propongo	VERB
+7521	woody	Woody	NOUN
+7524	nasconderti	nascondere ti	VERB
+7528	dozzine	dozzina	NOUN
+7529	amarti	amare ti	VERB
+7531	scrittura	scrittura	NOUN
+7533	orchestra	orchestra	ADV
+7537	tonnellate	tonnellata	NOUN
+7538	mini	mini	ADJ
+7540	ucciderai	uccidere ai	VERB
+7541	spettacolare	spettacolare	ADJ
+7543	tirarti	tirare ti	VERB
+7544	senno	senno	NOUN
+7546	rilassarti	rilassare ti	VERB
+7548	aah	aah	ADJ
+7549	dispiaccia	dispiacciare	VERB
+7550	immediato	immediato	ADJ
+7551	notiziario	notiziario	NOUN
+7557	altare	altare	NOUN
+7558	divertirti	divertire ti	VERB
+7559	esposizione	esposizione	NOUN
+7560	tecniche	tecnica	NOUN
+7562	news	news	NOUN
+7567	depresso	deprettere	VERB
+7568	lenti	lente	NOUN
+7572	dawson	dawson	NOUN
+7573	stessimo	stessimo	ADJ
+7574	pan	pano	NOUN
+7575	vorreste	vorreste	VERB
+7576	occuperò	occuperare	VERB
+7577	guarigione	guarigione	NOUN
+7578	spot	spot	NOUN
+7579	scotty	scotty	NOUN
+7580	air	air	NOUN
+7584	ascia	ascia	NOUN
+7586	aiutarli	aiutare li	VERB
+7587	vigliacco	vigliacco	ADJ
+7590	olive	oliva	NOUN
+7592	cestino	cestinare	NOUN
+7593	distratto	distratre	VERB
+7594	metterai	metterai	VERB
+7595	intenso	intenso	ADJ
+7596	circolazione	circolazione	NOUN
+7599	calendario	calendario	NOUN
+7600	insegno	insegno	NOUN
+7601	differenti	differente	ADJ
+7603	valsa	valsa	VERB
+7604	soddisfazione	soddisfazione	NOUN
+7606	caverna	cavernare	NOUN
+7609	paranoico	paranoico	ADJ
+7612	sorso	sorso	NOUN
+7614	frontiera	frontiera	NOUN
+7615	jedi	jeda	NOUN
+7616	defunto	defunto	NOUN
+7617	profitti	profitto	NOUN
+7619	perdonarmi	perdonare mi	VERB
+7620	rompe	rompe	VERB
+7621	confraternita	confraternita	NOUN
+7622	portatemi	portatemi	NOUN
+7623	semestre	semestre	NOUN
+7624	accadde	accadde	VERB
+7626	elettorale	elettorale	ADJ
+7629	razzo	razzo	NOUN
+7632	psicologo	psicologo	NOUN
+7635	scendo	scere	VERB
+7636	scadenza	scadenza	NOUN
+7637	bong	bong	NOUN
+7638	chiedertelo	chiedertee lo	VERB
+7639	oriente	oriente	ADV
+7640	gold	gold	ADJ
+7641	dimenticarlo	dimenticare lo	VERB
+7643	nicholas	nicholas	NOUN
+7644	estremo	estremo	ADJ
+7646	ricchezza	ricchezza	NOUN
+7647	homer	Homer	NOUN
+7648	spiacevole	spiacevole	ADJ
+7653	tenero	tenero	ADJ
+7654	sophia	Sophia	NOUN
+7655	avvicinarti	avvicinarre ti	VERB
+7656	turisti	turista	NOUN
+7657	terrestre	terrestre	ADJ
+7658	inseguendo	inseguere	VERB
+7660	balle	balla	NOUN
+7662	permettersi	permettere si	VERB
+7668	rudy	rudy	NOUN
+7669	glieli	gli li	VERB
+7670	dimentico	dimentico	ADJ
+7671	macellaio	macellaio	NOUN
+7672	what	What	NOUN
+7675	conoscessi	conoscessare	VERB
+7677	capanno	capanno	NOUN
+7679	donatore	donatore	NOUN
+7680	biologico	biologico	ADJ
+7681	cospirazione	cospirazione	NOUN
+7682	shin	shin	NOUN
+7684	picnic	picnic	NOUN
+7685	barattolo	barattolo	NOUN
+7687	pallida	pallido	ADJ
+7689	wall	Wall	NOUN
+7694	ricominciamo	ricomincere	VERB
+7695	mettimi	mettimi	VERB
+7696	nsa	nsa	NOUN
+7702	sopravvissuta	sopravvissuto	ADJ
+7704	manica	manica	NOUN
+7706	mentirmi	mentirmo	NOUN
+7710	nucleo	nucleo	NOUN
+7713	app	app	NOUN
+7714	verremo	verre	VERB
+7715	chiamalo	chiamalo	ADJ
+7716	freno	freno	NOUN
+7720	storico	storico	ADJ
+7721	side	side	NOUN
+7722	inviti	invito	NOUN
+7724	vivian	vivian	NOUN
+7727	morfina	morfina	NOUN
+7729	crociera	crociera	NOUN
+7730	arabo	arabo	NOUN
+7731	immondizia	immondizia	NOUN
+7732	corrispondenza	corrispondenza	NOUN
+7733	benedetto	Benedetto	VERB
+7734	cercavi	cercavi	VERB
+7735	prepararmi	preparare mi	VERB
+7739	rodney	rodney	ADJ
+7741	falco	falco	NOUN
+7742	bonus	bonus	NOUN
+7743	legna	legna	NOUN
+7744	sembravi	sembravi	VERB
+7746	usciremo	usciremo	VERB
+7747	arrendo	arrere	VERB
+7748	monitor	monitor	NOUN
+7749	operativo	operativo	ADJ
+7751	toglimi	toglie mi	VERB
+7752	feccia	feccia	NOUN
+7755	braccialetto	Braccialetto	NOUN
+7757	audio	audio	ADJ
+7762	sidney	sidney	NOUN
+7763	baciami	Baciami	NOUN
+7766	occuparti	occupare ti	VERB
+7769	privilegio	privilegio	NOUN
+7771	ironia	ironia	NOUN
+7772	smoking	smoking	NOUN
+7773	manzo	manzo	NOUN
+7774	song	song	NOUN
+7776	ricevimento	ricevimento	NOUN
+7778	cocco	cocco	NOUN
+7781	abuso	abuso	NOUN
+7784	ferie	feria	NOUN
+7786	affinche	affinche	VERB
+7790	cagnolino	cagnolino	NOUN
+7793	legga	Legga	VERB
+7794	cantiere	cantiere	NOUN
+7795	tradizionale	tradizionale	ADJ
+7797	secchio	secchio	NOUN
+7798	assunta	assunta	VERB
+7799	finirla	finire lo	VERB
+7801	toglietevi	toglietevi	VERB
+7802	frammenti	frammento	NOUN
+7804	lasceranno	Lasceranno	VERB
+7805	forbici	forbico	NOUN
+7806	batti	batto	NOUN
+7807	vaccino	vaccino	NOUN
+7808	individuo	individuo	NOUN
+7813	ucciderli	uccidere li	VERB
+7814	pope	Pope	NOUN
+7815	fammelo	fammelo	ADJ
+7816	bum	bum	NOUN
+7817	palude	palude	NOUN
+7819	zucca	zucca	NOUN
+7820	carrello	carrello	NOUN
+7821	scuro	scuro	ADJ
+7822	esibizione	esibizione	NOUN
+7823	mais	mais	NOUN
+7827	fitz	Fitz	NOUN
+7828	strip	strip	NOUN
+7829	creatore	creatore	NOUN
+7830	ringraziarmi	ringraziare mi	VERB
+7831	benessere	benessere	NOUN
+7836	life	Life	NOUN
+7838	interruzione	interruzione	NOUN
+7841	sposarlo	sposare lo	VERB
+7842	arancia	arancia	NOUN
+7843	coppa	coppa	NOUN
+7853	particelle	particella	NOUN
+7854	kathy	Kathy	NOUN
+7855	terrorismo	terrorismo	NOUN
+7856	marca	marca	NOUN
+7857	dessert	dessert	NOUN
+7860	terrificante	terrificante	ADJ
+7861	guardarla	guardare la	VERB
+7863	costantemente	costantemente	ADV
+7864	sonny	sonny	NOUN
+7866	mandy	mandy	NOUN
+7870	quarantena	quaranteno	NOUN
+7871	evitarlo	evitare lo	VERB
+7873	mina	Mina	VERB
+7874	premuto	premuto	NOUN
+7877	terapista	terapista	NOUN
+7878	visitatori	visitatore	NOUN
+7882	facessimo	facessimo	VERB
+7883	onnipotente	onnipotente	ADJ
+7884	federazione	federazione	NOUN
+7885	baxter	Baxter	NOUN
+7889	merlino	Merlino	NOUN
+7891	concentrazione	concentrazione	NOUN
+7893	insopportabile	insopportabile	ADJ
+7894	essenziale	essenziale	ADJ
+7895	incrocio	incrocio	NOUN
+7897	damien	damieno	NOUN
+7899	chan	chan	NOUN
+7901	joshua	joshua	NOUN
+7903	tranquillamente	tranquillamente	ADV
+7905	caserma	Caserma	NOUN
+7906	ahia	ahia	NOUN
+7909	attrazione	attrazione	NOUN
+7913	tessera	tessera	NOUN
+7915	peyton	peyton	VERB
+7918	darren	darrenre	VERB
+7920	shirley	shirley	ADJ
+7921	vederle	vedere le	VERB
+7922	cosciente	cosciente	ADJ
+7925	portarle	portare le	VERB
+7926	marciapiede	marciapiede	NOUN
+7927	maleducato	maleducato	ADJ
+7928	facciate	facciate	VERB
+7930	tenersi	tenere si	VERB
+7932	divertirmi	divertire mi	VERB
+7934	proteggerlo	proteggere lo	VERB
+7937	furia	furia	NOUN
+7938	ferrovia	ferrovia	NOUN
+7942	assicurarci	assicurare ci	VERB
+7943	domicilio	domicilio	NOUN
+7945	tartaruga	tartaruga	NOUN
+7947	sushi	sushi	NOUN
+7949	casinò	casinò	NOUN
+7950	oz	oz	NOUN
+7952	apocalisse	apocalisse	NOUN
+7954	shelly	shelly	NOUN
+7957	uccidilo	uccidie lo	ADJ
+7959	risonanza	risonanza	NOUN
+7963	pos	pos	NOUN
+7964	mandero	manderere	VERB
+7967	brendan	Brendan	ADJ
+7968	uva	uva	NOUN
+7969	curiosità	curiosità	NOUN
+7970	lotto	lotto	NOUN
+7971	parata	parata	NOUN
+7973	vincente	vincente	ADJ
+7977	price	price	ADJ
+7979	immigrazione	immigrazione	NOUN
+7982	brandy	brandy	NOUN
+7983	letteratura	letteratura	NOUN
+7988	eternità	eternità	NOUN
+7989	addetto	addetto	NOUN
+7990	k	k	NOUN
+7993	gialla	gia il	ADJ
+7996	shannon	shannon	NOUN
+8001	fazzoletto	fazzolere	NOUN
+8002	rafael	Rafael	ADJ
+8003	bond	bond	NOUN
+8004	maresciallo	maresciallo	NOUN
+8005	crack	crack	NOUN
+8007	evans	Evans	NOUN
+8008	doverlo	dovere lo	VERB
+8009	verdure	verdura	NOUN
+8010	chiedermelo	chiedermee lo	VERB
+8012	cynthia	cynthia	NOUN
+8013	fritto	fritto	NOUN
+8018	personalita	personalita	NOUN
+8023	lori	lore	NOUN
+8024	perquisizione	perquisizione	NOUN
+8026	good	goode	NOUN
+8029	water	water	NOUN
+8030	stewart	Stewart	NOUN
+8031	now	now	ADJ
+8032	cera	cera	NOUN
+8033	delinquente	delinquente	ADV
+8034	divino	divino	ADV
+8035	piattaforma	piattaforma	NOUN
+8036	riuscira	riuscirare	VERB
+8037	pagherai	paghere ai	VERB
+8041	pullman	pullman	NOUN
+8042	stronzetto	stronzetto	NOUN
+8043	muovermi	muovere mi	VERB
+8044	signorine	signorina	NOUN
+8046	sostituto	sostituto	NOUN
+8047	fumetti	fumetto	ADJ
+8049	graffio	graffio	NOUN
+8053	donazione	donazione	NOUN
+8054	griglia	griglia	NOUN
+8055	lasciaci	lasciaci	VERB
+8058	strappo	strappo	NOUN
+8059	ops	ops	NOUN
+8062	spiegherebbe	spiegheere	VERB
+8064	percentuale	percentuale	NOUN
+8065	succederebbe	succedare	VERB
+8066	gravemente	gravemente	ADV
+8067	suggerimento	suggerimento	NOUN
+8068	bennet	Bennet	NOUN
+8073	fienile	fienile	NOUN
+8075	thor	thor	NOUN
+8076	choi	choi	NOUN
+8077	facciamola	facciamolare	VERB
+8080	litigio	litigio	NOUN
+8083	camille	Camille	NOUN
+8084	preparazione	preparazione	NOUN
+8088	difetti	difetto	NOUN
+8089	avergli	averge li	VERB
+8093	fi	fi	NOUN
+8094	arizona	arizona	NOUN
+8095	editore	editore	NOUN
+8099	musicista	musicista	NOUN
+8100	lavorarci	lavorare ci	VERB
+8101	lasciarli	lasciare li	VERB
+8102	crollo	crollo	NOUN
+8104	granche	granca	NOUN
+8105	prendertela	prendertere la	VERB
+8107	evoluzione	evoluzione	NOUN
+8108	mills	Mills	ADJ
+8109	esther	esther	NOUN
+8113	cambiarmi	cambiare mi	VERB
+8115	dante	dante	ADJ
+8117	pasticcio	pasticcio	NOUN
+8119	libreria	libreria	NOUN
+8120	aspettero	aspettero	VERB
+8122	aggressivo	aggressivo	ADJ
+8124	perla	perla	NOUN
+8126	restera	restere	NOUN
+8129	manutenzione	manutenzione	NOUN
+8131	portarvi	portare vi	VERB
+8132	notturno	notturno	ADJ
+8134	whiskey	Whiskey	NOUN
+8136	armatura	armatura	NOUN
+8137	agnello	agnello	NOUN
+8138	bordello	Bordello	NOUN
+8139	farsa	farsa	NOUN
+8140	mantieni	mantieni	VERB
+8141	maggioranza	maggioranza	NOUN
+8143	sott'	sore tt	VERB
+8144	arteria	Arteria	NOUN
+8146	sedute	seduta	NOUN
+8147	brutale	brutale	ADJ
+8149	convincermi	convincere mi	VERB
+8150	tirarlo	tirare lo	VERB
+8151	capitan	Capitan	NOUN
+8153	scommetterci	scommettere ci	VERB
+8155	permettimi	permettimi	VERB
+8156	anonima	anonimo	ADJ
+8157	baracca	baracca	NOUN
+8158	arachidi	arachide	NOUN
+8161	panna	panna	NOUN
+8165	art	art	ADJ
+8166	ricordarmi	ricordare mi	VERB
+8167	anatra	anatra	NOUN
+8168	kg	kg	NOUN
+8169	orientale	orientale	ADJ
+8172	tenetevi	tenetevi	VERB
+8173	terremoto	terremoto	NOUN
+8174	samurai	samuraio	NOUN
+8175	occupiamo	occupire	VERB
+8176	ringraziarla	ringraziare lo	VERB
+8181	ispirato	ispirare	ADJ
+8182	rilevante	rilevante	ADJ
+8183	vip	vip	NOUN
+8186	tossico	tossico	ADJ
+8187	alzarti	alzare ti	VERB
+8188	escluso	escluso	VERB
+8192	fareste	fareste	VERB
+8194	kane	Kane	NOUN
+8195	ubriacone	ubriacone	NOUN
+8197	sballo	sballo	NOUN
+8198	brien	brien	NOUN
+8200	scopro	scopriro	VERB
+8201	metterli	mettere li	VERB
+8202	artificio	artificio	NOUN
+8203	clacson	clacson	NOUN
+8204	clima	clima	NOUN
+8205	decisi	decisi	VERB
+8206	contemporaneamente	contemporaneamente	ADV
+8209	suv	suv	NOUN
+8210	pepe	pepe	NOUN
+8213	cugini	cugine	NOUN
+8214	fastidioso	fastidioso	ADJ
+8215	inchiostro	inchiostro	NOUN
+8219	gorilla	gorilla	NOUN
+8220	pentirai	pentire ai	VERB
+8221	vicinanze	vicinanza	NOUN
+8229	romani	romano	ADJ
+8230	spiegarlo	spiegare lo	VERB
+8232	florrick	florrie ck	VERB
+8233	pensera	penserare	NOUN
+8234	trish	trish	ADJ
+8241	vega	vega	ADJ
+8242	agnes	agnes	NOUN
+8244	correttamente	correttamente	ADV
+8245	nuoto	nuoto	NOUN
+8247	gabrielle	gabrielle	ADJ
+8248	spiritoso	spiritoso	ADJ
+8250	deputato	deputato	NOUN
+8251	lavoretto	lavoretto	NOUN
+8255	puttanella	puttanello	NOUN
+8257	comprensibile	comprensibile	ADJ
+8261	lenta	lentare	ADJ
+8262	dovevate	dovevare	VERB
+8263	bush	busho	NOUN
+8264	trofeo	trofeo	NOUN
+8266	nash	nash	NOUN
+8268	privo	privo	ADJ
+8269	cicatrici	cicatrice	NOUN
+8270	reporter	reporter	NOUN
+8272	architetto	architetto	NOUN
+8273	spararmi	sparare mi	VERB
+8274	dance	dance	NOUN
+8276	ramo	ramo	NOUN
+8278	dong	dong	NOUN
+8280	brett	brett	NOUN
+8282	calze	calza	NOUN
+8283	gossip	gossip	NOUN
+8285	detroit	detroito	NOUN
+8286	deprimente	deprimente	ADV
+8287	scartoffie	scartoffia	NOUN
+8288	rimorso	rimorso	VERB
+8290	celeste	celeste	ADJ
+8291	klingon	Klingon	NOUN
+8294	telegramma	telegramma	NOUN
+8298	fumi	fume	NOUN
+8300	educato	educato	ADJ
+8302	profondità	profondità	NOUN
+8303	muffin	muffin	NOUN
+8305	tessa	tesso	NOUN
+8306	spogliarellista	spogliarellista	NOUN
+8307	ipocrita	ipocrita	ADJ
+8311	tolta	tolta	VERB
+8312	account	account	NOUN
+8314	lealta	lealto	ADJ
+8316	hunt	hunt	NOUN
+8317	contabile	contabile	ADJ
+8319	navetta	navetta	NOUN
+8320	dolcetto	dolcetto	NOUN
+8323	yogurt	yogurt	NOUN
+8325	lampo	lampo	NOUN
+8326	furioso	furioso	ADJ
+8330	aggressore	aggressore	NOUN
+8334	grotta	grotta	NOUN
+8335	tosse	tosse	NOUN
+8336	stu	stu	ADJ
+8337	sospensione	sospensione	NOUN
+8339	tate	tato	VERB
+8342	rimedio	rimedio	NOUN
+8344	sessualmente	sessualmente	ADV
+8345	cambiamo	cambere	VERB
+8346	midollo	midollo	NOUN
+8347	setta	setta	NOUN
+8349	telegiornale	telegiornale	NOUN
+8351	tirar	tirar	VERB
+8353	eredità	eredità	NOUN
+8356	piombo	piombo	NOUN
+8360	allegro	allegro	ADJ
+8362	riferisco	riferisco	VERB
+8364	irrilevante	irrilevante	ADJ
+8368	immortale	immortale	ADJ
+8372	ratti	ratto	NOUN
+8374	sessione	sessione	NOUN
+8375	arrosto	arrosto	NOUN
+8376	dignità	dignità	NOUN
+8377	reagan	reagan	NOUN
+8378	sfera	sfera	NOUN
+8379	tribù	tribù	NOUN
+8380	lealtà	lealtà	NOUN
+8381	azzurro	azzurro	ADJ
+8382	critiche	critica	NOUN
+8383	poterci	potere ci	VERB
+8386	but	but	NOUN
+8388	miserabile	miserabile	ADJ
+8389	neonato	neonato	ADJ
+8391	seung	seung	NOUN
+8392	mandarlo	mandare lo	VERB
+8393	liberamente	libero	ADV
+8394	oca	oca	NOUN
+8397	adrenalina	adrenalina	NOUN
+8400	alt	alt	NOUN
+8401	tenebre	tenebra	NOUN
+8403	laurie	laurio	ADJ
+8404	capsula	Capsula	NOUN
+8407	automatico	automatico	ADJ
+8409	psicologia	psicologia	NOUN
+8410	pagherò	paghare	VERB
+8411	antidoto	antidoto	NOUN
+8413	ammissione	ammissione	NOUN
+8414	abe	abe	ADJ
+8416	polly	polly	NOUN
+8417	torace	torace	ADV
+8418	spostatevi	spostatevi	VERB
+8419	isabelle	isabello	NOUN
+8421	sennò	sennò	ADV
+8422	spaccio	spaccio	NOUN
+8424	crystal	crystale	NOUN
+8425	powell	powell	NOUN
+8426	marmellata	marmellare	NOUN
+8427	scema	scema	VERB
+8430	divertiremo	divertiere	VERB
+8431	rispettabile	rispettabile	ADJ
+8435	surf	surf	NOUN
+8436	beneficio	beneficio	NOUN
+8438	fattore	fattore	NOUN
+8440	cross	cross	NOUN
+8447	preservativo	preservativo	NOUN
+8454	ms	ms	NOUN
+8455	civiltà	civiltà	NOUN
+8456	baia	baia	NOUN
+8457	aggiornamento	aggiornamento	NOUN
+8458	gates	gates	NOUN
+8459	tanner	tanner	NOUN
+8469	bridge	Bridge	NOUN
+8470	assaggio	assaggio	NOUN
+8471	first	First	NOUN
+8472	secret	secret	NOUN
+8473	nascondermi	nascondere mi	VERB
+8474	violino	violino	NOUN
+8478	separazione	separazione	NOUN
+8479	splendore	splendore	NOUN
+8480	pony	ponyo	NOUN
+8481	tirarmi	tirare mi	VERB
+8482	cappella	cappella	NOUN
+8484	liberarti	liberare ti	VERB
+8487	amavi	amavi	VERB
+8489	sistemo	sistemere	VERB
+8493	atleta	atleta	NOUN
+8495	cupcake	cupcake	NOUN
+8497	regolamento	regolamento	NOUN
+8498	sfugge	sfuggere	VERB
+8499	task	task	NOUN
+8501	bacino	bacino	NOUN
+8505	fatale	fatale	ADJ
+8506	sfondo	sfondo	NOUN
+8507	ragazzone	ragazzone	NOUN
+8508	marcio	marcio	ADJ
+8511	apriamo	aprare	VERB
+8513	antoine	antoinire	VERB
+8514	comico	comico	ADJ
+8515	insignificante	insignificante	ADJ
+8516	aziendale	aziendale	ADJ
+8517	vinco	vinco	VERB
+8518	straccio	straccio	NOUN
+8524	seminario	seminario	NOUN
+8525	casuale	casuale	ADJ
+8527	uscirai	uscire ai	VERB
+8528	lesioni	lesione	NOUN
+8529	sapersi	sapere si	VERB
+8530	trent	trent	NOUN
+8531	contributo	contributo	NOUN
+8535	disturbarti	disturbarto	VERB
+8536	indicazioni	indicazione	NOUN
+8541	farmelo	farmee lo	VERB
+8542	sella	sella	NOUN
+8545	tienimi	tienimi	VERB
+8546	pettegolezzi	pettegolezzo	NOUN
+8547	cliff	cliff	NOUN
+8548	zecca	zecca	NOUN
+8551	galla	galla	NOUN
+8552	autentico	autentico	ADJ
+8554	incontrarmi	incontrare mi	VERB
+8556	pompino	pompino	NOUN
+8557	interruttore	interruttore	NOUN
+8558	specialista	specialista	NOUN
+8559	rum	rum	NOUN
+8563	sparargli	sparare gli	VERB
+8564	barzelletta	barzelletta	NOUN
+8567	cardinale	cardinale	NOUN
+8569	officina	officina	NOUN
+8570	pearl	pearl	NOUN
+8572	jude	jude	VERB
+8574	municipio	municipio	NOUN
+8580	mae	Mae	NOUN
+8582	prigioniera	prigioniera	NOUN
+8583	pisello	pisello	NOUN
+8585	capira	capirare	VERB
+8590	stalker	Stalker	NOUN
+8593	decine	decina	NOUN
+8595	vapore	vapore	NOUN
+8597	curvatura	curvatura	NOUN
+8598	archie	archie	NOUN
+8599	insisto	insirre	VERB
+8600	collegio	Collegio	NOUN
+8601	buck	buck	NOUN
+8607	irritante	irritante	ADJ
+8609	puzzle	puzzle	NOUN
+8612	zoey	zoey	ADJ
+8613	offrirle	offrire lo	VERB
+8615	difensore	difensore	NOUN
+8616	popcorn	popcorn	NOUN
+8617	cucchiaio	cucchiaio	NOUN
+8619	jenkins	jenkins	NOUN
+8620	parrucca	parruccare	NOUN
+8621	corretta	corretto	ADJ
+8624	andavi	andavi	VERB
+8626	gamma	gamma	NOUN
+8628	solitamente	solitamente	ADV
+8630	got	got	NOUN
+8631	patrimonio	patrimonio	NOUN
+8632	jamal	jamal	NOUN
+8636	materasso	materasso	NOUN
+8640	frigorifero	frigorifero	NOUN
+8642	brady	brady	NOUN
+8644	veterinario	veterinario	NOUN
+8645	vigili	vigile	NOUN
+8646	scoprirai	scoprire ai	VERB
+8648	tenerci	tenere ci	VERB
+8649	postazione	postazione	NOUN
+8650	distributore	distributore	NOUN
+8652	bollette	bolletta	NOUN
+8655	facessero	facessero	VERB
+8656	talvolta	talvolta	ADV
+8657	sigillo	sigillo	NOUN
+8658	annuale	annuale	ADJ
+8661	check	check	NOUN
+8666	offri	offriri	VERB
+8668	suora	suora	NOUN
+8670	orlo	orlo	VERB
+8672	uscira	uscira	VERB
+8673	aborto	aborto	NOUN
+8674	arancione	arancione	ADJ
+8676	rana	rana	NOUN
+8677	noci	noce	NOUN
+8678	complotto	complotto	NOUN
+8681	stuprata	stuprare	VERB
+8683	atlanta	atlanta	NOUN
+8685	rimarrai	rimarre ai	VERB
+8687	infernale	infernale	ADJ
+8688	autografo	autografo	NOUN
+8689	duello	duello	NOUN
+8690	provincia	provincia	NOUN
+8691	spray	spray	NOUN
+8692	tragico	tragico	ADJ
+8693	irlanda	irlanda	NOUN
+8694	ispezione	ispezione	NOUN
+8696	imminente	imminente	ADJ
+8701	uccidimi	uccidimi	VERB
+8705	soda	soda	NOUN
+8706	nano	nano	NOUN
+8707	gideon	gideon	NOUN
+8709	banale	banale	ADJ
+8712	uragano	uragare	NOUN
+8713	dirvelo	dirvelo	VERB
+8714	rovescia	rovesciare	VERB
+8715	sonia	sonia	NOUN
+8716	temporanea	temporaneo	ADJ
+8718	industriale	industriale	ADJ
+8719	accosta	accostare	VERB
+8721	streaming	streaming	NOUN
+8722	janice	janice	ADJ
+8724	bea	bea	ADJ
+8725	bandito	bandire	VERB
+8726	bradley	Bradley	VERB
+8727	anomalia	anomalia	NOUN
+8728	fogna	Fogna	NOUN
+8731	drive	drive	NOUN
+8732	costituzione	Costituzione	NOUN
+8733	mentore	mentore	NOUN
+8734	portatela	portatela	VERB
+8736	atrio	atrio	NOUN
+8737	signoria	signoria	NOUN
+8738	vendicarsi	vendicare si	VERB
+8741	fissando	fissira	VERB
+8747	oxford	oxford	NOUN
+8748	creativo	creativo	ADJ
+8749	poster	postero	NOUN
+8750	regolarmente	regolarmente	ADV
+8752	deficiente	deficiente	ADJ
+8753	back	back	NOUN
+8754	caveau	caveau	NOUN
+8756	marge	marge	NOUN
+8758	dre	dre	NOUN
+8759	furgoncino	furgoncino	NOUN
+8760	insinuando	insinuare	VERB
+8761	accennato	accennare	VERB
+8762	fartelo	fartelo	VERB
+8764	principalmente	principalmente	ADV
+8765	mettera	metterare	VERB
+8766	invenzione	invenzione	NOUN
+8768	immaginarlo	immaginare lo	VERB
+8770	balena	balena	NOUN
+8773	contenitore	contenitore	NOUN
+8775	vabbe	vabbe	VERB
+8778	lavandino	Lavandino	VERB
+8780	lionel	lionel	ADJ
+8781	drone	drone	NOUN
+8782	buonissimo	buone	ADJ
+8783	terrà	terrà	VERB
+8784	precedenza	precedenza	NOUN
+8786	impaziente	impaziente	ADV
+8788	fontana	fontana	NOUN
+8792	chiamatemi	chiamatemi	VERB
+8793	documentario	documentario	NOUN
+8795	deeks	deeks	NOUN
+8796	doverti	dovere ti	VERB
+8797	rifarlo	rifare lo	VERB
+8802	gardner	gardnere	VERB
+8803	edwards	edwards	NOUN
+8804	perlomeno	perlomeno	ADV
+8805	audace	audace	ADJ
+8807	lamenti	lamento	NOUN
+8808	eredita	ereditare	VERB
+8809	periferia	periferia	NOUN
+8812	capodanno	capodanno	NOUN
+8814	malvagia	malvagiare	NOUN
+8815	torturato	torturare	VERB
+8816	cagna	cagna	NOUN
+8817	montgomery	montgomery	NOUN
+8818	restero	restero	VERB
+8819	respinta	respintare	VERB
+8820	calmarti	calmare ti	VERB
+8821	abbigliamento	abbigliamento	NOUN
+8825	alzarmi	alzare mi	VERB
+8826	prendine	prendina	NOUN
+8830	clive	clive	NOUN
+8831	corna	corna	NOUN
+8835	asino	asino	NOUN
+8836	mantello	mantello	NOUN
+8837	yacht	yacht	NOUN
+8838	credibile	credibile	ADJ
+8841	frost	frost	NOUN
+8843	strizzacervelli	strizzacervello	ADJ
+8844	puzzi	puzzio	ADJ
+8845	maxine	maxine	ADJ
+8846	piazzato	piazzare	VERB
+8847	coinvolgimento	coinvolgimento	NOUN
+8848	marion	marion	NOUN
+8849	primario	primario	ADJ
+8850	offensivo	offensivo	ADJ
+8851	etica	etica	NOUN
+8852	robinson	Robinson	VERB
+8854	mandami	mandami	VERB
+8855	pisolino	pisolino	NOUN
+8858	toccarla	toccare la	VERB
+8859	eugene	eue ge ne	NOUN
+8861	holt	Holt	NOUN
+8862	sportivo	sportivo	ADJ
+8863	square	square	NOUN
+8864	banchetto	banchetto	NOUN
+8866	contesto	contesto	NOUN
+8869	spaccato	spaccato	NOUN
+8870	fortezza	fortezza	NOUN
+8871	dormitorio	dormitorio	NOUN
+8874	elijah	elijah	ADJ
+8877	bancarotta	bancarotta	NOUN
+8880	morsi	morso	NOUN
+8881	artificiale	artificiale	ADJ
+8882	aidan	aidan	ADJ
+8883	mostrarmi	mostrare mi	VERB
+8885	sembrera	sembrera	VERB
+8886	presentarmi	presentare mi	VERB
+8888	sciarpa	sciarpa	NOUN
+8891	oppa	oppa	ADJ
+8892	bottino	bottino	NOUN
+8895	colla	colla	NOUN
+8896	verita'	verito	ADJ
+8897	elaine	elaine	ADJ
+8898	starmi	stare mi	VERB
+8901	verrete	verrete	VERB
+8902	rendermi	rendere mi	VERB
+8903	piacerti	piacere ti	VERB
+8905	starete	starere	VERB
+8907	fortemente	fortemente	ADV
+8908	essenza	essenza	NOUN
+8909	mutuo	mutuo	NOUN
+8910	abbracci	abbraccio	NOUN
+8911	diversivo	diversivo	ADJ
+8915	promosso	promottere	VERB
+8916	patrigno	patrigno	NOUN
+8917	darryl	darryl	NOUN
+8919	brusio	Brusio	NOUN
+8920	gallo	gallo	NOUN
+8924	definitiva	definitivo	ADJ
+8925	appassionato	appassionato	ADJ
+8926	evacuazione	evacuazione	NOUN
+8928	national	national	NOUN
+8929	svedese	svedese	ADJ
+8932	solletico	solletico	ADJ
+8933	farina	farina	NOUN
+8935	accampamento	accampamento	NOUN
+8939	ringraziarvi	ringraziare vi	VERB
+8940	adesivo	adesivo	NOUN
+8941	cancelliere	cancelliere	NOUN
+8942	bagnata	bagnare	VERB
+8943	way	way	NOUN
+8947	network	network	NOUN
+8948	orgasmo	orgasmo	NOUN
+8949	ritrovi	ritrovi	VERB
+8952	balcone	balcone	NOUN
+8953	laureato	laureato	ADJ
+8955	mazzo	mazzo	NOUN
+8958	cae'	caeo	ADJ
+8961	plotone	plotone	NOUN
+8962	inizieremo	iniziere	VERB
+8965	fore'	fore	NOUN
+8967	incaricato	incaricare	VERB
+8968	ostile	ostile	ADJ
+8969	salsiccia	salsiccia	NOUN
+8971	diventerò	diventere	VERB
+8972	soffro	soffrare	VERB
+8974	superficiale	superficiale	ADJ
+8977	ringraziamo	ringrazere	VERB
+8978	spavento	spavento	NOUN
+8984	adori	adore	NOUN
+8985	social	social	ADJ
+8986	ridammi	ridammi	VERB
+8987	lasciali	lasciale	ADJ
+8988	bryce	bryce	VERB
+8989	gocce	gocca	NOUN
+8990	sloan	sloan	VERB
+8992	pertanto	pertanto	ADV
+8993	tammy	tammy	ADJ
+8994	perderlo	perdere lo	VERB
+8995	sirene	sirena	NOUN
+8997	svegliarmi	svegliare mi	VERB
+8998	identificazione	identificazione	NOUN
+8999	sylvia	sylvia	NOUN
+9000	levi	Levi	VERB
+9001	hughes	hughes	VERB
+9006	violentata	violentare	VERB
+9008	recinto	recingere	NOUN
+9009	ottimista	ottimista	ADJ
+9010	necessità	necessità	NOUN
+9012	liberazione	Liberazione	NOUN
+9015	concorrenza	concorrenza	NOUN
+9016	incirca	incirca	ADV
+9018	callen	callen	NOUN
+9019	camper	camper	NOUN
+9020	gregory	gregory	ADJ
+9021	ugualmente	ugualmente	ADV
+9022	facciamoci	facciamoe ci	VERB
+9024	avermelo	avermelo	VERB
+9025	respinto	respingere	VERB
+9026	eccone	eccone	VERB
+9027	kung	Kung	NOUN
+9028	dawero	dawero	ADJ
+9029	dateci	datece	ADV
+9030	tessuti	tessuto	NOUN
+9034	figuriamoci	figurare ci	VERB
+9035	pentagono	pentagono	VERB
+9036	molestie	molestia	NOUN
+9037	farfalla	farfalla	NOUN
+9040	frequenti	frequente	ADJ
+9041	banconote	banconota	NOUN
+9044	metafora	metafora	NOUN
+9045	ormoni	ormone	NOUN
+9049	scherzetto	scherzetto	NOUN
+9050	emotivamente	emotivamente	ADV
+9051	master	Master	NOUN
+9052	discarica	discarica	NOUN
+9053	disprezzo	disprezzo	NOUN
+9054	tiriamo	tirire	VERB
+9055	nanna	nanna	NOUN
+9056	permetterti	permettere ti	VERB
+9059	confidenza	confidenza	NOUN
+9060	paramedici	paramedico	NOUN
+9061	gliele	gliele	NOUN
+9062	vediamoci	vediamoe ci	VERB
+9066	erezione	erezione	NOUN
+9072	falls	Falls	NOUN
+9073	ingrid	ingrid	ADJ
+9074	rientro	rientro	NOUN
+9076	magro	magro	ADJ
+9077	spacco	spacco	NOUN
+9083	allontanatevi	allontanatee vi	VERB
+9084	caverai	caverai	VERB
+9085	estrazione	estrazione	NOUN
+9090	bolle	bolla	NOUN
+9091	spionaggio	spionaggio	NOUN
+9093	roll	roll	NOUN
+9094	stregone	stregone	NOUN
+9095	ingenuo	ingenuo	ADJ
+9099	elettronica	elettronico	ADJ
+9100	esserle	essere le	VERB
+9103	schiaffo	schiaffo	NOUN
+9104	prepararti	prepararre ti	VERB
+9108	pagliaccio	pagliaccio	NOUN
+9109	investitori	investitore	NOUN
+9110	orecchini	orecchino	NOUN
+9111	bizzarro	bizzarro	ADJ
+9112	dama	dama	NOUN
+9113	pupazzo	pupazzo	NOUN
+9114	turco	turco	ADJ
+9115	corno	corno	NOUN
+9123	riportarlo	riportare lo	VERB
+9125	tabacco	tabacco	NOUN
+9127	cattolica	cattolico	ADJ
+9128	camino	camino	NOUN
+9129	point	point	NOUN
+9130	riuscirei	riuscirei	VERB
+9132	pollici	pollico	ADJ
+9135	vaga	vago	ADJ
+9137	idraulico	idraulico	ADJ
+9138	procedure	procedura	NOUN
+9142	tic	tic	NOUN
+9143	fedina	fedina	NOUN
+9145	gerald	gerald	NOUN
+9147	portiera	portierare	NOUN
+9149	sfilata	sfilare	VERB
+9152	formale	formale	ADJ
+9154	trasferirsi	trasferire si	VERB
+9158	cece	cece	NOUN
+9159	sapro	sapro	NOUN
+9160	capezzoli	capezzolo	NOUN
+9162	cartone	cartone	NOUN
+9163	ricevute	ricevuta	NOUN
+9164	ottieni	ottieni	VERB
+9165	verifica	verifica	NOUN
+9168	umiliante	umiliante	ADJ
+9171	veglia	vegliare	VERB
+9172	ironico	ironico	ADJ
+9174	biliardo	biliardo	NOUN
+9175	indipendenza	indipendenza	NOUN
+9176	center	center	NOUN
+9178	definitivamente	definitivamente	ADV
+9181	inaugurazione	inaugurazione	NOUN
+9182	intensiva	intensivo	ADJ
+9184	aprirla	aprire la	VERB
+9188	boxe	boxeo	NOUN
+9189	cho	cho	VERB
+9190	eccovi	eccoe vi	VERB
+9192	tifo	tifo	NOUN
+9193	link	link	NOUN
+9199	traguardo	traguardo	NOUN
+9200	orrendo	orrere	VERB
+9201	dorsale	dorsale	ADJ
+9202	sparagli	sparaglio	VERB
+9204	consigliato	consigliare	VERB
+9206	vulcano	vulcano	NOUN
+9207	soffitta	soffitta	NOUN
+9208	scusarsi	scusare si	VERB
+9209	abile	abile	ADJ
+9211	portaci	portaci	VERB
+9216	affrontarlo	affrontare lo	VERB
+9217	impiego	impiego	NOUN
+9220	ciccio	ciccio	NOUN
+9221	assemblea	assembleare	NOUN
+9222	inappropriato	inappropriato	ADJ
+9223	guasto	Guasto	NOUN
+9224	bree	Bree	VERB
+9227	lasciatela	Lasciatela	VERB
+9228	baciarmi	baciare mi	VERB
+9229	pittore	pittore	NOUN
+9230	monty	Monty	ADJ
+9233	spugna	spugna	NOUN
+9234	coinquilino	coinquilino	NOUN
+9235	naruto	naruto	NOUN
+9236	attratto	attraggere	VERB
+9237	alito	alito	NOUN
+9239	stupisce	stupire	VERB
+9240	dimora	dimora	NOUN
+9241	ghost	ghost	NOUN
+9242	metterei	metterei	VERB
+9245	maturo	maturo	ADJ
+9246	celebrita	celebrire	VERB
+9247	celia	celia	VERB
+9249	scoperte	scoperta	NOUN
+9251	presentarsi	presentare si	VERB
+9253	testardo	testardo	ADJ
+9254	decenni	decennio	NOUN
+9255	cast	cast	NOUN
+9257	pass	pass	NOUN
+9261	marshal	Marshal	NOUN
+9262	cavalleria	cavallerio	ADJ
+9263	distrazione	distrazione	NOUN
+9264	saprò	saprò	VERB
+9265	compenso	compenso	NOUN
+9267	balletto	balletto	NOUN
+9268	lontanamente	lontanamente	ADV
+9273	bancomat	bancomat	NOUN
+9274	profeta	profeta	NOUN
+9277	capanna	Capanna	NOUN
+9279	valeria	valeria	NOUN
+9281	sciroppo	sciroppo	NOUN
+9282	pagherà	paghere	VERB
+9283	facciale	facciale	ADJ
+9284	riposi	riposi	VERB
+9285	chiesi	chiesi	VERB
+9287	allergico	allergico	ADJ
+9288	gravità	gravità	NOUN
+9289	apparso	apparso	VERB
+9295	pellicola	pellicola	NOUN
+9299	dominic	dominic	NOUN
+9300	fotta	fotto	VERB
+9304	parlamento	parlamento	NOUN
+9305	muovo	muovare	VERB
+9306	capolavoro	capolavoro	NOUN
+9310	dirsi	dire si	VERB
+9311	suzanne	suzanne	VERB
+9313	tiffany	tiffae ny	VERB
+9314	solido	solido	ADJ
+9317	kid	Kid	NOUN
+9319	vabbè	vabbè	ADV
+9320	scenario	scenario	NOUN
+9322	velo	velo	NOUN
+9323	ambizione	ambizione	NOUN
+9324	banditi	bandito	NOUN
+9325	culla	cullare	VERB
+9330	pomodori	pomodoro	NOUN
+9331	maura	Maura	NOUN
+9333	lucido	lucido	ADJ
+9334	sabrina	Sabrina	VERB
+9336	modesto	modesto	ADJ
+9337	teletrasporto	teletrasporto	NOUN
+9338	canyon	canyon	NOUN
+9341	sottovoce	sottovoce	ADV
+9344	glee	glee	NOUN
+9345	levatevi	Levatevi	VERB
+9346	timore	timore	NOUN
+9348	fanciulla	fanciulla	NOUN
+9349	chiodo	chiodo	NOUN
+9350	noccioline	nocciolina	NOUN
+9351	sbrigarci	sbrigare ci	VERB
+9355	tabulati	tabulato	ADJ
+9356	flebo	flebo	NOUN
+9359	bip	bipo	NOUN
+9363	stamani	stamano	NOUN
+9364	entrarci	entrare ci	VERB
+9368	abbandono	abbandono	NOUN
+9369	serbatoio	serbatoio	NOUN
+9371	borsetta	Borsetta	NOUN
+9373	profezia	profezia	NOUN
+9375	timothy	timothy	ADV
+9376	dategli	datee gli	VERB
+9378	aiden	aiden	VERB
+9379	foro	foro	NOUN
+9380	supponiamo	supponere	VERB
+9382	eddai	edde ai	VERB
+9387	insensibile	insensibile	ADJ
+9390	separate	separate	ADJ
+9391	ansioso	ansioso	ADJ
+9393	baltimora	Baltimora	VERB
+9396	ascoltarlo	ascoltare lo	VERB
+9397	antincendio	antincendio	ADJ
+9398	battesimo	battesimo	NOUN
+9399	cupola	cupola	NOUN
+9400	devon	dovonre	VERB
+9402	concentrarti	concentrare ti	VERB
+9404	sanitaria	sanitario	ADJ
+9405	dividiamo	dividire	VERB
+9406	wa	wa	NOUN
+9407	darlo	dare lo	VERB
+9408	panorama	panorama	NOUN
+9410	assomigli	assomigre li	VERB
+9413	sapresti	saprestio	NOUN
+9415	vergogni	vergogni	ADJ
+9417	ricognizione	ricognizione	NOUN
+9418	vali	vale	ADJ
+9422	old	old	NOUN
+9423	tanya	tanya	NOUN
+9424	analista	analista	NOUN
+9426	trovarne	trovare ne	VERB
+9428	tornado	tornado	NOUN
+9429	container	container	NOUN
+9431	meccanismo	meccanismo	NOUN
+9432	knox	Knox	NOUN
+9433	poliziotta	poliziotta	NOUN
+9434	georgie	georgre ie	VERB
+9435	telecomando	telecomando	NOUN
+9436	guancia	guancia	NOUN
+9437	opportuno	opportuno	ADJ
+9438	alexis	alexis	NOUN
+9439	eternita	eternere	VERB
+9440	scoprira	scoprirare	VERB
+9441	tonno	tonno	NOUN
+9442	urgenza	urgenza	NOUN
+9446	valvola	valvola	NOUN
+9447	ricatto	ricatto	NOUN
+9448	signorino	signorino	VERB
+9449	pestato	pestare	VERB
+9450	combattiamo	combattare	VERB
+9452	milady	Milady	NOUN
+9454	pratico	pratico	ADJ
+9455	affar	affar	ADJ
+9457	mandarti	mandare ti	VERB
+9458	steroidi	steroida	NOUN
+9459	concentrarci	concentrare ci	VERB
+9460	vialetto	vialerre	NOUN
+9461	rasoio	rasoio	NOUN
+9463	pienamente	pienamente	ADV
+9464	cm	cm	NOUN
+9465	lavaggio	lavaggio	NOUN
+9466	equipaggiamento	equipaggiamento	NOUN
+9467	haven	haven	NOUN
+9468	colorado	Colorado	NOUN
+9471	frainteso	fraintendere	VERB
+9472	possiedo	possiedo	VERB
+9478	visivo	visivo	ADJ
+9479	spettatori	spettatore	NOUN
+9481	capii	capii	VERB
+9483	reggimento	reggimento	NOUN
+9485	caitlin	caitlin	VERB
+9486	siero	siero	NOUN
+9487	controllarlo	controllare lo	VERB
+9488	identico	identico	ADJ
+9494	harriet	harriet	VERB
+9495	ergastolo	ergastolo	NOUN
+9496	performance	performancia	NOUN
+9499	preoccuparci	preoccupare ci	VERB
+9502	navicella	navicella	NOUN
+9503	gotham	gotham	ADJ
+9504	worf	Worf	NOUN
+9505	ginger	ginger	NOUN
+9506	rito	rito	NOUN
+9508	passerai	passere ai	VERB
+9509	avanguardia	avanguardia	ADV
+9511	potter	potter	NOUN
+9515	coprifuoco	coprifuoco	NOUN
+9518	consiste	consistere	VERB
+9520	pulisci	puliscere	VERB
+9523	ciotola	ciotola	NOUN
+9524	tromba	tromba	NOUN
+9525	gomito	gomito	NOUN
+9528	rotoli	rotolo	NOUN
+9529	damigella	damigellae	NOUN
+9531	pelliccia	pelliccia	NOUN
+9533	dr	dr	NOUN
+9535	insulto	insulto	NOUN
+9536	sentii	sentii	VERB
+9538	raccontarmi	raccontare mi	VERB
+9540	aprila	aprilira	VERB
+9542	trovassi	trovassi	VERB
+9543	tentazione	tentazione	NOUN
+9545	grammi	grammo	NOUN
+9546	religioso	religioso	ADJ
+9547	autostima	autostima	NOUN
+9548	resoconto	resoconto	NOUN
+9550	eden	eden	NOUN
+9551	squilla	squillare	VERB
+9552	alzatevi	alzatee vi	VERB
+9556	lunghezza	lunghezza	NOUN
+9558	inaccettabile	inaccettabile	ADJ
+9561	aprilo	aprilore	VERB
+9563	binari	binario	NOUN
+9565	prendili	prendile	NOUN
+9566	guardatemi	guardatemi	VERB
+9567	strike	strike	ADJ
+9568	motto	motto	NOUN
+9569	biologia	biologia	NOUN
+9572	esservi	essere vi	VERB
+9574	dintorni	dintorno	NOUN
+9575	plasma	plasma	ADJ
+9577	sigaro	sigaro	NOUN
+9578	pancetta	pancetta	NOUN
+9579	arbitro	arbitro	NOUN
+9580	magra	Magra	ADJ
+9581	britannico	britannico	ADJ
+9583	silas	silas	NOUN
+9584	estivo	estivo	ADJ
+9585	rivale	rivale	NOUN
+9587	complicazioni	complicazione	NOUN
+9588	robaccia	robacciare	NOUN
+9591	sacca	sacca	NOUN
+9592	accolta	accogliere	VERB
+9593	fuso	fudere	VERB
+9594	elettricità	elettricità	NOUN
+9595	schiava	schiare	VERB
+9597	bourbon	Bourbon	NOUN
+9604	arrivino	arrivino	VERB
+9605	if	if	VERB
+9608	rico	rico	ADJ
+9609	comportarmi	comportare mi	VERB
+9611	parlerai	parlerai	VERB
+9613	acconsentito	acconsentire	VERB
+9614	margot	margot	NOUN
+9620	youtube	youtube	NOUN
+9623	assente	assente	ADJ
+9625	nico	nico	ADJ
+9626	sentira	sentirare	VERB
+9627	chiedigli	chiedigli	VERB
+9628	baule	Baule	NOUN
+9630	pagarmi	pagare mi	VERB
+9632	cola	colare	NOUN
+9633	vinceremo	vincare	VERB
+9634	mine	mina	NOUN
+9637	scarlett	scarlett	NOUN
+9641	nam	nam	NOUN
+9642	svegliarti	svegliare ti	VERB
+9643	incrociato	incrociare	VERB
+9648	pubblicamente	pubblicamente	ADV
+9650	jesus	Jesus	NOUN
+9654	cap	cap	NOUN
+9655	cassonetto	cassonerre	NOUN
+9662	amarmi	amare mi	VERB
+9666	quentin	quentin	VERB
+9669	pasquale	pasquale	ADJ
+9674	riprendersi	riprendere si	VERB
+9675	sgradevole	sgradevole	ADJ
+9676	courtney	courtneyo	NOUN
+9681	curiosita	curiosire	NOUN
+9682	funebre	Funebre	NOUN
+9683	salga	salga	VERB
+9685	jeannie	jeannie	NOUN
+9687	kai	kai	NOUN
+9688	lucky	lucky	NOUN
+9692	ollie	ollia	NOUN
+9693	horror	horror	ADJ
+9695	ignoto	ignoto	ADJ
+9696	venirmi	venire mi	VERB
+9699	formidabile	formidabile	ADJ
+9701	carly	carly	NOUN
+9708	prendervi	prendere vi	VERB
+9711	sfortunato	sfortunato	ADJ
+9712	esemplare	esemplare	ADJ
+9714	dinozzo	dinozzo	VERB
+9715	hyun	hyun	ADJ
+9716	salvarci	salvare ci	VERB
+9717	peterson	peterson	ADJ
+9718	discesa	discendere	NOUN
+9720	granata	granata	ADJ
+9730	simmons	Simmons	NOUN
+9734	francine	francine	ADJ
+9736	marines	Marines	NOUN
+9737	dette	detto	ADJ
+9742	francesca	francesca	NOUN
+9747	astuto	astere	VERB
+9748	comunale	comunale	ADJ
+9753	nikita	nikita	NOUN
+9755	accompagnarmi	accompagnare mi	VERB
+9756	cyril	cyril	NOUN
+9757	game	game	NOUN
+9761	sotterraneo	sotterraneo	ADJ
+9767	candy	candy	NOUN
+9771	scompare	scomparere	VERB
+9772	paghero	paghero	NOUN
+9774	salgo	salgo	VERB
+9776	rendera	rendera	VERB
+9777	denny	denny	VERB
+9780	contrabbando	contrabbare	NOUN
+9784	spazzolino	spazzolinare	NOUN
+9787	aiutaci	aiutacere	VERB
+9788	assai	assai	ADV
+9789	alaska	alaska	NOUN
+9790	sanguigno	sanguigno	ADJ
+9793	meyer	Meyer	NOUN
+9796	daccordo	Daccordo	VERB
+9798	preferiresti	preferiresta	VERB
+9800	biasimo	biasimare	VERB
+9801	disturbarla	disturbare la	VERB
+9802	tondo	tondo	ADJ
+9803	andiate	andiare	ADJ
+9804	rimetti	rimettare	VERB
+9812	delinquenti	delinquente	NOUN
+9817	dopodomani	dopodomano	ADV
+9820	starmene	stare me ne	VERB
+9825	arrendersi	arrendere si	VERB
+9829	intendevi	intendee vi	VERB
+9832	dicesti	dicedere	VERB
+9833	quadra	quadra	NOUN
+9835	addome	addome	ADV
+9841	assicurarti	assicurare ti	VERB
+9843	antidolorifici	antidolorifico	NOUN
+9844	occuparci	occupare ci	VERB
+9845	significherebbe	significheere	VERB
+9852	sherman	shermano	NOUN
+9854	pensarlo	pensare lo	VERB
+9855	vernon	vernon	ADV
+9857	dimostrarlo	dimostrare lo	VERB
+9859	maureen	maureen	VERB
+9860	lasciateci	lasciateci	VERB
+9862	burns	burns	NOUN
+9866	baciarti	baciarre ti	VERB
+9867	riprendermi	riprendere mi	VERB
+9868	gretchen	gretchen	NOUN
+9873	hulk	hulk	ADJ
+9874	crederti	credere ti	VERB
+9875	izzie	izzie	NOUN
+9877	michigan	michigan	NOUN
+9882	julio	julio	NOUN
+9885	empire	empire	VERB
+9888	maggiordomo	Maggiordomo	NOUN
+9889	nuziale	nuziale	ADJ
+9891	louie	Louie	ADJ
+9892	bon	bon	ADV
+9894	premuroso	premuroso	ADJ
+9896	dessi	dere	VERB
+9897	yuri	yuro	NOUN
+9898	trasferirmi	trasferire mi	VERB
+9900	usero	usero	VERB
+9902	arrabbiarti	arrabbiare ti	VERB
+9904	congelato	congelare	VERB
+9905	scopriranno	scoprari	VERB
+9906	tornarci	tornare ci	VERB
+9907	sposiamo	sposire	VERB
+9908	sbrighiamoci	sbrighiamoe ci	VERB
+9909	scendiamo	scendare	VERB
+9913	nasconderlo	nascondere lo	VERB
+9917	dircelo	dircelo	VERB
+9919	pennsylvania	pennsylvania	NOUN
+9920	mettici	metticare	VERB
+9922	stanne	stanne	ADJ
+9924	tatto	tatto	ADJ
+9926	cuoca	cuocare	VERB
+9927	grigia	grigia	ADJ
+9928	nigel	nigel	NOUN
+9932	judith	Judith	NOUN
+9933	avvicinatevi	avvicinatevi	VERB
+9934	segnalato	segnalare	VERB
+9940	salutarti	salutare ti	VERB
+9945	girls	girls	ADJ
+9950	scatenato	scatenare	VERB
+9955	rayna	rayna	NOUN
+9956	unisciti	uniscire	VERB
+9958	starti	stare ti	VERB
+9960	oggigiorno	oggigiorno	ADV
+9961	maledettamente	maledettamente	ADV
+9963	combini	combino	NOUN
+9964	predica	predicare	VERB
+9965	godetevi	godetevere	VERB
+9968	spontanea	spontaneo	ADJ
+9970	perfavore	perfavore	NOUN
+9971	metal	metal	NOUN
+9974	anteriore	anteriore	ADJ
+9976	gravita	gravitare	NOUN
+9977	mah	mah	ADJ
+9982	ciambella	ciambello	NOUN
+9985	valentine	valentino	ADJ
+9986	chiedilo	chiedilore	VERB
+9991	anita	anita	NOUN
+9992	perdero	perderoo	NOUN
+9993	teatrale	teatrale	ADJ
+9994	discreto	discreto	ADJ
+9997	am	am	NOUN
+10001	eccessivo	eccessivo	ADJ
+10003	vicky	vicky	ADJ
+10005	group	group	NOUN
+10007	preliminare	preliminare	ADJ
+10009	buster	buster	NOUN
+10013	dammene	de amm ne	VERB
+10014	invidio	invidiare	VERB
+10019	omosessuale	omosessuale	ADJ
+10020	boccone	bocconeo	NOUN
+10022	continuerò	continuerò	VERB
+10028	userò	userò	VERB
+10030	unirmi	unire mi	VERB
+10031	bank	bank	NOUN
+10033	sottoterra	sottoterrao	NOUN
+10040	piacermi	piacere mi	VERB
+10047	condotti	condovere	VERB
+10052	operandi	operandi	NOUN
+10057	accoltellato	accoltellare	VERB
+10060	grandissimo	grando	ADJ
+10064	interiore	interiore	ADJ
+10068	paulie	paulie	ADJ
+10074	ditegli	ditegli	VERB
+10075	golden	golden	NOUN
+10077	rigido	rigido	ADJ
+10079	lamentarti	lamentare ti	VERB
+10082	marziali	marziale	ADJ
+10084	soglia	sogliare	NOUN
+10085	sanchez	sanchez	ADJ
+10086	sync	sync	NOUN
+10087	firenze	firenza	NOUN
+10088	assicuratevi	assicurateve	ADJ
+10089	togliersi	togliere si	VERB
+10093	guardatevi	guardatevi	VERB
+10096	sbrighi	sbrigo	VERB
+10101	vocale	vocale	ADJ
+10107	comprarmi	comprare mi	VERB
+10108	ignorante	ignorante	ADJ
+10110	patricia	patricia	NOUN
+10111	risiamo	risere	VERB
+10117	puntuale	puntuale	ADJ
+10118	trovai	trovai	VERB
+10119	culturale	culturale	ADJ
+10120	sospira	sospirare	VERB
+10123	katrina	Katrina	VERB
+10127	petra	petrare	ADJ
+10128	roosevelt	roosevelte	VERB
+10131	insegnarmi	insegnare mi	VERB
+10132	ripeterlo	ripetere lo	VERB
+10133	televisivo	televisivo	ADJ
+10136	puzzolente	puzzolente	ADJ
+10146	giudiziario	giudiziario	ADJ
+10148	alleato	alleare	NOUN
+10156	serbo	serbo	ADJ
+10163	vagabondo	vagabondare	VERB
+10166	metterle	mettere le	VERB
+10171	accidentalmente	accidentalmente	ADV
+10174	penseremo	pensere	VERB
+10176	giove	giove	NOUN
+10179	ladra	Ladra	ADJ
+10181	scadente	scadente	ADJ
+10182	corvo	Corvo	NOUN
+10183	durera	durerare	VERB
+10184	canadese	canadese	ADJ
+10185	preston	preston	NOUN
+10186	proteggerci	proteggere ci	VERB
+10190	mastro	Mastro	NOUN
+10191	affamata	affamare	VERB
+10192	yankee	yankee	NOUN
+10193	razionale	razionale	ADJ
+10196	intuito	intuire	VERB
+10197	imprevedibile	imprevedibile	ADJ
+10198	conoscermi	conoscere mi	VERB
+10199	bevono	bevono	VERB
+10207	smetto	smettare	NOUN
+10208	incontriamoci	incontriamoe ci	VERB
+10209	renderla	rendere la	VERB
+10211	ricordatevi	ricordateve	VERB
+10216	hale	hale	ADJ
+10220	fidatevi	fidatevi	VERB
+10222	royal	royal	NOUN
+10223	spietato	spietare	ADJ
+10232	esausta	esaustare	VERB
+10239	rush	rush	NOUN
+10243	continuavo	continuavo	VERB
+10244	mostrerò	mostrere	VERB
+10247	imparerai	imparere ai	VERB
+10248	starci	stare ci	VERB
+10251	beva	beva	VERB
+10255	spiegami	spiegami	NOUN
+10257	mostrarle	mostrare le	VERB
+10258	tossicologico	tossicologico	ADJ
+10259	portali	portalo	NOUN
+10260	edie	edie	NOUN
+10262	costringermi	costringere mi	VERB
+10265	gracie	gracie	NOUN
+10267	perderla	perdere la	VERB
+10270	stargate	stargata	NOUN
+10276	lilly	lilly	NOUN
+10277	chiamala	chiamala	VERB
+10280	trattarmi	trattare mi	VERB
+10283	darius	darius	NOUN
+10284	efficiente	efficiente	ADJ
+10287	limonata	limonare	VERB
+10289	pamela	pamela	NOUN
+10290	sbornia	esssbornie	VERB
+10292	arrenderti	arrendere ti	VERB
+10296	flint	flint	NOUN
+10297	seguirlo	seguire lo	VERB
+10298	light	light	ADJ
+10304	julien	Julien	NOUN
+10309	riportarla	riportare la	VERB
+10310	preparativi	preparativo	NOUN
+10311	limitato	limitare	VERB
+10316	amaro	amaro	ADJ
+10318	stressante	stressante	ADJ
+10320	yale	yale	ADJ
+10324	riserve	riserva	NOUN
+10327	rilassarmi	rilassare mi	VERB
+10332	sdraiati	sdraiato	ADJ
+10333	cary	cary	NOUN
+10339	fletcher	fletcher	ADJ
+10340	trattarsi	trattare si	VERB
+10341	crowley	crowley	NOUN
+10350	ei	ei	VERB
+10351	donny	donny	NOUN
+10353	prue	prue	VERB
+10354	insegnarti	insegnare ti	VERB
+10355	feloreena	feloreeno	ADJ
+10358	cerasa	Cerasa	NOUN
+10360	fish	fish	NOUN
+10361	svegliarsi	svegliare si	VERB
+10366	numerosi	numeroso	ADJ
+10368	fingi	fingi	VERB
+10369	luminoso	luminoso	ADJ
+10373	vivrai	vivre ai	VERB
+10374	dillon	dillon	VERB
+10375	accettabile	accettabile	ADJ
+10376	concentrarsi	concentrare si	VERB
+10377	immenso	immenso	ADJ
+10381	queens	queens	ADJ
+10386	diventero	diventero	VERB
+10388	fermera	fermerare	NOUN
+10389	sentirei	sentirei	VERB
+10390	oswald	oswald	NOUN
+10394	permettetemi	permettetemi	VERB
+10395	togliamo	toglere	VERB
+10397	clarence	clarence	ADJ
+10398	who	who	ADJ
+10399	vesti	veste	NOUN
+10402	mangiarlo	mangiare lo	VERB
+10404	darla	dare la	VERB
+10409	lyon	Lyon	NOUN
+10412	imperiale	imperiale	ADJ
+10415	tornassi	tornassi	VERB
+10419	lamenta	lamentare	VERB
+10420	muto	muto	ADJ
+10423	lamento	lamentare	NOUN
+10425	addominali	addominale	ADJ
+10427	allontanarsi	allontanare si	VERB
+10428	ammalato	ammalare	VERB
+10430	abbassate	abbassato	ADJ
+10432	scozzese	scozzese	ADJ
+10433	condizionale	condizionale	ADJ
+10436	sposate	sposato	ADJ
+10437	disgraziato	disgraziato	ADJ
+10444	riggs	riggs	ADJ
+10447	arrabbi	arrabbi	VERB
+10451	spaventarti	spaventare ti	VERB
+10452	introdotto	introdurre	VERB
+10458	convocato	convocare	VERB
+10459	right	right	NOUN
+10460	lamentarsi	lamentare si	VERB
+10461	sposarla	sposare la	VERB
+10469	difendersi	difendere si	VERB
+10470	mancherà	manchare	VERB
+10472	aprirlo	aprire lo	VERB
+10473	rompi	rompi	VERB
+10476	graziosa	grazioso	ADJ
+10480	ricorderai	ricorderare	VERB
+10485	sconvolgente	sconvolgente	ADJ
+10489	canaglia	canagliare	NOUN
+10490	promettente	promettente	ADJ
+10493	nevada	Nevada	NOUN
+10494	turk	turk	ADJ
+10495	stressato	stressare	VERB
+10496	amatoriale	amatoriale	ADJ
+10497	strambo	strambo	ADJ
+10498	esecutivo	esecutivo	ADJ
+10500	see	see	ADJ
+10504	theresa	therendere	NOUN
+10514	vicki	vicki	ADV
+10516	mettetelo	mettetelo	VERB
+10517	suicidi	suicida	NOUN
+10523	aspirina	aspirinare	NOUN
+10524	cassidy	cassidy	VERB
+10525	invano	invano	ADV
+10530	lieve	lieve	ADJ
+10533	picchia	picchia	VERB
+10535	emmett	emmett	NOUN
+10537	attico	attico	ADJ
+10538	lasciassi	Lasciassi	VERB
+10541	continuerai	continuerai	VERB
+10549	bigliettoni	bigliettone	NOUN
+10550	minimamente	minimamente	ADV
+10553	fatela	fatela	VERB
+10554	spa	spa	ADJ
+10555	diffuso	diffuso	VERB
+10559	colpirmi	colpire mi	VERB
+10561	passerò	passerò	VERB
+10562	sawyer	sawyer	NOUN
+10564	dadi	dado	NOUN
+10566	from	from	NOUN
+10576	paracadute	paracaduteo	NOUN
+10578	cook	cook	NOUN
+10580	tenetelo	tenetelo	VERB
+10581	dimentichiamo	dimentichere	VERB
+10582	ade	ade	ADJ
+10586	christy	christy	VERB
+10588	lila	Lila	NOUN
+10591	how	how	NOUN
+10595	palm	palm	NOUN
+10597	umiliato	umiliare	VERB
+10601	satellitare	satellitare	ADJ
+10603	rintracciarlo	rintracciare lo	VERB
+10613	gabi	gabo	ADJ
+10627	assicurero	assicurero	ADJ
+10628	guardatelo	guardatelo	NOUN
+10630	intruso	intruso	ADJ
+10631	goccio	goccio	VERB
+10636	costiera	costiero	ADJ
+10638	psicologico	psicologico	ADJ
+10641	esausto	esausto	ADJ
+10644	league	leaguo	ADV
+10645	interamente	interamente	ADV
+10646	fiumi	fiume	NOUN
+10648	pensateci	pensateci	VERB
+10651	viscido	viscido	ADJ
+10652	bugiardi	bugiarde	NOUN
+10659	frego	frego	VERB
+10661	suocera	suocerae	NOUN
+10664	cadde	cadde	VERB
+10666	minestra	Minestra	NOUN
+10671	daresti	daredere	VERB
+10673	we'	we	NOUN
+10674	commovente	commovere	ADJ
+10682	tribu	tribu	NOUN
+10685	vivace	vivace	ADJ
+10693	yard	yard	NOUN
+10694	sottosopra	sottosopra	ADV
+10698	ip	ip	NOUN
+10701	kensi	Kensi	NOUN
+10702	conoscerci	conoscere ci	VERB
+10703	armstrong	armstrong	NOUN
+10705	abraham	abrahamo	NOUN
+10711	illegalmente	illegalmente	ADV
+10712	recluta	reclutare	VERB
+10714	heart	heart	NOUN
+10715	fesso	fesso	ADJ
+10717	venderla	vendere la	VERB
+10718	ricordami	ricordamere	VERB
+10719	minorenne	minorenne	ADJ
+10720	sookie	sookie	NOUN
+10722	was	was	NOUN
+10723	finiranno	finiere	VERB
+10724	ritirarsi	ritirare si	VERB
+10729	mentalmente	mentalmente	ADV
+10733	matthews	matthews	NOUN
+10735	dead	dead	NOUN
+10737	sterling	Sterling	NOUN
+10739	potevate	potevare	VERB
+10742	sub	sub	NOUN
+10743	sentirci	sentire ci	VERB
+10744	lawson	lawson	VERB
+10752	mannaro	Mannaro	ADJ
+10754	volontariamente	volontariamente	ADV
+10755	infiltrato	infiltrare	VERB
+10758	mars	Mars	NOUN
+10759	town	town	NOUN
+10762	alias	alias	NOUN
+10763	senior	senior	ADJ
+10764	pantaloncini	pantaloncino	NOUN
+10765	sederci	sedere ci	VERB
+10767	bisturi	bisturi	VERB
+10771	piango	piangare	VERB
+10772	matrimoniale	Matrimoniale	ADJ
+10775	ziva	zivo	ADJ
+10779	rilassarsi	rilassare si	VERB
+10785	russ	Russ	NOUN
+10786	morirete	morirere	VERB
+10791	disk	disk	NOUN
+10793	atomica	atomico	ADJ
+10794	lasciarsi	lasciare si	VERB
+10795	sfuggita	sfuggitare	VERB
+10797	napoleone	napoleone	NOUN
+10798	dopodiche	dopodico	ADJ
+10799	guidatore	guidatore	NOUN
+10801	figure	figura	NOUN
+10804	sedili	sedilo	NOUN
+10805	coroner	coronere	NOUN
+10806	pento	pento	NOUN
+10807	schiacciato	schiacciare	VERB
+10809	storiella	storiello	ADJ
+10812	tirarla	tirare la	VERB
+10814	ascoltarti	ascoltare ti	VERB
+10823	artistico	artistico	ADJ
+10828	chiedessi	chiedessare	VERB
+10830	sanguina	sanguina	VERB
+10836	seal	seal	NOUN
+10837	rimpianti	rimpiante	NOUN
+10838	interpol	interpol	VERB
+10842	bloom	Bloom	NOUN
+10849	perderò	perderò	VERB
+10853	gigantesco	gigantesco	ADJ
+10854	universale	universale	ADJ
+10856	lina	lina	NOUN
+10857	felicity	felicity	NOUN
+10858	prendetevi	prendetee vi	VERB
+10863	orfani	orfani	ADJ
+10864	apollo	apollo	NOUN
+10866	tobias	tobias	VERB
+10868	creek	creek	NOUN
+10875	diventeremo	diventeere	VERB
+10876	apertamente	apertamente	ADV
+10877	cambiarlo	cambiare lo	VERB
+10882	poteste	potesta	NOUN
+10885	live	live	NOUN
+10889	feroce	feroce	ADJ
+10891	pigro	pigro	ADJ
+10892	malvagi	malvagi	NOUN
+10895	buddha	Buddha	NOUN
+10898	raccogli	raccogre li	VERB
+10900	morbido	morbido	ADJ
+10903	ko	ko	NOUN
+10908	cambiarti	cambiare ti	VERB
+10909	specialita	specialire	VERB
+10912	mostrarvi	mostrare vi	VERB
+10915	richmond	richmond	VERB
+10919	reality	reality	NOUN
+10921	cruciale	cruciale	ADJ
+10922	gradirei	gradire	VERB
+10923	mangeremo	mangere	VERB
+10925	confidenziale	confidenziale	ADJ
+10930	spiccioli	spicciolo	ADJ
+10933	indice	indire	VERB
+10934	subs	subs	NOUN
+10937	consentito	consentire	VERB
+10941	moriamo	morare	VERB
+10942	dimesso	dimettere	VERB
+10944	desolato	desolato	ADJ
+10947	tuono	tuonare	VERB
+10948	ricoperto	ricoprire	VERB
+10949	facevate	facevare	VERB
+10954	walsh	Walsh	NOUN
+10964	startene	stare ti ne	VERB
+10968	nascondo	nascondo	VERB
+10969	fuggitivo	fuggitivo	ADJ
+10970	fire	fire	NOUN
+10973	continuero	continueroo	NOUN
+10974	sigari	sigario	NOUN
+10976	banane	banana	NOUN
+10977	ethel	ethel	VERB
+10985	riuscirete	riusciere	VERB
+10986	prendessi	prendessi	VERB
+10995	fondamentalmente	fondamentalmente	ADV
+10998	lascerei	Lascerei	VERB
+10999	frustrante	frustrante	ADJ
+11000	vivremo	vivremo	VERB
+11003	comprarti	comprare ti	VERB
+11005	passarmi	passare mi	VERB
+11012	fateci	fateci	NOUN
+11015	seol	seol	ADJ
+11018	cambieranno	cambiere	VERB
+11023	riferivo	riferivo	VERB
+11025	stiles	stiles	NOUN
+11027	wright	wright	NOUN
+11028	mettervi	mettere vi	VERB
+11030	sovietica	sovietico	ADJ
+11036	palcoscenico	palcoscenico	ADJ
+11038	design	design	NOUN
+11041	vargas	vargas	NOUN
+11042	arrestarlo	arrestare lo	VERB
+11045	fncomic	fncomic	ADJ
+11047	usarli	usare li	VERB
+11050	penelope	penelope	VERB
+11051	matura	Matura	NOUN
+11052	uccidersi	uccidere si	VERB
+11053	presuntuoso	presuntuoso	ADJ
+11055	trovarvi	trovare vi	VERB
+11056	butler	butler	NOUN
+11057	shelley	shelley	NOUN
+11059	stanford	Stanford	NOUN
+11065	aspettatemi	aspettatemi	VERB
+11067	hospital	hospital	NOUN
+11069	chiamerai	chiamerare	VERB
+11071	riempie	riempie	VERB
+11073	columbia	Columbia	NOUN
+11079	esplode	esplode	VERB
+11081	pensavate	pensavare	VERB
+11083	riposarti	riposare ti	VERB
+11087	modifiche	modifica	NOUN
+11095	milton	milton	NOUN
+11097	otis	otise	ADV
+11098	convincerti	convincere ti	VERB
+11099	orrenda	orrendo	ADJ
+11101	week	week	NOUN
+11104	sky	sky	NOUN
+11106	trump	trump	NOUN
+11109	trey	trey	NOUN
+11112	ottengo	ottengere	VERB
+11114	innocuo	innocuo	ADJ
+11117	jody	Jody	NOUN
+11118	regia	regiare	VERB
+11120	arturo	arturo	NOUN
+11123	joanna	joanna	NOUN
+11124	mettiamola	mettiamola	VERB
+11126	lockhart	Lockhart	ADJ
+11127	martinez	Martinez	NOUN
+11129	stupefacente	stupefacente	ADJ
+11130	school	School	NOUN
+11131	percepisco	percepisco	VERB
+11136	hawkins	hawkins	NOUN
+11137	stanton	stanton	NOUN
+11138	evie	evie	NOUN
+11141	visibile	visibile	ADJ
+11142	forense	forense	ADJ
+11148	fiammiferi	fiammifere	NOUN
+11149	consapevolezza	consapevolezzare	NOUN
+11160	mandarla	mandare la	VERB
+11165	w	w	NOUN
+11169	bin	bin	NOUN
+11170	cora	cora	ADV
+11171	magnetica	magnetico	ADJ
+11174	patterson	patterson	NOUN
+11177	insisti	insisto	ADJ
+11179	tori	tore	NOUN
+11184	nasconderci	nascondere ci	VERB
+11186	zoccola	zoccola	VERB
+11189	barrett	Barrett	VERB
+11192	sposerai	sposerai	VERB
+11194	ascoltarla	ascoltare la	VERB
+11195	scusarci	scusare ci	VERB
+11197	arriverai	arrivere ai	VERB
+11199	sentirtelo	sentirtelo	VERB
+11201	ferirti	ferire ti	VERB
+11203	promemoria	promemoriao	NOUN
+11204	dormivo	dormivo	ADJ
+11205	weaver	weavere	NOUN
+11206	diventiamo	diventire	VERB
+11209	mississippi	mississipre pi	NOUN
+11210	sissignora	sissignora	ADV
+11211	eliot	eliot	VERB
+11212	stacey	stacey	NOUN
+11214	occuparmene	occupare me ne	VERB
+11220	parassiti	parassito	NOUN
+11221	stringi	stringre	VERB
+11222	statemi	statema	VERB
+11224	spenta	spengere	VERB
+11226	finirò	finirò	VERB
+11228	fast	fast	ADJ
+11230	affermativo	affermativo	ADJ
+11235	natasha	natase ha	ADJ
+11236	mateo	mateo	NOUN
+11238	chet	chet	NOUN
+11242	diverti	divertare	VERB
+11243	billie	billie	NOUN
+11248	distruggerlo	distruggere lo	VERB
+11249	ball	ball	NOUN
+11251	giuri	giure	NOUN
+11252	colpirlo	colpire lo	VERB
+11259	supremo	supremo	ADJ
+11260	shot	shot	NOUN
+11261	two	two	NOUN
+11264	riconoscente	riconoscente	ADJ
+11270	diamogli	diamoglio	VERB
+11275	porsche	porsca	NOUN
+11276	alcolizzato	alcolizzare	VERB
+11278	impotente	impotente	ADJ
+11280	frederick	frederick	NOUN
+11281	portiamolo	portiamolo	VERB
+11284	macchiato	macchiare	ADJ
+11286	eduardo	eduardo	NOUN
+11288	botto	Botto	NOUN
+11289	prestarmi	prestare mi	VERB
+11290	indistinto	indistinto	ADJ
+11292	avercela	avercelae	VERB
+11293	odino	odare	NOUN
+11294	vestirmi	vestire mi	VERB
+11297	lasciarvi	lasciare vi	VERB
+11304	severo	severo	ADJ
+11309	groot	groot	NOUN
+11310	protegga	protegga	VERB
+11313	sbarazzarsi	sbarazzare si	VERB
+11316	dimentichero	dimentichero	ADJ
+11321	decisa	deciso	ADJ
+11325	bird	bird	NOUN
+11329	beta	beta	ADV
+11331	incosciente	incosciente	ADJ
+11332	offrirvi	offrire vi	VERB
+11338	attratta	attrattare	VERB
+11339	paghera	paghera	VERB
+11340	dilettante	dilettante	ADJ
+11343	benedetta	benedetto	ADJ
+11344	inaspettato	inaspettato	ADJ
+11345	pazzoide	pazzoide	NOUN
+11347	dolly	dolly	NOUN
+11351	cappuccino	cappuccare	NOUN
+11353	volermi	volere mi	VERB
+11357	diarrea	diarreo	NOUN
+11359	direte	direre	VERB
+11361	ernesto	Ernesto	NOUN
+11362	justine	justine	NOUN
+11364	boyle	boyle	ADJ
+11368	presunto	presunto	VERB
+11371	giurati	giurato	NOUN
+11372	casalinga	casalingo	ADJ
+11376	portafortuna	portafortuno	NOUN
+11377	jerome	jerome	NOUN
+11378	pi	po	VERB
+11382	proteggi	proteggio	VERB
+11383	daffodils	daffodils	VERB
+11386	accogliente	accogliente	ADJ
+11390	drammatico	drammatico	ADJ
+11396	betsy	Betsy	NOUN
+11397	qualcosina	qualcosina	NOUN
+11398	concentriamoci	concentriamoci	VERB
+11400	matrigna	Matrigna	NOUN
+11401	iii	iii	ADJ
+11405	collera	collera	NOUN
+11414	es	es	NOUN
+11416	prince	prince	NOUN
+11422	iron	iron	NOUN
+11424	clayton	Clayton	NOUN
+11425	dark	dark	ADJ
+11435	avvicinarmi	avvicinare mi	VERB
+11439	general	general	ADJ
+11441	spence	spence	VERB
+11442	volontaria	volontario	ADJ
+11446	ventre	ventre	ADV
+11447	mercurio	mercurio	NOUN
+11450	irresponsabile	irresponsabile	ADJ
+11454	josie	Josie	NOUN
+11455	alma	almare	VERB
+11460	prepariamo	preparere	VERB
+11464	componenti	componente	NOUN
+11466	sentissi	sentissare	VERB
+11467	segretamente	segretamente	ADV
+11470	cristalli	cristalle	NOUN
+11472	ucciderei	uccidere ei	VERB
+11474	tasha	Tasha	VERB
+11475	spaventarmi	spaventare mi	VERB
+11476	make	make	NOUN
+11477	plausibile	plausibile	ADJ
+11481	wanda	Wanda	NOUN
+11483	bleah	bleah	ADV
+11487	sfido	sfido	VERB
+11489	sti	sti	ADJ
+11490	butch	butch	NOUN
+11491	jasmine	Jasmine	NOUN
+11496	continuera	continuera	NOUN
+11497	polie'	polie	ADJ
+11498	stewie	stewiee	VERB
+11503	arrivassi	arrivassi	VERB
+11504	vance	vancia	NOUN
+11505	calmarmi	calmare mi	VERB
+11508	panda	pandere	NOUN
+11510	nova	novo	ADJ
+11513	giriamo	girere	VERB
+11517	stà	stàre	VERB
+11518	consideralo	consideralo	VERB
+11520	kentucky	Kentucky	NOUN
+11523	esistito	esistire	VERB
+11526	costera	costerare	NOUN
+11528	station	station	NOUN
+11529	concreto	concreto	ADJ
+11531	demgirl	demgirl	ADJ
+11533	vergognarsi	vergognare si	VERB
+11536	compatibile	compatibile	ADJ
+11538	call	call	NOUN
+11539	geme	geme	VERB
+11542	olandese	olandese	ADJ
+11543	woods	Woods	NOUN
+11547	sex	sex	NOUN
+11550	temporaneamente	temporaneamente	ADV
+11555	potersi	potere si	VERB
+11559	dude	dudee	NOUN
+11560	colpiscilo	colpiscilo	VERB
+11562	messicana	Messicana	ADJ
+11567	ducky	ducky	NOUN
+11568	diplomatico	diplomatico	ADJ
+11572	union	union	NOUN
+11573	boo	boo	NOUN
+11576	fotte	fotte	VERB
+11579	attenda	attenda	VERB
+11581	negarlo	negare lo	VERB
+11585	orlando	orlare	VERB
+11587	ambizioso	ambizioso	ADJ
+11597	indispensabile	indispensabile	ADJ
+11598	cimici	cimico	NOUN
+11599	farglielo	fargle ie lo	VERB
+11600	warner	Warner	NOUN
+11601	tomas	tomas	NOUN
+11602	dolcemente	dolcemente	ADV
+11610	gestisco	gestiscare	VERB
+11615	chiamerei	chiamerei	VERB
+11618	antidroga	antidrogare	NOUN
+11621	paranoia	paranoiae	NOUN
+11622	intellettuale	intellettuale	ADJ
+11623	futuri	futurare	ADJ
+11624	ditelo	ditelo	VERB
+11629	banks	banks	NOUN
+11630	licenzio	licenzio	NOUN
+11632	colpiscimi	colpiscimi	ADJ
+11637	terminale	terminale	ADJ
+11638	fissi	fissi	ADJ
+11644	ampio	ampio	ADJ
+11646	aspirapolvere	aspirapolvere	VERB
+11649	scoparti	scoparto	NOUN
+11653	power	power	NOUN
+11655	fiscale	fiscale	ADJ
+11657	fuller	fuller	NOUN
+11658	grady	grady	NOUN
+11659	cottage	cottage	NOUN
+11662	grimm	grimm	ADJ
+11666	rendete	rendete	VERB
+11671	specializzato	specializzato	ADJ
+11674	giovanile	giovanile	ADJ
+11675	bad	bad	NOUN
+11677	figliola	figliola	ADJ
+11680	trasferirti	trasferire ti	VERB
+11683	sabine	sabina	NOUN
+11688	scriverlo	scrivere lo	VERB
+11692	chiamera	chiamerare	NOUN
+11693	newton	newton	NOUN
+11695	camelot	camelot	ADJ
+11697	potervi	potere vi	VERB
+11701	schiaffi	schiaffa	NOUN
+11704	marcy	Marcy	NOUN
+11706	cochrane	cochrane	NOUN
+11707	selfridge	selfridgo	ADJ
+11711	equivoco	equivoco	ADJ
+11713	perbacco	perbacco	ADJ
+11716	rae	rae	VERB
+11717	pagarti	pagare ti	VERB
+11722	fae	fae	NOUN
+11725	fanny	fanny	NOUN
+11726	incontrerai	incontreraare	VERB
+11728	giretto	gireggere	NOUN
+11729	volle	volle	VERB
+11734	potercela	potercela	NOUN
+11735	vasta	vasto	ADJ
+11738	spegnilo	spegnilo	ADJ
+11746	nadine	nadine	ADJ
+11751	spiegherò	spiegherare	VERB
+11753	chester	chestere	NOUN
+11758	torri	torrie	NOUN
+11763	stargli	starge li	VERB
+11764	porci	pore ci	VERB
+11765	offrirmi	offrire mi	VERB
+11767	leila	Leila	NOUN
+11768	blaine	blaine	NOUN
+11770	bistecche	bistecca	NOUN
+11776	dwayne	dwayne	ADJ
+11779	hyung	Hyung	NOUN
+11780	venderlo	vendere lo	VERB
+11781	sanders	sanders	NOUN
+11782	ridammelo	ridammeloo	VERB
+11786	scoprirò	scoprie rò	VERB
+11788	delia	delia	NOUN
+11794	gelati	gelato	NOUN
+11795	buffy	buffy	NOUN
+11797	perdermi	perdere mi	VERB
+11798	rimarro	rimarro	ADJ
+11801	fighetta	fighettare	ADJ
+11803	blur	blur	NOUN
+11806	vestirti	vestire ti	VERB
+11807	buttarmi	buttare mi	VERB
+11810	fermeremo	fermere	VERB
+11811	fermatelo	fermatelo	VERB
+11813	norvegia	norvegia	NOUN
+11814	prevedibile	prevedibile	ADJ
+11815	winter	winter	NOUN
+11817	troietta	troiettare	NOUN
+11820	sentir	sentir	VERB
+11821	affezionato	affezionare	ADJ
+11822	andresti	andresti	NOUN
+11824	gratuito	gratuito	ADJ
+11826	mariana	mariano	ADJ
+11827	seanma	seanme	NOUN
+11829	classifica	classificare	NOUN
+11831	dividerci	dividere ci	VERB
+11832	berretto	Berretto	NOUN
+11833	off	off	ADJ
+11841	perkins	perkins	NOUN
+11844	ramon	ramon	NOUN
+11847	spararti	sparare ti	VERB
+11850	chiamarli	chiamare li	VERB
+11854	liberarci	liberare ci	VERB
+11857	wong	Wong	NOUN
+11860	cioccolatini	cioccolatino	NOUN
+11862	altoparlante	altoparlante	ADJ
+11863	guardali	guardale	ADJ
+11865	suicidarsi	suicidare si	VERB
+11871	sottufficiale	sottufficiale	ADJ
+11877	esclusivamente	esclusivamente	ADV
+11878	andrews	andree ws	VERB
+11879	rocco	rocco	NOUN
+11880	phillips	phillips	NOUN
+11881	sedativo	sedativo	ADJ
+11882	fregarmi	fregare mi	VERB
+11888	dovermi	dovere mi	VERB
+11890	difensiva	difensivo	ADJ
+11891	finiro	finiro	VERB
+11893	distratta	distraggere	VERB
+11899	ricardo	ricardo	ADJ
+11905	allie	allio	NOUN
+11906	riusciresti	riusciresti	VERB
+11908	colleen	colleen	NOUN
+11913	prepotente	prepotente	ADJ
+11914	scelga	scelere	VERB
+11918	sentivi	sentivo	NOUN
+11921	consegni	consegno	NOUN
+11923	alleluia	alleluia	NOUN
+11929	navale	navale	ADJ
+11931	bethany	Bethany	VERB
+11932	liquidi	liquido	NOUN
+11933	scioccante	scioccante	ADJ
+11944	frontale	frontale	ADJ
+11945	kirsten	kirsten	ADJ
+11951	toccherà	tocchare	VERB
+11959	sherry	sherry	NOUN
+11961	verra'	verra	NOUN
+11962	asiatico	asiatico	ADJ
+11963	venirci	venire ci	VERB
+11966	parziale	parziale	ADJ
+11970	stressata	stressato	ADJ
+11974	conducente	conducente	ADJ
+11980	rilassato	rilassato	ADJ
+11983	fateli	fatee li	VERB
+11984	calcagna	calcagnare	NOUN
+11986	trattenermi	trattenere mi	VERB
+11987	scesi	scedere	VERB
+11990	pressi	pressi	NOUN
+11994	ecstasy	ecstasy	NOUN
+11996	portateli	portateli	VERB
+11998	bicchierino	bicchierinare	VERB
+11999	controllarmi	controllare mi	VERB
+12002	abed	abed	VERB
+12010	isubs	isubs	VERB
+12011	drama	drama	NOUN
+12021	raven	raven	NOUN
+12022	resistente	resistente	ADJ
+12024	totò	totò	ADJ
+12025	gate	gate	NOUN
+12026	movies	movies	NOUN
+12029	edmund	edmunde	NOUN
+12033	zane	zano	NOUN
+12039	disperso	disperso	VERB
+12040	said	said	ADJ
+12043	diverto	diverto	VERB
+12045	felicemente	felicemente	ADV
+12047	prepararci	preparare ci	VERB
+12053	provalo	provalo	VERB
+12054	scapolo	scapolo	ADJ
+12067	colombia	Colombia	NOUN
+12069	haskell	Haskell	NOUN
+12072	food	food	NOUN
+12074	umido	umido	ADJ
+12076	melinda	Melinda	NOUN
+12080	guastafeste	guastafesta	ADV
+12083	staresti	starestio	NOUN
+12085	bass	bass	NOUN
+12086	regalino	regalinare	NOUN
+12094	significativo	significativo	ADJ
+12096	sofisticato	sofisticato	ADJ
+12097	cash	cash	NOUN
+12099	indifferente	indifferente	ADJ
+12102	residenti	residente	ADJ
+12103	tornai	tornai	VERB
+12105	universitario	universitario	ADJ
+12107	datevi	datevi	VERB
+12109	dopodiché	dopodiché	ADV
+12111	asma	asma	ADJ
+12118	camilla	camilla	NOUN
+12122	nat	nat	VERB
+12126	sepolti	sepolti	VERB
+12127	elias	Elias	NOUN
+12130	frusta	frustare	NOUN
+12131	harley	harley	NOUN
+12132	occuparsene	occupare si ne	VERB
+12134	allan	allan	VERB
+12136	licenziarmi	licenziare mi	VERB
+12137	ricordatelo	ricordatelo	VERB
+12148	batteri	battero	NOUN
+12149	lasciarle	lasciare le	VERB
+12152	jed	jed	NOUN
+12154	trudy	trudy	VERB
+12157	orfano	orfano	ADJ
+12163	rango	rangoe	NOUN
+12167	orale	orale	ADJ
+12173	ohh	ohh	VERB
+12174	oprah	oprah	ADV
+12178	meschino	meschino	ADJ
+12181	ugh	ugh	NOUN
+12192	disoccupato	disoccupare	NOUN
+12193	sorprendentemente	sorprendentemente	ADV
+12194	hyde	hydee	NOUN
+12197	strettamente	strettamente	ADV
+12200	siobhan	siobhan	ADV
+12205	trovami	trovamere	VERB
+12207	beatles	beatleso	NOUN
+12209	riprenderti	riprendere ti	VERB
+12215	card	card	NOUN
+12217	poppy	poppy	NOUN
+12218	raylan	Raylan	VERB
+12221	deduco	deduco	VERB
+12225	reclute	recluta	NOUN
+12226	credera	crederae	NOUN
+12227	imbarazzata	imbarazzato	ADJ
+12230	inizialmente	inizialmente	ADV
+12231	raccontarti	raccontare ti	VERB
+12232	interrompo	interrompo	VERB
+12233	riprendera	riprenderare	VERB
+12236	acustico	acustico	ADJ
+12237	equo	equo	ADJ
+12238	vestirsi	vestire si	VERB
+12239	rod	rod	NOUN
+12240	fernando	fernando	VERB
+12249	accompagnarti	accompagnare ti	VERB
+12253	churchill	churchill	NOUN
+12256	bullo	Bullo	NOUN
+12258	starne	stare ne	VERB
+12259	credessi	credessare	VERB
+12262	spock	spock	NOUN
+12264	buttalo	buttalo	VERB
+12265	margarita	Margarita	NOUN
+12266	tarda	tardo	ADJ
+12270	tattiche	tattica	ADJ
+12272	smetterai	smetterare	VERB
+12274	toglierlo	togliere lo	VERB
+12278	kayla	Kayla	NOUN
+12283	dicevamo	dicevamo	VERB
+12284	lurido	lurido	ADJ
+12285	combattenti	combattente	NOUN
+12287	genitali	genitale	ADJ
+12288	bambolina	bambolino	NOUN
+12291	thea	thea	NOUN
+12297	suggerendo	suggerere	VERB
+12301	confusi	confudere	VERB
+12302	spregevole	spregevole	ADJ
+12305	integrita	integrire	VERB
+12310	sugar	sugar	NOUN
+12313	verdura	verdurare	NOUN
+12317	ss	ss	ADJ
+12318	kono	Kono	VERB
+12321	boys	boys	NOUN
+12322	riprenditi	riprendito	VERB
+12323	mannaggia	mannaggia	VERB
+12326	trattati	trattato	NOUN
+12328	ebbi	ebbi	VERB
+12333	polacco	polacco	ADJ
+12334	heidi	Heidi	NOUN
+12340	otterrai	otterere	VERB
+12343	hawk	hawk	NOUN
+12345	lavarti	lavare ti	VERB
+12349	dutch	dutch	NOUN
+12350	best	best	ADJ
+12356	consulto	consulto	VERB
+12358	innumerevoli	innumerevole	ADJ
+12360	trovarle	trovare le	VERB
+12362	lavoravi	lavoravo	NOUN
+12367	rischiamo	rischare	VERB
+12369	riportarti	riportare ti	VERB
+12370	talbot	talbot	ADV
+12372	marjorie	marjorio	ADJ
+12373	rovinarmi	rovinare mi	VERB
+12375	funebri	funebri	VERB
+12376	sistemarlo	sistemare lo	VERB
+12378	appartieni	appartieni	VERB
+12382	allegria	allegria	ADJ
+12387	remoto	remoto	ADV
+12390	riceverai	ricevere ai	VERB
+12391	decker	decker	NOUN
+12392	springs	springs	NOUN
+12393	crederanno	credare	VERB
+12398	salvarsi	salvare si	VERB
+12399	sharpe	sharpa	NOUN
+12402	spente	spente	ADJ
+12409	lopez	Lopez	NOUN
+12413	carver	carvere	NOUN
+12415	riparliamo	riparlere	VERB
+12421	coprendo	coprere	VERB
+12429	lavarmi	lavare mi	VERB
+12433	moya	moya	NOUN
+12434	vagamente	vagamente	ADV
+12438	presumibilmente	presumibilmente	ADV
+12439	cox	cox	NOUN
+12444	sinclair	sinclairo	NOUN
+12445	rimarremo	rimarremo	VERB
+12449	traumi	traume	NOUN
+12450	ice	ice	NOUN
+12452	len	len	ADV
+12454	rimarrò	rimarrò	VERB
+12456	amorevole	amorevole	ADJ
+12457	pauline	pauline	ADJ
+12459	hillary	Hillary	NOUN
+12471	firmo	firmo	VERB
+12476	protesi	protendere	NOUN
+12477	potenzialmente	potenzialmente	ADV
+12478	marsh	marsh	NOUN
+12480	chambers	chambers	NOUN
+12481	intercettato	intercettato	ADJ
+12484	asciutto	asciutto	ADJ
+12487	trasferisco	trasferisco	VERB
+12488	chiarachi	chiaraco	NOUN
+12491	raffinato	raffinato	ADJ
