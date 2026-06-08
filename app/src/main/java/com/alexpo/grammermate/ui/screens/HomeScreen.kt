@@ -61,7 +61,6 @@ import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.ScreenLogger
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.Lesson
-import com.alexpo.grammermate.data.LessonPack
 import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingUiState
@@ -69,6 +68,8 @@ import com.alexpo.grammermate.ui.components.PomodoroSelectorSheet
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.LinearProgressIndicator
+import com.alexpo.grammermate.ui.PackTileUi
 
 enum class LessonTileState {
     SEED,
@@ -115,7 +116,8 @@ fun HomeScreen(
     onStartPomodoro: (Int) -> Unit = {},
     pomodoroLastDuration: Int = 20,
     pomodoroHistory: List<PomodoroHistoryEntry> = emptyList(),
-    onSelectPack: (String) -> Unit = {}
+    onSelectPack: (String) -> Unit = {},
+    packTiles: List<PackTileUi> = emptyList()
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -124,7 +126,6 @@ fun HomeScreen(
     var showLockedLessonHint by remember { mutableStateOf(false) }
     var earlyStartLessonId by remember { mutableStateOf<String?>(null) }
     var showPomodoroSheet by remember { mutableStateOf(false) }
-    var showPackageList by remember { mutableStateOf(false) }
     val languageCode = state.navigation.languages
         .firstOrNull { it.id == state.navigation.selectedLanguageId }
         ?.id?.value
@@ -261,39 +262,19 @@ fun HomeScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = { showPackageList = true })
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = activePackDisplayName ?: "Select Pack",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
-            }
-        }
-
-        if (showPackageList) {
-            // Filter packs by selected language to avoid mixing languages
-            val languagePacks = state.navigation.installedPacks.filter {
-                it.languageId == state.navigation.selectedLanguageId
-            }
-            PackageSelectorList(
-                packs = languagePacks,
-                currentPackId = state.navigation.activePackId?.value,
-                onPackSelected = { packId ->
+        // Pack tiles — always visible
+        if (packTiles.isNotEmpty()) {
+            PackTileGrid(
+                tiles = packTiles,
+                onSelectPack = { packId ->
                     ScreenLogger.tap("pack_select", details = "pack=$packId")
-                    val packName = languagePacks.firstOrNull { it.packId.value == packId }?.displayName ?: ""
+                    val packName = packTiles.firstOrNull { it.packId == packId }?.displayName ?: ""
                     AuditLogger.getInstanceOrNull()?.packSelect(packId, packName)
                     onSelectPack(packId)
-                    showPackageList = false
-                },
-                onDismiss = { showPackageList = false }
+                }
             )
+            Spacer(modifier = Modifier.height(16.dp))
         }
-        Spacer(modifier = Modifier.height(16.dp))
         Text(text = stringResource(R.string.home_grammar_roadmap), fontWeight = FontWeight.SemiBold)
         if (state.navigation.selectedLessonId != null) {
             val lessonIndex = state.navigation.lessons.indexOfFirst { it.id == state.navigation.selectedLessonId }
@@ -392,7 +373,13 @@ fun HomeScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Button(
-            onClick = if (hasActivePack) onPrimaryAction else ({ showPackageList = true }),
+            onClick = {
+                if (hasActivePack) {
+                    onPrimaryAction()
+                } else {
+                    packTiles.firstOrNull()?.let { onSelectPack(it.packId) }
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = primaryLabel)
@@ -544,51 +531,94 @@ fun ZeroStateLanguageSelector(
 }
 
 @Composable
-fun PackageSelectorList(
-    packs: List<LessonPack>,
-    currentPackId: String?,
-    onPackSelected: (String) -> Unit,
-    onDismiss: () -> Unit
+fun PackTileCard(
+    tile: PackTileUi,
+    onClick: () -> Unit
 ) {
-    Column(
+    val containerColor = if (tile.isActive) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val progressColor = if (tile.isActive) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.secondary
+    }
+    val progress = if (tile.totalLessons > 0) {
+        tile.completedLessons.toFloat() / tile.totalLessons.toFloat()
+    } else {
+        0f
+    }
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
-        Text(
-            text = "Select Package",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        packs.forEach { pack ->
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onPackSelected(pack.packId.value)
-                        onDismiss()
-                    }
-                    .background(
-                        if (pack.packId.value == currentPackId)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            Color.Transparent
-                    )
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = pack.displayName ?: pack.packId.value,
-                    fontWeight = if (pack.packId.value == currentPackId) FontWeight.Bold else FontWeight.Normal
-                )
-                if (pack.packId.value == currentPackId) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text("✓", color = MaterialTheme.colorScheme.primary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = tile.flowerEmoji,
+                        fontSize = (24 * tile.scaleMultiplier).sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tile.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                if (tile.isActive) {
+                    Text(
+                        text = "✓",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${tile.completedLessons}/${tile.totalLessons} lessons",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = progressColor,
+                trackColor = progressColor.copy(alpha = 0.2f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${tile.totalCards} cards shown",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+fun PackTileGrid(
+    tiles: List<PackTileUi>,
+    onSelectPack: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        tiles.forEach { tile ->
+            PackTileCard(
+                tile = tile,
+                onClick = { onSelectPack(tile.packId) }
+            )
         }
     }
 }

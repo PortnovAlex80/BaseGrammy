@@ -83,6 +83,24 @@ import com.alexpo.grammermate.data.CardDifficultyRating
 import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
+import com.alexpo.grammermate.data.FlowerCalculator
+import com.alexpo.grammermate.data.FlowerState
+import com.alexpo.grammermate.feature.progress.PackProgressCalculator
+
+data class PackTileUi(
+    val packId: String,
+    val displayName: String,
+    val languageId: String,
+    val flowerEmoji: String,
+    val flowerState: FlowerState,
+    val depth: Float,
+    val healthPercent: Float,
+    val scaleMultiplier: Float,
+    val completedLessons: Int,
+    val totalLessons: Int,
+    val totalCards: Int,
+    val isActive: Boolean
+)
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -120,6 +138,61 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             AuditLogger.getInstanceOrNull()?.updateContext(_coreState.value)
         }
         override fun saveProgress() = this@TrainingViewModel.saveProgress()
+    }
+
+    // ── Pack tile data for home screen ────────────────────────────────────
+
+    /**
+     * Build a list of [PackTileUi] for every installed pack.
+     * Each tile contains flower state, progress counters, and active flag.
+     */
+    fun getPackTiles(): List<PackTileUi> {
+        val nav = _coreState.value.navigation
+        val selectedLangId = nav.selectedLanguageId?.value
+        val packs = if (selectedLangId != null) {
+            nav.installedPacks.filter { it.languageId.value == selectedLangId }
+        } else {
+            nav.installedPacks
+        }
+        val activePackId = nav.activePackId?.value
+
+        return packs.map { pack ->
+            val packIdStr = pack.packId.value
+            val langIdStr = pack.languageId.value
+
+            val lessons = lessonStore.getLessons(packIdStr, langIdStr)
+            val lessonIds = lessons.map { it.id.value }
+
+            // Build mastery map for all lessons in this pack
+            val masteryMap = mutableMapOf<String, LessonMasteryState>()
+            var totalCards = 0
+            for (lesson in lessons) {
+                val lessonIdStr = lesson.id.value
+                val mastery = masteryStore.getForPack(packIdStr, lessonIdStr)
+                if (mastery != null) {
+                    masteryMap[lessonIdStr] = mastery
+                    totalCards += mastery.uniqueCardShows
+                }
+            }
+
+            // Calculate pack-level flower using PackProgressCalculator
+            val packFlower = PackProgressCalculator.calculatePackFlower(lessonIds, masteryMap)
+
+            PackTileUi(
+                packId = packIdStr,
+                displayName = pack.displayName ?: packIdStr,
+                languageId = langIdStr,
+                flowerEmoji = FlowerCalculator.getEmoji(packFlower.flowerState),
+                flowerState = packFlower.flowerState,
+                depth = packFlower.depth,
+                healthPercent = packFlower.healthPercent,
+                scaleMultiplier = packFlower.scaleMultiplier,
+                completedLessons = packFlower.completedLessons,
+                totalLessons = packFlower.totalLessons,
+                totalCards = totalCards,
+                isActive = packIdStr == activePackId
+            )
+        }.sortedWith(compareBy({ it.languageId }, { it.displayName }))
     }
 
     // ── Feature instances (declared before uiState combine chain) ──────────
