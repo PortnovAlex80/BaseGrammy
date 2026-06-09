@@ -191,11 +191,12 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         LanguageManager.DefaultPack("ITALIAN_EXPRESS", "grammarmate/packs/ITALIAN_EXPRESS.zip"),
         LanguageManager.DefaultPack("ITALIAN_SHORT", "grammarmate/packs/ITALIAN_EXPRESS_SHORT.zip"),
         LanguageManager.DefaultPack("ITALIAN_FULL_COURSE", "grammarmate/packs/ITALIAN_FULL_COURSE.zip"),
-        LanguageManager.DefaultPack("GREEK_EXPRESS", "grammarmate/packs/GREEK_EXPRESS.zip"),
-        LanguageManager.DefaultPack("GREEK_EXPRESS_IT", "grammarmate/packs/GREEK_EXPRESS_IT.zip"),
-        LanguageManager.DefaultPack("GERMAN_EXPRESS", "grammarmate/packs/GERMAN_EXPRESS.zip"),
-        LanguageManager.DefaultPack("CHINESE_EXPRESS", "grammarmate/packs/CHINESE_EXPRESS.zip"),
-        LanguageManager.DefaultPack("RUSSIAN_EXPRESS", "grammarmate/packs/RUSSIAN_EXPRESS.zip"),
+        // Reserved: Greek, German, Chinese, Russian packs (backup commit 7ca026a)
+        // LanguageManager.DefaultPack("GREEK_EXPRESS", "grammarmate/packs/GREEK_EXPRESS.zip"),
+        // LanguageManager.DefaultPack("GREEK_EXPRESS_IT", "grammarmate/packs/GREEK_EXPRESS_IT.zip"),
+        // LanguageManager.DefaultPack("GERMAN_EXPRESS", "grammarmate/packs/GERMAN_EXPRESS.zip"),
+        // LanguageManager.DefaultPack("CHINESE_EXPRESS", "grammarmate/packs/CHINESE_EXPRESS.zip"),
+        // LanguageManager.DefaultPack("RUSSIAN_EXPRESS", "grammarmate/packs/RUSSIAN_EXPRESS.zip"),
         LanguageManager.DefaultPack("EN_ADV_BASE_GRAMMAR", "grammarmate/packs/EN_ADV_BASE_GRAMMAR.zip"),
         LanguageManager.DefaultPack("EN_ENGLISH_FULL_COURSE", "grammarmate/packs/EN_ENGLISH_FULL_COURSE.zip")
     )
