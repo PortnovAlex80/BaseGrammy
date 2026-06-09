@@ -1,0 +1,15 @@
+{
+  "key": "B09",
+  "title": "B09 - Past Perfect",
+  "essence": "Past Perfect — это «предпрошедшее» время: действие, которое произошло ДО другого действия в прошлом. Образуется: had + V3. Представьте два события в прошлом: Past Perfect случился раньше, Past Simple — позже. В русском мы выражаем это словами «уже», «до того как»: «Я уже поужинал, когда она позвонила».",
+  "formula": "Утверждение: S + had + V3\nОтрицание: S + hadn't + V3\nВопрос: Had + S + V3?\n\nПаттерн:\nhad + V3 (раньше) + when/before + V2 (позже)\nV2 (позже) + after + had + V3 (раньше)",
+  "base": "B06",
+  "dontConfuse": "Используют Past Simple для обоих событий: «I ate dinner when she called» — непонятно, что было раньше. С Past Perfect порядок ясен: «I had eaten dinner when she called» = я поел ДО звонка. Ошибка «I had ate» — после had всегда V3, не V2. Также Past Perfect не нужен, если порядок ясен из контекста (after, before): «After I finished work, I went home» — можно без Past Perfect.",
+  "examples": [
+    {"en": "I had already left when they arrived.", "ru": "Я уже ушёл, когда они прибыли.", "note": "had left (раньше) + when + arrived (позже)"},
+    {"en": "She had never flown before that trip.", "ru": "Она никогда раньше не летала до той поездки.", "note": "никогда до определённого момента в прошлом"},
+    {"en": "Had you finished the report by Friday?", "ru": "Ты закончил отчёт к пятнице?", "note": "Вопрос: Had + S + V3 + by + время"},
+    {"en": "They realized they had lost the keys.", "ru": "Они поняли, что потеряли ключи.", "note": "Поняли (Past Simple) → потеряли раньше (Past Perfect)"},
+    {"en": "The train had departed before we reached the station.", "ru": "Поезд ушёл до того, как мы добрались до станции.", "note": "had departed (раньше) + before + reached (позже)"}
+  ]
+}

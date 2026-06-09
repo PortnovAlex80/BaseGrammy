@@ -1,0 +1,15 @@
+{
+  "key": "C06",
+  "title": "C06 - Idioms & Collocations",
+  "essence": "Идиомы — это устойчивые выражения, смысл которых не складывается из значений отдельных слов (break the ice = начать разговор). Коллокации — привычные сочетания слов (make a decision, не do a decision). Знание идиом и коллокаций — признак продвинутого владения языком.",
+  "formula": "Коллокации с make/take/do/have:\nmake a decision / a mistake / progress / an effort\ntake a break / a chance / advantage of / into account\ndo homework / business / harm / a favour\nhave a look / a rest / an effect / a conversation\n\nИдиомы:\nbreak the ice, hit the nail on the head, a piece of cake, under the weather, once in a blue moon",
+  "base": "A04",
+  "dontConfuse": "Прямой перевод русских сочетаний: «принять решение» → «take a decision» (американский: make a decision). «Сделать favour» → «make a favour» (правильно: do a favour). Глаголы make/do — самая частая ошибка: make для создания чего-то нового, do для выполнения действия.",
+  "examples": [
+    {"en": "We need to make a decision by Friday.", "ru": "Нам нужно принять решение до пятницы.", "note": "make a decision — коллокация (не take в американском английском)"},
+    {"en": "She took advantage of the discount.", "ru": "Она воспользовалась скидкой.", "note": "take advantage of — устойчивое сочетание"},
+    {"en": "Could you do me a favour and send this letter?", "ru": "Не могли бы вы оказать мне услугу и отправить это письмо?", "note": "do a favour — не make a favour"},
+    {"en": "His joke broke the ice at the meeting.", "ru": "Его шутка разрядила обстановку на встрече.", "note": "break the ice = снять напряжение, начать общение"},
+    {"en": "I'm feeling under the weather today.", "ru": "Я сегодня что-то неважно себя чувствую.", "note": "under the weather = нездоровится (идиома)"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "key": "B11",
+  "title": "B11 - Used to & Would",
+  "essence": "Used to и would описывают регулярные привычки и повторяющиеся действия в прошлом, которые больше не актуальны. Used to + V используется для привычек И состояний (I used to live in Moscow). Would + V — только для действий и привычек (I would go fishing every summer). В русском это передаётся прошедшим временем + «раньше», «бывало».",
+  "formula": "Used to: S + used to + V\n- I used to smoke. (= раньше курил, сейчас нет)\n- I didn't use to like coffee.\n- Did you use to play tennis?\n\nWould: S + would + V (только привычки-действия)\n- Every summer we would go to the seaside.\n\nРазница: used to = привычки + состояния\n          would = только привычки-действия",
+  "base": "B01",
+  "dontConfuse": "Пишут «I used to went» — после used to всегда начальная форма глагола. Также путают used to + V и be used to + V-ing: «I used to wake up early» (раньше просыпался) vs «I am used to waking up early» (привык просыпаться). Это разные конструкции с разным смыслом. В вопросе и отрицании: «Did you use to...» (БЕЗ d), «I didn't use to...» (БЕЗ d).",
+  "examples": [
+    {"en": "I used to play football every Sunday.", "ru": "Раньше я играл в футбол каждое воскресенье.", "note": "used to + play: привычка прошлого, сейчас нет"},
+    {"en": "She used to live in a small village.", "ru": "Она раньше жила в маленькой деревне.", "note": "used to + состояние (live), would здесь нельзя"},
+    {"en": "We would sit by the fire and tell stories.", "ru": "Бывало, мы сидели у огня и рассказывали истории.", "note": "would + действие: ностальгическое описание привычки"},
+    {"en": "He didn't use to eat vegetables when he was a child.", "ru": "В детстве он не ел овощи.", "note": "Отрицание: didn't + use to (без d на конце)"},
+    {"en": "Did you use to ride a bike to school?", "ru": "Ты раньше ездил в школу на велосипеде?", "note": "Вопрос: Did + S + use to + V"}
+  ]
+}

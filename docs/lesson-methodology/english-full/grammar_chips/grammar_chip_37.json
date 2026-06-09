@@ -1,0 +1,15 @@
+{
+  "key": "B21",
+  "title": "B21 - Conditionals: 3rd",
+  "essence": "Третий условный — сожаление о прошлом: то, что уже НЕ изменить. «Если бы я знал, я бы пришёл раньше» — но я не знал и не пришёл. Формула: If + Past Perfect, would have + V3. Это самый «сослагательный» из всех условных — полностью о нереальном прошлом. Часто выражает сожаление, критику или воображаемый другой исход.",
+  "formula": "Third Conditional (нереальное прошлое):\nIf + Past Perfect (had + V3), would have + V3\nIf I had known, I would have come earlier.\n\nОтрицание:\nIf I hadn't forgotten my phone, I would have called you.\n\nCould have / might have:\nIf she had studied harder, she could have passed.\nIf we had left earlier, we might have caught the train.",
+  "base": "B19",
+  "dontConfuse": "Пишут «If I would have known» — это частая разговорная ошибка, правильно «If I had known». Would не стоит в if-части НИКОГДА. Также путают Second и Third: «If I had money, I would buy it» (Second — сейчас нет денег) vs «If I had had money, I would have bought it» (Third — тогда не было денег). Past Perfect (had had) — двойной had, это корректно.",
+  "examples": [
+    {"en": "If I had studied harder, I would have passed the exam.", "ru": "Если бы я занимался усерднее, я бы сдал экзамен.", "note": "Third Conditional: сожаление о прошлом, изменить нельзя"},
+    {"en": "She wouldn't have been late if she had left on time.", "ru": "Она бы не опоздала, если бы вышла вовремя.", "note": "Отрицание в обеих частях: wouldn't have + if + hadn't"},
+    {"en": "If we had taken a taxi, we would have arrived on time.", "ru": "Если бы мы взяли такси, мы бы прибыли вовремя.", "note": "had taken (Past Perfect) + would have arrived"},
+    {"en": "He could have won the race if he hadn't fallen.", "ru": "Он мог бы выиграть гонку, если бы не упал.", "note": "could have = смог бы (альтернатива would have)"},
+    {"en": "If they had invited me, I might have gone.", "ru": "Если бы они меня пригласили, я, возможно, пошёл бы.", "note": "might have = возможно бы (менее уверенный вариант)"}
+  ]
+}

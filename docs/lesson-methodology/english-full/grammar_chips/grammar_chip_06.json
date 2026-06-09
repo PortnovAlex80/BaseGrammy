@@ -1,0 +1,15 @@
+{
+  "key": "A06",
+  "title": "A06 - Pronouns & Possessives",
+  "essence": "Английская система местоимений отличается от русской: вместо одного ряда «я/меня/мне/мой» есть чёткие формы для разных функций. Субъектные (I, he) — кто действует. Объектные (me, him) — на кого направлено действие. Притяжательные (my, his) — чей предмет. Абсолютные (mine, his) — «мой, а не чей-то». Возвратные (myself) — «сам».",
+  "formula": "Субъект:  I / you / he / she / it / we / they\nОбъект:    me / you / him / her / it / us / them\nПритяж.:   my / your / his / her / its / our / their\nАбсолют.:  mine / yours / his / hers / its / ours / theirs\nВозвратн.: myself / yourself / himself / herself / itself / ourselves / themselves\n\nIts (без апострофа!) = его (принадлежность), it's = it is",
+  "base": null,
+  "dontConfuse": "Частая путаница: «its» и «it's». Its (без апострофа) — притяжательное местоимение («его» для предметов). It's (с апострофом) — сокращение от «it is». Также путают «your» (ваш) и «you're» (you are). Апостроф — всегда сокращение глагола, не принадлежность.",
+  "examples": [
+    {"en": "She gave me her book.", "ru": "Она дала мне свою книгу.", "note": "she (кто) → me (кому) → her (чью)"},
+    {"en": "This pen is mine, not yours.", "ru": "Эта ручка моя, не твоя.", "note": "mine/yours — без существительного после"},
+    {"en": "The dog wagged its tail.", "ru": "Собака виляла своим хвостом.", "note": "its — без апострофа, принадлежность"},
+    {"en": "They did it themselves.", "ru": "Они сделали это сами.", "note": "themselves — возвратное, «без посторонней помощи»"},
+    {"en": "He told us about his trip.", "ru": "Он рассказал нам о своей поездке.", "note": "us (объектный) + his (притяжательный)"}
+  ]
+}

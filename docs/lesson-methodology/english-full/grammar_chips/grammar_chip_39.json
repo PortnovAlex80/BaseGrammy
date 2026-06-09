@@ -1,0 +1,15 @@
+{
+  "key": "B23",
+  "title": "B23 - Modal Perfects",
+  "essence": "Modal Perfects — это модальные глаголы (should, could, might, must, may) + have + V3, для выражения отношения к прошлому: сожаление, догадка, упрёк, вероятность. «I should have studied» = мне следовало заниматься (но не занимался). «She must have left» = она, должно быть, ушла (догадка). Это «модальность задним числом» — оценка того, что уже произошло.",
+  "formula": "should have + V3 = следовало (сожаление/упрёк)\ncould have + V3 = мог бы (но не сделал)\nmight have + V3 = возможно (неуверенная догадка)\nmust have + V3 = наверняка (уверенная догадка)\nmay have + V3 = может быть (догадка)\nshouldn't have + V3 = не следовало (сожаление о сделанном)\ncan't have + V3 = не может быть (уверенное отрицание)",
+  "base": "B06",
+  "dontConfuse": "Пишут «should of» вместо «should have» — это ОШИБКА, распространённая даже среди носителей. Правильно только «should have». Также путают must have и should have: must have = наверняка (догадка: «Он наверняка забыл»), should have = следовало (оценка: «Ему следовало позвонить»). И «could have» ≠ «must have»: could have = была возможность, must have = точно это сделал.",
+  "examples": [
+    {"en": "I should have apologised, but I was too proud.", "ru": "Мне следовало извиниться, но я был слишком гордым.", "note": "should have + V3 = сожаление о прошлом"},
+    {"en": "She must have forgotten about the meeting.", "ru": "Она, должно быть, забыла о встрече.", "note": "must have = уверенная догадка о прошлом"},
+    {"en": "You shouldn't have spent so much money.", "ru": "Тебе не следовало тратить столько денег.", "note": "shouldn't have = упрёк, сожаление о сделанном"},
+    {"en": "He could have won the championship, but he got injured.", "ru": "Он мог бы выиграть чемпионат, но получил травму.", "note": "could have = была возможность, но не реализовал"},
+    {"en": "They might have missed the train.", "ru": "Возможно, они опоздали на поезд.", "note": "might have = неуверенная догадка о прошлом"}
+  ]
+}

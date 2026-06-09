@@ -1,0 +1,15 @@
+{
+  "key": "A05",
+  "title": "A05 - Present Simple: Neg & Questions",
+  "essence": "Чтобы построить отрицание или вопрос в Present Simple, нужен вспомогательный глагол do/does. Он забирает на себя окончание -s для 3-го лица, поэтому основной глаголь остаётся «чистым». Русскоязычные часто пытаются построить отрицание по русской модели — просто добавляют «not» к глаголу, но в английском так нельзя.",
+  "formula": "Отрицание:\nI/You/We/They + don't + V\nHe/She/It + doesn't + V (глагол БЕЗ -s!)\n\nВопрос:\nDo + I/you/we/they + V?\nDoes + he/she/it + V? (глагол БЕЗ -s!)\n\nКраткий ответ:\nYes, I do. / No, she doesn't.",
+  "base": "A04",
+  "dontConfuse": "Две ошибки в одной: «She doesn't likes» — двойное -s. Правило: does забирает -s на себя, основной глаголь всегда в начальной форме. Doesn't like — правильно. Doesn't likes — никогда.",
+  "examples": [
+    {"en": "I don't like spicy food.", "ru": "Я не люблю острую еду.", "note": "don't + like (чистый глагол)"},
+    {"en": "He doesn't speak French.", "ru": "Он не говорит по-французски.", "note": "doesn't + speak, НЕ doesn't speaks"},
+    {"en": "Do you live in Moscow?", "ru": "Ты живёшь в Москве?", "note": "Do + you + live (чистый глагол)"},
+    {"en": "Does she know the answer?", "ru": "Она знает ответ?", "note": "Does + she + know, НЕ Does she knows"},
+    {"en": "We don't have time.", "ru": "У нас нет времени.", "note": "don't have — не путать с haven't (это для Perfect)"}
+  ]
+}

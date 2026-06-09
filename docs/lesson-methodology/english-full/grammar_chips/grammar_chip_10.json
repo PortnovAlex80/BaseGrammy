@@ -1,0 +1,15 @@
+{
+  "key": "A10",
+  "title": "A10 - There is/There are",
+  "essence": "Конструкция «there is/there are» используется, чтобы сказать «где-то что-то есть/находится». В русском мы используем безличные конструкции: «на столе книга», «в парке деревья». В английском подлежащее стоит ПОСЛЕ глагола, и выбор is/are зависит от этого подлежащего, а не от слова «there».",
+  "formula": "Единственное: There is (There's) + существительное в ед.ч.\nМножественное: There are + существительное во мн.ч.\n\nОтрицание: There isn't / There aren't\nВопрос: Is there...? / Are there...?\n\nПрошедшее: There was / There were\nБудущее: There will be (для обоих чисел!)\n\nThere is + ряд: There is a pen and two books on the desk. (по первому элементу)",
+  "base": null,
+  "dontConfuse": "Русскоязычные говорят «on the table is a book», перенося русский порядок. В английском «there» стоит первым — это фиктивное подлежащее. Также частая ошибка: «there is» после перечисления — «There is apples» вместо «There are apples». Согласование — по реальному подлежащему.",
+  "examples": [
+    {"en": "There is a bank near my house.", "ru": "Возле моего дома есть банк.", "note": "There is + ед.ч. (a bank)"},
+    {"en": "There are three cats in the garden.", "ru": "В саду три кошки.", "note": "There are + мн.ч. (three cats)"},
+    {"en": "There isn't any sugar in the kitchen.", "ru": "На кухне нет сахара.", "note": "Отрицание: there isn't + неисчисляемое"},
+    {"en": "Is there a pharmacy nearby?", "ru": "Здесь рядом есть аптека?", "note": "Вопрос: Is there + ед.ч."},
+    {"en": "There will be a meeting tomorrow.", "ru": "Завтра будет собрание.", "note": "Будущее: there will be — для обоих чисел"}
+  ]
+}

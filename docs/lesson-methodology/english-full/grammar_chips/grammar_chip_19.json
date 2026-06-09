@@ -1,0 +1,15 @@
+{
+  "key": "B03",
+  "title": "B03 - Past Simple: Neg & Questions",
+  "essence": "В Past Simple для отрицаний и вопросов используется вспомогательный глагол DID — он уже «содержит» прошедшее время, поэтому основной глагол возвращается в начальную форму. Это ключевое отличие от русского: мы говорим «Я не ходил», добавляя прошедшее время к глаголу, а в английском прошедшее время «забирает» на себя did, а основной глагол стоит в настоящей форме.",
+  "formula": "Отрицание: S + did not (didn't) + V\nВопрос: Did + S + V?\nКраткий ответ: Yes, S + did. / No, S + didn't.\n\nСпециальный вопрос: Wh + did + S + V?",
+  "base": "B01",
+  "dontConfuse": "Типичная ошибка — поставить два прошедших времени: «Did you went?» или «I didn't went». Правило одно: DID уже означает прошедшее, поэтому основной глагол стоит в начальной форме. Также путают с Present Simple: «Did she comes» вместо «Did she come».",
+  "examples": [
+    {"en": "I didn't understand the question.", "ru": "Я не понял вопрос.", "note": "didn't + understand (НЕ didn't understood)"},
+    {"en": "Did they arrive on time?", "ru": "Они прибыли вовремя?", "note": "Did + they + arrive (без -ed и без V2)"},
+    {"en": "Where did you buy this shirt?", "ru": "Где ты купил эту рубашку?", "note": "Wh-вопрос: Where + did + S + V"},
+    {"en": "She didn't call me back.", "ru": "Она мне не перезвонила.", "note": "Отрицание: didn't + call (НЕ didn't called)"},
+    {"en": "Did he know about the meeting?", "ru": "Он знал о встрече?", "note": "Did + know, не Did knew"}
+  ]
+}

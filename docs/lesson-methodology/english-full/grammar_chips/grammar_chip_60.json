@@ -1,0 +1,15 @@
+{
+  "key": "C17",
+  "title": "C17 - Register: Formal vs Informal",
+  "essence": "Один и тот же смысл можно выразить тремя способами: формально (письма, документы), нейтрально (повседневное общение), неформально (друзья, семья). Например: «I require assistance» (формально) / «I need help» (нейтрально) / «Give me a hand» (неформально). Выбор регистра зависит от ситуации и адресата.",
+  "formula": "Три регистра одного смысла:\n\nФормально: I would like to inquire / Could you possibly / I am writing to\nНейтрально: I'd like to know / Can you / I want to ask\nНеформально: Wanna know / Can you / Just wanted to ask\n\nФормальные замены:\nget → obtain / receive\nneed → require\nask → inquire\nhelp → assist / assistance\nbuy → purchase\ntell → inform",
+  "base": "C09",
+  "dontConfuse": "Русские часто не чувствуют разницу регистров и используют формальные слова в разговорной речи («I obtained a coffee») или сленг в деловой переписке («Hey, gonna send the docs»). Грамматический уровень тоже часть регистра: «I would like» (формально) vs «I want» (нейтрально) vs «I wanna» (неформально).",
+  "examples": [
+    {"en": "Formal: I would like to request further information.", "ru": "Формально: Я хотел бы запросить дополнительную информацию.", "note": "would like to request — формальный регистр"},
+    {"en": "Neutral: I'd like to know more about this.", "ru": "Нейтрально: Я хотел бы узнать больше об этом.", "note": "would like to know — нейтральный, повседневный"},
+    {"en": "Informal: Can you tell me more?", "ru": "Неформально: Можешь рассказать подробнее?", "note": "Can you tell me — простой разговорный вариант"},
+    {"en": "Formal: We regret to inform you that your application was unsuccessful.", "ru": "Формально: С сожалением сообщаем, что ваша заявка не была одобрена.", "note": "regret to inform — стандартная формула отказов"},
+    {"en": "Informal: Sorry, but you didn't get the job.", "ru": "Неформально: К сожалению, ты не получил эту работу.", "note": "Прямой и простой способ передать тот же смысл"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "key": "A09",
+  "title": "A09 - Adjectives & Comparison",
+  "essence": "Прилагательные в английском не изменяются по родам, числам и падежам — «big house» и «big houses», «big river» — всегда big. Но для сравнения есть три формы: положительная (big), сравнительная (bigger) и превосходная (the biggest). Короткие прилагательные добавляют -er/-est, длинные используют more/most. В русском всё это — через «более/самый».",
+  "formula": "Короткие (1-2 слога): big → bigger → the biggest\nДлинные (3+ слога): expensive → more expensive → the most expensive\n\nИсключения:\ngood → better → the best\nbad → worse → the worst\nfar → farther/further → the farthest/furthest\n\nas + прилагательное + as (такой же... как)\nnot as + прилагательное + as (не такой... как)",
+  "base": null,
+  "dontConfuse": "Нельзя удваивать: «more bigger» или «more better» — грубая ошибка. Либо -er/-est, либо more/most — выбирайте одно. Также «the» обязательно перед превосходной степенью: «the biggest», а не просто «biggest».",
+  "examples": [
+    {"en": "This bag is heavier than that one.", "ru": "Эта сумка тяжелее той.", "note": "heavy → heavier: y → ier (согласная + y)"},
+    {"en": "She is more intelligent than her brother.", "ru": "Она умнее своего брата.", "note": "3+ слога: more + intelligent"},
+    {"en": "This is the best restaurant in town.", "ru": "Это лучший ресторан в городе.", "note": "исключение: good → the best"},
+    {"en": "My car is as fast as yours.", "ru": "Моя машина такая же быстрая, как твоя.", "note": "as + fast + as — равенство"},
+    {"en": "The weather is getting worse.", "ru": "Погода становится хуже.", "note": "исключение: bad → worse"}
+  ]
+}

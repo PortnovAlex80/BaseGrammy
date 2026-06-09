@@ -1,0 +1,15 @@
+{
+  "key": "C15",
+  "title": "C15 - Money and Finance",
+  "essence": "Финансовая лексика: mortgage (ипотека), investment (инвестиция), interest rate (процентная ставка), loan (заём). В английском salary — оклад, income — общий доход, savings — накопления. Важнейшие глаголы: earn (зарабатывать), spend (тратить), save (копить), invest (инвестировать), borrow (брать в долг), lend (давать в долг).",
+  "formula": "Доходы и расходы:\nearn money, make a living, income, revenue\nspend money on, pay for, cost, expense, bill\nsave money, savings, put money aside\n\nБанковские термины:\nopen an account, deposit, withdraw, balance\nmortgage, loan, interest rate, credit card, debt\n\nИнвестиции:\ninvest in, shares / stocks, bonds, portfolio, return",
+  "base": "A08",
+  "dontConfuse": "Путают borrow (взять в долг у кого-то) и lend (дать в долг кому-то): «Can you borrow me money?» — неправильно, правильно «Can you lend me money?». Также путают save (экономить/копить) и safe (безопасный). Mortgage — именно ипотека (заём под залог недвижимости), а не любой кредит.",
+  "examples": [
+    {"en": "They took out a mortgage to buy the house.", "ru": "Они взяли ипотеку, чтобы купить дом.", "note": "take out a mortgage = оформить ипотеку (не take a credit)"},
+    {"en": "She earns a good salary but has a lot of expenses.", "ru": "Она получает хорошую зарплату, но у неё много расходов.", "note": "earn = зарабатывать, expenses = расходы"},
+    {"en": "Can you lend me $50 until next week?", "ru": "Можешь одолжить мне 50 долларов до следующей недели?", "note": "lend = дать в долг (borrow = взять в долг)"},
+    {"en": "He invested all his savings in the stock market.", "ru": "Он вложил все свои сбережения в фондовый рынок.", "note": "invest in = инвестировать во что-то, savings = накопления"},
+    {"en": "The interest rate on this loan is 7%.", "ru": "Процентная ставка по этому кредиту — 7%.", "note": "interest rate = процентная ставка, loan = заём"}
+  ]
+}

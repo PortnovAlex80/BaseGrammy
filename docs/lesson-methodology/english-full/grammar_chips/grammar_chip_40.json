@@ -1,0 +1,15 @@
+{
+  "key": "B24",
+  "title": "B24 - Reported Speech: Present Intro",
+  "essence": "Косвенная речь с вводящим глаголом в настоящем времени (He says..., She asks...) — самый простой случай: времена НЕ меняются. «He says: 'I live in London'» → «He says that he lives in London». Вводящий глагол в настоящем означает, что информация всё ещё актуальна, поэтому сдвигать времена не нужно. Нужно только поменять местоимения.",
+  "formula": "Прямая речь → Косвенная речь (ввод в настоящем)\n\nHe says, \"I live here.\" → He says (that) he lives there.\nShe says, \"I am tired.\" → She says (that) she is tired.\nThey say, \"We have finished.\" → They say (that) they have finished.\n\nИзменения:\n- Местоимения: I → he/she, my → his/her\n- Указательные: this → that, these → those\n- Наречия: here → there, now → then\n- Времена: НЕ меняются!",
+  "base": "A13",
+  "dontConfuse": "Думают, что времена всегда меняются в косвенной речи — нет, только если вводящий глагол в прошедшем. С «He says» времена те же. Также забывают менять местоимения: «He says that I live in London» — неправильно, если речь о нём: «He says that HE lives in London». That можно опускать: «He says he lives in London».",
+  "examples": [
+    {"en": "She says that she is working from home today.", "ru": "Она говорит, что сегодня работает из дома.", "note": "says (настоящее) → времена не меняются, is working остаётся"},
+    {"en": "He says he has already eaten lunch.", "ru": "Он говорит, что уже пообедал.", "note": "has eaten не меняется, ввод в настоящем"},
+    {"en": "The teacher says that we need to study more.", "ru": "Учитель говорит, что нам нужно заниматься больше.", "note": "need не меняется, we остаётся (we = we, не they)"},
+    {"en": "They say they can help us with the project.", "ru": "Они говорят, что могут помочь нам с проектом.", "note": "can не меняется при вводящем глаголе в настоящем"},
+    {"en": "She says she will call me back later.", "ru": "Она говорит, что перезвонит мне позже.", "note": "will не меняется, информация актуальна"}
+  ]
+}

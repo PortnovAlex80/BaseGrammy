@@ -1,0 +1,15 @@
+{
+  "key": "A13",
+  "title": "A13 - Questions: Full System",
+  "essence": "Английская система вопросов — одна из самых непривычных для русскоязычных. В русском вопрос — это только интонация: «Ты идёшь домой?» = «Ты идёшь домой.». В английском порядок слов меняется. Общие вопросы (да/нет) начинаются с вспомогательного глагола. Специальные вопросы начинаются с W-слова (what, where, when...), а дальше — инверсия.",
+  "formula": "Общий вопрос (Yes/No):\nDo/Does/Did + S + V? — Can you help?\nIs/Are/Was + S? — Is she ready?\nHave/Has + S + V3? — Have you finished?\n\nСпециальный вопрос (W-слово):\nWhat/Where/When/Why/Who/How + вспомогательный + S + V?\nWhere do you live? / What is she doing?\n\nВопрос к подлежащему (БЕЗ инверсии!):\nWho + V? — Who called you? (НЕ Who did call)\nWhat + V? — What happened?",
+  "base": "A05",
+  "dontConfuse": "Самая частая ошибка — вопрос к подлежащему с инверсией: «Who did call you?» вместо «Who called you?». Если вопросительное слово ЗАМЕЩАЕТ подлежащее, инверсии нет. Также путают «How much» (неисчисляемое) и «How many» (исчисляемое): «How much does it cost?» vs «How many do you need?».",
+  "examples": [
+    {"en": "Where do you work?", "ru": "Где ты работаешь?", "note": "W-слово + do + S + V"},
+    {"en": "What time does the train leave?", "ru": "Во сколько отправляется поезд?", "note": "What time + does + S + V"},
+    {"en": "Who told you that?", "ru": "Кто тебе это сказал?", "note": "Who = подлежащее, БЕЗ инверсии"},
+    {"en": "Why is she crying?", "ru": "Почему она плачет?", "note": "Why + is (BE инвертируется)"},
+    {"en": "How much does this cost?", "ru": "Сколько это стоит?", "note": "How much + does + S + V"}
+  ]
+}

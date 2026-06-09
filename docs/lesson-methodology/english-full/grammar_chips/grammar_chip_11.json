@@ -1,0 +1,15 @@
+{
+  "key": "A11",
+  "title": "A11 - Adverbs & Frequency",
+  "essence": "Наречия частоты (always, usually, often) описывают, как часто происходит действие. В русском «я всегда хожу» — слова стоят свободно. В английском у наречий частоты строгое место: перед основным глаголом, но ПОСЛЕ глагола BE. Это одно из самых устойчивых правил, и его нарушение сразу выдает не-нативного говорящего.",
+  "formula": "Порядок слов:\nS + always/usually/often/sometimes/rarely/never + V\nS + BE + always/usually/often/sometimes/rarely/never\n\nШкала частоты (100% → 0%):\nalways (100%) > usually (80%) > often (60%) > sometimes (40%) > rarely (20%) > never (0%)\n\nТакже: every day, once a week, twice a month (стоят в конце предложения)",
+  "base": null,
+  "dontConfuse": "Две частые ошибки: (1) «I am always late» — правильно, наречие после BE, но русскоязычные говорят «I always am late»; (2) «I don't never» — двойное отрицание. В английском одно отрицание: «I never» или «I don't ever», но не оба вместе.",
+  "examples": [
+    {"en": "She always drinks coffee in the morning.", "ru": "Она всегда пьёт кофе утром.", "note": "always перед drinks (основной глагол)"},
+    {"en": "He is never late for work.", "ru": "Он никогда не опаздывает на работу.", "note": "never после is (глагол BE)"},
+    {"en": "We usually go to the park on Sundays.", "ru": "Мы обычно ходим в парк по воскресеньям.", "note": "usually перед go"},
+    {"en": "I sometimes read before bed.", "ru": "Я иногда читаю перед сном.", "note": "sometimes перед read"},
+    {"en": "They rarely eat fast food.", "ru": "Они редко едят фастфуд.", "note": "rarely перед eat"}
+  ]
+}

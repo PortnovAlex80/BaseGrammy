@@ -1,0 +1,15 @@
+{
+  "key": "C12",
+  "title": "C12 - Health and Body",
+  "essence": "Английская лексика для описания здоровья и обращения к врачу: symptom (симптом), prescription (рецепт), appointment (запись к врачу). Важно различать ache (тупая боль: headache, toothache) и pain (общая боль). Английские идиомы о здоровье часто непредсказуемы: under the weather = нездоровится.",
+  "formula": "У врача:\nmake an appointment — записаться к врачу\ndescribe symptoms — описать симптомы\nprescribe medicine — выписать лекарство\ntake medicine — принимать лекарство (не eat/drink)\n\nЖалобы:\nI have a headache / sore throat / fever / cough\nI'm feeling dizzy / nauseous / exhausted\n\nТермины:\ntreatment, diagnosis, side effect, allergy, chronic, recovery",
+  "base": "A12",
+  "dontConfuse": "Русские говорят «eat medicine» или «drink pills» — правильно take medicine / take pills. Также путают hurt (глагол «болит» — My head hurts) и ache (существительное/суффикс — headache). «Recipe» — кулинарный рецепт, медицинский — prescription.",
+  "examples": [
+    {"en": "I need to make an appointment with the doctor.", "ru": "Мне нужно записаться к врачу.", "note": "make an appointment — записаться (не sign up)"},
+    {"en": "She has a sore throat and a high fever.", "ru": "У неё болит горло и высокая температура.", "note": "sore throat = больное горло, fever = температура"},
+    {"en": "The doctor prescribed antibiotics for the infection.", "ru": "Врач прописал антибиотики от инфекции.", "note": "prescribe = выписать рецепт, prescription = рецепт"},
+    {"en": "Take two pills after each meal.", "ru": "Принимайте по две таблетки после каждого приёма пищи.", "note": "take pills — не eat/drink pills"},
+    {"en": "He is in a lot of pain after the surgery.", "ru": "Он испытывает сильную боль после операции.", "note": "in pain — испытывать боль, pain — общая боль"}
+  ]
+}

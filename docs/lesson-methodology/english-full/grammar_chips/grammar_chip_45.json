@@ -1,0 +1,15 @@
+{
+  "key": "C02",
+  "title": "C02 - Inversion & Emphasis",
+  "essence": "Инверсия — это перестановка вспомогательного глагола перед подлежащим для эмфазы. Используется с отрицательными наречиями (never, rarely, not only) на начале предложения. Звучит формально и драматично — типично для письменного английского и публичных выступлений.",
+  "formula": "Negative adverb + auxiliary + subject + verb\n\nNever have I seen...\nNot only did she win, but she also broke the record.\nRarely do people...\nHardly had we arrived when...\nNo sooner had... than...\nSo + adjective + was + subject that...",
+  "base": "B19",
+  "dontConfuse": "Русские часто забывают ставить вспомогательный глагол: «Never I have seen» вместо «Never have I seen». Инверсия требует do/does/did для обычных глаголов, как в вопросе. Также путают hardly...when и no sooner...than — это парные союзы, их нельзя смешивать.",
+  "examples": [
+    {"en": "Never have I seen such a beautiful sunset.", "ru": "Никогда прежде я не видел такого красивого заката.", "note": "Never + have I seen (инверсия present perfect)"},
+    {"en": "Not only did she pass the exam, but she also got the highest score.", "ru": "Она не только сдала экзамен, но и получила высший балл.", "note": "Not only + did she pass (инверсия past simple через did)"},
+    {"en": "Hardly had we arrived when the phone rang.", "ru": "Едва мы приехали, как зазвонил телефон.", "note": "Hardly + had we arrived when — пара hardly...when"},
+    {"en": "So impressive was her performance that the audience stood up.", "ru": "Её выступление было настолько впечатляющим, что публика встала.", "note": "So + adj + was + subject + that"},
+    {"en": "Rarely do we get such an opportunity.", "ru": "Редко выпадает такая возможность.", "note": "Rarely + do we get (инверсия через do)"}
+  ]
+}

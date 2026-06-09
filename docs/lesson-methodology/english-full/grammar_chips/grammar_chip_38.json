@@ -1,0 +1,15 @@
+{
+  "key": "B22",
+  "title": "B22 - Conditionals: Mixed",
+  "essence": "Mixed Conditionals комбинируют условия из разных времён. Два основных типа: (1) нереальное прошлое → нереальный результат сейчас: «Если бы я тогда учился, СЕЙЧАС бы у меня была хорошая работа». (2) нереальное настоящее → нереальный результат в прошлом: «Если бы он не был таким ленивым (вообще), он бы ЗАКОНЧИЛ проект вчера». Это самая продвинутая тема в условных предложениях.",
+  "formula": "Mixed 1: Прошлое → Настоящее\nIf + Past Perfect, would + V\nIf I had accepted that job, I would live in London now.\n(Тогда не принял → сейчас живу не в Лондоне)\n\nMixed 2: Настоящее → Прошлое\nIf + Past Simple, would have + V3\nIf she were more careful, she wouldn't have made that mistake.\n(Вообще неосторожная → тогда ошиблась)",
+  "base": "B21",
+  "dontConfuse": "Путают, какой тип смешанного условного использовать. Проверка: спросите себя, КОГДА условие (if) и КОГДА результат. Если условие в прошлом (If I had studied), а результат сейчас (I would have a better job) — это Mixed 1. Также ошибаются в формах: «If I had studied, I will have a good job» — смешивают will и would. В смешанных всегда используется would (не will).",
+  "examples": [
+    {"en": "If I had been born in a different country, I would speak another language.", "ru": "Если бы я родился в другой стране, я бы говорил на другом языке.", "note": "Mixed 1: условие в прошлом (had been born) → результат сейчас (would speak)"},
+    {"en": "If she weren't so shy, she would have asked him out.", "ru": "Если бы она не была такой стеснительной, она бы его пригласила на свидание.", "note": "Mixed 2: общая черта (weren't shy) → результат в прошлом (would have asked)"},
+    {"en": "If I had saved more money, I wouldn't be worried about rent now.", "ru": "Если бы я отложил больше денег, я бы сейчас не переживал за аренду.", "note": "Mixed 1: прошлый выбор (had saved) → текущее состояние (wouldn't be worried)"},
+    {"en": "If he weren't allergic to cats, we would have adopted one long ago.", "ru": "Если бы у него не было аллергии на кошек, мы бы давно завели одну.", "note": "Mixed 2: постоянное свойство (weren't allergic) → прошлый результат (would have adopted)"},
+    {"en": "If they had left earlier, they would be here by now.", "ru": "Если бы они вышли раньше, они были бы уже здесь.", "note": "Mixed 1: прошлое действие (had left) → настоящий результат (would be)"}
+  ]
+}

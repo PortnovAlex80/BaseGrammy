@@ -1,0 +1,15 @@
+{
+  "key": "C19",
+  "title": "C19 - Meta-map: Russian Cases to English",
+  "essence": "В русском падежи выражают отношения между словами, а в английском эту роль берут предлоги и порядок слов. Карта: дательный → to/for, творительный → with/by, предложный → about/in/on, родительный → of. Эта мета-карта помогает русскоязычным не угадывать предлоги, а подставлять по аналогии с падежами.",
+  "formula": "Падеж → Предлог:\n\nДательный (кому? чему?): to, for\ngive it TO me, explain it TO me, good FOR you\n\nТворительный (кем? чем?): with, by\nwritten BY Tolstoy, cut WITH a knife, go BY bus\n\nПредложный (о чём? где?): about, in, on\ntalk ABOUT it, live IN London, depend ON\n\nРодительный (кого? чего?): of, from\na cup OF tea, result OF, suffer FROM\n\nВинительный (вижу что?): прямой объект без предлога\nI see the house, She bought a car",
+  "base": "A07",
+  "dontConfuse": "Прямой перенос предлогов по звуковой аналогии: «зависит от» → «depends of» (правильно: depends ON). «Ответить на» → «answer on» (правильно: answer + прямой объект без предлога, или reply TO). Ключевой принцип: русскому падежу не всегда соответствует один английский предлог — контекст решает.",
+  "examples": [
+    {"en": "She explained the rules to the students.", "ru": "Она объяснила правила студентам.", "note": "Дательный → TO: explain to, give to, show to"},
+    {"en": "The letter was written by a famous author.", "ru": "Письмо было написано известным автором.", "note": "Творительный → BY (агент действия в пассиве)"},
+    {"en": "He cut the paper with a knife.", "ru": "Он разрезал бумагу ножом.", "note": "Творительный (орудие) → WITH (инструмент)"},
+    {"en": "We are talking about the new project.", "ru": "Мы говорим о новом проекте.", "note": "Предложный → ABOUT (о чём-то)"},
+    {"en": "The roof of the house needs repair.", "ru": "Крыша дома нуждается в ремонте.", "note": "Родительный → OF (принадлежность, часть)"}
+  ]
+}

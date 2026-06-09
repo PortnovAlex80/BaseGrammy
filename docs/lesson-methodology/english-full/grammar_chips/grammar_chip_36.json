@@ -1,0 +1,15 @@
+{
+  "key": "B20",
+  "title": "B20 - Conditionals: 2nd",
+  "essence": "Второй условный — нереальная ситуация в настоящем или будущем: «Если бы у меня были деньги, я бы купил машину» (но денег нет). Формула: If + Past Simple, would + V. Это НЕ прошедшее время — это subjunctive, «сослагательное наклонение». В русском оно образуется частицей «бы», а в английском — сдвигом времени назад: Present → Past.",
+  "formula": "Second Conditional (нереальное настоящее/будущее):\nIf + Past Simple, would + V\nIf I had a million dollars, I would travel the world.\n\nWere вместо was (формальный вариант):\nIf I were rich, I would... (для всех лиц)\nIf she were here, she would... (более формально)\n\nCould / might вместо would:\nIf I had more time, I could help. (= смог бы)",
+  "base": "B19",
+  "dontConfuse": "Пишут «If I would have» — это неверно для Second Conditional. Правильно: «If I had..., I would...». Would НИКОГДА не стоит в if-части. Также путают First и Second Conditional: «If I win the lottery, I will buy a house» (First — реально возможно) vs «If I won the lottery, I would buy a house» (Second — маловероятно). Разница в реалистичности.",
+  "examples": [
+    {"en": "If I spoke better English, I would apply for that job.", "ru": "Если бы я лучше говорил по-английски, я бы подал заявку на ту работу.", "note": "Second Conditional: нереальная ситуация, сейчас не speaks хорошо"},
+    {"en": "If she were the boss, she would give everyone a raise.", "ru": "Если бы она была начальником, она бы всем повысила зарплату.", "note": "were для всех лиц — более формальный вариант"},
+    {"en": "What would you do if you won the lottery?", "ru": "Что бы ты сделал, если бы выиграл в лотерею?", "note": "Вопрос: What + would + S + V + if + Past Simple"},
+    {"en": "If we had more time, we could visit the museum.", "ru": "Если бы у нас было больше времени, мы могли бы посетить музей.", "note": "could вместо would = «смогли бы»"},
+    {"en": "I wouldn't say that if I were you.", "ru": "На твоём месте я бы так не говорил.", "note": "Частый фразеологизм: If I were you = на твоём месте"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "key": "B25",
+  "title": "B25 - Reported Speech: Past Intro",
+  "essence": "Когда вводящий глагол в прошедшем (He said..., She told me...), времена сдвигаются на шаг назад: Present → Past, Past → Past Perfect, Future → Conditional. Это так называемый «sequence of tenses» (согласование времён). В русском такого правила нет, поэтому русскоязычным приходится запоминать схему сдвига. Главное: каждое время «отступает» на один шаг в прошлое.",
+  "formula": "Сдвиг времён при вводящем глаголе в прошедшем:\n\nPresent Simple → Past Simple\n\"I live here\" → He said he lived there.\n\nPresent Continuous → Past Continuous\n\"I am working\" → She said she was working.\n\nPresent Perfect → Past Perfect\n\"I have finished\" → He said he had finished.\n\nPast Simple → Past Perfect\n\"I saw it\" → She said she had seen it.\n\nwill → would\ncan → could\nam/is/are going to → was/were going to",
+  "base": "B24",
+  "dontConfuse": "Путают said и told: «He said me that...» — неверно. Said БЕЗ дополнения (He said that...), told С дополнением (He told me that...). Также забывают менять here → there, today → that day, yesterday → the day before. И самая частая ошибка: не сдвигают will — «He said he will come» вместо «He said he would come».",
+  "examples": [
+    {"en": "She said that she lived in Moscow.", "ru": "Она сказала, что живёт в Москве.", "note": "lives → lived (Present Simple → Past Simple)"},
+    {"en": "He told me he had finished the report.", "ru": "Он сказал мне, что закончил отчёт.", "note": "has finished → had finished, told + me (с дополнением)"},
+    {"en": "They said they would arrive the next day.", "ru": "Они сказали, что прибудут на следующий день.", "note": "will arrive → would arrive, tomorrow → the next day"},
+    {"en": "She told us she couldn't come to the party.", "ru": "Она сказала нам, что не сможет прийти на вечеринку.", "note": "can't → couldn't, told + us"},
+    {"en": "He said he had been working all day.", "ru": "Он сказал, что работал весь день.", "note": "has been working → had been working (Perfect Continuous сдвиг)"}
+  ]
+}

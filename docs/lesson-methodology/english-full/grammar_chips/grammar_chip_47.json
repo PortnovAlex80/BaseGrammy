@@ -1,0 +1,15 @@
+{
+  "key": "C04",
+  "title": "C04 - Phrasal Verbs: Advanced",
+  "essence": "Продвинутые фразовые глаголы часто состоят из трёх частей: глагол + наречие + предлог (look forward to, put up with, come up with). Их значение невозможно вывести из отдельных слов — каждое сочетание нужно учить целиком. Трёхчастные фразовые глаголы — верный признак продвинутого уровня.",
+  "formula": "Verb + Adverb + Preposition (3-part phrasal)\n\nlook forward to + V-ing (ждать с нетерпением)\nput up with + noun/V-ing (терпеть)\ncome up with + noun (придумать)\nget away with + noun/V-ing (сойти с рук)\nrun out of + noun (закончиться)\ncut down on + noun (сократить)\nlook down on + noun (свысока смотреть)\ncatch up with + noun (догнать)",
+  "base": "B17",
+  "dontConfuse": "Русские часто ставят прямое дополнение между частями трёхчастного глагола: «look forward to see you» вместо «look forward to seeing you» — после предлога to всегда V-ing. Также путают get away with (сойти с рук) и get along with (ладить с).",
+  "examples": [
+    {"en": "I'm looking forward to hearing from you.", "ru": "С нетерпением жду вашего ответа.", "note": "look forward to + V-ing (to здесь — предлог, не инфинитив)"},
+    {"en": "She puts up with a lot of noise at work.", "ru": "Она терпит много шума на работе.", "note": "put up with = терпеть, мириться с"},
+    {"en": "We need to come up with a better solution.", "ru": "Нам нужно придумать лучшее решение.", "note": "come up with = придумать, предложить"},
+    {"en": "They ran out of time before finishing the test.", "ru": "У них закончилось время до завершения теста.", "note": "run out of = закончиться, иссякнуть"},
+    {"en": "He got away with cheating on the exam.", "ru": "Ему сошло с рук списывание на экзамене.", "note": "get away with = избежать наказания за"}
+  ]
+}

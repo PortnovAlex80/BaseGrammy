@@ -1,0 +1,15 @@
+{
+  "key": "A07",
+  "title": "A07 - Prepositions of Time & Place",
+  "essence": "Английские предлоги времени и места (in/on/at) не переводятся один к одному с русскими. В русском мы говорим «в понедельник», «в январе», «в 2024 году» — три «в», а в английском это три разных предлога: on Monday, in January, in 2024. Нужны не правила-исключения, а система: от общего к частному.",
+  "formula": "ВРЕМЯ:\nat + точное время: at 5 pm, at midnight, at the moment\non + день/дата: on Monday, on July 4th, on my birthday\nin + период длиннее дня: in January, in 2024, in the morning/summer\n\nМЕСТО:\nat + точка: at the bus stop, at home, at work\non + поверхность/улица: on the table, on Wall Street\nin + объём/город/страна: in the box, in London, in Russia\n\nИсключения: at night, at the weekend (брит.), on time vs in time",
+  "base": null,
+  "dontConfuse": "Русскоязычные переносят русские «в/на» на английский: «in Monday» вместо «on Monday». Логика: on — для конкретных дней (как бы «на поверхности календаря»), in — для «контейнеров» (месяц, год, утро), at — для «точек» (5 часов, автобусная остановка).",
+  "examples": [
+    {"en": "The meeting starts at 3 pm on Friday.", "ru": "Собрание начинается в 3 в пятницу.", "note": "at + время, on + день"},
+    {"en": "She was born in March.", "ru": "Она родилась в марте.", "note": "in + месяц — «контейнер»"},
+    {"en": "The keys are on the table.", "ru": "Ключи на столе.", "note": "on — на поверхности"},
+    {"en": "I left my phone in the car.", "ru": "Я оставил телефон в машине.", "note": "in — внутри объёма"},
+    {"en": "He is at work right now.", "ru": "Он сейчас на работе.", "note": "at — точка/место деятельности"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "key": "C08",
+  "title": "C08 - Meetings and Negotiation",
+  "essence": "Лексика для деловых встреч и переговоров: agenda (повестка дня), compromise (компромисс), deadline, feedback. Английский деловой стиль предпочитает косвенные формулировки — «I'm afraid I disagree» вместо «You're wrong». Это не вежливость, а стандарт корпоративной коммуникации.",
+  "formula": "Структура встречи:\nset the agenda — установить повестку\nchair a meeting — вести собрание\ntake minutes — вести протокол\nmove on to the next item — перейти к следующему вопросу\nwrap up — подвести итоги\n\nПереговоры:\nmake an offer, reach a compromise, come to an agreement\nturn down, accept, negotiate terms",
+  "base": "C07",
+  "dontConfuse": "Русские говорят «Let's discuss about this» — discuss не требует предлога (правильно: Let's discuss this). Также путают agenda (список тем) и meeting (сама встреча). «Compromise» в английском позитивно, а не уступка, как иногда воспринимается в русской деловой культуре.",
+  "examples": [
+    {"en": "The first item on the agenda is the budget review.", "ru": "Первый вопрос повестки — обзор бюджета.", "note": "agenda = повестка дня, план встречи"},
+    {"en": "We need to reach a compromise before the deadline.", "ru": "Нам нужно достичь компромисса до крайнего срока.", "note": "reach a compromise = прийти к компромиссу"},
+    {"en": "Let's move on to the next point.", "ru": "Давайте перейдём к следующему вопросу.", "note": "move on = перейти дальше (стандартная фраза на встречах)"},
+    {"en": "Could you take the minutes of today's meeting?", "ru": "Не могли бы вы вести протокол сегодняшней встречи?", "note": "take minutes = вести протокол (не write protocol)"},
+    {"en": "I'm afraid I have to disagree with that proposal.", "ru": "Боюсь, я должен не согласиться с этим предложением.", "note": "I'm afraid I disagree — косвенное несогласие, стандарт делового тона"}
+  ]
+}

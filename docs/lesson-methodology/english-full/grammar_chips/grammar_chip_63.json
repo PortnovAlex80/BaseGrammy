@@ -1,0 +1,15 @@
+{
+  "key": "C20",
+  "title": "C20 - Paraphrasing and Synonymy",
+  "essence": "Умение перефразировать — ключевой навык продвинутого уровня: сказать то же самое пятью способами. Это помогает избегать повторов, адаптировать речь к аудитории и обходить «забытые» слова. Пять методов: синонимы, изменение структуры, упрощение, обобщение, конкретизация.",
+  "formula": "5 способов перефразировать:\n\n1. Синонимы: important → crucial / vital / essential\n2. Структура: passive ↔ active, question ↔ statement\n3. Часть речи: decide (V) → decision (N) → decisive (Adj)\n4. Фразовый глагол ↔ формальный: put off ↔ postpone\n5. Пример вместо абстракции: He's lazy → He never does anything\n\nПолезные вводные:\nin other words, that is to say, what I mean is,\nto put it differently, simply put",
+  "base": "B27",
+  "dontConfuse": "Синонимы не взаимозаменяемы на 100%: big и large близки, но «a big mistake» звучит нормально, а «a large mistake» — нет. Коллокации решают. Также путают register: «kids» (неформально) и «children» (нейтрально) — не всегда взаимозаменяемы. Paraphrase — не пересказ всего текста, а переформулировка одной мысли.",
+  "examples": [
+    {"en": "The task is important. → The task is crucial for our success.", "ru": "Задача важна. → Задача критически важна для нашего успеха.", "note": "Метод 1: синоним (important → crucial)"},
+    {"en": "They cancelled the meeting. → The meeting was cancelled.", "ru": "Они отменили встречу. → Встреча была отменена.", "note": "Метод 2: смена структуры (active → passive)"},
+    {"en": "We need to decide. → We need to make a decision.", "ru": "Нам нужно решить. → Нам нужно принять решение.", "note": "Метод 3: изменение части речи (verb → noun)"},
+    {"en": "They put off the event. → They postponed the event.", "ru": "Они отложили мероприятие. → Они отложили мероприятие.", "note": "Метод 4: фразовый глагол → формальный глагол"},
+    {"en": "The film was boring — I almost fell asleep twice.", "ru": "Фильм был скучным — я почти заснул дважды.", "note": "Метод 5: конкретный пример вместо абстрактного описания"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "key": "B27",
+  "title": "B27 - Connecting Words",
+  "essence": "Связующие слова (linkers, conjunctions) соединяют идеи в предложения и абзацы, показывая отношения между ними: contrast (however, although, despite), cause/effect (because, therefore, as a result), addition (moreover, furthermore, in addition), condition (unless, provided that, as long as). В русском мы используем «но», «потому что», «однако» — английские линкеры имеют свои тонкости употребления и пунктуации.",
+  "formula": "Contrast:\nhowever, + clause (Однако,...)\nAlthough + clause, clause (Хотя...,...)\nDespite + noun/V-ing (Несмотря на...)\nIn spite of + noun/V-ing\n\nCause/Effect:\nbecause + clause (потому что)\nBecause of + noun (из-за)\nTherefore, + clause (Поэтому...)\nAs a result, + clause (В результате...)\n\nAddition:\nMoreover, / Furthermore, / In addition, (Кроме того,...)\n\nCondition:\nunless = if...not (если не)\nas long as = при условии что\nprovided that = при условии что",
+  "base": "B26",
+  "dontConfuse": "Путают although и despite: «Despite it was raining» — неверно. Despite + существительное/V-ing: «Despite the rain» или «Despite raining». Although + предложение: «Although it was raining». Также путают however и but: however — наречие, ставится после точки или с точкой с запятой (However, ...); but — союз, соединяет части одного предложения (..., but ...). И «because of» + существительное vs «because» + предложение.",
+  "examples": [
+    {"en": "Although it was raining, we went for a walk.", "ru": "Хотя шёл дождь, мы пошли на прогулку.", "note": "Although + предложение (it was raining), запятая перед главной частью"},
+    {"en": "Despite the delay, the flight arrived safely.", "ru": "Несмотря на задержку, рейс прибыл благополучно.", "note": "Despite + существительное (the delay), НЕ Despite of"},
+    {"en": "The project failed. However, we learned a lot from it.", "ru": "Проект провалился. Однако мы многому из него научились.", "note": "However = отдельное предложение с запятой, не but"},
+    {"en": "I won't go unless you come with me.", "ru": "Я не пойду, если ты не пойдёшь со мной.", "note": "unless = if...not, уже содержит отрицание"},
+    {"en": "You can stay here as long as you help with the chores.", "ru": "Можешь оставаться здесь при условии, что поможешь по дому.", "note": "as long as = при условии что, задаёт условие"}
+  ]
+}

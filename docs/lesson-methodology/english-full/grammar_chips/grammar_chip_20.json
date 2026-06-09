@@ -1,0 +1,15 @@
+{
+  "key": "B04",
+  "title": "B04 - Present Continuous",
+  "essence": "Present Continuous описывает то, что происходит прямо сейчас или временно. Образуется: глагол to be (am/is/are) + глагол с окончанием -ing. В русском нет аналога этого времени — мы используем тот же глагол в настоящем: «Я работаю» может означать и вообще, и прямо сейчас. В английском это два разных времени: I work (вообще) vs I am working (прямо сейчас).",
+  "formula": "Утверждение: S + am/is/are + V-ing\nОтрицание: S + am not / isn't / aren't + V-ing\nВопрос: Am/Is/Are + S + V-ing?\n\nОрфография -ing:\n- e → drop e + ing: make → making\n- ie → y + ing: die → dying\n- ударная + согл. → удвоение: run → running",
+  "base": "A04",
+  "dontConfuse": "Русскоязычные часто забывают глагол to be и говорят «I working» вместо «I am working». В английском BE — обязательная часть времени, без неё Present Continuous не существует. Также путают с Present Simple: «I am knowing» — глаголы состояния (know, want, like, understand) НЕ используются в Continuous.",
+  "examples": [
+    {"en": "I am reading a book right now.", "ru": "Я сейчас читаю книгу.", "note": "am + reading = действие в момент речи"},
+    {"en": "She isn't working this week.", "ru": "Она не работает на этой неделе.", "note": "Временная ситуация, не только данный момент"},
+    {"en": "Are you coming to the party tonight?", "ru": "Ты идёшь на вечеринку сегодня вечером?", "note": "Запланированное будущее: Are + S + V-ing"},
+    {"en": "They are staying at a hotel.", "ru": "Они живут в отеле.", "note": "Временное проживание (обычно живут в другом месте)"},
+    {"en": "The kids are playing in the garden.", "ru": "Дети играют в саду.", "note": "are + playing, действие происходит сейчас"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "key": "B05",
+  "title": "B05 - Past Continuous",
+  "essence": "Past Continuous описывает действие, которое было в процессе в определённый момент в прошлом: «я делал (что-то) в тот момент, когда...». Образуется: was/were + V-ing. Чаще всего используется в связке с Past Simple для описания фона и прерванного действия: «Я читал, когда позвонил телефон».",
+  "formula": "Утверждение: S + was/were + V-ing\nОтрицание: S + wasn't / weren't + V-ing\nВопрос: Was/Were + S + V-ing?\n\nКлассический паттерн:\nPast Continuous (фон) + when + Past Simple (событие)\nPast Simple (событие) + while + Past Continuous (фон)",
+  "base": "B04",
+  "dontConfuse": "Путают was/were с am/is/are: «I were sleeping» вместо «I was sleeping». I/he/she/it → was; we/you/they → were. Также используют Past Continuous вместо Past Simple для единичных завершённых действий: «I was going to the shop yesterday» — если это просто факт, то «I went to the shop». Continuous нужен именно для процесса в момент.",
+  "examples": [
+    {"en": "I was cooking dinner when the phone rang.", "ru": "Я готовил ужин, когда зазвонил телефон.", "note": "Фоновое действие (was cooking) прервано событием (rang)"},
+    {"en": "They were watching TV at 8 pm yesterday.", "ru": "Они смотрели телевизор вчера в 8 вечера.", "note": "Действие в процессе в конкретный момент прошлого"},
+    {"en": "While she was reading, he was cleaning the house.", "ru": "Пока она читала, он убирал дом.", "note": "Два одновременных фоновых действия"},
+    {"en": "We weren't sleeping when you called.", "ru": "Мы не спали, когда ты позвонил.", "note": "Отрицание: weren't + sleeping"},
+    {"en": "What were you doing at midnight?", "ru": "Что ты делал в полночь?", "note": "Wh-вопрос: What + were + S + V-ing"}
+  ]
+}

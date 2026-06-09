@@ -1,0 +1,15 @@
+{
+  "key": "C13",
+  "title": "C13 - Travel and Transport",
+  "essence": "Транспортная лексика: boarding (посадка на самолёт), itinerary (маршрут), departure (отправление), destination (место назначения). Важно различать trip (поездка), journey (путь), voyage (морское путешествие), tour (экскурсия). Предлоги в транспорте зависят от типа: on a bus, in a car, on a plane.",
+  "formula": "Аэропорт:\nboarding pass, gate, check-in, luggage / baggage\ndeparture, arrival, delay, cancellation, connecting flight\n\nТранспорт:\non foot, by bus/train/plane, in a car/taxi\ntake a taxi, catch a bus, miss a flight\n\nРазмещение:\nbook a hotel, check in/out, single/double room\nreception, reservation, accommodation",
+  "base": "A07",
+  "dontConfuse": "Путают trip (короткая поездка, any purpose) и journey (длительный путь, сам процесс). Также путают travel (глагол/несчисляемое — путешествовать) и a trip (существительное, конкретная поездка). «In bus» вместо «on a bus» — ошибка предлога. Luggage и baggage — синонимы, оба неисчисляемые (не luggages).",
+  "examples": [
+    {"en": "Your boarding pass says Gate 14.", "ru": "В вашем посадочном талоне указан выход 14.", "note": "boarding pass = посадочный талон"},
+    {"en": "We have a three-hour layover in Frankfurt.", "ru": "У нас трёхчасовая пересадка во Франкфурте.", "note": "layover / connecting flight = пересадка"},
+    {"en": "The itinerary includes visits to three cities.", "ru": "Маршрут включает посещение трёх городов.", "note": "itinerary = маршрут, план поездки"},
+    {"en": "I prefer travelling by train rather than by plane.", "ru": "Я предпочитаю путешествовать на поезде, а не на самолёте.", "note": "by + транспорт (без артикля): by train, by bus"},
+    {"en": "We need to check out of the hotel by noon.", "ru": "Нам нужно выехать из отеля до полудня.", "note": "check out = выехать из отеля, check in = заселиться"}
+  ]
+}

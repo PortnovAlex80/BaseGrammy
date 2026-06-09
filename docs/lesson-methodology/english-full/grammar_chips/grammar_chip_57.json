@@ -1,0 +1,15 @@
+{
+  "key": "C14",
+  "title": "C14 - Technology and Digital",
+  "essence": "Цифровая лексика пронизывает повседневный английский: upload/download (загрузить/скачать), sync (синхронизировать), backup (резервная копия). Важно различать install (установить программу) и download (скачать файл), sign in (войти в аккаунт) и sign up (зарегистрироваться).",
+  "formula": "Действия:\nupload, download, install, update, uninstall\nsign in / log in, sign up / register, sign out / log out\nsync, backup, restore, reset, restart\n\nУстройства и ПО:\ndevice, screen, battery, charger, cable\nsoftware, hardware, app / application, browser, link\npassword, username, account, profile, settings\n\nПроблемы:\ncrash, freeze, glitch, bug, error message\nrun out of storage, lose data, hack, virus",
+  "base": "A04",
+  "dontConfuse": "Русские говорят «upload» вместо «download» и наоборот: upload — загрузить НА сервер (отдаёшь), download — скачать С сервера (получаешь). Также путают sign in (войти — уже есть аккаунт) и sign up (зарегистрироваться — создать аккаунт). «Install» и «download» — не одно и то же.",
+  "examples": [
+    {"en": "You need to download the app before you can install it.", "ru": "Вам нужно скачать приложение, прежде чем его устанавливать.", "note": "download = скачать, install = установить — разные шаги"},
+    {"en": "Please back up your files regularly.", "ru": "Пожалуйста, регулярно делайте резервные копии файлов.", "note": "back up (глагол — 2 слова) = создать копию, backup (существительное — 1 слово)"},
+    {"en": "I can't sign in — it says my password is incorrect.", "ru": "Не могу войти — пишет, что пароль неверный.", "note": "sign in = войти (в существующий аккаунт), sign up = зарегистрироваться"},
+    {"en": "The app crashed and I lost all my changes.", "ru": "Приложение зависло, и я потерял все изменения.", "note": "crash = аварийное завершение, freeze = зависание"},
+    {"en": "Make sure your phone is synced with the cloud.", "ru": "Убедитесь, что ваш телефон синхронизирован с облаком.", "note": "sync (от synchronize) = синхронизировать данные"}
+  ]
+}

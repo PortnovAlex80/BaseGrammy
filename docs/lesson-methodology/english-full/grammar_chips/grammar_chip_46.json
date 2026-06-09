@@ -1,0 +1,15 @@
+{
+  "key": "C03",
+  "title": "C03 - Participle Clauses",
+  "essence": "Причастные обороты позволяют сократить сложные предложения, убрав подлежащее. Having done указывает на завершённое действие перед другим. V-ing (-ing форма) описывает одновременное или причинное действие. Используется в формальном письменном английском.",
+  "formula": "Having + V3 (Past Participle) → завершённое действие раньше\nV-ing → одновременное или причинное действие\nV3 (Past Participle) → пассивное значение\n\nHaving finished the work, he went home.\nFeeling tired, she went to bed early.\nBuilt in 1890, the bridge is still in use.",
+  "base": "B14",
+  "dontConfuse": "Главная ошибка — несовпадение подлежащего в главном предложении и подразумеваемого субъекта в причастном обороте: «Walking down the street, the trees were beautiful» (деревья не гуляли). Подлежащее главного предложения должно быть тем, кто совершает действие в причастном обороте.",
+  "examples": [
+    {"en": "Having studied all night, she felt confident about the exam.", "ru": "Проработав всю ночь, она чувствовала себя уверенно перед экзаменом.", "note": "Having studied = завершённое действие перед felt confident"},
+    {"en": "Not knowing the language, he used gestures to communicate.", "ru": "Не зная языка, он общался жестами.", "note": "Not knowing = причина (потому что не знал)"},
+    {"en": "Written in simple language, the article was easy to understand.", "ru": "Написанная простым языком, статья была понятной.", "note": "Written = пассив (статья была написана)"},
+    {"en": "Having been warned twice, he was careful this time.", "ru": "Получив предупреждение дважды, в этот раз он был осторожен.", "note": "Having been warned = пассив + завершённость"},
+    {"en": "Tired from the journey, they fell asleep immediately.", "ru": "Уставшие с дороги, они тут же уснули.", "note": "Tired = причастие-прилагательное, причина"}
+  ]
+}

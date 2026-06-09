@@ -1,0 +1,15 @@
+{
+  "key": "B16",
+  "title": "B16 - Gerund & Infinitive II",
+  "essence": "Некоторые глаголы меняют смысл в зависимости от того, стоит после них герундий или инфинитив. Это «глаголы-ловушки»: remember, forget, stop, try, regret, mean. Каждый из них с V-ing означает одно, а с to V — совершенно другое. Это тонкое различие, которое невозможно понять без контекста и конкретных примеров.",
+  "formula": "remember + V-ing = вспомнить то, что было (прошлое)\nremember + to V = не забыть сделать (будущее)\n\nforget + V-ing = забыть о том, что было\nforget + to V = забыть сделать\n\nstop + V-ing = перестать делать (прекратить)\nstop + to V = остановиться, чтобы сделать\n\ntry + V-ing = попробовать (эксперимент)\ntry + to V = пытаться (усилие)\n\nregret + V-ing = сожалеть о сделанном\nregret + to V = с сожалением сообщить",
+  "base": "B15",
+  "dontConfuse": "Самая частая путаница — remember/forget: «I remember to lock the door» (я помню, что нужно запереть — ещё не запёр) vs «I remember locking the door» (я помню, как запирал — уже запёр). И stop: «I stopped smoking» (я бросил курить) vs «I stopped to smoke» (я остановился, чтобы покурить). Контекст полностью меняет смысл.",
+  "examples": [
+    {"en": "I remember closing the window before I left.", "ru": "Я помню, как закрыл окно перед уходом.", "note": "remember + V-ing = воспоминание о прошлом действии"},
+    {"en": "Please remember to close the window.", "ru": "Пожалуйста, не забудь закрыть окно.", "note": "remember + to V = задача на будущее"},
+    {"en": "She stopped talking and looked at the door.", "ru": "Она перестала разговаривать и посмотрела на дверь.", "note": "stop + V-ing = прекратить действие"},
+    {"en": "He stopped to buy some milk on the way home.", "ru": "По дороге домой он остановился купить молока.", "note": "stop + to V = остановиться с целью сделать"},
+    {"en": "I tried opening the window, but it didn't help.", "ru": "Я попробовал открыть окно, но это не помогло.", "note": "try + V-ing = эксперимент, попробовать один вариант"}
+  ]
+}

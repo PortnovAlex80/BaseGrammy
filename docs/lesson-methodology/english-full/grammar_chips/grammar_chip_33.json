@@ -1,0 +1,15 @@
+{
+  "key": "B17",
+  "title": "B17 - Phrasal Verbs: Daily",
+  "essence": "Фразовые глаголы — это глагол + предлог/наречие, вместе образующие новый смысл, который нельзя угадать из отдельных слов: get up (вставать), turn on (включить), wake up (проснуться). Для русскоязычного ученика это особенно трудно, потому что в русском нет аналога — мы используем приставки (встать, включить). В английском один глагол может давать 5-10 фразовых глаголов с разными значениями (get up, get on, get off, get over, get by...).",
+  "formula": "Глагол + частица (предлог/наречие) = новый смысл\n\nРазделимые (частица может отходить):\nturn on → turn it on / turn on the light\nput on → put your coat on / put on your coat\n\nНеразделимые (частица всегда рядом):\nlook for → look for your keys (НЕ look your keys for)\nrun into → run into an old friend",
+  "base": "A04",
+  "dontConfuse": "Ставят местоимение после частицы в разделимых глаголах: «turn on it» — неверно, правильно «turn it on». Местоимение ВСЕГДА ставится между глаголом и частицей: pick it up, put them on, turn it off. Также путают значение: «give up» не «отдать наверх», а «бросить, сдаться»; «look forward to» не «смотреть вперёд», а «ждать с нетерпением».",
+  "examples": [
+    {"en": "I get up at 7 am every morning.", "ru": "Я встаю в 7 утра каждое утро.", "note": "get up = вставать (с постели), неразделимый"},
+    {"en": "Can you turn on the light? It's dark.", "ru": "Можешь включить свет? Темно.", "note": "turn on = включить, разделимый: turn the light on / turn it on"},
+    {"en": "She woke up late and missed the bus.", "ru": "Она проснулась поздно и пропустила автобус.", "note": "wake up = проснуться, неразделимый"},
+    {"en": "Put on your jacket — it's cold outside.", "ru": "Надень куртку — на улице холодно.", "note": "put on = надеть, разделимый: put your jacket on / put it on"},
+    {"en": "I'm looking for my phone. Have you seen it?", "ru": "Я ищу свой телефон. Ты его не видел?", "note": "look for = искать, неразделимый"}
+  ]
+}

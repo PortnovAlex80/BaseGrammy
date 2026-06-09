@@ -1,0 +1,15 @@
+{
+  "key": "B08",
+  "title": "B08 - Present Perfect Continuous",
+  "essence": "Present Perfect Continuous подчёркивает ПРОЦЕСС, который начался в прошлом и продолжается до сих пор (или только что закончился). Образуется: have/has + been + V-ing. В отличие от Present Perfect Simple, который фокусируется на результате («я покрасил три стены»), Continuous фокусируется на длительности процесса («я крашу стены уже два часа»).",
+  "formula": "Утверждение: S + have/has + been + V-ing\nОтрицание: S + haven't / hasn't + been + V-ing\nВопрос: Have/Has + S + been + V-ing?\n\nМаркеры: for, since, all day, how long...",
+  "base": "B06",
+  "dontConfuse": "Путают с Present Perfect Simple. Правило: если важно сколько (How long have you been waiting?) — Continuous. Если важно сколько/как много (How many letters have you written?) — Simple. Также ошибаются с глаголами состояния: «I have been knowing him for years» — глагол know не используется в Continuous, правильно «I have known him for years».",
+  "examples": [
+    {"en": "I have been learning English for five years.", "ru": "Я учу английский уже пять лет.", "note": "Процесс длится с прошлого до现在, подчёркивается длительность"},
+    {"en": "She has been working here since 2020.", "ru": "Она работает здесь с 2020 года.", "note": "since + точка начала, for + период"},
+    {"en": "It has been raining all day.", "ru": "Дождь идёт весь день.", "note": "Процесс, который начался и продолжается"},
+    {"en": "How long have you been waiting?", "ru": "Как давно ты ждёшь?", "note": "How long + have/has + been + V-ing"},
+    {"en": "You look tired. Have you been running?", "ru": "Ты выглядишь уставшим. Ты бегал?", "note": "Результат виден сейчас, но важен предшествующий процесс"}
+  ]
+}

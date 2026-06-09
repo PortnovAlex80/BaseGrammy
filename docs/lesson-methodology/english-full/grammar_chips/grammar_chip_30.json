@@ -1,0 +1,15 @@
+{
+  "key": "B14",
+  "title": "B14 - Relative Clauses",
+  "essence": "Relative clauses (придаточные определительные) добавляют информацию о существительном: «The man WHO called you is my boss». В русском это часто выражается причастиями или прилагательными: «Звонивший тебе человек — мой начальник». В английском используются who (люди), which (вещи), that (универсально), whose (принадлежность), where (место), when (время).",
+  "formula": "Существительное + relative pronoun + clause\n\nwho — люди (The girl who lives next door)\nwhich — вещи/животные (The book which I read)\nthat — универсальный (The car that I bought)\nwhose — принадлежность (The man whose car was stolen)\nwhere — место (The cafe where we met)\nwhen — время (The day when we arrived)\n\nОпределяющие (без запятых): The book that I read...\nН определяющие (с запятыми): My car, which is blue, ...",
+  "base": "A06",
+  "dontConfuse": "Путают who и which: «The man which called» (люди — who), «The book who I read» (вещи — which/that). Также забывают, что в определяющих придаточных можно опустить who/which/that, если оно — объект: «The book (that) I read» — можно без that. В неопределяющих (с запятыми) that использовать НЕЛЬЗЯ: «My car, that is blue» — неверно, нужно «My car, which is blue».",
+  "examples": [
+    {"en": "The woman who is talking to John is a doctor.", "ru": "Женщина, которая разговаривает с Джоном, — врач.", "note": "who = подлежащее, относится к человеку"},
+    {"en": "The book that I borrowed from you was great.", "ru": "Книга, которую я у тебя одолжил, была отличной.", "note": "that = дополнение, можно опустить: The book I borrowed..."},
+    {"en": "This is the house where I grew up.", "ru": "Это дом, где я вырос.", "note": "where = место, нельзя заменить that"},
+    {"en": "The student whose phone rang was asked to leave.", "ru": "Студента, чей телефон зазвонил, попросили выйти.", "note": "whose = принадлежность, чей"},
+    {"en": "My brother, who lives in Berlin, is visiting next week.", "ru": "Мой брат, который живёт в Берлине, приезжает на следующей неделе.", "note": "Н определяющее: запятые, нельзя использовать that"}
+  ]
+}

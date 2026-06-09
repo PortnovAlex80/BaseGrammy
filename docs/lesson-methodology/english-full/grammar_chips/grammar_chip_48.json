@@ -1,0 +1,15 @@
+{
+  "key": "C05",
+  "title": "C05 - Preposition Patterns",
+  "essence": "Многие английские прилагательные, существительные и глаголы требуют определённого предлога — это нельзя угадать, нужно запоминать. Например, interested IN (не about), depend ON (не from), responsible FOR (не about). Ошибки в предлогах — одна из самых стойких привычек русскоязычных.",
+  "formula": "Прилагательные + предлог:\ninterested in, good at, afraid of, famous for, keen on, similar to, different from\n\nГлаголы + предлог:\ndepend on, rely on, consist of, belong to, result in, lead to, suffer from\n\nСуществительные + предлог:\nreason for, solution to, demand for, advantage of, access to",
+  "base": "A07",
+  "dontConfuse": "Прямой перенос русских предлогов: «зависит от» → «depends of» (правильно: depends ON). «Состоит из» → «consists from» (правильно: consists OF). Также путают different from/to/than — в британском английском чаще different to, в американском different from.",
+  "examples": [
+    {"en": "She is interested in modern art.", "ru": "Она интересуется современным искусством.", "note": "interested in — не about, не for"},
+    {"en": "The result depends on many factors.", "ru": "Результат зависит от многих факторов.", "note": "depends on — не of, не from"},
+    {"en": "He is responsible for the marketing department.", "ru": "Он отвечает за отдел маркетинга.", "note": "responsible for — не about, не of"},
+    {"en": "The cake consists of chocolate and cream.", "ru": "Торт состоит из шоколада и сливок.", "note": "consist of — не from, не from"},
+    {"en": "They have no access to the building.", "ru": "У них нет доступа к зданию.", "note": "access to — не of, не for"}
+  ]
+}

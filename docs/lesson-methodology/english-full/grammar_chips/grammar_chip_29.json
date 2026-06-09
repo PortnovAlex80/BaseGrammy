@@ -1,0 +1,15 @@
+{
+  "key": "B13",
+  "title": "B13 - Passive: All Tenses",
+  "essence": "Пассивный залог можно образовать в любом времени — формула одна: форма глагола BE (меняется по временам) + V3 (всегда третья форма). Present: is/are done. Past: was/were done. Future: will be done. Present Perfect: has/have been done. Past Perfect: had been done. Present Continuous: is/are being done. Главное — правильно определить время глагола BE.",
+  "formula": "Universal formula: BE (в нужном времени) + V3\n\nPresent Simple: is/are + V3\nPast Simple: was/were + V3\nFuture Simple: will be + V3\nPresent Perfect: have/has been + V3\nPast Perfect: had been + V3\nPresent Continuous: am/is/are being + V3\nPast Continuous: was/were being + V3\nFuture Perfect: will have been + V3",
+  "base": "B12",
+  "dontConfuse": "Ошибаются во времени глагола BE: «The house was building» (неверно, время не то и форма не та) вместо «The house is being built» (Present Continuous Passive). Также забывают been в Perfect Passive: «The work has finished» (актив) vs «The work has been finished» (пассив). И не отличают «is done» (факт) от «is being done» (в процессе).",
+  "examples": [
+    {"en": "The new hospital will be opened next year.", "ru": "Новая больница будет открыта в следующем году.", "note": "Future Passive: will be + V3"},
+    {"en": "The documents have been signed.", "ru": "Документы подписаны.", "note": "Present Perfect Passive: have been + V3"},
+    {"en": "The road is being repaired this week.", "ru": "Дорогу ремонтируют на этой неделе.", "note": "Present Continuous Passive: is being + V3"},
+    {"en": "The project had been completed before the deadline.", "ru": "Проект был завершён до дедлайна.", "note": "Past Perfect Passive: had been + V3"},
+    {"en": "The cake was being decorated when I arrived.", "ru": "Торт украшали, когда я пришёл.", "note": "Past Continuous Passive: was being + V3"}
+  ]
+}

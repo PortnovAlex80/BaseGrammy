@@ -1,0 +1,15 @@
+{
+  "key": "C11",
+  "title": "C11 - Describing and Comparing",
+  "essence": "Английский богат глаголами для описания сходств и различий: resemble (походить на), consist of (состоять из), contrast with (контрастировать с). Для сравнения используются как стандартные формы (bigger than, the most important), так и продвинутые конструкции (whereas, while, in contrast to).",
+  "formula": "Сходство:\nresemble, be similar to, have in common, alike\nbe like, look like, sound like\n\nРазличие:\ncontrast with, differ from, in contrast to\nwhereas, while, on the other hand, unlike\n\nСравнение:\ncompared to / with, relative to, as opposed to\nthe more... the more..., twice as... as...",
+  "base": "A09",
+  "dontConfuse": "Путают resemble и look like: resemble — глагол без предлога (She resembles her mother), look like требует like (She looks like her mother). Также путают differ from (отличаться от) и differ with (не соглашаться с). «Consist of» — не «consist from».",
+  "examples": [
+    {"en": "She resembles her grandmother in her calm temperament.", "ru": "Она похожа на бабушку своим спокойным характером.", "note": "resemble + прямое дополнение, без предлога"},
+    {"en": "The report consists of three main sections.", "ru": "Отчёт состоит из трёх основных разделов.", "note": "consist of — не from, не from"},
+    {"en": "This approach contrasts sharply with the previous one.", "ru": "Этот подход резко контрастирует с предыдущим.", "note": "contrast with — сравнивать различия"},
+    {"en": "Unlike her brother, she enjoys public speaking.", "ru": "В отличие от своего брата, она любит публичные выступления.", "note": "unlike + noun — в отличие от"},
+    {"en": "The more you practise, the better you become.", "ru": "Чем больше практикуешься, тем лучше становишься.", "note": "the + comparative... the + comparative — параллельное сравнение"}
+  ]
+}

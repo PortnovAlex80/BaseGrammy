@@ -1,0 +1,15 @@
+{
+  "key": "C16",
+  "title": "C16 - Relationships and Emotions",
+  "essence": "Лексика для описания отношений и чувств: appreciate (ценить), trust (доверять), rely on (полагаться на), support (поддерживать). Английский различает чувства (emotion — внутреннее) и отношения (relationship — между людьми). Глаголы чувств часто сочетаются с предлогами: proud of, worried about, disappointed with.",
+  "formula": "Отношения:\nget along with, make friends with, rely on, trust\nbreak up, fall out, make up, drift apart\nsupport, appreciate, respect, betray, forgive\n\nЧувства + предлоги:\nproud of, ashamed of, jealous of\nworried about, anxious about, excited about\ndisappointed with / by, satisfied with, bored with\ninterested in, fond of, keen on\n\nСтепени:\na bit / slightly / quite / extremely + adjective",
+  "base": "A06",
+  "dontConfuse": "Русские говорят «I'm proud about my son» — правильно proud OF. Также путают alone (один, без компании — нейтрально) и lonely (одиноко — негативно). «Appreciate» не значит «оценивать» в смысле проверки, а значит «быть благодарным, ценить». Get along with = ладить, не путать с go along with = соглашаться с.",
+  "examples": [
+    {"en": "I really appreciate your help with the project.", "ru": "Я очень ценю вашу помощь с проектом.", "note": "appreciate = ценить, быть благодарным (не «оценивать»)"},
+    {"en": "She is proud of her daughter's achievements.", "ru": "Она гордится достижениями своей дочери.", "note": "proud of — не about, не for"},
+    {"en": "They get along well despite their differences.", "ru": "Они хорошо ладят, несмотря на различия.", "note": "get along with = ладить с кем-то"},
+    {"en": "He was disappointed with the results.", "ru": "Он был разочарован результатами.", "note": "disappointed with/by — не about, не from"},
+    {"en": "It's important to trust your friends.", "ru": "Важно доверять своим друзьям.", "note": "trust = доверять, rely on = полагаться на (не одинаковое)"}
+  ]
+}

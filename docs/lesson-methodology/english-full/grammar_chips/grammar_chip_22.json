@@ -1,0 +1,15 @@
+{
+  "key": "B06",
+  "title": "B06 - Present Perfect Simple",
+  "essence": "Present Perfect связывает прошлое с настоящим: действие произошло, но его результат важен сейчас. Образуется: have/has + V3 (третья форма глагола). Это самое «нерусское» время — в русском нет аналога. Мы говорим «Я уже поел» (прошедшее), а англичане — «I have already eaten» (результат: я сыт сейчас). Маркеры: already, yet, just, ever, never, recently, since, for.",
+  "formula": "Утверждение: S + have/has + V3\nОтрицание: S + haven't / hasn't + V3\nВопрос: Have/Has + S + V3?\n\nМаркеры времени:\n- already (уже) — в утверждении перед V3\n- yet (ещё / уже) — в конце отрицания/вопроса\n- just (только что) — перед V3\n- ever (когда-либо) — в вопросах\n- never (никогда) — вместо отрицания",
+  "base": "A04",
+  "dontConfuse": "Русскоязычные используют Past Simple там, где нужен Present Perfect: «I lost my key yesterday» vs «I have lost my key» (результат: сейчас не могу войти). Если момент времени не указан и важен РЕЗУЛЬТАТ — это Present Perfect. Если указано КОГДА (yesterday, last week, in 2020) — это Past Simple. Также путают V2 и V3: «I have went» вместо «I have gone».",
+  "examples": [
+    {"en": "I have just finished my homework.", "ru": "Я только что закончил домашнее задание.", "note": "just = только что, результат актуален сейчас"},
+    {"en": "She has never been to Japan.", "ru": "Она никогда не была в Японии.", "note": "never + V3, опыт за всю жизнь до此刻"},
+    {"en": "Have you seen this movie yet?", "ru": "Ты уже видел этот фильм?", "note": "yet в вопросе = уже, ставится в конце"},
+    {"en": "We have lived here for ten years.", "ru": "Мы живём здесь уже десять лет.", "note": "for + период = длительность до сих пор"},
+    {"en": "He has already read that book.", "ru": "Он уже прочитал эту книгу.", "note": "already = уже, перед V3 в утверждении"}
+  ]
+}

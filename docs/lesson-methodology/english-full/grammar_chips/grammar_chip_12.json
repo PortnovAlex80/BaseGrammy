@@ -1,0 +1,15 @@
+{
+  "key": "A12",
+  "title": "A12 - Modal Verbs: can/must/should",
+  "essence": "Модальные глаголы выражают не действие, а отношение к нему: способность (can), обязанность (must), совет (should). Они уникальны тем, что после них всегда стоит «чистый» инфинитив без «to» — это главное правило. Они не меняются по лицам (нет -s для he/she/it), не нуждаются в do/does для отрицания и вопросов.",
+  "formula": "can + V (без to!): I can swim.\nmust + V (без to!): You must stop.\nshould + V (без to!): You should rest.\n\nОтрицание: can't / mustn't / shouldn't + V\nВопрос: Can / Must / Should + S + V?\n\ncan't = cannot (разговорная / формальная форма)\nmustn't = запрещение (НЕ «не обязательно»)",
+  "base": null,
+  "dontConfuse": "Три главные ошибки: (1) добавление to после модального — «I can to swim» вместо «I can swim»; (2) добавление -s — «She cans» вместо «She can»; (3) путаница mustn't и don't have to. Mustn't = запрещение («нельзя»), don't have to = необязательность («не обязательно»). Это разные вещи!",
+  "examples": [
+    {"en": "She can speak three languages.", "ru": "Она может говорить на трёх языках.", "note": "can + speak (без to), she can (без -s)"},
+    {"en": "You must wear a seatbelt.", "ru": "Вы должны пристёгиваться.", "note": "must = обязанность, правило"},
+    {"en": "You should see a doctor.", "ru": "Вам следует обратиться к врачу.", "note": "should = совет, рекомендация"},
+    {"en": "You mustn't park here.", "ru": "Здесь нельзя парковаться.", "note": "mustn't = запрещение"},
+    {"en": "You don't have to come if you're busy.", "ru": "Тебе не обязательно приходить, если занят.", "note": "don't have to = необязательно (НЕ mustn't)"}
+  ]
+}

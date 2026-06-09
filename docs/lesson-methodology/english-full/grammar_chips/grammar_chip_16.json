@@ -1,0 +1,15 @@
+{
+  "key": "A16",
+  "title": "A16 - Numbers, Time, Money",
+  "essence": "Числа, время и деньги в английском имеют свои форматы и правила чтения, которые отличаются от русских. Даты читаются не так, как пишутся. Время использует am/pm, а не 24-часовой формат. Десятичные дроби используют точку, а не запятую. Тысячи разделяются запятой, а не пробелом. Всё это нужно знать, чтобы понимать цены, расписание и адреса.",
+  "formula": "Числа:\n0-20: отдельных слов (thirteen, fourteen...)\n20-99: twenty-one, thirty-five (дефис!)\n100+: one hundred, two thousand, a million\n\nВремя:\nПолное: It's three twenty. / It's twenty past three.\nЧетверть: quarter past three / quarter to four\nПоловина: half past three\nam = до полудня, pm = после полудня\n\nДеньги:\n$5.99 = five dollars ninety-nine (cents)\n£10 = ten pounds\n\nДаты:\nJuly 4th = the fourth of July / July the fourth\n2005 = two thousand and five\n1990 = nineteen ninety",
+  "base": null,
+  "dontConfuse": "Частые ошибки: (1) «two hundreds» — после числительного hundred/thousand/million БЕЗ -s: «two hundred people»; (2) десятичная точка: «point five» (0.5), а не «запятая пять»; (3) время «half past three» = 3:30, а не «половина четвёртого» (в русском это 3:30, но многие путают).",
+  "examples": [
+    {"en": "There are two hundred students.", "ru": "Там двести студентов.", "note": "two hundred — без -s после числительного"},
+    {"en": "It's quarter past seven.", "ru": "Сейчас четверть восьмого (7:15).", "note": "quarter past = 15 минут после"},
+    {"en": "The book costs twelve dollars and fifty cents.", "ru": "Книга стоит двенадцать долларов пятьдесят центов.", "note": "$12.50 = twelve fifty (разговорный вариант)"},
+    {"en": "She was born on May the third.", "ru": "Она родилась третьего мая.", "note": "May 3rd = the third of May / May the third"},
+    {"en": "The population is three million.", "ru": "Население — три миллиона.", "note": "three million — без -s (число перед ним)"}
+  ]
+}

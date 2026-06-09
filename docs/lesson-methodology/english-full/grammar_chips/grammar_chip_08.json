@@ -1,0 +1,15 @@
+{
+  "key": "A08",
+  "title": "A08 - Countable/Uncountable",
+  "essence": "В английском каждое существительное — либо исчисляемое (можно посчитать: one apple, two apples), либо неисчисляемое (нельзя посчитать поштучно: water, money, information). От этого зависит выбор артикля, местоимений (much/many) и формы глагола. В русском нет такого строгого разделения, поэтому это частый источник ошибок.",
+  "formula": "Исчисляемые (countable): a book, books, many books, few books, some books\nНеисчисляемые (uncountable): water, NO a water, much water, little water, some water\n\nmuch + неисчисляемое (much time, much money)\nmany + исчисляемое мн.ч. (many books, many people)\na few / few + исчисляемое (a few friends)\na little / little + неисчисляемое (a little water)\nsome + оба (утверждение) | any + оба (отрицание/вопрос)",
+  "base": null,
+  "dontConfuse": "Русскоязычные говорят «many money» или «much books» — путают much/many. Запомните: many = считаем штуки (many cups), much = измеряем объём (much water). Также «information», «advice», «news», «furniture» — неисчисляемые в английском, хотя в русском мы их считаем: «два совета» — нельзя «two advices», правильно «two pieces of advice».",
+  "examples": [
+    {"en": "I don't have much time.", "ru": "У меня не много времени.", "note": "much + неисчисляемое (time)"},
+    {"en": "How many students are in the class?", "ru": "Сколько студентов в классе?", "note": "many + исчисляемое (students)"},
+    {"en": "Can I have some water?", "ru": "Можно мне воды?", "note": "some + неисчисляемое в просьбе"},
+    {"en": "There isn't any milk in the fridge.", "ru": "В холодильнике нет молока.", "note": "any + неисчисляемое в отрицании"},
+    {"en": "She gave me some good advice.", "ru": "Она дала мне хороший совет.", "note": "advice — неисчисляемое, без -s"}
+  ]
+}

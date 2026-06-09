@@ -1,0 +1,15 @@
+{
+  "key": "B19",
+  "title": "B19 - Conditionals: 0 & 1st",
+  "essence": "Нулевой и первый условные — реальные условия. Zero Conditional: общие истины и законы природы — «If you heat water, it boils» (Если нагреть воду, она кипит). Обе части в Present Simple. First Conditional: реальная возможность в будущем — «If it rains, I will stay home» (Если пойдёт дождь, я останусь дома). Условие в Present Simple, результат в Future (will).",
+  "formula": "Zero Conditional (общие истины):\nIf + Present Simple, Present Simple\nIf you heat ice, it melts.\n\nFirst Conditional (реальное будущее):\nIf + Present Simple, will + V\nIf it rains tomorrow, we will stay home.\n\nМожно менять порядок:\nWe will stay home if it rains. (без запятой)",
+  "base": "A15",
+  "dontConfuse": "Главная ошибка — ставить WILL в части с IF: «If it will rain, I will stay home» — неверно! В части с if ВСЕГДА Present Simple, will только в главной части. Также путают when и if: when = когда (точно произойдёт), if = если (возможно). «When I get home» (точно приду) vs «If I get home early» (возможно).",
+  "examples": [
+    {"en": "If you mix red and blue, you get purple.", "ru": "Если смешать красный и синий, получится фиолетовый.", "note": "Zero Conditional: общая истина, оба части Present Simple"},
+    {"en": "If plants don't get enough water, they die.", "ru": "Если растения не получают достаточно воды, они погибают.", "note": "Zero Conditional: закон природы"},
+    {"en": "If I finish work early, I will call you.", "ru": "Если я закончу работу рано, я тебе позвоню.", "note": "First Conditional: реальная возможность, if + Present, will + V"},
+    {"en": "She won't pass the exam if she doesn't study.", "ru": "Она не сдаст экзамен, если не будет заниматься.", "note": "Отрицание: won't в главной, doesn't в if-части"},
+    {"en": "If you hurry, we will catch the bus.", "ru": "Если ты поторопишься, мы успеем на автобус.", "note": "First Conditional: призыв к действию с реальным результатом"}
+  ]
+}

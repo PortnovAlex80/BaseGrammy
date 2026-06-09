@@ -195,7 +195,9 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         LanguageManager.DefaultPack("GREEK_EXPRESS_IT", "grammarmate/packs/GREEK_EXPRESS_IT.zip"),
         LanguageManager.DefaultPack("GERMAN_EXPRESS", "grammarmate/packs/GERMAN_EXPRESS.zip"),
         LanguageManager.DefaultPack("CHINESE_EXPRESS", "grammarmate/packs/CHINESE_EXPRESS.zip"),
-        LanguageManager.DefaultPack("RUSSIAN_EXPRESS", "grammarmate/packs/RUSSIAN_EXPRESS.zip")
+        LanguageManager.DefaultPack("RUSSIAN_EXPRESS", "grammarmate/packs/RUSSIAN_EXPRESS.zip"),
+        LanguageManager.DefaultPack("EN_ADV_BASE_GRAMMAR", "grammarmate/packs/EN_ADV_BASE_GRAMMAR.zip"),
+        LanguageManager.DefaultPack("EN_ENGLISH_FULL_COURSE", "grammarmate/packs/EN_ENGLISH_FULL_COURSE.zip")
     )
 
     private val languageManager = LanguageManager(

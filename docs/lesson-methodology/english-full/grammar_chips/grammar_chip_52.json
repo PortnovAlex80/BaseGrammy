@@ -1,0 +1,15 @@
+{
+  "key": "C09",
+  "title": "C09 - Email and Written Communication",
+  "essence": "Деловая переписка на английском подчиняется строгим шаблонам: формальное приветствие, чёткая цель письма, призыв к действию, вежливое завершение. Формальный тон отличается от разговорного: attach (не send a file), look forward to hearing (не waiting for your answer).",
+  "formula": "Структура письма:\nDear [Name] / Dear Sir or Madam — приветствие\nI am writing to... — цель письма\nPlease find attached... — приложение\nI would appreciate it if... — вежливая просьба\nLooking forward to hearing from you — ожидание ответа\nKind regards / Yours sincerely — подпись\n\nФразы:\nregarding, concerning, with reference to — касательно\nas soon as possible, at your earliest convenience — как можно скорее",
+  "base": "C07",
+  "dontConfuse": "Русские переносят русскую структуру письма: «Hello, I want to tell you that...» вместо «I am writing to inform you that...». Также путают Yours faithfully (когда не знаете имя) и Yours sincerely (когда знаете имя). «Please find attached» — устоявшаяся формула, не «Please see attached».",
+  "examples": [
+    {"en": "Dear Mr Smith, I am writing to inquire about the vacancy.", "ru": "Уважаемый господин Смит, я пишу, чтобы узнать о вакансии.", "note": "I am writing to — стандартное начало формального письма"},
+    {"en": "Please find attached the report you requested.", "ru": "Во вложении — запрошенный вами отчёт.", "note": "Please find attached — формула для вложений"},
+    {"en": "I would appreciate it if you could reply by Friday.", "ru": "Буду признателен, если вы ответите до пятницы.", "note": "would appreciate it if — вежливая просьба"},
+    {"en": "With reference to your email of 5 June, we confirm the order.", "ru": "В отношении вашего письма от 5 июня подтверждаем заказ.", "note": "with reference to — формальная ссылка на предыдущее"},
+    {"en": "I look forward to hearing from you. Kind regards, Anna.", "ru": "С нетерпением жду вашего ответа. С уважением, Анна.", "note": "look forward to hearing — не waiting, Kind regards — стандартная подпись"}
+  ]
+}

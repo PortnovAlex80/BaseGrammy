@@ -1,0 +1,15 @@
+{
+  "key": "C18",
+  "title": "C18 - News and Media",
+  "essence": "Лексика для понимания новостей и СМИ: headline (заголовок), coverage (освещение), reportedly (по сообщениям). Язык газет и новостных сайтов использует специфические формулировки: is said to, is believed to (пассив с инфинитивом), а также краткие заголовки без артиклей и вспомогательных глаголов.",
+  "formula": "Заголовки:\nпропущены артикли и be: President visits China (The President is visiting...)\nпрошедшее → Present Simple: «PM announced» → «PM announces»\nбудущее → to + V: «Minister to resign» (is going to resign)\n\nПассивные конструкции:\nis reported to have / is said to be / is believed to\nallegedly, reportedly, according to\n\nТермины:\ncoverage, broadcast, editorial, press release, source\ncensorship, bias, fake news, verification, credibility",
+  "base": "B25",
+  "dontConfuse": "Русские воспринимают заголовки буквально и не понимают, что в них опущены артикли и be: «Police investigate murder» значит «The police are investigating a murder». Также путают reportedly (по сообщениям — нейтрально) и allegedly (якобы — с сомнением). «According to» — не «according me», нужен предлог to.",
+  "examples": [
+    {"en": "President to visit Japan next month.", "ru": "Президент посетит Японию в следующем месяце.", "note": "Заголовок: to + V = будущее, без артиклей"},
+    {"en": "The accident is reported to have been caused by fog.", "ru": "Сообщается, что авария была вызвана туманом.", "note": "is reported to have been — пассивный инфинитив (новостной стиль)"},
+    {"en": "According to local media, the situation is improving.", "ru": "По данным местной прессы, ситуация улучшается.", "note": "According to + источник (не according me)"},
+    {"en": "The newspaper provided extensive coverage of the election.", "ru": "Газета предоставила обширное освещение выборов.", "note": "coverage = освещение события в СМИ"},
+    {"en": "The suspect allegedly fled the country.", "ru": "Подозреваемый якобы бежал из страны.", "note": "allegedly = якобы, по утверждениям (выражает сомнение)"}
+  ]
+}

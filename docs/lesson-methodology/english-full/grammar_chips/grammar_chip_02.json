@@ -1,0 +1,15 @@
+{
+  "key": "A02",
+  "title": "A02 - Verb BE",
+  "essence": "Глагол BE (быть) — единственный глагол в английском, который спрягается по лицам: am/is/are, was/were. Он не нуждается в вспомогательном do/does/did для отрицания и вопросов. В русском мы часто опускаем «быть» в настоящем («Я студент»), но в английском BE обязателен.",
+  "formula": "Настоящее: I am / He-She-It is / We-You-They are\nПрошедшее: I-He-She-It was / We-You-They were\n\nОтрицание: S + am not / isn't / aren't / wasn't / weren't\nВопрос: Am / Is / Are / Was / Were + S?",
+  "base": null,
+  "dontConfuse": "Две главные ошибки: (1) пропуск BE в настоящем — «She beautiful» вместо «She is beautiful»; (2) добавление do к BE — «Do you be ready?» вместо «Are you ready?». BE — сам себе вспомогательный глагол, do с ним не используется никогда.",
+  "examples": [
+    {"en": "I am a student.", "ru": "Я студент.", "note": "В русском «есть» пропущено, в английском am обязателен"},
+    {"en": "They were tired after work.", "ru": "Они были уставшими после работы.", "note": "were для we/you/they в прошедшем"},
+    {"en": "She isn't at home right now.", "ru": "Её сейчас нет дома.", "note": "Отрицание: is + not = isn't, без do"},
+    {"en": "Were you at the concert?", "ru": "Ты был на концерте?", "note": "Вопрос: Were ставится перед подлежащим"},
+    {"en": "It was cold yesterday.", "ru": "Вчера было холодно.", "note": "Безличное предложение: it + was"}
+  ]
+}

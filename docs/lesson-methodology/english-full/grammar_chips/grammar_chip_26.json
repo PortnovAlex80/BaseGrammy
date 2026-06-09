@@ -1,0 +1,15 @@
+{
+  "key": "B10",
+  "title": "B10 - Future Continuous & Perfect",
+  "essence": "Future Continuous описывает действие в процессе в определённый момент будущего (will be doing). Future Perfect описывает действие, которое завершится К определённому моменту будущего (will have done). Оба времени объединяет фокус на моменте в будущем: Continuous — «что будет происходить», Perfect — «что уже будет сделано».",
+  "formula": "Future Continuous: S + will be + V-ing\n- This time tomorrow I will be flying to London.\n\nFuture Perfect: S + will have + V3\n- By next Monday I will have finished the project.\n\nFuture Perfect Continuous: S + will have been + V-ing\n- By June I will have been working here for 5 years.",
+  "base": "A15",
+  "dontConfuse": "Future Continuous путают с will + V: «I will sleep at 10 pm» (обещание) vs «I will be sleeping at 10 pm» (описание того, что будет происходить). Future Perfect путают с will + V: «I will finish by Friday» vs «I will have finished by Friday» — второе подчёркивает завершённость к моменту. Маркер Future Perfect — BY (к какому-то моменту).",
+  "examples": [
+    {"en": "This time next week I will be lying on a beach.", "ru": "В это время на следующей неделе я буду лежать на пляже.", "note": "Future Continuous: действие в процессе в момент будущего"},
+    {"en": "Don't call at 10 pm — we will be having dinner.", "ru": "Не звони в 10 вечера — мы будем ужинать.", "note": "Вежливое описание планов без давления"},
+    {"en": "By the end of this year, she will have graduated.", "ru": "К концу этого года она закончит учёбу.", "note": "Future Perfect: действие завершится к моменту"},
+    {"en": "Will you have packed everything by morning?", "ru": "Ты всё упакуешь к утру?", "note": "Вопрос: Will + S + have + V3 + by + момент"},
+    {"en": "By 2028 they will have been married for 30 years.", "ru": "К 2028 году они будут женаты 30 лет.", "note": "Future Perfect Continuous: длительность к моменту в будущем"}
+  ]
+}

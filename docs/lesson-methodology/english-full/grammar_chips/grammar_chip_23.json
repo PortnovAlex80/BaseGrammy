@@ -1,0 +1,15 @@
+{
+  "key": "B07",
+  "title": "B07 - Present Perfect vs Past Simple",
+  "essence": "Главный выбор между Present Perfect и Past Simple — связан ли результат с настоящим (Present Perfect) или действие полностью в прошлом (Past Simple). Если вы называете конкретное время или завершённый период — Past Simple. Если время не указано и важен опыт/результат сейчас — Present Perfect. Это различие не существует в русском языке, где оба случая передаются прошедшим временем.",
+  "formula": "Present Perfect: результат связан с настоящим\n- I have lost my key. (= и сейчас не могу найти)\n- Have you ever been to Paris? (= за всю жизнь до сих пор)\n\nPast Simple: действие завершено, время указано или понятно\n- I lost my key yesterday. (= факт прошлого)\n- Did you go to Paris last year? (= конкретный период)",
+  "base": "B06",
+  "dontConfuse": "Самая частая ошибка — использовать Past Simple с маркерами Present Perfect: «I have seen him yesterday» (неверно, yesterday требует Past Simple). И наоборот: «Did you ever eat sushi?» (неверно, ever требует Present Perfect). Простой тест: если можете добавить когда/в каком году — Past Simple. Если добавляете «уже/к настоящему моменту» — Present Perfect.",
+  "examples": [
+    {"en": "I have visited London three times.", "ru": "Я бывал в Лондоне три раза.", "note": "Present Perfect: опыт до сих пор, результат актуален"},
+    {"en": "I visited London in 2019.", "ru": "Я посетил Лондон в 2019 году.", "note": "Past Simple: указан конкретный год, факт прошлого"},
+    {"en": "She has written five reports this week.", "ru": "Она написала пять отчётов на этой неделе.", "note": "Present Perfect: неделя ещё не закончилась"},
+    {"en": "She wrote five reports last week.", "ru": "Она написала пять отчётов на прошлой неделе.", "note": "Past Simple: прошлая неделя — законченный период"},
+    {"en": "Have you decided what to order?", "ru": "Ты уже решил, что заказать?", "note": "Present Perfect: решение нужно сейчас"}
+  ]
+}

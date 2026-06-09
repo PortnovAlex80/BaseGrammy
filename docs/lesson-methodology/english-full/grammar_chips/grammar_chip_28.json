@@ -1,0 +1,15 @@
+{
+  "key": "B12",
+  "title": "B12 - Passive: Present & Past",
+  "essence": "Пассивный залог смещает фокус с того, КТО делает действие, на то, ЧТО делается с объектом. Образуется: be + V3. В русском пассив тоже есть («Дом построен»), но используется реже. В английском пассив очень распространён, особенно в новостях, инструкциях, научных текстах. Present Simple Passive: The book is written in English. Past Simple Passive: The book was written in 1850.",
+  "formula": "Present Simple Passive:\n- S + am/is/are + V3\n- S + am not/isn't/aren't + V3\n- Am/Is/Are + S + V3?\n\nPast Simple Passive:\n- S + was/were + V3\n- S + wasn't/weren't + V3\n- Was/Were + S + V3?\n\nПо-русски: \"Кем/чем делается/сделано\"",
+  "base": "A04",
+  "dontConfuse": "Путают V2 и V3 в пассиве: «The letter was wrote» вместо «The letter was written». В пассиве всегда V3! Также забывают глагол be: «The book written in 1990» — нужен be: «The book WAS written in 1990». И путают с активным залогом: «The book wrote» — книга не может писать, она была написана (was written).",
+  "examples": [
+    {"en": "English is spoken in many countries.", "ru": "На английском говорят во многих странах.", "note": "Present Passive: is + V3, неважно кто именно говорит"},
+    {"en": "The bridge was built in 1885.", "ru": "Мост был построен в 1885 году.", "note": "Past Passive: was + built, фокус на мосте, не на строителях"},
+    {"en": "These shoes are made in Italy.", "ru": "Эти туфли сделаны в Италии.", "note": "Present Passive: are + made, факт о происхождении"},
+    {"en": "The window was broken during the storm.", "ru": "Окно было разбито во время бури.", "note": "Past Passive: was + broken (V3 от break)"},
+    {"en": "Is the report finished yet?", "ru": "Отчёт уже закончен?", "note": "Вопрос: Is + S + V3"}
+  ]
+}

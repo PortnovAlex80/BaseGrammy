@@ -1,0 +1,15 @@
+{
+  "key": "B18",
+  "title": "B18 - Phrasal Verbs: Work & Study",
+  "essence": "Фразовые глаголы для работы и учёбы: carry out (выполнять), bring up (поднять вопрос), figure out (разобраться), hand in (сдать), look up (найти/посмотреть), go over (повторить), take notes (записывать), catch up (нагнать). В деловом и академическом английском фразовые глаголы используются постоянно — они звучат естественнее формальных синонимов.",
+  "formula": "Work & Study фразовые глаголы:\n\ncarry out = выполнять (исследование, задачу)\nbring up = поднять (тему, вопрос, проблему)\nfigure out = разобраться, понять\nhand in = сдать (работу, отчёт)\nlook up = посмотреть (в словаре, в интернете)\ngo over = повторить, просмотреть\ncatch up = нагнать, догнать\nset up = организовать, настроить\nturn in = сдать (американский вариант hand in)",
+  "base": "B17",
+  "dontConfuse": "Путают bring up и grow up: «I brought up in Moscow» — неверно. Bring up = воспитывать (ребёнка) или поднимать (вопрос). Grow up = расти, взрослеть: «I grew up in Moscow». Также путают look up (найти информацию) и look for (искать): look up the word = найти слово в словаре, look for the book = искать книгу физически.",
+  "examples": [
+    {"en": "The team carried out the experiment successfully.", "ru": "Команда успешно провела эксперимент.", "note": "carry out = выполнить, провести (формальный контекст)"},
+    {"en": "She brought up an interesting point during the meeting.", "ru": "Она подняла интересный вопрос на собрании.", "note": "bring up = упомянуть, поднять тему"},
+    {"en": "I can't figure out how to use this app.", "ru": "Не могу разобраться, как пользоваться этим приложением.", "note": "figure out = понять, решить проблему"},
+    {"en": "You need to hand in your essay by Friday.", "ru": "Нужно сдать эссе к пятнице.", "note": "hand in = сдать (разделимый: hand it in)"},
+    {"en": "Let's go over the main points one more time.", "ru": "Давайте повторим основные пункты ещё раз.", "note": "go over = просмотреть, повторить материал"}
+  ]
+}

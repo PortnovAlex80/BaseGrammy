@@ -1,0 +1,15 @@
+{
+  "key": "B15",
+  "title": "B15 - Gerund & Infinitive I",
+  "essence": "После одних глаголов ставится герундий (V-ing), после других — инфинитив (to V), после третьих — оба с разным смыслом. Это одна из главных трудностей для русскоязычных, потому что в русском оба часто переводятся одинаково: «I enjoy reading» = «Я люблю читать» и «I want to read» = «Я хочу читать». Нужно запоминать, какой глагол требует какую форму.",
+  "formula": "Герундий (V-ing) после:\nenjoy, like, love, hate, mind, finish, suggest,\navoid, keep, practice, deny, imagine, consider\n\nИнфинитив (to V) после:\nwant, need, decide, plan, hope, agree, refuse,\noffer, promise, learn, expect, seem, appear\n\nОба (смысл не меняется):\nbegin, start, continue, prefer, can't stand",
+  "base": "A04",
+  "dontConfuse": "Говорят «I enjoy to swim» — после enjoy только V-ing: «I enjoy swimming». Или «I want going home» — после want только to V: «I want to go home». Простой способ запомнить: глаголы ЧУВСТВ и ОТНОШЕНИЙ (enjoy, mind, avoid) + глаголы ЗАВЕРШЕНИЯ (finish, stop) требуют V-ing. Глаголы ЖЕЛАНИЯ и НАМЕРЕНИЯ (want, decide, hope) требуют to V.",
+  "examples": [
+    {"en": "I enjoy cooking dinner for my family.", "ru": "Мне нравится готовить ужин для семьи.", "note": "enjoy + V-ing (НЕ enjoy to cook)"},
+    {"en": "She decided to change her job.", "ru": "Она решила сменить работу.", "note": "decide + to V (НЕ decide changing)"},
+    {"en": "He keeps interrupting me.", "ru": "Он продолжает меня перебивать.", "note": "keep + V-ing = продолжать делать что-то"},
+    {"en": "We avoided driving through the city centre.", "ru": "Мы избегали ехать через центр города.", "note": "avoid + V-ing (НЕ avoid to drive)"},
+    {"en": "They promised to help us move.", "ru": "Они обещали помочь нам переехать.", "note": "promise + to V (НЕ promise helping)"}
+  ]
+}

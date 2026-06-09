@@ -1,0 +1,15 @@
+{
+  "key": "C07",
+  "title": "C07 - Work and Career",
+  "essence": "Английская лексика для профессиональной среды отличается от разговорной: apply for a job (не ask for), salary (не wage для офисных должностей), deadline (крайний срок), promotion (повышение). Знание деловой лексики необходимо для собеседований и работы в международной компании.",
+  "formula": "Ключевые термины:\nsalary, wages, income — зарплата (оклад / почасовая / доход)\ndeadline, due date — крайний срок\npromotion, raise — повышение, прибавка\napply for, resign, retire — подать заявку, уволиться, выйти на пенсию\nskills, qualifications, experience — навыки, квалификация, опыт\ncommute, remote, hybrid — ездить на работу, удалённо, гибридно",
+  "base": "A04",
+  "dontConfuse": "Путают salary (фиксированный месячный/годовой оклад) и wages (почасовая оплата). Также путают job (конкретная позиция), work (деятельность), career (профессиональный путь). «He has a good work» — неправильно, правильно «He has a good job».",
+  "examples": [
+    {"en": "She applied for a position at a multinational company.", "ru": "Она подала заявку на должность в международной компании.", "note": "apply for a position / job — подать заявку, не ask for"},
+    {"en": "The deadline for the report is next Monday.", "ru": "Крайний срок сдачи отчёта — следующий понедельник.", "note": "deadline = крайний срок (не limit)"},
+    {"en": "He got a promotion after three years at the company.", "ru": "Он получил повышение после трёх лет в компании.", "note": "promotion = продвижение по службе"},
+    {"en": "Her monthly salary is $4,000.", "ru": "Её месячный оклад — 4000 долларов.", "note": "salary — фиксированный оклад, wages — почасовая оплата"},
+    {"en": "I commute to the office every day — it takes an hour.", "ru": "Я каждый день езжу на работу — это занимает час.", "note": "commute = регулярная поездка на работу и обратно"}
+  ]
+}

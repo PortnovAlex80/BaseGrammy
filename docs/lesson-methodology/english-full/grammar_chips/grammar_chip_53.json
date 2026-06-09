@@ -1,0 +1,15 @@
+{
+  "key": "C10",
+  "title": "C10 - Problem Solving and Opinions",
+  "essence": "Английские фразы для анализа проблем и высказывания мнения строятся через конкретные глаголы: suggest (предложить), evaluate (оценить), conclude (заключить). Важно различать факты и мнение: I think / In my opinion vs The data shows. В деловом контексте мнение подаётся через смягчение: It seems to me rather than I'm sure.",
+  "formula": "Предложение решения:\nI suggest + V-ing / that we + V\nWe should / We could / How about + V-ing?\n\nАнализ:\nThe main issue is... / The problem lies in...\nWe need to consider... / Let's evaluate...\n\nМнение:\nIn my opinion / From my perspective / As far as I'm concerned\nI strongly believe / It seems to me / I'm convinced that\n\nИтог:\nTo sum up / In conclusion / Taking everything into account",
+  "base": "B27",
+  "dontConfuse": "Русские говорят «I suggest you to do» — но suggest не работает с инфинитивом: правильно «I suggest you do» или «I suggest doing». Также переносят русское «по-моему» как «on my opinion» — правильно «in my opinion».",
+  "examples": [
+    {"en": "I suggest we postpone the meeting until next week.", "ru": "Предлагаю отложить встречу до следующей недели.", "note": "suggest + that + subject + bare infinitive (без to)"},
+    {"en": "The main issue is a lack of communication between teams.", "ru": "Главная проблема — нехватка общения между командами.", "note": "The main issue is — формулировка проблемы"},
+    {"en": "In my opinion, this is the best option available.", "ru": "По моему мнению, это лучший из доступных вариантов.", "note": "In my opinion — не on my opinion"},
+    {"en": "We need to evaluate the risks before making a decision.", "ru": "Нам нужно оценить риски перед принятием решения.", "note": "evaluate = оценить, проанализировать"},
+    {"en": "To sum up, we have agreed on a two-week deadline.", "ru": "Подводя итог, мы договорились о двухнедельном сроке.", "note": "To sum up — подвести итог (не In the conclusion)"}
+  ]
+}

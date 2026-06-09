@@ -1,0 +1,15 @@
+{
+  "key": "B02",
+  "title": "B02 - Past Simple: Irregular (V2)",
+  "essence": "Около 200 английских глаголов имеют неправильные формы прошедшего времени (V2), которые не образуются по правилу -ed. Их нужно запомнить. Для русскоязычного ученика это главная боль, потому что в русском языке аналогов нет — все глаголы прошедшего времени образуются единообразно. Стратегия: учить группами по паттернам (sing-sang-sung, think-thought-thought).",
+  "formula": "Утверждение: S + V2 (неправильная форма)\nОтрицание: S + didn't + V\nВопрос: Did + S + V?\n\nГруппы по типам:\n- A-B-C: go-went-gone, see-saw-seen\n- A-B-B: build-built-built, feel-felt-felt\n- A-A-A: cut-cut-cut, put-put-put",
+  "base": "B01",
+  "dontConfuse": "Самая частая ошибка — использовать V3 (Participle) вместо V2 в Past Simple: «I have went» или «I seen him». В Past Simple утверждения нужна ТОЛЬКО V2 форма: I went, I saw, I wrote. Формы V3 используются только в Perfect временах (have/has/had + V3).",
+  "examples": [
+    {"en": "She wrote a letter to her friend.", "ru": "Она написала письмо подруге.", "note": "write → wrote (V2), НЕ writed или written"},
+    {"en": "I went to the shop after work.", "ru": "Я пошёл в магазин после работы.", "note": "go → went, самая частая неправильная форма"},
+    {"en": "We bought a new car last month.", "ru": "Мы купили новую машину в прошлом месяце.", "note": "buy → bought, rhymes with 'thought'"},
+    {"en": "He didn't know the answer.", "ru": "Он не знал ответ.", "note": "know → knew, но в отрицании: didn't + know (начальная форма)"},
+    {"en": "Did you see my keys?", "ru": "Ты видел мои ключи?", "note": "see → saw, но в вопросе: Did + see (начальная форма)"}
+  ]
+}

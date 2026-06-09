@@ -1,0 +1,15 @@
+{
+  "key": "A04",
+  "title": "A04 - Present Simple",
+  "essence": "Present Simple описывает регулярные действия, привычки, факты и расписание. Главная ловушка для русскоязычных: к глаголу в 3-м лице единственного числа (he/she/it) нужно добавлять окончание -s или -es. В русском ничего подобного нет — «я читаю» и «она читает» различаются только гласной, а в английском появляется целое окончание.",
+  "formula": "Утверждение: I/You/We/They + V  |  He/She/It + V+s/es\n\nОкончания:\n- -s: reads, plays, likes\n- -es после s, sh, ch, x, o: goes, watches\n- -ies: study → studies (согласная + y)\n- исключения: have → has\n\nМаркеры времени: always, usually, often, sometimes, every day/week/month",
+  "base": null,
+  "dontConfuse": "Самая частая ошибка — забыть -s/-es для he/she/it: «She like coffee» вместо «She likes coffee». В русском глагол не меняется по лицам в настоящем, поэтому это окончание «теряется». Тренируйте всегда добавлять -s, когда подлежащее — третье лицо.",
+  "examples": [
+    {"en": "I work in a bank.", "ru": "Я работаю в банке.", "note": "I/you/we/they — глагол без изменений"},
+    {"en": "He plays tennis every Saturday.", "ru": "Он играет в теннис каждую субботу.", "note": "He + plays: окончание -s обязательно"},
+    {"en": "She watches TV in the evening.", "ru": "Она смотрит телевизор вечером.", "note": "watch → watches: -es после ch"},
+    {"en": "The train leaves at 9 am.", "ru": "Поезд отправляется в 9 утра.", "note": "Расписание — тоже Present Simple"},
+    {"en": "Water boils at 100 degrees.", "ru": "Вода кипит при 100 градусах.", "note": "Научный факт — Present Simple"}
+  ]
+}

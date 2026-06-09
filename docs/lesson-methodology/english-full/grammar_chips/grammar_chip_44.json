@@ -1,0 +1,15 @@
+{
+  "key": "C01",
+  "title": "C01 - Wish, If Only, Had Better",
+  "essence": "Конструкции wish и if only выражают желание или сожаление — о настоящем, прошлом или будущем. Время после wish сдвигается на шаг назад: хотим изменить настоящее — Past Simple, сожалеем о прошлом — Past Perfect. Had better — строгий совет («лучше бы тебе», иначе будут последствия).",
+  "formula": "wish + Past Simple → хочу сейчас иначе (но не могу)\nwish + Past Perfect → жаль о прошлом\nwish + would → хочу, чтобы кто-то изменил поведение\nif only + Past Simple / Past Perfect → то же, эмоциональнее\nhad better + V → строгий совет (отрицание: had better not + V)",
+  "base": "B22",
+  "dontConfuse": "Русские говорят «I wish I can» вместо «I wish I could» — после wish нельзя использовать can/will в настоящем значении, только could/would. Также путают had better (строгий совет с угрозой последствий) с would rather (предпочтение).",
+  "examples": [
+    {"en": "I wish I knew the answer.", "ru": "Хотел бы я знать ответ.", "note": "wish + Past Simple = хочу сейчас, но не знаю"},
+    {"en": "If only I had studied harder at school.", "ru": "Если бы только я учился усерднее в школе.", "note": "If only + Past Perfect = сожаление о прошлом"},
+    {"en": "I wish you would stop interrupting me.", "ru": "Хотел бы я, чтобы ты перестал меня перебивать.", "note": "wish + would = раздражение поведением другого"},
+    {"en": "You had better leave now or you'll miss the train.", "ru": "Тебе лучше уйти сейчас, иначе ты опоздаешь на поезд.", "note": "had better = строгий совет, иначе последствия"},
+    {"en": "She wishes she hadn't said that.", "ru": "Она жалеет, что сказала это.", "note": "wish + Past Perfect (hadn't said) = сожаление о прошлом действии"}
+  ]
+}
