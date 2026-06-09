@@ -1,0 +1,35 @@
+{
+  "key": "L04",
+  "title": "L04 - Gerund & Infinitive",
+  "essence": "Герундий (V-ing) используется после предлогов (interested in V-ing, tired of V-ing, good at V-ing), после определённых глаголов (enjoy, like, hate, stop) и в конструкциях (worth V-ing, be used to V-ing). Инфинитив (to + V) — после глаголов намерения (want, need, decide, try). После предлогов ВСЕГДА герундий, никогда инфинитив. Конструкция 'by + V-ing' выражает способ действия.",
+  "formula": "После предлога: V-ing (без исключений)\nГлагол + to + V: want/need/decide + to V\nby/without/after/before + V-ing: способ/условие/время",
+  "base": null,
+  "dontConfuse": "Не говори 'I'm good at to swim' — после предлога at всегда герундий: 'I'm good at swimming'. Также 'tired of him watching' — после предлога of идёт герундий, притяжательное местоимение перед ним.",
+  "examples": [
+    {
+      "en": "I'm not good at saving money",
+      "ru": "Я не умею копить деньги",
+      "note": "После предлога at — всегда герундий: be good at V-ing"
+    },
+    {
+      "en": "She complained about having to work at the weekends",
+      "ru": "Она жаловалась о том, что приходится работать по выходным",
+      "note": "После about — герундий; having to = 'приходится' в форме герундия"
+    },
+    {
+      "en": "This film is definitely worth watching",
+      "ru": "Этот фильм однозначно стоит посмотреть",
+      "note": "Конструкция worth + V-ing: 'стоит сделать'"
+    },
+    {
+      "en": "You can learn a lot by travelling around the world",
+      "ru": "Можно много узнать, путешествуя по миру",
+      "note": "by + V-ing = способ действия: 'путём/посредством чего-то'"
+    },
+    {
+      "en": "He decided to join the military instead of going to university",
+      "ru": "Он решил пойти в армию вместо того, чтобы поступать в вуз",
+      "note": "decide + to V (инфинитив); instead of + V-ing (герундий после предлога)"
+    }
+  ]
+}

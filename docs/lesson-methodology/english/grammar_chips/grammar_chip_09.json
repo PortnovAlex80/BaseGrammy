@@ -1,0 +1,35 @@
+{
+  "key": "L09",
+  "title": "L09 - Passive Voice",
+  "essence": "Пассивный залог (be + V3) используется, когда важен ОБЪЕКТ действия, а не кто его совершил. 'John was fired' (не важно кто уволил — важен результат). Пассив меняет фокус с деятеля на результат. Время определяется по форме глагола be: is made (настоящее), was made (прошедшее), will be made (будущее), has been made (перфект). Агент указывается через by: 'was caused by US banks'.",
+  "formula": "be + V3 (past participle)\nНастоящее: is/are + V3\nПрошедшее: was/were + V3\nБудущее: will be + V3\nПерфект: have/has been + V3\nМодальный: can be + V3\nАгент: by + кто сделал",
+  "base": null,
+  "dontConfuse": "Не забудь изменить форму глагола be по времени: 'The contract hasn't been signed' (Present Perfect Passive), не 'isn't signed'. И 'The cars have been produced since 1963' (Present Perfect Passive), не 'are produced since'.",
+  "examples": [
+    {
+      "en": "John was fired last week",
+      "ru": "Джона уволили на прошлой неделе",
+      "note": "Past Simple Passive: был уволен. Кто уволил — неважно, важен факт"
+    },
+    {
+      "en": "Champagne is produced in France",
+      "ru": "Шампанское производят во Франции",
+      "note": "Present Simple Passive: общепринятый факт, не конкретный момент"
+    },
+    {
+      "en": "Your shipment will be delivered next week",
+      "ru": "Ваша посылка будет доставлена на следующей неделе",
+      "note": "Future Simple Passive: will be + V3"
+    },
+    {
+      "en": "The 2008 crisis was caused by US banks",
+      "ru": "Кризис 2008-ого был вызван банками США",
+      "note": "Past Simple Passive + агент через by: важно указать причину"
+    },
+    {
+      "en": "The contract hasn't been signed yet",
+      "ru": "Контракт ещё не подписали",
+      "note": "Present Perfect Passive: hasn't been + V3 — результат актуален сейчас"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "key": "L03",
+  "title": "L03 - Relative Clauses",
+  "essence": "Придаточные определительные (relative clauses) присоединяются к существительному через who (люди), which/that (вещи), where (места). Главное правило: предлог ставится В КОНЦЕ придаточного, а не перед who/which. 'The house I live in' — правильно, 'the house in which I live' — формально. В разговорной речи who/which/that часто опускаются, если они — объект действия.",
+  "formula": "Существительное + (who/which/that) + придаточное\nПредлог в конце: the person I rely ON, the topic we argue ABOUT",
+  "base": null,
+  "dontConfuse": "Не ставь предлог перед глаголом по-русски: 'люди, С которыми я работаю' = 'the people I work WITH' (не 'with who I work'). Предлог всегда в конце!",
+  "examples": [
+    {
+      "en": "I like the house I live in",
+      "ru": "Мне нравится дом, в котором я живу",
+      "note": "Предлог 'in' в конце, who/that можно опустить — это объектная позиция"
+    },
+    {
+      "en": "You're the only person I can rely on",
+      "ru": "Ты единственный человек, на которого я могу положиться",
+      "note": "Фразовый глагол rely on — предлог ON остаётся в конце придаточного"
+    },
+    {
+      "en": "Grammar is the thing we need to focus on now",
+      "ru": "Грамматика это та вещь, на которой надо сфокусироваться сейчас",
+      "note": "Фразовый глагол focus on — предлог ON не отрывается от глагола"
+    },
+    {
+      "en": "I don't like the people I work with",
+      "ru": "Мне не нравятся люди, с которыми я работаю",
+      "note": "work with — предлог WITH в конце, without who/that — разговорный стиль"
+    },
+    {
+      "en": "The position he applied for was already taken",
+      "ru": "Позиция, на которую он подал заявление, была уже занята",
+      "note": "apply FOR — предлог FOR остаётся в конце, без относительного местоимения"
+    }
+  ]
+}

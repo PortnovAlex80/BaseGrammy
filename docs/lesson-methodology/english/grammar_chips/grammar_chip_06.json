@@ -1,0 +1,35 @@
+{
+  "key": "L06",
+  "title": "L06 - Present Continuous",
+  "essence": "Present Continuous (am/is/are + V-ing) используется для действий, происходящих ПРЯМО СЕЙЧАС или в текущий период. Это 'процесс в развитии'. Некоторые глаголы НЕ используются в Continuous: know, want, like, need, remember, understand — они описывают состояния, а не процессы. Сравни: 'He wants an apple' (не 'is wanting') vs 'He is eating an apple' (процесс).",
+  "formula": "am/is/are + V-ing\nСЕЙЧАС: I am eating\nВРЕМЕННО: She is looking for a job\nЗАПЛАНИРОВАНО: I am leaving tomorrow\nНЕ используется с: know, want, like, need, remember",
+  "base": null,
+  "dontConfuse": "Не путай Present Simple и Continuous: 'I usually spend $500' (регулярно, Simple) vs 'I am writing a book' (процесс сейчас, Continuous). 'I don't understand' (не 'I'm not understanding') — глаголы состояния не бывают в Continuous.",
+  "examples": [
+    {
+      "en": "Where is Jane? She is cooking breakfast",
+      "ru": "Где Джейн? Она готовит завтрак",
+      "note": "Действие происходит прямо сейчас — process in progress"
+    },
+    {
+      "en": "I can't talk, I am driving home",
+      "ru": "Я не могу говорить, я еду домой",
+      "note": "Процесс в момент речи: 'я за рулём прямо сейчас'"
+    },
+    {
+      "en": "He is looking for a job because he needs money",
+      "ru": "Он ищет работу, потому что ему нужны деньги",
+      "note": "Временная ситуация: 'is looking' (процесс), но 'needs' — глагол состояния, без Continuous"
+    },
+    {
+      "en": "This team is winning a lot of games this season",
+      "ru": "Эта команда выигрывает много матчей в этом сезоне",
+      "note": "Текущий период (this season) — временная тенденция, не постоянная привычка"
+    },
+    {
+      "en": "I don't understand what you are talking about",
+      "ru": "Я не понимаю, о чём ты говоришь",
+      "note": "don't understand — глагол состояния (Simple), are talking — процесс (Continuous)"
+    }
+  ]
+}

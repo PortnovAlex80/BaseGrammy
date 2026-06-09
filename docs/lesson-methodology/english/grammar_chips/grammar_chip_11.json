@@ -1,0 +1,35 @@
+{
+  "key": "L11",
+  "title": "L11 - Modal Verbs",
+  "essence": "Модальные глаголы выражают отношение говорящего к действию: долженствование (must, have to, should), способность (can, could), возможность (may, might), желание/вежливость (would). У модальных глаголов НЕТ формы инфинитива (нет 'to must'), НЕТ окончания -s (не 'he musts'), после них всегда голый инфинитив (без to, кроме have to). Must = сильная обязанность, should = совет, have to = вынужденная необходимость.",
+  "formula": "Must + V: сильная обязанность / логический вывод\nHave to + V: вынужденная необходимость (внешняя)\nShould + V: совет / рекомендация\nCan + V: способность / разрешение\nCould + V: прошлая способность / вежливая просьба\nMay/Might + V: возможность / неуверенность\nWould + V: вежливость / гипотетическое желание",
+  "base": null,
+  "dontConfuse": "Не путай must и have to: 'You must eat before the road' (я так считаю, внутренняя убеждённость) vs 'Jane has to wear a uniform at work' (правило работы, внешняя необходимость). Must not = запрещено ('You mustn't eat sweets'), don't have to = не обязательно ('We don't have to arrive early').",
+  "examples": [
+    {
+      "en": "You must go to the doctor urgently",
+      "ru": "Тебе надо срочно к врачу",
+      "note": "Must: сильная необходимость, рекомендация, которую нельзя игнорировать"
+    },
+    {
+      "en": "Jane has to wear a uniform at work",
+      "ru": "Джейн обязана носить форму на работе",
+      "note": "Have to: внешнее правило, не личное решение. Заменяет must в прошедшем (had to)"
+    },
+    {
+      "en": "You should have told me earlier",
+      "ru": "Тебе следовало сказать мне раньше",
+      "note": "Should have + V3: сожаление о прошлом — 'стоило бы, но не сделал'"
+    },
+    {
+      "en": "Could you bring the menu?",
+      "ru": "Вы могли бы принести меню?",
+      "note": "Could для вежливых просьб — мягче и формальнее, чем Can"
+    },
+    {
+      "en": "It might rain tomorrow",
+      "ru": "Может быть, завтра пойдёт дождь",
+      "note": "Might/May: неуверенная возможность — 'возможно, но не точно'"
+    }
+  ]
+}

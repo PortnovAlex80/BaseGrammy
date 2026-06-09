@@ -1,0 +1,35 @@
+{
+  "key": "L07",
+  "title": "L07 - Past Continuous",
+  "essence": "Past Continuous (was/were + V-ing) описывает ДЛИТЕЛЬНЫЙ процесс в прошлом — фон, на котором происходили другие события. Классический паттерн: 'When I was doing X, Y happened' — длинное действие (Continuous) прерывается коротким (Past Simple). Также используется для описания атмосферы, причины, фонового контекста в прошлом.",
+  "formula": "was/were + V-ing\nФон: When I was working there, they paid me $200\nПрерывание: I was watching TV when you called\nПричина: I stayed home because it was raining",
+  "base": null,
+  "dontConfuse": "Не используй Past Simple для фона: 'When I was building a house' (длительный процесс), не 'When I built a house' (результат). Если описываешь атмосферу или процесс — Continuous; если результат/факт — Simple.",
+  "examples": [
+    {
+      "en": "When I was playing football in college, I injured my knee",
+      "ru": "Когда я занимался футболом в вузе, я травмировал колено",
+      "note": "Длительный процесс (was playing) как фон для одномоментного события (injured)"
+    },
+    {
+      "en": "I didn't have time last week because I was looking for a job",
+      "ru": "На прошлой неделе у меня не было времени, потому что я искал работу",
+      "note": "Past Continuous как причина: длительный процесс занимал всё время"
+    },
+    {
+      "en": "The boss called me when I was having dinner at a restaurant",
+      "ru": "Босс позвонил мне, когда я ужинал в ресторане",
+      "note": "Длинное действие (was having dinner) прерывается коротким (called)"
+    },
+    {
+      "en": "I was cleaning my room yesterday and found a $100 bill",
+      "ru": "Я убирался в комнате вчера и нашёл 100$ купюру",
+      "note": "Два события: процесс (was cleaning) и случайное открытие (found)"
+    },
+    {
+      "en": "The last time I talked to John, he was working at a bank",
+      "ru": "Последний раз, когда я говорил с Джоном, он работал в банке",
+      "note": "Past Continuous для описания обстоятельств того периода жизни"
+    }
+  ]
+}

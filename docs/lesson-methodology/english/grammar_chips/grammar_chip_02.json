@@ -1,0 +1,35 @@
+{
+  "key": "L02",
+  "title": "L02 - Verb BE",
+  "essence": "Глагол 'to be' (am/is/are, was/were) — единственный глагол, который не требует вспомогательного do/does/did для вопросов и отрицаний. Он сам себе помощник. Для образования вопроса меняешь порядок: 'You are busy' -> 'Are you busy?'. Отрицание через 'not': 'is not' / 'aren't'. Глагол be используется для описания состояний, профессий, характеристик, возраста, местонахождения.",
+  "formula": "Утверждение: S + am/is/are + ...\nОтрицание: S + am not / isn't / aren't + ...\nВопрос: Am/Is/Are + S + ...?\nПрошедшее: was/were (ед.ч. / мн.ч.)",
+  "base": null,
+  "dontConfuse": "Не путай вопросы с be и обычными глаголами: 'Are you busy?' (глагол be — без do), но 'Do you work here?' (обычный глагол — нужен do). Be — особый глагол, он не дружит с do/does/did.",
+  "examples": [
+    {
+      "en": "Are you busy?",
+      "ru": "Ты занят?",
+      "note": "Глагол be: вопрос через инверсию, без вспомогательного глагола"
+    },
+    {
+      "en": "She is interested in cars",
+      "ru": "Она интересуется машинами",
+      "note": "Be + прилагательное/причастие для описания состояния: be interested in, be tired of, be afraid of"
+    },
+    {
+      "en": "She is not ashamed of her past",
+      "ru": "Она не стыдится своего прошлого",
+      "note": "Отрицание с be: is not / isn't ставится прямо после подлежащего"
+    },
+    {
+      "en": "Will you be here at 10?",
+      "ru": "Ты будешь здесь в 10?",
+      "note": "Будущее время с be: will + be (инфинитив без to)"
+    },
+    {
+      "en": "Is it cold outside?",
+      "ru": "На улице холодно?",
+      "note": "Безличные предложения с it: it is cold / it is raining / it is late"
+    }
+  ]
+}

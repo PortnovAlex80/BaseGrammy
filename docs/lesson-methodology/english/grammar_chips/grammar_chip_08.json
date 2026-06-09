@@ -1,0 +1,35 @@
+{
+  "key": "L08",
+  "title": "L08 - Perfect Tenses",
+  "essence": "Perfect Tenses связывают прошлое с настоящим (Present Perfect) или предшествуют другому прошлому (Past Perfect). Present Perfect (have/has + V3): действие началось в прошлом и актуально СЕЙЧАС — 'I have lived here for 5 years' (и до сих пор живу). Past Perfect (had + V3): действие произошло ДО другого прошлого — 'I had known him before he became famous'. Ключевые слова: since (с какого момента), for (длительность), already/yet (уже/ещё), ever/never (когда-либо/никогда).",
+  "formula": "Present Perfect: have/has + V3 (связь с настоящим)\nPresent Perfect Continuous: have/has + been + V-ing (процесс)\nPast Perfect: had + V3 (предшествование в прошлом)\nСлова-маркеры: since, for, already, yet, ever, never, lately",
+  "base": null,
+  "dontConfuse": "Не путай Past Simple и Present Perfect: 'I saw this movie' (когда-то, Past Simple — отвлечённый факт) vs 'I have seen this movie' (результат актуален сейчас — 'я знаю сюжет, не надо смотреть'). С упоминанием конкретного времени — Past Simple, без времени или с since/for — Present Perfect.",
+  "examples": [
+    {
+      "en": "I have been studying English for 2 years",
+      "ru": "Я учу английский 2 года",
+      "note": "Present Perfect Continuous: началось в прошлом, продолжается сейчас, for = длительность"
+    },
+    {
+      "en": "He hasn't smoked for 2 weeks",
+      "ru": "Он не курит уже 2 недели",
+      "note": "Present Perfect: отрицательный результат держится до сих пор"
+    },
+    {
+      "en": "Have you ever been to Italy?",
+      "ru": "Ты когда-нибудь ездил в Италию?",
+      "note": "Present Perfect для жизненного опыта без конкретного времени"
+    },
+    {
+      "en": "They had been dating for 3 years before they got married",
+      "ru": "Они встречались 3 года перед тем, как стали женатыми",
+      "note": "Past Perfect Continuous: процесс, который предшествовал другому событию в прошлом"
+    },
+    {
+      "en": "I have lost my credit card, I need to call my bank",
+      "ru": "Я потерял карточку, надо позвонить в банк",
+      "note": "Present Perfect: результат важен сейчас (карточки нет при себе — надо звонить)"
+    }
+  ]
+}

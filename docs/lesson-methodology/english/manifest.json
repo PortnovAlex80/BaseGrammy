@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "packId": "EN_ADV_BASE_GRAMMAR",
+  "packVersion": "v1",
+  "language": "en",
+  "displayName": "Advanced Base Grammar from Alex Po",
+  "lessons": [
+    {"lessonId": "L01_SENTENCES", "order": 1, "file": "lesson_01.csv", "grammarChip": "grammar_chips/grammar_chip_01.json"},
+    {"lessonId": "L02_VERB_BE", "order": 2, "file": "lesson_02.csv", "grammarChip": "grammar_chips/grammar_chip_02.json"},
+    {"lessonId": "L03_RELATIVE_CLAUSES", "order": 3, "file": "lesson_03.csv", "grammarChip": "grammar_chips/grammar_chip_03.json"},
+    {"lessonId": "L04_VING", "order": 4, "file": "lesson_04.csv", "grammarChip": "grammar_chips/grammar_chip_04.json"},
+    {"lessonId": "L05_ARTICLES", "order": 5, "file": "lesson_05.csv", "grammarChip": "grammar_chips/grammar_chip_05.json"},
+    {"lessonId": "L06_PRESENT_CONT", "order": 6, "file": "lesson_06.csv", "grammarChip": "grammar_chips/grammar_chip_06.json"},
+    {"lessonId": "L07_PAST_CONT", "order": 7, "file": "lesson_07.csv", "grammarChip": "grammar_chips/grammar_chip_07.json"},
+    {"lessonId": "L08_PERFECT", "order": 8, "file": "lesson_08.csv", "grammarChip": "grammar_chips/grammar_chip_08.json"},
+    {"lessonId": "L09_PASSIVE", "order": 9, "file": "lesson_09.csv", "grammarChip": "grammar_chips/grammar_chip_09.json"},
+    {"lessonId": "L10_CONDITIONALS", "order": 10, "file": "lesson_10.csv", "grammarChip": "grammar_chips/grammar_chip_10.json"},
+    {"lessonId": "L11_MODALS", "order": 11, "file": "lesson_11.csv", "grammarChip": "grammar_chips/grammar_chip_11.json"}
+  ]
+}

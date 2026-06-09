@@ -1,0 +1,35 @@
+{
+  "key": "L10",
+  "title": "L10 - Conditionals",
+  "essence": "Условные предложения (If...) выражают гипотетические ситуации. Второе условное (Second Conditional): If + Past Simple, would + V — нереальная ситуация в настоящем/будущем ('If I had money, I would buy it' — но денег нет). Третье условное (Third Conditional): If + Past Perfect, would have + V3 — нереальная ситуация в прошлом ('If I had studied harder, I would have had better grades' — но не учился). Смешанное: If + Past Perfect, would + V — причина в прошлом, результат сейчас.",
+  "formula": "2nd: If + Past Simple, would + V (нереально сейчас)\n3rd: If + Past Perfect, would have + V3 (нереально в прошлом)\nMixed: If + Past Perfect, would + V (прошлое -> настоящее)\nНа твоём месте: If I were you, I would...",
+  "base": null,
+  "dontConfuse": "Не используй would в обеих частях: 'If I would have money' — ошибка. Правильно: 'If I had money, I would buy it'. Would только в главной части, не в if-части. Исключение: 'If I were you, I would...' — were для всех лиц.",
+  "examples": [
+    {
+      "en": "If I had a bicycle, I would be happier",
+      "ru": "Если бы у меня был велосипед, я был бы счастливее",
+      "note": "Second Conditional: нереальная ситуация сейчас (велосипеда нет). If + Past Simple, would + V"
+    },
+    {
+      "en": "If I had had a bicycle, I would have been happier",
+      "ru": "Если бы у меня был велосипед, я был бы счастливее (в детстве)",
+      "note": "Third Conditional: нереальная ситуация в прошлом. If + Past Perfect, would have + V3"
+    },
+    {
+      "en": "If he hadn't sold his company, he would be a billionaire now",
+      "ru": "Если бы он не продал свою компанию, он бы был миллиардером сейчас",
+      "note": "Mixed Conditional: причина в прошлом (hadn't sold), результат в настоящем (would be)"
+    },
+    {
+      "en": "If I were you, I would apologize",
+      "ru": "На твоём месте, я бы извинился",
+      "note": "Фиксированная формула совета: If I were you (не 'was'), would + V"
+    },
+    {
+      "en": "If you hadn't told me about the meeting, I would have missed it",
+      "ru": "Если бы ты не рассказал мне о встрече, я бы пропустил её",
+      "note": "Third Conditional: конкретная ситуация в прошлом, уже не изменить"
+    }
+  ]
+}

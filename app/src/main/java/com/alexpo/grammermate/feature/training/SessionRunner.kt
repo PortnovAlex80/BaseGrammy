@@ -69,7 +69,7 @@ class SessionRunner(
     // ── Retry/hint state machine (shared with VerbDrill, DailyPractice) ──
 
     private val stateMachine = CardSessionStateMachine(maxAttempts = AnswerValidator.HINT_THRESHOLD) { card ->
-        card.acceptedAnswers.joinToString(" / ")
+        card.acceptedAnswers.firstOrNull() ?: ""
     }
 
     // ── Private mutable state ───────────────────────────────────────────

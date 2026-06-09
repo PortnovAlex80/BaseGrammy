@@ -1,0 +1,35 @@
+{
+  "key": "L05",
+  "title": "L05 - Articles",
+  "essence": "Артикли — один из самых сложных элементов для русскоязычных. 'A/an' — неопределённый (любой из, один из). 'The' — определённый (конкретный, тот самый). Нулевой артикль — для обобщений и абстрактных понятий. Правило: если слушатель знает, о каком именно предмете речь — the. Если впервые упоминаешь или в общем — a/an или без артикля.",
+  "formula": "A/an: первое упоминание, любой из, профессия (He is a teacher)\nThe: конкретный, уникальный, из контекста ясно какой (the bank I work in)\nБез артикля: обобщения (Dogs are loyal), абстрактные (love, freedom), с названиями",
+  "base": null,
+  "dontConfuse": "Не забудь артикль при первом упоминании: 'I found a wallet on the street and returned it to the owner'. Первый раз — a wallet, потом — the owner (конкретный владелец того кошелька).",
+  "examples": [
+    {
+      "en": "He is an actor in this theater",
+      "ru": "Он актер в этом театре",
+      "note": "a/an для профессии (one of many actors); the theater — конкретный театр из контекста"
+    },
+    {
+      "en": "The bank I work in is very famous",
+      "ru": "Банк, в котором я работаю, очень известный",
+      "note": "The — потому что уточнение 'I work in' делает банк конкретным"
+    },
+    {
+      "en": "He is a smart student. He is the smartest student",
+      "ru": "Он умный студент. Он самый умный студент",
+      "note": "A smart — один из умных; the smartest — уникальный (суперлатив всегда с the)"
+    },
+    {
+      "en": "The best way to learn a language is through practice",
+      "ru": "Лучший способ выучить язык — через практику",
+      "note": "The best (суперлатив); a language (любой язык); практика — без артикля (абстрактное)"
+    },
+    {
+      "en": "Doctors in Canada are very polite",
+      "ru": "Доктора в Канаде очень вежливые",
+      "note": "Без артикля — обобщение: врачи вообще, не конкретные"
+    }
+  ]
+}
