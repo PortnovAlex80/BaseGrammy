@@ -268,13 +268,22 @@ private fun DeckReadyContent(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Difficulty badge (top-end): 😊 easy / 😐 medium / 😅 hard, by frequency rank.
+            Text(
+                text = difficultyEmoji(state.currentWord?.rank ?: 0),
+                fontSize = 24.sp,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
             Text(
                 text = state.currentWord?.wordIt ?: "",
                 fontSize = 40.sp,
@@ -303,6 +312,7 @@ private fun DeckReadyContent(
                     )
                 }
             }
+        }
         }
     }
 
@@ -475,6 +485,13 @@ private fun DeckReadyContent(
 }
 
 // ── Service start/stop helpers ────────────────────────────────────────────────
+
+/** Difficulty emoji by frequency rank: easy 😊 (≤1000) / medium 😐 (≤2500) / hard 😅 (>2500). */
+private fun difficultyEmoji(rank: Int): String = when {
+    rank <= 1000 -> "😊"
+    rank <= 2500 -> "😐"
+    else -> "😅"
+}
 
 private fun startForegroundPlayback(context: Context) {
     val intent = VocabPlaybackService.startIntent(context, VocabPlaybackService.ACTION_PLAY)
