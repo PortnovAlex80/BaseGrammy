@@ -11,6 +11,8 @@ import android.os.IBinder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
@@ -202,18 +204,22 @@ private fun DeckControls(
     onBack: () -> Unit
 ) {
     val state by player.state.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(padding)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (state.totalWords == 0) {
-            // Deck still loading or empty.
+            // Deck still loading or empty. (No fillMaxSize inside verticalScroll.)
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 64.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -415,6 +421,39 @@ private fun DeckReadyContent(
             Text("Дальше")
             Spacer(modifier = Modifier.width(8.dp))
             Icon(Icons.Filled.FastForward, contentDescription = "Next word")
+        }
+    }
+
+    // Pack navigation (±50 words) — simulate 50-word packs.
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedButton(
+            onClick = {
+                ScreenLogger.tap("bg_vocab_prev_pack")
+                if (isForegroundActive) player.prevPack() else requestStartPlayback()
+            },
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+        ) {
+            Text("−50", fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Пред. пакет", style = MaterialTheme.typography.labelMedium)
+        }
+        OutlinedButton(
+            onClick = {
+                ScreenLogger.tap("bg_vocab_next_pack")
+                if (isForegroundActive) player.nextPack() else requestStartPlayback()
+            },
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+        ) {
+            Text("След. пакет", style = MaterialTheme.typography.labelMedium)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("+50", fontWeight = FontWeight.Bold)
         }
     }
 

@@ -216,6 +216,26 @@ class DeckPlayer(
     }
 
     /**
+     * Jump forward by [packSize] words (wraps around the deck). Simulates
+     * "next 50-word pack" navigation so the listener can skip ahead in batches
+     * instead of one word at a time.
+     */
+    fun nextPack(packSize: Int = 50) {
+        if (words.isEmpty()) return
+        val size = words.size
+        val newIndex = (_state.value.currentIndex + packSize) % size
+        moveTo(newIndex)
+    }
+
+    /** Jump backward by [packSize] words (wraps around the deck). */
+    fun prevPack(packSize: Int = 50) {
+        if (words.isEmpty()) return
+        val size = words.size
+        val newIndex = ((_state.value.currentIndex - packSize) % size + size) % size
+        moveTo(newIndex)
+    }
+
+    /**
      * Jump to [index] (clamped into [0, totalWords-1]). If playback was active, relaunches
      * from the new word. Out-of-range indices are clamped, not rejected.
      */

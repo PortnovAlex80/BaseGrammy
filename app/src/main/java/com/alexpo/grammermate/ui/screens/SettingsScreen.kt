@@ -82,6 +82,7 @@ fun SettingsSheet(
     onSetUseOfflineAsr: (Boolean) -> Unit,
     onSetUseBluetoothMic: (Boolean) -> Unit = {},
     onStartAsrDownload: () -> Unit,
+    onStartTtsDownload: () -> Unit = {},
     onResetAllProgress: () -> Unit,
     onSetHintLevel: (HintLevel) -> Unit,
     onSetThemeMode: (com.alexpo.grammermate.data.ThemeMode) -> Unit = {},
@@ -373,6 +374,115 @@ fun SettingsSheet(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
+
+            // TTS voice models (explicit download section)
+            Text(
+                text = "Голосовые модели (TTS)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            // Per-language status list. TtsModelRegistry.displayNames are plain
+            // ("Italian", "Russian"); append the model dir name to match the task's
+            // "Italian — paola-medium" expectation.
+            val ttsTargetLanguages = listOf("it", "ru")
+            ttsTargetLanguages.forEach { langId ->
+                val spec = com.alexpo.grammermate.data.TtsModelRegistry.specFor(langId)
+                val displayName = spec?.let { "${it.displayName} — ${it.modelDirName}" } ?: langId
+                val present = state.audio.ttsModelsReady[langId] == true
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = if (present) "✓ Загружено" else "Не загружено",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (present) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            Button(
+                onClick = {
+                    AuditLogger.getInstanceOrNull()?.settingsChange("ttsDownload", "manual")
+                    onStartTtsDownload()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = ttsTargetLanguages.any { state.audio.ttsModelsReady[it] != true } &&
+                    state.audio.ttsDownloadState !is DownloadState.Downloading &&
+                    state.audio.ttsDownloadState !is DownloadState.Extracting &&
+                    state.audio.ttsDownloadState !is DownloadState.Initializing
+            ) {
+                Icon(Icons.Default.Download, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Загрузить модели")
+            }
+            // Progress block mirroring the ASR section's when(DownloadState).
+            when (val ttsState = state.audio.ttsDownloadState) {
+                is DownloadState.Downloading -> {
+                    LinearProgressIndicator(
+                        progress = { ttsState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Загрузка модели… ${ttsState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Extracting -> {
+                    LinearProgressIndicator(
+                        progress = { ttsState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Распаковка модели… ${ttsState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Initializing -> {
+                    LinearProgressIndicator(
+                        progress = { ttsState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = when (ttsState.phase) {
+                            InitPhase.CHECKING_FILES -> "Проверка файлов…"
+                            InitPhase.LOADING_MODEL -> "Загрузка движка…"
+                            InitPhase.PREPARING_ENGINE -> "Подготовка…"
+                        } + " ${ttsState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Error -> {
+                    Text(
+                        text = ttsState.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                is DownloadState.Done -> {
+                    Text(
+                        text = "Модели готовы к использованию.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                DownloadState.Idle -> {
+                    Text(
+                        text = "Скачайте модели для озвучки Italian и Russian заранее.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
 
             // Offline ASR toggle
             Text(

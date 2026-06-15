@@ -343,6 +343,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                     },
                     onStartAsrDownload = remember { { vm.audio.startAsrDownload() } },
+                    onStartTtsDownload = remember { { vm.startTtsDownload() } },
                     onResetAllProgress = vm::resetLanguageProgress,
                     onSetHintLevel = vm.settings::setHintLevel,
                     onSetThemeMode = vm.settings::setThemeMode,

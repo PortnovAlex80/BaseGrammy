@@ -491,6 +491,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Manually download TTS voice models for the background-vocab languages
+     * (Italian + Russian) from the Settings screen, with visible progress.
+     * Delegates to [AudioCoordinator.downloadTtsModels], which updates
+     * `audioState.ttsDownloadState` and `audioState.ttsModelsReady`.
+     */
+    fun startTtsDownload() {
+        audioCoordinator.downloadTtsModels(listOf("it", "ru"))
+    }
+
+    /**
      * Play multilingual story with automatic language switching.
      * Use this for stories with Italian insertions marked with {it}...{/it}
      *
@@ -585,7 +595,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             dailyPracticeCoordinator.setSessionSize(sessionSize)
             val bossLessonRewards = bossOrchestrator.parseBossRewards(progress.bossLessonRewards)
             val bossMegaRewards = bossOrchestrator.parseBossRewards(progress.bossMegaRewards)
-            val languages = lessonStore.getLanguages()
+            val languages = lessonStore.getLanguagesWithPacks()
             val packs = lessonStore.getInstalledPacks()
             val hasExistingProgress = progressStore.exists()
             val selectedLanguageId = if (hasExistingProgress) {
@@ -667,7 +677,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             // stale values on the IO thread.
             val reloaded = lessonStore.forceReloadDefaultPacks()
             if (reloaded) {
-                val reloadLanguages = lessonStore.getLanguages()
+                val reloadLanguages = lessonStore.getLanguagesWithPacks()
                 val reloadPacks = lessonStore.getInstalledPacks()
                 withContext(Dispatchers.Main) {
                     _coreState.update { current ->
@@ -1184,7 +1194,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val lessons = lessonStore.getLessons(pack.packId.value, pack.languageId.value)
             val selectedLessonId = lessons.firstOrNull()?.id
             _coreState.update {
-                it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = pack.languageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+                it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguagesWithPacks(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = pack.languageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
             }
             // Reset feature-owned state
             bossOrchestrator.resetStateKeepRewards()
@@ -1259,7 +1269,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessons = emptyList<com.alexpo.grammermate.data.Lesson>()
         val selectedLessonId = lessons.firstOrNull()?.id
         _coreState.update {
-            it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguages(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = language.id, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+            it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguagesWithPacks(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = language.id, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
         }
         // Reset feature-owned state
         bossOrchestrator.resetStateKeepRewards()

@@ -149,6 +149,10 @@ class AudioCoordinator(
                 asrModelReady = asrModelManager.isReady()
             )
         }
+
+        // Probe disk for present TTS models so the Settings section shows correct
+        // "✓ Загружено" / "Не загружено" status on first open.
+        refreshTtsModelsPresent()
     }
 
     // ── Sound effects (deduplicated) ───────────────────────────────────────
@@ -402,6 +406,109 @@ class AudioCoordinator(
 
     fun setTtsDownloadStateFromBackground(bgState: DownloadState) {
         _audioState.update { it.copy(ttsDownloadState = bgState) }
+    }
+
+    /**
+     * Public entry point for the Settings "Голосовые модели (TTS)" section.
+     * Downloads the given TTS models sequentially via [TtsModelManager.downloadMultiple],
+     * updating [_audioState.ttsDownloadState] (aggregate progress) and
+     * [_audioState.ttsModelsReady] (per-language presence map) as each completes.
+     *
+     * Defaults to the background-vocab languages (Italian + Russian). Callers may
+     * override [languageIds] for other combinations.
+     *
+     * Mirrors the [startAsrDownload] / [beginAsrDownload] pattern: guards against
+     * a duplicate in-flight job and against a metered network, then delegates to
+     * [downloadTtsModelsInternal].
+     */
+    fun downloadTtsModels(languageIds: List<String> = listOf("it", "ru")) {
+        if (languageIds.isEmpty()) return
+        // Refresh presence map first so UI status reflects current disk state.
+        refreshTtsModelsPresent(languageIds)
+        // If every requested model is already on disk, surface Done and skip network.
+        if (languageIds.all { ttsModelManager.isModelReady(it) }) {
+            _audioState.update { it.copy(ttsDownloadState = DownloadState.Done) }
+            return
+        }
+        if (ttsModelManager.isNetworkMetered()) {
+            _audioState.update { it.copy(ttsMeteredNetwork = true) }
+            return
+        }
+        downloadTtsModelsInternal(languageIds)
+    }
+
+    private fun downloadTtsModelsInternal(languageIds: List<String>) {
+        // A foreground multi-language download cancels any competing background batch.
+        bgDownloadJob?.cancel()
+        if (ttsDownloadJob?.isActive == true) {
+            Log.d(TAG, "downloadTtsModels: a TTS download is already in progress, ignoring")
+            return
+        }
+        val missing = languageIds.filter { !ttsModelManager.isModelReady(it) }
+        if (missing.isEmpty()) {
+            _audioState.update { it.copy(ttsDownloadState = DownloadState.Done) }
+            refreshTtsModelsPresent(languageIds)
+            return
+        }
+        ttsDownloadJob = coroutineScope.launch(Dispatchers.IO) {
+            _audioState.update { it.copy(ttsDownloadState = DownloadState.Downloading(0, 0L, 0L)) }
+            ttsModelManager.downloadMultiple(missing).collect { stateMap ->
+                val anyActive = stateMap.values.any {
+                    it is DownloadState.Downloading ||
+                        it is DownloadState.Extracting ||
+                        it is DownloadState.Initializing
+                }
+                val anyError = stateMap.values.filterIsInstance<DownloadState.Error>().firstOrNull()
+                val allDone = stateMap.values.all { it is DownloadState.Done }
+
+                _audioState.update { current ->
+                    // Aggregate the per-language states into a single representative
+                    // DownloadState for the shared ttsDownloadState field consumed by the
+                    // Settings UI. Prefer the first in-flight sub-state, else Error, else Done.
+                    val aggregate: DownloadState = when {
+                        anyError != null -> anyError
+                        anyActive -> {
+                            // Pick the most informative active sub-state (prefer Downloading with bytes).
+                            val downloading = stateMap.values.filterIsInstance<DownloadState.Downloading>().firstOrNull()
+                            val extracting = stateMap.values.filterIsInstance<DownloadState.Extracting>().firstOrNull()
+                            val initializing = stateMap.values.filterIsInstance<DownloadState.Initializing>().firstOrNull()
+                            downloading ?: extracting ?: initializing ?: current.ttsDownloadState
+                        }
+                        allDone -> DownloadState.Done
+                        else -> current.ttsDownloadState
+                    }
+                    val updatedReady = current.ttsModelsReady.toMutableMap().apply {
+                        stateMap.forEach { (langId, dlState) ->
+                            if (dlState is DownloadState.Done) this[langId] = true
+                        }
+                    }
+                    current.copy(
+                        bgTtsDownloadStates = stateMap,
+                        ttsDownloadState = aggregate,
+                        ttsModelsReady = updatedReady
+                    )
+                }
+
+                if (allDone) {
+                    refreshTtsModelsPresent(languageIds)
+                    _audioState.update { it.copy(ttsDownloadState = DownloadState.Done) }
+                }
+            }
+        }
+    }
+
+    /**
+     * Refresh [_audioState.ttsModelsReady] for the given languages by probing disk
+     * via [TtsModelManager.isModelReady]. Called on init, before a manual download,
+     * and after a download completes.
+     */
+    fun refreshTtsModelsPresent(languageIds: List<String> = TtsModelRegistry.models.keys.toList()) {
+        if (languageIds.isEmpty()) return
+        val probe = languageIds.associateWith { ttsModelManager.isModelReady(it) }
+        _audioState.update { current ->
+            val merged = current.ttsModelsReady.toMutableMap().apply { putAll(probe) }
+            current.copy(ttsModelsReady = merged)
+        }
     }
 
     // ── TTS model checks ──────────────────────────────────────────────────
