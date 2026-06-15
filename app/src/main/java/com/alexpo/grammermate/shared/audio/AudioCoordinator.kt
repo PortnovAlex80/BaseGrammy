@@ -108,6 +108,12 @@ class AudioCoordinator(
     // coroutine is using them. Serializing here closes that window.
     private val ttsMutex = Mutex()
 
+    // ── Segment player (shared playback engine) ────────────────────────────
+    // Factored out of the former private playSegments(...) so the background-vocab
+    // DeckPlayer can reuse the exact same loop without depending on this class.
+    // SegmentPlayer self-serializes via its own internal mutex.
+    private val segmentPlayer = SegmentPlayer(ttsEngine)
+
     // ── Init ───────────────────────────────────────────────────────────────
 
     init {
@@ -245,72 +251,26 @@ class AudioCoordinator(
         storyPlaybackJob = coroutineScope.launch {
             ttsMutex.withLock {
                 try {
-                    val segments = com.alexpo.grammermate.data.MultilingualStoryParser.parseStory(
+                    // Stories contain no {pause:N} markers, so parseSegments returns an
+                    // all-Text list — behavior is identical to the old parseStory path.
+                    val segments = com.alexpo.grammermate.data.MultilingualStoryParser.parseSegments(
                         content,
                         defaultLanguageId
                     )
 
-                    Log.d(TAG, "Playing ${segments.size} segments with languages: ${segments.map { it.languageId }}")
-
-                    var currentSegmentIdx = 0
-                    while (currentSegmentIdx < segments.size) {
-                        val segment = segments[currentSegmentIdx]
-                        val cleanText = com.alexpo.grammermate.data.MultilingualStoryParser.cleanMarkdown(segment.text)
-                        val previewText = cleanText.take(50).replace("\n", "\\n")
-
-                        Log.d(TAG, "════════════════════════════════════════")
-                        Log.d(TAG, "Segment $currentSegmentIdx/${segments.size} | Language: ${segment.languageId.uppercase()}")
-                        Log.d(TAG, "Text preview: \"$previewText...\"")
-
-                        // Initialize TTS for this segment's language if needed
-                        if (ttsEngine.state.value != TtsState.Ready
-                            || ttsEngine.activeLanguageId != segment.languageId
-                        ) {
-                            Log.d(TAG, "→ Initializing TTS for: ${segment.languageId}")
-                            ttsEngine.initialize(segment.languageId)
-                        }
-
-                        // Wait for TTS to be ready (increased timeout for VITS_PIPER)
-                        var retries = 0
-                        while (ttsEngine.state.value != TtsState.Ready && retries < 50) {
-                            delay(100)
-                            retries++
-                            if (retries % 10 == 0) {
-                                Log.d(TAG, "→ Still waiting for TTS initialization... (${retries * 100}ms)")
+                    Log.d(
+                        TAG,
+                        "Playing ${segments.size} segments with languages: " +
+                            segments.map {
+                                if (it is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Text) it.languageId
+                                else "pause"
                             }
-                        }
+                    )
 
-                        if (ttsEngine.state.value == TtsState.Ready) {
-                            Log.d(TAG, "→ Speaking segment $currentSegmentIdx...")
-                            Log.d(TAG, "→ Text length: ${cleanText.length}, full text: \"$cleanText\"")
-                            ttsEngine.speak(cleanText, languageId = segment.languageId, speed = _audioState.value.ttsSpeed)
-
-                            // Wait for this segment to finish playing
-                            var waitRetries = 0
-                            while (ttsEngine.state.value == TtsState.Speaking && waitRetries < 3000) {
-                                delay(100)
-                                waitRetries++
-                            }
-
-                            Log.d(TAG, "✓ Segment $currentSegmentIdx finished (${segment.languageId.uppercase()})")
-                        } else {
-                            Log.w(TAG, "⚠ TTS not ready for segment $currentSegmentIdx, skipping")
-                        }
-
-                        // After segment finishes, check if we were paused during playback
-                        if (_audioState.value.isStoryPlaybackPaused) {
-                            Log.d(TAG, "⏸ Paused after segment $currentSegmentIdx — waiting for resume to re-speak this segment")
-                            // Wait for resume
-                            while (_audioState.value.isStoryPlaybackPaused) {
-                                delay(100)
-                            }
-                            // Re-speak the current segment (don't advance index)
-                            Log.d(TAG, "▶ Resuming — re-speaking segment $currentSegmentIdx")
-                            continue
-                        }
-
-                        currentSegmentIdx++
-                    }
+                    playSegmentsViaSharedEngine(
+                        segments = segments,
+                        speed = _audioState.value.ttsSpeed
+                    )
 
                     Log.d(TAG, "All segments played successfully")
                 } catch (e: Throwable) {
@@ -322,6 +282,29 @@ class AudioCoordinator(
                 }
             }
         }
+    }
+
+    /**
+     * Thin delegation to the shared [segmentPlayer].
+     *
+     * Story playback already ran inside [ttsMutex] (see [playMultilingualStory]),
+     * and SegmentPlayer has its own internal mutex — the two are independent and
+     * never nest (SegmentPlayer does not call back into AudioCoordinator), so
+     * there is no deadlock risk. The story pause flag is read directly off
+     * [_audioState] exactly as before, preserving identical pause/resume behavior.
+     *
+     * Behavior is identical to the former private [playSegments]: same init-if-needed,
+     * speak, poll-until-not-Speaking, and re-speak-on-resume semantics.
+     */
+    private suspend fun playSegmentsViaSharedEngine(
+        segments: List<com.alexpo.grammermate.data.MultilingualStoryParser.Segment>,
+        speed: Float
+    ) {
+        segmentPlayer.playSegments(
+            segments = segments,
+            speed = speed,
+            isPaused = { _audioState.value.isStoryPlaybackPaused }
+        )
     }
 
     fun setTtsSpeed(speed: Float) {

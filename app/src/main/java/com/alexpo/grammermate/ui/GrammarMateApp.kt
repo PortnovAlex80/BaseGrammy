@@ -89,6 +89,7 @@ import com.alexpo.grammermate.ui.screens.TrainingScreen
 import com.alexpo.grammermate.ui.screens.GrammarStoryRoadmapScreen
 import com.alexpo.grammermate.ui.screens.ChapterLessonsScreen
 import com.alexpo.grammermate.ui.screens.StoryReaderScreen
+import com.alexpo.grammermate.ui.screens.BackgroundVocabScreen
 import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.VerbDrillViewModel
 import com.alexpo.grammermate.ui.screens.SettingsSheet
@@ -117,6 +118,7 @@ private object Routes {
     const val VOCAB_DRILL = "vocab_drill"
     const val GRAMMAR_STORY_ROADMAP = "grammar_story_roadmap"
     const val STORY_READER = "story_reader"
+    const val BACKGROUND_VOCAB = "background_vocab"
 }
 
 // ── Dialog state holder ──────────────────────────────────────────────────────
@@ -450,6 +452,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         }
                                     }
                                 },
+                                onBackgroundVocab = remember { { onNavigate(Routes.BACKGROUND_VOCAB) } },
                                 hasVerbDrill = state.navigation.hasVerbDrill,
                                 hasVocabDrill = state.navigation.hasVocabDrill,
                                 showBackButton = true,  // Show back button to return to pack selection
@@ -518,7 +521,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 } },
                                 pomodoroLastDuration = vm.getPomodoroLastDuration(),
                                 pomodoroHistory = vm.getPomodoroHistoryForSelectedLanguage(),
-                                packTiles = vm.getPackTiles()
+                                packTiles = vm.getPackTiles(),
+                                onBackgroundVocab = remember { { onNavigate(Routes.BACKGROUND_VOCAB) } }
                             )
                         }
                     }
@@ -935,6 +939,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                 }
                             },
+                            onBackgroundVocab = remember { { onNavigate(Routes.BACKGROUND_VOCAB) } },
                             hasVerbDrill = state.navigation.hasVerbDrill,
                             hasVocabDrill = state.navigation.hasVocabDrill,
                             isStoryPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking,
@@ -1033,6 +1038,24 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             navController.popBackStack(Routes.HOME, inclusive = false)
                         }
                     }
+
+                    composable(Routes.BACKGROUND_VOCAB) {
+                        LaunchedEffect(Unit) {
+                            ScreenLogger.screenShown("BACKGROUND_VOCAB")
+                        }
+                        BackgroundVocabScreen(
+                            onBack = remember { {
+                                ScreenLogger.nav("background_vocab", "BACK", trigger = "back_press")
+                                AuditLogger.getInstanceOrNull()?.backPress("background_vocab", "back_to_home")
+                                navController.popBackStack(Routes.HOME, inclusive = false)
+                            } }
+                        )
+                        BackHandler(enabled = !dialogs.showSettings) {
+                            ScreenLogger.nav("background_vocab", "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("background_vocab", "back_to_home")
+                            navController.popBackStack(Routes.HOME, inclusive = false)
+                        }
+                    }
                 }
 
                 NavDialogs(
@@ -1068,6 +1091,7 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
     Routes.VOCAB_DRILL -> AppScreen.VOCAB_DRILL
     Routes.GRAMMAR_STORY_ROADMAP -> AppScreen.HOME // Treat as home for tracking
     Routes.STORY_READER -> AppScreen.STORY // Treat as story for tracking
+    Routes.BACKGROUND_VOCAB -> AppScreen.HOME
     else -> AppScreen.HOME
 }
 

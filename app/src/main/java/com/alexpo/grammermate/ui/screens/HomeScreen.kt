@@ -117,7 +117,8 @@ fun HomeScreen(
     pomodoroLastDuration: Int = 20,
     pomodoroHistory: List<PomodoroHistoryEntry> = emptyList(),
     onSelectPack: (String) -> Unit = {},
-    packTiles: List<PackTileUi> = emptyList()
+    packTiles: List<PackTileUi> = emptyList(),
+    onBackgroundVocab: () -> Unit = {}
 ) {
     val tiles = remember(state.navigation.selectedLanguageId, state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId, state.navigation.activePackId, state.navigation.activePackLessonIds) {
         buildLessonTiles(state.navigation.lessons, state.cardSession.testMode, state.flowerDisplay.lessonFlowers, state.navigation.selectedLessonId?.value, state.navigation.activePackLessonIds)
@@ -356,6 +357,18 @@ fun HomeScreen(
                     onOpenElite()
                 }
             )
+            Spacer(modifier = Modifier.height(12.dp))
+            // Background Vocab Listener — passive listening deck.
+            // Guarded by activePackId != null per CLAUDE.md conditional-visibility rule.
+            OutlinedButton(
+                onClick = {
+                    ScreenLogger.tap("bg_vocab_open")
+                    onBackgroundVocab()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Фоновое слушание")
+            }
         }
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = stringResource(R.string.home_legend), fontWeight = FontWeight.SemiBold)

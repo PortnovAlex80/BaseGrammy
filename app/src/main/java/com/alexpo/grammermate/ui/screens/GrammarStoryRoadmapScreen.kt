@@ -66,6 +66,7 @@ fun GrammarStoryRoadmapScreen(
     onVerbPractice: () -> Unit,
     onFlashcards: () -> Unit,
     onDailyPractice: () -> Unit,
+    onBackgroundVocab: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
@@ -190,6 +191,20 @@ fun GrammarStoryRoadmapScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Daily Practice")
+                    }
+
+                    // Background Vocab Listener entry — passive listening deck.
+                    // Visible only when a pack is selected (this whole screen is only shown
+                    // when activePack != null and the pack has chapters), per CLAUDE.md
+                    // conditional-visibility rule.
+                    OutlinedButton(
+                        onClick = {
+                            ScreenLogger.tap("bg_vocab_open")
+                            onBackgroundVocab()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Фоновое слушание")
                     }
                 }
             }

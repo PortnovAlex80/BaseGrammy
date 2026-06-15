@@ -9,6 +9,10 @@ import kotlin.math.min
  * Supports markers like {it}Italian text{/it} within story content.
  * The parser splits text into segments with associated languages.
  *
+ * Additionally supports `{pause:N}` markers (N in milliseconds) which produce
+ * [Segment.Pause] entries in [parseSegments]. The legacy [parseStory] entry
+ * point filters pauses out so existing story playback is unchanged.
+ *
  * Example:
  * ```
  * This is English. {it}Questo è italiano.{/it} Back to English.
@@ -24,7 +28,31 @@ object MultilingualStoryParser {
     private const val TAG = "MultilingualStoryParser"
 
     /**
+     * Sealed hierarchy of segments produced by [parseSegments].
+     *
+     * A playback loop consumes this list and either speaks the [Text] segment via
+     * TTS or waits for [Pause.ms] milliseconds. Text-only consumers (e.g. story
+     * playback) can ignore [Pause] entries via [parseStory].
+     */
+    sealed interface Segment {
+        /**
+         * A run of text belonging to [languageId] (one of the supported marker
+         * languages or the caller-supplied default language id).
+         */
+        data class Text(val text: String, val languageId: String) : Segment
+
+        /**
+         * An explicit pause of [ms] milliseconds. Emitted from `{pause:N}` markup.
+         */
+        data class Pause(val ms: Long) : Segment
+    }
+
+    /**
      * Represents a text segment with its associated language.
+     *
+     * Kept as a top-level data class for backward compatibility with existing
+     * callers of [parseStory] (e.g. AudioCoordinator). New callers should prefer
+     * [Segment.Text] via [parseSegments].
      */
     data class TextSegment(
         val text: String,
@@ -36,6 +64,12 @@ object MultilingualStoryParser {
      * Supported languages: it, en, ru, el, de (German), zh (Chinese)
      */
     private val languagePattern = Regex("""\{(it|en|ru|el|de|zh)\}(.+?)\{/\1\}""", RegexOption.DOT_MATCHES_ALL)
+
+    /**
+     * Pause marker pattern: {pause:N} where N is a positive integer of milliseconds.
+     * Used by background-vocab scripts to insert explicit delays between TTS segments.
+     */
+    private val pausePattern = Regex("""\{pause:(\d+)\}""")
 
     /**
      * Detect the language of a text sample by character analysis and word patterns.
@@ -131,13 +165,46 @@ object MultilingualStoryParser {
     fun parseStory(content: String, defaultLanguageId: String = "en"): List<TextSegment> {
         if (content.isBlank()) return emptyList()
 
+        // Delegate to parseSegments and filter pauses out. Stories currently
+        // contain no {pause:N} markers, so behavior is identical to before.
+        // This keeps the legacy TextSegment return type for existing callers
+        // (AudioCoordinator etc.) while sharing one implementation.
+        return parseSegments(content, defaultLanguageId)
+            .mapNotNull { segment ->
+                when (segment) {
+                    is Segment.Text -> TextSegment(segment.text, segment.languageId)
+                    is Segment.Pause -> null
+                }
+            }
+    }
+
+    /**
+     * Parse content into a mixed stream of [Segment.Text] and [Segment.Pause].
+     *
+     * Same paragraph/language-marker logic as [parseStory], but additionally
+     * recognizes `{pause:N}` markers and emits [Segment.Pause] at the correct
+     * stream position (between the surrounding text segments).
+     *
+     * Example: `{it}casa{/it}{pause:300}{ru}дом{/ru}` produces
+     * `[Text("casa","it"), Pause(300), Text("дом","ru")]`.
+     *
+     * Text segments are trimmed and the same default-language detection rules
+     * as [parseStory] apply. Pause ordering is preserved exactly as written.
+     *
+     * @param content The marked-up content (may contain markdown, {lang}…{/lang} and {pause:N})
+     * @param defaultLanguageId Default language for text without markers
+     * @return Ordered list of [Segment]s (text + pauses interleaved)
+     */
+    fun parseSegments(content: String, defaultLanguageId: String = "en"): List<Segment> {
+        if (content.isBlank()) return emptyList()
+
         // Normalize CRLF to LF for consistent paragraph splitting
         val normalized = content.replace("\r\n", "\n")
 
-        Log.d(TAG, "=== parseStory START ===")
+        Log.d(TAG, "=== parseSegments START ===")
         Log.d(TAG, "Content length: ${normalized.length}, defaultLanguageId: $defaultLanguageId")
 
-        val segments = mutableListOf<TextSegment>()
+        val segments = mutableListOf<Segment>()
 
         // Split into paragraphs (double newline or markdown headers)
         val paragraphSplitRegex = Regex("""(\n\n+|^#{1,6}\s+.*$)""", RegexOption.MULTILINE)
@@ -151,78 +218,129 @@ object MultilingualStoryParser {
             if (paragraph.isBlank()) continue
 
             // Find all language markers within this paragraph
-            val matches = languagePattern.findAll(paragraph).toList()
+            val langMatches = languagePattern.findAll(paragraph).toList()
 
-            if (matches.isEmpty()) {
-                // No markers - detect language for entire paragraph
+            if (langMatches.isEmpty()) {
+                // No language markers. Detect language for the entire paragraph,
+                // but still split out any {pause:N} markers so a pause-only or
+                // pause-interleaved paragraph still produces Pause segments.
                 val paraLang = detectLanguage(paragraph, defaultLanguageId)
                 Log.d(TAG, "Paragraph $paraIndex: detected language='$paraLang', preview=${paragraph.take(30).replace("\n", "\\n")}...")
-                Log.d(TAG, "  → No markers, using detected language: $paraLang")
-                segments.add(TextSegment(paragraph.trim(), paraLang))
-                globalSegmentIndex++
+                Log.d(TAG, "  → No lang markers, using detected language: $paraLang")
+                val added = emitTextWithPauses(paragraph, paraLang, segments)
+                globalSegmentIndex += added
             } else {
-                // Markers present — non-marked text is in defaultLanguageId.
+                // Language markers present — non-marked text is in defaultLanguageId.
                 // detectLanguage() on raw paragraph with {it} tags skews toward Italian.
                 val paraLang = defaultLanguageId
-                Log.d(TAG, "Paragraph $paraIndex: has ${matches.size} markers, using defaultLanguage='$paraLang'")
+                Log.d(TAG, "Paragraph $paraIndex: has ${langMatches.size} lang markers, using defaultLanguage='$paraLang'")
 
-                // Process paragraph with markers
+                // Walk the paragraph left-to-right, interleaving pauses with text.
+                // For each gap between markers (and before/after the marker run),
+                // we emit the text via emitTextWithPauses so pauses inside the
+                // default-language gaps are preserved. Marker inner text is also
+                // routed through emitTextWithPauses so {pause:N} inside markers
+                // (rare but possible) is handled too.
                 var lastIndex = 0
 
-                for ((matchIndex, match) in matches.withIndex()) {
+                for (match in langMatches) {
                     val (fullMatch, langId, segmentText) = match.groupValues
                     val startIndex = match.range.first
 
-                    // Add text before the marker (paragraph language, NOT global default)
+                    // Text before this marker belongs to the paragraph language.
                     if (startIndex > lastIndex) {
                         val beforeText = paragraph.substring(lastIndex, startIndex)
                         if (beforeText.isNotBlank()) {
-                            Log.d(TAG, "  → Segment ${globalSegmentIndex}: language=$paraLang, preview=${beforeText.take(30).replace("\n", "\\n")}...")
-                            segments.add(TextSegment(beforeText.trim(), paraLang))
-                            globalSegmentIndex++
+                            Log.d(TAG, "  → Gap before marker: language=$paraLang, preview=${beforeText.take(30).replace("\n", "\\n")}...")
+                            globalSegmentIndex += emitTextWithPauses(beforeText, paraLang, segments)
                         }
                     }
 
-                    // Add the language-specific segment
+                    // The language-specific segment.
                     if (segmentText.isNotBlank()) {
                         Log.d(TAG, "  → Segment ${globalSegmentIndex}: language=$langId (MARKER), preview=${segmentText.take(30).replace("\n", "\\n")}...")
-                        segments.add(TextSegment(segmentText.trim(), langId))
-                        globalSegmentIndex++
+                        globalSegmentIndex += emitTextWithPauses(segmentText, langId, segments)
                     }
 
                     lastIndex = match.range.last + 1
                 }
 
-                // Add remaining text after the last marker (paragraph language)
+                // Remaining text after the last marker.
                 if (lastIndex < paragraph.length) {
                     val afterText = paragraph.substring(lastIndex)
                     if (afterText.isNotBlank()) {
-                        Log.d(TAG, "  → Segment ${globalSegmentIndex}: language=$paraLang, preview=${afterText.take(30).replace("\n", "\\n")}...")
-                        segments.add(TextSegment(afterText.trim(), paraLang))
-                        globalSegmentIndex++
+                        Log.d(TAG, "  → Tail after markers: language=$paraLang, preview=${afterText.take(30).replace("\n", "\\n")}...")
+                        globalSegmentIndex += emitTextWithPauses(afterText, paraLang, segments)
                     }
                 }
             }
         }
 
-        Log.d(TAG, "=== parseStory END ===")
+        Log.d(TAG, "=== parseSegments END ===")
         Log.d(TAG, "Total segments: $globalSegmentIndex")
-        Log.d(TAG, "Segment languages: ${segments.map { "${it.languageId}: [${it.text.take(20).replace("\n", " ")}]" }}")
+        Log.d(TAG, "Segment kinds: ${segments.map { if (it is Segment.Pause) "Pause(${it.ms})" else "Text(${(it as Segment.Text).languageId})" }}")
         return segments
     }
 
     /**
+     * Emit text from [raw] into [out], splitting on `{pause:N}` markers.
+     *
+     * Text between pauses becomes [Segment.Text] with the given [languageId]
+     * (trimmed; blank chunks are dropped). Each `{pause:N}` becomes a
+     * [Segment.Pause] with N milliseconds, preserving order.
+     *
+     * Returns the number of segments appended.
+     */
+    private fun emitTextWithPauses(raw: String, languageId: String, out: MutableList<Segment>): Int {
+        val pauseMatches = pausePattern.findAll(raw).toList()
+        if (pauseMatches.isEmpty()) {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) return 0
+            out.add(Segment.Text(trimmed, languageId))
+            return 1
+        }
+
+        var added = 0
+        var lastIndex = 0
+        for (match in pauseMatches) {
+            val start = match.range.first
+            if (start > lastIndex) {
+                val chunk = raw.substring(lastIndex, start).trim()
+                if (chunk.isNotEmpty()) {
+                    out.add(Segment.Text(chunk, languageId))
+                    added++
+                }
+            }
+            val msValue = match.groupValues[1].toLong()
+            out.add(Segment.Pause(msValue))
+            added++
+            lastIndex = match.range.last + 1
+        }
+        // Trailing text after the final pause.
+        if (lastIndex < raw.length) {
+            val chunk = raw.substring(lastIndex).trim()
+            if (chunk.isNotEmpty()) {
+                out.add(Segment.Text(chunk, languageId))
+                added++
+            }
+        }
+        return added
+    }
+
+    /**
      * Parse story content and strip all language markers, returning plain text.
-     * Useful for fallback when multilingual playback is not available.
+     * Also strips `{pause:N}` markers so plain-text fallbacks (clipboard copy,
+     * on-screen rendering) stay clean.
      *
      * @param content The story content with markers
      * @return Plain text without markers
      */
     fun stripMarkers(content: String): String {
-        return languagePattern.replace(content) { match ->
+        val withoutLang = languagePattern.replace(content) { match ->
             // Extract just the text content without markers
             match.groupValues[2]
         }
+        return pausePattern.replace(withoutLang) { "" }
     }
 
     /**
