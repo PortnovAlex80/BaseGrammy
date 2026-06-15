@@ -289,6 +289,26 @@ private fun DeckReadyContent(
         )
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
+            // Frequency-rank chip (top-start): the word's position in the 12500-word
+            // frequency list (rank = its frequency number / source line). Tracks order.
+            val rank = state.currentWord?.rank ?: 0
+            if (rank > 0) {
+                Text(
+                    text = "#$rank",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.35f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
             // Per-word mark buttons (top-end). GREEN excludes the word from background
             // playback; RED adds it to the "hard words" list. Tapping the active mark
             // clears it (setMark NONE). Visually: active button has a bold border + full
