@@ -115,7 +115,8 @@ class VocabPlaybackService : Service() {
             ttsEngine,
             segmentPlayer,
             scope,
-            speedProvider = { app.container.configStore.load().ttsSpeed }
+            speedProvider = { app.container.configStore.load().ttsSpeed },
+            markStore = app.container.bgVocabMarkStore
         )
 
         createNotificationChannel()

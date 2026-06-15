@@ -24,6 +24,7 @@ class AppContainer(private val application: Application) {
     val profileStore: ProfileStore by lazy { storeFactory.getProfileStore() }
     val backupManager: BackupManager by lazy { BackupManagerImpl(application) }
     val ttsEngine: TtsEngine by lazy { TtsProvider.getInstance(application).ttsEngine }
+    val bgVocabMarkStore: BgVocabMarkStore by lazy { BgVocabMarkStore(application) }
 
     // Pack-scoped stores
     fun wordMasteryStore(packId: String?): WordMasteryStore = storeFactory.getWordMasteryStore(packId)

@@ -1,6 +1,8 @@
 package com.alexpo.grammermate.feature.backgroundvocab
 
 import android.util.Log
+import com.alexpo.grammermate.data.BgVocabMark
+import com.alexpo.grammermate.data.BgVocabMarkStore
 import com.alexpo.grammermate.data.MultilingualStoryParser
 import com.alexpo.grammermate.data.SpeakSlot
 import com.alexpo.grammermate.data.TtsEngine
@@ -90,7 +92,8 @@ class DeckPlayer(
     private val scope: CoroutineScope,
     private val betweenWordsPauseMs: Long = 1500L,
     private val speedProvider: () -> Float = { 1f },
-    playWord: (suspend (WordScript) -> Unit)? = null
+    playWord: (suspend (WordScript) -> Unit)? = null,
+    private val markStore: BgVocabMarkStore? = null
 ) {
     companion object {
         private const val TAG = "DeckPlayer"
@@ -293,7 +296,33 @@ class DeckPlayer(
         playJob = scope.launch {
             try {
                 while (true) {
-                    val idx = _state.value.currentIndex
+                    // Skip GREEN-marked words before playing. A GREEN word is excluded
+                    // from background playback (the listener already knows it). Walk
+                    // forward (wrapping) until we find a non-GREEN word, but cap the
+                    // number of attempts at words.size so we can never spin forever if
+                    // every remaining word is marked GREEN — in that case break out of
+                    // the loop (the deck is effectively exhausted for this listener).
+                    var idx = _state.value.currentIndex
+                    var attempts = 0
+                    while (attempts < words.size) {
+                        val candidate = words.getOrNull(idx) ?: break
+                        if (markStore?.getMark(candidate.wordIt) != BgVocabMark.GREEN) break
+                        idx = if (idx + 1 >= words.size) 0 else idx + 1
+                        attempts++
+                    }
+                    if (attempts >= words.size) {
+                        // Every word is GREEN — nothing to play. Park the loop.
+                        Log.d(TAG, "play loop: all words are GREEN-marked, parking")
+                        _state.value = _state.value.copy(isPlaying = false)
+                        break
+                    }
+                    // Reflect the (possibly skipped-to) index in state before playing.
+                    if (idx != _state.value.currentIndex) {
+                        _state.value = _state.value.copy(
+                            currentIndex = idx,
+                            currentWord = words.getOrNull(idx)
+                        )
+                    }
                     val word = words.getOrNull(idx) ?: break
                     _state.value = _state.value.copy(currentSlot = null)
                     Log.d(TAG, "▶ Playing word index=$idx rank=${word.rank} '${word.wordIt}'")

@@ -11,6 +11,7 @@ import android.os.IBinder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -58,6 +61,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.alexpo.grammermate.GrammarMateApplication
+import com.alexpo.grammermate.data.BgVocabMark
 import com.alexpo.grammermate.data.SpeakSlot
 import com.alexpo.grammermate.feature.backgroundvocab.DeckPlayer
 import com.alexpo.grammermate.feature.backgroundvocab.VocabPlaybackService
@@ -89,6 +94,7 @@ import com.alexpo.grammermate.shared.ScreenLogger
 @Composable
 fun BackgroundVocabScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val markStore = (context.applicationContext as GrammarMateApplication).container.bgVocabMarkStore
 
     // ── Bind state ──────────────────────────────────────────────────────────
     var deckPlayer by remember { mutableStateOf<DeckPlayer?>(null) }
@@ -180,6 +186,7 @@ fun BackgroundVocabScreen(onBack: () -> Unit) {
         } else {
             DeckControls(
                 player = player,
+                markStore = markStore,
                 padding = padding,
                 notificationsDenied = notificationsDenied,
                 requestStartPlayback = requestStartPlayback,
@@ -198,6 +205,7 @@ fun BackgroundVocabScreen(onBack: () -> Unit) {
 @Composable
 private fun DeckControls(
     player: DeckPlayer,
+    markStore: com.alexpo.grammermate.data.BgVocabMarkStore,
     padding: androidx.compose.foundation.layout.PaddingValues,
     notificationsDenied: Boolean,
     requestStartPlayback: () -> Unit,
@@ -235,6 +243,7 @@ private fun DeckControls(
             DeckReadyContent(
                 state = state,
                 player = player,
+                markStore = markStore,
                 notificationsDenied = notificationsDenied,
                 requestStartPlayback = requestStartPlayback,
                 onBack = onBack
@@ -247,11 +256,21 @@ private fun DeckControls(
 private fun DeckReadyContent(
     state: com.alexpo.grammermate.feature.backgroundvocab.DeckState,
     player: DeckPlayer,
+    markStore: com.alexpo.grammermate.data.BgVocabMarkStore,
     notificationsDenied: Boolean,
     requestStartPlayback: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    // Local revision counter: bumped on every setMark so the mark buttons + red-count
+    // recompose to reflect the new store state (the store itself isn't observable).
+    var markRevision by remember { mutableStateOf(0) }
+    var showRedWords by remember { mutableStateOf(false) }
+    val currentWordIt = state.currentWord?.wordIt ?: ""
+    // Read the mark for the current word; markRevision is read here so a bump retracks it.
+    val currentMark: BgVocabMark = remember(currentWordIt, markRevision) {
+        markStore.getMark(currentWordIt)
+    }
     // Position indicator
     Text(
         text = "Слово ${state.currentIndex + 1} / ${state.totalWords}",
@@ -261,7 +280,8 @@ private fun DeckReadyContent(
         textAlign = TextAlign.Center
     )
 
-    // Current word card
+    // Current word card. The Box overlay (previously the difficulty emoji) now hosts the
+    // GREEN/RED mark buttons in the top-end corner.
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -269,14 +289,41 @@ private fun DeckReadyContent(
         )
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            // Difficulty badge (top-end): 😊 easy / 😐 medium / 😅 hard, by frequency rank.
-            Text(
-                text = difficultyEmoji(state.currentWord?.rank ?: 0),
-                fontSize = 24.sp,
+            // Per-word mark buttons (top-end). GREEN excludes the word from background
+            // playback; RED adds it to the "hard words" list. Tapping the active mark
+            // clears it (setMark NONE). Visually: active button has a bold border + full
+            // opacity; inactive buttons are dimmed.
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(12.dp)
-            )
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                MarkButton(
+                    emoji = "🟢",
+                    isActive = currentMark == BgVocabMark.GREEN,
+                    contentDescription = "Знаю это слово (зелёная метка)",
+                    onClick = {
+                        val newMark = if (currentMark == BgVocabMark.GREEN) BgVocabMark.NONE else BgVocabMark.GREEN
+                        markStore.setMark(currentWordIt, newMark)
+                        markRevision++
+                        if (newMark == BgVocabMark.GREEN) {
+                            // Word is now excluded from playback — advance to the next word.
+                            player.nextWord()
+                        }
+                    }
+                )
+                MarkButton(
+                    emoji = "🔴",
+                    isActive = currentMark == BgVocabMark.RED,
+                    contentDescription = "Сложное слово (красная метка)",
+                    onClick = {
+                        val newMark = if (currentMark == BgVocabMark.RED) BgVocabMark.NONE else BgVocabMark.RED
+                        markStore.setMark(currentWordIt, newMark)
+                        markRevision++
+                    }
+                )
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -467,6 +514,50 @@ private fun DeckReadyContent(
         }
     }
 
+    // "Hard words" launcher — shows the count of RED-marked words and opens a dialog
+    // listing them. markRevision is read here so the count refreshes after each setMark.
+    val redWords: List<String> = remember(markRevision) { markStore.redWords() }
+    OutlinedButton(
+        onClick = {
+            ScreenLogger.tap("bg_vocab_red_words")
+            showRedWords = true
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+    ) {
+        Text("Сложные слова (${redWords.size})")
+    }
+
+    if (showRedWords) {
+        AlertDialog(
+            onDismissRequest = { showRedWords = false },
+            title = { Text("Сложные слова (${redWords.size})") },
+            text = {
+                if (redWords.isEmpty()) {
+                    Text(
+                        text = "Пока нет сложных слов. Ставьте 🔴 на карточке слова, чтобы добавить его сюда.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        redWords.forEach { word ->
+                            Text(
+                                text = word,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showRedWords = false }) {
+                    Text("Закрыть")
+                }
+            }
+        )
+    }
+
     // Stop — halts playback, stops the service, and navigates back.
     OutlinedButton(
         onClick = {
@@ -486,11 +577,39 @@ private fun DeckReadyContent(
 
 // ── Service start/stop helpers ────────────────────────────────────────────────
 
-/** Difficulty emoji by frequency rank: easy 😊 (≤1000) / medium 😐 (≤2500) / hard 😅 (>2500). */
-private fun difficultyEmoji(rank: Int): String = when {
-    rank <= 1000 -> "😊"
-    rank <= 2500 -> "😐"
-    else -> "😅"
+/**
+ * Single per-word mark button. Renders an emoji circle; the active mark is shown with a
+ * bold on-surface border and full opacity, inactive marks are dimmed (0.45 alpha) so the
+ * active one reads as the current state at a glance.
+ */
+@Composable
+private fun MarkButton(
+    emoji: String,
+    isActive: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .padding(2.dp)
+            .then(
+                if (isActive) Modifier.border(
+                    2.dp,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                    RoundedCornerShape(20.dp)
+                ) else Modifier
+            )
+            .clickable(onClickLabel = contentDescription, onClick = onClick)
+            .padding(6.dp)
+    ) {
+        Text(
+            text = emoji,
+            fontSize = 22.sp,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                alpha = if (isActive) 1f else 0.45f
+            )
+        )
+    }
 }
 
 private fun startForegroundPlayback(context: Context) {
