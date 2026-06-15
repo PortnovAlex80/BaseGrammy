@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -45,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -374,6 +376,47 @@ fun SettingsSheet(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
+
+            // Background vocab — reset "easy" (green-marked) words
+            Text(
+                text = "Фоновое слушание",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            val bgMarkStore = (LocalContext.current.applicationContext
+                as com.alexpo.grammermate.GrammarMateApplication).container.bgVocabMarkStore
+            var resetGreenCount by remember { mutableStateOf(bgMarkStore.greenCount()) }
+            var showResetGreenDialog by remember { mutableStateOf(false) }
+            OutlinedButton(
+                onClick = {
+                    resetGreenCount = bgMarkStore.greenCount()
+                    showResetGreenDialog = true
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = resetGreenCount > 0
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Сбросить лёгкие слова ($resetGreenCount)")
+            }
+            if (showResetGreenDialog) {
+                AlertDialog(
+                    onDismissRequest = { showResetGreenDialog = false },
+                    title = { Text("Сбросить лёгкие слова?") },
+                    text = { Text("Все слова, отмеченные зелёным ($resetGreenCount), снова будут включены в фоновую озвучку.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            AuditLogger.getInstanceOrNull()?.settingsChange("bgVocabResetGreen", "reset")
+                            bgMarkStore.clearGreen()
+                            resetGreenCount = 0
+                            showResetGreenDialog = false
+                        }) { Text("Сбросить") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showResetGreenDialog = false }) { Text("Отмена") }
+                    }
+                )
+            }
 
             // TTS voice models (explicit download section)
             Text(

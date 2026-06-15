@@ -48,6 +48,24 @@ class BgVocabMarkStore(private val context: Context) {
     /** Count of GREEN-marked (excluded) words. */
     fun greenCount(): Int = synchronized(lock) { marks.count { it.value == BgVocabMark.GREEN } }
 
+    /**
+     * Remove all GREEN marks (the "easy/known" words) so they are included in
+     * background playback again. Returns how many were cleared. Safe to call from
+     * the settings UI; the DeckPlayer reads marks live, so the change takes effect
+     * on the next word without a restart.
+     */
+    fun clearGreen(): Int = synchronized(lock) {
+        val before = marks.size
+        val it = marks.entries.iterator()
+        while (it.hasNext()) {
+            if (it.next().value == BgVocabMark.GREEN) it.remove()
+        }
+        val removed = before - marks.size
+        if (removed > 0) save()
+        Log.d(TAG, "clearGreen: removed $removed GREEN marks, ${marks.size} remain")
+        removed
+    }
+
     private fun load() = synchronized(lock) {
         try {
             val f = file
