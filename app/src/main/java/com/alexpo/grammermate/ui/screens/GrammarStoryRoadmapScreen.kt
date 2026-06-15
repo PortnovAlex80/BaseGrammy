@@ -26,7 +26,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import android.widget.Toast
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -183,12 +186,13 @@ fun GrammarStoryRoadmapScreen(
                         }
                     }
 
+                    val dailyContext = LocalContext.current
                     OutlinedButton(
                         onClick = {
                             ScreenLogger.tap("daily_practice")
-                            onDailyPractice()
+                            Toast.makeText(dailyContext, "Временно не доступно", Toast.LENGTH_SHORT).show()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().alpha(0.5f) // temporarily disabled
                     ) {
                         Text("Daily Practice")
                     }

@@ -28,6 +28,31 @@ data class ScriptPauses(
 )
 
 /**
+ * Which part of a [WordScript] is currently being spoken. Drives in-sync UI
+ * highlighting (e.g. the active sentence card) during playback.
+ */
+sealed interface SpeakSlot {
+    data object WordIt : SpeakSlot
+    data object WordRu : SpeakSlot
+    data object ColloIt : SpeakSlot
+    data object ColloRu : SpeakSlot
+    data class SentenceIt(val index: Int) : SpeakSlot
+    data class SentenceRu(val index: Int) : SpeakSlot
+}
+
+/**
+ * One speakable part of a [WordScript]: the (already brace-escaped) text, its
+ * language, the pause to insert after it, and the [SpeakSlot] it corresponds to.
+ * [WordScript.speakPlan] is the single source of truth for playback order + slots.
+ */
+data class SpeakItem(
+    val text: String,
+    val lang: String,
+    val pauseAfterMs: Long,
+    val slot: SpeakSlot
+)
+
+/**
  * Full playback content for a single background-vocab word.
  *
  * A word is rendered (via [toMarkup]) into the `{lang}…{/lang}{pause:N}` markup
@@ -77,35 +102,24 @@ data class WordScript(
      * Any `{`, `}` characters present in the field values are escaped to
      * Unicode angle brackets so they cannot break the parser's marker regex.
      */
-    fun toMarkup(): String = buildString {
-        appendSegment("it", wordIt)
-        appendPause(pauses.afterWord)
-
-        appendSegment("ru", wordRu)
-        appendPause(pauses.afterTranslation)
-
-        appendSegment("it", colloIt)
-        appendPause(pauses.afterCollocation)
-
-        appendSegment("ru", colloRu)
-        appendPause(pauses.afterTranslation)
-
-        for (s in sentences) {
-            appendSegment("it", s.it)
-            appendPause(pauses.afterSentence)
-            appendSegment("ru", s.ru)
-            appendPause(pauses.afterSentence)
+    /**
+     * The ordered speakable parts of this word — single source of truth for both
+     * playback order and [toMarkup]. The DeckPlayer consumes this to track which
+     * part is currently being spoken (for in-sync UI highlighting).
+     */
+    fun speakPlan(): List<SpeakItem> = buildList {
+        add(SpeakItem(escapeBraces(wordIt), "it", pauses.afterWord, SpeakSlot.WordIt))
+        add(SpeakItem(escapeBraces(wordRu), "ru", pauses.afterTranslation, SpeakSlot.WordRu))
+        add(SpeakItem(escapeBraces(colloIt), "it", pauses.afterCollocation, SpeakSlot.ColloIt))
+        add(SpeakItem(escapeBraces(colloRu), "ru", pauses.afterTranslation, SpeakSlot.ColloRu))
+        sentences.forEachIndexed { i, s ->
+            add(SpeakItem(escapeBraces(s.it), "it", pauses.afterSentence, SpeakSlot.SentenceIt(i)))
+            add(SpeakItem(escapeBraces(s.ru), "ru", pauses.afterSentence, SpeakSlot.SentenceRu(i)))
         }
     }
 
-    private fun StringBuilder.appendSegment(lang: String, raw: String) {
-        append('{').append(lang).append('}')
-        append(escapeBraces(raw))
-        append("{/").append(lang).append('}')
-    }
-
-    private fun StringBuilder.appendPause(ms: Long) {
-        append("{pause:").append(ms).append('}')
+    fun toMarkup(): String = speakPlan().joinToString("") { item ->
+        "{" + item.lang + "}" + item.text + "{/" + item.lang + "}{pause:" + item.pauseAfterMs + "}"
     }
 
     /**

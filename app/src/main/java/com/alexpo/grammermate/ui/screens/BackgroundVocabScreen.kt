@@ -10,7 +10,9 @@ import android.os.Build
 import android.os.IBinder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.alexpo.grammermate.data.SpeakSlot
 import com.alexpo.grammermate.feature.backgroundvocab.DeckPlayer
 import com.alexpo.grammermate.feature.backgroundvocab.VocabPlaybackService
 import com.alexpo.grammermate.shared.AuditLogger
@@ -297,12 +300,21 @@ private fun DeckReadyContent(
         }
     }
 
-    // First sentence preview (optional).
-    state.currentWord?.sentences?.firstOrNull()?.let { sentence ->
+    // All example sentences; the one currently being spoken is highlighted.
+    val currentSlot = state.currentSlot
+    state.currentWord?.sentences?.forEachIndexed { i, sentence ->
+        val isActive = (currentSlot is SpeakSlot.SentenceIt && currentSlot.index == i) ||
+                       (currentSlot is SpeakSlot.SentenceRu && currentSlot.index == i)
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isActive) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                    else Modifier
+                ),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer
+                                 else MaterialTheme.colorScheme.surfaceVariant
             )
         ) {
             Column(
@@ -314,12 +326,14 @@ private fun DeckReadyContent(
                 Text(
                     text = sentence.it,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = sentence.ru,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
         }

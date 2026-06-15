@@ -21,8 +21,8 @@ object BgVocabLoader {
 
     private const val TAG = "BgVocabLoader"
 
-    /** Default MVP deck location under `assets/grammarmate/packs/`. */
-    const val DEFAULT_ASSET_PATH = "grammarmate/packs/bg_vocab_50.csv"
+    /** Default deck location under `assets/grammarmate/packs/` (300 words). */
+    const val DEFAULT_ASSET_PATH = "grammarmate/packs/bg_vocab_300.csv"
 
     /**
      * Load the word deck at [assetPath]. Returns an empty list if the asset is

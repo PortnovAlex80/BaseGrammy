@@ -1,7 +1,10 @@
 package com.alexpo.grammermate.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -355,7 +358,8 @@ fun HomeScreen(
                 onClick = {
                     ScreenLogger.tap("daily_practice")
                     onOpenElite()
-                }
+                },
+                enabled = false // temporarily disabled — tap shows "Временно не доступно"
             )
             Spacer(modifier = Modifier.height(12.dp))
             // Background Vocab Listener — passive listening deck.
@@ -711,13 +715,19 @@ fun VocabDrillEntryTile(
 
 @Composable
 fun DailyPracticeEntryTile(
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .clickable(onClick = onClick),
+            .then(if (!enabled) Modifier.alpha(0.45f) else Modifier)
+            .clickable {
+                if (enabled) onClick()
+                else Toast.makeText(context, "Временно не доступно", Toast.LENGTH_SHORT).show()
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )

@@ -2,6 +2,7 @@ package com.alexpo.grammermate.feature.backgroundvocab
 
 import android.util.Log
 import com.alexpo.grammermate.data.MultilingualStoryParser
+import com.alexpo.grammermate.data.SpeakSlot
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.WordScript
 import com.alexpo.grammermate.shared.audio.SegmentPlayer
@@ -34,7 +35,9 @@ data class DeckState(
     val currentIndex: Int = 0,
     val currentWord: WordScript? = null,
     val isPlaying: Boolean = false,
-    val isPaused: Boolean = false
+    val isPaused: Boolean = false,
+    /** Which part of the current word is being spoken right now (null = none/between). */
+    val currentSlot: SpeakSlot? = null
 )
 
 /**
@@ -97,12 +100,27 @@ class DeckPlayer(
     /** Observable transport/position state for UI + MediaSession. */
     val state: StateFlow<DeckState> = _state.asStateFlow()
 
-    /** Default per-word playback: parse the word's markup and feed it to [SegmentPlayer]. */
+    /** Default per-word playback: build segments from the word's speak plan, feed to
+     *  [SegmentPlayer], and track the currently-spoken [SpeakSlot] (for in-sync UI). */
     private suspend fun defaultPlayWord(word: WordScript) {
+        val plan = word.speakPlan()
+        val segments = ArrayList<MultilingualStoryParser.Segment>(plan.size * 2)
+        val slots = ArrayList<SpeakSlot?>(plan.size * 2)
+        for (item in plan) {
+            segments.add(MultilingualStoryParser.Segment.Text(item.text, item.lang))
+            slots.add(item.slot)
+            segments.add(MultilingualStoryParser.Segment.Pause(item.pauseAfterMs))
+            slots.add(null)
+        }
         segmentPlayer.playSegments(
-            segments = MultilingualStoryParser.parseSegments(word.toMarkup(), defaultLanguageId = "it"),
+            segments = segments,
             speed = speedProvider(),
-            isPaused = { _state.value.isPaused }
+            isPaused = { _state.value.isPaused },
+            onSegmentStart = { idx, _ ->
+                slots.getOrNull(idx)?.let { slot ->
+                    _state.value = _state.value.copy(currentSlot = slot)
+                }
+            }
         )
     }
 
@@ -257,6 +275,7 @@ class DeckPlayer(
                 while (true) {
                     val idx = _state.value.currentIndex
                     val word = words.getOrNull(idx) ?: break
+                    _state.value = _state.value.copy(currentSlot = null)
                     Log.d(TAG, "▶ Playing word index=$idx rank=${word.rank} '${word.wordIt}'")
                     playWordFn(word)
 
