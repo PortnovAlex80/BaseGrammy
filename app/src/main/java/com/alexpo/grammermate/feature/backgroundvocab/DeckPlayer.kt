@@ -3,6 +3,7 @@ package com.alexpo.grammermate.feature.backgroundvocab
 import android.util.Log
 import com.alexpo.grammermate.data.BgVocabMark
 import com.alexpo.grammermate.data.BgVocabMarkStore
+import com.alexpo.grammermate.data.BgVocabPositionStore
 import com.alexpo.grammermate.data.MultilingualStoryParser
 import com.alexpo.grammermate.data.SpeakSlot
 import com.alexpo.grammermate.data.TtsEngine
@@ -93,7 +94,8 @@ class DeckPlayer(
     private val betweenWordsPauseMs: Long = 1500L,
     private val speedProvider: () -> Float = { 1f },
     playWord: (suspend (WordScript) -> Unit)? = null,
-    private val markStore: BgVocabMarkStore? = null
+    private val markStore: BgVocabMarkStore? = null,
+    private val positionStore: BgVocabPositionStore? = null
 ) {
     companion object {
         private const val TAG = "DeckPlayer"
@@ -132,6 +134,7 @@ class DeckPlayer(
 
     private var words: List<WordScript> = emptyList()
     private var playJob: Job? = null
+    private var positionJob: Job? = null
 
     /**
      * Load a fresh deck. Resets [DeckState.currentIndex] to 0, clears any running playback
@@ -141,15 +144,33 @@ class DeckPlayer(
     fun setWords(words: List<WordScript>) {
         cancelPlayJob(cutAudio = true)
         this.words = words
-        val first = words.firstOrNull()
+        // Resume at the last-played word (by wordIt) if saved + present in the deck.
+        val resumedIdx = positionStore?.getLastWord()?.let { last ->
+            words.indexOfFirst { it.wordIt.equals(last, ignoreCase = true) }.takeIf { it >= 0 }
+        } ?: 0
+        val first = words.getOrNull(resumedIdx) ?: words.firstOrNull()
         _state.value = DeckState(
             totalWords = words.size,
-            currentIndex = 0,
+            currentIndex = resumedIdx,
             currentWord = first,
             isPlaying = false,
             isPaused = false
         )
-        Log.d(TAG, "setWords: ${words.size} words loaded")
+        Log.d(TAG, "setWords: ${words.size} words loaded, resumed at index $resumedIdx")
+        // Persist the current word whenever it changes, so the deck resumes here next launch.
+        positionStore?.let { store ->
+            positionJob?.cancel()
+            positionJob = scope.launch {
+                var lastPersisted: String? = null
+                state.collect { s ->
+                    val w = s.currentWord?.wordIt
+                    if (w != null && w != lastPersisted) {
+                        lastPersisted = w
+                        store.setLastWord(w)
+                    }
+                }
+            }
+        }
     }
 
     /**
