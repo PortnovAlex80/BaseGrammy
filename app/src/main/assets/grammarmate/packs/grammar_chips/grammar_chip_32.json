@@ -1,0 +1,22 @@
+{
+  "key": "B16",
+  "title": "B16 - Местоимения с модальными, повелительным, инфинитивом и герундием",
+  "essence": "Местоимения-дополнения меняют позицию в зависимости от глагольной формы: перед спрягаемым глаголом или присоединяются к инфинитиву/герундию/повелительному наклонению.",
+  "formula": "### С модальными глаголами (dovere, volere, potere)\nДва варианта:\n- Devo comprarla / La devo comprare (оба верны)\n- Voglio farlo / Lo voglio fare\n\n### С повелительным наклонением (imperativo)\nМестоимение присоединяется К КОНЦУ:\n- Dimmi! = Скажи мне!\n- Fammi un regalo! = Сделай мне подарок!\n- Fammelo! = Сделай мне его!\n- Non lo fare! = Не делай этого! (non + местоимение перед глаголом)\n\n### Вежливая форма (Lei)\n- Mi dica! = Скажите мне!\n- Me lo dia! = Дайте мне его!\n- Compratela! = Купите её! (вы мн.ч.)\n\n### С stare + gerundio\n- Sto cucinandola / La sto cucinando\n- Sto pulendola / La sto pulendo",
+  "base": null,
+  "dontConfuse": "С отрицательным повелительным (non + infinito): местоимение перед глаголом — Non lo fare!, Non la comprare! С утвердительным повелительным: местоимение в конце — Fammi!, Compratela! Вежливая форма (Lei) использует 3 л. cong.: Mi dica!, Me lo dia!",
+  "examples": [
+    {"it": "Devo comprarla / La devo comprare", "ru": "Я должен купить тот самый дом", "note": "два варианта с модальным глаголом"},
+    {"it": "Voglio farlo / Lo voglio fare", "ru": "Я хочу сделать тот самый подарок", "note": "volere + местоимение: оба порядка"},
+    {"it": "Ci sto andando / Sto andandoci", "ru": "Я иду туда — домой", "note": "stare + gerundio + ci"},
+    {"it": "Dobbiamo dirvelo / Ve lo dobbiamo dire", "ru": "Мы должны вам это сказать", "note": "комбинированные местоимения с модальным"},
+    {"it": "Dimmi!", "ru": "Скажи мне!", "note": "imperativo: местоимение в конце"},
+    {"it": "Fammi un regalo! / Fammelo!", "ru": "Сделай мне подарок!", "note": "возвратное + прямое в imperativo"},
+    {"it": "Non lo fare!", "ru": "Не делай этого!", "note": "отрицательный imperativo: местоимение перед"},
+    {"it": "Non la comprare!", "ru": "Не покупай ту самую машину!", "note": "отрицательный imperativo: non + la + infinito"},
+    {"it": "Mi dica!", "ru": "Скажите мне!", "note": "вежливая форма (Lei)"},
+    {"it": "Me lo dia!", "ru": "Дайте мне его — подарок!", "note": "вежливая форма + комбинированное"},
+    {"it": "Sto cucinandola / La sto cucinando", "ru": "Я готовлю тот самый ужин", "note": "stare + gerundio: два варианта"},
+    {"it": "Sto pulendola / La sto pulendo", "ru": "Я убираю ту самую кухню", "note": "gerundio с местоимением"}
+  ]
+}

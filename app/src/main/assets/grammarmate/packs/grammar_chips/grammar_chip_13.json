@@ -1,0 +1,30 @@
+{
+  "key": "A13",
+  "title": "A13 - Comparativi e Superlativi",
+  "essence": "Сравнение строится через più/meno, а превосходная степень через артикль + più/meno. di обычно сравнивает с объектом, che сравнивает свойства или действия.",
+  "formula": "Сравнительная степень:\npiù + прилагательное + di = более ... чем объект\nRoma è più grande di Milano.\nmeno + прилагательное + di = менее ... чем объект\n\nche:\npiù intelligente che bello = скорее умный, чем красивый\nmeglio andare che restare = лучше уйти, чем остаться\n\nПревосходная степень:\nil/la/i/le + più + прилагательное + di\nil più grande = самый большой\nla più bella = самая красивая\n\nЧастые нерегулярные:\nbuono -> migliore\ncattivo -> peggiore\ngrande -> maggiore\npiccolo -> minore",
+  "base": null,
+  "dontConfuse": "di используется, когда после него стоит тот, с кем сравниваем: più grande di te. che используется, когда сравниваем два качества или действия: più intelligente che bello. Превосходная степень требует артикль: il più grande.",
+  "examples": [
+    {
+      "it": "Roma è più grande di Milano.",
+      "ru": "Рим больше Милана.",
+      "note": "сравниваем два объекта."
+    },
+    {
+      "it": "È più intelligente che bello.",
+      "ru": "Он скорее умный, чем красивый.",
+      "note": "два свойства одного человека."
+    },
+    {
+      "it": "È il più bel libro della biblioteca.",
+      "ru": "Это самая красивая книга в библиотеке.",
+      "note": "артикль + più."
+    },
+    {
+      "it": "Questo è il mio migliore amico.",
+      "ru": "Это мой лучший друг.",
+      "note": "migliore вместо più buono."
+    }
+  ]
+}

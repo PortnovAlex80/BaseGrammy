@@ -1,0 +1,22 @@
+{
+  "key": "B01",
+  "title": "B01 - Imperfetto: прошедшее как процесс",
+  "essence": "Imperfetto описывает повторяющиеся, длительные или фоновые действия в прошлом — привычки, состояния, описания. Это не точечное событие, а процесс, который длился.",
+  "formula": "### Образование\nОснова глагола + суффикс imperfetto:\n- -are: parlavo, parlavi, parlava, parlavamo, parlavate, parlavano\n- -ere: facevo, facevi, faceva...\n- -ire: dormivo, dormivi, dormiva...\n\n### Неправильные формы\n- essere: ero, eri, era, eravamo, eravate, erano\n- avere: avevo, avevi, aveva...\n\n### Когда использовать\n- Привычки в прошлом: «я покупал» = compravo\n- Описания/состояния: «дом был красивый» = la casa era bella\n- Длительные фоновые действия: «я шёл домой» = andavo a casa\n- В отличие от passato prossimo, imperfetto не акцентирует завершённость",
+  "base": null,
+  "dontConfuse": "Imperfetto ≠ прошедшее завершённое. «Я покупал» (процесс/фон) — compravo, но «я купил» (результат) — ho comprato. Не путай с прошедшим совершённым видом в русском: длительность/повторяемость → imperfetto.",
+  "examples": [
+    {"it": "Compravo una casa", "ru": "Я покупал дом", "note": "Длительное/повторяющееся действие в прошлом"},
+    {"it": "Andavo a casa", "ru": "Я шёл домой", "note": "Процесс движения, не результат"},
+    {"it": "Facevo un regalo", "ru": "Я делал подарок", "note": "Фоновое действие"},
+    {"it": "Compravamo delle case", "ru": "Мы покупали дома", "note": "Повторяющееся действие, 1 л. мн. ч."},
+    {"it": "Puliva la cucina", "ru": "Она убирала кухню", "note": "Длительное действие, 3 л. ед. ч."},
+    {"it": "Cucinavamo una cena", "ru": "Мы готовили ужин", "note": "Фоновое действие, we-форма"},
+    {"it": "Lavoravano", "ru": "Они работали", "note": "Процесс без акцента на завершение"},
+    {"it": "Abitavamo in una casa grande", "ru": "Мы жили в большом доме", "note": "Состояние/описание в прошлом"},
+    {"it": "Avevo una macchina nuova", "ru": "У меня была новая машина", "note": "Состояние обладания в прошлом"},
+    {"it": "La casa era bella", "ru": "Тот самый дом был красивый", "note": "Описание свойства в прошлом"},
+    {"it": "Veniva al lavoro", "ru": "Он приходил на работу", "note": "Повторяющееся действие"},
+    {"it": "Arrivava tardi", "ru": "Она прибывала поздно", "note": "Привычка в прошлом"}
+  ]
+}

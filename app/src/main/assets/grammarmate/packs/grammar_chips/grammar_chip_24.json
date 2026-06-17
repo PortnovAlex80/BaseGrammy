@@ -1,0 +1,22 @@
+{
+  "key": "B08",
+  "title": "B08 - Futuro Anteriore: «сделаю к» и вероятность в прошлом",
+  "essence": "Futuro anteriore выражает действие, которое будет завершено до определённого момента в будущем. Также используется для вероятностных предположений о прошлом («должно быть, уже сделал»).",
+  "formula": "### Формула\nfuturo от avere/essere + participio passato\n\n### С avere\navrò comprato, avrai pulito, avremo cucinato...\n\n### С essere (согласование!)\nsarò andato/andata, sarà arrivato/arrivata...\n\n### Два употребления\n1. Действие завершится к моменту: Quando arrivi, avrò già comprato la casa\n2. Вероятность в прошлом: Sarà già arrivato = Наверное, он уже пришёл\n\n### Маркеры\nquando + presente (в придаточном), futuro anteriore (в главном)\nentro, prima di — к определённому моменту",
+  "base": null,
+  "dontConfuse": "Futuro anteriore для вероятности о прошлом: Sarà già arrivato = «Наверное, он уже пришёл» — не путай с trapassato prossimo (факт о прошлом). С essere participio согласуется: sarà arrivatA (она), saranno andatI (они).",
+  "examples": [
+    {"it": "Avrò comprato una casa", "ru": "Я куплю дом к вечеру", "note": "avrò + comprato, futurо anteriore с avere"},
+    {"it": "Sarò andato a casa", "ru": "Я пойду домой до вечера", "note": "sarò + andato, с essere"},
+    {"it": "Avrò fatto un regalo", "ru": "Я сделаю подарок до праздника", "note": "avrò + fatto от fare"},
+    {"it": "Avrai pulito la cucina", "ru": "Ты уберёшь кухню до их прихода", "note": "avrai — 2 л. ед.ч. futuro"},
+    {"it": "Avremo comprato una macchina nuova", "ru": "Мы купим новую машину к лету", "note": "avremo — 1 л. мн.ч."},
+    {"it": "Quando arrivi, avrò già comprato la casa", "ru": "Когда ты придёшь, я уже куплю дом", "note": "quando + presente → futuro anteriore"},
+    {"it": "Quando arrivano, avremo già pulito la cucina", "ru": "Когда они придут, мы уже уберём кухню", "note": "сложная временная конструкция"},
+    {"it": "Sarà arrivata a casa", "ru": "Она придёт домой до вечера", "note": "sarà + arrivata (ж.р.), essere"},
+    {"it": "Sarà andato via", "ru": "Он уйдёт до нашего прихода", "note": "andato via = уйти"},
+    {"it": "Sarà già arrivato", "ru": "Наверное, он уже пришёл", "note": "вероятность о прошлом"},
+    {"it": "Avranno già comprato un regalo", "ru": "Наверное, они уже купили подарок", "note": "вероятность: должно быть, купили"},
+    {"it": "La famiglia sarà già andata a lavoro", "ru": "Наверное, та самая семья уже ушла на работу", "note": "sarà + andata (ж.р., famiglia)"}
+  ]
+}

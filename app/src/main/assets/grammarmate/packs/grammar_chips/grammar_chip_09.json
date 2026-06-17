@@ -1,0 +1,35 @@
+{
+  "key": "A09",
+  "title": "A09 - Preposizioni semplici e articolate",
+  "essence": "Предлоги упаковывают русские падежные смыслы: принадлежность, адресат, место, направление, происхождение, совместность, цель. Если после предлога стоит определенный артикль, они часто сливаются в одно слово.",
+  "formula": "Простые предлоги:\ndi = принадлежность/тема/материал: il libro di Marco\na = адресат/направление/точка: vado a Roma, scrivo a Marco\nda = происхождение/от кого: vengo da Roma\nin = внутри/страна/транспорт: sono in Italia\nsu = на поверхности/тема: sul tavolo\ncon = с кем/чем: con Marco\nper = для/ради/через: per te\n\nСлитные формы:\ndi + il = del, di + la = della, di + i = dei\na + il = al, a + la = alla, a + i = ai\nin + il = nel, in + la = nella, in + i = nei\nsu + il = sul, su + la = sulla, su + i = sui\nda + il = dal, da + la = dalla",
+  "base": null,
+  "dontConfuse": "Не зубри предлог только по русскому слову. Сначала определи смысл: принадлежность -> di, адресат -> a, место внутри -> in, совместность -> con. Города обычно a: a Roma. Страны обычно in: in Italia.",
+  "examples": [
+    {
+      "it": "Il libro di Marco.",
+      "ru": "Книга Марко.",
+      "note": "di = принадлежность."
+    },
+    {
+      "it": "Vado al cinema.",
+      "ru": "Я иду в кино.",
+      "note": "a + il = al."
+    },
+    {
+      "it": "Sono nella stanza.",
+      "ru": "Я в комнате.",
+      "note": "in + la = nella."
+    },
+    {
+      "it": "Vengo da Roma.",
+      "ru": "Я из Рима.",
+      "note": "da = происхождение."
+    },
+    {
+      "it": "Parlo con Marco.",
+      "ru": "Я говорю с Марко.",
+      "note": "con = совместность."
+    }
+  ]
+}

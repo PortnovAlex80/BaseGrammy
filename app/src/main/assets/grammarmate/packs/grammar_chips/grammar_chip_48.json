@@ -1,0 +1,22 @@
+{
+  "key": "C05",
+  "title": "C05 - Discorso Indiretto: главное в прошедшем",
+  "essence": "Когда главный глагол в прошедшем (ha detto, ha chiesto), времена подчинённого предложения сдвигаются: presente -> imperfetto, passato prossimo -> trapassato prossimo, futuro -> condizionale composto, imperativo -> di + infinito.",
+  "formula": "### Сдвиг времён (concordanza dei tempi)\n- presente -> imperfetto: `Dice che lavora -> Ha detto che lavorava`\n- passato prossimo -> trapassato prossimo: `Dice che ha cucinato -> Ha detto che aveva cucinato`\n- futuro -> condizionale composto: `Dice che verrà -> Ha detto che sarebbe venuto`\n- imperativo -> di + infinito: `Pulisci! -> Ha detto di pulire`\n\n### Сдвиг обстоятельств времени/места\n- oggi -> quel giorno\n- ieri -> il giorno prima\n- domani -> il giorno dopo\n- qui -> lì\n- questo -> quello\n\n### Примеры из урока\n`Ha detto che comprava una casa` — Сказал, что покупает дом.\n`Ha detto che aveva cucinato` — Сказал, что приготовил ужин.\n`Ha detto che avrebbe comprato una casa` — Сказал, что купит дом.\n`Ha detto che sarebbe venuto lì il giorno dopo` — Сказал, что придёт сюда завтра.",
+  "base": null,
+  "dontConfuse": "Сдвиг 'passato prossimo -> trapassato prossimo' не 'passato prossimo -> imperfetto'. 'Ha comprato' становится 'aveva comprato', а не 'comprava'. Также 'condizionale composto' (avrebbe comprato) для будущего в прошедшем, не 'futuro anteriore'.",
+  "examples": [
+    {"it": "Ha detto che comprava una casa", "ru": "Сказал, что покупает дом", "note": "presente -> imperfetto"},
+    {"it": "Ha detto che andava a casa", "ru": "Сказал, что идёт домой", "note": "andare: va -> andava"},
+    {"it": "Ha detto che faceva un regalo", "ru": "Сказал, что делает подарок", "note": "fare: fa -> faceva"},
+    {"it": "Ha detto che aveva cucinato", "ru": "Сказал, что приготовил ужин", "note": "passato prossimo -> trapassato prossimo"},
+    {"it": "Ha detto che aveva già pulito la cucina", "ru": "Сказал, что уже убрал кухню", "note": "già сохраняет позицию"},
+    {"it": "La famiglia ha detto che aveva comprato una macchina nuova", "ru": "Та самая семья сказала, что купила новую машину", "note": "trapassato: aveva comprato"},
+    {"it": "Ha detto che avrebbe comprato una casa", "ru": "Сказал, что купит дом", "note": "futuro -> condizionale composto"},
+    {"it": "Ha detto che sarebbe venuto lì il giorno dopo", "ru": "Сказал, что придёт сюда завтра", "note": "qui->lì, domani->il giorno dopo"},
+    {"it": "Ha detto di pulire la cucina", "ru": "Сказал: «Убирай кухню!»", "note": "imperativo -> di + infinito"},
+    {"it": "La famiglia ha detto che lavorava quel giorno", "ru": "Та самая семья сказала, что работала сегодня", "note": "oggi -> quel giorno"},
+    {"it": "Ha detto che lavorava il giorno prima", "ru": "Сказал, что работал вчера", "note": "ieri -> il giorno prima"},
+    {"it": "La famiglia ha detto che sarebbe andata a casa", "ru": "Та самая семья сказала, что уйдёт домой", "note": "essere в condizionale composto: sarebbe andata"}
+  ]
+}

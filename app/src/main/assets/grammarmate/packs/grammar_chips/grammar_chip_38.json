@@ -1,0 +1,21 @@
+{
+  "key": "B22",
+  "title": "B22 - Pronomi Relativi: относительные местоимения",
+  "essence": "Относительные местоимения che, cui, il quale связывают придаточное с главным предложением, указывая на ранее упомянутый предмет или лицо: «дом, который я покупаю» = la casa che compro.",
+  "formula": "### Che = который (подлежащее или прямое дополнение)\nLa casa che compro = Дом, который я покупаю\nIl regalo che faccio = Подарок, который я делаю\n\n### Cui = которому/которым (с предлогом)\n- in cui = в который: La casa in cui va\n- con cui = с которым: La famiglia con cui lavoriamo\n- di cui = о котором: Il lavoro di cui parlo\n- a cui = к которому: La famiglia a cui viene\n- per cui = из-за которого: La casa per cui è partito\n\n### Il quale (формальный)\nIl libro del quale parliamo = Книга, о которой мы говорим (формально)\nСогласуется: il quale, la quale, i quali, le quali",
+  "base": null,
+  "dontConfuse": "Che = который без предлога (подлежащее/дополнение). Cui = который с предлогом (in cui, con cui, di cui). Il quale = формальный вариант cui, согласуется в роде и числе. Не путай che (относительное) с che (союз «что»).",
+  "examples": [
+    {"it": "La casa che compro", "ru": "Дом, который я покупаю", "note": "che = подлежащее придаточного"},
+    {"it": "Il regalo che faccio", "ru": "Подарок, который я делаю", "note": "che = прямое дополнение"},
+    {"it": "La casa in cui va", "ru": "Дом, в который он идёт", "note": "in + cui = в который"},
+    {"it": "Il libro che leggo", "ru": "Книга, которую я читаю", "note": "che = прямое дополнение"},
+    {"it": "La famiglia con cui lavoriamo", "ru": "Семья, с которой мы работаем", "note": "con + cui = с которой"},
+    {"it": "La cucina che puliscono", "ru": "Кухня, которую убирают", "note": "che = дополнение"},
+    {"it": "Il lavoro di cui parlo", "ru": "Работа, о которой я говорю", "note": "di + cui = о которой"},
+    {"it": "La macchina che la famiglia compra", "ru": "Машина, которую покупает та самая семья", "note": "che с расширенным придаточным"},
+    {"it": "La famiglia a cui viene", "ru": "Семья, к которой он приходит", "note": "a + cui = к которой"},
+    {"it": "La casa per cui è partito", "ru": "Дом, из-за которого он уехал", "note": "per + cui = из-за которого"},
+    {"it": "Il libro del quale parliamo", "ru": "Книга, о которой мы говорим — формально", "note": "il quale = формальный вариант cui"}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "key": "B10",
+  "title": "B10 - Condizionale Composto: «сделал бы» и будущее в прошедшем",
+  "essence": "Condizionale composto выражает нереализованное действие в прошлом («я бы купил, но не купил») и передаёт будущее в прошедшем при косвенной речи («он сказал, что купил бы»).",
+  "formula": "### Формула\ncondizionale от avere/essere + participio passato\n\n### С avere\navrei comprato, avresti fatto, avrebbe cucinato...\n\n### С essere (согласование!)\nsarei andato/andata, saresti venuto/venuta...\n\n### Два употребления\n1. Нереализованное действие: Avrei comprato una casa (но не купил)\n2. Косвенная речь (будущее в прошедшем): Ha detto che avrebbe comprato una casa",
+  "base": null,
+  "dontConfuse": "Condizionale composto ≠ trapassato prossimo. Trapassato = «уже сделал» (факт), condizionale composto = «сделал бы» (гипотеза/нереализованность). В косвенной речи: «сказал, что сделает» → avrebbe fatto, не farà.",
+  "examples": [
+    {"it": "Avrei comprato una casa", "ru": "Я купил бы дом", "note": "avrei + comprato, нереализованное действие"},
+    {"it": "Sarei andato a casa", "ru": "Я пошёл бы домой", "note": "sarei + andato, с essere"},
+    {"it": "Avrei fatto un regalo", "ru": "Я сделал бы подарок", "note": "avrei + fatto от fare"},
+    {"it": "Avresti comprato la macchina", "ru": "Ты купил бы ту самую машину", "note": "avresti — 2 л. ед.ч."},
+    {"it": "Avremmo pulito la cucina", "ru": "Мы убрали бы кухню", "note": "avremmo — 1 л. мн.ч."},
+    {"it": "Avrebbero cucinato", "ru": "Они приготовили бы ужин", "note": "avrebbero — 3 л. мн.ч."},
+    {"it": "Avreste fatto il regalo", "ru": "Вы сделали бы тот самый подарок", "note": "avreste — 2 л. мн.ч."},
+    {"it": "Sarebbe andata a casa", "ru": "Она пошла бы домой", "note": "sarebbe + andata (ж.р.)"},
+    {"it": "Saremmo venuti al lavoro", "ru": "Мы пришли бы на работу", "note": "saremmo + venuti (м.р. мн.ч.)"},
+    {"it": "Ha detto che avrebbe comprato una casa", "ru": "Он сказал, что купил бы дом", "note": "косвенная речь: condizionale composto"},
+    {"it": "Ha detto che sarebbe venuta al lavoro", "ru": "Она сказала, что пришла бы на работу", "note": "sarebbe venuta — ж.р., косвенная речь"},
+    {"it": "La famiglia ha detto che avrebbe cucinato", "ru": "Та самая семья сказала, что приготовила бы", "note": "косвенная речь с avere"}
+  ]
+}

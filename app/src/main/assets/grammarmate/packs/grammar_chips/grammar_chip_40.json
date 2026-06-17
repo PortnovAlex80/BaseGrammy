@@ -1,0 +1,21 @@
+{
+  "key": "B24",
+  "title": "B24 - Connettivi testuali: текстовые коннекторы",
+  "essence": "Коннекторы связывают части текста: inoltre (к тому же), infatti (и правда/в самом деле), invece (вместо этого), tuttavia (тем не менее), comunque (всё равно), anzi (наоборот), piuttosto (скорее), dunque (значит).",
+  "formula": "### Добавление\ninoltre = к тому же: Cuciniamo, inoltre compriamo un libro\n\n### Подтверждение\ninfatti = и правда / в самом деле:\nHo comprato un libro, infatti lo leggo\n\n### Противопоставление\ninvece = вместо этого: Non lavoro, invece compro una casa\ntuttavia = тем не менее: Il regalo è fatto, tuttavia compro un libro\ncomunque = всё равно: Non lavoro, comunque compro una casa\n\n### Альтернатива\nanzi = наоборот: Non compro, anzi lavoro\npiuttosto = скорее: Non lavoro, piuttosto leggo\n\n### Следствие\nquindi = поэтому: La casa è comprata, quindi lavoro molto\ndunque = значит: Non hanno letto il libro, dunque è nuovo",
+  "base": null,
+  "dontConfuse": "Invece = «вместо этого» (противопоставление), infatti = «и правда» (подтверждение) — не путай! Comunque = «всё равно/как бы то ни было», tuttavia = «тем не менее» — разные оттенки противопоставления. Dunque vs quindi: оба = «поэтому/значит», dunque чуть формальнее.",
+  "examples": [
+    {"it": "La casa è comprata, quindi lavoro molto", "ru": "Дом куплен, поэтому много работаю", "note": "quindi = поэтому (следствие)"},
+    {"it": "Si va a casa, infatti insieme", "ru": "В дом идут, и правда, вместе", "note": "infatti = и правда (подтверждение)"},
+    {"it": "Il regalo è fatto, tuttavia compro un libro", "ru": "Подарок сделан, тем не менее покупаю книгу", "note": "tuttavia = тем не менее"},
+    {"it": "Non lavoro, invece compro una casa", "ru": "Я не работаю, вместо этого покупаю дом", "note": "invece = вместо этого"},
+    {"it": "Ho comprato un libro, infatti lo leggo", "ru": "Я купил книгу — и правда, читаю её", "note": "infatti подтверждает предыдущее"},
+    {"it": "Non lavoro, comunque compro una casa", "ru": "Я не работаю, всё равно покупаю дом", "note": "comunque = всё равно"},
+    {"it": "Cuciniamo, inoltre compriamo un libro", "ru": "Мы готовим, к тому же покупаем книгу", "note": "inoltre = к тому же"},
+    {"it": "Non compro, anzi lavoro", "ru": "Я не покупаю — наоборот, работаю", "note": "anzi = наоборот"},
+    {"it": "Non lavoro, piuttosto leggo", "ru": "Я не работаю — скорее читаю", "note": "piuttosto = скорее"},
+    {"it": "Non hanno letto il libro, dunque è nuovo", "ru": "Они не читали книгу, значит она новая", "note": "dunque = значит"},
+    {"it": "Abbiamo comprato una macchina, infatti è nuova", "ru": "Мы купили машину — и правда, она новая", "note": "infatti = подтверждение факта"}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "key": "B02",
+  "title": "B02 - Participio Passato: причастие как прилагательное",
+  "essence": "Participio passato может работать как прилагательное, согласуясь с существительным в роде и числе: купленный дом, сделанный подарок, убранная кухня.",
+  "formula": "### Образование participio passato\n- -are → -ato: comprare → comprato\n- -ere → -uto/-ito: volere → voluto, fare → fatto\n- -ire → -ito: pulire → pulito\n\n### Согласование как прилагательное\n- м.р. ед.ч.: comprato, fatto\n- ж.р. ед.ч.: comprata, fatta\n- м.р. мн.ч.: comprati, fatti\n- ж.р. мн.ч.: comprate, fatte\n\n### Конструкция\nОпределённый артикль + существительное + participio + глагол:\n- La casa comprata è grande — Купленный (тот самый) дом — большой\n- Il regalo fatto è piccolo — Сделанный подарок — маленький",
+  "base": null,
+  "dontConfuse": "Participio как прилагательное требует согласования с существительным: la casa compratA (ж.р.), i libri compratI (мн.ч.). Не оставляй в неизменённой форме comprato перед ж.р./мн.ч.",
+  "examples": [
+    {"it": "La casa comprata è grande", "ru": "Тот самый купленный дом — большой", "note": "comprato → comprata (ж.р.) согласование с casa"},
+    {"it": "Il regalo fatto è piccolo", "ru": "Тот самый сделанный подарок — маленький", "note": "fatto — м.р. ед.ч., как regalo"},
+    {"it": "La macchina comprata è nuova", "ru": "Та самая купленная машина — новая", "note": "comprata согласуется с macchina (ж.р.)"},
+    {"it": "I libri comprati sono piccoli", "ru": "Те самые купленные книги — маленькие", "note": "comprati — м.р. мн.ч., libri"},
+    {"it": "La cucina pulita è bella", "ru": "Та самая убранная кухня — красивая", "note": "pulito → pulita (ж.р.)"},
+    {"it": "La cena cucinata è buona", "ru": "Тот самый приготовленный ужин — хороший", "note": "cucinato → cucinata (ж.р.)"},
+    {"it": "Le cene cucinate sono buone", "ru": "Те самые приготовленные ужины — хорошие", "note": "cucinate — ж.р. мн.ч."},
+    {"it": "Il regalo voluto è bello", "ru": "Тот самый желанный подарок — красивый", "note": "voluto — м.р. от volere"},
+    {"it": "Il lavoro fatto è nuovo", "ru": "Та самая сделанная работа — новая", "note": "fatto согласуется с lavoro (м.р.)"},
+    {"it": "Il giorno lavorato è lungo", "ru": "Тот самый отработанный день — длинный", "note": "lavorato — м.р. от lavorare"}
+  ]
+}

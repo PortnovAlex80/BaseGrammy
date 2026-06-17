@@ -1,0 +1,22 @@
+{
+  "key": "C07",
+  "title": "C07 - Passato Remoto: рецептивно (3-е лицо)",
+  "essence": "Passato remoto — прошедшее время, используемое в литературе, истории и формальном повествовании. На этом этапе важно узнавать формы 3-го лица (он/она/они): comprò, andò, fece, fu, ebbe, venne, vide, scrisse, disse.",
+  "formula": "### Ключевые неправильные формы (3-е лицо ед.ч.)\n- essere: `fu` — был/была\n- avere: `ebbe` — имел/имела\n- andare: `andò` — пошёл/пошла\n- venire: `venne` — пришёл/пришла\n- fare: `fece` — сделал/сделала\n- vedere: `vide` — увидел/увидела\n- scrivere: `scrisse` — написал/написала\n- dire: `disse` — сказал/сказала\n- comprare: `comprò` — купил/купила (правильный)\n\n### Контекст употребления\nИсторические narration, сказки, литература. В разговорной речи северной Италии предпочтителен passato prossimo, но на юге passato remoto используется и в разговоре.\n\n### Сочетание с прошлыми действиями\nЧасто комбинируется с другим passato remoto через `quando`, `poi`:\n`Comprò un libro, poi andò a casa.`\n`Quando venne, vide il regalo.`",
+  "base": null,
+  "dontConfuse": "Passato remoto vs Passato prossimo: оба переводятся на русский прошедшим временем. Passato remoto — книжное/историческое ('он купил' в книге), passato prossimo — живой опыт ('он купил' вчера). Не путать `fu` (был, essere) и `fece` (сделал, fare).",
+  "examples": [
+    {"it": "Comprò una casa", "ru": "Купил дом", "note": "comprare, правильный глагол, -ò"},
+    {"it": "Andò a casa", "ru": "Пошёл домой", "note": "andare, неправильный, andò"},
+    {"it": "Fece un regalo", "ru": "Сделал подарок", "note": "fare, неправильный, fece"},
+    {"it": "Fu a casa", "ru": "Был дома", "note": "essere, fu"},
+    {"it": "Ebbe il regalo grande", "ru": "Был тот самый большой подарок", "note": "avere, ebbe"},
+    {"it": "Venne a casa", "ru": "Пришёл домой", "note": "venire, venne"},
+    {"it": "Vide la macchina nuova", "ru": "Увидел ту самую новую машину", "note": "vedere, vide"},
+    {"it": "Scrisse un libro", "ru": "Написал книгу", "note": "scrivere, scrisse"},
+    {"it": "Disse che il libro era bello", "ru": "Сказал, что та самая книга красивая", "note": "dire, disse + che"},
+    {"it": "Comprò un libro, poi andò a casa", "ru": "Купил книгу, потом пошёл домой", "note": "Два remoto через poi"},
+    {"it": "Quando venne, vide il regalo", "ru": "Когда пришёл, увидел подарок", "note": "Два remoto через quando"},
+    {"it": "Quando comprò la macchina, partì", "ru": "Когда купил ту самую машину, уехал", "note": "partì = partire remoto"}
+  ]
+}

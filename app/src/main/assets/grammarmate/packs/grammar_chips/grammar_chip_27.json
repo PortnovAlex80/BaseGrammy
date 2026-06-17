@@ -1,0 +1,22 @@
+{
+  "key": "B11",
+  "title": "B11 - Pronomi Diretti: прямые местоимения-дополнения",
+  "essence": "Прямые местоимения (mi, ti, lo, la, ci, vi, li, le) заменяют прямое дополнение — существительное без предлога. В passato prossimo participio согласуется с местоимением.",
+  "formula": "### Формы\nmi (меня), ti (тебя), lo (его/это м.р.), la (её/это ж.р.)\nci (нас), vi (вас), li (их м.р.), le (их ж.р.)\n\n### Перед глаголом\nLo faccio = Я делаю это (подарок)\nLa compro = Я покупаю её (машину)\n\n### В Passato Prossimo\nМестоимение + avere/essere + participio (согласовано!):\nL'ho comprata = Я купил её (машину, ж.р.)\nLi abbiamo visti = Мы увидели их (книги, м.р. мн.ч.)\n\n### Апостроф перед гласной\nla + ho → l'ho; lo + ho → l'ho",
+  "base": null,
+  "dontConfuse": "Прямое vs косвенное: «Я его вижу» = Lo vedo (прямое, без предлога), «Я ему говорю» = Gli dico (косвенное, с предлогом a). В PP participio согласуется с прямым местоимением: L'ho compratA (ж.р.), Li ho vistI (мн.ч.).",
+  "examples": [
+    {"it": "La compro", "ru": "Я покупаю тот самый дом", "note": "la = дом (casa, ж.р.)"},
+    {"it": "Lo faccio", "ru": "Я делаю тот самый подарок", "note": "lo = подарок (regalo, м.р.)"},
+    {"it": "Le puliamo", "ru": "Мы убираем те самые кухни", "note": "le = кухни (cucine, ж.р. мн.ч.)"},
+    {"it": "Lo compri?", "ru": "Ты покупаешь тот самый подарок?", "note": "вопросительная форма"},
+    {"it": "Li compriamo", "ru": "Мы покупаем те самые книги", "note": "li = книги (libri, м.р. мн.ч.)"},
+    {"it": "La cucino", "ru": "Я готовлю тот самый ужин", "note": "la = ужин (cena, ж.р.)"},
+    {"it": "Lo vedi?", "ru": "Ты видишь тот самый подарок?", "note": "lo = подарок, вопрос"},
+    {"it": "Ci vede", "ru": "Он нас видит", "note": "ci = нас (прямое дополнение)"},
+    {"it": "L'ho comprata", "ru": "Я купил ту самую машину", "note": "PP: l' (=la) + ho + comprata (ж.р.)"},
+    {"it": "Li abbiamo visti", "ru": "Мы увидели те самые книги", "note": "PP: li + abbiamo + visti (м.р. мн.ч.)"},
+    {"it": "L'hai già pulita?", "ru": "Ты уже убрал ту самую кухню?", "note": "PP: già между avere и participio"},
+    {"it": "Li hanno fatti", "ru": "Они сделали те самые подарки", "note": "PP: li + hanno + fatti (м.р. мн.ч.)"}
+  ]
+}

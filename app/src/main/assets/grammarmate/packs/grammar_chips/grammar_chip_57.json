@@ -1,0 +1,21 @@
+{
+  "key": "C14",
+  "title": "C14 - Connettivi Avanzati: продвинутые союзы и связки",
+  "essence": "Продвинутые логические союзы (connettivi): nondimeno (тем не менее), pertanto (поэтому), ciononostante (несмотря на это), qualora (если бы), affinché (чтобы), a patto che (при условии что), sebbene/malgrado/nonostante (хотя/несмотря на). Многие требуют congiuntivo.",
+  "formula": "### Противительные (controargomentativi)\n- `nondimeno` — тем не менее: `Compro una casa; nondimeno è piccola`\n- `ciononostante` — несмотря на это: `È arrivato tardi; ciononostante ceniamo insieme`\n- `sebbene` + congiuntivo — хотя: `Sebbene la macchina sia piccola, è bella`\n- `malgrado` + congiuntivo — несмотря на: `Malgrado la macchina sia piccola, è bella`\n- `nonostante` + congiuntivo — несмотря на то что: `Nonostante il libro sia nuovo, è piccolo`\n\n### Причинно-следственные (causali)\n- `pertanto` — поэтому: `Vado a casa; pertanto non lavoro`\n\n### Условные (ipotetici)\n- `qualora` + congiuntivo — если бы: `Qualora comprassi la macchina, andremmo insieme`\n\n### Целевые (finali)\n- `affinché` + congiuntivo — чтобы: `Lavoro molto affinché ci sia una casa bella`\n\n### Ограничительные (limitativi)\n- `a patto che` + congiuntivo — при условии что: `Compro la macchina a patto che sia pulita`",
+  "base": null,
+  "dontConfuse": "Некоторые связки требуют congiuntivo (affinché, qualora, a patto che, sebbene, malgrado, nonostante), а другие — indicativo (pertanto, nondimeno, ciononostante). Sebbene/malgrado/nonostante — синонимы, все требуют congiuntivo. Qualora — формальная замена se + congiuntivo.",
+  "examples": [
+    {"it": "Compro una casa; nondimeno è piccola", "ru": "Я покупаю дом; тем не менее он маленький", "note": "nondimeno: противительная связка"},
+    {"it": "Vado a casa; pertanto non lavoro", "ru": "Я иду домой; поэтому я не работаю", "note": "pertanto: следствие"},
+    {"it": "Faccio un regalo; ciononostante lavoriamo insieme", "ru": "Я делаю подарок; несмотря на это мы работаем вместе", "note": "ciononostante: уступка"},
+    {"it": "Qualora comprassi la macchina, andremmo insieme", "ru": "Если бы ты купил ту самую машину, мы поехали бы вместе", "note": "qualora + congiuntivo imperfetto"},
+    {"it": "Lavoro molto affinché ci sia una casa bella", "ru": "Я работаю много, чтобы был красивый дом", "note": "affinché + congiuntivo presente"},
+    {"it": "Compro la macchina a patto che sia pulita", "ru": "Я покупаю ту самую машину при условии, что она будет чистой", "note": "a patto che + congiuntivo"},
+    {"it": "Sebbene la casa sia piccola, è bella", "ru": "Хотя дом и маленький, он красивый", "note": "sebbene + congiuntivo"},
+    {"it": "Malgrado la macchina sia piccola, è bella", "ru": "Хотя та самая машина и маленькая, она красивая", "note": "malgrado = sebbene"},
+    {"it": "Nonostante il libro sia nuovo, è piccolo", "ru": "Несмотря на то, что та самая книга новая, она маленькая", "note": "nonostante + congiuntivo"},
+    {"it": "La cucina è pulita; nondimeno è piccola", "ru": "Кухня чистая; тем не менее она маленькая", "note": "nondimeno: контраст"},
+    {"it": "Cucino la cena; pertanto la famiglia viene", "ru": "Я готовлю ужин; поэтому семья приходит", "note": "pertanto: причина-следствие"}
+  ]
+}

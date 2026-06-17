@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 2,
+  "packId": "EN_ENGLISH_FULL_COURSE",
+  "packVersion": "v1",
+  "language": "en",
+  "displayName": "English Full Course",
+  "description": "English full course: chapters 0-3, all 63 lessons A01-C20. B2/C1 level, work communication ready.",
+  "chapters": [
+    {
+      "chapterId": "chapter_0",
+      "order": 0,
+      "title": "Introduction — The Architecture of English",
+      "subtitle": "Before Language",
+      "storyFile": "chapter_00.md",
+      "lessons": []
+    },
+    {
+      "chapterId": "chapter_1",
+      "order": 1,
+      "title": "Chapter 1 — Foundations: Building Blocks",
+      "subtitle": "Foundations",
+      "storyFile": "chapter_01.md",
+      "lessons": [
+        "lesson_01_A01", "lesson_02_A02", "lesson_03_A03", "lesson_04_A04",
+        "lesson_05_A05", "lesson_06_A06", "lesson_07_A07", "lesson_08_A08",
+        "lesson_09_A09", "lesson_10_A10", "lesson_11_A11", "lesson_12_A12",
+        "lesson_13_A13", "lesson_14_A14", "lesson_15_A15", "lesson_16_A16"
+      ]
+    },
+    {
+      "chapterId": "chapter_2",
+      "order": 2,
+      "title": "Chapter 2 — Tenses and Structure of Speech",
+      "subtitle": "Tenses and Structure",
+      "storyFile": "chapter_02.md",
+      "lessons": [
+        "lesson_17_B01", "lesson_18_B02", "lesson_19_B03", "lesson_20_B04",
+        "lesson_21_B05", "lesson_22_B06", "lesson_23_B07", "lesson_24_B08",
+        "lesson_25_B09", "lesson_26_B10", "lesson_27_B11", "lesson_28_B12",
+        "lesson_29_B13", "lesson_30_B14", "lesson_31_B15", "lesson_32_B16",
+        "lesson_33_B17", "lesson_34_B18", "lesson_35_B19", "lesson_36_B20",
+        "lesson_37_B21", "lesson_38_B22", "lesson_39_B23", "lesson_40_B24",
+        "lesson_41_B25", "lesson_42_B26", "lesson_43_B27"
+      ]
+    },
+    {
+      "chapterId": "chapter_3",
+      "order": 3,
+      "title": "Chapter 3 — Mastery: Advanced Structures and Vocabulary",
+      "subtitle": "Mastery",
+      "storyFile": "chapter_03.md",
+      "lessons": [
+        "lesson_44_C01", "lesson_45_C02", "lesson_46_C03", "lesson_47_C04",
+        "lesson_48_C05", "lesson_49_C06", "lesson_50_C07", "lesson_51_C08",
+        "lesson_52_C09", "lesson_53_C10", "lesson_54_C11", "lesson_55_C12",
+        "lesson_56_C13", "lesson_57_C14", "lesson_58_C15", "lesson_59_C16",
+        "lesson_60_C17", "lesson_61_C18", "lesson_62_C19", "lesson_63_C20"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "key": "C03",
+  "title": "C03 - Periodo Ipotetico Misto: смешанные условные",
+  "essence": "Смешанные условные предложения (periodo ipotetico misto) сочетают разные времена в условии и результате: прошедшее условие с настоящим результатом, или настоящее условие с прошедшим результатом. Это позволяет выразить сложные гипотетические ситуации.",
+  "formula": "### Тип 1: Прошедшее условие -> Настоящий результат\nSe + congiuntivo trapassato -> condizionale presente.\nУсловие уже в прошлом (неизменяемо), результат в настоящем.\n`Se avessi comprato una casa, ora abiterei lì` — Если бы я купил дом, сейчас жил бы там.\n\n### Тип 2: Настоящее условие -> Прошедший результат\nSe + congiuntivo imperfetto -> condizionale composto.\nУсловие в настоящем (гипотетическое), результат уже не случился.\n`Se la cucina fosse pulita, avremmo lavorato lì` — Если бы кухня была чистая, мы работали бы там.\n`Se il libro fosse nuovo, l'avrei comprato` — Если бы книга была новая, я купил бы.\n\n### Маркеры времени\n- `ora`, `oggi` указывают на настоящее в результате.\n- Прошедший результат без маркера — из контекста.\n\n### Частые ошибки\nНе путать с нереальным прошедшим (оба времени в прошедшем). Здесь времена разные.",
+  "base": null,
+  "dontConfuse": "Смешанный тип A (trapassato + condizionale presente) vs нереальный прошедший (trapassato + condizionale composto). Ключевая подсказка — маркеры 'ora', 'oggi' в результате. Смешанный тип B (imperfetto + condizionale composto) означает: если бы сейчас было так, то уже случилось бы.",
+  "examples": [
+    {"it": "Se avessi comprato una casa, ora abiterei lì", "ru": "Если бы я купил дом, сейчас жил бы там", "note": "Прошедшее условие -> настоящий результат (ora)"},
+    {"it": "Se fossi andato a casa, ora lavorerei", "ru": "Если бы я пошёл домой, сейчас работал бы", "note": "trapassato + condizionale presente"},
+    {"it": "Se avessi fatto un regalo, ora sarei a casa", "ru": "Если бы я сделал подарок, сейчас был бы дома", "note": "trapassato + essere в condizionale presente"},
+    {"it": "Se la famiglia fosse partita, oggi sarebbe a casa", "ru": "Если бы та самая семья уехала, сегодня была бы дома", "note": "3-е лицо, oggi маркирует настоящее"},
+    {"it": "Se avessimo cucinato, ora lavoreremmo insieme", "ru": "Если бы мы приготовили, сейчас работали бы вместе", "note": "1-е лицо мн.ч., ora"},
+    {"it": "Se la cucina fosse pulita, avremmo lavorato lì", "ru": "Если бы та самая кухня была чистая, мы работали бы", "note": "Настоящее условие -> прошедший результат"},
+    {"it": "Se il libro fosse nuovo, l'avrei comprato", "ru": "Если бы та самая книга была новая, я купил бы", "note": "imperfetto + condizionale composto"},
+    {"it": "Se la macchina fosse bella, la famiglia sarebbe andata a casa", "ru": "Если бы та самая машина была красивая, та самая семья поехала бы домой", "note": "Настоящее условие -> прошедший результат"},
+    {"it": "Se il regalo fosse piccolo, l'avrei comprato", "ru": "Если бы тот самый подарок был маленький, купил бы", "note": "imperfetto + l'avrei comprato"},
+    {"it": "Se abitiamo nella casa, la famiglia sarebbe già arrivata", "ru": "Если мы живём в том самом доме, та самая семья уже приехала", "note": "Реальное условие (presente) + condizionale composto"}
+  ]
+}

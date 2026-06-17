@@ -1,0 +1,22 @@
+{
+  "key": "C17",
+  "title": "C17 - Registri: формальный письменный и разговорный",
+  "essence": "Итальянский имеет чёткие регистры: формальный письменный (desidero, acquistare, dimora) и разговорный (boh, tipo, un sacco, mica). Формальный регистр использует книжную лексику и полные конструкции, разговорный — сокращения, междометия и сленг.",
+  "formula": "### Формальный письменный регистро\nЛексика: desidero (хочу), acquistare (купить), dimora (жилище), residenza (резиденция), automobile (автомобиль), porgere (поднести), riconoscenza (признательность).\nГрамматика: полные предложения, без сокращений, уважительное обращение (Lei).\n`Desidero acquistare una dimora` — Я желаю приобрести жилище.\n\n### Разговорный регистро\nЛексика: boh (блин/не знаю), tipo (такой/типа), dai (давай), un sacco (куча), mica (вовсе не).\nМеждометия: boh, dai, cioè.\n`Boh, compro una casa, tipo` — Блин, покупаю дом, тип.\n\n### Конкретные пары\n- desidero/acquistare/dimora vs boh/comprare/casa\n- far ritorno vs andare a casa\n- porgere un regalo in segno di riconoscenza vs fare un regalino\n- lavorare con impegno vs lavorare un sacco\n- non acquisto un'automobile vs non compro mica una macchina\n\n### Уважительная форма\n`La ringrazio e Le porgo i miei saluti` — формально.\n`Dai, grazie mille` — разговорно.",
+  "base": null,
+  "dontConfuse": "Формальный регистр не значит 'правильный', а разговорный не значит 'неправильный'. Каждый уместен в своём контексте. Mica — усилитель отрицания, не частица 'не': 'Non compro mica' = 'я вовсе не покупаю'. 'Tipo' в разговорном = 'такой/типа', а не существительное 'тип'.",
+  "examples": [
+    {"it": "Desidero acquistare una dimora", "ru": "Я желаю приобрести жилище — формально", "note": "формальный: desidero, acquistare, dimora"},
+    {"it": "Boh, compro una casa, tipo", "ru": "Блин, покупаю дом, тип — разговорно", "note": "разговорный: boh, tipo"},
+    {"it": "Farò ritorno alla mia dimora", "ru": "Совершаю возврат в свою резиденцию — формально", "note": "формальный: farò ritorno, dimora"},
+    {"it": "Dai, vado a casa", "ru": "Давай, иду домой — разговорно", "note": "разговорный: dai"},
+    {"it": "Porgo un regalo in segno di riconoscenza", "ru": "Подношу подарок в знак признательности — формально", "note": "формальный: porgere, riconoscenza"},
+    {"it": "Cioè, faccio un regalino, tipo", "ru": "То есть делаю подарочек, такой — разговорно", "note": "разговорный: cioè, regalino, tipo"},
+    {"it": "Lavoro regolarmente e con impegno", "ru": "Я регулярно работаю с усердием — формально", "note": "формальный: regolarmente, impegno"},
+    {"it": "Dai, lavoro un sacco", "ru": "Давай, я пашу кучу — разговорно", "note": "разговорный: un sacco"},
+    {"it": "Al momento non acquisto un'automobile", "ru": "Я не приобретаю автомобиль в данный момент — формально", "note": "формальный: al momento, acquisto, automobile"},
+    {"it": "Non compro mica una macchina", "ru": "Я вовсе не покупаю машину — разговорно", "note": "разговорный: mica (усилитель отрицания)"},
+    {"it": "La ringrazio e Le porgo i miei saluti", "ru": "Выражаю благодарность и передаю приветствия — формально", "note": "формальный: Lei, porgere saluti"},
+    {"it": "Dai, grazie mille", "ru": "Да ладно, спасибо огромное — разговорно", "note": "разговорный: dai, grazie mille"}
+  ]
+}

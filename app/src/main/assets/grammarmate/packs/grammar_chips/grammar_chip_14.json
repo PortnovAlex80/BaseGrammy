@@ -1,0 +1,35 @@
+{
+  "key": "A14",
+  "title": "A14 - Verbi Modali",
+  "essence": "Модальный глагол говорит не само действие, а отношение к действию: должен, могу, хочу, умею. После него идет чистый инфинитив без предлога.",
+  "formula": "dovere + infinito = должен\nDevo lavorare. = Я должен работать.\n\npotere + infinito = могу / есть возможность / разрешено\nPosso entrare? = Можно войти?\n\nvolere + infinito = хочу\nVoglio mangiare. = Я хочу есть.\n\nsapere + infinito = умею / знаю как\nSo nuotare. = Я умею плавать.\n\nФормы:\ndevo, devi, deve, dobbiamo, dovete, devono\nposso, puoi, può, possiamo, potete, possono\nvoglio, vuoi, vuole, vogliamo, volete, vogliono\nso, sai, sa, sappiamo, sapete, sanno",
+  "base": null,
+  "dontConfuse": "sapere и potere оба могут переводиться «мочь», но смысл разный: so nuotare = умею плавать, posso nuotare = могу плавать сейчас / мне разрешено. В A14 только модальный + чистый инфинитив: без местоимений типа devo farlo и без возвратных devo alzarmi.",
+  "examples": [
+    {
+      "it": "Devo lavorare.",
+      "ru": "Я должен работать.",
+      "note": "dovere = необходимость."
+    },
+    {
+      "it": "Posso venire.",
+      "ru": "Я могу прийти.",
+      "note": "potere = возможность."
+    },
+    {
+      "it": "Voglio mangiare.",
+      "ru": "Я хочу есть.",
+      "note": "volere = желание."
+    },
+    {
+      "it": "So cucinare.",
+      "ru": "Я умею готовить.",
+      "note": "sapere = навык."
+    },
+    {
+      "it": "Puoi venire?",
+      "ru": "Ты можешь прийти?",
+      "note": "вопрос без do/does."
+    }
+  ]
+}

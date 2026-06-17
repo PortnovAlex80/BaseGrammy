@@ -1,0 +1,21 @@
+{
+  "key": "B14",
+  "title": "B14 - Ci e Ne: местоимения-заместители",
+  "essence": "Ci заменяет конструкции с a/in (туда, там, об этом), ne заменяет конструкции с di и количественные (из них, о нём, две из них). Оба стоят перед глаголом.",
+  "formula": "### Ci = туда / там / об этом (a / in + место/вещь)\n- Vado a casa → Ci vado\n- Penso a questo regalo → Ci penso\n- Abitiamo in quella casa → Ci abitiamo\n\n### Ne = из них / о нём / количество (di + что-то / число)\n- Parlo di questa casa → Ne parlo\n- Voglio due libri → Ne voglio due\n- Ho cinque libri → Ne ho cinque\n\n### Устойчивые пары\nCi vado = Я иду туда\nNe voglio due = Я хочу две из них",
+  "base": null,
+  "dontConfuse": "Ci vs ne: ci = к/в/на (место/объект с a/in), ne = из/о/количество (di + что-то или число). «Я говорю о доме» → Ne parlo (di → ne). «Я думаю об этом» → Ci penso (a → ci). Ищи скрытый предлог!",
+  "examples": [
+    {"it": "Ne parlo", "ru": "Я говорю о том самом доме", "note": "ne = о нём (di + casa)"},
+    {"it": "Ci vado", "ru": "Я иду туда — домой", "note": "ci = туда (a + casa)"},
+    {"it": "Ci penso", "ru": "Я думаю об этом — о том самом подарке", "note": "ci = об этом (a + regalo)"},
+    {"it": "Ci abitiamo", "ru": "Мы живём там — в том самом большом доме", "note": "ci = там (in + casa)"},
+    {"it": "Ci pensi anche", "ru": "Ты тоже думаешь об этом?", "note": "ci = об этом, anche = тоже"},
+    {"it": "Ci abitano anche", "ru": "Они тоже живут там", "note": "ci = там"},
+    {"it": "Ne parli", "ru": "Ты говоришь о той самой большой машине", "note": "ne = о ней (di + macchina)"},
+    {"it": "Ne voglio due", "ru": "Я хочу две из них — книги", "note": "ne + количество (due)"},
+    {"it": "Ne vuoi una", "ru": "Ты хочешь одну из них — машину", "note": "ne + una = одну из них"},
+    {"it": "Ne vogliamo tre", "ru": "Мы хотим три из них — подарки", "note": "ne + tre"},
+    {"it": "Ci vado / Ne voglio due", "ru": "Туда = ci / из них = ne", "note": "Сравнение: ci = направление, ne = источник/количество"}
+  ]
+}

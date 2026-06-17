@@ -1,0 +1,70 @@
+{
+  "key": "A03",
+  "title": "A03 - Genere e Numero: род, число и слово «это»",
+  "essence": "В A03 главное — увидеть, что существительное управляет словами рядом. Если предмет мужского рода единственного числа, будет questo/un. Если женского единственного — questa/una. Если предметов много, будет questi или queste, а essere меняется на sono. Во множественном числе неопределенного артикля обычно нет: un libro → libri, una penna → penne.",
+  "formula": "1. Мужской род, единственное число\nQuesto è un ragazzo. = Это мальчик.\nQuesto è un libro. = Это книга.\n\n2. Женский род, единственное число\nQuesta è una ragazza. = Это девочка.\nQuesta è una penna. = Это ручка.\n\n3. Мужской род, множественное число\nQuesti sono ragazzi. = Это мальчики.\nQuesti sono libri. = Это книги.\n\n4. Женский род, множественное число\nQueste sono ragazze. = Это девочки.\nQueste sono penne. = Это ручки.\n\n5. Окончания как первая подсказка\n-o → -i: ragazzo → ragazzi, libro → libri, tavolo → tavoli\n-a → -e: ragazza → ragazze, penna → penne, casa → case\n-e → -i: lezione → lezioni, notte → notti, autore → autori\n\n6. Классификация vs идентификация: почему «libri» без артикля, а «gli occhiali» с артиклем\nКогда вы НАЗЫВАЕТЕ, чем является предмет (классификация) — артикль не нужен:\nQuesti sono libri. = Эти предметы — книги. (называем класс предметов)\nQueste sono penne. = Эти предметы — ручки. (называем класс предметов)\n\nКогда вы ОПОЗНАЁТЕ конкретный предмет (идентификация) — артикль нужен:\nQuesti sono gli occhiali. = Это те самые очки. (опознаём конкретный предмет)\nQueste sono le chiavi. = Это те самые ключи. (опознаём конкретный предмет)\n\nКлючевое различие:\n— НАЗЫВАЕШЬ что это → без артикля: «Questi sono libri.»\n— ОПОЗНАЁШЬ какой именно → с артиклем: «Questi sono gli occhiali.»\n\nПолная форма тоже возможна:\nQuesti sono gli occhiali? = Эти вот — те самые очки?\nНо короткая форма Sono gli occhiali? звучит естественно, когда предмет уже перед глазами.\n\n7. Неизменяемые существительные (invariabili)\nНекоторые существительные не меняют форму в единственном и множественном числе:\ncittà (жен., —à): una città, due città (один город, два города)\ncinema (муж., заимствование): un cinema, due cinema\nfoto (жен., сокращение от fotografia): una foto, due foto\nauto (жен., сокращение от automobile): un'auto, due auto\n\nСуществительные общего рода (uno/una — оба варианта):\nturista: un turista (муж.), una turista (жен.)\ni turisti (муж. мн.), le turiste (жен. мн.)\nartista: un artista (муж.), un'artista (жен.)\ngiornalista: un giornalista (муж.), una giornalista (жен.)",
+  "base": null,
+  "dontConfuse": "Русское «это» обманывает: оно одинаково выглядит в «это книги» и «это те очки?», но в итальянском это разные ситуации. В «Это книги» мы классифицируем предметы: questi sono libri. В «Это те очки?» мы узнаем конкретный предмет: sono gli occhiali? Еще одна ловушка: во множественном числе для нового/общего предмета неопределенного артикля нет. Поэтому не un libri, а просто libri.",
+  "examples": [
+    {
+      "it": "Questo è un libro.",
+      "ru": "Это книга.",
+      "note": "libro мужского рода ед. числа: questo + è + un."
+    },
+    {
+      "it": "Questi sono libri.",
+      "ru": "Это книги.",
+      "note": "Классификация: называем, что это книги. Артикля нет, потому что это «книги вообще»."
+    },
+    {
+      "it": "Questi sono gli occhiali.",
+      "ru": "Это те очки.",
+      "note": "Идентификация: gli occhiali = конкретные очки. Опознаём конкретный предмет, поэтому артикль gli."
+    },
+    {
+      "it": "Questa è una penna.",
+      "ru": "Это ручка.",
+      "note": "penna женского рода ед. числа: questa + è + una."
+    },
+    {
+      "it": "Queste sono penne.",
+      "ru": "Это ручки.",
+      "note": "penne женского рода мн. числа: queste + sono. Неопределенного артикля во множественном нет."
+    },
+    {
+      "it": "Sono gli occhiali?",
+      "ru": "Это те очки?",
+      "note": "Вопрос с идентификацией: questi опущено. Смысл: «они являются теми очками?»"
+    },
+    {
+      "it": "Non è un libro?",
+      "ru": "Это не книга?",
+      "note": "В вопросах questo опущено: полная версия Questo non è un libro? возможна, но короткая естественнее."
+    },
+    {
+      "it": "È una città.",
+      "ru": "Это город.",
+      "note": "città женского рода и не меняется во множественном: una città, due città."
+    },
+    {
+      "it": "Queste sono due città.",
+      "ru": "Это два города.",
+      "note": "città — неизменяемое: одна città, две città. Окончание не меняется."
+    },
+    {
+      "it": "Un turista, una turista.",
+      "ru": "Турист (муж.), туристка (жен.).",
+      "note": "turista — существительное общего рода: форма одинаковая, артикль указывает на пол."
+    },
+    {
+      "it": "I turisti, le turiste.",
+      "ru": "Туристы (муж.), туристки (жен.).",
+      "note": "Множественное число общего рода: turisti (муж.), turiste (жен.)."
+    },
+    {
+      "it": "Due foto, due auto.",
+      "ru": "Две фотографии, две машины.",
+      "note": "foto и auto — сокращения, не меняются: una foto / due foto, un'auto / due auto."
+    }
+  ]
+}

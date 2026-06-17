@@ -1,0 +1,21 @@
+{
+  "key": "B20",
+  "title": "B20 - Participio Assoluto: абсолютивная конструкция",
+  "essence": "Participio assoluto — это самостоятельная причастная конструкция, где participio согласуется с собственным существительным: «Купив дом, семья...» = Comprata la casa, la famiglia... Более книжный/формальный стиль.",
+  "formula": "### Шаблон\nparticipio (согласовано) + существительное, главное предложение\n\n### Согласование\nCompratA la casA (ж.р. ед.ч.)\nFinitI i soldI (м.р. мн.ч.)\nPartitO il fratellO (м.р. ед.ч.)\n\n### «Как только» = Una volta + participio\nUna volta arrivata la famiglia = Как только прибыла семья\n\n### Обязательное условие\nПодлежащее причастия ≠ подлежащее главного предложения\n(в отличие от gerundio, где они совпадают)",
+  "base": null,
+  "dontConfuse": "Participio assoluto — более формальный/книжный вариант gerundio passato, но с другим подлежащим. В gerundio подлежащее совпадает, в participio assoluto — нет: Comprata la casa, la famiglia ha lavorato (семья = подлежащее главного, дом = подлежащее причастия).",
+  "examples": [
+    {"it": "Comprata la casa, la famiglia ha lavorato insieme", "ru": "Купив дом, та самая семья поработала вместе", "note": "comprata (ж.р.) + casa (ж.р.)"},
+    {"it": "Andato a casa il fratello, ha fatto un regalo", "ru": "Уйдя домой, брат сделал подарок", "note": "andato (м.р.) + fratello"},
+    {"it": "Finita la cucina, abbiamo lavorato", "ru": "Закончив ту самую кухню, мы поработали", "note": "finita (ж.р.) + cucina"},
+    {"it": "Una volta arrivata la famiglia, abbiamo cucinato", "ru": "Как только прибыла та самая семья, мы приготовили", "note": "una volta + participio = «как только»"},
+    {"it": "Una volta arrivata la sorella, abbiamo pulito", "ru": "Как только пришла сестра, мы убрали", "note": "arrivata (ж.р.) + sorella"},
+    {"it": "Una volta partita la famiglia, abbiamo lavorato insieme", "ru": "Как только та самая семья уехала, мы поработали вместе", "note": "partita (ж.р.) + famiglia"},
+    {"it": "Pulita la cucina piccola, la sorella ha comprato una macchina nuova", "ru": "Убрав ту самую маленькую кухню, сестра купила новую машину", "note": "pulita (ж.р.) + cucina piccola"},
+    {"it": "Una volta partito il fratello dalla casa grande, siamo venuti", "ru": "Как только брат уехал из того самого большого дома, мы пришли", "note": "partito (м.р.) + fratello"},
+    {"it": "Finito il lavoro, siamo andati a casa", "ru": "Закончив ту самую работу, мы пошли домой", "note": "finito (м.р.) + lavoro"},
+    {"it": "Comprata la macchina nuova, la famiglia è partita", "ru": "Купив ту самую новую машину, та самая семья уехала", "note": "comprata (ж.р.) + macchina"},
+    {"it": "Una volta arrivato il fratello, la famiglia ha fatto un regalo", "ru": "Как только пришёл брат, та самая семья сделала подарок", "note": "arrivato (м.р.) + fratello"}
+  ]
+}

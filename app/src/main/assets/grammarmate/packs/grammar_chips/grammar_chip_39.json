@@ -1,0 +1,22 @@
+{
+  "key": "B23",
+  "title": "B23 - Forma Passiva e Si: страдательный и безличный залог",
+  "essence": "Пассивный залог (essere + participio) ставит объект на место подлежащего. Конструкция si выражает безличность («говорят по-итальянски») или пассивность («дома покупаются»).",
+  "formula": "### Пассивный залог: essere + participio\nLa casa è comprata = Дом куплен\nLa cucina è stata pulita = Кухня была убрана\nLa macchina nuova sarà comprata = Новая машина будет куплена\n\n### С указанием агента: da + существительное\nLa macchina è stata comprata dalla famiglia\n= Машина была куплена семьёй\n\n### Si passivante (пассивное si)\nSi comprano le case = Покупают дома / Дома покупаются\nГлагол согласуется с объектом!\n\n### Si impersonale (безличное si)\nSi parla italiano = Говорят по-итальянски\nQui si lavora = Здесь работают\n3 л. ед.ч., нет конкретного подлежащего",
+  "base": null,
+  "dontConfuse": "Si passivante vs impersonale: «Si comprano le case» = пассивное (глагол во мн.ч., есть объект le case). «Si parla italiano» = безличное (глагол в ед.ч., язык = не прямое дополнение). В пассиве participio согласуется: è compratA (ж.р.), sono compratI (мн.ч.).",
+  "examples": [
+    {"it": "La casa è comprata", "ru": "Дом куплен", "note": "essere + comprata (ж.р.), настоящее пассивное"},
+    {"it": "Si va a casa", "ru": "В дом идут", "note": "si impersonale, 3 л. ед.ч."},
+    {"it": "Il regalo è fatto", "ru": "Подарок сделан", "note": "essere + fatto (м.р.)"},
+    {"it": "La cucina è stata pulita", "ru": "Кухня была убрана", "note": "PP пассивное: è stata + pulita"},
+    {"it": "Le case grandi sono state comprate", "ru": "Большие дома были куплены", "note": "PP пассивное мн.ч.: sono state + comprate"},
+    {"it": "La macchina nuova è stata comprata dalla famiglia", "ru": "Новая машина была куплена семьёй", "note": "da + агент, PP пассивное"},
+    {"it": "Il regalo è stato fatto da lui", "ru": "Тот самый подарок был сделан им", "note": "da lui = им, PP пассивное"},
+    {"it": "La casa era comprata", "ru": "Тот самый дом покупался", "note": "imperfetto пассивное"},
+    {"it": "La macchina nuova sarà comprata", "ru": "Новая машина будет куплена", "note": "futuro пассивное"},
+    {"it": "Si parla italiano", "ru": "Говорят по-итальянски", "note": "si impersonale"},
+    {"it": "Qui si lavora", "ru": "Здесь работают", "note": "si impersonale, обобщённое лицо"},
+    {"it": "I libri si comprano in Italia", "ru": "Те самые книги покупаются в Италии", "note": "si passivante: глагол во мн.ч. (libri)"}
+  ]
+}
