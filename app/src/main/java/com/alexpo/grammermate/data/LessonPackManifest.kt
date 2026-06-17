@@ -9,6 +9,36 @@ import org.json.JSONObject
  */
 data class DrillFiles(val files: List<String>)
 
+/**
+ * Declares a pack-scoped background-vocab deck for the Background Vocab
+ * Listener foreground service.
+ *
+ * Manifest shape (schema v1 and v2):
+ * ```json
+ * "backgroundVocab": {
+ *   "file": "bg_vocab_12000.csv",
+ *   "audioDir": "bg_vocab/audio",
+ *   "defaultLanguage": "it",
+ *   "translationLanguage": "ru"
+ * }
+ * ```
+ *
+ * - [file] — CSV filename (relative to the pack root) following the
+ *   [BgVocabCsvParser] schema. Required.
+ * - [audioDir] — optional directory (relative to the pack root) of pre-rendered
+ *   `.wav` clips. Null means TTS-only playback.
+ * - [defaultLanguage] — BCP-47-ish tag of the word/collocation/sentence language
+ *   (the language being learned). Defaults to `"it"`.
+ * - [translationLanguage] — tag of the parallel translation language. Defaults
+ *   to `"ru"`.
+ */
+data class BackgroundVocabSection(
+    val file: String,
+    val audioDir: String?,
+    val defaultLanguage: String,
+    val translationLanguage: String
+)
+
 data class LessonPackManifest(
     val schemaVersion: Int,
     val packId: String,
@@ -18,6 +48,7 @@ data class LessonPackManifest(
     val displayName: String? = null,
     val verbDrill: DrillFiles? = null,
     val vocabDrill: DrillFiles? = null,
+    val backgroundVocab: BackgroundVocabSection? = null,
     val chapters: List<Chapter> = emptyList()
 ) {
     companion object {
@@ -59,6 +90,7 @@ data class LessonPackManifest(
 
             val verbDrill = parseDrillFiles(json.optJSONObject("verbDrill"))
             val vocabDrill = parseDrillFiles(json.optJSONObject("vocabDrill"))
+            val backgroundVocab = parseBackgroundVocab(json.optJSONObject("backgroundVocab"))
 
             // Parse chapters (schema v2 only)
             val chapters = if (schemaVersion == 2) {
@@ -68,19 +100,19 @@ data class LessonPackManifest(
             }
 
             // Validation: Manifest must have content
-            // v1: at least one standard lesson OR drill sections
-            // v2: at least one chapter with non-empty lessons OR drill sections
+            // v1: at least one standard lesson OR drill sections OR backgroundVocab
+            // v2: at least one chapter with non-empty lessons OR drill sections OR backgroundVocab
             when (schemaVersion) {
                 1 -> {
                     val hasStandardLessons = lessons.any { it.type != "verb_drill" }
-                    if (!hasStandardLessons && verbDrill == null && vocabDrill == null) {
-                        error("Schema v1 manifest has no lessons and no drill sections")
+                    if (!hasStandardLessons && verbDrill == null && vocabDrill == null && backgroundVocab == null) {
+                        error("Schema v1 manifest has no lessons, no drill sections, and no backgroundVocab")
                     }
                 }
                 2 -> {
                     val hasChapterContent = chapters.any { it.lessons.isNotEmpty() }
-                    if (!hasChapterContent && verbDrill == null && vocabDrill == null) {
-                        error("Schema v2 manifest has no chapter content and no drill sections")
+                    if (!hasChapterContent && verbDrill == null && vocabDrill == null && backgroundVocab == null) {
+                        error("Schema v2 manifest has no chapter content, no drill sections, and no backgroundVocab")
                     }
                 }
             }
@@ -94,7 +126,22 @@ data class LessonPackManifest(
                 displayName = displayName,
                 verbDrill = verbDrill,
                 vocabDrill = vocabDrill,
+                backgroundVocab = backgroundVocab,
                 chapters = chapters
+            )
+        }
+
+        private fun parseBackgroundVocab(obj: JSONObject?): BackgroundVocabSection? {
+            if (obj == null) return null
+            val file = obj.optString("file").trim().ifBlank { null } ?: return null
+            val audioDir = obj.optString("audioDir").trim().ifBlank { null }
+            val defaultLanguage = obj.optString("defaultLanguage").trim().ifBlank { "it" }
+            val translationLanguage = obj.optString("translationLanguage").trim().ifBlank { "ru" }
+            return BackgroundVocabSection(
+                file = file,
+                audioDir = audioDir,
+                defaultLanguage = defaultLanguage,
+                translationLanguage = translationLanguage
             )
         }
 

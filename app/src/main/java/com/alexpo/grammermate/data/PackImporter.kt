@@ -276,6 +276,9 @@ internal class PackImporter(
             // Import pack-scoped drill files
             importPackDrills(packDir, manifest)
 
+            // Import pack-scoped background-vocab deck (CSV + optional audio dir)
+            importBackgroundVocab(packDir, manifest)
+
             val storyErrors = importStoriesFromPack(packDir, languageId)
             allErrors.addAll(storyErrors)
 
@@ -416,6 +419,52 @@ internal class PackImporter(
         val targetFile = File(verbDrillDir, "${languageId}_${lessonId}.csv")
         // AtomicFileWriter fix: replace sourceFile.copyTo(targetFile, overwrite = true)
         AtomicFileWriter.writeText(targetFile, sourceFile.readText())
+    }
+
+    /**
+     * Import a pack-scoped background-vocab deck declared in the manifest's
+     * `backgroundVocab` section.
+     *
+     * Copies:
+     *  - the CSV at `packDir/{file}` → `drills/{packId}/bg_vocab/{file}`
+     *    (text, via [AtomicFileWriter.writeText] — matches [importPackDrills]).
+     *  - if `audioDir` is non-null, every file under `packDir/{audioDir}/` →
+     *    `drills/{packId}/bg_vocab/audio/` preserving filenames. Audio clips
+     *    are binary (`.wav`), so they go through [AtomicFileWriter.copyAtomic]
+     *    (temp → fsync → rename) rather than `writeText`.
+     *
+     * No-op when [LessonPackManifest.backgroundVocab] is null or the source CSV
+     * is absent (the latter is logged as a warning, mirroring vocabDrill).
+     */
+    private fun importBackgroundVocab(packDir: File, manifest: LessonPackManifest) {
+        val section = manifest.backgroundVocab ?: return
+        val fileName = section.file
+
+        val sourceCsv = File(packDir, fileName)
+        if (!sourceCsv.exists()) {
+            Log.w(TAG, "Background-vocab CSV not found in pack: $fileName (full path: ${sourceCsv.absolutePath})")
+            return
+        }
+        val targetCsvDir = File(baseDir, "drills/${manifest.packId}/bg_vocab")
+        targetCsvDir.mkdirs()
+        val targetCsv = File(targetCsvDir, sourceCsv.name)
+        AtomicFileWriter.writeText(targetCsv, sourceCsv.readText())
+        Log.d(TAG, "Imported background-vocab CSV: $fileName to ${targetCsv.absolutePath}")
+
+        val audioDirRelative = section.audioDir ?: return
+        val sourceAudioDir = File(packDir, audioDirRelative)
+        if (!sourceAudioDir.exists() || !sourceAudioDir.isDirectory) {
+            Log.w(TAG, "Background-vocab audioDir not found in pack: $audioDirRelative (full path: ${sourceAudioDir.absolutePath})")
+            return
+        }
+        val targetAudioDir = File(targetCsvDir, "audio")
+        targetAudioDir.mkdirs()
+        sourceAudioDir.listFiles()?.forEach { src ->
+            if (!src.isFile) return@forEach
+            val dst = File(targetAudioDir, src.name)
+            AtomicFileWriter.copyAtomic(src, dst)
+            Log.d(TAG, "Imported background-vocab audio clip: ${src.name} to ${dst.absolutePath}")
+        }
     }
 
     // ── Story import from pack ───────────────────────────────────────────

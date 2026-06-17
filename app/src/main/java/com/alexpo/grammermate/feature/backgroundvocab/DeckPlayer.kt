@@ -86,6 +86,15 @@ data class DeckState(
  *                             parsing [WordScript.toMarkup] and feeding it to [SegmentPlayer].
  *                             Override in tests to avoid real TTS.
  * @param speed                TTS speed multiplier passed into the default [playWord].
+ * @param audioResolver        optional resolver for pre-rendered `.wav` clips. When set
+ *                             together with [packId], [defaultPlayWord] emits a
+ *                             [MultilingualStoryParser.Segment.Audio] for each speak item
+ *                             whose clip exists on disk, and falls back to
+ *                             [MultilingualStoryParser.Segment.Text] (TTS) otherwise. Null
+ *                             by default — the no-pack / pre-Wave-3 path stays all-TTS.
+ * @param packId               the active pack id used to scope [audioResolver] lookups.
+ *                             Null disables audio resolution entirely (all TTS), which is
+ *                             correct when no pack is active.
  */
 class DeckPlayer(
     private val ttsEngine: TtsEngine,
@@ -93,6 +102,8 @@ class DeckPlayer(
     private val scope: CoroutineScope,
     private val betweenWordsPauseMs: Long = 1500L,
     private val speedProvider: () -> Float = { 1f },
+    private val audioResolver: BgVocabAudioResolver? = null,
+    private val packId: String? = null,
     playWord: (suspend (WordScript) -> Unit)? = null,
     private val markStore: BgVocabMarkStore? = null,
     private val positionStore: BgVocabPositionStore? = null
@@ -106,13 +117,28 @@ class DeckPlayer(
     val state: StateFlow<DeckState> = _state.asStateFlow()
 
     /** Default per-word playback: build segments from the word's speak plan, feed to
-     *  [SegmentPlayer], and track the currently-spoken [SpeakSlot] (for in-sync UI). */
+     *  [SegmentPlayer], and track the currently-spoken [SpeakSlot] (for in-sync UI).
+     *
+     *  When [audioResolver] and [packId] are both set, each speak item is resolved to a
+     *  pre-rendered `.wav` clip and emitted as [MultilingualStoryParser.Segment.Audio] if
+     *  the clip exists on disk; otherwise it falls back to
+     *  [MultilingualStoryParser.Segment.Text] (TTS synthesis). This realizes the
+     *  wav→TTS fallback for background vocab: a partial clip set degrades gracefully to
+     *  TTS for whatever was not pre-rendered. */
     private suspend fun defaultPlayWord(word: WordScript) {
         val plan = word.speakPlan()
         val segments = ArrayList<MultilingualStoryParser.Segment>(plan.size * 2)
         val slots = ArrayList<SpeakSlot?>(plan.size * 2)
         for (item in plan) {
-            segments.add(MultilingualStoryParser.Segment.Text(item.text, item.lang))
+            val audioFile = audioResolver?.let { resolver ->
+                packId?.let { pid -> resolver.fileFor(pid, word.rank, item.slot) }
+            }
+            val seg = if (audioFile != null) {
+                MultilingualStoryParser.Segment.Audio(audioFile, item.lang)
+            } else {
+                MultilingualStoryParser.Segment.Text(item.text, item.lang)
+            }
+            segments.add(seg)
             slots.add(item.slot)
             segments.add(MultilingualStoryParser.Segment.Pause(item.pauseAfterMs))
             slots.add(null)

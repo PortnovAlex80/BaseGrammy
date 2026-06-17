@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
  *  - [TtsEngine] singleton, obtained from [GrammarMateApplication.container].
  *    `ttsEngine` (`AppContainer.ttsEngine`) — mirrors how ViewModels obtain it.
  *  - [SegmentPlayer] / [DeckPlayer] (feature.backgroundvocab) drive the actual audio.
- *  - [BgVocabLoader] loads the 50-word CSV from `grammarmate/packs/bg_vocab_50.csv`.
+ *  - [BgVocabLoader] loads the 12000-word CSV from `grammarmate/packs/bg_vocab_12000.csv`.
  *
  * The service exposes transport controls two ways:
  *
@@ -111,11 +111,25 @@ class VocabPlaybackService : Service() {
         val app = applicationContext as GrammarMateApplication
         ttsEngine = app.container.ttsEngine
         segmentPlayer = SegmentPlayer(ttsEngine)
+
+        // Resolve the active pack id from the persistent ProgressStore — NOT an Intent
+        // extra. The service can be killed & recreated as START_STICKY and would lose
+        // extras; ProgressStore is the canonical persisted source
+        // (TrainingProgress.activePackId, see Models.kt). Null when no pack is active.
+        val packId: String? = try {
+            app.container.progressStore.load().activePackId?.value
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to read activePackId from ProgressStore", e)
+            null
+        }
+
         deckPlayer = DeckPlayer(
             ttsEngine,
             segmentPlayer,
             scope,
             speedProvider = { app.container.configStore.load().ttsSpeed },
+            audioResolver = app.container.bgVocabAudioResolver,
+            packId = packId,
             markStore = app.container.bgVocabMarkStore,
             positionStore = app.container.bgVocabPositionStore
         )
@@ -123,13 +137,19 @@ class VocabPlaybackService : Service() {
         createNotificationChannel()
         setupMediaSession()
 
-        // Load the deck on the scope, then prime the DeckPlayer. Does NOT auto-play —
-        // playback starts only when an explicit Play arrives (from MediaSession callback,
-        // notification action, or a startForegroundService(ACTION_PLAY) intent).
+        // Load the deck on the scope, then prime the DeckPlayer. Pack-scoped first
+        // (drills/{packId}/bg_vocab/...); fall back to the bundled 12000-word asset when
+        // the pack declares no background-vocab deck or no pack is active. Does NOT
+        // auto-play — playback starts only when an explicit Play arrives (from
+        // MediaSession callback, notification action, or a
+        // startForegroundService(ACTION_PLAY) intent).
         scope.launch {
-            val words = BgVocabLoader.load(this@VocabPlaybackService)
+            val words = packId
+                ?.let { pid -> BgVocabLoader.loadPackScoped(this@VocabPlaybackService, app.container.baseDir, pid) }
+                ?.takeIf { it.isNotEmpty() }
+                ?: BgVocabLoader.load(this@VocabPlaybackService)
             deckPlayer.setWords(words)
-            Log.d(TAG, "Deck primed with ${words.size} words")
+            Log.d(TAG, "Deck primed with ${words.size} words (packId=$packId)")
         }
 
         // Reflect every DeckPlayer state change into the MediaSession + notification.

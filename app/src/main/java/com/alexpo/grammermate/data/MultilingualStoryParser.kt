@@ -45,6 +45,20 @@ object MultilingualStoryParser {
          * An explicit pause of [ms] milliseconds. Emitted from `{pause:N}` markup.
          */
         data class Pause(val ms: Long) : Segment
+
+        /**
+         * A pre-rendered audio clip on disk, played instead of TTS-synthesizing the
+         * corresponding text. Emitted only by background-vocab playback (Wave 3
+         * wiring in DeckPlayer) when a `.wav` clip resolves for a given slot;
+         * stories NEVER produce [Audio] segments, so the story path is unaffected.
+         *
+         * The [SegmentPlayer] plays [file] via `MediaPlayer` when it exists on disk;
+         * if the file is missing it logs a warning and advances (no TTS fallback
+         * here — fallback happens upstream at segment-construction time, since an
+         * [Audio] segment carries no text to synthesize). [languageId] is kept for
+         * symmetry with [Text] and for logging/diagnostics.
+         */
+        data class Audio(val file: java.io.File, val languageId: String) : Segment
     }
 
     /**
@@ -174,6 +188,11 @@ object MultilingualStoryParser {
                 when (segment) {
                     is Segment.Text -> TextSegment(segment.text, segment.languageId)
                     is Segment.Pause -> null
+                    // Audio clips carry no speakable text; they are skipped on the
+                    // text-only story path. (parseSegments never emits Audio today —
+                    // stories contain no audio markup — but the branch is required
+                    // for exhaustivity once the variant exists.)
+                    is Segment.Audio -> null
                 }
             }
     }
@@ -278,7 +297,7 @@ object MultilingualStoryParser {
 
         Log.d(TAG, "=== parseSegments END ===")
         Log.d(TAG, "Total segments: $globalSegmentIndex")
-        Log.d(TAG, "Segment kinds: ${segments.map { if (it is Segment.Pause) "Pause(${it.ms})" else "Text(${(it as Segment.Text).languageId})" }}")
+        Log.d(TAG, "Segment kinds: ${segments.map { kindLabel(it) }}")
         return segments
     }
 
@@ -325,6 +344,17 @@ object MultilingualStoryParser {
             }
         }
         return added
+    }
+
+    /**
+     * Human-readable label for a [Segment], used for debug logging. Handles all
+     * three variants (Text / Pause / Audio) without an exhaustive `when` so it
+     * is robust to future sealed-subclass additions.
+     */
+    private fun kindLabel(segment: Segment): String = when (segment) {
+        is Segment.Pause -> "Pause(${segment.ms})"
+        is Segment.Audio -> "Audio(${segment.file.name}/${segment.languageId})"
+        is Segment.Text -> "Text(${segment.languageId})"
     }
 
     /**

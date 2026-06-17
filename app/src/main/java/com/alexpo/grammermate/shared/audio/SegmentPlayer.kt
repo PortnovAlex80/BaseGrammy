@@ -1,12 +1,16 @@
 package com.alexpo.grammermate.shared.audio
 
+import android.media.MediaPlayer
 import android.util.Log
 import com.alexpo.grammermate.data.MultilingualStoryParser
 import com.alexpo.grammermate.data.TtsEngine
 import com.alexpo.grammermate.data.TtsState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.File
+import kotlin.coroutines.resume
 
 /**
  * Reusable sequential playback engine for [MultilingualStoryParser.Segment] streams.
@@ -50,6 +54,11 @@ class SegmentPlayer(private val ttsEngine: TtsEngine) {
      *   [TtsState.Speaking] state. If [isPaused] becomes true after the segment finishes,
      *   wait for it to clear and then re-speak the *same* segment (do NOT advance the
      *   index) — this preserves the exact pause/resume UX of story playback.
+     * - [MultilingualStoryParser.Segment.Audio]: play the referenced `.wav` file via
+     *   [MediaPlayer]. If the file is missing, log a warning and advance (no TTS
+     *   fallback here — an Audio segment has no text). Applies the same re-play-on-resume
+     *   UX as the Text branch. Emitted only by background-vocab playback; the story
+     *   path never produces Audio segments.
      *
      * [onSegmentStart] is invoked for every segment (including pauses) just before it is
      * processed; the index passed is the position within [segments]. It is optional and
@@ -150,7 +159,77 @@ class SegmentPlayer(private val ttsEngine: TtsEngine) {
 
                     currentSegmentIdx++
                 }
+
+                is MultilingualStoryParser.Segment.Audio -> {
+                    // Pre-rendered clip path (Wave 2). If the file is present, play it
+                    // via MediaPlayer and mirror the Text branch's pause/resume contract:
+                    // after the clip finishes, if isPaused() became true, wait for it to
+                    // clear and then RE-PLAY the same segment (continue — do not advance).
+                    // If the file is missing (deleted at runtime), log and advance without
+                    // crashing or falling back to TTS — an Audio segment carries no text,
+                    // so TTS fallback happens upstream at segment-construction time.
+                    val file = segment.file
+                    if (!file.exists() || !file.canRead()) {
+                        Log.w(TAG, "Audio file missing, skipping: $file")
+                        currentSegmentIdx++
+                    } else {
+                        Log.d(TAG, "Segment $currentSegmentIdx/${segments.size} | Audio: ${file.name} (${segment.languageId.uppercase()})")
+                        playAudioFile(file)
+
+                        // Same pause/resume UX as the Text branch: if playback was
+                        // paused while/after the clip played, wait for resume then
+                        // replay THIS segment (don't advance index).
+                        if (isPaused()) {
+                            Log.d(TAG, "⏸ Paused after audio-segment $currentSegmentIdx — waiting for resume to replay this clip")
+                            while (isPaused()) {
+                                delay(100)
+                            }
+                            Log.d(TAG, "▶ Resuming — replaying audio-segment $currentSegmentIdx")
+                            continue
+                        }
+
+                        currentSegmentIdx++
+                    }
+                }
             }
+        }
+    }
+
+    /**
+     * Play [file] via [MediaPlayer], suspending until the clip completes (or errors).
+     *
+     * The player is created, prepared, started, and released entirely within this
+     * call — no MediaPlayer instance escapes the function, so there is no leak.
+     * On coroutine cancellation the in-flight [MediaPlayer] is [MediaPlayer.release]d
+     * (best-effort; `release()` is idempotent and never throws on a released player).
+     *
+     * Resumes with `Unit` on `onCompletion` or `onError` (errors are logged and the
+     * caller advances past the clip rather than crashing); `setDataSource`/`prepare`
+     * failures throw synchronously and are caught here, also resuming with `Unit`.
+     */
+    private suspend fun playAudioFile(file: File) = suspendCancellableCoroutine { cont ->
+        val player = MediaPlayer()
+        // Safety net: if the coroutine is cancelled mid-clip, tear down native state.
+        cont.invokeOnCancellation { runCatching { player.release() } }
+
+        try {
+            player.setDataSource(file.absolutePath)
+            player.setOnCompletionListener {
+                player.release()
+                if (cont.isActive) cont.resume(Unit)
+            }
+            player.setOnErrorListener { mp, what, extra ->
+                Log.e(TAG, "MediaPlayer error what=$what extra=$extra on $file")
+                runCatching { mp.release() }
+                if (cont.isActive) cont.resume(Unit)
+                true
+            }
+            player.prepare()
+            player.start()
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to play audio clip $file", t)
+            runCatching { player.release() }
+            if (cont.isActive) cont.resume(Unit)
         }
     }
 }

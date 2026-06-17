@@ -266,8 +266,11 @@ class AudioCoordinator(
                         TAG,
                         "Playing ${segments.size} segments with languages: " +
                             segments.map {
-                                if (it is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Text) it.languageId
-                                else "pause"
+                                when (it) {
+                                    is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Text -> it.languageId
+                                    is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Pause -> "pause"
+                                    is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Audio -> "audio:${it.languageId}"
+                                }
                             }
                     )
 

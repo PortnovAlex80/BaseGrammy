@@ -3,6 +3,7 @@ package com.alexpo.grammermate
 import android.app.Application
 import com.alexpo.grammermate.data.*
 import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
+import com.alexpo.grammermate.feature.backgroundvocab.BgVocabAudioResolver
 
 /**
  * Centralized dependency container that exposes all store interfaces.
@@ -26,6 +27,22 @@ class AppContainer(private val application: Application) {
     val ttsEngine: TtsEngine by lazy { TtsProvider.getInstance(application).ttsEngine }
     val bgVocabMarkStore: BgVocabMarkStore by lazy { BgVocabMarkStore(application) }
     val bgVocabPositionStore: BgVocabPositionStore by lazy { BgVocabPositionStore(application) }
+
+    /**
+     * Root directory for pack-scoped background-vocab data: `filesDir/grammarmate`.
+     * Matches the convention used by [com.alexpo.grammermate.data.DrillFileManager] and
+     * the pack importer — the same root [BgVocabAudioResolver] and
+     * [com.alexpo.grammermate.data.BgVocabLoader.loadPackScoped] operate on.
+     */
+    val baseDir: java.io.File get() = java.io.File(application.filesDir, "grammarmate")
+
+    /**
+     * Resolves pre-rendered `.wav` clips for pack-scoped background-vocab playback.
+     * Used by [com.alexpo.grammermate.feature.backgroundvocab.DeckPlayer] to emit
+     * [com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Audio] in place of
+     * TTS when a clip exists on disk. See [BgVocabAudioResolver] for the path convention.
+     */
+    val bgVocabAudioResolver: BgVocabAudioResolver by lazy { BgVocabAudioResolver(baseDir) }
 
     // Pack-scoped stores
     fun wordMasteryStore(packId: String?): WordMasteryStore = storeFactory.getWordMasteryStore(packId)
