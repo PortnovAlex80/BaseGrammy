@@ -11,7 +11,7 @@
 
 GrammarMate suffers from architectural debt accumulated over 3+ years of iterative development. The primary issues are:
 
-1. **God Objects**: TrainingViewModel (1,570 lines), VerbDrillViewModel (1,017 lines), DailyPracticeCoordinator (970 lines), ProgressTracker (487 lines)
+1. **God Objects**: TrainingViewModel (2,579 lines), VerbDrillViewModel (1,035 lines), DailyPracticeCoordinator (1,019 lines), ProgressTracker (560 lines)
 2. **Business Logic in UI**: Core rules embedded in Compose callbacks and UI state holders
 3. **State Mutation Scatter**: `currentIndex` and other state mutated in 8+ locations
 4. **Zero Test Coverage**: No unit tests for ViewModels, no real store tests, no feature tests for special modes
@@ -38,7 +38,7 @@ This proposal defines a **target clean architecture** that:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           Compose UI Layer                           │
 ├─────────────────────────────────────────────────────────────────────┤
-│ GrammarMateApp.kt (1,321 lines)                                     │
+│ GrammarMateApp.kt (1,998 lines)                                     │
 │ - Navigation (string-based routes)                                  │
 │ - Dialog state management                                           │
 │ - Session coordination logic                                        │
@@ -51,16 +51,16 @@ This proposal defines a **target clean architecture** that:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Presentation Layer                           │
 ├─────────────────────────────────────────────────────────────────────┤
-│ TrainingViewModel (1,570 lines) ──────┐                            │
+│ TrainingViewModel (2,579 lines) ──────┐                            │
 │ - ALL app state (25+ fields)          │                            │
 │ - Business rules (mastery, SRS)       │                            │
 │ - Session orchestration               │    VerbDrillViewModel      │
-│ - State mutation (currentIndex × 8)   │    (1,017 lines)           │
+│ - State mutation (currentIndex × 8)   │    (1,035 lines)           │
 │ - Event handling (SessionEvent)       │    - Duplicate state       │
 │ - Persistence coordination            │    - No progress integration│
 │                                       │                            │
 │ ┌─────────────────────────────────┐  │                            │
-│ │ SessionRunner (1,240 lines)     │  │                            │
+│ │ SessionRunner (1,416 lines)     │  │                            │
 │ │ - Card session logic            │  │                            │
 │ │ - Retry/hint state machine      │  │                            │
 │ │ - Event callbacks               │  │                            │
@@ -73,12 +73,12 @@ This proposal defines a **target clean architecture** that:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    Business Logic (Scattered)                        │
 ├─────────────────────────────────────────────────────────────────────┤
-│ ProgressTracker (487 lines)                                         │
+│ ProgressTracker (560 lines)                                         │
 │ - Wraps 4 stores                                                     │
 │ - Dual storage pattern (legacy + pack-scoped)                       │
 │ - WORD_BANK mode ambiguity                                          │
 │                                                                      │
-│ DailyPracticeCoordinator (970 lines)                                │
+│ DailyPracticeCoordinator (1,019 lines)                              │
 │ - Triple caching strategy                                           │
 │ - Session composition (3 blocks)                                    │
 │ - No blocking logic                                                 │
@@ -753,7 +753,7 @@ class TrainingSessionViewModel @Inject constructor(
     }
 }
 
-// ViewModel size: ~200 lines (vs 1,570 currently)
+// ViewModel size: ~200 lines (vs 2,579 currently)
 ```
 
 ### Compose Screens (Stateless Where Possible)
@@ -810,7 +810,7 @@ private fun SessionContent(
 
 ## Business Rules to Extract
 
-### From TrainingViewModel (1,570 lines → pure functions)
+### From TrainingViewModel (2,579 lines → pure functions)
 
 **Extract to MasteryCalculator:**
 - `calculateNextInterval()`: SRS interval progression
@@ -828,7 +828,7 @@ private fun SessionContent(
 - `applyDifficultyFilter()`: Select by difficulty
 - `balanceItemTypes()`: Ensure variety
 
-### From ProgressTracker (487 lines → pure functions)
+### From ProgressTracker (560 lines → pure functions)
 
 **Extract to MasteryCalculator:**
 - `calculateMasteryStep()`: Determine new mastery step
@@ -840,7 +840,7 @@ private fun SessionContent(
 - `getLearnedItemCount()`: Count items with step >= 3
 - `getMasteredItemCount()`: Count items with step == 9
 
-### From DailyPracticeCoordinator (970 lines → pure functions)
+### From DailyPracticeCoordinator (1,019 lines → pure functions)
 
 **Extract to DailyPracticeComposer:**
 - `composeSessionBlocks()`: Create TRANSLATE/VOCAB/VERBS blocks

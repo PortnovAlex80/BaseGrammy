@@ -122,7 +122,7 @@
 
 ### TrainingViewModel
 **File:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt`  
-**Lines:** 76-1646 (~1570 lines)
+**Lines:** 105-2579 (~2579 lines)
 
 **State:**
 - `_coreState: MutableStateFlow<TrainingUiState>` (line 95) - Main state holder
@@ -189,7 +189,7 @@
 
 ### SessionRunner
 **File:** `app/src/main/java/com/alexpo/grammermate/feature/training/SessionRunner.kt`  
-**Lines:** 50-1289 (~1240 lines)
+**Lines:** 51-1416 (~1416 lines)
 
 **Responsibilities:**
 - Owns training session lifecycle
@@ -758,8 +758,8 @@
 ### Gaps
 
 **No Unit Tests For:**
-- `SessionRunner` (complex, 1240 lines)
-- `TrainingViewModel` (massive, 1570 lines)
+- `SessionRunner` (complex, 1416 lines)
+- `TrainingViewModel` (massive, 2579 lines)
 - `ProgressTracker` integration
 - `StreakManager` logic
 - Boss battle orchestration
@@ -775,9 +775,9 @@
 
 ### Architectural Concerns
 
-**1. TrainingViewModel Size (1570 lines)**
+**1. TrainingViewModel Size (2579 lines)**
 - **Risk:** God object, hard to understand, change, test
-- **Evidence:** Lines 76-1646
+- **Evidence:** Lines 105-2579
 - **Impact:** Every feature adds code to ViewModel
 - **Example:** Pomodoro alone added ~100 lines (line 313-389)
 
@@ -1037,7 +1037,7 @@ fun onSubmit(
 
 The training core is **functional but heavily coupled**. The main issues are:
 
-1. **TrainingViewModel is a god object** (1570 lines) - does everything
+1. **TrainingViewModel is a god object** (2579 lines) - does everything
 2. **Circular dependencies** - features depend on each other through ViewModel
 3. **Event-driven complexity** - hard to trace control flow
 4. **State mutation scatter** - same state mutated in multiple places

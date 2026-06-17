@@ -14,7 +14,7 @@
 - LOW: 2
 
 **Critical Risk Areas:**
-1. ProgressTracker complexity (487 lines, multiple concerns)
+1. ProgressTracker complexity (560 lines, multiple concerns)
 2. Dual storage pattern (legacy + pack-scoped)
 3. WORD_BANK mode ambiguity
 4. No incremental updates (performance/scalability)
@@ -30,7 +30,7 @@
 **Title:** ProgressTracker violates Single Responsibility Principle
 
 **Current behavior:**
-- ProgressTracker.kt is 487 lines handling mastery tracking, cursor management, lesson completion, progress persistence, and reset operations
+- ProgressTracker.kt is 560 lines handling mastery tracking, cursor management, lesson completion, progress persistence, and reset operations
 - Acts as facade/wrapper around 4 different stores (MasteryStore, ProgressStore, PackLessonProgressStore, PackDailyCursorStore)
 - Contains business logic for mode filtering (WORD_BANK, boss battles), SRS coordination, and lesson completion detection
 
@@ -38,7 +38,7 @@
 - Violates Single Responsibility Principle - handles too many concerns
 - Difficult to test due to multiple dependencies and side effects
 - High blast radius - any change affects multiple subsystems
-- Cognitive overload for developers - must understand entire 487-line file to make safe changes
+- Cognitive overload for developers - must understand entire 560-line file to make safe changes
 
 **Blast radius:**
 - Mastery tracking (recordCardShowForMastery, markSubLessonCardsShown)
@@ -62,7 +62,7 @@ class ProgressTracker(
     private val packDailyCursorStore: PackDailyCursorStore,
     private val packLessonProgressStore: PackLessonProgressStore
 ) {
-    // 487 lines of mixed concerns
+    // 560 lines of mixed concerns
 }
 ```
 
@@ -519,7 +519,7 @@ private fun recordCardShowForMastery(...) {
         selectedLessonId = selectedLessonId
     )
 }
-// Called from: line 452, 1310, and potentially other locations
+// Called from: line 452, 1416, and potentially other locations
 ```
 
 **Proposed direction:**

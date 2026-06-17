@@ -14,7 +14,7 @@
 - **LOW:** 3 risks (nice-to-have, technical debt)
 
 **Critical Findings:**
-1. VerbDrillViewModel is too large (1017 lines) with mixed responsibilities
+1. VerbDrillViewModel is too large (1035 lines) with mixed responsibilities
 2. UX inconsistency: VerbDrill has SessionCard, VocabDrill doesn't
 3. No integration with main progress system (WORD_BANK ≠ mastery)
 4. Test-only code leaked into production
@@ -26,11 +26,11 @@
 
 ### Risk #1: VerbDrillViewModel God Object
 
-**Title:** VerbDrillViewModel violates single responsibility (1017 lines)
+**Title:** VerbDrillViewModel violates single responsibility (1035 lines)
 
 **Current behavior:**
 ```kotlin
-// VerbDrillViewModel.kt:44-1017
+// VerbDrillViewModel.kt:44-1035
 class VerbDrillViewModel(
     private val application: Application,
     private val testStore: VerbDrillStore? = null  // Test-only param
@@ -41,13 +41,13 @@ class VerbDrillViewModel(
     // Last session handling (lines 704-833)
     // TTS integration (lines 835-900)
     // Bad sentence flagging (lines 902-950)
-    // Speed tracking (lines 952-1017)
+    // Speed tracking (lines 952-1035)
 }
 ```
 
 **Why this is a problem:**
 - CLAUDE.md guidance: "TrainingViewModel is ~1500 lines. Decompose helpers to `feature/` when adding logic"
-- VerbDrillViewModel is approaching this limit with 1017 lines
+- VerbDrillViewModel is approaching this limit with 1035 lines
 - Mixes infrastructure (CSV parsing, file I/O), business logic (session rules, progress calculation), and UI state
 - Hard to test: need to mock CSV parser, store, TTS, and config just to test session logic
 - Hard to understand: no clear separation between "what it does" and "how it works"
@@ -58,7 +58,7 @@ class VerbDrillViewModel(
 - Test coverage is spotty because tests need to navigate complex setup
 
 **Evidence:**
-- `VerbDrillViewModel.kt:1-1017` - File size
+- `VerbDrillViewModel.kt:1-1035` - File size
 - `VerbDrillViewModel.kt:148-327` - Card loading logic
 - `VerbDrillViewModel.kt:449-652` - Session management
 - `VerbDrillViewModel.kt:604-626` - Progress persistence
@@ -621,8 +621,8 @@ drills.forEach { it.startSession() }
 - Hard to test: Need separate test suites for each drill
 
 **Evidence:**
-- `VerbDrillViewModel.kt` - 1017 lines, no base class
-- `VocabDrillViewModel.kt` - 536 lines, no base class
+- `VerbDrillViewModel.kt` - 1035 lines, no base class
+- `VocabDrillViewModel.kt` - 550 lines, no base class
 - No `DrillViewModel` interface in codebase
 
 **Proposed direction:**
@@ -732,20 +732,20 @@ private fun startVoiceRecognition() {
 ## Evidence References
 
 **VerbDrillViewModel:**
-- Size and responsibilities: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:1-1017`
+- Size and responsibilities: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:1-1035`
 - Test-only code: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:59-80`
 - State mutations: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:524-599`
 - SessionCard actions: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:734-833`
 - Pack scoping: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:148-206`
 
 **VocabDrillViewModel:**
-- Size and responsibilities: `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillViewModel.kt:1-536`
+- Size and responsibilities: `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillViewModel.kt:1-550`
 - Pack scoping: `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillViewModel.kt:69-106`
 - Fire streak: `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillViewModel.kt:337-354`
 
 **Stores:**
-- VerbDrillStore: `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt:1-376`
-- WordMasteryStore: `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt:1-189`
+- VerbDrillStore: `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt:1-313`
+- WordMasteryStore: `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt:1-199`
 - Cache invalidation: `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt:74-84`, `WordMasteryStore.kt:52-54`
 
 **Tests:**

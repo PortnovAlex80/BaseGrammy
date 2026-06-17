@@ -11,7 +11,7 @@
 
 The Training Core suffers from **9 HIGH-risk**, **6 MEDIUM-risk**, and **3 LOW-risk** architectural issues. The most critical problems are:
 
-1. **TrainingViewModel God Object** (1570 lines) - violates single responsibility
+1. **TrainingViewModel God Object** (2579 lines) - violates single responsibility
 2. **State Mutation Scatter** - same state mutated in 8+ places
 3. **Event-Driven Complexity** - implicit control flow through event lists
 4. **Timer Side Effects** - independent coroutine mutates state
@@ -112,7 +112,7 @@ if (isVerbDrillComplete) {
 **Risk level:** HIGH
 
 **Current behavior:**
-- TrainingViewModel is **1570 lines** (TrainingViewModel.kt:76-1646)
+- TrainingViewModel is **2579 lines** (TrainingViewModel.kt:105-2579)
 - Handles navigation, session lifecycle, progress, audio, Pomodoro, settings, import/export, boss battles, daily practice, vocab sprint, story, streaks, backups, profile stats
 - Constructs 15+ feature coordinators in init block (lines 115-256)
 - Has 80+ public methods
@@ -132,7 +132,7 @@ if (isVerbDrillComplete) {
 
 **Evidence:**
 ```kotlin
-// TrainingViewModel.kt:76-1646 (1570 lines)
+// TrainingViewModel.kt:105-2579 (2579 lines)
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     // 15+ feature coordinators
     private val answerValidator = AnswerValidator()
@@ -1010,7 +1010,7 @@ private fun handleSessionEvents(events: List<SessionEvent>) {
 ## Summary by Risk Level
 
 ### HIGH Risk (9 issues)
-1. TrainingViewModel God Object (1570 lines)
+1. TrainingViewModel God Object (2579 lines)
 2. State Mutation Scatter - currentIndex
 3. State Mutation Scatter - SessionState
 4. Query Callback Pattern in Events

@@ -19,7 +19,7 @@
 
 **When Card is Marked Shown:**
 - Called from `TrainingViewModel.recordCardShowForMastery()` (TrainingViewModel.kt:1210-1217)
-- Triggered on card navigation (TrainingViewModel.kt:452) and session events (TrainingViewModel.kt:1310)
+- Triggered on card navigation (TrainingViewModel.kt:452) and session events (TrainingViewModel.kt:1416)
 - Updates `MasteryStore.recordCardShow()` (MasteryStore.kt:154-198)
 
 ### 2. Word Bank Mode
@@ -58,7 +58,7 @@
 
 ### ProgressTracker
 **File:** `feature/progress/ProgressTracker.kt`
-**Lines:** 1-487
+**Lines:** 1-560
 
 **What It Tracks:**
 - Single source of truth for all mastery tracking and progress persistence (lines 25-34)
@@ -455,7 +455,7 @@ data class LessonProgress(
 
 **1. ProgressTracker Complexity**
 - **Risk:** ~500 lines, handles multiple concerns (mastery, progress, cursor, reset)
-- **Evidence:** ProgressTracker.kt:1-487
+- **Evidence:** ProgressTracker.kt:1-560
 - **Impact:** Difficult to test, hard to reason about side effects
 
 **2. Dual Storage Pattern**
@@ -598,7 +598,7 @@ data class LessonProgress(
 **TrainingViewModel Integration**
 - recordCardShowForMastery: ui/TrainingViewModel.kt:1210-1217
 - saveProgress calls: ui/TrainingViewModel.kt:585, 633, 656, 671, 860, 901, 1091, 1107, 1186, 1266, 1302
-- progressTracker delegation: ui/TrainingViewModel.kt:168, 175, 452, 613, 982, 1138, 1153, 1198, 1214, 1310, 1316, 1334, 1344, 1428
+- progressTracker delegation: ui/TrainingViewModel.kt:168, 175, 452, 613, 982, 1138, 1153, 1198, 1214, 1416, 1316, 1334, 1344, 1428
 
 **DailyPracticeCoordinator Integration**
 - Card show recording: feature/daily/DailyPracticeCoordinator.kt:557

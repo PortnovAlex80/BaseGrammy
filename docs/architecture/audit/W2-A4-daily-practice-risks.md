@@ -6,7 +6,7 @@ The Daily Practice feature exhibits **MEDIUM to HIGH** architectural risk across
 
 1. **No explicit blocking logic** (HIGH) - Can start sessions with empty blocks
 2. **Business logic embedded in UI layer** (HIGH) - Composable makes routing decisions
-3. **970-line DailyPracticeCoordinator** (MEDIUM) - Excessive complexity for orchestration
+3. **1,019-line DailyPracticeCoordinator** (MEDIUM) - Excessive complexity for orchestration
 4. **Hidden coupling through callbacks** (MEDIUM) - TrainingStateAccess bridge pattern
 5. **Ambiguous state ownership** (MEDIUM) - Triple caching with unclear invalidation
 
@@ -966,7 +966,7 @@ data class DailyCursor(
 
 ### Risk 8.1: No Dedicated Unit Tests for Coordinator
 
-**Title:** Coordinator has 970 lines but no unit tests, only UI integration tests
+**Title:** Coordinator has 1,019 lines but no unit tests, only UI integration tests
 
 **Current behavior:**
 ```kotlin
@@ -1299,7 +1299,7 @@ The Daily Practice architecture has **15 identified architectural risks** across
 
 **Recommended approach:** Incremental refactoring with test coverage first. Start with Phase 1 (critical safety) while building comprehensive unit tests (Phase 2). This enables safe refactoring of lower-priority issues in Phase 3.
 
-**Key insight:** The 970-line DailyPracticeCoordinator is the center of architectural debt. Breaking it into smaller, focused components (repositories, services, validators) will address most risks simultaneously.
+**Key insight:** The 1,019-line DailyPracticeCoordinator is the center of architectural debt. Breaking it into smaller, focused components (repositories, services, validators) will address most risks simultaneously.
 
 ---
 

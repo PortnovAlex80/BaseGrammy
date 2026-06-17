@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-BaseGrammy uses Jetpack Compose with a single-activity architecture centered around `GrammarMateApp.kt` (1,321 lines). The UI layer manages navigation through Compose Navigation with 10 defined routes, coordinating between two primary ViewModels (`TrainingViewModel` and `VerbDrillViewModel`). State management follows a unidirectional flow pattern with `TrainingUiState` as the single source of truth.
+BaseGrammy uses Jetpack Compose with a single-activity architecture centered around `GrammarMateApp.kt` (1,998 lines). The UI layer manages navigation through Compose Navigation with 10 defined routes, coordinating between two primary ViewModels (`TrainingViewModel` and `VerbDrillViewModel`). State management follows a unidirectional flow pattern with `TrainingUiState` as the single source of truth.
 
 **Critical Finding:** The application has significant business logic embedded in the UI layer, particularly in `GrammarMateApp.kt` which handles session coordination, dialog state management, and navigation orchestration that should ideally be separated.
 
@@ -72,7 +72,7 @@ Any Screen → SettingsSheet → (background: TrainingScreen pause/resume)
 
 ## Main Classes and Responsibilities
 
-### GrammarMateApp (1,321 lines)
+### GrammarMateApp (1,998 lines)
 **File:** `ui/GrammarMateApp.kt:115-607`
 
 **Responsibilities:**
@@ -119,8 +119,8 @@ private object Routes {
 
 ### Screen Composables
 
-#### HomeScreen (415 lines)
-**File:** `ui/screens/HomeScreen.kt:98-415`
+#### HomeScreen (971 lines)
+**File:** `ui/screens/HomeScreen.kt:98-971`
 
 **Responsibilities:**
 - Language and pack selection
@@ -130,7 +130,7 @@ private object Routes {
 - Pomodoro timer integration
 - Profile stats display
 
-**Evidence:** `HomeScreen.kt:98-415`
+**Evidence:** `HomeScreen.kt:98-971`
 
 #### LessonRoadmapScreen
 **File:** `ui/screens/LessonRoadmapScreen.kt`
@@ -174,8 +174,8 @@ private object Routes {
 
 ### ViewModels
 
-#### TrainingViewModel (estimated 1,500+ lines)
-**File:** `ui/TrainingViewModel.kt:76-150+`
+#### TrainingViewModel (2,579 lines)
+**File:** `ui/TrainingViewModel.kt:105-2579`
 
 **Responsibilities:**
 - Central state holder for entire app
@@ -516,7 +516,7 @@ Required pattern for SessionCard batch tests:
 
 ### 1. Massive God ViewModel
 **Severity:** HIGH
-**Evidence:** `TrainingViewModel.kt:76-150+` (estimated 1,500+ lines)
+**Evidence:** `TrainingViewModel.kt:105-2579` (2,579 lines)
 
 **Issue:** Single ViewModel coordinates:
 - 15+ feature instances
@@ -618,17 +618,17 @@ Required pattern for SessionCard batch tests:
 ### File Locations
 
 **UI Layer (32 files):**
-- `ui/GrammarMateApp.kt` - Main navigation coordinator (1,321 lines)
-- `ui/AppRoot.kt` - Application entry point (132 lines)
+- `ui/GrammarMateApp.kt` - Main navigation coordinator (1,998 lines)
+- `ui/AppRoot.kt` - Application entry point (65 lines)
 - `ui/Theme.kt` - Material 3 theme
-- `ui/TrainingViewModel.kt` - Central state holder (1,500+ lines)
+- `ui/TrainingViewModel.kt` - Central state holder (2,579 lines)
 - `ui/VerbDrillViewModel.kt` - Verb drill state
 - `ui/VocabDrillViewModel.kt` - Vocab drill state
 - `ui/VerbDrillScreen.kt` - Verb drill selection (200+ lines)
 - `ui/VocabDrillScreen.kt` - Vocab drill selection
 - `ui/DailyPracticeScreen.kt` - Daily practice coordinator
 - `ui/TrainingCardSession.kt` - Session card display
-- `ui/screens/HomeScreen.kt` - Main dashboard (415 lines)
+- `ui/screens/HomeScreen.kt` - Main dashboard (971 lines)
 - `ui/screens/LessonRoadmapScreen.kt` - Lesson selection
 - `ui/screens/TrainingScreen.kt` - Card practice (600+ lines)
 - `ui/screens/LadderScreen.kt` - Mastery ladder

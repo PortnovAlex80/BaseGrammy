@@ -7,9 +7,50 @@
 
 ---
 
+## Re-verification Addendum (2026-06-13)
+
+> The quantitative metrics in this audit and the W1/W2/W3 documents were re-verified against the
+> current codebase on **2026-06-13** (audit was authored 2026-05-22; the separate
+> `architectural-analysis-report.md` was authored 2026-06-02). File sizes had drifted in two waves;
+> all stale counts below were normalized to verified current values.
+
+**Canonical current metrics (verified 2026-06-13):**
+
+| Artifact | Audit (2026-05-22) | Report (2026-06-02) | **Actual (2026-06-13)** |
+|----------|--------------------|---------------------|-------------------------|
+| `TrainingViewModel.kt` | 1,570 | 2,277 | **2,579** (`class` @ line 105) |
+| `GrammarMateApp.kt` | 1,321 | 1,920 | **1,998** (`fun GrammarMateApp` @ 138) |
+| `SessionRunner.kt` | 1,240 | 1,310 | **1,416** (`class` @ 51) |
+| `VerbDrillViewModel.kt` | 1,017 | — | **1,035** (`class` @ 44) |
+| Concrete store classes | "15 YAML stores" | — | **15 `*Impl`** (audit figure is accurate; ~19 classes match `*Store` incl. `StoreFactory` + non-`Impl` stores) |
+| `@Deprecated` methods | 8 | — | **6** |
+| TODO / FIXME | "Zero" | — | **1 TODO** (intentional reserved-pack note, `LessonStore.kt:191`), 0 FIXME |
+
+**Key delta since audit:** `TrainingViewModel` grew **+933 lines (1646 → 2579, +57%)** in ~3 weeks.
+The growth is attributable to the **pack-scoped migration** (commits `1eeda60` "full pack-scoped
+mastery isolation + v1→v2 migration", `37c3dda` "VocabProgressStore pack-scoped", `ee22a42` pack
+tiles UI, plus several lesson-completion fixes) being implemented **directly inside the god-object
+ViewModel** rather than via the use-case layer proposed in W3. This is exactly the trajectory W2
+Risk #1 warned against — the risk has materialized and intensified.
+
+**W3 (clean architecture: `domain/` + use cases + repositories) status: still NOT started.** No
+`domain/`/`application/`/`usecase` packages and no `*UseCase` classes exist. However, substantial
+decomposition HAS already happened via the `feature/` layer (27 files: Runner/Coordinator/Calculator
+with sealed `Result`/`Event` commands) and pure-logic classes in `data/` (`FlowerCalculator`,
+`MixedReviewScheduler`, `CefrCalculator`, `LessonLadderCalculator`, `Normalization`). The current
+pattern is best described as **feature-decomposed MVVM with a command/result pattern**, mid-migration
+— not a pure god object, and not yet clean architecture.
+
+**What was normalized in this pass:** stale line counts and `file:line` evidence ranges across
+`architectural-analysis-report.md` + all `audit/*.md` (W1-A1, W1-A2, W1-A5, W1-A9, W2-A2, W2-A5,
+W2-A9, W3, and this roadmap); the "Zero TODO/FIXME" claims in W1-A9/W2-A9. Qualitative risk
+conclusions remain valid and, for the god-object risk, have strengthened.
+
+---
+
 ## Executive Summary
 
-GrammarMate suffers from accumulated architectural debt after 3+ years of iterative development. The audit revealed **121 architectural risks** across 9 areas, with **32 HIGH-risk issues** requiring immediate attention. The primary problems are god objects (TrainingViewModel: 1,570 lines), business logic embedded in UI callbacks, state mutation scattered across 8+ locations, and zero test coverage for critical business rules.
+GrammarMate suffers from accumulated architectural debt after 3+ years of iterative development. The audit revealed **121 architectural risks** across 9 areas, with **32 HIGH-risk issues** requiring immediate attention. The primary problems are god objects (TrainingViewModel: 2,579 lines), business logic embedded in UI callbacks, state mutation scattered across 8+ locations, and zero test coverage for critical business rules.
 
 **We recommend a 5-phase incremental refactoring over 6-8 months** that prioritizes test coverage first, then extracts business logic to pure Kotlin, creates application orchestration layers, and finally consolidates infrastructure. This approach minimizes risk through small, safe PRs while preserving all user-visible behavior.
 
@@ -32,10 +73,10 @@ GrammarMate suffers from accumulated architectural debt after 3+ years of iterat
 
 ### Top 5 Problems (by Severity)
 
-#### 1. TrainingViewModel God Object (1,570 lines)
+#### 1. TrainingViewModel God Object (2,579 lines)
 **Severity:** CRITICAL  
 **Impact:** Violates single responsibility, impossible to test, state mutated in 8+ locations  
-**Location:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt:1-1570`  
+**Location:** `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt:1-2579`  
 **Blast Radius:** Entire training flow, all features depend on this class  
 **Risk Level:** HIGH - Any change risks breaking unrelated features
 
@@ -94,7 +135,7 @@ GrammarMate suffers from accumulated architectural debt after 3+ years of iterat
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           Compose UI Layer                           │
-│ GrammarMateApp.kt (1,321 lines)                                     │
+│ GrammarMateApp.kt (1,998 lines)                                     │
 │ - Business logic in callbacks                                       │
 │ - Session coordination                                              │
 │ - Dialog state management                                           │
@@ -105,13 +146,13 @@ GrammarMate suffers from accumulated architectural debt after 3+ years of iterat
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Presentation Layer                           │
-│ TrainingViewModel (1,570 lines) ──────┐                            │
+│ TrainingViewModel (2,579 lines) ──────┐                            │
 │ - ALL app state (25+ fields)          │                            │
 │ - Business rules (mastery, SRS)       │    VerbDrillViewModel      │
-│ - State mutation (currentIndex × 8)   │    (1,017 lines)           │
+│ - State mutation (currentIndex × 8)   │    (1,035 lines)           │
 │ - Direct store access                 │                            │
 │ ┌─────────────────────────────────┐  │                            │
-│ │ SessionRunner (1,240 lines)     │  │                            │
+│ │ SessionRunner (1,416 lines)     │  │                            │
 │ │ - Event callbacks               │  │                            │
 │ └─────────────────────────────────┘  │                            │
 └─────────────────────────────────────────────────────────────────────┘
@@ -358,8 +399,8 @@ GrammarMate suffers from accumulated architectural debt after 3+ years of iterat
   - `HandleBossBattleUseCase`
   - (10+ use cases total)
 - ViewModel size reduced by 50%+:
-  - TrainingViewModel: 1,570 → ~800 lines
-  - VerbDrillViewModel: 1,017 → ~500 lines
+  - TrainingViewModel: 2,579 → ~800 lines
+  - VerbDrillViewModel: 1,035 → ~500 lines
 - 30+ integration tests passing
 
 **Risks:** MEDIUM (touches ViewModels, requires careful testing)
@@ -479,8 +520,8 @@ GrammarMate suffers from accumulated architectural debt after 3+ years of iterat
   - Unused helper classes
   - Deprecated migration methods
 - God object decomposition complete:
-  - TrainingViewModel: 1,570 → ~200 lines
-  - VerbDrillViewModel: 1,017 → ~300 lines
+  - TrainingViewModel: 2,579 → ~200 lines
+  - VerbDrillViewModel: 1,035 → ~300 lines
   - DailyPracticeCoordinator: deleted (logic in use cases)
   - ProgressTracker: deleted (logic in domain services)
 - Documentation updated:
@@ -774,8 +815,8 @@ GrammarMate suffers from accumulated architectural debt after 3+ years of iterat
 
 **File references for all claims in this roadmap:**
 
-- TrainingViewModel size: `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt:1-1570`
-- VerbDrillViewModel size: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:1-1017`
+- TrainingViewModel size: `app/src/main/java/com/alexpo/grammermate/ui/TrainingViewModel.kt:1-2579`
+- VerbDrillViewModel size: `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt:1-1035`
 - State mutation scatter: `TrainingViewModel.kt` (8+ locations mutate `currentIndex`)
 - Business logic in UI: `GrammarMateApp.kt:446-456` (verb drill coordination)
 - Silent parser errors: `CsvParser.kt:25-27` (silent skip on malformed CSV)

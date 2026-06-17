@@ -43,7 +43,7 @@
 
 ### VerbDrillViewModel
 
-**File:** `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt` (1017 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/VerbDrillViewModel.kt` (1035 lines)
 
 **Key Responsibilities:**
 - Card loading from CSV files (via `VerbDrillCsvParser`)
@@ -82,13 +82,13 @@ private var tenseInfoMap: Map<String, TenseInfo> = emptyMap()
 - `injectTestCards(cards: List<VerbDrillCard>)` - Line 68: Test-only card injection
 - Constructor `VerbDrillViewModel(application, testStore)` - Line 59: Test-only store injection
 
-**File Evidence:** `VerbDrillViewModel.kt:44-1017`
+**File Evidence:** `VerbDrillViewModel.kt:44-1035`
 
 ---
 
 ### VocabDrillViewModel
 
-**File:** `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillViewModel.kt` (536 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/ui/VocabDrillViewModel.kt` (550 lines)
 
 **Key Responsibilities:**
 - Word loading from CSV files (via `ItalianDrillVocabParser`)
@@ -130,7 +130,7 @@ private val ratingIntervalDelta = mapOf(
 )
 ```
 
-**File Evidence:** `VocabDrillViewModel.kt:30-536`
+**File Evidence:** `VocabDrillViewModel.kt:30-550`
 
 ---
 
@@ -138,7 +138,7 @@ private val ratingIntervalDelta = mapOf(
 
 #### VerbDrillStore
 
-**File:** `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt` (376 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/data/VerbDrillStore.kt` (313 lines)
 
 **Data Structures:**
 ```kotlin
@@ -186,7 +186,7 @@ data class VerbDrillLastSessionState(
 
 #### WordMasteryStore
 
-**File:** `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt` (189 lines)
+**File:** `app/src/main/java/com/alexpo/grammermate/data/WordMasteryStore.kt` (199 lines)
 
 **Data Structures:**
 ```kotlin
@@ -215,7 +215,7 @@ data class WordMasteryState(
 - In-memory cache (`cache`), loaded on first access
 - Cache invalidation via `invalidateCache()`
 
-**File Evidence:** `WordMasteryStore.kt:9-189`
+**File Evidence:** `WordMasteryStore.kt:9-199`
 
 ---
 
@@ -496,9 +496,9 @@ session = session.copy(
 ### Architectural Concerns
 
 1. **ViewModel Size (VerbDrillViewModel):**
-   - **Issue:** 1017 lines, violates CLAUDE.md guidance ("~1500 lines. Decompose helpers to `feature/` when adding logic")
+   - **Issue:** 1035 lines, violates CLAUDE.md guidance ("~1500 lines. Decompose helpers to `feature/` when adding logic")
    - **Risk:** Hard to maintain, test, and understand
-   - **Evidence:** `VerbDrillViewModel.kt:1-1017`
+   - **Evidence:** `VerbDrillViewModel.kt:1-1035`
 
 2. **No Progress Integration:**
    - **Issue:** Both drills have separate progress systems, don't integrate with main `ProgressStore`
@@ -603,7 +603,7 @@ session = session.copy(
 - Both support bad sentence flagging
 
 **Major risks:**
-- VerbDrillViewModel size (1017 lines)
+- VerbDrillViewModel size (1035 lines)
 - Inconsistent UX (VocabDrill lacks SessionCard)
 - No progress integration with main system
 - Complex pack scoping logic

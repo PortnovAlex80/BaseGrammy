@@ -10,7 +10,7 @@
 
 ---
 
-### 🔴 Проблема #1: God Object TrainingViewModel (2277 строк)
+### 🔴 Проблема #1: God Object TrainingViewModel (2579 строк)
 
 **Файл:** `ui/TrainingViewModel.kt`
 
@@ -124,7 +124,7 @@ combine(_coreState, audioCoordinator.audioState, storyRunner.stateFlow,
 - `subLessonFinishedToken` (integer) связывает `SessionRunner` с `GrammarMateApp` — implicit coupling через наблюдение за числом
 - 7 `BackHandler`-ов на разных уровнях — порядок регистрации определяет приоритет
 
-**GrammarMateApp.kt — 1920 строк** — compositional god-object: навигация + диалоги + screen-контент + helper-функции.
+**GrammarMateApp.kt — 1998 строк** — compositional god-object: навигация + диалоги + screen-контент + helper-функции.
 
 ---
 
@@ -433,7 +433,7 @@ BossBattleRunner, or GrammarMateApp:
 
 9. **`TrainingUiState` — 120+ полей.** Любое добавление поля требует обновления всех `copy()` вызовов.
 
-10. **`GrammarMateApp.kt` — 1920 строк.** Compositional god-object.
+10. **`GrammarMateApp.kt` — 1998 строк.** Compositional god-object.
 
 11. **15+ YAML stores без единой транзакции.**
 
@@ -442,8 +442,8 @@ BossBattleRunner, or GrammarMateApp:
 ## Ключевые файлы
 
 ### Ядро (самые хрупкие)
-- `ui/TrainingViewModel.kt` — центральный god-object, 2277 строк
-- `ui/GrammarMateApp.kt` — навигация + диалоги, 1920 строк
+- `ui/TrainingViewModel.kt` — центральный god-object, 2579 строк
+- `ui/GrammarMateApp.kt` — навигация + диалоги, 1998 строк
 - `data/Models.kt` — все модели данных, 778 строк
 
 ### DI и Stores
@@ -452,7 +452,7 @@ BossBattleRunner, or GrammarMateApp:
 - `data/AtomicFileWriter.kt` — атомарная запись
 
 ### Feature layer
-- `feature/training/SessionRunner.kt` — управление сессией, 1310 строк
+- `feature/training/SessionRunner.kt` — управление сессией, 1416 строк
 - `feature/daily/DailyPracticeCoordinator.kt` — daily practice
 - `feature/progress/ProgressTracker.kt` — трекинг прогресса
 
@@ -476,7 +476,7 @@ BossBattleRunner, or GrammarMateApp:
 
 ## Резюме
 
-**Причина ломания не в отсутствии регрессионных проверок — а в god-object на 2277 строк с 12 ответственностями, 6 конкурирующими flow, и shotgun-surgery reset-каскадом в 7 местах, при нулевом тестовом покрытии ViewModel и навигации.** Pipelines и acceptance criteria не помогают потому, что хрупкость структурная — нет стен между доменами, и любое изменение каскадом идёт через весь god-object.
+**Причина ломания не в отсутствии регрессионных проверок — а в god-object на 2579 строк с 12 ответственностями, 6 конкурирующими flow, и shotgun-surgery reset-каскадом в 7 местах, при нулевом тестовом покрытии ViewModel и навигации.** Pipelines и acceptance criteria не помогают потому, что хрупкость структурная — нет стен между доменами, и любое изменение каскадом идёт через весь god-object.
 
 **Следующий шаг:** установить `maestro-mcp` плагин и написать YAML-флоу для критических user journeys — это даст реальные кликабельные автотесты, которые агент не сможет "пропустить".
 

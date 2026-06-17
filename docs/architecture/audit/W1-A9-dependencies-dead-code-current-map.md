@@ -13,11 +13,11 @@ This analysis maps the current dependency graph and identifies potential dead co
 
 **Key Findings:**
 - **HIGH Confidence Dead Code:** 2 unused navigation routes (ELITE, VOCAB)
-- **MEDIUM Confidence Dead Code:** 8 deprecated methods for pack-scoped migration
+- **MEDIUM Confidence Dead Code:** 6 deprecated methods for pack-scoped migration
 - **LOW Confidence Dead Code:** 12 potentially unused methods requiring runtime verification
 - **Architectural Debt:** Legacy navigation patterns and migration code from pre-pack-scoped architecture
 - **Zero Commented-Out Code:** No significant commented-out code blocks found
-- **Zero TODO/FIXME:** No TODO or FIXME comments found (clean codebase)
+- **Near-zero TODO/FIXME:** 1 TODO (intentional reserved-pack re-enable note, `LessonStore.kt:191`), 0 FIXME (clean codebase)
 
 ---
 
@@ -358,9 +358,9 @@ class AppContainer(private val application: Application) {
 
 ### Summary
 
-**Search Results:** ZERO TODO or FIXME comments found
+**Search Results:** 1 TODO comment found (intentional reserved-pack note), 0 FIXME
 
-**Search Pattern:** `grep -r "TODO\|FIXME"` returned no matches in Kotlin files
+**Search Pattern:** `grep -rn "TODO" app/src/main/java` → 1 match (`LessonStore.kt:191`: "TODO: re-enable when Italian verb groups pack is needed"); `grep -rn "FIXME"` → 0 matches
 
 **Assessment:** Excellent code hygiene - no tracked technical debt in code comments
 
@@ -606,7 +606,7 @@ The BaseGrammy codebase demonstrates excellent architecture with minimal dead co
 3. **Low-confidence monitoring:** StoreFactory cache methods (keep for safety)
 
 The codebase shows strong engineering discipline with:
-- Zero TODO/FIXME comments
+- Near-zero TODO/FIXME (1 intentional reserved-pack note)
 - Zero commented-out code blocks
 - Clear separation of concerns
 - Comprehensive deprecation warnings

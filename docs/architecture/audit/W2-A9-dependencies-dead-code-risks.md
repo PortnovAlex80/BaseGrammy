@@ -788,17 +788,17 @@ private fun checkAndMigrate() {
 
 ## LOW Risk Issues
 
-### Risk 15: Zero TODO/FIXME Comments
+### Risk 15: Near-Zero TODO/FIXME Comments
 
 **Title:** No tracked technical debt in code comments
 
 **Current behavior:**
-- Zero TODO or FIXME comments found in codebase
+- 1 TODO (intentional reserved-pack re-enable note, `LessonStore.kt:191`), 0 FIXME in codebase
 - Technical debt tracked externally (GitHub issues, specs)
 - No inline markers for future work
 
 **Evidence:**
-- Search: `grep -r "TODO\|FIXME"` returned no matches
+- Search: `grep -rn "TODO" app/src/main/java` → 1 match (`LessonStore.kt:191`, reserved-pack note); `grep -rn "FIXME"` → 0 matches
 - Debt tracking: External via TASK-XXX issues and specification documents
 
 **Why this is a problem:**
@@ -1117,7 +1117,7 @@ fun evict(packId: String?) {
 The BaseGrammy codebase demonstrates **excellent architectural health** with minimal technical debt:
 
 **Positive Findings:**
-- Zero TODO/FIXME comments
+- Near-zero TODO/FIXME (1 intentional reserved-pack note)
 - Zero commented-out code blocks
 - Clear deprecation warnings
 - Well-documented migration paths
