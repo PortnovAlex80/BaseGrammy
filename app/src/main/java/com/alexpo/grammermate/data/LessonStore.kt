@@ -23,6 +23,8 @@ interface LessonStore {
 
     fun getLanguages(): List<Language>
 
+    fun getLanguagesWithPacks(): List<Language>
+
     fun addLanguage(name: String): Language
 
     fun getInstalledPacks(): List<LessonPack>
@@ -188,7 +190,6 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1_DRILLS", "grammarmate/packs/EN_WORD_ORDER_A1_DRILLS.zip"),
         // TODO: re-enable when Italian verb groups pack is needed
         // LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip"),
-        LanguageManager.DefaultPack("ITALIAN_EXPRESS", "grammarmate/packs/ITALIAN_EXPRESS.zip"),
         LanguageManager.DefaultPack("ITALIAN_SHORT", "grammarmate/packs/ITALIAN_EXPRESS_SHORT.zip"),
         LanguageManager.DefaultPack("ITALIAN_FULL_COURSE", "grammarmate/packs/ITALIAN_FULL_COURSE.zip"),
         // Reserved: Greek, German, Chinese, Russian packs (backup commit 7ca026a)
@@ -257,6 +258,8 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     // ── Language & pack queries ──────────────────────────────────────────
 
     override fun getLanguages(): List<Language> = languageManager.getLanguages()
+
+    override fun getLanguagesWithPacks(): List<Language> = languageManager.getLanguagesWithPacks()
 
     override fun addLanguage(name: String): Language = languageManager.addLanguage(name)
 

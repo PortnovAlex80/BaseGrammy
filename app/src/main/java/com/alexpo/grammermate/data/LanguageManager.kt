@@ -152,6 +152,12 @@ internal class LanguageManager(
         }
     }
 
+    fun getLanguagesWithPacks(): List<Language> {
+        val allLanguages = getLanguages()
+        val packLanguageIds = getInstalledPacks().map { it.languageId.value }.toSet()
+        return allLanguages.filter { it.id.value in packLanguageIds }
+    }
+
     fun addLanguage(name: String): Language {
         ensureSeedData()
         val normalized = name.trim()
