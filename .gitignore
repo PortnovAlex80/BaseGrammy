@@ -97,3 +97,14 @@ lesson_packs/
 .maestro/output/
 pairs_preview.txt
 lesson_*.csv
+
+# Built APKs (never commit — ~130 MB each)
+*.apk
+
+# Background-vocab scratch / staging (zip-build mirror, coverage scripts, wav previews)
+/.bg_vocab_scratch/
+/preview_rows_1_10/
+/_sample4.txt
+
+# Backup snapshots with non-.bak suffix (e.g. *.bak_batch6)
+*.bak_*
