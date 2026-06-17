@@ -296,14 +296,30 @@ class DeckPlayer(
     }
 
     /**
-     * Stop playback. Cancels the play job, cuts any in-flight audio, and clears
-     * [DeckState.isPlaying]. [DeckState.currentIndex] is preserved so a subsequent [play]
-     * resumes from the same word.
+     * Stop playback and reset the deck to its first word.
+     *
+     * Cancels the play job, cuts any in-flight audio, clears [DeckState.isPlaying] and
+     * moves the cursor back to index 0. Standard media-player semantics: Stop returns to
+     * the beginning; [pause] keeps the position so [resume] can continue. Without the
+     * reset, a listener who reached a late word has no way back to the top of a large
+     * deck except tapping prev thousands of times.
+     *
+     * The reset is also persisted via [BgVocabPositionStore] so a service restart resumes
+     * from the start rather than from the word that was playing when Stop was pressed.
      */
     fun stop() {
         cancelPlayJob(cutAudio = true)
-        _state.value = _state.value.copy(isPlaying = false, isPaused = false)
-        Log.d(TAG, "stop() — playback halted at index ${_state.value.currentIndex}")
+        val first = words.firstOrNull()
+        _state.value = _state.value.copy(
+            currentIndex = 0,
+            currentWord = first,
+            isPlaying = false,
+            isPaused = false
+        )
+        if (first != null) {
+            positionStore?.setLastWord(first.wordIt)
+        }
+        Log.d(TAG, "stop() — playback halted, deck reset to start (index 0)")
     }
 
     // ── Internal ──────────────────────────────────────────────────────────

@@ -251,7 +251,7 @@ class DeckPlayerTest {
     }
 
     @Test
-    fun stop_preservesCurrentIndex() = runBlocking {
+    fun stop_resetsToStart() = runBlocking {
         val (player, _) = newPlayer()
         player.setWords(listOf(word(1), word(2), word(3)))
         player.seekTo(2)
@@ -260,9 +260,11 @@ class DeckPlayerTest {
         delay(20)
         player.stop()
 
-        assertEquals(2, player.state.value.currentIndex)
+        // Stop = full reset to the first word (media-player semantics);
+        // pause is the position-preserving variant.
+        assertEquals(0, player.state.value.currentIndex)
         assertNotNull(player.state.value.currentWord)
-        assertEquals(3, player.state.value.currentWord?.rank)
+        assertEquals(1, player.state.value.currentWord?.rank)
         assertFalse(player.state.value.isPlaying)
     }
 }
