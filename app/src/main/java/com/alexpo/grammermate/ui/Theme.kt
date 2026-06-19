@@ -2,6 +2,8 @@ package com.alexpo.grammermate.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -10,6 +12,12 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.alexpo.grammermate.ui.components.AppBackground
 
 // =====================================================================
 // GrammarMateColors — semantic color palette with light/dark variants
@@ -54,65 +62,69 @@ data class GrammarMateColors(
     val bossSilver: Color,
     val bossGold: Color,
     // Destructive actions (SettingsScreen)
-    val destructiveRed: Color
+    val destructiveRed: Color,
+    // Glass token — elevated translucent surface for glassmorphism cards (API 31+ blur target)
+    val surfaceElevated: Color
 )
 
-/** Light-mode semantic colors (matches original hardcoded vals). */
+/** Light-mode semantic colors — refreshed warm palette, emerald primary. */
 val LightGrammarMateColors = GrammarMateColors(
-    correctGreen = Color(0xFF2E7D32),
+    correctGreen = Color(0xFF0F7C66),
     incorrectRed = Color(0xFFC62828),
-    masteryGreen = Color(0xFF2E7D32),
-    progressGreen = Color(0xFF4CAF50),
-    progressTrackGreen = Color(0xFFC8E6C9),
-    progressFastGreen = Color(0xFF43A047),
+    masteryGreen = Color(0xFF0F7C66),
+    progressGreen = Color(0xFF0F7C66),
+    progressTrackGreen = Color(0xFFCFEFE5),
+    progressFastGreen = Color(0xFF0F7C66),
     speedSlowRed = Color(0xFFE53935),
-    speedMediumYellow = Color(0xFFFDD835),
+    speedMediumYellow = Color(0xFFF2A900),
     progressLabelWhite = Color.White,
     progressTrackGray = Color(0xFFE0E0E0),
-    srsAgainBackground = Color(0xFFFFEBEE),
-    srsAgainText = Color(0xFFE53935),
-    srsHardBackground = Color(0xFFFFF3E0),
-    srsHardText = Color(0xFFFF9800),
-    srsGoodBackground = Color(0xFFE8F5E9),
-    srsGoodText = Color(0xFF4CAF50),
-    srsEasyBackground = Color(0xFFE3F2FD),
-    srsEasyText = Color(0xFF2196F3),
-    vocabIntervalOrange = Color(0xFFE65100),
-    vocabCorrectBackground = Color(0xFFE8F5E9),
-    vocabIncorrectBackground = Color(0xFFFFEBEE),
+    srsAgainBackground = Color(0xFFFCE4E4),
+    srsAgainText = Color(0xFFC62828),
+    srsHardBackground = Color(0xFFFFF1DC),
+    srsHardText = Color(0xFFB26A00),
+    srsGoodBackground = Color(0xFFDCF2EC),
+    srsGoodText = Color(0xFF0F7C66),
+    srsEasyBackground = Color(0xFFE4EDF7),
+    srsEasyText = Color(0xFF1E6FB8),
+    vocabIntervalOrange = Color(0xFFB26A00),
+    vocabCorrectBackground = Color(0xFFDCF2EC),
+    vocabIncorrectBackground = Color(0xFFFCE4E4),
     bossBronze = Color(0xFFCD7F32),
-    bossSilver = Color(0xFFC0C0C0),
-    bossGold = Color(0xFFFFD700),
-    destructiveRed = Color(0xFFB00020)
+    bossSilver = Color(0xFF8A938C),
+    bossGold = Color(0xFFB8860B),
+    destructiveRed = Color(0xFFB00020),
+    surfaceElevated = Color(0xFFFFFFFF)
 )
 
-/** Dark-mode semantic colors — muted backgrounds, brighter foregrounds. */
+/** Dark-mode semantic colors — Premium Dark / Emerald. Muted glass backgrounds, brighter foregrounds. */
 val DarkGrammarMateColors = GrammarMateColors(
-    correctGreen = Color(0xFF66BB6A),
-    incorrectRed = Color(0xFFEF5350),
-    masteryGreen = Color(0xFF66BB6A),
-    progressGreen = Color(0xFF66BB6A),
-    progressTrackGreen = Color(0xFF2E4A2F),
-    progressFastGreen = Color(0xFF66BB6A),
-    speedSlowRed = Color(0xFFEF5350),
-    speedMediumYellow = Color(0xFFFFEE58),
+    correctGreen = Color(0xFF34D6B4),
+    incorrectRed = Color(0xFFFF8A80),
+    masteryGreen = Color(0xFF34D6B4),
+    progressGreen = Color(0xFF34D6B4),
+    progressTrackGreen = Color(0xFF1E2B25),
+    progressFastGreen = Color(0xFF5BE8CC),
+    speedSlowRed = Color(0xFFFF8A80),
+    speedMediumYellow = Color(0xFFFFD166),
     progressLabelWhite = Color.White,
-    progressTrackGray = Color(0xFF3A3A3A),
-    srsAgainBackground = Color(0xFF3A1B1B),
-    srsAgainText = Color(0xFFEF5350),
-    srsHardBackground = Color(0xFF3A2E1B),
-    srsHardText = Color(0xFFFF8A65),
-    srsGoodBackground = Color(0xFF1B3A1D),
-    srsGoodText = Color(0xFF66BB6A),
-    srsEasyBackground = Color(0xFF1A2E3A),
-    srsEasyText = Color(0xFF64B5F6),
-    vocabIntervalOrange = Color(0xFFFF8A65),
-    vocabCorrectBackground = Color(0xFF1B3A1D),
-    vocabIncorrectBackground = Color(0xFF3A1B1B),
+    progressTrackGray = Color(0xFF243329),
+    srsAgainBackground = Color(0xFF33201C),
+    srsAgainText = Color(0xFFFF8A80),
+    srsHardBackground = Color(0xFF332A1C),
+    srsHardText = Color(0xFFFFB74D),
+    srsGoodBackground = Color(0xFF1B3A2E),
+    srsGoodText = Color(0xFF34D6B4),
+    srsEasyBackground = Color(0xFF1C2A33),
+    srsEasyText = Color(0xFF7BC8F0),
+    vocabIntervalOrange = Color(0xFFFFB74D),
+    vocabCorrectBackground = Color(0xFF1B3A2E),
+    vocabIncorrectBackground = Color(0xFF33201C),
     bossBronze = Color(0xFFCD7F32),
-    bossSilver = Color(0xFFC0C0C0),
-    bossGold = Color(0xFFFFD700),
-    destructiveRed = Color(0xFFCF6679)
+    bossSilver = Color(0xFFB8C2BC),
+    bossGold = Color(0xFFFFD166),
+    destructiveRed = Color(0xFFFF8A80),
+    surfaceElevated = Color(0xFF243329)
 )
 
 /** CompositionLocal that provides the current [GrammarMateColors]. */
@@ -189,42 +201,85 @@ val BossGold: Color
 val DestructiveRed: Color
     @Composable @ReadOnlyComposable get() = LocalGrammarMateColors.current.destructiveRed
 
-// --- Light color scheme (unchanged from original) ---
+// --- Light color scheme — refreshed warm palette ---
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF2F5D62),
-    onPrimary = Color.White,
+    primary = Color(0xFF0F7C66),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFCFEFE5),
+    onPrimaryContainer = Color(0xFF00382B),
     secondary = Color(0xFF5E8B7E),
-    onSecondary = Color.White,
-    background = Color(0xFFF7F4F1),
-    onBackground = Color(0xFF1F1F1F),
-    surface = Color.White,
-    onSurface = Color(0xFF1F1F1F)
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFDDE9E3),
+    onSecondaryContainer = Color(0xFF1B3B31),
+    background = Color(0xFFF4F1EC),
+    onBackground = Color(0xFF1B2420),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1B2420),
+    surfaceVariant = Color(0xFFE8E4DD),
+    onSurfaceVariant = Color(0xFF5A6B63),
+    outline = Color(0xFFC9C2B6),
+    outlineVariant = Color(0xFFDED8CC),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFF9DEDC),
+    onErrorContainer = Color(0xFF410E0B)
 )
 
-// --- Dark color scheme ---
+// --- Dark color scheme — Premium Dark / Emerald ---
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF80CBC4),
-    onPrimary = Color(0xFF003731),
-    secondary = Color(0xFF80B5A9),
-    onSecondary = Color(0xFF00332B),
-    background = Color(0xFF1A1C1E),
-    onBackground = Color(0xFFE2E1DF),
-    surface = Color(0xFF1A1C1E),
-    onSurface = Color(0xFFE2E1DF),
-    surfaceVariant = Color(0xFF2C2E30),
-    onSurfaceVariant = Color(0xFFC3C7C5),
-    error = Color(0xFFCF6679),
+    primary = Color(0xFF34D6B4),
+    onPrimary = Color(0xFF042822),
+    primaryContainer = Color(0xFF0B4A3C),
+    onPrimaryContainer = Color(0xFF7FEFD8),
+    secondary = Color(0xFF5E8B7E),
+    onSecondary = Color(0xFF04130F),
+    secondaryContainer = Color(0xFF1E2B25),
+    onSecondaryContainer = Color(0xFFCFE6DC),
+    background = Color(0xFF0E1512),
+    onBackground = Color(0xFFE8EFEB),
+    surface = Color(0xFF15201B),
+    onSurface = Color(0xFFE8EFEB),
+    surfaceVariant = Color(0xFF1E2B25),
+    onSurfaceVariant = Color(0xFF9DB0A6),
+    outline = Color(0xFF2A3A33),
+    outlineVariant = Color(0xFF1C2924),
+    error = Color(0xFFEF5350),
     onError = Color(0xFF690005),
-    errorContainer = Color(0xFF690005),
-    onErrorContainer = Color(0xFFCF6679),
-    primaryContainer = Color(0xFF004D46),
-    onPrimaryContainer = Color(0xFF9CF0E4),
-    secondaryContainer = Color(0xFF004A42),
-    onSecondaryContainer = Color(0xFFA5F0E0),
-    outline = Color(0xFF8D9190),
-    outlineVariant = Color(0xFF424746)
+    errorContainer = Color(0xFF3A1B1B),
+    onErrorContainer = Color(0xFFFFB4AB)
+)
+
+// =====================================================================
+// Shapes — unified radii across the app (formerly M3 defaults)
+// =====================================================================
+
+val GrammarMateShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
+// =====================================================================
+// Typography — M3 scale retuned: tighter headings, medium body
+// =====================================================================
+
+private val GrammarMateTypography = Typography(
+    headlineLarge = TextStyle(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    headlineMedium = TextStyle(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    headlineSmall = TextStyle(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    titleLarge = TextStyle(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    titleMedium = TextStyle(fontWeight = FontWeight.SemiBold, letterSpacing = (-0.25).sp),
+    titleSmall = TextStyle(fontWeight = FontWeight.SemiBold),
+    bodyLarge = TextStyle(fontWeight = FontWeight.Medium),
+    bodyMedium = TextStyle(fontWeight = FontWeight.Medium),
+    bodySmall = TextStyle(fontWeight = FontWeight.Normal),
+    labelLarge = TextStyle(fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp),
+    labelSmall = TextStyle(fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
 )
 
 @Composable
@@ -248,7 +303,13 @@ fun GrammarMateTheme(
     CompositionLocalProvider(LocalGrammarMateColors provides grammarMateColors) {
         MaterialTheme(
             colorScheme = colorScheme,
-            content = content
+            shapes = GrammarMateShapes,
+            typography = GrammarMateTypography,
+            content = {
+                AppBackground(useDarkTheme = useDarkTheme) {
+                    content()
+                }
+            }
         )
     }
 }

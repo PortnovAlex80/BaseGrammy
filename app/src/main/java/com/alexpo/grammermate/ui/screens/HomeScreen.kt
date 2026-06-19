@@ -73,6 +73,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.LinearProgressIndicator
 import com.alexpo.grammermate.ui.PackTileUi
+import com.alexpo.grammermate.ui.components.emeraldGlow
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 enum class LessonTileState {
     SEED,
@@ -572,7 +574,9 @@ fun PackTileCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -649,7 +653,12 @@ fun VerbDrillEntryTile(
         modifier = modifier
             .height(64.dp)
             .testTag("verb_drill_entry_tile")
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -659,13 +668,25 @@ fun VerbDrillEntryTile(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.FitnessCenter,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FitnessCenter,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = stringResource(R.string.home_verb_drill), fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = stringResource(R.string.home_verb_drill),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -682,9 +703,11 @@ fun VocabDrillEntryTile(
             .height(64.dp)
             .testTag("vocab_drill_entry_tile")
             .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -694,13 +717,25 @@ fun VocabDrillEntryTile(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.MenuBook,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MenuBook,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = stringResource(R.string.home_flashcards), fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = stringResource(R.string.home_flashcards),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             if (masteredCount > 0) {
                 Text(
@@ -728,9 +763,11 @@ fun DailyPracticeEntryTile(
                 if (enabled) onClick()
                 else Toast.makeText(context, "Временно не доступно", Toast.LENGTH_SHORT).show()
             },
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -751,11 +788,19 @@ fun DailyPracticeEntryTile(
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
-            Icon(
-                Icons.Default.PlayArrow,
-                contentDescription = stringResource(R.string.home_start),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = stringResource(R.string.home_start),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -774,7 +819,12 @@ fun LessonTile(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(72.dp)
-                .clickable(onClick = onSelect)
+                .clickable(onClick = onSelect),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -787,7 +837,8 @@ fun LessonTile(
                 Icon(
                     imageVector = Icons.Default.FitnessCenter,
                     contentDescription = stringResource(R.string.home_verb_drill),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -805,14 +856,25 @@ fun LessonTile(
 
     val masteryPercent = flower?.masteryPercent ?: 0f
 
+    // Active/glow states: the next-available lesson and bloomed lessons get an emerald tint.
+    val isActive = tile.state == LessonTileState.UNLOCKED
+    val isBloomed = masteryPercent > 0f &&
+        tile.state != LessonTileState.LOCKED &&
+        tile.state != LessonTileState.UNLOCKED &&
+        !isEmpty
+
     // Empty tiles use a faded container
     val containerColor = if (isEmpty) {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+    } else if (isActive) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
     } else {
-        MaterialTheme.colorScheme.surface
+        MaterialTheme.colorScheme.surfaceVariant
     }
     val contentColor = if (isEmpty) {
         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    } else if (isActive) {
+        MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurface
     }
@@ -821,6 +883,7 @@ fun LessonTile(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
+            .then(if (isBloomed || isActive) Modifier.emeraldGlow(radius = 30.dp) else Modifier)
             .then(
                 if (isEmpty) Modifier
                 else Modifier.clickable {
@@ -831,10 +894,12 @@ fun LessonTile(
                     }
                 }
             ),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = containerColor,
             contentColor = contentColor
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -853,7 +918,8 @@ fun LessonTile(
                 Text(
                     text = "${(masteryPercent * 100).toInt()}%",
                     fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
