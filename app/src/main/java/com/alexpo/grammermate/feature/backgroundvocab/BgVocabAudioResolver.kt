@@ -68,28 +68,33 @@ class BgVocabAudioResolver(private val baseDir: File) {
     }
 
     /**
-     * **MVP / row-indexed Opus lookup.** The current Opus bank was generated against
-     * the **1-based row position** in the deck CSV (not the `rank` column — that mismatch
-     * is a generation bug; a rank-numbered bank will replace this later). Each clip is
-     * named `{lang}_r{row:06d}_f{fieldIndex}.opus` and lives under the same pack-scoped
-     * audio directory as the `.wav` clips.
+     * **Rank-indexed Opus lookup** against the pre-rendered Opus bank. The bank is named
+     * `{lang}_r{rank}_f{fieldIndex}.opus` (rank as a bare integer, NO zero-padding) and is
+     * keyed by the word's frequency RANK (the `rank` column of the deck CSV — ranks
+     * 2..12501 for the Italian deck), NOT by row position. This replaced the earlier
+     * row-indexed MVP bank, whose row-vs-rank mismatch caused wrong clips to play past the
+     * first few ranks.
      *
      * Convention:
      * ```
-     * drills/{packId}/bg_vocab/audio/{lang}_r{row:06d}_f{fieldIndex}.opus
+     * drills/{packId}/bg_vocab/audio/{lang}_r{rank}_f{fieldIndex}.opus
      * ```
      * - `lang` ∈ `{it, ru}` derived from the [SpeakSlot] (`*It` → `it`, `*Ru` → `ru`)
      * - `fieldIndex` via [slotToFieldIndex] (`f0`=word, `f1`=collo, `f2`=s1, …)
      *
+     * Note: rank is NOT zero-padded (the bank uses bare ints: `it_r2_f0.opus`,
+     * `it_r1114_f0.opus`). This differs from the legacy `.wav` clips ([fileFor]), which
+     * ARE 6-padded (`it_000002_word.wav`).
+     *
      * @return the Opus [File] if it exists on disk, or `null` (caller then tries
-     *  [fileFor] / falls back to TTS). The Ogg-Opus container is decoded natively by
-     *  Android `MediaPlayer` from API 21, so no extra decoder is needed.
+     *  [fileFor] for the legacy `.wav` clips / falls back to TTS). The Ogg-Opus container
+     *  is decoded natively by Android `MediaPlayer` from API 21, so no extra decoder is
+     *  needed.
      */
-    fun fileForRow(packId: String, row: Int, slot: SpeakSlot): File? {
+    fun fileForRank(packId: String, rank: Int, slot: SpeakSlot): File? {
         val lang = slotToFieldLang(slot).second
         val fIndex = slotToFieldIndex(slot)
-        val rowPadded = row.toString().padStart(6, '0')
-        val file = File(baseDir, "drills/$packId/bg_vocab/audio/${lang}_r${rowPadded}_f${fIndex}.opus")
+        val file = File(baseDir, "drills/$packId/bg_vocab/audio/${lang}_r${rank}_f${fIndex}.opus")
         return file.takeIf { it.exists() }
     }
 }

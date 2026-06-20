@@ -142,12 +142,11 @@ class DeckPlayer(
         for (item in plan) {
             val audioFile = audioResolver?.let { resolver ->
                 packId?.let { pid ->
-                    // MVP audio chain: row-indexed Opus bank (current audio is generated per
-                    // CSV row, so row == currentIndex + 1) → rank-indexed .wav clips → null
-                    // (caller falls back to TTS via Segment.Text). The play loop sets
-                    // currentIndex to this word's index before invoking us, so it is exact.
-                    val row = _state.value.currentIndex + 1
-                    resolver.fileForRow(pid, row, item.slot)
+                    // Audio chain: rank-indexed Opus bank (clips named by the word's
+                    // frequency rank) → legacy rank-indexed .wav clips → null (caller
+                    // falls back to TTS via Segment.Text). Keying by rank matches the
+                    // pre-rendered bank; word.rank comes straight from the deck CSV.
+                    resolver.fileForRank(pid, word.rank, item.slot)
                         ?: resolver.fileFor(pid, word.rank, item.slot)
                 }
             }
