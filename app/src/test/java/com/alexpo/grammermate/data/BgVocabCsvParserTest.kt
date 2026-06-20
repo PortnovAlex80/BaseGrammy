@@ -74,15 +74,17 @@ class BgVocabCsvParserTest {
 
     @Test
     fun parse_quotedFieldWithEscapedDoubleQuote_unescaped() {
-        val csv = """
-            $header
-            4,casa,дом,casa,"она сказала ""дом""",Vado a casa.,Я иду домой.,,,,,
-        """.trimIndent()
+        // NOTE: built with a normal escaped string (not a raw """ string) because the CSV
+        // cell "она сказала ""дом""" ends in a run of three double-quotes (дом"""), which
+        // would prematurely terminate a Kotlin raw string literal. \" keeps it unambiguous
+        // while preserving the exact CSV bytes the parser must handle.
+        val csv = header + "\n" +
+            "4,casa,дом,casa,\"она сказала \"\"дом\"\"\",Vado a casa.,Я иду домой.,,,,,"
 
         val rows = BgVocabCsvParser.parseString(csv)
 
         assertEquals(1, rows.size)
-        assertEquals("""она сказала "дом"""", rows[0].colloRu)
+        assertEquals("она сказала \"дом\"", rows[0].colloRu)
     }
 
     @Test

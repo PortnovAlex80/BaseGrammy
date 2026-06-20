@@ -51,6 +51,11 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+            // Android's unit-test JVM stubs throw on unmocked framework calls (e.g.
+            // android.util.Log.d reached via production parsers under test). Return the
+            // JVM default instead so pure-JVM tests that incidentally touch logging code
+            // don't crash — none of them assert on log output.
+            isReturnDefaultValues = true
         }
     }
     buildFeatures {
