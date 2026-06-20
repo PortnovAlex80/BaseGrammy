@@ -598,7 +598,18 @@ data class AudioState(
     val asrErrorMessage: String? = null,
     val audioPermissionDenied: Boolean = false,
     val isStoryPlaybackActive: Boolean = false,
-    val isStoryPlaybackPaused: Boolean = false
+    val isStoryPlaybackPaused: Boolean = false,
+    /**
+     * Download / import progress for the pre-rendered sound pack
+     * ([com.alexpo.grammermate.data.SoundPackManager]). Mirrors [ttsDownloadState].
+     */
+    val soundPackDownloadState: DownloadState = DownloadState.Idle,
+    /**
+     * Number of `*.opus` clips currently installed for the active pack's background-vocab
+     * audio bank. Refreshed by [com.alexpo.grammermate.ui.TrainingViewModel] on entry and
+     * whenever [soundPackDownloadState] becomes [DownloadState.Done].
+     */
+    val soundPackInstalledCount: Int = 0
 )
 
 data class DailyPracticeState(

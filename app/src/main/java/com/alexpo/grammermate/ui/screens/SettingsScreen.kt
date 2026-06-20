@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,6 +86,10 @@ fun SettingsSheet(
     onSetUseBluetoothMic: (Boolean) -> Unit = {},
     onStartAsrDownload: () -> Unit,
     onStartTtsDownload: () -> Unit = {},
+    onImportSoundPack: (android.net.Uri) -> Unit = {},
+    onDownloadSoundPack: () -> Unit = {},
+    onCancelSoundPackDownload: () -> Unit = {},
+    onRefreshSoundPackCount: () -> Unit = {},
     onResetAllProgress: () -> Unit,
     onSetHintLevel: (HintLevel) -> Unit,
     onSetThemeMode: (com.alexpo.grammermate.data.ThemeMode) -> Unit = {},
@@ -128,6 +133,15 @@ fun SettingsSheet(
     ) { uri ->
         if (uri != null) onRestoreBackup(uri)
     }
+    // SAF picker for importing a pre-rendered sound-pack ZIP.
+    val soundPackImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) onImportSoundPack(uri)
+    }
+    // Refresh the installed-clips count whenever the sheet is opened so the
+    // "Установлено клипов: N" line reflects the real on-disk state.
+    LaunchedEffect(Unit) { onRefreshSoundPackCount() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -456,6 +470,128 @@ fun SettingsSheet(
                         TextButton(onClick = { showResetGreenDialog = false }) { Text("Отмена") }
                     }
                 )
+            }
+
+            // Sound pack — pre-rendered background-vocab audio (import ZIP / download).
+            Text(
+                text = "Звуковой пакет фоновой озвучки",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Установлено клипов: ${state.audio.soundPackInstalledCount}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            // Both buttons are disabled while a download/extract is in flight,
+            // mirroring the TTS section gating.
+            val soundPackBusy = state.audio.soundPackDownloadState is DownloadState.Downloading ||
+                state.audio.soundPackDownloadState is DownloadState.Extracting ||
+                state.audio.soundPackDownloadState is DownloadState.Initializing
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("soundPackImport", "manual")
+                        soundPackImportLauncher.launch(
+                            arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !soundPackBusy
+                ) {
+                    Icon(Icons.Default.Upload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Импортировать из файла")
+                }
+                Button(
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("soundPackDownload", "manual")
+                        onDownloadSoundPack()
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !soundPackBusy
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Скачать с сервера")
+                }
+            }
+            // Cancel button only while busy.
+            if (soundPackBusy) {
+                OutlinedButton(
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.settingsChange("soundPackCancel", "manual")
+                        onCancelSoundPackDownload()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Отмена")
+                }
+            }
+            // Progress block mirroring the TTS section's when(DownloadState).
+            when (val spState = state.audio.soundPackDownloadState) {
+                is DownloadState.Downloading -> {
+                    LinearProgressIndicator(
+                        progress = { spState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Загрузка пакета… ${spState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Extracting -> {
+                    LinearProgressIndicator(
+                        progress = { spState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Распаковка ${spState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Initializing -> {
+                    LinearProgressIndicator(
+                        progress = { spState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Подготовка… ${spState.percent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Error -> {
+                    Text(
+                        text = spState.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = "Проверьте подключение к сети и повторите попытку.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                is DownloadState.Done -> {
+                    Text(
+                        text = "Звуковой пакет готов к использованию.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                DownloadState.Idle -> {
+                    Text(
+                        text = "Импортируйте или скачайте звуковой пакет, чтобы фоновая озвучка использовала готовые записи.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
             }
 
             // TTS voice models (explicit download section)
