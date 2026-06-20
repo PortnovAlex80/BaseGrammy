@@ -412,6 +412,23 @@ class AudioCoordinator(
     }
 
     /**
+     * Update [AudioState.soundPackDownloadState] (sound-pack import/download progress).
+     * Sound-pack state lives in this coordinator's [_audioState] — the same flow combined
+     * into the UI state in TrainingViewModel — so it survives the `combine` that
+     * overwrites `_coreState.audio`.
+     */
+    fun updateSoundPackDownloadState(state: DownloadState) {
+        _audioState.update { it.copy(soundPackDownloadState = state) }
+    }
+
+    /**
+     * Update [AudioState.soundPackInstalledCount] (live count of rendered clips on disk).
+     */
+    fun updateSoundPackInstalledCount(count: Int) {
+        _audioState.update { it.copy(soundPackInstalledCount = count) }
+    }
+
+    /**
      * Public entry point for the Settings "Голосовые модели (TTS)" section.
      * Downloads the given TTS models sequentially via [TtsModelManager.downloadMultiple],
      * updating [_audioState.ttsDownloadState] (aggregate progress) and

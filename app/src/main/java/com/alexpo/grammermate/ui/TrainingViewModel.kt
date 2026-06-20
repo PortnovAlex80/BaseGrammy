@@ -525,7 +525,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun refreshSoundPackInstalledCount() {
         val packId = _coreState.value.navigation.activePackId?.value ?: return
         val count = soundPackManager.installedClipCount(packId)
-        _coreState.update { it.copy(audio = it.audio.copy(soundPackInstalledCount = count)) }
+        audioCoordinator.updateSoundPackInstalledCount(count)
     }
 
     /**
@@ -538,9 +538,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun importSoundPack(uri: Uri) {
         val packId = _coreState.value.navigation.activePackId?.value
         if (packId == null) {
-            _coreState.update {
-                it.copy(audio = it.audio.copy(soundPackDownloadState = DownloadState.Error("Сначала выберите языковой пакет")))
-            }
+            audioCoordinator.updateSoundPackDownloadState(DownloadState.Error("Сначала выберите языковой пакет"))
             return
         }
         if (soundPackDownloadJob?.isActive == true) {
@@ -549,11 +547,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         val resolver = getApplication<Application>().contentResolver
         soundPackDownloadJob = viewModelScope.launch(Dispatchers.IO) {
+            Log.d(logTag, "[SP-import] START installFromUri pack=$packId")
             soundPackManager.installFromUri(uri, resolver, packId).collect { state ->
-                _coreState.update { it.copy(audio = it.audio.copy(soundPackDownloadState = state)) }
+                Log.d(logTag, "[SP-import] emit: $state")
+                audioCoordinator.updateSoundPackDownloadState(state)
                 if (state is DownloadState.Done) {
                     val count = soundPackManager.installedClipCount(packId)
-                    _coreState.update { it.copy(audio = it.audio.copy(soundPackInstalledCount = count)) }
+                    Log.d(logTag, "[SP-import] DONE, installedCount=$count")
+                    audioCoordinator.updateSoundPackInstalledCount(count)
                 }
             }
         }
@@ -567,9 +568,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun downloadSoundPack() {
         val packId = _coreState.value.navigation.activePackId?.value
         if (packId == null) {
-            _coreState.update {
-                it.copy(audio = it.audio.copy(soundPackDownloadState = DownloadState.Error("Сначала выберите языковой пакет")))
-            }
+            audioCoordinator.updateSoundPackDownloadState(DownloadState.Error("Сначала выберите языковой пакет"))
             return
         }
         if (soundPackDownloadJob?.isActive == true) {
@@ -578,10 +577,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         soundPackDownloadJob = viewModelScope.launch(Dispatchers.IO) {
             soundPackManager.downloadAndInstall(packId).collect { state ->
-                _coreState.update { it.copy(audio = it.audio.copy(soundPackDownloadState = state)) }
+                audioCoordinator.updateSoundPackDownloadState(state)
                 if (state is DownloadState.Done) {
                     val count = soundPackManager.installedClipCount(packId)
-                    _coreState.update { it.copy(audio = it.audio.copy(soundPackInstalledCount = count)) }
+                    audioCoordinator.updateSoundPackInstalledCount(count)
                 }
             }
         }
@@ -594,7 +593,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun cancelSoundPackDownload() {
         soundPackDownloadJob?.cancel()
         soundPackDownloadJob = null
-        _coreState.update { it.copy(audio = it.audio.copy(soundPackDownloadState = DownloadState.Idle)) }
+        audioCoordinator.updateSoundPackDownloadState(DownloadState.Idle)
     }
 
     /**

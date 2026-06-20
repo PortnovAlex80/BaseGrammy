@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -64,6 +67,7 @@ import androidx.core.content.ContextCompat
 import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.BgVocabMark
 import com.alexpo.grammermate.data.SpeakSlot
+import com.alexpo.grammermate.feature.backgroundvocab.BgVocabAudioResolver
 import com.alexpo.grammermate.feature.backgroundvocab.DeckPlayer
 import com.alexpo.grammermate.feature.backgroundvocab.VocabPlaybackService
 import com.alexpo.grammermate.shared.AuditLogger
@@ -94,7 +98,15 @@ import com.alexpo.grammermate.shared.ScreenLogger
 @Composable
 fun BackgroundVocabScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val markStore = (context.applicationContext as GrammarMateApplication).container.bgVocabMarkStore
+    val container = (context.applicationContext as GrammarMateApplication).container
+    val markStore = container.bgVocabMarkStore
+
+    // Pre-rendered Opus bank resolver + active pack, mirroring VocabPlaybackService.
+    // Used only to render the per-card Opus/TTS indicator (no playback here).
+    val resolver: BgVocabAudioResolver = container.bgVocabAudioResolver
+    val activePackId: String? = remember {
+        runCatching { container.progressStore.load().activePackId?.value }.getOrNull()
+    }
 
     // ── Bind state ──────────────────────────────────────────────────────────
     var deckPlayer by remember { mutableStateOf<DeckPlayer?>(null) }
@@ -187,6 +199,8 @@ fun BackgroundVocabScreen(onBack: () -> Unit) {
             DeckControls(
                 player = player,
                 markStore = markStore,
+                resolver = resolver,
+                activePackId = activePackId,
                 padding = padding,
                 notificationsDenied = notificationsDenied,
                 requestStartPlayback = requestStartPlayback,
@@ -206,6 +220,8 @@ fun BackgroundVocabScreen(onBack: () -> Unit) {
 private fun DeckControls(
     player: DeckPlayer,
     markStore: com.alexpo.grammermate.data.BgVocabMarkStore,
+    resolver: BgVocabAudioResolver,
+    activePackId: String?,
     padding: androidx.compose.foundation.layout.PaddingValues,
     notificationsDenied: Boolean,
     requestStartPlayback: () -> Unit,
@@ -244,6 +260,8 @@ private fun DeckControls(
                 state = state,
                 player = player,
                 markStore = markStore,
+                resolver = resolver,
+                activePackId = activePackId,
                 notificationsDenied = notificationsDenied,
                 requestStartPlayback = requestStartPlayback,
                 onBack = onBack
@@ -257,6 +275,8 @@ private fun DeckReadyContent(
     state: com.alexpo.grammermate.feature.backgroundvocab.DeckState,
     player: DeckPlayer,
     markStore: com.alexpo.grammermate.data.BgVocabMarkStore,
+    resolver: BgVocabAudioResolver,
+    activePackId: String?,
     notificationsDenied: Boolean,
     requestStartPlayback: () -> Unit,
     onBack: () -> Unit
@@ -309,6 +329,21 @@ private fun DeckReadyContent(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }
+            // Per-card audio-source indicator (bottom-start): VolumeUp when a pre-rendered
+            // Opus clip exists for this rank's word (f0), VolumeOff when it will fall back
+            // to TTS. Placed at BottomStart so it never overlaps the rank chip or the
+            // top-end mark buttons.
+            val hasOpus = hasOpusClip(resolver, activePackId, rank)
+            Icon(
+                imageVector = if (hasOpus) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                contentDescription = if (hasOpus) "Озвучка Opus" else "TTS-озвучка",
+                tint = if (hasOpus) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(10.dp)
+                    .size(18.dp)
+            )
             // Per-word mark buttons (top-end). GREEN excludes the word from background
             // playback; RED adds it to the "hard words" list. Tapping the active mark
             // clears it (setMark NONE). Visually: active button has a bold border + full
@@ -596,6 +631,16 @@ private fun DeckReadyContent(
 }
 
 // ── Service start/stop helpers ────────────────────────────────────────────────
+
+/**
+ * `true` if a pre-rendered Opus clip exists on disk for the word slot (field index f0)
+ * of [rank] under [packId]. Mirrors [DeckPlayer.defaultPlayWord], which tries the Opus
+ * word clip first and falls back to TTS when this returns false.
+ */
+fun hasOpusClip(resolver: BgVocabAudioResolver?, packId: String?, rank: Int): Boolean {
+    if (resolver == null || packId == null || rank <= 0) return false
+    return resolver.fileForRank(packId, rank, SpeakSlot.WordIt) != null
+}
 
 /**
  * Single per-word mark button. Renders an emoji circle; the active mark is shown with a
