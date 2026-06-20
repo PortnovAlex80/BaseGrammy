@@ -86,6 +86,12 @@ data class DeckState(
  *                             parsing [WordScript.toMarkup] and feeding it to [SegmentPlayer].
  *                             Override in tests to avoid real TTS.
  * @param speed                TTS speed multiplier passed into the default [playWord].
+ * @param sentencePauseMsProvider supplies the pause (ms) inserted after each example
+ *                             sentence (it/ru) in [defaultPlayWord]. User-tunable via
+ *                             AppConfig (`bgVocabSentencePauseMs`); overrides the per-word
+ *                             [WordScript] `afterSentence` so the listener can slow down
+ *                             (or speed up) the example-sentence cadence globally.
+ *                             Word/translation/collocation pauses are NOT affected.
  * @param audioResolver        optional resolver for pre-rendered `.wav` clips. When set
  *                             together with [packId], [defaultPlayWord] emits a
  *                             [MultilingualStoryParser.Segment.Audio] for each speak item
@@ -102,6 +108,7 @@ class DeckPlayer(
     private val scope: CoroutineScope,
     private val betweenWordsPauseMs: Long = 1500L,
     private val speedProvider: () -> Float = { 1f },
+    private val sentencePauseMsProvider: () -> Long = { 500L },
     private val audioResolver: BgVocabAudioResolver? = null,
     private val packId: String? = null,
     playWord: (suspend (WordScript) -> Unit)? = null,
@@ -127,6 +134,9 @@ class DeckPlayer(
      *  TTS for whatever was not pre-rendered. */
     private suspend fun defaultPlayWord(word: WordScript) {
         val plan = word.speakPlan()
+        // Resolve the user-tunable sentence pause once per word so a slider change takes
+        // effect on the next word (the current word's segments are already enqueued).
+        val sentencePauseMs = sentencePauseMsProvider()
         val segments = ArrayList<MultilingualStoryParser.Segment>(plan.size * 2)
         val slots = ArrayList<SpeakSlot?>(plan.size * 2)
         for (item in plan) {
@@ -148,7 +158,15 @@ class DeckPlayer(
             }
             segments.add(seg)
             slots.add(item.slot)
-            segments.add(MultilingualStoryParser.Segment.Pause(item.pauseAfterMs))
+            // Example-sentence pauses are user-tunable (AppConfig.bgVocabSentencePauseMs);
+            // all other in-word pauses (word/translation/collocation) keep the word's own
+            // ScriptPauses value.
+            val pauseMs = if (item.slot is SpeakSlot.SentenceIt || item.slot is SpeakSlot.SentenceRu) {
+                sentencePauseMs
+            } else {
+                item.pauseAfterMs
+            }
+            segments.add(MultilingualStoryParser.Segment.Pause(pauseMs))
             slots.add(null)
         }
         segmentPlayer.playSegments(

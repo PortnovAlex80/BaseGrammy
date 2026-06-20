@@ -211,4 +211,78 @@ class DeckPlayerAudioSegmentTest {
             baseDir.deleteRecursively()
         }
     }
+
+    /**
+     * Pins the user-tunable sentence-pause override in [DeckPlayer.defaultPlayWord]:
+     * example-sentence slots (`SentenceIt` / `SentenceRu`) take the configured
+     * `bgVocabSentencePauseMs`, while every other slot keeps its own [WordScript]
+     * `ScriptPauses` value. Replicates the exact selection expression because the real
+     * segment pipeline (SegmentPlayer → native TTS/MediaPlayer) cannot be intercepted
+     * from a pure-JVM test (see class KDoc) — same approach as the audio-decision tests.
+     */
+    @Test
+    fun defaultPlayWord_pause_overridesSentenceSlotsOnly() {
+        val w = WordScript(
+            rank = 2,
+            wordIt = "casa",
+            wordRu = "дом",
+            colloIt = "a casa",
+            colloRu = "дома",
+            sentences = listOf(
+                PhrasePair("Vado a casa.", "Я иду домой."),
+                PhrasePair("La casa è grande.", "Дом большой.")
+            )
+        )
+        val plan = w.speakPlan()
+        val userPauseMs = 2500L // user picked 2.5s in Settings
+
+        // Expression identical to the one in DeckPlayer.defaultPlayWord.
+        val effectivePauses = plan.map { item ->
+            if (item.slot is SpeakSlot.SentenceIt || item.slot is SpeakSlot.SentenceRu) {
+                userPauseMs
+            } else {
+                item.pauseAfterMs
+            }
+        }
+        val slots = plan.map { it.slot }
+
+        fun pauseFor(slot: SpeakSlot): Long =
+            effectivePauses[slots.indexOf(slot)]
+
+        // Non-sentence slots keep the word's own ScriptPauses.
+        assertEquals(
+            "WordIt must keep afterWord pause",
+            w.pauses.afterWord, pauseFor(SpeakSlot.WordIt)
+        )
+        assertEquals(
+            "WordRu must keep afterTranslation pause",
+            w.pauses.afterTranslation, pauseFor(SpeakSlot.WordRu)
+        )
+        assertEquals(
+            "ColloIt must keep afterCollocation pause",
+            w.pauses.afterCollocation, pauseFor(SpeakSlot.ColloIt)
+        )
+        assertEquals(
+            "ColloRu must keep afterTranslation pause",
+            w.pauses.afterTranslation, pauseFor(SpeakSlot.ColloRu)
+        )
+
+        // EVERY sentence slot (both langs, all sentence indices) takes the configured value.
+        assertEquals(
+            "SentenceIt(0) must take the configured pause",
+            userPauseMs, pauseFor(SpeakSlot.SentenceIt(0))
+        )
+        assertEquals(
+            "SentenceRu(0) must take the configured pause",
+            userPauseMs, pauseFor(SpeakSlot.SentenceRu(0))
+        )
+        assertEquals(
+            "SentenceIt(1) must take the configured pause",
+            userPauseMs, pauseFor(SpeakSlot.SentenceIt(1))
+        )
+        assertEquals(
+            "SentenceRu(1) must take the configured pause",
+            userPauseMs, pauseFor(SpeakSlot.SentenceRu(1))
+        )
+    }
 }

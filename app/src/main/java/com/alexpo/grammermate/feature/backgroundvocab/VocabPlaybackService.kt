@@ -128,6 +128,7 @@ class VocabPlaybackService : Service() {
             segmentPlayer,
             scope,
             speedProvider = { app.container.configStore.load().ttsSpeed },
+            sentencePauseMsProvider = { app.container.configStore.load().bgVocabSentencePauseMs },
             audioResolver = app.container.bgVocabAudioResolver,
             packId = packId,
             markStore = app.container.bgVocabMarkStore,

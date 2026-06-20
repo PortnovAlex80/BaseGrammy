@@ -383,6 +383,46 @@ fun SettingsSheet(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
+            // User-tunable pause after each example sentence (it/ru) in background-vocab
+            // playback. Read/written directly to AppConfigStore (mirrors the bgVocabMarkStore
+            // access pattern below). Persisted on lift (onValueChangeFinished) to avoid
+            // hammering disk on every drag tick; takes effect on the next spoken word.
+            val configStore = (LocalContext.current.applicationContext
+                as com.alexpo.grammermate.GrammarMateApplication).container.configStore
+            var sentencePauseSec by remember {
+                mutableStateOf(configStore.load().bgVocabSentencePauseMs / 1000f)
+            }
+            Text(
+                text = "Пауза между примерами",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(text = "0.5с", style = MaterialTheme.typography.bodySmall)
+                Slider(
+                    value = sentencePauseSec,
+                    onValueChange = { sentencePauseSec = it },
+                    onValueChangeFinished = {
+                        val ms = (sentencePauseSec * 1000).toLong().coerceIn(500L, 6000L)
+                        configStore.save(configStore.load().copy(bgVocabSentencePauseMs = ms))
+                        AuditLogger.getInstanceOrNull()?.settingsChange("bgVocabSentencePauseMs", ms.toString())
+                    },
+                    valueRange = 0.5f..6.0f,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(text = "6с", style = MaterialTheme.typography.bodySmall)
+            }
+            Text(
+                text = String.format("%.1f с", sentencePauseSec),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
             val bgMarkStore = (LocalContext.current.applicationContext
                 as com.alexpo.grammermate.GrammarMateApplication).container.bgVocabMarkStore
             var resetGreenCount by remember { mutableStateOf(bgMarkStore.greenCount()) }

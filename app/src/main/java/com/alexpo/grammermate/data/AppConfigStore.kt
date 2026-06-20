@@ -20,7 +20,10 @@ data class AppConfig(
     val sessionSize: Int = 10,
     val appVersion: Int = 0,
     val clickableWordHints: Boolean = true,  // Новая настройка: кликабельные слова в ответах
-    val useBluetoothMic: Boolean = false
+    val useBluetoothMic: Boolean = false,
+    /** Pause (ms) inserted after each example sentence (it/ru) in background-vocab
+     *  playback. User-tunable; clamp range 500..6000ms (0.5s..6s). Default 500ms. */
+    val bgVocabSentencePauseMs: Long = 500L
 )
 
 interface AppConfigStore {
@@ -55,7 +58,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             "sessionSize" to config.sessionSize,
             "appVersion" to config.appVersion,
             "clickableWordHints" to config.clickableWordHints,  // Новая настройка
-            "useBluetoothMic" to config.useBluetoothMic
+            "useBluetoothMic" to config.useBluetoothMic,
+            "bgVocabSentencePauseMs" to config.bgVocabSentencePauseMs
         )
         try {
             AtomicFileWriter.writeText(file, yaml.dump(payload))
@@ -105,6 +109,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         val clickableWordHints = data["clickableWordHints"] as? Boolean ?: true  // Новая настройка
         val useBluetoothMic = data["useBluetoothMic"] as? Boolean ?: false
         val ttsSpeed = ((data["ttsSpeed"] as? Number)?.toFloat()?.coerceIn(0.5f, 1.5f)) ?: 1.0f
+        val bgVocabSentencePauseMs = ((data["bgVocabSentencePauseMs"] as? Number)?.toLong()?.coerceIn(500L, 6000L)) ?: 500L
         return AppConfig(
             testMode = testMode,
             eliteSizeMultiplier = eliteSizeMultiplier,
@@ -119,7 +124,8 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
             sessionSize = sessionSize,
             appVersion = appVersion,
             clickableWordHints = clickableWordHints,  // Новая настройка
-            useBluetoothMic = useBluetoothMic
+            useBluetoothMic = useBluetoothMic,
+            bgVocabSentencePauseMs = bgVocabSentencePauseMs
         )
     }
 
