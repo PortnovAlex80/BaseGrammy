@@ -89,24 +89,36 @@ class DeckPlayerAudioSegmentTest {
     }
 
     /**
-     * Replicates the exact Audio/Text decision made inside [DeckPlayer.defaultPlayWord]
-     * and asserts both branches: a present clip selects [Segment.Audio], an absent clip
-     * selects [Segment.Text]. This is the contract `defaultPlayWord` implements —
-     * if it ever diverges from this expression, background-vocab playback silently
-     * regresses to all-TTS or all-skip.
+     * Replicates the Audio/Text decision made inside [DeckPlayer.defaultPlayWord] and
+     * pins the full MVP chain: **opus-by-row → wav-by-rank → Text (TTS)**.
+     *
+     *  - When a row-indexed `.opus` clip exists, it wins (takes precedence over any
+     *    rank-indexed `.wav` for the same slot) → [Segment.Audio] pointing at the opus.
+     *  - When only the `.wav` exists, it is used → [Segment.Audio] pointing at the wav.
+     *  - When neither exists, the slot falls back to [Segment.Text] (TTS synthesis).
+     *
+     * This is the load-bearing contract: if `defaultPlayWord` ever diverges from this
+     * expression, background-vocab playback silently regresses to all-TTS or all-skip,
+     * or — just as bad — plays the wrong clip family.
      */
     @Test
-    fun defaultPlayWord_decision_matchesResolverNonNullality() {
+    fun defaultPlayWord_decision_prefersOpusRow_thenWav_thenText() {
         val baseDir = createTempDirectory().toFile()
         try {
+            // For rank=2 / row=1, ship BOTH the rank-indexed wav and the row-indexed opus
+            // for the Italian word slot. Leave every other slot (wordRu, collo, …) absent.
             createClip(baseDir, "it_000002_word.wav")
+            createClip(baseDir, "it_r000001_f0.opus")
             val resolver: BgVocabAudioResolver? = BgVocabAudioResolver(baseDir)
             val pid: String? = packId
             val w = word(rank = 2)
+            val row = 1
 
             // Decision helper identical to the one in DeckPlayer.defaultPlayWord.
             fun decide(slot: SpeakSlot, text: String, lang: String): MultilingualStoryParser.Segment {
-                val audioFile = resolver?.let { r -> pid?.let { p -> r.fileFor(p, w.rank, slot) } }
+                val audioFile = resolver?.let { r ->
+                    pid?.let { p -> r.fileForRow(p, row, slot) ?: r.fileFor(p, w.rank, slot) }
+                }
                 return if (audioFile != null) {
                     MultilingualStoryParser.Segment.Audio(audioFile, lang)
                 } else {
@@ -114,14 +126,61 @@ class DeckPlayerAudioSegmentTest {
                 }
             }
 
-            // Present clip → Audio segment.
+            // Present opus (row) wins over the present wav (rank) → Audio pointing at opus.
             val wordItSeg = decide(SpeakSlot.WordIt, w.wordIt, "it")
-            assertTrue("WordIt must produce Audio when clip is present", wordItSeg is MultilingualStoryParser.Segment.Audio)
+            assertTrue("WordIt must produce Audio when a clip is present", wordItSeg is MultilingualStoryParser.Segment.Audio)
+            assertEquals(
+                "Opus-by-row must take precedence over wav-by-rank",
+                File(baseDir, "drills/$packId/bg_vocab/audio/it_r000001_f0.opus").absolutePath,
+                (wordItSeg as MultilingualStoryParser.Segment.Audio).file.absolutePath
+            )
 
-            // Absent clip → Text segment (the TTS fallback).
+            // Absent clip (no opus ru_r000001_f0.opus, no wav) → Text segment (TTS fallback).
             val wordRuSeg = decide(SpeakSlot.WordRu, w.wordRu, "ru")
-            assertTrue("WordRu must produce Text when clip is absent", wordRuSeg is MultilingualStoryParser.Segment.Text)
+            assertTrue("WordRu must produce Text when no clip is present", wordRuSeg is MultilingualStoryParser.Segment.Text)
             assertEquals(w.wordRu, (wordRuSeg as MultilingualStoryParser.Segment.Text).text)
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    /**
+     * Pins the row-indexed Opus resolver contract and the slot → `fN` field mapping used
+     * by the MVP audio bank: word→f0, collo→f1, s1→f2, s2→f3, s3→f4, in both languages.
+     * Returns the file when present, `null` when absent (caller falls back to wav/TTS).
+     */
+    @Test
+    fun fileForRow_resolvesOpusByRow_andMapsSlotsToFieldIndex() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            createClip(baseDir, "it_r000001_f0.opus") // word (it), row 1
+            createClip(baseDir, "ru_r000001_f0.opus") // word (ru), row 1
+            createClip(baseDir, "it_r000001_f1.opus") // collo (it), row 1
+            createClip(baseDir, "ru_r000001_f3.opus") // s2 (ru), row 1
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            // word → f0, both languages.
+            assertEquals(
+                File(baseDir, "drills/$packId/bg_vocab/audio/it_r000001_f0.opus").absolutePath,
+                resolver.fileForRow(packId, 1, SpeakSlot.WordIt)!!.absolutePath
+            )
+            assertEquals(
+                File(baseDir, "drills/$packId/bg_vocab/audio/ru_r000001_f0.opus").absolutePath,
+                resolver.fileForRow(packId, 1, SpeakSlot.WordRu)!!.absolutePath
+            )
+            // collo → f1 (present it, absent ru).
+            assertEquals(
+                File(baseDir, "drills/$packId/bg_vocab/audio/it_r000001_f1.opus").absolutePath,
+                resolver.fileForRow(packId, 1, SpeakSlot.ColloIt)!!.absolutePath
+            )
+            assertNull("collo_ru (f1) absent must be null", resolver.fileForRow(packId, 1, SpeakSlot.ColloRu))
+            // s1 → f2 (absent), s2 → f3 (present ru), s3 → f4 (absent).
+            assertNull(resolver.fileForRow(packId, 1, SpeakSlot.SentenceIt(0)))
+            assertEquals(
+                File(baseDir, "drills/$packId/bg_vocab/audio/ru_r000001_f3.opus").absolutePath,
+                resolver.fileForRow(packId, 1, SpeakSlot.SentenceRu(1))!!.absolutePath
+            )
+            assertNull(resolver.fileForRow(packId, 1, SpeakSlot.SentenceIt(2)))
         } finally {
             baseDir.deleteRecursively()
         }
