@@ -74,6 +74,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.LinearProgressIndicator
 import com.alexpo.grammermate.ui.PackTileUi
 import com.alexpo.grammermate.ui.components.emeraldGlow
+import com.alexpo.grammermate.ui.components.cardOutline
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 enum class LessonTileState {
@@ -573,6 +574,7 @@ fun PackTileCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .cardOutline(MaterialTheme.shapes.large)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = containerColor),
@@ -653,6 +655,7 @@ fun VerbDrillEntryTile(
         modifier = modifier
             .height(64.dp)
             .testTag("verb_drill_entry_tile")
+            .cardOutline(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
@@ -702,6 +705,7 @@ fun VocabDrillEntryTile(
         modifier = modifier
             .height(64.dp)
             .testTag("vocab_drill_entry_tile")
+            .cardOutline(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
@@ -759,6 +763,7 @@ fun DailyPracticeEntryTile(
             .fillMaxWidth()
             .height(64.dp)
             .then(if (!enabled) Modifier.alpha(0.45f) else Modifier)
+            .cardOutline(MaterialTheme.shapes.medium)
             .clickable {
                 if (enabled) onClick()
                 else Toast.makeText(context, "Временно не доступно", Toast.LENGTH_SHORT).show()
@@ -819,6 +824,7 @@ fun LessonTile(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(72.dp)
+                .cardOutline(MaterialTheme.shapes.medium)
                 .clickable(onClick = onSelect),
             shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.cardColors(
@@ -884,6 +890,7 @@ fun LessonTile(
             .fillMaxWidth()
             .height(72.dp)
             .then(if (isBloomed || isActive) Modifier.emeraldGlow(radius = 30.dp) else Modifier)
+            .cardOutline(MaterialTheme.shapes.medium)
             .then(
                 if (isEmpty) Modifier
                 else Modifier.clickable {

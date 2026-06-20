@@ -133,8 +133,8 @@ fun Modifier.glassSurface(
     shadowElevation: Dp = 12.dp
 ): Modifier {
     val supportsBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    // Hairline glass edge: light-on-dark uses white; on light theme a soft dark line.
-    val borderColor = Color.White.copy(alpha = 0.08f)
+    // Visible glass edge so cards/buttons read clearly against the dark gradient.
+    val borderColor = MaterialTheme.colorScheme.outline
     return this
         .shadow(
             elevation = shadowElevation,
@@ -159,6 +159,16 @@ fun Modifier.glassSurface(
         )
         .border(width = 1.dp, color = borderColor, shape = shape)
 }
+
+/**
+ * Card-edge border modifier for plain (non-glass) cards that need a visible outline
+ * against the dark background. Thicker than the glass hairline so it reads clearly.
+ */
+@Composable
+fun Modifier.cardOutline(
+    shape: Shape,
+    color: Color = MaterialTheme.colorScheme.outline
+): Modifier = this.border(width = 1.dp, color = color, shape = shape)
 
 /**
  * Soft emerald radial glow drawn behind an element (for active tiles, primary CTAs).
