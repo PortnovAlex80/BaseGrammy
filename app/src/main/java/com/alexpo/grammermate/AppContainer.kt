@@ -4,6 +4,7 @@ import android.app.Application
 import com.alexpo.grammermate.data.*
 import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
 import com.alexpo.grammermate.feature.backgroundvocab.BgVocabAudioResolver
+import com.alexpo.grammermate.feature.backgroundvocab.StoryAudioResolver
 
 /**
  * Centralized dependency container that exposes all store interfaces.
@@ -43,6 +44,14 @@ class AppContainer(private val application: Application) {
      * TTS when a clip exists on disk. See [BgVocabAudioResolver] for the path convention.
      */
     val bgVocabAudioResolver: BgVocabAudioResolver by lazy { BgVocabAudioResolver(baseDir) }
+
+    /**
+     * Resolves pre-rendered chapter narration clips (Opus) for pack-scoped story playback.
+     * Used by [com.alexpo.grammermate.shared.audio.AudioCoordinator.playMultilingualStory]
+     * to play real-voice narration when a clip exists on disk, falling back to TTS
+     * synthesis otherwise. See [StoryAudioResolver] for the path convention.
+     */
+    val storyAudioResolver: StoryAudioResolver by lazy { StoryAudioResolver(baseDir) }
 
     // Pack-scoped stores
     fun wordMasteryStore(packId: String?): WordMasteryStore = storeFactory.getWordMasteryStore(packId)

@@ -636,6 +636,9 @@ data class TrainingUiState(
     val activeChapterId: String? = null,
     /** Story Reader: chapter title being displayed (null if no story) */
     val storyReaderChapterTitle: String? = null,
+    /** Story Reader: story filename of the displayed chapter (e.g. "chapter_03.md"); used to
+     *  resolve a pre-rendered Opus narration clip. Null if no story is open or no file known. */
+    val storyReaderStoryFile: String? = null,
     /** Story Reader: story content being displayed (empty if no story) */
     val storyReaderContent: String = "",
     /** True while background init (file I/O) is in progress. UI shows a spinner. */

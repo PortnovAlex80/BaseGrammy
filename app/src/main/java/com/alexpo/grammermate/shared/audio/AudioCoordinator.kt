@@ -16,6 +16,7 @@ import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.feature.backgroundvocab.StoryAudioResolver
 import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +67,15 @@ class AudioCoordinator(
             Log.e(TAG, "ASR engine creation failed", e)
             null
         }
-    }
+    },
+    /**
+     * Optional resolver for pre-rendered chapter narration (Opus). When set, and a clip
+     * resolves for the chapter being played, [playMultilingualStory] plays the clip via
+     * [SegmentPlayer] (MediaPlayer) instead of synthesizing TTS. Null by default — the
+     * no-resolver path stays all-TTS, preserving pre-story-audio behavior for packs/tests
+     * that don't ship narration.
+     */
+    private val storyAudioResolver: StoryAudioResolver? = null
 ) {
     companion object {
         private const val TAG = "AudioCoordinator"
@@ -246,40 +255,79 @@ class AudioCoordinator(
      * Play multilingual story content with language switching.
      * Parses text segments and plays them sequentially with appropriate language.
      *
+     * If [storyAudioResolver] is set and a pre-rendered Opus narration clip resolves for
+     * `(packId, storyFile)`, the clip is played via [SegmentPlayer] (MediaPlayer) as a
+     * single [MultilingualStoryParser.Segment.Audio] — bypassing TTS entirely. This is
+     * the real-voice narration path. If the clip is missing (or no resolver/packId),
+     * playback falls back to TTS synthesis over the parsed [content]. The fallback is
+     * automatic and per-call, so a pack can ship narration for some chapters and TTS for
+     * others.
+     *
      * @param content Story content with {it}...{/it} markers
      * @param defaultLanguageId Default language for unmarked text
+     * @param storyFile The chapter's story filename (e.g. "chapter_03.md"), used to
+     *  resolve the Opus clip. Null/blank disables narration lookup (TTS only).
+     * @param packId Active pack id scoping the narration lookup. Null disables lookup.
      */
-    fun playMultilingualStory(content: String, defaultLanguageId: String = "en") {
+    fun playMultilingualStory(
+        content: String,
+        defaultLanguageId: String = "en",
+        storyFile: String? = null,
+        packId: String? = null
+    ) {
         storyPlaybackJob?.cancel()
         _audioState.update { it.copy(isStoryPlaybackActive = true, isStoryPlaybackPaused = false) }
         storyPlaybackJob = coroutineScope.launch {
             ttsMutex.withLock {
                 try {
-                    // Stories contain no {pause:N} markers, so parseSegments returns an
-                    // all-Text list — behavior is identical to the old parseStory path.
-                    val segments = com.alexpo.grammermate.data.MultilingualStoryParser.parseSegments(
-                        content,
-                        defaultLanguageId
-                    )
+                    // Prefer a pre-rendered Opus narration clip when one resolves for this
+                    // chapter. The clip already contains both languages and pacing, so we
+                    // play it whole via SegmentPlayer's Audio branch (MediaPlayer).
+                    val narrationClip = storyAudioResolver?.let { resolver ->
+                        packId?.let { pid ->
+                            resolver.resolveChapterAudio(pid, storyFile)
+                        }
+                    }
+                    if (narrationClip != null) {
+                        Log.d(TAG, "Playing pre-rendered narration: ${narrationClip.name} (packId=$packId, storyFile=$storyFile)")
+                        playSegmentsViaSharedEngine(
+                            segments = listOf(
+                                com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Audio(
+                                    narrationClip,
+                                    defaultLanguageId
+                                )
+                            ),
+                            speed = _audioState.value.ttsSpeed
+                        )
+                        Log.d(TAG, "Narration clip played successfully")
+                    } else {
+                        // No narration clip on disk (or no resolver/packId) → TTS fallback.
+                        // Stories contain no {pause:N} markers, so parseSegments returns an
+                        // all-Text list — behavior is identical to the old parseStory path.
+                        val segments = com.alexpo.grammermate.data.MultilingualStoryParser.parseSegments(
+                            content,
+                            defaultLanguageId
+                        )
 
-                    Log.d(
-                        TAG,
-                        "Playing ${segments.size} segments with languages: " +
-                            segments.map {
-                                when (it) {
-                                    is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Text -> it.languageId
-                                    is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Pause -> "pause"
-                                    is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Audio -> "audio:${it.languageId}"
+                        Log.d(
+                            TAG,
+                            "Playing ${segments.size} segments with languages: " +
+                                segments.map {
+                                    when (it) {
+                                        is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Text -> it.languageId
+                                        is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Pause -> "pause"
+                                        is com.alexpo.grammermate.data.MultilingualStoryParser.Segment.Audio -> "audio:${it.languageId}"
+                                    }
                                 }
-                            }
-                    )
+                        )
 
-                    playSegmentsViaSharedEngine(
-                        segments = segments,
-                        speed = _audioState.value.ttsSpeed
-                    )
+                        playSegmentsViaSharedEngine(
+                            segments = segments,
+                            speed = _audioState.value.ttsSpeed
+                        )
 
-                    Log.d(TAG, "All segments played successfully")
+                        Log.d(TAG, "All segments played successfully")
+                    }
                 } catch (e: Throwable) {
                     if (e !is kotlinx.coroutines.CancellationException) {
                         Log.e(TAG, "Multilingual story playback failed", e)

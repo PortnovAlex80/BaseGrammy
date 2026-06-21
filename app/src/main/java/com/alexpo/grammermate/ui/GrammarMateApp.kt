@@ -398,7 +398,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onReadStory = remember { { chapter ->
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
                                     if (storyContent != null) {
-                                        vm.setStoryReader(chapter.title, storyContent)
+                                        vm.setStoryReader(chapter.title, storyContent, chapter.storyFile)
                                         onNavigate(Routes.STORY_READER)
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -409,8 +409,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     val storyContent = vm.loadStoryContent(chapter.storyFile)
                                     if (storyContent != null && storyContent.isNotBlank()) {
                                         // Use multilingual TTS with Italian markers {it}...{/it}
-                                        // ALLEGORY_PACK stories are in Russian with Italian insertions
-                                        vm.speakMultilingualStory(storyContent, defaultLanguageId = "ru")
+                                        // ALLEGORY_PACK stories are in Russian with Italian insertions.
+                                        // When a pre-rendered Opus narration clip exists for this chapter
+                                        // (real-voice narration), it is played instead of TTS; otherwise
+                                        // the multilingual TTS path synthesizes the story text.
+                                        vm.speakMultilingualStory(
+                                            storyContent,
+                                            defaultLanguageId = "ru",
+                                            storyFile = chapter.storyFile,
+                                            packId = activePackId
+                                        )
                                     } else {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                     }
@@ -887,7 +895,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onReadStory = remember { { chapter ->
                                 val storyContent = vm.loadStoryContent(chapter.storyFile)
                                 if (storyContent != null) {
-                                    vm.setStoryReader(chapter.title, storyContent)
+                                    vm.setStoryReader(chapter.title, storyContent, chapter.storyFile)
                                     onNavigate(Routes.STORY_READER)
                                 } else {
                                     Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
@@ -907,10 +915,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onNavigate(Routes.CHAPTER_LESSONS)
                             } },
                             onPlayChapterStory = remember { { chapter ->
-                                // Quick play from roadmap - use multilingual TTS
+                                // Quick play from roadmap - use multilingual TTS, or the
+                                // pre-rendered Opus narration clip when one is present for this
+                                // chapter (real-voice narration overrides TTS automatically).
                                 val storyContent = vm.loadStoryContent(chapter.storyFile)
                                 if (storyContent != null) {
-                                    vm.speakMultilingualStory(storyContent, defaultLanguageId = "ru")
+                                    vm.speakMultilingualStory(
+                                        storyContent,
+                                        defaultLanguageId = "ru",
+                                        storyFile = chapter.storyFile,
+                                        packId = state.navigation.activePackId?.value
+                                    )
                                 } else {
                                     Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                 }
@@ -980,9 +995,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             onPlayStory = remember {
                                 {
-                                    // Use multilingual TTS for story narration
+                                    // Play story narration: prefer the pre-rendered Opus clip for this
+                                    // chapter (real-voice narration) when present; otherwise fall back to
+                                    // multilingual TTS synthesis of the on-screen content.
                                     if (content.isNotEmpty()) {
-                                        vm.speakMultilingualStory(content, defaultLanguageId = "ru")
+                                        vm.speakMultilingualStory(
+                                            content,
+                                            defaultLanguageId = "ru",
+                                            storyFile = state.storyReaderStoryFile,
+                                            packId = state.navigation.activePackId?.value
+                                        )
                                     }
                                 }
                             },

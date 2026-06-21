@@ -331,7 +331,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         stateAccess = stateAccess,
         appContext = application,
         coroutineScope = viewModelScope,
-        configStore = configStore
+        configStore = configStore,
+        storyAudioResolver = container.storyAudioResolver
     )
 
     /**
@@ -596,11 +597,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Play multilingual story with automatic language switching.
      * Use this for stories with Italian insertions marked with {it}...{/it}
      *
+     * When [storyFile] and [packId] are provided, plays the pre-rendered Opus narration
+     * clip for the chapter if one exists on disk (real-voice narration), otherwise
+     * synthesizes the [content] via multilingual TTS.
+     *
      * @param content Story content with language markers
      * @param defaultLanguageId Default language (e.g., "en" for English stories, "ru" for Russian)
+     * @param storyFile Optional chapter story filename (e.g. "chapter_03.md") for narration lookup
+     * @param packId Optional active pack id scoping the narration lookup
      */
-    fun speakMultilingualStory(content: String, defaultLanguageId: String = "en") {
-        audioCoordinator.playMultilingualStory(content, defaultLanguageId)
+    fun speakMultilingualStory(
+        content: String,
+        defaultLanguageId: String = "en",
+        storyFile: String? = null,
+        packId: String? = null
+    ) {
+        audioCoordinator.playMultilingualStory(content, defaultLanguageId, storyFile, packId)
     }
 
     fun stopStoryNarration() {
@@ -615,10 +627,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         audioCoordinator.resumeStoryPlayback()
     }
 
-    fun setStoryReader(chapterTitle: String, content: String) {
+    fun setStoryReader(chapterTitle: String, content: String, storyFile: String? = null) {
         _coreState.update {
             it.copy(
                 storyReaderChapterTitle = chapterTitle,
+                storyReaderStoryFile = storyFile,
                 storyReaderContent = content
             )
         }
@@ -628,6 +641,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _coreState.update {
             it.copy(
                 storyReaderChapterTitle = null,
+                storyReaderStoryFile = null,
                 storyReaderContent = ""
             )
         }
