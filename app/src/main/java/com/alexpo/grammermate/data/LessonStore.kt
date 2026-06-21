@@ -567,6 +567,14 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
         Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value} (filtered from ${packDir.listFiles()?.count { it.isFile && it.name.endsWith(".csv") } ?: 0} CSVs), schema: ${manifest?.schemaVersion}")
 
+        // Canonical lesson order from the manifest (v2: chapter order; v1: lesson
+        // order). listFiles() returns files in FS/readdir order which is
+        // non-deterministic on ext4 — sorting the result here keeps
+        // MixedReviewScheduler (which mixes review cards by positional lesson
+        // index) stable and prevents unrelated lessons from leaking into a
+        // level's mix (Symptom B regression).
+        val orderedLessonIds = getOrderedLessonIdsFromManifest(pack.packId.value)
+
         for (lessonFile in lessonFiles) {
             try {
                 val parseResult = CsvParser.parseLesson(lessonFile.inputStream())
@@ -598,7 +606,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         }
 
         Log.d("LessonStore", "Loaded ${lessons.size} lessons from pack: $packId for language: $languageId")
-        return lessons
+        return sortByManifestOrder(lessons, orderedLessonIds)
     }
 
     override fun deleteAllLessons(languageId: String) {
@@ -1037,6 +1045,24 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         } else {
             manifest.lessons.sortedBy { it.order }.map { it.lessonId }
         }
+    }
+
+    /**
+     * Sort [lessons] to match the canonical [orderedLessonIds] from the manifest.
+     * Lessons not present in the manifest (e.g. stray CSVs) keep their relative
+     * order and are placed after the known ones — stable, so the result is
+     * deterministic regardless of listFiles()/readdir order on the device FS.
+     */
+    private fun sortByManifestOrder(
+        lessons: List<Lesson>,
+        orderedLessonIds: List<String>
+    ): List<Lesson> {
+        if (orderedLessonIds.isEmpty()) return lessons
+        val orderIndex = orderedLessonIds.withIndex().associate { (i, id) -> id to i }
+        val knownCount = orderedLessonIds.size
+        // Kotlin's sortedBy is stable: unknown lessons (all keyed at knownCount)
+        // keep their input relative order and land after every known lesson.
+        return lessons.sortedBy { lesson -> orderIndex[lesson.id.value] ?: knownCount }
     }
 
     private fun findPack(packId: String, languageId: String): LessonPack? {

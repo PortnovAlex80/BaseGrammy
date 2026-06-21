@@ -213,7 +213,10 @@ fun LessonRoadmapScreen(
                                     .height(72.dp)
                                     .clickable {
                                         if (canEnter) {
-                                            AuditLogger.getInstanceOrNull()?.lessonSelect("${index + 1}", state.activeChapterId ?: "")
+                                            AuditLogger.getInstanceOrNull()?.lessonSelect(
+                                                state.navigation.selectedLessonId?.value ?: "",
+                                                state.activeChapterId ?: ""
+                                            )
                                             onStartSubLesson(index)
                                         } else {
                                             earlyStartSubLessonIndex = index
@@ -288,7 +291,7 @@ fun LessonRoadmapScreen(
         Spacer(modifier = Modifier.height(16.dp))
         if (!isLessonComplete) {
             Button(
-                onClick = { AuditLogger.getInstanceOrNull()?.lessonSelect("${currentIndex + 1}", state.activeChapterId ?: ""); onStartSubLesson(currentIndex) },
+                onClick = { AuditLogger.getInstanceOrNull()?.lessonSelect(state.navigation.selectedLessonId?.value ?: "", state.activeChapterId ?: ""); onStartSubLesson(currentIndex) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = if (completed == 0) stringResource(R.string.roadmap_start_lesson) else stringResource(R.string.roadmap_continue_lesson))

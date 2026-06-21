@@ -122,6 +122,7 @@ class LessonStoreLazyLoadingTest {
         override fun updateDefaultPacksIfNeeded(): Boolean = false
         override fun forceReloadDefaultPacks(): Boolean = false
         override fun getLanguages(): List<Language> = emptyList()
+        override fun getLanguagesWithPacks(): List<Language> = emptyList()
         override fun addLanguage(name: String): Language = throw UnsupportedOperationException()
         override fun getInstalledPacks(): List<LessonPack> = emptyList()
         override fun getPackIdForLesson(lessonId: String): String? = null
