@@ -106,5 +106,12 @@ lesson_*.csv
 /preview_rows_1_10/
 /_sample4.txt
 
+# Opus voicing corpus — source input for regenerating sound-pack ZIPs (~615 MB,
+# 116k files). NOT an APK/pack build input: Gradle only reads app/src/main/assets.
+# Keep locally to rebuild packs; never commit.
+/docs/lesson-methodology/italian/work_opus/
+/docs/lesson-methodology/italian/work_opus.zip
+/bg_vocab_scratch/
+
 # Backup snapshots with non-.bak suffix (e.g. *.bak_batch6)
 *.bak_*
