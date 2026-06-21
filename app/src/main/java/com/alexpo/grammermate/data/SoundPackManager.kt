@@ -314,7 +314,6 @@ class SoundPackManager(
         audioDir.mkdirs()
         val canonicalAudioDir = audioDir.canonicalPath + File.separator
         var bytesRead: Long = 0
-        var entriesProcessed = 0
         var lastPercent = -1
 
         ZipInputStream(inputStream).use { zipIn ->
@@ -348,7 +347,6 @@ class SoundPackManager(
                     }
 
                     writeAtomic(zipIn, destFile)
-                    entriesProcessed++
 
                     // ZipInputStream doesn't expose a reliable per-entry byte count a priori, so
                     // advance bytesRead by the bytes we just copied. writeAtomic reports them.
@@ -360,7 +358,6 @@ class SoundPackManager(
                     }
                     if (percent != lastPercent) {
                         lastPercent = percent
-                        Log.d(TAG, "extract: entries=$entriesProcessed bytesRead=$bytesRead/$totalBytesForProgress percent=$percent")
                         emitter.emit(DownloadState.Extracting(percent))
                     }
                 } finally {

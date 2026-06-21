@@ -68,7 +68,6 @@ private fun ColumnScope.SoundPackSection(
     onDownload: () -> Unit,
     onCancel: () -> Unit
 ) {
-    android.util.Log.d("SoundPackUI", "SoundPackSection recompose: state=$downloadState count=$installedCount")
     val soundPackImportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri -> if (uri != null) onImport(uri) }

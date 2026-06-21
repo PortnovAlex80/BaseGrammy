@@ -547,14 +547,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         val resolver = getApplication<Application>().contentResolver
         soundPackDownloadJob = viewModelScope.launch(Dispatchers.IO) {
-            Log.d(logTag, "[SP-import] START installFromUri pack=$packId")
             soundPackManager.installFromUri(uri, resolver, packId).collect { state ->
-                Log.d(logTag, "[SP-import] emit: $state")
                 audioCoordinator.updateSoundPackDownloadState(state)
                 if (state is DownloadState.Done) {
-                    val count = soundPackManager.installedClipCount(packId)
-                    Log.d(logTag, "[SP-import] DONE, installedCount=$count")
-                    audioCoordinator.updateSoundPackInstalledCount(count)
+                    audioCoordinator.updateSoundPackInstalledCount(soundPackManager.installedClipCount(packId))
                 }
             }
         }
