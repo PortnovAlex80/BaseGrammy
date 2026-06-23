@@ -98,6 +98,7 @@ fun VerbDrillScreen(
             state = state,
             onSelectTense = viewModel::selectTense,
             onSelectGroup = viewModel::selectGroup,
+            onSelectPerson = viewModel::selectPerson,
             onToggleSortByFrequency = viewModel::toggleSortByFrequency,
             onStart = {
                 viewModel.startSession()
@@ -189,6 +190,7 @@ private fun VerbDrillSelectionScreen(
     state: VerbDrillUiState,
     onSelectTense: (String?) -> Unit,
     onSelectGroup: (String?) -> Unit,
+    onSelectPerson: (String?) -> Unit,
     onToggleSortByFrequency: () -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit,
@@ -237,6 +239,17 @@ private fun VerbDrillSelectionScreen(
                 selected = state.selectedGroup,
                 items = state.availableGroups,
                 onSelect = onSelectGroup
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        if (!hasSavedSession && state.availablePersons.isNotEmpty()) {
+            VerbDrillDropdown(
+                label = stringResource(R.string.verb_select_person),
+                allLabel = stringResource(R.string.verb_all_persons),
+                selected = state.selectedPerson,
+                items = state.availablePersons,
+                onSelect = onSelectPerson
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -368,7 +381,8 @@ private fun StartFreshResumeDialog(
                 if (lastSessionContext != null) {
                     SessionContextInfo(
                         selectedTense = lastSessionContext.selectedTense,
-                        selectedGroup = lastSessionContext.selectedGroup
+                        selectedGroup = lastSessionContext.selectedGroup,
+                        selectedPerson = lastSessionContext.selectedPerson
                     )
                 }
             }
@@ -405,7 +419,8 @@ private fun StartFreshResumeDialog(
 @Composable
 private fun SessionContextInfo(
     selectedTense: String?,
-    selectedGroup: String?
+    selectedGroup: String?,
+    selectedPerson: String? = null
 ) {
     Column(
         modifier = Modifier
@@ -424,6 +439,13 @@ private fun SessionContextInfo(
             SessionInfoRow(
                 label = stringResource(R.string.verb_resume_dialog_group),
                 value = selectedGroup
+            )
+        }
+        // Person
+        if (selectedPerson != null) {
+            SessionInfoRow(
+                label = stringResource(R.string.verb_resume_dialog_person),
+                value = selectedPerson
             )
         }
     }
@@ -484,7 +506,8 @@ internal fun SessionCard(
 
             SessionContextInfo(
                 selectedTense = lastSessionContext.selectedTense,
-                selectedGroup = lastSessionContext.selectedGroup
+                selectedGroup = lastSessionContext.selectedGroup,
+                selectedPerson = lastSessionContext.selectedPerson
             )
 
             val shownCount = lastSessionContext.todayShownCardIds.size

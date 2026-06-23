@@ -7,6 +7,18 @@ object VerbDrillCsvParser {
     /** Pre-compiled regex to extract verb from parenthetical hint in promptRu. */
     private val PARENTHETICAL_VERB_REGEX = Regex("\\(([\\w]+)")
 
+    /** Italian subject pronouns recognized at the start of the IT (answer) column. */
+    private val PERSON_PRONOUNS = setOf("Io", "Tu", "Lui", "Lei", "Noi", "Voi", "Loro")
+
+    /** Ordered list of persons for consistent dropdown display. */
+    val PERSON_ORDER = listOf("Io", "Tu", "Lui", "Lei", "Noi", "Voi", "Loro")
+
+    /** Extract Italian person pronoun from the first word of the answer string. */
+    private fun extractPerson(answer: String): String? {
+        val firstWord = answer.split(' ', '\t').firstOrNull()?.trim() ?: return null
+        return if (firstWord in PERSON_PRONOUNS) firstWord else null
+    }
+
     /**
      * Parse verb drill CSV content from a String.
      * Loads the entire content into memory — avoid for large files.
@@ -132,6 +144,7 @@ object VerbDrillCsvParser {
                     verb = resolvedVerb,
                     tense = tense,
                     group = group,
+                    person = extractPerson(answer),
                     rank = rank
                 )
             )
@@ -271,6 +284,7 @@ object VerbDrillCsvParser {
                     verb = resolvedVerb,
                     tense = tense,
                     group = group,
+                    person = extractPerson(answer),
                     rank = rank
                 )
             )

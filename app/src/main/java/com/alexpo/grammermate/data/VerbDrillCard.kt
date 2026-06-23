@@ -7,6 +7,7 @@ data class VerbDrillCard(
     val verb: String? = null,
     val tense: String? = null,
     val group: String? = null,
+    val person: String? = null,
     val rank: Int? = null
 ) : SessionCard {
     override val acceptedAnswers: List<String> get() = listOf(answer)
@@ -47,6 +48,7 @@ data class VerbDrillSessionState(
 data class VerbDrillLastSessionState(
     val selectedTense: String?,
     val selectedGroup: String?,
+    val selectedPerson: String? = null,
     val sortByFrequency: Boolean,
     val todayShownCardIds: Set<String> = emptySet(),
     val sessionCardIds: List<String> = emptyList(),
@@ -57,8 +59,10 @@ data class VerbDrillLastSessionState(
 data class VerbDrillUiState(
     val availableTenses: List<String> = emptyList(),
     val availableGroups: List<String> = emptyList(),
+    val availablePersons: List<String> = emptyList(),
     val selectedTense: String? = null,
     val selectedGroup: String? = null,
+    val selectedPerson: String? = null,
     val totalCards: Int = 0,
     val everShownCount: Int = 0,
     val todayShownCount: Int = 0,

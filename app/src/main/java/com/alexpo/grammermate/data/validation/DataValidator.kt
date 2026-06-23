@@ -467,6 +467,7 @@ object DataValidator {
         val verb = (data["verb"] as? String)?.takeIf { it.isNotBlank() }
         val tense = (data["tense"] as? String)?.takeIf { it.isNotBlank() }
         val group = (data["group"] as? String)?.takeIf { it.isNotBlank() }
+        val person = (data["person"] as? String)?.takeIf { it.isNotBlank() }
         val rank = (data["rank"] as? Number)?.toInt()?.coerceAtLeast(0)
 
         return if (errors.isNotEmpty() || id == null || promptRu == null || answer == null) {
@@ -481,6 +482,7 @@ object DataValidator {
                     verb = verb,
                     tense = tense,
                     group = group,
+                    person = person,
                     rank = rank
                 )
             )
@@ -708,6 +710,9 @@ object DataValidator {
         // Validate selectedGroup (optional)
         val selectedGroup = (data["selectedGroup"] as? String)?.takeIf { it.isNotBlank() }
 
+        // Validate selectedPerson (optional)
+        val selectedPerson = (data["selectedPerson"] as? String)?.takeIf { it.isNotBlank() }
+
         // Validate sortByFrequency
         val sortByFrequency = data["sortByFrequency"] as? Boolean ?: false
 
@@ -740,6 +745,7 @@ object DataValidator {
                 VerbDrillLastSessionState(
                     selectedTense = selectedTense,
                     selectedGroup = selectedGroup,
+                    selectedPerson = selectedPerson,
                     sortByFrequency = sortByFrequency,
                     todayShownCardIds = todayShownCardIds,
                     sessionCardIds = sessionCardIds.distinct(),
@@ -753,6 +759,7 @@ object DataValidator {
                 VerbDrillLastSessionState(
                     selectedTense = selectedTense,
                     selectedGroup = selectedGroup,
+                    selectedPerson = selectedPerson,
                     sortByFrequency = sortByFrequency,
                     todayShownCardIds = todayShownCardIds,
                     sessionCardIds = sessionCardIds,

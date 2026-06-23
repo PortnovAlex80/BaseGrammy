@@ -69,10 +69,14 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         allCards = cards
         val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
         val groups = cards.mapNotNull { it.group }.distinct().sorted()
+        val persons = cards.mapNotNull { it.person }
+            .distinct()
+            .sortedBy { VerbDrillCsvParser.PERSON_ORDER.indexOf(it) }
         _uiState.update {
             it.copy(
                 availableTenses = tenses,
                 availableGroups = groups,
+                availablePersons = persons,
                 isLoading = false,
                 loadedLanguageId = "it"
             )
@@ -310,13 +314,16 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
             val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
             val groups = cards.mapNotNull { it.group }.distinct().sorted()
+            val persons = cards.mapNotNull { it.person }
+                .distinct()
+                .sortedBy { VerbDrillCsvParser.PERSON_ORDER.indexOf(it) }
             val progress = verbDrillStore.loadProgress()
             val badCount = packIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
 
             // Load tense reference info (asset file read)
             val tenseInfo = loadTenseInfoInternal(lang)
 
-            LoadCardsResult(cards, cardToPack, packIds, tenses, groups, progress, badCount, lang, tenseInfo)
+            LoadCardsResult(cards, cardToPack, packIds, tenses, groups, persons, progress, badCount, lang, tenseInfo)
         }
 
         // State updates on main thread (viewModelScope.launch default dispatcher)
@@ -331,6 +338,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 badSentenceCount = ioResult.badCount,
                 availableTenses = ioResult.tenses,
                 availableGroups = ioResult.groups,
+                availablePersons = ioResult.persons,
                 isLoading = false,
                 loadedLanguageId = ioResult.lang
             )
@@ -369,6 +377,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val packIds: Set<String>,
         val tenses: List<String>,
         val groups: List<String>,
+        val persons: List<String>,
         val progress: Map<String, VerbDrillComboProgress>,
         val badCount: Int,
         val lang: String,
@@ -437,17 +446,23 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         updateProgressDisplay()
     }
 
+    fun selectPerson(person: String?) {
+        _uiState.update { it.copy(selectedPerson = person, allDoneToday = false) }
+        updateProgressDisplay()
+    }
+
     fun toggleSortByFrequency() {
         _uiState.update { it.copy(sortByFrequency = !it.sortByFrequency) }
     }
 
     private fun updateProgressDisplay() {
         val state = _uiState.value
-        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"
+        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}|${state.selectedPerson ?: ""}"
 
         val filtered = allCards.filter { card ->
             (state.selectedTense == null || card.tense == state.selectedTense) &&
-            (state.selectedGroup == null || card.group == state.selectedGroup)
+            (state.selectedGroup == null || card.group == state.selectedGroup) &&
+            (state.selectedPerson == null || card.person == state.selectedPerson)
         }
 
         val progress = progressMap[comboKey]
@@ -468,11 +483,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         ignoreTodayShown: Boolean = false
     ) {
         val state = _uiState.value
-        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"
+        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}|${state.selectedPerson ?: ""}"
 
         val filtered = allCards.filter { card ->
             (state.selectedTense == null || card.tense == state.selectedTense) &&
-            (state.selectedGroup == null || card.group == state.selectedGroup)
+            (state.selectedGroup == null || card.group == state.selectedGroup) &&
+            (state.selectedPerson == null || card.person == state.selectedPerson)
         }
 
         if (filtered.isEmpty()) {
@@ -519,6 +535,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val lastSessionState = com.alexpo.grammermate.data.VerbDrillLastSessionState(
             selectedTense = state.selectedTense,
             selectedGroup = state.selectedGroup,
+            selectedPerson = state.selectedPerson,
             sortByFrequency = state.sortByFrequency,
             todayShownCardIds = allShownCardIds,
             sessionCardIds = selected.map { it.id },
@@ -620,13 +637,14 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     private fun persistCardProgress(card: VerbDrillCard) {
         val uiState = _uiState.value
-        val comboKey = "${uiState.selectedGroup ?: ""}|${uiState.selectedTense ?: ""}"
+        val comboKey = "${uiState.selectedGroup ?: ""}|${uiState.selectedTense ?: ""}|${uiState.selectedPerson ?: ""}"
         val existing = progressMap[comboKey]
         val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
         val todayShown = (existing?.todayShownCardIds ?: emptySet()) + card.id
         val totalCards = allCards.count { c ->
             (uiState.selectedTense == null || c.tense == uiState.selectedTense) &&
-            (uiState.selectedGroup == null || c.group == uiState.selectedGroup)
+            (uiState.selectedGroup == null || c.group == uiState.selectedGroup) &&
+            (uiState.selectedPerson == null || c.person == uiState.selectedPerson)
         }
 
         val updatedProgress = VerbDrillComboProgress(
@@ -720,13 +738,14 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun saveLastSessionState(session: VerbDrillSessionState) {
         val state = _uiState.value
-        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}"
+        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}|${state.selectedPerson ?: ""}"
         val progress = progressMap[comboKey]
         val todayShownCardIds = progress?.todayShownCardIds ?: emptySet()
 
         val lastSessionState = com.alexpo.grammermate.data.VerbDrillLastSessionState(
             selectedTense = state.selectedTense,
             selectedGroup = state.selectedGroup,
+            selectedPerson = state.selectedPerson,
             sortByFrequency = state.sortByFrequency,
             todayShownCardIds = todayShownCardIds,
             sessionCardIds = session.cards.map { it.id },
@@ -760,6 +779,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             state.copy(
                 selectedTense = lastSession.selectedTense,
                 selectedGroup = lastSession.selectedGroup,
+                selectedPerson = lastSession.selectedPerson,
                 sortByFrequency = lastSession.sortByFrequency,
                 showStartFreshResumeDialog = false
             )
@@ -784,6 +804,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             state.copy(
                 selectedTense = lastSession.selectedTense,
                 selectedGroup = lastSession.selectedGroup,
+                selectedPerson = lastSession.selectedPerson,
                 sortByFrequency = lastSession.sortByFrequency,
                 showStartFreshResumeDialog = false
             )
@@ -830,6 +851,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 showStartFreshResumeDialog = false,
                 selectedTense = null,
                 selectedGroup = null,
+                selectedPerson = null,
                 sortByFrequency = false,
                 session = null,
                 currentCardIsBad = false,

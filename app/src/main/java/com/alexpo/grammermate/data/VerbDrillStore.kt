@@ -281,6 +281,7 @@ class VerbDrillStoreImpl(
             "schemaVersion" to schemaVersion,
             "selectedTense" to session.selectedTense,
             "selectedGroup" to session.selectedGroup,
+            "selectedPerson" to session.selectedPerson,
             "sortByFrequency" to session.sortByFrequency,
             "todayShownCardIds" to session.todayShownCardIds.toList(),
             "sessionCardIds" to session.sessionCardIds,

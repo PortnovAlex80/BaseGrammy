@@ -70,6 +70,8 @@
     <string name="verb_all_tenses">Все времена</string>
     <string name="verb_select_group">Группа</string>
     <string name="verb_all_groups">Все группы</string>
+    <string name="verb_select_person">Лицо</string>
+    <string name="verb_all_persons">Все лица</string>
     <string name="verb_sort_by_frequency">По частотности</string>
     <string name="verb_progress">Прогресс: %1$d / %2$d</string>
     <string name="verb_today">Сегодня: %1$d</string>
@@ -83,6 +85,7 @@
     <string name="verb_resume_dialog_start_fresh">Начать сначала</string>
     <string name="verb_resume_dialog_tense">Время</string>
     <string name="verb_resume_dialog_group">Группа</string>
+    <string name="verb_resume_dialog_person">Лицо</string>
     <string name="verb_resume_dialog_progress">Прогресс</string>
     <string name="verb_resume_dialog_progress_value">%1$d / %2$d</string>
     <string name="verb_resume_dialog_score">Счёт</string>
