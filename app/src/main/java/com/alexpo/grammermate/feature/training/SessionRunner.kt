@@ -399,7 +399,9 @@ class SessionRunner(
                     submitBossLastCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
                 }
                 state.boss.bossActive -> {
-                    submitBossMidCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
+                    val (r, e) = submitBossMidCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
+                    events.addAll(e)
+                    r
                 }
                 state.elite.eliteActive && isLastCard -> {
                     val (r, e) = submitEliteFinish(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
@@ -412,7 +414,9 @@ class SessionRunner(
                     r
                 }
                 else -> {
-                    submitNormalMidCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
+                    val (r, e) = submitNormalMidCard(shouldAddVoiceMetrics, voiceDurationMs, voiceWords, state)
+                    events.addAll(e)
+                    r
                 }
             }
             return result to events
@@ -500,20 +504,25 @@ class SessionRunner(
 
     /**
      * Boss mode: mid-session correct answer. Advance to next card.
+     *
+     * Returns the events emitted by [nextCardInternal] (notably
+     * [SessionEvent.AdvanceBossProgress]) so the ViewModel can advance the
+     * boss progress field the progress bar reads. Dropping these events
+     * leaves the boss progress bar frozen at "1 / N".
      */
     private fun submitBossMidCard(
         shouldAddVoiceMetrics: Boolean,
         voiceDurationMs: Long?,
         voiceWords: Int,
         state: com.alexpo.grammermate.data.TrainingUiState
-    ): SubmitResult {
+    ): Pair<SubmitResult, List<SessionEvent>> {
         stateMachine.reset()
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
         }
-        // nextCard handles voice trigger, word bank, save
-        nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
-        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true)
+        // nextCard handles voice trigger, word bank, save, and boss progress event.
+        val events = nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
+        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true) to events
     }
 
     /**
@@ -600,14 +609,14 @@ class SessionRunner(
         voiceDurationMs: Long?,
         voiceWords: Int,
         state: com.alexpo.grammermate.data.TrainingUiState
-    ): SubmitResult {
+    ): Pair<SubmitResult, List<SessionEvent>> {
         stateMachine.reset()
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
         }
-        // nextCard handles voice trigger, word bank, save
-        nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
-        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true)
+        // nextCard handles voice trigger, word bank, save.
+        val events = nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
+        return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true) to events
     }
 
     /**
