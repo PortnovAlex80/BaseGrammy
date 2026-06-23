@@ -77,59 +77,122 @@ If Java is only available through IntelliJ JBR, use the same classpath with the 
 
 ## BUILD APK
 
-**Java NOT available in this environment.** Build APK on your local machine.
-
-### Complete build documentation
-
-**The file `java.txt` in the project root contains complete build instructions, including:**
-- Java 17 installation (IntelliJ JBR or standalone)
-- Android SDK setup without Android Studio
-- Windows Gradle wrapper workaround (3-JAR classpath)
-- All build commands with examples
-- Troubleshooting guide
-
-### Quick reference
-
-Also see `docs/BUILD_INSTRUCTIONS.md` for additional setup details.
-
 ### Prerequisites
 
-| Component | Version |
-|-----------|---------|
-| Java JDK | 17 |
-| Android SDK | API 34 |
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Java JDK | 17 | IntelliJ JBR or standalone. Other versions unsupported. |
+| Android SDK | API 34 | Platform, build-tools, platform-tools |
+| Gradle | 8.9 | Auto-downloaded via wrapper |
 
-### Quick commands
-
-**IMPORTANT:** If `java` command is not found, use full IntelliJ JBR path (see note below).
+### Quick build (one command)
 
 ```cmd
-:: Debug APK (output: app\build\outputs\apk\debug\grammermate.apk)
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
-
-:: Release APK
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleRelease
-
-:: Run tests
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain test
+build.bat assembleDebug
 ```
 
-**Windows workaround:** Gradle 8.9+ requires all 3 wrapper JARs in classpath (wildcard `gradle/wrapper/*` doesn't work):
+APK output: `app\build\outputs\apk\debug\grammermate.apk`
+
+### Windows Gradle workaround
+
+Gradle 8.9+ requires all 3 wrapper JARs in classpath (`gradle/wrapper/*` wildcard doesn't work):
 ```
 gradle/wrapper/gradle-wrapper.jar
 gradle/wrapper/gradle-wrapper-shared.jar
 gradle/wrapper/gradle-cli.jar
 ```
 
-**IntelliJ JBR full path (PRIMARY SOLUTION when `java` command fails):**
+**IntelliJ JBR (PRIMARY — works even when `java -version` fails):**
 ```cmd
 "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
 
-The full IntelliJ JBR path works even when `java -version` fails or Java is not in PATH.
-See `java.txt` or `docs/BUILD_INSTRUCTIONS.md` for complete troubleshooting guide.
+**System Java:**
+```cmd
+java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+```
 
-Or create `build.bat` (see BUILD_INSTRUCTIONS.md or java.txt for full instructions).
+### All build commands
+
+```cmd
+build.bat assembleDebug          :: Debug APK
+build.bat assembleRelease        :: Release APK
+build.bat test                   :: Run all tests
+build.bat test --tests "...::SomeTest"  :: Run specific test
+build.bat clean                  :: Clean build artifacts
+```
+
+### Android SDK path
+
+Actual SDK location (from `local.properties`):
+```
+C:\Users\user\AppData\Local\Android\Sdk
+```
+
+### Install APK on phone
+
+**IMPORTANT:** `adb` is NOT in system PATH on this machine. Use full path:
+```cmd
+set ADB=C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe
+```
+
+**USB cable (recommended):**
+1. Enable **Developer Options** on phone: Settings → About Phone → tap "Build number" 7 times
+2. Enable **USB Debugging** in Developer Options
+3. Connect phone via USB cable
+4. Check device is visible:
+   ```cmd
+   %ADB% devices
+   ```
+5. Install APK:
+   ```cmd
+   %ADB% install -r app\build\outputs\apk\debug\grammermate.apk
+   ```
+
+**Wireless (over Wi-Fi):**
+1. Phone and PC must be on the same Wi-Fi network
+2. First connect via USB once and pair:
+   ```cmd
+   %ADB% tcpip 5555
+   %ADB% connect <PHONE_IP>:5555
+   ```
+3. Disconnect USB, then install:
+   ```cmd
+   %ADB% install -r app\build\outputs\apk\debug\grammermate.apk
+   ```
+
+**Direct file transfer (no adb):**
+1. Copy `app\build\outputs\apk\debug\grammermate.apk` to phone (USB cable, Google Drive, Telegram, etc.)
+2. On phone: open the APK file in Files app
+3. Allow "Install from unknown sources" if prompted
+4. Tap **Install**
+
+### Run / launch app on connected phone
+
+```cmd
+:: Launch app on connected device
+%ADB% shell am start -n com.alexpo.grammermate/.MainActivity
+
+:: See logs in real time
+%ADB% logcat -s "GrammerMate" "AndroidRuntime"
+
+:: Uninstall app
+%ADB% uninstall com.alexpo.grammermate
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `java` not found | Use full IntelliJ JBR path (see above) |
+| `NoClassDefFoundError: IDownload` | Ensure all 3 JARs in classpath |
+| `sdk.dir not found` | Create `local.properties`: `sdk.dir=C\\:\\Users\\user\\AppData\\Local\\Android\\Sdk` |
+| `adb` not found | Use full path: `C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe` |
+| `FileAlreadyExistsException` on rebuild | Delete old APK first: `rm app\build\outputs\apk\debug\grammermate.apk` |
+| Device not found | Check USB Debugging is on; run `%ADB% devices` to verify |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Use `%ADB% install -r` or `%ADB% uninstall com.alexpo.grammermate` first |
+
+**Full docs:** `java.txt` (root), `docs/BUILD_INSTRUCTIONS.md`, `BUILD.md`
 
 ---
 

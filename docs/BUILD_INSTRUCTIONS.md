@@ -81,7 +81,7 @@ sdkmanager --licenses
 Создайте файл `local.properties` в корне проекта со следующим содержимым:
 
 ```properties
-sdk.dir=C:\\Users\\user\\Android\\Sdk
+sdk.dir=C\\:\\Users\\user\\AppData\\Local\\Android\\Sdk
 ```
 
 Укажите свой реальный путь к SDK. Этот файл не коммитится в репозиторий.
@@ -89,7 +89,7 @@ sdk.dir=C:\\Users\\user\\Android\\Sdk
 Альтернативно — установите переменную окружения `ANDROID_HOME`:
 
 ```cmd
-set ANDROID_HOME=C:\Users\user\Android\Sdk
+set ANDROID_HOME=C:\Users\user\AppData\Local\Android\Sdk
 ```
 
 ---
@@ -246,3 +246,84 @@ echo %ANDROID_HOME%
 
 ### Проблема: Сборка не выполняется несмотря на правильную настройку Java
 **Решение:** Проверьте путь к Android SDK в local.properties и убедитесь, что установлен API 34
+
+---
+
+## 7. Установка APK на телефон
+
+### Вариант A: Через USB-кабель (рекомендуется)
+
+1. **Включите Developer Options** на телефоне:
+   - Настройки → О телефоне → нажать "Номер сборки" 7 раз
+2. **Включите USB Debugging** в Developer Options
+3. Подключите телефон по USB-кабелю
+4. Установите APK:
+   ```cmd
+   adb install app\build\outputs\apk\debug\grammermate.apk
+   ```
+5. Если приложение уже установлено — обновление с заменой:
+   ```cmd
+   adb install -r app\build\outputs\apk\debug\grammermate.apk
+   ```
+
+### Вариант B: По Wi-Fi (без USB-кабеля)
+
+1. Телефон и ПК должны быть в одной Wi-Fi сети
+2. Подключите USB один раз и выполните:
+   ```cmd
+   adb tcpip 5555
+   adb connect <IP_ТЕЛЕФОНА>:5555
+   ```
+3. Отключите USB-кабель, затем установите:
+   ```cmd
+   adb install app\build\outputs\apk\debug\grammermate.apk
+   ```
+
+### Вариант C: Прямой перенос файла (без adb)
+
+1. Скопируйте `app\build\outputs\apk\debug\grammermate.apk` на телефон (USB-накопитель, Google Drive, Telegram и т.д.)
+2. На телефоне откройте APK-файл через приложение "Файлы"
+3. Разрешите "Установку из неизвестных источников" при запросе
+4. Нажмите **Установить**
+
+---
+
+## 8. Запуск приложения на подключённом телефоне
+
+```cmd
+:: Запустить приложение
+adb shell am start -n com.alexpo.grammermate/.MainActivity
+
+:: Логи в реальном времени
+adb logcat -s "GrammerMate" "AndroidRuntime"
+
+:: Удалить приложение
+adb uninstall com.alexpo.grammermate
+```
+
+### Проблемы с adb
+
+**ВАЖНО:** На данной машине `adb` не находится в PATH. Используйте полный путь:
+```cmd
+set ADB=C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe
+```
+Затем заменяйте все `adb` в командах ниже на `%ADB%`.
+
+| Проблема | Решение |
+|----------|---------|
+| `adb` не найден | Используйте полный путь: `C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe` |
+| Устройство не отображается в `adb devices` | Включите USB Debugging; проверьте драйверы; попробуйте другой USB-кабель |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Используйте `adb install -r` или сначала `adb uninstall com.alexpo.grammermate` |
+
+### Проблема: FileAlreadyExistsException при пересборке
+
+Если при повторной сборке Gradle выдаёт:
+```
+kotlin.io.FileAlreadyExistsException: app-debug.apk -> grammermate.apk: Tried to overwrite the destination, but failed to delete it.
+```
+
+**Решение:** Удалите старый APK перед сборкой:
+```cmd
+del app\build\outputs\apk\debug\grammermate.apk
+build.bat assembleDebug
+```
