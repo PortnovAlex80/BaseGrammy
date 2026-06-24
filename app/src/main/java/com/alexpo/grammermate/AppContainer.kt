@@ -56,6 +56,7 @@ class AppContainer(private val application: Application) {
     // Pack-scoped stores
     fun wordMasteryStore(packId: String?): WordMasteryStore = storeFactory.getWordMasteryStore(packId)
     fun verbDrillStore(packId: String?): VerbDrillStore = storeFactory.getVerbDrillStore(packId)
+    fun auxDrillStore(packId: String?): AuxDrillStore = storeFactory.getAuxDrillStore(packId)
     fun packDailyCursorStore(): PackDailyCursorStore = PackDailyCursorStoreImpl(application)
     val packLessonProgressStore: PackLessonProgressStore by lazy { PackLessonProgressStoreImpl(application) }
     fun chapterProgressStore(packId: String): ChapterProgressStore = ChapterProgressStore(application, packId)

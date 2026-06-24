@@ -14,6 +14,7 @@ class StoreFactory private constructor(private val appContext: Application) {
     // ── Pack-scoped stores (keyed by packId) ─────────────────────────────
     private val wordMasteryCache = mutableMapOf<String?, WordMasteryStoreImpl>()
     private val verbDrillCache = mutableMapOf<String?, VerbDrillStoreImpl>()
+    private val auxDrillCache = mutableMapOf<String?, AuxDrillStoreImpl>()
 
     // ── Singleton stores (lazy, thread-safe) ─────────────────────────────
     private val badSentenceCache: BadSentenceStoreImpl by lazy { BadSentenceStoreImpl(appContext) }
@@ -40,6 +41,13 @@ class StoreFactory private constructor(private val appContext: Application) {
     fun getVerbDrillStore(packId: String?): VerbDrillStore {
         return verbDrillCache.getOrPut(packId) {
             VerbDrillStoreImpl(appContext, packId = packId)
+        }
+    }
+
+    @Synchronized
+    fun getAuxDrillStore(packId: String?): AuxDrillStore {
+        return auxDrillCache.getOrPut(packId) {
+            AuxDrillStoreImpl(appContext, packId = packId)
         }
     }
 
