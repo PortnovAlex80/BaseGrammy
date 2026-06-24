@@ -274,10 +274,42 @@ internal class LanguageManager(
         packsStore.write(remaining)
     }
 
+    /**
+     * Clear the pack's drill data (`drills/{packId}/`) — the lessons/progress/mastery
+     * artifacts a pack reload rebuilds — while PRESERVING the `bg_vocab/audio/`
+     * subtree.
+     *
+     * `bg_vocab/audio/` holds the out-of-band background-vocab sound-pack clips
+     * (the user-installed `.opus` ZIP). Those clips are NOT part of the pack bundle
+     * and are NOT restored by a pack reload, so wiping them here would silently
+     * destroy the user's separately-installed sound pack on every restart — which
+     * reaches this method via `forceReloadDefaultPacks` on each launch.
+     *
+     * To preserve the subtree while still clearing everything else (including
+     * siblings of `bg_vocab/audio/` and files alongside `bg_vocab/`), the audio
+     * dir is moved aside to a temp sibling, the tree is removed, and the audio dir
+     * is moved back. The `bg_vocab/` parent is recreated so the restored path is
+     * identical to the original (`drills/{packId}/bg_vocab/audio/...`).
+     */
     fun deletePackDrills(packId: String) {
         val drillsDir = File(baseDir, "drills/$packId")
-        if (drillsDir.exists()) {
-            drillsDir.deleteRecursively()
+        if (!drillsDir.exists()) return
+
+        val audioDir = File(drillsDir, "bg_vocab/audio")
+        val shelter = if (audioDir.exists()) {
+            val shelterDir = File(drillsDir.parentFile, "${drillsDir.name}.audio_shelter")
+            if (shelterDir.exists()) shelterDir.deleteRecursively()
+            audioDir.renameTo(shelterDir)
+            shelterDir
+        } else {
+            null
+        }
+
+        drillsDir.deleteRecursively()
+
+        if (shelter != null && shelter.exists()) {
+            val restoredBgVocab = File(drillsDir, "bg_vocab").apply { mkdirs() }
+            shelter.renameTo(File(restoredBgVocab, "audio"))
         }
     }
 
