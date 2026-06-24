@@ -139,8 +139,7 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
             it.copy(
                 selectedPair = pair,
                 totalCards = filtered.size,
-                everShownCount = progress?.everShownCardIds?.size ?: 0,
-                todayShownCount = progress?.todayShownCardIds?.size ?: 0
+                everShownCount = progress?.everShownCardIds?.size ?: 0
             )
         }
     }
@@ -165,32 +164,27 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Persist that [cardIds] were shown during an aux training session.
-     * Called after the shared training session ends so the menu's progress
-     * display and the "shown today" exclusion stay accurate.
+     * Persist that [cardIds] were shown during an aux training session, so the
+     * menu's "N / total seen" counter stays accurate. Called by the caller
+     * after handing the deck to the shared training session.
      */
     fun recordShown(pair: AuxDrillPair, cardIds: Set<String>) {
         if (cardIds.isEmpty()) return
         val comboKey = comboKeyFor(pair)
         val existing = progressMap[comboKey]
         val ever = (existing?.everShownCardIds ?: emptySet()) + cardIds
-        val today = (existing?.todayShownCardIds ?: emptySet()) + cardIds
         val total = filteredCards(pair).size
         val updated = AuxDrillComboProgress(
             verb = pair.verb,
             tense = pair.tense,
             totalCards = total,
             everShownCardIds = ever,
-            todayShownCardIds = today,
             lastDate = java.time.LocalDate.now().toString()
         )
         progressMap = progressMap.toMutableMap().apply { this[comboKey] = updated }
         auxDrillStore.upsertComboProgress(comboKey, updated)
         _uiState.update {
-            it.copy(
-                everShownCount = updated.everShownCardIds.size,
-                todayShownCount = updated.todayShownCardIds.size
-            )
+            it.copy(everShownCount = updated.everShownCardIds.size)
         }
     }
 

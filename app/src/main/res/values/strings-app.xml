@@ -85,7 +85,6 @@
     <string name="aux_drill_leads_to">Leads to %1$s — %2$s</string>
     <string name="aux_drill_select_pair">Select an auxiliary verb to drill</string>
     <string name="aux_drill_progress">%1$d / %2$d seen</string>
-    <string name="aux_drill_today">Today: %1$d</string>
     <string name="aux_drill_start">Begin</string>
     <string name="aux_drill_content_desc_back">Back</string>
 

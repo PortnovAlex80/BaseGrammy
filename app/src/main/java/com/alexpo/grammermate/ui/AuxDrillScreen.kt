@@ -82,7 +82,6 @@ fun AuxDrillScreen(
                         selected = state.selectedPair == pair,
                         totalCards = if (state.selectedPair == pair) state.totalCards else 0,
                         everShown = if (state.selectedPair == pair) state.everShownCount else 0,
-                        todayShown = if (state.selectedPair == pair) state.todayShownCount else 0,
                         onClick = { viewModel.selectPair(pair) },
                         onStart = {
                             viewModel.selectPair(pair)
@@ -101,7 +100,6 @@ private fun AuxPairCard(
     selected: Boolean,
     totalCards: Int,
     everShown: Int,
-    todayShown: Int,
     onClick: () -> Unit,
     onStart: () -> Unit
 ) {
@@ -126,8 +124,6 @@ private fun AuxPairCard(
             if (selected) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(stringResource(R.string.aux_drill_progress, everShown, totalCards), fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(stringResource(R.string.aux_drill_today, todayShown), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { if (totalCards > 0) everShown.toFloat() / totalCards.toFloat() else 0f },

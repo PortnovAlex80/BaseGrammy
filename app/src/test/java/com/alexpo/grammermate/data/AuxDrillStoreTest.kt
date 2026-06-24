@@ -16,7 +16,6 @@ class AuxDrillStoreTest {
             tense = "Presente",
             totalCards = 35,
             everShownCardIds = setOf("c1", "c2"),
-            todayShownCardIds = setOf("c1"),
             lastDate = "2026-06-24"
         )
 

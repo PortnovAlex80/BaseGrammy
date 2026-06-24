@@ -68,7 +68,6 @@ class AuxDrillStoreImpl(
                 tense = tense,
                 totalCards = (entry["totalCards"] as? Int) ?: 0,
                 everShownCardIds = (entry["everShownCardIds"] as? List<*>)?.mapNotNull { it as? String }?.toSet() ?: emptySet(),
-                todayShownCardIds = (entry["todayShownCardIds"] as? List<*>)?.mapNotNull { it as? String }?.toSet() ?: emptySet(),
                 lastDate = entry["lastDate"] as? String ?: ""
             )
         }
@@ -100,7 +99,6 @@ class AuxDrillStoreImpl(
                 "tense" to value.tense,
                 "totalCards" to value.totalCards,
                 "everShownCardIds" to value.everShownCardIds.toList(),
-                "todayShownCardIds" to value.todayShownCardIds.toList(),
                 "lastDate" to value.lastDate
             )
         }

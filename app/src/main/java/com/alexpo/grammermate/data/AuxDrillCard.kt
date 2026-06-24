@@ -22,7 +22,6 @@ data class AuxDrillComboProgress(
     val tense: String,
     val totalCards: Int,
     val everShownCardIds: Set<String> = emptySet(),
-    val todayShownCardIds: Set<String> = emptySet(),
     val lastDate: String = ""
 )
 
@@ -39,7 +38,6 @@ data class AuxDrillUiState(
     val selectedPair: AuxDrillPair? = null,
     val totalCards: Int = 0,
     val everShownCount: Int = 0,
-    val todayShownCount: Int = 0,
     val session: AuxDrillSessionState? = null,
     val isLoading: Boolean = true,
     val loadedLanguageId: String? = null
