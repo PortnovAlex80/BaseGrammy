@@ -116,6 +116,7 @@ private object Routes {
     const val LADDER = "ladder"
     const val VERB_DRILL = "verb_drill"
     const val VOCAB_DRILL = "vocab_drill"
+    const val AUX_DRILL = "aux_drill"
     const val GRAMMAR_STORY_ROADMAP = "grammar_story_roadmap"
     const val STORY_READER = "story_reader"
     const val BACKGROUND_VOCAB = "background_vocab"
@@ -525,6 +526,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 hasVerbDrill = state.navigation.hasVerbDrill,
                                 hasVocabDrill = state.navigation.hasVocabDrill,
                                 onOpenVerbDrill = remember { { onNavigate(Routes.VERB_DRILL) } },
+                                onOpenAuxDrill = remember { { onNavigate(Routes.AUX_DRILL) } },
                                 onOpenVocabDrill = remember { { onNavigate(Routes.VOCAB_DRILL) } },
                                 onProfileClick = remember(dialogs) { { dialogs = dialogs.copy(showProfileStats = true) } },
                                 onStartPomodoro = remember { { duration: Int ->
@@ -881,6 +883,30 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded,
                             onClearBadSentences = vocabDrillVm::clearBadSentences,
                             badSentenceCount = vocabDrillVm.getBadSentenceCount()
+                        )
+                    }
+
+                    composable(Routes.AUX_DRILL) {
+                        val auxVm = viewModel<AuxDrillViewModel>()
+                        val packId = state.navigation.activePackId
+                        LaunchedEffect(packId, state.navigation.selectedLanguageId) {
+                            if (packId != null) {
+                                auxVm.reloadForPack(packId.value, state.navigation.selectedLanguageId?.value ?: "it")
+                            }
+                        }
+                        val auxExit = remember(auxVm) {
+                            {
+                                auxVm.exitSession()
+                                onNavigate(Routes.HOME)
+                            }
+                        }
+                        BackHandler {
+                            auxExit()
+                        }
+                        AuxDrillScreen(
+                            viewModel = auxVm,
+                            onBack = auxExit,
+                            onStartTraining = { /* training shown inline in same screen */ }
                         )
                     }
 

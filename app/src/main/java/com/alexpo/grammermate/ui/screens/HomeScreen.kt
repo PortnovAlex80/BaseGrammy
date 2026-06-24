@@ -117,6 +117,7 @@ fun HomeScreen(
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
+    onOpenAuxDrill: () -> Unit = {},
     onOpenVocabDrill: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onStartPomodoro: (Int) -> Unit = {},
@@ -342,9 +343,15 @@ fun HomeScreen(
                         }
                     )
                 }
+                if (hasVerbDrill) {
+                    AuxDrillEntryTile(
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenAuxDrill
+                    )
+                }
                 if (hasVocabDrill) {
                     VocabDrillEntryTile(
-                        modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                        modifier = Modifier.weight(1f),
                         onClick = {
                             ScreenLogger.tap("drill_start", details = "type=vocab")
                             AuditLogger.getInstanceOrNull()?.vocabDrillStart("")
@@ -691,6 +698,37 @@ fun VerbDrillEntryTile(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun AuxDrillEntryTile(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(64.dp)
+            .testTag("aux_drill_entry_tile")
+            .cardOutline(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.aux_drill_entry),
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
