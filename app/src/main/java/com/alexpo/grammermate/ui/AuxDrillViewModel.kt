@@ -128,6 +128,120 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
 
     internal fun comboKeyFor(pair: AuxDrillPair): String = "aux|${pair.verb}|${pair.tense}"
 
+    // ── Session logic ────────────────────────────────────────────────────
+
+    private var cardShownTimestamp: Long = 0L
+
+    fun setSessionSize(size: Int) {
+        sessionSize = size.coerceIn(1, 1000)
+    }
+
+    fun startSession() {
+        val pair = _uiState.value.selectedPair ?: return
+        val filtered = filteredCards(pair)
+        if (filtered.isEmpty()) {
+            _uiState.update { it.copy(session = null, allDoneToday = true) }
+            return
+        }
+        val comboKey = comboKeyFor(pair)
+        val progress = progressMap[comboKey]
+        val shownToday = progress?.todayShownCardIds ?: emptySet()
+        val remaining = filtered.filter { it.id !in shownToday }
+
+        val pool = if (remaining.isEmpty()) filtered else remaining
+        val selected = pool.shuffled().take(sessionSize)
+
+        _uiState.update {
+            it.copy(
+                session = com.alexpo.grammermate.data.AuxDrillSessionState(cards = selected),
+                allDoneToday = false
+            )
+        }
+        cardShownTimestamp = System.currentTimeMillis()
+    }
+
+    fun submitCorrectAnswer() {
+        val session = _uiState.value.session ?: return
+        if (session.isComplete || session.currentIndex >= session.cards.size) return
+        val card = session.cards[session.currentIndex]
+        val nextIndex = session.currentIndex + 1
+        val isComplete = nextIndex >= session.cards.size
+
+        _uiState.update { state ->
+            state.copy(
+                session = session.copy(
+                    currentIndex = nextIndex,
+                    correctCount = session.correctCount + 1,
+                    isComplete = isComplete
+                )
+            )
+        }
+        persistCardProgress(card)
+        if (!isComplete) cardShownTimestamp = System.currentTimeMillis()
+        updateProgressDisplay()
+    }
+
+    fun markCardCompleted() {
+        val session = _uiState.value.session ?: return
+        if (session.isComplete || session.currentIndex >= session.cards.size) return
+        val card = session.cards[session.currentIndex]
+        val nextIndex = session.currentIndex + 1
+        val isComplete = nextIndex >= session.cards.size
+
+        _uiState.update { state ->
+            state.copy(
+                session = session.copy(
+                    currentIndex = nextIndex,
+                    incorrectCount = session.incorrectCount + 1,
+                    isComplete = isComplete
+                )
+            )
+        }
+        persistCardProgress(card)
+        if (!isComplete) cardShownTimestamp = System.currentTimeMillis()
+        updateProgressDisplay()
+    }
+
+    fun exitSession() {
+        auxDrillStore.flush()
+        _uiState.update { it.copy(session = null) }
+    }
+
+    private fun persistCardProgress(card: AuxDrillCard) {
+        val pair = _uiState.value.selectedPair ?: return
+        val comboKey = comboKeyFor(pair)
+        val existing = progressMap[comboKey]
+        val ever = (existing?.everShownCardIds ?: emptySet()) + card.id
+        val today = (existing?.todayShownCardIds ?: emptySet()) + card.id
+        val total = filteredCards(pair).size
+        val updated = AuxDrillComboProgress(
+            verb = pair.verb,
+            tense = pair.tense,
+            totalCards = total,
+            everShownCardIds = ever,
+            todayShownCardIds = today,
+            lastDate = java.time.LocalDate.now().toString()
+        )
+        progressMap = progressMap.toMutableMap().apply { this[comboKey] = updated }
+        auxDrillStore.upsertComboProgress(comboKey, updated)
+    }
+
+    private fun updateProgressDisplay() {
+        val pair = _uiState.value.selectedPair ?: return
+        val comboKey = comboKeyFor(pair)
+        val progress = progressMap[comboKey]
+        _uiState.update {
+            it.copy(
+                everShownCount = progress?.everShownCardIds?.size ?: 0,
+                todayShownCount = progress?.todayShownCardIds?.size ?: 0
+            )
+        }
+    }
+
+    fun clearSelection() {
+        _uiState.update { it.copy(selectedPair = null, session = null, allDoneToday = false) }
+    }
+
     // ── Test hooks ───────────────────────────────────────────────────────
     internal fun injectPoolForTest(cards: List<VerbDrillCard>) {
         allCards = cards.map { it.toAux() }
@@ -139,4 +253,8 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
 
     internal fun currentFilteredCardsForTest(): List<AuxDrillCard> =
         _uiState.value.selectedPair?.let { filteredCards(it) } ?: emptyList()
+
+    internal fun setSessionSizeForTest(size: Int) = setSessionSize(size)
+
+    internal fun auxStoreForTest(): AuxDrillStore = auxDrillStore
 }

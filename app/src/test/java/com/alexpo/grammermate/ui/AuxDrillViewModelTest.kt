@@ -67,4 +67,65 @@ class AuxDrillViewModelTest {
 
         assertEquals(3, vm.uiState.value.totalCards)
     }
+
+    @Test
+    fun startSession_buildsSessionFromFilteredCards() {
+        val vm = makeVm()
+        vm.injectPoolForTest(makeCards())
+
+        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
+        vm.selectPair(pair)
+        vm.setSessionSizeForTest(2)
+        vm.startSession()
+
+        val session = vm.uiState.value.session
+        assertTrue(session != null)
+        assertEquals(2, session?.cards?.size)
+        assertTrue(session?.cards?.all { it.verb == "avere" } == true)
+    }
+
+    @Test
+    fun submitCorrectAnswer_advancesAndPersists() {
+        val vm = makeVm()
+        vm.injectPoolForTest(makeCards())
+        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
+        vm.selectPair(pair)
+        vm.setSessionSizeForTest(2)
+        vm.startSession()
+
+        val firstCardId = vm.uiState.value.session!!.cards.first().id
+        vm.submitCorrectAnswer()
+
+        assertEquals(1, vm.uiState.value.session?.correctCount)
+        val key = "aux|avere|Presente"
+        val progress = (vm.auxStoreForTest() as com.alexpo.grammermate.testharness.FakeAuxDrillStore).loadProgress()[key]
+        assertTrue(progress?.everShownCardIds?.contains(firstCardId) == true)
+    }
+
+    @Test
+    fun startSession_marksAllDoneWhenNoCards() {
+        val vm = makeVm()
+        vm.injectPoolForTest(makeCards())
+        // Futuro Semplice: no cards in test pool
+        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Futuro Semplice" }
+        vm.selectPair(pair)
+        vm.startSession()
+
+        assertTrue(vm.uiState.value.allDoneToday)
+        assertEquals(null, vm.uiState.value.session)
+    }
+
+    @Test
+    fun exitSession_clearsSession() {
+        val vm = makeVm()
+        vm.injectPoolForTest(makeCards())
+        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
+        vm.selectPair(pair)
+        vm.setSessionSizeForTest(2)
+        vm.startSession()
+
+        vm.exitSession()
+
+        assertEquals(null, vm.uiState.value.session)
+    }
 }
