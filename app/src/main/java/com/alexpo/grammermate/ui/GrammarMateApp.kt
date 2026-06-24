@@ -691,7 +691,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 val beforeCard = state.cardSession.currentCard
                                 val result = vm.submitAnswer()
                                 if (
-                                    state.cardSession.returnTo == Routes.VERB_DRILL &&
+                                    isVerbDrillLikeReturn(state.cardSession.returnTo) &&
                                     beforeCard is VerbDrillCard &&
                                     result.accepted
                                 ) {
@@ -701,7 +701,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             onNext = {
                                 if (
-                                    state.cardSession.returnTo == Routes.VERB_DRILL &&
+                                    isVerbDrillLikeReturn(state.cardSession.returnTo) &&
                                     state.cardSession.currentCard is VerbDrillCard &&
                                     (state.cardSession.lastResult == false || state.cardSession.answerText != null)
                                 ) {
@@ -711,7 +711,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             onPrev = {
                                 if (
-                                    state.cardSession.returnTo == Routes.VERB_DRILL &&
+                                    isVerbDrillLikeReturn(state.cardSession.returnTo) &&
                                     state.cardSession.currentIndex > 0
                                 ) {
                                     verbDrillVm.prevCard()
@@ -723,14 +723,14 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     val returnTo = state.cardSession.returnTo
                                     val hasActiveCard = state.cardSession.currentCard != null
                                     when {
-                                        // VERB_DRILL with active card (exiting mid-session) → save state, return to selection screen
-                                        returnTo == Routes.VERB_DRILL && hasActiveCard -> {
+                                        // Verb/Aux drill with active card (exiting mid-session) → return to drill screen
+                                        isVerbDrillLikeReturn(returnTo) && hasActiveCard -> {
                                             verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
-                                            onNavigate(Routes.VERB_DRILL)
+                                            onNavigate(returnTo)
                                         }
-                                        // VERB_DRILL with NO active card (block completed) → save state, go to HOME
-                                        returnTo == Routes.VERB_DRILL && !hasActiveCard -> {
+                                        // Verb/Aux drill with NO active card (block completed) → save state, go to HOME
+                                        isVerbDrillLikeReturn(returnTo) && !hasActiveCard -> {
                                             verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
                                             onNavigate(Routes.HOME)
@@ -787,6 +787,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                                 onNavigate(Routes.LESSON)
                                             }
                                         }
+                                        isVerbDrillLikeReturn(returnTo) -> {
+                                            // VERB_DRILL / AUX_DRILL: return to the drill screen we came from
+                                            Log.d("NavDebug", "SESSION_DONE: → drill return $returnTo")
+                                            onNavigate(returnTo)
+                                        }
                                         else -> {
                                             Log.d("NavDebug", "SESSION_DONE: → HOME (default)")
                                             onNavigate(Routes.HOME)
@@ -797,17 +802,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             getTenseInfo = remember { { tenseName: String -> verbTenseInfoVm.getTenseInfo(tenseName) } }
                         )
 
-                        // Local back handler for VERB_DRILL return path
-                        BackHandler(enabled = state.cardSession.returnTo == Routes.VERB_DRILL && !dialogs.showSettings) {
-                            Log.d("NavDebug", "BACK: TRAINING VERB_DRILL return path")
+                        // Local back handler for VERB_DRILL / AUX_DRILL return path
+                        BackHandler(enabled = isVerbDrillLikeReturn(state.cardSession.returnTo) && !dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: TRAINING drill return path -> ${state.cardSession.returnTo}")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            AuditLogger.getInstanceOrNull()?.backPress("training", "verb_drill_return")
+                            AuditLogger.getInstanceOrNull()?.backPress("training", "drill_return")
                             verbDrillVm.persistSessionState()
                             vm.exitVerbDrillSession()
-                            onNavigate(Routes.VERB_DRILL)
+                            onNavigate(state.cardSession.returnTo)
                         }
                         // Local back handler for TRAINING — staircase navigation (only for lesson-based training)
-                        BackHandler(enabled = state.cardSession.returnTo != Routes.VERB_DRILL && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
+                        BackHandler(enabled = !isVerbDrillLikeReturn(state.cardSession.returnTo) && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: TRAINING staircase → LESSON")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("training", "staircase_to_lesson")
@@ -1139,6 +1144,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
     } // Surface
 } // GrammarMateApp
 
+/**
+ * True when the training session's [returnTo] route is a verb-drill-style
+ * screen (regular Verb Drill or the aux lead-in drill). Aux drill reuses the
+ * VERB_DRILL training mode, so all verb-drill-specific UI logic (chip cards,
+ * header suppression, back/return navigation, session-done routing) applies to
+ * both. Centralizing the check here keeps the call sites from listing both
+ * routes explicitly.
+ */
+private fun isVerbDrillLikeReturn(returnTo: String?): Boolean =
+    returnTo == Routes.VERB_DRILL || returnTo == Routes.AUX_DRILL
+
 // ── Route-to-AppScreen mapping ───────────────────────────────────────────────
 
 private fun routeToScreen(route: String?): AppScreen = when (route) {
@@ -1299,8 +1315,8 @@ private fun TrainingScreenContent(
     // Get lesson title for header — suppress during daily practice and verb drill modes
     val lessonTitle = if (state.cardSession.returnTo == Routes.DAILY_PRACTICE) {
         null  // Daily practice: don't show lesson title
-    } else if (state.cardSession.returnTo == Routes.VERB_DRILL) {
-        null  // Verb drill: don't show lesson title (drill CSV titles are technical)
+    } else if (isVerbDrillLikeReturn(state.cardSession.returnTo)) {
+        null  // Verb drill / aux drill: don't show lesson title (drill CSV titles are technical)
     } else {
         state.navigation.lessons
             .firstOrNull { it.id == state.navigation.selectedLessonId }?.title
@@ -1552,8 +1568,8 @@ private fun NavDialogs(
                 vm.daily.onBlockComplete()
                 Log.d("NavDebug", "TOKEN_NAV: → DAILY_PRACTICE")
                 onNavigate(returnTo)
-            } else if (returnTo == Routes.VERB_DRILL) {
-                Log.d("NavDebug", "TOKEN_NAV: → VERB_DRILL")
+            } else if (isVerbDrillLikeReturn(returnTo)) {
+                Log.d("NavDebug", "TOKEN_NAV: → drill return $returnTo")
                 onNavigate(returnTo)
             } else {
                 // Lesson-based training — compute what's next and show dialog
