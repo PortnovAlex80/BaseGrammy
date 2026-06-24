@@ -119,7 +119,11 @@ private fun AuxPairCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("${pair.verb} — ${pair.tense}", fontWeight = FontWeight.Medium)
-                Text(stringResource(R.string.aux_drill_leads_to, pair.lessonId, pair.lessonTopic), fontSize = 12.sp)
+                Text(
+                    text = "→ ${pair.lessonId}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
             }
             if (selected) {
                 Spacer(modifier = Modifier.height(8.dp))

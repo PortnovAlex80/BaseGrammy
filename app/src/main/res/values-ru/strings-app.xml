@@ -82,7 +82,6 @@
     <!-- Aux (lead-in) drill -->
     <string name="aux_drill_title">Подводящие упражнения</string>
     <string name="aux_drill_entry">Подводящие</string>
-    <string name="aux_drill_leads_to">Подводит к %1$s — %2$s</string>
     <string name="aux_drill_select_pair">Выберите служебный глагол для тренировки</string>
     <string name="aux_drill_progress">%1$d / %2$d пройдено</string>
     <string name="aux_drill_start">Начать</string>
