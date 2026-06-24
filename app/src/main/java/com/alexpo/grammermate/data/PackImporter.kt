@@ -459,12 +459,16 @@ internal class PackImporter(
         }
         val targetAudioDir = File(targetCsvDir, "audio")
         targetAudioDir.mkdirs()
+        var copied = 0
+        var skipped = 0
         sourceAudioDir.listFiles()?.forEach { src ->
             if (!src.isFile) return@forEach
             val dst = File(targetAudioDir, src.name)
-            AtomicFileWriter.copyAtomic(src, dst)
-            Log.d(TAG, "Imported background-vocab audio clip: ${src.name} to ${dst.absolutePath}")
+            val existed = dst.exists() && dst.length() == src.length()
+            AtomicFileWriter.copyAtomicIfChanged(src, dst)
+            if (existed) skipped++ else copied++
         }
+        Log.i(TAG, "Background-vocab audio for ${manifest.packId}: copied=$copied skipped(unchanged)=$skipped")
     }
 
     // ── Story import from pack ───────────────────────────────────────────

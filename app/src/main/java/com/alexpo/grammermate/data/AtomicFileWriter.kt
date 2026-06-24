@@ -122,4 +122,23 @@ object AtomicFileWriter {
         // Verify final file exists and is not empty (allow empty if source is empty)
         verifyWrite(target, target.name, allowEmpty = source.length() == 0L)
     }
+
+    /**
+     * Atomically copy [source] to [target], but SKIP the copy entirely when [target]
+     * already exists with the same byte length as [source].
+     *
+     * Pack reload (`forceReloadDefaultPacks` on every app start) re-runs the background-vocab
+     * audio import on each launch. Copying tens of thousands of unchanged `.opus` clips through
+     * the temp -> fsync -> rename path costs minutes of fsync on flash storage. Size equality
+     * is a cheap, sufficient guard here: audio clips are write-once assets that never change
+     * byte-length in place, so a matching length means the clip is already current. When the
+     * guard does not hold (target missing or stale/different length), this delegates to the
+     * full crash-safe [copyAtomic].
+     */
+    fun copyAtomicIfChanged(source: File, target: File) {
+        if (target.exists() && target.length() == source.length()) {
+            return
+        }
+        copyAtomic(source, target)
+    }
 }
