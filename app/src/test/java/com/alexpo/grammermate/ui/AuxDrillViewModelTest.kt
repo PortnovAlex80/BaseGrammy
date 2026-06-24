@@ -5,6 +5,7 @@ import com.alexpo.grammermate.data.AuxDrillCatalog
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.testharness.FakeAuxDrillStore
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -13,6 +14,10 @@ import org.robolectric.RobolectricTestRunner
 /**
  * Robolectric is required because [AuxDrillViewModel] extends AndroidViewModel
  * and needs an Application context. Same pattern as VerbDrillViewModel tests.
+ *
+ * Note: the aux screen only hosts the menu; training itself runs in the shared
+ * TrainingViewModel. These tests cover pool loading, pair filtering, and the
+ * deck handoff (sessionCardsFor) + progress recording (recordShown).
  */
 @RunWith(RobolectricTestRunner::class)
 class AuxDrillViewModelTest {
@@ -69,63 +74,50 @@ class AuxDrillViewModelTest {
     }
 
     @Test
-    fun startSession_buildsSessionFromFilteredCards() {
+    fun sessionCardsFor_returnsVerbDrillCardsMatchingPair() {
         val vm = makeVm()
         vm.injectPoolForTest(makeCards())
 
         val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
-        vm.selectPair(pair)
-        vm.setSessionSizeForTest(2)
-        vm.startSession()
+        val deck = vm.sessionCardsFor(pair) ?: error("deck should not be null")
 
-        val session = vm.uiState.value.session
-        assertTrue(session != null)
-        assertEquals(2, session?.cards?.size)
-        assertTrue(session?.cards?.all { it.verb == "avere" } == true)
+        assertTrue(deck.all { it.verb == "avere" && it.tense == "Presente" })
+        assertTrue(deck.size <= 3)
     }
 
     @Test
-    fun submitCorrectAnswer_advancesAndPersists() {
+    fun sessionCardsFor_returnsNullWhenPairAbsent() {
         val vm = makeVm()
         vm.injectPoolForTest(makeCards())
-        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
-        vm.selectPair(pair)
-        vm.setSessionSizeForTest(2)
-        vm.startSession()
 
-        val firstCardId = vm.uiState.value.session!!.cards.first().id
-        vm.submitCorrectAnswer()
-
-        assertEquals(1, vm.uiState.value.session?.correctCount)
-        val key = "aux|avere|Presente"
-        val progress = (vm.auxStoreForTest() as com.alexpo.grammermate.testharness.FakeAuxDrillStore).loadProgress()[key]
-        assertTrue(progress?.everShownCardIds?.contains(firstCardId) == true)
-    }
-
-    @Test
-    fun startSession_marksAllDoneWhenNoCards() {
-        val vm = makeVm()
-        vm.injectPoolForTest(makeCards())
         // Futuro Semplice: no cards in test pool
         val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Futuro Semplice" }
-        vm.selectPair(pair)
-        vm.startSession()
-
-        assertTrue(vm.uiState.value.allDoneToday)
-        assertEquals(null, vm.uiState.value.session)
+        assertNull(vm.sessionCardsFor(pair))
     }
 
     @Test
-    fun exitSession_clearsSession() {
+    fun recordShown_persistsProgressUnderAuxKey() {
+        val store = FakeAuxDrillStore()
+        val vm = makeVm(store)
+        vm.injectPoolForTest(makeCards())
+
+        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
+        vm.recordShown(pair, setOf("a1", "a2"))
+
+        val progress = store.loadProgress()["aux|avere|Presente"]
+        assertTrue(progress?.everShownCardIds?.contains("a1") == true)
+        assertTrue(progress?.everShownCardIds?.contains("a2") == true)
+        assertEquals(3, progress?.totalCards)
+    }
+
+    @Test
+    fun selectPair_marksAllDoneWhenNoCardsForPair() {
         val vm = makeVm()
         vm.injectPoolForTest(makeCards())
-        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Presente" }
+
+        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Futuro Semplice" }
         vm.selectPair(pair)
-        vm.setSessionSizeForTest(2)
-        vm.startSession()
 
-        vm.exitSession()
-
-        assertEquals(null, vm.uiState.value.session)
+        assertTrue(vm.uiState.value.allDoneToday)
     }
 }

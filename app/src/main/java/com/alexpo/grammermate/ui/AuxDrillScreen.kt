@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,23 +35,19 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AuxDrillCatalog
 import com.alexpo.grammermate.data.AuxDrillPair
 
+/**
+ * Aux (lead-in) drill menu. Lets the user pick a (verb×tense) pair and start a
+ * training session. Training itself runs in the shared TrainingScreen —
+ * [onStartTraining] receives the pair and the filtered deck, and the caller
+ * hands them to [com.alexpo.grammermate.ui.TrainingViewModel.startVerbDrillSession].
+ */
 @Composable
 fun AuxDrillScreen(
     viewModel: AuxDrillViewModel,
     onBack: () -> Unit,
-    onStartTraining: () -> Unit
+    onStartTraining: (pair: AuxDrillPair) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    if (state.session != null) {
-        AuxDrillTrainingSurface(
-            state = state,
-            onSubmitCorrect = viewModel::submitCorrectAnswer,
-            onSkip = viewModel::markCardCompleted,
-            onExit = { viewModel.exitSession(); onBack() }
-        )
-        return
-    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -88,11 +83,11 @@ fun AuxDrillScreen(
                         totalCards = if (state.selectedPair == pair) state.totalCards else 0,
                         everShown = if (state.selectedPair == pair) state.everShownCount else 0,
                         todayShown = if (state.selectedPair == pair) state.todayShownCount else 0,
+                        allDoneToday = state.selectedPair == pair && state.allDoneToday,
                         onClick = { viewModel.selectPair(pair) },
                         onStart = {
                             viewModel.selectPair(pair)
-                            viewModel.startSession()
-                            onStartTraining()
+                            onStartTraining(pair)
                         }
                     )
                 }
@@ -108,6 +103,7 @@ private fun AuxPairCard(
     totalCards: Int,
     everShown: Int,
     todayShown: Int,
+    allDoneToday: Boolean,
     onClick: () -> Unit,
     onStart: () -> Unit
 ) {
@@ -140,43 +136,19 @@ private fun AuxPairCard(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.aux_drill_start))
+                if (allDoneToday) {
+                    Text(
+                        text = stringResource(R.string.aux_drill_all_done),
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.fillMaxWidth(),
+                        fontSize = 14.sp
+                    )
+                } else {
+                    Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.aux_drill_start))
+                    }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun AuxDrillTrainingSurface(
-    state: com.alexpo.grammermate.data.AuxDrillUiState,
-    onSubmitCorrect: () -> Unit,
-    onSkip: () -> Unit,
-    onExit: () -> Unit
-) {
-    val session = state.session ?: return
-    val card = session.cards.getOrNull(session.currentIndex)
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onExit) {
-                Icon(Icons.Default.ArrowBack, contentDescription = null)
-            }
-            Text("Aux Drill  ${session.currentIndex + 1}/${session.cards.size}")
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        card?.let {
-            Text(text = it.promptRu, fontSize = 22.sp, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = it.answer, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-        }
-        Spacer(modifier = Modifier.height(32.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(onClick = onSkip, modifier = Modifier.weight(1f)) { Text("Skip") }
-            Button(onClick = onSubmitCorrect, modifier = Modifier.weight(1f)) { Text("Correct") }
         }
     }
 }

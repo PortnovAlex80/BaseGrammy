@@ -22,6 +22,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * ViewModel for the aux (lead-in) drill **menu** screen.
+ *
+ * Loads the shared verb-drill pool, lets the user pick a (verb×tense) pair, and
+ * hands the filtered [VerbDrillCard]s to the shared training session — it does
+ * NOT run its own training surface. Training mechanics (input, answer, chips,
+ * hint) live in the shared [TrainingViewModel] via
+ * [TrainingViewModel.startVerbDrillSession], so aux drill reuses the same
+ * training screen as regular Verb Drill.
+ *
+ * Progress for aux pairs is tracked separately in [AuxDrillStore]
+ * (aux_drill_progress.yaml) so it never mixes with regular Verb Drill.
+ */
 class AuxDrillViewModel(application: Application) : AndroidViewModel(application) {
 
     private val logTag = "AuxDrillVM"
@@ -45,7 +58,13 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
     )
     val uiState: StateFlow<AuxDrillUiState> = _uiState
 
+    /** Aux cards derived from the pool, used for the menu's progress display. */
     private var allCards: List<AuxDrillCard> = emptyList()
+
+    /** Original VerbDrillCards kept so a pair can be handed to the shared
+     *  training session (VerbDrillCard implements SessionCard). */
+    private var allSourceCards: List<VerbDrillCard> = emptyList()
+
     private var progressMap: Map<String, AuxDrillComboProgress> = emptyMap()
     private var currentPackId: String? = null
     private var sessionSize: Int = 10
@@ -56,7 +75,8 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
 
     /**
      * Load the shared pool for the given pack. Maps parsed VerbDrillCards into
-     * AuxDrillCards (same underlying file, separate model).
+     * AuxDrillCards (same underlying file, separate model) and keeps the
+     * originals for handing to the shared training session.
      */
     fun reloadForPack(packId: String, languageId: String) {
         sessionSize = container.configStore.load().sessionSize
@@ -75,22 +95,25 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
         }
         val ioResult = withContext(Dispatchers.IO) {
             val files = lessonStore.getVerbDrillFiles(packId, languageId)
-            val cards = mutableListOf<AuxDrillCard>()
+            val auxCards = mutableListOf<AuxDrillCard>()
+            val sourceCards = mutableListOf<VerbDrillCard>()
             for (file in files) {
                 val parseResult = file.bufferedReader().use { reader ->
                     VerbDrillCsvParser.parse(reader)
                 }
                 val parsed = parseResult.data ?: continue
-                cards.addAll(parsed.map { it.toAux() })
+                sourceCards.addAll(parsed)
+                auxCards.addAll(parsed.map { it.toAux() })
             }
-            Triple(cards, auxDrillStore.loadProgress(), languageId)
+            Triple(auxCards, sourceCards, auxDrillStore.loadProgress())
         }
         allCards = ioResult.first
-        progressMap = ioResult.second
+        allSourceCards = ioResult.second
+        progressMap = ioResult.third
         _uiState.update {
             it.copy(
                 isLoading = false,
-                loadedLanguageId = ioResult.third
+                loadedLanguageId = languageId
             )
         }
         Log.d(logTag, "Loaded ${allCards.size} pool cards for aux drill")
@@ -118,7 +141,7 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
                 totalCards = filtered.size,
                 everShownCount = progress?.everShownCardIds?.size ?: 0,
                 todayShownCount = progress?.todayShownCardIds?.size ?: 0,
-                allDoneToday = false
+                allDoneToday = filtered.isEmpty()
             )
         }
     }
@@ -128,91 +151,36 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
 
     internal fun comboKeyFor(pair: AuxDrillPair): String = "aux|${pair.verb}|${pair.tense}"
 
-    // ── Session logic ────────────────────────────────────────────────────
-
-    private var cardShownTimestamp: Long = 0L
-
-    fun setSessionSize(size: Int) {
-        sessionSize = size.coerceIn(1, 1000)
-    }
-
-    fun startSession() {
-        val pair = _uiState.value.selectedPair ?: return
-        val filtered = filteredCards(pair)
-        if (filtered.isEmpty()) {
-            _uiState.update { it.copy(session = null, allDoneToday = true) }
-            return
-        }
+    /**
+     * Build the [VerbDrillCard] deck for the selected pair, excluding cards
+     * already shown today, capped at [sessionSize]. Caller hands this deck to
+     * the shared training session via
+     * [TrainingViewModel.startVerbDrillSession].
+     *
+     * Returns null when the pair has no matching cards (pool not loaded or the
+     * verb/tense is absent), so the caller can show an "all done" message.
+     */
+    fun sessionCardsFor(pair: AuxDrillPair): List<VerbDrillCard>? {
+        val matching = allSourceCards.filter { it.verb == pair.verb && it.tense == pair.tense }
+        if (matching.isEmpty()) return null
         val comboKey = comboKeyFor(pair)
-        val progress = progressMap[comboKey]
-        val shownToday = progress?.todayShownCardIds ?: emptySet()
-        val remaining = filtered.filter { it.id !in shownToday }
-
-        val pool = if (remaining.isEmpty()) filtered else remaining
-        val selected = pool.shuffled().take(sessionSize)
-
-        _uiState.update {
-            it.copy(
-                session = com.alexpo.grammermate.data.AuxDrillSessionState(cards = selected),
-                allDoneToday = false
-            )
-        }
-        cardShownTimestamp = System.currentTimeMillis()
+        val shownToday = progressMap[comboKey]?.todayShownCardIds ?: emptySet()
+        val remaining = matching.filter { it.id !in shownToday }
+        val pool = if (remaining.isEmpty()) matching else remaining
+        return pool.shuffled().take(sessionSize)
     }
 
-    fun submitCorrectAnswer() {
-        val session = _uiState.value.session ?: return
-        if (session.isComplete || session.currentIndex >= session.cards.size) return
-        val card = session.cards[session.currentIndex]
-        val nextIndex = session.currentIndex + 1
-        val isComplete = nextIndex >= session.cards.size
-
-        _uiState.update { state ->
-            state.copy(
-                session = session.copy(
-                    currentIndex = nextIndex,
-                    correctCount = session.correctCount + 1,
-                    isComplete = isComplete
-                )
-            )
-        }
-        persistCardProgress(card)
-        if (!isComplete) cardShownTimestamp = System.currentTimeMillis()
-        updateProgressDisplay()
-    }
-
-    fun markCardCompleted() {
-        val session = _uiState.value.session ?: return
-        if (session.isComplete || session.currentIndex >= session.cards.size) return
-        val card = session.cards[session.currentIndex]
-        val nextIndex = session.currentIndex + 1
-        val isComplete = nextIndex >= session.cards.size
-
-        _uiState.update { state ->
-            state.copy(
-                session = session.copy(
-                    currentIndex = nextIndex,
-                    incorrectCount = session.incorrectCount + 1,
-                    isComplete = isComplete
-                )
-            )
-        }
-        persistCardProgress(card)
-        if (!isComplete) cardShownTimestamp = System.currentTimeMillis()
-        updateProgressDisplay()
-    }
-
-    fun exitSession() {
-        auxDrillStore.flush()
-        _uiState.update { it.copy(session = null) }
-    }
-
-    private fun persistCardProgress(card: AuxDrillCard) {
-        val pair = _uiState.value.selectedPair ?: return
+    /**
+     * Persist that [cardIds] were shown during an aux training session.
+     * Called after the shared training session ends so the menu's progress
+     * display and the "shown today" exclusion stay accurate.
+     */
+    fun recordShown(pair: AuxDrillPair, cardIds: Set<String>) {
+        if (cardIds.isEmpty()) return
         val comboKey = comboKeyFor(pair)
         val existing = progressMap[comboKey]
-        val ever = (existing?.everShownCardIds ?: emptySet()) + card.id
-        val today = (existing?.todayShownCardIds ?: emptySet()) + card.id
+        val ever = (existing?.everShownCardIds ?: emptySet()) + cardIds
+        val today = (existing?.todayShownCardIds ?: emptySet()) + cardIds
         val total = filteredCards(pair).size
         val updated = AuxDrillComboProgress(
             verb = pair.verb,
@@ -224,27 +192,22 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
         )
         progressMap = progressMap.toMutableMap().apply { this[comboKey] = updated }
         auxDrillStore.upsertComboProgress(comboKey, updated)
-    }
-
-    private fun updateProgressDisplay() {
-        val pair = _uiState.value.selectedPair ?: return
-        val comboKey = comboKeyFor(pair)
-        val progress = progressMap[comboKey]
         _uiState.update {
             it.copy(
-                everShownCount = progress?.everShownCardIds?.size ?: 0,
-                todayShownCount = progress?.todayShownCardIds?.size ?: 0
+                everShownCount = updated.everShownCardIds.size,
+                todayShownCount = updated.todayShownCardIds.size
             )
         }
     }
 
     fun clearSelection() {
-        _uiState.update { it.copy(selectedPair = null, session = null, allDoneToday = false) }
+        _uiState.update { it.copy(selectedPair = null, allDoneToday = false) }
     }
 
     // ── Test hooks ───────────────────────────────────────────────────────
     internal fun injectPoolForTest(cards: List<VerbDrillCard>) {
         allCards = cards.map { it.toAux() }
+        allSourceCards = cards
         progressMap = auxDrillStore.loadProgress()
         _uiState.update { it.copy(isLoading = false, loadedLanguageId = "it") }
     }
@@ -253,8 +216,6 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
 
     internal fun currentFilteredCardsForTest(): List<AuxDrillCard> =
         _uiState.value.selectedPair?.let { filteredCards(it) } ?: emptyList()
-
-    internal fun setSessionSizeForTest(size: Int) = setSessionSize(size)
 
     internal fun auxStoreForTest(): AuxDrillStore = auxDrillStore
 }

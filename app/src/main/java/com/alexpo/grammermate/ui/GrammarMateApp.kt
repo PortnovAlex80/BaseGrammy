@@ -897,7 +897,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         val auxExit = remember(auxVm) {
                             {
-                                auxVm.exitSession()
                                 onNavigate(Routes.HOME)
                             }
                         }
@@ -907,7 +906,17 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         AuxDrillScreen(
                             viewModel = auxVm,
                             onBack = auxExit,
-                            onStartTraining = { /* training shown inline in same screen */ }
+                            onStartTraining = remember(auxVm) { { pair ->
+                                val deck = auxVm.sessionCardsFor(pair)
+                                if (!deck.isNullOrEmpty()) {
+                                    // Record shown cards for aux-scoped progress, then hand the
+                                    // deck to the shared training session (same path as Verb Drill).
+                                    auxVm.recordShown(pair, deck.map { it.id }.toSet())
+                                    vm.startVerbDrillSession(deck)
+                                    vm.setReturnTo(Routes.AUX_DRILL)
+                                    onNavigate(Routes.TRAINING)
+                                }
+                            } }
                         )
                     }
 
