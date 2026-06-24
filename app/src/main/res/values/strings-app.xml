@@ -79,6 +79,17 @@
     <string name="verb_continue">Продолжить</string>
     <string name="verb_start">Begin</string>
 
+    <!-- Aux (lead-in) drill -->
+    <string name="aux_drill_title">Lead-in Exercises</string>
+    <string name="aux_drill_entry">Lead-in</string>
+    <string name="aux_drill_leads_to">Leads to %1$s — %2$s</string>
+    <string name="aux_drill_select_pair">Select an auxiliary verb to drill</string>
+    <string name="aux_drill_progress">%1$d / %2$d seen</string>
+    <string name="aux_drill_today">Today: %1$d</string>
+    <string name="aux_drill_all_done">All cards done today</string>
+    <string name="aux_drill_start">Begin</string>
+    <string name="aux_drill_content_desc_back">Back</string>
+
     <!-- VD-50: Start Fresh / Resume Dialog -->
     <string name="verb_resume_dialog_message">You have an incomplete training session. Continue where you left off or start fresh?</string>
     <string name="verb_resume_dialog_resume">Resume</string>

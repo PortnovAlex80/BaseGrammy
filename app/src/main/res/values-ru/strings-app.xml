@@ -79,6 +79,17 @@
     <string name="verb_continue">Продолжить</string>
     <string name="verb_start">Начать</string>
 
+    <!-- Aux (lead-in) drill -->
+    <string name="aux_drill_title">Подводящие упражнения</string>
+    <string name="aux_drill_entry">Подводящие</string>
+    <string name="aux_drill_leads_to">Подводит к %1$s — %2$s</string>
+    <string name="aux_drill_select_pair">Выберите служебный глагол для тренировки</string>
+    <string name="aux_drill_progress">%1$d / %2$d пройдено</string>
+    <string name="aux_drill_today">Сегодня: %1$d</string>
+    <string name="aux_drill_all_done">На сегодня всё пройдено</string>
+    <string name="aux_drill_start">Начать</string>
+    <string name="aux_drill_content_desc_back">Назад</string>
+
     <!-- VD-50: Start Fresh / Resume Dialog -->
     <string name="verb_resume_dialog_message">У вас есть незаконченная сессия. Продолжить или начать сначала?</string>
     <string name="verb_resume_dialog_resume">Продолжить</string>
