@@ -140,8 +140,7 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
                 selectedPair = pair,
                 totalCards = filtered.size,
                 everShownCount = progress?.everShownCardIds?.size ?: 0,
-                todayShownCount = progress?.todayShownCardIds?.size ?: 0,
-                allDoneToday = filtered.isEmpty()
+                todayShownCount = progress?.todayShownCardIds?.size ?: 0
             )
         }
     }
@@ -152,22 +151,17 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
     internal fun comboKeyFor(pair: AuxDrillPair): String = "aux|${pair.verb}|${pair.tense}"
 
     /**
-     * Build the [VerbDrillCard] deck for the selected pair, excluding cards
-     * already shown today, capped at [sessionSize]. Caller hands this deck to
-     * the shared training session via
+     * Build a random [VerbDrillCard] deck for the selected pair, capped at
+     * [sessionSize]. Caller hands this deck to the shared training session via
      * [TrainingViewModel.startVerbDrillSession].
      *
      * Returns null when the pair has no matching cards (pool not loaded or the
-     * verb/tense is absent), so the caller can show an "all done" message.
+     * verb/tense is absent).
      */
     fun sessionCardsFor(pair: AuxDrillPair): List<VerbDrillCard>? {
         val matching = allSourceCards.filter { it.verb == pair.verb && it.tense == pair.tense }
         if (matching.isEmpty()) return null
-        val comboKey = comboKeyFor(pair)
-        val shownToday = progressMap[comboKey]?.todayShownCardIds ?: emptySet()
-        val remaining = matching.filter { it.id !in shownToday }
-        val pool = if (remaining.isEmpty()) matching else remaining
-        return pool.shuffled().take(sessionSize)
+        return matching.shuffled().take(sessionSize)
     }
 
     /**
@@ -201,7 +195,7 @@ class AuxDrillViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun clearSelection() {
-        _uiState.update { it.copy(selectedPair = null, allDoneToday = false) }
+        _uiState.update { it.copy(selectedPair = null) }
     }
 
     // ── Test hooks ───────────────────────────────────────────────────────

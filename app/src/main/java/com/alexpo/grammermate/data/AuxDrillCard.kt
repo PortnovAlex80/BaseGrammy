@@ -41,7 +41,6 @@ data class AuxDrillUiState(
     val everShownCount: Int = 0,
     val todayShownCount: Int = 0,
     val session: AuxDrillSessionState? = null,
-    val allDoneToday: Boolean = false,
     val isLoading: Boolean = true,
     val loadedLanguageId: String? = null
 )

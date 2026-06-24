@@ -109,15 +109,4 @@ class AuxDrillViewModelTest {
         assertTrue(progress?.everShownCardIds?.contains("a2") == true)
         assertEquals(3, progress?.totalCards)
     }
-
-    @Test
-    fun selectPair_marksAllDoneWhenNoCardsForPair() {
-        val vm = makeVm()
-        vm.injectPoolForTest(makeCards())
-
-        val pair = AuxDrillCatalog.ALL.first { it.verb == "avere" && it.tense == "Futuro Semplice" }
-        vm.selectPair(pair)
-
-        assertTrue(vm.uiState.value.allDoneToday)
-    }
 }

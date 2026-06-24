@@ -83,7 +83,6 @@ fun AuxDrillScreen(
                         totalCards = if (state.selectedPair == pair) state.totalCards else 0,
                         everShown = if (state.selectedPair == pair) state.everShownCount else 0,
                         todayShown = if (state.selectedPair == pair) state.todayShownCount else 0,
-                        allDoneToday = state.selectedPair == pair && state.allDoneToday,
                         onClick = { viewModel.selectPair(pair) },
                         onStart = {
                             viewModel.selectPair(pair)
@@ -103,7 +102,6 @@ private fun AuxPairCard(
     totalCards: Int,
     everShown: Int,
     todayShown: Int,
-    allDoneToday: Boolean,
     onClick: () -> Unit,
     onStart: () -> Unit
 ) {
@@ -136,17 +134,8 @@ private fun AuxPairCard(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                if (allDoneToday) {
-                    Text(
-                        text = stringResource(R.string.aux_drill_all_done),
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.fillMaxWidth(),
-                        fontSize = 14.sp
-                    )
-                } else {
-                    Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.aux_drill_start))
-                    }
+                Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.aux_drill_start))
                 }
             }
         }

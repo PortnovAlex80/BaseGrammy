@@ -86,7 +86,6 @@
     <string name="aux_drill_select_pair">Выберите служебный глагол для тренировки</string>
     <string name="aux_drill_progress">%1$d / %2$d пройдено</string>
     <string name="aux_drill_today">Сегодня: %1$d</string>
-    <string name="aux_drill_all_done">На сегодня всё пройдено</string>
     <string name="aux_drill_start">Начать</string>
     <string name="aux_drill_content_desc_back">Назад</string>
 
