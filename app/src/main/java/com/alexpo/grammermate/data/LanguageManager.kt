@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.data
 
+import android.util.Log
 import java.io.File
 
 /**
@@ -130,13 +131,16 @@ internal class LanguageManager(
         removeInstalledPackData: (String) -> Boolean,
         importFromAssets: (String) -> Boolean
     ): Boolean {
+        Log.i(TAG, "forceReloadDefaultPacks: ENTER, packs=${defaultPacks.map { it.packId }}")
         ensureSeedData()
         var reloadedAny = false
         defaultPacks.forEach { pack ->
             val removed = removeInstalledPackData(pack.packId)
             val reloaded = runCatching { importFromAssets(pack.assetPath) }.isSuccess
+            Log.i(TAG, "forceReloadDefaultPacks: pack=${pack.packId} removed=$removed reloaded=$reloaded")
             if (removed || reloaded) reloadedAny = true
         }
+        Log.i(TAG, "forceReloadDefaultPacks: EXIT reloadedAny=$reloadedAny")
         return reloadedAny
     }
 
@@ -293,23 +297,36 @@ internal class LanguageManager(
      */
     fun deletePackDrills(packId: String) {
         val drillsDir = File(baseDir, "drills/$packId")
-        if (!drillsDir.exists()) return
+        if (!drillsDir.exists()) {
+            Log.i(TAG, "deletePackDrills[$packId]: drills dir absent, nothing to do")
+            return
+        }
 
         val audioDir = File(drillsDir, "bg_vocab/audio")
+        val audioClipCount = audioDir.listFiles { f -> f.isFile && f.extension.equals("opus", ignoreCase = true) }
+            ?.size ?: 0
+        Log.i(TAG, "deletePackDrills[$packId]: ENTER drills=${drillsDir.exists()} audioDir=${audioDir.exists()} opus=$audioClipCount")
+
         val shelter = if (audioDir.exists()) {
             val shelterDir = File(drillsDir.parentFile, "${drillsDir.name}.audio_shelter")
             if (shelterDir.exists()) shelterDir.deleteRecursively()
-            audioDir.renameTo(shelterDir)
+            val moved = audioDir.renameTo(shelterDir)
+            Log.i(TAG, "deletePackDrills[$packId]: shelter move audio->${shelterDir.name} moved=$moved shelterExists=${shelterDir.exists()}")
             shelterDir
         } else {
+            Log.i(TAG, "deletePackDrills[$packId]: no audio dir to shelter")
             null
         }
 
-        drillsDir.deleteRecursively()
+        val deleted = drillsDir.deleteRecursively()
+        Log.i(TAG, "deletePackDrills[$packId]: drills tree deleted=$deleted drillsStillExists=${drillsDir.exists()}")
 
         if (shelter != null && shelter.exists()) {
             val restoredBgVocab = File(drillsDir, "bg_vocab").apply { mkdirs() }
-            shelter.renameTo(File(restoredBgVocab, "audio"))
+            val restoredAudio = File(restoredBgVocab, "audio")
+            val movedBack = shelter.renameTo(restoredAudio)
+            val restoredCount = restoredAudio.listFiles { f -> f.isFile && f.extension.equals("opus", ignoreCase = true) }?.size ?: 0
+            Log.i(TAG, "deletePackDrills[$packId]: restore movedBack=$movedBack audioExists=${restoredAudio.exists()} opus=$restoredCount shelterStillExists=${shelter.exists()}")
         }
     }
 
@@ -319,4 +336,8 @@ internal class LanguageManager(
         val packId: String,
         val assetPath: String
     )
+
+    private companion object {
+        const val TAG = "LanguageManager"
+    }
 }

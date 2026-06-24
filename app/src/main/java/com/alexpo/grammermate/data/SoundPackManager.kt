@@ -123,6 +123,7 @@ class SoundPackManager(
             emit(DownloadState.Error("Import failed: ${e.message}"))
             return@flow
         }
+        Log.i(TAG, "installFromUri: DONE pack=$packId installedClips=${installedClipCount(packId)}")
         emit(DownloadState.Done)
     }
 
