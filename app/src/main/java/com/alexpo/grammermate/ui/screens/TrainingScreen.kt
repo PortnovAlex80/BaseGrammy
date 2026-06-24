@@ -147,14 +147,22 @@ fun TrainingScreen(
     // Derive verb drill flag from screenMode instead of boolean param
     val isVerbDrillMode = mode == TrainingScreenMode.VERB_DRILL
 
+    // A session counts as "attempted" once at least one card was answered
+    // (correctly or skipped). Without this guard, exiting a drill session
+    // before touching any card would flash a spurious "congratulations"
+    // screen with zero stats.
+    val hasAnyAnswer = state.cardSession.correctCount + state.cardSession.incorrectCount > 0
+
     // Bottom sheet state for verb/tense chip taps
     var showVerbSheet by remember { mutableStateOf(false) }
     var showTenseSheet by remember { mutableStateOf(false) }
     var showGrammarSheet by remember { mutableStateOf(false) }
     val drillCard = state.cardSession.currentCard as? VerbDrillCard
 
-    // VERB_DRILL completion: show stats + More/Exit buttons instead of card session
-    val isVerbDrillComplete = isVerbDrillMode && !hasCards && mode == TrainingScreenMode.VERB_DRILL
+    // VERB_DRILL completion: show stats + More/Exit buttons instead of card session.
+    // Only when the session was actually attempted — not when the user backed out
+    // with zero answers.
+    val isVerbDrillComplete = isVerbDrillMode && !hasCards && hasAnyAnswer
     if (isVerbDrillComplete) {
         VerbDrillCompletionContent(
             correctCount = state.cardSession.correctCount,
@@ -183,16 +191,21 @@ fun TrainingScreen(
         return
     }
 
-    // Universal session completion for ALL modes when no cards remain
+    // Universal session completion for ALL modes when no cards remain.
+    // Skip the congratulations screen when nothing was attempted (user backed
+    // out of a drill/aux session with zero answers): render an empty background
+    // while the back/exit handler navigates away, instead of a 0/0 summary.
     if (!hasCards) {
-        Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
-            SessionCompletionContent(
-                modifier = Modifier.padding(padding),
-                mode = mode,
-                correctCount = state.cardSession.correctCount,
-                incorrectCount = state.cardSession.incorrectCount,
-                onDone = onSessionDone
-            )
+        if (hasAnyAnswer) {
+            Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+                SessionCompletionContent(
+                    modifier = Modifier.padding(padding),
+                    mode = mode,
+                    correctCount = state.cardSession.correctCount,
+                    incorrectCount = state.cardSession.incorrectCount,
+                    onDone = onSessionDone
+                )
+            }
         }
         return
     }
