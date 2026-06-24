@@ -438,6 +438,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     onNavigate(Routes.CHAPTER_LESSONS)
                                 } },
                                 onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
+                                onAuxDrill = remember { { onNavigate(Routes.AUX_DRILL) } },
                                 onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
                                 onDailyPractice = remember(dialogs) {
                                     {

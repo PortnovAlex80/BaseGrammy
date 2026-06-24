@@ -38,8 +38,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import android.os.Handler
 import android.os.Looper
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.ui.ChapterCardUi
@@ -67,6 +69,7 @@ fun GrammarStoryRoadmapScreen(
     onContinue: (Chapter) -> Unit,
     onPlayChapterStory: (Chapter) -> Unit = {},
     onVerbPractice: () -> Unit,
+    onAuxDrill: () -> Unit = {},
     onFlashcards: () -> Unit,
     onDailyPractice: () -> Unit,
     onBackgroundVocab: () -> Unit = {},
@@ -172,13 +175,24 @@ fun GrammarStoryRoadmapScreen(
                                     Text("Verb Practice")
                                 }
                             }
+                            if (hasVerbDrill) {
+                                OutlinedButton(
+                                    onClick = {
+                                        ScreenLogger.tap("drill_start", details = "type=aux")
+                                        onAuxDrill()
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(stringResource(R.string.aux_drill_entry))
+                                }
+                            }
                             if (hasVocabDrill) {
                                 OutlinedButton(
                                     onClick = {
                                         ScreenLogger.tap("drill_start", details = "type=vocab")
                                         onFlashcards()
                                     },
-                                    modifier = if (hasVerbDrill) Modifier.weight(1f) else Modifier.fillMaxWidth()
+                                    modifier = Modifier.weight(1f)
                                 ) {
                                     Text("Flashcards")
                                 }
