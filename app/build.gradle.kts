@@ -1,22 +1,32 @@
-﻿plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)        // Kotlin 2.0 Compose compiler plugin (replaces composeOptions)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "com.alexpo.grammermate"
-    compileSdk = 34
+    compileSdk = 35                            // bumped from 34 → M3 Adaptive + Compose 2024.10
 
     defaultConfig {
         applicationId = "com.alexpo.grammermate"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 7
-        versionName = "1.7"
+        minSdk = 26                            // bumped from 24 → FSRS, DataStore, modern APIs
+        targetSdk = 35
+        versionCode = 100                      // v2 fresh start
+        versionName = "2.0.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.alexpo.grammermate.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+
+        // Room schema export for migration regression tests
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
         }
     }
 
@@ -46,24 +56,23 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi",
+        )
     }
 
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
-            // Android's unit-test JVM stubs throw on unmocked framework calls (e.g.
-            // android.util.Log.d reached via production parsers under test). Return the
-            // JVM default instead so pure-JVM tests that incidentally touch logging code
-            // don't crash — none of them assert on log output.
             isReturnDefaultValues = true
         }
     }
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
-    }
+    // No composeOptions block: Kotlin 2.0 uses the Compose Gradle plugin above.
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -89,48 +98,90 @@ tasks.matching { it.name == "assembleDebug" }.configureEach {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    // AndroidX core
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
 
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-text")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    // Compose (BOM-managed)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.text)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.navigation.compose)
 
-    implementation("org.yaml:snakeyaml:2.2")
+    // Compose Material 3 Adaptive (responsive layouts for phones/tablets/foldables)
+    implementation(libs.androidx.compose.material3.adaptive)
+    implementation(libs.androidx.compose.material3.adaptive.layout)
+    implementation(libs.androidx.compose.material3.adaptive.navigation)
 
-    // Sherpa-ONNX TTS (static-linked ONNX Runtime)
+    // Room (user-state persistence — single transaction boundary, fixes card_15)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // DataStore (settings / preferences / migration flags)
+    implementation(libs.androidx.datastore.preferences)
+
+    // Hilt (DI — constructor injection, KSP-processed alongside Room)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Serialization (Room TypeConverters, audit log)
+    implementation(libs.kotlinx.serialization.json)
+
+    // Legacy / migration
+    implementation(libs.snakeyaml)              // one-time YAML reader for migration
+    implementation(libs.commons.compress)       // tar.bz2 extraction for TTS model download
+
+    // QR code
+    implementation(libs.qrose)
+
+    // SRS — локальная pure-Kotlin реализация в domain-слое (SrsScheduler.kt).
+    // Внешних зависимостей нет; это убирает риск отсутствия стабильного FSRS-артефакта.
+
+    // Sherpa-ONNX TTS (static-linked ONNX Runtime) — local AAR
     implementation(files("libs/sherpa-onnx-static-link-onnxruntime-1.12.40.aar"))
-    // tar.bz2 extraction for TTS model download
-    implementation("org.apache.commons:commons-compress:1.26.1")
-    // QR code generation
-    implementation("io.github.alexzhirkevich:qrose:1.0.1")
 
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Unit test dependencies (minimal working set for pure unit + smoke tests)
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.robolectric:robolectric:4.13")
-    testImplementation("androidx.test:core:1.5.0")
-    testImplementation("androidx.test.ext:junit:1.1.5")
-    testImplementation("androidx.compose.ui:ui-test-junit4")
+    // Unit tests
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 
-    // UI integration test dependencies (androidTest - requires Android runtime)
-    androidTestImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
-    androidTestImplementation("org.robolectric:robolectric:4.13")
-    androidTestImplementation("androidx.test:core:1.5.0")
-    androidTestImplementation("com.google.truth:truth:1.1.5")
+    // Instrumented tests (androidTest — requires Hilt test setup)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.turbine)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.manifest)
+    // Hilt test
+    androidTestImplementation(libs.hilt.android)
+    kspAndroidTest(libs.hilt.compiler)
 }

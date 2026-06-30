@@ -1,0 +1,140 @@
+package com.alexpo.grammermate.data
+
+import android.content.Context
+import android.util.Log
+import org.yaml.snakeyaml.Yaml
+import java.io.File
+import java.io.IOException
+
+data class AppConfig(
+    val testMode: Boolean = false,
+    val eliteSizeMultiplier: Double = 1.25,
+    val vocabSprintLimit: Int = 20,
+    val useOfflineAsr: Boolean = false,
+    val hintLevel: HintLevel = HintLevel.EASY,
+    val ruTextScale: Float = 1.0f,
+    val ttsSpeed: Float = 1.0f,
+    val voiceAutoStart: Boolean = true,
+    val uiLanguage: String = "system",
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val sessionSize: Int = 10,
+    val appVersion: Int = 0,
+    val clickableWordHints: Boolean = true,  // Новая настройка: кликабельные слова в ответах
+    val useBluetoothMic: Boolean = false,
+    /** Pause (ms) inserted after each example sentence (it/ru) in background-vocab
+     *  playback. User-tunable; clamp range 500..6000ms (0.5s..6s). Default 500ms. */
+    val bgVocabSentencePauseMs: Long = 500L
+)
+
+interface AppConfigStore {
+
+    fun save(config: AppConfig)
+
+    fun load(): AppConfig
+
+    fun getLastVersion(): Int
+
+    fun setLastVersion(version: Int)
+}
+
+class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
+    private val yaml = Yaml()
+    private val baseDir = File(context.filesDir, "grammarmate")
+    private val file = File(baseDir, "config.yaml")
+
+    override fun save(config: AppConfig) {
+        baseDir.mkdirs()
+        val payload = mapOf(
+            "testMode" to config.testMode,
+            "eliteSizeMultiplier" to config.eliteSizeMultiplier,
+            "vocabSprintLimit" to config.vocabSprintLimit,
+            "useOfflineAsr" to config.useOfflineAsr,
+            "hintLevel" to config.hintLevel.name,
+            "ruTextScale" to config.ruTextScale,
+            "ttsSpeed" to config.ttsSpeed,
+            "voiceAutoStart" to config.voiceAutoStart,
+            "uiLanguage" to config.uiLanguage,
+            "themeMode" to config.themeMode.name,
+            "sessionSize" to config.sessionSize,
+            "appVersion" to config.appVersion,
+            "clickableWordHints" to config.clickableWordHints,  // Новая настройка
+            "useBluetoothMic" to config.useBluetoothMic,
+            "bgVocabSentencePauseMs" to config.bgVocabSentencePauseMs
+        )
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(payload))
+            Log.i("AppConfigStore", "Successfully saved app config: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("AppConfigStore", "Failed to save app config: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("AppConfigStore", "Unexpected error saving app config: ${file.name}", e)
+            throw IOException("Failed to save app config", e)
+        }
+    }
+
+    override fun load(): AppConfig {
+        if (!file.exists()) {
+            baseDir.mkdirs()
+            val seeded = runCatching {
+                context.assets.open("grammarmate/config.yaml").use { input ->
+                    val text = input.bufferedReader().readText()
+                    AtomicFileWriter.writeText(file, text)
+                    text
+                }
+            }.getOrNull()
+            if (seeded == null) {
+                AtomicFileWriter.writeText(
+                    file,
+                    yaml.dump(mapOf("testMode" to false, "vocabSprintLimit" to 20))
+                )
+            }
+        }
+        val raw = try { yaml.load<Any>(file.readText()) } catch (_: Exception) { null } ?: return AppConfig()
+        val data = raw as? Map<*, *> ?: return AppConfig()
+        val testMode = data["testMode"] as? Boolean ?: false
+        val eliteSizeMultiplier = (data["eliteSizeMultiplier"] as? Number)?.toDouble() ?: 1.25
+        val vocabSprintLimit = (data["vocabSprintLimit"] as? Number)?.toInt() ?: 20
+        val useOfflineAsr = data["useOfflineAsr"] as? Boolean ?: false
+        val hintLevelStr = data["hintLevel"] as? String ?: "EASY"
+        val hintLevel = runCatching { HintLevel.valueOf(hintLevelStr) }.getOrDefault(HintLevel.EASY)
+        val ruTextScale = ((data["ruTextScale"] as? Number)?.toFloat()?.coerceIn(1.0f, 2.0f)) ?: 1.0f
+        val voiceAutoStart = data["voiceAutoStart"] as? Boolean ?: true
+        val uiLanguage = (data["uiLanguage"] as? String)?.takeIf { it in listOf("system", "en", "ru") } ?: "system"
+        val themeModeStr = data["themeMode"] as? String ?: "SYSTEM"
+        val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
+        val rawSessionSize = (data["sessionSize"] as? Number)?.toInt() ?: 10
+        val sessionSize = rawSessionSize.coerceIn(3, 1000)
+        val appVersion = (data["appVersion"] as? Number)?.toInt() ?: 0
+        val clickableWordHints = data["clickableWordHints"] as? Boolean ?: true  // Новая настройка
+        val useBluetoothMic = data["useBluetoothMic"] as? Boolean ?: false
+        val ttsSpeed = ((data["ttsSpeed"] as? Number)?.toFloat()?.coerceIn(0.5f, 1.5f)) ?: 1.0f
+        val bgVocabSentencePauseMs = ((data["bgVocabSentencePauseMs"] as? Number)?.toLong()?.coerceIn(500L, 6000L)) ?: 500L
+        return AppConfig(
+            testMode = testMode,
+            eliteSizeMultiplier = eliteSizeMultiplier,
+            vocabSprintLimit = vocabSprintLimit,
+            useOfflineAsr = useOfflineAsr,
+            hintLevel = hintLevel,
+            ruTextScale = ruTextScale,
+            ttsSpeed = ttsSpeed,
+            voiceAutoStart = voiceAutoStart,
+            uiLanguage = uiLanguage,
+            themeMode = themeMode,
+            sessionSize = sessionSize,
+            appVersion = appVersion,
+            clickableWordHints = clickableWordHints,  // Новая настройка
+            useBluetoothMic = useBluetoothMic,
+            bgVocabSentencePauseMs = bgVocabSentencePauseMs
+        )
+    }
+
+    override fun getLastVersion(): Int {
+        return load().appVersion
+    }
+
+    override fun setLastVersion(version: Int) {
+        val config = load()
+        save(config.copy(appVersion = version))
+    }
+}

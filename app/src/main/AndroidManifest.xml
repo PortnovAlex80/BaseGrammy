@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:name=".GrammarMateApplication"
+        android:name=".v2.GrammarMateApplicationV2"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:label="GrammarMate"
@@ -29,7 +29,7 @@
         android:networkSecurityConfig="@xml/network_security_config">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".v2.MainActivityV2"
             android:exported="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode">
             <intent-filter>
@@ -37,15 +37,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".feature.backgroundvocab.VocabPlaybackService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-            </intent-filter>
-        </service>
 
     </application>
 

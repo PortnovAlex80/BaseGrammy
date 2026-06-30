@@ -115,3 +115,9 @@ lesson_*.csv
 
 # Backup snapshots with non-.bak suffix (e.g. *.bak_batch6)
 *.bak_*
+
+# v2 rewrite artifacts
+app/schemas/
+app/build/
+.gradle/
+local.properties
