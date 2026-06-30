@@ -1,0 +1,110 @@
+package com.alexpo.grammermate.v2.core.domain.session
+
+import com.alexpo.grammermate.v2.core.domain.model.CardId
+import com.alexpo.grammermate.v2.core.domain.model.LessonId
+import com.alexpo.grammermate.v2.core.domain.model.PackId
+import com.alexpo.grammermate.v2.core.domain.model.SessionId
+import com.alexpo.grammermate.v2.core.domain.model.SessionSnapshot
+import com.alexpo.grammermate.v2.core.domain.model.SessionStatus
+import com.alexpo.grammermate.v2.core.domain.model.TrainingMode
+import com.alexpo.grammermate.v2.core.domain.repository.SessionRepository
+
+/**
+ * In-memory реализация [SessionRepository] для чистых JVM-тестов.
+ *
+ * Полностью повторяет контракт data-слоя (Room), но без SQLite/Android:
+ * состояние хранится в единой мутабельной [Map]. Это позволяет тестировать
+ * доменную логику [SessionEngine] (включая критический resume-сценарий
+ * бага `card_15`) детерминированно и мгновенно.
+ *
+ * `getOrCreateSession` создаёт свежий снимок из переданного [poolCardIds]
+ * с `currentCardId` = первая карта пула — ровно так, как должен делать
+ * реальный data-слой.
+ */
+class FakeSessionRepository(
+    private val clock: () -> Long = { System.currentTimeMillis() },
+) : SessionRepository {
+
+    /** Единое хранилище снимков: имитация «одной транзакции» Room. */
+    private val store = mutableMapOf<SessionId, SessionSnapshot>()
+
+    override suspend fun getOrCreateSession(
+        sessionId: SessionId,
+        packId: PackId,
+        lessonId: LessonId?,
+        mode: TrainingMode,
+        poolCardIds: List<CardId>?,
+        selectedTense: String?,
+        selectedGroup: String?,
+        selectedPerson: String?,
+    ): SessionSnapshot {
+        store[sessionId]?.let { return it }
+        val now = clock()
+        val pool = poolCardIds ?: emptyList()
+        val snapshot = SessionSnapshot(
+            sessionId = sessionId,
+            packId = packId,
+            lessonId = lessonId,
+            mode = mode,
+            currentCardId = pool.firstOrNull(),
+            cursorIndex = 0,
+            status = SessionStatus.ACTIVE,
+            state = com.alexpo.grammermate.v2.core.domain.model.SessionState.ACTIVE,
+            poolCardIds = pool,
+            shownCardIds = emptySet(),
+            correctCount = 0,
+            incorrectCount = 0,
+            hintCount = 0,
+            completedSubLessonCount = 0,
+            selectedTense = selectedTense,
+            selectedGroup = selectedGroup,
+            selectedPerson = selectedPerson,
+            startedAtMs = now,
+            updatedAtMs = now,
+        )
+        store[sessionId] = snapshot
+        return snapshot
+    }
+
+    override suspend fun loadSession(sessionId: SessionId): SessionSnapshot? = store[sessionId]
+
+    override suspend fun saveSession(snapshot: SessionSnapshot) {
+        store[snapshot.sessionId] = snapshot
+    }
+
+    override suspend fun completeSession(sessionId: SessionId) {
+        store[sessionId]?.let { cur ->
+            store[sessionId] = cur.copy(status = SessionStatus.COMPLETED, updatedAtMs = clock())
+        }
+    }
+
+    override suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId) {
+        store[sessionId]?.let { cur ->
+            store[sessionId] = cur.copy(currentCardId = cardId, updatedAtMs = clock())
+        }
+    }
+
+    override suspend fun markCardShown(sessionId: SessionId, cardId: CardId) {
+        store[sessionId]?.let { cur ->
+            store[sessionId] = cur.copy(
+                shownCardIds = cur.shownCardIds + cardId,
+                updatedAtMs = clock(),
+            )
+        }
+    }
+
+    override suspend fun updateProgress(sessionId: SessionId, correct: Int, incorrect: Int, hint: Int) {
+        store[sessionId]?.let { cur ->
+            store[sessionId] = cur.copy(
+                correctCount = correct,
+                incorrectCount = incorrect,
+                hintCount = hint,
+                updatedAtMs = clock(),
+            )
+        }
+    }
+
+    override suspend fun deleteSession(sessionId: SessionId) {
+        store.remove(sessionId)
+    }
+}
