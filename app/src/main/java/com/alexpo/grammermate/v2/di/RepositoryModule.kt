@@ -1,11 +1,15 @@
 package com.alexpo.grammermate.v2.di
 
+import com.alexpo.grammermate.v2.core.data.audio.SherpaAudioModelRepository
+import com.alexpo.grammermate.v2.core.data.audio.SherpaAudioRepository
 import com.alexpo.grammermate.v2.core.data.repository.ContentRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.MasteryRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.ProgressRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.SessionRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.SettingsRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.UserContentRepositoryImpl
+import com.alexpo.grammermate.v2.core.domain.audio.AudioModelRepository
+import com.alexpo.grammermate.v2.core.domain.audio.AudioRepository
 import com.alexpo.grammermate.v2.core.domain.repository.ContentRepository
 import com.alexpo.grammermate.v2.core.domain.repository.MasteryRepository
 import com.alexpo.grammermate.v2.core.domain.repository.ProgressRepository
@@ -52,4 +56,17 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    /**
+     * Аудио-порты (Фаза 9 — изоляция Sherpa-ONNX за чистым доменным интерфейсом).
+     * Домен зависит от [AudioRepository]/[AudioModelRepository]; конкретные
+     * Sherpa-ONNX-реализации подключаются здесь, в тестах подменяются fake'ами.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindAudioRepository(impl: SherpaAudioRepository): AudioRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAudioModelRepository(impl: SherpaAudioModelRepository): AudioModelRepository
 }
