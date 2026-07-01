@@ -155,16 +155,38 @@ sealed interface TrainingIntent {
 
 | Фаза | Что | Статус |
 |---|---|---|
-| 0 | Этот документ + ROOM_SCHEMA.md | done |
-| 1 | Build config (KSP/Hilt/Room/DataStore/Kotlin 2.0) | pending |
-| 2 | Domain-слой (модели, FSRS) | pending |
-| 3 | Data-слой (Room entities/DAOs, repositories) | pending |
-| 4 | Yaml→Room мигратор | pending |
-| 5 | MVI core (Intent/State/Reducer) | pending |
-| 6 | Session engine (currentCardId PK) | pending |
-| 7 | UI (Compose M3 Adaptive) | pending |
-| 8 | Регрессионные тесты | pending |
-| 9 | Аудио/голос (Sherpa-ONNX за интерфейсом) | pending |
+| 0 | Этот документ + ROOM_SCHEMA.md | ✅ done |
+| 1 | Build config (KSP/Hilt/Room/DataStore/Kotlin 2.0/AGP 8.7.3) | ✅ done (BUILD SUCCESSFUL) |
+| 2 | Domain-слой (18 файлов: модели, FSRS v6, репозитории) | ✅ done |
+| 3 | Data-слой (21 entity, 5 DAO, Database WAL, 6 repos, Hilt) | ✅ done |
+| 4 | Yaml→Room мигратор (транзакционный, идемпотентный) | ✅ done |
+| 5 | MVI core (MviViewModel, Reducer, Compose extensions) | ✅ done |
+| 6 | Session engine (currentCardId PK — баг card_15 убит) | ✅ done |
+| 7 | UI Compose M3 Adaptive (Theme, Nav, Home, Training) | ✅ done |
+| 8 | Регрессионные тесты (72/72 pass) | ✅ done |
+| 9 | Аудио/голос (Sherpa-ONNX за чистым интерфейсом) | ✅ done (каркас + TODO) |
+
+## Итог (ветка `rewrite/v2-clean-architecture`)
+
+**Регрессионная защита:** 72 unit-теста, 0 failures.
+- `SessionEngineResumeRegressionTest` (11) — баг card_15 мёртв и доказан:
+  resume сохраняет `currentCardId` после пересборки пула.
+- `SrsSchedulerTest` (33) + `SrsParamsTest` (10) — FSRS v6 формулы верифицированы
+  против py-fsrs (R(t=S)=0.9, монотонность, переходы состояний).
+- `SrsMigrationTest` (10) — миграция со старой интервальной лестницы.
+- `SubLessonSchedulerTest` (8).
+
+**Структура:** 4 checkpoint-коммита. Domain — чистый Kotlin (0 Android),
+тестируется на JVM без Robolectric. Data — Room (одна БД = одна транзакция = фикс
+card_15). Presentation — MVI с pure reducer. UI — Compose M3 Adaptive.
+
+**Что осталось (фоллоу-ап, НЕ блокирует фундамент):**
+- Settings/VerbDrill/DailyPractice/ChapterLessons экраны (сейчас Placeholder).
+- Полная реализация TTS/ASR в SherpaAudioRepository (speak/recognizeSpeech —
+  каркас с TODO на миграцию логики из legacy AudioCoordinator/TtsEngine/AsrEngine).
+- Pack import (CSV/YAML → Room) для загрузки контента паков.
+- Backup/Restore через Room snapshot.
+- Иконки/ассеты (mipmap) — наследуются от v1.
 
 ## Источники решений
 - [FSRS-Kotlin v6](https://github.com/open-spaced-repetition/FSRS-Kotlin) — современный SRS.
