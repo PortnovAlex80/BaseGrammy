@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.alexpo.grammermate.v2.core.data.local.GrammarMateDatabase
 import com.alexpo.grammermate.v2.core.data.local.dao.ContentDao
+import com.alexpo.grammermate.v2.core.data.local.dao.DrillDao
 import com.alexpo.grammermate.v2.core.data.local.dao.MasteryDao
 import com.alexpo.grammermate.v2.core.data.local.dao.ProgressDao
 import com.alexpo.grammermate.v2.core.data.local.dao.SessionDao
@@ -44,6 +45,8 @@ object DataModule {
     @Provides fun provideSessionDao(db: GrammarMateDatabase): SessionDao = db.sessionDao()
 
     @Provides fun provideMasteryDao(db: GrammarMateDatabase): MasteryDao = db.masteryDao()
+
+    @Provides fun provideDrillDao(db: GrammarMateDatabase): DrillDao = db.drillDao()
 
     @Provides fun provideProgressDao(db: GrammarMateDatabase): ProgressDao = db.progressDao()
 

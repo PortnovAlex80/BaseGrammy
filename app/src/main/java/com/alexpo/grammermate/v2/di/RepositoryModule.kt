@@ -8,6 +8,7 @@ import com.alexpo.grammermate.v2.core.data.repository.ProgressRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.SessionRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.SettingsRepositoryImpl
 import com.alexpo.grammermate.v2.core.data.repository.UserContentRepositoryImpl
+import com.alexpo.grammermate.v2.core.data.repository.VocabDrillRepositoryImpl
 import com.alexpo.grammermate.v2.core.domain.audio.AudioModelRepository
 import com.alexpo.grammermate.v2.core.domain.audio.AudioRepository
 import com.alexpo.grammermate.v2.core.domain.repository.ContentRepository
@@ -16,6 +17,7 @@ import com.alexpo.grammermate.v2.core.domain.repository.ProgressRepository
 import com.alexpo.grammermate.v2.core.domain.repository.SessionRepository
 import com.alexpo.grammermate.v2.core.domain.repository.SettingsRepository
 import com.alexpo.grammermate.v2.core.domain.repository.UserContentRepository
+import com.alexpo.grammermate.v2.core.domain.repository.VocabDrillRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -52,6 +54,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUserContentRepository(impl: UserContentRepositoryImpl): UserContentRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindVocabDrillRepository(impl: VocabDrillRepositoryImpl): VocabDrillRepository
 
     @Binds
     @Singleton

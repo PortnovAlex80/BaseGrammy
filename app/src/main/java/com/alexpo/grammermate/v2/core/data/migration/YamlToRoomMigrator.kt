@@ -13,6 +13,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.MasteryStateEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.MigrationFlagEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.ShownCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.StreakEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.WordMasteryEntity
 import com.alexpo.grammermate.v2.core.domain.srs.SrsMigration
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +50,8 @@ sealed interface MigrationResult {
  * @property badSentences  число [BadSentenceEntity].
  * @property drillProgress число [DrillProgressEntity] (по pack+drillType).
  * @property dailyCursors  число [DailyCursorEntity] (по pack).
+ * @property wordMastery   число [WordMasteryEntity] (SRS-состояния отдельных слов
+ *                         из `drills/<packId>/word_mastery.yaml`).
  * @property lessonProgress 0 всегда: legacy `lesson_progress_*.yaml` не имеют прямого аналога
  *                          в v2-схеме и пропускаются (см. [YamlToRoomMigrator]).
  */
@@ -59,6 +62,7 @@ data class MigrationCounts(
     val badSentences: Int,
     val drillProgress: Int,
     val dailyCursors: Int,
+    val wordMastery: Int,
     val lessonProgress: Int,
 )
 
@@ -94,8 +98,12 @@ data class MigrationCounts(
  *  - `bad_sentences.yaml`      → [BadSentenceEntity]
  *  - `daily_cursor_<packId>.yaml` → [DailyCursorEntity]
  *  - `drills/<packId>/verb_drill_progress.yaml` → [DrillProgressEntity] (drillType = VERB)
- *  - `drills/<packId>/word_mastery.yaml`         → ПРОПУСК (нет аналога в v2-схеме)
- *  - `lesson_progress_<packId>.yaml`             → ПРОПУСК (нет аналога в v2-схеме)
+ *  - `drills/<packId>/word_mastery.yaml`         → [WordMasteryEntity] (SRS-состояния слов)
+ *  - `drills/<packId>/vocab_progress.yaml`       → ПРОПУСК (иной формат: per-lesson
+ *    completedIndices + per-entry SRS без nextReviewDateMs; миграция в [WordMasteryEntity]
+ *    невозможна без потери семантики — см. [parseVocabProgressFiles])
+ *  - `lesson_progress_<packId>.yaml`             → ПРОПУСК (нет аналога в v2-схеме;
+ *    переносится в session snapshot, если такая таблица будет добавлена)
  *
  * @property context   контекст приложения (для доступа к [Context.getFilesDir]).
  * @property database  единая Room-БД v2 (и транзакционный контейнер, и DAO-источник).
@@ -149,6 +157,7 @@ class YamlToRoomMigrator @Inject constructor(
                 val masteryDao = database.masteryDao()
                 val progressDao = database.progressDao()
                 val userContentDao = database.userContentDao()
+                val drillDao = database.drillDao()
 
                 for (m in b.mastery) masteryDao.upsert(m)
                 for (sc in b.shownCards) masteryDao.insertShownCard(sc)
@@ -158,6 +167,7 @@ class YamlToRoomMigrator @Inject constructor(
                 for (dc in b.dailyCursors) progressDao.upsertDailyCursor(dc)
                 for (hc in b.hidden) userContentDao.hideCard(hc)
                 for (bs in b.badSentences) userContentDao.insertBadSentence(bs)
+                for (wm in b.wordMastery) drillDao.upsertWordMastery(wm)
 
                 userContentDao.setMigrationFlag(
                     MigrationFlagEntity(key = MIGRATION_KEY, done = true, migratedAtMs = System.currentTimeMillis())
@@ -174,7 +184,8 @@ class YamlToRoomMigrator @Inject constructor(
             "Migration committed in one transaction: " +
                 "mastery=${b.mastery.size}, streaks=${b.streaks.size}, hidden=${b.hidden.size}, " +
                 "badSentences=${b.badSentences.size}, drillProgress=${b.drillProgress.size}, " +
-                "dailyCursors=${b.dailyCursors.size} (legacy .yaml left in place as backup)."
+                "dailyCursors=${b.dailyCursors.size}, wordMastery=${b.wordMastery.size} " +
+                "(legacy .yaml left in place as backup)."
         )
         MigrationResult.Migrated(
             MigrationCounts(
@@ -184,6 +195,7 @@ class YamlToRoomMigrator @Inject constructor(
                 badSentences = b.badSentences.size,
                 drillProgress = b.drillProgress.size,
                 dailyCursors = b.dailyCursors.size,
+                wordMastery = b.wordMastery.size,
                 lessonProgress = 0, // не переносится (нет аналога в v2-схеме)
             )
         )
@@ -203,6 +215,7 @@ class YamlToRoomMigrator @Inject constructor(
         val dailyCursors = mutableListOf<DailyCursorEntity>()
         val hidden = mutableListOf<HiddenCardEntity>()
         val badSentences = mutableListOf<BadSentenceEntity>()
+        val wordMastery = mutableListOf<WordMasteryEntity>()
     }
 
     /**
@@ -219,9 +232,13 @@ class YamlToRoomMigrator @Inject constructor(
         parseFileSafely("bad_sentences.yaml") { file -> parseBadSentences(file, bag) }
         parseDailyCursorFiles(bag, now)
         parseVerbDrillProgressFiles(bag, now)
-        // Документируемые пропуски (нет аналога в v2-схеме):
-        logSkipped("lesson_progress_<packId>.yaml", "no direct v2 entity (PackLessonProgress)")
-        logSkipped("drills/<packId>/word_mastery.yaml", "no word-level mastery table in v2 schema")
+        parseWordMasteryFiles(bag)
+        parseVocabProgressFiles()
+        // Документируемый пропуск (нет аналога в v2-схеме):
+        logSkipped(
+            "lesson_progress_<packId>.yaml",
+            "no direct v2 entity (PackLessonProgress); переносится в session snapshot при добавлении такой таблицы"
+        )
         return bag
     }
 
@@ -505,6 +522,105 @@ class YamlToRoomMigrator @Inject constructor(
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "Skipping verb drill progress for pack $packId: ${e.message}")
+            }
+        }
+    }
+
+    // ─── drills/<packId>/word_mastery.yaml ────────────────────────────────────────
+
+    /**
+     * Сканирует `drills/<packId>/word_mastery.yaml` → по одной [WordMasteryEntity]
+     * на слово. PackId берётся из пути каталога (для аудита он не хранится в
+     * [WordMasteryEntity] — его PK это `wordId`).
+     *
+     * Точный legacy-формат (schemaVersion 1, см. `WordMasteryStoreImpl`):
+     * ```
+     * schemaVersion: 1
+     * data:
+     *   <wordId>:
+     *     intervalStepIndex: 2
+     *     correctCount: 3
+     *     incorrectCount: 1
+     *     lastReviewDateMs: 1780375959300
+     *     nextReviewDateMs: 1780550000000
+     *     isLearned: false
+     * ```
+     * Также поддерживается legacy-расположение `word_mastery.yaml` (без каталога pack),
+     * где packId неизвестен — слова мигрируются как есть.
+     *
+     * Поля переносятся 1-в-1 (схема [WordMasteryEntity] совпадает по полям с v1).
+     */
+    private fun parseWordMasteryFiles(bag: EntityBag) {
+        // 1. Pack-scoped файлы: drills/<packId>/word_mastery.yaml
+        val drillsDir = File(baseDir, "drills")
+        if (drillsDir.exists() && drillsDir.isDirectory) {
+            val packDirs = drillsDir.listFiles { f -> f.isDirectory } ?: emptyArray()
+            for (packDir in packDirs) {
+                parseWordMasteryFile(File(packDir, "word_mastery.yaml"), bag)
+            }
+        }
+        // 2. Legacy-расположение: grammarmate/word_mastery.yaml (без packId).
+        parseWordMasteryFile(File(baseDir, "word_mastery.yaml"), bag)
+    }
+
+    /** Разбор одного `word_mastery.yaml`: каждое слово → [WordMasteryEntity]. */
+    private fun parseWordMasteryFile(file: File, bag: EntityBag) {
+        if (!file.exists() || file.length() == 0L) return
+        try {
+            val raw = yaml.load<Any>(file.readText()) ?: return
+            val root = raw as? Map<*, *> ?: return
+            @Suppress("UNCHECKED_CAST")
+            val payload = (root["data"] as? Map<String, Any>) ?: (root as Map<String, Any>)
+
+            for ((wordIdObj, value) in payload) {
+                val wordId = wordIdObj as? String ?: continue
+                val entry = value as? Map<*, *> ?: continue
+                try {
+                    bag.wordMastery.add(
+                        WordMasteryEntity(
+                            wordId = wordId,
+                            intervalStepIndex = entry.intOr("intervalStepIndex", 0),
+                            correctCount = entry.intOr("correctCount", 0),
+                            incorrectCount = entry.intOr("incorrectCount", 0),
+                            lastReviewDateMs = entry.longOr("lastReviewDateMs", 0L),
+                            nextReviewDateMs = entry.longOr("nextReviewDateMs", 0L),
+                            isLearned = entry["isLearned"] as? Boolean ?: false,
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Skipping word mastery entry '$wordId' in ${file.name}: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Skipping word mastery file ${file.name}: ${e.message}")
+        }
+    }
+
+    // ─── drills/<packId>/vocab_progress.yaml ──────────────────────────────────────
+
+    /**
+     * `vocab_progress.yaml` — ПРОПУСК (с логированием).
+     *
+     * Legacy-формат (`VocabProgressStoreImpl`) структурно отличен от
+     * [WordMasteryEntity]: он хранит per-lesson `completedIndices` (Set<Int>) и
+     * per-entry SRS (`lastCorrectMs`/`lastIncorrectMs`/`intervalStep`), но **без**
+     * `nextReviewDateMs` и `correctCount`/`incorrectCount`. Перенос в
+     * [WordMasteryEntity] невозможен без потери семантики (нет даты следующего
+     * повтора; `entryId` не равен `wordId` схемы vocab drill). Файл остаётся как
+     * backup; при необходимости миграция реализуется отдельным pass после появления
+     * маппинга entryId → wordId.
+     */
+    private fun parseVocabProgressFiles() {
+        val drillsDir = File(baseDir, "drills")
+        if (!drillsDir.exists() || !drillsDir.isDirectory) return
+        val packDirs = drillsDir.listFiles { f -> f.isDirectory } ?: return
+        for (packDir in packDirs) {
+            val file = File(packDir, "vocab_progress.yaml")
+            if (file.exists() && file.length() > 0L) {
+                logSkipped(
+                    "drills/${packDir.name}/vocab_progress.yaml",
+                    "incompatible schema (per-lesson completedIndices + entry SRS without nextReviewDateMs); migrate via dedicated entryId→wordId pass"
+                )
             }
         }
     }

@@ -6,12 +6,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.alexpo.grammermate.v2.core.data.local.dao.ContentDao
+import com.alexpo.grammermate.v2.core.data.local.dao.DrillDao
 import com.alexpo.grammermate.v2.core.data.local.dao.MasteryDao
 import com.alexpo.grammermate.v2.core.data.local.dao.ProgressDao
 import com.alexpo.grammermate.v2.core.data.local.dao.SessionDao
 import com.alexpo.grammermate.v2.core.data.local.dao.UserContentDao
+import com.alexpo.grammermate.v2.core.data.local.entity.AuxDrillCardEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.AuxDrillComboProgressEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.BadSentenceEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.BgVocabMarkEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.BossRewardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.BgVocabPositionEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.CardEncounterEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.CardEntity
@@ -20,6 +24,11 @@ import com.alexpo.grammermate.v2.core.data.local.entity.ChapterProgressEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.DailyCursorEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.DrillProgressEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.HiddenCardEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.VerbDrillCardEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.VerbDrillComboProgressEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.VerbDrillLastSessionEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.VocabWordEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.WordMasteryEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.LessonEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.MasteryStateEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.MigrationFlagEntity
@@ -71,6 +80,15 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
         DrillProgressEntity::class,
         ChapterProgressEntity::class,
         DailyCursorEntity::class,
+        // Drill-тренировки (vocab SRS, verb/aux, boss-награды)
+        VocabWordEntity::class,
+        WordMasteryEntity::class,
+        VerbDrillCardEntity::class,
+        AuxDrillCardEntity::class,
+        VerbDrillComboProgressEntity::class,
+        AuxDrillComboProgressEntity::class,
+        VerbDrillLastSessionEntity::class,
+        BossRewardEntity::class,
         // Пользовательский контент
         HiddenCardEntity::class,
         BadSentenceEntity::class,
@@ -86,6 +104,7 @@ abstract class GrammarMateDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun masteryDao(): MasteryDao
     abstract fun progressDao(): ProgressDao
+    abstract fun drillDao(): DrillDao
     abstract fun userContentDao(): UserContentDao
 
     companion object {
