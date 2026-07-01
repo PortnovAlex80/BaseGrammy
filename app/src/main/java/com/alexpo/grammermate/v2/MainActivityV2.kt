@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-// import com.alexpo.grammermate.v2.ui.GrammarMateApp  // будет создан в Фазе 7
+import com.alexpo.grammermate.v2.ui.GrammarMateApp
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -13,7 +13,7 @@ class MainActivityV2 : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            /* TODO Фаза 7: GrammarMateApp() composable */
+            GrammarMateApp()
         }
     }
 }

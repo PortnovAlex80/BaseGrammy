@@ -26,11 +26,19 @@ fun trainingReducer(state: TrainingViewState, intent: TrainingIntent): TrainingV
         // Подсказка — чистый UI-toggle, без I/O.
         TrainingIntent.RequestHint -> state.copy(showHint = true)
 
+        // Переход к следующей карточке: сбрасываем подсказку и мгновенную
+        // обратную связь. Реальный advance по пулу — в ViewModel.
+        TrainingIntent.NextCard -> state.copy(showHint = false, lastResult = null)
+
+        // Скрыть мгновенную обратную связь — чистый UI-clear.
+        TrainingIntent.DismissResult -> state.copy(lastResult = null)
+
         // Флаг карточки — пока только UI-маркер (TODO Фаза 6: persist флага).
         TrainingIntent.FlagCard -> state
 
-        // Ответ пользователя — мгновенная UI-обратная связь (например, очистка
-        // подсказки); проверка ответа и persist — в ViewModel (Фаза 6).
+        // Ответ пользователя — мгновенная UI-обратная связь (скрытие подсказки);
+        // проверка ответа и persist — в ViewModel, она выставит lastResult через
+        // updateState.
         is TrainingIntent.SubmitAnswer -> state.copy(showHint = false)
 
         // SRS-рейтинг — запоминаем для мгновенной отрисовки; persist карточки

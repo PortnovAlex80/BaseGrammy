@@ -1,0 +1,125 @@
+package com.alexpo.grammermate.v2.ui.navigation
+
+/**
+ * Карта маршрутов (destinations) навигации GrammarMate v2.
+ *
+ * Каждый экран представлен `sealed interface`-вариантом [Destination] — это даёт
+ * exhaustive `when` и type-safe построение route-строк. Строковые шаблоны
+ * (route-pattern для NavHost + конкретный route с аргументами) хранятся рядом с
+ * вариантом, чтобы избежать «магических строк» в нескольких местах.
+ *
+ * Аргументы навигации (packId/lessonId и т.д.) — это простые String, т.к.
+ * navigation-compose работает со строковыми аргументами; value-class
+ * ([com.alexpo.grammermate.v2.core.domain.model.PackId] и др.) наворачивается
+ * на границе экрана (в composable-destination).
+ *
+ * **Идёмпотентный дизайн:** повторный навигационный переход на тот же маршрут —
+ * no-op (NavHost по умолчанию), что соответствует ожиданиям bottom-bar навигации.
+ */
+sealed interface Destination {
+
+    /** route-pattern для регистрации в NavHost (без подставленных аргументов). */
+    val routePattern: String
+
+    /**
+     * Готовая route-строка с подставленными аргументами — для
+     * `navController.navigate(...)`.
+     */
+    fun route(): String
+
+    /**
+     * Главная — сетка паков (точка входа в приложение).
+     */
+    data object Home : Destination {
+        override val routePattern: String = ROUTE_HOME
+        override fun route(): String = ROUTE_HOME
+    }
+
+    /**
+     * Уроки главы пака — список уроков внутри выбранной главы.
+     *
+     * @property packId    пак главы.
+     * @property chapterId выбранная глава.
+     */
+    data class ChapterLessons(val packId: String, val chapterId: String) : Destination {
+        override val routePattern: String = "$ROUTE_CHAPTER_LESSONS/{$ARG_PACK_ID}/{$ARG_CHAPTER_ID}"
+        override fun route(): String = "$ROUTE_CHAPTER_LESSONS/$packId/$chapterId"
+
+        companion object {
+            /** Полный route-pattern для регистрации destination в NavHost. */
+            const val PATTERN = "chapter_lessons/{packId}/{chapterId}"
+        }
+    }
+
+    /**
+     * Экран тренировки — прохождение карточек урока.
+     *
+     * @property packId   пак тренировки.
+     * @property lessonId урок (для drill/daily — см. отдельные маршруты).
+     */
+    data class Training(val packId: String, val lessonId: String) : Destination {
+        override val routePattern: String = "$ROUTE_TRAINING/{$ARG_PACK_ID}/{$ARG_LESSON_ID}"
+        override fun route(): String = "$ROUTE_TRAINING/$packId/$lessonId"
+
+        companion object {
+            /** Полный route-pattern для регистрации destination в NavHost. */
+            const val PATTERN = "training/{packId}/{lessonId}"
+        }
+    }
+
+    /**
+     * Настройки приложения (тема, TTS, язык интерфейса и т.д.).
+     */
+    data object Settings : Destination {
+        override val routePattern: String = ROUTE_SETTINGS
+        override fun route(): String = ROUTE_SETTINGS
+    }
+
+    /**
+     * Drill-тренировка глаголов пака.
+     *
+     * @property packId пак глаголов.
+     */
+    data class VerbDrill(val packId: String) : Destination {
+        override val routePattern: String = "$ROUTE_VERB_DRILL/{$ARG_PACK_ID}"
+        override fun route(): String = "$ROUTE_VERB_DRILL/$packId"
+
+        companion object {
+            /** Полный route-pattern для регистрации destination в NavHost. */
+            const val PATTERN = "verb_drill/{packId}"
+        }
+    }
+
+    /**
+     * Дневная норма практики пака.
+     *
+     * @property packId пак дневной нормы.
+     */
+    data class DailyPractice(val packId: String) : Destination {
+        override val routePattern: String = "$ROUTE_DAILY_PRACTICE/{$ARG_PACK_ID}"
+        override fun route(): String = "$ROUTE_DAILY_PRACTICE/$packId"
+
+        companion object {
+            /** Полный route-pattern для регистрации destination в NavHost. */
+            const val PATTERN = "daily_practice/{packId}"
+        }
+    }
+
+    companion object {
+        // ── Базовые route-строки ───────────────────────────────────────────────
+        const val ROUTE_HOME = "home"
+        const val ROUTE_CHAPTER_LESSONS = "chapter_lessons"
+        const val ROUTE_TRAINING = "training"
+        const val ROUTE_SETTINGS = "settings"
+        const val ROUTE_VERB_DRILL = "verb_drill"
+        const val ROUTE_DAILY_PRACTICE = "daily_practice"
+
+        // ── Имена nav-аргументов ───────────────────────────────────────────────
+        const val ARG_PACK_ID = "packId"
+        const val ARG_CHAPTER_ID = "chapterId"
+        const val ARG_LESSON_ID = "lessonId"
+
+        /** Стартовый маршрут приложения (для NavHost startDestination). */
+        const val START_ROUTE: String = ROUTE_HOME
+    }
+}

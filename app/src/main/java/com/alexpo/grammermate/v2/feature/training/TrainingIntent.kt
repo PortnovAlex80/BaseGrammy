@@ -34,6 +34,17 @@ sealed interface TrainingIntent : MviIntent {
     /** Запросить/скрыть подсказку на текущей карточке. */
     data object RequestHint : TrainingIntent
 
+    /**
+     * Перейти к следующей карточке сессии.
+     *
+     * Чистая UI-проекция: сбрасывает подсказку и мгновенную обратную связь;
+     * реальный advance по пулу (через SessionEngine) делает ViewModel.
+     */
+    data object NextCard : TrainingIntent
+
+    /** Скрыть мгновенную обратную связь (✓/✗) — после того как пользователь увидел. */
+    data object DismissResult : TrainingIntent
+
     /** Пометить текущую карточку флажком (например, «сложная»). */
     data object FlagCard : TrainingIntent
 
