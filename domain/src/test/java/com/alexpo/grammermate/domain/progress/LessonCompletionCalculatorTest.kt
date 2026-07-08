@@ -179,4 +179,104 @@ class LessonCompletionCalculatorTest {
         )
         assertThat(result).isEqualTo(0)
     }
+
+    // ── advanceActiveSubLessonIndex (AC-14 Then.3: monotonic non-decreasing) ──
+
+    @Test
+    fun `advanceActiveSubLessonIndex advances when actual ahead of current`() {
+        // current=1, actual=3, size=5 → maxOf(1,3)=3.
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(1, 3, 5)
+        ).isEqualTo(3)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex never moves backward when actual below current`() {
+        // AC-14 Then.3 regression anchor: actual dropped (e.g. after hiding cards)
+        // but current index is preserved — maxOf(current, actual).
+        // current=4, actual=2, size=5 → maxOf(4,2)=4 (never moves back to 2).
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(4, 2, 5)
+        ).isEqualTo(4)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex equals when current equals actual`() {
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(2, 2, 5)
+        ).isEqualTo(2)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex clamps to sublesson count`() {
+        // Defensive: actual (or current) above size → clamped to size (valid index bound).
+        // size=5 → index 5 = «за последним под-уроком» (сигнал «урок пройден»),
+        // никогда 6 или больше.
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(2, 7, 5)
+        ).isEqualTo(5)
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(9, 1, 5)
+        ).isEqualTo(5)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex handles negative inputs as zero`() {
+        // Defensive: отрицательные входы coerceAtLeast(0).
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(-2, -1, 5)
+        ).isEqualTo(0)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex returns zero when no sublessons`() {
+        assertThat(
+            LessonCompletionCalculator.advanceActiveSubLessonIndex(3, 2, 0)
+        ).isEqualTo(0)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex overload computes actual from sublessons and never regresses`() {
+        // AC-14 Then.3 end-to-end: текущий индекс = 3 (пользователь дошёл до 3-го
+        // под-урока), но после скрытия карт actualCompleted пересчитался в 1.
+        // Индекс НЕ должен откатиться назад.
+        val subLessons = listOf(
+            subLesson("c1", "c2"),     // завершён
+            subLesson("c3", "h1"),     // НЕ завершён (c3 не показан, h1 скрыта)
+            subLesson("c4", "c5"),     // не считается (break)
+            subLesson("c6", "c7"),     // не считается
+        )
+        val shown = setOf(CardId("c1"), CardId("c2"))
+        val all = setOf(CardId("c1"), CardId("c2"), CardId("c3"), CardId("c4"), CardId("c5"), CardId("c6"), CardId("c7"))
+        val hidden = setOf(CardId("h1"))
+        val result = LessonCompletionCalculator.advanceActiveSubLessonIndex(
+            currentIndex = 3,
+            subLessons = subLessons,
+            shownCardIds = shown,
+            lessonCardIds = all,
+            hiddenCardIds = hidden,
+        )
+        // actual = 1, current = 3 → maxOf(3,1) = 3 (не регрессирует).
+        assertThat(result).isEqualTo(3)
+    }
+
+    @Test
+    fun `advanceActiveSubLessonIndex overload advances forward normally`() {
+        // Все первые 2 под-урока завершены, current=0 → advancing to 2.
+        val subLessons = listOf(
+            subLesson("c1", "c2"),
+            subLesson("c3", "c4"),
+            subLesson("c5", "c6"),
+        )
+        val shown = setOf(CardId("c1"), CardId("c2"), CardId("c3"), CardId("c4"))
+        val all = (1..6).map { CardId("c$it") }.toSet()
+        val result = LessonCompletionCalculator.advanceActiveSubLessonIndex(
+            currentIndex = 0,
+            subLessons = subLessons,
+            shownCardIds = shown,
+            lessonCardIds = all,
+            hiddenCardIds = emptySet(),
+        )
+        assertThat(result).isEqualTo(2)
+    }
 }
