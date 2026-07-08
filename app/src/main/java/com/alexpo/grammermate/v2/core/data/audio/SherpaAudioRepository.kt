@@ -13,7 +13,6 @@ import com.alexpo.grammermate.domain.model.LanguageId
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,14 +39,13 @@ import javax.inject.Singleton
  *
  * ### Что РЕАЛИЗОВАНО сейчас:
  *  - [playSoundEffect] — полностью (SoundPool + готовые mp3 из `res/raw`).
- *  - [isAsrAvailable] — проверка файлов Whisper+VAD по известному манифесту
- *    (стабильные имена файлов, одна модель на все языки).
+ *  - [isTtsAvailable] — точная per-language manifest-проверка через [TtsModelRegistry] (AC-11).
+ *  - [isAsrAvailable] — manifest-проверка Whisper+VAD через [AsrModelManifest] (AC-12, regression-lock).
  *  - [stop] — делегирует в обёртки (пока no-op скелеты).
  *
  * ### Что TODO (body-задачи реализуют внутри фиксированного контракта):
  *  - [speak] — делегировать в `ttsEngine.speak` → `Flow<AudioEvent>`.
  *  - [recognizeSpeech] — делегировать в `asrEngine.recordAndTranscribe` → `Flow<RecognitionEvent>`.
- *  - [isTtsAvailable] — точный per-language манифест файлов TTS-модели.
  *
  * @param context application context (для доступа к `filesDir`, `SoundPool`, raw).
  * @param ttsEngine обёртка над Sherpa-ONNX OfflineTts (FR-2/FR-3/FR-4).
@@ -214,46 +212,37 @@ class SherpaAudioRepository @Inject constructor(
     }
 
     /**
-     * Готова ли TTS-модель для [languageId]. Каркас — проверяет наличие
-     * непустого каталога модели под `filesDir/tts/`.
+     * **AC-11 — isTtsAvailable(languageId): per-language manifest-проверка.**
      *
-     * TODO(phase-9-migration): точная проверка по манифесту `requiredFiles`/
-     * `requiredDirs` из legacy `data/TtsModelRegistry.kt` (имена каталогов и
-     * файлов варьируются по языкам — `vits-piper-en_US-amy-low`, ...). Сейчас
-     * проверяется только существование каталога под `tts/`.
+     * Делегирует в [TtsModelRegistry.isAvailable]: для [languageId] находит
+     * `TtsModelSpec` (или `null` → `false` для неизвестного языка) и проверяет,
+     * что каталог `filesDir/tts/${spec.modelDirName}/` содержит **все**
+     * обязательные файлы (`requiredFiles`, ненулевой размер) и подкаталоги
+     * (`requiredDirs`, напр. `espeak-ng-data`).
+     *
+     * Это **точная** per-language проверка (FR-8), а не «есть любой каталог под
+     * `tts/`»: удаление `tokens.txt` для загруженного языка → `false`.
+     * Используется системой-TTS fallback-решением (AC-7) и UI-статусом модели.
+     *
+     * Чистая логика проверки вынесена в [TtsModelRegistry] (pure Kotlin), чтобы
+     * unit-тестировать её на temp-dir fixture без Robolectric (AC-11 verification).
      */
-    override suspend fun isTtsAvailable(languageId: LanguageId): Boolean {
-        val ttsRoot = File(context.filesDir, "tts")
-        // TODO(phase-9-migration): сопоставить languageId → TtsModelSpec.modelDirName
-        //   из legacy TtsModelRegistry и проверить spec.requiredFiles.
-        val hasModelDir = ttsRoot.listFiles()
-            ?.any { it.isDirectory && it.listFiles()?.isNotEmpty() == true }
-            ?: false
-        return hasModelDir
-    }
+    override suspend fun isTtsAvailable(languageId: LanguageId): Boolean =
+        TtsModelRegistry.isAvailable(context.filesDir, languageId.value)
 
     /**
-     * Готова ли ASR-модель (Whisper + VAD). **Реализовано** — манифест файлов
-     * стабилен (одна multilingual-модель): `asr/whisper-small/` с тремя файлами
-     * + `asr/vad/silero_vad.onnx`. Соответствует legacy `AsrModelRegistry`
-     * (defaultModel.requiredFiles + vadModel.requiredFiles).
+     * **AC-12 (regression-lock) — isAsrAvailable(): манифест Whisper + VAD.**
+     *
+     * Делегирует в [AsrModelManifest.isAvailable]: `true` iff и Whisper Small
+     * (`asr/whisper-small/` со всеми `whisperRequiredFiles`), и VAD
+     * (`asr/vad/silero_vad.onnx`) полностью присутствуют на диске.
+     * Regression-lock: контракт skeleton-проверки сохранён 1:1
+     * (legacy `AsrModelRegistry.isReady()`).
      */
-    override suspend fun isAsrAvailable(): Boolean {
-        val asrDir = File(context.filesDir, "asr/whisper-small")
-        val whisperReady = ASR_REQUIRED_FILES.all { f ->
-            val file = File(asrDir, f)
-            file.exists() && file.length() > 0L
-        }
-        val vadFile = File(context.filesDir, "asr/vad/silero_vad.onnx")
-        val vadReady = vadFile.exists() && vadFile.length() > 0L
-        return whisperReady && vadReady
-    }
+    override suspend fun isAsrAvailable(): Boolean =
+        AsrModelManifest.isAvailable(context.filesDir)
 
     companion object {
         private const val TAG = "SherpaAudioRepository"
-
-        /** Обязательные файлы Whisper Small (legacy AsrModelRegistry.defaultModel.requiredFiles). */
-        private val ASR_REQUIRED_FILES =
-            listOf("small-encoder.int8.onnx", "small-decoder.int8.onnx", "small-tokens.txt")
     }
 }
