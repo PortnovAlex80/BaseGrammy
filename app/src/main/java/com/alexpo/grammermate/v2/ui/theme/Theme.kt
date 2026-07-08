@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.alexpo.grammermate.v2.core.domain.model.ThemeMode
+import com.alexpo.grammermate.domain.model.ThemeMode
 
 /**
  * Тема приложения GrammarMate v2 — presentation-слой.

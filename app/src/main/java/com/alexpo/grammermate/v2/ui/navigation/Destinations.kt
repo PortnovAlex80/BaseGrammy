@@ -10,7 +10,7 @@ package com.alexpo.grammermate.v2.ui.navigation
  *
  * Аргументы навигации (packId/lessonId и т.д.) — это простые String, т.к.
  * navigation-compose работает со строковыми аргументами; value-class
- * ([com.alexpo.grammermate.v2.core.domain.model.PackId] и др.) наворачивается
+ * ([com.alexpo.grammermate.domain.model.PackId] и др.) наворачивается
  * на границе экрана (в composable-destination).
  *
  * **Идёмпотентный дизайн:** повторный навигационный переход на тот же маршрут —

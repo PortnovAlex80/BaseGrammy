@@ -4,15 +4,15 @@ import com.alexpo.grammermate.v2.core.data.local.dao.SessionDao
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
-import com.alexpo.grammermate.v2.core.domain.model.CardId
-import com.alexpo.grammermate.v2.core.domain.model.LessonId
-import com.alexpo.grammermate.v2.core.domain.model.PackId
-import com.alexpo.grammermate.v2.core.domain.model.SessionId
-import com.alexpo.grammermate.v2.core.domain.model.SessionSnapshot
-import com.alexpo.grammermate.v2.core.domain.model.SessionState
-import com.alexpo.grammermate.v2.core.domain.model.SessionStatus
-import com.alexpo.grammermate.v2.core.domain.model.TrainingMode
-import com.alexpo.grammermate.v2.core.domain.repository.SessionRepository
+import com.alexpo.grammermate.domain.model.CardId
+import com.alexpo.grammermate.domain.model.LessonId
+import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.SessionId
+import com.alexpo.grammermate.domain.model.SessionSnapshot
+import com.alexpo.grammermate.domain.model.SessionState
+import com.alexpo.grammermate.domain.model.SessionStatus
+import com.alexpo.grammermate.domain.model.TrainingMode
+import com.alexpo.grammermate.domain.repository.SessionRepository
 import javax.inject.Inject
 
 /**

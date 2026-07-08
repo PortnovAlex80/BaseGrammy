@@ -2,13 +2,13 @@ package com.alexpo.grammermate.v2.core.data.repository
 
 import com.alexpo.grammermate.v2.core.data.local.dao.MasteryDao
 import com.alexpo.grammermate.v2.core.data.local.entity.MasteryStateEntity
-import com.alexpo.grammermate.v2.core.domain.model.CardId
-import com.alexpo.grammermate.v2.core.domain.model.LessonId
-import com.alexpo.grammermate.v2.core.domain.model.LessonMastery
-import com.alexpo.grammermate.v2.core.domain.model.PackId
-import com.alexpo.grammermate.v2.core.domain.repository.MasteryRepository
-import com.alexpo.grammermate.v2.core.domain.srs.SrsCardState
-import com.alexpo.grammermate.v2.core.domain.srs.SrsMemoryState
+import com.alexpo.grammermate.domain.model.CardId
+import com.alexpo.grammermate.domain.model.LessonId
+import com.alexpo.grammermate.domain.model.LessonMastery
+import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.repository.MasteryRepository
+import com.alexpo.grammermate.domain.srs.SrsCardState
+import com.alexpo.grammermate.domain.srs.SrsMemoryState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json

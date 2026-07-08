@@ -1,11 +1,11 @@
 package com.alexpo.grammermate.v2.core.data.audio
 
 import android.content.Context
-import com.alexpo.grammermate.v2.core.domain.audio.AudioModelRepository
-import com.alexpo.grammermate.v2.core.domain.audio.DownloadProgress
-import com.alexpo.grammermate.v2.core.domain.audio.ModelStatus
-import com.alexpo.grammermate.v2.core.domain.model.LanguageId
-import com.alexpo.grammermate.v2.core.domain.repository.SettingsRepository
+import com.alexpo.grammermate.domain.audio.AudioModelRepository
+import com.alexpo.grammermate.domain.audio.DownloadProgress
+import com.alexpo.grammermate.domain.audio.ModelStatus
+import com.alexpo.grammermate.domain.model.LanguageId
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

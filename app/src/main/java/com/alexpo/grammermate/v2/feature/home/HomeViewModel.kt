@@ -2,7 +2,7 @@ package com.alexpo.grammermate.v2.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.v2.core.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.ContentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow

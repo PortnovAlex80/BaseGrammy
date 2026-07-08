@@ -1,11 +1,11 @@
 package com.alexpo.grammermate.v2.feature.home
 
-import com.alexpo.grammermate.v2.core.domain.model.Pack
+import com.alexpo.grammermate.domain.model.Pack
 
 /**
  * State экрана Home (сетка паков) — single source of truth для UI.
  *
- * Формируется [HomeViewModel] из [com.alexpo.grammermate.v2.core.domain.repository.ContentRepository].
+ * Формируется [HomeViewModel] из [com.alexpo.grammermate.domain.repository.ContentRepository].
  * View читает ровно один [HomeViewState] и перерисовывается детерминированно.
  *
  * Поля намеренно плоские (а не `UiState<List<Pack>>`), чтобы UI разветвлялся по

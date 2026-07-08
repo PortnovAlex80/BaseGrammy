@@ -48,7 +48,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.alexpo.grammermate.v2.core.domain.model.Card
+import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.v2.core.ui.collectEffects
 import com.alexpo.grammermate.v2.core.ui.collectState
 

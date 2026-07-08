@@ -2,8 +2,8 @@ package com.alexpo.grammermate.v2.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.v2.core.domain.model.ThemeMode
-import com.alexpo.grammermate.v2.core.domain.repository.SettingsRepository
+import com.alexpo.grammermate.domain.model.ThemeMode
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted

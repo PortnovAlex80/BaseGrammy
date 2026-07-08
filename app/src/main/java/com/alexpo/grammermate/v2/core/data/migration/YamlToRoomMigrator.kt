@@ -14,7 +14,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.MigrationFlagEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.ShownCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.StreakEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.WordMasteryEntity
-import com.alexpo.grammermate.v2.core.domain.srs.SrsMigration
+import com.alexpo.grammermate.domain.srs.SrsMigration
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -636,7 +636,7 @@ class YamlToRoomMigrator @Inject constructor(
         runCatching { json.encodeToString(strSetSerializer, set) }.getOrDefault("[]")
 
     /** Минимальная JSON-сериализация SRS-состояния для колонки `fsrsStateJson`. */
-    private fun encodeSrsState(s: com.alexpo.grammermate.v2.core.domain.srs.SrsCardState): String =
+    private fun encodeSrsState(s: com.alexpo.grammermate.domain.srs.SrsCardState): String =
         """{"stability":${s.stability},"difficulty":${s.difficulty},"lastReviewMs":${s.lastReviewMs},"reps":${s.reps},"lapses":${s.lapses},"state":"${s.state.name}","dueAtMs":${s.dueAtMs}}"""
 
     // ─────────────────────────────────────────────────────────────────────────────

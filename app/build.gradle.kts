@@ -98,6 +98,10 @@ tasks.matching { it.name == "assembleDebug" }.configureEach {
 }
 
 dependencies {
+    // Domain module — pure-Kotlin ports/models (extracted from v2.core.domain).
+    // AC-1: :app depends on :domain; the v2/core/domain package is gone from :app.
+    implementation(project(":domain"))
+
     // AndroidX core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
