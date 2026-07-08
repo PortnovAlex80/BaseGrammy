@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.alexpo.grammermate.domain.model.InitPhase
 import com.alexpo.grammermate.domain.model.TtsState
+import com.k2fsa.sherpa.onnx.OfflineTts
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,8 +58,12 @@ class TtsEngineWrapper @Inject constructor(
      * Резидентный LRU-кэш нативных [OfflineTts]-моделей по language id.
      * Заменяет single-model var v1 — позволяет it + ru сосуществовать в RAM.
      * FR-3 (maxSize=3, eviction policy), NFR-4 (latency <100 мс).
+     *
+     * Тип-носитель зафиксирован как [OfflineTts] через фабрику
+     * [ResidentTtsCache.forOfflineTts] — freeFn дёргает native `free()`.
      */
-    private val offlineTtsCache: ResidentTtsCache = ResidentTtsCache()
+    private val offlineTtsCache: ResidentTtsCache<OfflineTts> =
+        ResidentTtsCache.forOfflineTts()
 
     /**
      * Callback прогресса инициализации (фаза + проценты). SRS-003 §2.3 —

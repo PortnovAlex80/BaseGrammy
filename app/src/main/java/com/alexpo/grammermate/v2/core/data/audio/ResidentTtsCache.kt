@@ -23,15 +23,24 @@ import com.k2fsa.sherpa.onnx.OfflineTts
  * в [put] наименее-недавно-используемая запись удаляется, и для неё вызывается
  * [freeFn] чтобы освободить native-хэндл модели.
  *
+ * **Generic-носитель.** Кэш параметризован типом [T] модели. В production
+ * ([TtsEngineWrapper]) — это `OfflineTts`, и [freeFn] вызывает
+ * `OfflineTts.free()`. В unit-тестах носителем выступает любой лёгкий объект
+ * (mock/POJO): это обязательно, потому что `OfflineTts` имеет `static {
+ * System.loadLibrary("sherpa-onnx-jni") }`, который падает в pure-JVM окружении
+ * без Android ABI — instantiate/mock его нельзя. Таким образом LRU-логика и
+ * latency-бенчмарк (AC-4, AC-5) проверяются изолированно от native-слоя.
+ *
  * Перенос из legacy `data/TtsEngine.kt:68-143` (SRS-003 §2.5).
  *
+ * @param T      тип носителя модели (production: [OfflineTts]).
  * @param maxSize максимум резидентных моделей. Должен быть >= 1.
- * @param freeFn  функция освобождения модели. По умолчанию [OfflineTts.free].
+ * @param freeFn  функция освобождения модели. Production: `OfflineTts.free`.
  *                Инжектируется чтобы unit-тесты могли передать fake без native-кода.
  */
-internal class ResidentTtsCache(
+internal class ResidentTtsCache<T : Any>(
     private val maxSize: Int = DEFAULT_MAX_SIZE,
-    private val freeFn: (OfflineTts) -> Unit = { tts -> tts.free() },
+    private val freeFn: (T) -> Unit = { _ -> },
 ) {
     init {
         require(maxSize >= 1) { "maxSize must be >= 1, was $maxSize" }
@@ -42,14 +51,14 @@ internal class ResidentTtsCache(
      * `removeEldestEntry` намеренно НЕ используется — eviction вызывает [freeFn]
      * с side-effect, поэтому обрабатываем явно в [put] для контроля порядка.
      */
-    private val map: LinkedHashMap<String, OfflineTts> =
+    private val map: LinkedHashMap<String, T> =
         LinkedHashMap(4, 0.75f, true)
 
     /**
      * Резидентная модель для [lang] или null. Побочный эффект access-order:
      * успешный lookup промоутирует [lang] в MRU.
      */
-    fun get(lang: String): OfflineTts? = map[lang]
+    fun get(lang: String): T? = map[lang]
 
     /** true если резидентная модель для [lang] есть. НЕ промоутирует recency. */
     fun contains(lang: String): Boolean = map.containsKey(lang)
@@ -60,7 +69,7 @@ internal class ResidentTtsCache(
      * [lang] уже резидентна — предыдущая модель освобождается и заменяется
      * (без двойного счёта против [maxSize]).
      */
-    fun put(lang: String, tts: OfflineTts) {
+    fun put(lang: String, tts: T) {
         val existing = map.remove(lang)
         if (existing != null && existing !== tts) {
             safeFree(existing)
@@ -92,7 +101,7 @@ internal class ResidentTtsCache(
     /** Количество резидентных моделей. */
     fun size(): Int = map.size
 
-    private fun safeFree(tts: OfflineTts) {
+    private fun safeFree(tts: T) {
         try {
             freeFn(tts)
         } catch (t: Throwable) {
@@ -103,5 +112,13 @@ internal class ResidentTtsCache(
     companion object {
         /** Канонический cap резидентных TTS-моделей (SRS-003 FR-3, NFR-4). */
         const val DEFAULT_MAX_SIZE = 3
+
+        /**
+         * Фабрика production-кэша для нативных [OfflineTts] моделей: тип-носитель
+         * фиксируется как [OfflineTts], [freeFn] дёргает native `free()`.
+         * Используется [TtsEngineWrapper]-ом.
+         */
+        fun forOfflineTts(maxSize: Int = DEFAULT_MAX_SIZE): ResidentTtsCache<OfflineTts> =
+            ResidentTtsCache(maxSize = maxSize) { tts -> tts.free() }
     }
 }
