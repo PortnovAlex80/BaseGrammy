@@ -109,6 +109,10 @@ data class MigrationCounts(
  * @property database  единая Room-БД v2 (и транзакционный контейнер, и DAO-источник).
  */
 @Singleton
+@Deprecated(
+    "Q3 greenfield data — migrator больше не активный путь данных",
+    level = DeprecationLevel.WARNING,
+)
 class YamlToRoomMigrator @Inject constructor(
     @ApplicationContext private val context: Context,
     private val database: GrammarMateDatabase,
