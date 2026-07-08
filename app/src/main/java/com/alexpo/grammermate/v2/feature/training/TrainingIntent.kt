@@ -1,8 +1,8 @@
 package com.alexpo.grammermate.v2.feature.training
 
-import com.alexpo.grammermate.v2.core.domain.model.PackId
-import com.alexpo.grammermate.v2.core.domain.model.LessonId
-import com.alexpo.grammermate.v2.core.domain.model.SrsRating
+import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.LessonId
+import com.alexpo.grammermate.domain.model.SrsRating
 import com.alexpo.grammermate.v2.core.ui.MviIntent
 
 /**

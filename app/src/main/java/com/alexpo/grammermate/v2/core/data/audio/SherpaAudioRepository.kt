@@ -5,11 +5,11 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import android.util.Log
 import com.alexpo.grammermate.R
-import com.alexpo.grammermate.v2.core.domain.audio.AudioEvent
-import com.alexpo.grammermate.v2.core.domain.audio.AudioRepository
-import com.alexpo.grammermate.v2.core.domain.audio.RecognitionEvent
-import com.alexpo.grammermate.v2.core.domain.audio.SoundEffect
-import com.alexpo.grammermate.v2.core.domain.model.LanguageId
+import com.alexpo.grammermate.domain.audio.AudioEvent
+import com.alexpo.grammermate.domain.audio.AudioRepository
+import com.alexpo.grammermate.domain.audio.RecognitionEvent
+import com.alexpo.grammermate.domain.audio.SoundEffect
+import com.alexpo.grammermate.domain.model.LanguageId
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

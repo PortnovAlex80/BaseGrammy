@@ -2,15 +2,15 @@ package com.alexpo.grammermate.v2.feature.training
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.v2.core.domain.model.Card
-import com.alexpo.grammermate.v2.core.domain.model.CardId
-import com.alexpo.grammermate.v2.core.domain.model.LessonId
-import com.alexpo.grammermate.v2.core.domain.model.PackId
-import com.alexpo.grammermate.v2.core.domain.model.SessionId
-import com.alexpo.grammermate.v2.core.domain.model.TrainingMode
-import com.alexpo.grammermate.v2.core.domain.repository.ContentRepository
-import com.alexpo.grammermate.v2.core.domain.repository.MasteryRepository
-import com.alexpo.grammermate.v2.core.domain.repository.SessionRepository
+import com.alexpo.grammermate.domain.model.Card
+import com.alexpo.grammermate.domain.model.CardId
+import com.alexpo.grammermate.domain.model.LessonId
+import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.SessionId
+import com.alexpo.grammermate.domain.model.TrainingMode
+import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.MasteryRepository
+import com.alexpo.grammermate.domain.repository.SessionRepository
 import com.alexpo.grammermate.v2.core.ui.MviReducer
 import com.alexpo.grammermate.v2.core.ui.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel

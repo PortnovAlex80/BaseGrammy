@@ -85,7 +85,7 @@ data class BgVocabPositionEntity(
 /**
  * Запись истории помодоро-сессии — для графиков и статистики.
  *
- * Поля повторяют доменную [com.alexpo.grammermate.v2.core.domain.model.PomodoroHistoryEntry];
+ * Поля повторяют доменную [com.alexpo.grammermate.domain.model.PomodoroHistoryEntry];
  * индекс [completedAtMs] поддерживает временны́е выборки.
  *
  * @property id               идентификатор записи (PK).

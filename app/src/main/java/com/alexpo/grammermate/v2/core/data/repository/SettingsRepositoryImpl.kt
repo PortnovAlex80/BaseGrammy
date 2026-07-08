@@ -12,10 +12,10 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.alexpo.grammermate.v2.core.data.local.dao.UserContentDao
 import com.alexpo.grammermate.v2.core.data.local.entity.MigrationFlagEntity
-import com.alexpo.grammermate.v2.core.domain.model.AppConfig
-import com.alexpo.grammermate.v2.core.domain.model.HintLevel
-import com.alexpo.grammermate.v2.core.domain.model.ThemeMode
-import com.alexpo.grammermate.v2.core.domain.repository.SettingsRepository
+import com.alexpo.grammermate.domain.model.AppConfig
+import com.alexpo.grammermate.domain.model.HintLevel
+import com.alexpo.grammermate.domain.model.ThemeMode
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map

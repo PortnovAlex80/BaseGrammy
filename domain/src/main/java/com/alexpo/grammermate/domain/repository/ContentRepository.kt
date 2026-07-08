@@ -1,0 +1,55 @@
+package com.alexpo.grammermate.domain.repository
+
+import com.alexpo.grammermate.domain.model.Card
+import com.alexpo.grammermate.domain.model.Chapter
+import com.alexpo.grammermate.domain.model.ChapterId
+import com.alexpo.grammermate.domain.model.Language
+import com.alexpo.grammermate.domain.model.LanguageId
+import com.alexpo.grammermate.domain.model.Lesson
+import com.alexpo.grammermate.domain.model.LessonId
+import com.alexpo.grammermate.domain.model.Pack
+import com.alexpo.grammermate.domain.model.PackId
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Read-only доступ к контенту паков: языки, паки, главы, уроки, карточки.
+ *
+ * Контент иммутабелен (импортируется извне), поэтому все методы — одноразовые
+ * `suspend`-чтения, кроме [observeLessons], на который подписывается UI для
+ * реактивного обновления списка уроков пака.
+ */
+interface ContentRepository {
+
+    /** Все доступные языки обучения. */
+    suspend fun getLanguages(): List<Language>
+
+    /** Все установленные паки. */
+    suspend fun getPacks(): List<Pack>
+
+    /** Паки конкретного языка. */
+    suspend fun getPacksForLanguage(langId: LanguageId): List<Pack>
+
+    /** Один пак по идентификатору или null, если не найден. */
+    suspend fun getPack(packId: PackId): Pack?
+
+    /** Главы пака в порядке отображения. */
+    suspend fun getChapters(packId: PackId): List<Chapter>
+
+    /** Все уроки пака. */
+    suspend fun getLessons(packId: PackId): List<Lesson>
+
+    /** Уроки конкретной главы пака. */
+    suspend fun getLessonsForChapter(packId: PackId, chapterId: ChapterId): List<Lesson>
+
+    /**
+     * Один урок вместе с его карточками (включая [Lesson.cards]),
+     * либо null, если урок не найден.
+     */
+    suspend fun getLesson(lessonId: LessonId): Lesson?
+
+    /** Карточки урока в порядке отображения. */
+    suspend fun getCards(lessonId: LessonId): List<Card>
+
+    /** Реактивный список уроков пака — для подписки UI. */
+    fun observeLessons(packId: PackId): Flow<List<Lesson>>
+}
