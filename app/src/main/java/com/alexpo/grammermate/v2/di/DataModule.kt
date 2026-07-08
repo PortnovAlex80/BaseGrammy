@@ -16,6 +16,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 /** DataStore для настроек key-value (один на приложение). */
@@ -58,4 +62,29 @@ object DataModule {
     fun provideAppConfigDataStore(
         @ApplicationContext context: Context,
     ): DataStore<Preferences> = context.appConfigDataStore
+
+    /**
+     * Application-scoped [CoroutineScope] для аудио-компонентов (SRS-003 §2.11).
+     *
+     * Нужен [BluetoothAudioRouter] для запуска `AudioManager`-коллбэков
+     * (`addOnCommunicationDeviceChangedListener` ожидает Executor/scope.launch).
+     * [SupervisorJob] — сбой одного коллбэка не отменяет скоуп; [Dispatchers.Main]
+     * потому что AudioManager-коллбэки должны выполняться на main thread (SRS §2.11).
+     *
+     * Помечен [AudioCoroutineScope] qualifier'ом, чтобы не конфликтовать с другими
+     * application-scoped CoroutineScope'ами (если появятся).
+     */
+    @Provides
+    @Singleton
+    @AudioCoroutineScope
+    fun provideAudioCoroutineScope(): CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 }
+
+/**
+ * Qualifier: application-scoped [CoroutineScope] для аудио-компонентов
+ * (BluetoothAudioRouter). SRS-003 §2.11.
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AudioCoroutineScope
