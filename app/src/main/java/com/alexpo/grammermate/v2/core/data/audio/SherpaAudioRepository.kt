@@ -28,40 +28,42 @@ import javax.inject.Singleton
  * домена подставляется fake-реализация `AudioRepository`, не дотрагиваясь до
  * нативного кода.
  *
- * ## Статус миграции (Фаза 9 — изоляция, НЕ полная миграция v1)
+ * ## Статус миграции (E03 — scaffold фиксирует API surface)
  *
- * Полный v1-движок (`AudioCoordinator.kt`, 939 строк: TTS+ASR+soundpack+
- * bluetooth) и его обёртки (`data/TtsEngine.kt`, `data/AsrEngine.kt`,
- * `data/TtsModelRegistry.kt`, `data/AsrModelRegistry.kt`) живут в
- * `app/legacy-src`, который **не входит** в compile source-set v2. Поэтому этот
- * адаптер — **архитектурный каркас**: интерфейсный контракт полностью
- * реализован и компилируется, а тяжёлая нативная логика синтеза/распознавания
- * оставлена как задокументированные `TODO` со ссылками на legacy-файлы. При
- * последующих фазах миграции сюда инжектируются порт-обёртки над Sherpa-ONNX
- * (`TtsEngineWrapper`, `AsrEngineWrapper`) — сигнатуры конструктора уже готовы.
+ * Helper-обёртки (`TtsEngineWrapper`, `AsrEngineWrapper`, `SegmentPlayer`,
+ * `BluetoothAudioRouter`, `MemoryChecker`) перенесены в v2 data-слой как скелеты
+ * (scaffold E03 task #467) и инжектируются в конструктор (SRS-003 §2.1).
+ * API surface адаптера и helper-классов зафиксирован; 24 body-задачи (AC-1..AC-29)
+ * реализуют тяжёлую нативную логику **внутри** этого фиксированного контракта.
+ * Доменные порты [AudioRepository]/[AudioModelRepository] **immutable**
+ * (regression-lock E01) — не меняются.
  *
  * ### Что РЕАЛИЗОВАНО сейчас:
  *  - [playSoundEffect] — полностью (SoundPool + готовые mp3 из `res/raw`).
  *  - [isAsrAvailable] — проверка файлов Whisper+VAD по известному манифесту
  *    (стабильные имена файлов, одна модель на все языки).
- *  - [stop] — no-op-скелет (движка пока нет).
+ *  - [stop] — делегирует в обёртки (пока no-op скелеты).
  *
- * ### Что TODO (со ссылкой на legacy):
- *  - [speak] — синтез речи через Sherpa-ONNX `OfflineTts` + `AudioTrack`.
- *  - [recognizeSpeech] — запись + VAD + Whisper `OfflineRecognizer`.
+ * ### Что TODO (body-задачи реализуют внутри фиксированного контракта):
+ *  - [speak] — делегировать в `ttsEngine.speak` → `Flow<AudioEvent>`.
+ *  - [recognizeSpeech] — делегировать в `asrEngine.recordAndTranscribe` → `Flow<RecognitionEvent>`.
  *  - [isTtsAvailable] — точный per-language манифест файлов TTS-модели.
  *
  * @param context application context (для доступа к `filesDir`, `SoundPool`, raw).
+ * @param ttsEngine обёртка над Sherpa-ONNX OfflineTts (FR-2/FR-3/FR-4).
+ * @param asrEngine обёртка над Whisper+VAD (FR-6/FR-9/FR-11).
+ * @param memoryChecker pre-check памяти (FR-10, NFR-2).
+ * @param segmentPlayer sequential playback (FR-12, shared с E08/E09 — SRS §5).
  *
  * @see AudioRepository доменный контракт.
  */
 @Singleton
 class SherpaAudioRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    // TODO(phase-9-migration): инжектировать обёртки над Sherpa-ONNX, когда они
-    //   будут перенесены из legacy в v2 data-слой:
-    //   private val ttsEngine: TtsEngineWrapper,
-    //   private val asrEngine: AsrEngineWrapper,
+    private val ttsEngine: TtsEngineWrapper,
+    private val asrEngine: AsrEngineWrapper,
+    private val memoryChecker: MemoryChecker,
+    private val segmentPlayer: SegmentPlayer,
 ) : AudioRepository {
 
     // ── SoundPool (SFX) ────────────────────────────────────────────────────
@@ -99,13 +101,13 @@ class SherpaAudioRepository @Inject constructor(
 
     /**
      * Озвучивание текста. Каркас `Flow<AudioEvent>` готов; тяжёлый путь синтеза
-     * (Sherpa-ONNX `OfflineTts` + `AudioTrack`) — TODO.
+     * делегируется в [ttsEngine] (Sherpa-ONNX `OfflineTts` + `AudioTrack`).
      *
-     * TODO(phase-9-migration): делегировать в обёртку над legacy `data/TtsEngine.kt`:
+     * TODO(body, AC-2+AC-3+AC-4): делегировать в `ttsEngine`:
      *   1. `ttsEngine.initialize(languageId)` — выбор/загрузка нативной модели
      *      VITS_PIPER/KOKORO из `filesDir/tts/` (legacy TtsEngine.kt:235-348),
      *      с resident LRU-кэром для мгновенного переключения языков
-     *      (legacy ResidentTtsCache) и system-TTS fallback для 32-bit ARM /
+     *      (ResidentTtsCache) и system-TTS fallback для 32-bit ARM /
      *      отсутствующих файлов (legacy TtsEngine.kt:354-431).
      *   2. Эмитить [AudioEvent.Started] после `TtsState.Ready`.
      *   3. `ttsEngine.speak(text, languageId, speed)` — синтез PCM-float через
@@ -118,7 +120,7 @@ class SherpaAudioRepository @Inject constructor(
      *
      * Сейчас: эмитит `Started`, затем `Failed(IllegalStateException)` — чтобы
      * контракт `Flow<AudioEvent>` был наблюдаем и компилировался без падения
-     * на этапе сборки. Заменить TODO-блоком выше при миграции движка.
+     * на этапе сборки. Body-задача AC-2/AC-3 заменяет TODO-блоком.
      */
     override fun speak(text: String, languageId: LanguageId, speed: Float): Flow<AudioEvent> = flow {
         if (text.isBlank()) return@flow
@@ -138,16 +140,18 @@ class SherpaAudioRepository @Inject constructor(
     }
 
     /**
-     * Остановить воспроизведение. Каркас.
+     * Остановить воспроизведение/запись. Делегирует в обёртки (FR-15, NFR-5).
      *
-     * TODO(phase-9-migration): делегировать в `ttsEngine.stop()` (неблокирующий,
-     * через флаг isStopped + cancel speakJob, см. legacy TtsEngine.kt:689-706) и
-     * прерывать активную запись ASR (`asrEngine.stopRecording()`,
-     * legacy AsrEngine.kt:349-358). Сейчас no-op — останавливать пока нечего.
+     * TODO(body, AC-20): `ttsEngine.stop()` (неблокирующий: флаг isStopped +
+     * cancel speakJob БЕЗ join — legacy ANR-fix) и `asrEngine.stopRecording()`
+     * (`audioRecord.stop()+release()` в try/catch). Обёртки — пока no-op скелеты;
+     * body-задача AC-20 реализует <100ms non-blocking контракт.
      */
     override suspend fun stop() {
-        // TODO(phase-9-migration): ttsEngine.stop(); asrEngine.stopRecording()
-        Log.d(TAG, "stop() — no-op skeleton (engine not yet ported)")
+        // TODO(body): подтвердить <100ms latency после реализации wrapper TODO.
+        ttsEngine.stop()
+        asrEngine.stopRecording()
+        Log.d(TAG, "stop() — delegated to wrappers (tts+asr)")
     }
 
     /**
