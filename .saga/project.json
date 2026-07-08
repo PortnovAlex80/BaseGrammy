@@ -1,0 +1,6 @@
+{
+  "project_id": 25,
+  "project_slug": "grammarmate",
+  "project_repository_id": 7,
+  "note": "Saga project GrammarMate (id=25). Repo BaseGrammy (id=7). Reverse-engineering legacy (com.alexpo.grammermate, branch main, 217 files) into build-from-scratch plan on v2 clean architecture. Discovery done: decision=go, Modified D' (13 epics / 5 waves). See saga notes 1-4, 28. Discovery notes 1,2 were originally created against project_id=1 (wrong 'test' project) and re-linked to 25."
+}

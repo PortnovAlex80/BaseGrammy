@@ -10,7 +10,7 @@ C02 - Periodo Ipotetico: 3 tipi
 Если время есть, посещаем город (se, c'è, tempo, visitiamo, città);Se c'è tempo, visitiamo la città
 Если я нахожу работу, переезжаю (se, trovo, lavoro, mi, trasferisco);Se trovo un lavoro, mi trasferisco
 Если тот самый магазин открыт, покупаю хлеб (se, negozio, essere, aperto, compro, pane);Se il negozio è aperto, compro il pane
-Если он помогает, finishingiamo prestо (se, aiuta, finiamo, presto);Se aiuta, finiamo presto
+Если он помогает, заканчиваем рано (se, aiuta, finiamo, presto);Se aiuta, finiamo presto
 Если вы звоните, я отвечаю (se, chiamate, rispondo);Se chiamate, rispondo
 Если та самая машина новая, стоит дорого (se, macchina, essere, nuova, costa, molto);Se la macchina è nuova, costa molto
 Если погода хорошая, идём в парк (se, tempo, essere, buono, andiamo, parco);Se il tempo è buono, andiamo al parco
@@ -40,7 +40,7 @@ C02 - Periodo Ipotetico: 3 tipi
 Если бы время было, посещали бы город (se, ci fosse, tempo, visiteremmo, città);Se ci fosse tempo, visiteremmo la città
 Если бы я находил работу, переезжал бы (se, trovassi, lavoro, mi, trasferirei);Se trovassi un lavoro, mi trasferirei
 Если бы тот самый магазин был открыт, покупал бы хлеб (se, negozio, fosse, aperto, comprerei, pane);Se il negozio fosse aperto, comprerei il pane
-Если бы он помогал, finishingали бы рано (se, aiutasse, finiremmo, presto);Se aiutasse, finiremmo presto
+Если бы он помогал, заканчивали бы рано (se, aiutasse, finiremmo, presto);Se aiutasse, finiremmo presto
 Если бы вы звонили, я бы отвечал (se, chiamaste, risponderei);Se chiamaste, risponderei
 Если бы та самая машина была новая, стоила бы дорого (se, macchina, fosse, nuova, costerebbe, molto);Se la macchina fosse nuova, costerebbe molto
 Если бы погода была хорошая, шли бы в парк (se, tempo, fosse, buono, andremmo, parco);Se il tempo fosse buono, andremmo al parco
@@ -61,7 +61,7 @@ C02 - Periodo Ipotetico: 3 tipi
 Если бы время было, мы бы посетили город (se, ci fosse, stato, tempo, avremmo, visitato, città);Se ci fosse stato tempo, avremmo visitato la città
 Если бы я нашёл работу, я бы переехал (se, avessi, trovato, lavoro, mi, sarei, trasferito);Se avessi trovato un lavoro, mi sarei trasferito
 Если бы тот самый магазин был открыт, я бы купил хлеб (se, negozio, fosse, stato, aperto, avrei, comprato, pane);Se il negozio fosse stato aperto, avrei comprato il pane
-Если бы он помог, мы бы finishingали рано (se, avesse, aiutato, avremmo, finito, presto);Se avesse aiutato, avremmo finito presto
+Если бы он помог, мы бы закончили рано (se, avesse, aiutato, avremmo, finito, presto);Se avesse aiutato, avremmo finito presto
 Если бы вы позвонили, я бы ответил (se, aveste, chiamato, avrei, risposto);Se aveste chiamato, avrei risposto
 Если бы та самая машина была новая, она бы стоила дорого (se, macchina, fosse, stata, nuova, sarebbe, costata, molto);Se la macchina fosse stata nuova, sarebbe costata molto
 Если бы погода была хорошая, мы бы пошли в парк (se, tempo, fosse, stato, buono, saremmo, andati, parco);Se il tempo fosse stato buono, saremmo andati al parco
