@@ -2,8 +2,8 @@ package com.alexpo.grammermate.v2.core.data.audio
 
 import android.content.Context
 import android.util.Log
-import com.alexpo.grammermate.v2.core.domain.model.InitPhase
-import com.alexpo.grammermate.v2.core.domain.model.TtsState
+import com.alexpo.grammermate.domain.model.InitPhase
+import com.alexpo.grammermate.domain.model.TtsState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

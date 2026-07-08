@@ -1,6 +1,6 @@
 package com.alexpo.grammermate.v2.core.data.packimport
 
-import com.alexpo.grammermate.v2.core.domain.model.WordScript
+import com.alexpo.grammermate.domain.model.WordScript
 import java.io.InputStream
 
 /**

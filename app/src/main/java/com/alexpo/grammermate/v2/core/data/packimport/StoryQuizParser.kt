@@ -1,7 +1,7 @@
 package com.alexpo.grammermate.v2.core.data.packimport
 
-import com.alexpo.grammermate.v2.core.domain.model.StoryPhase
-import com.alexpo.grammermate.v2.core.domain.model.StoryQuiz
+import com.alexpo.grammermate.domain.model.StoryPhase
+import com.alexpo.grammermate.domain.model.StoryQuiz
 
 /**
  * Парсер Story JSON → [StoryQuiz] (SRS-002 FR-5, AC-10).
