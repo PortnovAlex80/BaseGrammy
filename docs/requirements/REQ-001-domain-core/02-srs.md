@@ -684,6 +684,63 @@ interface AudioModelRepository {
 - **Новый тип DailyTask:** добавить `data class` вариант в sealed `DailyTask`
   (`model/DailyTask.kt`) + соответствующий `DailyBlockType`.
 
+### 5.11. TrainingStateAccess (cross-cutting state-порт, GAP C2 successor)
+
+> **GAP C2 / AC-18.** Cross-cutting доменный порт для чтения/записи разделяемого
+> training state. Successor legacy-интерфейса `TrainingStateAccess` из
+> `feature/daily/DailySessionHelper.kt` (v1), поднятый с feature-слоя в `:domain`
+> как стабильный контракт до старта Wave 1. Потребляется E04 (Training), E07
+> (Daily), E08 (BackgroundVocab), E10 (Gamification), E11 (Boss), E12 (Pomodoro)
+> **через DI**, НЕ через прямые ссылки на `TrainingViewModel`. Файл:
+> `domain/training/TrainingStateAccess.kt` (пакет `domain.training`).
+
+```kotlin
+interface TrainingStateAccess {
+    val trainingState: StateFlow<TrainingState>
+    fun updateState(transform: (TrainingState) -> TrainingState)
+    suspend fun saveProgress()
+}
+
+data class TrainingState(
+    val navigation: TrainingNavigation = TrainingNavigation(),
+    val session: TrainingSessionCounters = TrainingSessionCounters(),
+) {
+    companion object { val Empty: TrainingState = TrainingState() }
+}
+
+data class TrainingNavigation(
+    val activePackId: PackId? = null,
+    val selectedLanguageId: LanguageId? = null,
+    val selectedLessonId: LessonId? = null,
+    val mode: TrainingMode = TrainingMode.LESSON,
+    val currentScreen: String = "HOME",
+)
+
+data class TrainingSessionCounters(
+    val currentIndex: Int = 0,
+    val sessionState: SessionState = SessionState.ACTIVE,
+    val correctCount: Int = 0,
+    val incorrectCount: Int = 0,
+    val incorrectAttemptsForCard: Int = 0,
+    val hintCount: Int = 0,
+    val activeTimeMs: Long = 0L,
+    val voiceActiveMs: Long = 0L,
+    val voiceWordCount: Int = 0,
+    val completedSubLessonCount: Int = 0,
+)
+```
+
+**Контракт:**
+- `trainingState` — hot `StateFlow`, всегда есть текущее значение (`TrainingState.Empty` на старте). Мигрирует legacy `val uiState: StateFlow<TrainingUiState>`, но тип сужен до доменного cross-cutting среза (вместо UI god-state).
+- `updateState(transform)` — атомарное обновление через чистую функцию (CAS-цикл реализации, как `MutableStateFlow.update`). Мигрирует legacy `fun updateState(transform: (TrainingUiState) -> TrainingUiState)`. Синхронная (не `suspend`): конкурирующие обновления от разных фич не теряются.
+- `saveProgress()` — персист training state в data-слой. Мигрирует legacy `fun saveProgress()`; в домене стал `suspend` по правилу §5 (mutating/persist-операции портов — `suspend`, чтобы реализация писала в Room/DataStore без блокировки).
+
+**Срез состояния.** В отличие от legacy god-state `TrainingUiState` (40+ полей), доменный порт оперирует только тем, что действительно разделяется между фичами cross-cutting: контекст навигации (`TrainingNavigation`) и сессионные счётчики/курсор (`TrainingSessionCounters`). Feature-local подсостояния (boss/daily/pomodoro/vocab/story) в новой архитектуре владеются фичами локально (E04/E07/E10/E11/E12) — это и есть исправление legacy tech-debt.
+
+**Стабильность (NFR-4):** после старта Wave 1 любое изменение сигнатуры (метод, тип, `suspend`/`StateFlow`) = drift и требует отдельной задачи с `trace_add(link_type:'derived_from', target:SRS-001)`. Параллельные dev-задачи Wave 1–4 **потребляют** этот порт, не меняют его.
+
+**Проверка (AC-18):** `grep -rn "interface TrainingStateAccess" domain/src` → 1; контракт-тест `TrainingStateAccessTest` фиксирует reactive read, atomic update, suspend persist.
+
 ---
 
 ## 6. Зависимости и интеграция

@@ -48,7 +48,7 @@
 | SessionEvent | `feature/training/SessionEvent.kt` | E04 | COVERED |
 | BossBattleRunner + BossOrchestrator + 3 BossType + tiers | `feature/boss/*.kt` | E11 | COVERED |
 | DailyPracticeCoordinator + Composer + TENSE_LADDER | `feature/daily/*.kt` | E07 | COVERED |
-| **TrainingStateAccess interface** | `feature/daily/DailySessionHelper.kt` | E01 | **GAP C2** → ДОБАВИТЬ В E01 (критический cross-cutting порт) |
+| **TrainingStateAccess interface** | `feature/daily/DailySessionHelper.kt` | E01 | **GAP C2 — ✅ CLOSED (AC-18):** successor-порт определён в `domain/training/TrainingStateAccess.kt` (pure Kotlin), контракт зафиксирован в SRS-001 §5.11 |
 | PomodoroHelper | `feature/pomodoro/PomodoroHelper.kt` | E12 | COVERED |
 | VocabSprintRunner | `feature/vocab/VocabSprintRunner.kt` | E06 | COVERED |
 | VocabPlaybackService + DeckPlayer + MediaSession | `feature/backgroundvocab/*.kt` | E08 | COVERED |
@@ -199,7 +199,7 @@
 
 ## K. Cross-cutting concerns (coordination risk)
 
-1. **TrainingStateAccess (GAP C2)** — самый cross-cutting контракт. Потребляется E04/E07/E08/E10/E11/E12. E01 ОБЯЗАН определить successor-порт до старта любого feature-эпика. **Высокий риск расхождения.**
+1. **TrainingStateAccess (GAP C2) — ✅ CLOSED (AC-18)** — самый cross-cutting контракт. Потребляется E04/E07/E08/E10/E11/E12. E01 определил successor-порт до старта Wave 1: `domain/training/TrainingStateAccess.kt` (pure Kotlin), контракт зафиксирован в SRS-001 §5.11. Wave 1 разблокирован. Риск расхождения закрыт NFR-4 (стабильность контракта портов).
 2. **AuditLogger instrumentation** — разбросан по SettingsScreen (каждый toggle), GrammarMateApplication (session start), feature modules. E13 владеет, но каждый эпик, трогающий экран, должен переинструментировать. Риск: silent regression где новые экраны перестают логировать.
 3. **ScreenLogger** — трогает каждый маршрут в GrammarMateApp. Nav refactor (E13) должен сохранить события SHOWN/NAV/TAP/OVERLAY.
 4. **applyLocale** — AndroidX per-app language API; Activity recreation. Любой эпик, трогающий экран со строками, должен учитывать locale применяется на Activity level.
@@ -215,7 +215,7 @@
 | GAP | Что | Куда | Критичность |
 |---|---|---|---|
 | C1 | BadSentenceHelper + BadSentenceStore + exportToTextFile | E04 (training card lifecycle) | medium |
-| **C2** | **TrainingStateAccess interface (cross-cutting порт)** | **E01 (domain ports)** | **HIGH — блокирует Wave 1** |
+| **C2** | **TrainingStateAccess interface (cross-cutting порт) — ✅ CLOSED (AC-18)** | **E01 (domain ports)** | **HIGH — блокирует Wave 1 → закрыто в E01: `domain/training/TrainingStateAccess.kt`** |
 | C3 | ELITE/VOCAB route redirects (back-compat) | E13 (AppShell/Nav) | low |
 | C4 | HomophoneReplacerConfig (ASR hook) | E03 (audio ASR) | low |
 | C5 | ModelLoadLogger (→ Downloads/model_load_log.txt) | E03 (audio infra) | low |
