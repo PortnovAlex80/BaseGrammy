@@ -49,6 +49,7 @@ class SessionEngineResumeRegressionTest {
         content: FakeContentRepository,
         userContent: FakeUserContentRepository,
         sessionRepo: FakeSessionRepository = FakeSessionRepository(),
+        onMarkShown: suspend (CardId, Long) -> Unit = { _, _ -> },
     ): Triple<SessionEngine, FakeSessionRepository, FakeUserContentRepository> =
         Triple(
             SessionEngine(
@@ -56,6 +57,7 @@ class SessionEngineResumeRegressionTest {
                 contentRepository = content,
                 userContentRepository = userContent,
                 clock = { 1_700_000_000_000L },
+                onMarkShown = onMarkShown,
             ),
             sessionRepo,
             userContent,
@@ -254,6 +256,117 @@ class SessionEngineResumeRegressionTest {
         // Одной операцией: и прогресс, и shown согласованы.
         assertThat(after.correctCount).isEqualTo(1)
         assertThat(after.shownCardIds).contains(CardId("card_0"))
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-7 (DoD-named): WORD_BANK — X ∉ shownCardIds AND FlowerCalculator NOT called
+    // ───────────────────────────────────────────────────────────────────────
+    @Test
+    fun `submitAnswer_WORD_BANK_notMarkedShown`() = runTest {
+        // AC-7 Given: карта cardId = X показана в режиме ввода InputMode.WORD_BANK.
+        // AC-7 When: SessionEngine.submitAnswer(cardId=X, isCorrect=true, inputMode=WORD_BANK).
+        // Перехватываем хук mastery/flower-advance (downstream recordCardShow) —
+        // через него вызывается FlowerCalculator.
+        var markShownCalls = 0
+        var lastMarkedCardId: CardId? = null
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(3)) }
+        val (engine, _, _) = buildEngine(
+            content,
+            FakeUserContentRepository(),
+            onMarkShown = { cardId, _ ->
+                markShownCalls++
+                lastMarkedCardId = cardId
+            },
+        )
+
+        val snapshot = engine.startLessonSession(packId, lessonId, sessionSize = 3)
+        val sessionId = snapshot.sessionId
+        val x = CardId("card_1")
+
+        // AC-7 When.
+        engine.submitAnswer(sessionId, x, isCorrect = true, inputMode = InputMode.WORD_BANK)
+
+        val after = engine.resumeSession(sessionId)!!
+
+        // AC-7 Then-1: прогресс обновлён атомарно (correct=1).
+        assertThat(after.correctCount).isEqualTo(1)
+        // AC-7 Then-2: X НЕ добавлен в shownCardIds.
+        assertThat(after.shownCardIds).doesNotContain(x)
+        // AC-7 Then-3: mastery/flower НЕ выросли — onMarkShown (→ FlowerCalculator)
+        // НИКОГДА не вызывается для WORD_BANK-ответа.
+        assertThat(markShownCalls).isEqualTo(0)
+        assertThat(lastMarkedCardId).isNull()
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-8 (DoD-named): KEYBOARD — X ∈ shownCardIds AND mastery advanced
+    // ───────────────────────────────────────────────────────────────────────
+    @Test
+    fun `onSubmit_KEYBOARD_addsToShownCardIds`() = runTest {
+        // AC-8 Given: карта cardId = X в режиме InputMode.KEYBOARD.
+        // AC-8 When: SessionEngine.submitAnswer(cardId=X, isCorrect=true, inputMode=KEYBOARD).
+        var markShownCalls = 0
+        var lastMarkedCardId: CardId? = null
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(3)) }
+        val (engine, _, _) = buildEngine(
+            content,
+            FakeUserContentRepository(),
+            onMarkShown = { cardId, _ ->
+                markShownCalls++
+                lastMarkedCardId = cardId
+            },
+        )
+
+        val snapshot = engine.startLessonSession(packId, lessonId, sessionSize = 3)
+        val sessionId = snapshot.sessionId
+        val x = CardId("card_2")
+
+        // AC-8 When.
+        engine.submitAnswer(sessionId, x, isCorrect = true, inputMode = InputMode.KEYBOARD)
+
+        val after = engine.resumeSession(sessionId)!!
+
+        // AC-8 Then-1: прогресс обновлён.
+        assertThat(after.correctCount).isEqualTo(1)
+        // AC-8 Then-2: X добавлен в shownCardIds (самостоятельный ввод = показ).
+        assertThat(after.shownCardIds).contains(x)
+        // AC-8 Then-3: mastery/flower продвигаются — onMarkShown (→ FlowerCalculator)
+        // вызывается ровно один раз для X.
+        assertThat(markShownCalls).isEqualTo(1)
+        assertThat(lastMarkedCardId).isEqualTo(x)
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-8 (VOICE variant): VOICE — X ∈ shownCardIds AND mastery advanced
+    // ───────────────────────────────────────────────────────────────────────
+    @Test
+    fun `submitAnswer_VOICE_addsToShownCardIds_andAdvancesMastery`() = runTest {
+        // AC-8 (VOICE alternative): inputMode = VOICE тоже помечает shown и
+        // продвигает mastery — самостоятельный голосовой ввод = показ.
+        var markShownCalls = 0
+        var lastMarkedCardId: CardId? = null
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(3)) }
+        val (engine, _, _) = buildEngine(
+            content,
+            FakeUserContentRepository(),
+            onMarkShown = { cardId, _ ->
+                markShownCalls++
+                lastMarkedCardId = cardId
+            },
+        )
+
+        val snapshot = engine.startLessonSession(packId, lessonId, sessionSize = 3)
+        val sessionId = snapshot.sessionId
+        val x = CardId("card_0")
+
+        engine.submitAnswer(sessionId, x, isCorrect = true, inputMode = InputMode.VOICE)
+
+        val after = engine.resumeSession(sessionId)!!
+
+        assertThat(after.correctCount).isEqualTo(1)
+        assertThat(after.shownCardIds).contains(x)
+        assertThat(markShownCalls).isEqualTo(1)
+        assertThat(lastMarkedCardId).isEqualTo(x)
     }
 
     // ───────────────────────────────────────────────────────────────────────
