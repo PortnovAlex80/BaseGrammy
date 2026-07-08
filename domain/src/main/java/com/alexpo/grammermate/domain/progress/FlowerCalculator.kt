@@ -161,7 +161,7 @@ object FlowerCalculator {
      * Рассчитать визуальное состояние цветка урока.
      *
      * Перенесено из v1 `FlowerCalculator.calculate`, строки 20–67 (адаптировано:
-     * `nowMs` передаётся параметром вместо `System.currentTimeMillis()`, модель —
+     * `nowMs` передаётся параметром вместо wall-clock, модель —
      * [LessonMastery] вместо v1 `LessonMasteryState`).
      *
      * @param mastery           данные освоения урока (null = урок не начат → SEED).

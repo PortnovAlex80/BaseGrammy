@@ -25,7 +25,7 @@ object ChapterProgressCalculator {
      * Перенесено 1:1 из v1 `ChapterProgressCalculator.calculateChapterProgress`,
      * строки 38–88 (адаптировано: ключи карты — [LessonId] вместо v1 `String`;
      * [Chapter.lessonIds] — `List<LessonId>` вместо v1 `List<String>`; убран
-     * `android.util.Log`).
+     * вызов Android-логгера).
      *
      * Правила (перенесены из КОДА v1, не из KDoc — см. ниже):
      *  - started: `uniqueCardShows > 0`;
@@ -96,7 +96,7 @@ object ChapterProgressCalculator {
  * `app/legacy-src/java/com/alexpo/grammermate/feature/progress/PackProgressCalculator.kt`.
  *
  * Агрегирует mastery уроков в метрики пака для тайла выбора пака. Ноль Android.
- * `nowMs` инъектируется (в v1 — `System.currentTimeMillis()`).
+ * `nowMs` инъектируется (в v1 — wall-clock).
  */
 object PackProgressCalculator {
 
@@ -105,7 +105,7 @@ object PackProgressCalculator {
      *
      * Перенесено 1:1 из v1 `PackProgressCalculator.calculatePackFlower`, строки 60–150
      * (адаптировано: ключи — [LessonId] вместо `String`; `nowMs` параметром вместо
-     * `System.currentTimeMillis()`; убран `android.util.Log`).
+     * wall-clock; убран Android-логгер).
      *
      * Правила:
      *  - depth: среднее `(uniqueCardShows / MASTERY_THRESHOLD).coerceAtMost(1)` по

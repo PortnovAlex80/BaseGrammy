@@ -13,7 +13,7 @@ import com.alexpo.grammermate.domain.training.ScheduledSubLesson
  * `calculateCompletedSubLessons` (строки 171–206). Stateful-обёртка над сторами
  * в v1 НЕ переносится — только чистые функции-предикаты/счётчики.
  *
- * Ноль Android-зависимостей (в v1 были `android.util.Log` — убраны).
+ * Ноль Android-зависимостей (в v1 был Android-логгер — убран).
  */
 object LessonCompletionCalculator {
 
@@ -51,7 +51,7 @@ object LessonCompletionCalculator {
      *
      * Перенесено 1:1 из v1 `ProgressTracker.calculateCompletedSubLessons`,
      * строки 171–206 (адаптировано: чистые множества [CardId] вместо обращения к
-     * `mastery.shownCardIds`/`lessons`; убраны `android.util.Log`).
+     * `mastery.shownCardIds`/`lessons`; убран Android-логгер).
      *
      * Под-урок завершён, если каждая доставляемая карточка (не hidden) показана.
      * Подсчёт ПОСЛЕДОВАТЕЛЬНЫЙ: прерывается на первом незавершённом под-уроке.
