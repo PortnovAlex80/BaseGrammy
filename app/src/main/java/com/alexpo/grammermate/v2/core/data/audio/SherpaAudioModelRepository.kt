@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -136,37 +135,27 @@ class SherpaAudioModelRepository @Inject constructor(
     // ── Статус моделей ────────────────────────────────────────────────────
 
     /**
-     * Статус TTS-модели для [languageId]. **Реализовано** (с упрощением):
-     * `READY` если под `filesDir/tts/` есть непустой каталог модели,
-     * иначе `NOT_DOWNLOADED`. `ERROR`/`DOWNLOADING` пока не различаются.
+     * Статус TTS-модели для [languageId]. **Реализовано**: `READY` если
+     * per-language манифест (`TtsModelSpec.requiredFiles` + `requiredDirs`,
+     * ненулевой размер) полностью присутствует на диске, иначе `NOT_DOWNLOADED`.
      *
-     * TODO(phase-9-migration): точная per-language проверка по манифесту
-     *   `TtsModelSpec.requiredFiles`/`requiredDirs` из legacy
-     *   `data/TtsModelRegistry.kt` (имена каталогов зависят от языка); и
-     *   различение `ERROR` (битые/неполные файлы) от `NOT_DOWNLOADED`.
+     * Использует тот же manifest, что [SherpaAudioRepository.isTtsAvailable]
+     * (AC-11) — единый источник правды в [TtsModelRegistry]. `ERROR`/
+     * `DOWNLOADING` пока не различаются (`NOT_DOWNLOADED` покрывает «нет/неполно»).
      */
     override suspend fun getTtsModelStatus(languageId: LanguageId): ModelStatus {
-        val ttsRoot = File(context.filesDir, "tts")
-        val hasModelDir = ttsRoot.listFiles()
-            ?.any { it.isDirectory && it.listFiles()?.isNotEmpty() == true }
-            ?: false
-        return if (hasModelDir) ModelStatus.READY else ModelStatus.NOT_DOWNLOADED
+        val ready = TtsModelRegistry.isAvailable(context.filesDir, languageId.value)
+        return if (ready) ModelStatus.READY else ModelStatus.NOT_DOWNLOADED
     }
 
     /**
-     * Статус ASR-модели (Whisper + VAD). **Реализовано** — по манифесту
-     * стабильных файлов: `asr/whisper-small/` (3 файла) + `asr/vad/silero_vad.onnx`.
-     * Соответствует legacy `AsrModelRegistry.isReady()`.
+     * Статус ASR-модели (Whisper + VAD). **Реализовано** — через
+     * [AsrModelManifest.isAvailable] (`asr/whisper-small/` + `asr/vad/silero_vad.onnx`).
+     * Regression-lock AC-12 — единый источник правды с [SherpaAudioRepository.isAsrAvailable].
      */
     override suspend fun getAsrModelStatus(): ModelStatus {
-        val asrDir = File(context.filesDir, "asr/whisper-small")
-        val whisperReady = ASR_REQUIRED_FILES.all { f ->
-            val file = File(asrDir, f)
-            file.exists() && file.length() > 0L
-        }
-        val vadFile = File(context.filesDir, "asr/vad/silero_vad.onnx")
-        val vadReady = vadFile.exists() && vadFile.length() > 0L
-        return if (whisperReady && vadReady) ModelStatus.READY else ModelStatus.NOT_DOWNLOADED
+        val ready = AsrModelManifest.isAvailable(context.filesDir)
+        return if (ready) ModelStatus.READY else ModelStatus.NOT_DOWNLOADED
     }
 
     // ── Bluetooth микрофон ────────────────────────────────────────────────
@@ -199,9 +188,5 @@ class SherpaAudioModelRepository @Inject constructor(
 
     companion object {
         private const val TAG = "SherpaAudioModelRepository"
-
-        /** Обязательные файлы Whisper Small (legacy AsrModelRegistry.defaultModel.requiredFiles). */
-        private val ASR_REQUIRED_FILES =
-            listOf("small-encoder.int8.onnx", "small-decoder.int8.onnx", "small-tokens.txt")
     }
 }
