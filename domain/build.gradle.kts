@@ -46,3 +46,46 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
+// AC-2 (E01, task #432): continuously enforce that :domain stays free of any
+// Android- or Sherpa-ONNX imports. The Kotlin/JVM plugin already makes
+// `android.*` unresolvable at compile time (NFR-3); this task is a belt-and-
+// braces grep that fails the build the moment a stale `^import android` or
+// `^import com.k2fsa.sherpa` leaks into domain/src (e.g. a copy-paste from a
+// migrated file). DoD = the two greps return 0 lines; wiring them as a gradle
+// task makes the invariant re-checked on every `:domain:check` / CI run, not
+// only at the manual AC-2 verification step.
+val forbiddenImports = listOf(
+    "^import android" to "android.* (Android SDK)",
+    "^import com.k2fsa.sherpa" to "com.k2fsa.sherpa.* (Sherpa-ONNX)",
+)
+
+tasks.register("enforceNoAndroidImports") {
+    group = "verification"
+    description = "AC-2: fail if any domain source imports android.* or com.k2fsa.sherpa.*"
+    val sourceDirs = sourceSets.getByName("main").java.srcDirs
+
+    inputs.files(sourceDirs)
+    doLast {
+        var violations = 0
+        sourceDirs.forEach { dir ->
+            (fileTree(dir) { include("**/*.kt") }).forEach { file ->
+                file.readLines().forEachIndexed { index, line ->
+                    forbiddenImports.forEach { (pattern, label) ->
+                        if (line.matches(Regex("$pattern\\b.*"))) {
+                            logger.error("AC-2 violation: ${file.path}:${index + 1}: $line  [$label]")
+                            violations++
+                        }
+                    }
+                }
+            }
+        }
+        check(violations == 0) {
+            "AC-2 FAILED: found $violations forbidden android/sherpa imports in :domain " +
+                "(expected 0). See messages above."
+        }
+        logger.lifecycle("AC-2 OK: 0 android/sherpa imports in :domain (checked ${sourceDirs.size} src dirs).")
+    }
+}
+
+tasks.named("check") { dependsOn("enforceNoAndroidImports") }
+
