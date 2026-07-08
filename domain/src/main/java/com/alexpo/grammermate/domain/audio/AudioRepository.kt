@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.Flow
  *
  * **Зачем этот интерфейс в домене.** В v1 аудио было сосредоточено в одном
  * God Object'е — `AudioCoordinator.kt` (939 строк, TTS + ASR + soundpack +
- * bluetooth), который тянул в себя нативную библиотеку Sherpa-ONNX
- * (`com.k2fsa.sherpa.onnx.*`), Android `SoundPool`/`AudioTrack` и т.д. Любой
+ * bluetooth), который тянул в себя нативную ONNX-библиотеку TTS/ASR
+ * (vendor k2-fsa), Android `SoundPool`/`AudioTrack` и т.д. Любой
  * модуль домена/UI, которому нужно было «произнести текст», заражался этой
  * зависимостью. В clean-архитектуре v2 домен **ничего не знает** ни про
  * Sherpa-ONNX, ни про Android: он зависит только от этого чистого интерфейса.
