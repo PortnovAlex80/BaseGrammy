@@ -228,6 +228,30 @@
 
 **GATE:** после патча 9 GAP в эпики безопасно переходить к AC-этапу.
 
+### SRS-declared gaps (closure log)
+
+Три gap'а объявлены в SRS-001 (FR-10/FR-12/FR-14) как незакрытые кейсы
+доменного ядра и адресуются AC-14/AC-15/AC-16 соответственно:
+
+| Gap | Что | AC | Статус |
+|---|---|---|---|
+| #1 | `MultilingualStoryParser` → `:domain` (pure-Kotlin парсер) | AC-15 | pending |
+| #2 | `DailyTask` composers — сборка дневной нормы из блоков | AC-16 | pending |
+| **#3** | **`LessonCompletionCalculator` — контракт завершения покрывает все legacy-кейсы** | **AC-14** | **CLOSED (task #442, 2026-07-08)** |
+
+**gap #3 → CLOSED:** `LessonCompletionCalculator` (`domain/progress/`) покрывает
+все legacy-кейсы завершения урока/под-урока:
+1. полностью скрытые под-уроки авто-завершаются
+   (`calculateCompletedSubLessons`, `deliverableCards.isEmpty() → completed++`);
+2. порог завершения = `min(effective, 150)`
+   (`isLessonComplete`, cap из `TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD=150`);
+3. `activeSubLessonIndex` монотонно неубывающий — добавлена pure-функция
+   `advanceActiveSubLessonIndex(current, actual, size)` (`maxOf(current, actual)`,
+   clamping), никогда не движется назад (regression-anchor к AC-13/AC-5/AC-6).
+
+Проверка: `gradlew.bat :domain:test --tests "*LessonCompletionCalculatorTest*"`
+exit 0 (24 теста, 0 failures).
+
 ---
 
 *Документ обновляется при выявлении новых GAP'ов или изменении покрытия. Последний аудит: 2026-07-07, верифицировано чтением кода legacy на ветке `main`.*
