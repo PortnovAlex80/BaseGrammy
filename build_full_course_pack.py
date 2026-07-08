@@ -103,7 +103,10 @@ print(f"  Lessons: {len(LESSONS)}")
 print(f"  Chapters: {len(manifest['chapters'])}")
 
 # Source zips
-express_zip = zipfile.ZipFile(f"{ASSETS}/ITALIAN_EXPRESS.zip", "r")
+# NOTE: ITALIAN_EXPRESS.zip was removed (commit 0ec038501, replaced by ITALIAN_FULL_COURSE).
+# Drill files are copied from ITALIAN_EXPRESS_SHORT.zip (which already bundles them),
+# NOT from ITALIAN_FULL_COURSE.zip — that one is the build output and gets overwritten.
+express_zip = zipfile.ZipFile(f"{ASSETS}/ITALIAN_EXPRESS_SHORT.zip", "r")
 short_zip = zipfile.ZipFile(f"{ASSETS}/ITALIAN_EXPRESS_SHORT.zip", "r")
 
 with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as zf:
