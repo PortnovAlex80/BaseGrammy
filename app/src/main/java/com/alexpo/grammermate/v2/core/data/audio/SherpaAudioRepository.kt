@@ -12,6 +12,7 @@ import com.alexpo.grammermate.domain.audio.SoundEffect
 import com.alexpo.grammermate.domain.model.LanguageId
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,7 +60,7 @@ import javax.inject.Singleton
 class SherpaAudioRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val ttsEngine: TtsEngineWrapper,
-    private val asrEngine: AsrEngineWrapper,
+    private val asrEngine: AsrEnginePort,
     private val memoryChecker: MemoryChecker,
     private val segmentPlayer: SegmentPlayer,
 ) : AudioRepository {
@@ -153,35 +154,33 @@ class SherpaAudioRepository @Inject constructor(
     }
 
     /**
-     * Распознавание речи (ASR). Каркас `Flow<RecognitionEvent>` готов; тяжёлый
-     * путь записи + VAD + Whisper — TODO.
+     * Распознавание речи (ASR). Реализация по SRS-003 §2.1 / FR-6 / AC-8:
+     * репозиторий эмитит [RecognitionEvent.ListeningStarted] первым, затем
+     * делегирует тяжёлый путь (capture → VAD → decode) в [asrEngine]
+     * ([AsrEnginePort.streamRecognition]) и пробрасывает его события
+     * (`Partial`* → `EndpointDetected` → `Final` / `Failed`).
      *
-     * TODO(phase-9-migration): делегировать в обёртку над legacy `data/AsrEngine.kt`:
-     *   1. Эмитить [RecognitionEvent.ListeningStarted] после `AsrState.READY`.
-     *   2. При необходимости переключить язык: `asrEngine.setLanguage(languageId)`
-     *      (legacy AsrEngine.kt:177-225) — мультиязычная модель Whisper.
-     *   3. `asrEngine.recordAndTranscribe()` в streaming-режиме: открыть
-     *      `AudioRecord` (VOICE_RECOGNITION, 16 кГц), кормить чанки в
-     *      `Vad.acceptWaveform` (legacy AsrEngine.kt:232-344).
-     *   4. По сегментам речи эмитить [RecognitionEvent.Partial]
-     *      (промежуточные `getResult`) и [RecognitionEvent.EndpointDetected]
-     *      когда VAD нашёл паузу; финал — [RecognitionEvent.Final].
-     *   5. Маршрут на Bluetooth-микрофон если включён (через
-     *      AudioModelRepository / legacy BluetoothAudioRouter).
+     * Контракт: `ListeningStarted → (Partial ≥ 0) → EndpointDetected →
+     * Final(text)` (AC-8 regression-anchor — НЕ `Started → Failed`). Если
+     * ASR-модель не готова, движок эмитит [RecognitionEvent.Failed] (AC-9);
+     * `ListeningStarted` репозиторий эмитит до проверки готовности, т.к. это
+     * сигнал «микрофон активирован / сессия начата» (FR-6: «после READY» —
+     * репозиторий не проверяет READY сам, движок делает это в `streamRecognition`).
      *
-     * Сейчас: эмитит `ListeningStarted`, затем `Failed(IllegalStateException)`.
+     * Язык синхронизируется до старта стрима: `asrEngine.setLanguage(...)` —
+     * мультиязычная Whisper-модель, смена языка без перезагрузки (FR-6/legacy
+     * AsrEngine.kt:177-225).
+     *
+     * TODO(phase-9-migration, AC-10): реальная capture-логика (AudioRecord +
+     * Sherpa VAD) живёт в [AsrEngineWrapper.streamRecognition]; streaming-
+     * `Partial` гипотезы появятся вместе с AC-10 streaming-pipeline.
      */
     override fun recognizeSpeech(languageId: LanguageId): Flow<RecognitionEvent> = flow {
         emit(RecognitionEvent.ListeningStarted)
-        // TODO(phase-9-migration): Whisper + Silero VAD — см. KDoc выше.
-        emit(
-            RecognitionEvent.Failed(
-                IllegalStateException(
-                    "ASR recognition not yet ported (lang=${languageId.value}). " +
-                        "See legacy app/legacy-src/.../data/AsrEngine.kt"
-                )
-            )
-        )
+        // FR-6: мультиязычная модель, смена языка без перезагрузки.
+        asrEngine.setLanguage(languageId.value)
+        // Делегируем capture→endpoint→decode→Final в движок (Fake в unit-тестах).
+        emitAll(asrEngine.streamRecognition())
     }
 
     /**
