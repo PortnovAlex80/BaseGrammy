@@ -5,7 +5,7 @@
 //
 // Constraints (locked here so body tasks AC-1..AC-18 implement inside a fixed
 // contract):
-//   - pure JVM Kotlin (org.jetbrains.kotlin.jvm); NO com.android.* plugin,
+//   - pure JVM Kotlin (org.jetbrains.kotlin.jvm); NO Android application plugin,
 //     NO Android SDK in classpath, NO `import android.*` (AC-2).
 //   - jvmTarget = 17 (matches :app compileOptions / kotlinOptions). We compile
 //     on the Gradle JVM (no jvmToolchain — only JDK 21 is installed on the
