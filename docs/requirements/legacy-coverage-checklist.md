@@ -252,6 +252,33 @@
 Проверка: `gradlew.bat :domain:test --tests "*LessonCompletionCalculatorTest*"`
 exit 0 (24 теста, 0 failures).
 
+### AC-4 audit (models immutability + value-class IDs) — CLOSED (task #434, 2026-07-08)
+
+Аудит `domain/model/` против §C/E и AC-4 критериев. Все 14 доменных групп
+представлены immutable моделями (`data class` с `val` / `sealed interface`):
+
+| Группа | Файл | Каноничные модели |
+|---|---|---|
+| pack IDs | `Pack.kt` | `PackId`/`LessonId`/`CardId`/`LanguageId`/`ChapterId`/`SessionId` (все `@JvmInline value class`) |
+| контент | `Content.kt` | `Language`, `Pack`, `Chapter`, `Lesson`, `Card`, `GrammarChip`, `GrammarExample`, `StoryQuiz`, `StoryQuestion` |
+| прогресс | `Progress.kt` | `LessonMastery`, `StreakData`, `ChapterProgress`, `DrillProgress`, `DailyCursor`, `PomodoroHistoryEntry` |
+| сессии | `SessionSnapshot.kt`, `AnswerResult.kt` | `SessionSnapshot`, `AnswerResult` |
+| настройки | `Settings.kt` | `AppConfig` |
+| пользовательский контент | `UserContent.kt` | `HiddenCard`, `BadSentence`, `BgVocabWord`, `BgVocabMarkEntry`, `UserProfile` |
+| drill'ы | `Drills.kt` | `VerbDrillCard`, `AuxDrillCard`, `VocabWord`, `VocabDrillCard`, `WordMasteryState`, `VocabEntry`, `VocabDrillSessionState` |
+| геймификация | `Gamification.kt`, `Flower.kt` | `BossState`, `EliteState`, `PomodoroState`, `LessonLadderRow`, `FlowerVisual`, `PackFlowerVisual` |
+| bg-vocab | `WordScript.kt`, `UserContent.kt` | `WordScript`, `PhrasePair`, `ScriptPauses`, `SpeakItem`, `BgVocabWord` |
+| daily | `DailyTask.kt` | `DailyTask` (sealed: `TranslateSentence`/`VocabFlashcard`/`ConjugateVerb`) |
+| enums/sealed | `Enums.kt` | все enums + `TtsState`/`DownloadState`/`SpeakSlot`/`Segment`/`ParseError` sealed |
+
+DoD-команда `grep -rn "^[[:space:]]*var " domain/src/main/java/com/alexpo/grammermate/domain/model/`
+→ ровно **1 совпадение**: `Progress.kt:84` `var totalLessons: Int = 0 private set`
+внутри `ChapterProgress` (документированное исключение + `withTotalLessons(total)`).
+Никаких исправлений не потребовалось — scaffold #430 перенёс модели as-is immutable.
+
+Проверка: `gradlew :domain:test` (pure JVM, JDK 21, emit 17) exit 0
+(359 тестов, 0 failures, 0 errors).
+
 ---
 
 *Документ обновляется при выявлении новых GAP'ов или изменении покрытия. Последний аудит: 2026-07-07, верифицировано чтением кода legacy на ветке `main`.*
