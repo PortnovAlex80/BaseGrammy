@@ -2,7 +2,7 @@ package com.alexpo.grammermate.v2.core.data.audio
 
 import android.media.MediaPlayer
 import android.util.Log
-import com.alexpo.grammermate.v2.core.domain.model.TtsState
+import com.alexpo.grammermate.domain.model.TtsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex

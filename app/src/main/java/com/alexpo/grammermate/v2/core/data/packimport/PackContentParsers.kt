@@ -1,6 +1,6 @@
 package com.alexpo.grammermate.v2.core.data.packimport
 
-import com.alexpo.grammermate.v2.core.domain.model.WordScript
+import com.alexpo.grammermate.domain.model.WordScript
 import java.io.InputStream
 
 /**
@@ -91,7 +91,7 @@ object PackContentParsers {
         VocabCsvParser.parse(stream)
 
     fun parseStoryJson(text: String): ParseResult<
-        com.alexpo.grammermate.v2.core.domain.model.StoryQuiz,
+        com.alexpo.grammermate.domain.model.StoryQuiz,
         ParseError,
         > = StoryQuizParser.parse(text)
 
