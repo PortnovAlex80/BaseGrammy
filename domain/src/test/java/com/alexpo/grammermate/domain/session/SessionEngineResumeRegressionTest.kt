@@ -6,6 +6,7 @@ import com.alexpo.grammermate.domain.model.CardType
 import com.alexpo.grammermate.domain.model.InputMode
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.domain.model.SessionStatus
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
@@ -279,6 +280,109 @@ class SessionEngineResumeRegressionTest {
         val (engine, _, _) = buildEngine(content, FakeUserContentRepository())
 
         assertThat(engine.resumeSession(com.alexpo.grammermate.domain.model.SessionId("ghost"))).isNull()
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-5: resume возвращает ТОТ ЖЕ currentCardId (= X ∈ pool) — идентичность
+    // ───────────────────────────────────────────────────────────────────────
+    @Test
+    fun `resume_returnsSameCurrentCardId_inPool`() = runTest {
+        // AC-5 Given: сохранена сессия currentCardId = card_3 ∈ pool [0..4].
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(5)) }
+        val (engine, sessionRepo, _) = buildEngine(content, FakeUserContentRepository())
+
+        val started = engine.startLessonSession(packId, lessonId, sessionSize = 5)
+        val sessionId = started.sessionId
+        // Доводим курсор до card_3 (X = card_3 ∈ poolCardIds).
+        repeat(3) { engine.nextCard(sessionId) }
+        val beforeResume = sessionRepo.loadSession(sessionId)!!
+        assertThat(beforeResume.currentCardId).isEqualTo(CardId("card_3"))
+        assertThat(beforeResume.currentCardId in beforeResume.poolCardIds).isTrue()
+
+        // AC-5 When: resumeSession.
+        val resumed = engine.resumeSession(sessionId)
+
+        // AC-5 Then: тот же currentCardId (идентичность), X ∈ pool, снимок не пересохранён без нужды.
+        assertThat(resumed).isNotNull()
+        assertThat(resumed!!.currentCardId).isEqualTo(CardId("card_3"))
+        assertThat(resumed.currentCardId in resumed.poolCardIds).isTrue()
+        // Загрузка — одна операция loadSession (FakeSessionRepository её детерминированно имитирует).
+        val stored = sessionRepo.loadSession(sessionId)
+        assertThat(stored?.currentCardId).isEqualTo(CardId("card_3"))
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-6: resume при выпавшей из пула карте — X возвращается в КОНЕЦ pool
+    // ───────────────────────────────────────────────────────────────────────
+    @Test
+    fun `resume_orphanCurrentCardId_readdedToPoolTail`() = runTest {
+        // AC-6 Given: currentCardId = card_9, но card_9 ∉ poolCardIds (пул пересобран/повреждён).
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(10)) }
+        val userContent = FakeUserContentRepository()
+        val (engine, sessionRepo, _) = buildEngine(content, userContent)
+        val sessionId = SessionId.forLesson(packId, lessonId)
+
+        // Стартуем и доводим до card_9 (X = card_9).
+        engine.startLessonSession(packId, lessonId, sessionSize = 10)
+        repeat(9) { engine.nextCard(sessionId) }
+        assertThat(sessionRepo.loadSession(sessionId)!!.currentCardId).isEqualTo(CardId("card_9"))
+
+        // Имитируем повреждение/пересборку пула: убираем card_9 из pool, но оставляем currentCardId = card_9.
+        val corrupted = sessionRepo.loadSession(sessionId)!!.copy(
+            poolCardIds = listOf(
+                CardId("card_0"), CardId("card_1"), CardId("card_2"),
+            ),
+            currentCardId = CardId("card_9"),
+        )
+        sessionRepo.saveSession(corrupted)
+
+        // AC-6 When: resumeSession.
+        val resumed = engine.resumeSession(sessionId)
+
+        // AC-6 Then-1: card_9 возвращена в КОНЕЦ poolCardIds.
+        assertThat(resumed).isNotNull()
+        assertThat(resumed!!.currentCardId).isEqualTo(CardId("card_9"))
+        assertThat(resumed.poolCardIds).contains(CardId("card_9"))
+        assertThat(resumed.poolCardIds.last()).isEqualTo(CardId("card_9"))
+
+        // AC-6 Then-2: снимок пересохранён через saveSession (атомарно) — загружаем снова, те же данные.
+        val stored = sessionRepo.loadSession(sessionId)!!
+        assertThat(stored.currentCardId).isEqualTo(CardId("card_9"))
+        assertThat(stored.poolCardIds.last()).isEqualTo(CardId("card_9"))
+
+        // AC-6 Then-3/4: currentCardId ∈ poolCardIds, НИКОГДА курсор не мимо пула, без подмены.
+        assertThat(resumed.currentCardId in resumed.poolCardIds).isTrue()
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-6: скрытие ТЕКУЩЕЙ карты → явный advance (не null, не молчаливая подмена)
+    // ───────────────────────────────────────────────────────────────────────
+    @Test
+    fun `resume_hiddenCurrentCard_advancesExplicitly_neverNull`() = runTest {
+        // AC-6 (инвариант «никогда не возвращается снимок, где курсор мимо пула»)
+        // проверяется через hideCard текущей карты: currentCardId должен ЯВНО
+        // перейти на следующую доступную карту (не null, не подмена молча).
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(5)) }
+        val (engine, _, _) = buildEngine(content, FakeUserContentRepository())
+
+        val started = engine.startLessonSession(packId, lessonId, sessionSize = 5)
+        val sessionId = started.sessionId
+        // Текущая = card_2.
+        engine.nextCard(sessionId)
+        engine.nextCard(sessionId)
+        assertThat(engine.resumeSession(sessionId)!!.currentCardId).isEqualTo(CardId("card_2"))
+
+        // Скрываем ТЕКУЩУЮ (card_2) → ЯВНЫЙ переход на card_3, НЕ null, НЕ подмена молча.
+        val afterHide = engine.hideCard(sessionId, CardId("card_2"))
+        assertThat(afterHide.currentCardId).isNotNull()
+        assertThat(afterHide.currentCardId).isNotEqualTo(CardId("card_2"))
+        assertThat(afterHide.currentCardId in afterHide.poolCardIds).isTrue()
+        assertThat(afterHide.poolCardIds).doesNotContain(CardId("card_2"))
+
+        // После resume снимок согласован: курсор в пуле, никогда не null при непустом пуле.
+        val resumed = engine.resumeSession(sessionId)!!
+        assertThat(resumed.currentCardId).isNotNull()
+        assertThat(resumed.currentCardId in resumed.poolCardIds).isTrue()
     }
 
     private fun assertTrue(condition: Boolean) {
