@@ -111,7 +111,7 @@
 
 **Правило:** сигнатуры портов НЕ изменяются после E01. Любое расширение = отдельная задача с trace `derived_from` к SRS. Wave 1-4 эпики **потребляют** порты, не меняют их.
 
-**GAP C2 (HIGH):** `TrainingStateAccess` successor — cross-cutting доменный порт для feature-модулей (Boss/Daily/Pomodoro/Vocab/Progress/Story/Settings читают/пишут training state). Должен быть определён в E01 ДО старта Wave 1. AC-18 E01.
+**GAP C2 (HIGH) — ✅ CLOSED (AC-18):** `TrainingStateAccess` successor — cross-cutting доменный порт для feature-модулей (Boss/Daily/Pomodoro/Vocab/Progress/Story/Settings читают/пишут training state). Определён в E01 ДО старта Wave 1: `domain/training/TrainingStateAccess.kt` (контракт зафиксирован в SRS-001 §5.11). AC-18 E01 — готов, Wave 1 разблокирован.
 
 Подробности контрактов (сигнатуры suspend/Flow, value-class IDs): [`SRS-001 §5 API contract`](../requirements/REQ-001-domain-core/02-srs.md).
 
