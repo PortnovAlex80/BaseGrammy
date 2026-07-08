@@ -37,17 +37,28 @@ import com.alexpo.grammermate.domain.repository.UserContentRepository
  * 4. `submitAnswer` атомарно обновляет прогресс и (для VOICE/KEYBOARD)
  *    пометку shown одной `saveSession`.
  * 5. WORD_BANK не помечает карту shown (дизайн v1 — сохранён).
+ * 6. Mastery/flower-advance GATED по [InputMode]: только VOICE/KEYBOARD
+ *    триггерят [onMarkShown]-хук (downstream подключает его к
+ *    `MasteryRepository.recordCardShow` → `FlowerCalculator`). WORD_BANK
+ *    НИКОГДА не дёргает mastery — пассивный показ из набора слов не считается
+ *    «самостоятельным вводом». AC-7 #3 / AC-8 #3.
  *
  * @property sessionRepository    персистенция снимков (одна транзакция = атомарность).
  * @property contentRepository    read-only контент паков (карточки урока).
  * @property userContentRepository скрытые/«плохие» карточки пользователя.
  * @property clock                injectable источник времени (детерминизм в тестах).
+ * @property onMarkShown          optional хук «карточка помечена shown в активном
+ *                                режиме (VOICE/KEYBOARD)» — downstream использует
+ *                                его для продвинжения mastery/flower. null по
+ *                                умолчанию (SessionEngine не зависит от
+ *                                MasteryRepository — это забота слоя use-case).
  */
 class SessionEngine(
     private val sessionRepository: SessionRepository,
     private val contentRepository: ContentRepository,
     private val userContentRepository: UserContentRepository,
     private val clock: () -> Long = { System.currentTimeMillis() },
+    private val onMarkShown: suspend (CardId, Long) -> Unit = { _, _ -> },
 ) {
 
     // ── Построение пула ────────────────────────────────────────────────────
@@ -146,6 +157,13 @@ class SessionEngine(
      * VOICE/KEYBOARD, пометить карту показанной. WORD_BANK — НЕ mark shown
      * (дизайн v1: ввод из набора слов не считается полноценным показом).
      * Атомарно — одной [SessionRepository.saveSession].
+     *
+     * **Mastery/flower gate (AC-7 #3 / AC-8 #3):** только когда карта реально
+     * помечается shown (inputMode == VOICE или KEYBOARD), вызывается хук
+     * [onMarkShown] — downstream продвигает `LessonMastery` (счётчик показов,
+     * `FlowerCalculator`). Для WORD_BANK хук НЕ дёргается → mastery/flower не
+     * растут от пассивного показа. Это прямое доказуемое соответствие бизнес-
+     * правилу «WORD_BANK ≠ mastery» (TARGET_ARCHITECTURE.md §12).
      */
     suspend fun submitAnswer(
         sessionId: SessionId,
@@ -158,14 +176,21 @@ class SessionEngine(
         val newIncorrect = current.incorrectCount + (if (!isCorrect) 1 else 0)
         // Только «самостоятельный» ввод (VOICE/KEYBOARD) помечает карту shown.
         val markShown = inputMode != InputMode.WORD_BANK
+        val nowMs = clock()
         val newShown = if (markShown) current.shownCardIds + cardId else current.shownCardIds
         val updated = current.copy(
             correctCount = newCorrect,
             incorrectCount = newIncorrect,
             shownCardIds = newShown,
-            updatedAtMs = clock(),
+            updatedAtMs = nowMs,
         )
         sessionRepository.saveSession(updated)
+        // Mastery/flower продвигаются ТОЛЬКО для «самостоятельного» ввода.
+        // AC-7 (WORD_BANK): hook не вызывается → FlowerCalculator не вызывается для X.
+        // AC-8 (KEYBOARD/VOICE): hook вызывается → mastery advanced для X.
+        if (markShown) {
+            onMarkShown(cardId, nowMs)
+        }
         return updated
     }
 

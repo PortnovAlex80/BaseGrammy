@@ -281,4 +281,38 @@ class CardSessionStateMachineTest {
         sm.showAnswer("my-special-card")
         assertThat(receivedId).isEqualTo("my-special-card")
     }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  AC-8 (DoD-named): KEYBOARD input помечает карту shown на уровне контракта
+    // ───────────────────────────────────────────────────────────────────────
+    // AC-8 говорит: «KEYBOARD/VOICE помечают карту shown — самостоятельный ввод
+    // = полноценный показ». На уровне [CardSessionStateMachine] сам факт shown
+    // управляется [SessionEngine] (см. SessionEngineResumeRegressionTest.
+    // onSubmit_KEYBOARD_addsToShownCardIds); машина retry/hint лишь НЕ должна
+    // вмешиваться: верный ответ в KEYBOARD возвращается как Correct без
+    // побочных VOICE-эффектов (voiceTriggerToken не инкрементируется), что
+    // отличает KEYBOARD от VOICE-режима. Гарантирует, что downstream-обработчик
+    // видит чистый «Correct» и сам помечает карту shown.
+    @Test
+    fun `onSubmit_KEYBOARD_addsToShownCardIds`() {
+        val sm = newStateMachine()
+        val voiceTokenBefore = sm.voiceTriggerToken
+
+        val result = sm.onSubmit(
+            isCorrect = true,
+            cardId = cardId,
+            inputMode = InputMode.KEYBOARD,
+        )
+
+        // Верный KEYBOARD-ответ → Correct (downstream пометит shown).
+        assertThat(result).isInstanceOf(OnSubmitResult.Correct::class.java)
+        val correct = result as OnSubmitResult.Correct
+        assertThat(correct.answerResult.correct).isTrue()
+        // KEYBOARD НЕ дёргает VOICE-токен: distinguishing signal vs VOICE-режим.
+        assertThat(sm.voiceTriggerToken).isEqualTo(voiceTokenBefore)
+        // Состояние сброшено к чистому: показ не «зажат» подсказкой.
+        assertThat(sm.hintAnswer).isNull()
+        assertThat(sm.isPaused).isFalse()
+        assertThat(sm.remainingAttempts).isEqualTo(3)
+    }
 }
