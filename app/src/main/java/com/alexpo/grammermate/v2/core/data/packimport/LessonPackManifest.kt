@@ -72,7 +72,7 @@ data class LessonPackManifest(
                 val title = entry.optString("title").trim().ifBlank { null }
                 val type = entry.optString("type", "standard").trim()
                 if (lessonId.isBlank() || file.isBlank()) {
-                    error("Invalid lesson entry at index $i")
+                    return null // фикс M-2: невалидная запись урока — typed-отказ
                 }
                 val tensesArray = entry.optJSONArray("tenses")
                 val tenses = if (tensesArray != null) {
@@ -102,16 +102,33 @@ data class LessonPackManifest(
                 1 -> {
                     val hasStandardLessons = lessons.any { it.type != "verb_drill" }
                     if (!hasStandardLessons && verbDrill == null && vocabDrill == null && backgroundVocab == null) {
-                        error("Schema v1 manifest has no lessons, no drill sections, and no backgroundVocab")
+                        return null // пустой манифест без контента
                     }
                 }
                 2 -> {
                     val hasChapterContent = chapters.any { it.lessons.isNotEmpty() }
                     if (!hasChapterContent && verbDrill == null && vocabDrill == null && backgroundVocab == null) {
-                        error("Schema v2 manifest has no chapter content, no drill sections, and no backgroundVocab")
+                        return null // пустой манифест без контента
                     }
                 }
             }
+
+            // Фикс M-1: структурная валидация — дубли chapterId (REPLACE-каскады
+            // при импорте), висячие ссылки chapter.lessons на несуществующие
+            // уроки (молча исчезали), отрицательные order. Дубли order НЕ
+            // запрещены: legacy-манифесты легально их содержат (default
+            // order = index+1 может совпасть с явным), сортировка устойчива
+            // по (order, index).
+            val chapterIds = chapters.map { it.chapterId }
+            if (chapterIds.size != chapterIds.toSet().size) return null
+            // Висячие ссылки проверяем ТОЛЬКО при явных root-уроках: v2-формат
+            // допускает объявление уроков самими главами (без root lessons) —
+            // там chapter.lessons и есть декларации.
+            if (lessons.isNotEmpty()) {
+                val knownLessonIds = lessons.map { it.lessonId }.toSet()
+                if (chapters.any { ch -> ch.lessons.any { it !in knownLessonIds } }) return null
+            }
+            if (lessons.any { it.order < 0 } || chapters.any { it.order < 0 }) return null
 
             return LessonPackManifest(
                 schemaVersion = schemaVersion,

@@ -77,6 +77,37 @@ class LessonPackManifestTest {
         assertThat(manifest.backgroundVocab!!.audioDir).isEqualTo("bg_vocab/audio")
     }
 
+    /** Фикс M-1: дубли chapterId / висячие chapter.lessons / дубли order — null. */
+    @Test
+    fun structural_validation_rejectsDuplicatesAndDanglingRefs() {
+        val base = """
+            {
+              "schemaVersion": 2, "packId": "P", "packVersion": "v", "language": "it",
+              "lessons": [
+                { "lessonId": "l1", "file": "l1.csv", "order": 1 },
+                { "lessonId": "l2", "file": "l2.csv", "order": 2 }
+              ]
+            }
+        """.trimIndent()
+        fun chapters(vararg ch: String) = base.replace("}", ",\"chapters\": [" + ch.joinToString(",") + "] }", )
+
+        // Дубль chapterId.
+        assertThat(LessonPackManifest.fromJson(chapters(
+            """{"chapterId": "c1", "order": 1, "title": "t", "subtitle": null, "storyFile": null, "lessons": ["l1"]}""",
+            """{"chapterId": "c1", "order": 2, "title": "t", "subtitle": null, "storyFile": null, "lessons": ["l2"]}""",
+        ))).isNull()
+
+        // Висячая ссылка chapter.lessons → несуществующий урок.
+        assertThat(LessonPackManifest.fromJson(chapters(
+            """{"chapterId": "c1", "order": 1, "title": "t", "subtitle": null, "storyFile": null, "lessons": ["ghost"]}""",
+        ))).isNull()
+
+        // Валидная структура с главой проходит.
+        assertThat(LessonPackManifest.fromJson(chapters(
+            """{"chapterId": "c1", "order": 1, "title": "t", "subtitle": null, "storyFile": null, "lessons": ["l1", "l2"]}""",
+        ))).isNotNull()
+    }
+
     @Test
     fun v1_rootLessons_parsed() {
         val manifest = LessonPackManifest.fromJson(
@@ -120,18 +151,14 @@ class LessonPackManifestTest {
         ).isNull()
     }
 
+    /** Фикс M-2: пустой манифест без контента — null, не исключение. */
     @Test
-    fun v2_withoutContent_throws() {
-        val ex = assertThrows(IllegalStateException::class.java) {
+    fun v2_withoutContent_returnsNull() {
+        assertThat(
             LessonPackManifest.fromJson(
-                """
-                { "schemaVersion": 2, "packId": "p", "packVersion": "v", "language": "it",
-                  "chapters": [ { "chapterId": "c0", "order": 0, "title": "Пусто", "lessons": [] } ] }
-                """.trimIndent()
+                """{"schemaVersion": 2, "packId": "P", "packVersion": "v", "language": "it"}"""
             )
-        }
-        assertThat(ex).hasMessageThat()
-            .contains("Schema v2 manifest has no chapter content")
+        ).isNull()
     }
 
     @Test
