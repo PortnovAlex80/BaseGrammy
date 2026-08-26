@@ -56,21 +56,12 @@ object PackContentParsers {
         /** BgVocab CSV (из секции `backgroundVocab.file`) → [BgVocabCsvParser]. */
         BG_VOCAB_CSV,
 
-        /** Audio / markdown / прочее — не парсится PackImporter'ом (E03 / отображение). */
-        IGNORED,
-    }
+        /** Markdown-стория главы (`chapters[].storyFile`) — сохраняется для
+         *  runtime-чтения story reader'ом (фикс аудита M-3: не IGNORED). */
+        STORY_MD,
 
-    /**
-     * Классифицировать файл пака по имени/расширению → [ContentType].
-     *
-     * SCAFFOLD TODO (AC-1 / AC-4): реализовать классификацию по manifest-context.
-     * Простая эвристика: `manifest.json` → MANIFEST; `*.csv` по секциям manifest;
-     * `*.json` (не manifest) → STORY_JSON; `*.md`/`*.wav`/`*.opus` → IGNORED.
-     *
-     * @param fileName имя файла относительно корня пака.
-     */
-    fun classify(fileName: String): ContentType {
-        TODO("AC-1/AC-4: PackContentParsers.classify — fileName → ContentType (dispatch contract)")
+        /** Audio / прочее — не парсируется PackImporter'ом (E03 / отображение). */
+        IGNORED,
     }
 
     /**
@@ -97,4 +88,27 @@ object PackContentParsers {
 
     fun parseBgVocabCsv(stream: InputStream): List<WordScript> =
         BgVocabCsvParser.parse(stream)
+
+    /**
+     * Классифицировать файл пака по имени/расширению → [ContentType].
+     *
+     * Эвристика (контракт AC-1/AC-4): `manifest.json` → MANIFEST;
+     * `vocab_*.csv` → VOCAB_CSV; `*.json` → STORY_JSON; `*.md` → [STORY_MD]
+     * (фикс аудита M-3: стори-файлы глав — markdown, НЕ «ignored» — importer
+     * сохраняет их для runtime-чтения story reader'ом); прочие `*.csv` →
+     * LESSON_CSV (verb/aux уточняются по секциям manifest на стороне
+     * [PackImporter] — имя файла само по себе их не различает);
+     * аудио/прочее → IGNORED.
+     */
+    fun classify(fileName: String): ContentType {
+        val name = fileName.substringAfterLast('/').lowercase()
+        return when {
+            name == "manifest.json" -> ContentType.MANIFEST
+            name.startsWith("vocab_") && name.endsWith(".csv") -> ContentType.VOCAB_CSV
+            name.endsWith(".json") -> ContentType.STORY_JSON
+            name.endsWith(".md") -> ContentType.STORY_MD
+            name.endsWith(".csv") -> ContentType.LESSON_CSV
+            else -> ContentType.IGNORED
+        }
+    }
 }
