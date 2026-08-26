@@ -35,7 +35,10 @@ object ImportConfirmationResolver {
      * Финальное решение транзакции по [ImportConfirmation].
      *
      * [PackImporter] сопоставляет [Resolution] → Room-действие:
-     * - [CommitPartial] → `database.withTransaction { write(importedFiles) }`.
+     * - [CommitPartial] → `database.withTransaction { write(importedFiles) }`
+     *   (ФИКС C-1: применим к SAF/потоковым ре-импортам ВНЕ importer-транзакции;
+     *   основной [PackImporter] путь коммитит валидное подмножество сам, внутри
+     *   одной транзакции, ДО возврата Partial — cancel там откатить не может).
      * - [Rollback] → откатить текущую транзакцию (AC-3 rollback path).
      * - [StaleDialog] / [RejectedNotAccepted] → no-op, ожидать корректный ввод.
      */

@@ -15,8 +15,12 @@ package com.alexpo.grammermate.v2.core.data.packimport
  *   записи в [rejectedFiles] и ровно 7 — в [importedFiles] (AC-13 etalon: 7 валидных,
  *   3 сбойных). Число [errors] == [rejectedFiles].size.
  * - «continue anyway» → [ImportConfirmation.Proceed] → в БД остаются 7 валидных,
- *   3 сбойных отбрасываются (см. [PackImporter] write-path внутри `withTransaction`).
- * - «cancel» → [ImportConfirmation.Cancel] → rollback всей транзакции, дельта = 0.
+ *   3 сбойных отбрасываются (write-path [PackImporter] внутри `withTransaction`).
+ * - «cancel» → [ImportConfirmation.Cancel] → ФИКС C-1 (аудит 2026-08-26):
+ *   rollback уже закоммиченных данных невозможен — валидное подмножество
+ *   атомарно записано ВНУТРИ importer-транзакции ДО возврата Partial. Cancel =
+ *   решение UI пост-фактум: штатное удаление пака / отказ от дальнейших
+ *   действий; повторный импорт идемпотентен (REPLACE по packId).
  *
  * **Координация с AC-3 (atomic):** partial — это **валидные подмножества**, а не
  * rollback всей транзакции. Полный сбой (невалидный manifest / битый ZIP / I/O)
