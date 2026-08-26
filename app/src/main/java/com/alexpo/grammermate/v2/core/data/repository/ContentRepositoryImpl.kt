@@ -2,6 +2,7 @@ package com.alexpo.grammermate.v2.core.data.repository
 
 import com.alexpo.grammermate.v2.core.data.local.dao.ContentDao
 import com.alexpo.grammermate.v2.core.data.local.dao.DrillDao
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.alexpo.grammermate.v2.core.data.local.entity.VerbDrillCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.CardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.ChapterEntity
@@ -52,6 +53,7 @@ import javax.inject.Inject
 class ContentRepositoryImpl @Inject constructor(
     private val contentDao: ContentDao,
     private val drillDao: DrillDao,
+    @ApplicationContext private val context: android.content.Context,
 ) : ContentRepository {
 
     // ── Языки ──────────────────────────────────────────────────────────────────
@@ -235,6 +237,15 @@ class ContentRepositoryImpl @Inject constructor(
         return runCatching {
             JSON.decodeFromString(STRING_LIST_SERIALIZER, json)
         }.getOrDefault(emptyList())
+    }
+
+    /**
+     * Story-текст главы из filesDir/stories/<packId>/<relativePath>
+     * (файлы кладёт PackImporter.preserveStoryFiles — срез 6 Фазы 4).
+     */
+    override suspend fun getStoryText(packId: PackId, relativePath: String): String? {
+        val file = java.io.File(java.io.File(context.filesDir, "stories/${packId.value}"), relativePath)
+        return file.takeIf { it.isFile }?.readText()
     }
 
     /**

@@ -70,6 +70,13 @@ interface ContentRepository {
         person: String? = null,
     ): List<VerbDrillCard>
 
+    /**
+     * Текст story-файла главы (срез 6 Фазы 4): importer сохраняет `.md`-файлы
+     * пака; путь — как в `chapters[].storyFile` манифеста. null — файл не
+     * найден (пак без стори / не импортирован).
+     */
+    suspend fun getStoryText(packId: PackId, relativePath: String): String?
+
     /** Реактивный список уроков пака — для подписки UI. */
     fun observeLessons(packId: PackId): Flow<List<Lesson>>
 }

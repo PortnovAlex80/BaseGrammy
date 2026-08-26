@@ -261,6 +261,13 @@ class PackImporter @Inject constructor(
             }
         }
 
+        // Story-контент глав (срез 6 Фазы 4, вход STORY_MD/фикс M-3): .md-файлы
+        // копируются в filesDir/stories/<packId>/… ПОСЛЕ успешной DB-транзакции
+        // (сбой транзакции → файлов-сирот не остаётся; temp-каталог ещё жив).
+        // Ошибка копирования не роняет импорт — story-контент дозагрузится
+        // повторным идемпотентным импортом.
+        runCatching { preserveStoryFiles(packDir, manifest.packId) }
+
         val pack = LessonPack(
             packId = manifest.packId,
             packVersion = manifest.packVersion,
@@ -275,6 +282,23 @@ class PackImporter @Inject constructor(
     }
 
     // ── Внутренние хелперы ────────────────────────────────────────────────────
+
+    /**
+     * Копировать все `.md`-файлы пака в `filesDir/stories/<packId>/<relPath>`
+     * (путь относительно корня пака — совпадает с `chapters[].storyFile` из
+     * манифеста, fallback stories/<lang>/… разрешает читатель). Идемпотентно
+     * (overwrite) — повторный импорт обновляет контент.
+     */
+    private fun preserveStoryFiles(packDir: File, packId: String) {
+        val destRoot = File(File(context.filesDir, "stories"), packId)
+        packDir.walkTopDown()
+            .filter { it.isFile && it.extension.equals("md", ignoreCase = true) }
+            .forEach { md ->
+                val dest = File(destRoot, md.relativeTo(packDir).path)
+                dest.parentFile?.mkdirs()
+                md.copyTo(dest, overwrite = true)
+            }
+    }
 
     /** Запись урока манифеста после сбора из v1/v2 секций. */
     private data class LessonEntry(

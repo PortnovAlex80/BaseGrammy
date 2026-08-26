@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.alexpo.grammermate.domain.model.PackId
 
 /**
  * Регрессия PackImporter (Фаза 1 плана стабилизации 2026-08-26): идемпотентный
@@ -73,6 +74,42 @@ class PackImporterTest {
         repeat(rows) { i -> sb.append("Промпт $i;answer $i\n") }
         if (withBadLine) sb.append("лишняя;колонка;здесь\n")
         return sb.toString()
+    }
+
+
+    /** Срез 6 Фазы 4: .md-стори сохраняются в filesDir и читаются портом (M-3). */
+    @Test
+    fun importPackFromStream_preservesStoryMdReadableByPort() = runTest {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val storyMd = "# Глава 1\n\n{it}Ciao{/it} — начало пути."
+        val result = importer.importPackFromStream(
+            zip(
+                "manifest.json" to manifestJson,
+                "lesson_01.csv" to lessonCsv(rows = 1),
+                "lesson_02.csv" to lessonCsv(rows = 1),
+                "stories/it/chapter_1.md" to storyMd,
+            )
+        )
+
+        assertThat(result).isInstanceOf(PackImportResult.Success::class.java)
+
+        // Файл сохранён в filesDir/stories/<packId>/<rel>.
+        val saved = java.io.File(
+            java.io.File(context.filesDir, "stories/TEST_PACK"),
+            "stories/it/chapter_1.md",
+        )
+        assertThat(saved.isFile).isTrue()
+        assertThat(saved.readText()).isEqualTo(storyMd)
+
+        // И доступен через доменный порт (ContentRepositoryImpl).
+        val repo = com.alexpo.grammermate.v2.core.data.repository.ContentRepositoryImpl(
+            contentDao = db.contentDao(),
+            drillDao = db.drillDao(),
+            context = context,
+        )
+        assertThat(repo.getStoryText(PackId("TEST_PACK"), "stories/it/chapter_1.md"))
+            .isEqualTo(storyMd)
+        assertThat(repo.getStoryText(PackId("TEST_PACK"), "missing.md")).isNull()
     }
 
     @Test

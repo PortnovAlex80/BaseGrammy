@@ -77,4 +77,6 @@ class FakeContentRepository : ContentRepository {
             .sortedWith(compareBy<VerbDrillCard> { it.rank ?: Int.MAX_VALUE }.thenBy { it.id })
 
     override fun observeLessons(packId: PackId): Flow<List<Lesson>> = flowOf(emptyList())
+
+    override suspend fun getStoryText(packId: PackId, relativePath: String): String? = null
 }
