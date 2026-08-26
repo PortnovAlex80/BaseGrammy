@@ -69,6 +69,16 @@ android {
             isReturnDefaultValues = true
         }
     }
+
+    // Room schema exports как assets DEBUG-варианта: Robolectric-тесты читают
+    // merged assets debug (unit tests не имеют собственного asset-merge),
+    // MigrationTestHelper берёт оттуда схемы 1..N.json. Release-APL их не
+    // содержит — набор scoped на debug.
+    sourceSets {
+        getByName("debug") {
+            assets.srcDirs("$projectDir/schemas")
+        }
+    }
     buildFeatures {
         compose = true
     }

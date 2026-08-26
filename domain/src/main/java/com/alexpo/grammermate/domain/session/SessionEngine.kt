@@ -29,7 +29,8 @@ import com.alexpo.grammermate.domain.repository.UserContentRepository
  * Чистый Kotlin (suspend, корутины), ноль Android-импортов: тестируется
  * на чистом JVM через in-memory fake-репозитории.
  *
- * Гарантируемые инварианты (покрыты `SessionEngineResumeRegressionTest`):
+ * Гарантируемые инварианты (покрыты `SessionEngineResumeRegressionTest` и
+ * `SessionEnginePropertyTest`):
  * 1. `currentCardId` ВСЕГДА ∈ `poolCardIds` (или null, если пул пуст).
  * 2. `resumeSession` возвращает снимок с тем же `currentCardId`, что был
  *    при сохранении — идентичность сохранена.
@@ -43,23 +44,39 @@ import com.alexpo.grammermate.domain.repository.UserContentRepository
  *    `MasteryRepository.recordCardShow` → `FlowerCalculator`). WORD_BANK
  *    НИКОГДА не дёргает mastery — пассивный показ из набора слов не считается
  *    «самостоятельным вводом». AC-7 #3 / AC-8 #3.
+ * 7. Повторный submit той же карточки в том же проходе идемпотентен: карта
+ *    уже в `shownCardIds` → снимок возвращается без изменений (double-tap /
+ *    stale retry не двойной счёт). MODE_MATRIX → Normal lesson → Attempt:
+ *    «одна submit-попытка закрывает карточку прохода».
+ * 8. `revision` строго растёт на каждой durable-мутации (+1); сохранение
+ *    устаревшей ревизии отвергается [StaleSessionRevisionException].
  *
  * @property sessionRepository    персистенция снимков (одна транзакция = атомарность).
  * @property contentRepository    read-only контент паков (карточки урока).
  * @property userContentRepository скрытые/«плохие» карточки пользователя.
  * @property clock                injectable источник времени (детерминизм в тестах).
+ * @property commitCoordinator    транзакционный координатор составных событий
+ *                                (answer+shown+mastery, completion+lesson-done)
+ *                                — Фаза 2 плана; по умолчанию проходной.
  * @property onMarkShown          optional хук «карточка помечена shown в активном
- *                                режиме (VOICE/KEYBOARD)» — downstream использует
- *                                его для продвинжения mastery/flower. null по
- *                                умолчанию (SessionEngine не зависит от
- *                                MasteryRepository — это забота слоя use-case).
+ *                                режиме (VOICE/KEYBOARD)» с pack/lesson-контекстом
+ *                                (Фаза 2: сигнатуры хватает для
+ *                                `MasteryRepository.recordCardShow`). null-реализация
+ *                                по умолчанию — Engine не зависит от
+ *                                MasteryRepository.
+ * @property onSessionCompleted   optional хук «сессия завершена» — downstream
+ *                                фиксирует завершение урока
+ *                                (`MasteryRepository.markLessonCompleted`) в той же
+ *                                транзакции координатора.
  */
 class SessionEngine(
     private val sessionRepository: SessionRepository,
     private val contentRepository: ContentRepository,
     private val userContentRepository: UserContentRepository,
     private val clock: () -> Long = { System.currentTimeMillis() },
-    private val onMarkShown: suspend (CardId, Long) -> Unit = { _, _ -> },
+    private val commitCoordinator: SessionCommitCoordinator = PassThroughCommitCoordinator,
+    private val onMarkShown: suspend (packId: PackId, lessonId: LessonId?, cardId: CardId, nowMs: Long) -> Unit = { _, _, _, _ -> },
+    private val onSessionCompleted: suspend (packId: PackId, lessonId: LessonId?, nowMs: Long) -> Unit = { _, _, _ -> },
 ) {
 
     // ── Построение пула ────────────────────────────────────────────────────
@@ -122,10 +139,11 @@ class SessionEngine(
     suspend fun resumeSession(sessionId: SessionId): SessionSnapshot? {
         val snapshot = sessionRepository.loadSession(sessionId) ?: return null
         val restored = restoreCurrentCardIfNeeded(snapshot)
-        if (restored !== snapshot) {
-            sessionRepository.saveSession(restored)
-        }
-        return restored
+        if (restored === snapshot) return restored
+        // Явное восстановление персистится с ревизией +1 (инвариант 8).
+        val resaved = restored.copy(revision = snapshot.revision + 1)
+        sessionRepository.saveSession(resaved)
+        return resaved
     }
 
     /**
@@ -162,6 +180,10 @@ class SessionEngine(
      * Политика завершения живёт здесь, в домене, а не в ViewModel (план §3.1.7:
      * mode задаёт completion). Используется и для Next после ответа, и для Skip.
      *
+     * Завершение — составное событие (Фаза 2): смена статуса и
+     * [onSessionCompleted] (фиксация завершения урока) применяются в одной
+     * транзакции [commitCoordinator.commit].
+     *
      * @return снимок после advance либо завершённый снимок (status = COMPLETED).
      */
     suspend fun nextCardOrComplete(sessionId: SessionId): SessionSnapshot {
@@ -170,12 +192,17 @@ class SessionEngine(
         if (pool.isEmpty()) return saveTimestamped(current, currentCardId = null)
         val idx = current.currentCardId?.let { pool.indexOf(it) } ?: -1
         return if (idx == pool.lastIndex) {
-            val completed = current.copy(
-                status = SessionStatus.COMPLETED,
-                updatedAtMs = clock(),
-            )
-            sessionRepository.saveSession(completed)
-            completed
+            val nowMs = clock()
+            commitCoordinator.commit {
+                val completed = current.copy(
+                    status = SessionStatus.COMPLETED,
+                    updatedAtMs = nowMs,
+                    revision = current.revision + 1,
+                )
+                sessionRepository.saveSession(completed)
+                onSessionCompleted(current.packId, current.lessonId, nowMs)
+                completed
+            }
         } else {
             nextCard(sessionId)
         }
@@ -185,7 +212,15 @@ class SessionEngine(
      * Зафиксировать ответ: обновить прогресс (correct/incorrect) и, для
      * VOICE/KEYBOARD, пометить карту показанной. WORD_BANK — НЕ mark shown
      * (дизайн v1: ввод из набора слов не считается полноценным показом).
-     * Атомарно — одной [SessionRepository.saveSession].
+     *
+     * Атомарность составного события (Фаза 2 плана): load → счётчики →
+     * saveSession → mastery-хук выполняются внутри [commitCoordinator.commit]
+     * — персистенция снимка и запись mastery применяются одной транзакцией
+     * (ADR-001 pre-mortem №3).
+     *
+     * Идемпотентность повторного submit (инвариант 7): если карточка уже в
+     * `shownCardIds` (самостоятельный ввод уже засчитан), снимок возвращается
+     * как есть — без второго счёта и без повторного mastery.
      *
      * **Mastery/flower gate (AC-7 #3 / AC-8 #3):** только когда карта реально
      * помечается shown (inputMode == VOICE или KEYBOARD), вызывается хук
@@ -199,12 +234,16 @@ class SessionEngine(
         cardId: CardId,
         isCorrect: Boolean,
         inputMode: InputMode,
-    ): SessionSnapshot {
+    ): SessionSnapshot = commitCoordinator.commit {
         val current = requireActive(sessionId)
-        val newCorrect = current.correctCount + (if (isCorrect) 1 else 0)
-        val newIncorrect = current.incorrectCount + (if (!isCorrect) 1 else 0)
         // Только «самостоятельный» ввод (VOICE/KEYBOARD) помечает карту shown.
         val markShown = inputMode != InputMode.WORD_BANK
+        // Идемпотентность повторного submit той же карточки прохода.
+        if (markShown && cardId in current.shownCardIds) {
+            return@commit current
+        }
+        val newCorrect = current.correctCount + (if (isCorrect) 1 else 0)
+        val newIncorrect = current.incorrectCount + (if (!isCorrect) 1 else 0)
         val nowMs = clock()
         val newShown = if (markShown) current.shownCardIds + cardId else current.shownCardIds
         val updated = current.copy(
@@ -212,15 +251,16 @@ class SessionEngine(
             incorrectCount = newIncorrect,
             shownCardIds = newShown,
             updatedAtMs = nowMs,
+            revision = current.revision + 1,
         )
         sessionRepository.saveSession(updated)
         // Mastery/flower продвигаются ТОЛЬКО для «самостоятельного» ввода.
         // AC-7 (WORD_BANK): hook не вызывается → FlowerCalculator не вызывается для X.
         // AC-8 (KEYBOARD/VOICE): hook вызывается → mastery advanced для X.
         if (markShown) {
-            onMarkShown(cardId, nowMs)
+            onMarkShown(current.packId, current.lessonId, cardId, nowMs)
         }
-        return updated
+        updated
     }
 
     /**
@@ -236,12 +276,16 @@ class SessionEngine(
     }
 
     /**
-     * Скрыть карточку: убрать её из пула И из учёта завершения.
+     * Скрыть карточку: убрать её из пула, из множества показанных И из учёта
+     * завершения.
      *
      * Если скрыта ТЕКУЩАЯ карта — `currentCardId` **ЯВНО** переходит на
      * следующую доступную карту (на ту же позицию в урезанном пуле, с
      * зацикливанием, если скрыта хвостовая). Если скрыта не текущая —
      * `currentCardId` сохраняется (он всё ещё в пуле). Пустой пул → null.
+     *
+     * Скрытая карта исключается и из `shownCardIds` (Фаза 2): карточки больше
+     * нет в учёте сессии, инвариант `shownCardIds ⊆ poolCardIds` сохраняется.
      */
     suspend fun hideCard(sessionId: SessionId, cardId: CardId): SessionSnapshot {
         val current = requireActive(sessionId)
@@ -252,7 +296,9 @@ class SessionEngine(
         val updated = current.copy(
             poolCardIds = newPool,
             currentCardId = newCurrent,
+            shownCardIds = current.shownCardIds - cardId,
             updatedAtMs = clock(),
+            revision = current.revision + 1,
         )
         sessionRepository.saveSession(updated)
         return updated
@@ -320,12 +366,16 @@ class SessionEngine(
         sessionRepository.loadSession(sessionId)
             ?: error("Session $sessionId not found — call startLessonSession/resumeSession first.")
 
-    /** Сохранить снимок с обновлённым `currentCardId`/timestamp. */
+    /** Сохранить снимок с обновлённым `currentCardId`/timestamp и ревизией +1. */
     private suspend fun saveTimestamped(
         current: SessionSnapshot,
         currentCardId: CardId? = current.currentCardId,
     ): SessionSnapshot {
-        val updated = current.copy(currentCardId = currentCardId, updatedAtMs = clock())
+        val updated = current.copy(
+            currentCardId = currentCardId,
+            updatedAtMs = clock(),
+            revision = current.revision + 1,
+        )
         sessionRepository.saveSession(updated)
         return updated
     }

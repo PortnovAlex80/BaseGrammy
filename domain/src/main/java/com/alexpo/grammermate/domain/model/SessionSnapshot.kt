@@ -7,19 +7,26 @@ package com.alexpo.grammermate.domain.model
  * приводило к рассинхрону: курсор ссылался на один индекс, а пул — на другой,
  * из-за чего после возобновления показывалась чужая карточка (card_15).
  *
- * [SessionSnapshot] — единая целостная единица: курсор + пул + множество
- * показанных + текущая карточка по первичному ключу ([currentCardId], а не
- * по индексу). Data-слой (Room) загружает и сохраняет весь снимок в одной
- * транзакции, что гарантирует атомарность resume.
+ * [SessionSnapshot] — единая целостная единица: пул + множество показанных +
+ * текущая карточка по первичному ключу ([currentCardId], а не по индексу).
+ * Data-слой (Room) загружает и сохраняет весь снимок в одной транзакции,
+ * что гарантирует атомарность resume.
+ *
+ * Фаза 2 плана стабилизации 2026-08-26 — единый источник истины позиции:
+ * `cursorIndex` удалён из снимка (второй источник истины; в БД колонка
+ * остаётся и пишется производным значением `pool.indexOf(currentCardId)`).
+ * Позиция всегда выводится из [currentCardId] + порядка [poolCardIds].
  *
  * @property sessionId               идентификатор сессии.
  * @property packId                  пак тренировки.
  * @property lessonId                урок (null для drill/daily/помодоро).
  * @property mode                    режим тренировки.
  * @property currentCardId           ★ PK текущей карточки, НЕ индекс.
- * @property cursorIndex             индекс курсора в [poolCardIds].
  * @property status                  жизненный цикл сессии (см. [SessionStatus]).
  * @property state                   состояние шага экрана (см. [SessionState]).
+ * @property revision                монотонная ревизия снимка: +1 на каждую
+ *                                   durable-мутацию; command-токен для защиты
+ *                                   от stale-результатов и double-tap (Фаза 2).
  * @property poolCardIds             упорядоченный пул карточек сессии.
  * @property shownCardIds            множество уже показанных карточек.
  * @property correctCount            счётчик правильных ответов.
@@ -38,9 +45,9 @@ data class SessionSnapshot(
     val lessonId: LessonId?,
     val mode: TrainingMode,
     val currentCardId: CardId?,
-    val cursorIndex: Int,
     val status: SessionStatus,
     val state: SessionState,
+    val revision: Long,
     val poolCardIds: List<CardId>,
     val shownCardIds: Set<CardId>,
     val correctCount: Int,

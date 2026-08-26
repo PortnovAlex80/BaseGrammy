@@ -49,7 +49,7 @@ class SessionEngineResumeRegressionTest {
         content: FakeContentRepository,
         userContent: FakeUserContentRepository,
         sessionRepo: FakeSessionRepository = FakeSessionRepository(),
-        onMarkShown: suspend (CardId, Long) -> Unit = { _, _ -> },
+        onMarkShown: suspend (packId: PackId, lessonId: LessonId?, cardId: CardId, nowMs: Long) -> Unit = { _, _, _, _ -> },
     ): Triple<SessionEngine, FakeSessionRepository, FakeUserContentRepository> =
         Triple(
             SessionEngine(
@@ -273,7 +273,7 @@ class SessionEngineResumeRegressionTest {
         val (engine, _, _) = buildEngine(
             content,
             FakeUserContentRepository(),
-            onMarkShown = { cardId, _ ->
+            onMarkShown = { _, _, cardId, _ ->
                 markShownCalls++
                 lastMarkedCardId = cardId
             },
@@ -311,7 +311,7 @@ class SessionEngineResumeRegressionTest {
         val (engine, _, _) = buildEngine(
             content,
             FakeUserContentRepository(),
-            onMarkShown = { cardId, _ ->
+            onMarkShown = { _, _, cardId, _ ->
                 markShownCalls++
                 lastMarkedCardId = cardId
             },
@@ -349,7 +349,7 @@ class SessionEngineResumeRegressionTest {
         val (engine, _, _) = buildEngine(
             content,
             FakeUserContentRepository(),
-            onMarkShown = { cardId, _ ->
+            onMarkShown = { _, _, cardId, _ ->
                 markShownCalls++
                 lastMarkedCardId = cardId
             },
@@ -440,12 +440,16 @@ class SessionEngineResumeRegressionTest {
         repeat(9) { engine.nextCard(sessionId) }
         assertThat(sessionRepo.loadSession(sessionId)!!.currentCardId).isEqualTo(CardId("card_9"))
 
-        // Имитируем повреждение/пересборку пула: убираем card_9 из pool, но оставляем currentCardId = card_9.
-        val corrupted = sessionRepo.loadSession(sessionId)!!.copy(
+        // Имитируем пересборку пула внешним писателем (Фаза 2: легитимный
+        // писатель обязан поднять ревизию): убираем card_9 из pool, но
+        // оставляем currentCardId = card_9.
+        val storedSnapshot = sessionRepo.loadSession(sessionId)!!
+        val corrupted = storedSnapshot.copy(
             poolCardIds = listOf(
                 CardId("card_0"), CardId("card_1"), CardId("card_2"),
             ),
             currentCardId = CardId("card_9"),
+            revision = storedSnapshot.revision + 1,
         )
         sessionRepo.saveSession(corrupted)
 

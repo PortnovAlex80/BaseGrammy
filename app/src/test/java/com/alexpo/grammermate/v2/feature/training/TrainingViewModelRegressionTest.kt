@@ -17,6 +17,7 @@ import com.alexpo.grammermate.domain.repository.UserContentRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
 import com.alexpo.grammermate.v2.core.data.local.TrainingDbFixture
+import com.alexpo.grammermate.v2.core.data.repository.FakeSessionRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -84,7 +85,7 @@ class TrainingViewModelRegressionTest {
         assertThat((state as TrainingViewState.Active).card.id.value)
             .isEqualTo(TrainingDbFixture.CARD_IDS.first())
 
-        val persisted = sessionRepository.saved[sessionId.value]
+        val persisted = sessionRepository.store[sessionId.value]
         assertThat(persisted).isNotNull()
         assertThat(persisted!!.poolCardIds.map { it.value })
             .containsExactlyElementsIn(TrainingDbFixture.CARD_IDS)
@@ -105,7 +106,7 @@ class TrainingViewModelRegressionTest {
         vm.submitAnswer()
 
         assertThat(vm.state.value).isInstanceOf(TrainingViewState.Error::class.java)
-        val persisted = sessionRepository.saved[sessionId.value]!!
+        val persisted = sessionRepository.store[sessionId.value]!!
         assertThat(persisted.correctCount).isEqualTo(0)
         assertThat(persisted.shownCardIds).isEmpty()
     }
@@ -131,7 +132,7 @@ class TrainingViewModelRegressionTest {
         assertThat(state.isLastCard).isFalse()
         assertThat(state.correctAnswer).isNull()
 
-        val persisted = sessionRepository.saved[sessionId.value]!!
+        val persisted = sessionRepository.store[sessionId.value]!!
         assertThat(persisted.correctCount).isEqualTo(1)
         assertThat(persisted.shownCardIds.map { it.value })
             .containsExactly(TrainingDbFixture.CARD_IDS.first())
@@ -148,7 +149,7 @@ class TrainingViewModelRegressionTest {
         assertThat(state.result.correct).isFalse()
         assertThat(state.correctAnswer).isEqualTo("answer 0")
 
-        val persisted = sessionRepository.saved[sessionId.value]!!
+        val persisted = sessionRepository.store[sessionId.value]!!
         assertThat(persisted.incorrectCount).isEqualTo(1)
     }
 
@@ -172,7 +173,7 @@ class TrainingViewModelRegressionTest {
         // Второй вызов уже не в Active — команда игнорируется.
         vm.submitAnswer()
 
-        val persisted = sessionRepository.saved[sessionId.value]!!
+        val persisted = sessionRepository.store[sessionId.value]!!
         assertThat(persisted.correctCount).isEqualTo(1)
     }
 
@@ -197,7 +198,7 @@ class TrainingViewModelRegressionTest {
 
         val state = vm.state.value as TrainingViewState.Active
         assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
-        val persisted = sessionRepository.saved[sessionId.value]!!
+        val persisted = sessionRepository.store[sessionId.value]!!
         assertThat(persisted.shownCardIds).isEmpty()
         assertThat(persisted.correctCount + persisted.incorrectCount).isEqualTo(0)
     }
@@ -216,7 +217,7 @@ class TrainingViewModelRegressionTest {
         assertThat(state.correctCount).isEqualTo(TrainingDbFixture.CARD_IDS.size)
         assertThat(state.totalCards).isEqualTo(TrainingDbFixture.CARD_IDS.size)
 
-        assertThat(sessionRepository.saved[sessionId.value]!!.status)
+        assertThat(sessionRepository.store[sessionId.value]!!.status)
             .isEqualTo(SessionStatus.COMPLETED)
     }
 
@@ -249,7 +250,7 @@ class TrainingViewModelRegressionTest {
 
         val state = vm.state.value as TrainingViewState.Active
         assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
-        assertThat(sessionRepository.saved[sessionId.value]!!.poolCardIds)
+        assertThat(sessionRepository.store[sessionId.value]!!.poolCardIds)
             .containsExactlyElementsIn(TrainingDbFixture.CARD_IDS.map(::CardId))
             .inOrder()
     }
@@ -317,99 +318,4 @@ class TrainingViewModelRegressionTest {
                 frequencyRank = null,
             )
         }
-}
-
-/**
- * Fake доменного порта сессий: stateful in-memory карта снимков.
- * Повторяет контракт Room-реализации для happy-path (пул — только явный).
- *
- * Паритет с Room-impl по getOrCreate (resume только ACTIVE-сессий) закрыт в
- * Фазе 1; расхождение loadSession-vs-getActiveSession recovery остаётся до Фазы 2.
- */
-private class FakeSessionRepository : SessionRepository {
-
-    val saved = linkedMapOf<String, SessionSnapshot>()
-    var failSaveSession = false
-
-    private fun snapshot(sessionId: SessionId): SessionSnapshot =
-        checkNotNull(saved[sessionId.value]) { "session not created: ${sessionId.value}" }
-
-    override suspend fun getOrCreateSession(
-        sessionId: SessionId,
-        packId: PackId,
-        lessonId: LessonId?,
-        mode: TrainingMode,
-        poolCardIds: List<CardId>,
-        selectedTense: String?,
-        selectedGroup: String?,
-        selectedPerson: String?,
-    ): SessionSnapshot {
-        // Как Room-impl (getActiveSession): resume только ACTIVE-сессии;
-        // COMPLETED → свежая сессия с тем же PK (MODE_MATRIX → Normal lesson).
-        saved[sessionId.value]?.takeIf { it.status == SessionStatus.ACTIVE }?.let { return it }
-        val now = System.currentTimeMillis()
-        val fresh = SessionSnapshot(
-            sessionId = sessionId,
-            packId = packId,
-            lessonId = lessonId,
-            mode = mode,
-            currentCardId = poolCardIds.firstOrNull(),
-            cursorIndex = 0,
-            status = SessionStatus.ACTIVE,
-            state = SessionState.ACTIVE,
-            poolCardIds = poolCardIds,
-            shownCardIds = emptySet(),
-            correctCount = 0,
-            incorrectCount = 0,
-            hintCount = 0,
-            completedSubLessonCount = 0,
-            selectedTense = selectedTense,
-            selectedGroup = selectedGroup,
-            selectedPerson = selectedPerson,
-            startedAtMs = now,
-            updatedAtMs = now,
-        )
-        saved[sessionId.value] = fresh
-        return fresh
-    }
-
-    override suspend fun loadSession(sessionId: SessionId): SessionSnapshot? =
-        saved[sessionId.value]
-
-    override suspend fun saveSession(snapshot: SessionSnapshot) {
-        if (failSaveSession) throw IllegalStateException("simulated Room failure")
-        saved[snapshot.sessionId.value] = snapshot
-    }
-
-    override suspend fun completeSession(sessionId: SessionId) {
-        saved[sessionId.value] = snapshot(sessionId).copy(status = SessionStatus.COMPLETED)
-    }
-
-    override suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId) {
-        saved[sessionId.value] = snapshot(sessionId).copy(currentCardId = cardId)
-    }
-
-    override suspend fun markCardShown(sessionId: SessionId, cardId: CardId) {
-        val current = snapshot(sessionId)
-        saved[sessionId.value] =
-            current.copy(shownCardIds = current.shownCardIds + cardId)
-    }
-
-    override suspend fun updateProgress(
-        sessionId: SessionId,
-        correct: Int,
-        incorrect: Int,
-        hint: Int,
-    ) {
-        if (failSaveSession) throw IllegalStateException("simulated Room failure")
-        saved[sessionId.value] = snapshot(sessionId).copy(
-            correctCount = correct,
-            incorrectCount = incorrect,
-            hintCount = hint,
-        )
-    }
-
-    override suspend fun deleteSession(sessionId: SessionId) {
-        saved.remove(sessionId.value)
-    }
 }

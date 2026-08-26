@@ -1,9 +1,6 @@
 package com.alexpo.grammermate.v2.core.data.repository
 
-import com.alexpo.grammermate.v2.core.data.local.dao.SessionDao
-import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
-import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
-import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
+import android.util.Log
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.PackId
@@ -13,30 +10,51 @@ import com.alexpo.grammermate.domain.model.SessionState
 import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.SessionRepository
+import com.alexpo.grammermate.v2.core.data.local.dao.SessionDao
+import com.alexpo.grammermate.v2.core.data.local.dao.SessionSnapshotParts
+import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
 import javax.inject.Inject
+
+/**
+ * Битое значение enum-поля в строке сессии (Фаза 2 плана стабилизации
+ * 2026-08-26: «ошибочные enum/status/content версии возвращать typed
+ * recovery/failure и логировать»).
+ *
+ * Раньше мусорное значение молча превращалось в `LESSON/ACTIVE` через
+ * `getOrDefault` — сессия «оживала» с чужой семантикой. Теперь это явный
+ * typed failure: presentation показывает recoverable error, причина — в логе.
+ */
+class SessionCorruptionException(
+    val field: String,
+    val rawValue: String,
+    val sessionId: String,
+) : IllegalStateException(
+    "Corrupted session row '$sessionId': field '$field' has unknown value '$rawValue'",
+)
 
 /**
  * Реализация [SessionRepository] поверх Room — ★ центральный фикс бага card_15.
  *
  * Сессия хранится и возобновляется как единый целостный снимок
- * ([SessionSnapshot]): курсор + упорядоченный пул + множество показанных +
- * текущая карточка по первичному ключу ([SessionSnapshot.currentCardId], а НЕ
- * по индексу массива). Раньше текущая карточка была `массив[индекс]` и при
- * пересборке пула терялась; теперь `currentCardId` — это PK карточки, а resume
- * грузит весь снимок одной атомарной операцией чтения, a persist — одной
- * атомарной транзакцией записи.
+ * ([SessionSnapshot]): упорядоченный пул + множество показанных + текущая
+ * карточка по первичному ключу. Resume — одна транзакция чтения
+ * ([SessionDao.loadSnapshotParts]); persist — одна транзакция записи
+ * ([SessionDao.saveSnapshot]) с проверкой ревизии и hot updates (Фаза 2).
  *
- * Атомарность гарантирует [SessionDao.saveSnapshot]: курсор + пул +
- * currentCardId + shown-set всегда согласованы — ни при каких условиях курсор
- * не может сослаться на карточку, которой нет в пуле.
+ * Recovery-семантика (Фаза 2, паритет с fake): `currentCardId` вне пула
+ * возвращается КАК ЕСТЬ — никакого молчаливого восстановления первой картой;
+ * явное восстановление делает домен (`SessionEngine.restoreCurrentCardIfNeeded`
+ * возвращает карту в пул).
  *
- * Маппинг entity ↔ domain инкапсулирован здесь (entity из data-слоя не
- * утекают в domain). Enum-поля домена (TrainingMode, SessionStatus,
- * SessionState) хранятся в БД как String; маппинг enum ↔ String — в
- * приватных extension-функциях ниже.
+ * `cursorIndex` — производная проекция `pool.indexOf(currentCardId)`: единственный
+ * источник истины позиции — [SessionSnapshot.currentCardId] + порядок пула
+ * (второго источника истины больше нет; колонка сохраняется для совместимости).
  *
- * @property sessionDao Room-DAO сессий (включает атомарные
- *                      [SessionDao.saveSnapshot] / [SessionDao.replacePool]).
+ * Маппинг entity ↔ domain инкапсулирован здесь. Enum-поля домена хранятся как
+ * String; неизвестные значения — [SessionCorruptionException] (+ лог), а не
+ * молчаливый дефолт.
  */
 class SessionRepositoryImpl @Inject constructor(
     private val sessionDao: SessionDao,
@@ -47,11 +65,11 @@ class SessionRepositoryImpl @Inject constructor(
     /**
      * Создать новую сессию или возобновить существующую по [sessionId].
      *
-     * - Если есть [SessionEntity] со статусом ACTIVE — атомарно собрать её снимок
-     *   и вернуть как есть (это и есть resume).
-     * - Иначе создать свежую сессию с переданным пулом (пул строит SessionEngine —
-     *   ADR-001; обязательность параметра закрывает P0 «сессия с пустым пулом»
-     *   на этапе компиляции).
+     * - Если есть ACTIVE-строка — атомарно собрать её снимок (одной транзакцией
+     *   чтения) и вернуть как есть (это и есть resume).
+     * - Иначе создать свежую сессию с переданным пулом (пул строит
+     *   SessionEngine — ADR-001; обязательность параметра закрывает P0
+     *   «сессия с пустым пулом» на этапе компиляции).
      *
      * @param poolCardIds готовый упорядоченный пул (пустой допустим: все карты
      *                    урока скрыты → UI получает явное Empty, а не fallback-карту).
@@ -66,10 +84,19 @@ class SessionRepositoryImpl @Inject constructor(
         selectedGroup: String?,
         selectedPerson: String?,
     ): SessionSnapshot {
-        // 1. Попытка возобновить существующую ACTIVE-сессию.
-        val active = sessionDao.getActiveSession(sessionId.value)
-        if (active != null) {
-            return assembleSnapshot(active)
+        // 1. Попытка возобновить существующую ACTIVE-сессию — одним
+        //    транзакционным чтением всех частей снимка.
+        val parts = sessionDao.loadSnapshotParts(sessionId.value)
+        if (parts?.session?.status == SessionStatus.ACTIVE.name) {
+            return assembleSnapshot(parts)
+        }
+
+        // 2. Нет ACTIVE (нет строки, либо COMPLETED) — свежая сессия с тем же
+        //    PK. Завершённая строка удаляется ЦЕЛИКОМ (CASCADE: pool/shown):
+        //    свежий проход стартует с ревизией 0, конфликт stale-check
+        //    [SessionDao.saveSnapshot] невозможен.
+        if (parts != null) {
+            sessionDao.deleteSession(sessionId.value)
         }
 
         // 2. Нет активной — создаём новую с переданным пулом.
@@ -81,9 +108,9 @@ class SessionRepositoryImpl @Inject constructor(
             lessonId = lessonId,
             mode = mode,
             currentCardId = pool.firstOrNull(),
-            cursorIndex = 0,
             status = SessionStatus.ACTIVE,
             state = SessionState.ACTIVE,
+            revision = 0L,
             poolCardIds = pool,
             shownCardIds = emptySet(),
             correctCount = 0,
@@ -102,28 +129,23 @@ class SessionRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Resume: атомарно загрузить снимок сессии одним чтением БД.
+     * Resume: атомарно загрузить снимок сессии — session + pool + shown
+     * ОДНОЙ транзакцией чтения ([SessionDao.loadSnapshotParts], Фаза 2).
+     * Возвращает null, если сессии нет.
      *
-     * Три SELECT (session, pool, shown) выполняются последовательно, но в рамках
-     * одной логической операции чтения Room; между ними нет записи, поэтому
-     * рассинхрон невозможен. Возвращает null, если сессии нет.
-     *
-     * ★ Если сохранённый [SessionSnapshot.currentCardId] (PK) не входит в пул
-     * (например, пул пересобрали между persist и resume), снимок валиден —
-     * курсор остаётся как есть, а текущая карточка обнуляется до первой в пуле.
-     * Это явный recovery, а не молчаливая подмена по индексу (фикс card_15).
+     * Recovery: сохранённый [SessionSnapshot.currentCardId] вне пула
+     * возвращается как есть — явное восстановление делает домен, не data-слой.
      */
-    override suspend fun loadSession(sessionId: SessionId): SessionSnapshot? {
-        val entity = sessionDao.getSession(sessionId.value) ?: return null
-        return assembleSnapshot(entity)
-    }
+    override suspend fun loadSession(sessionId: SessionId): SessionSnapshot? =
+        sessionDao.loadSnapshotParts(sessionId.value)?.let(::assembleSnapshot)
 
     /**
-     * Атомарно сохранить весь снимок в одной транзакции (через
-     * [SessionDao.saveSnapshot]): upsert session + replace pool + replace shown.
+     * Атомарно сохранить весь снимок в одной транзакции ([SessionDao.saveSnapshot]):
+     * upsert session + diff pool + diff shown. Обычный Submit/Next не делает
+     * delete/reinsert пула и shown-множества (hot updates, Фаза 2).
      *
-     * Это ГЛАВНЫЙ ФИКС card_15: курсор, пул, currentCardId и shown-set всегда
-     * согласованы, поскольку пишутся вместе и не могут «съехать» друг от друга.
+     * @throws com.alexpo.grammermate.domain.session.StaleSessionRevisionException
+     *         при попытке сохранить снимок с устаревшей ревизией.
      */
     override suspend fun saveSession(snapshot: SessionSnapshot) {
         val now = System.currentTimeMillis()
@@ -134,54 +156,50 @@ class SessionRepositoryImpl @Inject constructor(
         )
     }
 
-    /**
-     * Пометить сессию завершённой ([SessionStatus.COMPLETED]).
-     */
+    /** Пометить сессию завершённой ([SessionStatus.COMPLETED]); ревизия +1. */
     override suspend fun completeSession(sessionId: SessionId) {
         sessionDao.updateStatus(sessionId.value, SessionStatus.COMPLETED.name, System.currentTimeMillis())
     }
 
     /**
-     * Установить текущую карточку по её первичному ключу [cardId] (★ НЕ по индексу).
+     * Установить текущую карточку по её первичному ключу [cardId].
      *
-     * Курсор [snapshot.cursorIndex] намеренно не сдвигается здесь — его двигает
-     * доменный SessionEngine; репозиторий лишь персистит PK карточки.
+     * Курсор — производная проекция: пишется `pool.indexOf(cardId)`, оба поля
+     * согласованы одной UPDATE-командой (Фаза 2: раздельное обновление
+     * `currentCardId` и `cursorIndex` устранено).
      */
     override suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId) {
-        // Курсор не известен на этом уровне → берём текущий из строки, чтобы
-        // не затереть его. Делаем read-modify-write: безопасно, т.к. между чтением
-        // и записью нет конкурирующей записи в рамках одного Engine-вызова.
-        val current = sessionDao.getSession(sessionId.value)
-        val cursor = current?.cursorIndex ?: 0
+        val parts = sessionDao.loadSnapshotParts(sessionId.value)
+        val cursor = parts?.cards
+            ?.sortedBy { it.ord }
+            ?.indexOfFirst { it.cardId == cardId.value }
+            ?.takeIf { it >= 0 }
+            ?: 0
         sessionDao.updateCursor(sessionId.value, cardId.value, cursor, System.currentTimeMillis())
     }
 
     /**
-     * Добавить карточку в множество показанных ([SessionSnapshot.shownCardIds]).
-     *
-     * INSERT OR IGNORE (см. [SessionDao.markShown]) — повторная пометка той же
-     * карточки идемпотентна.
+     * Добавить карточку в множество показанных — INSERT OR IGNORE + ревизия
+     * строки +1, одной транзакцией (паритет с fake). Повторная пометка той же
+     * карточки идемпотентна, исходный `shownAtMs` сохраняется.
      */
     override suspend fun markCardShown(sessionId: SessionId, cardId: CardId) {
-        sessionDao.markShown(
+        sessionDao.markShownAndBumpRevision(
             SessionShownCardEntity(
                 sessionId = sessionId.value,
                 cardId = cardId.value,
                 shownAtMs = System.currentTimeMillis(),
-            )
+            ),
+            now = System.currentTimeMillis(),
         )
     }
 
-    /**
-     * Обновить счётчики правильных/неправильных/подсказок сессии.
-     */
+    /** Обновить счётчики правильных/неправильных/подсказок сессии; ревизия +1. */
     override suspend fun updateProgress(sessionId: SessionId, correct: Int, incorrect: Int, hint: Int) {
         sessionDao.updateCounts(sessionId.value, correct, incorrect, hint, System.currentTimeMillis())
     }
 
-    /**
-     * Удалить сессию целиком (CASCADE снесёт pool и shown-set).
-     */
+    /** Удалить сессию целиком (CASCADE снесёт pool и shown-set). */
     override suspend fun deleteSession(sessionId: SessionId) {
         sessionDao.deleteSession(sessionId.value)
     }
@@ -189,38 +207,30 @@ class SessionRepositoryImpl @Inject constructor(
     // ── Маппинг entity → domain (сборка снимка) ──────────────────────────────
 
     /**
-     * Собрать [SessionSnapshot] из [SessionEntity] + связанных pool/shown.
+     * Собрать [SessionSnapshot] из транзакционно прочитанных [SessionSnapshotParts].
      *
-     * Атомарное по смыслу чтение: три SELECT идут подряд без записи между ними.
-     * Включает recovery currentCardId: если сохранённый PK не входит в пул,
-     * текущей становится первая карточка пула (или null при пустом пуле).
+     * `currentCardId` возвращается как сохранён (в т.ч. вне пула) — recovery
+     * выполняет домен. `cursorIndex` — производная `pool.indexOf(currentCardId)`.
      */
-    private suspend fun assembleSnapshot(entity: SessionEntity): SessionSnapshot {
-        val pool = sessionDao.getSessionCards(entity.id)
-        val poolCardIds = pool
+    private fun assembleSnapshot(parts: SessionSnapshotParts): SessionSnapshot {
+        val entity = parts.session
+        val poolCardIds = parts.cards
             .sortedBy { it.ord }
             .map { CardId(it.cardId) }
 
-        val shown = sessionDao.getShownCards(entity.id)
-        val shownCardIds = shown.map { CardId(it.cardId) }.toSet()
+        val shownCardIds = parts.shown.map { CardId(it.cardId) }.toSet()
 
-        // Recovery: currentCardId должен быть валидным PK из пула.
-        val savedCurrent = entity.currentCardId?.takeIf { it.isNotBlank() }
-        val currentCardId: CardId? = when {
-            savedCurrent == null -> poolCardIds.firstOrNull()
-            poolCardIds.any { it.value == savedCurrent } -> CardId(savedCurrent)
-            else -> poolCardIds.firstOrNull() // PK пропал из пула → первая карточка
-        }
+        val savedCurrent = entity.currentCardId?.takeIf { it.isNotBlank() }?.let(::CardId)
 
         return SessionSnapshot(
             sessionId = SessionId(entity.id),
             packId = PackId(entity.packId),
             lessonId = entity.lessonId?.takeIf { it.isNotBlank() }?.let(::LessonId),
-            mode = entity.mode.toTrainingMode(),
-            currentCardId = currentCardId,
-            cursorIndex = entity.cursorIndex.coerceAtLeast(0),
-            status = entity.status.toSessionStatus(),
-            state = entity.state.toSessionState(),
+            mode = entity.mode.toTrainingMode(entity.id),
+            currentCardId = savedCurrent,
+            status = entity.status.toSessionStatus(entity.id),
+            state = entity.state.toSessionState(entity.id),
+            revision = entity.revision,
             poolCardIds = poolCardIds,
             shownCardIds = shownCardIds,
             correctCount = entity.correctCount,
@@ -237,14 +247,14 @@ class SessionRepositoryImpl @Inject constructor(
 
     // ── Маппинг domain → entity ──────────────────────────────────────────────
 
-    /** Снимок → строка сессии (c новым [now] как updatedAtMs). */
+    /** Снимок → строка сессии (cursorIndex — производная от currentCardId). */
     private fun SessionSnapshot.toEntity(now: Long): SessionEntity = SessionEntity(
         id = sessionId.value,
         packId = packId.value,
         lessonId = lessonId?.value,
         mode = mode.name,
         subLessonIndex = 0, // под-урок управляется отдельно; здесь нейтральное значение
-        cursorIndex = cursorIndex,
+        cursorIndex = derivedCursor(),
         currentCardId = currentCardId?.value,
         selectedTense = selectedTense,
         selectedGroup = selectedGroup,
@@ -261,7 +271,12 @@ class SessionRepositoryImpl @Inject constructor(
         voiceWordCount = 0,
         startedAtMs = startedAtMs,
         updatedAtMs = now,
+        revision = revision,
     )
+
+    /** Позиция currentCardId в пуле — единственная согласованная запись курсора. */
+    private fun SessionSnapshot.derivedCursor(): Int =
+        currentCardId?.let { poolCardIds.indexOf(it) }?.takeIf { it >= 0 } ?: 0
 
     /** Снимок → упорядоченный пул карточек (ord = позиция в списке). */
     private fun SessionSnapshot.toCardEntities(): List<SessionCardEntity> =
@@ -273,25 +288,43 @@ class SessionRepositoryImpl @Inject constructor(
             )
         }
 
-    /** Снимок → множество показанных карточек. */
+    /**
+     * Снимок → целевое множество показанных. `shownAtMs` здесь — время persist
+     * ТОЛЬКО для новых строк: DAO вставляет лишь отсутствующие, существующие
+     * строки сохраняют исходный timestamp (hot updates).
+     */
     private fun SessionSnapshot.toShownEntities(now: Long): List<SessionShownCardEntity> =
         shownCardIds.map { cardId ->
             SessionShownCardEntity(
                 sessionId = sessionId.value,
                 cardId = cardId.value,
-                // shownAtMs неизвестен в снимке → метим временем persist.
                 shownAtMs = now,
             )
         }
 
-    // ── Маппинг String → enum (защита от мусорных/устаревших значений) ───────
+    // ── Маппинг String → enum: битые значения — typed failure ────────────────
 
-    private fun String.toTrainingMode(): TrainingMode =
-        runCatching { TrainingMode.valueOf(this) }.getOrDefault(TrainingMode.LESSON)
+    private fun String.toTrainingMode(sessionId: String): TrainingMode =
+        parseEnum<TrainingMode>("mode", sessionId, this)
 
-    private fun String.toSessionStatus(): SessionStatus =
-        runCatching { SessionStatus.valueOf(this) }.getOrDefault(SessionStatus.ACTIVE)
+    private fun String.toSessionStatus(sessionId: String): SessionStatus =
+        parseEnum<SessionStatus>("status", sessionId, this)
 
-    private fun String.toSessionState(): SessionState =
-        runCatching { SessionState.valueOf(this) }.getOrDefault(SessionState.ACTIVE)
+    private fun String.toSessionState(sessionId: String): SessionState =
+        parseEnum<SessionState>("state", sessionId, this)
+
+    private inline fun <reified T : Enum<T>> parseEnum(
+        field: String,
+        sessionId: String,
+        raw: String,
+    ): T = try {
+        enumValueOf<T>(raw)
+    } catch (e: IllegalArgumentException) {
+        Log.w(TAG, "Corrupted session row: field '$field' = '$raw' (session $sessionId)")
+        throw SessionCorruptionException(field, raw, sessionId)
+    }
+
+    private companion object {
+        const val TAG = "SessionRepository"
+    }
 }

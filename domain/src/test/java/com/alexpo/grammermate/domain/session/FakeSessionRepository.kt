@@ -21,6 +21,10 @@ import com.alexpo.grammermate.domain.repository.SessionRepository
  * с `currentCardId` = первая карта пула — ровно так, как должен делать
  * реальный data-слой. Пул обязателен (ADR-001: пул строит SessionEngine,
  * data-слой только персистит переданное).
+ *
+ * Контракт ревизий (Фаза 2, паритет с Room): [saveSession] отвергает снимок,
+ * чья ревизия ≠ `stored + 1` ([StaleSessionRevisionException]); гранулярные
+ * мутаторы инкрементируют ревизию сами.
  */
 class FakeSessionRepository(
     private val clock: () -> Long = { System.currentTimeMillis() },
@@ -50,9 +54,9 @@ class FakeSessionRepository(
             lessonId = lessonId,
             mode = mode,
             currentCardId = pool.firstOrNull(),
-            cursorIndex = 0,
             status = SessionStatus.ACTIVE,
             state = com.alexpo.grammermate.domain.model.SessionState.ACTIVE,
+            revision = 0L,
             poolCardIds = pool,
             shownCardIds = emptySet(),
             correctCount = 0,
@@ -69,21 +73,34 @@ class FakeSessionRepository(
         return snapshot
     }
 
+    /** Как Room: сохранённое значение возвращается как есть (recovery — Engine). */
     override suspend fun loadSession(sessionId: SessionId): SessionSnapshot? = store[sessionId]
 
     override suspend fun saveSession(snapshot: SessionSnapshot) {
+        val stored = store[snapshot.sessionId]
+        if (stored != null && snapshot.revision != stored.revision + 1) {
+            throw StaleSessionRevisionException(snapshot.sessionId, snapshot.revision, stored.revision)
+        }
         store[snapshot.sessionId] = snapshot
     }
 
     override suspend fun completeSession(sessionId: SessionId) {
         store[sessionId]?.let { cur ->
-            store[sessionId] = cur.copy(status = SessionStatus.COMPLETED, updatedAtMs = clock())
+            store[sessionId] = cur.copy(
+                status = SessionStatus.COMPLETED,
+                updatedAtMs = clock(),
+                revision = cur.revision + 1,
+            )
         }
     }
 
     override suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId) {
         store[sessionId]?.let { cur ->
-            store[sessionId] = cur.copy(currentCardId = cardId, updatedAtMs = clock())
+            store[sessionId] = cur.copy(
+                currentCardId = cardId,
+                updatedAtMs = clock(),
+                revision = cur.revision + 1,
+            )
         }
     }
 
@@ -92,6 +109,7 @@ class FakeSessionRepository(
             store[sessionId] = cur.copy(
                 shownCardIds = cur.shownCardIds + cardId,
                 updatedAtMs = clock(),
+                revision = cur.revision + 1,
             )
         }
     }
@@ -103,6 +121,7 @@ class FakeSessionRepository(
                 incorrectCount = incorrect,
                 hintCount = hint,
                 updatedAtMs = clock(),
+                revision = cur.revision + 1,
             )
         }
     }

@@ -5,6 +5,9 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
+import com.alexpo.grammermate.domain.session.StaleSessionRevisionException
+import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
@@ -12,18 +15,22 @@ import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
 /**
  * Data-слой сессий — ★ КРИТИЧНО, фикс бага card_15.
  *
- * Сессия хранится и возобновляется как единый целостный снимок: курсор +
- * упорядоченный пул ([session_cards]) + множество показанных
- * ([session_shown_cards]) + текущая карточка по первичному ключу
- * ([SessionEntity.currentCardId], а НЕ по индексу массива).
+ * Сессия хранится и возобновляется как единый целостный снимок: упорядоченный
+ * пул ([session_cards]) + множество показанных ([session_shown_cards]) +
+ * текущая карточка по первичному ключу ([SessionEntity.currentCardId], а НЕ
+ * по индексу массива).
  *
- * Раньше состояние было размазано по нескольким полям, из-за чего курсор и пул
- * рассинхронизировались и после возобновления показывалась чужая карточка
- * (card_15). Теперь:
- *  - [saveSnapshot] пишет сессию, пул и shown-set в **одной транзакции**;
- *  - [replacePool] пересобирает пул атомарно (delete + insert);
- *  - `currentCardId` обновляется точечно через [updateCursor] как PK, не индекс.
+ * Фаза 2 плана стабилизации 2026-08-26:
+ *  - [loadSnapshotParts] читает сессию, пул и shown-set ОДНОЙ транзакцией —
+ *    torn snapshot между тремя SELECT невозможен;
+ *  - [saveSnapshot] — hot updates: обычный Submit/Next НЕ переписывает пул и
+ *    shown целиком, применяются только изменившиеся части (guardrail плана:
+ *    «full pool rewrite на обычный Submit/Next = 0»); shown-строки сохраняют
+ *    исходный `shownAtMs`;
+ *  - ревизии: запись отвергается [StaleSessionRevisionException], если ревизия
+ *    снимка ≠ stored + 1 (optimistic concurrency; БД не изменяется).
  *
+ * `currentCardId` обновляется точечно через [updateCursor] как PK, не индекс.
  * Все mutating-методы — `suspend`. UI не подписывается на сессию реактивно,
  * поэтому `Flow` здесь не нужен.
  */
@@ -32,7 +39,13 @@ interface SessionDao {
 
     // ── Session row ──────────────────────────────────────────────────────────
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /**
+     * Upsert строки сессии. ★ НЕ `@Insert(REPLACE)` (Фаза 2): REPLACE в SQLite =
+     * DELETE + INSERT, что через FK `ON DELETE CASCADE` сносил бы pool/shown
+     * детей на КАЖДОМ сохранении и убивал hot updates. `@Upsert` на конфликте
+     * делает UPDATE — cascade не запускается.
+     */
+    @Upsert
     suspend fun upsertSession(session: SessionEntity)
 
     @Query("SELECT * FROM sessions WHERE id = :id")
@@ -44,14 +57,17 @@ interface SessionDao {
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun deleteSession(id: String)
 
-    @Query("UPDATE sessions SET currentCardId = :cardId, cursorIndex = :cursor, updatedAtMs = :now WHERE id = :id")
+    @Query("UPDATE sessions SET currentCardId = :cardId, cursorIndex = :cursor, revision = revision + 1, updatedAtMs = :now WHERE id = :id")
     suspend fun updateCursor(id: String, cardId: String?, cursor: Int, now: Long)
 
-    @Query("UPDATE sessions SET status = :status, updatedAtMs = :now WHERE id = :id")
+    @Query("UPDATE sessions SET status = :status, revision = revision + 1, updatedAtMs = :now WHERE id = :id")
     suspend fun updateStatus(id: String, status: String, now: Long)
 
-    @Query("UPDATE sessions SET correctCount = :correct, incorrectCount = :incorrect, hintCount = :hint, updatedAtMs = :now WHERE id = :id")
+    @Query("UPDATE sessions SET correctCount = :correct, incorrectCount = :incorrect, hintCount = :hint, revision = revision + 1, updatedAtMs = :now WHERE id = :id")
     suspend fun updateCounts(id: String, correct: Int, incorrect: Int, hint: Int, now: Long)
+
+    @Query("UPDATE sessions SET revision = revision + 1, updatedAtMs = :now WHERE id = :id")
+    suspend fun bumpRevision(id: String, now: Long)
 
     // ── Session pool (session_cards) ─────────────────────────────────────────
 
@@ -66,10 +82,7 @@ interface SessionDao {
 
     /**
      * Атомарно пересобрать пул карточек сессии: удалить старый и вставить [cards].
-     *
-     * Валидация `currentCardId` ∈ новом пуле выполняется в репозитории: если
-     * текущая карточка не входит в пересобранный пул, репозиторий делает явный
-     * recovery (а не молчаливую подмену).
+     * Вызывается ТОЛЬКО когда пул реально изменился (см. [saveSnapshot]).
      */
     @Transaction
     suspend fun replacePool(sessionId: String, cards: List<SessionCardEntity>) {
@@ -82,22 +95,61 @@ interface SessionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun markShown(entity: SessionShownCardEntity)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun markShownAll(entities: List<SessionShownCardEntity>)
+
     @Query("SELECT * FROM session_shown_cards WHERE sessionId = :id")
     suspend fun getShownCards(id: String): List<SessionShownCardEntity>
 
     @Query("DELETE FROM session_shown_cards WHERE sessionId = :id")
     suspend fun deleteShownCards(id: String)
 
+    @Query("DELETE FROM session_shown_cards WHERE sessionId = :id AND cardId IN (:cardIds)")
+    suspend fun deleteShownCards(id: String, cardIds: List<String>)
+
+    // ── Составные транзакционные операции ────────────────────────────────────
+
     /**
-     * ★ Атомарно сохранить весь снимок сессии в одной транзакции.
+     * Пометить карточку shown И поднять ревизию строки сессии — одной
+     * транзакцией (паритет с fake: снимок изменился → ревизия выросла).
+     */
+    @Transaction
+    suspend fun markShownAndBumpRevision(entity: SessionShownCardEntity, now: Long) {
+        markShown(entity)
+        bumpRevision(entity.sessionId, now)
+    }
+
+    /**
+     * Атомарно прочитать все части снимка одной транзакцией (Фаза 2: load —
+     * настоящий `@Transaction`, а не три независимых SELECT).
      *
-     * Гарантирует целостность resume: курсор, пул, currentCardId и shown-set
-     * всегда согласованы — это и есть фикс бага card_15. Ни при каких условиях
-     * курсор не может сослаться на карточку, которой нет в пуле.
+     * @return части снимка либо null, если строки сессии нет.
+     */
+    @Transaction
+    suspend fun loadSnapshotParts(id: String): SessionSnapshotParts? {
+        val session = getSession(id) ?: return null
+        return SessionSnapshotParts(
+            session = session,
+            cards = getSessionCards(id),
+            shown = getShownCards(id),
+        )
+    }
+
+    /**
+     * ★ Атомарно сохранить снимок сессии в одной транзакции — с проверкой
+     * ревизии и hot updates.
      *
-     * @param session сессия (курсор + currentCardId + счётчики).
-     * @param cards   упорядоченный пул карточек (ord детерминирован).
-     * @param shown   множество уже показанных карточек.
+     * Ревизии: запись принимается iff строка новая ИЛИ
+     * `session.revision == stored.revision + 1`; иначе —
+     * [StaleSessionRevisionException], БД не изменена. Ревизию в снимке
+     * проставляет домен (`SessionEngine` делает copy с `revision + 1`).
+     *
+     * Hot updates: пул переписывается только при фактическом изменении
+     * (сравнение списков); shown — вставка только НОВЫХ строк и удаление
+     * только удалённых; исходные `shownAtMs` сохраняются.
+     *
+     * Гарантирует целостность resume: пул и currentCardId всегда согласованы —
+     * это и есть фикс бага card_15.
      */
     @Transaction
     suspend fun saveSnapshot(
@@ -105,11 +157,42 @@ interface SessionDao {
         cards: List<SessionCardEntity>,
         shown: List<SessionShownCardEntity>,
     ) {
+        val existing = getSession(session.id)
+        if (existing != null && session.revision != existing.revision + 1L) {
+            throw StaleSessionRevisionException(
+                sessionId = SessionId(session.id),
+                snapshotRevision = session.revision,
+                storedRevision = existing.revision,
+            )
+        }
         upsertSession(session)
-        replacePool(session.id, cards)
-        deleteShownCards(session.id)
-        if (shown.isNotEmpty()) {
-            shown.forEach { markShown(it) }
+        if (existing == null || getSessionCards(session.id) != cards) {
+            replacePool(session.id, cards)
+        }
+        val existingShownIds = getShownCards(session.id).map { it.cardId }.toSet()
+        val targetShownIds = shown.map { it.cardId }.toSet()
+        val toInsert = shown.filter { it.cardId !in existingShownIds }
+        if (toInsert.isNotEmpty()) {
+            markShownAll(toInsert)
+        }
+        if (existing != null && targetShownIds != existingShownIds) {
+            val removed = (existingShownIds - targetShownIds).toList()
+            if (removed.isNotEmpty()) {
+                deleteShownCards(session.id, removed)
+            }
         }
     }
 }
+
+/**
+ * Части снимка, прочитанные одной транзакцией [SessionDao.loadSnapshotParts].
+ *
+ * @property session строка сессии (курсор + currentCardId + счётчики + ревизия).
+ * @property cards   упорядоченный пул карточек.
+ * @property shown   множество показанных карточек (с исходными shownAtMs).
+ */
+data class SessionSnapshotParts(
+    val session: SessionEntity,
+    val cards: List<SessionCardEntity>,
+    val shown: List<SessionShownCardEntity>,
+)

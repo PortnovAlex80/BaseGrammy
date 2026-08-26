@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.alexpo.grammermate.v2.core.data.local.dao.ContentDao
 import com.alexpo.grammermate.v2.core.data.local.dao.DrillDao
 import com.alexpo.grammermate.v2.core.data.local.dao.MasteryDao
@@ -55,10 +57,16 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
  * WAL-режим ([RoomDatabase.Builder.setJournalMode]) включён в DI-модуле: писатель
  * не блокирует читателей, заменяя 24 `ReentrantLock` из v1.
  *
- * Версия схемы: 1 (initial). Миграции добавляются через [Builder.addMigrations].
+ * Версия схемы: 2. История миграций:
+ *  - v1 → v2 ([MIGRATION_1_2], Фаза 2 плана стабилизации 2026-08-26):
+ *    `sessions.revision` (NOT NULL DEFAULT 0) — optimistic-concurrency токен
+ *    снимка сессии.
+ *
+ * Миграции регистрируются через [Builder.addMigrations]; schema-экспорт — в
+ * `app/schemas/` (регрессионные migration-тесты через room-testing).
  */
 @Database(
-    version = 1,
+    version = 2,
     exportSchema = true,
     entities = [
         // Контент
@@ -111,6 +119,17 @@ abstract class GrammarMateDatabase : RoomDatabase() {
         const val DATABASE_NAME = "grammarmate_v2.db"
 
         /**
+         * v1 → v2: колонка `sessions.revision` — монотонная ревизия снимка
+         * (Фаза 2 плана стабилизации 2026-08-26). Additive: существующие строки
+         * получают ревизию 0; destructive-изменений нет.
+         */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /**
          * Production builder: WAL включён, миграции регистрируются здесь.
          * Schema export — в `app/schemas/` (для регрессионных migration-тестов).
          */
@@ -121,7 +140,7 @@ abstract class GrammarMateDatabase : RoomDatabase() {
                 DATABASE_NAME,
             )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                // .addMigrations(*ALL_MIGRATIONS)  // добавляются по мере эволюции схемы
+                .addMigrations(MIGRATION_1_2)
                 // fallbackToDestructiveMigration НЕ используется — данные пользователя критичны.
                 .build()
     }

@@ -52,6 +52,10 @@ import androidx.room.ForeignKey.Companion.CASCADE
  * @property voiceWordCount            слов, распознанных голосом.
  * @property startedAtMs               epoch-мс старта сессии.
  * @property updatedAtMs               epoch-мс последнего обновления.
+ * @property revision                  ★ монотонная ревизия снимка (schema v2,
+ *                                     Фаза 2 плана): optimistic-concurrency токен —
+ *                                     [SessionDao.saveSnapshot] отвергает запись,
+ *                                     если ревизия снимка ≠ stored + 1.
  */
 @Entity(tableName = "sessions")
 data class SessionEntity(
@@ -77,6 +81,7 @@ data class SessionEntity(
     val voiceWordCount: Int,
     val startedAtMs: Long,
     val updatedAtMs: Long,
+    val revision: Long = 0L,
 )
 
 /**

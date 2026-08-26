@@ -74,14 +74,30 @@ interface MasteryDao {
 
     /**
      * Атомарно увеличить счётчик встреч карточки: вставить строку со счётчиком 1,
-     * либо при конфликте инкрементить существующий `count`. (REPLACE-upsert сущности
-     * затирал бы счётчик, поэтому здесь — чистый SQL `ON CONFLICT DO UPDATE`.)
+     * либо инкрементить существующий `count`.
+     *
+     * ★ Фаза 2 плана стабилизации 2026-08-26: прежний «атомарный» SQL
+     * `ON CONFLICT ... DO UPDATE` (UPSERT) требует SQLite >= 3.24 — его нет на
+     * Android API 26-29 и в Robolectric, т.е. путь mastery падал на референсных
+     * устройствах плана. Заменён на транзакционный read-modify-write: вызовы
+     * идут внутри @Transaction (а в продакшне — внутри транзакции координатора
+     * сессии), поэтому гонки «прочитал-записал» нет.
      */
-    @Query(
-        "INSERT INTO card_encounters(packId, lessonId, cardId, count) VALUES (:packId, :lessonId, :cardId, 1) " +
-            "ON CONFLICT(packId, lessonId, cardId) DO UPDATE SET count = count + 1"
-    )
-    suspend fun incrementEncounter(packId: String, lessonId: String, cardId: String)
+    @Query("SELECT count FROM card_encounters WHERE packId = :packId AND lessonId = :lessonId AND cardId = :cardId")
+    suspend fun getEncounterCount(packId: String, lessonId: String, cardId: String): Int?
+
+    @Query("UPDATE card_encounters SET count = :count WHERE packId = :packId AND lessonId = :lessonId AND cardId = :cardId")
+    suspend fun updateEncounterCount(packId: String, lessonId: String, cardId: String, count: Int)
+
+    @Transaction
+    suspend fun incrementEncounter(packId: String, lessonId: String, cardId: String) {
+        val current = getEncounterCount(packId, lessonId, cardId)
+        if (current == null) {
+            upsertEncounter(CardEncounterEntity(packId, lessonId, cardId, count = 1))
+        } else {
+            updateEncounterCount(packId, lessonId, cardId, current + 1)
+        }
+    }
 
     @Query("SELECT * FROM card_encounters WHERE packId = :packId AND lessonId = :lessonId")
     suspend fun getEncounters(packId: String, lessonId: String): List<CardEncounterEntity>

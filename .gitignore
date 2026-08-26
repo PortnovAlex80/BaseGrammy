@@ -117,7 +117,10 @@ lesson_*.csv
 *.bak_*
 
 # v2 rewrite artifacts
-app/schemas/
+# Room schema exports версионируются: MigrationTestHelper (Robolectric) читает
+# 1..N.json как debug-assets; без них миграционные тесты падают на чистом checkout'e
+# (DoD плана: schema change = forward migration + schema fixture + test).
+!app/schemas/
 app/build/
 .gradle/
 local.properties

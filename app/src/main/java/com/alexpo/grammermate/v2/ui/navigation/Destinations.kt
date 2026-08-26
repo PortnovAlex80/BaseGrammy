@@ -37,7 +37,7 @@ sealed interface Destination {
 
     /**
      * Содержимое пака — главы с уроками (Фаза 1 плана: путь Pack → Chapter →
-     * Lesson;替代 устранённого `ChapterLessons(packId, chapterId)`-placeholder'а).
+     * Lesson; вместо устранённого `ChapterLessons(packId, chapterId)`-placeholder'а).
      *
      * @property packId пак, чьё содержимое показывается.
      */

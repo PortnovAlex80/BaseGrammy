@@ -35,17 +35,20 @@ completion → resume). Владелец мутаций — `SessionEngine`; pre
 | **Selection** | Все карты урока по `ord` (`ContentRepository.getCards`) минус скрытые (`UserContentRepository.getHiddenCardIds`), нарезка `SubLessonScheduler.buildSubLessons(sessionSize=TrainingConfig.SUB_LESSON_SIZE_DEFAULT=10)`; активный под-урок #0 для новой сессии | `init_lessonWithCards_persistsSessionWithNonEmptyPool` (пул = срез карт урока, порядок сохранён) |
 | **Ordering** | Sequential (ord), без перемешивания, без seed; пул фиксируется при старте и хранится в снимке целиком | инвариант `currentCardId ∈ poolCardIds` (`SessionEngine` KDoc-инварианты 1–3) |
 | **Exercise** | Перевод RU → текстовый ответ; input mode: KEYBOARD (VOICE/WORD_BANK — поздние фазы); рендерер — `PromptCard` + `OutlinedTextField` | `TrainingScreenTestTags` semantics |
-| **Attempt** | Одна submit-попытка закрывает карточку прохода; валидация — `AnswerValidator.validate` (Normalizer: trim/lowercase/диакритики/пунктуация/апострофы; альтернативы через `+`); **hint** — эфемерный UI (маска первой буквы); persist `hintCount` и attempt-семантика — Фаза 2; **skip** — advance без shown-метки и без счётчиков | `AnswerValidatorTest`; `submit_…` VM-тесты |
+| **Attempt** | Одна submit-попытка закрывает карточку прохода — повторный submit той же карты идемпотентен (Engine-guard по shown-set, Фаза 2); валидация — `AnswerValidator.validate` (Normalizer: trim/lowercase/диакритики/пунктуация/апострофы; альтернативы через `+`); **hint** — эфемерный UI (маска первой буквы); persist `hintCount` — открытый follow-up; **skip** — advance без shown-метки и без счётчиков | `AnswerValidatorTest`; `SessionEnginePropertyTest.double submit counts exactly once`; `submit_…` VM-тесты |
 | **Progress** | numerator = `correctCount + incorrectCount` (закрытые карточки прохода), denominator = `poolCardIds.size`; `shown` — только submit с input mode ≠ WORD_BANK (`SessionEngine.submitAnswer` gate) | `SessionEngine` инвариант 4/5; VM-тесты прогресса |
-| **Mastery** | Submit KEYBOARD/VOICE → хук `onMarkShown` (в Фазе 1 — no-op: wiring `MasteryRepository.recordCardShow` входит в транзакционный координатор Фазы 2 — ADR-001 pre-mortem №3); WORD_BANK/hint/skip mastery не меняют | инвариант 6 `SessionEngine`; wiring — Фаза 2 |
-| **Completion** | Полный проход пула: Next/Skip с последней карты пула → `completeSession` (status=COMPLETED); summary = correct/incorrect/pool; next action — возврат к списку уроков | `next_afterLastCard_completesSession`; повторный вход после COMPLETED — свежая сессия с тем же PK |
-| **Persistence** | Каждый submit/next/hide — одна `saveSession` (снимок целиком: pool + shown + currentCardId + счётчики, одна транзакция Room `SessionDao.saveSnapshot`); атомарность «answer + shown» — инвариант 4 | `SessionRepositoryContractTest.saveLoadRoundtrip…`; failure-injection — Фаза 2 |
+| **Mastery** | Submit KEYBOARD/VOICE → хук `onMarkShown` с pack/lesson-контекстом → `MasteryRepository.recordCardShow` В ТОЙ ЖЕ Room-транзакции, что и снимок (координатор `RoomSessionCommitCoordinator`, Фаза 2 — ADR-001 pre-mortem №3 закрыт); completion → `markLessonCompleted` той же транзакцией; WORD_BANK/hint/skip mastery не меняют | `RoomSessionAtomicCommitTest` (3 теста: rollback ×2 + happy-path «сессия+mastery вместе») |
+| **Completion** | Полный проход пула: Next/Skip с последней карты пула → `completeSession` (status=COMPLETED) + completion-хук одной транзакцией; summary = correct/incorrect/pool; next action — возврат к списку уроков | `next_afterLastCard_completesSession`; повторный вход после COMPLETED — свежая сессия с тем же PK |
+| **Persistence** | Каждый submit/next/hide — одна `saveSession`: ревизия `revision+1` (stale-защита), hot updates (обычный Submit/Next НЕ переписывает pool/shown — `@Upsert` вместо REPLACE-cascade, diff вставки/удаления); битые enum-значения → typed `SessionCorruptionException` | `SessionRepositoryContractSpec` (fake+Room parity); `SessionHotUpdateTest`; `GrammarMateMigrationTest` (schema v2) |
 | **Navigation** | Back (toolbar/system — одна семантика): выход без подтверждения, сессия остаётся ACTIVE (авто-pause), снимок уже durable → повторный вход resume'ит тот же PK с той же картой; abandon-диалог не нужен — потерь ответов нет | `init_resume_returnsSameCardAndPk`; rotation/process-death — gate Фазы 1 (E2E), unit-уровень — draft в SavedStateHandle |
 
-ИзвестныеFollow-ups строки (не блокируют Фазу 1, зарегистрированы планом):
+Известные follow-ups строки (не блокируют golden journey, зарегистрированы планом):
 
-- `hintCount`/attempt-семантика и `SessionState.HINT_SHOWN` — Фаза 2 (входит в atomic submit).
+- `hintCount`-persist и `SessionState.HINT_SHOWN` — единственный оставшийся пункт
+  Attempt-клетки (attempt-семантика «один submit закрывает карту» закрыта Фазой 2).
 - `SessionStatus.PAUSED` не используется: Back оставляет ACTIVE; явный PAUSED появится,
   если появится семантика «пауза ≠ выход» (Фаза 3, UX shell).
-- `cursorIndex` и `currentCardId` пишутся раздельно (`setCurrentCard` не двигает курсор) —
-  консолидация запланирована Фазой 2.
+- ~~`cursorIndex` и `currentCardId` пишутся раздельно~~ — закрыто Фазой 2: `cursorIndex`
+  удалён из снимка, в БД пишется производная `pool.indexOf(currentCardId)`.
+- Streak/progress-агрегация при completion — Фазы 4/5 (вместе с режимами, которым
+  она нужна; mastery/completion уже атомарны — координатор Фазы 2).
