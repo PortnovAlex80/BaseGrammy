@@ -10,7 +10,7 @@
 |---|---|---|
 | Normal lesson (LESSON) | [ниже](#normal-lesson) | **заполнена (Фаза 1)** |
 | Sequential/Mixed review (ALL_SEQUENTIAL / ALL_MIXED) | [ниже](#sequentialmixed-review) | **заполнена (Фаза 4, срез 1)** |
-| Verb drill + aux drill | — | TBD — гейт Фазы 4, срез 2 |
+| Verb drill + aux drill | [ниже](#verb-drill) | **verb drill заполнен (Фаза 4, срез 2)**; aux — TBD |
 | Vocab drill | — | TBD — гейт Фазы 4, срез 3 (требует решения по pack-scoping `word_mastery`) |
 | Daily translate/vocab/verbs | — | TBD — гейт Фазы 4, срез 4 |
 | Boss/mega/elite | — | TBD — гейт Фазы 4, срез 5 |
@@ -81,3 +81,28 @@ Follow-ups строки:
   порядку» = re-enter COMPLETED-урока) — станет отдельным входом, если
   product-семантика «повтор по порядку» потребуется отдельно.
 - SRS-driven review (due-уроки по `dueAtMs`) — слой 2 ADR-002, гейт Фазы 4+.
+
+---
+
+## Verb drill
+
+Фаза 4, срез 2 (2026-08-26). Спряжение: промпт RU → ввод формы глагола.
+Combo-фильтры (tense/group/person) персистятся в снимке — resume восстанавливает выбор.
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | `SessionId.forVerbDrill(packId)`, `mode=VERB_DRILL`, `lessonId=null`; маршрут `verb_drill/{packId}` (typed requiredId) | `SessionEngineVerbDrillTest.pool is ranked…` |
+| **Selection** | `ContentRepository.getVerbDrillCards(packId, tense?, group?, person?)` — combo-фильтры, null = всё | `init_buildsRankedPool_andShowsFirstPrompt` |
+| **Ordering** | Частотность `rank` (null — в конец), детерминированно; `sessionSize` режет сверху | `sessionSize caps pool…` |
+| **Exercise** | Промпт `promptRu` → ввод `answer` (KEYBOARD, AnswerValidator с `listOf(card.answer)`) | `submit_correct/wrong…` |
+| **Attempt** | Один submit закрывает карту (идемпотентность — Engine-guard по shown, Фаза 2) | `SessionEnginePropertyTest.double submit…` |
+| **Progress** | correct+incorrect / pool.size, как Normal lesson | `fullPass_completesSession` |
+| **Mastery** | Drill не пишет lesson-mastery (`onMarkShown`-хук домена не привязан к drill-комбо — вычисляемое следствие combo-выборки; Словесный SRS — срез 3) | follow-up ниже |
+| **Completion** | Полный проход пула → COMPLETED (`nextCardOrComplete`) | `fullPass_completesSession` |
+| **Persistence** | Все commit'ы через SessionEngine (revision+1, hot-updates) — как Normal lesson | `SessionRepositoryContractSpec` |
+| **Navigation** | Back = выход, сессия durable; повторный вход resume'ит combo | режим-агностичные контракты Фазы 1–2 |
+
+Follow-ups строки: вход из PackContent по флагу `hasVerbDrill` манифеста (сейчас
+маршрут не публикуется из UI); UI combo-селектора фильтров; контракт
+Repeat/Continue/Reset (CLAUDE.md) — `VerbDrillLastSession`-модель есть, входов ещё нет;
+aux drill — по образцу (порт `getAuxDrillCards`).

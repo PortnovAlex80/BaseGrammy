@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.alexpo.grammermate.v2.feature.home.HomeScreen
 import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
+import com.alexpo.grammermate.v2.feature.verbdrill.VerbDrillScreen
 import com.alexpo.grammermate.v2.ui.components.InvalidRouteScreen
 import com.alexpo.grammermate.v2.ui.components.PlaceholderScreen
 
@@ -115,13 +116,17 @@ fun GrammarMateNavHost(
             PlaceholderScreen("Settings")
         }
 
-        // ── VerbDrill (TODO — вертикальный срез Фазы 4) ───────────────────────
+        // ── VerbDrill (Фаза 4 срез 2: спряжение по combo-фильтрам) ─────────────
         composable(
             route = Destination.VerbDrill.PATTERN,
             arguments = listOf(navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType }),
         ) { entry ->
-            val packId = entry.arguments?.getString(Destination.ARG_PACK_ID).orEmpty()
-            PlaceholderScreen("VerbDrill\npack=$packId")
+            val packId = entry.requiredId(Destination.ARG_PACK_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_PACK_ID,
+                    onBack = { navController.popBackStack() },
+                )
+            VerbDrillScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         // ── DailyPractice (TODO — вертикальный срез Фазы 4) ───────────────────
