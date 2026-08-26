@@ -13,6 +13,7 @@ import com.alexpo.grammermate.v2.feature.home.HomeScreen
 import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
 import com.alexpo.grammermate.v2.feature.verbdrill.VerbDrillScreen
+import com.alexpo.grammermate.v2.feature.pomodoro.PomodoroScreen
 import com.alexpo.grammermate.v2.feature.story.StoryReaderScreen
 import com.alexpo.grammermate.v2.feature.vocabdrill.VocabDrillScreen
 import com.alexpo.grammermate.v2.ui.components.InvalidRouteScreen
@@ -91,6 +92,11 @@ fun GrammarMateNavHost(
                         launchSingleTop = true
                     }
                 },
+                onOpenPomodoro = {
+                    navController.navigate(Destination.Pomodoro(packId).route()) {
+                        launchSingleTop = true
+                    }
+                },
             )
         }
 
@@ -162,6 +168,19 @@ fun GrammarMateNavHost(
                 )
             VocabDrillScreen(onNavigateBack = { navController.popBackStack() })
         }
+        // ── Pomodoro (срез 7 Фазы 4: orchestration wrapper) ─────────────────────
+        composable(
+            route = Destination.Pomodoro.PATTERN,
+            arguments = listOf(navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType }),
+        ) { entry ->
+            val packId = entry.requiredId(Destination.ARG_PACK_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_PACK_ID,
+                    onBack = { navController.popBackStack() },
+                )
+            PomodoroScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
         // ── Story reader (срез 6 Фазы 4: главы со storyFile) ────────────────────
         composable(
             route = Destination.Story.PATTERN,

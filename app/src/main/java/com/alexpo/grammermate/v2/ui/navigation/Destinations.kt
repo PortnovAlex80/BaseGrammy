@@ -106,6 +106,20 @@ sealed interface Destination {
     }
 
     /**
+     * Помодоро-таймер пака (Фаза 4 срез 7, orchestration wrapper).
+     *
+     * @property packId пак тренировки во время сессии.
+     */
+    data class Pomodoro(val packId: String) : Destination {
+        override val routePattern: String = "$ROUTE_POMODORO/{$ARG_PACK_ID}"
+        override fun route(): String = "$ROUTE_POMODORO/$packId"
+
+        companion object {
+            const val PATTERN = "pomodoro/{packId}"
+        }
+    }
+
+    /**
      * Чтение истории главы (Фаза 4 срез 6).
      *
      * @property packId    пак главы.
@@ -144,6 +158,7 @@ sealed interface Destination {
         const val ROUTE_VERB_DRILL = "verb_drill"
         const val ROUTE_VOCAB_DRILL = "vocab_drill"
         const val ROUTE_STORY = "story"
+        const val ROUTE_POMODORO = "pomodoro"
         const val ROUTE_DAILY_PRACTICE = "daily_practice"
 
         // ── Имена nav-аргументов ───────────────────────────────────────────────

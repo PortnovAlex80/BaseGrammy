@@ -15,7 +15,7 @@
 | Daily translate/vocab/verbs | [ниже](#daily-practice) | **заполнена (Фаза 4, срез 4)** |
 | Boss/mega/elite | [ниже](#boss-mega-elite) | **LESSON-boss заполнен (срез 5); MEGA/ELITE — follow-up** |
 | Story reader/quiz | — | TBD — гейт Фазы 4, срез 6 |
-| Pomodoro | — | TBD — гейт Фазы 4, срез 7 |
+| Pomodoro | [ниже](#pomodoro) | **заполнена (Фаза 4, срез 7)** |
 
 Строки `TrainingMode` (3 значения), `TrainingScreenMode` (8), `CardType`, `DailyBlockType`
 и `BlockRenderVia` — независимые измерения; их типизированное объединение (launch/policy
@@ -184,3 +184,29 @@ Follow-up строки: MEGA-босс (пул нескольких уроков/
 пул ×EliteSizeMultiplier) — отдельные входы после флагов манифеста; пороги
 остаются [BossReward.pct]; стартегия дуления TrainingConfig vs Enums.pct
 (аудит L-18) закрывается при появлении второго потребителя констант.
+
+---
+
+## Pomodoro
+
+Фаза 4, срез 7 (2026-08-26). Orchestration wrapper (план §4.7: «не вариант
+card renderer»): таймер живёт ПОВЕРХ обычной тренировки — пользователь
+стартует пресет и тренируется в любом режиме; durable — только завершённые
+сессии (`pomodoro_history` через `UserContentRepository.addPomodoroSession`).
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | Маршрут `pomodoro/{packId}`; сессия = `pomodoro_<startedAtMs>` в истории | `manualFinishRecordsElapsed…` (id/packId) |
+| **Selection/Ordering** | — (режим не выбирает карточки) | — |
+| **Exercise** | Пресеты PomodoroPreset QUICK(5)/FOCUS(15)/CLASSIC(20) мин; Пауза/Продолжить/Завершить | `startOnlyFromIdle…`, `pauseFreezesTimer…` |
+| **Attempt** | — | — |
+| **Progress** | Обратный отсчёт mm:ss из state (единственный источник — VM-state, тик 1с) | `pauseFreezesTimer_resumeContinues` (виртуальное время) |
+| **Mastery** | Не пишет lesson/word-SRS (таймер о runtime, не о контенте) | — |
+| **Completion** | Обратный отсчёт до 0 ИЛИ «Завершить» вручную → запись истории (totalSeconds, remainingSeconds, durationMinutes, languageId из пака) → Finished | `countdownCompletes_andRecordsSession` |
+| **Persistence** | Одна addPomodoroSession на завершение; публикация Finished ТОЛЬКО после успешной записи (§3.1.5); ошибка записи → Error | тот же тест (saved.single()) |
+| **Navigation** | Back = выход в любой момент (незавершённая сессия НЕ пишется); вход — кнопка «🍅 Помодоро» из PackContent (pack_pomodoro) | `startOnlyFromIdle_andDismissResets` |
+
+Follow-ups строки: таймер эфемерен (переживает rotation через VM, но не
+process death — при возврате отсчёт начинается заново); счётчики
+cardsShown/correct — нули до интеграции хостинга тренировки внутрь wrapper'а;
+TTS-озвучка завершения — с audio-контуром Фазы 5.

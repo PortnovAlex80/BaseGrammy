@@ -42,6 +42,9 @@ object PackContentTestTags {
 /** Кнопка «История» в заголовке главы со storyFile (срез 6 Фазы 4). */
 const val PACK_CHAPTER_STORY_TAG = "pack_chapter_story"
 
+/** Кнопка «Помодоро» в списке пака (срез 7 Фазы 4). */
+const val PACK_POMODORO_TAG = "pack_pomodoro"
+
 /**
  * Экран содержимого пака — главы с уроками (Фаза 1 плана стабилизации
  * 2026-08-26: путь Pack → Chapter → Lesson; P0 `lessonId = packId` устранён).
@@ -61,6 +64,7 @@ fun PackContentScreen(
     onNavigateBack: () -> Unit,
     onOpenLesson: (String) -> Unit,
     onOpenStory: (chapterId: String) -> Unit = {},
+    onOpenPomodoro: () -> Unit = {},
     viewModel: PackContentViewModel = hiltViewModel(),
 ) {
     val state = collectState(viewModel.state)
@@ -128,6 +132,12 @@ fun PackContentScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                item(key = "pomodoro_entry") {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onOpenPomodoro,
+                        modifier = Modifier.fillMaxWidth().testTag(PACK_POMODORO_TAG),
+                    ) { Text("🍅 Помодоро") }
+                }
                 state.sections.forEach { section ->
                     if (section.chapter != null) {
                         item(key = "chapter_${section.chapter.id.value}") {
