@@ -11,7 +11,7 @@
 | Normal lesson (LESSON) | [ниже](#normal-lesson) | **заполнена (Фаза 1)** |
 | Sequential/Mixed review (ALL_SEQUENTIAL / ALL_MIXED) | [ниже](#sequentialmixed-review) | **заполнена (Фаза 4, срез 1)** |
 | Verb drill + aux drill | [ниже](#verb-drill) | **verb drill заполнен (Фаза 4, срез 2)**; aux — TBD |
-| Vocab drill | — | TBD — гейт Фазы 4, срез 3 (требует решения по pack-scoping `word_mastery`) |
+| Vocab drill | [ниже](#vocab-drill) | **заполнена (Фаза 4, срез 3; ADR-003 реализован)** |
 | Daily translate/vocab/verbs | — | TBD — гейт Фазы 4, срез 4 |
 | Boss/mega/elite | — | TBD — гейт Фазы 4, срез 5 |
 | Story reader/quiz | — | TBD — гейт Фазы 4, срез 6 |
@@ -106,3 +106,29 @@ Follow-ups строки: вход из PackContent по флагу `hasVerbDrill
 маршрут не публикуется из UI); UI combo-селектора фильтров; контракт
 Repeat/Continue/Reset (CLAUDE.md) — `VerbDrillLastSession`-модель есть, входов ещё нет;
 aux drill — по образцу (порт `getAuxDrillCards`).
+
+---
+
+## Vocab drill
+
+Фаза 4, срез 3 (2026-08-26). Anki-style карточки слов; режим БЕЗ SessionEngine-
+сессий: durable-состояние — сам word-SRS (`recordWordReview` фиксирует каждый
+ответ немедленно, ADR-003 pack-scoped). Батч детерминирован: due-слова пака
+(самые просроченные) + добор новыми по рангу частотности, [BATCH_SIZE]=10.
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | Маршрут `vocab_drill/{packId}` (typed requiredId); сессионного PK НЕТ по дизайну — идентичность = `(packId, wordId)` в word_mastery | `blankRoute_showsErrorWithoutLoading` |
+| **Selection** | `observeDueWords(packId, 10)` (ADR-003: фильтр по паку) + `getVocabWords(packId)` минус reviewed-и-не-due | `init_batchIsDueFirstThenFreshByRank` |
+| **Ordering** | due-первыми (по возрастанию nextReviewDateMs), затем новые по rank; порядок фиксируется при загрузке батча | `init_batchIsDueFirstThenFreshByRank` |
+| **Exercise** | Question (слово, перевод скрыт) → Revealed (перевод + Знаю/Не знаю); реколл Meaning, без набора текста | `reveal_showsTranslation_withoutRecording` |
+| **Attempt** | Один ответ на слово за батч: `answer()` фиксирует review и двигает позицию; reveal НЕ пишет SRS | `answer_recordsReview_thenAdvances`; co-verify 0 записей на reveal |
+| **Progress** | index/total по батчу; Done = reviewed/correct | `fullBatch_endsInDoneWithCounts` |
+| **Mastery** | `recordWordReview(packId, wordId, isCorrect)` — лестница (слой 1 ADR-002; фикс off-by-one: первый верный → 1 день) | `GrammarMateMigrationTest` (schema v3) + impl-фикс в a5139838a |
+| **Completion** | Конец батча → Done (терминальное для входа); следующий вход соберёт новый батч из due+новых | `fullBatch_endsInDoneWithCounts` |
+| **Persistence** | Каждый ответ — отдельный durable-commit до продвижения (§3.1.5: ошибка → Error, позиция не двигается) | `answer_recordsReview_thenAdvances` (advance после verify) |
+| **Navigation** | Back = выход в любой момент (данные уже durable пофразово) | контракты Фазы 3 (режим-агностичны) |
+
+Follow-ups строки: вход из PackContent по `hasVocabDrill` (маршрут не публикуется
+из UI до флага манифеста); Voice-режим карточки; `bg_vocab_marks`/`bg_vocab_position`
+(тёмный v1-контур) — Фаза 5.

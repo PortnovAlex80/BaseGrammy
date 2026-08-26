@@ -91,6 +91,21 @@ sealed interface Destination {
     }
 
     /**
+     * Словарный drill (Anki-style карточки слов, Фаза 4 срез 3).
+     *
+     * @property packId пак словаря.
+     */
+    data class VocabDrill(val packId: String) : Destination {
+        override val routePattern: String = "$ROUTE_VOCAB_DRILL/{$ARG_PACK_ID}"
+        override fun route(): String = "$ROUTE_VOCAB_DRILL/$packId"
+
+        companion object {
+            /** Полный route-pattern для регистрации destination в NavHost. */
+            const val PATTERN = "vocab_drill/{packId}"
+        }
+    }
+
+    /**
      * Дневная норма практики пака.
      *
      * @property packId пак дневной нормы.
@@ -112,6 +127,7 @@ sealed interface Destination {
         const val ROUTE_TRAINING = "training"
         const val ROUTE_SETTINGS = "settings"
         const val ROUTE_VERB_DRILL = "verb_drill"
+        const val ROUTE_VOCAB_DRILL = "vocab_drill"
         const val ROUTE_DAILY_PRACTICE = "daily_practice"
 
         // ── Имена nav-аргументов ───────────────────────────────────────────────
