@@ -555,20 +555,23 @@ class YamlToRoomMigrator @Inject constructor(
      * Поля переносятся 1-в-1 (схема [WordMasteryEntity] совпадает по полям с v1).
      */
     private fun parseWordMasteryFiles(bag: EntityBag) {
-        // 1. Pack-scoped файлы: drills/<packId>/word_mastery.yaml
+        // 1. Pack-scoped файлы: drills/<packId>/word_mastery.yaml (ADR-003:
+        // packId слова = каталог пака).
         val drillsDir = File(baseDir, "drills")
         if (drillsDir.exists() && drillsDir.isDirectory) {
             val packDirs = drillsDir.listFiles { f -> f.isDirectory } ?: emptyArray()
             for (packDir in packDirs) {
-                parseWordMasteryFile(File(packDir, "word_mastery.yaml"), bag)
+                parseWordMasteryFile(File(packDir, "word_mastery.yaml"), bag, packDir.name)
             }
         }
-        // 2. Legacy-расположение: grammarmate/word_mastery.yaml (без packId).
-        parseWordMasteryFile(File(baseDir, "word_mastery.yaml"), bag)
+        // 2. Legacy-расположение: grammarmate/word_mastery.yaml (без packId) —
+        // pack неизвестен; строки получат packId="" и будут отфильтрованы
+        // scoped-запросами (мigrator отключён, путь не активен).
+        parseWordMasteryFile(File(baseDir, "word_mastery.yaml"), bag, "")
     }
 
     /** Разбор одного `word_mastery.yaml`: каждое слово → [WordMasteryEntity]. */
-    private fun parseWordMasteryFile(file: File, bag: EntityBag) {
+    private fun parseWordMasteryFile(file: File, bag: EntityBag, packId: String) {
         if (!file.exists() || file.length() == 0L) return
         try {
             val raw = yaml.load<Any>(file.readText()) ?: return
@@ -582,6 +585,7 @@ class YamlToRoomMigrator @Inject constructor(
                 try {
                     bag.wordMastery.add(
                         WordMasteryEntity(
+                            packId = packId,
                             wordId = wordId,
                             intervalStepIndex = entry.intOr("intervalStepIndex", 0),
                             correctCount = entry.intOr("correctCount", 0),

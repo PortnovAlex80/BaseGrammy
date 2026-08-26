@@ -65,4 +65,43 @@ class GrammarMateMigrationTest {
         }
         v2.close()
     }
+
+    /**
+     * ADR-003: v2 → v3 — `word_mastery` становится pack-scoped (составной PK
+     * packId+wordId). Строка с контентом получает packId из `vocab_words`;
+     * сирота без контента удаляется.
+     */
+    @Test
+    fun `migrate 2 to 3 scopes word mastery to pack and drops orphans`() {
+        val scopedDb = "migration-test-v3.db"
+        helper.createDatabase(scopedDb, 2).use { v2 ->
+            v2.execSQL(
+                "INSERT INTO vocab_words (id, packId, word, pos, rank, meaningRu, collocationsJson, formsJson) " +
+                    "VALUES ('noun_1_casa', 'ITALIAN_SHORT', 'casa', 'noun', 1, 'дом', '[]', '{}')",
+            )
+            // Слово с контентом (получит packId) + сирота (без контента — в дроп).
+            v2.execSQL(
+                "INSERT INTO word_mastery (wordId, intervalStepIndex, correctCount, incorrectCount, " +
+                    "lastReviewDateMs, nextReviewDateMs, isLearned) " +
+                    "VALUES ('noun_1_casa', 2, 3, 1, 100, 200, 0)",
+            )
+            v2.execSQL(
+                "INSERT INTO word_mastery (wordId, intervalStepIndex, correctCount, incorrectCount, " +
+                    "lastReviewDateMs, nextReviewDateMs, isLearned) " +
+                    "VALUES ('ghost_9_word', 1, 1, 0, 100, 200, 0)",
+            )
+        }
+
+        val v3 = helper.runMigrationsAndValidate(scopedDb, 3, true, GrammarMateDatabase.MIGRATION_2_3)
+
+        v3.query("SELECT packId, wordId, intervalStepIndex, correctCount FROM word_mastery ORDER BY wordId").use { cursor ->
+            assertThat(cursor.count).isEqualTo(1)
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("ITALIAN_SHORT")
+            assertThat(cursor.getString(1)).isEqualTo("noun_1_casa")
+            assertThat(cursor.getInt(2)).isEqualTo(2)
+            assertThat(cursor.getInt(3)).isEqualTo(3)
+        }
+        v3.close()
+    }
 }

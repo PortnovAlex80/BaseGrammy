@@ -75,14 +75,14 @@ class VocabDrillRepositoryImpl @Inject constructor(
     override suspend fun getVocabWordsByRankRange(packId: PackId, min: Int, max: Int): List<VocabWord> =
         drillDao.getVocabWordsByRankRange(packId.value, min, max).map(::vocabWordEntityToDomain)
 
-    // ── Word mastery (SRS по словам) ────────────────────────────────────────────
+    // ── Word mastery (SRS по словам, ADR-003: pack-scoped) ─────────────────────
 
-    override suspend fun getWordMastery(wordId: String): WordMasteryState? =
-        drillDao.getWordMastery(wordId)?.let(::wordMasteryEntityToDomain)
+    override suspend fun getWordMastery(packId: PackId, wordId: String): WordMasteryState? =
+        drillDao.getWordMastery(packId.value, wordId)?.let(::wordMasteryEntityToDomain)
 
-    override fun observeDueWords(limit: Int): Flow<List<Pair<String, WordMasteryState>>> {
+    override fun observeDueWords(packId: PackId, limit: Int): Flow<List<Pair<String, WordMasteryState>>> {
         val now = System.currentTimeMillis()
-        return drillDao.observeDueWords(now, limit).map { rows ->
+        return drillDao.observeDueWords(now, packId.value, limit).map { rows ->
             rows.map { e -> e.wordId to wordMasteryEntityToDomain(e) }
         }
     }
@@ -90,20 +90,33 @@ class VocabDrillRepositoryImpl @Inject constructor(
     /**
      * Зафиксировать повторение слова: пересчитать SRS-состояние по лестнице
      * интервалов и атомарно сохранить через [DrillDao.markWordReviewed].
+     *
+     * Фикс off-by-one (аудит 2026-08-26): первый верный ответ НОВОГО слова
+     * даёт интервал шага 0 (1 день), а не шага 1 (2 дня) — шаг 0 существовал
+     * в лестнице, но был недостижим. Порог изученности (step >= 3, три верных
+     * ответа подряд от нового слова) не меняется.
      */
-    override suspend fun recordWordReview(wordId: String, isCorrect: Boolean, nowMs: Long): WordMasteryState {
-        val current = drillDao.getWordMastery(wordId)
-        val stepBefore = current?.intervalStepIndex ?: 0
+    override suspend fun recordWordReview(
+        packId: PackId,
+        wordId: String,
+        isCorrect: Boolean,
+        nowMs: Long,
+    ): WordMasteryState {
+        val current = drillDao.getWordMastery(packId.value, wordId)
+        val stepBefore = current?.intervalStepIndex ?: -1
         val ladder = SrsConstants.INTERVAL_LADDER_DAYS
         val maxStep = ladder.lastIndex // 9
 
         // correct → +1 (capped); incorrect → reset to 0 (Anki-style lapse).
         val newStep = if (isCorrect) (stepBefore + 1).coerceAtMost(maxStep) else 0
-        val intervalDays = ladder[newStep.coerceIn(0, maxStep)]
+        // Интервал «следующего повтора» = лестница[newStep - 1]: step 1 (первый
+        // верный ответ) → 1 день; step N ≥ 1 → интервал пройденного шага.
+        val intervalDays = ladder[(newStep - 1).coerceIn(0, maxStep)]
         val nextReviewDateMs = nowMs + intervalDays.toLong() * SrsConstants.DAY_MS
         val isLearned = newStep >= SrsConstants.LEARNED_THRESHOLD
 
         val updated = WordMasteryEntity(
+            packId = packId.value,
             wordId = wordId,
             intervalStepIndex = newStep,
             correctCount = (current?.correctCount ?: 0) + if (isCorrect) 1 else 0,
@@ -116,8 +129,8 @@ class VocabDrillRepositoryImpl @Inject constructor(
         return wordMasteryEntityToDomain(updated)
     }
 
-    override suspend fun getAllWordMastery(): Map<String, WordMasteryState> =
-        drillDao.getAllWordMastery().associate { e -> e.wordId to wordMasteryEntityToDomain(e) }
+    override suspend fun getAllWordMastery(packId: PackId): Map<String, WordMasteryState> =
+        drillDao.getAllWordMastery(packId.value).associate { e -> e.wordId to wordMasteryEntityToDomain(e) }
 
     // ── Verb drill ──────────────────────────────────────────────────────────────
 

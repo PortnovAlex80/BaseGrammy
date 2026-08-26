@@ -57,10 +57,11 @@ data class VocabWordEntity(
 /**
  * SRS-состояние отдельного слова (vocab drill) — ОТДЕЛЬНО от lesson mastery.
  *
- * Уникальный индекс `wordId` + индекс `nextReviewDateMs` для SRS-выборки «что
- * повторить сейчас». [intervalStepIndex] индексирует лестницу дней интервала.
+ * ADR-003 (gap #4 аудита 2026-08-26): PK составной `(packId, wordId)` — SRS
+ * слова pack-scoped, как весь user-state; due-выборка фильтруется по паку.
  *
- * @property wordId            PK — идентификатор слова ([VocabWordEntity.id]).
+ * @property packId            пак слова ([VocabWordEntity.packId]).
+ * @property wordId            идентификатор слова ([VocabWordEntity.id]).
  * @property intervalStepIndex индекс шага интервала (0-9).
  * @property correctCount      всего правильных ответов.
  * @property incorrectCount    всего неправильных ответов.
@@ -68,9 +69,14 @@ data class VocabWordEntity(
  * @property nextReviewDateMs  ★ epoch-мс, когда слово снова нужно повторить (0 — сразу); индекс SRS.
  * @property isLearned         достигнут ли порог изученности (intervalStepIndex >= 3).
  */
-@Entity(tableName = "word_mastery", indices = [Index("wordId", unique = true), Index("nextReviewDateMs")])
+@Entity(
+    tableName = "word_mastery",
+    primaryKeys = ["packId", "wordId"],
+    indices = [Index("nextReviewDateMs"), Index("packId")],
+)
 data class WordMasteryEntity(
-    @PrimaryKey val wordId: String,
+    val packId: String,
+    val wordId: String,
     val intervalStepIndex: Int = 0,
     val correctCount: Int = 0,
     val incorrectCount: Int = 0,

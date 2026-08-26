@@ -63,19 +63,23 @@ interface DrillDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertWordMastery(entity: WordMasteryEntity)
 
-    @Query("SELECT * FROM word_mastery WHERE wordId = :wordId")
-    suspend fun getWordMastery(wordId: String): WordMasteryEntity?
+    @Query("SELECT * FROM word_mastery WHERE packId = :packId AND wordId = :wordId")
+    suspend fun getWordMastery(packId: String, wordId: String): WordMasteryEntity?
 
     /**
-     * ★ SRS-выборка: слова, у которых срок повтора наступил к моменту [now],
-     * отсортированные по возрастанию [WordMasteryEntity.nextReviewDateMs] (самые
-     * «просроченные»), не более [limit] штук. Реактивна — для живого Review-списка.
+     * ★ SRS-выборка: слова ПАКА, у которых срок повтора наступил к моменту
+     * [now], отсортированные по возрастанию [WordMasteryEntity.nextReviewDateMs]
+     * (самые «просроченные»), не более [limit] штук. Реактивна — для живого
+     * Review-списка. ADR-003: фильтр по паку обязателен.
      */
-    @Query("SELECT * FROM word_mastery WHERE nextReviewDateMs <= :now ORDER BY nextReviewDateMs LIMIT :limit")
-    fun observeDueWords(now: Long, limit: Int): Flow<List<WordMasteryEntity>>
+    @Query(
+        "SELECT * FROM word_mastery WHERE packId = :packId AND nextReviewDateMs <= :now " +
+            "ORDER BY nextReviewDateMs LIMIT :limit"
+    )
+    fun observeDueWords(now: Long, packId: String, limit: Int): Flow<List<WordMasteryEntity>>
 
-    @Query("SELECT * FROM word_mastery")
-    suspend fun getAllWordMastery(): List<WordMasteryEntity>
+    @Query("SELECT * FROM word_mastery WHERE packId = :packId")
+    suspend fun getAllWordMastery(packId: String): List<WordMasteryEntity>
 
     /**
      * ★ Атомарно зафиксировать повторение слова: upsert пересчитанного SRS-состояния

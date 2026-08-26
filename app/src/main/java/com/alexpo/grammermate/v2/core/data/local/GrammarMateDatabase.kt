@@ -66,7 +66,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
  * `app/schemas/` (регрессионные migration-тесты через room-testing).
  */
 @Database(
-    version = 2,
+    version = 3,
     exportSchema = true,
     entities = [
         // Контент
@@ -130,6 +130,52 @@ abstract class GrammarMateDatabase : RoomDatabase() {
         }
 
         /**
+         * v2 → v3 (ADR-003): `word_mastery` становится pack-scoped — составной
+         * PK `(packId, wordId)`. PK меняется только пересборкой таблицы:
+         * `packId` каждой строки подтягивается из `vocab_words` по `wordId`
+         * (id слова глобально уникален в контенте); строки-сироты без
+         * контента удаляются (зелёная field-БД их не содержит).
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS word_mastery_v3 (
+                        packId TEXT NOT NULL,
+                        wordId TEXT NOT NULL,
+                        intervalStepIndex INTEGER NOT NULL DEFAULT 0,
+                        correctCount INTEGER NOT NULL DEFAULT 0,
+                        incorrectCount INTEGER NOT NULL DEFAULT 0,
+                        lastReviewDateMs INTEGER NOT NULL DEFAULT 0,
+                        nextReviewDateMs INTEGER NOT NULL DEFAULT 0,
+                        isLearned INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (packId, wordId)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO word_mastery_v3 (packId, wordId, intervalStepIndex,
+                        correctCount, incorrectCount, lastReviewDateMs, nextReviewDateMs, isLearned)
+                    SELECT v.packId, m.wordId, m.intervalStepIndex, m.correctCount,
+                           m.incorrectCount, m.lastReviewDateMs, m.nextReviewDateMs, m.isLearned
+                    FROM word_mastery m
+                    JOIN vocab_words v ON v.id = m.wordId
+                    """.trimIndent(),
+                )
+                db.execSQL("DROP TABLE word_mastery")
+                db.execSQL("ALTER TABLE word_mastery_v3 RENAME TO word_mastery")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_word_mastery_nextReviewDateMs " +
+                        "ON word_mastery (nextReviewDateMs)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_word_mastery_packId ON word_mastery (packId)",
+                )
+            }
+        }
+
+        /**
          * Production builder: WAL включён, миграции регистрируются здесь.
          * Schema export — в `app/schemas/` (для регрессионных migration-тестов).
          */
@@ -140,7 +186,7 @@ abstract class GrammarMateDatabase : RoomDatabase() {
                 DATABASE_NAME,
             )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 // fallbackToDestructiveMigration НЕ используется — данные пользователя критичны.
                 .build()
     }

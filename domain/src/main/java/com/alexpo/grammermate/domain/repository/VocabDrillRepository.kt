@@ -43,35 +43,38 @@ interface VocabDrillRepository {
     /** Срез слов пака по диапазону ранга (включительно, отсортированы по рангу). */
     suspend fun getVocabWordsByRankRange(packId: PackId, min: Int, max: Int): List<VocabWord>
 
-    // ── Word mastery (SRS по словам) ────────────────────────────────────────────
+    // ── Word mastery (SRS по словам, ADR-003: pack-scoped) ─────────────────────
 
-    /** Текущее SRS-состояние слова, либо null, если слово никогда не повторялось. */
-    suspend fun getWordMastery(wordId: String): WordMasteryState?
+    /** Текущее SRS-состояние слова В ПАКЕ, либо null, если слово никогда не повторялось. */
+    suspend fun getWordMastery(packId: PackId, wordId: String): WordMasteryState?
 
     /**
-     * ★ Реактивная SRS-выборка слов к повторению: пары `wordId → state` для слов,
-     * у которых срок повтора ([WordMasteryState.nextReviewDateMs]) наступил к
-     * моменту подписки. Отсортированы по возрастанию даты (самые просроченные
-     * первыми), не более [limit] штук. Для живого Review-списка UI.
+     * ★ Реактивная SRS-выборка слов ПАКА к повторению: пары `wordId → state`
+     * для слов, у которых срок повтора ([WordMasteryState.nextReviewDateMs])
+     * наступил к моменту подписки. Отсортированы по возрастанию даты (самые
+     * просроченные первыми), не более [limit] штук. Для живого Review-списка UI.
+     * ADR-003: слова других паков в выборку не попадают.
      */
-    fun observeDueWords(limit: Int): Flow<List<Pair<String, WordMasteryState>>>
+    fun observeDueWords(packId: PackId, limit: Int): Flow<List<Pair<String, WordMasteryState>>>
 
     /**
-     * Зафиксировать повторение слова и вернуть обновлённое SRS-состояние.
+     * Зафиксировать повторение слова В ПАКЕ и вернуть обновлённое SRS-состояние.
      *
      * Перерасчёт лестницы интервалов: при верном ответе `step` растёт (capped),
-     * при неверном — сбрасывается; `nextReviewDateMs` = [nowMs] + лестница[step]
-     * дней; `isLearned` = step ≥ порога изученности.
+     * при неверном — сбрасывается; `nextReviewDateMs` = [nowMs] + интервал
+     * шага дней; `isLearned` = step ≥ порога изученности. Первый верный ответ
+     * нового слова даёт интервал шага 0 (1 день) — фикс off-by-one аудита.
      *
+     * @param packId    пак слова (ADR-003: SRS pack-scoped).
      * @param wordId    идентификатор слова.
      * @param isCorrect верный ли ответ.
      * @param nowMs     момент повторения (epoch-мс).
      * @return пересчитанное SRS-состояние слова.
      */
-    suspend fun recordWordReview(wordId: String, isCorrect: Boolean, nowMs: Long): WordMasteryState
+    suspend fun recordWordReview(packId: PackId, wordId: String, isCorrect: Boolean, nowMs: Long): WordMasteryState
 
-    /** Все SRS-состояния слов (wordId → state). */
-    suspend fun getAllWordMastery(): Map<String, WordMasteryState>
+    /** Все SRS-состояния слов ПАКА (wordId → state). */
+    suspend fun getAllWordMastery(packId: PackId): Map<String, WordMasteryState>
 
     // ── Verb drill ──────────────────────────────────────────────────────────────
 
