@@ -43,10 +43,16 @@ fun GrammarMateNavHost(
         composable(Destination.Home.routePattern) {
             HomeScreen(
                 onPackClick = { packId ->
-                    navController.navigate(Destination.PackContent(packId).route())
+                    // launchSingleTop: двойной тап по паку не создаёт дубль
+                    // destination в back stack (гейт Фазы 3 «без дублей»).
+                    navController.navigate(Destination.PackContent(packId).route()) {
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateSettings = {
-                    navController.navigate(Destination.Settings.route())
+                    navController.navigate(Destination.Settings.route()) {
+                        launchSingleTop = true
+                    }
                 },
             )
         }
@@ -70,7 +76,11 @@ fun GrammarMateNavHost(
                 packId = packId,
                 onNavigateBack = { navController.popBackStack() },
                 onOpenLesson = { lessonId ->
-                    navController.navigate(Destination.Training(packId, lessonId).route())
+                    // launchSingleTop: повторный тап по уроку не дублирует
+                    // Training (две VM параллельно писали бы одну сессию).
+                    navController.navigate(Destination.Training(packId, lessonId).route()) {
+                        launchSingleTop = true
+                    }
                 },
             )
         }
