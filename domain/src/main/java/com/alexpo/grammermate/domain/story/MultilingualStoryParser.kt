@@ -59,6 +59,12 @@ object MultilingualStoryParser {
      */
     private val pausePattern = Regex("""\{pause:(\d+)\}""")
 
+    /** Верхняя граница паузы {pause:N} — 60 секунд (фикс аудита C-2). */
+    private const val MAX_PAUSE_MS = 600_000L
+
+    /** Висячий (незакрытый/без пары) языковой маркер — вырезается (фикс M-11). */
+    private val orphanMarkerPattern = Regex("""\{/?it\}|\{/?ru\}|\{/?en\}|\{/?de\}|\{/?el\}|\{/?zh\}""")
+
     /**
      * Определить язык текста по символьному анализу и словесным шаблонам.
      * Возвращает "ru", "en", "it", "el", "de", "zh" либо [defaultLanguageId].
@@ -67,6 +73,9 @@ object MultilingualStoryParser {
      */
     fun detectLanguage(text: String, defaultLanguageId: String): String {
         val sample = text.take(500) // Анализируем первые 500 символов
+        // Фикс аудита H-1: матчинг ЦЕЛЫХ слов, а не подстрок — "di" внутри
+        // "dialog" и "il" внутри "family" больше не дают ложный итальянский.
+        val tokens = sample.lowercase().split(Regex("""[^\p{L}\p{N}']+""")).toSet()
 
         // Подсчёт символьных шаблонов для каждого языка
         val ruChars = sample.count { it in 'а'..'я' || it in 'А'..'Я' || it == 'ё' || it == 'Ё' }
@@ -78,20 +87,20 @@ object MultilingualStoryParser {
 
         // Подсчёт частых итальянских слов для лучшего определения
         val italianWords = listOf("questo", "quella", "questa", "essere", "avere", "per", "con", "da", "il", "lo", "la", "le", "un", "uno", "una", "in", "su", "a", "ad", "da", "di", "del", "dello", "della", "dei", "degli", "delle", "su", "sul", "sullo", "sulla", "sui", "sugli", "sulle", "tra", "fra", "anche", "ancora", "caso", "cosa", "fare", "dire", "vedere", "parlare", "essere")
-        val italianWordMatches = italianWords.count { word -> sample.contains(word, ignoreCase = true) }
+        val italianWordMatches = italianWords.count { it in tokens }
 
         // Подсчёт частых греческих слов
         val greekWords = listOf("είμαι", "έχω", "είναι", "αυτό", "αυτή", "αυτός", "που", "με", "σε", "για", "το", "η", "τα", "τις", "τα", "και", "δεν", "στα", "στην", "στον", "μια", "ένα", "να", "με", "θα", "είναι", "μπορώ", "πρέπει", "ελληνικά")
-        val greekWordMatches = greekWords.count { word -> sample.contains(word, ignoreCase = true) }
+        val greekWordMatches = greekWords.count { it in tokens }
 
         // Немецкие частые слова
         val germanWords = listOf("und", "der", "die", "das", "ist", "ein", "eine", "nicht", "ich", "mit", "auf", "für", "sich", "auch", "als", "nach", "wie", "noch", "werden", "haben", "sein", "dieser", "welche", "mich", "dich", "sich", "uns", "euch", "mein", "dein", "kein", "werden", "wurde", "worden", "konnte", "gemacht", "gegangen")
-        val germanWordMatches = germanWords.count { word -> sample.contains(word, ignoreCase = true) }
+        val germanWordMatches = germanWords.count { it in tokens }
 
         // Частые английские слова (исключают итальянский)
         @Suppress("ktlint:standard:max-line-length")
         val englishWords = listOf("this", "that", "with", "from", "have", "been", "will", "would", "could", "should", "about", "which", "their", "there", "where", "when", "what", "how", "then", "than", "more", "some", "such", "only", "into", "over", "after", "before", "being", "under", "while", "because", "though", "until", "again", "where", "through", "each", "much", "own", "same", "so", "good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high", "different", "small", "large", "next", "early", "young", "important", "public", "bad", "able", "free", "best", "better", "during", "enough", "both", "full", "tonight", "always", "anything", "anywhere", "being", "beautiful", "before", "believe", "between", "both", "bring", "build", "business", "but", "by", "call", "came", "can", "come", "could", "course", "develop", "different", "do", "does", "done", "don", "down", "during", "early", "education", "enough", "even", "ever", "every", "example", "face", "family", "far", "fast", "field", "fight", "find", "first", "for", "from", "get", "give", "go", "good", "great", "group", "grow", "had", "has", "have", "he", "head", "help", "her", "here", "high", "history", "home", "how", "however", "if", "important", "in", "include", "into", "is", "it", "its", "just", "keep", "know", "large", "last", "late", "learn", "leave", "life", "like", "line", "little", "long", "look", "make", "man", "many", "may", "me", "member", "might", "mile", "million", "miss", "more", "most", "much", "music", "must", "my", "name", "never", "new", "news", "next", "night", "no", "not", "now", "of", "off", "often", "old", "on", "once", "one", "only", "or", "other", "our", "out", "over", "own", "part", "people", "place", "play", "point", "political", "possible", "present", "president", "problem", "program", "provide", "public", "purpose", "question", "rather", "really", "result", "return", "right", "run", "same", "say", "school", "second", "see", "seem", "see", "service", "set", "several", "should", "since", "small", "so", "social", "some", "something", "special", "start", "statement", "still", "such", "system", "take", "talk", "teach", "tell", "than", "that", "the", "their", "them", "then", "there", "these", "they", "thing", "think", "this", "those", "though", "three", "through", "time", "to", "today", "together", "too", "toward", "travel", "try", "turn", "two", "under", "understand", "unit", "until", "up", "upon", "use", "usually", "value", "very", "want", "way", "we", "week", "well", "west", "what", "whatever", "when", "where", "whether", "which", "while", "white", "who", "whole", "whose", "why", "will", "with", "within", "without", "word", "work", "world", "would", "write", "year", "you", "your", "yours")
-        val englishWordMatches = englishWords.count { word -> sample.contains(word, ignoreCase = true) }
+        val englishWordMatches = englishWords.count { it in tokens }
 
         val total = ruChars + enChars + itChars + elChars + deChars + zhChars
         if (total == 0) {
@@ -281,9 +290,13 @@ object MultilingualStoryParser {
                     added++
                 }
             }
-            val msValue = match.groupValues[1].toLong()
-            out.add(Segment.Pause(msValue))
-            added++
+            // Фикс аудита C-2: невалидное/гигантское {pause:N} не роняет
+            // парсинг; длительность ограничена сверху 60 секундами.
+            val msValue = match.groupValues[1].toLongOrNull()?.coerceIn(0L, MAX_PAUSE_MS)
+            if (msValue != null) {
+                out.add(Segment.Pause(msValue))
+                added++
+            }
             lastIndex = match.range.last + 1
         }
         // Хвостовой текст после последней паузы.
@@ -310,7 +323,10 @@ object MultilingualStoryParser {
             // Извлекаем только текст контента без маркеров
             match.groupValues[2]
         }
-        return pausePattern.replace(withoutLang) { "" }
+        // Фикс аудита M-11: незакрытые/висячие маркеры ({it} без {/it}) не
+        // должны утекать в чистый текст/TTS сырой разметкой.
+        val withoutOrphans = orphanMarkerPattern.replace(withoutLang) { "" }
+        return pausePattern.replace(withoutOrphans) { "" }
     }
 
     /**
@@ -333,12 +349,12 @@ object MultilingualStoryParser {
     fun cleanMarkdown(markdown: String): String {
         val normalized = markdown.replace("\r\n", "\n")
         return normalized
-            .replace(Regex("""^#+\s+.*$"""), "") // Заголовки
+            .replace(Regex("""^#+\s+.*$""", RegexOption.MULTILINE), "") // Заголовки (в ЛЮБОЙ строке — фикс M-9)
             .replace(Regex("""\*\*([^*]+)\*\*"""), "$1") // Bold
             .replace(Regex("""\*([^*]+)\*"""), "$1") // Italic
             .replace(Regex("""```[^`]*```"""), "") // Code blocks
             .replace(Regex("""```"""), "") // Code block markers
-            .replace(Regex("""[-*]\s+"""), "") // List markers
+            .replace(Regex("""^[-*]\s+""", RegexOption.MULTILINE), "") // List markers (только в начале строки — фикс M-9)
             .replace(Regex("""\n\n+"""), "\n") // Множественные newlines
             .trim()
     }
