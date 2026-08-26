@@ -182,6 +182,9 @@ interface DrillDao {
     @Query("SELECT * FROM boss_rewards WHERE packId = :packId")
     suspend fun getBossRewards(packId: String): List<BossRewardEntity>
 
-    @Query("SELECT * FROM boss_rewards WHERE packId = :packId AND bossType = :bossType AND scopeKey = :scopeKey")
+    /** Награда конкретной boss-битвы (exactly-once проверка в репозитории). */
+    @Query(
+        "SELECT * FROM boss_rewards WHERE packId = :packId AND bossType = :bossType AND scopeKey = :scopeKey"
+    )
     suspend fun getBossReward(packId: String, bossType: String, scopeKey: String): BossRewardEntity?
 }

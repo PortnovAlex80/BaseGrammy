@@ -145,11 +145,12 @@ interface VocabDrillRepository {
 
     // ── Boss rewards ────────────────────────────────────────────────────────────
 
-    /** Все награды за boss-битвы пака (scopeKey → reward). */
+    /** Все награды за boss-битвы пака; ключ — `"<bossType>:<scopeKey>"`. */
     suspend fun getBossRewards(packId: PackId): Map<String, BossReward>
 
     /**
-     * Сохранить награду за boss-битву.
+     * Сохранить награду за boss-битву (exactly-once / best-of: повторная
+     * выдача и понижение уровня игнорируются — сохраняется только повышение).
      *
      * @param bossType тип босса (LESSON/MEGA/ELITE).
      * @param scopeKey область: lessonId для LESSON, "mega" для MEGA, шаг для ELITE.

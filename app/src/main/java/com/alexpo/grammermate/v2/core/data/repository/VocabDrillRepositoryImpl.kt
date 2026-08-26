@@ -245,12 +245,22 @@ class VocabDrillRepositoryImpl @Inject constructor(
 
     // ── Boss rewards ────────────────────────────────────────────────────────────
 
+    /**
+     * Ключ карты — `"<bossType-lowercase>:<scopeKey>"` (фикс аудита L-3:
+     * прежний голый scopeKey схлопывал LESSON и ELITE с одинаковым scope,
+     * toMap last-wins терял награду).
+     */
     override suspend fun getBossRewards(packId: PackId): Map<String, BossReward> =
         drillDao.getBossRewards(packId.value).mapNotNull { e ->
             val reward = parseBossReward(e.reward) ?: return@mapNotNull null
-            e.scopeKey to reward
+            "${e.bossType.lowercase()}:${e.scopeKey}" to reward
         }.toMap()
 
+    /**
+     * Exactly-once / best-of (срез 5 Фазы 4): повторная выдача НЕ перезаписывает
+     * существующую награду; понижение (GOLD→BRONZE) невозможно — сохраняется
+     * только повышение уровня, время первой выдачи лучшей награды фиксируется.
+     */
     override suspend fun saveBossReward(
         packId: PackId,
         bossType: BossType,
@@ -258,6 +268,13 @@ class VocabDrillRepositoryImpl @Inject constructor(
         reward: BossReward,
         nowMs: Long,
     ) {
+        val existing = drillDao.getBossReward(packId.value, bossType.name, scopeKey)
+        if (existing != null) {
+            val existingReward = parseBossReward(existing.reward)
+            if (existingReward != null && existingReward.ordinal >= reward.ordinal) {
+                return // уже есть равная или лучшая — exactly-once
+            }
+        }
         drillDao.upsertBossReward(
             BossRewardEntity(
                 packId = packId.value,
