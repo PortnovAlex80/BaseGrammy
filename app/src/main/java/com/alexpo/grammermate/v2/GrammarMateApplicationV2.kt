@@ -1,6 +1,8 @@
 package com.alexpo.grammermate.v2
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
+import android.os.StrictMode
 import com.alexpo.grammermate.v2.core.data.packimport.BundledPackSeeder
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -23,6 +25,19 @@ class GrammarMateApplicationV2 : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Фаза 6 плана стабилизации: StrictMode в debug-сборках — детекция
+        // main-thread I/O и утечек (penaltyLog, без падения тестов/отладки).
+        if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder().detectLeakedClosableObjects()
+                    .detectActivityLeaks()
+                    .penaltyLog()
+                    .build()
+            )
+        }
         // Q3 greenfield data: YamlToRoomMigrator больше не активный путь данных
         // (класс помечен @Deprecated, AC-17). Startup больше не запускает миграцию.
         // Флаг миграции SettingsRepository.isMigrationDone(...) остаётся в контракте
