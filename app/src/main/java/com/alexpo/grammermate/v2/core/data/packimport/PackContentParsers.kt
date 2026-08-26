@@ -78,8 +78,8 @@ object PackContentParsers {
     fun parseVerbCsv(content: String): ParseResult<List<VerbDrillCard>, ParseError> =
         VerbDrillCsvParser.parse(content)
 
-    fun parseVocabCsv(stream: InputStream): ParseResult<List<VocabRow>, ParseError> =
-        VocabCsvParser.parse(stream)
+    fun parseVocabCsv(stream: InputStream, fileName: String): ParseResult<List<VocabRow>, ParseError> =
+        VocabCsvParser.parse(stream, fileName)
 
     fun parseStoryJson(text: String): ParseResult<
         com.alexpo.grammermate.domain.model.StoryQuiz,
