@@ -6,7 +6,11 @@
 
 **Область:** активное приложение v2 (`MainActivityV2`), модуль `:domain`, Room/data, Compose UX, CI и тестовый контур
 
-**Статус:** accepted — Phase 0 started 2026-08-26
+**Статус:** executed — Фазы 0–7 пройдены 2026-08-26 (локально-верифицируемая
+часть; 625 тестов зелёные; 22+ аудиторских фикса; ADR-001/002/003; MODE_MATRIX
+заполнена полностью). Device/CI-зависимые follow-up'ы вынесены отдельно:
+эмуляторные E2E и navigation-гейты (PR-smoke контур), Macrobenchmark/Baseline
+Profile, audio body-контур (TTS/ASR реализация поверх готовых портов).
 
 ## 1. Итог аудита
 
