@@ -40,23 +40,26 @@ data class LessonPackManifest(
         /**
          * Распарсить JSON-текст манифеста с валидацией (regression-locked, legacy 1:1).
          *
-         * 1. `schemaVersion` ∈ {1, 2} (иначе `error("Unsupported schemaVersion: $sv")`).
-         * 2. `packId`/`packVersion`/`language` непусты (иначе `error("Missing packId/packVersion/language")`).
+         * 1. `schemaVersion` ∈ {1, 2} (иначе null — фикс аудита M-2: typed
+         *    отказ вместо IllegalStateException, ронявшего весь import-путь).
+         * 2. `packId`/`packVersion`/`language` непусты (иначе null).
          * 3. `lessons` (v1), `chapters` (v2), drill-секции, backgroundVocab.
          * 4. Content-валидация: у манифеста должен быть контент (см. KDoc класса).
          */
-        fun fromJson(text: String): LessonPackManifest {
-            val json = Json.parseToJsonElement(text).jsonObject
+        fun fromJson(text: String): LessonPackManifest? {
+            // Фикс M-2: битый JSON и невалидные поля — null, а не исключение.
+            val json = runCatching { Json.parseToJsonElement(text).jsonObject }
+                .getOrNull() ?: return null
 
             val schemaVersion = json.optInt("schemaVersion", -1)
             if (schemaVersion != 1 && schemaVersion != 2) {
-                error("Unsupported schemaVersion: $schemaVersion")
+                return null
             }
             val packId = json.optString("packId").trim()
             val packVersion = json.optString("packVersion").trim()
             val language = json.optString("language").trim()
             if (packId.isBlank() || packVersion.isBlank() || language.isBlank()) {
-                error("Missing packId/packVersion/language")
+                return null
             }
 
             val lessonsJson = json.optJSONArray("lessons") ?: JsonArray(emptyList())

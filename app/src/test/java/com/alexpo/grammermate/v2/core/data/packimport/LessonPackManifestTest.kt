@@ -11,6 +11,22 @@ import org.junit.Test
  */
 class LessonPackManifestTest {
 
+    /** Фикс M-2: невалидный манифест — null, а не IllegalStateException. */
+    @Test
+    fun invalid_manifest_returnsNull_notException() {
+        assertThat(LessonPackManifest.fromJson("{not json")).isNull()
+        assertThat(
+            LessonPackManifest.fromJson(
+                """{"schemaVersion": 3, "packId": "P", "packVersion": "v", "language": "it"}"""
+            )
+        ).isNull()
+        assertThat(
+            LessonPackManifest.fromJson(
+                """{"schemaVersion": 2, "packId": "", "packVersion": "v", "language": "it"}"""
+            )
+        ).isNull()
+    }
+
     private val v2Manifest = """
         {
           "schemaVersion": 2,
@@ -38,6 +54,7 @@ class LessonPackManifestTest {
     @Test
     fun v2_chaptersDrillsAndBackgroundVocab_parsed() {
         val manifest = LessonPackManifest.fromJson(v2Manifest)
+            .also { assertThat(it).isNotNull() }!!
 
         assertThat(manifest.schemaVersion).isEqualTo(2)
         assertThat(manifest.packId).isEqualTo("ITALIAN_SHORT")
@@ -73,7 +90,7 @@ class LessonPackManifestTest {
               ]
             }
             """.trimIndent()
-        )
+        ).also { assertThat(it).isNotNull() }!!
 
         assertThat(manifest.lessons).hasSize(2)
         assertThat(manifest.lessons[0].order).isEqualTo(2)
@@ -83,22 +100,24 @@ class LessonPackManifestTest {
         assertThat(manifest.chapters).isEmpty()
     }
 
+    /** Фикс M-2: невалидный schemaVersion — null (typed-отказ), не исключение. */
     @Test
-    fun unsupportedSchemaVersion_throws() {
-        val ex = assertThrows(IllegalStateException::class.java) {
-            LessonPackManifest.fromJson("""{"schemaVersion": 3, "packId": "p", "packVersion": "v", "language": "it"}""")
-        }
-        assertThat(ex).hasMessageThat().contains("Unsupported schemaVersion: 3")
+    fun unsupportedSchemaVersion_returnsNull() {
+        assertThat(
+            LessonPackManifest.fromJson(
+                """{"schemaVersion": 3, "packId": "p", "packVersion": "v", "language": "it"}"""
+            )
+        ).isNull()
     }
 
+    /** Фикс M-2: пустые обязательные поля — null (typed-отказ), не исключение. */
     @Test
-    fun missingRequiredFields_throws() {
-        val ex = assertThrows(IllegalStateException::class.java) {
+    fun missingRequiredFields_returnsNull() {
+        assertThat(
             LessonPackManifest.fromJson(
                 """{"schemaVersion": 2, "packId": "  ", "packVersion": "v", "language": "it", "chapters": []}"""
             )
-        }
-        assertThat(ex).hasMessageThat().contains("Missing packId/packVersion/language")
+        ).isNull()
     }
 
     @Test
@@ -123,7 +142,7 @@ class LessonPackManifestTest {
               "chapters": [],
               "backgroundVocab": { "file": "bg.csv" } }
             """.trimIndent()
-        )
+        ).also { assertThat(it).isNotNull() }!!
 
         assertThat(manifest.backgroundVocab).isNotNull()
         assertThat(manifest.backgroundVocab!!.defaultLanguage).isEqualTo("it")

@@ -103,6 +103,13 @@ class PackImporter @Inject constructor(
                 )
             }
             val manifest = LessonPackManifest.fromJson(manifestFile.readText())
+                ?: return PackImportResult.Failed(
+                    errors = listOf(
+                        ParseError.InvalidFormat(
+                            reason = "manifest.json невалиден (schemaVersion/packId/packVersion/language)",
+                        )
+                    )
+                )
             return importPackAtomic(tempDir, manifest)
         } finally {
             tempDir.deleteRecursively()
@@ -136,6 +143,7 @@ class PackImporter @Inject constructor(
                     error("Manifest not found")
                 }
                 return LessonPackManifest.fromJson(manifestFile.readText())
+                    ?: error("Manifest invalid")
             } finally {
                 tempDir.deleteRecursively()
             }
