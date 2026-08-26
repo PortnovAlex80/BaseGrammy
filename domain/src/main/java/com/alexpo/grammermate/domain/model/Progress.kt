@@ -119,6 +119,27 @@ data class DrillProgress(
 )
 
 /**
+ * Реактивный прогресс пака по урокам (ADR-002, слой 1: истина — счётчики).
+ *
+ * `completedLessons` агрегируется из `mastery_states.completedAtMs` — без
+ * SRS-математики (лестница/FSRS в агрегате не участвуют до активации слоя 2;
+ * см. docs/architecture/decisions/002-srs-single-source-of-truth.md).
+ *
+ * @property packId           пак.
+ * @property totalLessons     всего уроков пака.
+ * @property completedLessons уроков с completedAtMs != null.
+ */
+data class PackLessonProgress(
+    val packId: PackId,
+    val totalLessons: Int,
+    val completedLessons: Int,
+) {
+    /** Доля завершённых уроков 0..1 (`totalLessons <= 0` → 0). */
+    val fraction: Float
+        get() = if (totalLessons <= 0) 0f else completedLessons.toFloat() / totalLessons
+}
+
+/**
  * Курсор дневной нормы — состояние проходжения дневного набора карточек.
  *
  * @property packId                        пак.

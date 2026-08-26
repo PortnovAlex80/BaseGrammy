@@ -4,6 +4,7 @@ import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.LessonMastery
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.PackLessonProgress
 import com.alexpo.grammermate.domain.srs.SrsCardState
 import kotlinx.coroutines.flow.Flow
 
@@ -41,4 +42,11 @@ interface MasteryRepository {
 
     /** Сохранить агрегированное SRS-состояние урока (после повтора). */
     suspend fun updateSrsState(packId: PackId, lessonId: LessonId, srs: SrsCardState)
+
+    /**
+     * Реактивный прогресс всех паков по завершённости уроков (ADR-002 слой 1:
+     * агрегат из `completedAtMs`, без SRS-математики). Паки без единого
+     * завершённого урока входят с `completedLessons = 0`.
+     */
+    fun observePackProgress(): Flow<List<PackLessonProgress>>
 }

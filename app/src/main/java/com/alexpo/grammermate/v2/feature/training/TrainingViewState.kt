@@ -60,6 +60,19 @@ sealed interface TrainingViewState {
         val totalCards: Int,
     ) : TrainingViewState
 
+    /**
+     * Повторный вход в незавершённый урок (Фаза 3 slice 2: recovered-session
+     * экран). Явный выбор пользователя: продолжить с сохранённой карточки
+     * или начать заново. Сессия durable-ACTIVE (Back-семантика MODE_MATRIX),
+     * данные НЕ теряются, пока выбор не сделан.
+     */
+    data class ResumeGate(
+        val answeredCards: Int,
+        val totalCards: Int,
+        val correctCount: Int,
+        val incorrectCount: Int,
+    ) : TrainingViewState
+
     /** Recoverable-ошибка (persist/load). Retry повторяет операцию, Back выходит. */
     data class Error(val message: String) : TrainingViewState
 }

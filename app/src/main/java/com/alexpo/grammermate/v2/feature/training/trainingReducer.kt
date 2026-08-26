@@ -44,7 +44,11 @@ fun trainingReducer(state: TrainingViewState, intent: TrainingIntent): TrainingV
         TrainingIntent.NextCard,
         TrainingIntent.SkipCard -> state
 
-        // Флаг карточки — пока только UI-noop (persist Report/Flag — Фаза 3).
+        // Продолжить/начать заново из ResumeGate: UI → Loading; новую фазу
+        // публикует ViewModel после commit (resume читает снимок, restart
+        // делает Engine.restartLessonSession — mastery сохраняется).
+        TrainingIntent.ResumeAccepted,
+        TrainingIntent.RestartRequested -> TrainingViewState.Loading
 
         // Выход с экрана — state не меняется; навигация идёт через эффект.
         TrainingIntent.NavigateBack -> state

@@ -147,6 +147,27 @@ class SessionEngine(
     }
 
     /**
+     * Начать урок заново: удалить сохранённую сессию (пул/курсор/счётчики
+     * ответов) и построить свежую ([startLessonSession]).
+     *
+     * Reset-семантика (MODE_MATRIX): очищается ТОЛЬКО контекст сессии —
+     * mastery/цветы (uniqueCardShows, completedAtMs) не трогаются.
+     * Владелец мутации — Engine: presentation не вызывает delete напрямую.
+     */
+    suspend fun restartLessonSession(
+        packId: PackId,
+        lessonId: LessonId,
+        sessionSize: Int,
+    ): SessionSnapshot {
+        sessionRepository.deleteSession(SessionId.forLesson(packId, lessonId))
+        return startLessonSession(
+            packId = packId,
+            lessonId = lessonId,
+            sessionSize = sessionSize,
+        )
+    }
+
+    /**
      * Перейти к следующей карточке. Обновляет `currentCardId` по PK
      * (индекс в пуле + 1, с зацикливанием). Пустой пул → currentCardId null.
      */

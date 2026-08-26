@@ -128,4 +128,39 @@ interface MasteryDao {
         markShown(packId, lessonId, cardId)
         incrementEncounter(packId, lessonId, cardId)
     }
+
+    // ── Pack progress (ADR-002 слой 1) ──────────────────────────────────────
+
+    /**
+     * Реактивный прогресс паков: уроки пака LEFT JOIN mastery по
+     * (packId, lessonId); завершён = `completedAtMs IS NOT NULL`.
+     *
+     * Инвалидация Flow срабатывает и на `lessons`, и на `mastery_states` —
+     * завершение урока в тренировке мгновенно отражается на Home.
+     */
+    @Query(
+        """
+        SELECT l.packId AS packId,
+               COUNT(l.id) AS totalLessons,
+               COUNT(m.completedAtMs) AS completedLessons
+        FROM lessons l
+        LEFT JOIN mastery_states m
+            ON m.packId = l.packId AND m.lessonId = l.id
+        GROUP BY l.packId
+        """
+    )
+    fun observePackProgress(): Flow<List<PackProgressRow>>
 }
+
+/**
+ * Projection-строка агрегата прогресса пака (ADR-002 слой 1).
+ *
+ * @property packId           пак.
+ * @property totalLessons     всего уроков пака (COUNT(*) из lessons).
+ * @property completedLessons уроков с completedAtMs != null.
+ */
+data class PackProgressRow(
+    val packId: String,
+    val totalLessons: Int,
+    val completedLessons: Int,
+)

@@ -117,9 +117,11 @@ class TrainingViewModel @Inject constructor(
         onIntent(TrainingIntent.StartSession)
         viewModelScope.launch {
             commands.withLock {
+                var resumedSnapshot: SessionSnapshot? = null
                 runCatching {
                     val resumed = sessionEngine.resumeSession(sessionId)
                     if (resumed != null && resumed.status != SessionStatus.COMPLETED) {
+                        resumedSnapshot = resumed
                         resumed
                     } else {
                         sessionEngine.startLessonSession(
@@ -134,7 +136,25 @@ class TrainingViewModel @Inject constructor(
                     cardsById = runCatching {
                         contentRepository.getCards(lessonId).associateBy { it.id }
                     }.getOrElse { emptyMap() }
-                    applySession(snapshot)
+                    val resumed = resumedSnapshot
+                    val midLesson = resumed != null &&
+                        (resumed.shownCardIds.isNotEmpty() ||
+                            resumed.correctCount > 0 ||
+                            resumed.incorrectCount > 0)
+                    if (midLesson) {
+                        // Recovered-session экран (Фаза 3 slice 2): незавершённый
+                        // урок — явный выбор, а не молчаливый resume.
+                        updateState {
+                            TrainingViewState.ResumeGate(
+                                answeredCards = snapshot.correctCount + snapshot.incorrectCount,
+                                totalCards = snapshot.poolCardIds.size,
+                                correctCount = snapshot.correctCount,
+                                incorrectCount = snapshot.incorrectCount,
+                            )
+                        }
+                    } else {
+                        applySession(snapshot)
+                    }
                 }.onFailure { e ->
                     updateState { TrainingViewState.Error(e.message ?: "Не удалось загрузить тренировку") }
                 }
@@ -215,6 +235,59 @@ class TrainingViewModel @Inject constructor(
             commands.withLock {
                 if (currentState !is TrainingViewState.Active) return@withLock
                 advanceAfterCommit()
+            }
+        }
+    }
+
+    /**
+     * Продолжить незавершённый урок с сохранённой карточки (из
+     * [TrainingViewState.ResumeGate]). Данные не меняются: только projection
+     * актуального снимка.
+     */
+    fun resumeFromGate() {
+        if (currentState !is TrainingViewState.ResumeGate) return
+        onIntent(TrainingIntent.ResumeAccepted)
+        viewModelScope.launch {
+            commands.withLock {
+                runCatching { sessionEngine.resumeSession(sessionId) }
+                    .onSuccess { snapshot ->
+                        if (snapshot == null || snapshot.status == SessionStatus.COMPLETED) {
+                            // Сессию завершили/удалили извне (другой вход, миграция):
+                            // честный перезапуск вместо пустого экрана.
+                            reload()
+                        } else {
+                            applySession(snapshot)
+                        }
+                    }
+                    .onFailure { e ->
+                        updateState { TrainingViewState.Error(e.message ?: "Не удалось загрузить тренировку") }
+                    }
+            }
+        }
+    }
+
+    /**
+     * Начать незавершённый урок заново (из [TrainingViewState.ResumeGate]):
+     * [SessionEngine.restartLessonSession] сбрасывает ТОЛЬКО контекст сессии
+     * (пул/курсор/счётчики ответов); mastery (показы, completedAtMs) остаётся.
+     */
+    fun restartFromGate() {
+        if (currentState !is TrainingViewState.ResumeGate) return
+        onIntent(TrainingIntent.RestartRequested)
+        viewModelScope.launch {
+            commands.withLock {
+                runCatching {
+                    sessionEngine.restartLessonSession(
+                        packId = packId,
+                        lessonId = lessonId,
+                        sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                    )
+                }.onSuccess { snapshot ->
+                    clearDraft()
+                    applySession(snapshot)
+                }.onFailure { e ->
+                    updateState { TrainingViewState.Error(e.message ?: "Не удалось начать заново") }
+                }
             }
         }
     }

@@ -20,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.alexpo.grammermate.domain.model.Pack
+import com.alexpo.grammermate.domain.model.PackLessonProgress
 import com.alexpo.grammermate.v2.core.ui.collectState
 
 /**
@@ -89,6 +91,7 @@ fun HomeScreen(
             state.packs.isEmpty() -> EmptyState(modifier = Modifier.padding(innerPadding))
             else -> PacksGrid(
                 packs = state.packs,
+                packProgress = state.packProgress,
                 onPackClick = onPackClick,
                 contentPadding = innerPadding,
             )
@@ -105,6 +108,7 @@ fun HomeScreen(
 @Composable
 private fun PacksGrid(
     packs: List<Pack>,
+    packProgress: Map<String, PackLessonProgress>,
     onPackClick: (String) -> Unit,
     contentPadding: PaddingValues,
 ) {
@@ -124,7 +128,11 @@ private fun PacksGrid(
             items = packs,
             key = { it.id.value },
         ) { pack ->
-            PackCard(pack = pack, onClick = { onPackClick(pack.id.value) })
+            PackCard(
+                pack = pack,
+                progress = packProgress[pack.id.value],
+                onClick = { onPackClick(pack.id.value) },
+            )
         }
     }
 }
@@ -138,18 +146,25 @@ const val HOME_PACK_CARD_TAG = "home_pack_card"
 /** Кнопка Retry в error-state Home (Фаза 3). */
 const val HOME_RETRY_BUTTON_TAG = "home_retry_button"
 
+/** Test-tag полосы прогресса внутри карточки пака (ADR-002 слой 1). */
+const val HOME_PACK_PROGRESS_TAG = "home_pack_progress"
+
 /**
  * Карточка одного пака обучения.
  *
  * Красивая заливка `primaryContainer` + закруглённые углы + тонкая тень.
- * Реактивный прогресс урока появится в Фазе 3 (ProgressRepository) — фиктивный
- * индикатор 0% удалён. Имя пака берётся из [Pack.displayName] либо fallback
- * на `id.value`.
+ * Прогресс — реактивный `completedLessons/totalLessons` (Фаза 3 slice 2,
+ * ADR-002 слой 1); null = уроков с данными нет (0%).
+ * Имя пака берётся из [Pack.displayName] либо fallback на `id.value`.
  *
  * Statelesss: клик пробрасывается в [onClick], карточка сама ничего не мутирует.
  */
 @Composable
-private fun PackCard(pack: Pack, onClick: () -> Unit) {
+private fun PackCard(
+    pack: Pack,
+    progress: PackLessonProgress?,
+    onClick: () -> Unit,
+) {
     Card(
         onClick = onClick,
         modifier = Modifier
@@ -179,10 +194,15 @@ private fun PackCard(pack: Pack, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
             )
-            // Реактивный прогресс урока — Фаза 3 плана (ProgressRepository);
-            // фиктивный индикатор 0% удалён (не показывать фейковые данные).
+            // Реактивный прогресс (ADR-002 слой 1): completedAtMs-агрегат.
+            LinearProgressIndicator(
+                progress = { progress?.fraction ?: 0f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(HOME_PACK_PROGRESS_TAG),
+            )
             Text(
-                text = "Версия ${pack.version}",
+                text = "Уроков пройдено: ${progress?.completedLessons ?: 0} / ${progress?.totalLessons ?: 0}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
             )

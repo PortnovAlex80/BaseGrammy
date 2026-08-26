@@ -10,6 +10,7 @@ import com.alexpo.grammermate.domain.model.LanguageId
 import com.alexpo.grammermate.domain.model.Pack
 import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.MasteryRepository
 import com.alexpo.grammermate.v2.ui.theme.GrammarMateTheme
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
@@ -59,6 +60,11 @@ class HomeScreenTest {
         Dispatchers.resetMain()
     }
 
+    /** Прогресс-канал пуст: пак без mastery-строк = 0% (ADR-002 слой 1). */
+    private fun emptyProgress(): MasteryRepository = mockk {
+        coEvery { observePackProgress() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+    }
+
     private fun viewModel(packs: List<Pack>, error: Boolean = false): HomeViewModel {
         val repo = mockk<ContentRepository> {
             coEvery { getPacks() } returns packs
@@ -68,7 +74,7 @@ class HomeScreenTest {
                 coEvery { observePacks() } throws IllegalStateException("network down")
             }
         }
-        return HomeViewModel(repo)
+        return HomeViewModel(repo, emptyProgress())
     }
 
     @Test
@@ -122,7 +128,7 @@ class HomeScreenTest {
                 throw IllegalStateException("network down")
             }
         }
-        val vm = HomeViewModel(repo)
+        val vm = HomeViewModel(repo, emptyProgress())
 
         compose.setContent {
             GrammarMateTheme {

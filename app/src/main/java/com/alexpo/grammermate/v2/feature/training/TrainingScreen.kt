@@ -70,6 +70,8 @@ object TrainingTestTags {
     const val REPORT_BUTTON = "training_report_button"
     const val COMPLETED_LABEL = "training_completed_label"
     const val RETRY_BUTTON = "training_retry_button"
+    const val RESUME_BUTTON = "training_resume_button"
+    const val RESTART_BUTTON = "training_restart_button"
 }
 
 /**
@@ -166,12 +168,78 @@ fun TrainingScreen(
                 modifier = Modifier.padding(innerPadding),
             )
 
+            is TrainingViewState.ResumeGate -> ResumeGateContent(
+                phase = s,
+                onResume = viewModel::resumeFromGate,
+                onRestart = viewModel::restartFromGate,
+                modifier = Modifier.padding(innerPadding),
+            )
+
             is TrainingViewState.Error -> ErrorState(
                 message = s.message,
                 onRetry = viewModel::reload,
                 onBack = { viewModel.navigateBack() },
                 modifier = Modifier.padding(innerPadding),
             )
+        }
+    }
+}
+
+// ── Фаза ResumeGate (Фаза 3 slice 2) ─────────────────────────────────────────
+
+/**
+ * Recovered-session экран: незавершённый урок найден при повторном входе.
+ *
+ * Явный выбор (план §3.1.4: recovery — явный результат): продолжить с
+ * сохранённой карточки либо начать заново (сбрасывается только контекст
+ * сессии; mastery сохраняется). Back = выход, сессия остаётся durable.
+ */
+@Composable
+private fun ResumeGateContent(
+    phase: TrainingViewState.ResumeGate,
+    onResume: () -> Unit,
+    onRestart: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = "Урок начат",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "Пройдено ${phase.answeredCards} из ${phase.totalCards} карточек " +
+                "(верно: ${phase.correctCount}, неверно: ${phase.incorrectCount}).",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(
+            onClick = onResume,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.RESUME_BUTTON),
+        ) {
+            Text("Продолжить с карточки ${phase.answeredCards + 1}")
+        }
+        OutlinedButton(
+            onClick = onRestart,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.RESTART_BUTTON),
+        ) {
+            Text("Начать заново")
         }
     }
 }

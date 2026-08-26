@@ -6,6 +6,7 @@ import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.LessonMastery
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.PackLessonProgress
 import com.alexpo.grammermate.domain.repository.MasteryRepository
 import com.alexpo.grammermate.domain.srs.SrsCardState
 import com.alexpo.grammermate.domain.srs.SrsMemoryState
@@ -132,6 +133,18 @@ class MasteryRepositoryImpl @Inject constructor(
             ),
         )
     }
+
+    /** ADR-002 слой 1: агрегат из `completedAtMs`, без SRS-математики. */
+    override fun observePackProgress(): Flow<List<PackLessonProgress>> =
+        masteryDao.observePackProgress().map { rows ->
+            rows.map { row ->
+                PackLessonProgress(
+                    packId = PackId(row.packId),
+                    totalLessons = row.totalLessons,
+                    completedLessons = row.completedLessons,
+                )
+            }
+        }
 
     // ── Маппинг сущность → домен ──────────────────────────────────────────────
 

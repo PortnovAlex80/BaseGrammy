@@ -33,6 +33,18 @@ sealed interface TrainingIntent : MviIntent {
     /** Пропустить карточку без ответа (в [TrainingViewState.Active]). */
     data object SkipCard : TrainingIntent
 
+    /**
+     * Продолжить незавершённый урок с сохранённой карточки
+     * (в [TrainingViewState.ResumeGate]; Фаза 3 slice 2).
+     */
+    data object ResumeAccepted : TrainingIntent
+
+    /**
+     * Начать незавершённый урок заново — сброс контекста сессии
+     * (в [TrainingViewState.ResumeGate]; mastery сохраняется).
+     */
+    data object RestartRequested : TrainingIntent
+
     /** Пользователь закрыл экран/нажал back. */
     data object NavigateBack : TrainingIntent
 }

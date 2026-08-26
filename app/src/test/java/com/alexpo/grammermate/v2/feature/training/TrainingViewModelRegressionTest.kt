@@ -5,6 +5,7 @@ import com.alexpo.grammermate.domain.model.BadSentence
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.CardType
+import com.alexpo.grammermate.domain.model.InputMode
 import com.alexpo.grammermate.domain.model.LanguageId
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.Pack
@@ -327,6 +328,102 @@ class TrainingViewModelRegressionTest {
         // Retry на невалидном маршруте — no-op (маршрута нет, повторять нечего).
         vm.reload()
         assertThat(vm.state.value).isInstanceOf(TrainingViewState.Error::class.java)
+    }
+
+    // ── Фаза 3 slice 2: ResumeGate (recovered-session экран) ─────────────────
+
+    /**
+     * Повторный вход в незавершённый урок (есть ответы) — ЯВНЫЙ выбор
+     * (ResumeGate), а не молчаливый resume (план §3.1.4: recovery — явный
+     * результат).
+     */
+    @Test
+    fun reenter_midLesson_showsResumeGate() {
+        val engine = sessionEngine()
+        kotlinx.coroutines.runBlocking {
+            engine.startLessonSession(packId, lessonId, sessionSize = 10)
+            engine.submitAnswer(
+                sessionId, CardId(TrainingDbFixture.CARD_IDS.first()),
+                isCorrect = true, inputMode = InputMode.KEYBOARD,
+            )
+        }
+
+        val vm = trainingViewModel(engine = engine)
+
+        val state = vm.state.value as TrainingViewState.ResumeGate
+        assertThat(state.answeredCards).isEqualTo(1)
+        assertThat(state.totalCards).isEqualTo(TrainingDbFixture.CARD_IDS.size)
+        assertThat(state.correctCount).isEqualTo(1)
+        assertThat(state.incorrectCount).isEqualTo(0)
+    }
+
+    /** «Продолжить» из гейта — с сохранённой карточки и счётчиков. */
+    @Test
+    fun resumeFromGate_continuesFromSavedCard() {
+        val engine = sessionEngine()
+        kotlinx.coroutines.runBlocking {
+            engine.startLessonSession(packId, lessonId, sessionSize = 10)
+            engine.submitAnswer(
+                sessionId, CardId(TrainingDbFixture.CARD_IDS.first()),
+                isCorrect = true, inputMode = InputMode.KEYBOARD,
+            )
+            engine.nextCard(sessionId)
+        }
+        val vm = trainingViewModel(engine = engine)
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.ResumeGate::class.java)
+
+        vm.resumeFromGate()
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
+        assertThat(state.answeredCards).isEqualTo(1)
+    }
+
+    /**
+     * «Начать заново» из гейта: сбрасывается ТОЛЬКО контекст сессии — счётчики
+     * ответов/shown обнулены, пул тот же; mastery не участвует (зона
+     * MasteryRepository, см. SessionEngineRestartTest).
+     */
+    @Test
+    fun restartFromGate_resetsSessionContextOnly() {
+        val engine = sessionEngine()
+        kotlinx.coroutines.runBlocking {
+            engine.startLessonSession(packId, lessonId, sessionSize = 10)
+            engine.submitAnswer(
+                sessionId, CardId(TrainingDbFixture.CARD_IDS.first()),
+                isCorrect = true, inputMode = InputMode.KEYBOARD,
+            )
+        }
+        val vm = trainingViewModel(engine = engine)
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.ResumeGate::class.java)
+
+        vm.restartFromGate()
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS.first())
+        assertThat(state.answeredCards).isEqualTo(0)
+        val persisted = sessionRepository.store[sessionId.value]!!
+        assertThat(persisted.correctCount).isEqualTo(0)
+        assertThat(persisted.shownCardIds).isEmpty()
+        assertThat(persisted.poolCardIds.map { it.value })
+            .containsExactlyElementsIn(TrainingDbFixture.CARD_IDS)
+            .inOrder()
+    }
+
+    /** Гейт НЕ срабатывает без ответов: навигационный re-enter = тихий resume. */
+    @Test
+    fun reenter_lessonWithoutAnswers_resumesSilently() {
+        val engine = sessionEngine()
+        kotlinx.coroutines.runBlocking {
+            engine.startLessonSession(packId, lessonId, sessionSize = 10)
+            engine.nextCard(sessionId) // переход без ответа
+        }
+
+        val vm = trainingViewModel(engine = engine)
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
+        assertThat(state.answeredCards).isEqualTo(0)
     }
 
     // ── Хелперы ──────────────────────────────────────────────────────────────
