@@ -27,12 +27,6 @@ sealed interface TrainingIntent : MviIntent {
     /** Запросить подсказку на текущей карточке (эфемерный UI; persist — Фаза 2). */
     data object RequestHint : TrainingIntent
 
-    /** Перейти к следующей карточке / завершить урок на последней (в [TrainingViewState.Feedback]). */
-    data object NextCard : TrainingIntent
-
-    /** Пропустить карточку без ответа (в [TrainingViewState.Active]). */
-    data object SkipCard : TrainingIntent
-
     /**
      * Продолжить незавершённый урок с сохранённой карточки
      * (в [TrainingViewState.ResumeGate]; Фаза 3 slice 2).
@@ -44,7 +38,4 @@ sealed interface TrainingIntent : MviIntent {
      * (в [TrainingViewState.ResumeGate]; mastery сохраняется).
      */
     data object RestartRequested : TrainingIntent
-
-    /** Пользователь закрыл экран/нажал back. */
-    data object NavigateBack : TrainingIntent
 }

@@ -14,10 +14,10 @@ import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
 import com.alexpo.grammermate.v2.feature.verbdrill.VerbDrillScreen
 import com.alexpo.grammermate.v2.feature.pomodoro.PomodoroScreen
+import com.alexpo.grammermate.v2.feature.settings.SettingsScreen
 import com.alexpo.grammermate.v2.feature.story.StoryReaderScreen
 import com.alexpo.grammermate.v2.feature.vocabdrill.VocabDrillScreen
 import com.alexpo.grammermate.v2.ui.components.InvalidRouteScreen
-import com.alexpo.grammermate.v2.ui.components.PlaceholderScreen
 
 /**
  * NavHost приложения GrammarMate v2 — регистрирует все [Destination]'ы.
@@ -30,9 +30,8 @@ import com.alexpo.grammermate.v2.ui.components.PlaceholderScreen
  * **Home → PackContent (главы + уроки) → Training(packId, lessonId)** —
  * реальный `lessonId`, а не `packId`-заглушка (P0-дефект закрыт).
  *
- * Экраны, которые ещё не реализованы (Settings, VerbDrill, DailyPractice),
- * отрисовывают [PlaceholderScreen] — их маршруты не публикуются как доступные
- * действия из golden journey.
+ * Все маршруты ведут на реальные экраны (Фаза 7: последний Placeholder —
+ * Settings — заменён экраном режима темы).
  */
 @Composable
 fun GrammarMateNavHost(
@@ -125,9 +124,9 @@ fun GrammarMateNavHost(
             )
         }
 
-        // ── Settings (TODO — полный экран, Фаза 3) ────────────────────────────
+        // ── Settings (Фаза 7: реальный экран — режим темы) ────────────────────
         composable(Destination.Settings.routePattern) {
-            PlaceholderScreen("Settings")
+            SettingsScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         // ── VerbDrill (Фаза 4 срез 2: спряжение по combo-фильтрам) ─────────────

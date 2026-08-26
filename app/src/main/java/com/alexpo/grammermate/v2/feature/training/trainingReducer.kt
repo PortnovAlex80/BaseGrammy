@@ -39,17 +39,9 @@ fun trainingReducer(state: TrainingViewState, intent: TrainingIntent): TrainingV
             else -> state
         }
 
-        // Next/Skip: реальный advance — side-effect в ViewModel; новая фаза
-        // (Active/Completed/Error) публикуется после commit.
-        TrainingIntent.NextCard,
-        TrainingIntent.SkipCard -> state
-
         // Продолжить/начать заново из ResumeGate: UI → Loading; новую фазу
         // публикует ViewModel после commit (resume читает снимок, restart
         // делает Engine.restartLessonSession — mastery сохраняется).
         TrainingIntent.ResumeAccepted,
         TrainingIntent.RestartRequested -> TrainingViewState.Loading
-
-        // Выход с экрана — state не меняется; навигация идёт через эффект.
-        TrainingIntent.NavigateBack -> state
     }

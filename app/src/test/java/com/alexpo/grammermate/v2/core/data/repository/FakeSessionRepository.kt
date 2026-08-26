@@ -100,37 +100,8 @@ class FakeSessionRepository(
         }
     }
 
-    override suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId) {
-        store[sessionId.value]?.let {
-            store[sessionId.value] = it.copy(
-                currentCardId = cardId,
-                updatedAtMs = clock(),
-                revision = it.revision + 1,
-            )
-        }
-    }
 
-    override suspend fun markCardShown(sessionId: SessionId, cardId: CardId) {
-        store[sessionId.value]?.let {
-            store[sessionId.value] = it.copy(
-                shownCardIds = it.shownCardIds + cardId,
-                updatedAtMs = clock(),
-                revision = it.revision + 1,
-            )
-        }
-    }
 
-    override suspend fun updateProgress(sessionId: SessionId, correct: Int, incorrect: Int, hint: Int) {
-        store[sessionId.value]?.let {
-            store[sessionId.value] = it.copy(
-                correctCount = correct,
-                incorrectCount = incorrect,
-                hintCount = hint,
-                updatedAtMs = clock(),
-                revision = it.revision + 1,
-            )
-        }
-    }
 
     override suspend fun deleteSession(sessionId: SessionId) {
         store.remove(sessionId.value)

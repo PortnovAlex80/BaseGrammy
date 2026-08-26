@@ -189,20 +189,6 @@ abstract class SessionRepositoryContractSpec {
     }
 
     @Test
-    fun `markCardShown is idempotent and bumps revision`() = runTest {
-        val repository = repository()
-        val first = createSession(repository)
-        val before = repository.loadSession(sessionId)!!.revision
-
-        repository.markCardShown(sessionId, pool[0])
-        repository.markCardShown(sessionId, pool[0])
-
-        val loaded = repository.loadSession(sessionId)!!
-        assertThat(loaded.shownCardIds).containsExactly(pool[0])
-        assertThat(loaded.revision).isEqualTo(before + 2)
-    }
-
-    @Test
     fun `deleteSession removes snapshot entirely`() = runTest {
         val repository = repository()
         createSession(repository)

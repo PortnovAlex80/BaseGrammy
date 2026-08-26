@@ -161,43 +161,9 @@ class SessionRepositoryImpl @Inject constructor(
         sessionDao.updateStatus(sessionId.value, SessionStatus.COMPLETED.name, System.currentTimeMillis())
     }
 
-    /**
-     * Установить текущую карточку по её первичному ключу [cardId].
-     *
-     * Курсор — производная проекция: пишется `pool.indexOf(cardId)`, оба поля
-     * согласованы одной UPDATE-командой (Фаза 2: раздельное обновление
-     * `currentCardId` и `cursorIndex` устранено).
-     */
-    override suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId) {
-        val parts = sessionDao.loadSnapshotParts(sessionId.value)
-        val cursor = parts?.cards
-            ?.sortedBy { it.ord }
-            ?.indexOfFirst { it.cardId == cardId.value }
-            ?.takeIf { it >= 0 }
-            ?: 0
-        sessionDao.updateCursor(sessionId.value, cardId.value, cursor, System.currentTimeMillis())
-    }
-
-    /**
-     * Добавить карточку в множество показанных — INSERT OR IGNORE + ревизия
-     * строки +1, одной транзакцией (паритет с fake). Повторная пометка той же
-     * карточки идемпотентна, исходный `shownAtMs` сохраняется.
-     */
-    override suspend fun markCardShown(sessionId: SessionId, cardId: CardId) {
-        sessionDao.markShownAndBumpRevision(
-            SessionShownCardEntity(
-                sessionId = sessionId.value,
-                cardId = cardId.value,
-                shownAtMs = System.currentTimeMillis(),
-            ),
-            now = System.currentTimeMillis(),
-        )
-    }
-
-    /** Обновить счётчики правильных/неправильных/подсказок сессии; ревизия +1. */
-    override suspend fun updateProgress(sessionId: SessionId, correct: Int, incorrect: Int, hint: Int) {
-        sessionDao.updateCounts(sessionId.value, correct, incorrect, hint, System.currentTimeMillis())
-    }
+    // Фаза 7 плана: granular writer API (setCurrentCard/markCardShown/
+    // updateProgress) удалён из порта — единственный путь записи это атомарный
+    // saveSession (hot-updates Фазы 2 внутри SessionDao.saveSnapshot).
 
     /** Удалить сессию целиком (CASCADE снесёт pool и shown-set). */
     override suspend fun deleteSession(sessionId: SessionId) {

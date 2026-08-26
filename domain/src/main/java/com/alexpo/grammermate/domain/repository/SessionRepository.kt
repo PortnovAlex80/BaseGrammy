@@ -89,18 +89,12 @@ interface SessionRepository {
     suspend fun completeSession(sessionId: SessionId)
 
     /**
-     * Установить текущую карточку по её первичному ключу [cardId] (★ НЕ по индексу).
+     * Удалить сессию целиком (снимок + связанные данные).
      *
-     * Это устраняет класс ошибок, когда курсор и реальная карточка расходились.
+     * Фаза 7 плана: granular writer API (setCurrentCard/markCardShown/
+     * updateProgress) удалён — единственный путь записи это атомарный
+     * [saveSession] (hot-updates Фазы 2); presentation никогда не собирал
+     * снимок по частям (ADR-001).
      */
-    suspend fun setCurrentCard(sessionId: SessionId, cardId: CardId)
-
-    /** Добавить карточку в множество показанных ([SessionSnapshot.shownCardIds]). */
-    suspend fun markCardShown(sessionId: SessionId, cardId: CardId)
-
-    /** Обновить счётчики правильных/неправильных/подсказок сессии. */
-    suspend fun updateProgress(sessionId: SessionId, correct: Int, incorrect: Int, hint: Int)
-
-    /** Удалить сессию целиком (снимок + связанные данные). */
     suspend fun deleteSession(sessionId: SessionId)
 }
