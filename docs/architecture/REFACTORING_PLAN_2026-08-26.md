@@ -6,7 +6,7 @@
 
 **Область:** активное приложение v2 (`MainActivityV2`), модуль `:domain`, Room/data, Compose UX, CI и тестовый контур
 
-**Статус:** proposed execution plan
+**Статус:** accepted — Phase 0 started 2026-08-26
 
 ## 1. Итог аудита
 

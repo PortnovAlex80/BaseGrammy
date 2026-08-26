@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -128,6 +129,12 @@ private fun PacksGrid(
 }
 
 /**
+ * Стабильный test-tag карточки пака: один тег на ВСЕ карточки LazyGrid —
+ * journey-тесты адресуют элементы через `onAllNodesWithTag`, не `onNodeWithTag`.
+ */
+const val HOME_PACK_CARD_TAG = "home_pack_card"
+
+/**
  * Карточка одного пака обучения.
  *
  * Красивая заливка `primaryContainer` + закруглённые углы + тонкая тень. Прогресс
@@ -141,7 +148,9 @@ private fun PacksGrid(
 private fun PackCard(pack: Pack, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(HOME_PACK_CARD_TAG),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,

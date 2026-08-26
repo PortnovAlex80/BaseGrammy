@@ -22,6 +22,21 @@ Key points:
 - See troubleshooting section below if this path doesn't work
 
 ================================================================================
+IMPORTANT: :app JAVAC NEEDS A FULL JDK WITH jlink (2026-08-26)
+================================================================================
+
+IntelliJ JBR has NO jlink.exe, so :app:compileDebugJavaWithJavac fails with
+"jlink executable ... does not exist" (JdkImageTransform on core-for-system-modules.jar).
+For any task that reaches javac (tests, assembleDebug) use a FULL JDK instead.
+Confirmed working on this machine (Gradle 8.9 supports Java 21; compile target
+stays 17 via compileOptions):
+
+  C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain <tasks> --no-parallel --max-workers=1
+
+--no-parallel --max-workers=1 avoids the native JVM OOM when :domain and :app
+test JVMs start together (see REFACTORING_PLAN_2026-08-26.md, Phase 0).
+
+================================================================================
 REQUIREMENTS
 ================================================================================
 

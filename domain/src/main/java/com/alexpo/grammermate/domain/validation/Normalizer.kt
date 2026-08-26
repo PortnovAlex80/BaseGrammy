@@ -34,10 +34,17 @@ object Normalizer {
      * 2. NFD-декомпозиция + удаление combining diacritical marks (é → e);
      * 3. regex времени `\b(\d{1,2}):\d{2}\b` → `$1` (минуты отбрасываются);
      * 4. lowercase;
-     * 5. посимвольный фильтр: skip — `` ` ``, `´`, `.`, `,`, `?`, `!`, `:`, `;`,
+     * 5. унификация апострофов: `’` (U+2019) и `‘` (U+2018) — автозамена
+     *    мобильных клавиатур — эквивалентны ASCII `'` (U+0027). Без этого
+     *    `l’albero` ≠ `l'albero` даёт ложные «Неверно» для итальянского.
+     *    (Замечание: Training-экран сейчас проверяет ответы упрощённо в
+     *    TrainingViewModel и подключит AnswerValidator только в Фазе 1 плана
+     *    стабилизации — до этого фикс действует в Normalizer/isExactMatch/
+     *    WordBankGenerator, но не в самом Training-пути.);
+     * 6. посимвольный фильтр: skip — `` ` ``, `´`, `.`, `,`, `?`, `!`, `:`, `;`,
      *    `"`, `<`, `>`, `(`, `)`, `[`, `]`, `{`, `}`; keep — `-` (дефис) и все
      *    буквы/цифры. **Апостроф `'` — keep (расхождение с v1, см. KDoc класса).**
-     * 6. финальный collapse whitespace + trim.
+     * 7. финальный collapse whitespace + trim.
      */
     fun normalize(input: String): String {
         val trimmed = input.trim().replace(WHITESPACE_REGEX, " ")
@@ -46,8 +53,11 @@ object Normalizer {
         val noDiacritics = decomposed.replace(DIACRITICAL_MARKS_REGEX, "")
         val timeFixed = noDiacritics.replace(TIME_MINUTES_REGEX, "$1")
         val lower = timeFixed.lowercase()
+        // Апостроф остаётся значимым символом, но его типографские варианты
+        // (U+2019/U+2018 из автозамены клавиатур) сводятся к ASCII U+0027.
+        val apostropheUnified = lower.replace('’', '\'').replace('‘', '\'')
         val builder = StringBuilder()
-        for (ch in lower) {
+        for (ch in apostropheUnified) {
             when (ch) {
                 // v1 также skip-ал апостроф здесь; v2 — СОХРАНЯЕТ (исправление бага).
                 '`', '´', '.', ',', '?', '!', ':', ';', '"', '<', '>', '(', ')', '[', ']', '{', '}' -> {

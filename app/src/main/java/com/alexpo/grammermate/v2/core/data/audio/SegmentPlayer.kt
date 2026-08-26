@@ -8,6 +8,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 /**
@@ -28,7 +30,8 @@ import kotlin.coroutines.resume
  *
  * @param ttsEngine singleton Sherpa-ONNX TTS-обёртка (resident LRU cache).
  */
-class SegmentPlayer(private val ttsEngine: TtsEngineWrapper) {
+@Singleton
+class SegmentPlayer @Inject constructor(private val ttsEngine: TtsEngineWrapper) {
 
     /**
      * Сериализует concurrent callers. Player владеет TTS-доступом для своих

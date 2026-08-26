@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
 import com.alexpo.grammermate.v2.core.data.local.GrammarMateDatabase
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 /**
@@ -44,7 +45,7 @@ import javax.inject.Inject
  */
 class PackImporter @Inject constructor(
     private val database: GrammarMateDatabase,
-    private val context: Context,
+    @ApplicationContext private val context: Context,
 ) {
 
     /**

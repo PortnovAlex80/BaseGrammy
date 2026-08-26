@@ -74,6 +74,18 @@ class NormalizerTest {
     }
 
     @Test
+    fun `normalize unifies typographic apostrophes with ascii - keyboard autocorrect equivalence`() {
+        // U+2019/U+2018 (автозамена мобильных клавиатур) эквивалентны U+0027:
+        // иначе "l’albero" (ввод пользователя) ≠ "l'albero" (CSV) — ложное
+        // «Неверно» для итальянского. Фикс из аудита 2026-08-26.
+        assertThat(Normalizer.normalize("l’albero")).isEqualTo("l'albero")
+        assertThat(Normalizer.normalize("un‘ora")).isEqualTo("un'ora")
+        assertThat(Normalizer.normalize("dell’acqua")).isEqualTo(Normalizer.normalize("dell'acqua"))
+        // Апостроф остаётся значимым символом (v2 fix): "l'albero" ≠ "lalbero".
+        assertThat(Normalizer.normalize("l’albero")).isNotEqualTo("lalbero")
+    }
+
+    @Test
     fun `normalize keeps hyphen`() {
         assertThat(Normalizer.normalize("e-mail")).isEqualTo("e-mail")
         assertThat(Normalizer.normalize("mother-in-law")).isEqualTo("mother-in-law")

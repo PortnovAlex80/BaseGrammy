@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, feature/* ]
+    branches: [ main, dev, feature/* ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   build-and-test:
@@ -35,11 +35,16 @@ jobs:
         run: ./gradlew assembleDebug
 
       - name: Run unit tests
-        run: ./gradlew test
+        # GitHub-runner'ы (7 ГБ RAM) переживают 2 воркера; на dev-машинах
+        # параллельные test-JVM :domain+:app дают native OOM — локально
+        # запускать с --max-workers=1 (см. java.txt, план Фаза 0).
+        run: ./gradlew :domain:test :app:testDebugUnitTest --max-workers=2
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: app/build/reports/tests/
+          path: |
+            app/build/reports/tests/
+            domain/build/reports/tests/

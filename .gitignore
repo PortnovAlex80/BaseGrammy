@@ -121,3 +121,13 @@ app/schemas/
 app/build/
 .gradle/
 local.properties
+
+# Agent-tool workspaces (session state, worktrees, MCP config) — не исходники
+.agents/
+.claude/
+.worktrees/
+.zcode/
+
+# Generated content exports + Windows-артефакт `nul` (redirect-мусор)
+/output_it/
+/nul

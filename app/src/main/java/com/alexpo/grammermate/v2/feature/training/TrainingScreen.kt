@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +52,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.v2.core.ui.collectEffects
 import com.alexpo.grammermate.v2.core.ui.collectState
+
+/**
+ * Стабильные test-tags основного UX-пути тренировки (Фаза 0 плана
+ * стабилизации 2026-08-26: clickable/journey тесты ищут элементы по тегам,
+ * а не по тексту локали).
+ */
+object TrainingTestTags {
+    const val PROMPT_CARD = "training_prompt_card"
+    const val INPUT_FIELD = "training_input_field"
+    const val CHECK_BUTTON = "training_check_button"
+    const val NEXT_BUTTON = "training_next_button"
+    const val HINT_BUTTON = "training_hint_button"
+    const val SKIP_BUTTON = "training_skip_button"
+    const val REPORT_BUTTON = "training_report_button"
+}
 
 /**
  * Экран тренировки — прохождение карточек урока.
@@ -193,7 +209,9 @@ private fun TrainingContent(
             OutlinedTextField(
                 value = answer,
                 onValueChange = onAnswerChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(TrainingTestTags.INPUT_FIELD),
                 label = { Text("Ваш ответ") },
                 singleLine = true,
                 enabled = state.lastResult == null,
@@ -237,7 +255,9 @@ private fun TrainingContent(
 @Composable
 private fun PromptCard(card: Card, showHint: Boolean, lastResult: AnswerResult?) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(TrainingTestTags.PROMPT_CARD),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -331,13 +351,20 @@ private fun ActionRow(
         if (lastResult == null) {
             Button(
                 onClick = onSubmit,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(TrainingTestTags.CHECK_BUTTON),
                 enabled = canSubmit,
             ) {
                 Text("Проверить")
             }
         } else {
-            Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = onNext,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(TrainingTestTags.NEXT_BUTTON),
+            ) {
                 Icon(Icons.Filled.SkipNext, contentDescription = null)
                 Text("  Далее")
             }
@@ -349,7 +376,9 @@ private fun ActionRow(
         ) {
             FilledTonalButton(
                 onClick = onHint,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(TrainingTestTags.HINT_BUTTON),
                 enabled = lastResult == null,
             ) {
                 Icon(Icons.Filled.Lightbulb, contentDescription = null)
@@ -357,14 +386,21 @@ private fun ActionRow(
             }
             OutlinedButton(
                 onClick = onSkip,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(TrainingTestTags.SKIP_BUTTON),
             ) {
                 Icon(Icons.Filled.SkipNext, contentDescription = null)
                 Text("  Пропустить")
             }
         }
 
-        TextButton(onClick = onReport, modifier = Modifier.fillMaxWidth()) {
+        TextButton(
+            onClick = onReport,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.REPORT_BUTTON),
+        ) {
             Icon(Icons.Filled.Flag, contentDescription = null)
             Text("  Сообщить о проблеме")
         }

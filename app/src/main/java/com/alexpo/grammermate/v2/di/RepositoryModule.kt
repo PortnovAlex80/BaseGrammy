@@ -1,5 +1,7 @@
 package com.alexpo.grammermate.v2.di
 
+import com.alexpo.grammermate.v2.core.data.audio.AsrEnginePort
+import com.alexpo.grammermate.v2.core.data.audio.AsrEngineWrapper
 import com.alexpo.grammermate.v2.core.data.audio.SherpaAudioModelRepository
 import com.alexpo.grammermate.v2.core.data.audio.SherpaAudioRepository
 import com.alexpo.grammermate.v2.core.data.repository.ContentRepositoryImpl
@@ -75,4 +77,15 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindAudioModelRepository(impl: SherpaAudioModelRepository): AudioModelRepository
+
+    /**
+     * ASR-движок за доменным портом [AsrEnginePort] (seam из AC-8): production
+     * получает [AsrEngineWrapper], тесты — fake. Находка аудита 2026-08-26:
+     * до этой привязки первый же инжект AudioRepository в точку входа падал
+     * с `[Dagger/MissingBinding]` (сборка проходила лишь потому, что аудио-
+     * репозиторий никем не запрашивался).
+     */
+    @Binds
+    @Singleton
+    abstract fun bindAsrEnginePort(impl: AsrEngineWrapper): AsrEnginePort
 }
