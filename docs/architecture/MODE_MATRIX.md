@@ -10,11 +10,11 @@
 |---|---|---|
 | Normal lesson (LESSON) | [ниже](#normal-lesson) | **заполнена (Фаза 1)** |
 | Sequential/Mixed review (ALL_SEQUENTIAL / ALL_MIXED) | [ниже](#sequentialmixed-review) | **заполнена (Фаза 4, срез 1)** |
-| Verb drill + aux drill | [ниже](#verb-drill) | **verb drill заполнен (Фаза 4, срез 2)**; aux — TBD |
+| Verb drill + aux drill | [ниже](#verb-drill) | **verb drill заполнен (Фаза 4, срез 2)**; aux — отложено (нет контент-конвейера: manifest-секция auxDrill + импорт + парсер — отдельный срез, см. follow-up строки) |
 | Vocab drill | [ниже](#vocab-drill) | **заполнена (Фаза 4, срез 3; ADR-003 реализован)** |
 | Daily translate/vocab/verbs | [ниже](#daily-practice) | **заполнена (Фаза 4, срез 4)** |
 | Boss/mega/elite | [ниже](#boss-mega-elite) | **LESSON-boss заполнен (срез 5); MEGA/ELITE — follow-up** |
-| Story reader/quiz | — | TBD — гейт Фазы 4, срез 6 |
+| Story reader/quiz | [ниже](#story-readerquiz) | **заполнена (Фаза 4, срез 6)** |
 | Pomodoro | [ниже](#pomodoro) | **заполнена (Фаза 4, срез 7)** |
 
 Строки `TrainingMode` (3 значения), `TrainingScreenMode` (8), `CardType`, `DailyBlockType`
@@ -210,3 +210,27 @@ Follow-ups строки: таймер эфемерен (переживает rot
 process death — при возврате отсчёт начинается заново); счётчики
 cardsShown/correct — нули до интеграции хостинга тренировки внутрь wrapper'а;
 TTS-озвучка завершения — с audio-контуром Фазы 5.
+
+---
+
+## Story reader/quiz
+
+Фаза 4, срез 6 (2026-08-26; строка доблена ретроспективно при финальной
+гейт-сверке — реализация была закоммичена шагами 1–3b).
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | Маршрут `story/{packId}/{chapterId}` (typed requiredId); контент = `chapters[].storyFile` (.md, сохраняется importer'ом в filesDir/stories) | `importPackFromStream_preservesStoryMdReadableByPort` |
+| **Selection** | `.md`-файлы пака — classify STORY_MD (фикс M-3); preserveStoryFiles ПОСЛЕ DB-транзакции (идемпотентно) | тот же тест |
+| **Ordering** | Абзацы по 
+
+ исходного файла | `story text loads…` (VM-тест) |
+| **Exercise** | Чтение: stripMarkers (домен) + снятие '#'-префиксов; quiz-JSON — StoryQuizParser (строгий, M-10) | `MultilingualStoryParserAuditFixTest`, `StoryQuizParserTest` |
+| **Attempt/Progress** | — (пассивное чтение; quiz-интерактив — follow-up с контентом квизов) | — |
+| **Mastery** | Не пишет | — |
+| **Completion** | Конец скролла; Back = выход | — |
+| **Persistence** | Контент — файлы (filesDir); метаданные — chapters.storyFile в Room | импорт-тест |
+| **Navigation** | Вход — «📖 История» в главе со storyFile (pack_chapter_story); без storyFile кнопки нет | `PackContentScreen` wiring |
+
+Follow-up: quiz-интерактив по StoryQuizParser-данным (когда появятся паки с
+квизами); TTS-озвучка абзацев (audio-контур).
