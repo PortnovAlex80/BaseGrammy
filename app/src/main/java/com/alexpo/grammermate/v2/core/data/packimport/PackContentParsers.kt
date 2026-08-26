@@ -86,7 +86,7 @@ object PackContentParsers {
         ParseError,
         > = StoryQuizParser.parse(text)
 
-    fun parseBgVocabCsv(stream: InputStream): List<WordScript> =
+    fun parseBgVocabCsv(stream: InputStream): ParseResult<List<WordScript>, ParseError> =
         BgVocabCsvParser.parse(stream)
 
     /**
