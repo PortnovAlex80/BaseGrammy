@@ -12,7 +12,7 @@
 | Sequential/Mixed review (ALL_SEQUENTIAL / ALL_MIXED) | [ниже](#sequentialmixed-review) | **заполнена (Фаза 4, срез 1)** |
 | Verb drill + aux drill | [ниже](#verb-drill) | **verb drill заполнен (Фаза 4, срез 2)**; aux — TBD |
 | Vocab drill | [ниже](#vocab-drill) | **заполнена (Фаза 4, срез 3; ADR-003 реализован)** |
-| Daily translate/vocab/verbs | — | TBD — гейт Фазы 4, срез 4 |
+| Daily translate/vocab/verbs | [ниже](#daily-practice) | **заполнена (Фаза 4, срез 4)** |
 | Boss/mega/elite | — | TBD — гейт Фазы 4, срез 5 |
 | Story reader/quiz | — | TBD — гейт Фазы 4, срез 6 |
 | Pomodoro | — | TBD — гейт Фазы 4, срез 7 |
@@ -132,3 +132,28 @@ aux drill — по образцу (порт `getAuxDrillCards`).
 Follow-ups строки: вход из PackContent по `hasVocabDrill` (маршрут не публикуется
 из UI до флага манифеста); Voice-режим карточки; `bg_vocab_marks`/`bg_vocab_position`
 (тёмный v1-контур) — Фаза 5.
+
+---
+
+## Daily practice
+
+Фаза 4, срез 4 (2026-08-26). Три блока одной лентой {5 TRANSLATE, 3 VOCAB,
+2 VERBS} (AC-16); режим безсессионный — durable-состояние = курсор дня
+(`daily_cursors`, schema v4) + word-SRS для флешкарт.
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | Маршрут `daily_practice/{packId}` (typed requiredId); сессий нет — идентичность = `(packId, day-cursor)` | `blankRoute_showsError` |
+| **Selection** | [DailyTaskComposer] по курсору: sentences = карты уроков пака (SENTENCE), verbs = getVerbDrillCards, vocab = getVocabWords (rank) | `init_composesTenTasks_firstIsTranslate` |
+| **Ordering** | Порядок блоков конфигурации (T→V→Verbs); пулы срезаются смещениями курсора | `compose_eachTaskHasCorrectBlockTypeInConfigOrder` |
+| **Exercise** | Translate/Conjugate — ввод+AnswerValidator; VocabFlashcard — реколл (reveal + Знаю/Не знаю) | `vocabFlashcard_knowPath…`, `vocabReveal…` |
+| **Attempt** | Один ответ на задачу; id задач = `daily:<block>:<contentId>` (фикс M-12) | `compose_idsFollowContent_notDayIndex` |
+| **Progress** | index/total ленты; Done = reviewed/correct | `fullDay…` |
+| **Mastery** | Vocab — recordWordReview (ADR-003, ДО продвижения §3.1.5); translate/verbs — эфемерны в этом срезе (follow-up: проводка через lesson-mastery) | `vocabDontKnow_recordsIncorrectReview` (co-verify 1) |
+| **Completion** | Конец ленты → курсор += потреблённые задачи по КАЖДОМУ блоку (sentence/verb/vocab) одной записью → Done | `fullDay_advancesCursorByConsumedCounts` (5/2/3) |
+| **Persistence** | Word-SRS — пофразный durable; курсор — один saveDailyCursor на завершение дня (ошибка → Error, день не «выполнен» дважды) | тот же тест (savedCursor.single()) |
+| **Navigation** | Back = выход в любой момент; частично пройденный день НЕ двигает курсор (коммит только в конце) | контракт follows from finishDay-путь |
+
+Follow-ups: вход из PackContent (после флагов манифеста); streak/огоньки на
+завершение дня (ProgressRepository.recordPracticeCompletion — вместе с Фазой 5);
+firstSession*-семантика v1 не переносится (museum-поля курсора).

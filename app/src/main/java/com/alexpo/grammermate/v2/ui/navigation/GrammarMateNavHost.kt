@@ -8,6 +8,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.alexpo.grammermate.v2.feature.daily.DailyPracticeScreen
 import com.alexpo.grammermate.v2.feature.home.HomeScreen
 import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
@@ -130,13 +131,17 @@ fun GrammarMateNavHost(
             VerbDrillScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        // ── DailyPractice (TODO — вертикальный срез Фазы 4) ───────────────────
+        // ── DailyPractice (срез 4 Фазы 4: 3 блока одной лентой) ────────────────
         composable(
             route = Destination.DailyPractice.PATTERN,
             arguments = listOf(navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType }),
         ) { entry ->
-            val packId = entry.arguments?.getString(Destination.ARG_PACK_ID).orEmpty()
-            PlaceholderScreen("DailyPractice\npack=$packId")
+            val packId = entry.requiredId(Destination.ARG_PACK_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_PACK_ID,
+                    onBack = { navController.popBackStack() },
+                )
+            DailyPracticeScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         // ── VocabDrill (Фаза 4 срез 3: Anki-style карточки слов) ───────────────
