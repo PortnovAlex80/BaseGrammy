@@ -73,7 +73,16 @@ object TrainingTestTags {
     const val RESUME_BUTTON = "training_resume_button"
     const val RESTART_BUTTON = "training_restart_button"
     const val REPEAT_MIXED_BUTTON = "training_repeat_mixed_button"
+    const val BOSS_REWARD_LABEL = "training_boss_reward_label"
 }
+
+/** Человекочитаемый уровень boss-награды (BRONZE/SILVER/GOLD). */
+private fun rewardLabel(reward: com.alexpo.grammermate.domain.model.BossReward): String =
+    when (reward) {
+        com.alexpo.grammermate.domain.model.BossReward.BRONZE -> "🥉 Бронза"
+        com.alexpo.grammermate.domain.model.BossReward.SILVER -> "🥈 Серебро"
+        com.alexpo.grammermate.domain.model.BossReward.GOLD -> "🥇 Золото"
+    }
 
 /**
  * Экран тренировки — прохождение карточек урока (Фаза 1: golden journey).
@@ -568,6 +577,14 @@ private fun CompletedState(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            phase.reward?.let { reward ->
+                Text(
+                    text = "Награда: ${rewardLabel(reward)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag(TrainingTestTags.BOSS_REWARD_LABEL),
+                )
+            }
             Button(onClick = onFinish) { Text("К урокам") }
             OutlinedButton(
                 onClick = onRepeatMixed,

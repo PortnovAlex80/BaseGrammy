@@ -18,12 +18,14 @@ import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import com.alexpo.grammermate.domain.repository.SessionRepository
 import com.alexpo.grammermate.domain.repository.UserContentRepository
+import com.alexpo.grammermate.domain.repository.VocabDrillRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
 import com.alexpo.grammermate.v2.core.data.local.TrainingDbFixture
 import com.alexpo.grammermate.v2.core.data.repository.FakeSessionRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -471,6 +473,48 @@ class TrainingViewModelRegressionTest {
             .isEqualTo(TrainingMode.LESSON)
     }
 
+    // ── Фаза 4 срез 5: boss-награда урока по порогам BossReward.pct ──────────
+
+    @Test
+    fun completion_allCorrect_savesGoldBossReward() {
+        val vocabRepo = mockk<com.alexpo.grammermate.domain.repository.VocabDrillRepository>(relaxed = true)
+        val vm = trainingViewModel(vocabRepo = vocabRepo)
+        TrainingDbFixture.CARD_IDS.forEachIndexed { index, _ ->
+            vm.onDraftChange("answer $index")
+            vm.submitAnswer()
+            vm.next()
+        }
+
+        val state = vm.state.value as TrainingViewState.Completed
+        assertThat(state.reward).isEqualTo(com.alexpo.grammermate.domain.model.BossReward.GOLD)
+        coVerify(exactly = 1) {
+            vocabRepo.saveBossReward(packId, com.alexpo.grammermate.domain.model.BossType.LESSON, lessonId.value, com.alexpo.grammermate.domain.model.BossReward.GOLD, any())
+        }
+    }
+
+    @Test
+    fun completion_oneOfThree_savesBronze() {
+        val vocabRepo = mockk<com.alexpo.grammermate.domain.repository.VocabDrillRepository>(relaxed = true)
+        val vm = trainingViewModel(vocabRepo = vocabRepo)
+        vm.onDraftChange("answer 0"); vm.submitAnswer(); vm.next()
+        vm.onDraftChange("nope"); vm.submitAnswer(); vm.next()
+        vm.onDraftChange("nope"); vm.submitAnswer(); vm.next()
+
+        val state = vm.state.value as TrainingViewState.Completed
+        assertThat(state.reward).isEqualTo(com.alexpo.grammermate.domain.model.BossReward.BRONZE)
+    }
+
+    @Test
+    fun completion_zeroCorrect_savesNothing() {
+        val vocabRepo = mockk<com.alexpo.grammermate.domain.repository.VocabDrillRepository>(relaxed = true)
+        val vm = trainingViewModel(vocabRepo = vocabRepo)
+        repeat(3) { vm.onDraftChange("nope"); vm.submitAnswer(); vm.next() }
+
+        val state = vm.state.value as TrainingViewState.Completed
+        assertThat(state.reward).isNull()
+        coVerify(exactly = 0) { vocabRepo.saveBossReward(any(), any(), any(), any(), any()) }
+    }
+
     // ── Хелперы ──────────────────────────────────────────────────────────────
 
     private fun trainingViewModel(
@@ -478,11 +522,13 @@ class TrainingViewModelRegressionTest {
             mapOf("packId" to packId.value, "lessonId" to lessonId.value)
         ),
         engine: SessionEngine = sessionEngine(),
+        vocabRepo: VocabDrillRepository = mockk(relaxed = true),
     ): TrainingViewModel = TrainingViewModel(
         savedStateHandle = handle,
         sessionEngine = engine,
         contentRepository = contentRepository(),
         userContentRepository = userContentRepository,
+        vocabDrillRepository = vocabRepo,
         answerValidator = AnswerValidator(),
     )
 

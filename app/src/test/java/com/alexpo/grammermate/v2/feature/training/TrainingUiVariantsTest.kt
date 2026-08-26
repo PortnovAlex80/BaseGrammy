@@ -211,6 +211,7 @@ class TrainingUiVariantsTest {
             sessionEngine = SessionEngine(parts.first, parts.second, parts.third, clock = { 1L }),
             contentRepository = parts.second,
             userContentRepository = parts.third,
+            vocabDrillRepository = io.mockk.mockk(relaxed = true),
             answerValidator = AnswerValidator(),
         )
     }
@@ -233,6 +234,7 @@ class TrainingUiVariantsTest {
             sessionEngine = engine,
             contentRepository = contentRepository,
             userContentRepository = userContentRepository,
+            vocabDrillRepository = io.mockk.mockk(relaxed = true),
             answerValidator = AnswerValidator(),
         )
     }

@@ -94,6 +94,7 @@ class TrainingScreenTest {
             sessionEngine = SessionEngine(sessionRepository, contentRepository, userContentRepository, clock = { 1L }),
             contentRepository = contentRepository,
             userContentRepository = userContentRepository,
+            vocabDrillRepository = io.mockk.mockk(relaxed = true),
             answerValidator = AnswerValidator(),
         )
     }

@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.v2.feature.training
 
+import com.alexpo.grammermate.domain.model.BossReward
 import com.alexpo.grammermate.domain.model.Card
 
 /**
@@ -58,6 +59,8 @@ sealed interface TrainingViewState {
         val correctCount: Int,
         val incorrectCount: Int,
         val totalCards: Int,
+        /** Boss-награда за урок по порогу правильных (null — ниже BRONZE/ошибка). */
+        val reward: BossReward? = null,
     ) : TrainingViewState
 
     /**

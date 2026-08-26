@@ -13,7 +13,7 @@
 | Verb drill + aux drill | [ниже](#verb-drill) | **verb drill заполнен (Фаза 4, срез 2)**; aux — TBD |
 | Vocab drill | [ниже](#vocab-drill) | **заполнена (Фаза 4, срез 3; ADR-003 реализован)** |
 | Daily translate/vocab/verbs | [ниже](#daily-practice) | **заполнена (Фаза 4, срез 4)** |
-| Boss/mega/elite | — | TBD — гейт Фазы 4, срез 5 |
+| Boss/mega/elite | [ниже](#boss-mega-elite) | **LESSON-boss заполнен (срез 5); MEGA/ELITE — follow-up** |
 | Story reader/quiz | — | TBD — гейт Фазы 4, срез 6 |
 | Pomodoro | — | TBD — гейт Фазы 4, срез 7 |
 
@@ -157,3 +157,30 @@ Follow-ups строки: вход из PackContent по `hasVocabDrill` (мар�
 Follow-ups: вход из PackContent (после флагов манифеста); streak/огоньки на
 завершение дня (ProgressRepository.recordPracticeCompletion — вместе с Фазой 5);
 firstSession*-семантика v1 не переносится (museum-поля курсора).
+
+---
+
+## Boss/mega/elite
+
+Фаза 4, срез 5 (2026-08-26). LESSON-boss = завершение урока с подсчётом
+процента правильных и выдачей награды по порогам [BossReward.pct]
+(BRONZE 30 / SILVER 60 / GOLD 90). Отдельного экрана нет — награда встроена
+в Completed-фазу тренировки (босс = сам урок, «битва» = проход).
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | `boss_rewards` PK `(packId, bossType, scopeKey)`; scopeKey LESSON-босса = lessonId | `VocabBossRewardTest.getBossRewards_keyIncludesBossType` |
+| **Selection** | Пул обычного урока (boss не меняет selection/ordering) | Normal lesson строка |
+| **Ordering** | — (наследует LESSON) | — |
+| **Exercise** | — (наследует LESSON) | — |
+| **Attempt** | — (наследует LESSON) | — |
+| **Progress** | correct/total → pct → порог [BossReward.pct] | `completion_allCorrect_savesGold…`, `…oneOfThree_savesBronze` |
+| **Mastery** | Как Normal lesson (completion-hook той же транзакцией — Фаза 2) | `RoomSessionAtomicCommitTest` |
+| **Completion** | При COMPLETED: level(pct) ≥ BRONZE → saveBossReward; ниже порога — ничего; ошибка записи не роняет Completed (best-of перевыдаст) | `completion_zeroCorrect_savesNothing` (co-verify 0) |
+| **Persistence** | Exactly-once/best-of: повторная выдача no-op, понижение невозможно, повышение фиксирует время (шаг 1 среза) | `VocabBossRewardTest` (save_sameReward_isNoOp, upgradeOnly) |
+| **Navigation** | Completed показывает уровень награды (training_boss_reward_label) + repeat-mixed как обычно | `TrainingScreenTest` (Completed-фаза) |
+
+Follow-up строки: MEGA-босс (пул нескольких уроков/пака) и ELITE (расширенный
+пул ×EliteSizeMultiplier) — отдельные входы после флагов манифеста; пороги
+остаются [BossReward.pct]; стартегия дуления TrainingConfig vs Enums.pct
+(аудит L-18) закрывается при появлении второго потребителя констант.

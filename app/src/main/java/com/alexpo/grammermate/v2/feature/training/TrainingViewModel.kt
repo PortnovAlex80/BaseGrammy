@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.domain.TrainingConfig
 import com.alexpo.grammermate.domain.model.BadSentence
+import com.alexpo.grammermate.domain.model.BossReward
+import com.alexpo.grammermate.domain.model.BossType
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.LanguageId
@@ -16,6 +18,7 @@ import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import com.alexpo.grammermate.domain.repository.UserContentRepository
+import com.alexpo.grammermate.domain.repository.VocabDrillRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
 import com.alexpo.grammermate.v2.core.ui.MviReducer
@@ -68,6 +71,7 @@ class TrainingViewModel @Inject constructor(
     private val sessionEngine: SessionEngine,
     private val contentRepository: ContentRepository,
     private val userContentRepository: UserContentRepository,
+    private val vocabDrillRepository: VocabDrillRepository,
     private val answerValidator: AnswerValidator,
 ) : MviViewModel<TrainingViewState, TrainingIntent, TrainingEffect>(
     initialState = TrainingViewState.Loading,
@@ -385,11 +389,29 @@ class TrainingViewModel @Inject constructor(
             .onSuccess { snapshot ->
                 clearDraft()
                 if (snapshot.status == SessionStatus.COMPLETED) {
+                    // Boss-награда урока (срез 5 Фазы 4): порог правильных
+                    // BossReward.pct; выдача exactly-once/best-of в репозитории.
+                    // Ошибка записи не роняет Completed — награда не показывается
+                    // и будет перевыдана при следующем завершении (best-of).
+                    val total = snapshot.poolCardIds.size
+                    val reward = bossRewardFor(snapshot.correctCount, total)
+                        ?.let { reward ->
+                            runCatching {
+                                vocabDrillRepository.saveBossReward(
+                                    packId = packId,
+                                    bossType = BossType.LESSON,
+                                    scopeKey = lessonId.value,
+                                    reward = reward,
+                                    nowMs = System.currentTimeMillis(),
+                                )
+                            }.getOrNull()?.let { reward }
+                        }
                     updateState {
                         TrainingViewState.Completed(
                             correctCount = snapshot.correctCount,
                             incorrectCount = snapshot.incorrectCount,
-                            totalCards = snapshot.poolCardIds.size,
+                            totalCards = total,
+                            reward = reward,
                         )
                     }
                 } else {
@@ -399,6 +421,18 @@ class TrainingViewModel @Inject constructor(
             .onFailure { e ->
                 updateState { TrainingViewState.Error(e.message ?: "Не удалось сохранить прогресс") }
             }
+    }
+
+    /** Уровень boss-награды по проценту правильных (пороги [BossReward.pct]). */
+    private fun bossRewardFor(correct: Int, total: Int): BossReward? {
+        if (total <= 0) return null
+        val pct = correct * 100.0 / total
+        return when {
+            pct >= BossReward.GOLD.pct -> BossReward.GOLD
+            pct >= BossReward.SILVER.pct -> BossReward.SILVER
+            pct >= BossReward.BRONZE.pct -> BossReward.BRONZE
+            else -> null
+        }
     }
 
     /**
