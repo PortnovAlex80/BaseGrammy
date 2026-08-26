@@ -1,10 +1,13 @@
 package com.alexpo.grammermate.v2.feature.training
 
 import androidx.lifecycle.SavedStateHandle
+import com.alexpo.grammermate.domain.model.BadSentence
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.CardType
+import com.alexpo.grammermate.domain.model.LanguageId
 import com.alexpo.grammermate.domain.model.LessonId
+import com.alexpo.grammermate.domain.model.Pack
 import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.domain.model.SessionSnapshot
@@ -54,12 +57,20 @@ class TrainingViewModelRegressionTest {
     private lateinit var sessionRepository: FakeSessionRepository
     private lateinit var userContentRepository: UserContentRepository
 
+    /** Записанные флаги «плохое предложение» (Фаза 3: persist Flag). */
+    private val flaggedSentences = mutableListOf<BadSentence>()
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         sessionRepository = FakeSessionRepository()
+        flaggedSentences.clear()
         userContentRepository = mockk {
             coEvery { getHiddenCardIds() } returns emptySet()
+            coEvery { flagBadSentence(any()) } answers {
+                val entry: BadSentence = firstArg()
+                flaggedSentences += entry
+            }
         }
     }
 
@@ -280,6 +291,44 @@ class TrainingViewModelRegressionTest {
         assertThat(vm.state.value).isInstanceOf(TrainingViewState.Empty::class.java)
     }
 
+    /**
+     * Фаза 3: «Persist Report/Flag» — flagCard пишет BadSentence в
+     * UserContentRepository с контекстом карточки и НЕ меняет сессию.
+     */
+    @Test
+    fun flagCard_persistsBadSentence_withoutTouchingSession() {
+        val vm = trainingViewModel()
+        vm.onDraftChange("answer 0")
+        vm.submitAnswer() // теперь Feedback
+        val persistedBefore = sessionRepository.store[sessionId.value]!!
+
+        vm.flagCard()
+
+        assertThat(flaggedSentences).hasSize(1)
+        val flag = flaggedSentences.single()
+        assertThat(flag.cardId.value).isEqualTo(TrainingDbFixture.CARD_IDS.first())
+        assertThat(flag.packId).isEqualTo(packId)
+        assertThat(flag.languageId.value).isEqualTo("it")
+        assertThat(flag.mode).isEqualTo("LESSON")
+        // Сессия не тронута: ни ревизия, ни счётчики (bad ≠ hide).
+        val persistedAfter = sessionRepository.store[sessionId.value]!!
+        assertThat(persistedAfter).isEqualTo(persistedBefore)
+    }
+
+    /** Фаза 3: невалидный маршрут (пустые required ID) — явная Error, не пустая сессия. */
+    @Test
+    fun init_blankRouteArgs_showsErrorWithoutSession() {
+        val vm = trainingViewModel(
+            handle = SavedStateHandle(mapOf("packId" to "", "lessonId" to "")),
+        )
+
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Error::class.java)
+        assertThat(sessionRepository.store).isEmpty()
+        // Retry на невалидном маршруте — no-op (маршрута нет, повторять нечего).
+        vm.reload()
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Error::class.java)
+    }
+
     // ── Хелперы ──────────────────────────────────────────────────────────────
 
     private fun trainingViewModel(
@@ -291,6 +340,7 @@ class TrainingViewModelRegressionTest {
         savedStateHandle = handle,
         sessionEngine = engine,
         contentRepository = contentRepository(),
+        userContentRepository = userContentRepository,
         answerValidator = AnswerValidator(),
     )
 
@@ -299,6 +349,13 @@ class TrainingViewModelRegressionTest {
 
     private fun contentRepository(): ContentRepository = mockk(relaxed = true) {
         coEvery { getCards(lessonId) } returns lessonCards()
+        coEvery { getPack(packId) } returns Pack(
+            id = packId,
+            languageId = LanguageId("it"),
+            displayName = "Fixture Pack",
+            version = "1",
+            importedAtMs = 0L,
+        )
     }
 
     private fun lessonCards(): List<Card> =

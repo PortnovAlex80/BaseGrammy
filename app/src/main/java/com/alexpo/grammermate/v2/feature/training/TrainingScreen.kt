@@ -34,12 +34,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -91,15 +96,22 @@ fun TrainingScreen(
 ) {
     val state = collectState(viewModel.state)
 
+    // Snackbar для one-shot эффектов (Фаза 3: ShowToast больше не no-op).
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     collectEffects(viewModel.effects) { effect ->
         when (effect) {
             TrainingEffect.NavigateBack -> onNavigateBack()
-            is TrainingEffect.ShowToast -> { /* TODO(Фаза 3): SnackbarHostState.showSnackbar */ }
+            is TrainingEffect.ShowToast -> scope.launch {
+                snackbarHostState.showSnackbar(effect.message)
+            }
             is TrainingEffect.PlayTts -> { /* TODO(Фаза 5): TTS после session commit */ }
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Тренировка", style = MaterialTheme.typography.titleLarge) },

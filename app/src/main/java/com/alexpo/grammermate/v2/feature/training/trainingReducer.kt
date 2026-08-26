@@ -45,7 +45,6 @@ fun trainingReducer(state: TrainingViewState, intent: TrainingIntent): TrainingV
         TrainingIntent.SkipCard -> state
 
         // Флаг карточки — пока только UI-noop (persist Report/Flag — Фаза 3).
-        TrainingIntent.FlagCard -> state
 
         // Выход с экрана — state не меняется; навигация идёт через эффект.
         TrainingIntent.NavigateBack -> state

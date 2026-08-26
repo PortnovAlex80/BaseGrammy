@@ -2,6 +2,7 @@ package com.alexpo.grammermate.v2.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -10,6 +11,7 @@ import androidx.navigation.navArgument
 import com.alexpo.grammermate.v2.feature.home.HomeScreen
 import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
+import com.alexpo.grammermate.v2.ui.components.InvalidRouteScreen
 import com.alexpo.grammermate.v2.ui.components.PlaceholderScreen
 
 /**
@@ -56,7 +58,14 @@ fun GrammarMateNavHost(
                 navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType },
             ),
         ) { entry ->
-            val packId = entry.arguments?.getString(Destination.ARG_PACK_ID).orEmpty()
+            // Typed route-аргумент (Фаза 3): required ID без `orEmpty()` —
+            // невалидный/deep-link-маршрут получает явный InvalidRoute, а не
+            // экран с пустым идентификатором.
+            val packId = entry.requiredId(Destination.ARG_PACK_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_PACK_ID,
+                    onBack = { navController.popBackStack() },
+                )
             PackContentScreen(
                 packId = packId,
                 onNavigateBack = { navController.popBackStack() },
@@ -74,8 +83,16 @@ fun GrammarMateNavHost(
                 navArgument(Destination.ARG_LESSON_ID) { type = NavType.StringType },
             ),
         ) { entry ->
-            val packId = entry.arguments?.getString(Destination.ARG_PACK_ID).orEmpty()
-            val lessonId = entry.arguments?.getString(Destination.ARG_LESSON_ID).orEmpty()
+            val packId = entry.requiredId(Destination.ARG_PACK_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_PACK_ID,
+                    onBack = { navController.popBackStack() },
+                )
+            val lessonId = entry.requiredId(Destination.ARG_LESSON_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_LESSON_ID,
+                    onBack = { navController.popBackStack() },
+                )
             TrainingScreen(
                 packId = packId,
                 lessonId = lessonId,
@@ -107,3 +124,11 @@ fun GrammarMateNavHost(
         }
     }
 }
+
+/**
+ * Обязательный строковый nav-аргумент (Фаза 3 плана: «запретить `orEmpty()`
+ * для required IDs»). Невалидный deep-link/restore не должен попадать в экран
+ * с пустым идентификатором — вызывающий показывает InvalidRouteScreen.
+ */
+private fun NavBackStackEntry.requiredId(key: String): String? =
+    arguments?.getString(key)?.takeIf { it.isNotBlank() }

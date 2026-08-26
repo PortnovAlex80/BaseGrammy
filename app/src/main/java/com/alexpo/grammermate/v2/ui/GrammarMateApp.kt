@@ -67,6 +67,11 @@ fun GrammarMateApp(
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
 
+        // Focused-флоу (Фаза 3 плана): тренировка иммерсивна — bottom bar/rail
+        // скрываются, чтобы не отвлекать и не съедать место под IME. Back
+        // возвращает к chrome-навигации (сессия durable — потерь нет).
+        val showChrome = currentRoute?.startsWith(Destination.ROUTE_TRAINING) != true
+
         // Активный таб (Home / Settings) — для подсветки в bar/rail.
         val selectedTab = remember(currentRoute) { resolveTopTab(currentRoute) }
 
@@ -75,6 +80,7 @@ fun GrammarMateApp(
         ) { innerPadding ->
             AdaptiveNavigationScaffold(
                 useNavRail = useNavRail,
+                showChrome = showChrome,
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     navController.navigate(tab.destination.route()) {
@@ -141,10 +147,11 @@ private fun resolveTopTab(currentRoute: String?): TopTab =
  * Адаптивный контейнер навигации: [NavigationRail] (medium+) или
  * [NavigationBar] (compact) + контент.
  *
- * Отрисовывает только навигационный chrome; сам контент передаётся в [content]
- * как `PaddingValues`, чтобы экраны сами занимали оставшееся пространство.
+ * На focused-флоу (`showChrome = false`, план Фаза 3) навигационный chrome не
+ * отрисовывается вовсе — контент занимает весь экран.
  *
  * @param useNavRail      true → rail (планшет/фолдабл), false → bottom bar (телефон).
+ * @param showChrome      false → скрыть bar/rail (иммерсивные экраны: Training).
  * @param selectedTab     текущий активный таб.
  * @param onTabSelected   колбэк выбора таба.
  * @param scaffoldPadding padding от внешнего Scaffold (status/gesture bars).
@@ -153,11 +160,23 @@ private fun resolveTopTab(currentRoute: String?): TopTab =
 @Composable
 private fun AdaptiveNavigationScaffold(
     useNavRail: Boolean,
+    showChrome: Boolean,
     selectedTab: TopTab,
     onTabSelected: (TopTab) -> Unit,
     scaffoldPadding: PaddingValues,
     content: @Composable (PaddingValues) -> Unit,
 ) {
+    if (!showChrome) {
+        // Focused-флоу: полный экран без навигационного chrome.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(scaffoldPadding),
+        ) {
+            content(PaddingValues(0.dp))
+        }
+        return
+    }
     if (useNavRail) {
         // Medium/Expanded: навигационная rail слева + контент справа.
         Row(modifier = Modifier.fillMaxSize()) {

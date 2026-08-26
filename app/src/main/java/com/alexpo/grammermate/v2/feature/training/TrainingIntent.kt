@@ -33,9 +33,6 @@ sealed interface TrainingIntent : MviIntent {
     /** Пропустить карточку без ответа (в [TrainingViewState.Active]). */
     data object SkipCard : TrainingIntent
 
-    /** Пометить текущую карточку флажком («плохое» предложение; persist — Фаза 3). */
-    data object FlagCard : TrainingIntent
-
     /** Пользователь закрыл экран/нажал back. */
     data object NavigateBack : TrainingIntent
 }

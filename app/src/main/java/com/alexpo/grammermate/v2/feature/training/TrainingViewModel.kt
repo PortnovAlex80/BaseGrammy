@@ -3,15 +3,19 @@ package com.alexpo.grammermate.v2.feature.training
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.domain.TrainingConfig
+import com.alexpo.grammermate.domain.model.BadSentence
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.domain.model.CardId
+import com.alexpo.grammermate.domain.model.LanguageId
 import com.alexpo.grammermate.domain.model.InputMode
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.domain.model.SessionSnapshot
 import com.alexpo.grammermate.domain.model.SessionStatus
+import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.UserContentRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
 import com.alexpo.grammermate.v2.core.ui.MviReducer
@@ -63,6 +67,7 @@ class TrainingViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val sessionEngine: SessionEngine,
     private val contentRepository: ContentRepository,
+    private val userContentRepository: UserContentRepository,
     private val answerValidator: AnswerValidator,
 ) : MviViewModel<TrainingViewState, TrainingIntent, TrainingEffect>(
     initialState = TrainingViewState.Loading,
@@ -85,8 +90,18 @@ class TrainingViewModel @Inject constructor(
     /** Карточки урока по PK — грузятся один раз на вход, advance не перечитывает контент. */
     private var cardsById: Map<CardId, Card> = emptyMap()
 
+    /** Required nav-аргументы валидны (Фаза 3: `orEmpty()` для ID запрещён планом). */
+    private val routeValid: Boolean =
+        packId.value.isNotBlank() && lessonId.value.isNotBlank()
+
     init {
-        reload()
+        if (routeValid) {
+            reload()
+        } else {
+            // Невалидный маршрут (NavHost обычно отсекает раньше — defense-in-depth):
+            // явная ошибка вместо сессии с пустыми PK.
+            updateState { TrainingViewState.Error("Некорректный маршрут тренировки") }
+        }
     }
 
     // ── Загрузка / resume ─────────────────────────────────────────────────────
@@ -98,6 +113,7 @@ class TrainingViewModel @Inject constructor(
      * перезапускается свежим проходом с тем же PK.
      */
     fun reload() {
+        if (!routeValid) return // невалидный маршрут: Retry не имеет смысла.
         onIntent(TrainingIntent.StartSession)
         viewModelScope.launch {
             commands.withLock {
@@ -215,8 +231,43 @@ class TrainingViewModel @Inject constructor(
     /** Запросить подсказку (эфемерный UI; persist hintCount — Фаза 2). */
     fun requestHint() = onIntent(TrainingIntent.RequestHint)
 
-    /** Пометить карточку флажком («плохое» предложение). Persist — Фаза 3. */
-    fun flagCard() = onIntent(TrainingIntent.FlagCard)
+    /**
+     * Пометить карточку флажком («плохое» предложение) — Фаза 3 плана:
+     * «Persist Report/Flag». Запись идёт в пользовательский контент
+     * ([UserContentRepository.flagBadSentence]) с полным контекстом карточки;
+     * session state при этом НЕ меняется (пул/currentCard не трогаются —
+     * дизайн bad ≠ hide). Результат — ephemeral [TrainingEffect.ShowToast],
+     * ошибка — тоже ShowToast (не молча, не крашем).
+     */
+    fun flagCard() {
+        // Флаг доступен и во время ввода (Active), и после ответа (Feedback).
+        val card = when (val s = currentState) {
+            is TrainingViewState.Active -> s.card
+            is TrainingViewState.Feedback -> s.card
+            else -> return
+        }
+        viewModelScope.launch {
+            runCatching {
+                val languageId = contentRepository.getPack(packId)?.languageId
+                    ?: LanguageId("unknown")
+                userContentRepository.flagBadSentence(
+                    BadSentence(
+                        packId = packId,
+                        cardId = card.id,
+                        languageId = languageId,
+                        sentence = card.acceptedAnswers.firstOrNull().orEmpty(),
+                        translation = card.promptRu,
+                        mode = TrainingMode.LESSON.name,
+                        addedAtMs = System.currentTimeMillis(),
+                    ),
+                )
+            }.onSuccess {
+                emitEffect(TrainingEffect.ShowToast("Предложение отправлено на проверку"))
+            }.onFailure {
+                emitEffect(TrainingEffect.ShowToast("Не удалось сохранить отметку"))
+            }
+        }
+    }
 
     /**
      * Выйти с экрана: сессия durable (каждый commit — saveSession), снимок

@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -81,6 +82,7 @@ fun HomeScreen(
             state.isLoading -> LoadingState(modifier = Modifier.padding(innerPadding))
             state.error != null -> ErrorState(
                 message = state.error!!,
+                onRetry = viewModel::retry,
                 modifier = Modifier.padding(innerPadding),
             )
 
@@ -132,6 +134,9 @@ private fun PacksGrid(
  * journey-тесты адресуют элементы через `onAllNodesWithTag`, не `onNodeWithTag`.
  */
 const val HOME_PACK_CARD_TAG = "home_pack_card"
+
+/** Кнопка Retry в error-state Home (Фаза 3). */
+const val HOME_RETRY_BUTTON_TAG = "home_retry_button"
 
 /**
  * Карточка одного пака обучения.
@@ -198,7 +203,11 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 
 /** Состояние ошибки — сообщение по центру. */
 @Composable
-private fun ErrorState(message: String, modifier: Modifier = Modifier) {
+private fun ErrorState(
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -218,6 +227,16 @@ private fun ErrorState(message: String, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            // Фаза 3 плана: Retry повторяет неуспешную операцию (re-query),
+            // а не работает кнопкой Back.
+            Button(
+                onClick = onRetry,
+                modifier = Modifier
+                    .testTag(HOME_RETRY_BUTTON_TAG)
+                    .padding(top = 8.dp),
+            ) {
+                Text("Повторить")
+            }
         }
     }
 }
