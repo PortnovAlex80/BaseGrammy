@@ -1,3 +1,4 @@
 # Architecture decisions
 
 1. [001. Incremental SessionEngine integration](001-incremental-session-engine-integration.md)
+2. [002. SRS: единый источник истины (staged)](002-srs-single-source-of-truth.md)
