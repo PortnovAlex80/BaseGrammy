@@ -92,6 +92,10 @@ android {
 
 tasks.withType<Test> {
     jvmArgs("-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8")
+    // Robolectric-набор вырос (584 теста) — дефолтного heap тест-JVM мало
+    // (OutOfMemoryError на поздних классах после загрузки нескольких
+    // Android-environment'ов Robolectric); 2g стабилизирует прогоны.
+    maxHeapSize = "2g"
     systemProperty("android.manifest_resource_path",
         layout.buildDirectory.file("intermediates/merged_manifests/debug/AndroidManifest.xml").get().asFile.absolutePath)
 }

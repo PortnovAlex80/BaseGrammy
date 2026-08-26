@@ -1,44 +1,119 @@
 package com.alexpo.grammermate.v2.core.data.packimport
 
+import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.StoryPhase
+import com.alexpo.grammermate.domain.model.StoryQuestion
 import com.alexpo.grammermate.domain.model.StoryQuiz
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Парсер Story JSON → [StoryQuiz] (SRS-002 FR-5, AC-10).
+ * Парсер Story JSON → [StoryQuiz] (SRS-002 FR-5, AC-10; срез 6 Фазы 4).
  *
- * Story-импорт использует **доменный** `MultilingualStoryParser` (E01 FR-12,
- * `:domain/story/`, pure Kotlin) для разворачивания разметки `{it}…{/it}`, `{en}`,
- * `{ru}`, … в `Segment.Text`/`Segment.Pause(ms)`, и **этот** парсер для
- * JSON-структуры квиза:
- * - `storyId`, `lessonId`, `phase: StoryPhase.CHECK_IN|CHECK_OUT`, `text`, `questions: List<StoryQuestion>`.
+ * JSON-структура квиза:
+ * - `storyId`, `lessonId`, `phase: "CHECK_IN"|"CHECK_OUT"`, `text`, `questions: List<StoryQuestion>`.
  * - Каждый `StoryQuestion` = `qId, prompt, options: List<String>, correctIndex, explain?`.
- * - Валидация: `correctIndex in options.indices`, иначе [ParseError.InvalidFormat].
  *
- * SCAFFOLD: контракт зафиксирован SRS-002 FR-5; реализация — TODO (AC-10).
- * Legacy-тест `StoryQuizParserTest` переносится в v2 без изменения утверждений (NFR-6).
- * Доменный `MultilingualStoryParser` уже существует в `:domain` (E01) — data-слой
- * только вызывает `MultilingualStoryParser.parseSegments(content, defaultLanguageId)`.
+ * Валидация (строгая — фикс аудита M-10):
+ * - неизвестная `phase` → [ParseError.InvalidFormat], а НЕ молчаливый CHECK_IN
+ *   (финальный квиз главы не должен незаметно превращаться во вводный);
+ * - `correctIndex` вне `options.indices` → [ParseError.InvalidFormat];
+ * - пустые `options`/`questions`, пустые `storyId`/`lessonId` → InvalidFormat.
  *
- * @see <a href="../../../../../../../../docs/requirements/REQ-002-data-room/02-srs.md">SRS-002 FR-5</a>
+ * Story-разметка (`{it}…{/it}`, `{pause:N}`) в `text` НЕ разворачивается здесь —
+ * это делает доменный `MultilingualStoryParser` при рендере/TTS (E01 FR-12).
  */
 object StoryQuizParser {
+
+    private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * Распарсить Story JSON в [StoryQuiz].
      *
      * @param text JSON-текст стори (один `.json` файл из пака, кроме `manifest.json`).
-     * @return [ParseResult] с `StoryQuiz`; failure — если JSON невалиден или `correctIndex` вне диапазона.
+     * @return [ParseResult.Success] с квизом; [ParseResult.Failure] — битый JSON,
+     *         неверная структура, неизвестная фаза или `correctIndex` вне диапазона.
      */
     fun parse(text: String): ParseResult<StoryQuiz, ParseError> {
-        TODO("AC-10: реализовать StoryQuizParser.parse (legacy 1:1, regression-locked)")
+        val root = runCatching { json.parseToJsonElement(text).jsonObject }
+            .getOrElse {
+                return ParseResult.failure(
+                    listOf(ParseError.InvalidFormat(reason = "Story JSON не распознан: ${it.message}"))
+                )
+            }
+
+        val storyId = root.stringField("storyId")
+            ?: return invalid("отсутствует/пусто 'storyId'")
+        val lessonId = root.stringField("lessonId")
+            ?: return invalid("отсутствует/пусто 'lessonId'")
+        val phase = parsePhase(root.stringField("phase"))
+            ?: return invalid("неизвестная 'phase' (ожидается CHECK_IN|CHECK_OUT): ${root.stringField("phase")}")
+        val storyText = root.stringField("text")
+            ?: return invalid("отсутствует/пусто 'text'")
+
+        val questionsArray = runCatching { root["questions"]?.jsonArray }
+            .getOrElse { return invalid("'questions' не является массивом") }
+            ?: return invalid("отсутствует 'questions'")
+        if (questionsArray.isEmpty()) return invalid("'questions' пуст")
+
+        val questions = mutableListOf<StoryQuestion>()
+        questionsArray.forEachIndexed { index, element ->
+            val q = runCatching { element.jsonObject }.getOrElse {
+                return invalid("question[$index]: не объект")
+            }
+            val qId = q.stringField("qId") ?: return invalid("question[$index]: отсутствует 'qId'")
+            val prompt = q.stringField("prompt") ?: return invalid("question[$index]: отсутствует 'prompt'")
+            val options = runCatching { q["options"]?.jsonArray }
+                .getOrElse { return invalid("question[$index]: 'options' не массив") }
+                ?: return invalid("question[$index]: отсутствует 'options'")
+            val optionTexts = options.mapNotNull { runCatching { it.jsonPrimitive.content }.getOrNull() }
+            if (optionTexts.isEmpty()) return invalid("question[$index]: 'options' пуст")
+            val correct = q["correctIndex"]?.let {
+                runCatching { it.jsonPrimitive.content.toIntOrNull() }.getOrNull()
+            } ?: return invalid("question[$index]: отсутствует/не число 'correctIndex'")
+            if (correct !in optionTexts.indices) {
+                return invalid("question[$index]: correctIndex=$correct вне options.indices=0..${optionTexts.lastIndex}")
+            }
+            questions += StoryQuestion(
+                qId = qId,
+                prompt = prompt,
+                options = optionTexts,
+                correctIndex = correct,
+                explain = q.stringField("explain"),
+            )
+        }
+
+        return ParseResult.Success(
+            StoryQuiz(
+                storyId = storyId,
+                lessonId = LessonId(lessonId),
+                phase = phase,
+                text = storyText,
+                questions = questions,
+            )
+        )
     }
 
     /**
      * Фаза стори из строки JSON (`"CHECK_IN"` / `"CHECK_OUT"`).
      *
-     * SCAFFOLD: helper для body-задачи; по умолчанию маппит неизвестные строки в `CHECK_IN`.
+     * СТРОГО (фикс M-10): неизвестное значение → null → вызывающий возвращает
+     * [ParseError.InvalidFormat]; молчаливый маппинг в CHECK_IN запрещён.
      */
-    fun parsePhase(raw: String?): StoryPhase {
-        TODO("AC-10: реализовать StoryQuizParser.parsePhase — map JSON string → StoryPhase")
+    fun parsePhase(raw: String?): StoryPhase? = when (raw?.trim()?.uppercase()) {
+        "CHECK_IN" -> StoryPhase.CHECK_IN
+        "CHECK_OUT" -> StoryPhase.CHECK_OUT
+        else -> null
     }
+
+    // ── Хелперы ──────────────────────────────────────────────────────────────
+
+    private fun invalid(reason: String): ParseResult.Failure<StoryQuiz, ParseError> =
+        ParseResult.Failure(listOf(ParseError.InvalidFormat(reason = reason)))
+
+    private fun JsonObject.stringField(key: String): String? =
+        this[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }?.takeIf { it.isNotBlank() }
 }

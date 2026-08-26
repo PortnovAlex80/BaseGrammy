@@ -237,8 +237,11 @@ class MemoryCheckerHardBlockTest {
     @Test
     fun `AC-13 heap-only fallback blocks ASR when ActivityManager unavailable`() {
         checker.nativeAvailableMbProvider = { null } // имитация: AM недоступен.
+        // Детерминированно (было негерметично: полагалось на реальный heap
+        // JVM < 1200 МБ — сломалось при maxHeapSize=2g в build.gradle).
+        checker.heapAvailableMbProvider = { 512L }
 
-        // ASR требует 800×1.5 = 1200 МБ — heap в unit-тесте меньше.
+        // ASR требует 800×1.5 = 1200 МБ — heap 512 МБ блокируется.
         val result = checker.checkForLoad(MemoryChecker.ModelKind.ASR)
         assertThat(result).isInstanceOf(MemoryCheckResult.Blocked::class.java)
         assertThat((result as MemoryCheckResult.Blocked).message).isEqualTo(MemoryChecker.ASR_BLOCK_MESSAGE)
