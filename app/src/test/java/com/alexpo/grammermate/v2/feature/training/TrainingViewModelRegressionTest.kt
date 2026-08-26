@@ -426,6 +426,51 @@ class TrainingViewModelRegressionTest {
         assertThat(state.answeredCards).isEqualTo(0)
     }
 
+    // ── Фаза 4 срез 1: mixed review из Completed ─────────────────────────────
+
+    /**
+     * «Повторить вперемешку»: пул пересобран чередованием половин
+     * ([c0, c2, c1] для трёх карт фикстуры), счётчики прохода обнулены,
+     * persisted mode = ALL_MIXED.
+     */
+    @Test
+    fun repeatMixedFromCompleted_rebuildsInterleavedPool() {
+        val vm = trainingViewModel()
+        TrainingDbFixture.CARD_IDS.forEachIndexed { index, _ ->
+            vm.onDraftChange("answer $index")
+            vm.submitAnswer()
+            vm.next()
+        }
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Completed::class.java)
+
+        vm.repeatMixedFromCompleted()
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS.first())
+        assertThat(state.answeredCards).isEqualTo(0)
+        val persisted = sessionRepository.store[sessionId.value]!!
+        assertThat(persisted.mode).isEqualTo(TrainingMode.ALL_MIXED)
+        assertThat(persisted.poolCardIds.map { it.value })
+            .containsExactly(
+                TrainingDbFixture.CARD_IDS[0],
+                TrainingDbFixture.CARD_IDS[2],
+                TrainingDbFixture.CARD_IDS[1],
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun repeatMixed_onlyAvailableInCompleted() {
+        val vm = trainingViewModel() // Active
+
+        vm.repeatMixedFromCompleted()
+
+        // Команда вне фазы Completed — no-op (сессия не тронута).
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Active::class.java)
+        assertThat(sessionRepository.store[sessionId.value]!!.mode)
+            .isEqualTo(TrainingMode.LESSON)
+    }
+
     // ── Хелперы ──────────────────────────────────────────────────────────────
 
     private fun trainingViewModel(

@@ -72,6 +72,7 @@ object TrainingTestTags {
     const val RETRY_BUTTON = "training_retry_button"
     const val RESUME_BUTTON = "training_resume_button"
     const val RESTART_BUTTON = "training_restart_button"
+    const val REPEAT_MIXED_BUTTON = "training_repeat_mixed_button"
 }
 
 /**
@@ -165,6 +166,7 @@ fun TrainingScreen(
             is TrainingViewState.Completed -> CompletedState(
                 phase = s,
                 onFinish = { viewModel.navigateBack() },
+                onRepeatMixed = viewModel::repeatMixedFromCompleted,
                 modifier = Modifier.padding(innerPadding),
             )
 
@@ -536,11 +538,12 @@ private fun EmptyState(message: String, onBack: () -> Unit, modifier: Modifier =
     }
 }
 
-/** Урок завершён: итоги прохода + возврат к списку уроков. */
+/** Урок завершён: итоги прохода + возврат к списку уроков + mixed-повтор. */
 @Composable
 private fun CompletedState(
     phase: TrainingViewState.Completed,
     onFinish: () -> Unit,
+    onRepeatMixed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -566,6 +569,12 @@ private fun CompletedState(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = onFinish) { Text("К урокам") }
+            OutlinedButton(
+                onClick = onRepeatMixed,
+                modifier = Modifier.testTag(TrainingTestTags.REPEAT_MIXED_BUTTON),
+            ) {
+                Text("Повторить вперемешку")
+            }
         }
     }
 }

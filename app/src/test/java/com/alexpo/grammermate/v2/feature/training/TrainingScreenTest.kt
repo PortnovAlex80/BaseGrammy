@@ -169,4 +169,47 @@ class TrainingScreenTest {
 
         compose.runOnIdle { assert(navigatedBack) }
     }
+
+    /**
+     * Фаза 4 срез 1: Completed → «Повторить вперемешку» — реальный клик
+     * запускает mixed-проход; вторая карта = ЧЕТВЁРТНАЯ карта урока
+     * (чередование половин), а не вторая — видимая пользователю разница
+     * с sequential-порядком.
+     */
+    @Test
+    fun completed_repeatMixedButton_startsInterleavedPass() {
+        val vm = viewModel()
+
+        compose.setContent {
+            GrammarMateTheme {
+                TrainingScreen(
+                    packId = packId.value,
+                    lessonId = lessonId.value,
+                    onNavigateBack = {},
+                    viewModel = vm,
+                )
+            }
+        }
+
+        // Полный sequential-проход трёх карт фикстуры.
+        TrainingDbFixture.CARD_IDS.forEachIndexed { index, _ ->
+            compose.onNodeWithTag(TrainingTestTags.INPUT_FIELD)
+                .performTextInput("answer $index")
+            compose.onNodeWithTag(TrainingTestTags.CHECK_BUTTON).performClick()
+            compose.onNodeWithText("Верно!").assertIsDisplayed()
+            compose.onNodeWithTag(TrainingTestTags.NEXT_BUTTON).performClick()
+        }
+        compose.onNodeWithText("Урок завершён!", substring = true).assertIsDisplayed()
+
+        compose.onNodeWithTag(TrainingTestTags.REPEAT_MIXED_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+
+        // Mixed-пул фикстуры: [card_0, card_2, card_1] — вторая карта «Промпт 2».
+        compose.onNodeWithText("Промпт 0").assertIsDisplayed()
+        compose.onNodeWithTag(TrainingTestTags.INPUT_FIELD).performTextInput("answer 2")
+        compose.onNodeWithTag(TrainingTestTags.CHECK_BUTTON).performClick()
+        compose.onNodeWithTag(TrainingTestTags.NEXT_BUTTON).performClick()
+        compose.onNodeWithText("Промпт 2").assertIsDisplayed()
+    }
 }

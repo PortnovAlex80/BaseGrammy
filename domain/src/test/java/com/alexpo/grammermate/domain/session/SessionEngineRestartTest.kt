@@ -102,4 +102,42 @@ class SessionEngineRestartTest {
             .containsExactly("card_0", "card_1")
             .inOrder()
     }
+
+    // ── Mixed review (Фаза 4 срез 1: ALL_MIXED через LessonOrderPolicy) ─────
+
+    @Test
+    fun `startLessonSession ALL_MIXED persists interleaved pool and mode`() = runTest {
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(5)) }
+        val (engine, _) = buildEngine(content)
+
+        val snapshot = engine.startLessonSession(
+            packId, lessonId, sessionSize = 10, mode = com.alexpo.grammermate.domain.model.TrainingMode.ALL_MIXED,
+        )
+
+        assertThat(snapshot.mode)
+            .isEqualTo(com.alexpo.grammermate.domain.model.TrainingMode.ALL_MIXED)
+        // interleave([c0..c4]) = [c0, c3, c1, c4, c2].
+        assertThat(snapshot.poolCardIds.map { it.value })
+            .containsExactly("card_0", "card_3", "card_1", "card_4", "card_2")
+            .inOrder()
+    }
+
+    @Test
+    fun `restart with mode switches pool order and resets counters`() = runTest {
+        val content = FakeContentRepository().apply { setCardsForLesson(lessonId, lessonCards(5)) }
+        val (engine, _) = buildEngine(content)
+
+        engine.startLessonSession(packId, lessonId, sessionSize = 10)
+        engine.submitAnswer(sessionId, CardId("card_0"), isCorrect = true, inputMode = InputMode.KEYBOARD)
+
+        val mixed = engine.restartLessonSession(
+            packId, lessonId, sessionSize = 10,
+            mode = com.alexpo.grammermate.domain.model.TrainingMode.ALL_MIXED,
+        )
+
+        assertThat(mixed.correctCount).isEqualTo(0)
+        assertThat(mixed.poolCardIds.map { it.value })
+            .containsExactly("card_0", "card_3", "card_1", "card_4", "card_2")
+            .inOrder()
+    }
 }

@@ -85,19 +85,25 @@ class SessionEngine(
      * Собрать активный пул карточек для урока:
      * 1. все карты урока ([ContentRepository.getCards]);
      * 2. минус скрытые пользователем ([UserContentRepository.getHiddenCardIds]);
-     * 3. нарезать на под-уроки по [sessionSize] через [SubLessonScheduler];
-     * 4. выбрать активный под-урок (индекс 0 для новой сессии).
+     * 3. порядок карт — по [LessonOrderPolicy] для [mode] (Фаза 4 срез 1:
+     *    ALL_MIXED = детерминированное чередование половин);
+     * 4. нарезать на под-уроки по [sessionSize] через [SubLessonScheduler];
+     * 5. выбрать активный под-урок (индекс 0 для новой сессии).
      *
      * @return упорядоченный пул [CardId] активного под-урока.
      */
     private suspend fun buildPool(
         lessonId: LessonId,
         sessionSize: Int,
+        mode: TrainingMode,
         activeSubLessonIndex: Int = 0,
     ): List<CardId> {
         val allCards = contentRepository.getCards(lessonId)
         val hidden = userContentRepository.getHiddenCardIds()
-        val visible = allCards.filter { it.id !in hidden }
+        val visible = LessonOrderPolicy.apply(
+            cards = allCards.filter { it.id !in hidden },
+            mode = mode,
+        )
         val subLessons = SubLessonScheduler.buildSubLessons(visible, sessionSize)
         return SubLessonScheduler.activeSubLesson(subLessons, activeSubLessonIndex)
     }
@@ -108,20 +114,23 @@ class SessionEngine(
      * Начать новую сессию урока: построить пул, создать снимок, сохранить.
      *
      * `currentCardId` = первая карта пула (новая сессия). Стабильный
-     * [sessionId] выводится из `packId`+`lessonId`.
+     * [sessionId] выводится из `packId`+`lessonId`. [mode] задаёт политику
+     * порядка пула ([LessonOrderPolicy]): LESSON/ALL_SEQUENTIAL — порядок
+     * урока; ALL_MIXED — чередование половин (mixed review, Фаза 4 срез 1).
      */
     suspend fun startLessonSession(
         packId: PackId,
         lessonId: LessonId,
         sessionSize: Int,
+        mode: TrainingMode = TrainingMode.LESSON,
     ): SessionSnapshot {
         val sessionId = SessionId.forLesson(packId, lessonId)
-        val pool = buildPool(lessonId, sessionSize)
+        val pool = buildPool(lessonId, sessionSize, mode)
         return sessionRepository.getOrCreateSession(
             sessionId = sessionId,
             packId = packId,
             lessonId = lessonId,
-            mode = TrainingMode.LESSON,
+            mode = mode,
             poolCardIds = pool,
         )
     }
@@ -158,12 +167,14 @@ class SessionEngine(
         packId: PackId,
         lessonId: LessonId,
         sessionSize: Int,
+        mode: TrainingMode = TrainingMode.LESSON,
     ): SessionSnapshot {
         sessionRepository.deleteSession(SessionId.forLesson(packId, lessonId))
         return startLessonSession(
             packId = packId,
             lessonId = lessonId,
             sessionSize = sessionSize,
+            mode = mode,
         )
     }
 

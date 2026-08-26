@@ -9,7 +9,7 @@
 | Режим | Строка | Статус |
 |---|---|---|
 | Normal lesson (LESSON) | [ниже](#normal-lesson) | **заполнена (Фаза 1)** |
-| Sequential/Mixed review (ALL_SEQUENTIAL / ALL_MIXED) | — | TBD — гейт Фазы 4, срез 1 |
+| Sequential/Mixed review (ALL_SEQUENTIAL / ALL_MIXED) | [ниже](#sequentialmixed-review) | **заполнена (Фаза 4, срез 1)** |
 | Verb drill + aux drill | — | TBD — гейт Фазы 4, срез 2 |
 | Vocab drill | — | TBD — гейт Фазы 4, срез 3 (требует решения по pack-scoping `word_mastery`) |
 | Daily translate/vocab/verbs | — | TBD — гейт Фазы 4, срез 4 |
@@ -52,3 +52,32 @@ completion → resume). Владелец мутаций — `SessionEngine`; pre
   удалён из снимка, в БД пишется производная `pool.indexOf(currentCardId)`.
 - Streak/progress-агрегация при completion — Фазы 4/5 (вместе с режимами, которым
   она нужна; mastery/completion уже атомарны — координатор Фазы 2).
+
+---
+
+## Sequential/Mixed review
+
+Фаза 4, срез 1 (2026-08-26). Mixed review = повторение завершённого урока с
+чередованием половин пула — ломает механическое запоминание последовательности.
+Это НЕ SRS-driven повторение: интервалы «когда повторять» — слой 2 ADR-002
+(после гейта FSRS); здесь только детерминированный порядок пула.
+
+| Поле контракта | Решение | Проверяемое утверждение |
+|---|---|---|
+| **Identity** | Тот же `sessionId = SessionId.forLesson(packId, lessonId)`, `snapshot.mode = ALL_MIXED` (маркер прохода в снимке); источник — Completed-экран тренировки (`training_repeat_mixed_button`) | `repeatMixedFromCompleted_rebuildsInterleavedPool` (persisted mode) |
+| **Selection** | Как Normal lesson (все карты урока минус скрытые); различие — только Ordering | `startLessonSession ALL_MIXED…` (SessionEngineRestartTest) |
+| **Ordering** | [LessonOrderPolicy]: LESSON/ALL_SEQUENTIAL — порядок `ord`; ALL_MIXED — чередование половин `a₁b₁a₂b₂…`, детерминировано без random/seed; пул фиксируется на старте и персистится в снимке (никакой рантайм-пересборки v1 — источник card_15) | `LessonOrderPolicyTest` (детерминизм, точный порядок, полнота множества, короткие входы) |
+| **Exercise** | тот же рендерер/ввод, что Normal lesson | `TrainingScreenTest.completed_repeatMixedButton_startsInterleavedPass` |
+| **Attempt** | идентично Normal lesson | Normal lesson Attempt |
+| **Progress** | идентично: numerator = correct+incorrect, denominator = pool.size | `repeatMixedFromCompleted_rebuildsInterleavedPool` (answeredCards=0 после рестарта) |
+| **Mastery** | Повтор НЕ «разучивает» заново: shown/encounters идут как обычно через `onMarkShown`-хук, `completedAtMs` сохраняется (повтор не сбрасывает завершённость) | `RoomSessionAtomicCommitTest` (тот же координатор); restart не трогает mastery — `SessionEngineRestartTest.restart clears session context…` |
+| **Completion** | Полный проход mixed-пула → COMPLETED тем же `nextCardOrComplete`; после — снова доступен mixed-повтор | `next_afterLastCard_completesSession` (режим-агностичен) |
+| **Persistence** | `restartLessonSession(mode=ALL_MIXED)`: delete + fresh start тем же PK; ревизии/hot-updates — как Normal lesson | `restart with mode switches pool order…` |
+| **Navigation** | Вход только из Completed; выход — как Normal lesson (Back = выход, сессия durable, re-enter resume'ит mixed-пул) | `repeatMixed_onlyAvailableInCompleted` (команда вне фазы — no-op) |
+
+Follow-ups строки:
+
+- `ALL_SEQUENTIAL` сейчас неотличим от `LESSON` (явного входа нет: «повтор по
+  порядку» = re-enter COMPLETED-урока) — станет отдельным входом, если
+  product-семантика «повтор по порядку» потребуется отдельно.
+- SRS-driven review (due-уроки по `dueAtMs`) — слой 2 ADR-002, гейт Фазы 4+.

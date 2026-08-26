@@ -343,6 +343,35 @@ class TrainingViewModel @Inject constructor(
     }
 
     /**
+     * Повторить завершённый урок вперемешку (Фаза 4 срез 1: ALL_MIXED).
+     *
+     * [SessionEngine.restartLessonSession] с [TrainingMode.ALL_MIXED]: пул
+     * пересобирается чередованием половин урока ([LessonOrderPolicy]), счётчики
+     * прохода обнуляются, mastery не трогается (повтор не «разучивает» урок
+     * заново — completedAtMs сохраняется).
+     */
+    fun repeatMixedFromCompleted() {
+        if (currentState !is TrainingViewState.Completed) return
+        viewModelScope.launch {
+            commands.withLock {
+                runCatching {
+                    sessionEngine.restartLessonSession(
+                        packId = packId,
+                        lessonId = lessonId,
+                        sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                        mode = TrainingMode.ALL_MIXED,
+                    )
+                }.onSuccess { snapshot ->
+                    clearDraft()
+                    applySession(snapshot)
+                }.onFailure { e ->
+                    updateState { TrainingViewState.Error(e.message ?: "Не удалось начать повтор") }
+                }
+            }
+        }
+    }
+
+    /**
      * Выйти с экрана: сессия durable (каждый commit — saveSession), снимок
      * остаётся ACTIVE; повторный вход resume'ит тот же PK (MODE_MATRIX.md).
      */
