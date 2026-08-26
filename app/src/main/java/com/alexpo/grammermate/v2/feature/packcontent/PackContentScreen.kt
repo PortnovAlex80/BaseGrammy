@@ -39,6 +39,9 @@ object PackContentTestTags {
     const val LESSON_ITEM = "pack_lesson_item"
 }
 
+/** Кнопка «История» в заголовке главы со storyFile (срез 6 Фазы 4). */
+const val PACK_CHAPTER_STORY_TAG = "pack_chapter_story"
+
 /**
  * Экран содержимого пака — главы с уроками (Фаза 1 плана стабилизации
  * 2026-08-26: путь Pack → Chapter → Lesson; P0 `lessonId = packId` устранён).
@@ -57,6 +60,7 @@ fun PackContentScreen(
     packId: String,
     onNavigateBack: () -> Unit,
     onOpenLesson: (String) -> Unit,
+    onOpenStory: (chapterId: String) -> Unit = {},
     viewModel: PackContentViewModel = hiltViewModel(),
 ) {
     val state = collectState(viewModel.state)
@@ -130,6 +134,8 @@ fun PackContentScreen(
                             ChapterHeader(
                                 title = section.chapter.title,
                                 subtitle = section.chapter.subtitle,
+                                hasStory = section.chapter.storyFile != null,
+                                onOpenStory = { onOpenStory(section.chapter.id.value) },
                             )
                         }
                     }
@@ -150,18 +156,36 @@ fun PackContentScreen(
 }
 
 @Composable
-private fun ChapterHeader(title: String, subtitle: String?) {
+private fun ChapterHeader(
+    title: String,
+    subtitle: String?,
+    hasStory: Boolean = false,
+    onOpenStory: () -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp)
             .testTag(PackContentTestTags.CHAPTER_HEADER),
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            if (hasStory) {
+                androidx.compose.material3.TextButton(
+                    onClick = onOpenStory,
+                    modifier = Modifier.testTag(PACK_CHAPTER_STORY_TAG),
+                ) { Text("📖 История") }
+            }
+        }
         if (subtitle != null) {
             Text(
                 text = subtitle,

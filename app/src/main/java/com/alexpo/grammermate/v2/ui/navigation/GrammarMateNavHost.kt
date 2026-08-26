@@ -13,6 +13,7 @@ import com.alexpo.grammermate.v2.feature.home.HomeScreen
 import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
 import com.alexpo.grammermate.v2.feature.verbdrill.VerbDrillScreen
+import com.alexpo.grammermate.v2.feature.story.StoryReaderScreen
 import com.alexpo.grammermate.v2.feature.vocabdrill.VocabDrillScreen
 import com.alexpo.grammermate.v2.ui.components.InvalidRouteScreen
 import com.alexpo.grammermate.v2.ui.components.PlaceholderScreen
@@ -82,6 +83,11 @@ fun GrammarMateNavHost(
                     // launchSingleTop: повторный тап по уроку не дублирует
                     // Training (две VM параллельно писали бы одну сессию).
                     navController.navigate(Destination.Training(packId, lessonId).route()) {
+                        launchSingleTop = true
+                    }
+                },
+                onOpenStory = { chapterId ->
+                    navController.navigate(Destination.Story(packId, chapterId).route()) {
                         launchSingleTop = true
                     }
                 },
@@ -155,6 +161,26 @@ fun GrammarMateNavHost(
                     onBack = { navController.popBackStack() },
                 )
             VocabDrillScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        // ── Story reader (срез 6 Фазы 4: главы со storyFile) ────────────────────
+        composable(
+            route = Destination.Story.PATTERN,
+            arguments = listOf(
+                navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType },
+                navArgument(Destination.ARG_CHAPTER_ID) { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val packId = entry.requiredId(Destination.ARG_PACK_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_PACK_ID,
+                    onBack = { navController.popBackStack() },
+                )
+            val chapterId = entry.requiredId(Destination.ARG_CHAPTER_ID)
+                ?: return@composable InvalidRouteScreen(
+                    missing = Destination.ARG_CHAPTER_ID,
+                    onBack = { navController.popBackStack() },
+                )
+            StoryReaderScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }

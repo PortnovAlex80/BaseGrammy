@@ -106,6 +106,21 @@ sealed interface Destination {
     }
 
     /**
+     * Чтение истории главы (Фаза 4 срез 6).
+     *
+     * @property packId    пак главы.
+     * @property chapterId глава, чью историю (`chapters[].storyFile`) читаем.
+     */
+    data class Story(val packId: String, val chapterId: String) : Destination {
+        override val routePattern: String = "$ROUTE_STORY/{$ARG_PACK_ID}/{$ARG_CHAPTER_ID}"
+        override fun route(): String = "$ROUTE_STORY/$packId/$chapterId"
+
+        companion object {
+            const val PATTERN = "story/{packId}/{chapterId}"
+        }
+    }
+
+    /**
      * Дневная норма практики пака.
      *
      * @property packId пак дневной нормы.
@@ -128,11 +143,13 @@ sealed interface Destination {
         const val ROUTE_SETTINGS = "settings"
         const val ROUTE_VERB_DRILL = "verb_drill"
         const val ROUTE_VOCAB_DRILL = "vocab_drill"
+        const val ROUTE_STORY = "story"
         const val ROUTE_DAILY_PRACTICE = "daily_practice"
 
         // ── Имена nav-аргументов ───────────────────────────────────────────────
         const val ARG_PACK_ID = "packId"
         const val ARG_LESSON_ID = "lessonId"
+        const val ARG_CHAPTER_ID = "chapterId"
 
         /** Стартовый маршрут приложения (для NavHost startDestination). */
         const val START_ROUTE: String = ROUTE_HOME
