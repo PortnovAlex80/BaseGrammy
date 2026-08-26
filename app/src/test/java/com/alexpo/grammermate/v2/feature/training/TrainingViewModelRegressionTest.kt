@@ -12,10 +12,13 @@ import com.alexpo.grammermate.domain.model.SessionState
 import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
-import com.alexpo.grammermate.domain.repository.MasteryRepository
 import com.alexpo.grammermate.domain.repository.SessionRepository
+import com.alexpo.grammermate.domain.repository.UserContentRepository
+import com.alexpo.grammermate.domain.session.SessionEngine
+import com.alexpo.grammermate.domain.validation.AnswerValidator
 import com.alexpo.grammermate.v2.core.data.local.TrainingDbFixture
 import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -23,17 +26,21 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
 /**
- * ViewModel-регрессия основного UX-пути тренировки (Фаза 0 плана
- * стабилизации 2026-08-26). Два RED-якоря известных P0-дефектов плана
- * (раздел 2): production-путь обходит SessionEngine и создаёт сессию без
- * пула; ошибка персистенции превращается в визуальный успех.
+ * ViewModel-регрессия основного UX-пути тренировки (Фаза 0→1 плана
+ * стабилизации 2026-08-26).
  *
- * RED-тесты помечены [Ignore] до фикса в Фазе 1; зелёный guard фиксирует
- * текущее корректное поведение загрузки.
+ * Два бывших RED-якоря P0-дефектов (раздел 2 плана) сняты с `@Ignore` тем же
+ * changeset'ом, что закрыл дефекты (конвенция Фазы 0):
+ *  - «сессия сохраняется с пустым pool» → VM идёт через SessionEngine,
+ *    который строит и передаёт реальный пул;
+ *  - «persistence failure превращается в визуальный успех» → FSM публикует
+ *    Feedback только после успешного commit.
+ *
+ * Плюс переходы FSM golden journey: submit→feedback, next→active,
+ * next-after-last→completed, skip, resume по PK, draft-restore, double-submit.
  */
 class TrainingViewModelRegressionTest {
 
@@ -44,11 +51,15 @@ class TrainingViewModelRegressionTest {
     private val sessionId = SessionId.forLesson(packId, lessonId)
 
     private lateinit var sessionRepository: FakeSessionRepository
+    private lateinit var userContentRepository: UserContentRepository
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         sessionRepository = FakeSessionRepository()
+        userContentRepository = mockk {
+            coEvery { getHiddenCardIds() } returns emptySet()
+        }
     }
 
     @After
@@ -56,25 +67,23 @@ class TrainingViewModelRegressionTest {
         Dispatchers.resetMain()
     }
 
+    // ── Снятые RED-якоря Фазы 1 ───────────────────────────────────────────────
+
     /**
-     * P0-дефект «сессия сохраняется с пустым pool» (план, раздел 2): VM
-     * вызывает `getOrCreateSession` без пула; UI маскирует пустой пул
-     * fallback'ом на первую карточку контента. Целевое поведение (Фаза 1,
-     * ADR-001): пул строится SessionEngine и персистится непустым для урока
-     * с карточками.
-     *
-     * RED до Фазы 1.
+     * P0-дефект «сессия сохраняется с пустым pool» — закрыт Фазой 1 (ADR-001):
+     * VM стартует сессию через [SessionEngine.startLessonSession], который
+     * строит пул (карты урока минус скрытые, нарезка под-уроков) и передаёт
+     * его в персистенцию. Пул непустой и совпадает с контентом урока по порядку.
      */
-    @Ignore("RED-якорь P0 «пустой пул» — REFACTORING_PLAN_2026-08-26.md Фаза 1")
     @Test
     fun init_lessonWithCards_persistsSessionWithNonEmptyPool() {
         val vm = trainingViewModel()
 
-        // Контент урока загружен и показан (текущее поведение — корректно).
-        assertThat(vm.state.value.currentCard).isNotNull()
-        assertThat(vm.state.value.totalCards).isEqualTo(TrainingDbFixture.CARD_IDS.size)
+        val state = vm.state.value
+        assertThat(state).isInstanceOf(TrainingViewState.Active::class.java)
+        assertThat((state as TrainingViewState.Active).card.id.value)
+            .isEqualTo(TrainingDbFixture.CARD_IDS.first())
 
-        // Целевое поведение: сессия в персистенции имеет непустой пул.
         val persisted = sessionRepository.saved[sessionId.value]
         assertThat(persisted).isNotNull()
         assertThat(persisted!!.poolCardIds.map { it.value })
@@ -83,52 +92,216 @@ class TrainingViewModelRegressionTest {
     }
 
     /**
-     * P0-дефект «persistence failure превращается в визуальный успех» (план,
-     * раздел 2): `runCatching` без `onFailure` проглатывает исключение, state
-     * получает `lastResult` и `answeredCards+1`. Целевое поведение (правило
-     * 3.1.5 плана): success-UI публикуется только после успешного commit.
-     *
-     * RED до Фазы 1.
+     * P0-дефект «persistence failure превращается в визуальный успех» — закрыт
+     * Фазой 1 (правило плана §3.1.5): при падении commit состояние — Error,
+     * Feedback недостижим, счётчики в персистенции не изменены.
      */
-    @Ignore("RED-якорь P0 «успех при упавшем persist» — план Фаза 1")
     @Test
     fun submitAnswer_persistenceFailure_doesNotShowSuccess() {
         val vm = trainingViewModel()
-        sessionRepository.failUpdateProgress = true
+        vm.onDraftChange("answer 0")
+        sessionRepository.failSaveSession = true
 
-        vm.onSubmitAnswer("answer 0")
+        vm.submitAnswer()
 
-        assertThat(vm.state.value.lastResult).isNull()
-        assertThat(vm.state.value.error).isNotNull()
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Error::class.java)
+        val persisted = sessionRepository.saved[sessionId.value]!!
+        assertThat(persisted.correctCount).isEqualTo(0)
+        assertThat(persisted.shownCardIds).isEmpty()
     }
 
-    /**
-     * Зелёный guard: happy-path загрузки — карточки урока отображаются,
-     * ошибка отсутствует.
-     */
+    // ── Переходы FSM golden journey ───────────────────────────────────────────
+
     @Test
     fun init_lessonWithCards_showsFirstCardWithoutError() {
         val vm = trainingViewModel()
 
-        assertThat(vm.state.value.isLoading).isFalse()
-        assertThat(vm.state.value.error).isNull()
-        assertThat(vm.state.value.currentCard?.id?.value)
-            .isEqualTo(TrainingDbFixture.CARD_IDS.first())
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Active::class.java)
+    }
+
+    @Test
+    fun submitAnswer_correctAnswer_publishesFeedbackAfterCommit() {
+        val vm = trainingViewModel()
+        vm.onDraftChange("answer 0")
+
+        vm.submitAnswer()
+
+        val state = vm.state.value as TrainingViewState.Feedback
+        assertThat(state.result.correct).isTrue()
+        assertThat(state.isLastCard).isFalse()
+        assertThat(state.correctAnswer).isNull()
+
+        val persisted = sessionRepository.saved[sessionId.value]!!
+        assertThat(persisted.correctCount).isEqualTo(1)
+        assertThat(persisted.shownCardIds.map { it.value })
+            .containsExactly(TrainingDbFixture.CARD_IDS.first())
+    }
+
+    @Test
+    fun submitAnswer_wrongAnswer_showsCorrectAnswerAndCountsIncorrect() {
+        val vm = trainingViewModel()
+        vm.onDraftChange("nope")
+
+        vm.submitAnswer()
+
+        val state = vm.state.value as TrainingViewState.Feedback
+        assertThat(state.result.correct).isFalse()
+        assertThat(state.correctAnswer).isEqualTo("answer 0")
+
+        val persisted = sessionRepository.saved[sessionId.value]!!
+        assertThat(persisted.incorrectCount).isEqualTo(1)
+    }
+
+    @Test
+    fun submitAnswer_normalization_matchesNormalizedAcceptance() {
+        val vm = trainingViewModel()
+        // "ANSWER 0" нормализуется (trim/lowercase) и принимается.
+        vm.onDraftChange("  ANSWER 0  ")
+
+        vm.submitAnswer()
+
+        assertThat((vm.state.value as TrainingViewState.Feedback).result.correct).isTrue()
+    }
+
+    @Test
+    fun submitAnswer_whileChecking_ignoredExactlyOnce() {
+        val vm = trainingViewModel()
+        vm.onDraftChange("answer 0")
+
+        vm.submitAnswer()
+        // Второй вызов уже не в Active — команда игнорируется.
+        vm.submitAnswer()
+
+        val persisted = sessionRepository.saved[sessionId.value]!!
+        assertThat(persisted.correctCount).isEqualTo(1)
+    }
+
+    @Test
+    fun next_afterFeedback_advancesToNextCard() {
+        val vm = trainingViewModel()
+        vm.onDraftChange("answer 0")
+        vm.submitAnswer()
+
+        vm.next()
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
+        assertThat(state.draft).isEmpty()
+    }
+
+    @Test
+    fun skip_doesNotMarkShownAndAdvances() {
+        val vm = trainingViewModel()
+
+        vm.skip()
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
+        val persisted = sessionRepository.saved[sessionId.value]!!
+        assertThat(persisted.shownCardIds).isEmpty()
+        assertThat(persisted.correctCount + persisted.incorrectCount).isEqualTo(0)
+    }
+
+    @Test
+    fun next_afterLastCard_completesSession() {
+        val vm = trainingViewModel()
+        // Полный проход: 3 карты, на каждой — ответ и advance.
+        TrainingDbFixture.CARD_IDS.forEachIndexed { index, _ ->
+            vm.onDraftChange("answer $index")
+            vm.submitAnswer()
+            vm.next()
+        }
+
+        val state = vm.state.value as TrainingViewState.Completed
+        assertThat(state.correctCount).isEqualTo(TrainingDbFixture.CARD_IDS.size)
+        assertThat(state.totalCards).isEqualTo(TrainingDbFixture.CARD_IDS.size)
+
+        assertThat(sessionRepository.saved[sessionId.value]!!.status)
+            .isEqualTo(SessionStatus.COMPLETED)
+    }
+
+    @Test
+    fun reenter_afterCompletion_startsFreshSessionSamePk() {
+        val vm = trainingViewModel()
+        TrainingDbFixture.CARD_IDS.forEachIndexed { index, _ ->
+            vm.onDraftChange("answer $index")
+            vm.submitAnswer()
+            vm.next()
+        }
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Completed::class.java)
+
+        // Повторный вход: COMPLETED-сессия перезапускается свежим проходом.
+        val reentered = trainingViewModel()
+        val state = reentered.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS.first())
+        assertThat(state.answeredCards).isEqualTo(0)
+    }
+
+    @Test
+    fun init_activeSessionExists_resumesSameCardAndPk() {
+        val engine = sessionEngine()
+        kotlinx.coroutines.runBlocking {
+            engine.startLessonSession(packId, lessonId, sessionSize = 10)
+            engine.nextCard(sessionId) // курсор на второй карте
+        }
+
+        val vm = trainingViewModel(engine = engine)
+
+        val state = vm.state.value as TrainingViewState.Active
+        assertThat(state.card.id.value).isEqualTo(TrainingDbFixture.CARD_IDS[1])
+        assertThat(sessionRepository.saved[sessionId.value]!!.poolCardIds)
+            .containsExactlyElementsIn(TrainingDbFixture.CARD_IDS.map(::CardId))
+            .inOrder()
+    }
+
+    @Test
+    fun draft_restoredFromSavedStateForSameCard() {
+        val handle = SavedStateHandle(
+            mapOf("packId" to packId.value, "lessonId" to lessonId.value)
+        )
+        val vm = trainingViewModel(handle = handle)
+        vm.onDraftChange("частичный ответ")
+
+        // Process death: новый VM с тем же SavedStateHandle — draft восстановлен.
+        val restored = trainingViewModel(handle = handle)
+        val state = restored.state.value as TrainingViewState.Active
+        assertThat(state.draft).isEqualTo("частичный ответ")
+    }
+
+    @Test
+    fun allCardsHidden_emptyPoolShowsEmptyStateWithoutFallback() {
+        val hiddenRepository = mockk<UserContentRepository> {
+            coEvery { getHiddenCardIds() } returns TrainingDbFixture.CARD_IDS.map(::CardId).toSet()
+        }
+        val engine = SessionEngine(sessionRepository, contentRepository(), hiddenRepository)
+        val vm = trainingViewModel(engine = engine)
+
+        assertThat(vm.state.value).isInstanceOf(TrainingViewState.Empty::class.java)
     }
 
     // ── Хелперы ──────────────────────────────────────────────────────────────
 
-    private fun trainingViewModel(): TrainingViewModel = TrainingViewModel(
-        savedStateHandle = SavedStateHandle(
+    private fun trainingViewModel(
+        handle: SavedStateHandle = SavedStateHandle(
             mapOf("packId" to packId.value, "lessonId" to lessonId.value)
         ),
-        sessionRepository = sessionRepository,
-        contentRepository = contentRepositoryWithLessonCards(),
-        masteryRepository = mockk<MasteryRepository>(relaxed = true),
+        engine: SessionEngine = sessionEngine(),
+    ): TrainingViewModel = TrainingViewModel(
+        savedStateHandle = handle,
+        sessionEngine = engine,
+        contentRepository = contentRepository(),
+        answerValidator = AnswerValidator(),
     )
 
-    private fun contentRepositoryWithLessonCards(): ContentRepository {
-        val cards = TrainingDbFixture.CARD_IDS.mapIndexed { index, cardId ->
+    private fun sessionEngine(): SessionEngine =
+        SessionEngine(sessionRepository, contentRepository(), userContentRepository)
+
+    private fun contentRepository(): ContentRepository = mockk(relaxed = true) {
+        coEvery { getCards(lessonId) } returns lessonCards()
+    }
+
+    private fun lessonCards(): List<Card> =
+        TrainingDbFixture.CARD_IDS.mapIndexed { index, cardId ->
             Card(
                 id = CardId(cardId),
                 packId = packId,
@@ -144,20 +317,19 @@ class TrainingViewModelRegressionTest {
                 frequencyRank = null,
             )
         }
-        return mockk(relaxed = true) {
-            io.mockk.coEvery { getCards(lessonId) } returns cards
-        }
-    }
 }
 
 /**
  * Fake доменного порта сессий: stateful in-memory карта снимков.
  * Повторяет контракт Room-реализации для happy-path (пул — только явный).
+ *
+ * Паритет с Room-impl по getOrCreate (resume только ACTIVE-сессий) закрыт в
+ * Фазе 1; расхождение loadSession-vs-getActiveSession recovery остаётся до Фазы 2.
  */
 private class FakeSessionRepository : SessionRepository {
 
     val saved = linkedMapOf<String, SessionSnapshot>()
-    var failUpdateProgress = false
+    var failSaveSession = false
 
     private fun snapshot(sessionId: SessionId): SessionSnapshot =
         checkNotNull(saved[sessionId.value]) { "session not created: ${sessionId.value}" }
@@ -167,27 +339,25 @@ private class FakeSessionRepository : SessionRepository {
         packId: PackId,
         lessonId: LessonId?,
         mode: TrainingMode,
-        poolCardIds: List<CardId>?,
+        poolCardIds: List<CardId>,
         selectedTense: String?,
         selectedGroup: String?,
         selectedPerson: String?,
     ): SessionSnapshot {
-        // ЗАМЕТКА О РАСХОЖДЕНИИ: Room-impl резюмит только ACTIVE-сессии
-        // (getActiveSession); этот fake возвращает любую сохранённую. При
-        // снятии @Ignore в Фазе 2 («уравнять recovery-семантики fake/Room»)
-        // свести к контрактy Room.
-        saved[sessionId.value]?.let { return it }
+        // Как Room-impl (getActiveSession): resume только ACTIVE-сессии;
+        // COMPLETED → свежая сессия с тем же PK (MODE_MATRIX → Normal lesson).
+        saved[sessionId.value]?.takeIf { it.status == SessionStatus.ACTIVE }?.let { return it }
         val now = System.currentTimeMillis()
         val fresh = SessionSnapshot(
             sessionId = sessionId,
             packId = packId,
             lessonId = lessonId,
             mode = mode,
-            currentCardId = poolCardIds?.firstOrNull(),
+            currentCardId = poolCardIds.firstOrNull(),
             cursorIndex = 0,
             status = SessionStatus.ACTIVE,
             state = SessionState.ACTIVE,
-            poolCardIds = poolCardIds ?: emptyList(),
+            poolCardIds = poolCardIds,
             shownCardIds = emptySet(),
             correctCount = 0,
             incorrectCount = 0,
@@ -207,6 +377,7 @@ private class FakeSessionRepository : SessionRepository {
         saved[sessionId.value]
 
     override suspend fun saveSession(snapshot: SessionSnapshot) {
+        if (failSaveSession) throw IllegalStateException("simulated Room failure")
         saved[snapshot.sessionId.value] = snapshot
     }
 
@@ -230,7 +401,7 @@ private class FakeSessionRepository : SessionRepository {
         incorrect: Int,
         hint: Int,
     ) {
-        if (failUpdateProgress) throw IllegalStateException("simulated Room failure")
+        if (failSaveSession) throw IllegalStateException("simulated Room failure")
         saved[sessionId.value] = snapshot(sessionId).copy(
             correctCount = correct,
             incorrectCount = incorrect,

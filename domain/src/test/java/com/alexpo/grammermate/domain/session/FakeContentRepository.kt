@@ -45,6 +45,7 @@ class FakeContentRepository : ContentRepository {
 
     override suspend fun getLanguages(): List<Language> = emptyList()
     override suspend fun getPacks(): List<Pack> = emptyList()
+    override fun observePacks(): Flow<List<Pack>> = flowOf(emptyList())
     override suspend fun getPacksForLanguage(langId: LanguageId): List<Pack> = emptyList()
     override suspend fun getPack(packId: PackId): Pack? = null
     override suspend fun getChapters(packId: PackId): List<Chapter> = emptyList()

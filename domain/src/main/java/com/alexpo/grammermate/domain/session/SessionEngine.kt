@@ -7,6 +7,7 @@ import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.domain.model.SessionSnapshot
 import com.alexpo.grammermate.domain.model.SessionState
+import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import com.alexpo.grammermate.domain.repository.SessionRepository
@@ -150,6 +151,34 @@ class SessionEngine(
         val idx = current.currentCardId?.let { pool.indexOf(it) } ?: 0
         val prevIdx = if (idx <= 0) pool.lastIndex else idx - 1
         return saveTimestamped(current, currentCardId = pool[prevIdx])
+    }
+
+    /**
+     * Advance режима LESSON с терминальным условием «полный проход пула»
+     * (MODE_MATRIX.md → Normal lesson → Completion; Фаза 1 плана стабилизации
+     * 2026-08-26): если текущая карта — последняя в пуле, сессия завершается
+     * ([SessionStatus.COMPLETED], снимок сохранён); иначе — как [nextCard].
+     *
+     * Политика завершения живёт здесь, в домене, а не в ViewModel (план §3.1.7:
+     * mode задаёт completion). Используется и для Next после ответа, и для Skip.
+     *
+     * @return снимок после advance либо завершённый снимок (status = COMPLETED).
+     */
+    suspend fun nextCardOrComplete(sessionId: SessionId): SessionSnapshot {
+        val current = requireActive(sessionId)
+        val pool = current.poolCardIds
+        if (pool.isEmpty()) return saveTimestamped(current, currentCardId = null)
+        val idx = current.currentCardId?.let { pool.indexOf(it) } ?: -1
+        return if (idx == pool.lastIndex) {
+            val completed = current.copy(
+                status = SessionStatus.COMPLETED,
+                updatedAtMs = clock(),
+            )
+            sessionRepository.saveSession(completed)
+            completed
+        } else {
+            nextCard(sessionId)
+        }
     }
 
     /**

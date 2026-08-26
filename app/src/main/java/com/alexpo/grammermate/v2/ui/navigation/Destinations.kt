@@ -36,18 +36,18 @@ sealed interface Destination {
     }
 
     /**
-     * Уроки главы пака — список уроков внутри выбранной главы.
+     * Содержимое пака — главы с уроками (Фаза 1 плана: путь Pack → Chapter →
+     * Lesson;替代 устранённого `ChapterLessons(packId, chapterId)`-placeholder'а).
      *
-     * @property packId    пак главы.
-     * @property chapterId выбранная глава.
+     * @property packId пак, чьё содержимое показывается.
      */
-    data class ChapterLessons(val packId: String, val chapterId: String) : Destination {
-        override val routePattern: String = "$ROUTE_CHAPTER_LESSONS/{$ARG_PACK_ID}/{$ARG_CHAPTER_ID}"
-        override fun route(): String = "$ROUTE_CHAPTER_LESSONS/$packId/$chapterId"
+    data class PackContent(val packId: String) : Destination {
+        override val routePattern: String = "$ROUTE_PACK_CONTENT/{$ARG_PACK_ID}"
+        override fun route(): String = "$ROUTE_PACK_CONTENT/$packId"
 
         companion object {
-            /** Полный route-pattern для регистрации destination в NavHost. */
-            const val PATTERN = "chapter_lessons/{packId}/{chapterId}"
+            /** Полный route-pattern для регистрации destination. */
+            const val PATTERN = "pack_content/{packId}"
         }
     }
 
@@ -108,7 +108,7 @@ sealed interface Destination {
     companion object {
         // ── Базовые route-строки ───────────────────────────────────────────────
         const val ROUTE_HOME = "home"
-        const val ROUTE_CHAPTER_LESSONS = "chapter_lessons"
+        const val ROUTE_PACK_CONTENT = "pack_content"
         const val ROUTE_TRAINING = "training"
         const val ROUTE_SETTINGS = "settings"
         const val ROUTE_VERB_DRILL = "verb_drill"
@@ -116,7 +116,6 @@ sealed interface Destination {
 
         // ── Имена nav-аргументов ───────────────────────────────────────────────
         const val ARG_PACK_ID = "packId"
-        const val ARG_CHAPTER_ID = "chapterId"
         const val ARG_LESSON_ID = "lessonId"
 
         /** Стартовый маршрут приложения (для NavHost startDestination). */

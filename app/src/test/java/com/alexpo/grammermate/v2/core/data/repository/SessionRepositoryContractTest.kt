@@ -24,9 +24,14 @@ import org.robolectric.annotation.Config
  * `SessionRepository` (Фаза 0 плана стабилизации 2026-08-26: «Repository
  * contract suite проходит одинаково для fake и in-memory Room»).
  *
- * Два теста — **RED-якоря известных P0-дефектов** (план, раздел 2). Они
- * помечены [Ignore] до фикса в Фазе 1/2: снять Ignore нужно тем же PR, что
- * чинит дефект. Третий тест — зелёный guard корректного поведения.
+ * Бывший RED-якорь P0 «сессия сохраняется с пустым pool» снят с `@Ignore`
+ * changeset'ом Фазы 1: порт `getOrCreateSession` получил ОБЯЗАТЕЛЬНЫЙ
+ * `poolCardIds` (ADR-001 — пул строит SessionEngine, data-слой персистит
+ * переданное), т.е. «создать сессию урока без пула» больше не компилируется.
+ * Ниже — позитивная фиксация нового контракта.
+ *
+ * RED-якорь P1 «молчаливая подмена currentCard» остаётся под `@Ignore`
+ * до Фазы 2 (уравнивание recovery-семантики fake/Room).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34]) // Robolectric 4.13: max supported SDK
@@ -51,18 +56,12 @@ class SessionRepositoryContractTest {
     }
 
     /**
-     * P0-дефект «сессия сохраняется с пустым pool» (план, раздел 2, строка 3).
-     *
-     * Контракт порта (`SessionRepository.getOrCreateSession` KDoc): «если
-     * poolCardIds null/пусто — data-слой собирает его сам по контексту».
-     * Room-реализация контракт нарушает: урок с карточками → сессия с пустым
-     * пулом → «Далее»/«Пропустить» мертвы.
-     *
-     * RED до Фазы 1 (пул передаётся SessionEngine / собирается data-слоем).
+     * Новый контракт порта (Фаза 1, вместо RED-якоря «пустой пул»): пул —
+     * обязательный аргумент, сохраняется в одной транзакции целиком и в
+     * порядке передачи; `currentCardId` новой сессии — первая карта пула.
      */
-    @Ignore("RED-якорь P0 «пустой пул» — REFACTORING_PLAN_2026-08-26.md Фаза 1")
     @Test
-    fun getOrCreateSession_withoutPool_buildsPoolFromLessonCards() = runTest {
+    fun getOrCreateSession_persistsRequiredPoolAndFirstCardAsCurrent() = runTest {
         TrainingDbFixture.seedTrainingContent(db)
 
         val snapshot = repository.getOrCreateSession(
@@ -70,15 +69,18 @@ class SessionRepositoryContractTest {
             packId = packId,
             lessonId = lessonId,
             mode = TrainingMode.LESSON,
+            poolCardIds = TrainingDbFixture.CARD_IDS.map(::CardId),
         )
 
         assertThat(snapshot.poolCardIds.map { it.value })
             .containsExactlyElementsIn(TrainingDbFixture.CARD_IDS)
             .inOrder()
+        assertThat(snapshot.currentCardId?.value).isEqualTo(TrainingDbFixture.CARD_IDS.first())
+        assertThat(snapshot.shownCardIds).isEmpty()
     }
 
     /**
-     * P1-дефект «молчаливая подмена currentCardId» (план Фаза 2: «никакой
+     * P1-дефект «молчиливая подмена currentCardId» (план Фаза 2: «никакой
      * молчаливой замены current card»).
      *
      * Целевая семантика (инварианты SessionEngine): если сохранённый PK выпал

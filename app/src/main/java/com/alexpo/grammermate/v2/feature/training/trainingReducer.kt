@@ -1,49 +1,51 @@
 package com.alexpo.grammermate.v2.feature.training
 
 /**
- * Чистый редюсер экрана тренировки: `(state, intent) → state`.
+ * Чистый редюсер экрана тренировки: `(state, intent) → state` над FSM
+ * [TrainingViewState] (Фаза 1 плана стабилизации 2026-08-26, §3.3).
  *
  * **БЕЗ side-effects:** не трогает репозитории/БД/TTS/навигацию. Только
- * детерминированная трансформация [TrainingViewState] по [TrainingIntent].
- * Тестируется на чистом JVM (например, Truth-ассертами, см. test/.../training).
+ * детерминированные синхронные переходы фаз. Side-effects (commit через
+ * SessionEngine, навигация) живут в [TrainingViewModel] и публикуют новую фазу
+ * через `updateState` только после успешного commit (правило плана §3.1.5).
  *
- * Side-effects (persist сессии, навигация, TTS) живут в [TrainingViewModel] и
- * запускаются по контексту intent'а, а НЕ здесь. Здесь лишь «UI-проекция» события.
+ * Переходы вне допустимой фазы — no-op (повторный Submit в `Checking`,
+ * Next в `Active` и т.п.): команда игнорируется, состояние не портится.
  *
  * exhaustive `when` → компилятор не даст забыть новый intent.
- *
- * @param state  текущий state экрана.
- * @param intent намерение для обработки.
- * @return новый state.
  */
 fun trainingReducer(state: TrainingViewState, intent: TrainingIntent): TrainingViewState =
     when (intent) {
-        // Старт/возобновление сессии — переводим в loading; реальную загрузку и
-        // заполнение currentCard выполняет ViewModel через updateState (Фаза 6).
-        is TrainingIntent.StartSession,
-        is TrainingIntent.Resume -> state.copy(isLoading = true, error = null)
+        // (Пере)загрузка сессии: в Loading; результат опубликует ViewModel.
+        TrainingIntent.StartSession -> TrainingViewState.Loading
 
-        // Подсказка — чистый UI-toggle, без I/O.
-        TrainingIntent.RequestHint -> state.copy(showHint = true)
+        // Черновик живёт только в Active.
+        is TrainingIntent.DraftChanged -> (state as? TrainingViewState.Active)
+            ?.copy(draft = intent.text)
+            ?: state
 
-        // Переход к следующей карточке: сбрасываем подсказку и мгновенную
-        // обратную связь. Реальный advance по пулу — в ViewModel.
-        TrainingIntent.NextCard -> state.copy(showHint = false, lastResult = null)
+        // Подсказка — чистый UI-toggle в Active.
+        TrainingIntent.RequestHint -> (state as? TrainingViewState.Active)
+            ?.copy(showHint = true)
+            ?: state
 
-        // Скрыть мгновенную обратную связь — чистый UI-clear.
-        TrainingIntent.DismissResult -> state.copy(lastResult = null)
+        // Submit: Active → Checking (ввод заблокирован до публикации Feedback/Error).
+        TrainingIntent.SubmitAnswer -> when (state) {
+            is TrainingViewState.Active -> TrainingViewState.Checking(
+                card = state.card,
+                answeredCards = state.answeredCards,
+                totalCards = state.totalCards,
+            )
+            else -> state
+        }
 
-        // Флаг карточки — пока только UI-маркер (TODO Фаза 6: persist флага).
+        // Next/Skip: реальный advance — side-effect в ViewModel; новая фаза
+        // (Active/Completed/Error) публикуется после commit.
+        TrainingIntent.NextCard,
+        TrainingIntent.SkipCard -> state
+
+        // Флаг карточки — пока только UI-noop (persist Report/Flag — Фаза 3).
         TrainingIntent.FlagCard -> state
-
-        // Ответ пользователя — мгновенная UI-обратная связь (скрытие подсказки);
-        // проверка ответа и persist — в ViewModel, она выставит lastResult через
-        // updateState.
-        is TrainingIntent.SubmitAnswer -> state.copy(showHint = false)
-
-        // SRS-рейтинг — запоминаем для мгновенной отрисовки; persist карточки
-        // и пересчёт расписания — в ViewModel через masteryRepository (Фаза 6).
-        is TrainingIntent.RateCard -> state.copy(lastRating = intent.rating)
 
         // Выход с экрана — state не меняется; навигация идёт через эффект.
         TrainingIntent.NavigateBack -> state

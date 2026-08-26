@@ -24,17 +24,21 @@ interface SessionRepository {
     /**
      * Создать новую сессию или возобновить существующую по [sessionId].
      *
-     * Если сессия уже есть — возвращает её снимок. Иначе собирает пул карточек
-     * по [packId]/[lessonId]/[mode] (с учётом drill-фильтров [selectedTense],
-     * [selectedGroup], [selectedPerson]) и сохраняет свежий снимок. Возвращает
-     * снимок целиком.
+     * Если сессия уже есть (ACTIVE) — возвращает её снимок. Иначе сохраняет
+     * свежий снимок с переданным пулом.
+     *
+     * **Владение пулом (ADR-001, Фаза 1 плана стабилизации 2026-08-26):** пул
+     * собирает вызывающий доменный код (`SessionEngine.buildPool` — фильтры,
+     * нарезка под-уроков), data-слой только персистит то, что ему передали.
+     * [poolCardIds] — обязательный параметр: сессия урока без пула —
+     * compile-time ошибка, а не молчаливый пустой пул (P0-дефект плана §2).
      *
      * @param sessionId      стабильный идентификатор сессии (см. [SessionId.forLesson] и др.).
      * @param packId         пак тренировки.
      * @param lessonId       урок (null для drill/daily/помодоро).
      * @param mode           режим тренировки.
-     * @param poolCardIds    готовый упорядоченный пул карточек (если null/пусто —
-     *                       data-слой собирает его сам по контексту).
+     * @param poolCardIds    готовый упорядоченный пул карточек (может быть пустым —
+     *                       например, все карты урока скрыты; UI покажет Empty).
      * @param selectedTense  фильтр времени для verb-drill, либо null.
      * @param selectedGroup  фильтр группы спряжения для drill, либо null.
      * @param selectedPerson фильтр лица/числа для drill, либо null.
@@ -44,7 +48,7 @@ interface SessionRepository {
         packId: PackId,
         lessonId: LessonId?,
         mode: TrainingMode,
-        poolCardIds: List<CardId>? = null,
+        poolCardIds: List<CardId>,
         selectedTense: String? = null,
         selectedGroup: String? = null,
         selectedPerson: String? = null,

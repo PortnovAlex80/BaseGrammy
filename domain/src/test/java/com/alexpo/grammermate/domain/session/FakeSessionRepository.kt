@@ -19,7 +19,8 @@ import com.alexpo.grammermate.domain.repository.SessionRepository
  *
  * `getOrCreateSession` создаёт свежий снимок из переданного [poolCardIds]
  * с `currentCardId` = первая карта пула — ровно так, как должен делать
- * реальный data-слой.
+ * реальный data-слой. Пул обязателен (ADR-001: пул строит SessionEngine,
+ * data-слой только персистит переданное).
  */
 class FakeSessionRepository(
     private val clock: () -> Long = { System.currentTimeMillis() },
@@ -33,14 +34,16 @@ class FakeSessionRepository(
         packId: PackId,
         lessonId: LessonId?,
         mode: TrainingMode,
-        poolCardIds: List<CardId>?,
+        poolCardIds: List<CardId>,
         selectedTense: String?,
         selectedGroup: String?,
         selectedPerson: String?,
     ): SessionSnapshot {
-        store[sessionId]?.let { return it }
+        // Как Room-impl (getActiveSession): resume только ACTIVE-сессий;
+        // COMPLETED → свежий снимок с тем же PK (MODE_MATRIX → Normal lesson).
+        store[sessionId]?.takeIf { it.status == SessionStatus.ACTIVE }?.let { return it }
         val now = clock()
-        val pool = poolCardIds ?: emptyList()
+        val pool = poolCardIds.filter { it.value.isNotBlank() }
         val snapshot = SessionSnapshot(
             sessionId = sessionId,
             packId = packId,

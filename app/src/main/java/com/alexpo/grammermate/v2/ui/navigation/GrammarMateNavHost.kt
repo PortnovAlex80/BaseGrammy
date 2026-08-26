@@ -8,23 +8,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.alexpo.grammermate.v2.feature.home.HomeScreen
+import com.alexpo.grammermate.v2.feature.packcontent.PackContentScreen
 import com.alexpo.grammermate.v2.feature.training.TrainingScreen
 import com.alexpo.grammermate.v2.ui.components.PlaceholderScreen
 
 /**
  * NavHost приложения GrammarMate v2 — регистрирует все [Destination]'ы.
  *
- * Навигация — presentation-слой: здесь маршруты превращаются в composable-экраны.
+ * Навигация — presentation-слой: маршруты превращаются в composable-экраны.
  * Аргументы (packId/lessonId/…) приходят как String и оборачиваются в value-class
- * на границе экрана ([HomeScreen]/[TrainingScreen]).
+ * на границе экрана.
  *
- * Каждый composable-destination = один экран. Экраны, которые ещё не реализованы
- * (Settings, VerbDrill, DailyPractice, ChapterLessons), отрисовывают
- * [PlaceholderScreen] с TODO-меткой — это держит весь nav-graph компилируемым и
- * кликабельным, пока реальные экраны не готовы.
+ * Golden journey (Фаза 1 плана стабилизации 2026-08-26):
+ * **Home → PackContent (главы + уроки) → Training(packId, lessonId)** —
+ * реальный `lessonId`, а не `packId`-заглушка (P0-дефект закрыт).
  *
- * @param navController контроллер навигации (создаётся в [com.alexpo.grammermate.v2.ui.GrammarMateApp]).
- * @param modifier      модификатор для растягивания NavHost в Scaffold.
+ * Экраны, которые ещё не реализованы (Settings, VerbDrill, DailyPractice),
+ * отрисовывают [PlaceholderScreen] — их маршруты не публикуются как доступные
+ * действия из golden journey.
  */
 @Composable
 fun GrammarMateNavHost(
@@ -40,10 +41,7 @@ fun GrammarMateNavHost(
         composable(Destination.Home.routePattern) {
             HomeScreen(
                 onPackClick = { packId ->
-                    // TODO(Фаза 7): переход на ChapterLessons(packId, firstChapterId),
-                    //   пока данных по главам нет — сразу в тренировку первого урока.
-                    //   Используем заглушку lessonId = packId, чтобы стек не падал.
-                    navController.navigate(Destination.Training(packId, packId).route())
+                    navController.navigate(Destination.PackContent(packId).route())
                 },
                 onNavigateSettings = {
                     navController.navigate(Destination.Settings.route())
@@ -51,17 +49,21 @@ fun GrammarMateNavHost(
             )
         }
 
-        // ── ChapterLessons: уроки главы (TODO — полный экран) ─────────────────
+        // ── PackContent: главы + уроки пака ───────────────────────────────────
         composable(
-            route = Destination.ChapterLessons.PATTERN,
+            route = Destination.PackContent.PATTERN,
             arguments = listOf(
                 navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType },
-                navArgument(Destination.ARG_CHAPTER_ID) { type = NavType.StringType },
             ),
         ) { entry ->
             val packId = entry.arguments?.getString(Destination.ARG_PACK_ID).orEmpty()
-            val chapterId = entry.arguments?.getString(Destination.ARG_CHAPTER_ID).orEmpty()
-            PlaceholderScreen("ChapterLessons\npack=$packId\nchapter=$chapterId")
+            PackContentScreen(
+                packId = packId,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenLesson = { lessonId ->
+                    navController.navigate(Destination.Training(packId, lessonId).route())
+                },
+            )
         }
 
         // ── Training: тренировка карточек урока ───────────────────────────────
@@ -81,12 +83,12 @@ fun GrammarMateNavHost(
             )
         }
 
-        // ── Settings (TODO — полный экран) ────────────────────────────────────
+        // ── Settings (TODO — полный экран, Фаза 3) ────────────────────────────
         composable(Destination.Settings.routePattern) {
             PlaceholderScreen("Settings")
         }
 
-        // ── VerbDrill (TODO — полный экран) ───────────────────────────────────
+        // ── VerbDrill (TODO — вертикальный срез Фазы 4) ───────────────────────
         composable(
             route = Destination.VerbDrill.PATTERN,
             arguments = listOf(navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType }),
@@ -95,7 +97,7 @@ fun GrammarMateNavHost(
             PlaceholderScreen("VerbDrill\npack=$packId")
         }
 
-        // ── DailyPractice (TODO — полный экран) ───────────────────────────────
+        // ── DailyPractice (TODO — вертикальный срез Фазы 4) ───────────────────
         composable(
             route = Destination.DailyPractice.PATTERN,
             arguments = listOf(navArgument(Destination.ARG_PACK_ID) { type = NavType.StringType }),

@@ -43,6 +43,13 @@ interface ContentDao {
     @Query("SELECT * FROM packs WHERE id = :packId")
     suspend fun getPack(packId: String): PackEntity?
 
+    /**
+     * Реактивный список паков — Home подписывается и видит bundled-seed сразу
+     * по завершении первого импорта (Фаза 1: реактивный fresh-install путь).
+     */
+    @Query("SELECT * FROM packs")
+    fun observePacks(): Flow<List<PackEntity>>
+
     @Query("DELETE FROM packs WHERE id = :packId")
     suspend fun deletePack(packId: String)
 

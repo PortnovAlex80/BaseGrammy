@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,10 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -66,24 +63,18 @@ object TrainingTestTags {
     const val HINT_BUTTON = "training_hint_button"
     const val SKIP_BUTTON = "training_skip_button"
     const val REPORT_BUTTON = "training_report_button"
+    const val COMPLETED_LABEL = "training_completed_label"
+    const val RETRY_BUTTON = "training_retry_button"
 }
 
 /**
- * Экран тренировки — прохождение карточек урока.
+ * Экран тренировки — прохождение карточек урока (Фаза 1: golden journey).
  *
- * Presentation-слой чистой архитектуры: читает [TrainingViewState] из
- * [TrainingViewModel] через [collectState] (lifecycle-aware) и обрабатывает
- * one-shot эффекты через [collectEffects] (навигация/snackbar). Локальное UI-state
- * (введённый ответ) хойстится в `remember { mutableStateOf }` — это эфемерный
- * ввод, не требующий персистенции.
- *
- * Цикл взаимодействия:
- *  * `promptRu` карточки → `OutlinedTextField` → **Submit** → проверка →
- *    мгновенная обратная связь (`lastResult`) → **Next** → следующая карточка.
- *  * **Hint** — показать/скрыть подсказку (`showHint`).
- *  * **Skip** — перейти к следующей карточке без засчитывания ответа.
- *  * **Report** — флаг «плохое» предложение (TODO: persist через UserContentRepository).
- *  * **Back** — выход (через [onNavigateBack]).
+ * Presentation-слой: читает FSM [TrainingViewState] из [TrainingViewModel] через
+ * [collectState] и рендерит ровно одну фазу. Черновик ответа живёт в state
+ * (`Active.draft`, персистится VM в SavedStateHandle) — rotation/process death
+ * не теряют ввод. Повторные действия во время commit невозможны: `Checking`
+ * не содержит кнопок отправки (правило плана §3.1.5/§3.1.6).
  *
  * @param packId   пак тренировки (из nav-args; ViewModel также читает из SavedStateHandle).
  * @param lessonId урок тренировки (аналогично).
@@ -100,15 +91,11 @@ fun TrainingScreen(
 ) {
     val state = collectState(viewModel.state)
 
-    // Эфемерный ввод ответа — хойстится локально, не персистится.
-    var answer by remember { mutableStateOf("") }
-
-    // One-shot эффекты: навигация «назад».
     collectEffects(viewModel.effects) { effect ->
         when (effect) {
             TrainingEffect.NavigateBack -> onNavigateBack()
-            is TrainingEffect.ShowToast -> { /* TODO(Фаза 7): SnackbarHostState.showSnackbar */ }
-            is TrainingEffect.PlayTts -> { /* TODO(Фаза 7): TTS-движок */ }
+            is TrainingEffect.ShowToast -> { /* TODO(Фаза 3): SnackbarHostState.showSnackbar */ }
+            is TrainingEffect.PlayTts -> { /* TODO(Фаза 5): TTS после session commit */ }
         }
     }
 
@@ -130,59 +117,66 @@ fun TrainingScreen(
             )
         },
     ) { innerPadding ->
-        when {
-            state.isLoading -> LoadingState(Modifier.padding(innerPadding))
-            state.error != null -> ErrorState(
-                message = state.error!!,
-                onRetry = { viewModel.navigateBack() },
+        when (val s = state) {
+            TrainingViewState.Loading -> LoadingState(Modifier.padding(innerPadding))
+
+            is TrainingViewState.Empty -> EmptyState(
+                message = s.message,
+                onBack = { viewModel.navigateBack() },
                 modifier = Modifier.padding(innerPadding),
             )
 
-            else -> TrainingContent(
-                state = state,
-                answer = answer,
-                onAnswerChange = { answer = it },
-                onSubmit = {
-                    viewModel.onSubmitAnswer(answer)
-                },
-                onNext = {
-                    viewModel.onNextCard()
-                    answer = ""
-                },
-                onHint = { viewModel.requestHint() },
-                onSkip = {
-                    viewModel.onNextCard()
-                    answer = ""
-                },
-                onReport = { viewModel.flagCard() },
+            is TrainingViewState.Active -> TrainingContent(
+                phase = s,
+                onDraftChange = viewModel::onDraftChange,
+                onSubmit = viewModel::submitAnswer,
+                onHint = viewModel::requestHint,
+                onSkip = viewModel::skip,
+                onReport = viewModel::flagCard,
                 contentPadding = innerPadding,
+            )
+
+            is TrainingViewState.Checking -> CheckingContent(
+                phase = s,
+                contentPadding = innerPadding,
+            )
+
+            is TrainingViewState.Feedback -> FeedbackContent(
+                phase = s,
+                onNext = viewModel::next,
+                onReport = viewModel::flagCard,
+                contentPadding = innerPadding,
+            )
+
+            is TrainingViewState.Completed -> CompletedState(
+                phase = s,
+                onFinish = { viewModel.navigateBack() },
+                modifier = Modifier.padding(innerPadding),
+            )
+
+            is TrainingViewState.Error -> ErrorState(
+                message = s.message,
+                onRetry = viewModel::reload,
+                onBack = { viewModel.navigateBack() },
+                modifier = Modifier.padding(innerPadding),
             )
         }
     }
 }
 
-/**
- * Основной контент тренировки: прогресс + карточка-промпт + ввод + действия.
- */
+// ── Фаза Active ──────────────────────────────────────────────────────────────
+
+/** Активная фаза: прогресс + карточка-промпт + ввод + действия. */
 @Composable
 private fun TrainingContent(
-    state: TrainingViewState,
-    answer: String,
-    onAnswerChange: (String) -> Unit,
+    phase: TrainingViewState.Active,
+    onDraftChange: (String) -> Unit,
     onSubmit: () -> Unit,
-    onNext: () -> Unit,
     onHint: () -> Unit,
     onSkip: () -> Unit,
     onReport: () -> Unit,
     contentPadding: PaddingValues,
 ) {
-    val card = state.currentCard
-    val progress = if (state.totalCards > 0) {
-        state.answeredCards.toFloat() / state.totalCards.toFloat()
-    } else {
-        0f
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -191,69 +185,201 @@ private fun TrainingContent(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── Прогресс сессии ───────────────────────────────────────────────────
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Text(
-            text = "${state.answeredCards} / ${state.totalCards}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        SessionProgress(phase.answeredCards, phase.totalCards)
+        PromptCard(card = phase.card, showHint = phase.showHint, feedback = null)
+
+        OutlinedTextField(
+            value = phase.draft,
+            onValueChange = onDraftChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.INPUT_FIELD),
+            label = { Text("Ваш ответ") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(onDone = { if (phase.draft.isNotBlank()) onSubmit() }),
         )
 
-        if (card != null) {
-            PromptCard(card = card, showHint = state.showHint, lastResult = state.lastResult)
-
-            // ── Поле ввода ответа ──────────────────────────────────────────────
-            OutlinedTextField(
-                value = answer,
-                onValueChange = onAnswerChange,
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onSubmit,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag(TrainingTestTags.INPUT_FIELD),
-                label = { Text("Ваш ответ") },
-                singleLine = true,
-                enabled = state.lastResult == null,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(onDone = { if (answer.isNotBlank()) onSubmit() }),
-            )
+                    .testTag(TrainingTestTags.CHECK_BUTTON),
+                enabled = phase.draft.isNotBlank(),
+            ) {
+                Text("Проверить")
+            }
 
-            // ── Мгновенная обратная связь ──────────────────────────────────────
-            FeedbackBanner(lastResult = state.lastResult)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalButton(
+                    onClick = onHint,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag(TrainingTestTags.HINT_BUTTON),
+                ) {
+                    Icon(Icons.Filled.Lightbulb, contentDescription = null)
+                    Text("  Подсказка")
+                }
+                OutlinedButton(
+                    onClick = onSkip,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag(TrainingTestTags.SKIP_BUTTON),
+                ) {
+                    Icon(Icons.Filled.SkipNext, contentDescription = null)
+                    Text("  Пропустить")
+                }
+            }
 
-            // ── Действия ───────────────────────────────────────────────────────
-            ActionRow(
-                lastResult = state.lastResult,
-                canSubmit = answer.isNotBlank(),
-                onSubmit = onSubmit,
-                onNext = onNext,
-                onHint = onHint,
-                onSkip = onSkip,
-                onReport = onReport,
-            )
-        } else {
-            Text(
-                text = "В уроке нет карточек.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            TextButton(
+                onClick = onReport,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(TrainingTestTags.REPORT_BUTTON),
+            ) {
+                Icon(Icons.Filled.Flag, contentDescription = null)
+                Text("  Сообщить о проблеме")
+            }
         }
     }
 }
 
-/**
- * Карточка с промптом упражнения.
- *
- * Показывает `promptRu` (что перевести/спрягать) крупным текстом, контекстные
- * мета-поля (verb/tense/person при наличии) и подсказку (первый принимаемый
- * ответ с замаскированной первой буквой), если `showHint`.
- */
+// ── Фаза Checking ────────────────────────────────────────────────────────────
+
+/** Commit ответа: карточка видна, ввод и кнопки заблокированы. */
 @Composable
-private fun PromptCard(card: Card, showHint: Boolean, lastResult: AnswerResult?) {
+private fun CheckingContent(
+    phase: TrainingViewState.Checking,
+    contentPadding: PaddingValues,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        SessionProgress(phase.answeredCards, phase.totalCards)
+        PromptCard(card = phase.card, showHint = false, feedback = null)
+        OutlinedTextField(
+            value = "",
+            onValueChange = {},
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.INPUT_FIELD),
+            label = { Text("Проверяем…") },
+            singleLine = true,
+            enabled = false,
+            readOnly = true,
+        )
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(),
+            enabled = false,
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.padding(4.dp).size(20.dp),
+                strokeWidth = 2.dp,
+            )
+            Text("  Проверяем…")
+        }
+    }
+}
+
+// ── Фаза Feedback ────────────────────────────────────────────────────────────
+
+/** Ответ зафиксирован: ✓/✗ + правильный ответ + Next (или завершение урока). */
+@Composable
+private fun FeedbackContent(
+    phase: TrainingViewState.Feedback,
+    onNext: () -> Unit,
+    onReport: () -> Unit,
+    contentPadding: PaddingValues,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        SessionProgress(phase.answeredCards, phase.totalCards)
+        PromptCard(card = phase.card, showHint = false, feedback = phase.result)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            val (icon, text, color) = if (phase.result.correct) {
+                Triple(Icons.Filled.Check, "Верно!", MaterialTheme.colorScheme.primary)
+            } else {
+                Triple(Icons.Filled.Close, "Неверно", MaterialTheme.colorScheme.error)
+            }
+            Icon(icon, contentDescription = null, tint = color)
+            Text(text, style = MaterialTheme.typography.titleMedium, color = color)
+        }
+        if (!phase.result.correct && phase.correctAnswer != null) {
+            Text(
+                text = "Правильный ответ: ${phase.correctAnswer}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Button(
+            onClick = onNext,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.NEXT_BUTTON),
+        ) {
+            Icon(Icons.Filled.SkipNext, contentDescription = null)
+            Text(if (phase.isLastCard) "  Завершить урок" else "  Далее")
+        }
+
+        TextButton(
+            onClick = onReport,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TrainingTestTags.REPORT_BUTTON),
+        ) {
+            Icon(Icons.Filled.Flag, contentDescription = null)
+            Text("  Сообщить о проблеме")
+        }
+    }
+}
+
+// ── Общие компоненты ─────────────────────────────────────────────────────────
+
+/** Прогресс сессии: `answered / total` + линейный индикатор. */
+@Composable
+private fun SessionProgress(answered: Int, total: Int) {
+    val progress = if (total > 0) answered.toFloat() / total.toFloat() else 0f
+    LinearProgressIndicator(
+        progress = { progress },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Text(
+        text = "$answered / $total",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** Карточка с промптом упражнения + опциональная подсказка/фидбек. */
+@Composable
+private fun PromptCard(card: Card, showHint: Boolean, feedback: AnswerResult?) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -282,7 +408,6 @@ private fun PromptCard(card: Card, showHint: Boolean, lastResult: AnswerResult?)
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
-            // Контекстные мета-теги для drill-карточек.
             val meta = listOfNotNull(card.tense, card.verb, card.person)
             if (meta.isNotEmpty()) {
                 Text(
@@ -292,7 +417,6 @@ private fun PromptCard(card: Card, showHint: Boolean, lastResult: AnswerResult?)
                 )
             }
 
-            // Подсказка: замаскированная подсказка по первому принимаемому ответу.
             if (showHint && card.acceptedAnswers.isNotEmpty()) {
                 Text(
                     text = "Подсказка: ${masked(card.acceptedAnswers.first())}",
@@ -300,109 +424,6 @@ private fun PromptCard(card: Card, showHint: Boolean, lastResult: AnswerResult?)
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
-        }
-    }
-}
-
-/**
- * Баннер мгновенной обратной связи (✓ верно / ✗ неверно + правильный ответ).
- *
- * Чистая проекция `lastResult` из state: его безопасно перерисовывать.
- */
-@Composable
-private fun FeedbackBanner(lastResult: AnswerResult?) {
-    if (lastResult == null) return
-    val contentColor = if (lastResult.correct) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onErrorContainer
-    }
-    val icon = if (lastResult.correct) Icons.Filled.Check else Icons.Filled.Close
-    val text = if (lastResult.correct) "Верно!" else "Неверно"
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = contentColor)
-        Text(text, style = MaterialTheme.typography.titleMedium, color = contentColor)
-    }
-}
-
-/**
- * Ряд действий: Submit/Next + Hint/Skip/Report.
- *
- * Когда ответ отправлен (`lastResult != null`) — главная кнопка становится Next,
- * иначе — Submit. Вторичные действия — текстовые кнопки в ряду ниже.
- */
-@Composable
-private fun ActionRow(
-    lastResult: AnswerResult?,
-    canSubmit: Boolean,
-    onSubmit: () -> Unit,
-    onNext: () -> Unit,
-    onHint: () -> Unit,
-    onSkip: () -> Unit,
-    onReport: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (lastResult == null) {
-            Button(
-                onClick = onSubmit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TrainingTestTags.CHECK_BUTTON),
-                enabled = canSubmit,
-            ) {
-                Text("Проверить")
-            }
-        } else {
-            Button(
-                onClick = onNext,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TrainingTestTags.NEXT_BUTTON),
-            ) {
-                Icon(Icons.Filled.SkipNext, contentDescription = null)
-                Text("  Далее")
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FilledTonalButton(
-                onClick = onHint,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TrainingTestTags.HINT_BUTTON),
-                enabled = lastResult == null,
-            ) {
-                Icon(Icons.Filled.Lightbulb, contentDescription = null)
-                Text("  Подсказка")
-            }
-            OutlinedButton(
-                onClick = onSkip,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TrainingTestTags.SKIP_BUTTON),
-            ) {
-                Icon(Icons.Filled.SkipNext, contentDescription = null)
-                Text("  Пропустить")
-            }
-        }
-
-        TextButton(
-            onClick = onReport,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(TrainingTestTags.REPORT_BUTTON),
-        ) {
-            Icon(Icons.Filled.Flag, contentDescription = null)
-            Text("  Сообщить о проблеме")
         }
     }
 }
@@ -415,9 +436,9 @@ private fun LoadingState(modifier: Modifier = Modifier) {
     }
 }
 
-/** Состояние ошибки — сообщение + кнопка возврата. */
+/** Урок без карточек — явный результат, без fallback. */
 @Composable
-private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyState(message: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -425,7 +446,66 @@ private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier 
             modifier = Modifier.padding(24.dp),
         ) {
             Text(
-                text = "Не удалось загрузить тренировку",
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            OutlinedButton(onClick = onBack) { Text("К урокам") }
+        }
+    }
+}
+
+/** Урок завершён: итоги прохода + возврат к списку уроков. */
+@Composable
+private fun CompletedState(
+    phase: TrainingViewState.Completed,
+    onFinish: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(24.dp),
+        ) {
+            Text(
+                text = "Урок завершён!",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.testTag(TrainingTestTags.COMPLETED_LABEL),
+            )
+            Text(
+                text = "Верных: ${phase.correctCount} из ${phase.totalCards}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Ошибок: ${phase.incorrectCount}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(onClick = onFinish) { Text("К урокам") }
+        }
+    }
+}
+
+/** Recoverable-ошибка: Retry повторяет операцию, Back выходит. */
+@Composable
+private fun ErrorState(
+    message: String,
+    onRetry: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(24.dp),
+        ) {
+            Text(
+                text = "Не удалось сохранить",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.error,
                 textAlign = TextAlign.Center,
@@ -436,7 +516,11 @@ private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier 
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            OutlinedButton(onClick = onRetry) { Text("Назад") }
+            OutlinedButton(
+                onClick = onRetry,
+                modifier = Modifier.testTag(TrainingTestTags.RETRY_BUTTON),
+            ) { Text("Повторить") }
+            TextButton(onClick = onBack) { Text("Назад") }
         }
     }
 }

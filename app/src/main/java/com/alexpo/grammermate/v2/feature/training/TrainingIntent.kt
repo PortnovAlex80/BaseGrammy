@@ -1,8 +1,5 @@
 package com.alexpo.grammermate.v2.feature.training
 
-import com.alexpo.grammermate.domain.model.PackId
-import com.alexpo.grammermate.domain.model.LessonId
-import com.alexpo.grammermate.domain.model.SrsRating
 import com.alexpo.grammermate.v2.core.ui.MviIntent
 
 /**
@@ -11,52 +8,33 @@ import com.alexpo.grammermate.v2.core.ui.MviIntent
  * Sealed-иерархия: exhaustive `when` в [trainingReducer] гарантирует обработку
  * каждого intent'а на этапе компиляции. Реализует маркер [MviIntent], поэтому
  * проходит в [com.alexpo.grammermate.v2.core.ui.MviViewModel.onIntent].
+ *
+ * Фаза 1 плана стабилизации 2026-08-26: контракт ужат до фактически
+ * существующих действий экрана (неиспользуемые `Resume`/`RateCard`/
+ * `DismissResult` удалены — они вернутся вместе со своими фичами, а не раньше).
  */
 sealed interface TrainingIntent : MviIntent {
 
-    /**
-     * Старт новой сессии (или resume существующей) по контексту пак/урок.
-     *
-     * @property packId  пак тренировки.
-     * @property lessonId урок (null для drill/daily/помодоро).
-     */
-    data class StartSession(val packId: PackId, val lessonId: LessonId?) : TrainingIntent
+    /** (Пере)загрузка/возобновление сессии — вход на экран или Retry после ошибки. */
+    data object StartSession : TrainingIntent
 
-    /**
-     * Пользователь отправил ответ. Сам ответ НЕ мутирует SRS напрямую — reducer
-     * лишь фиксирует UI-состояние (например, lastRating); persist проходит через
-     * ViewModel в репозиторий.
-     *
-     * @property answer введённый/распознанный ответ.
-     */
-    data class SubmitAnswer(val answer: String) : TrainingIntent
+    /** Изменение черновика ответа (переживает rotation/process death в SavedStateHandle). */
+    data class DraftChanged(val text: String) : TrainingIntent
 
-    /** Запросить/скрыть подсказку на текущей карточке. */
+    /** Отправить ответ (валидно только в [TrainingViewState.Active]). */
+    data object SubmitAnswer : TrainingIntent
+
+    /** Запросить подсказку на текущей карточке (эфемерный UI; persist — Фаза 2). */
     data object RequestHint : TrainingIntent
 
-    /**
-     * Перейти к следующей карточке сессии.
-     *
-     * Чистая UI-проекция: сбрасывает подсказку и мгновенную обратную связь;
-     * реальный advance по пулу (через SessionEngine) делает ViewModel.
-     */
+    /** Перейти к следующей карточке / завершить урок на последней (в [TrainingViewState.Feedback]). */
     data object NextCard : TrainingIntent
 
-    /** Скрыть мгновенную обратную связь (✓/✗) — после того как пользователь увидел. */
-    data object DismissResult : TrainingIntent
+    /** Пропустить карточку без ответа (в [TrainingViewState.Active]). */
+    data object SkipCard : TrainingIntent
 
-    /** Пометить текущую карточку флажком (например, «сложная»). */
+    /** Пометить текущую карточку флажком («плохое» предложение; persist — Фаза 3). */
     data object FlagCard : TrainingIntent
-
-    /** Возобновить приостановленную сессию. */
-    data object Resume : TrainingIntent
-
-    /**
-     * Пользователь выставил SRS-рейтинг по карточке (FSRS-стиль).
-     *
-     * @property rating оценка сложности.
-     */
-    data class RateCard(val rating: SrsRating) : TrainingIntent
 
     /** Пользователь закрыл экран/нажал back. */
     data object NavigateBack : TrainingIntent

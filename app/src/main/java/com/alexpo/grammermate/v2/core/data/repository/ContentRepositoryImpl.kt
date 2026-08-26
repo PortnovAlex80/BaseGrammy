@@ -72,6 +72,10 @@ class ContentRepositoryImpl @Inject constructor(
     override suspend fun getPack(packId: PackId): Pack? =
         contentDao.getPack(packId.value)?.let(::packEntityToDomain)
 
+    /** Реактивные паки: Home видит bundled-seed сразу после первого импорта. */
+    override fun observePacks(): Flow<List<Pack>> =
+        contentDao.observePacks().map { entities -> entities.map(::packEntityToDomain) }
+
     // ── Главы ──────────────────────────────────────────────────────────────────
 
     override suspend fun getChapters(packId: PackId): List<Chapter> {

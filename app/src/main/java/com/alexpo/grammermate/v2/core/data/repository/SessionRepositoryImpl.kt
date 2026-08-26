@@ -49,20 +49,19 @@ class SessionRepositoryImpl @Inject constructor(
      *
      * - Если есть [SessionEntity] со статусом ACTIVE — атомарно собрать её снимок
      *   и вернуть как есть (это и есть resume).
-     * - Иначе создать свежую сессию с **пустым пулом** (пул заполняется отдельным
-     *   вызовом из SessionEngine через [saveSession] после сборки пула) и
-     *   вернуть снимок с пустыми pool/shown.
+     * - Иначе создать свежую сессию с переданным пулом (пул строит SessionEngine —
+     *   ADR-001; обязательность параметра закрывает P0 «сессия с пустым пулом»
+     *   на этапе компиляции).
      *
-     * @param poolCardIds готовый упорядоченный пул (если передан, он записывается
-     *                    сразу при создании новой сессии; иначе пул остаётся
-     *                    пустым и наполняется позже).
+     * @param poolCardIds готовый упорядоченный пул (пустой допустим: все карты
+     *                    урока скрыты → UI получает явное Empty, а не fallback-карту).
      */
     override suspend fun getOrCreateSession(
         sessionId: SessionId,
         packId: PackId,
         lessonId: LessonId?,
         mode: TrainingMode,
-        poolCardIds: List<CardId>?,
+        poolCardIds: List<CardId>,
         selectedTense: String?,
         selectedGroup: String?,
         selectedPerson: String?,
@@ -73,9 +72,9 @@ class SessionRepositoryImpl @Inject constructor(
             return assembleSnapshot(active)
         }
 
-        // 2. Нет активной — создаём новую с пустым/переданным пулом.
+        // 2. Нет активной — создаём новую с переданным пулом.
         val now = System.currentTimeMillis()
-        val pool = poolCardIds?.filter { it.value.isNotBlank() } ?: emptyList()
+        val pool = poolCardIds.filter { it.value.isNotBlank() }
         val snapshot = SessionSnapshot(
             sessionId = sessionId,
             packId = packId,

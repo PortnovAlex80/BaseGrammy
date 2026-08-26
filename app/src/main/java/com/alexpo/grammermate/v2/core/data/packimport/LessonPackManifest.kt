@@ -1,20 +1,26 @@
 package com.alexpo.grammermate.v2.core.data.packimport
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+
 /**
  * JSON-манифест языкового пака (schema v1 / v2).
  *
- * Переносится из legacy (`com.alexpo.grammermate.data.LessonPackManifest`) 1:1
- * по контракту SRS-002 FR-2 / §5.2. Валидация:
+ * Перенесён 1:1 из legacy (`com.alexpo.grammermate.data.LessonPackManifest`) по
+ * контракту SRS-002 FR-2 / §5.2 (semantics `org.json.opt*` воспроизведены через
+ * kotlinx.serialization — pure Kotlin, тестируется на чистом JVM). Валидация:
  * - [schemaVersion] **только 1 или 2**; иначе `error("Unsupported schemaVersion")`.
  * - [packId]/[packVersion]/[language] — обязательны (blank → error).
  * - v1: хотя бы один standard lesson, либо `verbDrill`/`vocabDrill`/`backgroundVocab`;
  *   иначе `error("Schema v1 manifest has no lessons, no drill sections, and no backgroundVocab")`.
  * - v2: хотя бы одна глава с непустым `lessons`, либо drill-секции, либо backgroundVocab;
  *   иначе `error("Schema v2 manifest has no chapter content, no drill sections, and no backgroundVocab")`.
- *
- * SCAFFOLD: модели данных определены (контракт зафиксирован SRS-002 §5.2);
- * парсер [fromJson] — TODO (AC-4 / AC-5 / AC-6). Тело `packimport/` реализуется
- * в body-задачах E02 внутри этого фиксированного контракта.
  *
  * @see <a href="../../../../../../../../docs/requirements/REQ-002-data-room/02-srs.md">SRS-002 §5.2</a>
  */
@@ -32,18 +38,146 @@ data class LessonPackManifest(
 ) {
     companion object {
         /**
-         * Распарсить JSON-текст манифеста с валидацией (regression-locked).
+         * Распарсить JSON-текст манифеста с валидацией (regression-locked, legacy 1:1).
          *
-         * SCAFFOLD TODO (AC-4 / AC-5 / AC-6): реализовать парсинг v1/v2 с валидацией.
-         * Переносится 1:1 из legacy `LessonPackManifest.fromJson` — без изменения
-         * утверждений валидации (NFR-6). Реализация должна:
-         * 1. Проверить `schemaVersion` ∈ {1, 2} (иначе `error("Unsupported schemaVersion: $sv")`).
-         * 2. Проверить `packId`/`packVersion`/`language` непусты (иначе `error("Missing packId/packVersion/language")`).
-         * 3. Распарсить `lessons` (v1), `chapters` (v2), drill-секции, backgroundVocab.
-         * 4. Применить content-валидацию (см. KDoc класса / SRS-002 FR-2).
+         * 1. `schemaVersion` ∈ {1, 2} (иначе `error("Unsupported schemaVersion: $sv")`).
+         * 2. `packId`/`packVersion`/`language` непусты (иначе `error("Missing packId/packVersion/language")`).
+         * 3. `lessons` (v1), `chapters` (v2), drill-секции, backgroundVocab.
+         * 4. Content-валидация: у манифеста должен быть контент (см. KDoc класса).
          */
         fun fromJson(text: String): LessonPackManifest {
-            TODO("AC-4 / AC-5 / AC-6: реализовать LessonPackManifest.fromJson (v1/v2 валидация, regression-locked)")
+            val json = Json.parseToJsonElement(text).jsonObject
+
+            val schemaVersion = json.optInt("schemaVersion", -1)
+            if (schemaVersion != 1 && schemaVersion != 2) {
+                error("Unsupported schemaVersion: $schemaVersion")
+            }
+            val packId = json.optString("packId").trim()
+            val packVersion = json.optString("packVersion").trim()
+            val language = json.optString("language").trim()
+            if (packId.isBlank() || packVersion.isBlank() || language.isBlank()) {
+                error("Missing packId/packVersion/language")
+            }
+
+            val lessonsJson = json.optJSONArray("lessons") ?: JsonArray(emptyList())
+            val lessons = mutableListOf<LessonPackLesson>()
+            for (i in 0 until lessonsJson.size) {
+                val entry = lessonsJson[i] as? JsonObject ?: continue
+                val lessonId = entry.optString("lessonId").trim()
+                val file = entry.optString("file").trim()
+                val order = entry.optInt("order", i + 1)
+                val title = entry.optString("title").trim().ifBlank { null }
+                val type = entry.optString("type", "standard").trim()
+                if (lessonId.isBlank() || file.isBlank()) {
+                    error("Invalid lesson entry at index $i")
+                }
+                val tensesArray = entry.optJSONArray("tenses")
+                val tenses = if (tensesArray != null) {
+                    tensesArray.mapNotNull {
+                        (it as? JsonElement)?.strOrNull()?.trim()?.ifBlank { null }
+                    }
+                } else {
+                    emptyList()
+                }
+                val grammarChip = entry.optString("grammarChip").trim().ifBlank { null }
+                lessons.add(LessonPackLesson(lessonId, order, title, file, type, tenses, grammarChip))
+            }
+
+            val displayName = json.optString("displayName").trim().ifBlank { null }
+            val verbDrill = parseDrillFiles(json.optJSONObject("verbDrill"))
+            val vocabDrill = parseDrillFiles(json.optJSONObject("vocabDrill"))
+            val backgroundVocab = parseBackgroundVocab(json.optJSONObject("backgroundVocab"))
+
+            // Chapters — только schema v2.
+            val chapters = if (schemaVersion == 2) {
+                parseChapters(json.optJSONArray("chapters"))
+            } else {
+                emptyList()
+            }
+
+            when (schemaVersion) {
+                1 -> {
+                    val hasStandardLessons = lessons.any { it.type != "verb_drill" }
+                    if (!hasStandardLessons && verbDrill == null && vocabDrill == null && backgroundVocab == null) {
+                        error("Schema v1 manifest has no lessons, no drill sections, and no backgroundVocab")
+                    }
+                }
+                2 -> {
+                    val hasChapterContent = chapters.any { it.lessons.isNotEmpty() }
+                    if (!hasChapterContent && verbDrill == null && vocabDrill == null && backgroundVocab == null) {
+                        error("Schema v2 manifest has no chapter content, no drill sections, and no backgroundVocab")
+                    }
+                }
+            }
+
+            return LessonPackManifest(
+                schemaVersion = schemaVersion,
+                packId = packId,
+                packVersion = packVersion,
+                language = language,
+                lessons = lessons,
+                displayName = displayName,
+                verbDrill = verbDrill,
+                vocabDrill = vocabDrill,
+                backgroundVocab = backgroundVocab,
+                chapters = chapters,
+            )
+        }
+
+        // ── opt*-хелперы в семантике org.json (missing → default) ─────────────
+
+        private fun JsonObject.optString(key: String, default: String = ""): String =
+            this[key]?.strOrNull() ?: default
+
+        private fun JsonObject.optInt(key: String, default: Int): Int =
+            (this[key] as? JsonPrimitive)?.intOrNull ?: default
+
+        private fun JsonElement.strOrNull(): String? =
+            (this as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+
+        private fun JsonObject.optJSONArray(key: String): JsonArray? =
+            this[key] as? JsonArray
+
+        private fun JsonObject.optJSONObject(key: String): JsonObject? =
+            this[key] as? JsonObject
+
+        // ── Секции манифеста ──────────────────────────────────────────────────
+
+        private fun parseBackgroundVocab(obj: JsonObject?): BackgroundVocabSection? {
+            if (obj == null) return null
+            val file = obj.optString("file").trim().ifBlank { null } ?: return null
+            val audioDir = obj.optString("audioDir").trim().ifBlank { null }
+            val defaultLanguage = obj.optString("defaultLanguage").trim().ifBlank { "it" }
+            val translationLanguage = obj.optString("translationLanguage").trim().ifBlank { "ru" }
+            return BackgroundVocabSection(file, audioDir, defaultLanguage, translationLanguage)
+        }
+
+        private fun parseDrillFiles(obj: JsonObject?): DrillFiles? {
+            if (obj == null) return null
+            val arr = obj.optJSONArray("files") ?: return null
+            val files = arr.mapNotNull { it.strOrNull()?.trim()?.ifBlank { null } }
+            if (files.isEmpty()) return null
+            return DrillFiles(files)
+        }
+
+        private fun parseChapters(chaptersJson: JsonArray?): List<ManifestChapter> {
+            if (chaptersJson == null) return emptyList()
+            val chapters = mutableListOf<ManifestChapter>()
+            for (i in 0 until chaptersJson.size) {
+                val entry = chaptersJson[i] as? JsonObject ?: continue
+                val chapterId = entry.optString("chapterId").trim()
+                val title = entry.optString("title").trim()
+                val order = entry.optInt("order", i)
+                val subtitle = entry.optString("subtitle").trim().ifBlank { null }
+                val storyFile = entry.optString("storyFile").trim().ifBlank { null }
+                if (chapterId.isBlank() || title.isBlank()) {
+                    error("Invalid chapter entry at index $i: missing chapterId or title")
+                }
+                val lessonsArr = entry.optJSONArray("lessons") ?: JsonArray(emptyList())
+                val lessons = lessonsArr.mapNotNull { it.strOrNull()?.trim()?.ifBlank { null } }
+                chapters.add(ManifestChapter(chapterId, order, title, subtitle, storyFile, lessons))
+            }
+            return chapters
         }
     }
 }

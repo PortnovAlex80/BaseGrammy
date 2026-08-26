@@ -26,6 +26,12 @@ interface ContentRepository {
     /** Все установленные паки. */
     suspend fun getPacks(): List<Pack>
 
+    /**
+     * Реактивный список установленных паков — Home подписывается и отражает
+     * первый bundled-import без ручного re-query (Фаза 1 плана стабилизации).
+     */
+    fun observePacks(): Flow<List<Pack>>
+
     /** Паки конкретного языка. */
     suspend fun getPacksForLanguage(langId: LanguageId): List<Pack>
 

@@ -1,0 +1,173 @@
+package com.alexpo.grammermate.v2.core.data.packimport
+
+import androidx.test.core.app.ApplicationProvider
+import com.alexpo.grammermate.v2.core.data.local.GrammarMateDatabase
+import com.alexpo.grammermate.v2.core.data.local.TrainingDbFixture
+import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * Регрессия PackImporter (Фаза 1 плана стабилизации 2026-08-26): идемпотентный
+ * импорт bundled-пака — ZIP → manifest → packs/chapters/lessons/cards в ОДНОЙ
+ * Room-транзакции; card PK = `lessonId_index` (префикс урока исключает
+ * коллизии `card_N` между уроками).
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
+class PackImporterTest {
+
+    private lateinit var db: GrammarMateDatabase
+    private lateinit var importer: PackImporter
+
+    @Before
+    fun setUp() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        db = TrainingDbFixture.inMemory(context)
+        importer = PackImporter(db, context)
+    }
+
+    @After
+    fun tearDown() {
+        db.close()
+    }
+
+    private fun zip(vararg entries: Pair<String, String>): ByteArrayInputStream {
+        val bytes = ByteArrayOutputStream()
+        ZipOutputStream(bytes).use { zip ->
+            entries.forEach { (name, content) ->
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(content.toByteArray(Charsets.UTF_8))
+                zip.closeEntry()
+            }
+        }
+        return ByteArrayInputStream(bytes.toByteArray())
+    }
+
+    private val manifestJson = """
+        {
+          "schemaVersion": 2,
+          "packId": "TEST_PACK", "packVersion": "v1", "language": "it",
+          "displayName": "Test Pack",
+          "chapters": [
+            { "chapterId": "chapter_1", "order": 1, "title": "Глава 1", "subtitle": null,
+              "lessons": ["lesson_01", "lesson_02"] }
+          ]
+        }
+    """.trimIndent()
+
+    private fun lessonCsv(rows: Int, withBadLine: Boolean = false): String {
+        val sb = StringBuilder("Урок тестовый\n")
+        repeat(rows) { i -> sb.append("Промпт $i;answer $i\n") }
+        if (withBadLine) sb.append("лишняя;колонка;здесь\n")
+        return sb.toString()
+    }
+
+    @Test
+    fun importPackFromStream_writesPackChaptersLessonsCards() = runTest {
+        val result = importer.importPackFromStream(
+            zip(
+                "manifest.json" to manifestJson,
+                "lesson_01.csv" to lessonCsv(rows = 2),
+                "lesson_02.csv" to lessonCsv(rows = 1),
+            )
+        )
+
+        assertThat(result).isInstanceOf(PackImportResult.Success::class.java)
+
+        val pack = db.contentDao().getPack("TEST_PACK")!!
+        assertThat(pack.languageId).isEqualTo("it")
+        assertThat(pack.version).isEqualTo("v1")
+        assertThat(pack.displayName).isEqualTo("Test Pack")
+
+        val chapters = db.contentDao().getChapters("TEST_PACK")
+        assertThat(chapters).hasSize(1)
+        assertThat(chapters.single().title).isEqualTo("Глава 1")
+
+        val lessons = db.contentDao().getLessons("TEST_PACK")
+        assertThat(lessons.map { it.id }).containsExactly("lesson_01", "lesson_02").inOrder()
+        assertThat(lessons.map { it.chapterId }).containsExactly("chapter_1", "chapter_1")
+
+        val cards01 = db.contentDao().getCards("lesson_01")
+        assertThat(cards01.map { it.id }).containsExactly("lesson_01_0", "lesson_01_1").inOrder()
+        assertThat(cards01.map { it.ord }).containsExactly(0, 1).inOrder()
+        assertThat(db.contentDao().getCards("lesson_02")).hasSize(1)
+    }
+
+    @Test
+    fun importPackFromStream_idempotentReimport() = runTest {
+        val stream = zip(
+            "manifest.json" to manifestJson,
+            "lesson_01.csv" to lessonCsv(rows = 2),
+            "lesson_02.csv" to lessonCsv(rows = 1),
+        )
+        importer.importPackFromStream(stream)
+
+        val second = importer.importPackFromStream(
+            zip(
+                "manifest.json" to manifestJson,
+                "lesson_01.csv" to lessonCsv(rows = 2),
+                "lesson_02.csv" to lessonCsv(rows = 1),
+            )
+        )
+
+        assertThat(second).isInstanceOf(PackImportResult.Success::class.java)
+        assertThat(db.contentDao().getPacks()).hasSize(1)
+        assertThat(db.contentDao().getLessons("TEST_PACK")).hasSize(2)
+        assertThat(db.contentDao().getCards("lesson_01")).hasSize(2)
+    }
+
+    @Test
+    fun importPackFromStream_partialLesson_producesPartialResultAndSkipsBadLine() = runTest {
+        val result = importer.importPackFromStream(
+            zip(
+                "manifest.json" to manifestJson,
+                "lesson_01.csv" to lessonCsv(rows = 2, withBadLine = true),
+                "lesson_02.csv" to lessonCsv(rows = 1),
+            )
+        )
+
+        val partial = result as PackImportResult.Partial
+        assertThat(partial.errors).hasSize(1)
+        // Корректные карты сохранены, упавшая строка пропущена.
+        assertThat(db.contentDao().getCards("lesson_01")).hasSize(2)
+    }
+
+    @Test
+    fun importPackFromStream_missingManifest_failsWithoutWrite() = runTest {
+        val result = importer.importPackFromStream(
+            zip("lesson_01.csv" to lessonCsv(rows = 1))
+        )
+
+        assertThat(result).isInstanceOf(PackImportResult.Failed::class.java)
+        assertThat(db.contentDao().getPacks()).isEmpty()
+    }
+
+    @Test
+    fun importedCards_acceptedAnswersDecodeFromJson() = runTest {
+        importer.importPackFromStream(
+            zip(
+                "manifest.json" to manifestJson,
+                "lesson_01.csv" to "Урок\nПривет;ciao+salve\n",
+                "lesson_02.csv" to lessonCsv(rows = 1),
+            )
+        )
+
+        val card = db.contentDao().getCards("lesson_01").single()
+        assertThat(card.promptRu).isEqualTo("Привет")
+        val answers = Json.decodeFromString(ListSerializer(String.serializer()), card.acceptedAnswersJson)
+        assertThat(answers).containsExactly("ciao", "salve").inOrder()
+    }
+}

@@ -19,7 +19,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -137,10 +136,10 @@ const val HOME_PACK_CARD_TAG = "home_pack_card"
 /**
  * Карточка одного пака обучения.
  *
- * Красивая заливка `primaryContainer` + закруглённые углы + тонкая тень. Прогресс
- * урока — заглушка (TODO: тянуть из ProgressRepository); показывает индикатор
- * лишь как демо design-system. Имя пака берётся из [Pack.displayName] либо
- * fallback на `id.value`.
+ * Красивая заливка `primaryContainer` + закруглённые углы + тонкая тень.
+ * Реактивный прогресс урока появится в Фазе 3 (ProgressRepository) — фиктивный
+ * индикатор 0% удалён. Имя пака берётся из [Pack.displayName] либо fallback
+ * на `id.value`.
  *
  * Statelesss: клик пробрасывается в [onClick], карточка сама ничего не мутирует.
  */
@@ -175,12 +174,8 @@ private fun PackCard(pack: Pack, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
             )
-            // TODO(Фаза 7+): реальный прогресс из ProgressRepository.
-            //   Пока — статичный 0% как плейсхолдер design-system.
-            LinearProgressIndicator(
-                progress = { 0.0f },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // Реактивный прогресс урока — Фаза 3 плана (ProgressRepository);
+            // фиктивный индикатор 0% удалён (не показывать фейковые данные).
             Text(
                 text = "Версия ${pack.version}",
                 style = MaterialTheme.typography.labelSmall,
