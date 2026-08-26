@@ -320,25 +320,30 @@ class PackImporter @Inject constructor(
 
     /**
      * Распаковка ZIP во временный каталог с path-traversal защитой
-     * (`canonicalTarget.startsWith(canonicalParent)`, AC-2, legacy 1:1).
+     * (ZipGuard: Path-посегментно + бюджеты entries/байты — фикс аудита H-2).
      */
     private fun extractZipToTemp(input: InputStream): File {
         val tempDir = File(context.cacheDir, "pack_import_${UUID.randomUUID()}")
         tempDir.mkdirs()
+        val budget = ZipGuard.ZipBudget()
         ZipInputStream(input).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
+                if (!budget.onEntry()) error("Zip has too many entries (>${ZipGuard.MAX_ENTRIES})")
                 val outFile = File(tempDir, entry.name)
-                val canonicalParent = tempDir.canonicalPath + File.separator
-                val canonicalTarget = outFile.canonicalPath
-                if (!canonicalTarget.startsWith(canonicalParent)) {
+                if (!ZipGuard.isInsideDir(outFile, tempDir)) {
                     error("Invalid zip entry: ${entry.name}")
                 }
                 if (entry.isDirectory) {
                     outFile.mkdirs()
                 } else {
                     outFile.parentFile?.mkdirs()
-                    FileOutputStream(outFile).use { out -> zip.copyTo(out) }
+                    FileOutputStream(outFile).use { out ->
+                        val copied = zip.copyTo(out)
+                        if (!budget.onBytes(copied)) {
+                            error("Zip unpacked size exceeds ${ZipGuard.MAX_TOTAL_BYTES} bytes")
+                        }
+                    }
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
