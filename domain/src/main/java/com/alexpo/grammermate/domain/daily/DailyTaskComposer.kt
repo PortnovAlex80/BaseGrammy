@@ -77,10 +77,11 @@ data class DailySettings(
  *     (для `{TRANSLATE:5, VOCAB:3, VERBS:2}` → 10);
  *  2. Порядок задач = порядок блоков в [blockConfig] (LinkedHashMap сохраняет
  *     порядок вставки); у каждой задачи корректный [DailyTask.blockType];
- *  3. Каждый [DailyTask] несёт стабильный `id` вида `"daily:<block>:<index>"`,
- *     где `<block>` — нижний регистр имени [DailyBlockType], `<index>` —
- *     порядковый номер задачи внутри блока (0-based). Одинаковые входы →
- *     одинаковые id (стабильность для UI-ключей);
+ *  3. Каждый [DailyTask] несёт стабильный `id` вида
+ *     `"daily:<block>:<contentId>"`, где `<contentId>` — идентификатор
+ *     карточки/слова. Одинаковые входы → одинаковые id; разное содержимое
+ *     дня → разные id (фикс аудита M-12: индексный формат коллидил между
+ *     днями, засчитывая вчерашнее выполнение сегодняшнему контенту);
  *  4. Подтипы переиспользуют существующие модели ([Card]/[VocabWord]/
  *     [InputMode]/[VocabDrillDirection]/[VerbDrillCard]) — без дублирования;
  *  5. Чистый Kotlin, 0 `import android`.
@@ -107,16 +108,19 @@ object DailyTaskComposer {
         settings: DailySettings,
     ): List<DailyTask> {
         val tasks = ArrayList<DailyTask>(settings.blockConfig.values.sum())
+        // Фильтр предложений — один раз на вызов (фикс аудита M-14: было
+        // O(count×pool) внутри repeat).
+        val sentences = content.sentenceCards.filter { it.type == CardType.SENTENCE }
         settings.blockConfig.forEach { (blockType, count) ->
             repeat(count) { index ->
                 val task = when (blockType) {
                     DailyBlockType.TRANSLATE -> composeTranslate(
                         cursor,
-                        content,
+                        sentences,
                         settings,
                         index,
                     )
-                    DailyBlockType.VOCAB -> composeVocab(content, settings, index)
+                    DailyBlockType.VOCAB -> composeVocab(cursor, content, settings, index)
                     DailyBlockType.VERBS -> composeVerbs(
                         cursor,
                         content,
@@ -133,21 +137,20 @@ object DailyTaskComposer {
     /**
      * Собирает [DailyTask.TranslateSentence] из пула карточек-предложений.
      *
-     * Берёт карточку по смещению [DailyCursor.sentenceOffset] + [index],
-     * пропуская не-предложения (фльтр по [CardType.SENTENCE]).
+     * Берёт карточку по смещению [DailyCursor.sentenceOffset] + [index]
+     * (пул уже отфильтрован по [CardType.SENTENCE] в [compose]).
      * `null`, если пул исчерпан.
      */
     private fun composeTranslate(
         cursor: DailyCursor,
-        content: DailyContent,
+        sentences: List<Card>,
         settings: DailySettings,
         index: Int,
     ): DailyTask.TranslateSentence? {
-        val sentences = content.sentenceCards.filter { it.type == CardType.SENTENCE }
         val position = cursor.sentenceOffset + index
         val card = sentences.getOrNull(position) ?: return null
         return DailyTask.TranslateSentence(
-            id = stableId(DailyBlockType.TRANSLATE, index),
+            id = stableId(DailyBlockType.TRANSLATE, card.id.value),
             card = card,
             inputMode = settings.inputMode,
         )
@@ -156,18 +159,21 @@ object DailyTaskComposer {
     /**
      * Собирает [DailyTask.VocabFlashcard] из пула словарных слов.
      *
-     * Берёт слово по индексу [index] (vocab sprint идёт по курсору частотности,
+     * Берёт слово по смещению [DailyCursor.vocabOffset] + [index] (срез 4
+     * Фазы 4: словарь идёт по курсору частотности — не с нуля каждый день;
      * порядок слов в [DailyContent.vocabWords] уже отсортирован data-слоем).
      * `null`, если пул исчерпан.
      */
     private fun composeVocab(
+        cursor: DailyCursor,
         content: DailyContent,
         settings: DailySettings,
         index: Int,
     ): DailyTask.VocabFlashcard? {
-        val word = content.vocabWords.getOrNull(index) ?: return null
+        val position = cursor.vocabOffset + index
+        val word = content.vocabWords.getOrNull(position) ?: return null
         return DailyTask.VocabFlashcard(
-            id = stableId(DailyBlockType.VOCAB, index),
+            id = stableId(DailyBlockType.VOCAB, word.id),
             word = word,
             direction = settings.vocabDirection,
         )
@@ -188,19 +194,19 @@ object DailyTaskComposer {
         val position = cursor.verbOffset + index
         val card = content.verbCards.getOrNull(position) ?: return null
         return DailyTask.ConjugateVerb(
-            id = stableId(DailyBlockType.VERBS, index),
+            id = stableId(DailyBlockType.VERBS, card.id),
             card = card,
             inputMode = settings.inputMode,
         )
     }
 
     /**
-     * Стабильный идентификатор задачи: `"daily:<block-lowercase>:<index>"`.
+     * Стабильный идентификатор задачи: `"daily:<block-lowercase>:<contentId>"`.
      *
-     * Зависит только от типа блока и индекса внутри блока — не от содержимого
-     * карточки, поэтому одинаковые входы всегда дают одинаковые id (требование
-     * AC-16 Then-2 для UI-ключей).
+     * Зависит от типа блока и ИДЕНТИЧНОСТИ КОНТЕНТА (фикс аудита M-12:
+     * прежний индексный формат коллидил между днями). Одинаковые входы →
+     * одинаковые id; контент другого дня → другой id.
      */
-    private fun stableId(blockType: DailyBlockType, index: Int): String =
-        "daily:" + blockType.name.lowercase() + ":" + index
+    private fun stableId(blockType: DailyBlockType, contentId: String): String =
+        "daily:" + blockType.name.lowercase() + ":" + contentId
 }

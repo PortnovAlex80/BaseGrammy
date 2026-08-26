@@ -104,4 +104,28 @@ class GrammarMateMigrationTest {
         }
         v3.close()
     }
+
+    /** Срез 4 Фазы 4: v3 → v4 — `daily_cursors.vocabOffset` (additive, default 0). */
+    @Test
+    fun `migrate 3 to 4 adds vocabOffset with zero default`() {
+        val db4 = "migration-test-v4.db"
+        helper.createDatabase(db4, 3).use { v3 ->
+            v3.execSQL(
+                "INSERT INTO daily_cursors (packId, sentenceOffset, currentLessonIndex, verbOffset, " +
+                    "firstSessionDate, firstSessionSentenceCardIdsJson, firstSessionVerbCardIdsJson, " +
+                    "firstSessionLessonId, updatedAtMs) " +
+                    "VALUES ('P1', 5, 1, 3, NULL, '[]', '[]', NULL, 1)",
+            )
+        }
+
+        val v4 = helper.runMigrationsAndValidate(db4, 4, true, GrammarMateDatabase.MIGRATION_3_4)
+
+        v4.query("SELECT sentenceOffset, verbOffset, vocabOffset FROM daily_cursors").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getInt(0)).isEqualTo(5)
+            assertThat(cursor.getInt(1)).isEqualTo(3)
+            assertThat(cursor.getInt(2)).isEqualTo(0)
+        }
+        v4.close()
+    }
 }

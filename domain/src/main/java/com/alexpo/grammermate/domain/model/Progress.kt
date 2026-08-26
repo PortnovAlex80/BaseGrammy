@@ -156,6 +156,8 @@ data class DailyCursor(
     val sentenceOffset: Int,
     val currentLessonIndex: Int,
     val verbOffset: Int,
+    /** Курсор vocab-блока (срез 4 Фазы 4: словарь идёт по частотности, не с нуля каждый день). */
+    val vocabOffset: Int = 0,
     val firstSessionDate: String?,
     val firstSessionSentenceCardIds: List<CardId>,
     val firstSessionVerbCardIds: List<CardId>,

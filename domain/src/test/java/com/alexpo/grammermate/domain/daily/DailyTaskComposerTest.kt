@@ -138,13 +138,43 @@ class DailyTaskComposerTest {
         // Then-2: стабильный id у каждой задачи + все уникальны (UI-ключи).
         val ids = tasks.map { it.id }
         assertThat(ids).containsNoDuplicates()
-        // Формат id: "daily:<block>:<index>".
+        // Формат id: "daily:<block>:<contentId>" — id следует за КОНТЕНТОМ,
+        // а не индексом (фикс аудита M-12: коллизии между днями).
         assertThat(ids).containsExactly(
-            "daily:translate:0", "daily:translate:1", "daily:translate:2",
-            "daily:translate:3", "daily:translate:4",
-            "daily:vocab:0", "daily:vocab:1", "daily:vocab:2",
-            "daily:verbs:0", "daily:verbs:1",
+            "daily:translate:sentence-0", "daily:translate:sentence-1",
+            "daily:translate:sentence-2", "daily:translate:sentence-3",
+            "daily:translate:sentence-4",
+            "daily:vocab:nouns_0", "daily:vocab:nouns_1", "daily:vocab:nouns_2",
+            "daily:verbs:verb-0", "daily:verbs:verb-1",
         ).inOrder()
+    }
+
+    /** Фикс аудита M-12: id другого ДНЯ (другой контент) отличаются. */
+    @Test
+    fun compose_idsFollowContent_notDayIndex() {
+        val day1 = DailyTaskComposer.compose(cursor, content, settings)
+        val nextDay = cursor.copy(sentenceOffset = 5, verbOffset = 2, vocabOffset = 3)
+        val day2 = DailyTaskComposer.compose(nextDay, content, settings)
+
+        assertThat(day2.map { it.id }).containsExactly(
+            "daily:translate:sentence-5", "daily:translate:sentence-6",
+            "daily:translate:sentence-7", // пул 8: 5+4 за границей → только 3
+            "daily:vocab:nouns_3", "daily:vocab:nouns_4", "daily:vocab:nouns_5",
+            "daily:verbs:verb-2", "daily:verbs:verb-3",
+        ).inOrder()
+        // Ни один id дня 2 не совпадает с днём 1 при том же формате.
+        assertThat(day1.map { it.id }.toSet() intersect day2.map { it.id }.toSet()).isEmpty()
+    }
+
+    /** Фикс аудита M-13: vocab-блок идёт по курсору, не с нуля каждый день. */
+    @Test
+    fun compose_vocabRespectsCursorOffset() {
+        val advanced = cursor.copy(vocabOffset = 4)
+
+        val tasks = DailyTaskComposer.compose(advanced, content, settings)
+
+        val vocab = tasks.filterIsInstance<DailyTask.VocabFlashcard>()
+        assertThat(vocab.map { it.word.id }).containsExactly("nouns_4", "nouns_5").inOrder()
     }
 
     @Test

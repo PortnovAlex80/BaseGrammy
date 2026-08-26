@@ -66,7 +66,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
  * `app/schemas/` (регрессионные migration-тесты через room-testing).
  */
 @Database(
-    version = 3,
+    version = 4,
     exportSchema = true,
     entities = [
         // Контент
@@ -176,6 +176,17 @@ abstract class GrammarMateDatabase : RoomDatabase() {
         }
 
         /**
+         * v3 → v4 (срез 4 Фазы 4): `daily_cursors.vocabOffset` — курсор
+         * vocab-блока дневной нормы (словарь больше не стартует с нуля каждый
+         * день). Additive: существующие строки получают 0.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE daily_cursors ADD COLUMN vocabOffset INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /**
          * Production builder: WAL включён, миграции регистрируются здесь.
          * Schema export — в `app/schemas/` (для регрессионных migration-тестов).
          */
@@ -186,7 +197,7 @@ abstract class GrammarMateDatabase : RoomDatabase() {
                 DATABASE_NAME,
             )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 // fallbackToDestructiveMigration НЕ используется — данные пользователя критичны.
                 .build()
     }

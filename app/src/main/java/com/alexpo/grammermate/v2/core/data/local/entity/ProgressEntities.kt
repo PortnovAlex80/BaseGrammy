@@ -129,6 +129,8 @@ data class DailyCursorEntity(
     val sentenceOffset: Int,
     val currentLessonIndex: Int,
     val verbOffset: Int,
+    /** Курсор vocab-блока (schema v4, срез 4 Фазы 4). */
+    val vocabOffset: Int = 0,
     val firstSessionDate: String?,
     val firstSessionSentenceCardIdsJson: String,
     val firstSessionVerbCardIdsJson: String,
