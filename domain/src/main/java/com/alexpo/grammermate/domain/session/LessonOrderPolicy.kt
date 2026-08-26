@@ -25,7 +25,9 @@ object LessonOrderPolicy {
      * (порядок `ord`); [TrainingMode.ALL_MIXED] — [interleave].
      */
     fun apply(cards: List<Card>, mode: TrainingMode): List<Card> = when (mode) {
-        TrainingMode.LESSON, TrainingMode.ALL_SEQUENTIAL -> cards
+        TrainingMode.LESSON, TrainingMode.ALL_SEQUENTIAL,
+        TrainingMode.VERB_DRILL, // порядок drill-пула задаётся при сборке (rank)
+            -> cards
         TrainingMode.ALL_MIXED -> interleave(cards)
     }
 

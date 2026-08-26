@@ -12,7 +12,7 @@ package com.alexpo.grammermate.domain.model
  */
 
 /** Режим тренировки внутри пака. */
-enum class TrainingMode { LESSON, ALL_SEQUENTIAL, ALL_MIXED }
+enum class TrainingMode { LESSON, ALL_SEQUENTIAL, ALL_MIXED, VERB_DRILL }
 
 /** Жизненный цикл сессии тренировки. */
 enum class SessionStatus { ACTIVE, PAUSED, COMPLETED }

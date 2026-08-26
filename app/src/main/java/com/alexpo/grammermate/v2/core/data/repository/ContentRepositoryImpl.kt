@@ -1,6 +1,8 @@
 package com.alexpo.grammermate.v2.core.data.repository
 
 import com.alexpo.grammermate.v2.core.data.local.dao.ContentDao
+import com.alexpo.grammermate.v2.core.data.local.dao.DrillDao
+import com.alexpo.grammermate.v2.core.data.local.entity.VerbDrillCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.CardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.ChapterEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.LessonEntity
@@ -16,6 +18,7 @@ import com.alexpo.grammermate.domain.model.Lesson
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.Pack
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.VerbDrillCard
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -44,9 +47,11 @@ import javax.inject.Inject
  *    по `chapterId` (без N+1).
  *
  * @property contentDao Room-DAO контента паков.
+ * @property drillDao   Room-DAO drill-контента (verb drill, Фаза 4 срез 2).
  */
 class ContentRepositoryImpl @Inject constructor(
     private val contentDao: ContentDao,
+    private val drillDao: DrillDao,
 ) : ContentRepository {
 
     // ── Языки ──────────────────────────────────────────────────────────────────
@@ -182,6 +187,39 @@ class ContentRepositoryImpl @Inject constructor(
         person = e.person,
         frequencyRank = e.frequencyRank,
     )
+
+    // ── Verb drill (Фаза 4 срез 2) ─────────────────────────────────────────────
+
+    /**
+     * Карточки verb drill пака: один SELECT по `packId` (индекс) + фильтрация
+     * combo в памяти (`tense`/`group`/`person`; null = не фильтровать) и
+     * сортировка по частотности (`rank`, null — в конец), детерминированно.
+     */
+    override suspend fun getVerbDrillCards(
+        packId: PackId,
+        tense: String?,
+        group: String?,
+        person: String?,
+    ): List<VerbDrillCard> =
+        drillDao.getVerbDrillCardsForPack(packId.value)
+            .asSequence()
+            .filter { tense == null || it.tense == tense }
+            .filter { group == null || it.group == group }
+            .filter { person == null || it.person == person }
+            .sortedWith(compareBy<VerbDrillCardEntity> { it.rank ?: Int.MAX_VALUE }.thenBy { it.id })
+            .map { e ->
+                VerbDrillCard(
+                    id = e.id,
+                    promptRu = e.promptRu,
+                    answer = e.answer,
+                    verb = e.verb,
+                    tense = e.tense,
+                    group = e.group,
+                    person = e.person,
+                    rank = e.rank,
+                )
+            }
+            .toList()
 
     // ── Вспомогательное: JSON и enum-маппинг ───────────────────────────────────
 

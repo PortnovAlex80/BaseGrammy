@@ -9,6 +9,7 @@ import com.alexpo.grammermate.domain.model.Lesson
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.Pack
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.VerbDrillCard
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -55,6 +56,19 @@ interface ContentRepository {
 
     /** Карточки урока в порядке отображения. */
     suspend fun getCards(lessonId: LessonId): List<Card>
+
+    /**
+     * Карточки verb drill пака с combo-фильтрами (Фаза 4 срез 2).
+     *
+     * `null`-фильтр = не фильтровать по этому измерению. Порядок — по
+     * частотности (`VerbDrillCard.rank`, null — в конец), детерминированно.
+     */
+    suspend fun getVerbDrillCards(
+        packId: PackId,
+        tense: String? = null,
+        group: String? = null,
+        person: String? = null,
+    ): List<VerbDrillCard>
 
     /** Реактивный список уроков пака — для подписки UI. */
     fun observeLessons(packId: PackId): Flow<List<Lesson>>

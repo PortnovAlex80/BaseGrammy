@@ -9,6 +9,7 @@ import com.alexpo.grammermate.domain.model.Lesson
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.Pack
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.VerbDrillCard
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -25,6 +26,12 @@ class FakeContentRepository : ContentRepository {
 
     private val cardsByLesson = mutableMapOf<LessonId, List<Card>>()
     private val lessonsById = mutableMapOf<LessonId, Lesson>()
+    private val verbDrillCardsByPack = mutableMapOf<PackId, List<VerbDrillCard>>()
+
+    /** Тестовый сетап: задать карточки verb drill для пака. */
+    fun setVerbDrillCards(packId: PackId, cards: List<VerbDrillCard>) {
+        verbDrillCardsByPack[packId] = cards
+    }
 
     /** Тестовый сетап: задать карточки (и сам урок) для урока. */
     fun setCardsForLesson(lessonId: LessonId, cards: List<Card>) {
@@ -56,5 +63,18 @@ class FakeContentRepository : ContentRepository {
     override suspend fun getLesson(lessonId: LessonId): Lesson? = lessonsById[lessonId]
     override suspend fun getCards(lessonId: LessonId): List<Card> =
         cardsByLesson[lessonId] ?: emptyList()
+
+    override suspend fun getVerbDrillCards(
+        packId: PackId,
+        tense: String?,
+        group: String?,
+        person: String?,
+    ): List<VerbDrillCard> =
+        verbDrillCardsByPack[packId].orEmpty()
+            .filter { tense == null || it.tense == tense }
+            .filter { group == null || it.group == group }
+            .filter { person == null || it.person == person }
+            .sortedWith(compareBy<VerbDrillCard> { it.rank ?: Int.MAX_VALUE }.thenBy { it.id })
+
     override fun observeLessons(packId: PackId): Flow<List<Lesson>> = flowOf(emptyList())
 }

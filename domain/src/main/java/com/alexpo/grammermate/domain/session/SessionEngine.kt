@@ -179,6 +179,39 @@ class SessionEngine(
     }
 
     /**
+     * Начать verb-drill сессию пака (Фаза 4 срез 2).
+     *
+     * Пул — карточки [ContentRepository.getVerbDrillCards] по combo-фильтрам
+     * (`tense`/`group`/`person`; null = всё), порядок — частотность (`rank`),
+     * детерминированно; `sessionSize` ограничивает пул сверху (0/отрицательное
+     * = без ограничения). Фильтры персистятся в снимке (`selectedTense/Group/
+     * Person`) — resume восстанавливает тот же combo. `lessonId = null`
+     * (drill вне уроков), стабильный PK — [SessionId.forVerbDrill].
+     */
+    suspend fun startVerbDrillSession(
+        packId: PackId,
+        sessionSize: Int,
+        tense: String? = null,
+        group: String? = null,
+        person: String? = null,
+    ): SessionSnapshot {
+        val sessionId = SessionId.forVerbDrill(packId)
+        val ranked = contentRepository.getVerbDrillCards(packId, tense, group, person)
+            .map { CardId(it.id) }
+        val pool = if (sessionSize > 0) ranked.take(sessionSize) else ranked
+        return sessionRepository.getOrCreateSession(
+            sessionId = sessionId,
+            packId = packId,
+            lessonId = null,
+            mode = TrainingMode.VERB_DRILL,
+            poolCardIds = pool,
+            selectedTense = tense,
+            selectedGroup = group,
+            selectedPerson = person,
+        )
+    }
+
+    /**
      * Перейти к следующей карточке. Обновляет `currentCardId` по PK
      * (индекс в пуле + 1, с зацикливанием). Пустой пул → currentCardId null.
      */
