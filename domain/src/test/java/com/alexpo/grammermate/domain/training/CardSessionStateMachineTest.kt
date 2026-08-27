@@ -315,4 +315,45 @@ class CardSessionStateMachineTest {
         assertThat(sm.isPaused).isFalse()
         assertThat(sm.remainingAttempts).isEqualTo(3)
     }
+
+    // ── TASK-073 Priority 2: resume-пути после universal non-ACTIVE fix ────
+
+    /** PAUSED (после HintShown) + ввод текста → resume, верный submit → Correct. */
+    @Test
+    fun `onSubmit correct after pause and typed input resumes and returns Correct`() {
+        val sm = newStateMachine()
+        repeat(3) { sm.onSubmit(false, cardId, InputMode.KEYBOARD) }
+        assertThat(sm.isPaused).isTrue() // HintShown на 3-й неверной
+
+        sm.onInputChanged("ci") // пользователь начал печатать → пауза снята
+        assertThat(sm.isPaused).isFalse()
+
+        val result = sm.onSubmit(true, cardId, InputMode.KEYBOARD)
+        assertThat(result).isInstanceOf(OnSubmitResult.Correct::class.java)
+        assertThat(sm.incorrectAttempts).isEqualTo(0)
+    }
+
+    /** HINT_SHOWN state + корректный voice-ответ без typing → остаётся Wrong (см. фикс M-7 аудита). */
+    @Test
+    fun `onSubmit correct while hint shown without typing stays Wrong`() {
+        val sm = newStateMachine()
+        repeat(3) { sm.onSubmit(false, cardId, InputMode.KEYBOARD) }
+        assertThat(sm.hintAnswer).isNotNull()
+
+        // VOICE не вызывает onInputChanged — подсказка не сброшена.
+        val result = sm.onSubmit(true, cardId, InputMode.VOICE)
+
+        assertThat(result).isInstanceOf(OnSubmitResult.Wrong::class.java)
+    }
+
+    /** VOICE retry после неверной: авто-ретриггер распознавания (voiceTriggerToken++). */
+    @Test
+    fun `onSubmit wrong in VOICE mode increments voiceTriggerToken for retry`() = runTest {
+        val sm = newStateMachine()
+        val before = sm.voiceTriggerTokenFlow.first()
+
+        sm.onSubmit(false, cardId, InputMode.VOICE)
+
+        assertThat(sm.voiceTriggerTokenFlow.first()).isEqualTo(before + 1)
+    }
 }

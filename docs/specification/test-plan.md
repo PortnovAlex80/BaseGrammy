@@ -36,8 +36,8 @@ Related: TASK-073, legacy-test-plan.md
 | Test Case | Status | Existing Coverage |
 |-----------|--------|-------------------|
 | correct answer ACTIVE → advance to next card | COVERED | `submitAnswer_correctNormalMidCard_advancesToNextCard` |
-| correct answer PAUSED → resume + advance | **MISSING** | PAUSED+correct not tested after recent fix |
-| correct answer HINT_SHOWN → resume + advance | **MISSING** | HINT_SHOWN+correct not tested after recent fix |
+| correct answer PAUSED → resume + advance | COVERED | `onSubmit correct after pause and typed input resumes and returns Correct` |
+| correct answer HINT_SHOWN → resume + advance | COVERED (семантика v2) | `onSubmit correct while hint shown without typing stays Wrong` — resume ТОЛЬКО через onInputChanged (typing); voice-путь остаётся Wrong до смены карты (фикс M-7 аудита) |
 | wrong answer ACTIVE → stay, increment attempts | COVERED | `submitAnswer_wrongAnswer_incrementsIncorrectAttempts` |
 | wrong × 3 → show hint, HINT_SHOWN state | COVERED | `submitAnswer_wrongAnswerAtHintThreshold_showsHint` |
 | last card + correct → subLessonFinishedToken++ | COVERED | `submitAnswer_correctNormalLastCard_signalsSubLessonComplete` |
@@ -50,7 +50,7 @@ Related: TASK-073, legacy-test-plan.md
 | startCardSession(cards, DAILY_TRANSLATE) | COVERED | `startSession_normalMode_emitsBuildSessionCards` |
 | exitCardSession → resets state | COVERED | `finishSession_*` tests |
 
-**GAP: 2 tests needed** — PAUSED+correct and HINT_SHOWN+correct after the universal non-ACTIVE fix.
+**GAP: 0** — закрыто 2026-08-27 (+bonus: VOICE-retry авто-ретриггер тест).
 
 ### 2. DailyPracticeCoordinator — Cursor & Session
 
