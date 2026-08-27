@@ -217,13 +217,23 @@ class PackImporter @Inject constructor(
             importedAtMs = importedAtMs,
         )
         val chapterEntities = manifest.chapters.map { ch ->
+            val resolvedStory = ch.storyFile?.let { declared ->
+                resolveStoryPath(packDir, declared).also { resolved ->
+                    if (resolved == null) {
+                        errors += ParseError.WithFileContext(
+                            declared,
+                            ParseError.InvalidFormat(reason = "Missing or unsafe story file"),
+                        )
+                    }
+                }
+            }
             ChapterEntity(
                 id = ch.chapterId,
                 packId = manifest.packId,
                 order = ch.order,
                 title = ch.title,
                 subtitle = ch.subtitle,
-                storyFile = ch.storyFile,
+                storyFile = resolvedStory,
             )
         }
         val lessonEntities = parsedLessons.map { it.toEntity(manifest.packId) }
@@ -316,6 +326,9 @@ class PackImporter @Inject constructor(
         // Ошибка копирования не роняет импорт — story-контент дозагрузится
         // повторным идемпотентным импортом.
         runCatching { preserveStoryFiles(packDir, manifest.packId) }
+            .onFailure { error ->
+                errors += ParseError.InvalidFormat(reason = "Cannot preserve story files: ${error.message}")
+            }
 
         val pack = LessonPack(
             packId = manifest.packId,
@@ -347,6 +360,17 @@ class PackImporter @Inject constructor(
                 dest.parentFile?.mkdirs()
                 md.copyTo(dest, overwrite = true)
             }
+    }
+
+    private fun resolveStoryPath(packDir: File, declaredPath: String): String? {
+        val normalized = declaredPath.replace('\\', '/').trimStart('/')
+        if (normalized.isBlank() || normalized.split('/').any { it == ".." }) return null
+        val candidates = listOf(normalized, "stories/$normalized").distinct()
+        val root = packDir.canonicalFile
+        return candidates.firstOrNull { relative ->
+            val candidate = File(packDir, relative).canonicalFile
+            candidate.path.startsWith(root.path + File.separator) && candidate.isFile
+        }
     }
 
     /** Запись урока манифеста после сбора из v1/v2 секций. */

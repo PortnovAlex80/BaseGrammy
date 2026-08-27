@@ -20,16 +20,16 @@ interface UserContentRepository {
     // ── Скрытые карточки ───────────────────────────────────────────────────
 
     /** Множество скрытых карточек. */
-    suspend fun getHiddenCardIds(): Set<CardId>
+    suspend fun getHiddenCardIds(packId: PackId): Set<CardId>
 
     /** Скрыть карточку в момент [nowMs]. */
-    suspend fun hideCard(cardId: CardId, nowMs: Long)
+    suspend fun hideCard(packId: PackId, cardId: CardId, nowMs: Long)
 
     /** Вернуть карточку в выдачу. */
-    suspend fun unhideCard(cardId: CardId)
+    suspend fun unhideCard(packId: PackId, cardId: CardId)
 
     /** Реактивное множество скрытых карточек — для фильтрации выдачи UI. */
-    fun observeHiddenCards(): Flow<Set<CardId>>
+    fun observeHiddenCards(packId: PackId): Flow<Set<CardId>>
 
     // ── «Плохие» предложения (жалобы на контент) ───────────────────────────
 

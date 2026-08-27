@@ -170,4 +170,43 @@ class GrammarMateMigrationTest {
         }
         v4.close()
     }
+
+    @Test
+    fun `migrate 5 to 6 scopes state and invalidates only active lesson sessions`() {
+        val db6 = "migration-test-v6.db"
+        helper.createDatabase(db6, 5).use { v5 ->
+            v5.execSQL("INSERT INTO packs (id, languageId, displayName, version, importedAtMs) VALUES ('P1', 'it', 'Pack', '1', 0)")
+            v5.execSQL(
+                "INSERT INTO cards (packId, id, lessonId, ord, type, promptRu, acceptedAnswersJson) " +
+                    "VALUES ('P1', 'card_1', 'lesson', 0, 'SENTENCE', 'p', '[\"a\"]')",
+            )
+            v5.execSQL("INSERT INTO hidden_cards (cardId, hiddenAtMs) VALUES ('card_1', 42)")
+            val sessionColumns = "id, packId, lessonId, mode, subLessonIndex, cursorIndex, currentCardId, " +
+                "status, state, correctCount, incorrectCount, hintCount, incorrectAttemptsForCard, " +
+                "completedSubLessonCount, activeTimeMs, voiceActiveMs, voiceWordCount, startedAtMs, updatedAtMs, revision"
+            v5.execSQL(
+                "INSERT INTO sessions ($sessionColumns) VALUES " +
+                    "('active', 'P1', 'lesson', 'LESSON', 0, 0, 'card_1', 'ACTIVE', 'ACTIVE', 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0)",
+            )
+            v5.execSQL(
+                "INSERT INTO sessions ($sessionColumns) VALUES " +
+                    "('completed', 'P1', 'lesson', 'LESSON', 0, 0, 'card_1', 'COMPLETED', 'ACTIVE', 1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1)",
+            )
+        }
+
+        val migrated = helper.runMigrationsAndValidate(db6, 6, true, GrammarMateDatabase.MIGRATION_5_6)
+        migrated.query("SELECT id, sessionSize FROM sessions").use { cursor ->
+            assertThat(cursor.count).isEqualTo(1)
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("completed")
+            assertThat(cursor.getInt(1)).isEqualTo(10)
+        }
+        migrated.query("SELECT packId, cardId, hiddenAtMs FROM hidden_cards").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("P1")
+            assertThat(cursor.getString(1)).isEqualTo("card_1")
+            assertThat(cursor.getLong(2)).isEqualTo(42L)
+        }
+        migrated.close()
+    }
 }

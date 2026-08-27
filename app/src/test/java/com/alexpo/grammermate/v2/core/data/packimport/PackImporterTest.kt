@@ -112,6 +112,34 @@ class PackImporterTest {
         assertThat(repo.getStoryText(PackId("TEST_PACK"), "missing.md")).isNull()
     }
 
+    @Test
+    fun manifestStoryBasename_resolvesToStoriesDirectory() = runTest {
+        val storyManifest = manifestJson.replace(
+            "\"lessons\": [\"lesson_01\", \"lesson_02\"]",
+            "\"storyFile\": \"chapter_1.md\", \"lessons\": [\"lesson_01\", \"lesson_02\"]",
+        )
+        val story = "# Story"
+
+        val result = importer.importPackFromStream(
+            zip(
+                "manifest.json" to storyManifest,
+                "lesson_01.csv" to lessonCsv(rows = 1),
+                "lesson_02.csv" to lessonCsv(rows = 1),
+                "stories/chapter_1.md" to story,
+            ),
+        )
+
+        assertThat(result).isInstanceOf(PackImportResult.Success::class.java)
+        val chapter = db.contentDao().getChapters("TEST_PACK").single()
+        assertThat(chapter.storyFile).isEqualTo("stories/chapter_1.md")
+        val repo = com.alexpo.grammermate.v2.core.data.repository.ContentRepositoryImpl(
+            contentDao = db.contentDao(),
+            drillDao = db.drillDao(),
+            context = ApplicationProvider.getApplicationContext(),
+        )
+        assertThat(repo.getStoryText(PackId("TEST_PACK"), chapter.storyFile!!)).isEqualTo(story)
+    }
+
 
     /** D3: verb/vocab drill-секции манифеста импортируются в Room. */
 

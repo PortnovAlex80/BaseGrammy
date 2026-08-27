@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.alexpo.grammermate.domain.model.PackLessonProgress
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import com.alexpo.grammermate.domain.repository.MasteryRepository
+import com.alexpo.grammermate.v2.core.seed.BundledSeedState
+import com.alexpo.grammermate.v2.core.seed.BundledSeedStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +40,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     private val contentRepository: ContentRepository,
     masteryRepository: MasteryRepository,
+    private val seedStatus: BundledSeedStatus = BundledSeedStatus(),
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeViewState(isLoading = true))
@@ -57,15 +60,17 @@ class HomeViewModel @Inject constructor(
         combine(
             contentRepository.observePacks(),
             masteryRepository.observePackProgress(),
-        ) { packs, progress ->
-            packs to progress.associateBy { it.packId.value }
+            seedStatus.state,
+        ) { packs, progress, seedState ->
+            Triple(packs, progress.associateBy { it.packId.value }, seedState)
         }
-            .onEach { (packs, progress) ->
+            .onEach { (packs, progress, seedState) ->
+                val seedFailure = (seedState as? BundledSeedState.Failed)?.message
                 _state.value = HomeViewState(
                     packs = packs,
                     packProgress = progress,
-                    isLoading = false,
-                    error = null,
+                    isLoading = packs.isEmpty() && seedState == BundledSeedState.Running,
+                    error = seedFailure?.takeIf { packs.isEmpty() },
                 )
             }
             .catch { e ->
@@ -81,6 +86,9 @@ class HomeViewModel @Inject constructor(
     fun retry() {
         _state.value = _state.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
+            if (seedStatus.state.value is BundledSeedState.Failed) {
+                seedStatus.retry()
+            }
             // Одноразовый re-query для мгновенного фидбека; реактивная подписка
             // из init продолжает работать и обновит state при изменениях.
             runCatching { contentRepository.getPacks() }

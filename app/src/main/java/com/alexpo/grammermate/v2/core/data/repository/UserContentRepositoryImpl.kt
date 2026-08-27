@@ -55,19 +55,19 @@ class UserContentRepositoryImpl @Inject constructor(
 
     // ── Скрытые карточки ───────────────────────────────────────────────────────
 
-    override suspend fun getHiddenCardIds(): Set<CardId> =
-        userContentDao.getHiddenCardIds().map { CardId(it) }.toSet()
+    override suspend fun getHiddenCardIds(packId: PackId): Set<CardId> =
+        userContentDao.getHiddenCardIds(packId.value).map { CardId(it) }.toSet()
 
-    override suspend fun hideCard(cardId: CardId, nowMs: Long) {
-        userContentDao.hideCard(HiddenCardEntity(cardId.value, nowMs))
+    override suspend fun hideCard(packId: PackId, cardId: CardId, nowMs: Long) {
+        userContentDao.hideCard(HiddenCardEntity(packId.value, cardId.value, nowMs))
     }
 
-    override suspend fun unhideCard(cardId: CardId) {
-        userContentDao.unhideCard(cardId.value)
+    override suspend fun unhideCard(packId: PackId, cardId: CardId) {
+        userContentDao.unhideCard(packId.value, cardId.value)
     }
 
-    override fun observeHiddenCards(): Flow<Set<CardId>> =
-        userContentDao.observeHiddenCardIds().map { ids -> ids.map { CardId(it) }.toSet() }
+    override fun observeHiddenCards(packId: PackId): Flow<Set<CardId>> =
+        userContentDao.observeHiddenCardIds(packId.value).map { ids -> ids.map { CardId(it) }.toSet() }
 
     // ── «Плохие» предложения ───────────────────────────────────────────────────
 

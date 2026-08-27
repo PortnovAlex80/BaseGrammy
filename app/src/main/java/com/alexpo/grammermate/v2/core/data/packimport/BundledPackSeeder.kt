@@ -2,6 +2,8 @@ package com.alexpo.grammermate.v2.core.data.packimport
 
 import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.v2.core.seed.BundledSeedState
+import com.alexpo.grammermate.v2.core.seed.BundledSeedStatus
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +25,12 @@ import kotlinx.coroutines.withContext
 class BundledPackSeeder @Inject constructor(
     private val packImporter: PackImporter,
     private val contentRepository: ContentRepository,
+    private val seedStatus: BundledSeedStatus,
 ) {
+
+    init {
+        seedStatus.registerRetry(::seedIfNeeded)
+    }
 
     /** Bundled-пак golden journey: итальянский экспресс-курс (63 урока, manifest v2). */
     companion object {
@@ -33,12 +40,22 @@ class BundledPackSeeder @Inject constructor(
 
     /** Импортировать bundled-пак, если он ещё не установлен. */
     suspend fun seedIfNeeded() = withContext(Dispatchers.IO) {
+        seedStatus.publish(BundledSeedState.Running)
         runCatching {
             val installed = contentRepository.getPack(PackId(BUNDLED_PACK_ID))
             if (installed == null) {
-                packImporter.importPackFromAssets(BUNDLED_PACK_ASSET)
+                when (val result = packImporter.importPackFromAssets(BUNDLED_PACK_ASSET)) {
+                    is PackImportResult.Failed -> error(
+                        result.errors.joinToString { it.toString() }.ifBlank { "Bundled pack import failed" },
+                    )
+                    is PackImportResult.Success,
+                    is PackImportResult.Partial -> Unit
+                }
             }
+        }.onSuccess {
+            seedStatus.publish(BundledSeedState.Ready)
         }.onFailure { e ->
+            seedStatus.publish(BundledSeedState.Failed(e.message ?: "Bundled pack import failed"))
             // Не крашим первый запуск: Home покажет empty-state, следующий
             // launch повторит попытку (идемпотентность по наличию пака).
             android.util.Log.w(TAG, "Bundled pack seed failed: ${e.message}")

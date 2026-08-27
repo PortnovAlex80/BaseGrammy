@@ -153,6 +153,8 @@ fun PackContentScreen(
                             onClick = onOpenVocabDrill,
                             modifier = Modifier.weight(1f).testTag(PACK_VOCAB_DRILL_TAG),
                         ) { Text("Словарь") }
+                    }
+                    androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth()) {
                         androidx.compose.material3.OutlinedButton(
                             onClick = onOpenDailyPractice,
                             modifier = Modifier.weight(1f).testTag(PACK_DAILY_TAG),

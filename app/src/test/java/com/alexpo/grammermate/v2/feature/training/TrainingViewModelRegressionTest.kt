@@ -69,7 +69,7 @@ class TrainingViewModelRegressionTest {
         sessionRepository = FakeSessionRepository()
         flaggedSentences.clear()
         userContentRepository = mockk {
-            coEvery { getHiddenCardIds() } returns emptySet()
+            coEvery { getHiddenCardIds(any()) } returns emptySet()
             coEvery { flagBadSentence(any()) } answers {
                 val entry: BadSentence = firstArg()
                 flaggedSentences += entry
@@ -286,7 +286,7 @@ class TrainingViewModelRegressionTest {
     @Test
     fun allCardsHidden_emptyPoolShowsEmptyStateWithoutFallback() {
         val hiddenRepository = mockk<UserContentRepository> {
-            coEvery { getHiddenCardIds() } returns TrainingDbFixture.CARD_IDS.map(::CardId).toSet()
+            coEvery { getHiddenCardIds(any()) } returns TrainingDbFixture.CARD_IDS.map(::CardId).toSet()
         }
         val engine = SessionEngine(sessionRepository, contentRepository(), hiddenRepository)
         val vm = trainingViewModel(engine = engine)

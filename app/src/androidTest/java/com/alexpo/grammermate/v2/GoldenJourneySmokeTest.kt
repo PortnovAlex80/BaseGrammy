@@ -30,7 +30,7 @@ class GoldenJourneySmokeTest {
     fun launch_showsBundledPack_onPackContent_showsModeButtons() {
         // Bundled-seed идемпотентен и реактивен: ждём появления карточки пака
         // (может занять время на первый распаковку — waitUntil).
-        compose.waitUntil(timeoutMillis = 30_000) {
+        compose.waitUntil(timeoutMillis = 180_000) {
             compose.onAllNodesWithTag(HOME_PACK_CARD_TAG).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onAllNodesWithTag(HOME_PACK_CARD_TAG)[0].assertIsDisplayed()

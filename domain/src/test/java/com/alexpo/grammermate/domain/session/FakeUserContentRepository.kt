@@ -34,17 +34,17 @@ class FakeUserContentRepository : UserContentRepository {
     /** Снимок скрытых для ассертов. */
     fun snapshotHidden(): Set<CardId> = hiddenCardIds.toSet()
 
-    override suspend fun getHiddenCardIds(): Set<CardId> = hiddenCardIds.toSet()
+    override suspend fun getHiddenCardIds(packId: PackId): Set<CardId> = hiddenCardIds.toSet()
 
-    override suspend fun hideCard(cardId: CardId, nowMs: Long) {
+    override suspend fun hideCard(packId: PackId, cardId: CardId, nowMs: Long) {
         hiddenCardIds.add(cardId)
     }
 
-    override suspend fun unhideCard(cardId: CardId) {
+    override suspend fun unhideCard(packId: PackId, cardId: CardId) {
         hiddenCardIds.remove(cardId)
     }
 
-    override fun observeHiddenCards(): Flow<Set<CardId>> = flowOf(hiddenCardIds.toSet())
+    override fun observeHiddenCards(packId: PackId): Flow<Set<CardId>> = flowOf(hiddenCardIds.toSet())
 
     override suspend fun getBadSentences(packId: PackId): List<BadSentence> =
         badSentences.filter { it.packId == packId }

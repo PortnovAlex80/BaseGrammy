@@ -52,8 +52,8 @@ interface DrillDao {
     @Query("SELECT * FROM vocab_words WHERE packId = :packId AND rank >= :minRank AND rank <= :maxRank ORDER BY rank")
     suspend fun getVocabWordsByRankRange(packId: String, minRank: Int, maxRank: Int): List<VocabWordEntity>
 
-    @Query("SELECT * FROM vocab_words WHERE id = :id")
-    suspend fun getVocabWord(id: String): VocabWordEntity?
+    @Query("SELECT * FROM vocab_words WHERE packId = :packId AND id = :id")
+    suspend fun getVocabWord(packId: String, id: String): VocabWordEntity?
 
     // ── Word mastery (SRS по словам) ──────────────────────────────────────────
 

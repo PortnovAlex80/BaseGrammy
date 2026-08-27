@@ -78,7 +78,7 @@ data class ChapterEntity(
 @Entity(
     tableName = "lessons",
     primaryKeys = ["packId", "id"],
-    indices = [Index("chapterId")],
+    indices = [Index("chapterId"), Index(value = ["packId", "chapterId"])],
     foreignKeys = [ForeignKey(
         entity = ChapterEntity::class,
         parentColumns = ["packId", "id"],

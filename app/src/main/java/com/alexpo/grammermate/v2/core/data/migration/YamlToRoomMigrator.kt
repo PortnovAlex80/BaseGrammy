@@ -388,7 +388,9 @@ class YamlToRoomMigrator @Inject constructor(
         val data = raw as? Map<*, *> ?: return
         val ids = data.stringListOr("hiddenCardIds")
         val now = System.currentTimeMillis()
-        ids.forEach { cardId -> bag.hidden.add(HiddenCardEntity(cardId = cardId, hiddenAtMs = now)) }
+        ids.forEach { cardId ->
+            bag.hidden.add(HiddenCardEntity(packId = LEGACY_UNSCOPED_PACK, cardId = cardId, hiddenAtMs = now))
+        }
     }
 
     // ─── bad_sentences.yaml ────────────────────────────────────────────────────────
@@ -678,6 +680,7 @@ class YamlToRoomMigrator @Inject constructor(
     }
 
     private companion object {
+        const val LEGACY_UNSCOPED_PACK = "__legacy__"
         private const val TAG = "YamlMigrator"
         private const val MIGRATION_KEY = "migration_yaml_v1_to_v2"
     }

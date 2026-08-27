@@ -1,6 +1,5 @@
 package com.alexpo.grammermate.domain.session
 
-import com.alexpo.grammermate.domain.TrainingConfig
 
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.InputMode
@@ -115,7 +114,7 @@ class SessionEngine(
         mode: TrainingMode,
     ): List<List<CardId>> {
         val allCards = contentRepository.getCards(packIdOfLesson, lessonId)
-        val hidden = userContentRepository.getHiddenCardIds()
+        val hidden = userContentRepository.getHiddenCardIds(packIdOfLesson)
         val visible = LessonOrderPolicy.apply(
             cards = allCards.filter { it.id !in hidden },
             mode = mode,
@@ -140,13 +139,17 @@ class SessionEngine(
         mode: TrainingMode = TrainingMode.LESSON,
     ): SessionSnapshot {
         val sessionId = SessionId.forLesson(packId, lessonId)
-        val pool = buildPool(packId, lessonId, sessionSize, mode)
+        val effectiveSize = sessionSize.coerceAtLeast(1)
+        val orderedCards = buildSubLessonPools(packId, lessonId, effectiveSize, mode).flatten()
+        val pool = orderedCards.take(effectiveSize)
         return sessionRepository.getOrCreateSession(
             sessionId = sessionId,
             packId = packId,
             lessonId = lessonId,
             mode = mode,
             poolCardIds = pool,
+            pendingCardIds = orderedCards.drop(effectiveSize),
+            sessionSize = effectiveSize,
         )
     }
 
@@ -277,20 +280,14 @@ class SessionEngine(
             // Сначала пытаемся перейти к следующему под-уроку той же нарезки
             // (completedSubLessonCount — индекс пройденных); завершение урока —
             // только когда под-уроки исчерпаны.
-            val lessonId = current.lessonId
-            if (lessonId != null && current.mode != TrainingMode.VERB_DRILL) {
-                val nextIndex = current.completedSubLessonCount + 1
-                val nextSubPool = buildSubLessonPools(
-                    packIdOfLesson = current.packId,
-                    lessonId = lessonId,
-                    sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
-                    mode = current.mode,
-                ).getOrNull(nextIndex).orEmpty()
+            if (current.pendingCardIds.isNotEmpty()) {
+                val nextSubPool = current.pendingCardIds.take(current.sessionSize.coerceAtLeast(1))
                 if (nextSubPool.isNotEmpty()) {
                     val nowMs = clock()
                     return commitCoordinator.commit {
                         val advanced = current.copy(
                             poolCardIds = nextSubPool,
+                            pendingCardIds = current.pendingCardIds.drop(nextSubPool.size),
                             currentCardId = nextSubPool.first(),
                             completedSubLessonCount = current.completedSubLessonCount + 1,
                             updatedAtMs = nowMs,
@@ -398,19 +395,35 @@ class SessionEngine(
      */
     suspend fun hideCard(sessionId: SessionId, cardId: CardId): SessionSnapshot {
         val current = requireActive(sessionId)
-        userContentRepository.hideCard(cardId, clock())
         val oldPool = current.poolCardIds
         val newPool = oldPool.filter { it != cardId }
-        val newCurrent = reassignCurrentAfterHide(current.currentCardId, cardId, oldPool, newPool)
+        val filteredPending = current.pendingCardIds.filter { it != cardId }
+        val promoted = newPool.isEmpty() && filteredPending.isNotEmpty()
+        val targetPool = if (promoted) {
+            filteredPending.take(current.sessionSize.coerceAtLeast(1))
+        } else {
+            newPool
+        }
+        val targetPending = if (promoted) filteredPending.drop(targetPool.size) else filteredPending
+        val newCurrent = if (promoted) {
+            targetPool.firstOrNull()
+        } else {
+            reassignCurrentAfterHide(current.currentCardId, cardId, oldPool, targetPool)
+        }
+        val nowMs = clock()
         val updated = current.copy(
-            poolCardIds = newPool,
+            poolCardIds = targetPool,
+            pendingCardIds = targetPending,
             currentCardId = newCurrent,
             shownCardIds = current.shownCardIds - cardId,
-            updatedAtMs = clock(),
+            updatedAtMs = nowMs,
             revision = current.revision + 1,
         )
-        sessionRepository.saveSession(updated)
-        return updated
+        return commitCoordinator.commit {
+            userContentRepository.hideCard(current.packId, cardId, nowMs)
+            sessionRepository.saveSession(updated)
+            updated
+        }
     }
 
     /** Завершить сессию ([SessionStatus.COMPLETED]). */

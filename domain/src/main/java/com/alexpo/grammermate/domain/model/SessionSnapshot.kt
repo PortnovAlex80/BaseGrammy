@@ -49,6 +49,8 @@ data class SessionSnapshot(
     val state: SessionState,
     val revision: Long,
     val poolCardIds: List<CardId>,
+    val pendingCardIds: List<CardId> = emptyList(),
+    val sessionSize: Int = 10,
     val shownCardIds: Set<CardId>,
     val correctCount: Int,
     val incorrectCount: Int,

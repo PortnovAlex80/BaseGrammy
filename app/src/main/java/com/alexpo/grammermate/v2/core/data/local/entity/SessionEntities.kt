@@ -82,6 +82,7 @@ data class SessionEntity(
     val startedAtMs: Long,
     val updatedAtMs: Long,
     val revision: Long = 0L,
+    val sessionSize: Int = 10,
 )
 
 /**
@@ -101,6 +102,18 @@ data class SessionEntity(
     foreignKeys = [ForeignKey(entity = SessionEntity::class, parentColumns = ["id"], childColumns = ["sessionId"], onDelete = CASCADE)]
 )
 data class SessionCardEntity(
+    val sessionId: String,
+    val ord: Int,
+    val cardId: String,
+)
+
+@Entity(
+    tableName = "session_pending_cards",
+    primaryKeys = ["sessionId", "ord"],
+    indices = [Index("sessionId"), Index("cardId")],
+    foreignKeys = [ForeignKey(entity = SessionEntity::class, parentColumns = ["id"], childColumns = ["sessionId"], onDelete = CASCADE)]
+)
+data class SessionPendingCardEntity(
     val sessionId: String,
     val ord: Int,
     val cardId: String,

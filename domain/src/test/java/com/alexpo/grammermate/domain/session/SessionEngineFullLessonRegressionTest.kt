@@ -113,4 +113,36 @@ class SessionEngineFullLessonRegressionTest {
         assertThat(snapshot!!.status).isEqualTo(SessionStatus.COMPLETED)
         assertThat(snapshot!!.correctCount).isEqualTo(3)
     }
+
+    @Test
+    fun `pending queue survives content changes and removes a hidden future card`() = runTest {
+        val content = FakeContentRepository().apply {
+            setCardsForLesson(lessonId, lessonCards(13))
+        }
+        val repository = FakeSessionRepository(clock = { 1L })
+        val engine = SessionEngine(
+            sessionRepository = repository,
+            contentRepository = content,
+            userContentRepository = FakeUserContentRepository(),
+            clock = { 1L },
+        )
+
+        val started = engine.startLessonSession(packId, lessonId, sessionSize = 5)
+        assertThat(started.pendingCardIds.map { it.value })
+            .containsExactly("card_5", "card_6", "card_7", "card_8", "card_9", "card_10", "card_11", "card_12")
+            .inOrder()
+
+        engine.hideCard(sessionId, CardId("card_7"))
+        content.setCardsForLesson(lessonId, emptyList())
+        repeat(4) { engine.nextCardOrComplete(sessionId) }
+        val nextChunk = engine.nextCardOrComplete(sessionId)
+
+        assertThat(nextChunk.sessionSize).isEqualTo(5)
+        assertThat(nextChunk.poolCardIds.map { it.value })
+            .containsExactly("card_5", "card_6", "card_8", "card_9", "card_10")
+            .inOrder()
+        assertThat(nextChunk.pendingCardIds.map { it.value })
+            .containsExactly("card_11", "card_12")
+            .inOrder()
+    }
 }

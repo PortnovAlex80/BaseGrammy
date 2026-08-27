@@ -59,6 +59,8 @@ interface SessionRepository {
         lessonId: LessonId?,
         mode: TrainingMode,
         poolCardIds: List<CardId>,
+        pendingCardIds: List<CardId> = emptyList(),
+        sessionSize: Int = 10,
         selectedTense: String? = null,
         selectedGroup: String? = null,
         selectedPerson: String? = null,

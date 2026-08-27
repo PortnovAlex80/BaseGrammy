@@ -42,9 +42,9 @@ import androidx.room.PrimaryKey
  * @property collocationsJson устойчивые словосочетания (JSON List<String>).
  * @property formsJson        родовые/числовые формы (JSON Map<String,String>).
  */
-@Entity(tableName = "vocab_words", indices = [Index("packId"), Index(value = ["packId", "word"], unique = true)])
+@Entity(tableName = "vocab_words", primaryKeys = ["packId", "id"], indices = [Index("packId"), Index(value = ["packId", "word"], unique = true)])
 data class VocabWordEntity(
-    @PrimaryKey val id: String, // "${pos}_${rank}_${word}"
+    val id: String, // "${pos}_${rank}_${word}"
     val packId: String,
     val word: String,
     val pos: String,
@@ -101,9 +101,9 @@ data class WordMasteryEntity(
  * @property person   лицо/число (Io/Tu/...), либо null.
  * @property rank     ранг частотности (для sortByFrequency), либо null.
  */
-@Entity(tableName = "verb_drill_cards", indices = [Index("packId"), Index(value = ["packId", "tense"]), Index(value = ["packId", "verb", "tense"])])
+@Entity(tableName = "verb_drill_cards", primaryKeys = ["packId", "id"], indices = [Index("packId"), Index(value = ["packId", "tense"]), Index(value = ["packId", "verb", "tense"])])
 data class VerbDrillCardEntity(
-    @PrimaryKey val id: String, // "${group}_${tense}_${dataRowIndex}"
+    val id: String, // "${group}_${tense}_${dataRowIndex}"
     val packId: String,
     val promptRu: String,
     val answer: String,
@@ -129,9 +129,9 @@ data class VerbDrillCardEntity(
  * @property person   лицо/число, либо null.
  * @property rank     ранг частотности, либо null.
  */
-@Entity(tableName = "aux_drill_cards", indices = [Index("packId"), Index(value = ["packId", "verb", "tense"])])
+@Entity(tableName = "aux_drill_cards", primaryKeys = ["packId", "id"], indices = [Index("packId"), Index(value = ["packId", "verb", "tense"])])
 data class AuxDrillCardEntity(
-    @PrimaryKey val id: String,
+    val id: String,
     val packId: String,
     val promptRu: String,
     val answer: String,

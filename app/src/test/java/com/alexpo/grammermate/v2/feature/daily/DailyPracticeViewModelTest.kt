@@ -179,4 +179,17 @@ class DailyPracticeViewModelTest {
 
         assertThat(vm.state.value).isInstanceOf(DailyViewState.Error::class.java)
     }
+
+    @Test
+    fun doubleNext_consumesAnsweredTaskOnlyOnce() {
+        val vm = viewModel()
+        vm.submitAnswer("a_0")
+
+        vm.next()
+        vm.next()
+
+        val state = vm.state.value as DailyViewState.Question
+        assertThat(state.index).isEqualTo(2)
+        assertThat((state.task as DailyTask.TranslateSentence).card.id.value).isEqualTo("s_1")
+    }
 }

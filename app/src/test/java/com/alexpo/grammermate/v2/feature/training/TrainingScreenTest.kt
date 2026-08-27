@@ -85,7 +85,7 @@ class TrainingScreenTest {
             coEvery { getCards(packId, lessonId) } returns lessonCards()
         }
         val userContentRepository = mockk<UserContentRepository>(relaxed = true) {
-            coEvery { getHiddenCardIds() } returns emptySet()
+            coEvery { getHiddenCardIds(any()) } returns emptySet()
         }
         return TrainingViewModel(
             savedStateHandle = SavedStateHandle(

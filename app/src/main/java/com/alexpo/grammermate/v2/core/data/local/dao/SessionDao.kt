@@ -10,6 +10,7 @@ import com.alexpo.grammermate.domain.session.StaleSessionRevisionException
 import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.SessionPendingCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
 
 /**
@@ -80,6 +81,21 @@ interface SessionDao {
     @Query("DELETE FROM session_cards WHERE sessionId = :id")
     suspend fun deleteSessionCards(id: String)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPendingCards(cards: List<SessionPendingCardEntity>)
+
+    @Query("SELECT * FROM session_pending_cards WHERE sessionId = :id ORDER BY ord")
+    suspend fun getPendingCards(id: String): List<SessionPendingCardEntity>
+
+    @Query("DELETE FROM session_pending_cards WHERE sessionId = :id")
+    suspend fun deletePendingCards(id: String)
+
+    @Transaction
+    suspend fun replacePending(sessionId: String, cards: List<SessionPendingCardEntity>) {
+        deletePendingCards(sessionId)
+        insertPendingCards(cards)
+    }
+
     /**
      * Атомарно пересобрать пул карточек сессии: удалить старый и вставить [cards].
      * Вызывается ТОЛЬКО когда пул реально изменился (см. [saveSnapshot]).
@@ -131,6 +147,7 @@ interface SessionDao {
         return SessionSnapshotParts(
             session = session,
             cards = getSessionCards(id),
+            pending = getPendingCards(id),
             shown = getShownCards(id),
         )
     }
@@ -155,6 +172,7 @@ interface SessionDao {
     suspend fun saveSnapshot(
         session: SessionEntity,
         cards: List<SessionCardEntity>,
+        pending: List<SessionPendingCardEntity>,
         shown: List<SessionShownCardEntity>,
     ) {
         val existing = getSession(session.id)
@@ -168,6 +186,9 @@ interface SessionDao {
         upsertSession(session)
         if (existing == null || getSessionCards(session.id) != cards) {
             replacePool(session.id, cards)
+        }
+        if (existing == null || getPendingCards(session.id) != pending) {
+            replacePending(session.id, pending)
         }
         val existingShownIds = getShownCards(session.id).map { it.cardId }.toSet()
         val targetShownIds = shown.map { it.cardId }.toSet()
@@ -194,5 +215,6 @@ interface SessionDao {
 data class SessionSnapshotParts(
     val session: SessionEntity,
     val cards: List<SessionCardEntity>,
+    val pending: List<SessionPendingCardEntity>,
     val shown: List<SessionShownCardEntity>,
 )

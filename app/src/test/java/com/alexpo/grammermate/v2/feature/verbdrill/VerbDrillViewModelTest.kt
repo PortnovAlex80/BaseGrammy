@@ -52,7 +52,7 @@ class VerbDrillViewModelTest {
             coEvery { getVerbDrillCards(packId, null, null, null) } returns cards()
         }
         val userContent = mockk<UserContentRepository>(relaxed = true) {
-            coEvery { getHiddenCardIds() } returns emptySet()
+            coEvery { getHiddenCardIds(any()) } returns emptySet()
         }
         return VerbDrillViewModel(
             savedStateHandle = SavedStateHandle(mapOf("packId" to packId.value)),

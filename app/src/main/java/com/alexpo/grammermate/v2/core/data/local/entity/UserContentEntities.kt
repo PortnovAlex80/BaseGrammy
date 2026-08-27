@@ -18,9 +18,10 @@ import androidx.room.PrimaryKey
  * @property cardId     скрытая карточка (PK).
  * @property hiddenAtMs epoch-мс момента скрытия.
  */
-@Entity(tableName = "hidden_cards")
+@Entity(tableName = "hidden_cards", primaryKeys = ["packId", "cardId"], indices = [Index("cardId")])
 data class HiddenCardEntity(
-    @PrimaryKey val cardId: String,
+    val packId: String,
+    val cardId: String,
     val hiddenAtMs: Long,
 )
 

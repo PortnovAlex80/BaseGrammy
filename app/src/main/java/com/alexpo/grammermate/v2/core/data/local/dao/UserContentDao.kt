@@ -31,17 +31,17 @@ interface UserContentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun hideCard(entity: HiddenCardEntity)
 
-    @Query("DELETE FROM hidden_cards WHERE cardId = :cardId")
-    suspend fun unhideCard(cardId: String)
+    @Query("DELETE FROM hidden_cards WHERE packId = :packId AND cardId = :cardId")
+    suspend fun unhideCard(packId: String, cardId: String)
 
-    @Query("SELECT cardId FROM hidden_cards")
-    suspend fun getHiddenCardIds(): List<String>
+    @Query("SELECT cardId FROM hidden_cards WHERE packId = :packId")
+    suspend fun getHiddenCardIds(packId: String): List<String>
 
-    @Query("SELECT cardId FROM hidden_cards")
-    fun observeHiddenCardIds(): Flow<List<String>>
+    @Query("SELECT cardId FROM hidden_cards WHERE packId = :packId")
+    fun observeHiddenCardIds(packId: String): Flow<List<String>>
 
-    @Query("DELETE FROM hidden_cards")
-    suspend fun clearHiddenCards()
+    @Query("DELETE FROM hidden_cards WHERE packId = :packId")
+    suspend fun clearHiddenCards(packId: String)
 
     // ── Bad sentences (жалобы на контент) ────────────────────────────────────
 

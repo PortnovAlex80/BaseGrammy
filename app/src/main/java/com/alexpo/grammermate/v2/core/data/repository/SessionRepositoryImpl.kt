@@ -14,6 +14,7 @@ import com.alexpo.grammermate.v2.core.data.local.dao.SessionDao
 import com.alexpo.grammermate.v2.core.data.local.dao.SessionSnapshotParts
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.SessionPendingCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
 import javax.inject.Inject
 
@@ -80,6 +81,8 @@ class SessionRepositoryImpl @Inject constructor(
         lessonId: LessonId?,
         mode: TrainingMode,
         poolCardIds: List<CardId>,
+        pendingCardIds: List<CardId>,
+        sessionSize: Int,
         selectedTense: String?,
         selectedGroup: String?,
         selectedPerson: String?,
@@ -112,6 +115,8 @@ class SessionRepositoryImpl @Inject constructor(
             state = SessionState.ACTIVE,
             revision = 0L,
             poolCardIds = pool,
+            pendingCardIds = pendingCardIds.filter { it.value.isNotBlank() },
+            sessionSize = sessionSize.coerceAtLeast(1),
             shownCardIds = emptySet(),
             correctCount = 0,
             incorrectCount = 0,
@@ -152,6 +157,7 @@ class SessionRepositoryImpl @Inject constructor(
         sessionDao.saveSnapshot(
             session = snapshot.toEntity(now),
             cards = snapshot.toCardEntities(),
+            pending = snapshot.toPendingEntities(),
             shown = snapshot.toShownEntities(now),
         )
     }
@@ -185,6 +191,7 @@ class SessionRepositoryImpl @Inject constructor(
             .map { CardId(it.cardId) }
 
         val shownCardIds = parts.shown.map { CardId(it.cardId) }.toSet()
+        val pendingCardIds = parts.pending.sortedBy { it.ord }.map { CardId(it.cardId) }
 
         val savedCurrent = entity.currentCardId?.takeIf { it.isNotBlank() }?.let(::CardId)
 
@@ -198,6 +205,8 @@ class SessionRepositoryImpl @Inject constructor(
             state = entity.state.toSessionState(entity.id),
             revision = entity.revision,
             poolCardIds = poolCardIds,
+            pendingCardIds = pendingCardIds,
+            sessionSize = entity.sessionSize,
             shownCardIds = shownCardIds,
             correctCount = entity.correctCount,
             incorrectCount = entity.incorrectCount,
@@ -238,6 +247,7 @@ class SessionRepositoryImpl @Inject constructor(
         startedAtMs = startedAtMs,
         updatedAtMs = now,
         revision = revision,
+        sessionSize = sessionSize,
     )
 
     /** Позиция currentCardId в пуле — единственная согласованная запись курсора. */
@@ -252,6 +262,11 @@ class SessionRepositoryImpl @Inject constructor(
                 ord = ord,
                 cardId = cardId.value,
             )
+        }
+
+    private fun SessionSnapshot.toPendingEntities(): List<SessionPendingCardEntity> =
+        pendingCardIds.mapIndexed { ord, cardId ->
+            SessionPendingCardEntity(sessionId = sessionId.value, ord = ord, cardId = cardId.value)
         }
 
     /**

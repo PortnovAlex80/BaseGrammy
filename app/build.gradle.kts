@@ -189,7 +189,7 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
 
     // Instrumented tests (androidTest — requires Hilt test setup)
-    androidTestUtil(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.espresso.core)

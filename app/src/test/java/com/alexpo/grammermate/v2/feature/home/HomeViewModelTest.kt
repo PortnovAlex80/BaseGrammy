@@ -5,6 +5,8 @@ import com.alexpo.grammermate.domain.model.Pack
 import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import com.alexpo.grammermate.domain.repository.MasteryRepository
+import com.alexpo.grammermate.v2.core.seed.BundledSeedState
+import com.alexpo.grammermate.v2.core.seed.BundledSeedStatus
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.every
@@ -91,5 +93,23 @@ class HomeViewModelTest {
 
         assertThat(vm.state.value.isLoading).isFalse()
         assertThat(vm.state.value.error).isNotNull()
+    }
+
+    @Test
+    fun emptyPacks_whileBundledSeedRuns_staysLoading() {
+        val seedStatus = BundledSeedStatus().apply { publish(BundledSeedState.Running) }
+        val vm = HomeViewModel(repository(flowOf(emptyList())), emptyProgress(), seedStatus)
+
+        assertThat(vm.state.value.isLoading).isTrue()
+        assertThat(vm.state.value.error).isNull()
+    }
+
+    @Test
+    fun emptyPacks_afterBundledSeedFailure_showsError() {
+        val seedStatus = BundledSeedStatus().apply { publish(BundledSeedState.Failed("broken pack")) }
+        val vm = HomeViewModel(repository(flowOf(emptyList())), emptyProgress(), seedStatus)
+
+        assertThat(vm.state.value.isLoading).isFalse()
+        assertThat(vm.state.value.error).isEqualTo("broken pack")
     }
 }

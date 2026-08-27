@@ -74,7 +74,7 @@ class RoomSessionAtomicCommitTest {
 
     private fun userContentRepository(): com.alexpo.grammermate.domain.repository.UserContentRepository =
         mockk(relaxed = true) {
-            coEvery { getHiddenCardIds() } returns emptySet()
+            coEvery { getHiddenCardIds(any()) } returns emptySet()
         }
 
     private fun engine(
@@ -130,7 +130,8 @@ class RoomSessionAtomicCommitTest {
         val engine = engine(
             onSessionCompleted = { _, _, _ -> error("lesson completion failed (injected)") },
         )
-        val started = engine.startLessonSession(packId, lessonId, sessionSize = 1)
+        val started = engine.startLessonSession(packId, lessonId, sessionSize = Int.MAX_VALUE)
+        repeat(started.poolCardIds.lastIndex) { engine.nextCard(started.sessionId) }
 
         var thrown: IllegalStateException? = null
         try {

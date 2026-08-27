@@ -218,12 +218,11 @@ class DailyPracticeViewModel @Inject constructor(
 
     /** Следующая задача; на последней — зафиксировать курсор и Done. */
     fun next() {
-        val a = _state.value as? DailyViewState.Answered ?: return
-        consumed[a.task.blockType] = (consumed[a.task.blockType] ?: 0) + 1
-        position++
         viewModelScope.launch {
             commands.withLock {
-                if (_state.value !is DailyViewState.Answered) return@withLock
+                val answered = _state.value as? DailyViewState.Answered ?: return@withLock
+                consumed[answered.task.blockType] = (consumed[answered.task.blockType] ?: 0) + 1
+                position++
                 if (position >= tasks.size) {
                     finishDay()
                 } else {

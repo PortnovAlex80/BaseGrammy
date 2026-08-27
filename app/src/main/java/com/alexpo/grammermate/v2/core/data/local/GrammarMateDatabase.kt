@@ -38,6 +38,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.PackEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.PomodoroHistoryEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.SessionPendingCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.SessionShownCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.ShownCardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.StreakEntity
@@ -66,7 +67,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
  * `app/schemas/` (регрессионные migration-тесты через room-testing).
  */
 @Database(
-    version = 5,
+    version = 6,
     exportSchema = true,
     entities = [
         // Контент
@@ -77,6 +78,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
         // Сессия (фикс card_15)
         SessionEntity::class,
         SessionCardEntity::class,
+        SessionPendingCardEntity::class,
         SessionShownCardEntity::class,
         // Mastery / SRS
         MasteryStateEntity::class,
@@ -198,6 +200,98 @@ abstract class GrammarMateDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN sessionSize INTEGER NOT NULL DEFAULT 10")
+                db.execSQL("DELETE FROM sessions WHERE status = 'ACTIVE' AND lessonId IS NOT NULL")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS session_pending_cards (
+                        sessionId TEXT NOT NULL,
+                        ord INTEGER NOT NULL,
+                        cardId TEXT NOT NULL,
+                        PRIMARY KEY (sessionId, ord),
+                        FOREIGN KEY (sessionId) REFERENCES sessions (id) ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_session_pending_cards_sessionId ON session_pending_cards (sessionId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_session_pending_cards_cardId ON session_pending_cards (cardId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_lessons_packId_chapterId ON lessons (packId, chapterId)")
+                rebuildPackScopedDrillTables(db)
+                rebuildPackScopedHiddenCards(db)
+            }
+        }
+
+        private fun rebuildPackScopedDrillTables(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE vocab_words_v6 (
+                    id TEXT NOT NULL, packId TEXT NOT NULL, word TEXT NOT NULL, pos TEXT NOT NULL,
+                    rank INTEGER NOT NULL, meaningRu TEXT, collocationsJson TEXT NOT NULL,
+                    formsJson TEXT NOT NULL, PRIMARY KEY (packId, id)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL("INSERT INTO vocab_words_v6 SELECT id, packId, word, pos, rank, meaningRu, collocationsJson, formsJson FROM vocab_words")
+            db.execSQL("DROP TABLE vocab_words")
+            db.execSQL("ALTER TABLE vocab_words_v6 RENAME TO vocab_words")
+            db.execSQL("CREATE INDEX index_vocab_words_packId ON vocab_words (packId)")
+            db.execSQL("CREATE UNIQUE INDEX index_vocab_words_packId_word ON vocab_words (packId, word)")
+
+            db.execSQL(
+                """
+                CREATE TABLE verb_drill_cards_v6 (
+                    id TEXT NOT NULL, packId TEXT NOT NULL, promptRu TEXT NOT NULL, answer TEXT NOT NULL,
+                    verb TEXT, tense TEXT, `group` TEXT, person TEXT, rank INTEGER,
+                    PRIMARY KEY (packId, id)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL("INSERT INTO verb_drill_cards_v6 SELECT id, packId, promptRu, answer, verb, tense, `group`, person, rank FROM verb_drill_cards")
+            db.execSQL("DROP TABLE verb_drill_cards")
+            db.execSQL("ALTER TABLE verb_drill_cards_v6 RENAME TO verb_drill_cards")
+            db.execSQL("CREATE INDEX index_verb_drill_cards_packId ON verb_drill_cards (packId)")
+            db.execSQL("CREATE INDEX index_verb_drill_cards_packId_tense ON verb_drill_cards (packId, tense)")
+            db.execSQL("CREATE INDEX index_verb_drill_cards_packId_verb_tense ON verb_drill_cards (packId, verb, tense)")
+
+            db.execSQL(
+                """
+                CREATE TABLE aux_drill_cards_v6 (
+                    id TEXT NOT NULL, packId TEXT NOT NULL, promptRu TEXT NOT NULL, answer TEXT NOT NULL,
+                    verb TEXT, tense TEXT, `group` TEXT, person TEXT, rank INTEGER,
+                    PRIMARY KEY (packId, id)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL("INSERT INTO aux_drill_cards_v6 SELECT id, packId, promptRu, answer, verb, tense, `group`, person, rank FROM aux_drill_cards")
+            db.execSQL("DROP TABLE aux_drill_cards")
+            db.execSQL("ALTER TABLE aux_drill_cards_v6 RENAME TO aux_drill_cards")
+            db.execSQL("CREATE INDEX index_aux_drill_cards_packId ON aux_drill_cards (packId)")
+            db.execSQL("CREATE INDEX index_aux_drill_cards_packId_verb_tense ON aux_drill_cards (packId, verb, tense)")
+        }
+
+        private fun rebuildPackScopedHiddenCards(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE hidden_cards_v6 (
+                    packId TEXT NOT NULL, cardId TEXT NOT NULL, hiddenAtMs INTEGER NOT NULL,
+                    PRIMARY KEY (packId, cardId)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO hidden_cards_v6 (packId, cardId, hiddenAtMs)
+                SELECT DISTINCT c.packId, h.cardId, h.hiddenAtMs
+                FROM hidden_cards h JOIN cards c ON c.id = h.cardId
+                """.trimIndent(),
+            )
+            db.execSQL("DROP TABLE hidden_cards")
+            db.execSQL("ALTER TABLE hidden_cards_v6 RENAME TO hidden_cards")
+            db.execSQL("CREATE INDEX index_hidden_cards_cardId ON hidden_cards (cardId)")
+        }
+
         /**
          * D4: пересборка chapters/lessons/cards под составные PK (packId, id)
          * с сохранением данных и внешних ключей.
@@ -287,7 +381,7 @@ abstract class GrammarMateDatabase : RoomDatabase() {
                 DATABASE_NAME,
             )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 // fallbackToDestructiveMigration НЕ используется — данные пользователя критичны.
                 .build()
     }
