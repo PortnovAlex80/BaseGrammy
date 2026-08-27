@@ -9,6 +9,8 @@ import com.alexpo.grammermate.v2.core.data.local.entity.CardEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.ChapterEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.LessonEntity
 import com.alexpo.grammermate.v2.core.data.local.entity.PackEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.VerbDrillCardEntity
+import com.alexpo.grammermate.v2.core.data.local.entity.VocabWordEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
@@ -247,6 +249,50 @@ class PackImporter @Inject constructor(
             }
         }
 
+
+        // D3 (аудит 2026-08-26): drill-контент — verb/vocab CSV из секций
+        // манифеста. Парсинг до транзакции; ошибки файла → partial (skip).
+        val verbCardEntities = mutableListOf<VerbDrillCardEntity>()
+        val vocabWordEntities = mutableListOf<VocabWordEntity>()
+        manifest.verbDrill?.files?.forEach { drillFile ->
+            val file = File(packDir, drillFile)
+            if (!file.exists()) {
+                errors += ParseError.WithFileContext(
+                    drillFile,
+                    ParseError.InvalidFormat(reason = "Missing verb drill file"),
+                )
+                return@forEach
+            }
+            when (val r = VerbDrillCsvParser.parse(file.readText())) {
+                is ParseResult.Success -> verbCardEntities += r.data.map { it.toEntity(manifest.packId) }
+                is ParseResult.Partial -> {
+                    verbCardEntities += r.data.map { it.toEntity(manifest.packId) }
+                    errors += r.errors.map { ParseError.WithFileContext(drillFile, it) }
+                }
+                is ParseResult.Failure ->
+                    errors += r.errors.map { ParseError.WithFileContext(drillFile, it) }
+            }
+        }
+        manifest.vocabDrill?.files?.forEach { vocabFile ->
+            val file = File(packDir, vocabFile)
+            if (!file.exists()) {
+                errors += ParseError.WithFileContext(
+                    vocabFile,
+                    ParseError.InvalidFormat(reason = "Missing vocab file"),
+                )
+                return@forEach
+            }
+            when (val r = VocabCsvParser.parse(file.inputStream(), vocabFile)) {
+                is ParseResult.Success -> vocabWordEntities += r.data.map { it.toEntity(manifest.packId) }
+                is ParseResult.Partial -> {
+                    vocabWordEntities += r.data.map { it.toEntity(manifest.packId) }
+                    errors += r.errors.map { ParseError.WithFileContext(vocabFile, it) }
+                }
+                is ParseResult.Failure ->
+                    errors += r.errors.map { ParseError.WithFileContext(vocabFile, it) }
+            }
+        }
+
         // Одна транзакция: pack + chapters + lessons + cards всех уроков.
         database.withTransaction {
             val contentDao = database.contentDao()
@@ -259,6 +305,9 @@ class PackImporter @Inject constructor(
                 // PK карт содержит lessonId → REPLACE-реимпорт урока идемпотентен.
                 contentDao.replaceLessonCards(cardsForLesson.first().lessonId, cardsForLesson)
             }
+            val drillDao = database.drillDao()
+            if (verbCardEntities.isNotEmpty()) drillDao.insertVerbDrillCards(verbCardEntities)
+            if (vocabWordEntities.isNotEmpty()) drillDao.insertVocabWords(vocabWordEntities)
         }
 
         // Story-контент глав (срез 6 Фазы 4, вход STORY_MD/фикс M-3): .md-файлы
@@ -383,6 +432,30 @@ class PackImporter @Inject constructor(
         }
         return tempDir
     }
+
+    /** Маппер parser-моделей → entity (D3). */
+    private fun VerbDrillCard.toEntity(packId: String) = VerbDrillCardEntity(
+        id = id,
+        packId = packId,
+        promptRu = promptRu,
+        answer = answer,
+        verb = verb,
+        tense = tense,
+        group = group,
+        person = person,
+        rank = rank,
+    )
+
+    private fun VocabRow.toEntity(packId: String) = VocabWordEntity(
+        id = id,
+        packId = packId,
+        word = word,
+        pos = pos,
+        rank = rank,
+        meaningRu = meaningRu,
+        collocationsJson = "[]",
+        formsJson = "{}",
+    )
 
     private companion object {
         const val MANIFEST_FILE = "manifest.json"

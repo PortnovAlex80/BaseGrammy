@@ -112,6 +112,44 @@ class PackImporterTest {
         assertThat(repo.getStoryText(PackId("TEST_PACK"), "missing.md")).isNull()
     }
 
+
+    /** D3: verb/vocab drill-секции манифеста импортируются в Room. */
+    @Test
+    fun importPackFromStream_importsDrillContent() = runTest {
+        val manifest = """
+            {
+              "schemaVersion": 2,
+              "packId": "TEST_PACK", "packVersion": "v1", "language": "it",
+              "verbDrill": { "files": ["it_drill_verbs.csv"] },
+              "vocabDrill": { "files": ["vocab_nouns.csv"] },
+              "chapters": [
+                { "chapterId": "chapter_1", "order": 1, "title": "Глава 1", "subtitle": null,
+                  "lessons": ["lesson_01"] }
+              ]
+            }
+        """.trimIndent()
+        val verbCsv = "Спряжения\nru;it;verb;tense;group;rank\nя говорю;io parlo;parlare;presente;are;1\n"
+        val vocabCsv = "дом;casa\nкнига;libro;hard\n"
+
+        val result = importer.importPackFromStream(
+            zip(
+                "manifest.json" to manifest,
+                "lesson_01.csv" to lessonCsv(rows = 1),
+                "it_drill_verbs.csv" to verbCsv,
+                "vocab_nouns.csv" to vocabCsv,
+            )
+        )
+
+        assertThat(result).isInstanceOf(PackImportResult.Success::class.java)
+        val verbs = db.drillDao().getVerbDrillCardsForPack("TEST_PACK")
+        assertThat(verbs).hasSize(1)
+        assertThat(verbs.single().answer).isEqualTo("io parlo")
+        assertThat(verbs.single().packId).isEqualTo("TEST_PACK")
+        val vocab = db.drillDao().getVocabWordsForPack("TEST_PACK")
+        assertThat(vocab.map { it.word }).containsExactly("casa", "libro").inOrder()
+        assertThat(vocab.first().pos).isEqualTo("nouns")
+    }
+
     @Test
     fun importPackFromStream_writesPackChaptersLessonsCards() = runTest {
         val result = importer.importPackFromStream(

@@ -45,6 +45,11 @@ const val PACK_CHAPTER_STORY_TAG = "pack_chapter_story"
 /** Кнопка «Помодоро» в списке пака (срез 7 Фазы 4). */
 const val PACK_POMODORO_TAG = "pack_pomodoro"
 
+/** Кнопки режимов в списке пака (D3 аудита 2026-08-26). */
+const val PACK_VERB_DRILL_TAG = "pack_verb_drill"
+const val PACK_VOCAB_DRILL_TAG = "pack_vocab_drill"
+const val PACK_DAILY_TAG = "pack_daily"
+
 /**
  * Экран содержимого пака — главы с уроками (Фаза 1 плана стабилизации
  * 2026-08-26: путь Pack → Chapter → Lesson; P0 `lessonId = packId` устранён).
@@ -65,6 +70,9 @@ fun PackContentScreen(
     onOpenLesson: (String) -> Unit,
     onOpenStory: (chapterId: String) -> Unit = {},
     onOpenPomodoro: () -> Unit = {},
+    onOpenVerbDrill: () -> Unit = {},
+    onOpenVocabDrill: () -> Unit = {},
+    onOpenDailyPractice: () -> Unit = {},
     viewModel: PackContentViewModel = hiltViewModel(),
 ) {
     val state = collectState(viewModel.state)
@@ -132,7 +140,24 @@ fun PackContentScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item(key = "pomodoro_entry") {
+                item(key = "modes_entry") {
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                    ) {
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = onOpenVerbDrill,
+                            modifier = Modifier.weight(1f).testTag(PACK_VERB_DRILL_TAG),
+                        ) { Text("Спряжения") }
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = onOpenVocabDrill,
+                            modifier = Modifier.weight(1f).testTag(PACK_VOCAB_DRILL_TAG),
+                        ) { Text("Словарь") }
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = onOpenDailyPractice,
+                            modifier = Modifier.weight(1f).testTag(PACK_DAILY_TAG),
+                        ) { Text("Норма") }
+                    }
                     androidx.compose.material3.OutlinedButton(
                         onClick = onOpenPomodoro,
                         modifier = Modifier.fillMaxWidth().testTag(PACK_POMODORO_TAG),

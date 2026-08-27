@@ -96,6 +96,21 @@ fun GrammarMateNavHost(
                         launchSingleTop = true
                     }
                 },
+                onOpenVerbDrill = {
+                    navController.navigate(Destination.VerbDrill(packId).route()) {
+                        launchSingleTop = true
+                    }
+                },
+                onOpenVocabDrill = {
+                    navController.navigate(Destination.VocabDrill(packId).route()) {
+                        launchSingleTop = true
+                    }
+                },
+                onOpenDailyPractice = {
+                    navController.navigate(Destination.DailyPractice(packId).route()) {
+                        launchSingleTop = true
+                    }
+                },
             )
         }
 

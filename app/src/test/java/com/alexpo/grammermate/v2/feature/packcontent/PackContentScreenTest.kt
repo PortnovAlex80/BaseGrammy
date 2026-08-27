@@ -134,4 +134,30 @@ class PackContentScreenTest {
 
         compose.onNodeWithText("Пак не найден", substring = true).assertIsDisplayed()
     }
+
+    /** D3: кнопки режимов кликабельны и несут маршруты. */
+    @Test
+    fun modeButtons_navigateToDrillVocabDaily() {
+        val vm = viewModel()
+        var verb = false; var vocab = false; var daily = false
+        compose.setContent {
+            GrammarMateTheme {
+                PackContentScreen(
+                    packId = "TEST_PACK",
+                    onNavigateBack = {},
+                    onOpenLesson = {},
+                    onOpenVerbDrill = { verb = true },
+                    onOpenVocabDrill = { vocab = true },
+                    onOpenDailyPractice = { daily = true },
+                    viewModel = vm,
+                )
+            }
+        }
+        compose.onNodeWithTag(PACK_VERB_DRILL_TAG).performClick()
+        compose.onNodeWithTag(PACK_VOCAB_DRILL_TAG).performClick()
+        compose.onNodeWithTag(PACK_DAILY_TAG).performClick()
+        compose.runOnIdle {
+            assertThat(verb).isTrue(); assertThat(vocab).isTrue(); assertThat(daily).isTrue()
+        }
+    }
 }
