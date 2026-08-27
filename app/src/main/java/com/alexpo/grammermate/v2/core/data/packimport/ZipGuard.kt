@@ -14,8 +14,10 @@ import java.nio.file.Path
  */
 object ZipGuard {
 
-    /** Максимум entries в паковом ZIP (реальные паки ~сотни файлов). */
-    const val MAX_ENTRIES = 5_000
+    /** Максимум entries в паковом ZIP. Реальный потолок контента: флагманский
+     * bundled ITALIAN_EXPRESS_SHORT — 8 949 entries (аудит 2026-08-26: лимит
+     * 5 000 ломал clean install); 20 000 = 2.2x запас с защитой от бомбы. */
+    const val MAX_ENTRIES = 20_000
 
     /** Максимум суммарного распакованного размера (512 МБ; opus-паки большие). */
     const val MAX_TOTAL_BYTES = 512L * 1024 * 1024

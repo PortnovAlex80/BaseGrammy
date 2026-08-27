@@ -122,6 +122,10 @@ class SessionEnginePropertyTest {
     }
 
     /** Инварианты 1-3 (см. KDoc класса) после каждой команды. */
+    private val allCardIds: Set<com.alexpo.grammermate.domain.model.CardId> by lazy {
+        lessonCards().map { it.id }.toSet()
+    }
+
     private fun checkInvariants(
         snapshot: com.alexpo.grammermate.domain.model.SessionSnapshot,
         seed: Int,
@@ -134,11 +138,12 @@ class SessionEnginePropertyTest {
             assertThat(current).isNotNull()
             assertThat(snapshot.poolCardIds).contains(current)
         }
-        // shown ⊆ pool (кроме terminal-снимка: shown фиксируется на момент
-        // завершения, пул уже не меняется).
+        // shown ⊆ ВСЕ карточки урока (фикс D2: пул = активный под-урок и
+        // сменяется при переходе к следующему; shown накапливается по всему
+        // уроку, поэтому ⊆ pool больше не инвариант).
         if (snapshot.status != SessionStatus.COMPLETED) {
             for (shown in snapshot.shownCardIds) {
-                assertThat(snapshot.poolCardIds).contains(shown)
+                assertThat(allCardIds).contains(shown)
             }
         }
         assertThat(snapshot.poolCardIds.distinct()).hasSize(snapshot.poolCardIds.size)

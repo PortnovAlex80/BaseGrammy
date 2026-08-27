@@ -1,5 +1,7 @@
 package com.alexpo.grammermate.domain.session
 
+import com.alexpo.grammermate.domain.TrainingConfig
+
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.InputMode
 import com.alexpo.grammermate.domain.model.LessonId
@@ -97,15 +99,27 @@ class SessionEngine(
         sessionSize: Int,
         mode: TrainingMode,
         activeSubLessonIndex: Int = 0,
-    ): List<CardId> {
+    ): List<CardId> =
+        buildSubLessonPools(lessonId, sessionSize, mode)
+            .getOrNull(activeSubLessonIndex)
+            .orEmpty()
+
+    /**
+     * Все под-уроки урока как явный список (фикс D2: без clamp — короткий
+     * урок даёт ровно один чанк, выход за границы = нет следующего).
+     */
+    private suspend fun buildSubLessonPools(
+        lessonId: LessonId,
+        sessionSize: Int,
+        mode: TrainingMode,
+    ): List<List<CardId>> {
         val allCards = contentRepository.getCards(lessonId)
         val hidden = userContentRepository.getHiddenCardIds()
         val visible = LessonOrderPolicy.apply(
             cards = allCards.filter { it.id !in hidden },
             mode = mode,
         )
-        val subLessons = SubLessonScheduler.buildSubLessons(visible, sessionSize)
-        return SubLessonScheduler.activeSubLesson(subLessons, activeSubLessonIndex)
+        return SubLessonScheduler.buildSubLessons(visible, sessionSize)
     }
 
     // ── Публичный API ──────────────────────────────────────────────────────
@@ -257,6 +271,34 @@ class SessionEngine(
         if (pool.isEmpty()) return saveTimestamped(current, currentCardId = null)
         val idx = current.currentCardId?.let { pool.indexOf(it) } ?: -1
         return if (idx == pool.lastIndex) {
+            // Фикс аудита 2026-08-26 (дефект «урок обрывается после первого
+            // под-урока»): конец пула — это конец ПОД-УРОКА, а не урока.
+            // Сначала пытаемся перейти к следующему под-уроку той же нарезки
+            // (completedSubLessonCount — индекс пройденных); завершение урока —
+            // только когда под-уроки исчерпаны.
+            val lessonId = current.lessonId
+            if (lessonId != null && current.mode != TrainingMode.VERB_DRILL) {
+                val nextIndex = current.completedSubLessonCount + 1
+                val nextSubPool = buildSubLessonPools(
+                    lessonId = lessonId,
+                    sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                    mode = current.mode,
+                ).getOrNull(nextIndex).orEmpty()
+                if (nextSubPool.isNotEmpty()) {
+                    val nowMs = clock()
+                    return commitCoordinator.commit {
+                        val advanced = current.copy(
+                            poolCardIds = nextSubPool,
+                            currentCardId = nextSubPool.first(),
+                            completedSubLessonCount = current.completedSubLessonCount + 1,
+                            updatedAtMs = nowMs,
+                            revision = current.revision + 1,
+                        )
+                        sessionRepository.saveSession(advanced)
+                        advanced
+                    }
+                }
+            }
             val nowMs = clock()
             commitCoordinator.commit {
                 val completed = current.copy(
