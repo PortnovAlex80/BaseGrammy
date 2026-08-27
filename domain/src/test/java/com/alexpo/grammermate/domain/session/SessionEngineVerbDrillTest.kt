@@ -88,6 +88,7 @@ class SessionEngineVerbDrillTest {
 
         val capped = engine.startVerbDrillSession(packId, sessionSize = 2)
         assertThat(capped.poolCardIds.map { it.value }).containsExactly("vc_1", "vc_2").inOrder()
+        assertThat(capped.sessionSize).isEqualTo(2)
 
         // Тот же PK резюмит существующую сессию (create-or-resume) — «без
         // ограничения» проверяем на свежем движке/репозитории.

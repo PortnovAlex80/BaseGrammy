@@ -3,7 +3,6 @@ package com.alexpo.grammermate.v2.feature.verbdrill
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.domain.TrainingConfig
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.InputMode
 import com.alexpo.grammermate.domain.model.PackId
@@ -12,6 +11,7 @@ import com.alexpo.grammermate.domain.model.SessionSnapshot
 import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.VerbDrillCard
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -63,6 +63,7 @@ class VerbDrillViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val sessionEngine: SessionEngine,
     private val contentRepository: ContentRepository,
+    private val settingsRepository: SettingsRepository,
     private val answerValidator: AnswerValidator,
 ) : ViewModel() {
 
@@ -96,7 +97,7 @@ class VerbDrillViewModel @Inject constructor(
                     if (resumed != null && resumed.status != SessionStatus.COMPLETED) resumed
                     else sessionEngine.startVerbDrillSession(
                         packId = packId,
-                        sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                        sessionSize = settingsRepository.getAppConfig().sessionSize,
                     )
                 }.onSuccess { snapshot ->
                     cardsById = runCatching {

@@ -203,6 +203,44 @@ class PackImporterTest {
     }
 
     @Test
+    fun twoPacks_sameDrillCardId_doNotOverwriteEachOther() = runTest {
+        fun drillManifest(packId: String) = """
+            {
+              "schemaVersion": 2,
+              "packId": "$packId", "packVersion": "v1", "language": "it",
+              "verbDrill": { "files": ["verbs.csv"] },
+              "chapters": [
+                { "chapterId": "chapter_1", "order": 1, "title": "Chapter",
+                  "lessons": ["lesson_01"] }
+              ]
+            }
+        """.trimIndent()
+        fun verbCsv(answer: String) =
+            "Conjugations\nru;it;verb;tense;group;rank\nprompt;$answer;parlare;presente;are;1\n"
+
+        importer.importPackFromStream(
+            zip(
+                "manifest.json" to drillManifest("PACK_A"),
+                "lesson_01.csv" to lessonCsv(rows = 1),
+                "verbs.csv" to verbCsv("answer-a"),
+            ),
+        )
+        importer.importPackFromStream(
+            zip(
+                "manifest.json" to drillManifest("PACK_B"),
+                "lesson_01.csv" to lessonCsv(rows = 1),
+                "verbs.csv" to verbCsv("answer-b"),
+            ),
+        )
+
+        val cardA = db.drillDao().getVerbDrillCardsForPack("PACK_A").single()
+        val cardB = db.drillDao().getVerbDrillCardsForPack("PACK_B").single()
+        assertThat(cardA.id).isEqualTo(cardB.id)
+        assertThat(cardA.answer).isEqualTo("answer-a")
+        assertThat(cardB.answer).isEqualTo("answer-b")
+    }
+
+    @Test
     fun importPackFromStream_writesPackChaptersLessonsCards() = runTest {
         val result = importer.importPackFromStream(
             zip(

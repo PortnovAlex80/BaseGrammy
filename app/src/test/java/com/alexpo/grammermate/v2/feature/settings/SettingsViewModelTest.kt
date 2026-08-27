@@ -6,7 +6,6 @@ import com.alexpo.grammermate.domain.repository.SettingsRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -42,10 +41,10 @@ class SettingsViewModelTest {
     @Test
     fun `observes theme mode reactively`() {
         val vm = SettingsViewModel(repository)
-        assertThat(vm.state.value).isEqualTo(SettingsViewState.Content(ThemeMode.SYSTEM))
+        assertThat(vm.state.value).isEqualTo(SettingsViewState.Content(ThemeMode.SYSTEM, 10))
 
-        configFlow.value = AppConfig(themeMode = ThemeMode.DARK)
-        assertThat(vm.state.value).isEqualTo(SettingsViewState.Content(ThemeMode.DARK))
+        configFlow.value = AppConfig(themeMode = ThemeMode.DARK, sessionSize = 25)
+        assertThat(vm.state.value).isEqualTo(SettingsViewState.Content(ThemeMode.DARK, 25))
     }
 
     @Test
@@ -56,6 +55,19 @@ class SettingsViewModelTest {
 
         io.mockk.coVerify {
             repository.updateAppConfig(any())
+        }
+    }
+
+    @Test
+    fun `setSessionSize writes through updateAppConfig`() {
+        val vm = SettingsViewModel(repository)
+
+        vm.setSessionSize(12)
+
+        io.mockk.coVerify {
+            repository.updateAppConfig(match { transform ->
+                transform(AppConfig()).sessionSize == 12
+            })
         }
     }
 }

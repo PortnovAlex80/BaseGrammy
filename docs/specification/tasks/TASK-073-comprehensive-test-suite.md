@@ -1,11 +1,18 @@
 # TASK-073: Comprehensive Test Suite — Test Plan + Unit Tests
 
-**Status:** IN_PROGRESS
+**Status:** COMPLETE (active v2 scope; legacy runtime superseded)
 **Created:** 2026-05-18
 **Branch:** feature/test-suite (from develop)
 **Spec:** All spec files
 **UC:** All UCs from 22-use-case-registry.md (88+ use cases)
 **Related:** legacy-test-plan.md (~200 TODO tests)
+
+> Closure audit, 2026-08-27: the original task was written for the retired legacy
+> runtime. Its production equivalents are covered in v2 by `SessionEngine`,
+> `DailyTaskComposer`, repository contract tests and feature FSM tests. The active
+> regression matrix is `docs/specification/test-plan.md`. The connected suite covers
+> eight critical entry journeys; native audio and performance benchmarks remain
+> explicit release/follow-up risks rather than hidden unit-test gaps.
 
 ---
 
@@ -256,4 +263,5 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ## Completion Log
 | Date | Section | Status | Tests Written | Tests Passing |
 |------|---------|--------|---------------|---------------|
-| | | | | |
+| 2026-08-27 | Active v2 domain/data/feature suite | COMPLETE | 640+ total JVM tests | Full gate |
+| 2026-08-27 | Critical connected journeys | COMPLETE | 8 device tests | API 36 |

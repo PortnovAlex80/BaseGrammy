@@ -1,210 +1,75 @@
-# Test Plan — GrammarMate
+# Regression Test Plan - GrammarMate v2
 
-Generated: 2026-05-18
-Status: ACTIVE
-Related: TASK-073, legacy-test-plan.md
+Updated: 2026-08-27  
+Status: ACTIVE, TASK-073 closure baseline  
+Scope: `MainActivityV2`, `:domain`, Room/DataStore, Compose navigation and critical Android journeys
 
----
+The previous version of this document described the retired legacy runtime
+(`SessionRunner`, `DailyPracticeCoordinator`, `DailySessionComposer`). Its detailed
+matrix remains available in `legacy-archive/legacy-test-plan.md`. The production v2
+runtime uses `SessionEngine`, `DailyTaskComposer`, pack-scoped Room state and feature FSMs.
 
-## Existing Coverage
+## Quality Gate
 
-| Test File | Tests | Lines | Status |
-|-----------|-------|-------|--------|
-| SessionRunnerTest.kt | ~85 | 1,338 | EXTENSIVE |
-| DailyPracticeCoordinatorTest.kt | ~75 | 1,737 | EXTENSIVE |
-| CardProviderTest.kt | ~40 | 1,271 | EXTENSIVE |
-| ProgressTrackerTest.kt | ~40 | 1,422 | EXTENSIVE |
-| AnswerValidatorTest.kt | ~15 | 493 | GOOD |
-| FlowerCalculatorTest.kt | ~12 | 362 | GOOD |
-| ProgressStoreTest.kt | ~12 | 469 | GOOD |
-| StreakStoreTest.kt | ~10 | 305 | GOOD |
-| MasteryStoreTest.kt | ~10 | 377 | GOOD |
-| NormalizerTest.kt | ~10 | 304 | GOOD |
-| SpacedRepetitionConfigTest.kt | ~10 | 304 | GOOD |
-| MixedReviewSchedulerTest.kt | ~4 | 127 | MINIMAL |
-| BossBattleRunnerTest.kt | ~20 | 754 | GOOD |
-| MasteryIntegrationTest.kt | ~8 | 299 | GOOD |
-| ProgressIntegrationTest.kt | ~8 | 302 | GOOD |
-| **DailySessionComposerTest.kt** | **0** | **0** | **MISSING** |
+Every change must pass:
 
----
+```text
+./gradlew :domain:test :app:testDebugUnitTest lintDebug assembleDebug assembleRelease assembleDebugAndroidTest
+./gradlew connectedDebugAndroidTest
+```
 
-## Gap Analysis against TASK-073
+CI executes the unit/lint/build gate and an API 36 emulator job. A release is not
+considered regression-safe when the connected suite is skipped.
 
-### 1. SessionRunner — Card Orchestration (CRITICAL)
+## Active Coverage Matrix
 
-| Test Case | Status | Existing Coverage |
-|-----------|--------|-------------------|
-| correct answer ACTIVE → advance to next card | COVERED | `submitAnswer_correctNormalMidCard_advancesToNextCard` |
-| correct answer PAUSED → resume + advance | COVERED | `onSubmit correct after pause and typed input resumes and returns Correct` |
-| correct answer HINT_SHOWN → resume + advance | COVERED (семантика v2) | `onSubmit correct while hint shown without typing stays Wrong` — resume ТОЛЬКО через onInputChanged (typing); voice-путь остаётся Wrong до смены карты (фикс M-7 аудита) |
-| wrong answer ACTIVE → stay, increment attempts | COVERED | `submitAnswer_wrongAnswer_incrementsIncorrectAttempts` |
-| wrong × 3 → show hint, HINT_SHOWN state | COVERED | `submitAnswer_wrongAnswerAtHintThreshold_showsHint` |
-| last card + correct → subLessonFinishedToken++ | COVERED | `submitAnswer_correctNormalLastCard_signalsSubLessonComplete` |
-| navigateNext → currentIndex+1, PAUSED | COVERED | `nextCard_midSession_advancesIndex` |
-| navigatePrev → currentIndex-1, PAUSED | COVERED | `prevCard_midSession_decrementsIndex` |
-| navigateNext on last card → stays | COVERED | `nextCard_lastIndex_clampsToLast` |
-| navigatePrev on first card → stays | COVERED | `prevCard_atFirstIndex_staysAtZero` |
-| VOICE mode → auto-trigger recognition | COVERED | `nextCard_voiceMode_triggersVoiceToken` |
-| KEYBOARD mode → no auto-trigger | COVERED | `nextCard_keyboardMode_doesNotTriggerVoiceToken` |
-| startCardSession(cards, DAILY_TRANSLATE) | COVERED | `startSession_normalMode_emitsBuildSessionCards` |
-| exitCardSession → resets state | COVERED | `finishSession_*` tests |
+| Risk area | Owner/source of truth | Required regression level | Current anchors | Status |
+|---|---|---|---|---|
+| Lesson queue, advance, resume, completion | `SessionEngine` + `SessionSnapshot` | Domain unit + repository contract + VM | `SessionEngineTest`, `SessionRepositoryContractTest`, `TrainingViewModelRegressionTest` | COVERED |
+| Frozen sub-lessons and pending queue after restart | persisted `pendingCardIds`, `sessionSize` | Engine + fake/Room parity | pending-queue round-trip and full-lesson tests | COVERED |
+| Atomic Room snapshots and schema migration | Room transaction, migrations v1..v6 | In-memory Room + migration tests | `SessionRepositoryRoomContractTest`, `GrammarMateDatabaseMigrationTest` | COVERED |
+| Pack isolation for cards, drills, hidden and mastery state | composite `(packId, id)` keys | Two-pack collision tests | pack importer, scoped hidden-card and DAO tests | COVERED |
+| Pack import and bundled first run | `PackImporter`, bundled seed state | Parser/import unit + device journey | bundled ZIP regressions, Home device smoke | COVERED |
+| Training FSM and persistence failures | `TrainingViewModel`/`SessionEngine` | Reducer/VM + Compose | submit/next/skip/resume/restart/error tests | COVERED |
+| Daily state and Next serialization | `DailyPracticeViewModel`, `DailyTaskComposer` | Domain + VM race regression | composer matrix and double-next regression | COVERED |
+| Verb and vocabulary drills | drill VMs + scoped repositories | Domain/VM + device entry | full-pass/rating/filter tests and device smoke | COVERED |
+| Story resolution and rendering | imported basename path + reader state | Import unit + device entry | story path regression and markdown smoke | COVERED |
+| Settings persistence and consumers | `SettingsRepository`/DataStore | Repository + VM + consumer VM | session-size persist/clamp and lesson/verb wiring | COVERED |
+| Audio resource lifecycle | audio repositories/coordinators | JVM contract tests; device smoke where native model exists | ASR manifest/memory, TTS registry/cache, recognition tests | COVERED WITH DEVICE LIMITATION |
+| Critical navigation | Navigation Compose routes | Connected device suite | Home -> Pack, Lesson, Story, Verb, Vocab, Daily, Pomodoro | COVERED |
 
-**GAP: 0** — закрыто 2026-08-27 (+bonus: VOICE-retry авто-ретриггер тест).
+## Critical Device Journeys
 
-### 2. DailyPracticeCoordinator — Cursor & Session
+`GoldenJourneySmokeTest` must run against a clean install and verifies:
 
-| Test Case | Status | Existing Coverage |
-|-----------|--------|-------------------|
-| cancelDailySession all practiced → returns count | COVERED | `cancelDailySession_finishedAllSentenceAndVerbCards_returnsSentenceCount` |
-| cancelDailySession partial → returns null | COVERED | `cancelDailySession_partialTranslate_returnsNull` |
-| cancelDailySession WORD_BANK only → null | COVERED | `cancelDailySession_finishedButIncomplete_returnsNull` |
-| advanceCursor(10) → offset += 10 | COVERED | cursor tests exist |
-| advanceCursor past lesson boundary → lessonIndex++ | COVERED | cursor boundary tests |
-| advanceCursor past last lesson → wrap to 0 | COVERED | wrap tests |
-| startDailyPractice first session → stores cardIds | COVERED | `startDailySession_callsOnStoreFirstSessionCardIds` |
-| startDailyPractice NOT first → preserves cardIds | COVERED | repeat tests |
-| repeatDailyPractice → uses stored cardIds | COVERED | `repeatDailyPractice_withCachedTasks_reusesTasks` |
-| hasResumableDailySession → true/false | COVERED | `hasResumableDailySession_*` |
-| resetState() preserves cursor | COVERED | `resetState_preservesCursor` |
-| resetAllDailyState() wipes cursor | **MISSING** | New method, no test |
-| recordDailyCardPracticed TRANSLATE/VERBS | COVERED | `recordDailyCardPracticed_*` |
-| onBlockComplete advances blockIndex | COVERED | `advanceToNextBlock_*` |
-| onBlockComplete on last block → endSession | COVERED | `advanceToNextBlock_fromVerbs_atLastBlock_endsSession` |
-| endSession records streak per practice type | COVERED | `endSession_*` |
+1. Home seeds and opens the bundled pack.
+2. The first lesson opens a real Training card.
+3. Chapter story opens imported markdown.
+4. Verb drill opens an answer field.
+5. Vocabulary drill opens a rating/reveal flow.
+6. Daily practice opens a task.
+7. Pomodoro opens its timer controls.
+8. Settings opens the persisted lesson-size controls.
 
-**GAP: 1 test needed** — `resetAllDailyState()` wipes cursor.
+These are deliberately shallow end-to-end tests. Detailed transitions and failure
+branches stay in deterministic JVM tests to keep the emulator suite stable.
 
-### 3. DailySessionComposer — Block Building (NO TESTS EXIST)
+## Required Regression Rules
 
-| Test Case | Status | Priority |
-|-----------|--------|----------|
-| TRANSLATE block: builds from cursor offset | **MISSING** | HIGH |
-| TRANSLATE block: does NOT cross lesson boundary | **MISSING** | HIGH |
-| TRANSLATE block: sessionSize limits output | **MISSING** | HIGH |
-| TRANSLATE block: offset >= lesson size → empty | **MISSING** | HIGH |
-| TRANSLATE block: cards in sequential order | **MISSING** | HIGH |
-| VOCAB block: selects due words first (overdue) | **MISSING** | HIGH |
-| VOCAB block: then new words by rank | **MISSING** | MEDIUM |
-| VOCAB block: sessionSize limits output | **MISSING** | MEDIUM |
-| VOCAB block: excludes numbers | **MISSING** | MEDIUM |
-| VERBS block: filters by active tenses | **MISSING** | HIGH |
-| VERBS block: excludes previously shown cards | **MISSING** | HIGH |
-| VERBS block: cycles when all shown | **MISSING** | MEDIUM |
-| VERBS block: weakness-first ordering | **MISSING** | MEDIUM |
-| buildBlocks returns 3 blocks in order | **MISSING** | HIGH |
-| buildRepeatBlocks uses stored card IDs | **MISSING** | MEDIUM |
-| sessionSize=3 produces 3 cards per block | **MISSING** | HIGH |
+- Any new state field must have fake and Room save/load parity tests.
+- Any new session command must test duplicate taps and persistence failure.
+- Any pack-owned entity must include a two-pack/same-local-id collision test.
+- Any new route must have a device entry smoke and a ViewModel invalid-route test.
+- Any settings field must test persistence, validation/clamp and every production consumer.
+- Any Room schema change must include explicit migration and destructive-migration rejection checks.
+- Flaky retries do not count as coverage; fix synchronization with semantic state/tags.
 
-**GAP: 16 tests needed** — entirely new test file.
+## Residual Risks
 
-### 4. AnswerValidator
+- Native ASR/TTS model execution depends on device ABI and installed model files; JVM tests
+  cannot prove vendor/native cleanup. Exercise this during release testing on phone and tablet.
+- Performance is guarded structurally (bounded queues, no repeated content reload on Next),
+  but macrobenchmarks and startup/frame timing are not yet a release gate.
+- Foldable/tablet visual layout is covered by Compose density variants, not screenshot baselines.
 
-| Test Case | Status | Existing Coverage |
-|-----------|--------|-------------------|
-| exact match → correct | COVERED | |
-| case-insensitive → correct | COVERED | |
-| synonym match → correct | COVERED | |
-| partial match → wrong | COVERED | |
-| empty input → wrong | COVERED | |
-| testMode → accepts any non-empty | COVERED | |
-
-**GAP: 0 tests needed** — fully covered.
-
-### 5. CardProvider — Sub-lesson Scheduling
-
-| Test Case | Status | Existing Coverage |
-|-----------|--------|-------------------|
-| NEW_ONLY sub-lessons: only new cards | COVERED | |
-| MIXED sub-lessons: new + review | COVERED | |
-| subLessonSize controls cards | COVERED | |
-| cycles through all before repeat | COVERED | |
-
-**GAP: 0 tests needed** — fully covered.
-
-### 6. FlowerCalculator
-
-| Test Case | Status | Existing Coverage |
-|-----------|--------|-------------------|
-| mastery=0 → LOCKED | COVERED | |
-| mastery>0 → SEED | COVERED | |
-| mastery at threshold → SPROUT | COVERED | |
-| mastery at bloom → BLOOM | COVERED | |
-| decay → WILTING → WILTED → GONE | COVERED | |
-
-**GAP: 0 tests needed** — fully covered.
-
-### 7. Progress Persistence
-
-| Test Case | Status | Existing Coverage |
-|-----------|--------|-------------------|
-| saveProgress persists to file | COVERED | ProgressStoreTest |
-| loadProgress restores state | COVERED | |
-| cursor survives restart | COVERED | ProgressIntegrationTest |
-| firstSessionDate survives restart | COVERED | |
-
-**GAP: 0 tests needed** — fully covered.
-
-### 8. Settings
-
-| Test Case | Status | Priority |
-|-----------|--------|----------|
-| setSessionSize updates all consumers | **MISSING** | MEDIUM |
-| setSessionSize persists to config | **MISSING** | MEDIUM |
-| setSessionSize clamps to valid range | **MISSING** | MEDIUM |
-
-**GAP: 3 tests needed** — no settings tests exist.
-
-### 9. TTS/ASR
-
-| Test Case | Status | Priority |
-|-----------|--------|----------|
-| TtsEngine.initialize serializes via mutex | **MISSING** | LOW |
-| TtsEngine.doRelease frees native resources | **MISSING** | LOW |
-| AudioCoordinator ttsMutex prevents concurrent access | **MISSING** | LOW |
-
-**GAP: 3 tests needed** — requires native mocking, LOW priority.
-
-### 10. Per-Screen User Journeys
-
-| Test Case | Status | Priority |
-|-----------|--------|----------|
-| Full daily session: TRANSLATE→VOCAB→VERBS→completion | COVERED | `fullLifecycle_traverseAllBlocks_cancelReturnsSentenceCount` |
-| Exit mid-session → cursor does NOT advance | COVERED | `fullLifecycle_cancelEarly_noCursorAdvancement` |
-| Wrong × 3 → hint → correct → advance | COVERED | `fullFlow_threeWrong_showsHintThenUserCanAdvance` |
-| Navigate back/forward → PAUSED → correct → advance | **MISSING** | MEDIUM |
-| Verb drill: VOICE correct → advance | **MISSING** | LOW (VerbDrillViewModel) |
-| Vocab drill: rate cards → session done | COVERED | `rateVocabCard_*` tests |
-
-**GAP: 2 tests needed.**
-
----
-
-## Implementation Priority
-
-### Priority 1: DailySessionComposerTest (16 new tests)
-Entirely untested. Critical for the VERBS loop fix — ensures block building logic is correct.
-
-### Priority 2: SessionRunner PAUSED/HINT_SHOWN+correct (2 new tests)
-Tests the recent fix for non-ACTIVE state advancement.
-
-### Priority 3: Settings tests (3 new tests)
-setSessionSize validation.
-
-### Priority 4: resetAllDailyState test (1 new test)
-
-### Priority 5: User journey + TTS (5 new tests)
-Lower priority, requires more mocking.
-
----
-
-## Total Gap: ~27 tests across 4 files
-
-| File | New Tests | Action |
-|------|-----------|--------|
-| DailySessionComposerTest.kt (NEW) | 16 | Create from scratch |
-| SessionRunnerTest.kt (EXPAND) | 2 | Add PAUSED/HINT_SHOWN tests |
-| DailyPracticeCoordinatorTest.kt (EXPAND) | 1 | Add resetAllDailyState test |
-| Settings / integration tests | 8 | Settings validation + journeys |
-
-**Existing coverage: ~300+ tests. Adding ~27 tests fills all gaps.**
+These are explicit platform/performance follow-ups, not unimplemented TASK-073 unit-test gaps.

@@ -2,6 +2,7 @@ package com.alexpo.grammermate.v2.feature.training
 
 import androidx.lifecycle.SavedStateHandle
 import com.alexpo.grammermate.domain.model.BadSentence
+import com.alexpo.grammermate.domain.model.AppConfig
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.CardType
@@ -17,6 +18,7 @@ import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
 import com.alexpo.grammermate.domain.repository.SessionRepository
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import com.alexpo.grammermate.domain.repository.UserContentRepository
 import com.alexpo.grammermate.domain.repository.VocabDrillRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
@@ -104,6 +106,17 @@ class TrainingViewModelRegressionTest {
         assertThat(persisted!!.poolCardIds.map { it.value })
             .containsExactlyElementsIn(TrainingDbFixture.CARD_IDS)
             .inOrder()
+    }
+
+    @Test
+    fun init_usesConfiguredSessionSizeForNewSession() {
+        val settings = mockk<SettingsRepository> {
+            coEvery { getAppConfig() } returns AppConfig(sessionSize = 3)
+        }
+
+        trainingViewModel(settingsRepo = settings)
+
+        assertThat(sessionRepository.store.getValue(sessionId.value).sessionSize).isEqualTo(3)
     }
 
     /**
@@ -523,12 +536,16 @@ class TrainingViewModelRegressionTest {
         ),
         engine: SessionEngine = sessionEngine(),
         vocabRepo: VocabDrillRepository = mockk(relaxed = true),
+        settingsRepo: SettingsRepository = mockk(relaxed = true) {
+            coEvery { getAppConfig() } returns AppConfig()
+        },
     ): TrainingViewModel = TrainingViewModel(
         savedStateHandle = handle,
         sessionEngine = engine,
         contentRepository = contentRepository(),
         userContentRepository = userContentRepository,
         vocabDrillRepository = vocabRepo,
+        settingsRepository = settingsRepo,
         answerValidator = AnswerValidator(),
     )
 

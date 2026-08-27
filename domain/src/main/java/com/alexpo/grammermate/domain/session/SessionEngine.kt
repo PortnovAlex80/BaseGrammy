@@ -223,6 +223,7 @@ class SessionEngine(
             lessonId = null,
             mode = TrainingMode.VERB_DRILL,
             poolCardIds = pool,
+            sessionSize = sessionSize,
             selectedTense = tense,
             selectedGroup = group,
             selectedPerson = person,

@@ -10,12 +10,14 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.domain.TrainingConfig
+import com.alexpo.grammermate.domain.model.AppConfig
 import com.alexpo.grammermate.domain.model.Card
 import com.alexpo.grammermate.domain.model.CardId
 import com.alexpo.grammermate.domain.model.CardType
 import com.alexpo.grammermate.domain.model.LessonId
 import com.alexpo.grammermate.domain.model.PackId
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import com.alexpo.grammermate.domain.repository.UserContentRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
@@ -95,6 +97,9 @@ class TrainingScreenTest {
             contentRepository = contentRepository,
             userContentRepository = userContentRepository,
             vocabDrillRepository = io.mockk.mockk(relaxed = true),
+            settingsRepository = mockk<SettingsRepository>(relaxed = true) {
+                coEvery { getAppConfig() } returns AppConfig()
+            },
             answerValidator = AnswerValidator(),
         )
     }

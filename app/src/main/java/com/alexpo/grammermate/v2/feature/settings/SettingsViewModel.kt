@@ -15,7 +15,10 @@ import kotlinx.coroutines.launch
 /** FSM настроек (Фаза 7: последний Placeholder → реальный экран). */
 sealed interface SettingsViewState {
     data object Loading : SettingsViewState
-    data class Content(val themeMode: ThemeMode) : SettingsViewState
+    data class Content(
+        val themeMode: ThemeMode,
+        val sessionSize: Int,
+    ) : SettingsViewState
     data class Error(val message: String) : SettingsViewState
 }
 
@@ -36,7 +39,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.observeAppConfig()
                 .collect { config ->
-                    _state.value = SettingsViewState.Content(config.themeMode)
+                    _state.value = SettingsViewState.Content(
+                        themeMode = config.themeMode,
+                        sessionSize = config.sessionSize,
+                    )
                 }
         }
     }
@@ -45,6 +51,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 settingsRepository.updateAppConfig { it.copy(themeMode = mode) }
+            }.onFailure { e ->
+                _state.value = SettingsViewState.Error(e.message ?: "Не удалось сохранить настройку")
+            }
+        }
+    }
+
+    fun setSessionSize(size: Int) {
+        viewModelScope.launch {
+            runCatching {
+                settingsRepository.updateAppConfig { it.copy(sessionSize = size) }
             }.onFailure { e ->
                 _state.value = SettingsViewState.Error(e.message ?: "Не удалось сохранить настройку")
             }

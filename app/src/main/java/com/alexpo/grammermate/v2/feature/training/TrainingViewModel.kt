@@ -2,7 +2,6 @@ package com.alexpo.grammermate.v2.feature.training
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.alexpo.grammermate.domain.TrainingConfig
 import com.alexpo.grammermate.domain.model.BadSentence
 import com.alexpo.grammermate.domain.model.BossReward
 import com.alexpo.grammermate.domain.model.BossType
@@ -17,6 +16,7 @@ import com.alexpo.grammermate.domain.model.SessionSnapshot
 import com.alexpo.grammermate.domain.model.SessionStatus
 import com.alexpo.grammermate.domain.model.TrainingMode
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import com.alexpo.grammermate.domain.repository.UserContentRepository
 import com.alexpo.grammermate.domain.repository.VocabDrillRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
@@ -72,6 +72,7 @@ class TrainingViewModel @Inject constructor(
     private val contentRepository: ContentRepository,
     private val userContentRepository: UserContentRepository,
     private val vocabDrillRepository: VocabDrillRepository,
+    private val settingsRepository: SettingsRepository,
     private val answerValidator: AnswerValidator,
 ) : MviViewModel<TrainingViewState, TrainingIntent, TrainingEffect>(
     initialState = TrainingViewState.Loading,
@@ -131,7 +132,7 @@ class TrainingViewModel @Inject constructor(
                         sessionEngine.startLessonSession(
                             packId = packId,
                             lessonId = lessonId,
-                            sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                            sessionSize = settingsRepository.getAppConfig().sessionSize,
                         )
                     }
                 }.onSuccess { snapshot ->
@@ -284,7 +285,7 @@ class TrainingViewModel @Inject constructor(
                     sessionEngine.restartLessonSession(
                         packId = packId,
                         lessonId = lessonId,
-                        sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                        sessionSize = settingsRepository.getAppConfig().sessionSize,
                     )
                 }.onSuccess { snapshot ->
                     clearDraft()
@@ -362,7 +363,7 @@ class TrainingViewModel @Inject constructor(
                     sessionEngine.restartLessonSession(
                         packId = packId,
                         lessonId = lessonId,
-                        sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
+                        sessionSize = settingsRepository.getAppConfig().sessionSize,
                         mode = TrainingMode.ALL_MIXED,
                     )
                 }.onSuccess { snapshot ->

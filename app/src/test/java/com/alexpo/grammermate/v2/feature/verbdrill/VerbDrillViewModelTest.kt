@@ -1,9 +1,12 @@
 package com.alexpo.grammermate.v2.feature.verbdrill
 
 import androidx.lifecycle.SavedStateHandle
+import com.alexpo.grammermate.domain.model.AppConfig
 import com.alexpo.grammermate.domain.model.PackId
+import com.alexpo.grammermate.domain.model.SessionId
 import com.alexpo.grammermate.domain.model.VerbDrillCard
 import com.alexpo.grammermate.domain.repository.ContentRepository
+import com.alexpo.grammermate.domain.repository.SettingsRepository
 import com.alexpo.grammermate.domain.repository.UserContentRepository
 import com.alexpo.grammermate.domain.session.SessionEngine
 import com.alexpo.grammermate.domain.validation.AnswerValidator
@@ -47,7 +50,8 @@ class VerbDrillViewModelTest {
         VerbDrillCard("v3", "он говорит", "parla", verb = "parlare", tense = "present", group = "are", person = "Lui", rank = 3),
     )
 
-    private fun viewModel(): VerbDrillViewModel {
+    private fun viewModel(sessionSize: Int = 10): VerbDrillViewModel {
+        val configuredSessionSize = sessionSize
         val content = mockk<ContentRepository>(relaxed = true) {
             coEvery { getVerbDrillCards(packId, null, null, null) } returns cards()
         }
@@ -58,6 +62,9 @@ class VerbDrillViewModelTest {
             savedStateHandle = SavedStateHandle(mapOf("packId" to packId.value)),
             sessionEngine = SessionEngine(sessionRepository, content, userContent, clock = { 1L }),
             contentRepository = content,
+            settingsRepository = mockk<SettingsRepository>(relaxed = true) {
+                coEvery { getAppConfig() } returns AppConfig(sessionSize = configuredSessionSize)
+            },
             answerValidator = AnswerValidator(),
         )
     }
@@ -70,6 +77,14 @@ class VerbDrillViewModelTest {
         assertThat(state.card).isEqualTo("v1")
         assertThat(state.promptRu).isEqualTo("я говорю")
         assertThat(state.totalCards).isEqualTo(3)
+    }
+
+    @Test
+    fun init_usesConfiguredSessionSizeForNewSession() {
+        viewModel(sessionSize = 3)
+
+        val session = sessionRepository.store.getValue(SessionId.forVerbDrill(packId).value)
+        assertThat(session.sessionSize).isEqualTo(3)
     }
 
     @Test
@@ -115,6 +130,7 @@ class VerbDrillViewModelTest {
             savedStateHandle = SavedStateHandle(mapOf("packId" to "")),
             sessionEngine = SessionEngine(sessionRepository, content, mockk(relaxed = true)),
             contentRepository = content,
+            settingsRepository = mockk(relaxed = true),
             answerValidator = AnswerValidator(),
         )
 

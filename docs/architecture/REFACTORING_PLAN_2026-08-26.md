@@ -45,9 +45,10 @@
 hidden/drill-состояния (schema v6), story-path, гонку Daily Next и состояние долгого
 bundled seed. Решение зафиксировано в ADR-004.
 
-TASK-073 остается `IN_PROGRESS`: один golden journey теперь исполняется локально и в CI,
-но полная матрица всех 88+ use cases из comprehensive test plan еще не реализована.
-Поэтому документ нельзя переводить в статус полного исполнения до закрытия этой матрицы.
+TASK-073 закрыта по активному v2 scope: legacy-матрица 88+ use cases признана
+неприменимой к production runtime, а актуальный контур описан в `test-plan.md`.
+Connected suite расширен до восьми критических входных journeys (Pack, Lesson, Story,
+Verb, Vocab, Daily, Pomodoro, Settings); детальные переходы и ошибки закреплены JVM-тестами.
 
 ## 1. Итог аудита
 

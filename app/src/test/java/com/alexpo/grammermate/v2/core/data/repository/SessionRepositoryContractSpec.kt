@@ -127,6 +127,36 @@ abstract class SessionRepositoryContractSpec {
     }
 
     @Test
+    fun `saveLoad roundtrip preserves pending queue order and session size`() = runTest {
+        val repository = repository()
+        val pending = listOf("future_1", "future_2", "future_3").map(::CardId)
+        val created = repository.getOrCreateSession(
+            sessionId = sessionId,
+            packId = packId,
+            lessonId = lessonId,
+            mode = TrainingMode.LESSON,
+            poolCardIds = pool.take(2),
+            pendingCardIds = pending,
+            sessionSize = 2,
+        )
+
+        assertThat(created.pendingCardIds).containsExactlyElementsIn(pending).inOrder()
+        assertThat(created.sessionSize).isEqualTo(2)
+
+        val updatedPending = listOf(pending[1], pending[2])
+        repository.saveSession(
+            created.copy(
+                pendingCardIds = updatedPending,
+                revision = created.revision + 1,
+            ),
+        )
+        val loaded = repository.loadSession(sessionId)!!
+
+        assertThat(loaded.pendingCardIds).containsExactlyElementsIn(updatedPending).inOrder()
+        assertThat(loaded.sessionSize).isEqualTo(2)
+    }
+
+    @Test
     fun `saveSession with stale revision is rejected and leaves state unchanged`() = runTest {
         val repository = repository()
         val first = createSession(repository)
