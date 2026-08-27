@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.v2.feature.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -95,13 +97,17 @@ fun SettingsScreen(
                             Icon(Icons.Default.Remove, contentDescription = "Уменьшить")
                         }
                         Spacer(Modifier.width(16.dp))
-                        Text(
-                            text = s.sessionSize.toString(),
-                            style = MaterialTheme.typography.headlineSmall,
+                        Box(
                             modifier = Modifier
                                 .size(48.dp)
                                 .testTag(SettingsTestTags.SESSION_SIZE_VALUE),
-                        )
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = s.sessionSize.toString(),
+                                style = MaterialTheme.typography.headlineSmall,
+                            )
+                        }
                         Spacer(Modifier.width(16.dp))
                         IconButton(
                             onClick = { viewModel.setSessionSize(s.sessionSize + 1) },
@@ -136,6 +142,6 @@ private fun ThemeChip(
         selected = state.themeMode == mode,
         onClick = { viewModel.setThemeMode(mode) },
         label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(0f).testTag(tag),
+        modifier = Modifier.testTag(tag),
     )
 }
