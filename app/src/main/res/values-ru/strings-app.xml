@@ -202,4 +202,7 @@
     <string name="app_restoring_backup">Восстановление резервной копии…</string>
     <string name="app_waiting_backup">Ожидание папки резервной копии…</string>
     <string name="app_preparing">Подготовка…</string>
+
+    <!-- D5 (аудит 2026-08-26): недостающие переводы lint MissingTranslation -->
+    <string name="app_name">GrammarMate</string>
 </resources>

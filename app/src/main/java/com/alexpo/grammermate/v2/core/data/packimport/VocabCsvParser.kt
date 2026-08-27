@@ -45,7 +45,7 @@ object VocabCsvParser {
         inputStream.bufferedReader().useLines { lines ->
             lines.forEach { raw ->
                 lineNumber += 1
-                val line = raw.trim().trimStart('﻿')
+                val line = raw.trim().trimStart('\uFEFF')
                 if (line.isBlank()) return@forEach
 
                 val columns = CsvLineParser.parseLine(line).map { it.trim().trim('"') }

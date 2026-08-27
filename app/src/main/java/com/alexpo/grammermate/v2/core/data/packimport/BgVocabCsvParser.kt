@@ -46,7 +46,7 @@ object BgVocabCsvParser {
         input.bufferedReader().useLines { lines ->
             lines.forEach { raw ->
                 lineNumber += 1
-                val line = raw.trim().let { if (lineNumber == 1) it.trimStart('﻿') else it }
+                val line = raw.trim().let { if (lineNumber == 1) it.trimStart('\uFEFF') else it }
                 if (line.isBlank()) return@forEach
 
                 val fields = rfc4180Line(line)

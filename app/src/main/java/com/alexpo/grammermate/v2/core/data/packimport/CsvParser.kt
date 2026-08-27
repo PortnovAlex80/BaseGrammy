@@ -118,7 +118,7 @@ object CsvParser {
 
     /** Заголовок урока из строки 1: trim + снятие кавычек/BOM + ограничение 160 символов. */
     private fun extractTitle(raw: String): String? {
-        val trimmed = raw.trim().trim('"').trimStart('﻿')
+        val trimmed = raw.trim().trim('"').trimStart('\uFEFF')
         return trimmed.take(160).trim().ifBlank { null }
     }
 }

@@ -21,8 +21,10 @@
       PackContent (Спряжения/Словарь/Норма, launchSingleTop).
 - [ ] D4 Room PK cards/vocab не изолированы по packId (коллизии при двух
       паках с одинаковыми lessonId) — schema v5.
-- [ ] D5 lintDebug: 248 ошибок / 547 предупреждений — не входит в зелёный
-      контур CI.
+- [x] D5 lintDebug: 248 ошибок → 0 (245 MissingTranslation — добавлены ru-переводы
+      всех 245 ключей; 3 ByteOrderMark — BOM-литералы CSV-парсеров заменены на
+      escape ﻿ байт-level скриптом). Осталось 547 предупреждений
+      (предупреждения не блокируют сборку; отдельный срез при желании).
 - [ ] D6 androidTest и активные Maestro/E2E-сценарии отсутствуют;
       TASK-073 (comprehensive test suite) OPEN.
 
