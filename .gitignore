@@ -134,3 +134,6 @@ local.properties
 # Generated content exports + Windows-артефакт `nul` (redirect-мусор)
 /output_it/
 /nul
+
+# Kotlin compiler daemon session markers
+/.kotlin/
