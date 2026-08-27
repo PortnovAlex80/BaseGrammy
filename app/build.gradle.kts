@@ -18,7 +18,7 @@ android {
         versionCode = 100                      // v2 fresh start
         versionName = "2.0.0"
 
-        testInstrumentationRunner = "com.alexpo.grammermate.HiltTestRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -189,6 +189,7 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
 
     // Instrumented tests (androidTest — requires Hilt test setup)
+    androidTestUtil(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.espresso.core)

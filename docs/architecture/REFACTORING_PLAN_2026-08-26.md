@@ -28,8 +28,11 @@
       всех 245 ключей; 3 ByteOrderMark — BOM-литералы CSV-парсеров заменены на
       escape ﻿ байт-level скриптом). Осталось 547 предупреждений
       (предупреждения не блокируют сборку; отдельный срез при желании).
-- [ ] D6 androidTest и активные Maestro/E2E-сценарии отсутствуют;
-      TASK-073 (comprehensive test suite) OPEN.
+- [x] D6 (локальная половина): androidTest-source-set создан — smoke golden
+      journey (Home→PackContent, waitUntil на bundled-seed) компилируется
+      (assembleDebugAndroidTest OK); runner исправлен на AndroidJUnitRunner
+      (несуществующий HiltTestRunner). ЗАПУСК — эмулятор/CI. TASK-073: OPEN
+      → IN_PROGRESS (smoke готов, полная матрица journeys в задаче).
 
 Плановая Status-строка "executed" была преждевременной: unit-зелёность не
 доказывает реальный первый запуск (D1 — ровно этот случай).
