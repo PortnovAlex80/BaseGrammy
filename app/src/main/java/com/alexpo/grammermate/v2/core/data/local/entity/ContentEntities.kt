@@ -51,12 +51,12 @@ data class PackEntity(
  */
 @Entity(
     tableName = "chapters",
-    indices = [Index("packId")],
+    primaryKeys = ["packId", "id"],
     foreignKeys = [ForeignKey(entity = PackEntity::class, parentColumns = ["id"], childColumns = ["packId"], onDelete = CASCADE)]
 )
 data class ChapterEntity(
-    @PrimaryKey val id: String,
     val packId: String,
+    val id: String,
     val order: Int,
     val title: String,
     val subtitle: String?,
@@ -77,12 +77,18 @@ data class ChapterEntity(
  */
 @Entity(
     tableName = "lessons",
-    indices = [Index("packId"), Index("chapterId")],
-    foreignKeys = [ForeignKey(entity = ChapterEntity::class, parentColumns = ["id"], childColumns = ["chapterId"], onDelete = CASCADE)]
+    primaryKeys = ["packId", "id"],
+    indices = [Index("chapterId")],
+    foreignKeys = [ForeignKey(
+        entity = ChapterEntity::class,
+        parentColumns = ["packId", "id"],
+        childColumns = ["packId", "chapterId"],
+        onDelete = CASCADE,
+    )]
 )
 data class LessonEntity(
-    @PrimaryKey val id: String,
     val packId: String,
+    val id: String,
     val chapterId: String?,
     val order: Int,
     val title: String,
@@ -112,11 +118,12 @@ data class LessonEntity(
  */
 @Entity(
     tableName = "cards",
-    indices = [Index("lessonId"), Index("packId"), Index(value = ["lessonId", "ord"])]
+    primaryKeys = ["packId", "id"],
+    indices = [Index("lessonId"), Index(value = ["lessonId", "ord"])]
 )
 data class CardEntity(
-    @PrimaryKey val id: String,
     val packId: String,
+    val id: String,
     val lessonId: String,
     val ord: Int,
     val type: String,

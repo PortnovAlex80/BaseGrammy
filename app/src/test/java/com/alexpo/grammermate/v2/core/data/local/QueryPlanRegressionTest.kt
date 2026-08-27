@@ -96,11 +96,11 @@ class QueryPlanRegressionTest {
             """.trimIndent()
         )
         // mastery_states: SEARCH по unique (packId, lessonId); lessons идут
-        // index-ordered SCAN'ом по index_lessons_packId для GROUP BY — это не
-        // full-scan (SQLite маркирует SCAN ... USING INDEX).
+        // SCAN по COVERING INDEX PK-autoindex (packId — часть составного PK
+        // после D4) — это не full-scan.
         assertThat(p).doesNotContain("SCAN mastery_states")
         assertThat(p).contains("SEARCH TABLE mastery_states AS m USING INDEX index_mastery_states_packId_lessonId")
-        assertThat(p).contains("index_lessons_packId")
+        assertThat(p).contains("USING COVERING INDEX sqlite_autoindex_lessons")
     }
 
     @Test

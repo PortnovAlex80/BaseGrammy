@@ -122,7 +122,10 @@ class ContentRepositoryImpl @Inject constructor(
      * Возвращает null, если урока нет.
      */
     override suspend fun getLesson(lessonId: LessonId): Lesson? {
-        val entity = contentDao.getLesson(lessonId.value) ?: return null
+        // D4: lessons PK составной (packId, id) — ищем по всем пакам первый матч
+        // (одиночный урок без pak-контекста в v2 UI не запрашивается).
+        val entity = contentDao.getPacks()
+            .firstNotNullOfOrNull { pack -> contentDao.getLesson(pack.id, lessonId.value) } ?: return null
         val cards = contentDao.getCards(entity.packId, lessonId.value).map(::cardEntityToDomain)
         return lessonEntityToDomain(entity, cards)
     }

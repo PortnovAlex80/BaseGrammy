@@ -114,6 +114,30 @@ class PackImporterTest {
 
 
     /** D3: verb/vocab drill-секции манифеста импортируются в Room. */
+
+    /** D4: два пака с одинаковыми lessonId не затирают друг друга (составные PK). */
+    @Test
+    fun twoPacks_sameLessonId_bothCoexist() = runTest {
+        val manifestA = manifestJson.replace("\"packId\": \"TEST_PACK\"", "\"packId\": \"PACK_A\"")
+        val manifestB = manifestJson.replace("\"packId\": \"TEST_PACK\"", "\"packId\": \"PACK_B\"")
+        val r1 = importer.importPackFromStream(
+            zip("manifest.json" to manifestA, "lesson_01.csv" to lessonCsv(rows = 2), "lesson_02.csv" to lessonCsv(rows = 1))
+        )
+        val r2 = importer.importPackFromStream(
+            zip("manifest.json" to manifestB, "lesson_01.csv" to lessonCsv(rows = 1), "lesson_02.csv" to lessonCsv(rows = 1))
+        )
+        assertThat(r1).isInstanceOf(PackImportResult.Success::class.java)
+        assertThat(r2).isInstanceOf(PackImportResult.Success::class.java)
+
+        // Оба пака: уроки не REPLACE-ились.
+        assertThat(db.contentDao().getCards("PACK_A", "lesson_01")).hasSize(2)
+        assertThat(db.contentDao().getCards("PACK_B", "lesson_01")).hasSize(1)
+        val chaptersA = db.contentDao().getChapters("PACK_A")
+        val chaptersB = db.contentDao().getChapters("PACK_B")
+        assertThat(chaptersA).hasSize(1)
+        assertThat(chaptersB).hasSize(1)
+    }
+
     @Test
     fun importPackFromStream_importsDrillContent() = runTest {
         val manifest = """

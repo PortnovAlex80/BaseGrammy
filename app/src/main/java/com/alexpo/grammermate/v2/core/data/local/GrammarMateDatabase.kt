@@ -66,7 +66,7 @@ import com.alexpo.grammermate.v2.core.data.local.entity.StreakPracticeTodayEntit
  * `app/schemas/` (регрессионные migration-тесты через room-testing).
  */
 @Database(
-    version = 4,
+    version = 5,
     exportSchema = true,
     entities = [
         // Контент
@@ -187,6 +187,96 @@ abstract class GrammarMateDatabase : RoomDatabase() {
         }
 
         /**
+         * v4 → v5 (D4 аудита 2026-08-26): составные PK (packId, id) у
+         * chapters/lessons/cards — коллизии одинаковых id в разных pakах
+         * больше не REPLACE-ят контент. Пересборка таблиц (PK меняется
+         * только пересборкой); данные копируются как есть.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                rebuildChapterLessonCardTables(db)
+            }
+        }
+
+        /**
+         * D4: пересборка chapters/lessons/cards под составные PK (packId, id)
+         * с сохранением данных и внешних ключей.
+         */
+        private fun rebuildChapterLessonCardTables(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS chapters_v5 (
+                    packId TEXT NOT NULL,
+                    id TEXT NOT NULL,
+                    `order` INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    subtitle TEXT,
+                    storyFile TEXT,
+                    PRIMARY KEY (packId, id),
+                    FOREIGN KEY (packId) REFERENCES packs (id) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "INSERT INTO chapters_v5 (packId, id, `order`, title, subtitle, storyFile) " +
+                    "SELECT packId, id, `order`, title, subtitle, storyFile FROM chapters"
+            )
+            db.execSQL("DROP TABLE chapters")
+            db.execSQL("ALTER TABLE chapters_v5 RENAME TO chapters")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS lessons_v5 (
+                    packId TEXT NOT NULL,
+                    id TEXT NOT NULL,
+                    chapterId TEXT,
+                    `order` INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    cefrLevel TEXT,
+                    grammarChipKey TEXT,
+                    PRIMARY KEY (packId, id),
+                    FOREIGN KEY (packId, chapterId) REFERENCES chapters (packId, id) ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "INSERT INTO lessons_v5 (packId, id, chapterId, `order`, title, cefrLevel, grammarChipKey) " +
+                    "SELECT packId, id, chapterId, `order`, title, cefrLevel, grammarChipKey FROM lessons"
+            )
+            db.execSQL("DROP TABLE lessons")
+            db.execSQL("ALTER TABLE lessons_v5 RENAME TO lessons")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_lessons_chapterId ON lessons (chapterId)")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS cards_v5 (
+                    packId TEXT NOT NULL,
+                    id TEXT NOT NULL,
+                    lessonId TEXT NOT NULL,
+                    ord INTEGER NOT NULL,
+                    type TEXT NOT NULL,
+                    promptRu TEXT NOT NULL,
+                    acceptedAnswersJson TEXT NOT NULL,
+                    tense TEXT,
+                    verb TEXT,
+                    verbGroup TEXT,
+                    person TEXT,
+                    frequencyRank INTEGER,
+                    PRIMARY KEY (packId, id)
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "INSERT INTO cards_v5 (packId, id, lessonId, ord, type, promptRu, acceptedAnswersJson, tense, verb, verbGroup, person, frequencyRank) " +
+                    "SELECT packId, id, lessonId, ord, type, promptRu, acceptedAnswersJson, tense, verb, verbGroup, person, frequencyRank FROM cards"
+            )
+            db.execSQL("DROP TABLE cards")
+            db.execSQL("ALTER TABLE cards_v5 RENAME TO cards")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_cards_lessonId ON cards (lessonId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_cards_lessonId_ord ON cards (lessonId, ord)")
+        }
+
+        /**
          * Production builder: WAL включён, миграции регистрируются здесь.
          * Schema export — в `app/schemas/` (для регрессионных migration-тестов).
          */
@@ -197,7 +287,7 @@ abstract class GrammarMateDatabase : RoomDatabase() {
                 DATABASE_NAME,
             )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 // fallbackToDestructiveMigration НЕ используется — данные пользователя критичны.
                 .build()
     }

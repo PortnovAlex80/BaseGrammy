@@ -105,6 +105,48 @@ class GrammarMateMigrationTest {
         v3.close()
     }
 
+
+    /** D4: v4 → v5 — составные PK chapters/lessons/cards, данные сохраняются. */
+    @Test
+    fun `migrate 4 to 5 rebuilds composite PKs and keeps data`() {
+        val db5 = "migration-test-v5.db"
+        helper.createDatabase(db5, 4).use { v4 ->
+            v4.execSQL(
+                "INSERT INTO packs (id, languageId, displayName, version, importedAtMs) VALUES ('P1', 'it', 'Pack', '1', 0)"
+            )
+            v4.execSQL(
+                "INSERT INTO chapters (id, packId, \"order\", title, subtitle, storyFile) " +
+                    "VALUES ('ch1', 'P1', 0, 'Глава', NULL, NULL)"
+            )
+            v4.execSQL(
+                "INSERT INTO lessons (id, packId, chapterId, \"order\", title, cefrLevel, grammarChipKey) " +
+                    "VALUES ('lesson_01', 'P1', 'ch1', 0, 'Урок', NULL, NULL)"
+            )
+            v4.execSQL(
+                "INSERT INTO cards (id, packId, lessonId, ord, type, promptRu, acceptedAnswersJson, tense, verb, verbGroup, person, frequencyRank) " +
+                    "VALUES ('lesson_01_0', 'P1', 'lesson_01', 0, 'SENTENCE', 'привет', '[\"ciao\"]', NULL, NULL, NULL, NULL, NULL)"
+            )
+        }
+
+        val v5 = helper.runMigrationsAndValidate(db5, 5, true, GrammarMateDatabase.MIGRATION_4_5)
+
+        v5.query("SELECT packId, id FROM chapters").use { c ->
+            assertThat(c.moveToFirst()).isTrue()
+            assertThat(c.getString(0)).isEqualTo("P1")
+            assertThat(c.getString(1)).isEqualTo("ch1")
+        }
+        v5.query("SELECT packId, id FROM lessons").use { c ->
+            assertThat(c.moveToFirst()).isTrue()
+            assertThat(c.getString(1)).isEqualTo("lesson_01")
+        }
+        v5.query("SELECT packId, id FROM cards").use { c ->
+            assertThat(c.moveToFirst()).isTrue()
+            assertThat(c.getString(0)).isEqualTo("P1")
+            assertThat(c.getString(1)).isEqualTo("lesson_01_0")
+        }
+        v5.close()
+    }
+
     /** Срез 4 Фазы 4: v3 → v4 — `daily_cursors.vocabOffset` (additive, default 0). */
     @Test
     fun `migrate 3 to 4 adds vocabOffset with zero default`() {

@@ -19,8 +19,11 @@
 - [x] D3 Drill/Daily/Vocab подключены: импорт verb/vocab CSV из секций
       манифеста (одна транзакция, partial-семантика) + кнопки режимов в
       PackContent (Спряжения/Словарь/Норма, launchSingleTop).
-- [ ] D4 Room PK cards/vocab не изолированы по packId (коллизии при двух
-      паках с одинаковыми lessonId) — schema v5.
+- [x] D4 PK изолированы по packId (schema v5, два среза): чтение pack-scoped
+      (getCards/getLesson/replaceLessonCards/deleteCardsForLesson) + составные
+      PK (packId, id) chapters/lessons/cards с миграцией v4→v5; два пака с
+      одинаковыми lessonId не затирают друг друга (тест). vocab/word PK уже
+      scoped ранее (ADR-003).
 - [x] D5 lintDebug: 248 ошибок → 0 (245 MissingTranslation — добавлены ru-переводы
       всех 245 ключей; 3 ByteOrderMark — BOM-литералы CSV-парсеров заменены на
       escape ﻿ байт-level скриптом). Осталось 547 предупреждений

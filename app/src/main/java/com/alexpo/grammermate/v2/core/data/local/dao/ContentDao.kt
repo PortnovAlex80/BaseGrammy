@@ -84,8 +84,8 @@ interface ContentDao {
     @Query("SELECT * FROM lessons WHERE packId = :packId AND chapterId = :chapterId ORDER BY `order`")
     suspend fun getLessonsForChapter(packId: String, chapterId: String): List<LessonEntity>
 
-    @Query("SELECT * FROM lessons WHERE id = :lessonId")
-    suspend fun getLesson(lessonId: String): LessonEntity?
+    @Query("SELECT * FROM lessons WHERE packId = :packId AND id = :lessonId")
+    suspend fun getLesson(packId: String, lessonId: String): LessonEntity?
 
     @Query("DELETE FROM lessons WHERE packId = :packId")
     suspend fun deleteLessonsForPack(packId: String)
@@ -107,8 +107,8 @@ interface ContentDao {
     @Query("SELECT * FROM cards WHERE id = :cardId")
     suspend fun getCard(cardId: String): CardEntity?
 
-    @Query("DELETE FROM cards WHERE lessonId = :lessonId")
-    suspend fun deleteCardsForLesson(lessonId: String)
+    @Query("DELETE FROM cards WHERE packId = :packId AND lessonId = :lessonId")
+    suspend fun deleteCardsForLesson(packId: String, lessonId: String)
 
     @Query("DELETE FROM cards WHERE packId = :packId")
     suspend fun deleteCardsForPack(packId: String)
@@ -120,8 +120,8 @@ interface ContentDao {
      * с его [LessonEntity] (старые карточки не «зависают» в выдаче).
      */
     @Transaction
-    suspend fun replaceLessonCards(lessonId: String, cards: List<CardEntity>) {
-        deleteCardsForLesson(lessonId)
+    suspend fun replaceLessonCards(packId: String, lessonId: String, cards: List<CardEntity>) {
+        deleteCardsForLesson(packId, lessonId)
         insertCards(cards)
     }
 }

@@ -303,7 +303,7 @@ class PackImporter @Inject constructor(
             contentDao.insertLessons(lessonEntities)
             cardEntities.forEach { cardsForLesson ->
                 // PK карт содержит lessonId → REPLACE-реимпорт урока идемпотентен.
-                contentDao.replaceLessonCards(cardsForLesson.first().lessonId, cardsForLesson)
+                contentDao.replaceLessonCards(cardsForLesson.first().packId, cardsForLesson.first().lessonId, cardsForLesson)
             }
             val drillDao = database.drillDao()
             if (verbCardEntities.isNotEmpty()) drillDao.insertVerbDrillCards(verbCardEntities)
