@@ -175,10 +175,10 @@ class PackImporterTest {
         assertThat(lessons.map { it.id }).containsExactly("lesson_01", "lesson_02").inOrder()
         assertThat(lessons.map { it.chapterId }).containsExactly("chapter_1", "chapter_1")
 
-        val cards01 = db.contentDao().getCards("lesson_01")
+        val cards01 = db.contentDao().getCards("TEST_PACK", "lesson_01")
         assertThat(cards01.map { it.id }).containsExactly("lesson_01_0", "lesson_01_1").inOrder()
         assertThat(cards01.map { it.ord }).containsExactly(0, 1).inOrder()
-        assertThat(db.contentDao().getCards("lesson_02")).hasSize(1)
+        assertThat(db.contentDao().getCards("TEST_PACK", "lesson_02")).hasSize(1)
     }
 
     @Test
@@ -201,7 +201,7 @@ class PackImporterTest {
         assertThat(second).isInstanceOf(PackImportResult.Success::class.java)
         assertThat(db.contentDao().getPacks()).hasSize(1)
         assertThat(db.contentDao().getLessons("TEST_PACK")).hasSize(2)
-        assertThat(db.contentDao().getCards("lesson_01")).hasSize(2)
+        assertThat(db.contentDao().getCards("TEST_PACK", "lesson_01")).hasSize(2)
     }
 
     @Test
@@ -217,7 +217,7 @@ class PackImporterTest {
         val partial = result as PackImportResult.Partial
         assertThat(partial.errors).hasSize(1)
         // Корректные карты сохранены, упавшая строка пропущена.
-        assertThat(db.contentDao().getCards("lesson_01")).hasSize(2)
+        assertThat(db.contentDao().getCards("TEST_PACK", "lesson_01")).hasSize(2)
     }
 
     @Test
@@ -240,7 +240,7 @@ class PackImporterTest {
             )
         )
 
-        val card = db.contentDao().getCards("lesson_01").single()
+        val card = db.contentDao().getCards("TEST_PACK", "lesson_01").single()
         assertThat(card.promptRu).isEqualTo("Привет")
         val answers = Json.decodeFromString(ListSerializer(String.serializer()), card.acceptedAnswersJson)
         assertThat(answers).containsExactly("ciao", "salve").inOrder()

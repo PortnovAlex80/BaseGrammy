@@ -123,13 +123,13 @@ class ContentRepositoryImpl @Inject constructor(
      */
     override suspend fun getLesson(lessonId: LessonId): Lesson? {
         val entity = contentDao.getLesson(lessonId.value) ?: return null
-        val cards = contentDao.getCards(lessonId.value).map(::cardEntityToDomain)
+        val cards = contentDao.getCards(entity.packId, lessonId.value).map(::cardEntityToDomain)
         return lessonEntityToDomain(entity, cards)
     }
 
     /** Карточки урока (с десериализацией acceptedAnswers из JSON). */
-    override suspend fun getCards(lessonId: LessonId): List<Card> =
-        contentDao.getCards(lessonId.value).map(::cardEntityToDomain)
+    override suspend fun getCards(packId: PackId, lessonId: LessonId): List<Card> =
+        contentDao.getCards(packId.value, lessonId.value).map(::cardEntityToDomain)
 
     /** Реактивный список уроков пака (без карточек — для подписки UI-списка). */
     override fun observeLessons(packId: PackId): Flow<List<Lesson>> =

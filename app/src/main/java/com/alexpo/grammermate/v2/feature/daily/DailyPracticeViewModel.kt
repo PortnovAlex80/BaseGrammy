@@ -107,7 +107,7 @@ class DailyPracticeViewModel @Inject constructor(
                             firstSessionLessonId = null,
                         )
                     val sentences = contentRepository.getLessons(packId)
-                        .flatMap { lesson -> contentRepository.getCards(lesson.id) }
+                        .flatMap { lesson -> contentRepository.getCards(packId, lesson.id) }
                         .filter { it.type == CardType.SENTENCE }
                     val content = DailyContent(
                         sentenceCards = sentences,

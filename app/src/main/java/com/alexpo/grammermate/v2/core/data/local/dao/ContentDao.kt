@@ -98,8 +98,8 @@ interface ContentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCards(cards: List<CardEntity>)
 
-    @Query("SELECT * FROM cards WHERE lessonId = :lessonId ORDER BY ord")
-    suspend fun getCards(lessonId: String): List<CardEntity>
+    @Query("SELECT * FROM cards WHERE packId = :packId AND lessonId = :lessonId ORDER BY ord")
+    suspend fun getCards(packId: String, lessonId: String): List<CardEntity>
 
     @Query("SELECT * FROM cards WHERE packId = :packId")
     suspend fun getCardsForPack(packId: String): List<CardEntity>

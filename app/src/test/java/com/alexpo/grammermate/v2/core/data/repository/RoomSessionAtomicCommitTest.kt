@@ -57,7 +57,7 @@ class RoomSessionAtomicCommitTest {
     }
 
     private fun contentRepository(): ContentRepository = mockk(relaxed = true) {
-        coEvery { getCards(lessonId) } returns TrainingDbFixture.CARD_IDS.mapIndexed { index, cardId ->
+        coEvery { getCards(packId, lessonId) } returns TrainingDbFixture.CARD_IDS.mapIndexed { index, cardId ->
             com.alexpo.grammermate.domain.model.Card(
                 id = CardId(cardId),
                 packId = packId,

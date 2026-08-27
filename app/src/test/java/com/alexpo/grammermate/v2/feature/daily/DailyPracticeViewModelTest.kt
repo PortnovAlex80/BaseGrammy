@@ -64,7 +64,7 @@ class DailyPracticeViewModelTest {
         coEvery { getLessons(packId) } returns listOf(
             Lesson(lessonId, packId, null, 0, "L", null, null, emptyList()),
         )
-        coEvery { getCards(lessonId) } returns sentences
+        coEvery { getCards(packId, lessonId) } returns sentences
     }
 
     private fun vocabRepo() = mockk<VocabDrillRepository>(relaxed = true) {

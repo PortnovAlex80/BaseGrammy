@@ -82,7 +82,7 @@ class TrainingScreenTest {
     private fun viewModel(): TrainingViewModel {
         val sessionRepository = FakeSessionRepository(clock = { 1L })
         val contentRepository = mockk<ContentRepository>(relaxed = true) {
-            coEvery { getCards(lessonId) } returns lessonCards()
+            coEvery { getCards(packId, lessonId) } returns lessonCards()
         }
         val userContentRepository = mockk<UserContentRepository>(relaxed = true) {
             coEvery { getHiddenCardIds() } returns emptySet()

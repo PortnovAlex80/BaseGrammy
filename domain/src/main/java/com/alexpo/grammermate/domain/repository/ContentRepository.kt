@@ -55,7 +55,7 @@ interface ContentRepository {
     suspend fun getLesson(lessonId: LessonId): Lesson?
 
     /** Карточки урока в порядке отображения. */
-    suspend fun getCards(lessonId: LessonId): List<Card>
+    suspend fun getCards(packId: PackId, lessonId: LessonId): List<Card>
 
     /**
      * Карточки verb drill пака с combo-фильтрами (Фаза 4 срез 2).

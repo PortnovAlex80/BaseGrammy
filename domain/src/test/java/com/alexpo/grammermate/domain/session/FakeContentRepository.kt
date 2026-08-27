@@ -61,8 +61,8 @@ class FakeContentRepository : ContentRepository {
     override suspend fun getLessonsForChapter(packId: PackId, chapterId: ChapterId): List<Lesson> =
         emptyList()
     override suspend fun getLesson(lessonId: LessonId): Lesson? = lessonsById[lessonId]
-    override suspend fun getCards(lessonId: LessonId): List<Card> =
-        cardsByLesson[lessonId] ?: emptyList()
+    override suspend fun getCards(packId: PackId, lessonId: LessonId): List<Card> =
+        (cardsByLesson[lessonId] ?: emptyList()).filter { it.packId == packId }
 
     override suspend fun getVerbDrillCards(
         packId: PackId,

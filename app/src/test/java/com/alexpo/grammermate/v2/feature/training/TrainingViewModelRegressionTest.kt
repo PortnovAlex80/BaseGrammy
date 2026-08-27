@@ -536,7 +536,7 @@ class TrainingViewModelRegressionTest {
         SessionEngine(sessionRepository, contentRepository(), userContentRepository)
 
     private fun contentRepository(): ContentRepository = mockk(relaxed = true) {
-        coEvery { getCards(lessonId) } returns lessonCards()
+        coEvery { getCards(packId, lessonId) } returns lessonCards()
         coEvery { getPack(packId) } returns Pack(
             id = packId,
             languageId = LanguageId("it"),

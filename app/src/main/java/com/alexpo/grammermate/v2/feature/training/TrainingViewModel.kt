@@ -138,7 +138,7 @@ class TrainingViewModel @Inject constructor(
                     // Контент читаем в той же command-критической секции —
                     // projection согласована со снимком.
                     cardsById = runCatching {
-                        contentRepository.getCards(lessonId).associateBy { it.id }
+                        contentRepository.getCards(packId, lessonId).associateBy { it.id }
                     }.getOrElse { emptyMap() }
                     val resumed = resumedSnapshot
                     val midLesson = resumed != null &&

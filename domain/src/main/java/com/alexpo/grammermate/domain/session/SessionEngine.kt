@@ -95,12 +95,12 @@ class SessionEngine(
      * @return упорядоченный пул [CardId] активного под-урока.
      */
     private suspend fun buildPool(
+        packId: PackId,
         lessonId: LessonId,
         sessionSize: Int,
         mode: TrainingMode,
         activeSubLessonIndex: Int = 0,
-    ): List<CardId> =
-        buildSubLessonPools(lessonId, sessionSize, mode)
+    ): List<CardId> = buildSubLessonPools(packId, lessonId, sessionSize, mode)
             .getOrNull(activeSubLessonIndex)
             .orEmpty()
 
@@ -109,11 +109,12 @@ class SessionEngine(
      * урок даёт ровно один чанк, выход за границы = нет следующего).
      */
     private suspend fun buildSubLessonPools(
+        packIdOfLesson: PackId,
         lessonId: LessonId,
         sessionSize: Int,
         mode: TrainingMode,
     ): List<List<CardId>> {
-        val allCards = contentRepository.getCards(lessonId)
+        val allCards = contentRepository.getCards(packIdOfLesson, lessonId)
         val hidden = userContentRepository.getHiddenCardIds()
         val visible = LessonOrderPolicy.apply(
             cards = allCards.filter { it.id !in hidden },
@@ -139,7 +140,7 @@ class SessionEngine(
         mode: TrainingMode = TrainingMode.LESSON,
     ): SessionSnapshot {
         val sessionId = SessionId.forLesson(packId, lessonId)
-        val pool = buildPool(lessonId, sessionSize, mode)
+        val pool = buildPool(packId, lessonId, sessionSize, mode)
         return sessionRepository.getOrCreateSession(
             sessionId = sessionId,
             packId = packId,
@@ -280,6 +281,7 @@ class SessionEngine(
             if (lessonId != null && current.mode != TrainingMode.VERB_DRILL) {
                 val nextIndex = current.completedSubLessonCount + 1
                 val nextSubPool = buildSubLessonPools(
+                    packIdOfLesson = current.packId,
                     lessonId = lessonId,
                     sessionSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT,
                     mode = current.mode,
