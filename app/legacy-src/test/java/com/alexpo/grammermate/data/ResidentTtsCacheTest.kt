@@ -1,6 +1,5 @@
 package com.alexpo.grammermate.data
 
-import com.k2fsa.sherpa.onnx.OfflineTts
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -27,17 +26,12 @@ class ResidentTtsCacheTest {
     /** Tracks free() calls keyed by FakeTts.label, returns the same list. */
     private class FreeRecorder {
         val freed: MutableList<String> = mutableListOf()
-        fun freeFn(): (OfflineTts) -> Unit = { tts ->
-            // Unchecked cast: in tests we only ever store FakeTts via makeModel().
-            @Suppress("UNCHECKED_CAST")
-            val fake = tts as FakeTts
-            freed += fake.label
+        fun freeFn(): (FakeTts) -> Unit = { tts ->
+            freed += tts.label
         }
     }
 
-    /** Wraps a FakeTts as an OfflineTts reference without instantiating the native class. */
-    @Suppress("UNCHECKED_CAST")
-    private fun makeModel(fake: FakeTts): OfflineTts = fake as OfflineTts
+    private fun makeModel(fake: FakeTts): FakeTts = fake
 
     @Test
     fun `put and get round-trips a single model`() {
@@ -55,7 +49,7 @@ class ResidentTtsCacheTest {
 
     @Test
     fun `get returns null for unknown language`() {
-        val cache = ResidentTtsCache(maxSize = 3) { _ -> }
+        val cache = ResidentTtsCache<FakeTts>(maxSize = 3) { _ -> }
         assertNull(cache.get("ru"))
         assertFalse(cache.contains("ru"))
         assertEquals(0, cache.size())
@@ -177,7 +171,7 @@ class ResidentTtsCacheTest {
 
     @Test
     fun `keys returns the set of resident languages`() {
-        val cache = ResidentTtsCache(maxSize = 3) { _ -> }
+        val cache = ResidentTtsCache<FakeTts>(maxSize = 3) { _ -> }
         cache.put("it", makeModel(FakeTts("it")))
         cache.put("ru", makeModel(FakeTts("ru")))
 
@@ -190,7 +184,7 @@ class ResidentTtsCacheTest {
     @Test
     fun `constructor rejects maxSize smaller than 1`() {
         try {
-            ResidentTtsCache(maxSize = 0) { _ -> }
+            ResidentTtsCache<FakeTts>(maxSize = 0) { _ -> }
             fail("Expected IllegalArgumentException for maxSize = 0")
         } catch (e: IllegalArgumentException) {
             // expected
@@ -199,7 +193,7 @@ class ResidentTtsCacheTest {
 
     @Test
     fun `freeFn exceptions are swallowed and do not corrupt the cache`() {
-        val boom: (OfflineTts) -> Unit = { throw RuntimeException("native free exploded") }
+        val boom: (FakeTts) -> Unit = { throw RuntimeException("native free exploded") }
         val cache = ResidentTtsCache(maxSize = 2, freeFn = boom)
 
         cache.put("it", makeModel(FakeTts("it")))

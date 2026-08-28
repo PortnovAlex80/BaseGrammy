@@ -206,7 +206,13 @@ internal class PackImporter(
             val storiesTempDir = File(tempDir, "stories")
             Log.d(TAG, "Stories dir in temp: ${storiesTempDir.exists()}, files: ${storiesTempDir.listFiles()?.size ?: 0}")
 
-            tempDir.copyRecursively(packDir, overwrite = true)
+            // Both directories are siblings in app-private storage. A rename avoids a
+            // second full copy of large bundled packs; keep the copy fallback for file
+            // systems where an atomic directory move is unavailable.
+            if (!tempDir.renameTo(packDir)) {
+                tempDir.copyRecursively(packDir, overwrite = true)
+                tempDir.deleteRecursively()
+            }
 
             // Debug: List pack dir contents after copying
             Log.d(TAG, "Pack dir contents after copy:")
@@ -217,8 +223,6 @@ internal class PackImporter(
             // Check if stories directory exists in pack
             val storiesPackDir = File(packDir, "stories")
             Log.d(TAG, "Stories dir in pack: ${storiesPackDir.exists()}, files: ${storiesPackDir.listFiles()?.size ?: 0}")
-
-            tempDir.deleteRecursively()
 
             // Collect lesson entries from both root-level lessons and chapter-level lessons (schema v2)
             val lessonEntries = mutableListOf<LessonPackLesson>()
@@ -458,6 +462,16 @@ internal class PackImporter(
             return
         }
         val targetAudioDir = File(targetCsvDir, "audio")
+
+        // On a fresh install the extracted directory can become the canonical audio
+        // directory in O(1). Existing directories are merged below so downloaded or
+        // user-imported sound packs remain intact across bundled-pack updates.
+        if (!targetAudioDir.exists() && sourceAudioDir.renameTo(targetAudioDir)) {
+            val installed = targetAudioDir.listFiles()?.count { it.isFile } ?: 0
+            Log.i(TAG, "Background-vocab audio for ${manifest.packId}: moved=$installed")
+            return
+        }
+
         targetAudioDir.mkdirs()
         var copied = 0
         var skipped = 0

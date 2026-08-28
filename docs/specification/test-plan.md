@@ -1,27 +1,33 @@
-# Regression Test Plan - GrammarMate v2
+# Regression Test Plan - GrammarMate product and v2 migration
 
-Updated: 2026-08-27  
-Status: ACTIVE, TASK-073 closure baseline  
-Scope: `MainActivityV2`, `:domain`, Room/DataStore, Compose navigation and critical Android journeys
+Updated: 2026-08-28
+Status: ACTIVE, TASK-073 REOPENED
+Scope: complete product (`legacy` variant), v2 preview, data compatibility, mobile journeys
 
-The previous version of this document described the retired legacy runtime
-(`SessionRunner`, `DailyPracticeCoordinator`, `DailySessionComposer`). Its detailed
-matrix remains available in `legacy-archive/legacy-test-plan.md`. The production v2
-runtime uses `SessionEngine`, `DailyTaskComposer`, pack-scoped Room state and feature FSMs.
+Correction: the legacy runtime was not retired. It contains established user journeys
+that v2 does not yet implement and is restored as the production variant. The detailed
+matrix in `legacy-archive/legacy-test-plan.md`, the use-case registry, scenarios and
+user-journey models remain migration requirements. v2 is a separately installable
+preview until parity is demonstrated.
 
 ## Quality Gate
 
 Every change must pass:
 
 ```text
-./gradlew :domain:test :app:testDebugUnitTest lintDebug assembleDebug assembleRelease assembleDebugAndroidTest
-./gradlew connectedDebugAndroidTest
+./gradlew :domain:test :app:testV2DebugUnitTest :app:testLegacyDebugUnitTest
+./gradlew :app:lintLegacyDebug :app:lintV2Debug :app:assembleLegacyDebug :app:assembleV2Debug
+./gradlew :app:connectedLegacyDebugAndroidTest :app:connectedV2DebugAndroidTest
 ```
 
-CI executes the unit/lint/build gate and an API 36 emulator job. A release is not
-considered regression-safe when the connected suite is skipped.
+CI builds both variants and runs both connected suites. The legacy JVM audit is
+temporarily non-blocking because its preserved baseline has 46 failures; this is an
+explicit release risk, not a green gate. See `migration-parity-audit.md`.
 
-## Active Coverage Matrix
+## V2 Preview Coverage Matrix
+
+`COVERED` below means covered inside the implemented v2 scope. It does not mean
+the corresponding complete-product journey or migration parity is covered.
 
 | Risk area | Owner/source of truth | Required regression level | Current anchors | Status |
 |---|---|---|---|---|

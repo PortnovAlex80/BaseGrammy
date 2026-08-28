@@ -30,6 +30,22 @@ android {
         }
     }
 
+    flavorDimensions += "runtime"
+    productFlavors {
+        create("legacy") {
+            dimension = "runtime"
+            minSdk = 24
+            targetSdk = 34
+            versionCode = 7
+            versionName = "1.7"
+        }
+        create("v2") {
+            dimension = "runtime"
+            applicationIdSuffix = ".v2preview"
+            versionName = "2.0.0-preview"
+        }
+    }
+
     signingConfigs {
         create("release") {
             storeFile = file(System.getenv("KEYSTORE_FILE") ?: "release.keystore")
@@ -51,6 +67,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -75,6 +92,27 @@ android {
     // MigrationTestHelper берёт оттуда схемы 1..N.json. Release-APL их не
     // содержит — набор scoped на debug.
     sourceSets {
+        getByName("main") {
+            java.setSrcDirs(emptyList<String>())
+            manifest.srcFile("src/main/AndroidManifest.shared.xml")
+        }
+        getByName("legacy") {
+            java.srcDir("legacy-src/java")
+            manifest.srcFile("src/legacy/AndroidManifest.xml")
+        }
+        getByName("v2") {
+            java.srcDir("src/main/java")
+            manifest.srcFile("src/main/AndroidManifest.xml")
+        }
+        getByName("testLegacy") {
+            java.srcDir("legacy-src/test/java")
+            // This historical Compose journey uses Robolectric and unit-test fakes,
+            // despite having been stored under androidTest.
+            java.srcDir("legacy-src/androidTest/java")
+        }
+        getByName("androidTestLegacy") {
+            java.setSrcDirs(listOf("src/androidTestLegacy/java"))
+        }
         getByName("debug") {
             assets.srcDirs("$projectDir/schemas")
         }
@@ -96,14 +134,12 @@ tasks.withType<Test> {
     // (OutOfMemoryError на поздних классах после загрузки нескольких
     // Android-environment'ов Robolectric); 2g стабилизирует прогоны.
     maxHeapSize = "2g"
-    systemProperty("android.manifest_resource_path",
-        layout.buildDirectory.file("intermediates/merged_manifests/debug/AndroidManifest.xml").get().asFile.absolutePath)
 }
 
-tasks.matching { it.name == "assembleDebug" }.configureEach {
+tasks.matching { it.name == "assembleLegacyDebug" }.configureEach {
     doLast {
-        val apkDir = layout.buildDirectory.dir("outputs/apk/debug").get().asFile
-        val source = File(apkDir, "app-debug.apk")
+        val apkDir = layout.buildDirectory.dir("outputs/apk/legacy/debug").get().asFile
+        val source = File(apkDir, "app-legacy-debug.apk")
         val target = File(apkDir, "grammermate.apk")
         if (source.exists()) {
             source.copyTo(target, overwrite = true)
@@ -111,7 +147,20 @@ tasks.matching { it.name == "assembleDebug" }.configureEach {
     }
 }
 
+tasks.matching { it.name == "assembleV2Debug" }.configureEach {
+    doLast {
+        val apkDir = layout.buildDirectory.dir("outputs/apk/v2/debug").get().asFile
+        val source = File(apkDir, "app-v2-debug.apk")
+        val target = File(apkDir, "grammermate-v2-preview.apk")
+        if (source.exists()) {
+            source.copyTo(target, overwrite = true)
+        }
+    }
+}
+
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     // Domain module — pure-Kotlin ports/models (extracted from v2.core.domain).
     // AC-1: :app depends on :domain; the v2/core/domain package is gone from :app.
     implementation(project(":domain"))
@@ -123,6 +172,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
+    implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("com.google.android.material:material:1.12.0")
 
     // Compose (BOM-managed)
     implementation(platform(libs.androidx.compose.bom))

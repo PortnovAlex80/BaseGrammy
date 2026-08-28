@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.*
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.testharness.FakeVerbDrillStore
 import org.junit.After
@@ -14,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -38,7 +38,7 @@ import kotlinx.coroutines.runBlocking
  * - User Story: US-10.20
  * - Use Case: UC-74
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class VerbDrillScreenStartFreshResumeTest {
 
@@ -59,7 +59,7 @@ class VerbDrillScreenStartFreshResumeTest {
     @Before
     fun setup() {
         store = FakeVerbDrillStore()
-        application = RuntimeEnvironment.getApplication<Application>()
+        application = RuntimeEnvironment.getApplication()
         sessionStarted = false
         backPressed = false
     }
@@ -74,7 +74,8 @@ class VerbDrillScreenStartFreshResumeTest {
     // ========================================
 
     @Test
-    fun dialogShown_onReentryAfterExitSession() = runBlocking {
+    fun dialogShown_onReentryAfterExitSession() {
+        runBlocking {
         // --- GIVEN: Cards are loaded in the store ---
         val testCards = createTestCards()
         store.setCards(testPackId, testLanguageId, testCards)
@@ -133,6 +134,7 @@ class VerbDrillScreenStartFreshResumeTest {
         // --- THEN: Session context should be displayed ---
         composeTestRule.onNodeWithText(testTense).assertIsDisplayed()
         composeTestRule.onNodeWithText(testGroup).assertIsDisplayed()
+        }
     }
 
     // ========================================
@@ -367,7 +369,8 @@ class VerbDrillScreenStartFreshResumeTest {
     // ========================================
 
     @Test
-    fun dialogDisplaysFilterContext_onlyTenseAndGroup() = runBlocking {
+    fun dialogDisplaysFilterContext_onlyTenseAndGroup() {
+        runBlocking {
         // --- GIVEN: A session with specific filters ---
         val testCards = createTestCards()
         store.setCards(testPackId, testLanguageId, testCards)
@@ -404,6 +407,7 @@ class VerbDrillScreenStartFreshResumeTest {
         // --- THEN: Progress and Score labels should NOT be shown ---
         // Note: These assertions assume the string resources use "Progress" and "Score" as labels
         // If the actual strings differ, these would need adjustment
+        }
     }
 
     // ========================================

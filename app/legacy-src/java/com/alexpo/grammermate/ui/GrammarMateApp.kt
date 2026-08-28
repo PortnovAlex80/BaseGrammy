@@ -148,7 +148,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator()
+                    Text(
+                        text = stringResource(R.string.app_preparing),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
         } else {
 

@@ -65,9 +65,9 @@ sealed class TtsState {
  * @param freeFn  function used to release a model. Defaults to [OfflineTts.free].
  *                Injected so unit tests can pass a fake without touching native code.
  */
-internal class ResidentTtsCache(
+internal class ResidentTtsCache<T : Any>(
     private val maxSize: Int = DEFAULT_MAX_SIZE,
-    private val freeFn: (OfflineTts) -> Unit = { tts -> tts.free() }
+    private val freeFn: (T) -> Unit
 ) {
     init {
         require(maxSize >= 1) { "maxSize must be >= 1, was $maxSize" }
@@ -78,7 +78,7 @@ internal class ResidentTtsCache(
      * `removeEldestEntry` is intentionally NOT used — eviction runs [freeFn] which
      * has side effects, so we handle it explicitly in [put] to control ordering.
      */
-    private val map: LinkedHashMap<String, OfflineTts> =
+    private val map: LinkedHashMap<String, T> =
         LinkedHashMap(4, 0.75f, true)
 
     /**
@@ -86,7 +86,7 @@ internal class ResidentTtsCache(
      * As a side effect of access-order, a successful lookup promotes [lang] to
      * most-recently-used.
      */
-    fun get(lang: String): OfflineTts? = map[lang]
+    fun get(lang: String): T? = map[lang]
 
     /** True iff a resident model exists for [lang]. Does not promote recency. */
     fun contains(lang: String): Boolean = map.containsKey(lang)
@@ -97,7 +97,7 @@ internal class ResidentTtsCache(
      * [freeFn]. If [lang] was already resident, the previous model is freed and
      * replaced (no double-count against [maxSize]).
      */
-    fun put(lang: String, tts: OfflineTts) {
+    fun put(lang: String, tts: T) {
         val existing = map.remove(lang)
         if (existing != null && existing !== tts) {
             safeFree(existing)
@@ -129,7 +129,7 @@ internal class ResidentTtsCache(
     /** Number of resident models. */
     fun size(): Int = map.size
 
-    private fun safeFree(tts: OfflineTts) {
+    private fun safeFree(tts: T) {
         try {
             freeFn(tts)
         } catch (t: Throwable) {
@@ -180,7 +180,7 @@ class TtsEngine(private val context: Context) {
      * coexist in memory for instant alternating playback. See [ResidentTtsCache]
      * for memory-cost notes (~150 MB per VITS model, default cap 3 ≈ 450 MB).
      */
-    private val offlineTtsCache: ResidentTtsCache = ResidentTtsCache()
+    private val offlineTtsCache = ResidentTtsCache<OfflineTts> { it.free() }
 
     /**
      * Track which languages have been initialized via the system-TTS fallback

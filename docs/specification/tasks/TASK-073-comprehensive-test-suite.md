@@ -1,18 +1,15 @@
 # TASK-073: Comprehensive Test Suite — Test Plan + Unit Tests
 
-**Status:** COMPLETE (active v2 scope; legacy runtime superseded)
+**Status:** IN PROGRESS (reopened 2026-08-28; product parity not proven)
 **Created:** 2026-05-18
 **Branch:** feature/test-suite (from develop)
 **Spec:** All spec files
 **UC:** All UCs from 22-use-case-registry.md (88+ use cases)
 **Related:** legacy-test-plan.md (~200 TODO tests)
 
-> Closure audit, 2026-08-27: the original task was written for the retired legacy
-> runtime. Its production equivalents are covered in v2 by `SessionEngine`,
-> `DailyTaskComposer`, repository contract tests and feature FSM tests. The active
-> regression matrix is `docs/specification/test-plan.md`. The connected suite covers
-> eight critical entry journeys; native audio and performance benchmarks remain
-> explicit release/follow-up risks rather than hidden unit-test gaps.
+> Correction, 2026-08-28: the legacy runtime was not retired; it contains product
+> journeys missing from v2. Its requirements and tests remain applicable. Current
+> evidence and blockers are recorded in `docs/specification/migration-parity-audit.md`.
 
 ---
 

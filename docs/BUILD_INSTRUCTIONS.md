@@ -1,5 +1,24 @@
 # Инструкция по сборке GrammarMate (BaseGrammy)
 
+## Runtime variants (2026-08-28)
+
+The complete product is the `legacy` production variant. Build it explicitly:
+
+```cmd
+gradlew.bat :app:assembleLegacyDebug
+```
+
+APK: `app\build\outputs\apk\legacy\debug\grammermate.apk`
+
+The incomplete migration is an installable preview only:
+
+```cmd
+gradlew.bat :app:assembleV2Debug
+```
+
+Preview APK: `app\build\outputs\apk\v2\debug\grammermate-v2-preview.apk`.
+Do not use generic `assembleDebug` or the v2 APK as product-release evidence.
+
 ## ⚠️ ВАЖНО: ИСПОЛЬЗУЙТЕ ПОЛНЫЙ ПУТЬ К INTELLIJ JBR (ОСНОВНОЕ РЕШЕНИЕ)
 
 Если команда `java` не найдена в PATH, используйте полный путь к java.exe из IntelliJ JBR.

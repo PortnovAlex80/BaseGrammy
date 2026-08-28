@@ -1,5 +1,11 @@
 # GrammarMate: план стабилизации, рефакторинга и регрессионной защиты
 
+> **CORRECTION 2026-08-28: REOPENED.** The earlier `EXECUTED` status covered only
+> the reduced v2 runtime and is invalid as a product-completion claim. The complete
+> runtime is restored as the production `legacy` variant; v2 is a preview until the
+> requirements and journey parity gate in
+> `docs/specification/migration-parity-audit.md` passes. TASK-073 is open.
+
 **Дата аудита:** 2026-08-26
 
 **Ветка/ревизия:** `dev` / `67c5ac0c6`

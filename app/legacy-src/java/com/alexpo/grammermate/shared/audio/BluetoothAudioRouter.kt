@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.shared.audio
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
@@ -125,6 +126,7 @@ class BluetoothAudioRouter(
      * This tells the headset to use its microphone for speech input.
      * Must be called BEFORE launching SpeechRecognizer.
      */
+    @SuppressLint("MissingPermission")
     fun startHeadsetVoiceRecognition(): Boolean {
         val headset = bluetoothHeadset
         if (headset == null) {
