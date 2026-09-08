@@ -6,6 +6,7 @@ import android.net.Uri
 import java.io.File
 import com.alexpo.grammermate.AppContainer
 import com.alexpo.grammermate.BuildConfig
+import com.alexpo.grammermate.ui.navigation.Routes
 import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.GrammarChipStore
 import com.alexpo.grammermate.data.SubmitResult
@@ -837,6 +838,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 packProgress?.lessonProgress?.get(lessonId.value)
             }
 
+            // Phase 3 (3.5): stamp retroactive completions on the restore path
+            // too — only selectPack recalculated before, so a cold start showed
+            // 0 completed lessons for any pack whose last-card event never fired
+            // (the quarantined BUG REPRO). Runs OFF-main: the hidden-card read
+            // and the mastery writes stay off the UI thread (review blocker),
+            // and the freshly stamped completions are already visible to the
+            // flower/chapter refreshes below.
+            if (initialActivePackId != null && selectedLanguageId != null && lessons.isNotEmpty()) {
+                progressTracker.recalculateCompletionsExcludingHidden(
+                    lessons = lessons,
+                    languageId = selectedLanguageId,
+                    hiddenCardIds = hiddenCardStore.getHiddenCardIds(),
+                    packId = initialActivePackId.value
+                )
+            }
+
             withContext(Dispatchers.Main) {
                 _coreState.update {
                     it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode, uiLanguage = config.uiLanguage, clickableWordHints = config.clickableWordHints), cardSession = it.cardSession.copy(sessionState = lessonProgress?.state ?: SessionState.PAUSED, currentIndex = lessonProgress?.currentIndex ?: 0, correctCount = lessonProgress?.correctCount ?: 0, incorrectCount = lessonProgress?.incorrectCount ?: 0, incorrectAttemptsForCard = lessonProgress?.incorrectAttemptsForCard ?: 0, activeTimeMs = lessonProgress?.activeTimeMs ?: 0L, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
@@ -851,18 +868,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 rebuildSchedules(filterLessonsForActivePack(lessons))
                 buildSessionCards()
                 refreshFlowerStates()
-                // Phase 3 (3.5): stamp retroactive completions on the restore
-                // path too — only selectPack recalculated before, so a cold
-                // start showed 0 completed lessons for any pack whose
-                // last-card event never fired (the quarantined BUG REPRO).
-                if (initialActivePackId != null && selectedLanguageId != null && lessons.isNotEmpty()) {
-                    progressTracker.recalculateCompletionsExcludingHidden(
-                        lessons = lessons,
-                        languageId = selectedLanguageId,
-                        hiddenCardIds = hiddenCardStore.getHiddenCardIds(),
-                        packId = initialActivePackId.value
-                    )
-                }
                 loadChapters()
                 refreshProfileStats()
                 refreshPomodoroHistory()

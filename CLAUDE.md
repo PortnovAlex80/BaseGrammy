@@ -391,6 +391,5 @@ Pack Selection
 - `totalLessons`: chapter.lessons.size; Progress %: lessonsCompleted / totalLessons
 
 **Data Stores:**
-- `ChapterProgressStore`: pack-scoped chapter progress
-- `ChapterProgressCalculator`: computes progress from mastery data
+- `ChapterProgressCalculator`: computes progress from mastery data (live, no on-disk chapter store)
 - Atomic writes via AtomicFileWriter pattern

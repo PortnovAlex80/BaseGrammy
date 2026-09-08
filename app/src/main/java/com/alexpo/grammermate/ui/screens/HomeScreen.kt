@@ -113,7 +113,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onPrimaryAction: () -> Unit,
     onSelectLesson: (String) -> Unit,
-    onOpenElite: () -> Unit,
+    onDailyPractice: () -> Unit,
     hasVerbDrill: Boolean = false,
     hasVocabDrill: Boolean = false,
     onOpenVerbDrill: () -> Unit = {},
@@ -367,7 +367,7 @@ fun HomeScreen(
             DailyPracticeEntryTile(
                 onClick = {
                     ScreenLogger.tap("daily_practice")
-                    onOpenElite()
+                    onDailyPractice()
                 },
                 enabled = false // temporarily disabled — tap shows "Временно не доступно"
             )
