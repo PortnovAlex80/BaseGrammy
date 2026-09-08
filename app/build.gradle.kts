@@ -2,47 +2,24 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)        // Kotlin 2.0 Compose compiler plugin (replaces composeOptions)
-    alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "com.alexpo.grammermate"
-    compileSdk = 35                            // bumped from 34 → M3 Adaptive + Compose 2024.10
+    compileSdk = 35
 
+    // Production identity (carried over from the former `legacy` flavor —
+    // last shipped as apk-12000 / v1.7; see docs/architecture/decisions/006).
     defaultConfig {
         applicationId = "com.alexpo.grammermate"
-        minSdk = 26                            // bumped from 24 → FSRS, DataStore, modern APIs
-        targetSdk = 35
-        versionCode = 100                      // v2 fresh start
-        versionName = "2.0.0"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 7
+        versionName = "1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
-        }
-
-        // Room schema export for migration regression tests
-        ksp {
-            arg("room.schemaLocation", "$projectDir/schemas")
-            arg("room.incremental", "true")
-        }
-    }
-
-    flavorDimensions += "runtime"
-    productFlavors {
-        create("legacy") {
-            dimension = "runtime"
-            minSdk = 24
-            targetSdk = 34
-            versionCode = 7
-            versionName = "1.7"
-        }
-        create("v2") {
-            dimension = "runtime"
-            applicationIdSuffix = ".v2preview"
-            versionName = "2.0.0-preview"
         }
     }
 
@@ -87,36 +64,6 @@ android {
         }
     }
 
-    // Room schema exports как assets DEBUG-варианта: Robolectric-тесты читают
-    // merged assets debug (unit tests не имеют собственного asset-merge),
-    // MigrationTestHelper берёт оттуда схемы 1..N.json. Release-APL их не
-    // содержит — набор scoped на debug.
-    sourceSets {
-        getByName("main") {
-            java.setSrcDirs(emptyList<String>())
-            manifest.srcFile("src/main/AndroidManifest.shared.xml")
-        }
-        getByName("legacy") {
-            java.srcDir("legacy-src/java")
-            manifest.srcFile("src/legacy/AndroidManifest.xml")
-        }
-        getByName("v2") {
-            java.srcDir("src/main/java")
-            manifest.srcFile("src/main/AndroidManifest.xml")
-        }
-        getByName("testLegacy") {
-            java.srcDir("legacy-src/test/java")
-            // This historical Compose journey uses Robolectric and unit-test fakes,
-            // despite having been stored under androidTest.
-            java.srcDir("legacy-src/androidTest/java")
-        }
-        getByName("androidTestLegacy") {
-            java.setSrcDirs(listOf("src/androidTestLegacy/java"))
-        }
-        getByName("debug") {
-            assets.srcDirs("$projectDir/schemas")
-        }
-    }
     buildFeatures {
         compose = true
     }
@@ -130,28 +77,18 @@ android {
 
 tasks.withType<Test> {
     jvmArgs("-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8")
-    // Robolectric-набор вырос (584 теста) — дефолтного heap тест-JVM мало
+    // Robolectric-набор вырос (466 тестов) — дефолтного heap тест-JVM мало
     // (OutOfMemoryError на поздних классах после загрузки нескольких
     // Android-environment'ов Robolectric); 2g стабилизирует прогоны.
     maxHeapSize = "2g"
 }
 
-tasks.matching { it.name == "assembleLegacyDebug" }.configureEach {
+// Keep the historical APK name so build.bat / install docs stay valid.
+tasks.matching { it.name == "assembleDebug" }.configureEach {
     doLast {
-        val apkDir = layout.buildDirectory.dir("outputs/apk/legacy/debug").get().asFile
-        val source = File(apkDir, "app-legacy-debug.apk")
+        val apkDir = layout.buildDirectory.dir("outputs/apk/debug").get().asFile
+        val source = File(apkDir, "app-debug.apk")
         val target = File(apkDir, "grammermate.apk")
-        if (source.exists()) {
-            source.copyTo(target, overwrite = true)
-        }
-    }
-}
-
-tasks.matching { it.name == "assembleV2Debug" }.configureEach {
-    doLast {
-        val apkDir = layout.buildDirectory.dir("outputs/apk/v2/debug").get().asFile
-        val source = File(apkDir, "app-v2-debug.apk")
-        val target = File(apkDir, "grammermate-v2-preview.apk")
         if (source.exists()) {
             source.copyTo(target, overwrite = true)
         }
@@ -161,10 +98,6 @@ tasks.matching { it.name == "assembleV2Debug" }.configureEach {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
-    // Domain module — pure-Kotlin ports/models (extracted from v2.core.domain).
-    // AC-1: :app depends on :domain; the v2/core/domain package is gone from :app.
-    implementation(project(":domain"))
-
     // AndroidX core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -173,7 +106,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
     implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("com.google.android.material:material:1.12.0")
 
     // Compose (BOM-managed)
     implementation(platform(libs.androidx.compose.bom))
@@ -191,34 +123,15 @@ dependencies {
     implementation(libs.androidx.compose.material3.adaptive.layout)
     implementation(libs.androidx.compose.material3.adaptive.navigation)
 
-    // Room (user-state persistence — single transaction boundary, fixes card_15)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
-    // DataStore (settings / preferences / migration flags)
-    implementation(libs.androidx.datastore.preferences)
-
-    // Hilt (DI — constructor injection, KSP-processed alongside Room)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
-
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // Serialization (Room TypeConverters, audit log)
-    implementation(libs.kotlinx.serialization.json)
-
-    // Legacy / migration
-    implementation(libs.snakeyaml)              // one-time YAML reader for migration
+    // YAML stores (mastery/config/packs are YAML on disk)
+    implementation(libs.snakeyaml)
     implementation(libs.commons.compress)       // tar.bz2 extraction for TTS model download
 
     // QR code
     implementation(libs.qrose)
-
-    // SRS — локальная pure-Kotlin реализация в domain-слое (SrsScheduler.kt).
-    // Внешних зависимостей нет; это убирает риск отсутствия стабильного FSRS-артефакта.
 
     // Sherpa-ONNX TTS (static-linked ONNX Runtime) — local AAR
     implementation(files("libs/sherpa-onnx-static-link-onnxruntime-1.12.40.aar"))
@@ -235,11 +148,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
-    testImplementation(libs.androidx.room.testing)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
 
-    // Instrumented tests (androidTest — requires Hilt test setup)
+    // Instrumented tests
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
@@ -247,11 +159,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.turbine)
-    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.compose.ui.test.manifest)
-    // Hilt test
-    androidTestImplementation(libs.hilt.android)
-    kspAndroidTest(libs.hilt.compiler)
 }

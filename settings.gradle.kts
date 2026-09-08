@@ -17,4 +17,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "GrammarMate"
 include(":app")
-include(":domain")

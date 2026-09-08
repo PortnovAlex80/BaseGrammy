@@ -115,12 +115,6 @@ lesson_*.csv
 
 # Backup snapshots with non-.bak suffix (e.g. *.bak_batch6)
 *.bak_*
-
-# v2 rewrite artifacts
-# Room schema exports версионируются: MigrationTestHelper (Robolectric) читает
-# 1..N.json как debug-assets; без них миграционные тесты падают на чистом checkout'e
-# (DoD плана: schema change = forward migration + schema fixture + test).
-!app/schemas/
 app/build/
 .gradle/
 local.properties
