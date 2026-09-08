@@ -31,30 +31,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build production and preview APKs
-        run: ./gradlew :app:assembleLegacyDebug :app:assembleV2Debug
+      - name: Build production APK
+        run: ./gradlew :app:assembleDebug
 
       - name: Run unit tests
-        # GitHub-runner'ы (7 ГБ RAM) переживают 2 воркера; на dev-машинах
-        # параллельные test-JVM :domain+:app дают native OOM — локально
-        # запускать с --max-workers=1 (см. java.txt, план Фаза 0).
-        run: ./gradlew :domain:test :app:testV2DebugUnitTest --max-workers=2
-
-      - name: Audit restored product regressions
-        # Temporary non-blocking audit: the preserved suite currently has known
-        # stale/broken tests tracked in migration-parity-audit.md. Its result is
-        # always uploaded and must reach zero failures before v2 can replace legacy.
-        continue-on-error: true
-        run: ./gradlew :app:testLegacyDebugUnitTest --max-workers=1 --no-parallel
+        # Blocking gate on the shipping runtime. GitHub-runner'ы (7 ГБ RAM)
+        # не переживают параллельные test-JVM; локально тоже запускать с
+        # --no-parallel --max-workers=1 (см. java.txt).
+        run: ./gradlew :app:testDebugUnitTest --no-parallel --max-workers=1
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: |
-            app/build/reports/tests/
-            domain/build/reports/tests/
+          path: app/build/reports/tests/
 
   instrumentation:
     needs: build-and-test
@@ -79,7 +70,7 @@ jobs:
           api-level: 35
           arch: x86_64
           disable-animations: true
-          script: ./gradlew :app:connectedLegacyDebugAndroidTest :app:connectedV2DebugAndroidTest --max-workers=1
+          script: ./gradlew :app:connectedDebugAndroidTest --max-workers=1
 
       - name: Upload instrumentation results
         if: always()
