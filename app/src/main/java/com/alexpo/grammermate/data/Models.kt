@@ -125,6 +125,14 @@ enum class InputMode {
     WORD_BANK
 }
 
+/**
+ * THE single definition of the WORD_BANK mastery exclusion (Phase 3, item
+ * 3.6): only VOICE and KEYBOARD grow flowers/advance the daily cursor;
+ * WORD_BANK never counts. Every counting path must consult this predicate.
+ */
+val InputMode.countsTowardMastery: Boolean
+    get() = this != InputMode.WORD_BANK
+
 enum class SrsRating { AGAIN, HARD, GOOD, EASY }
 
 /** Theme mode controlling light/dark/system appearance. */
@@ -721,17 +729,24 @@ data class Chapter(
 }
 
 /**
- * Tracks progress through a chapter. Pack-scoped storage.
+ * Tracks progress through a chapter. Pack-scoped.
+ *
+ * THE single completion rule (Phase 3, item 3.5): a lesson is completed iff
+ * its mastery row has completedAtMs stamped — which happens when
+ * uniqueCardShows >= min(effectiveCardCount, 150). intervalStepIndex is an
+ * SRS spacing signal and is NOT a completion criterion.
  *
  * @param chapterId Links to Chapter.chapterId.
- * @param lessonsStarted Number of lessons with mastery > 0. >= 0.
- * @param lessonsCompleted Number of lessons with intervalStepIndex >= 3. >= 0.
+ * @param lessonsStarted Number of lessons with uniqueCardShows > 0. >= 0.
+ * @param lessonsCompleted Number of lessons with completedAtMs != null. >= 0.
+ * @param totalLessons The chapter's FULL lesson count (chapter.lessons.size).
  * @param lastAccessedMs Epoch millis of last lesson activity in this chapter. 0 = never accessed.
  */
 data class ChapterProgress(
     val chapterId: String,
     val lessonsStarted: Int = 0,
     val lessonsCompleted: Int = 0,
+    val totalLessons: Int = 0,
     val lastAccessedMs: Long = 0L
 ) {
     init {
@@ -740,21 +755,9 @@ data class ChapterProgress(
         require(lessonsStarted >= lessonsCompleted) { "lessonsStarted must be >= lessonsCompleted" }
     }
 
+    /** Completed / total lesson count of the chapter (0 for story-only chapters). */
     val progress: Float
-        get() = if (lessonsStarted == 0) 0f else lessonsCompleted.toFloat() / lessonsStarted
-
-    val totalLessons: Int
-        get() = lessonsStarted // This is updated as lessons are discovered
-
-    /**
-     * Check if a specific lesson is completed (mastery step >= 3).
-     * This requires mastery data to be passed separately.
-     */
-    fun isLessonCompleted(lessonId: String): Boolean {
-        // This is a placeholder - actual completion check requires mastery data
-        // Returns false by default, should be overridden with actual mastery check
-        return false
-    }
+        get() = if (totalLessons == 0) 0f else lessonsCompleted.toFloat() / totalLessons
 
     companion object {
         /**

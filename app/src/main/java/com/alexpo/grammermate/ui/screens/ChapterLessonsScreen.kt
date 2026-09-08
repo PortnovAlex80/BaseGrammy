@@ -87,7 +87,8 @@ fun ChapterLessonsScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                if (chapterProgress != null) {
+                // Story-only chapters (totalLessons == 0) show no progress row.
+                if (chapterProgress != null && chapterProgress.totalLessons > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Progress bar

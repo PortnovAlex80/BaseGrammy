@@ -21,7 +21,7 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 | **AtomicFileWriter** | All file writes must use temp → fsync → rename pattern |
 | **Single ViewModel** | `TrainingViewModel` is ~1500 lines. Decompose helpers to `feature/` when adding logic. |
 | **Pack-scoped drills** | `hasVerbDrill`/`hasVocabDrill` check active pack manifest only |
-| **Learned threshold** | Mastery step ≥ 3 = "learned", not step 9 (full mastery) |
+| **Learned threshold** | Vocab words: mastery step ≥ 3 = "learned". Lesson completion is SEPARATE: completedAtMs stamped at uniqueCardShows ≥ min(effectiveCardCount, 150) |
 | **Chapter progress** | `ChapterProgress` is pack-scoped. Independent between packs and chapters. |
 | **UI conditional visibility** | No pack selected = hide lesson tiles, daily practice. Use `activePack != null` check. |
 | **Story language fallback** | Story files prefer `<storyFile>`, fallback to `stories/<language>/<storyFile>`. |
@@ -334,8 +334,8 @@ Grammar Story Roadmap is a narrative layer that organizes lessons into chapters 
 **Chapter System:**
 - 8 chapters with progressive difficulty (Before Language → First Words → Grammar Garden)
 - Each chapter has: title, subtitle, story file, ordered lessons
-- Chapter progress tracked independently: lessonsStarted, lessonsCompleted, lastAccessedMs
-- Progress pack-scoped via ChapterProgressStore
+- Chapter progress tracked independently: lessonsStarted, lessonsCompleted, totalLessons, lastAccessedMs
+- Progress computed LIVE from mastery (ChapterProgressCalculator); no on-disk chapter progress store
 
 **Story Reader:**
 - Markdown rendering with mobile-optimized layout
@@ -382,13 +382,13 @@ Pack Selection
 
 **Chapter Status:**
 - ACTIVE: Chapter in progress (green highlight)
-- DONE: All lessons completed (mastery >= 3)
+- DONE: All lessons completed (completedAtMs stamped)
 - No LOCKED state (removed for cleaner UX)
 
-**Progress Calculation:**
-- `lessonsStarted`: lessons with mastery > 0
-- `lessonsCompleted`: lessons with intervalStepIndex >= 3
-- Progress %: (lessonsCompleted / totalLessons) * 100
+**Progress Calculation (single rule owner: ChapterProgressCalculator):**
+- `lessonsStarted`: lessons with uniqueCardShows > 0
+- `lessonsCompleted`: lessons with completedAtMs != null (stamped by ProgressTracker when uniqueCardShows >= min(effectiveCardCount, 150))
+- `totalLessons`: chapter.lessons.size; Progress %: lessonsCompleted / totalLessons
 
 **Data Stores:**
 - `ChapterProgressStore`: pack-scoped chapter progress

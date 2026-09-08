@@ -96,54 +96,68 @@ class ChapterProgressUpdateTest {
         assertEquals(3000L, progress.lastAccessedMs)
     }
 
-    // ── Step 3: BUG REPRO — lesson with uniqueShows but no completedAtMs ──
+    // ── Step 3 (Phase 3 repair): retroactive stamping fixes the cold-start repro ──
 
     @Test
-    @Ignore("Phase 0 quarantine — documents the live completedAtMs bug, reopened in Phase 3 (legacy-test-quarantine.md)")
-    fun `BUG REPRO - lesson with uniqueShows but no completedAtMs not counted as completed`() {
+    fun `retroactive recalculation stamps completion so live progress counts them`() {
+        // Original bug: a user went through all cards, but the last-card event
+        // never fired (and the restore path never recalculated) → completedAtMs
+        // stayed null → chapter progress showed 0 completed. Phase 3 (3.5) adds
+        // recalculateCompletionsExcludingHidden to the restore path; this test
+        // pins the repaired chain: recalc stamps → calculator counts.
+        val fakeMastery = com.alexpo.grammermate.testharness.FakeMasteryStore()
+        val packId = "PACK_X"
+        fun unstampedLesson(lessonId: String, shows: Int) = LessonMasteryState(
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId("it"),
+            uniqueCardShows = shows,
+            totalCardShows = shows,
+            lastShowDateMs = 1000L,
+            intervalStepIndex = 0,
+            completedAtMs = null
+        )
+        fakeMastery.saveForPack(unstampedLesson("lesson_01_A01", 15), packId)
+        fakeMastery.saveForPack(unstampedLesson("lesson_02_A02", 14), packId)
+
+        fun cards(n: Int) = (1..n).map { i ->
+            SentenceCard(id = "c$i", promptRu = "p$i", acceptedAnswers = listOf("a$i"))
+        }
+        val lessons = listOf(
+            Lesson(LessonId("lesson_01_A01"), LanguageId("it"), "L1", cards(15)),
+            Lesson(LessonId("lesson_02_A02"), LanguageId("it"), "L2", cards(14))
+        )
+
+        val tracker = ProgressTracker(
+            stateAccess = com.alexpo.grammermate.testharness.FakeTrainingStateAccess(),
+            masteryStore = fakeMastery,
+            progressStore = io.mockk.mockk(relaxed = true),
+            lessonStore = io.mockk.mockk(relaxed = true),
+            packDailyCursorStore = io.mockk.mockk(relaxed = true),
+            packLessonProgressStore = io.mockk.mockk(relaxed = true)
+        )
+        tracker.recalculateCompletionsExcludingHidden(
+            lessons = lessons,
+            languageId = LanguageId("it"),
+            hiddenCardIds = emptySet(),
+            packId = packId
+        )
+
         val chapter = Chapter(
             chapterId = "chapter_1",
             order = 1,
             title = "Present",
             lessons = listOf("lesson_01_A01", "lesson_02_A02")
         )
-
-        // lesson_01: user went through all 15 cards, but completedAtMs was never set!
-        val lesson1 = LessonMasteryState(
-            lessonId = LessonId("lesson_01_A01"),
-            languageId = LanguageId("it"),
-            uniqueCardShows = 15,
-            totalCardShows = 15,
-            lastShowDateMs = 1000L,
-            intervalStepIndex = 0,
-            completedAtMs = null  // BUG: should be set but isn't
-        )
-        // lesson_02: same situation
-        val lesson2 = LessonMasteryState(
-            lessonId = LessonId("lesson_02_A02"),
-            languageId = LanguageId("it"),
-            uniqueCardShows = 14,
-            totalCardShows = 14,
-            lastShowDateMs = 2000L,
-            intervalStepIndex = 0,
-            completedAtMs = null  // BUG: should be set but isn't
-        )
-
-        val masteryStates = mapOf(
-            "lesson_01_A01" to lesson1,
-            "lesson_02_A02" to lesson2
-        )
-
+        val masteryStates = buildMap {
+            for (lid in chapter.lessons) put(lid, fakeMastery.getForPack(packId, lid)!!)
+        }
         val progress = calculator.calculateChapterProgress(chapter, masteryStates)
 
-        // These assertions document the BUG:
         assertEquals(2, progress.lessonsStarted)
-        // BUG: completedCount = 0 because completedAtMs is null!
-        // If this fails (shows 0), the bug is: markLessonCompletedForPack was never called
-        // even though uniqueCardShows >= threshold
         assertEquals(
-            "BUG: lessons completed but completedAtMs not set → shows 0 completed",
-            2, progress.lessonsCompleted  // This SHOULD be 2, but is 0 if bug exists
+            "retroactive recalculation must stamp completedAtMs for lessons at threshold",
+            2,
+            progress.lessonsCompleted
         )
     }
 

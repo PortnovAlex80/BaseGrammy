@@ -35,7 +35,7 @@ import com.alexpo.grammermate.data.CardSessionStateModel
  * play/pause/submit/retry/navigation behavior.
  *
  * @param stateModel   Unified state source (SessionRunner or
- *                     DailyPracticeSessionProvider — both implement [CardSessionStateModel]).
+ *                     the daily session flow — both implement [CardSessionStateModel]).
  * @param supportsPause Whether the play/pause button should be shown.
  * @param supportsNavigation Whether the navigation row should be shown at all.
  * @param onPrev       Navigate to the previous card (pauses-first).

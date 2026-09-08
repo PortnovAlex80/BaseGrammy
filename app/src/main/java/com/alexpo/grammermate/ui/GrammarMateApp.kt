@@ -289,7 +289,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         LaunchedEffect(Unit) {
             vm.navigationEvents.collect { event ->
                 when (event) {
-                    is NavigationEvent.Navigate -> onNavigate(event.route)
+                    is NavigationEvent.Navigate -> onNavigatePopTo(event.route)
                     is NavigationEvent.CompletionDialog -> completionNextAction.value = event.action
                     NavigationEvent.BossSessionFinished -> onNavigatePopTo(Routes.LESSON)
                 }
@@ -591,7 +591,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         // Refresh chapter progress from disk (mastery may have changed)
                                         vm.loadChapters()
                                         Log.d("NavDebug", "LESSON onBack → CHAPTER_LESSONS")
-                                        onNavigate(Routes.CHAPTER_LESSONS)
+                                        onNavigatePopTo(Routes.CHAPTER_LESSONS)
                                     } else {
                                         Log.d("NavDebug", "LESSON onBack → HOME")
                                         navController.popBackStack(Routes.HOME, inclusive = false)
@@ -644,7 +644,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     val chapter = vm.findChapterForLesson(currentLessonId)
                                     if (chapter != null) vm.selectChapter(chapter)
                                 }
-                                onNavigate(Routes.CHAPTER_LESSONS)
+                                onNavigatePopTo(Routes.CHAPTER_LESSONS)
                             } else {
                                 navController.popBackStack(Routes.HOME, inclusive = false)
                             }
@@ -760,7 +760,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         isVerbDrillLikeReturn(returnTo) && hasActiveCard -> {
                                             verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
-                                            onNavigate(returnTo)
+                                            onNavigatePopTo(returnTo)
                                         }
                                         // Verb/Aux drill with NO active card (block completed) → save state, go to HOME
                                         isVerbDrillLikeReturn(returnTo) && !hasActiveCard -> {
@@ -985,7 +985,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                     vm.clearStoryReader()
                                     // Pop back to whatever launched STORY_READER
-                                    // (HOME showing roadmap, or GRAMMAR_STORY_ROADMAP route)
+                                    // (HOME showing the roadmap).
                                     navController.popBackStack()
                                 }
                             },
@@ -1027,9 +1027,15 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     composable(Routes.CHAPTER_LESSONS) {
                         val selectedChapter = state.navigation.selectedChapter
                         val packId = state.navigation.activePackId
+                        // Live progress (Phase 3, item 3.3): the SAME
+                        // computation the HOME roadmap consumes — the roadmap
+                        // and this screen can no longer diverge.
+                        val chapterCards by vm.chapterCards.collectAsStateWithLifecycle()
 
                         if (selectedChapter != null && packId != null) {
-                            val chapterProgress = vm.getChapterProgress(packId.value, selectedChapter.chapterId)
+                            val chapterProgress = chapterCards.firstOrNull {
+                                it.chapter.chapterId == selectedChapter.chapterId
+                            }?.progress
                             val lessons = vm.getLessonsForChapter(selectedChapter)
                             val completedLessonIds = vm.getCompletedLessonIds(selectedChapter)
 
@@ -1082,11 +1088,14 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 }
 
                 // Route-level back handlers, registered AFTER NavHost on purpose
-                // (Phase 2, item 2.5/2.6): back-callback priority is LIFO, so this
-                // order makes screen-internal BackHandlers win first, then these
-                // route handlers, then NavController's own pop. Before, these were
-                // registered before NavHost and NavController silently outranked
-                // them wherever the back stack was deeper than [HOME].
+                // (Phase 2, items 2.5/2.6). Back-callback priority is LIFO — the
+                // LAST registered enabled callback wins. Screen-internal handlers
+                // (inside composable(...) destinations) register whenever their
+                // destination composes, i.e. above these; NavController's own pop
+                // registers with the dispatcher at rememberNavController() time,
+                // i.e. BELOW these. Effective order: screen-internal > these route
+                // handlers > NavController pop. Before the move, NavController
+                // silently outranked these wherever the back stack exceeded [HOME].
                 NavBackHandlers(
                     currentRoute = currentRoute,
                     showSettings = dialogs.showSettings,
@@ -1535,9 +1544,9 @@ private fun NavDialogs(
                 // Exit: navigate back to lesson list
                 val hasChapters = state.navigation.activePackHasChapters
                 if (returnTo == Routes.CHAPTER_LESSONS || hasChapters) {
-                    onNavigate(Routes.CHAPTER_LESSONS)
+                    onNavigatePopTo(Routes.CHAPTER_LESSONS)
                 } else {
-                    onNavigate(Routes.LESSON)
+                    onNavigatePopTo(Routes.LESSON)
                 }
             },
             title = {
@@ -1617,9 +1626,9 @@ private fun NavDialogs(
                     // Navigate back to lesson list
                     val hasChapters = state.navigation.activePackHasChapters
                     if (returnTo == Routes.CHAPTER_LESSONS || hasChapters) {
-                        onNavigate(Routes.CHAPTER_LESSONS)
+                        onNavigatePopTo(Routes.CHAPTER_LESSONS)
                     } else {
-                        onNavigate(Routes.LESSON)
+                        onNavigatePopTo(Routes.LESSON)
                     }
                 }) {
                     Text("Выход")

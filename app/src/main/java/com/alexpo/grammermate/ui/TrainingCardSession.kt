@@ -84,7 +84,7 @@ class TrainingCardSessionScope(
  * Result tracking is delegated to the [CardSessionContract] adapter. The
  * adapter's [CardSessionContract.lastResult] and [CardSessionContract.currentCard]
  * drive whether the result or input UI is shown. Adapters that need custom
- * submit logic (e.g. [DailyPracticeSessionProvider]) can bypass the default
+ * submit logic can bypass the default
  * [CardSessionContract.submitAnswer] flow and set their own result state.
  *
  * @param contract Adapter that provides cards, state, and actions.

@@ -21,6 +21,7 @@ import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.LessonSchedule
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.countsTowardMastery
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.BossReward
@@ -850,6 +851,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 rebuildSchedules(filterLessonsForActivePack(lessons))
                 buildSessionCards()
                 refreshFlowerStates()
+                // Phase 3 (3.5): stamp retroactive completions on the restore
+                // path too — only selectPack recalculated before, so a cold
+                // start showed 0 completed lessons for any pack whose
+                // last-card event never fired (the quarantined BUG REPRO).
+                if (initialActivePackId != null && selectedLanguageId != null && lessons.isNotEmpty()) {
+                    progressTracker.recalculateCompletionsExcludingHidden(
+                        lessons = lessons,
+                        languageId = selectedLanguageId,
+                        hiddenCardIds = hiddenCardStore.getHiddenCardIds(),
+                        packId = initialActivePackId.value
+                    )
+                }
                 loadChapters()
                 refreshProfileStats()
                 refreshPomodoroHistory()
@@ -1117,10 +1130,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun getChapterProgress(packId: String, chapterId: String): ChapterProgress? {
-        return _coreState.value.chapterProgresses[chapterId]
-    }
-
     fun selectPack(packId: String) {
         // Cancel any active daily session before switching packs
         if (_coreState.value.daily.dailySession.active) {
@@ -1254,12 +1263,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         // Track daily card practice for cursor advancement.
-        // Only VOICE and KEYBOARD answers count — WORD_BANK does NOT (Level B rule).
-        // This hook is the sole counting mechanism for DAILY_TRANSLATE and DAILY_VERBS
-        // sessions that run through SessionRunner (the DailyPracticeSessionProvider
-        // path with its onCardAdvanced callback is dead code, never instantiated).
+        // Only VOICE and KEYBOARD answers count — WORD_BANK does NOT
+        // (single rule owner: InputMode.countsTowardMastery).
+        // This hook is the sole counting mechanism for DAILY_TRANSLATE and
+        // DAILY_VERBS sessions that run through SessionRunner.
         if (result.accepted && isDailySession()) {
-            if (beforeInputMode != InputMode.WORD_BANK) {
+            if (beforeInputMode.countsTowardMastery) {
                 val blockType = when (beforeScreenMode) {
                     com.alexpo.grammermate.data.TrainingScreenMode.DAILY_TRANSLATE -> DailyBlockType.TRANSLATE
                     com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS -> DailyBlockType.VERBS
@@ -2385,21 +2394,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         progressTracker.resetStores(app)
         container.clearCache() // invalidate all cached stores including vocabProgressStore
         packDailyCursorStore.invalidateCache() // prevent stale cursor reads after disk deletion
-        // Clear chapter progress for all packs
-        lessonStore.getInstalledPacks().forEach { pack ->
-            container.chapterProgressStore(pack.packId.value).clear()
-        }
+        // Chapter progress is derived live from mastery (Phase 3, 3.3) —
+        // resetting mastery removes the underlying data; nothing extra to clear.
     }
     private fun resetStoresForLanguage(app: Application, languageId: String) {
         progressTracker.resetStoresForLanguage(app, languageId)
         container.clearCache() // invalidate all cached stores including vocabProgressStore
         packDailyCursorStore.invalidateCache() // prevent stale cursor reads after disk deletion
-        // Clear chapter progress for packs matching this language
-        lessonStore.getInstalledPacks()
-            .filter { it.languageId.value == languageId }
-            .forEach { pack ->
-                container.chapterProgressStore(pack.packId.value).clear()
-            }
+        // Chapter progress is derived live from mastery (Phase 3, 3.3).
     }
     private fun resetDrillFiles(app: Application) {
         progressTracker.resetDrillFiles(app)
@@ -2653,8 +2655,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         for (lessonId in chapter.lessons) {
             val masteryState = activePackId?.let { masteryStore.getForPack(it, lessonId) }
                 ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
-            // Consider lesson incomplete if intervalStepIndex < 3 (learned threshold)
-            if (masteryState.intervalStepIndex < 3) {
+            // THE completion rule (Phase 3, item 3.5): completedAtMs, not
+            // intervalStepIndex — the step threshold is a vocab/SRS signal.
+            if (masteryState.completedAtMs == null) {
                 return lessonId
             }
         }
@@ -2695,8 +2698,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         Log.d(logTag, "loadChapters: loading chapters for pack $activePackId")
         val chapters = lessonStore.getChapters(activePackId)
-        val chapterProgressStore = container.chapterProgressStore(activePackId)
-        val chapterProgresses = chapterProgressStore.loadAll()
+        // Phase 3 (3.3): chapter progress is ALWAYS computed live from mastery
+        // (the same ChapterProgressCalculator the roadmap uses). The on-disk
+        // chapterProgressStore snapshot is gone — it could be stale/empty on
+        // cold start and diverged from the roadmap's live numbers (B3).
+        val chapterProgresses = computeAllChapterProgress(chapters, activePackId)
 
         // Determine active chapter ID (first incomplete or first chapter)
         val activeChapterId = determineActiveChapter(chapters, chapterProgresses)
@@ -2750,7 +2756,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val chapters = lessonStore.getChapters(activePackId)
-        val chapterProgressStore = container.chapterProgressStore(activePackId)
 
         // Find which chapter(s) contain this lesson
         val affectedChapters = chapters.filter { chapter ->
@@ -2761,24 +2766,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        // Get mastery states for all lessons in the pack
-        val allLessonMasteryStates = mutableMapOf<String, LessonMasteryState>()
-        for (lid in lessonStore.getLessonIdsForPack(activePackId)) {
-            val masteryState = masteryStore.getForPack(activePackId, lid) ?: LessonMasteryState(LessonId(lid), LanguageId(selectedLanguageId))
-            allLessonMasteryStates[lid] = masteryState
-        }
-
-        // Update progress for each affected chapter
+        // Recompute LIVE progress for each affected chapter
+        val allLessonMasteryStates = buildPackMasteryStates(activePackId, selectedLanguageId)
         for (chapter in affectedChapters) {
             val newProgress = ChapterProgressCalculator.calculateChapterProgress(
                 chapter = chapter,
                 masteryStates = allLessonMasteryStates
             )
-
-            // Persist to store atomically
-            chapterProgressStore.upsertProgress(newProgress)
-
-            // Update in-memory state
             _coreState.update {
                 it.copy(
                     chapterProgresses = it.chapterProgresses.toMutableMap().apply {
@@ -2790,12 +2784,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshChapterCards()
     }
 
-    /**
-     * Get chapter progress for a specific chapter.
-     * Returns null if chapter has no progress data.
-     */
-    fun getChapterProgress(chapterId: String): ChapterProgress? {
-        return _coreState.value.chapterProgresses[chapterId]
+    /** Mastery snapshot for every lesson of the pack (memory-only reads). */
+    private fun buildPackMasteryStates(
+        packId: String,
+        languageId: String
+    ): Map<String, LessonMasteryState> {
+        val states = mutableMapOf<String, LessonMasteryState>()
+        for (lid in lessonStore.getLessonIdsForPack(packId)) {
+            states[lid] = masteryStore.getForPack(packId, lid)
+                ?: LessonMasteryState(LessonId(lid), LanguageId(languageId))
+        }
+        return states
+    }
+
+    private fun computeAllChapterProgress(chapters: List<Chapter>, packId: String): Map<String, ChapterProgress> {
+        val langId = _coreState.value.navigation.selectedLanguageId?.value ?: ""
+        val masteryStates = buildPackMasteryStates(packId, langId)
+        return chapters.associate { ch ->
+            ch.chapterId to ChapterProgressCalculator.calculateChapterProgress(ch, masteryStates)
+        }
     }
 
     fun getCompletedLessonIds(chapter: Chapter): Set<String> {

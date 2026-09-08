@@ -4,6 +4,7 @@ import android.util.Log
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.countsTowardMastery
 import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonId
@@ -64,7 +65,8 @@ class ProgressTracker(
 
         // Word Bank mode: does NOT count for mastery (flower growth)
         // Only voice and keyboard input count for skill formation
-        if (inputMode == InputMode.WORD_BANK) {
+        // (single rule owner: InputMode.countsTowardMastery)
+        if (!inputMode.countsTowardMastery) {
             Log.d(logTag, "Skipping card show record for Word Bank mode - does not count for mastery")
             return
         }

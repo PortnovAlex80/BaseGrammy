@@ -1011,7 +1011,7 @@ class DailyPracticeCoordinator(
 
     /**
      * Get the DailyTask list for the current block (all types).
-     * Used by DailyPracticeSessionProvider to access tasks for the block.
+     * Used by the daily-practice block flow to access tasks for the block.
      */
     fun getCurrentBlockTasks(): List<DailyTask> {
         return getCurrentBlock()?.tasks ?: emptyList()

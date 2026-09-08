@@ -6,15 +6,14 @@
 
 These failures predate the 2026-09-08 refactor: they are inherited breakage from earlier runtime restoration, not regressions of Phase 0. Nothing below may be deleted — each row is a regression net awaiting repair.
 
-## 1. Chapter progress & completion rule — reopen in Phase 3 (items 3.1/3.3/3.5)
+## 1. Chapter progress & completion rule — REPAIRED in Phase 3 (items 3.1/3.3/3.5)
 
-The completion rule stamps `completedAtMs` when `uniqueCardShows >= min(effectiveCardCount, 150)`; these tests assert lessons counted as completed and get 0. Phase 3 unifies the rule and these tests must be repaired (not re-recorded) as part of it.
-
-| Test class | Failing tests | Symptom |
-|---|---|---|
-| `feature.progress.ChapterProgressCalculatorTest` | `calculateChapterProgress is independent across chapters`; `calculateChapterProgress counts completed lessons correctly`; `calculateChapterProgress_maintainsStartedGeqCompleted_invariant` | expected 1-2 completed, got 0 |
-| `feature.progress.ChapterProgressUpdateTest` | `` `BUG REPRO - lesson with uniqueShows but no completedAtMs not counted as completed` `` | documents the live bug: completed lessons report 0 because `completedAtMs` is never stamped |
-| `ui.TrainingViewModelChapterIntegrationTest` | `test chapter progress calculation with lesson mastery states`; `test chapter progress with all lessons completed` | expected 1-2, got 0 |
+All six quarantined tests were repaired and un-@Ignore'd in Phase 3:
+fixtures re-anchored to the unified rule (completion = `completedAtMs`
+stamped at `uniqueCardShows >= min(effectiveCardCount, 150)`), and the BUG
+REPRO was rewritten to pin the repaired chain (restore-path
+`recalculateCompletionsExcludingHidden` stamps → live calculator counts).
+New rule pins live in `feature/progress/ChapterProgressRulesTest.kt`.
 
 ## 2. Compose click-UI journeys — reopen in Phase 2 (navigation/effects rework)
 

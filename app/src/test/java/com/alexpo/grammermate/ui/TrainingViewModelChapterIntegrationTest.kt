@@ -19,7 +19,6 @@ import org.junit.Test
 class TrainingViewModelChapterIntegrationTest {
 
     @Test
-    @Ignore("Phase 0 quarantine — completion counting returns 0, reopened in Phase 3 (legacy-test-quarantine.md)")
     fun `test chapter progress calculation with lesson mastery states`() {
         // Given: A chapter with 3 lessons
         val chapter = Chapter(
@@ -36,7 +35,8 @@ class TrainingViewModelChapterIntegrationTest {
                 languageId = LanguageId("it"),
                 uniqueCardShows = 10,
                 intervalStepIndex = 5,
-                lastShowDateMs = 1000L
+                lastShowDateMs = 1000L,
+                completedAtMs = 1000L  // Phase 3 rule: completion = completedAtMs
             ),
             "lesson_2" to LessonMasteryState(
                 lessonId = LessonId("lesson_2"),
@@ -82,7 +82,6 @@ class TrainingViewModelChapterIntegrationTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — completion counting returns 0, reopened in Phase 3 (legacy-test-quarantine.md)")
     fun `test chapter progress with all lessons completed`() {
         // Given: A chapter where all lessons are completed
         val chapter = Chapter(
@@ -98,14 +97,16 @@ class TrainingViewModelChapterIntegrationTest {
                 languageId = LanguageId("it"),
                 uniqueCardShows = 10,
                 intervalStepIndex = 5,
-                lastShowDateMs = 1000L
+                lastShowDateMs = 1000L,
+                completedAtMs = 1000L  // Phase 3 rule: completion = completedAtMs
             ),
             "lesson_2" to LessonMasteryState(
                 lessonId = LessonId("lesson_2"),
                 languageId = LanguageId("it"),
                 uniqueCardShows = 15,
                 intervalStepIndex = 8,
-                lastShowDateMs = 2000L
+                lastShowDateMs = 2000L,
+                completedAtMs = 2000L  // Phase 3 rule: completion = completedAtMs
             )
         )
 

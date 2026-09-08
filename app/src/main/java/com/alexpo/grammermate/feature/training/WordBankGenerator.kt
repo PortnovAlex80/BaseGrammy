@@ -9,7 +9,7 @@ import com.alexpo.grammermate.data.SentenceCard
  * Consolidates word bank generation logic that was previously duplicated across
  * [TrainingViewModel][com.alexpo.grammermate.ui.TrainingViewModel],
  * [SessionRunner][com.alexpo.grammermate.feature.training.SessionRunner], and
- * [DailyPracticeSessionProvider][com.alexpo.grammermate.feature.daily.DailyPracticeSessionProvider].
+ * the daily-practice session flow.
  *
  * All functions are stateless and pure — no Android dependencies, no side effects.
  */

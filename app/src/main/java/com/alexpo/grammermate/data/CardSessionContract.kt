@@ -4,7 +4,7 @@ package com.alexpo.grammermate.data
  * Unified state model for card session lifecycle.
  *
  * All card-based drill modes (training via SessionRunner,
- * daily practice via DailyPracticeSessionProvider)
+ * daily practice via SessionRunner)
  * implement this interface so the UI layer can query session state uniformly.
  *
  * This is a read-only state interface. Actions (submit, nextCard, etc.) remain
@@ -98,7 +98,7 @@ interface CardSessionContract : CardSessionCapabilities, CardSessionStateModel {
 
     // ── CardSessionStateModel defaults ──────────────────────────────────
     // Mapped from existing CardSessionContract properties so that existing
-    // implementations (DailyPracticeSessionProvider)
+    // implementations
     // work without changes. SessionRunnerAdapter overrides these explicitly.
 
     override val isActive: Boolean get() = sessionActive && !isHintShown

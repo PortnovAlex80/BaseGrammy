@@ -73,7 +73,6 @@ class ChapterProgressCalculatorTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — completion counting returns 0, reopened in Phase 3 (legacy-test-quarantine.md)")
     fun `calculateChapterProgress counts completed lessons correctly`() {
         // Arrange: Chapter with mixed lesson states
         val chapter = Chapter(
@@ -96,7 +95,8 @@ class ChapterProgressCalculatorTest {
             uniqueCardShows = 80,
             totalCardShows = 100,
             lastShowDateMs = 2000L,
-            intervalStepIndex = 4  // Completed (>= 3)
+            intervalStepIndex = 4,
+            completedAtMs = 2000L  // Completed (Phase 3 rule: completedAtMs stamped)
         )
         val lesson3 = LessonMasteryState(
             lessonId = LessonId("lesson_03"),
@@ -123,7 +123,6 @@ class ChapterProgressCalculatorTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — completion counting returns 0, reopened in Phase 3 (legacy-test-quarantine.md)")
     fun `calculateChapterProgress is independent across chapters`() {
         // Arrange: Two different chapters with different lessons
         val chapter1 = Chapter(
@@ -146,7 +145,8 @@ class ChapterProgressCalculatorTest {
             uniqueCardShows = 50,
             totalCardShows = 60,
             lastShowDateMs = 1000L,
-            intervalStepIndex = 3  // Completed
+            intervalStepIndex = 3,
+            completedAtMs = 1000L  // Completed (Phase 3 rule: completedAtMs stamped)
         )
         val lesson2 = LessonMasteryState(
             lessonId = LessonId("lesson_02"),
@@ -273,7 +273,6 @@ class ChapterProgressCalculatorTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — completion counting returns 0, reopened in Phase 3 (legacy-test-quarantine.md)")
     fun calculateChapterProgress_maintainsStartedGeqCompleted_invariant() {
         // Arrange: Chapter with various lesson states
         val chapter = Chapter(
@@ -305,7 +304,8 @@ class ChapterProgressCalculatorTest {
                 uniqueCardShows = 80,
                 totalCardShows = 100,
                 lastShowDateMs = 2000L,
-                intervalStepIndex = 3  // Completed
+                intervalStepIndex = 3,
+                completedAtMs = 2000L  // Completed (Phase 3 rule: completedAtMs stamped)
             ),
             "lesson_04" to LessonMasteryState(
                 lessonId = LessonId("lesson_04"),
@@ -313,7 +313,8 @@ class ChapterProgressCalculatorTest {
                 uniqueCardShows = 100,
                 totalCardShows = 120,
                 lastShowDateMs = 3000L,
-                intervalStepIndex = 5  // Completed
+                intervalStepIndex = 5,
+                completedAtMs = 3000L  // Completed (Phase 3 rule: completedAtMs stamped)
             ),
             "lesson_05" to LessonMasteryState(
                 lessonId = LessonId("lesson_05"),

@@ -12,15 +12,19 @@ import com.alexpo.grammermate.data.LessonMasteryState
  * of its lessons. Progress is independent across chapters - a lesson in
  * Chapter 1 does not affect Chapter 2's progress.
  *
+ * THE single completion rule (Phase 3, item 3.5): a lesson is completed iff
+ * its mastery row has completedAtMs stamped — which ProgressTracker does when
+ * uniqueCardShows >= min(effectiveCardCount, 150). intervalStepIndex is NOT
+ * a completion signal.
+ *
  * Computation rules:
  * - lessonsStarted: Count of lessons where uniqueCardShows > 0
- * - lessonsCompleted: Count of lessons where EITHER:
- *   - intervalStepIndex >= LEARNED_THRESHOLD (3) — advanced via Daily Review SRS
- *   - OR uniqueCardShows >= MASTERY_THRESHOLD (150) — completed all cards
+ * - lessonsCompleted: Count of lessons where completedAtMs != null
+ * - totalLessons: chapter.lessons.size (progress divides by THIS)
  * - lastAccessedMs: Maximum lastShowDateMs from all lessons in the chapter
  *
  * Edge cases:
- * - Empty chapter (no lessons): Returns zero progress with lastAccessedMs = 0
+ * - Empty chapter (no lessons): Returns zero progress with totalLessons = 0
  * - Single lesson chapter: Works correctly, counts that one lesson
  * - Lessons without mastery data: Treated as not started (uniqueCardShows = 0)
  */
@@ -44,6 +48,7 @@ object ChapterProgressCalculator {
                 chapterId = chapter.chapterId,
                 lessonsStarted = 0,
                 lessonsCompleted = 0,
+                totalLessons = 0,
                 lastAccessedMs = 0L
             )
         }
@@ -83,6 +88,7 @@ object ChapterProgressCalculator {
             chapterId = chapter.chapterId,
             lessonsStarted = startedCount,
             lessonsCompleted = completedCount,
+            totalLessons = chapter.lessons.size,
             lastAccessedMs = lastAccessedMs
         )
     }
