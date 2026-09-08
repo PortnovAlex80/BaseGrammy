@@ -40,11 +40,14 @@ import com.alexpo.grammermate.data.CompletionNextAction
 import com.alexpo.grammermate.data.PracticeType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -126,6 +129,41 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val backupManager = container.backupManager
     private val profileStore = container.profileStore
     private val _coreState = MutableStateFlow(TrainingUiState(isLoading = true))
+
+    // ── One-shot navigation events (Phase 2, item 2.2) ────────────────────
+    // Consumed by a single LaunchedEffect collector in GrammarMateApp. The
+    // channel is BUFFERED so events raised before the collector attaches
+    // (e.g. during startup) are not dropped.
+    private val _navigationEvents = Channel<NavigationEvent>(Channel.BUFFERED)
+    val navigationEvents: Flow<NavigationEvent> = _navigationEvents.receiveAsFlow()
+
+    /**
+     * Edge handler for "a sub-lesson finished" (the UI's token-keyed effect
+     * calls this exactly once per completion). Owns the pomodoro bookkeeping
+     * and decides the navigation outcome; the UI only renders what the
+     * emitted [NavigationEvent] says.
+     */
+    fun handleSubLessonFinished() {
+        onTrainingSessionCompleted()
+        val s = _coreState.value
+        val hasCards = s.cardSession.currentCard != null
+        if (s.pomodoro.isComplete || !hasCards) return
+        val returnTo = s.cardSession.returnTo
+        viewModelScope.launch {
+            when {
+                returnTo == Routes.DAILY_PRACTICE -> {
+                    dailyPracticeCoordinator.onBlockComplete()
+                    _navigationEvents.send(NavigationEvent.Navigate(Routes.DAILY_PRACTICE))
+                }
+                returnTo == Routes.VERB_DRILL || returnTo == Routes.AUX_DRILL -> {
+                    _navigationEvents.send(NavigationEvent.Navigate(requireNotNull(returnTo)))
+                }
+                else -> _navigationEvents.send(
+                    NavigationEvent.CompletionDialog(computeCompletionNextAction())
+                )
+            }
+        }
+    }
 
     // ── High-frequency timer flows (separate from main state for performance) ──
     private val _sessionTimerMs = MutableStateFlow(0L)
@@ -1825,6 +1863,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
         )
         handleBossCommands(bossOrchestrator.finishBoss())
+        viewModelScope.launch { _navigationEvents.send(NavigationEvent.BossSessionFinished) }
     }
 
     fun clearBossRewardMessage() = handleBossCommands(bossOrchestrator.clearBossRewardMessage())

@@ -104,7 +104,7 @@ import com.alexpo.grammermate.shared.ScreenLogger
 
 // ── Route constants ──────────────────────────────────────────────────────────
 
-private object Routes {
+internal object Routes {
     const val HOME = "home"
     const val LESSON = "lesson"
     const val CHAPTER_LESSONS = "chapter_lessons"
@@ -117,7 +117,6 @@ private object Routes {
     const val VERB_DRILL = "verb_drill"
     const val VOCAB_DRILL = "vocab_drill"
     const val AUX_DRILL = "aux_drill"
-    const val GRAMMAR_STORY_ROADMAP = "grammar_story_roadmap"
     const val STORY_READER = "story_reader"
     const val BACKGROUND_VOCAB = "background_vocab"
 }
@@ -167,14 +166,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route ?: Routes.HOME
         val context = LocalContext.current
 
-        // Track previous screen for LADDER back navigation
-        var previousRoute by remember { mutableStateOf(Routes.HOME) }
-
         // Story reader state managed in ViewModel (state.storyReaderChapterTitle, state.storyReaderContent)
         var dialogs by remember { mutableStateOf(DialogState()) }
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
-        val lastBossFinishedToken = remember { mutableStateOf(state.boss.bossFinishedToken) }
         val completionNextAction = remember { mutableStateOf(CompletionNextAction.NONE) }
 
         // VerbDrillViewModel shared between TRAINING and VERB_DRILL routes for session persistence.
@@ -254,12 +249,49 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     trigger = "navigate"
                 )
                 if (route != actual) {
-                    previousRoute = actual ?: Routes.HOME
+                    // Phase 2, item 2.4: plain push. The stack is no longer
+                    // flattened to [HOME, X] — back is meaningful again. Flows
+                    // that must reset use onNavigateResetStack; "training done,
+                    // return to origin" flows use onNavigatePopTo.
                     navController.navigate(route) {
-                        // Pop up to start destination to avoid building a large back stack
-                        popUpTo(Routes.HOME) { inclusive = false }
                         launchSingleTop = true
                     }
+                }
+            }
+        }
+
+        /** Abandon-flow navigation: reset to a clean single-entry stack. */
+        val onNavigateResetStack: (String) -> Unit = remember(navController) {
+            { route: String ->
+                navController.navigate(route) {
+                    popUpTo(Routes.HOME) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+
+        /**
+         * Training-done navigation: pop back to the existing origin entry
+         * (LESSON / CHAPTER_LESSONS / drill screen) instead of pushing a
+         * duplicate on top of TRAINING.
+         */
+        val onNavigatePopTo: (String) -> Unit = remember(navController) {
+            { route: String ->
+                if (!navController.popBackStack(route, inclusive = false)) {
+                    navController.navigate(route) { launchSingleTop = true }
+                }
+            }
+        }
+
+        // Single consumer of the ViewModel's one-shot navigation events
+        // (Phase 2, item 2.2): sub-lesson completion outcomes and boss exits
+        // navigate exclusively through this stream.
+        LaunchedEffect(Unit) {
+            vm.navigationEvents.collect { event ->
+                when (event) {
+                    is NavigationEvent.Navigate -> onNavigate(event.route)
+                    is NavigationEvent.CompletionDialog -> completionNextAction.value = event.action
+                    NavigationEvent.BossSessionFinished -> onNavigatePopTo(Routes.LESSON)
                 }
             }
         }
@@ -279,16 +311,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
             }
 
             Box(modifier = Modifier.weight(1f)) {
-                NavBackHandlers(
-                    currentRoute = currentRoute,
-                    showSettings = dialogs.showSettings,
-                    previousRoute = previousRoute,
-                    state = state,
-                    vm = vm,
-                    navController = navController,
-                    onShowExitDialog = remember(dialogs) { { dialogs = dialogs.copy(showExitDialog = true) } }
-                )
-
                 // Bluetooth mic permission launcher — handles BLUETOOTH_CONNECT on API 31+
                 val btPermissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
@@ -312,13 +334,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             }
                         }
                     },
-                    onOpenLadder = remember(dialogs, currentRoute) {
+                    onOpenLadder = remember(navController) {
                         {
                             ScreenLogger.overlay("settings", shown = false)
                             dialogs = dialogs.copy(showSettings = false)
-                            previousRoute = currentRoute
+                            // Plain push: LADDER back pops to the screen that opened it.
                             navController.navigate(Routes.LADDER) {
-                                popUpTo(Routes.HOME) { inclusive = false }
                                 launchSingleTop = true
                             }
                         }
@@ -436,9 +457,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
                                     }
                                 } },
-                                onOpenSettings = remember(dialogs) {
+                                onOpenSettings = remember {
                                     {
-                                        previousRoute = Routes.HOME
                                         vm.pauseSession()
                                         ScreenLogger.overlay("settings", shown = true)
                                         dialogs = dialogs.copy(showSettings = true)
@@ -452,7 +472,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
                                 onAuxDrill = remember { { onNavigate(Routes.AUX_DRILL) } },
                                 onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
-                                onDailyPractice = remember(dialogs) {
+                                onDailyPractice = remember {
                                     {
                                         val level = vm.getProgressLessonLevel()
                                         Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
@@ -495,9 +515,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 state = state,
                                 onSelectLanguage = vm::selectLanguage,
                                 onSelectPack = remember { { packId: String -> vm.selectPack(packId) } },
-                                onOpenSettings = remember(dialogs) {
+                                onOpenSettings = remember {
                                     {
-                                        previousRoute = Routes.HOME
                                         vm.pauseSession()
                                         ScreenLogger.overlay("settings", shown = true)
                                         dialogs = dialogs.copy(showSettings = true)
@@ -509,7 +528,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     vm.selectLesson(lessonId, currentPackId)
                                     onNavigate(Routes.LESSON)
                                 } },
-                                onOpenElite = remember(dialogs) {
+                                onOpenElite = remember {
                                     {
                                         val level = vm.getProgressLessonLevel()
                                         Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
@@ -541,7 +560,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onOpenVerbDrill = remember { { onNavigate(Routes.VERB_DRILL) } },
                                 onOpenAuxDrill = remember { { onNavigate(Routes.AUX_DRILL) } },
                                 onOpenVocabDrill = remember { { onNavigate(Routes.VOCAB_DRILL) } },
-                                onProfileClick = remember(dialogs) { { dialogs = dialogs.copy(showProfileStats = true) } },
+                                onProfileClick = remember { { dialogs = dialogs.copy(showProfileStats = true) } },
                                 onStartPomodoro = remember { { duration: Int ->
                                     ScreenLogger.overlay("pomodoro", shown = true, details = "duration=${duration}m")
                                     vm.startPomodoro(duration)
@@ -644,7 +663,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                     composable(Routes.DAILY_PRACTICE) {
                         LaunchedEffect(Unit) { Log.d("GrammarMate", "Screen: DAILY_PRACTICE shown") }
-                        DailyPracticeScreenContent(state, vm, remember { { route: String -> onNavigate(route) } })
+                        DailyPracticeScreenContent(state, vm, remember { { route: String -> onNavigate(route) } }, onNavigateResetStack)
                     }
 
                     composable(Routes.STORY) {
@@ -673,12 +692,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     composable(Routes.LADDER) {
                         LadderScreen(
                             state = state,
-                            onBack = remember(previousRoute, state.cardSession.currentCard) {
+                            onBack = remember(state.cardSession.currentCard) {
                                 {
-                                    onNavigate(previousRoute)
-                                    if (previousRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
+                                    // LADDER was pushed on top of its opener —
+                                    // resume a paused session only if that opener
+                                    // was TRAINING with a live card.
+                                    val opener = navController.previousBackStackEntry?.destination?.route
+                                    if (opener == Routes.TRAINING && state.cardSession.currentCard != null) {
                                         vm.resumeFromSettings()
                                     }
+                                    navController.popBackStack()
                                 }
                             }
                         )
@@ -743,11 +766,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                         isVerbDrillLikeReturn(returnTo) && !hasActiveCard -> {
                                             verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
-                                            onNavigate(Routes.HOME)
+                                            onNavigateResetStack(Routes.HOME)
                                         }
                                         returnTo == Routes.DAILY_PRACTICE -> {
                                             vm.cancelDailySession()
-                                            onNavigate(Routes.HOME)
+                                            onNavigateResetStack(Routes.HOME)
                                         }
                                         else -> {
                                             dialogs = dialogs.copy(showExitDialog = true)
@@ -755,7 +778,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     }
                                 }
                             },
-                            onShowSettings = remember(dialogs) { { previousRoute = Routes.TRAINING; vm.pauseSession(); ScreenLogger.overlay("settings", shown = true); dialogs = dialogs.copy(showSettings = true) } },
+                            onShowSettings = remember { { vm.pauseSession(); ScreenLogger.overlay("settings", shown = true); dialogs = dialogs.copy(showSettings = true) } },
                             onTtsSpeak = onTtsSpeak,
                             onVerbDrillMore = remember { {
                                 verbDrillVm.persistSessionState()
@@ -766,7 +789,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 } else {
                                     // No more cards — go to selection screen
                                     vm.exitVerbDrillSession()
-                                    onNavigate(Routes.VERB_DRILL)
+                                    onNavigatePopTo(Routes.VERB_DRILL)
                                 }
                             } },
                             onNavigate = onNavigate,
@@ -779,31 +802,31 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             Log.d("NavDebug", "SESSION_DONE: → DAILY_PRACTICE")
                                             Log.d("GrammarMate", "DailyPractice: navigating after block, returnTo=DAILY_PRACTICE")
                                             vm.daily.onBlockComplete()
-                                            onNavigate(Routes.DAILY_PRACTICE)
+                                            onNavigatePopTo(Routes.DAILY_PRACTICE)
                                         }
                                         returnTo == Routes.CHAPTER_LESSONS -> {
                                             Log.d("NavDebug", "SESSION_DONE: → CHAPTER_LESSONS")
-                                            onNavigate(Routes.CHAPTER_LESSONS)
+                                            onNavigatePopTo(Routes.CHAPTER_LESSONS)
                                         }
                                         returnTo == Routes.LESSON -> {
                                             val hasChapters = state.navigation.activePackHasChapters
                                             Log.d("NavDebug", "SESSION_DONE: returnTo=LESSON, hasChapters=$hasChapters")
                                             if (hasChapters) {
                                                 Log.d("NavDebug", "SESSION_DONE: → CHAPTER_LESSONS (chapter pack)")
-                                                onNavigate(Routes.CHAPTER_LESSONS)
+                                                onNavigatePopTo(Routes.CHAPTER_LESSONS)
                                             } else {
                                                 Log.d("NavDebug", "SESSION_DONE: → LESSON (classic pack)")
-                                                onNavigate(Routes.LESSON)
+                                                onNavigatePopTo(Routes.LESSON)
                                             }
                                         }
                                         isVerbDrillLikeReturn(returnTo) -> {
                                             // VERB_DRILL / AUX_DRILL: return to the drill screen we came from
                                             Log.d("NavDebug", "SESSION_DONE: → drill return $returnTo")
-                                            onNavigate(returnTo)
+                                            onNavigatePopTo(returnTo)
                                         }
                                         else -> {
                                             Log.d("NavDebug", "SESSION_DONE: → HOME (default)")
-                                            onNavigate(Routes.HOME)
+                                            onNavigateResetStack(Routes.HOME)
                                         }
                                     }
                                 }
@@ -818,15 +841,25 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             AuditLogger.getInstanceOrNull()?.backPress("training", "drill_return")
                             verbDrillVm.persistSessionState()
                             vm.exitVerbDrillSession()
-                            onNavigate(state.cardSession.returnTo)
+                            onNavigatePopTo(state.cardSession.returnTo)
                         }
-                        // Local back handler for TRAINING — staircase navigation (only for lesson-based training)
-                        BackHandler(enabled = !isVerbDrillLikeReturn(state.cardSession.returnTo) && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
-                            Log.d("NavDebug", "BACK: TRAINING staircase → LESSON")
+                        // Local back handler: daily-practice training → cancel + HOME
+                        BackHandler(enabled = state.cardSession.returnTo == Routes.DAILY_PRACTICE && !dialogs.showSettings) {
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            AuditLogger.getInstanceOrNull()?.backPress("training", "staircase_to_lesson")
-                            vm.finishSession()
-                            onNavigate(Routes.LESSON)
+                            AuditLogger.getInstanceOrNull()?.backPress("training", "daily_cancel_to_home")
+                            vm.cancelDailySession()
+                            onNavigateResetStack(Routes.HOME)
+                        }
+                        // Local back handler: lesson training → exit confirmation
+                        // dialog — the SAME behavior as the on-screen Stop button
+                        // (Phase 2, item 2.5). These handlers live INSIDE the
+                        // TRAINING destination so they always outrank both
+                        // NavBackHandlers and NavController's own pop.
+                        BackHandler(enabled = !isVerbDrillLikeReturn(state.cardSession.returnTo) && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
+                            Log.d("NavDebug", "BACK: TRAINING lesson → exit dialog")
+                            ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
+                            AuditLogger.getInstanceOrNull()?.backPress("training", "show_exit_dialog")
+                            dialogs = dialogs.copy(showExitDialog = true)
                         }
                     }
 
@@ -845,7 +878,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             {
                                 verbDrillVm.exitSession()
                                 vm.refreshStreakFromStore()
-                                onNavigate(Routes.HOME)
+                                onNavigateResetStack(Routes.HOME)
                             }
                         }
                         BackHandler {
@@ -880,7 +913,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     vm.refreshVocabMasteryCount()
                                 }
                                 vm.refreshStreakFromStore()
-                                onNavigate(Routes.HOME)
+                                onNavigateResetStack(Routes.HOME)
                             }
                         }
                         BackHandler {
@@ -911,7 +944,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         val auxExit = remember(auxVm) {
                             {
-                                onNavigate(Routes.HOME)
+                                onNavigateResetStack(Routes.HOME)
                             }
                         }
                         BackHandler {
@@ -932,92 +965,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 }
                             } }
                         )
-                    }
-
-                    composable(Routes.GRAMMAR_STORY_ROADMAP) {
-                        // Chapter cards are VM state (Phase 1) — no remember/progressKey needed.
-                        val chapterCards by vm.chapterCards.collectAsStateWithLifecycle()
-                        GrammarStoryRoadmapScreen(
-                            chapters = chapterCards,
-                            onBack = remember { { vm.clearActivePack(); navController.popBackStack(Routes.HOME, inclusive = false) } },
-                            showBackButton = true,  // Show back button when accessed via direct route
-                            onReadStory = remember { { chapter ->
-                                val storyContent = vm.loadStoryContent(chapter.storyFile)
-                                if (storyContent != null) {
-                                    vm.setStoryReader(chapter.title, storyContent, chapter.storyFile)
-                                    onNavigate(Routes.STORY_READER)
-                                } else {
-                                    Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
-                                }
-                            } },
-                            onOpenSettings = remember(dialogs) {
-                                {
-                                    previousRoute = Routes.GRAMMAR_STORY_ROADMAP
-                                    vm.pauseSession()
-                                    ScreenLogger.overlay("settings", shown = true)
-                                    dialogs = dialogs.copy(showSettings = true)
-                                }
-                            },
-                            onContinue = remember { { chapter ->
-                                // Navigate to chapter lessons screen
-                                vm.selectChapter(chapter)
-                                onNavigate(Routes.CHAPTER_LESSONS)
-                            } },
-                            onPlayChapterStory = remember { { chapter ->
-                                // Quick play from roadmap - use multilingual TTS, or the
-                                // pre-rendered Opus narration clip when one is present for this
-                                // chapter (real-voice narration overrides TTS automatically).
-                                val storyContent = vm.loadStoryContent(chapter.storyFile)
-                                if (storyContent != null) {
-                                    vm.speakMultilingualStory(
-                                        storyContent,
-                                        defaultLanguageId = "ru",
-                                        storyFile = chapter.storyFile,
-                                        packId = state.navigation.activePackId?.value
-                                    )
-                                } else {
-                                    Toast.makeText(context, "Story not found: ${chapter.storyFile}", Toast.LENGTH_SHORT).show()
-                                }
-                            } },
-                            onVerbPractice = remember { { onNavigate(Routes.VERB_DRILL) } },
-                            onFlashcards = remember { { onNavigate(Routes.VOCAB_DRILL) } },
-                            onDailyPractice = remember(dialogs) {
-                                {
-                                    val level = vm.getProgressLessonLevel()
-                                    Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
-                                    if (vm.daily.hasResumableDailySession()) {
-                                        dialogs = dialogs.copy(showDailyResumeDialog = true, pendingDailyLevel = level)
-                                    } else {
-                                        dialogs = dialogs.copy(isLoadingDaily = true)
-                                        dailyScope.launch {
-                                            try {
-                                                val started = withContext(Dispatchers.IO) {
-                                                    vm.startDailyPractice(level)
-                                                }
-                                                dialogs = dialogs.copy(isLoadingDaily = false)
-                                                if (started) {
-                                                    onNavigate(Routes.DAILY_PRACTICE)
-                                                } else {
-                                                    Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                dialogs = dialogs.copy(isLoadingDaily = false)
-                                                Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            onBackgroundVocab = remember { { onNavigate(Routes.BACKGROUND_VOCAB) } },
-                            hasVerbDrill = state.navigation.hasVerbDrill,
-                            hasVocabDrill = state.navigation.hasVocabDrill,
-                            isStoryPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking,
-                            isStoryPaused = state.audio.isStoryPlaybackPaused,
-                            onStopStory = remember { { vm.stopStoryNarration() } },
-                            onPauseStory = remember { { vm.pauseStoryPlayback() } },
-                            onResumeStory = remember { { vm.resumeStoryPlayback() } }
-                        )
-                        // Back handler removed — handled by outer NavBackHandlers to avoid double-fire
                     }
 
                     composable(Routes.STORY_READER) {
@@ -1134,6 +1081,21 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
                 }
 
+                // Route-level back handlers, registered AFTER NavHost on purpose
+                // (Phase 2, item 2.5/2.6): back-callback priority is LIFO, so this
+                // order makes screen-internal BackHandlers win first, then these
+                // route handlers, then NavController's own pop. Before, these were
+                // registered before NavHost and NavController silently outranked
+                // them wherever the back stack was deeper than [HOME].
+                NavBackHandlers(
+                    currentRoute = currentRoute,
+                    showSettings = dialogs.showSettings,
+                    state = state,
+                    vm = vm,
+                    navController = navController,
+                    onShowExitDialog = remember { { dialogs = dialogs.copy(showExitDialog = true) } }
+                )
+
                 NavDialogs(
                     dialogs = dialogs,
                     state = state,
@@ -1141,10 +1103,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     vm = vm,
                     dailyScope = dailyScope,
                     lastFinishedToken = lastFinishedToken,
-                    lastBossFinishedToken = lastBossFinishedToken,
                     completionNextAction = completionNextAction,
                     onDialogsChange = remember { { dialogs = it } },
-                    onNavigate = onNavigate
+                    onNavigate = onNavigate,
+                    onNavigateResetStack = onNavigateResetStack,
+                    onNavigatePopTo = onNavigatePopTo
                 )
             } // Box
         } // Column
@@ -1176,7 +1139,8 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
     Routes.LADDER -> AppScreen.LADDER
     Routes.VERB_DRILL -> AppScreen.VERB_DRILL
     Routes.VOCAB_DRILL -> AppScreen.VOCAB_DRILL
-    Routes.GRAMMAR_STORY_ROADMAP -> AppScreen.HOME // Treat as home for tracking
+    Routes.CHAPTER_LESSONS -> AppScreen.CHAPTER_LESSONS
+    Routes.AUX_DRILL -> AppScreen.AUX_DRILL
     Routes.STORY_READER -> AppScreen.STORY // Treat as story for tracking
     Routes.BACKGROUND_VOCAB -> AppScreen.HOME
     else -> AppScreen.HOME
@@ -1186,13 +1150,9 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
 //
 // Architecture note:
 //   GrammarStoryRoadmapScreen is rendered INSIDE the HOME composable when
-//   `hasChapters == true`.  The separate GRAMMAR_STORY_ROADMAP route exists
-//   only for direct entry from STORY_READER.  This means the "grammar roadmap"
-//   that appears after selecting a chapters pack IS the HOME screen.
-//
-//   Therefore, back from CHAPTER_LESSONS must go to HOME (which shows the
-//   roadmap), NOT to the GRAMMAR_STORY_ROADMAP route.  Using popBackStack()
-//   is correct here because the stack naturally contains HOME at the base.
+//   `hasChapters == true` — the "grammar roadmap" that appears after
+//   selecting a chapters pack IS the HOME screen. There is no separate
+//   roadmap route.
 //
 //   BackHandler priority in Compose: the LAST registered (innermost) handler
 //   with enabled=true intercepts the back press first.  Inner handlers
@@ -1202,7 +1162,6 @@ private fun routeToScreen(route: String?): AppScreen = when (route) {
 private fun NavBackHandlers(
     currentRoute: String?,
     showSettings: Boolean,
-    previousRoute: String,
     state: TrainingUiState,
     vm: TrainingViewModel,
     navController: androidx.navigation.NavHostController,
@@ -1223,15 +1182,10 @@ private fun NavBackHandlers(
         // No navigation needed — HOME recomposes with pack selection when activePackId becomes null
     }
 
-    // ── TRAINING back (lesson-based) → show exit dialog ──
-    // Note: inner TRAINING BackHandlers (verb_drill return, staircase) have
-    // higher priority and will intercept first when applicable.
-    BackHandler(enabled = currentRoute == Routes.TRAINING && !showSettings) {
-        Log.d("NavDebug", "BACK: TRAINING BackHandler fired! showSettings=$showSettings, currentRoute=$currentRoute")
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        AuditLogger.getInstanceOrNull()?.backPress("training", "show_exit_dialog")
-        onShowExitDialog()
-    }
+    // ── TRAINING back ──
+    // All TRAINING back cases are handled by INNER BackHandlers inside the
+    // TRAINING destination (drill return / daily cancel / lesson exit dialog)
+    // so they outrank NavController's own pop. Nothing to do here.
 
     // ── DAILY_PRACTICE back → exit dialog ──
     BackHandler(enabled = currentRoute == Routes.DAILY_PRACTICE && !showSettings) {
@@ -1250,49 +1204,27 @@ private fun NavBackHandlers(
         }
     }
 
-    // ── LADDER back → previous route ──
+    // ── LADDER back → the screen that opened it ──
     BackHandler(enabled = currentRoute == Routes.LADDER && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        AuditLogger.getInstanceOrNull()?.backPress("ladder", "back_to_$previousRoute")
-        navController.navigate(previousRoute) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
-        if (previousRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
+        AuditLogger.getInstanceOrNull()?.backPress("ladder", "pop_back")
+        val opener = navController.previousBackStackEntry?.destination?.route
+        if (opener == Routes.TRAINING && state.cardSession.currentCard != null) {
             vm.resumeFromSettings()
         }
+        navController.popBackStack()
     }
 
-    // ── TRAINING with daily-practice return → cancel daily, go HOME ──
-    BackHandler(enabled = currentRoute == Routes.TRAINING && state.cardSession.returnTo == Routes.DAILY_PRACTICE && !showSettings) {
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        AuditLogger.getInstanceOrNull()?.backPress("training", "daily_cancel_to_home")
-        vm.cancelDailySession()
-        navController.navigate(Routes.HOME) {
-            popUpTo(Routes.HOME) { inclusive = true }
-            launchSingleTop = true
-        }
-    }
+    // (TRAINING with daily-practice return is handled by an inner BackHandler
+    // inside the TRAINING destination — see the comment above.)
 
-    // ── GRAMMAR_STORY_ROADMAP route back → HOME (clearActivePack) ──
-    // This route is only reached from STORY_READER.  Clear pack and go to HOME.
-    BackHandler(enabled = currentRoute == Routes.GRAMMAR_STORY_ROADMAP && !showSettings) {
-        Log.d("NavDebug", "BACK: GRAMMAR_STORY_ROADMAP → HOME (clearActivePack)")
-        ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
-        AuditLogger.getInstanceOrNull()?.backPress("grammar_story_roadmap", "clear_active_pack_to_home")
-        vm.clearActivePack()
-        navController.popBackStack(Routes.HOME, inclusive = false)
-    }
-
-    // ── STORY_READER back → GRAMMAR_STORY_ROADMAP or HOME ──
-    // STORY_READER is entered from either the HOME roadmap or the
-    // GRAMMAR_STORY_ROADMAP route.  Pop back to whichever is underneath.
+    // ── STORY_READER back → whatever launched it ──
+    // STORY_READER is entered from the HOME roadmap; pop back to it.
     BackHandler(enabled = currentRoute == Routes.STORY_READER && !showSettings) {
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         AuditLogger.getInstanceOrNull()?.backPress("story_reader", "pop_back")
         // Pop back one step — returns to whatever launched STORY_READER
-        // (HOME showing roadmap, or GRAMMAR_STORY_ROADMAP direct route).
-        // Also stop TTS if playing.
+        // (HOME showing roadmap). Also stop TTS if playing.
         vm.stopStoryNarration()
         vm.clearStoryReader()
         navController.popBackStack()
@@ -1388,7 +1320,8 @@ private fun TrainingScreenContent(
 private fun DailyPracticeScreenContent(
     state: TrainingUiState,
     vm: TrainingViewModel,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onNavigateResetStack: (String) -> Unit
 ) {
     val dailyState = state.daily.dailySession
     val currentBlock = vm.daily.getCurrentBlock()
@@ -1421,11 +1354,13 @@ private fun DailyPracticeScreenContent(
         } },
         onStopTts = remember { { vm.audio.stopTts() } },
         ttsState = state.audio.ttsState,
-        onExit = remember(onNavigate) { {
-            Log.d("GrammarMate", "DailyPractice: session exit, navigating HOME")
-            vm.cancelDailySession()
-            onNavigate(Routes.HOME)
-        } },
+        onExit = remember {
+            {
+                Log.d("GrammarMate", "DailyPractice: session exit, navigating HOME")
+                vm.cancelDailySession()
+                onNavigateResetStack(Routes.HOME)
+            }
+        },
         onComplete = remember { {
             // VOCAB block completed — signal coordinator to advance to next block
             val nextBlock = vm.daily.onBlockComplete()
@@ -1468,10 +1403,11 @@ private fun NavDialogs(
     vm: TrainingViewModel,
     dailyScope: kotlinx.coroutines.CoroutineScope,
     lastFinishedToken: androidx.compose.runtime.MutableState<Int>,
-    lastBossFinishedToken: androidx.compose.runtime.MutableState<Int>,
     completionNextAction: androidx.compose.runtime.MutableState<CompletionNextAction>,
     onDialogsChange: (DialogState) -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onNavigateResetStack: (String) -> Unit,
+    onNavigatePopTo: (String) -> Unit
 ) {
     // Welcome dialog trigger — only on HOME screen, only if attempts < 3.
     // Guard: languages must be non-empty to ensure init block has loaded the real
@@ -1519,11 +1455,16 @@ private fun NavDialogs(
 
     // TTS download dialog
     if (dialogs.showTtsDownloadDialog) {
-        if (state.audio.ttsDownloadState is DownloadState.Done) {
-            onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
-            vm.audio.dismissTtsDownloadDialog()
-            val text = state.cardSession.answerText ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
-            if (text != null) vm.audio.onTtsSpeak(text)
+        // Effect, not composition: level-triggered on dialog-open + download
+        // Done — runs on key change AND on first composition with the keys
+        // already set (dialog opened after Done), then starts playback once.
+        LaunchedEffect(dialogs.showTtsDownloadDialog, state.audio.ttsDownloadState) {
+            if (dialogs.showTtsDownloadDialog && state.audio.ttsDownloadState is DownloadState.Done) {
+                onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
+                vm.audio.dismissTtsDownloadDialog()
+                val text = state.cardSession.answerText ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
+                if (text != null) vm.audio.onTtsSpeak(text)
+            }
         }
         if (dialogs.showTtsDownloadDialog) {
             TtsDownloadDialog(
@@ -1556,40 +1497,21 @@ private fun NavDialogs(
         )
     }
 
-    // Sync lastFinishedToken when token is reset (new session started)
-    if (state.cardSession.subLessonFinishedToken < lastFinishedToken.value) {
-        lastFinishedToken.value = state.cardSession.subLessonFinishedToken
-    }
-
-    // Token-based navigation: sub-lesson finished — show completion dialog or auto-navigate
-    if (currentRoute == Routes.TRAINING && state.cardSession.subLessonFinishedToken != lastFinishedToken.value) {
-        lastFinishedToken.value = state.cardSession.subLessonFinishedToken
-        Log.d("NavDebug", "TOKEN_NAV: subLessonFinished, pomodoroComplete=${state.pomodoro.isComplete}, hasCards=${state.cardSession.currentCard != null}, returnTo=${state.cardSession.returnTo}")
-        // Pomodoro: track session completion for timer stats
-        vm.onTrainingSessionCompleted()
-        val hasCards = state.cardSession.currentCard != null
-
-        if (!state.pomodoro.isComplete && hasCards) {
-            val returnTo = state.cardSession.returnTo
-
-            // Special flows (daily practice, verb drill) — keep original auto-navigate behavior
-            if (returnTo == Routes.DAILY_PRACTICE) {
-                Log.d("GrammarMate", "DailyPractice: navigating after block, returnTo=DAILY_PRACTICE")
-                vm.daily.onBlockComplete()
-                Log.d("NavDebug", "TOKEN_NAV: → DAILY_PRACTICE")
-                onNavigate(returnTo)
-            } else if (isVerbDrillLikeReturn(returnTo)) {
-                Log.d("NavDebug", "TOKEN_NAV: → drill return $returnTo")
-                onNavigate(returnTo)
-            } else {
-                // Lesson-based training — compute what's next and show dialog
-                val nextAction = vm.computeCompletionNextAction()
-                Log.d("NavDebug", "TOKEN_NAV: completion dialog, nextAction=$nextAction")
-                completionNextAction.value = nextAction
-            }
+    // Token-based navigation, as an EFFECT keyed on the token (Phase 2, items
+    // 2.1/2.2): the key IS the edge detector (each distinct token fires once,
+    // resets resync the baseline); all decisions live in the ViewModel and
+    // travel to the UI only as one-shot NavigationEvents.
+    LaunchedEffect(state.cardSession.subLessonFinishedToken, currentRoute) {
+        val token = state.cardSession.subLessonFinishedToken
+        if (token < lastFinishedToken.value) {
+            // Session reset (token dropped) — resync the remembered baseline.
+            lastFinishedToken.value = token
+            return@LaunchedEffect
         }
-        // If !hasCards: SessionCompletionContent will render via TrainingScreen early-return
-        // User presses OK → onSessionDone → navigate HOME or DAILY_PRACTICE
+        if (token == lastFinishedToken.value) return@LaunchedEffect
+        lastFinishedToken.value = token
+        if (currentRoute != Routes.TRAINING) return@LaunchedEffect
+        vm.handleSubLessonFinished()
     }
 
     // Sub-lesson completion dialog
@@ -1706,11 +1628,8 @@ private fun NavDialogs(
         )
     }
 
-    // Token-based navigation: boss finished
-    if (currentRoute == Routes.TRAINING && state.boss.bossFinishedToken != lastBossFinishedToken.value) {
-        lastBossFinishedToken.value = state.boss.bossFinishedToken
-        onNavigate(Routes.LESSON)
-    }
+    // Boss-finished navigation now arrives as a NavigationEvent (see the
+    // single collector in GrammarMateApp) — no UI-side token bookkeeping.
 
     // Daily practice loading overlay
     if (dialogs.isLoadingDaily) {
@@ -1724,7 +1643,9 @@ private fun NavDialogs(
             state = state,
             vm = vm,
             onDismiss = { onDialogsChange(dialogs.copy(showExitDialog = false)) },
-            onNavigate = onNavigate
+            onNavigate = onNavigate,
+            onNavigateResetStack = onNavigateResetStack,
+            onNavigatePopTo = onNavigatePopTo
         )
     }
 
@@ -1861,7 +1782,9 @@ private fun ExitConfirmDialog(
     state: TrainingUiState,
     vm: TrainingViewModel,
     onDismiss: () -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onNavigateResetStack: (String) -> Unit = onNavigate,
+    onNavigatePopTo: (String) -> Unit = onNavigate
 ) {
     val isPomodoroActive = state.pomodoro.isActive
     val dialogTitle = when {
@@ -1883,22 +1806,23 @@ private fun ExitConfirmDialog(
                 AuditLogger.getInstanceOrNull()?.dialogAction("exit_confirm", "yes")
                 if (isPomodoroActive) {
                     vm.confirmPomodoroExit()
-                    onNavigate(Routes.HOME)
+                    onNavigateResetStack(Routes.HOME)
                     return@TextButton
                 }
                 if (currentRoute == Routes.DAILY_PRACTICE) {
                     vm.cancelDailySession()
-                    onNavigate(Routes.HOME)
+                    onNavigateResetStack(Routes.HOME)
                     return@TextButton
                 }
                 if (state.boss.bossActive) {
+                    // finishBoss() emits BossSessionFinished through the
+                    // navigation-event channel — the single navigation owner.
                     vm.finishBoss()
-                    onNavigate(Routes.LESSON)
                     return@TextButton
                 }
                 vm.finishSession()
                 Log.d("NavDebug", "EXIT_DIALOG: confirm exit → LESSON")
-                onNavigate(Routes.LESSON)
+                onNavigatePopTo(Routes.LESSON)
             }) {
                 Text(text = stringResource(R.string.dialog_exit_confirm))
             }

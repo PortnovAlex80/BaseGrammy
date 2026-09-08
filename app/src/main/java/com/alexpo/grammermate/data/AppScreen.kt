@@ -15,7 +15,9 @@ enum class AppScreen {
     TRAINING,
     LADDER,
     VERB_DRILL,
-    VOCAB_DRILL;
+    VOCAB_DRILL,
+    CHAPTER_LESSONS,
+    AUX_DRILL;
 
     companion object {
         fun parse(name: String): AppScreen =
