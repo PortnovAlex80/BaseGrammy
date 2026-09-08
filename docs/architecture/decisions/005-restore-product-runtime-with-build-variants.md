@@ -1,6 +1,6 @@
 # 005. Restore the complete product runtime with build variants
 
-- Status: accepted
+- Status: superseded by [006-drop-v2-single-runtime](006-drop-v2-single-runtime.md) (2026-09-08)
 - Date: 2026-08-28
 - Decision owner: repository maintainers
 

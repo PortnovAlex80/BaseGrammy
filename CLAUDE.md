@@ -8,7 +8,7 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 
 **What:** Android language learning app for RU→Target translation (English/Italian). Flower-growing metaphor for progress based on Ebbinghaus forgetting curve. Grammar Story Roadmap: chapter-based narrative learning with allegorical stories.
 
-**Stack:** Kotlin 1.9.22, Jetpack Compose (BOM 2024.02.00), Material 3, Android SDK 24–34, Java 17, SnakeYAML 2.2, Sherpa-ONNX (TTS/ASR)
+**Stack:** Kotlin 2.0.21, Jetpack Compose (BOM 2024.10.00), Material 3, Android SDK 24–34 (compileSdk 35), Java 17, SnakeYAML 2.2, Sherpa-ONNX (TTS/ASR)
 
 ---
 
