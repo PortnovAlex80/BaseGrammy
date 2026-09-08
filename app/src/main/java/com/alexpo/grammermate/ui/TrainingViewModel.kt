@@ -219,6 +219,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val _pomodoroHistory = MutableStateFlow<List<PomodoroHistoryEntry>>(emptyList())
     val pomodoroHistory: StateFlow<List<PomodoroHistoryEntry>> = _pomodoroHistory.asStateFlow()
 
+    // Last chosen pomodoro duration (pomodoro_settings.yaml read was the last
+    // per-composition disk hit on HOME). Seeded off-main at init, republished
+    // on startPomodoro.
+    private val _pomodoroLastDuration = MutableStateFlow(20)
+    val pomodoroLastDuration: StateFlow<Int> = _pomodoroLastDuration.asStateFlow()
+
     private fun refreshPackTiles() {
         val tiles = getPackTiles()
         if (_packTiles.value != tiles) _packTiles.value = tiles
@@ -239,6 +245,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val entries = _coreState.value.navigation.selectedLanguageId
             ?.let { pomodoroHistoryStore.loadAll(it.value) } ?: emptyList()
         if (_pomodoroHistory.value != entries) _pomodoroHistory.value = entries
+    }
+
+    /** Session resets zero cardSession.badSentenceCount — re-seed it for the
+     *  active pack (before Phase 1 the TRAINING screen recomputed it per
+     *  composition; the count also feeds the updateStreak threshold). */
+    private fun refreshBadSentenceCount() {
+        val packId = _coreState.value.navigation.activePackId?.value
+        val count = if (packId != null) badSentenceStore.getBadSentenceCount(packId) else 0
+        if (_coreState.value.cardSession.badSentenceCount != count) {
+            _coreState.update { it.copy(cardSession = it.cardSession.copy(badSentenceCount = count)) }
+        }
     }
 
     // ── Feature instances (declared before uiState combine chain) ──────────
@@ -467,6 +484,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun startPomodoro(durationMinutes: Int) {
         pomodoroSettingsStore.save(durationMinutes)
+        _pomodoroLastDuration.value = durationMinutes
         _pomodoroRemainingSeconds.value = durationMinutes * 60
         pomodoroHelper.startPomodoro(durationMinutes)
         AuditLogger.getInstanceOrNull()?.pomodoroStart(
@@ -534,7 +552,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun getPomodoroLastDuration(): Int {
-        return pomodoroSettingsStore.load()
+        return _pomodoroLastDuration.value
     }
 
     fun getPomodoroHistoryForSelectedLanguage() =
@@ -737,6 +755,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             // Warm the mastery cache off-main: later main-thread reads
             // (getForPack during composition-derived refreshes) hit memory only.
             masteryStore.loadAll()
+            _pomodoroLastDuration.value = pomodoroSettingsStore.load()
             eliteSizeMultiplier = config.eliteSizeMultiplier
             sessionSize = config.sessionSize
             cardProvider.setSubLessonSize(sessionSize)
@@ -1029,6 +1048,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         buildSessionCards()
         refreshFlowerStates()
         loadChapters()
+        refreshBadSentenceCount()
         saveProgress()
     }
 
@@ -1128,6 +1148,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             dailyPracticeCoordinator.initializeCursor()
             refreshDrillVisibility()
             loadChapters()
+            refreshBadSentenceCount()
             saveProgress()
         }
     }
@@ -1172,6 +1193,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         buildSessionCards()
+        refreshBadSentenceCount()
         saveProgress()
     }
 
@@ -1369,6 +1391,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             rebuildSchedules(filterLessonsForActivePack(lessons))
             buildSessionCards()
             loadChapters()
+            refreshPackTiles()
+            refreshBadSentenceCount()
             saveProgress()
         } catch (e: Exception) {
             Log.e(logTag, "Lesson pack import failed", e)
@@ -1478,6 +1502,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             refreshLessons(null)
         }
         _coreState.update { it.copy(navigation = it.navigation.copy(installedPacks = lessonStore.getInstalledPacks())) }
+        refreshPackTiles()
     }
 
     fun toggleTestMode() = handleSettingsResults(settingsActionHandler.toggleTestMode())
@@ -2310,6 +2335,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         rebuildSchedules(filterLessonsForActivePack(lessons))
         buildSessionCards()
         loadChapters() // reload chapter progress from disk (cleared after reset)
+        // Progress resets clear mastery on disk — derived data must follow
+        // (flowers/tiles/profile show pre-reset values otherwise).
+        refreshFlowerStates()
+        refreshProfileStats()
+        refreshBadSentenceCount()
         saveProgress()
     }
     private fun resetStores(app: Application) {

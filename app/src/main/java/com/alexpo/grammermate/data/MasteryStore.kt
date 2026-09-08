@@ -51,9 +51,11 @@ interface MasteryStore {
  * Хранилище состояний освоения уроков (mastery).
  * Сохраняет данные о показах карточек для каждого урока.
  *
- * Locking (Phase 1, plan item 1.6): [mutex] guards the in-memory cache ONLY —
- * it is never held across file I/O, so main-thread readers are not blocked by
- * a background writer's YAML dump. [fileMutex] serializes writers end-to-end
+ * Locking (Phase 1, plan item 1.6): [mutex] guards the in-memory cache and is
+ * never held across the YAML dump + file write; the one exception is the
+ * first-load disk read, which runs under [mutex] and is warmed off-main at
+ * ViewModel init. Main-thread cache readers are therefore not blocked by a
+ * background writer's file I/O. [fileMutex] serializes writers end-to-end
  * (mutate + persist) to keep write ordering deterministic; each persist
  * writes a complete snapshot, so last-write-wins is safe.
  */

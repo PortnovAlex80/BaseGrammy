@@ -388,6 +388,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         // not recomputed during composition.
                         val pomodoroHistory by vm.pomodoroHistory.collectAsStateWithLifecycle()
                         val packTiles by vm.packTiles.collectAsStateWithLifecycle()
+                        val pomodoroLastDuration by vm.pomodoroLastDuration.collectAsStateWithLifecycle()
                         val activePackId = state.navigation.activePackId?.value
                         val hasChapters = state.navigation.activePackHasChapters
 
@@ -546,7 +547,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     vm.startPomodoro(duration)
                                     onNavigate(Routes.LESSON)
                                 } },
-                                pomodoroLastDuration = vm.getPomodoroLastDuration(),
+                                pomodoroLastDuration = pomodoroLastDuration,
                                 pomodoroHistory = pomodoroHistory,
                                 packTiles = packTiles,
                                 onBackgroundVocab = remember { { onNavigate(Routes.BACKGROUND_VOCAB) } }
