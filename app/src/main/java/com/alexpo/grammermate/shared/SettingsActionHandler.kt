@@ -96,17 +96,19 @@ class SettingsActionHandler(
     fun setUiLanguage(code: String) {
         val safeCode = code.takeIf { it in listOf("system", "en", "ru") } ?: "system"
         configStore.save(configStore.load().copy(uiLanguage = safeCode))
+        stateAccess.updateState { it.copy(navigation = it.navigation.copy(uiLanguage = safeCode)) }
         applyLocale(safeCode)
         Log.d(logTag, "UI language set to: $safeCode")
     }
 
     fun setClickableWordHints(enabled: Boolean) {
         configStore.save(configStore.load().copy(clickableWordHints = enabled))
+        stateAccess.updateState { it.copy(navigation = it.navigation.copy(clickableWordHints = enabled)) }
         Log.d(logTag, "Clickable word hints set to: $enabled")
     }
 
     fun getClickableWordHints(): Boolean {
-        return configStore.load().clickableWordHints
+        return stateAccess.uiState.value.navigation.clickableWordHints
     }
 
     // ── Profile ─────────────────────────────────────────────────────────

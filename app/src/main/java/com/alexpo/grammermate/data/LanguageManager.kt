@@ -18,6 +18,13 @@ internal class LanguageManager(
     private val defaultPacks: List<DefaultPack>
 ) {
 
+    // Manifest reads are hit from composition (hasChapters → BackHandler).
+    // ConcurrentHashMap forbids null values, but an absent pack must cache
+    // "no manifest" too — hence the wrapper.
+    private val manifestCache = java.util.concurrent.ConcurrentHashMap<String, CachedManifest>()
+
+    private data class CachedManifest(val manifest: LessonPackManifest?)
+
     // ── Seed data ────────────────────────────────────────────────────────
 
     fun ensureSeedData() {
@@ -74,6 +81,7 @@ internal class LanguageManager(
                 if (packDir.exists()) packDir.deleteRecursively()
                 val drillsDir = File(baseDir, "drills/$packId")
                 if (drillsDir.exists()) drillsDir.deleteRecursively()
+                invalidateManifestCache(packId)
                 true
             } else {
                 false
@@ -219,9 +227,17 @@ internal class LanguageManager(
     }
 
     fun readInstalledPackManifest(packId: String): LessonPackManifest? {
+        manifestCache[packId]?.let { return it.manifest }
         val manifestFile = File(File(packsDir, packId), "manifest.json")
-        if (!manifestFile.exists()) return null
-        return runCatching { LessonPackManifest.fromJson(manifestFile.readText()) }.getOrNull()
+        val result = if (!manifestFile.exists()) null
+        else runCatching { LessonPackManifest.fromJson(manifestFile.readText()) }.getOrNull()
+        manifestCache[packId] = CachedManifest(result)
+        return result
+    }
+
+    /** Drop cached manifests; null clears everything (pack dirs were deleted). */
+    fun invalidateManifestCache(packId: String? = null) {
+        if (packId == null) manifestCache.clear() else manifestCache.remove(packId)
     }
 
     fun removePackEntry(packId: String): Boolean {
@@ -253,6 +269,7 @@ internal class LanguageManager(
                 if (packId != null) {
                     val dir = File(packsDir, packId)
                     if (dir.exists()) dir.deleteRecursively()
+                    invalidateManifestCache(packId)
                 }
             } else {
                 remaining.add(entry)
@@ -271,6 +288,7 @@ internal class LanguageManager(
                 // Remove old version of this pack
                 val dir = File(packsDir, packIdToRemove)
                 if (dir.exists()) dir.deleteRecursively()
+                invalidateManifestCache(packIdToRemove)
             } else {
                 remaining.add(entry)
             }

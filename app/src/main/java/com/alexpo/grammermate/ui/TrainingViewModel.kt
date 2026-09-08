@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import java.io.File
 import com.alexpo.grammermate.AppContainer
+import com.alexpo.grammermate.BuildConfig
 import com.alexpo.grammermate.GrammarMateApplication
 import com.alexpo.grammermate.data.GrammarChipStore
 import com.alexpo.grammermate.data.SubmitResult
@@ -199,6 +200,45 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 isActive = packIdStr == activePackId
             )
         }.sortedWith(compareBy({ it.languageId }, { it.displayName }))
+    }
+
+    // ── Derived data as state (Phase 1: no disk I/O during composition) ───
+    // These were imperative per-composition calls; they are now StateFlows
+    // refreshed on the events that actually change them, with equality-skip
+    // so unchanged refreshes emit nothing.
+
+    private val _packTiles = MutableStateFlow<List<PackTileUi>>(emptyList())
+    val packTiles: StateFlow<List<PackTileUi>> = _packTiles.asStateFlow()
+
+    private val _chapterCards = MutableStateFlow<List<ChapterCardUi>>(emptyList())
+    val chapterCards: StateFlow<List<ChapterCardUi>> = _chapterCards.asStateFlow()
+
+    private val _profileStats = MutableStateFlow(ProfileStats(0, 0, ""))
+    val profileStats: StateFlow<ProfileStats> = _profileStats.asStateFlow()
+
+    private val _pomodoroHistory = MutableStateFlow<List<PomodoroHistoryEntry>>(emptyList())
+    val pomodoroHistory: StateFlow<List<PomodoroHistoryEntry>> = _pomodoroHistory.asStateFlow()
+
+    private fun refreshPackTiles() {
+        val tiles = getPackTiles()
+        if (_packTiles.value != tiles) _packTiles.value = tiles
+    }
+
+    private fun refreshChapterCards() {
+        val cards = getChapterCards()
+        if (_chapterCards.value != cards) _chapterCards.value = cards
+    }
+
+    /** profileStats' CEFR scan parses vocab CSVs from disk — refresh only on
+     *  pack/language changes, not on every mastery update. */
+    private fun refreshProfileStats() {
+        _profileStats.value = getProfileStats()
+    }
+
+    private fun refreshPomodoroHistory() {
+        val entries = _coreState.value.navigation.selectedLanguageId
+            ?.let { pomodoroHistoryStore.loadAll(it.value) } ?: emptyList()
+        if (_pomodoroHistory.value != entries) _pomodoroHistory.value = entries
     }
 
     // ── Feature instances (declared before uiState combine chain) ──────────
@@ -419,7 +459,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     /** Public accessor for settings operations. */
     val settings: SettingsActionHandler get() = settingsActionHandler
     /** Current UI language setting for the settings screen selector. */
-    val currentUiLanguage: String get() = configStore.load().uiLanguage
+    val currentUiLanguage: String get() = _coreState.value.navigation.uiLanguage
     /** Current session size for the settings screen. */
     val currentSessionSize: Int get() = sessionSize
 
@@ -670,6 +710,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 wordsPerMinute = stats.wordsPerMinute
             )
         )
+        refreshPomodoroHistory()
     }
 
     init {
@@ -693,6 +734,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val progress = progressStore.load()
             val config = configStore.load()
             val profile = profileStore.load()
+            // Warm the mastery cache off-main: later main-thread reads
+            // (getForPack during composition-derived refreshes) hit memory only.
+            masteryStore.loadAll()
             eliteSizeMultiplier = config.eliteSizeMultiplier
             sessionSize = config.sessionSize
             cardProvider.setSubLessonSize(sessionSize)
@@ -737,7 +781,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
             withContext(Dispatchers.Main) {
                 _coreState.update {
-                    it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode), cardSession = it.cardSession.copy(sessionState = lessonProgress?.state ?: SessionState.PAUSED, currentIndex = lessonProgress?.currentIndex ?: 0, correctCount = lessonProgress?.correctCount ?: 0, incorrectCount = lessonProgress?.incorrectCount ?: 0, incorrectAttemptsForCard = lessonProgress?.incorrectAttemptsForCard ?: 0, activeTimeMs = lessonProgress?.activeTimeMs ?: 0L, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
+                    it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode, uiLanguage = config.uiLanguage, clickableWordHints = config.clickableWordHints), cardSession = it.cardSession.copy(sessionState = lessonProgress?.state ?: SessionState.PAUSED, currentIndex = lessonProgress?.currentIndex ?: 0, correctCount = lessonProgress?.correctCount ?: 0, incorrectCount = lessonProgress?.incorrectCount ?: 0, incorrectAttemptsForCard = lessonProgress?.incorrectAttemptsForCard ?: 0, activeTimeMs = lessonProgress?.activeTimeMs ?: 0L, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
                 }
                 // Initialize feature-owned state from persisted progress
                 bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
@@ -750,6 +794,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 buildSessionCards()
                 refreshFlowerStates()
                 loadChapters()
+                refreshProfileStats()
+                refreshPomodoroHistory()
                 if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE && _coreState.value.cardSession.currentCard != null) {
                     sessionRunner.resumeTimer()
                     (_coreState.value.cardSession.currentCard as? SentenceCard)?.let {
@@ -830,6 +876,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     buildSessionCards()
                     refreshFlowerStates()
                     loadChapters()
+                    refreshProfileStats()
+                    refreshPomodoroHistory()
                 }
             }
 
@@ -870,7 +918,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      */
     private fun refreshDrillVisibility() {
         val (verbDrill, vocabDrill) = computeDrillVisibility()
-        _coreState.update { it.copy(navigation = it.navigation.copy(hasVerbDrill = verbDrill, hasVocabDrill = vocabDrill)) }
+        val hasChapters = _coreState.value.navigation.activePackId
+            ?.let { lessonStore.hasChapters(it.value) } ?: false
+        _coreState.update {
+            it.copy(navigation = it.navigation.copy(
+                hasVerbDrill = verbDrill,
+                hasVocabDrill = vocabDrill,
+                activePackHasChapters = hasChapters
+            ))
+        }
     }
 
     fun selectLanguage(languageId: String) {
@@ -907,6 +963,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         buildSessionCards()
         refreshFlowerStates()
         loadChapters()
+        refreshProfileStats()
+        refreshPomodoroHistory()
         saveProgress()
         audioCoordinator.ttsModelManager.currentLanguageId = languageId
         audioCoordinator.checkTtsModel()
@@ -2061,7 +2119,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             updateChapterProgress(lessonId.value)
         }
     }
-    private fun refreshFlowerStates() = flowerRefresher.refreshFlowerStates()
+    private fun refreshFlowerStates() {
+        flowerRefresher.refreshFlowerStates()
+        // Pack tiles derive from the same mastery data as the flower display;
+        // mastery change is the shared trigger. Equality-skip inside keeps
+        // this cheap when nothing visible changed.
+        refreshPackTiles()
+    }
     private fun updateStreak(forcedPracticeType: PracticeType? = null) {
         // TASK-051: Streak only counts when session is "completed" (засчитанная УЕ).
         // Must have enough correct answers to cover non-bad cards.
@@ -2406,8 +2470,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val activePackId = _coreState.value.navigation.activePackId?.value ?: return emptyList()
         val selectedLanguageId = _coreState.value.navigation.selectedLanguageId?.value ?: return emptyList()
 
-        Log.d(logTag, "getChapterCards: activePackId=$activePackId, selectedLanguageId=$selectedLanguageId")
-
         if (!lessonStore.hasChapters(activePackId)) {
             return emptyList()
         }
@@ -2419,7 +2481,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         for (lessonId in lessonStore.getLessonIdsForPack(activePackId)) {
             val masteryState = masteryStore.getForPack(activePackId, lessonId) ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
             allLessonMasteryStates[lessonId] = masteryState
-            if (masteryState.uniqueCardShows > 0 || masteryState.intervalStepIndex > 0) {
+            if (BuildConfig.DEBUG && (masteryState.uniqueCardShows > 0 || masteryState.intervalStepIndex > 0)) {
                 Log.d(logTag, "getChapterCards: $lessonId -> uniqueShows=${masteryState.uniqueCardShows}, stepIndex=${masteryState.intervalStepIndex}")
             }
         }
@@ -2428,7 +2490,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             // Calculate progress LIVE from mastery data instead of relying on
             // chapterProgressStore which may be stale/empty on app start.
             val progress = ChapterProgressCalculator.calculateChapterProgress(chapter, allLessonMasteryStates)
-            Log.d(logTag, "getChapterCards: chapter=${chapter.chapterId} started=${progress.lessonsStarted} completed=${progress.lessonsCompleted}/${chapter.lessons.size}")
             val status = calculateChapterStatus(chapter, progress, allLessonMasteryStates, index)
 
             ChapterCardUi(
@@ -2580,6 +2641,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 activeChapterId = activeChapterId
             )
         }
+        refreshChapterCards()
     }
 
     /**
@@ -2656,6 +2718,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 )
             }
         }
+        refreshChapterCards()
     }
 
     /**

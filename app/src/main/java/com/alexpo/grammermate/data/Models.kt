@@ -461,6 +461,14 @@ data class NavigationState(
     val appVersion: String = "1.5",
     val hasVerbDrill: Boolean = false,
     val hasVocabDrill: Boolean = false,
+    /** True when the active pack's manifest declares chapters. Computed once
+     *  per pack change (refreshDrillVisibility) — reading the manifest from
+     *  composition (BackHandler enabled=…) re-parsed JSON every frame. */
+    val activePackHasChapters: Boolean = false,
+    /** Settings snapshot consumed by composition; mirrors AppConfig fields
+     *  so composables never hit AppConfigStore.load() (disk + YAML parse). */
+    val uiLanguage: String = "system",
+    val clickableWordHints: Boolean = true,
     val selectedChapter: Chapter? = null,
     val welcomeDialogAttempts: Int = 0,
     val themeMode: ThemeMode = ThemeMode.SYSTEM

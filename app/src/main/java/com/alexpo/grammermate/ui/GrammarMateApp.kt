@@ -371,8 +371,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onDismissParseWarning = vm::dismissParseWarning,
                     onConfirmPartialImport = vm::confirmPartialImport,
                     sessionSize = vm.currentSessionSize,
-                    clickableWordHints = vm.settings.getClickableWordHints(),
-                    uiLanguage = vm.currentUiLanguage,
+                    clickableWordHints = state.navigation.clickableWordHints,
+                    uiLanguage = state.navigation.uiLanguage,
                     languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId?.value ?: ""
                 )
 
@@ -384,17 +384,19 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         LaunchedEffect(Unit) {
                             ScreenLogger.screenShown("HOME")
                         }
+                        // VM-state slices (Phase 1): refreshed on their own events,
+                        // not recomputed during composition.
+                        val pomodoroHistory by vm.pomodoroHistory.collectAsStateWithLifecycle()
+                        val packTiles by vm.packTiles.collectAsStateWithLifecycle()
                         val activePackId = state.navigation.activePackId?.value
-                        val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                        val hasChapters = state.navigation.activePackHasChapters
 
                         if (hasChapters) {
-                            // Rebuild chapter cards when pack changes OR chapter progress updates.
-                            // Lightweight string key — only changes when actual progress values change,
-                            // not on every _coreState.update (timer, etc).
-                            val progressKey = state.chapterProgresses.values
-                                .sortedBy { it.chapterId }
-                                .joinToString(",") { "${it.chapterId}:${it.lessonsCompleted}/${it.lessonsStarted}" }
-                            val chapterCards = remember(activePackId, progressKey) { vm.getChapterCards() }
+                            // Chapter cards are VM state refreshed on pack switch
+                            // and chapter-progress updates (was: imperative call +
+                            // remember keyed on a progress string — disk read on
+                            // every key change, per-composition before Phase 1).
+                            val chapterCards by vm.chapterCards.collectAsStateWithLifecycle()
                             GrammarStoryRoadmapScreen(
                                 chapters = chapterCards,
                                 onBack = remember {
@@ -545,8 +547,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     onNavigate(Routes.LESSON)
                                 } },
                                 pomodoroLastDuration = vm.getPomodoroLastDuration(),
-                                pomodoroHistory = vm.getPomodoroHistoryForSelectedLanguage(),
-                                packTiles = vm.getPackTiles(),
+                                pomodoroHistory = pomodoroHistory,
+                                packTiles = packTiles,
                                 onBackgroundVocab = remember { { onNavigate(Routes.BACKGROUND_VOCAB) } }
                             )
                         }
@@ -557,8 +559,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             state = state,
                             onBack = remember(state.navigation.activePackId) {
                                 {
-                                    val activePackId = state.navigation.activePackId?.value
-                                    val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                                    val hasChapters = state.navigation.activePackHasChapters
                                     Log.d("NavDebug", "LESSON onBack: hasChapters=$hasChapters")
                                     if (hasChapters) {
                                         // Restore selectedChapter so CHAPTER_LESSONS doesn't show spinner
@@ -612,8 +613,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         // Inner BackHandler — has higher priority than NavController's internal
                         // handler, so system back gesture works correctly on Android 14+.
                         // Uses the same logic as the UI back button (onNavigate).
-                        val lessonActivePackId = state.navigation.activePackId?.value
-                        val lessonHasChapters = lessonActivePackId != null && vm.hasPackChapters(lessonActivePackId)
+                        val lessonHasChapters = state.navigation.activePackHasChapters
                         BackHandler(enabled = !dialogs.showSettings) {
                             Log.d("NavDebug", "BACK: LESSON inner handler, hasChapters=$lessonHasChapters")
                             ScreenLogger.nav("lesson", "BACK", trigger = "back_press")
@@ -785,8 +785,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             onNavigate(Routes.CHAPTER_LESSONS)
                                         }
                                         returnTo == Routes.LESSON -> {
-                                            val activePackId = state.navigation.activePackId?.value
-                                            val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                                            val hasChapters = state.navigation.activePackHasChapters
                                             Log.d("NavDebug", "SESSION_DONE: returnTo=LESSON, hasChapters=$hasChapters")
                                             if (hasChapters) {
                                                 Log.d("NavDebug", "SESSION_DONE: → CHAPTER_LESSONS (chapter pack)")
@@ -935,11 +934,10 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.GRAMMAR_STORY_ROADMAP) {
-                        val progressKey = state.chapterProgresses.values
-                            .sortedBy { it.chapterId }
-                            .joinToString(",") { "${it.chapterId}:${it.lessonsCompleted}/${it.lessonsStarted}" }
+                        // Chapter cards are VM state (Phase 1) — no remember/progressKey needed.
+                        val chapterCards by vm.chapterCards.collectAsStateWithLifecycle()
                         GrammarStoryRoadmapScreen(
-                            chapters = remember(state.navigation.activePackId?.value, progressKey) { vm.getChapterCards() },
+                            chapters = chapterCards,
                             onBack = remember { { vm.clearActivePack(); navController.popBackStack(Routes.HOME, inclusive = false) } },
                             showBackButton = true,  // Show back button when accessed via direct route
                             onReadStory = remember { { chapter ->
@@ -1216,7 +1214,7 @@ private fun NavBackHandlers(
     // ── HOME with chapters pack back → clear pack, stay on HOME ──
     // When HOME renders GrammarStoryRoadmapScreen (active chapters pack),
     // back should clear the pack and show pack selection (also on HOME).
-    BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && vm.hasPackChapters(state.navigation.activePackId.value) && !showSettings) {
+    BackHandler(enabled = currentRoute == Routes.HOME && state.navigation.activePackId != null && state.navigation.activePackHasChapters && !showSettings) {
         Log.d("NavDebug", "BACK: HOME+chapters → clearActivePack")
         ScreenLogger.nav(currentRoute ?: "?", "BACK", trigger = "back_press")
         AuditLogger.getInstanceOrNull()?.backPress("home", "clear_active_pack")
@@ -1361,7 +1359,7 @@ private fun TrainingScreenContent(
         onExportBadSentences = vm.reports::exportBadSentences,
         isBadSentence = vm.reports::isBadSentence,
         onClearBadSentences = vm::clearPackBadSentences,
-        badSentenceCount = vm.reports.getBadSentenceCount(),
+        badSentenceCount = state.cardSession.badSentenceCount,
         onStartOfflineRecognition = vm::startOfflineRecognition,
         hintLevel = hintLevel,
         onPausePomodoro = vm::pausePomodoro,
@@ -1374,7 +1372,7 @@ private fun TrainingScreenContent(
         onSessionDone = onSessionDone,
         getTenseInfo = getTenseInfo,
         pomodoroRemainingSeconds = pomodoroRemainingSeconds,
-        clickableWordHints = vm.settings.getClickableWordHints(),
+        clickableWordHints = state.navigation.clickableWordHints,
         baseDir = LocalContext.current.filesDir,
         grammarChip = grammarChip,
         lessonTitle = lessonTitle,
@@ -1506,7 +1504,9 @@ private fun NavDialogs(
 
     // Profile stats popup
     if (dialogs.showProfileStats) {
-        val profileStats = remember { vm.getProfileStats() }
+        // VM state (Phase 1) — refreshed on pack/language changes; the old
+        // unkeyed remember froze the first-ever snapshot forever.
+        val profileStats by vm.profileStats.collectAsStateWithLifecycle()
         ProfileStatsPopup(
             userName = state.navigation.userName,
             cardsCompleted = profileStats.cardsCompleted,
@@ -1610,8 +1610,7 @@ private fun NavDialogs(
             onDismissRequest = {
                 completionNextAction.value = CompletionNextAction.NONE
                 // Exit: navigate back to lesson list
-                val activePackId = state.navigation.activePackId?.value
-                val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                val hasChapters = state.navigation.activePackHasChapters
                 if (returnTo == Routes.CHAPTER_LESSONS || hasChapters) {
                     onNavigate(Routes.CHAPTER_LESSONS)
                 } else {
@@ -1656,7 +1655,7 @@ private fun NavDialogs(
                         CompletionNextAction.NEXT_LESSON -> {
                             // Find and start next lesson in chapter/pack
                             val activePackId = state.navigation.activePackId?.value
-                            val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                            val hasChapters = state.navigation.activePackHasChapters
                             val currentLessonId = state.navigation.selectedLessonId
 
                             if (hasChapters) {
@@ -1693,8 +1692,7 @@ private fun NavDialogs(
                     ScreenLogger.tap("completion_exit")
                     AuditLogger.getInstanceOrNull()?.dialogClose("completion", "exit")
                     // Navigate back to lesson list
-                    val activePackId = state.navigation.activePackId?.value
-                    val hasChapters = activePackId != null && vm.hasPackChapters(activePackId)
+                    val hasChapters = state.navigation.activePackHasChapters
                     if (returnTo == Routes.CHAPTER_LESSONS || hasChapters) {
                         onNavigate(Routes.CHAPTER_LESSONS)
                     } else {

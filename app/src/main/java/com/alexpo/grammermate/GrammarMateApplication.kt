@@ -1,6 +1,7 @@
 package com.alexpo.grammermate
 
 import android.app.Application
+import android.os.StrictMode
 import com.alexpo.grammermate.shared.AuditLogger
 
 /**
@@ -14,6 +15,18 @@ class GrammarMateApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) {
+            // Phase 1 regression guard: main-thread disk I/O must stay out of
+            // composition. penaltyLog only — never penaltyDeath, so Robolectric
+            // tests instantiating this Application cannot fail on violations.
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .penaltyLog()
+                    .build()
+            )
+        }
         AuditLogger.initialize(this)
         AuditLogger.getInstance().startSession(appVersion = "1.7")
     }

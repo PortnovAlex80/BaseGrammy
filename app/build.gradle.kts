@@ -66,6 +66,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true               // BuildConfig.DEBUG guards for hot-path logging + StrictMode
     }
     // No composeOptions block: Kotlin 2.0 uses the Compose Gradle plugin above.
     packaging {

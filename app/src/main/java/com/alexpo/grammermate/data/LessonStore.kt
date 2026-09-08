@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.alexpo.grammermate.BuildConfig
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
@@ -230,18 +231,32 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun ensureSeedData() = languageManager.ensureSeedData()
 
-    override fun seedDefaultPacksIfNeeded(): Boolean = languageManager.seedDefaultPacksIfNeeded { path ->
-        packImporter.importPackFromAssets(path)
-        true
+    /** Drop every pack-derived cache (lessons + manifests) after pack mutations. */
+    private fun invalidatePackCaches() {
+        invalidateLessonsCache()
+        languageManager.invalidateManifestCache()
     }
 
-    override fun updateDefaultPacksIfNeeded(): Boolean = languageManager.updateDefaultPacksIfNeeded(
-        importFromAssets = { path ->
+    override fun seedDefaultPacksIfNeeded(): Boolean {
+        val seeded = languageManager.seedDefaultPacksIfNeeded { path ->
             packImporter.importPackFromAssets(path)
             true
-        },
-        readManifestFromAssets = { path -> packImporter.readPackManifestFromAssets(path) }
-    )
+        }
+        if (seeded) invalidatePackCaches()
+        return seeded
+    }
+
+    override fun updateDefaultPacksIfNeeded(): Boolean {
+        val updated = languageManager.updateDefaultPacksIfNeeded(
+            importFromAssets = { path ->
+                packImporter.importPackFromAssets(path)
+                true
+            },
+            readManifestFromAssets = { path -> packImporter.readPackManifestFromAssets(path) }
+        )
+        if (updated) invalidatePackCaches()
+        return updated
+    }
 
     override fun forceReloadDefaultPacks(): Boolean {
         val result = languageManager.forceReloadDefaultPacks(
@@ -251,7 +266,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
                 true
             }
         )
-        if (result) invalidateLessonsCache()
+        if (result) invalidatePackCaches()
         return result
     }
 
@@ -318,6 +333,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         ensureSeedData()
         val pack = packImporter.importPackFromUri(uri, resolver)
         invalidateLessonsCache()
+        languageManager.invalidateManifestCache(pack.packId.value)
         return pack
     }
 
@@ -325,6 +341,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         ensureSeedData()
         val pack = packImporter.importPackFromAssets(assetPath)
         invalidateLessonsCache()
+        languageManager.invalidateManifestCache(pack.packId.value)
         return pack
     }
 
@@ -352,6 +369,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             removedEntry || removedDir
         }
         invalidateLessonsCache()
+        languageManager.invalidateManifestCache(packId)
         return result
     }
 
@@ -706,8 +724,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     override fun getChapters(packId: String): List<Chapter> {
         val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
         val chapters = manifest.chapters.sortedBy { it.order }
-        Log.d("LessonStore", "getChapters($packId): returning ${chapters.size} chapters")
-        chapters.forEach { Log.d("LessonStore", "  - ${it.chapterId}: ${it.title}") }
+        if (BuildConfig.DEBUG) {
+            Log.d("LessonStore", "getChapters($packId): returning ${chapters.size} chapters")
+            chapters.forEach { Log.d("LessonStore", "  - ${it.chapterId}: ${it.title}") }
+        }
         return chapters
     }
 

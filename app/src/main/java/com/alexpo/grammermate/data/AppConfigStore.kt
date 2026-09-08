@@ -42,6 +42,12 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "config.yaml")
 
+    // load() is called from composition (uiLanguage, clickableWordHints);
+    // the YAML re-read per call was the per-recomposition disk hit.
+    // Per-instance on purpose: Robolectric tests build fresh stores and
+    // must not observe each other's config.
+    @Volatile private var cachedConfig: AppConfig? = null
+
     override fun save(config: AppConfig) {
         baseDir.mkdirs()
         val payload = mapOf(
@@ -64,6 +70,7 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
         try {
             AtomicFileWriter.writeText(file, yaml.dump(payload))
             Log.i("AppConfigStore", "Successfully saved app config: ${file.name} (${file.length()} bytes)")
+            cachedConfig = config
         } catch (e: IOException) {
             Log.e("AppConfigStore", "Failed to save app config: ${file.name}", e)
             throw e
@@ -74,6 +81,13 @@ class AppConfigStoreImpl(private val context: Context) : AppConfigStore {
     }
 
     override fun load(): AppConfig {
+        cachedConfig?.let { return it }
+        val loaded = loadFromDisk()
+        cachedConfig = loaded
+        return loaded
+    }
+
+    private fun loadFromDisk(): AppConfig {
         if (!file.exists()) {
             baseDir.mkdirs()
             val seeded = runCatching {

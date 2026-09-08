@@ -2,6 +2,7 @@ package com.alexpo.grammermate.data
 
 import android.content.Context
 import android.util.Log
+import com.alexpo.grammermate.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -169,7 +170,6 @@ object GrammarChipStore {
     fun getChipForLesson(lessonId: String, packId: String? = null): GrammarChip? {
         if (!initialized) {
             Log.w(TAG, "GrammarChipStore not initialized yet! Cannot get chip for lesson: $lessonId")
-            Log.d(TAG, "Cache size: ${cache.size}, Mappings size: ${lessonToChipFile.size}")
             return null
         }
 
@@ -181,19 +181,15 @@ object GrammarChipStore {
         }
 
         if (mapping == null) {
-            Log.d(TAG, "No grammar chip mapping for lesson: $lessonId (packId=$packId)")
-            Log.d(TAG, "Available mappings: ${lessonToChipFile.keys.take(10)}...")
+            if (BuildConfig.DEBUG) Log.d(TAG, "No grammar chip mapping for lesson: $lessonId (packId=$packId)")
             return null
         }
 
         val (resolvedPackId, chipFile) = mapping
-        Log.d(TAG, "Found mapping for $lessonId -> $resolvedPackId/$chipFile")
 
         // Extract chip number from filename and get key
         val chipNumber = chipFile.removePrefix("grammar_chip_").removeSuffix(".json")
         val chipKey = getChipKeyFromNumber(chipNumber)
-
-        Log.d(TAG, "Looking for chip with key: $chipKey (from file: $chipFile, lesson: $lessonId, pack: $resolvedPackId)")
 
         // Pack-scoped lookup with case fallbacks
         val chip = cache[packChipKey(resolvedPackId, chipKey)]
@@ -202,10 +198,6 @@ object GrammarChipStore {
 
         if (chip == null) {
             Log.w(TAG, "Chip not found in cache for key: $chipKey (pack: $resolvedPackId)")
-            Log.d(TAG, "Available keys in cache: ${cache.keys.take(10)}...")
-            Log.d(TAG, "Total cache size: ${cache.size}")
-        } else {
-            Log.d(TAG, "Successfully loaded chip: ${chip.key} (for lesson: $lessonId, pack: $resolvedPackId)")
         }
 
         return chip

@@ -50,12 +50,19 @@ interface MasteryStore {
 /**
  * Хранилище состояний освоения уроков (mastery).
  * Сохраняет данные о показах карточек для каждого урока.
+ *
+ * Locking (Phase 1, plan item 1.6): [mutex] guards the in-memory cache ONLY —
+ * it is never held across file I/O, so main-thread readers are not blocked by
+ * a background writer's YAML dump. [fileMutex] serializes writers end-to-end
+ * (mutate + persist) to keep write ordering deterministic; each persist
+ * writes a complete snapshot, so last-write-wins is safe.
  */
 class MasteryStoreImpl(private val context: Context) : MasteryStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "mastery.yaml")
     private val mutex = ReentrantLock()
+    private val fileMutex = ReentrantLock()
 
     // Кеш для быстрого доступа
     private var cache: MutableMap<String, MutableMap<String, LessonMasteryState>> = mutableMapOf()
@@ -132,113 +139,106 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     override fun getForPack(packId: String, lessonId: String): LessonMasteryState? {
         loadAll()
         val packKey = "pack:$packId"
-        return cache[packKey]?.get(lessonId)
+        return mutex.withLock { cache[packKey]?.get(lessonId) }
     }
 
     /**
      * Pack-scoped save. Stores mastery under "pack:{packId}" key.
      */
-    override fun saveForPack(state: LessonMasteryState, packId: String) = mutex.withLock {
-        loadAllInternal()
-
-        val packKey = "pack:$packId"
-        if (!cache.containsKey(packKey)) {
-            cache[packKey] = mutableMapOf()
+    override fun saveForPack(state: LessonMasteryState, packId: String) = fileMutex.withLock {
+        mutex.withLock {
+            loadAllInternal()
+            cache.getOrPut("pack:$packId") { mutableMapOf() }[state.lessonId.value] = state
         }
-        cache[packKey]!![state.lessonId.value] = state
-
-        persistToFile()
+        persistToFileLocked()
     }
 
     /**
      * Pack-scoped card show recording. Stores under "pack:{packId}" key.
      */
-    override fun recordCardShowForPack(packId: String, lessonId: String, cardId: String) = mutex.withLock {
-        loadAllInternal()
+    override fun recordCardShowForPack(packId: String, lessonId: String, cardId: String) = fileMutex.withLock {
+        mutex.withLock {
+            loadAllInternal()
 
-        val packKey = "pack:$packId"
-        val existing = cache[packKey]?.get(lessonId)
-        val now = System.currentTimeMillis()
+            val packKey = "pack:$packId"
+            val existing = cache[packKey]?.get(lessonId)
+            val now = System.currentTimeMillis()
 
-        val isNewCard = existing?.shownCardIds?.contains(cardId) != true
-        val newShownCardIds = (existing?.shownCardIds ?: emptySet()) + cardId
+            val isNewCard = existing?.shownCardIds?.contains(cardId) != true
+            val newShownCardIds = (existing?.shownCardIds ?: emptySet()) + cardId
 
-        val daysSinceLastShow = if (existing?.lastShowDateMs != null && existing.lastShowDateMs > 0) {
-            ((now - existing.lastShowDateMs) / (24 * 60 * 60 * 1000)).toInt()
-        } else {
-            0
-        }
-
-        val currentStep = existing?.intervalStepIndex ?: 0
-        val wasOnTime = SpacedRepetitionConfig.wasRepetitionOnTime(daysSinceLastShow, currentStep)
-        val newStep = if (existing != null && daysSinceLastShow > 0) {
-            SpacedRepetitionConfig.nextIntervalStep(currentStep, wasOnTime)
-        } else {
-            currentStep
-        }
-
-        // Use packId-derived language from existing state, or empty placeholder
-        val languageId = existing?.languageId?.value ?: ""
-        val updated = LessonMasteryState(
-            lessonId = LessonId(lessonId),
-            languageId = LanguageId(languageId),
-            uniqueCardShows = if (isNewCard) {
-                (existing?.uniqueCardShows ?: 0) + 1
+            val daysSinceLastShow = if (existing?.lastShowDateMs != null && existing.lastShowDateMs > 0) {
+                ((now - existing.lastShowDateMs) / (24 * 60 * 60 * 1000)).toInt()
             } else {
-                existing?.uniqueCardShows ?: 0
-            },
-            totalCardShows = (existing?.totalCardShows ?: 0) + 1,
-            lastShowDateMs = now,
-            intervalStepIndex = newStep,
-            completedAtMs = existing?.completedAtMs,
-            shownCardIds = newShownCardIds
-        )
+                0
+            }
 
-        if (!cache.containsKey(packKey)) {
-            cache[packKey] = mutableMapOf()
+            val currentStep = existing?.intervalStepIndex ?: 0
+            val wasOnTime = SpacedRepetitionConfig.wasRepetitionOnTime(daysSinceLastShow, currentStep)
+            val newStep = if (existing != null && daysSinceLastShow > 0) {
+                SpacedRepetitionConfig.nextIntervalStep(currentStep, wasOnTime)
+            } else {
+                currentStep
+            }
+
+            // Use packId-derived language from existing state, or empty placeholder
+            val languageId = existing?.languageId?.value ?: ""
+            val updated = LessonMasteryState(
+                lessonId = LessonId(lessonId),
+                languageId = LanguageId(languageId),
+                uniqueCardShows = if (isNewCard) {
+                    (existing?.uniqueCardShows ?: 0) + 1
+                } else {
+                    existing?.uniqueCardShows ?: 0
+                },
+                totalCardShows = (existing?.totalCardShows ?: 0) + 1,
+                lastShowDateMs = now,
+                intervalStepIndex = newStep,
+                completedAtMs = existing?.completedAtMs,
+                shownCardIds = newShownCardIds
+            )
+
+            cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        cache[packKey]!![updated.lessonId.value] = updated
-        persistToFile()
+        persistToFileLocked()
     }
 
     /**
      * Pack-scoped card progress marking. Stores under "pack:{packId}" key.
      */
-    override fun markCardsShownForProgressForPack(packId: String, lessonId: String, cardIds: Collection<String>) = mutex.withLock {
-        loadAllInternal()
-        if (cardIds.isEmpty()) return
+    override fun markCardsShownForProgressForPack(packId: String, lessonId: String, cardIds: Collection<String>) = fileMutex.withLock {
+        mutex.withLock {
+            loadAllInternal()
+            if (cardIds.isEmpty()) return
 
-        val packKey = "pack:$packId"
-        val existing = cache[packKey]?.get(lessonId) ?: LessonMasteryState(
-            lessonId = LessonId(lessonId),
-            languageId = LanguageId("")
-        )
-        val updated = existing.copy(shownCardIds = existing.shownCardIds + cardIds)
+            val packKey = "pack:$packId"
+            val existing = cache[packKey]?.get(lessonId) ?: LessonMasteryState(
+                lessonId = LessonId(lessonId),
+                languageId = LanguageId("")
+            )
+            val updated = existing.copy(shownCardIds = existing.shownCardIds + cardIds)
 
-        if (!cache.containsKey(packKey)) {
-            cache[packKey] = mutableMapOf()
+            cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        cache[packKey]!![updated.lessonId.value] = updated
-        persistToFile()
+        persistToFileLocked()
     }
 
     /**
      * Pack-scoped lesson completion marking. Stores under "pack:{packId}" key.
      */
-    override fun markLessonCompletedForPack(packId: String, lessonId: String) = mutex.withLock {
-        loadAllInternal()
-        val packKey = "pack:$packId"
-        val existing = cache[packKey]?.get(lessonId) ?: return
+    override fun markLessonCompletedForPack(packId: String, lessonId: String) = fileMutex.withLock {
+        mutex.withLock {
+            loadAllInternal()
+            val packKey = "pack:$packId"
+            val existing = cache[packKey]?.get(lessonId) ?: return
 
-        if (existing.completedAtMs != null) return
+            if (existing.completedAtMs != null) return
 
-        val updated = existing.copy(completedAtMs = System.currentTimeMillis())
+            val updated = existing.copy(completedAtMs = System.currentTimeMillis())
 
-        if (!cache.containsKey(packKey)) {
-            cache[packKey] = mutableMapOf()
+            cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        cache[packKey]!![updated.lessonId.value] = updated
-        persistToFile()
+        persistToFileLocked()
     }
 
     /**
@@ -255,23 +255,23 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
      * Pack-scoped card encounter tracking. Returns new encounter count.
      * Stores under "pack:{packId}" key.
      */
-    override fun recordCardEncounterForPack(packId: String, lessonId: String, cardId: String): Int = mutex.withLock {
-        loadAllInternal()
-        val packKey = "pack:$packId"
-        val existing = cache[packKey]?.get(lessonId) ?: LessonMasteryState(
-            lessonId = LessonId(lessonId),
-            languageId = LanguageId("")
-        )
-        val currentCount = existing.cardEncounterCounts[cardId] ?: 0
-        val newCount = currentCount + 1
-        val updated = existing.copy(
-            cardEncounterCounts = existing.cardEncounterCounts + (cardId to newCount)
-        )
-        if (!cache.containsKey(packKey)) {
-            cache[packKey] = mutableMapOf()
+    override fun recordCardEncounterForPack(packId: String, lessonId: String, cardId: String): Int = fileMutex.withLock {
+        val newCount = mutex.withLock {
+            loadAllInternal()
+            val packKey = "pack:$packId"
+            val existing = cache[packKey]?.get(lessonId) ?: LessonMasteryState(
+                lessonId = LessonId(lessonId),
+                languageId = LanguageId("")
+            )
+            val currentCount = existing.cardEncounterCounts[cardId] ?: 0
+            val nextCount = currentCount + 1
+            val updated = existing.copy(
+                cardEncounterCounts = existing.cardEncounterCounts + (cardId to nextCount)
+            )
+            cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
+            nextCount
         }
-        cache[packKey]!![updated.lessonId.value] = updated
-        persistToFile()
+        persistToFileLocked()
         newCount
     }
 
@@ -281,15 +281,17 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     override fun getCardEncounterCountForPack(packId: String, lessonId: String, cardId: String): Int {
         loadAll()
         val packKey = "pack:$packId"
-        return cache[packKey]?.get(lessonId)?.cardEncounterCounts?.get(cardId) ?: 0
+        return mutex.withLock { cache[packKey]?.get(lessonId)?.cardEncounterCounts?.get(cardId) } ?: 0
     }
 
     /**
      * Очистить все данные.
      */
-    override fun clear() = mutex.withLock {
-        cache.clear()
-        cacheLoaded = true
+    override fun clear() = fileMutex.withLock {
+        mutex.withLock {
+            cache.clear()
+            cacheLoaded = true
+        }
         if (file.exists()) {
             file.delete()
         }
@@ -298,22 +300,44 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     /**
      * Pack-scoped clear: removes all mastery data for a given pack.
      */
-    override fun clearPack(packId: String) = mutex.withLock {
-        loadAllInternal()
-        cache.remove("pack:$packId")
-        persistToFile()
+    override fun clearPack(packId: String) = fileMutex.withLock {
+        mutex.withLock {
+            loadAllInternal()
+            cache.remove("pack:$packId")
+        }
+        persistToFileLocked()
     }
 
     /**
      * Flush any pending dirty data to disk immediately.
-     * No-op: writes are now immediate (no write-behind batching).
-     * Kept for API compatibility.
+     * No-op: writes are synchronous within each mutation (serialized by
+     * fileMutex). Kept for API compatibility with lifecycle call sites.
      */
     override fun flush() {
-        // No-op: writes are immediate now
+        // No-op: writes are synchronous now
     }
 
-    private fun persistToFile() {
+    /**
+     * Persist the current cache snapshot. Caller must hold [fileMutex];
+     * [mutex] is taken only to build the payload (memory-only) and released
+     * before the YAML dump + file write.
+     */
+    private fun persistToFileLocked() {
+        val data = mutex.withLock { buildPersistPayload() }
+
+        try {
+            AtomicFileWriter.writeText(file, yaml.dump(data))
+            Log.i("MasteryStore", "Successfully persisted mastery data: ${file.name} (${file.length()} bytes)")
+        } catch (e: IOException) {
+            Log.e("MasteryStore", "Failed to persist mastery data: ${file.name}", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("MasteryStore", "Unexpected error persisting mastery data: ${file.name}", e)
+            throw IOException("Failed to persist mastery data", e)
+        }
+    }
+
+    private fun buildPersistPayload(): LinkedHashMap<String, Any> {
         val payload = linkedMapOf<String, Any>()
 
         for ((languageId, lessonMap) in cache) {
@@ -334,20 +358,9 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             payload[languageId] = lessonsPayload
         }
 
-        val data = linkedMapOf(
+        return linkedMapOf(
             "schemaVersion" to 2,
             "data" to payload
         )
-
-        try {
-            AtomicFileWriter.writeText(file, yaml.dump(data))
-            Log.i("MasteryStore", "Successfully persisted mastery data: ${file.name} (${file.length()} bytes)")
-        } catch (e: IOException) {
-            Log.e("MasteryStore", "Failed to persist mastery data: ${file.name}", e)
-            throw e
-        } catch (e: Exception) {
-            Log.e("MasteryStore", "Unexpected error persisting mastery data: ${file.name}", e)
-            throw IOException("Failed to persist mastery data", e)
-        }
     }
 }
