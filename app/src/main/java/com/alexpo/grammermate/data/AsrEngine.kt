@@ -326,6 +326,13 @@ class AsrEngine(private val context: Context) {
                 Log.d(TAG, "ASR result received (lang=$currentLanguage)")
                 _state.value = AsrState.READY
                 text
+            } catch (e: SecurityException) {
+                // RECORD_AUDIO rejected by the user: AudioRecord construction
+                // throws SecurityException before any recording starts.
+                Log.e(TAG, "Recording permission denied", e)
+                errorMessage = "Recording permission denied: ${e.message}"
+                _state.value = AsrState.ERROR
+                ""
             } catch (e: Throwable) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 Log.e(TAG, "Recording/transcription failed", e)
