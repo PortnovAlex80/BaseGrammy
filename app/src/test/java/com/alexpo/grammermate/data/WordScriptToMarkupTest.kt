@@ -160,7 +160,7 @@ class WordScriptToMarkupTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — round-trip segment count drift: expected 10, got 12 (legacy-test-quarantine.md)")
+
     fun roundTrip_parsesToExpectedItRuAlternation() {
         val ws = script(
             sentences = listOf(
@@ -170,8 +170,10 @@ class WordScriptToMarkupTest {
 
         val segments = MultilingualStoryParser.parseSegments(ws.toMarkup(), defaultLanguageId = "it")
 
-        // 5 it/ru text runs + 5 pauses = 10 segments.
-        assertEquals(10, segments.size)
+        // word pairs (4 runs + 4 pauses) + sentence pair (it + ru runs with
+        // their pauses) = 12 segments — the sentence's RU half is part of
+        // the markup (pinned by twoSentences_matchesExactExpectedMarkup).
+        assertEquals(12, segments.size)
         assertEquals(Segment.Text("casa", "it"), segments[0])
         assertEquals(Segment.Pause(300L), segments[1])
         assertEquals(Segment.Text("дом, жилище", "ru"), segments[2])
@@ -182,5 +184,7 @@ class WordScriptToMarkupTest {
         assertEquals(Segment.Pause(500L), segments[7])
         assertEquals(Segment.Text("Ogni sera torno a casa.", "it"), segments[8])
         assertEquals(Segment.Pause(400L), segments[9])
+        assertEquals(Segment.Text("Каждый вечер я возвращаюсь домой.", "ru"), segments[10])
+        assertEquals(Segment.Pause(400L), segments[11])
     }
 }

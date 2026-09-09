@@ -17,11 +17,12 @@ object Normalizer {
         val builder = StringBuilder()
         for (ch in lower) {
             when (ch) {
-                '\'', '`', '´', '’', '‘', '.', ',', '?', '!', ':', ';', '"', '<', '>', '(', ')', '[', ']', '{', '}' -> {
-                    // Skip punctuation and apostrophe variants.
-                }
-                '-' -> {
-                    builder.append(ch)
+                // Spec (legacy-project-idea: "апостроф внутри слова сохраняется",
+                // don't ≠ dont): apostrophes are MEANINGFUL — normalize all
+                // typographic variants to ASCII and keep them.
+                '\'', '`', '´', '’', '‘' -> builder.append('\'')
+                '.', ',', '?', '!', ':', ';', '"', '<', '>', '(', ')', '[', ']', '{', '}' -> {
+                    // Skip punctuation.
                 }
                 else -> builder.append(ch)
             }

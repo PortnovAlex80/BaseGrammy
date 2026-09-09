@@ -104,9 +104,11 @@ Simple tenses
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — malformed-line expectation drift (legacy-test-quarantine.md)")
+
     fun parseLesson_lineWithoutSeparator_ignored() {
-        // FR-3.2.3.4: Строка без разделителя игнорируется
+        // FR-3.2.3.4: a line without the separator does not become a card.
+        // Actual design (pinned by parseLesson_malformedLine_returnsPartial):
+        // the line is skipped AND reported as MalformedLine → isPartial
         val csv = """
 Simple tenses
 Он работает;He works
@@ -114,7 +116,8 @@ Invalid line without separator
 Она учится;She studies
 """.trimIndent()
         val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
-        assertTrue(result.isSuccess)
+        assertTrue(result.isPartial)
+        assertEquals(1, result.errors.size)
         val (_, cards) = result.data!!
         assertEquals(2, cards.size)
         assertEquals("Он работает", cards[0].promptRu)

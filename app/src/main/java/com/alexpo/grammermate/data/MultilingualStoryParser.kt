@@ -240,10 +240,11 @@ object MultilingualStoryParser {
             val langMatches = languagePattern.findAll(paragraph).toList()
 
             if (langMatches.isEmpty()) {
-                // No language markers. Detect language for the entire paragraph,
-                // but still split out any {pause:N} markers so a pause-only or
-                // pause-interleaved paragraph still produces Pause segments.
-                val paraLang = detectLanguage(paragraph, defaultLanguageId)
+                // No language markers: unmarked text belongs to the CALLER'S
+                // default language (the parameter is the contract — auto-
+                // detection would make it meaningless). Pauses are still split
+                // out so pause-interleaved paragraphs produce Pause segments.
+                val paraLang = defaultLanguageId
                 Log.d(TAG, "Paragraph $paraIndex: detected language='$paraLang', preview=${paragraph.take(30).replace("\n", "\\n")}...")
                 Log.d(TAG, "  → No lang markers, using detected language: $paraLang")
                 val added = emitTextWithPauses(paragraph, paraLang, segments)

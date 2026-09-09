@@ -70,7 +70,7 @@ class MultilingualStoryParserPauseTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — default languageId drift: expected ru, got en (legacy-test-quarantine.md)")
+
     fun pausesInterleavedWithUnmarkedText_useDefaultLanguageId() {
         val content = "hello{pause:120}world"
 

@@ -143,7 +143,7 @@ class NormalizerTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — apostrophe handling drift: expected it's, got its (legacy-test-quarantine.md)")
+
     fun normalize_timeTwelveColon30_becomesTwelve() {
         // FR-6.1.5: "12:30" → "12"
         assertEquals("meet at 12", Normalizer.normalize("meet at 12:30"))
@@ -169,7 +169,7 @@ class NormalizerTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — apostrophe handling drift: expected it's, got its (legacy-test-quarantine.md)")
+
     fun normalize_realUserAnswer_matchesExpected() {
         // FR-6.2.1: Реальные примеры ответов
         assertEquals("i am learning english", Normalizer.normalize("I am learning English."))
@@ -179,7 +179,7 @@ class NormalizerTest {
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — apostrophe handling drift: expected it's, got its (legacy-test-quarantine.md)")
+
     fun normalize_multipleTransformations_appliedCorrectly() {
         // Все трансформации применяются последовательно
         val input = "  HELLO, World!  How are you?  It's 5:30.  "

@@ -7,11 +7,11 @@ import org.junit.Test
 
 class VerbDrillCsvParserTest {
     @Test
-    @Ignore("Phase 0 quarantine — parser contract drift, 4/6 suite fails (legacy-test-quarantine.md)")
+
     fun parseValidVerbDrill() {
         val csv = """
 Italian Verb Drill
-ru,it,verb,tense,group,rank
+ru;it;verb;tense;group;rank
 io lavoro;I work;lavorare;Presente;io;1
 tu lavori;you work;lavorare;Presente;io;2
 """.trimIndent()
@@ -37,11 +37,11 @@ tu lavori;you work;lavorare;Presente;io;2
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — parser contract drift, 4/6 suite fails (legacy-test-quarantine.md)")
+
     fun parse_malformedCsv_returnsPartial() {
         val csv = """
 Italian Verb Drill
-ru,it,verb,tense,group,rank
+ru;it;verb;tense;group;rank
 io lavoro;I work;lavorare;Presente;io;1
 invalid line without enough columns
 tu lavori;you work;lavorare;Presente;io;2
@@ -54,11 +54,11 @@ tu lavori;you work;lavorare;Presente;io;2
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — parser contract drift, 4/6 suite fails (legacy-test-quarantine.md)")
+
     fun parse_specialCharacters_handlesCorrectly() {
         val csv = """
 Italian Verb Drill
-ru,it,verb,tense,group,rank
+ru;it;verb;tense;group;rank
 io sono 👍;I am 👍;essere;Presente;io;1
 """.trimIndent()
         val result = VerbDrillCsvParser.parse(csv)
@@ -82,11 +82,11 @@ io lavoro;lavorare
     }
 
     @Test
-    @Ignore("Phase 0 quarantine — parser contract drift, 4/6 suite fails (legacy-test-quarantine.md)")
+
     fun parseLineNumbers_includedInErrors() {
         val csv = """
 Italian Verb Drill
-ru,it,verb,tense,group,rank
+ru;it;verb;tense;group;rank
 io lavoro;I work;lavorare;Presente;io;1
 bad line
 tu lavori;you work;lavorare;Presente;io;2

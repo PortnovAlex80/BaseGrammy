@@ -2,7 +2,8 @@
 
 **Created:** 2026-09-08, Phase 0 item 0.8 of `docs/architecture/ARCHITECTURE_REVIEW_2026-09-08.md`
 **Baseline:** `:app:testLegacyDebugUnitTest` on dev @ 7413b4260 — 466 tests, 46 failures, 0 errors.
-**Policy:** every quarantined test carries a named `@Ignore("Phase 0 quarantine — <reason> (legacy-test-quarantine.md)")`. This file is the tracking list; when a test is fixed, remove its `@Ignore` and delete its row here. CI is blocking from Phase 0 on, so the quarantine is the only sanctioned way to be red-free.
+**CLOSED 2026-09-09:** all 46 quarantined tests repaired (§1 in Phase 3, §2–§3 after the external audit); the suite now runs 501 tests, 0 skipped, 0 failures. This document remains as the repair record.
+**Policy (historical):** every quarantined test carried a named `@Ignore("Phase 0 quarantine — <reason> (legacy-test-quarantine.md)")`. CI was blocking from Phase 0 on, so the quarantine was the only sanctioned way to be red-free.
 
 These failures predate the 2026-09-08 refactor: they are inherited breakage from earlier runtime restoration, not regressions of Phase 0. Nothing below may be deleted — each row is a regression net awaiting repair.
 
@@ -39,15 +40,25 @@ re-anchoring in VerbDrill tests, BOSS screenMode + "N / M" progress format,
 Pomodoro `stats` field + split value/label StatCards, and the DailyPractice
 vocab flow re-pointed at its real surface (DailyPracticeScreen flip + SRS row).
 
-## 3. Parser / normalizer drift — not owned by a plan phase; triage separately
+## 3. Parser / normalizer drift — REPAIRED 2026-09-09
 
-Expectations recorded against an older parser/normalizer; code drifted (or tests assert behaviour that was deliberately changed). Requires per-case product decision (e.g. apostrophe handling in user answers: tests expect `it's` preserved, normalizer strips `'`).
+All 11 quarantined parser tests repaired and un-@Ignore'd. One real spec
+violation fixed in code (the rest were stale fixtures):
 
-| Test class | Failing tests | Symptom |
-|---|---|---|
-| `data.NormalizerTest` | `normalize_realUserAnswer_matchesExpected`; `normalize_timeTwelveColon30_becomesTwelve`; `normalize_multipleTransformations_appliedCorrectly` | apostrophes stripped: expected `it's`, got `its` |
-| `data.CsvParserTest` | `parseLesson_lineWithoutSeparator_ignored` | assertion on malformed-line handling |
-| `data.VerbDrillCsvParserTest` | `parse_malformedCsv_returnsPartial`; `parseValidVerbDrill`; `parse_specialCharacters_handlesCorrectly`; `parseLineNumbers_includedInErrors` | 4/6 of the suite — parser contract drift |
-| `data.MultilingualStoryParserPauseTest` | `pausesInterleavedWithUnmarkedText_useDefaultLanguageId` | default languageId `en` vs expected `ru` |
-| `data.WordScriptToMarkupTest` | `roundTrip_parsesToExpectedItRuAlternation` | expected 10 segments, got 12 |
-| `feature.backgroundvocab.DeckPlayerTest` | `nextWord_whilePlaying_relaunchesFromNewWord` | relaunch counter 0 vs 1 |
+- **Normalizer stripped apostrophes** — the spec is explicit («апостроф внутри
+  слова сохраняется», don't ≠ dont). `normalize()` now keeps apostrophes,
+  normalizing typographic variants (’ ‘ ´ `) to ASCII `'`. The voice variant
+  (`normalizeForVoice`) is unchanged — voice input can never produce them.
+- CsvParserTest: a separator-less line IS reported (MalformedLine → isPartial)
+  per the design pinned by `parseLesson_malformedLine_returnsPartial`; the
+  test's `isSuccess` expectation was stale.
+- VerbDrillCsvParserTest: fixture headers used commas; the real drill CSV
+  format (verified in bundled packs) is semicolon-delimited `RU;IT;Verb;Tense;
+  Group;Rank`.
+- MultilingualStoryParser: unmarked text now uses the caller's
+  `defaultLanguageId` verbatim — auto-detection had made the parameter
+  meaningless (it only applied to letter-less text).
+- WordScriptToMarkupTest: round-trip now pins 12 segments (the sentence's RU
+  half is part of the markup, per the passing exact-markup test).
+- DeckPlayerTest: assert the cursor BEFORE `stop()` — stop is the documented
+  full-reset transport (`stop_resetsToStart`).

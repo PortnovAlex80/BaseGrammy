@@ -234,7 +234,7 @@ class DeckPlayerTest {
     // ── navigation while playing ───────────────────────────────────────────
 
     @Test
-    @Ignore("Phase 0 quarantine — relaunch counter 0 vs 1 (legacy-test-quarantine.md)")
+
     fun nextWord_whilePlaying_relaunchesFromNewWord() = runBlocking {
         val (player, played) = newPlayer()
         player.setWords(listOf(word(1), word(2), word(3)))
@@ -244,11 +244,11 @@ class DeckPlayerTest {
 
         player.nextWord() // cancel + jump to rank 2
         delay(20)
+        // The cursor must be on index 1 (rank 2) BEFORE stop — stop() is the
+        // full-reset transport (pinned by stop_resetsToStart) and zeroes it.
+        assertEquals(1, player.state.value.currentIndex)
         player.stop()
 
-        // After nextWord, the cursor must be on index 1 (rank 2), and a playWord call
-        // for rank 2 must have occurred at or after the navigation.
-        assertEquals(1, player.state.value.currentIndex)
         assertTrue("rank 2 must have been played after nextWord; got $played", played.contains(2))
     }
 
