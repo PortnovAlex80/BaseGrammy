@@ -782,6 +782,19 @@ data class ChapterProgress(
     }
 }
 
+/** Roadmap row model: a chapter with its live progress and status. */
+data class ChapterCardUi(
+    val chapter: Chapter,
+    val progress: ChapterProgress,
+    val status: ChapterStatus
+)
+
+/** Status of a chapter in the roadmap. */
+enum class ChapterStatus {
+    ACTIVE,     // Started but not completed
+    DONE        // All lessons completed
+}
+
 /**
  * Grammar chip content loaded from markdown files.
  * Provides grammar explanations for lessons.

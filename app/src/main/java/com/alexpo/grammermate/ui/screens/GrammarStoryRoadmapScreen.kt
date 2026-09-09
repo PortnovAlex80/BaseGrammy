@@ -1,5 +1,7 @@
 package com.alexpo.grammermate.ui.screens
 
+import com.alexpo.grammermate.data.ChapterCardUi
+import com.alexpo.grammermate.data.ChapterStatus
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,8 +46,6 @@ import android.os.Looper
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
-import com.alexpo.grammermate.ui.ChapterCardUi
-import com.alexpo.grammermate.ui.ChapterStatus
 import com.alexpo.grammermate.ui.MasteryGreen
 import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.ScreenLogger

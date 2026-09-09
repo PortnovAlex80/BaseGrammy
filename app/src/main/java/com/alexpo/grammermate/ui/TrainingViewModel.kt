@@ -92,6 +92,8 @@ import com.alexpo.grammermate.data.CardDifficultyRating
 import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
+import com.alexpo.grammermate.data.ChapterCardUi
+import com.alexpo.grammermate.data.ChapterStatus
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.feature.progress.PackProgressCalculator
@@ -249,6 +251,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private val _packTiles = MutableStateFlow<List<PackTileUi>>(emptyList())
     val packTiles: StateFlow<List<PackTileUi>> = _packTiles.asStateFlow()
+
+    private val chapterRepository = com.alexpo.grammermate.feature.progress.ChapterRepository(lessonStore, masteryStore)
 
     private val _chapterCards = MutableStateFlow<List<ChapterCardUi>>(emptyList())
     val chapterCards: StateFlow<List<ChapterCardUi>> = _chapterCards.asStateFlow()
@@ -2601,46 +2605,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val chapters = lessonStore.getChapters(activePackId)
-
-        // Get mastery states for all lessons in the pack
-        val allLessonMasteryStates = mutableMapOf<String, LessonMasteryState>()
-        for (lessonId in lessonStore.getLessonIdsForPack(activePackId)) {
-            val masteryState = masteryStore.getForPack(activePackId, lessonId) ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
-            allLessonMasteryStates[lessonId] = masteryState
-            if (BuildConfig.DEBUG && (masteryState.uniqueCardShows > 0 || masteryState.intervalStepIndex > 0)) {
-                Log.d(logTag, "getChapterCards: $lessonId -> uniqueShows=${masteryState.uniqueCardShows}, stepIndex=${masteryState.intervalStepIndex}")
-            }
-        }
-
-        return chapters.mapIndexed { index, chapter ->
-            // Calculate progress LIVE from mastery data instead of relying on
-            // chapterProgressStore which may be stale/empty on app start.
-            val progress = ChapterProgressCalculator.calculateChapterProgress(chapter, allLessonMasteryStates)
-            val status = calculateChapterStatus(chapter, progress, allLessonMasteryStates, index)
-
-            ChapterCardUi(
-                chapter = chapter,
-                progress = progress,
-                status = status
-            )
-        }
-    }
-
-    /**
-     * Calculate the status of a chapter based on progress.
-     * All chapters are accessible - no locks. Users can learn at their own pace.
-     */
-    private fun calculateChapterStatus(
-        chapter: com.alexpo.grammermate.data.Chapter,
-        progress: com.alexpo.grammermate.data.ChapterProgress,
-        masteryStates: Map<String, LessonMasteryState>,
-        chapterIndex: Int
-    ): ChapterStatus {
-        return when {
-            chapter.lessons.isEmpty() -> ChapterStatus.ACTIVE // Empty chapter is never DONE
-            progress.lessonsCompleted >= chapter.lessons.size -> ChapterStatus.DONE
-            else -> ChapterStatus.ACTIVE // All chapters are accessible
-        }
+        return chapterRepository.getChapterCards(chapters, activePackId, selectedLanguageId)
     }
 
     /**
@@ -2871,19 +2836,4 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 }
 
-/**
- * UI model for a chapter card in the roadmap.
- */
-data class ChapterCardUi(
-    val chapter: com.alexpo.grammermate.data.Chapter,
-    val progress: com.alexpo.grammermate.data.ChapterProgress,
-    val status: ChapterStatus
-)
 
-/**
- * Status of a chapter in the roadmap.
- */
-enum class ChapterStatus {
-    ACTIVE,     // Started but not completed
-    DONE        // All lessons completed
-}

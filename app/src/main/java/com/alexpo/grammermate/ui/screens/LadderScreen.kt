@@ -34,7 +34,7 @@ import com.alexpo.grammermate.data.TrainingUiState
 
 @Composable
 fun LadderScreen(
-    state: TrainingUiState,
+    ladderRows: List<com.alexpo.grammermate.data.LessonLadderRow>,
     onBack: () -> Unit
 ) {
     Column(
@@ -66,7 +66,7 @@ fun LadderScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (state.navigation.ladderRows.isEmpty()) {
+        if (ladderRows.isEmpty()) {
             Text(
                 text = stringResource(R.string.ladder_no_data),
                 style = MaterialTheme.typography.bodyMedium,
@@ -80,7 +80,7 @@ fun LadderScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(state.navigation.ladderRows) { row ->
+            items(ladderRows) { row ->
                 LadderRowCard(row)
             }
         }

@@ -1,5 +1,7 @@
 package com.alexpo.grammermate.ui
 
+import com.alexpo.grammermate.data.ChapterCardUi
+import com.alexpo.grammermate.data.ChapterStatus
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -634,7 +636,9 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
 
                     composable(Routes.LADDER) {
                         LadderScreen(
-                            state = state,
+                            // Phase 4 (4.4 slice-passing): screens subscribe to
+                            // the slice they render, not the whole state object
+                            ladderRows = state.navigation.ladderRows,
                             onBack = remember(state.cardSession.currentCard) {
                                 {
                                     // LADDER was pushed on top of its opener —

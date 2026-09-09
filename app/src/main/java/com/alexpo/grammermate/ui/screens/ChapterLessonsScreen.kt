@@ -1,5 +1,7 @@
 package com.alexpo.grammermate.ui.screens
 
+import com.alexpo.grammermate.data.ChapterCardUi
+import com.alexpo.grammermate.data.ChapterStatus
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
