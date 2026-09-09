@@ -15,9 +15,16 @@ REPRO was rewritten to pin the repaired chain (restore-path
 `recalculateCompletionsExcludingHidden` stamps → live calculator counts).
 New rule pins live in `feature/progress/ChapterProgressRulesTest.kt`.
 
-## 2. Compose click-UI journeys — reopen in Phase 2 (navigation/effects rework)
+## 2. Compose click-UI journeys — still quarantined; NOT repaired in Phase 2
 
-Two failure shapes: (a) `Expected at most 1 node but found 2` — the same text matches both static Text and EditableText nodes, a harness matcher drift; (b) `The component is not displayed!` — UI behavior moved since the tests were recorded. Phase 2 re-anchors navigation and adds a fresh HOME→training→back journey test; these suites are repaired against the post-Phase-2 behaviour.
+Status correction (2026-09-09, external audit): Phase 2 added ONE new journey
+test (NavigationJourneyClickUiTest — real shell, HOME→roadmap→chapter→lesson→
+training→back→exit dialog→confirm), which pins the phase's exit criteria, but
+the seven legacy suites below were NOT repaired. They remain @Ignore'd and must
+be re-recorded against the post-refactor behaviour as follow-up work — no phase
+owns them now. Two failure shapes: (a) `Expected at most 1 node but found 2` —
+harness matcher drift; (b) `The component is not displayed!` — UI behaviour
+moved since the tests were recorded.
 
 | Test class | Failing / total | Shape |
 |---|---|---|

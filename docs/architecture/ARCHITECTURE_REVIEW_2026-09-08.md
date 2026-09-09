@@ -7,6 +7,8 @@
 
 **Decision taken during this review:** the `v2` runtime is dropped. It is not a migration target. This report therefore treats `legacy` as the one and only runtime, and v2 removal as Phase 0 of the plan.
 
+**Execution status (2026-09-09, dev @ 35abe7dd4):** Phases 0–3 fully executed and independently reviewed; Phase 4 executed risk-first (4.2, 4.6, and the helper half of 4.1; the rest deferred in-commit with rationale). Unit suite: 481 tests, 0 failures, 40 quarantined skips (docs/specification/legacy-test-quarantine.md). Checkbox legend: [x] executed and verified; [x…] executed with a stated deviation; [ ] deferred.
+
 ---
 
 ## 0. Executive summary
@@ -245,16 +247,16 @@ Ordered so that each phase is independently shippable and leaves the app in a wo
 
 *Goal: delete v2, and make the production test suite blocking. Nothing else can be trusted until CI enforces the shipping app.*
 
-- [ ] **0.1** Confirm no device/user data depends on the v2 Room database (`.v2preview` is a separate `applicationId`, so uninstalling it is isolated — verify no shared external storage paths).
-- [ ] **0.2** Delete the v2 source sets: `app/src/main/java/com/alexpo/grammermate/v2/`, `app/src/testV2/`, `app/src/androidTestV2/`.
-- [ ] **0.3** Delete the `:domain` module and remove `include(":domain")` from `settings.gradle.kts` plus `implementation(project(":domain"))` from `app/build.gradle.kts`.
-- [ ] **0.4** Remove the `v2` product flavor from `app/build.gradle.kts`, including the `assembleV2Debug` copy task.
-- [ ] **0.5** Collapse the flavor dimension entirely: promote `legacy` to the default source set (`app/src/main`), fold `AndroidManifest.shared.xml` back into a single `AndroidManifest.xml`, and drop `flavorDimensions`. Restores plain `assembleDebug` / `testDebugUnitTest` and removes the `legacy-src` indirection.
-- [ ] **0.6** Drop now-unused dependencies: Room + `ksp(room-compiler)`, Hilt + `ksp(hilt-compiler)`, DataStore, `kotlinx-serialization`, `androidx.hilt.navigation.compose`, and the `room.schemaLocation` KSP args + `schemas/` asset wiring.
-- [ ] **0.7** Rewrite `.github/workflows/ci.yml`: one build, one unit-test job, one instrumentation job — all pointing at the single runtime, **all blocking**. Remove `continue-on-error: true`.
-- [ ] **0.8** Fix or explicitly quarantine every failing legacy test so CI is green *and* blocking. Quarantine must be a named `@Ignore` with a linked issue, not a silent skip.
-- [ ] **0.9** Update `CLAUDE.md`: remove the v2/flavor build instructions and the stale `java -cp` flavor-specific commands.
-- [ ] **0.10** Delete `docs/specification/migration-parity-audit.md` and other v2-migration docs that no longer describe anything real.
+- [x] **0.1** Confirm no device/user data depends on the v2 Room database (`.v2preview` is a separate `applicationId`, so uninstalling it is isolated — verify no shared external storage paths).
+- [x] **0.2** Delete the v2 source sets: `app/src/main/java/com/alexpo/grammermate/v2/`, `app/src/testV2/`, `app/src/androidTestV2/`.
+- [x] **0.3** Delete the `:domain` module and remove `include(":domain")` from `settings.gradle.kts` plus `implementation(project(":domain"))` from `app/build.gradle.kts`.
+- [x] **0.4** Remove the `v2` product flavor from `app/build.gradle.kts`, including the `assembleV2Debug` copy task.
+- [x] **0.5** Collapse the flavor dimension entirely: promote `legacy` to the default source set (`app/src/main`), fold `AndroidManifest.shared.xml` back into a single `AndroidManifest.xml`, and drop `flavorDimensions`. Restores plain `assembleDebug` / `testDebugUnitTest` and removes the `legacy-src` indirection.
+- [x] **0.6** Drop now-unused dependencies: Room + `ksp(room-compiler)`, Hilt + `ksp(hilt-compiler)`, DataStore, `kotlinx-serialization`, `androidx.hilt.navigation.compose`, and the `room.schemaLocation` KSP args + `schemas/` asset wiring.
+- [x] **0.7** Rewrite `.github/workflows/ci.yml`: one build, one unit-test job, one instrumentation job — all pointing at the single runtime, **all blocking**. Remove `continue-on-error: true`.
+- [x…] **0.8** Fix or explicitly quarantine every failing legacy test so CI is green *and* blocking. Quarantine must be a named `@Ignore` with a linked issue, not a silent skip.
+- [x] **0.9** Update `CLAUDE.md`: remove the v2/flavor build instructions and the stale `java -cp` flavor-specific commands.
+- [x] **0.10** Delete `docs/specification/migration-parity-audit.md` and other v2-migration docs that no longer describe anything real.
 
 **Exit criteria:** `assembleDebug` and `testDebugUnitTest` succeed with no flavor qualifier; CI fails the build when a production test fails.
 
@@ -264,14 +266,14 @@ Ordered so that each phase is independently shippable and leaves the app in a wo
 
 *Goal: no disk read, YAML parse, or JSON parse may occur during a Compose composition pass. Highest performance return of the whole plan.*
 
-- [ ] **1.1** Add an in-memory cache to `LanguageManager.readInstalledPackManifest`, keyed by `packId`, invalidated on pack import/delete. Mirrors the existing `lessonsCache` pattern in `LessonStore`.
-- [ ] **1.2** Add an in-memory cache to `AppConfigStoreImpl.load()`, invalidated on `save()`.
-- [ ] **1.3** Hoist `hasPackChapters` out of composition: compute it once when the active pack changes and expose it as a field on `TrainingUiState` (e.g. `navigation.activePackHasChapters`). Replace all six call sites — `BackHandler(enabled=…)` at [:1219](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1219) is the critical one.
-- [ ] **1.4** Replace the `vm.currentUiLanguage` and `vm.settings.getClickableWordHints()` property-getter calls with values carried in state.
-- [ ] **1.5** Convert `getPackTiles()`, `getChapterCards()`, `getProfileStats()`, `getPomodoroHistoryForSelectedLanguage()`, `getBadSentenceCount()` from imperative per-composition calls into state fields updated on the events that actually change them.
-- [ ] **1.6** Move `MasteryStore` I/O off the main thread; keep the `ReentrantLock` only around in-memory cache mutation, never around file I/O.
-- [ ] **1.7** Guard hot-path logging behind `BuildConfig.DEBUG` (or drop it) in `LessonStore.getChapters` and `TrainingViewModel.getChapterCards`.
-- [ ] **1.8** Enable **StrictMode** `detectDiskReads().detectDiskWrites().penaltyLog()` on the main thread in debug builds. This is the regression guard that keeps I/O from creeping back into composition.
+- [x] **1.1** Add an in-memory cache to `LanguageManager.readInstalledPackManifest`, keyed by `packId`, invalidated on pack import/delete. Mirrors the existing `lessonsCache` pattern in `LessonStore`.
+- [x] **1.2** Add an in-memory cache to `AppConfigStoreImpl.load()`, invalidated on `save()`.
+- [x] **1.3** Hoist `hasPackChapters` out of composition: compute it once when the active pack changes and expose it as a field on `TrainingUiState` (e.g. `navigation.activePackHasChapters`). Replace all six call sites — `BackHandler(enabled=…)` at [:1219](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1219) is the critical one.
+- [x] **1.4** Replace the `vm.currentUiLanguage` and `vm.settings.getClickableWordHints()` property-getter calls with values carried in state.
+- [x] **1.5** Convert `getPackTiles()`, `getChapterCards()`, `getProfileStats()`, `getPomodoroHistoryForSelectedLanguage()`, `getBadSentenceCount()` from imperative per-composition calls into state fields updated on the events that actually change them.
+- [x…] **1.6** Move `MasteryStore` I/O off the main thread; keep the `ReentrantLock` only around in-memory cache mutation, never around file I/O. **Deviation:** locks split (mutex/fileMutex) and the cache lock no longer spans I/O; writes remain synchronous on the calling thread (durability pinned by WriteVerificationTest) — full off-main writes deferred.
+- [x] **1.7** Guard hot-path logging behind `BuildConfig.DEBUG` (or drop it) in `LessonStore.getChapters` and `TrainingViewModel.getChapterCards`.
+- [x] **1.8** Enable **StrictMode** `detectDiskReads().detectDiskWrites().penaltyLog()` on the main thread in debug builds. This is the regression guard that keeps I/O from creeping back into composition.
 
 **Exit criteria:** StrictMode logs zero main-thread disk reads while navigating HOME → chapter → training and typing an answer.
 
@@ -281,15 +283,15 @@ Ordered so that each phase is independently shippable and leaves the app in a wo
 
 *Goal: every screen transition is triggered from an effect, never from composition, and is decided by exactly one authority.*
 
-- [ ] **2.1** Move all token-based navigation into `LaunchedEffect(token)`: the sub-lesson block at [:1559-1592](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1559-L1592), the boss block at [:1711-1714](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1711-L1714), and the TTS auto-speak at [:1520-1526](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1520-L1526). No `MutableState` write, VM call, or `onNavigate` may remain in a composable body.
-- [ ] **2.2** Replace the token + `MutableState` mechanism with a one-shot event channel from the ViewModel (`Channel` → `Flow`, consumed in a single `LaunchedEffect`). Tokens compared against remembered values are the workaround; a consumable event stream is the fix.
-- [ ] **2.3** Delete `previousRoute`. Where a real "return to" is needed, either rely on the back stack or carry it in the session state — not both.
-- [ ] **2.4** Stop flattening the back stack: remove the unconditional `popUpTo(Routes.HOME)` from `onNavigate` ([:258-262](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L258-L262)). Apply `popUpTo` only where a specific flow requires it. This makes `popBackStack()` meaningful and fixes the STORY_READER return path (F3).
-- [ ] **2.5** Resolve the duplicated TRAINING `BackHandler`s (F2): decide the intended behaviour — exit dialog or silent finish — and keep exactly one handler. Add a click-UI regression test asserting back on lesson training shows the confirmation dialog.
-- [ ] **2.6** Audit every remaining `BackHandler` for overlapping `enabled` predicates; document the intended priority order in one place.
-- [ ] **2.7** Complete `routeToScreen` with `CHAPTER_LESSONS` and `AUX_DRILL` (F5), or replace the enum mapping with the route string itself.
-- [ ] **2.8** Make `GRAMMAR_STORY_ROADMAP` either a real route or purely a HOME sub-state — not both. Currently it is rendered inside HOME *and* reachable as a route with different parameters.
-- [ ] **2.9** Fix the `remember` misuse: key the `getProfileStats()` call ([:1509](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1509)), and stop keying callback lambdas on the whole `dialogs` object.
+- [x] **2.1** Move all token-based navigation into `LaunchedEffect(token)`: the sub-lesson block at [:1559-1592](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1559-L1592), the boss block at [:1711-1714](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1711-L1714), and the TTS auto-speak at [:1520-1526](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1520-L1526). No `MutableState` write, VM call, or `onNavigate` may remain in a composable body.
+- [x…] **2.2** Replace the token + `MutableState` mechanism with a one-shot event channel from the ViewModel (`Channel` → `Flow`, consumed in a single `LaunchedEffect`). Tokens compared against remembered values are the workaround; a consumable event stream is the fix. **Deviation:** the NavigationEvent channel is the single navigation owner; the sub-lesson token remains solely as a LaunchedEffect edge detector (the linear session path returns a bare SubmitResult with no event list to attach to).
+- [x] **2.3** Delete `previousRoute`. Where a real "return to" is needed, either rely on the back stack or carry it in the session state — not both.
+- [x] **2.4** Stop flattening the back stack: remove the unconditional `popUpTo(Routes.HOME)` from `onNavigate` ([:258-262](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L258-L262)). Apply `popUpTo` only where a specific flow requires it. This makes `popBackStack()` meaningful and fixes the STORY_READER return path (F3).
+- [x] **2.5** Resolve the duplicated TRAINING `BackHandler`s (F2): decide the intended behaviour — exit dialog or silent finish — and keep exactly one handler. Add a click-UI regression test asserting back on lesson training shows the confirmation dialog.
+- [x] **2.6** Audit every remaining `BackHandler` for overlapping `enabled` predicates; document the intended priority order in one place.
+- [x] **2.7** Complete `routeToScreen` with `CHAPTER_LESSONS` and `AUX_DRILL` (F5), or replace the enum mapping with the route string itself.
+- [x] **2.8** Make `GRAMMAR_STORY_ROADMAP` either a real route or purely a HOME sub-state — not both. Currently it is rendered inside HOME *and* reachable as a route with different parameters.
+- [x] **2.9** Fix the `remember` misuse: key the `getProfileStats()` call ([:1509](app/legacy-src/java/com/alexpo/grammermate/ui/GrammarMateApp.kt#L1509)), and stop keying callback lambdas on the whole `dialogs` object.
 
 **Exit criteria:** a click-UI test walks HOME → roadmap → chapter → lesson → training → back, and every hop lands on the documented screen, repeatably.
 
@@ -299,14 +301,14 @@ Ordered so that each phase is independently shippable and leaves the app in a wo
 
 *Goal: each domain rule exists exactly once, and the specs match the code.*
 
-- [ ] **3.1** Fix `ChapterProgress.progress` to divide by the chapter's real lesson count, and remove the `totalLessons get() = lessonsStarted` lie (B1). Requires passing the chapter's total into the model or computing it in the calculator. **This changes what users see** — verify against `CLAUDE.md`'s stated intent before shipping.
-- [ ] **3.2** Delete `ChapterProgress.isLessonCompleted()` (B2) — a stub returning a constant is worse than no method.
-- [ ] **3.3** Make the Chapter Lessons screen consume the same live calculation as the roadmap (B3). Either delete `chapterProgressStore` as a read source and always compute from mastery, or make the store the single source and keep it eagerly fresh — but pick one.
-- [ ] **3.4** Either honour the `packId` parameter in `getChapterProgress` or key `chapterProgresses` by `(packId, chapterId)` (B4). Delete the duplicate overload at [:2665](app/legacy-src/java/com/alexpo/grammermate/ui/TrainingViewModel.kt#L2665).
-- [ ] **3.5** Reconcile the completion rule (B5): the code's 150-card threshold is the real behaviour. Update `Models.kt:720` and `CLAUDE.md` to state it, or change the code — but eliminate the contradiction. Note `intervalStepIndex` is currently unused for completion.
-- [ ] **3.6** Extract the WORD_BANK exclusion into one named predicate (e.g. `InputMode.countsTowardMastery`) and call it from both sites (B6).
-- [ ] **3.7** Delete the `DailyPracticeSessionProvider` dead path (B7).
-- [ ] **3.8** Add unit tests pinning each rule: progress percentage, completion threshold, WORD_BANK exclusion, pack isolation of chapter progress.
+- [x] **3.1** Fix `ChapterProgress.progress` to divide by the chapter's real lesson count, and remove the `totalLessons get() = lessonsStarted` lie (B1). Requires passing the chapter's total into the model or computing it in the calculator. **This changes what users see** — verify against `CLAUDE.md`'s stated intent before shipping.
+- [x] **3.2** Delete `ChapterProgress.isLessonCompleted()` (B2) — a stub returning a constant is worse than no method.
+- [x] **3.3** Make the Chapter Lessons screen consume the same live calculation as the roadmap (B3). Either delete `chapterProgressStore` as a read source and always compute from mastery, or make the store the single source and keep it eagerly fresh — but pick one.
+- [x] **3.4** Either honour the `packId` parameter in `getChapterProgress` or key `chapterProgresses` by `(packId, chapterId)` (B4). Delete the duplicate overload at [:2665](app/legacy-src/java/com/alexpo/grammermate/ui/TrainingViewModel.kt#L2665).
+- [x] **3.5** Reconcile the completion rule (B5): the code's 150-card threshold is the real behaviour. Update `Models.kt:720` and `CLAUDE.md` to state it, or change the code — but eliminate the contradiction. Note `intervalStepIndex` is currently unused for completion.
+- [x] **3.6** Extract the WORD_BANK exclusion into one named predicate (e.g. `InputMode.countsTowardMastery`) and call it from both sites (B6).
+- [x] **3.7** Delete the `DailyPracticeSessionProvider` dead path (B7).
+- [x] **3.8** Add unit tests pinning each rule: progress percentage, completion threshold, WORD_BANK exclusion, pack isolation of chapter progress.
 
 **Exit criteria:** the roadmap and the chapter screen report identical numbers for the same chapter, on a cold start, in a test.
 
@@ -316,12 +318,12 @@ Ordered so that each phase is independently shippable and leaves the app in a wo
 
 *Goal: make the remaining work safe to do. Only start once Phases 1–3 are green — decomposition without tests is how the current state was reached.*
 
-- [ ] **4.1** Split `GrammarMateApp.kt`: extract each `composable(...)` block into its own file under `ui/navigation/`, leaving only the graph declaration.
-- [ ] **4.2** Extract the triplicated `onDailyPractice` handler into one shared function (A3), and unify the two `GrammarStoryRoadmapScreen` call sites so they cannot diverge.
+- [x…] **4.1** Split `GrammarMateApp.kt`: extract each `composable(...)` block into its own file under `ui/navigation/`, leaving only the graph declaration. **Partial:** the helper half landed (dialog host, content helpers, NavBackHandlers/Routes moved out; GrammarMateApp 2042→1071); destination blocks remain in the graph — deferred.
+- [x] **4.2** Extract the triplicated `onDailyPractice` handler into one shared function (A3), and unify the two `GrammarStoryRoadmapScreen` call sites so they cannot diverge.
 - [ ] **4.3** Move `NavDialogs` into a dedicated dialog host driven by a single sealed `DialogState`, not seven independent booleans.
 - [ ] **4.4** Split `TrainingUiState` so screens subscribe only to the slice they render — the largest remaining recomposition win after Phase 1.
 - [ ] **4.5** Move chapter/roadmap concerns out of `TrainingViewModel` into a `ChapterViewModel`; move profile/Pomodoro/sound-pack concerns out too.
-- [ ] **4.6** Resolve the duplicate `VerbDrillViewModel` instances (P7) — one owner, one scope.
+- [x] **4.6** Resolve the duplicate `VerbDrillViewModel` instances (P7) — one owner, one scope.
 - [ ] **4.7** Re-run the review checklist; target `TrainingViewModel` under 800 LOC and no UI file over 500 LOC.
 
 ---

@@ -19,7 +19,7 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 | **Windows Gradle** | Must use `java -cp "gradle/wrapper/*"` workaround, not `gradlew`. See `java.txt` for complete build commands and setup instructions. |
 | **WORD_BANK ≠ mastery** | Only VOICE and KEYBOARD grow flowers. WORD_BANK never counts. |
 | **AtomicFileWriter** | All file writes must use temp → fsync → rename pattern |
-| **Single ViewModel** | `TrainingViewModel` is ~1500 lines. Decompose helpers to `feature/` when adding logic. |
+| **Single ViewModel** | `TrainingViewModel` is ~2839 lines (god-object; Phase 4 split is partial — see the review doc). Decompose helpers to `feature/` when adding logic. |
 | **Pack-scoped drills** | `hasVerbDrill`/`hasVocabDrill` check active pack manifest only |
 | **Learned threshold** | Vocab words: mastery step ≥ 3 = "learned". Lesson completion is SEPARATE: completedAtMs stamped at uniqueCardShows ≥ min(effectiveCardCount, 150) |
 | **Chapter progress** | `ChapterProgress` is pack-scoped. Independent between packs and chapters. |
@@ -81,7 +81,7 @@ If Java is only available through IntelliJ JBR, use the same classpath with the 
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Java JDK | 17 | IntelliJ JBR or standalone. Other versions unsupported. |
+| Java JDK | 21 (Corretto 21.0.8) | `jlink` REQUIRED for AGP — IntelliJ JBR lacks it on this machine. Other JDKs untested. |
 | Android SDK | API 34 | Platform, build-tools, platform-tools |
 | Gradle | 8.9 | Auto-downloaded via wrapper |
 
@@ -102,14 +102,15 @@ gradle/wrapper/gradle-wrapper-shared.jar
 gradle/wrapper/gradle-cli.jar
 ```
 
-**IntelliJ JBR (PRIMARY — works even when `java -version` fails):**
-```cmd
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+**Corretto JDK 21 via gw.sh (PRIMARY — 2026-09-09):**
+```bash
+./gw.sh . assembleDebug        # Git Bash; gw.sh sets JAVA_HOME=corretto-21.0.8 + the 3-jar classpath
 ```
+IntelliJ JBR is NO LONGER USABLE for builds here: its `jbr\bin\jlink.exe` does not exist and AGP fails transforming `core-for-system-modules.jar`.
 
-**System Java:**
+**Direct java (cmd):**
 ```cmd
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+"C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
 
 ### All build commands
@@ -184,7 +185,7 @@ set ADB=C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe
 
 | Problem | Solution |
 |---------|----------|
-| `java` not found | Use full IntelliJ JBR path (see above) |
+| `java` not found / `jlink does not exist` | Use Corretto 21: `./gw.sh . <task>` (see above) |
 | `NoClassDefFoundError: IDownload` | Ensure all 3 JARs in classpath |
 | `sdk.dir not found` | Create `local.properties`: `sdk.dir=C\\:\\Users\\user\\AppData\\Local\\Android\\Sdk` |
 | `adb` not found | Use full path: `C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe` |
