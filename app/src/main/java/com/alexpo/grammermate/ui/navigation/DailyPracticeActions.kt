@@ -36,22 +36,22 @@ internal fun rememberOnDailyPractice(
             val level = vm.getProgressLessonLevel()
             Log.d("GrammarMate", "DailyPractice: user clicked daily practice, level=$level")
             if (vm.daily.hasResumableDailySession()) {
-                setDialogs(getDialogs().copy(showDailyResumeDialog = true, pendingDailyLevel = level))
+                setDialogs(DialogState.DailyResume(level))
             } else {
-                setDialogs(getDialogs().copy(isLoadingDaily = true))
+                setDialogs(DialogState.DailyLoading)
                 dailyScope.launch {
                     try {
                         val started = withContext(Dispatchers.IO) {
                             vm.startDailyPractice(level)
                         }
-                        setDialogs(getDialogs().copy(isLoadingDaily = false))
+                        setDialogs(DialogState.None)
                         if (started) {
                             onNavigate(Routes.DAILY_PRACTICE)
                         } else {
                             toast(context)
                         }
                     } catch (e: Exception) {
-                        setDialogs(getDialogs().copy(isLoadingDaily = false))
+                        setDialogs(DialogState.None)
                         toast(context)
                     }
                 }

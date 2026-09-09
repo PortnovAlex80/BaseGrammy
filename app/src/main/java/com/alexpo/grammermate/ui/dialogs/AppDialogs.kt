@@ -90,16 +90,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal data class DialogState(
-    val showSettings: Boolean = false,
-    val showExitDialog: Boolean = false,
-    val showWelcomeDialog: Boolean = false,
-    val showDailyResumeDialog: Boolean = false,
-    val showTtsDownloadDialog: Boolean = false,
-    val showProfileStats: Boolean = false,
-    val pendingDailyLevel: Int = 0,
-    val isLoadingDaily: Boolean = false
-)
+/**
+ * One dialog at a time (Phase 4, item 4.3): the seven independent booleans
+ * became a sealed hierarchy. Mutually exclusive by construction — the
+ * Welcome/Exit/ProfileStats/TtsDownload/DailyResume/Settings kinds can no
+ * longer coexist; [DailyResume] carries its payload; [DailyLoading] is the
+ * loading overlay (transient, replaces whatever dialog was up).
+ */
+sealed interface DialogState {
+    data object None : DialogState
+    data object Settings : DialogState
+    data object Exit : DialogState
+    data object Welcome : DialogState
+    data object ProfileStats : DialogState
+    data object TtsDownload : DialogState
+    data class DailyResume(val level: Int) : DialogState
+    data object DailyLoading : DialogState
+}
 
 @Composable
 internal fun NavDialogs(
@@ -127,12 +134,12 @@ internal fun NavDialogs(
             && state.navigation.welcomeDialogAttempts < 3
             && state.navigation.languages.isNotEmpty()
         ) {
-            onDialogsChange(dialogs.copy(showWelcomeDialog = true))
+            onDialogsChange(DialogState.Welcome)
         }
     }
 
     // Welcome dialog
-    if (dialogs.showWelcomeDialog) {
+    if (dialogs == DialogState.Welcome) {
         WelcomeDialog(
             onNameSet = { name ->
                 if (name == "GrammarMateUser") {
@@ -140,13 +147,13 @@ internal fun NavDialogs(
                 } else {
                     vm.settings.updateUserName(name)
                 }
-                onDialogsChange(dialogs.copy(showWelcomeDialog = false))
+                onDialogsChange(if (dialogs == DialogState.Welcome) DialogState.None else dialogs)
             }
         )
     }
 
     // Profile stats popup
-    if (dialogs.showProfileStats) {
+    if (dialogs == DialogState.ProfileStats) {
         // VM state (Phase 1) — refreshed on pack/language changes; the old
         // unkeyed remember froze the first-ever snapshot forever.
         val profileStats by vm.profileStats.collectAsStateWithLifecycle()
@@ -155,31 +162,31 @@ internal fun NavDialogs(
             cardsCompleted = profileStats.cardsCompleted,
             wordsLearned = profileStats.wordsLearned,
             cefrLevel = profileStats.cefrLevel,
-            onDismiss = { onDialogsChange(dialogs.copy(showProfileStats = false)) }
+            onDismiss = { onDialogsChange(if (dialogs == DialogState.ProfileStats) DialogState.None else dialogs) }
         )
     }
 
     // TTS download dialog
-    if (dialogs.showTtsDownloadDialog) {
+    if (dialogs == DialogState.TtsDownload) {
         // Effect, not composition: level-triggered on dialog-open + download
         // Done — runs on key change AND on first composition with the keys
         // already set (dialog opened after Done), then starts playback once.
-        LaunchedEffect(dialogs.showTtsDownloadDialog, state.audio.ttsDownloadState) {
-            if (dialogs.showTtsDownloadDialog && state.audio.ttsDownloadState is DownloadState.Done) {
-                onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
+        LaunchedEffect(dialogs == DialogState.TtsDownload, state.audio.ttsDownloadState) {
+            if (dialogs == DialogState.TtsDownload && state.audio.ttsDownloadState is DownloadState.Done) {
+                onDialogsChange(if (dialogs == DialogState.TtsDownload) DialogState.None else dialogs)
                 vm.audio.dismissTtsDownloadDialog()
                 val text = state.cardSession.answerText ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
                 if (text != null) vm.audio.onTtsSpeak(text)
             }
         }
-        if (dialogs.showTtsDownloadDialog) {
+        if (dialogs == DialogState.TtsDownload) {
             TtsDownloadDialog(
                 downloadState = state.audio.ttsDownloadState,
                 languageId = state.navigation.selectedLanguageId?.value ?: "en",
                 onConfirm = { vm.audio.startTtsDownload() },
                 onDismiss = {
                     vm.audio.dismissTtsDownloadDialog()
-                    onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
+                    onDialogsChange(if (dialogs == DialogState.TtsDownload) DialogState.None else dialogs)
                 }
             )
         }
@@ -192,7 +199,7 @@ internal fun NavDialogs(
             onDismiss = {
                 vm.audio.dismissMeteredWarning()
                 vm.audio.dismissTtsDownloadDialog()
-                onDialogsChange(dialogs.copy(showTtsDownloadDialog = false))
+                onDialogsChange(if (dialogs == DialogState.TtsDownload) DialogState.None else dialogs)
             }
         )
     }
@@ -338,17 +345,17 @@ internal fun NavDialogs(
     // single collector in GrammarMateApp) — no UI-side token bookkeeping.
 
     // Daily practice loading overlay
-    if (dialogs.isLoadingDaily) {
+    if (dialogs == DialogState.DailyLoading) {
         DailyLoadingOverlay()
     }
 
     // Exit confirmation dialog
-    if (dialogs.showExitDialog) {
+    if (dialogs == DialogState.Exit) {
         ExitConfirmDialog(
             currentRoute = currentRoute,
             state = state,
             vm = vm,
-            onDismiss = { onDialogsChange(dialogs.copy(showExitDialog = false)) },
+            onDismiss = { onDialogsChange(if (dialogs == DialogState.Exit) DialogState.None else dialogs) },
             onNavigate = onNavigate,
             onNavigateResetStack = onNavigateResetStack,
             onNavigatePopTo = onNavigatePopTo
@@ -356,12 +363,12 @@ internal fun NavDialogs(
     }
 
     // Daily resume dialog
-    if (dialogs.showDailyResumeDialog) {
+    if (dialogs is DialogState.DailyResume) {
         DailyResumeDialog(
-            pendingDailyLevel = dialogs.pendingDailyLevel,
+            pendingDailyLevel = dialogs.level,
             vm = vm,
             dailyScope = dailyScope,
-            onDialogsChange = { onDialogsChange(dialogs.copy(showDailyResumeDialog = false, isLoadingDaily = it.isLoadingDaily)) },
+            onDialogsChange = { next -> onDialogsChange(next) },
             onNavigate = onNavigate
         )
     }
@@ -556,19 +563,19 @@ internal fun DailyResumeDialog(
 ) {
     val context = LocalContext.current
     AlertDialog(
-        onDismissRequest = { onDialogsChange(DialogState()) },
+        onDismissRequest = { onDialogsChange(DialogState.None) },
         confirmButton = {
             TextButton(onClick = {
-                onDialogsChange(DialogState(isLoadingDaily = true))
+                onDialogsChange(DialogState.DailyLoading)
                 dailyScope.launch {
                     try {
                         val started = withContext(Dispatchers.IO) {
                             vm.startDailyPractice(pendingDailyLevel)
                         }
-                        onDialogsChange(DialogState())
+                        onDialogsChange(DialogState.None)
                         if (started) onNavigate(Routes.DAILY_PRACTICE)
                     } catch (e: Exception) {
-                        onDialogsChange(DialogState())
+                        onDialogsChange(DialogState.None)
                         Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -578,16 +585,16 @@ internal fun DailyResumeDialog(
         },
         dismissButton = {
             TextButton(onClick = {
-                onDialogsChange(DialogState(isLoadingDaily = true))
+                onDialogsChange(DialogState.DailyLoading)
                 dailyScope.launch {
                     try {
                         val started = withContext(Dispatchers.IO) {
                             vm.repeatDailyPractice(pendingDailyLevel)
                         }
-                        onDialogsChange(DialogState())
+                        onDialogsChange(DialogState.None)
                         if (started) onNavigate(Routes.DAILY_PRACTICE)
                     } catch (e: Exception) {
-                        onDialogsChange(DialogState())
+                        onDialogsChange(DialogState.None)
                         Toast.makeText(context, context.getString(R.string.dialog_daily_loading), Toast.LENGTH_SHORT).show()
                     }
                 }

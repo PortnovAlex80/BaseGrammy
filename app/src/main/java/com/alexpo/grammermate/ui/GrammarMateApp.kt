@@ -152,7 +152,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         val context = LocalContext.current
 
         // Story reader state managed in ViewModel (state.storyReaderChapterTitle, state.storyReaderContent)
-        var dialogs by remember { mutableStateOf(DialogState()) }
+        var dialogs by remember { mutableStateOf<DialogState>(DialogState.None) }
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
         val completionNextAction = remember { mutableStateOf(CompletionNextAction.NONE) }
@@ -211,7 +211,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     if (bgState != null && bgState !is DownloadState.Idle) {
                         vm.audio.setTtsDownloadStateFromBackground(bgState)
                     }
-                    dialogs = dialogs.copy(showTtsDownloadDialog = true)
+                    dialogs = DialogState.TtsDownload
                 } else {
                     val text = state.cardSession.answerText
                         ?: state.cardSession.currentCard?.acceptedAnswers?.firstOrNull()
@@ -308,12 +308,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 }
 
                 SettingsSheet(
-                    show = dialogs.showSettings,
+                    show = dialogs == DialogState.Settings,
                     state = state,
                     onDismiss = remember(dialogs, currentRoute, state.cardSession.currentCard) {
                         {
                             ScreenLogger.overlay("settings", shown = false)
-                            dialogs = dialogs.copy(showSettings = false)
+                            dialogs = DialogState.None
                             if (currentRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
                                 vm.resumeFromSettings()
                             }
@@ -322,7 +322,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     onOpenLadder = remember(navController) {
                         {
                             ScreenLogger.overlay("settings", shown = false)
-                            dialogs = dialogs.copy(showSettings = false)
+                            dialogs = DialogState.None
                             // Plain push: LADDER back pops to the screen that opened it.
                             navController.navigate(Routes.LADDER) {
                                 launchSingleTop = true
@@ -446,7 +446,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     {
                                         vm.pauseSession()
                                         ScreenLogger.overlay("settings", shown = true)
-                                        dialogs = dialogs.copy(showSettings = true)
+                                        dialogs = DialogState.Settings
                                     }
                                 },
                                 onContinue = remember { { chapter ->
@@ -483,7 +483,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     {
                                         vm.pauseSession()
                                         ScreenLogger.overlay("settings", shown = true)
-                                        dialogs = dialogs.copy(showSettings = true)
+                                        dialogs = DialogState.Settings
                                     }
                                 },
                                 onPrimaryAction = remember { { onNavigate(Routes.LESSON) } },
@@ -503,7 +503,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 onOpenVerbDrill = remember { { onNavigate(Routes.VERB_DRILL) } },
                                 onOpenAuxDrill = remember { { onNavigate(Routes.AUX_DRILL) } },
                                 onOpenVocabDrill = remember { { onNavigate(Routes.VOCAB_DRILL) } },
-                                onProfileClick = remember { { dialogs = dialogs.copy(showProfileStats = true) } },
+                                onProfileClick = remember { { dialogs = DialogState.ProfileStats } },
                                 onStartPomodoro = remember { { duration: Int ->
                                     ScreenLogger.overlay("pomodoro", shown = true, details = "duration=${duration}m")
                                     vm.startPomodoro(duration)
@@ -577,7 +577,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         // handler, so system back gesture works correctly on Android 14+.
                         // Uses the same logic as the UI back button (onNavigate).
                         val lessonHasChapters = state.navigation.activePackHasChapters
-                        BackHandler(enabled = !dialogs.showSettings) {
+                        BackHandler(enabled = dialogs != DialogState.Settings) {
                             Log.d("NavDebug", "BACK: LESSON inner handler, hasChapters=$lessonHasChapters")
                             ScreenLogger.nav("lesson", "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("lesson", "back_to_${if (lessonHasChapters) "chapter_lessons" else "home"}")
@@ -710,12 +710,12 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                             onNavigateResetStack(Routes.HOME)
                                         }
                                         else -> {
-                                            dialogs = dialogs.copy(showExitDialog = true)
+                                            dialogs = DialogState.Exit
                                         }
                                     }
                                 }
                             },
-                            onShowSettings = remember { { vm.pauseSession(); ScreenLogger.overlay("settings", shown = true); dialogs = dialogs.copy(showSettings = true) } },
+                            onShowSettings = remember { { vm.pauseSession(); ScreenLogger.overlay("settings", shown = true); dialogs = DialogState.Settings } },
                             onTtsSpeak = onTtsSpeak,
                             onVerbDrillMore = remember { {
                                 verbDrillVm.persistSessionState()
@@ -772,7 +772,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         )
 
                         // Local back handler for VERB_DRILL / AUX_DRILL return path
-                        BackHandler(enabled = isVerbDrillLikeReturn(state.cardSession.returnTo) && !dialogs.showSettings) {
+                        BackHandler(enabled = isVerbDrillLikeReturn(state.cardSession.returnTo) && dialogs != DialogState.Settings) {
                             Log.d("NavDebug", "BACK: TRAINING drill return path -> ${state.cardSession.returnTo}")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("training", "drill_return")
@@ -781,7 +781,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             onNavigatePopTo(state.cardSession.returnTo)
                         }
                         // Local back handler: daily-practice training → cancel + HOME
-                        BackHandler(enabled = state.cardSession.returnTo == Routes.DAILY_PRACTICE && !dialogs.showSettings) {
+                        BackHandler(enabled = state.cardSession.returnTo == Routes.DAILY_PRACTICE && dialogs != DialogState.Settings) {
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("training", "daily_cancel_to_home")
                             vm.cancelDailySession()
@@ -792,11 +792,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         // (Phase 2, item 2.5). These handlers live INSIDE the
                         // TRAINING destination so they always outrank both
                         // NavBackHandlers and NavController's own pop.
-                        BackHandler(enabled = !isVerbDrillLikeReturn(state.cardSession.returnTo) && state.cardSession.returnTo != Routes.DAILY_PRACTICE && !dialogs.showSettings) {
+                        BackHandler(enabled = !isVerbDrillLikeReturn(state.cardSession.returnTo) && state.cardSession.returnTo != Routes.DAILY_PRACTICE && dialogs != DialogState.Settings) {
                             Log.d("NavDebug", "BACK: TRAINING lesson → exit dialog")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("training", "show_exit_dialog")
-                            dialogs = dialogs.copy(showExitDialog = true)
+                            dialogs = DialogState.Exit
                         }
                     }
 
@@ -997,7 +997,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                         // Inner BackHandler — higher priority than NavController, so system back
                         // works correctly on Android 14+ predictive back.
-                        BackHandler(enabled = !dialogs.showSettings) {
+                        BackHandler(enabled = dialogs != DialogState.Settings) {
                             Log.d("NavDebug", "BACK: CHAPTER_LESSONS inner handler → HOME")
                             ScreenLogger.nav("chapter_lessons", "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("chapter_lessons", "back_to_home")
@@ -1016,7 +1016,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                 navController.popBackStack(Routes.HOME, inclusive = false)
                             } }
                         )
-                        BackHandler(enabled = !dialogs.showSettings) {
+                        BackHandler(enabled = dialogs != DialogState.Settings) {
                             ScreenLogger.nav("background_vocab", "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("background_vocab", "back_to_home")
                             navController.popBackStack(Routes.HOME, inclusive = false)
@@ -1035,11 +1035,11 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                 // silently outranked these wherever the back stack exceeded [HOME].
                 NavBackHandlers(
                     currentRoute = currentRoute,
-                    showSettings = dialogs.showSettings,
+                    showSettings = dialogs == DialogState.Settings,
                     state = state,
                     vm = vm,
                     navController = navController,
-                    onShowExitDialog = remember { { dialogs = dialogs.copy(showExitDialog = true) } }
+                    onShowExitDialog = remember { { dialogs = DialogState.Exit } }
                 )
 
                 NavDialogs(
