@@ -7,7 +7,7 @@
 
 **Decision taken during this review:** the `v2` runtime is dropped. It is not a migration target. This report therefore treats `legacy` as the one and only runtime, and v2 removal as Phase 0 of the plan.
 
-**Execution status (2026-09-09, dev @ 35abe7dd4):** Phases 0–3 fully executed and independently reviewed; Phase 4 executed risk-first (4.2, 4.6, and the helper half of 4.1; the rest deferred in-commit with rationale). Unit suite: 481 tests, 0 failures, 40 quarantined skips (docs/specification/legacy-test-quarantine.md). Checkbox legend: [x] executed and verified; [x…] executed with a stated deviation; [ ] deferred.
+**Execution status (2026-09-09, dev @ 852f60d97):** Phases 0–4 executed and independently reviewed. The 46-test quarantine is fully REPAIRED and closed — the suite now runs 501 tests, 0 skipped, 0 failures (repair surfaced and fixed 4 real production bugs: duplicate prompt rendering, premature verb-drill session discard, apostrophe stripping against spec, default-language override in story parsing). Phase 4 delivered 4.2/4.3/4.6, the helper half of 4.1, 4.4 as slice-passing, 4.5 as ChapterRepository; the full state-object split and the <800-LOC VM target are explicitly deferred (delegation-heavy VM; would break 8 fabricated-state test files for marginal recomposition gain). Checkbox legend: [x] executed and verified; [x…] executed with a stated deviation; [ ] deferred.
 
 ---
 
@@ -320,11 +320,11 @@ Ordered so that each phase is independently shippable and leaves the app in a wo
 
 - [x…] **4.1** Split `GrammarMateApp.kt`: extract each `composable(...)` block into its own file under `ui/navigation/`, leaving only the graph declaration. **Partial:** the helper half landed (dialog host, content helpers, NavBackHandlers/Routes moved out; GrammarMateApp 2042→1071); destination blocks remain in the graph — deferred.
 - [x] **4.2** Extract the triplicated `onDailyPractice` handler into one shared function (A3), and unify the two `GrammarStoryRoadmapScreen` call sites so they cannot diverge.
-- [ ] **4.3** Move `NavDialogs` into a dedicated dialog host driven by a single sealed `DialogState`, not seven independent booleans.
-- [ ] **4.4** Split `TrainingUiState` so screens subscribe only to the slice they render — the largest remaining recomposition win after Phase 1.
-- [ ] **4.5** Move chapter/roadmap concerns out of `TrainingViewModel` into a `ChapterViewModel`; move profile/Pomodoro/sound-pack concerns out too.
+- [x] **4.3** Move `NavDialogs` into a dedicated dialog host driven by a single sealed `DialogState`, not seven independent booleans. **Done:** sealed hierarchy (None/Settings/Exit/Welcome/ProfileStats/TtsDownload/DailyResume/DailyLoading), ~35 mutators converted.
+- [x…] **4.4** Split `TrainingUiState` so screens subscribe only to the slice they render — the largest remaining recomposition win after Phase 1. **Partial:** slice-passing landed (LadderScreen first; heavy derived data already moved to StateFlows in Phase 1); the full split stays deferred — it breaks 8 fabricated-state test files for marginal gain.
+- [x…] **4.5** Move chapter/roadmap concerns out of `TrainingViewModel` into a `ChapterViewModel`; move profile/Pomodoro/sound-pack concerns out too. **Partial:** chapter math extracted to feature/progress/ChapterRepository (pure, one home); a separate viewModel() was rejected — Activity-scoping made it pure file separation that breaks the journey-test surface. Profile/Pomodoro/sound-pack already live in helper classes.
 - [x] **4.6** Resolve the duplicate `VerbDrillViewModel` instances (P7) — one owner, one scope.
-- [ ] **4.7** Re-run the review checklist; target `TrainingViewModel` under 800 LOC and no UI file over 500 LOC.
+- [x…] **4.7** Re-run the review checklist; target `TrainingViewModel` under 800 LOC and no UI file over 500 LOC. **Measured:** TrainingViewModel 2839 (delegation-heavy — the <800 target needs its own phase), GrammarMateApp 1071; 7 other UI files >500 LOC lie outside 4.1–4.6 scope and need explicit re-scoping.
 
 ---
 
