@@ -1267,6 +1267,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             forceBackupOnSave = true
         }
 
+        recordSelfProducedIfEarned(result.accepted, beforeState, beforeCard, beforeInputMode)
+
         // Track daily card practice for cursor advancement.
         // Only VOICE and KEYBOARD answers count — WORD_BANK does NOT
         // (single rule owner: InputMode.countsTowardMastery).
@@ -1291,6 +1293,47 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         Log.d(logTag, "Answer submitted: accepted=${result.accepted}")
         return SubmitResult(result.accepted, result.hintShown)
+    }
+
+    /**
+     * Двигает лестницу интервалов урока, которому принадлежит карточка — но только
+     * если человек **воспроизвёл её сам**.
+     *
+     * Правильность ответа сигналом быть не может: голос идёт через ASR с высокой
+     * долей ошибок, и непринятый ответ чаще означает промах распознавания, а не
+     * забывание. Доступен только бинарный сигнал «ввёл / не ввёл», поэтому здесь
+     * проверяется ровно он: ответ принят, режим ввода считается для мастери
+     * (не WORD_BANK) и ответ не был раскрыт через «показать ответ».
+     *
+     * Урок, пройденный целиком через подсказки, копит экспозицию, но не
+     * зарабатывает более длинный интервал. Это не откат — лестница монотонна.
+     */
+    private fun recordSelfProducedIfEarned(
+        accepted: Boolean,
+        beforeState: com.alexpo.grammermate.data.CardSessionState,
+        beforeCard: com.alexpo.grammermate.data.SessionCard?,
+        beforeInputMode: InputMode
+    ) {
+        if (!accepted) return
+        if (beforeCard == null) return
+        if (!beforeInputMode.countsTowardMastery) return
+        // Ответ был раскрыт подсказкой — воспроизведения не было.
+        if (beforeState.sessionState == SessionState.HINT_SHOWN || beforeState.answerText != null) return
+        // Босс и ежедневная практика ведут свой учёт и в лестницу уроков не пишут.
+        if (bossOrchestrator.stateFlow.value.bossActive) return
+        if (isDailySession()) return
+
+        val packId = _coreState.value.navigation.activePackId?.value ?: return
+        val lessonId = progressTracker.resolveCardLessonId(
+            beforeCard,
+            _coreState.value.navigation.selectedLessonId,
+            _coreState.value.navigation.lessons
+        )
+        masteryStore.recordSelfProducedForPack(
+            packId = packId,
+            lessonId = lessonId.value,
+            totalEffortCards = masteryStore.totalEffortCardsForPack(packId)
+        )
     }
 
     fun nextCard(triggerVoice: Boolean = false) {
@@ -2302,6 +2345,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 masteryStore.getForPack(pid.value, lid.value)
             }
         }
+        val activePackId = state.navigation.activePackId?.value
         val result = cardProvider.buildSessionCards(
             lessons = lessons,
             mode = state.navigation.mode,
@@ -2309,7 +2353,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             schedules = lessonSchedules,
             activeSubLessonIndex = state.cardSession.activeSubLessonIndex,
             hiddenCardIds = hiddenIds,
-            mastery = mastery
+            mastery = mastery,
+            // Слоты повторения в смешанных блоках заполняются по актуальному
+            // mastery — обе шкалы кривой забывания считаются здесь, на лету.
+            masteryOf = { lessonId ->
+                activePackId?.let { masteryStore.getForPack(it, lessonId) }
+            },
+            totalEffortCards = activePackId?.let { masteryStore.totalEffortCardsForPack(it) } ?: 0
         )
         sessionRunner.setSessionCards(result.cards)
         subLessonTotal = result.subLessonTotal

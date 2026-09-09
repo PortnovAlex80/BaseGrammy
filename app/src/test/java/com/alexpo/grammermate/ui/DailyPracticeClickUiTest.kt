@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.data.*
@@ -41,7 +42,7 @@ class DailyPracticeClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — duplicate-node matcher drift, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun dailyPractice_fullThreeBlockFlow() {
         // ARRANGE: Create test data for all 3 blocks
         val sentenceCards = (1..10).map { i ->
@@ -189,9 +190,12 @@ class DailyPracticeClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — show_answer_button node missing, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun vocabBlock_showAnswer_thenRate() {
-        // ARRANGE: Single vocab card
+        // ARRANGE: Single vocab card. The VOCAB flashcard flow renders in
+        // DailyPracticeScreen (its own flip + SRS rating buttons) — the
+        // TrainingScreen input-bar show-answer is gated on a SentenceCard
+        // which vocab cards never have.
         val vocabWord = VocabWord(
             id = "word-casa",
             word = "casa",
@@ -199,93 +203,56 @@ class DailyPracticeClickUiTest {
             rank = 1,
             meaningRu = "дом"
         )
-
-        var showAnswerCalled = false
-        var rated = false
-        var currentRating: SrsRating? = null
-
         val vocabTask = DailyTask.VocabFlashcard(
             id = "vocab-1",
             word = vocabWord,
             direction = VocabDrillDirection.IT_TO_RU
         )
-
-        val initialState = TrainingUiState().copy(
-            daily = DailyPracticeState(
-                dailySession = DailySessionState(
-                    active = true,
-                    blocks = listOf(DailyBlock(DailyBlockType.VOCAB, listOf(vocabTask))),
-                    blockIndex = 0,
-                    finishedToken = false
-                )
-            ),
-            cardSession = CardSessionState(
-                currentCard = null,  // Vocab cards don't use SentenceCard
-                currentIndex = 0,
-                subLessonTotal = 1,
-                sessionState = SessionState.ACTIVE,
-                inputMode = InputMode.KEYBOARD
-            ),
-            navigation = NavigationState(
-                selectedLanguageId = LanguageId("it"),
-                selectedLessonId = LessonId("lesson-daily")
-            )
+        val block = DailyBlock(DailyBlockType.VOCAB, listOf(vocabTask))
+        val sessionState = com.alexpo.grammermate.data.DailySessionState(
+            active = true,
+            blocks = listOf(block),
+            blockIndex = 0,
+            finishedToken = false
         )
+        val progress = com.alexpo.grammermate.feature.daily.BlockProgress(
+            blockType = DailyBlockType.VOCAB,
+            positionInBlock = 0,
+            blockSize = 1,
+            totalTasks = 1,
+            globalPosition = 0
+        )
+        var ratedRating: SrsRating? = null
 
-        // ACT: Render screen with VOCAB block
         composeTestRule.setContent {
-            TrainingScreen(
-                state = initialState,
-                onInputChange = { /* no-op */ },
-                onSubmit = { SubmitResult(accepted = true, hintShown = false) },
-                onPrev = { /* no-op */ },
-                onNext = { /* no-op */ },
-                onTogglePause = { /* no-op */ },
-                onRequestExit = { /* no-op */ },
-                onOpenSettings = { /* no-op */ },
-                onShowSettings = { /* no-op */ },
-                onSelectLesson = { /* no-op */ },
-                onSelectMode = { /* no-op */ },
-                onSetInputMode = { /* no-op */ },
-                onShowAnswer = {
-                    showAnswerCalled = true
-                    // Simulate showing answer
-                },
-                onVoicePromptStarted = { /* no-op */ },
-                onSelectWordFromBank = { /* no-op */ },
-                onRemoveLastWord = { /* no-op */ },
-                onTtsSpeak = { /* no-op */ },
-                onRateCardDifficulty = { rating ->
-                    rated = true
-                    currentRating = when (rating) {
-                        com.alexpo.grammermate.data.CardDifficultyRating.EASY -> SrsRating.EASY
-                        com.alexpo.grammermate.data.CardDifficultyRating.GOOD -> SrsRating.GOOD
-                        com.alexpo.grammermate.data.CardDifficultyRating.HARD -> SrsRating.HARD
-                        com.alexpo.grammermate.data.CardDifficultyRating.AGAIN -> SrsRating.HARD
-                    }
-                }
+            com.alexpo.grammermate.ui.DailyPracticeScreen(
+                state = sessionState,
+                blockProgress = progress,
+                currentBlock = block,
+                currentTask = vocabTask,
+                onShowSentenceAnswer = { null },
+                onShowVerbAnswer = { null },
+                onRateVocabCard = { ratedRating = it },
+                onSpeak = { },
+                onStopTts = { },
+                ttsState = com.alexpo.grammermate.data.TtsState.Idle,
+                onExit = { },
+                onComplete = { }
             )
         }
 
-        // ACT: Click Show Answer button
-        composeTestRule.onNodeWithTag("show_answer_button")
-            .performClick()
+        // ACT: flip the card via the real Show answer button
+        composeTestRule.onNodeWithText("Show answer").performClick()
+        composeTestRule.waitForIdle()
 
-        // ASSERT: Show answer callback invoked
-        assertTrue("Show answer should be called", showAnswerCalled)
+        // ASSERT: the answer is revealed — the rating row appears
+        composeTestRule.onNodeWithText("Easy").assertIsDisplayed()
 
-        // ACT: Rate the card (simulate EASY rating)
-        // In real UI, user clicks rating button
-        // The callback is defined in TrainingScreen parameters
-        // Simulating the effect of rating EASY
+        // ACT: rate EASY through the UI
+        composeTestRule.onNodeWithText("Easy").performClick()
 
-        // Simulate EASY rating
-        rated = true
-        currentRating = SrsRating.EASY
-
-        // ASSERT: Card was rated
-        assertTrue("Card should be rated", rated)
-        assertEquals("Should be EASY rating", SrsRating.EASY, currentRating)
+        // ASSERT: rating went through the callback
+        assertEquals("Card should be rated EASY", SrsRating.EASY, ratedRating)
     }
 
     // ========================================

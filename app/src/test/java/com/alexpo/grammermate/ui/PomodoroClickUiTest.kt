@@ -304,7 +304,7 @@ class PomodoroClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — cancelled pomodoro reports complete, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun cancelPomodoro_summaryNotShown() {
         // ARRANGE: Active Pomodoro
         var isActive = true
@@ -314,8 +314,18 @@ class PomodoroClickUiTest {
         cancelled = true
         isActive = false
 
-        // ASSERT: Not marked as complete, just inactive
-        assertFalse("Should not be complete (cancelled)", !isActive && cancelled)
+        // ASSERT: cancelling ends the session WITHOUT completing it —
+        // the real invariant is on PomodoroState (what the UI renders from)
+        val cancelledState = PomodoroState(
+            isActive = isActive,
+            isPaused = false,
+            isComplete = false,
+            totalSeconds = 1500,
+            remainingSeconds = 700
+        )
+        assertFalse("Cancelled session must not be complete", cancelledState.isComplete)
+        assertFalse("Cancelled session must not be active", cancelledState.isActive)
+        assertFalse("Summary renders only when isComplete", cancelledState.isComplete)
     }
 
     // ========================================

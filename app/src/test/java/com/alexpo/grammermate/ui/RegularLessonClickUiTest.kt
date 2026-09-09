@@ -5,7 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertTextContains
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -112,7 +115,7 @@ class RegularLessonClickUiTest {
             .performTextInput("english word 1")
 
         // ACT: Click Check button
-        composeTestRule.onNodeWithTag("check_button").performClick()
+        composeTestRule.onNodeWithTag("check_button").performScrollTo().performClick()
 
         // ASSERT: Verify submit was called
         assert(submitCount == 1) { "Submit should be called once" }
@@ -123,7 +126,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — hint-attempt counting drift, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun threeWrongAnswers_showsHint() {
         // ARRANGE
         val testCard = SentenceCard(
@@ -150,13 +153,20 @@ class RegularLessonClickUiTest {
             )
         )
 
-        // ACT: Render TrainingScreen
+        // ACT: Render TrainingScreen with a REACTIVE input field: the
+        // check button enables only when state's inputText is non-blank,
+        // so the harness must recompose with the typed text (a static
+        // state keeps the button disabled forever).
         composeTestRule.setContent {
+            var typed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
             TrainingScreen(
-                state = initialState,
-                onInputChange = { text -> currentInput = text },
+                state = initialState.copy(
+                    cardSession = initialState.cardSession.copy(inputText = typed)
+                ),
+                onInputChange = { text -> currentInput = text; typed = text },
                 onSubmit = {
                     incorrectCount++
+                    typed = ""
                     // Simulate wrong answer - no hint shown yet
                     SubmitResult(accepted = false, hintShown = incorrectCount >= 3)
                 },
@@ -180,15 +190,14 @@ class RegularLessonClickUiTest {
         // ACT: Submit three wrong answers
         repeat(3) {
             composeTestRule.onNodeWithTag("input_field")
-                .performTextInput("wrong answer")
-            composeTestRule.onNodeWithTag("check_button").performClick()
-            // Clear input for next attempt
-            currentInput = ""
+                .performTextInput("wrong answer $it")
+            composeTestRule.onNodeWithTag("check_button").performScrollTo().performClick()
+            composeTestRule.waitForIdle()
         }
 
         // ASSERT: After 3 wrong, hint should be available
         // (In real app, hint is shown via answerText in state)
-        assert(incorrectCount == 3) { "Should have 3 incorrect attempts" }
+        assert(incorrectCount == 3) { "Should have 3 incorrect attempts (got $incorrectCount, lastInput='$currentInput')" }
     }
 
     // ========================================
@@ -196,7 +205,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — completion screen not displayed, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun completeAllCards_showsCompletionScreen() {
         // ARRANGE: No cards remaining = completion state
         val completionState = TrainingUiState().copy(
@@ -243,11 +252,11 @@ class RegularLessonClickUiTest {
 
         // ASSERT: Completion screen should be displayed
         // The completion content shows statistics
-        composeTestRule.onNodeWithText("8").assertIsDisplayed()  // correct count
-        composeTestRule.onNodeWithText("2").assertIsDisplayed()  // incorrect count
+        // Completion stats render as ONE combined string (SessionCompletionContent)
+        composeTestRule.onNodeWithText("8 correct / 2 incorrect (80%)").assertIsDisplayed()
 
-        // ACT: Click Done button
-        composeTestRule.onNodeWithText("Done").performClick()
+        // ACT: Click OK (the completion button; was "Done" pre-consolidation)
+        composeTestRule.onNodeWithText("OK").performClick()
 
         // ASSERT: onSessionDone callback should be invoked
         assert(onDoneCalled) { "Session done callback should be invoked" }
@@ -258,7 +267,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — duplicate-node matcher drift, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun pause_typeAnswer_check_resume_sameCard() {
         // ARRANGE
         val testCard = SentenceCard(
@@ -285,12 +294,16 @@ class RegularLessonClickUiTest {
             )
         )
 
-        // ACT: Render TrainingScreen
+        // ACT: Render TrainingScreen (reactive input: the check button
+        // enables only when the state's inputText is non-blank)
         composeTestRule.setContent {
+            var typed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
             TrainingScreen(
-                state = initialState,
-                onInputChange = { text -> currentInput = text },
-                onSubmit = { submitCount++; SubmitResult(accepted = true, hintShown = false) },
+                state = initialState.copy(
+                    cardSession = initialState.cardSession.copy(inputText = typed)
+                ),
+                onInputChange = { text -> currentInput = text; typed = text },
+                onSubmit = { submitCount++; typed = ""; SubmitResult(accepted = true, hintShown = false) },
                 onPrev = { /* no-op */ },
                 onNext = { /* no-op */ },
                 onTogglePause = { isPaused = !isPaused },
@@ -319,9 +332,10 @@ class RegularLessonClickUiTest {
         // Note: In real UI, pause button text changes based on state
         // Here we just verify the callback is invoked
 
-        // ACT: Resume and complete the answer
-        currentInput = "card five"
-        composeTestRule.onNodeWithTag("check_button").performClick()
+        // ACT: Resume and complete the answer (type the full answer — the
+        // earlier "partial" was cleared by the accepted-submit simulation)
+        composeTestRule.onNodeWithTag("input_field").performTextInput("card five")
+        composeTestRule.onNodeWithTag("check_button").performScrollTo().performClick()
 
         // ASSERT: Submit was called
         assert(submitCount == 1) { "Submit should be called once" }
@@ -332,7 +346,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — duplicate-node matcher drift, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun wordBankMode_clickWords_submit() {
         // ARRANGE: Enable Word Bank with available words
         val testCard = SentenceCard(
@@ -361,10 +375,20 @@ class RegularLessonClickUiTest {
             )
         )
 
-        // ACT: Render TrainingScreen
+        // ACT: Render TrainingScreen (reactive: word selections flow back
+        // into the state — the check button enables only when inputText is
+        // non-blank)
         composeTestRule.setContent {
+            var selected by androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(emptyList<String>())
+            }
             TrainingScreen(
-                state = initialState,
+                state = initialState.copy(
+                    cardSession = initialState.cardSession.copy(
+                        selectedWords = selected,
+                        inputText = selected.joinToString(" ")
+                    )
+                ),
                 onInputChange = { text -> currentInput = text },
                 onSubmit = { submitCount++; SubmitResult(accepted = true, hintShown = false) },
                 onPrev = { /* no-op */ },
@@ -380,6 +404,7 @@ class RegularLessonClickUiTest {
                 onVoicePromptStarted = { /* no-op */ },
                 onSelectWordFromBank = { word ->
                     selectedWords = selectedWords + word
+                    selected = selected + word
                     currentInput = selectedWords.joinToString(" ")
                 },
                 onRemoveLastWord = { /* no-op */ },
@@ -390,15 +415,11 @@ class RegularLessonClickUiTest {
         // ASSERT: Word bank should show available words
         composeTestRule.onNodeWithText("слово").assertIsDisplayed()
 
-        // ACT: Select words from bank (simulated via callback)
-        // In real UI, user clicks on word chips
-        // The callback is invoked by TrainingScreen when user clicks a word
-        // Simulating the effect of clicking "word"
-        // (currentInput is updated by the callback in TrainingScreen)
-        assert(initialState.cardSession.wordBankWords.contains("word")) { "Word bank should contain 'word'" }
+        // ACT: Select a word from the bank via the UI chip (real click path)
+        composeTestRule.onNodeWithText("word").performClick()
 
         // ACT: Submit
-        composeTestRule.onNodeWithTag("check_button").performClick()
+        composeTestRule.onNodeWithTag("check_button").performScrollTo().performClick()
         assert(submitCount == 1) { "Submit should be called" }
     }
 
@@ -469,7 +490,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — duplicate-node matcher drift, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun previousNextNavigation_works() {
         // ARRANGE: Multiple cards
         val testCards = listOf(
@@ -523,6 +544,7 @@ class RegularLessonClickUiTest {
 
         // ACT: Click Previous
         composeTestRule.onNodeWithTag("prev_button")
+            .performScrollTo()
             .performClick()
 
         // ASSERT: Previous callback invoked
@@ -530,6 +552,7 @@ class RegularLessonClickUiTest {
 
         // ACT: Click Next
         composeTestRule.onNodeWithTag("next_button")
+            .performScrollTo()
             .performClick()
 
         // ASSERT: Next callback invoked
@@ -614,7 +637,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — incorrect-feedback component not displayed, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun incorrectAnswer_showsIncorrectFeedback() {
         // ARRANGE
         val testCard = SentenceCard(
@@ -662,7 +685,8 @@ class RegularLessonClickUiTest {
         }
 
         // ASSERT: "Incorrect" feedback should be displayed
-        composeTestRule.onNodeWithText("Incorrect").assertIsDisplayed()
+        // ResultBlock renders at the bottom of the scrollable — bring it in
+        composeTestRule.onNodeWithText("Incorrect").performScrollTo().assertIsDisplayed()
     }
 
     // ========================================
@@ -670,7 +694,7 @@ class RegularLessonClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — progress indicator not displayed, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun progressIndicator_showsCorrectProgress() {
         // ARRANGE
         val testCards = listOf(
@@ -718,7 +742,7 @@ class RegularLessonClickUiTest {
 
         // ASSERT: Progress indicator should show "1 / 2"
         // The progress indicator displays current/total
-        composeTestRule.onNodeWithText("1").assertIsDisplayed()  // current
-        composeTestRule.onNodeWithText("2").assertIsDisplayed()  // total
+        // Progress renders as a single "current / total" string
+        composeTestRule.onNodeWithText("1 / 2").assertIsDisplayed()
     }
 }

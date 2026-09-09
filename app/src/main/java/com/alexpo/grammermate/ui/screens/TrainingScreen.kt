@@ -312,17 +312,23 @@ fun TrainingScreen(
             }
 
             // ── Prompt text ────────────────────────────────────────────
-            val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
-            val cleanPrompt = rawPrompt.replace(ParentheticalRegex, "")
+            // Drill modes render the prompt here (green, next to the chips and
+            // drill progress); every other mode renders the RU-labeled
+            // CardPrompt card below. Rendering BOTH duplicated the prompt on
+            // every card — a production bug the paused click-UI suites pinned.
             val isDrillStyle = mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS
-            if (cleanPrompt.isNotBlank()) {
-                Text(
-                    text = cleanPrompt,
-                    fontSize = (18f * state.audio.ruTextScale).sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isDrillStyle) CorrectGreen else MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (isDrillStyle) {
+                val rawPrompt = state.cardSession.currentCard?.promptRu ?: ""
+                val cleanPrompt = rawPrompt.replace(ParentheticalRegex, "")
+                if (cleanPrompt.isNotBlank()) {
+                    Text(
+                        text = cleanPrompt,
+                        fontSize = (18f * state.audio.ruTextScale).sp,
+                        fontWeight = FontWeight.Medium,
+                        color = CorrectGreen,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             // ── Chips for VERB_DRILL / DAILY_VERBS ──────────────────────
@@ -353,7 +359,9 @@ fun TrainingScreen(
                 )
             }
 
-            CardPrompt(state, onSpeak = onTtsSpeak)
+            if (!isDrillStyle) {
+                CardPrompt(state, onSpeak = onTtsSpeak)
+            }
             AnswerBox(
                 state,
                 onInputChange,

@@ -41,7 +41,6 @@ import kotlinx.coroutines.runBlocking
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
-@Ignore("Phase 0 quarantine — 7/7 fail: session persistence lifecycle drift, reopened in Phase 2 (legacy-test-quarantine.md)")
 class VerbDrillScreenStartFreshResumeTest {
 
     @get:Rule
@@ -128,14 +127,12 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel2.reloadForPack(testPackId)
         waitForViewModel(viewModel2)
 
-        // --- THEN: Dialog should be shown ---
-        composeTestRule.onNodeWithText("Resume").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Start Fresh").assertIsDisplayed()
-        composeTestRule.onNodeWithText("You have an incomplete session").assertIsDisplayed()
-
-        // --- THEN: Session context should be displayed ---
-        composeTestRule.onNodeWithText(testTense).assertIsDisplayed()
-        composeTestRule.onNodeWithText(testGroup).assertIsDisplayed()
+        // --- THEN (VD-51): the inline SessionCard is shown (dialog retired)
+        composeTestRule.onNodeWithTag("session_card").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Previous session").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("continue_button").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("repeat_button").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("reset_button").performScrollTo().assertIsDisplayed()
         }
     }
 
@@ -188,15 +185,15 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel2.reloadForPack(testPackId)
         waitForViewModel(viewModel2)
 
-        // Verify dialog is shown
-        composeTestRule.onNodeWithText("Resume").assertIsDisplayed()
+        // Verify session card is shown
+        composeTestRule.onNodeWithTag("session_card").performScrollTo().assertIsDisplayed()
 
-        // Click Resume
-        composeTestRule.onNodeWithText("Resume").performClick()
+        // Click Continue (the resume action)
+        composeTestRule.onNodeWithTag("continue_button").performScrollTo().performClick()
         waitForViewModel(viewModel2)
 
-        // --- THEN: Dialog should be dismissed ---
-        composeTestRule.onNodeWithText("Resume").assertDoesNotExist()
+        // --- THEN: SessionCard gone (session active) ---
+        composeTestRule.onAllNodesWithTag("session_card").fetchSemanticsNodes().isEmpty()
 
         // --- THEN: New session should be started with NEXT cards ---
         val newSession = viewModel2.uiState.value.session
@@ -217,8 +214,8 @@ class VerbDrillScreenStartFreshResumeTest {
         check(viewModel2.uiState.value.selectedTense == testTense) { "Tense should be restored" }
         check(viewModel2.uiState.value.selectedGroup == testGroup) { "Group should be restored" }
 
-        // --- THEN: Last session should be deleted after resume ---
-        check(store.loadLastSession() == null) { "Last session should be deleted after resume" }
+        // --- THEN (VD-51): the saved session is kept until an explicit Reset
+        check(store.loadLastSession() != null) { "Last session should be preserved until Reset" }
     }
 
     // ========================================
@@ -257,11 +254,11 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel2.reloadForPack(testPackId)
         waitForViewModel(viewModel2)
 
-        // Verify dialog is shown
-        composeTestRule.onNodeWithText("Start Fresh").assertIsDisplayed()
+        // Verify session card is shown
+        composeTestRule.onNodeWithTag("session_card").performScrollTo().assertIsDisplayed()
 
-        // Click Start Fresh
-        composeTestRule.onNodeWithText("Start Fresh").performClick()
+        // Click Reset from beginning (the start-fresh action)
+        composeTestRule.onNodeWithTag("reset_button").performScrollTo().performClick()
         waitForViewModel(viewModel2)
 
         // --- THEN: Dialog should be dismissed ---
@@ -272,8 +269,8 @@ class VerbDrillScreenStartFreshResumeTest {
         check(store.loadLastSession() == null) { "Last session should be deleted" }
 
         // --- THEN: Selection screen should be visible ---
-        composeTestRule.onNodeWithText("Verb Drill").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Start").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Verb Practice").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("verb_start_button").performScrollTo().assertIsDisplayed()
 
         // --- THEN: Filters should be cleared ---
         check(viewModel2.uiState.value.selectedTense == null) { "Tense should be null" }
@@ -315,13 +312,16 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel2.reloadForPack(testPackId)
         waitForViewModel(viewModel2)
 
-        composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("session_card").performScrollTo().assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Cancel").performClick()
+        // VD-51: no dialog Cancel; the selection screen stays with the saved
+        // session card until an explicit action
+        composeTestRule.onNodeWithText("Verb Practice").performScrollTo().assertIsDisplayed()
         waitForViewModel(viewModel2)
 
-        // --- THEN: Dialog should be dismissed ---
-        composeTestRule.onNodeWithText("Resume").assertDoesNotExist()
+        // --- THEN (VD-51): no dialog to cancel; the screen's back button
+        // still routes through onBack
+        composeTestRule.onNodeWithContentDescription("Back").performClick()
 
         // --- THEN: Back callback should be invoked ---
         check(backPressed) { "Back should be pressed after cancel" }
@@ -358,8 +358,8 @@ class VerbDrillScreenStartFreshResumeTest {
         waitForViewModel(viewModel)
 
         // --- THEN: Selection screen should be visible ---
-        composeTestRule.onNodeWithText("Verb Drill").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Start").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Verb Practice").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("verb_start_button").performScrollTo().assertIsDisplayed()
 
         // --- THEN: Dialog should NOT be shown ---
         composeTestRule.onNodeWithText("Resume").assertDoesNotExist()
@@ -381,8 +381,10 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel1.reloadForPack(testPackId)
         waitForViewModel(viewModel1)
 
-        viewModel1.selectTense("Imperfetto")
-        viewModel1.selectGroup("mixed_irregular")
+        // NOTE: createTestCards only mints cards for testTense/testGroup —
+        // selecting any other filters yields an empty session that never saves
+        viewModel1.selectTense(testTense)
+        viewModel1.selectGroup(testGroup)
         viewModel1.startSession()
 
         viewModel1.exitSession()
@@ -402,9 +404,12 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel2.reloadForPack(testPackId)
         waitForViewModel(viewModel2)
 
-        // --- THEN: Dialog should show filter context ---
-        composeTestRule.onNodeWithText("Imperfetto").assertIsDisplayed()
-        composeTestRule.onNodeWithText("mixed_irregular").assertIsDisplayed()
+        // --- THEN (VD-51): SessionCard visible; filter context lives in state
+        composeTestRule.onNodeWithTag("session_card").performScrollTo().assertIsDisplayed()
+        val ctx = viewModel2.uiState.value.lastSessionContext
+        check(ctx != null && ctx.selectedTense == testTense && ctx.selectedGroup == testGroup) {
+            "Session context should preserve filters: $ctx"
+        }
 
         // --- THEN: Progress and Score labels should NOT be shown ---
         // Note: These assertions assume the string resources use "Progress" and "Score" as labels
@@ -455,14 +460,16 @@ class VerbDrillScreenStartFreshResumeTest {
         viewModel2.reloadForPack(testPackId)
         waitForViewModel(viewModel2)
 
-        composeTestRule.onNodeWithText("Resume").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Resume").performClick()
+        composeTestRule.onNodeWithTag("continue_button").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("continue_button").performScrollTo().performClick()
         waitForViewModel(viewModel2)
 
         // --- THEN: No new cards should be available ---
         check(viewModel2.uiState.value.allDoneToday) { "Should show all done message" }
+        composeTestRule.onNodeWithText("На сегодня всё!").performScrollTo().assertIsDisplayed()
         check(viewModel2.uiState.value.session == null) { "No session should be started" }
-        check(store.loadLastSession() == null) { "Last session should be deleted after resume" }
+        // VD-51: the saved session state survives until an explicit Reset
+        check(store.loadLastSession() != null) { "Saved session preserved until Reset" }
     }
 
     // ========================================
@@ -474,7 +481,13 @@ class VerbDrillScreenStartFreshResumeTest {
      * Includes delay for coroutine launches and state updates.
      */
     private suspend fun waitForViewModel(viewModel: VerbDrillViewModel) {
-        delay(500) // Wait for coroutines to settle
+        // The VM loads cards on viewModelScope (Dispatchers.Main) — under
+        // Robolectric those continuations sit in the main-looper queue and
+        // only run when the looper is drained. delay() alone never pumps it.
+        repeat(10) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+            delay(50)
+        }
         composeTestRule.waitForIdle()
     }
 

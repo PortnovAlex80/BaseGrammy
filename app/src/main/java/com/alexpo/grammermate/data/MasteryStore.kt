@@ -20,8 +20,17 @@ interface MasteryStore {
     /** Save mastery state with pack-scoped key. */
     fun saveForPack(state: LessonMasteryState, packId: String)
 
-    /** Record card show with pack-scoped key. */
+    /** Record card show with pack-scoped key. Exposure only — does not advance the ladder. */
     fun recordCardShowForPack(packId: String, lessonId: String, cardId: String)
+
+    /**
+     * Record a self-produced answer (voice/keyboard, no reveal) for a lesson.
+     * The only place the interval ladder advances.
+     */
+    fun recordSelfProducedForPack(packId: String, lessonId: String, totalEffortCards: Int)
+
+    /** Sum of totalCardShows across the pack — the effort axis of the forgetting curve. */
+    fun totalEffortCardsForPack(packId: String): Int
 
     /** Pack-scoped card progress marking. */
     fun markCardsShownForProgressForPack(packId: String, lessonId: String, cardIds: Collection<String>)
@@ -169,25 +178,13 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             val isNewCard = existing?.shownCardIds?.contains(cardId) != true
             val newShownCardIds = (existing?.shownCardIds ?: emptySet()) + cardId
 
-            val daysSinceLastShow = if (existing?.lastShowDateMs != null && existing.lastShowDateMs > 0) {
-                ((now - existing.lastShowDateMs) / (24 * 60 * 60 * 1000)).toInt()
-            } else {
-                0
-            }
-
-            val currentStep = existing?.intervalStepIndex ?: 0
-            val wasOnTime = SpacedRepetitionConfig.wasRepetitionOnTime(daysSinceLastShow, currentStep)
-            val newStep = if (existing != null && daysSinceLastShow > 0) {
-                SpacedRepetitionConfig.nextIntervalStep(currentStep, wasOnTime)
-            } else {
-                currentStep
-            }
-
-            // Use packId-derived language from existing state, or empty placeholder
-            val languageId = existing?.languageId?.value ?: ""
-            val updated = LessonMasteryState(
+            // Лестница интервалов здесь НЕ двигается: показ карточки — это
+            // экспозиция, а не доказательство воспроизведения. Продвижение живёт
+            // в recordSelfProducedForPack (см. спеку forgetting-curve-review-scheduling.md).
+            val updated = (existing ?: LessonMasteryState(
                 lessonId = LessonId(lessonId),
-                languageId = LanguageId(languageId),
+                languageId = LanguageId("")
+            )).copy(
                 uniqueCardShows = if (isNewCard) {
                     (existing?.uniqueCardShows ?: 0) + 1
                 } else {
@@ -195,14 +192,79 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                 },
                 totalCardShows = (existing?.totalCardShows ?: 0) + 1,
                 lastShowDateMs = now,
-                intervalStepIndex = newStep,
-                completedAtMs = existing?.completedAtMs,
                 shownCardIds = newShownCardIds
             )
 
             cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
         persistToFileLocked()
+    }
+
+    /**
+     * Отметить **самостоятельное воспроизведение** карточки урока.
+     *
+     * Единственная точка, где двигается лестница интервалов. Вызывается, когда
+     * ответ принят, режим ввода считается для мастери (не WORD_BANK) и ответ не
+     * был раскрыт через «показать ответ».
+     *
+     * Правильность ответа как сигнал использовать нельзя: голосовой ввод идёт
+     * через ASR с высокой долей ошибок, поэтому непринятый ответ чаще означает
+     * промах распознавания, а не забывание. Доступен только бинарный сигнал —
+     * человек воспроизвёл карточку или нет.
+     *
+     * Шаг двигается не чаще раза в календарный день на урок; [lastReviewMs] и
+     * [effortAtLastReview] стамповываются при каждом вызове, задавая обе шкалы
+     * кривой забывания.
+     *
+     * @param totalEffortCards суммарные показы карточек по паку на текущий момент
+     */
+    override fun recordSelfProducedForPack(
+        packId: String,
+        lessonId: String,
+        totalEffortCards: Int
+    ) = fileMutex.withLock {
+        mutex.withLock {
+            loadAllInternal()
+
+            val packKey = "pack:$packId"
+            val existing = cache[packKey]?.get(lessonId)
+            val now = System.currentTimeMillis()
+
+            val daysSinceLastReview = if (existing != null && existing.lastReviewMs > 0) {
+                ((now - existing.lastReviewMs) / (24 * 60 * 60 * 1000)).toInt()
+            } else {
+                0
+            }
+
+            val currentStep = existing?.intervalStepIndex ?: 0
+            val newStep = if (existing != null && existing.lastReviewMs > 0 && daysSinceLastReview > 0) {
+                val wasOnTime = SpacedRepetitionConfig.wasRepetitionOnTime(daysSinceLastReview, currentStep)
+                SpacedRepetitionConfig.nextIntervalStep(currentStep, wasOnTime)
+            } else {
+                currentStep
+            }
+
+            val updated = (existing ?: LessonMasteryState(
+                lessonId = LessonId(lessonId),
+                languageId = LanguageId("")
+            )).copy(
+                intervalStepIndex = newStep,
+                lastReviewMs = now,
+                effortAtLastReview = totalEffortCards
+            )
+
+            cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
+        }
+        persistToFileLocked()
+    }
+
+    /**
+     * Суммарные показы карточек по паку — шкала усилий кривой забывания.
+     * Считается по уже загруженной карте mastery: отдельный счётчик не нужен.
+     */
+    override fun totalEffortCardsForPack(packId: String): Int = mutex.withLock {
+        loadAllInternal()
+        cache["pack:$packId"]?.values?.sumOf { it.totalCardShows } ?: 0
     }
 
     /**
@@ -353,7 +415,9 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                     "intervalStepIndex" to mastery.intervalStepIndex,
                     "completedAtMs" to mastery.completedAtMs,
                     "shownCardIds" to mastery.shownCardIds.toList(),
-                    "cardEncounterCounts" to mastery.cardEncounterCounts
+                    "cardEncounterCounts" to mastery.cardEncounterCounts,
+                    "lastReviewMs" to mastery.lastReviewMs,
+                    "effortAtLastReview" to mastery.effortAtLastReview
                 )
             }
 

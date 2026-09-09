@@ -7,9 +7,19 @@ enum class SubLessonType {
     MIXED
 }
 
+/**
+ * Один блок под-урока.
+ *
+ * Для [SubLessonType.MIXED] расписание хранит только **число слотов** под
+ * повторение, а не конкретные карточки: чем их заполнить, решается в момент
+ * показа по актуальному mastery (см. [com.alexpo.grammermate.feature.training.ReviewSelector]).
+ * Благодаря этому статический план остаётся функцией контента, а всё
+ * зависящее от времени считается на лету.
+ */
 data class ScheduledSubLesson(
     val type: SubLessonType,
-    val cards: List<SentenceCard>
+    val cards: List<SentenceCard>,
+    val reviewSlots: Int = 0
 )
 
 data class LessonSchedule(
@@ -17,38 +27,30 @@ data class LessonSchedule(
     val subLessons: List<ScheduledSubLesson>
 )
 
+/**
+ * Строит **форму** курса: сколько блоков у каждого урока, какие новые карточки
+ * в них попадают и сколько в смешанных блоках слотов под повторение.
+ *
+ * Конкретные карточки повторения здесь НЕ выбираются — это делает
+ * [com.alexpo.grammermate.feature.training.ReviewSelector] в момент показа, по
+ * актуальному mastery. Раньше они запекались сюда вместе с позиционным
+ * счётчиком «дней», из-за чего план не мог реагировать на то, когда человек
+ * реально занимался, а «день» растягивался пропорционально размеру урока.
+ *
+ * См. `docs/specification/forgetting-curve-review-scheduling.md`.
+ */
 class MixedReviewScheduler(
-    private val subLessonSize: Int,
-    private val intervals: List<Int> = listOf(1, 2, 4, 7, 10, 14, 20, 28, 42, 56)
+    private val subLessonSize: Int
 ) {
 
     fun build(lessons: List<Lesson>): Map<LessonId, LessonSchedule> {
         if (lessons.isEmpty()) return emptyMap()
         val schedules = linkedMapOf<LessonId, LessonSchedule>()
-        val reviewQueues = mutableMapOf<LessonId, ArrayDeque<SentenceCard>>()
-        val reserveQueues = mutableMapOf<LessonId, ArrayDeque<SentenceCard>>()
-        val reviewStartMixedIndex = mutableMapOf<LessonId, Int>()
-        val lessonIndexById = lessons.mapIndexed { index, lesson -> lesson.id to index }.toMap()
-        var globalMixedIndex = 0
 
         lessons.forEachIndexed { lessonIndex, lesson ->
-            if (lessonIndex > 0) {
-                val previousLessonId = lessons[lessonIndex - 1].id
-                reviewStartMixedIndex.putIfAbsent(previousLessonId, globalMixedIndex)
-            }
-
-            // Limit total review cards to TrainingConfig.REVIEW_LIMIT
-            val allReviewCards = (lesson.mainPoolCards + lesson.reservePoolCards)
-                .shuffled()
-                .take(TrainingConfig.REVIEW_LIMIT)
-
-            // Split into main and reserve pools (50/50 split up to max)
-            val mainCount = (allReviewCards.size / 2).coerceAtLeast(lesson.mainPoolCards.size.coerceAtMost(150))
-            reviewQueues[lesson.id] = ArrayDeque(allReviewCards.take(mainCount))
-            reserveQueues[lesson.id] = ArrayDeque(allReviewCards.drop(mainCount))
-
             // Use all available cards for sub-lessons (not just first 150)
             val currentCards = lesson.allCards
+            // Первому уроку повторять нечего — у него нет предшественников.
             val allowMixed = lessonIndex > 0
             val reviewSlots = subLessonSize / 2
             val currentSlotsInMixed = subLessonSize - reviewSlots
@@ -67,28 +69,16 @@ class MixedReviewScheduler(
             val mixedSubLessons = mutableListOf<ScheduledSubLesson>()
             if (allowMixed) {
                 while (mixedCurrentQueue.isNotEmpty()) {
-                    globalMixedIndex += 1
                     val currentHalf = takeUpTo(mixedCurrentQueue, currentSlotsInMixed)
-                    val reviewSlotsNeeded = subLessonSize - currentHalf.size
-                    val dueLessons = dueLessonIds(
-                        reviewStartMixedIndex,
-                        lessonIndexById,
-                        globalMixedIndex
-                    ).take(2)
-                    val reviewCards = if (reviewSlotsNeeded <= 0) {
-                        emptyList()
-                    } else {
-                        fillReviewSlots(
-                            dueLessons,
-                            reviewQueues,
-                            reserveQueues,
-                            reviewSlotsNeeded,
-                            mixedCurrentQueue
+                    val slotsNeeded = (subLessonSize - currentHalf.size).coerceAtLeast(0)
+                    if (currentHalf.isNotEmpty()) {
+                        mixedSubLessons.add(
+                            ScheduledSubLesson(
+                                type = SubLessonType.MIXED,
+                                cards = currentHalf,
+                                reviewSlots = slotsNeeded
+                            )
                         )
-                    }
-                    val mixedCards = currentHalf + reviewCards
-                    if (mixedCards.isNotEmpty()) {
-                        mixedSubLessons.add(ScheduledSubLesson(SubLessonType.MIXED, mixedCards))
                     }
                 }
             }
@@ -105,94 +95,6 @@ class MixedReviewScheduler(
         }
 
         return schedules
-    }
-
-    private fun dueLessonIds(
-        reviewStartMixedIndex: Map<LessonId, Int>,
-        lessonIndexById: Map<LessonId, Int>,
-        globalMixedIndex: Int
-    ): List<LessonId> {
-        if (globalMixedIndex <= 0) return emptyList()
-        val due = mutableListOf<LessonId>()
-        for ((lessonId, startIndex) in reviewStartMixedIndex) {
-            val step = globalMixedIndex - startIndex
-            if (intervals.contains(step)) {
-                due.add(lessonId)
-            }
-        }
-        return due.sortedByDescending { lessonIndexById[it] ?: -1 }
-    }
-
-    private fun fillReviewSlots(
-        dueLessons: List<LessonId>,
-        reviewQueues: Map<LessonId, ArrayDeque<SentenceCard>>,
-        reserveQueues: Map<LessonId, ArrayDeque<SentenceCard>>,
-        slots: Int,
-        fallbackQueue: ArrayDeque<SentenceCard>
-    ): List<SentenceCard> {
-        if (slots <= 0) return emptyList()
-
-        // Priority 1: Try to get cards from reserve pools first
-        val result = mutableListOf<SentenceCard>()
-        val availableReserveLessons = dueLessons.filter { reserveQueues[it]?.isNotEmpty() == true }
-
-        if (availableReserveLessons.isNotEmpty()) {
-            val reserveLessonQueues = availableReserveLessons
-                .mapNotNull { lessonId ->
-                    val queue = reserveQueues[lessonId] ?: return@mapNotNull null
-                    lessonId to queue
-                }
-                .toMutableList()
-            var index = 0
-            while (result.size < slots && reserveLessonQueues.isNotEmpty()) {
-                val (_, queue) = reserveLessonQueues[index]
-                if (queue.isNotEmpty()) {
-                    result.add(queue.removeFirst())
-                }
-                if (queue.isEmpty()) {
-                    reserveLessonQueues.removeAt(index)
-                } else {
-                    index++
-                }
-                if (index >= reserveLessonQueues.size) {
-                    index = 0
-                }
-            }
-        }
-
-        // Priority 2: If reserve not enough, use main pool cards
-        if (result.size < slots) {
-            val availableLessons = dueLessons.filter { reviewQueues[it]?.isNotEmpty() == true }
-            if (availableLessons.isNotEmpty()) {
-                val lessonQueues = availableLessons
-                    .mapNotNull { lessonId ->
-                        val queue = reviewQueues[lessonId] ?: return@mapNotNull null
-                        lessonId to queue
-                    }
-                    .toMutableList()
-                var index = 0
-                while (result.size < slots && lessonQueues.isNotEmpty()) {
-                    val (_, queue) = lessonQueues[index]
-                    if (queue.isNotEmpty()) {
-                        result.add(queue.removeFirst())
-                    }
-                    if (queue.isEmpty()) {
-                        lessonQueues.removeAt(index)
-                    } else {
-                        index++
-                    }
-                    if (index >= lessonQueues.size) {
-                        index = 0
-                    }
-                }
-            }
-        }
-
-        // Priority 3: Use fallback queue if still not enough
-        if (result.size < slots) {
-            result.addAll(takeUpTo(fallbackQueue, slots - result.size))
-        }
-        return result
     }
 
     private fun takeUpTo(queue: ArrayDeque<SentenceCard>, count: Int): List<SentenceCard> {

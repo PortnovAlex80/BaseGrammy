@@ -15,26 +15,29 @@ REPRO was rewritten to pin the repaired chain (restore-path
 `recalculateCompletionsExcludingHidden` stamps → live calculator counts).
 New rule pins live in `feature/progress/ChapterProgressRulesTest.kt`.
 
-## 2. Compose click-UI journeys — still quarantined; NOT repaired in Phase 2
+## 2. Compose click-UI journeys — REPAIRED 2026-09-09
 
-Status correction (2026-09-09, external audit): Phase 2 added ONE new journey
-test (NavigationJourneyClickUiTest — real shell, HOME→roadmap→chapter→lesson→
-training→back→exit dialog→confirm), which pins the phase's exit criteria, but
-the seven legacy suites below were NOT repaired. They remain @Ignore'd and must
-be re-recorded against the post-refactor behaviour as follow-up work — no phase
-owns them now. Two failure shapes: (a) `Expected at most 1 node but found 2` —
-harness matcher drift; (b) `The component is not displayed!` — UI behaviour
-moved since the tests were recorded.
+All 29 quarantined click-UI tests were repaired and un-@Ignore'd. The repairs
+surfaced TWO real production bugs (fixed with the repairs):
 
-| Test class | Failing / total | Shape |
-|---|---|---|
-| `ui.PauseCascadeClickUiTest` | 8 / 8 (class quarantined) | (a) duplicate-node matcher |
-| `ui.RegularLessonClickUiTest` | 7 / 10 | (a)+(b) |
-| `ui.VerbDrillScreenStartFreshResumeTest` | 7 / 7 (class quarantined) | session persistence lifecycle + (b) |
-| `ui.BossBattleClickUiTest` | 2 / 2 (class quarantined) | (b) |
-| `ui.DailyPracticeClickUiTest` | 2 / 12 | (a) + missing `show_answer_button` node |
-| `ui.PomodoroBannerClickUiTest` | 2 / 6 | (b) summary not displayed |
-| `ui.PomodoroClickUiTest` | 1 / 10 | cancel should suppress summary |
+1. **Duplicate prompt rendering in TrainingScreen** — the card prompt rendered
+   twice (untagged header text + `card_prompt_text` card) on every non-drill
+   card, which was also the root of the duplicate-node matcher failures. Drill
+   modes now render the header prompt; other modes render the RU-labeled card.
+2. **Premature verb-drill session discard** — a fresh `VerbDrillViewModel`
+   deleted the saved resume session during startup validation because card
+   availability was checked before `allCards` loaded. Validation now runs only
+   when cards are loaded. Also: the fake-store test path reads injected cards
+   via `loadAllCardsForPack` (with a pack-scoped language fallback) instead of
+   waiting for the never-called `injectTestCards`.
+
+Harness-level repairs (behaviour-preserving): remembered reactive state so
+controlled fields/buttons enable (`mutableStateOf` without `remember` resets
+every recomposition), `performScrollTo()` before below-the-fold clicks,
+`performTextSelection` semantics on controlled fields, VD-51 dialog→SessionCard
+re-anchoring in VerbDrill tests, BOSS screenMode + "N / M" progress format,
+Pomodoro `stats` field + split value/label StatCards, and the DailyPractice
+vocab flow re-pointed at its real surface (DailyPracticeScreen flip + SRS row).
 
 ## 3. Parser / normalizer drift — not owned by a plan phase; triage separately
 

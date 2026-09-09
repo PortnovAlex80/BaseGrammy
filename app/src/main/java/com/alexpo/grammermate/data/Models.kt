@@ -205,7 +205,22 @@ data class LessonMasteryState(
     val intervalStepIndex: Int = 0,
     val completedAtMs: Long? = null,
     val shownCardIds: Set<String> = emptySet(),
-    val cardEncounterCounts: Map<String, Int> = emptyMap()
+    val cardEncounterCounts: Map<String, Int> = emptyMap(),
+    /**
+     * Когда урок в последний раз был **самостоятельно воспроизведён**
+     * (голос/клавиатура, без «показать ответ»). Календарная шкала кривой
+     * забывания считается от этого момента, а НЕ от [lastShowDateMs]:
+     * часы должны мерить время с последнего повторения, иначе простой показ
+     * карточки обнулял бы срок самого урока.
+     *
+     * 0 = урок ни разу не воспроизводился; такие уроки в повторение не идут.
+     */
+    val lastReviewMs: Long = 0L,
+    /**
+     * Снимок суммарных показов карточек по паку на момент последнего
+     * повторения. Основа шкалы усилий: см. [SpacedRepetitionConfig.effectiveDays].
+     */
+    val effortAtLastReview: Int = 0
 )
 
 /**

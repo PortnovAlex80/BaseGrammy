@@ -45,6 +45,42 @@ class FakeMasteryStore : MasteryStore {
         saveForPack(updated, packId)
     }
 
+    override fun recordSelfProducedForPack(packId: String, lessonId: String, totalEffortCards: Int) {
+        val packKey = "pack:$packId"
+        val existing = data[packKey]?.get(lessonId) ?: LessonMasteryState(
+            lessonId = LessonId(lessonId),
+            languageId = LanguageId("")
+        )
+        val now = System.currentTimeMillis()
+        val daysSinceLastReview = if (existing.lastReviewMs > 0) {
+            ((now - existing.lastReviewMs) / (24 * 60 * 60 * 1000)).toInt()
+        } else {
+            0
+        }
+        val newStep = if (existing.lastReviewMs > 0 && daysSinceLastReview > 0) {
+            com.alexpo.grammermate.data.SpacedRepetitionConfig.nextIntervalStep(
+                existing.intervalStepIndex,
+                com.alexpo.grammermate.data.SpacedRepetitionConfig.wasRepetitionOnTime(
+                    daysSinceLastReview,
+                    existing.intervalStepIndex
+                )
+            )
+        } else {
+            existing.intervalStepIndex
+        }
+        saveForPack(
+            existing.copy(
+                intervalStepIndex = newStep,
+                lastReviewMs = now,
+                effortAtLastReview = totalEffortCards
+            ),
+            packId
+        )
+    }
+
+    override fun totalEffortCardsForPack(packId: String): Int =
+        data["pack:$packId"]?.values?.sumOf { it.totalCardShows } ?: 0
+
     override fun markCardsShownForProgressForPack(packId: String, lessonId: String, cardIds: Collection<String>) {
         if (cardIds.isEmpty()) return
         val packKey = "pack:$packId"

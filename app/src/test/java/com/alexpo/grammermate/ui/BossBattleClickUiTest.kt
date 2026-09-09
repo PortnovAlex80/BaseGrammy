@@ -3,7 +3,12 @@ package com.alexpo.grammermate.ui
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,7 +37,7 @@ import org.junit.runner.RunWith
  * This test specifically validates the fix for: bossProgress not updating
  */
 @RunWith(AndroidJUnit4::class)
-@Ignore("Phase 0 quarantine — 2/2 fail: components not displayed, reopened in Phase 2 (legacy-test-quarantine.md)")
+
 class BossBattleClickUiTest {
 
     @get:Rule
@@ -64,7 +69,9 @@ class BossBattleClickUiTest {
                 currentIndex = 0,
                 subLessonTotal = 10,  // Boss battle: все карточки за раз
                 sessionState = SessionState.PAUSED,  // Boss starts paused
-                inputMode = InputMode.KEYBOARD
+                inputMode = InputMode.KEYBOARD,
+                // The boss header renders only in BOSS screen modes
+                screenMode = com.alexpo.grammermate.data.TrainingScreenMode.BOSS
             ),
             boss = BossState(
                 bossActive = true,
@@ -80,10 +87,15 @@ class BossBattleClickUiTest {
             )
         )
 
-        // ACT: Render TrainingScreen in Boss mode
+        // ACT: Render TrainingScreen in Boss mode. Boss progress must live in
+        // a remembered state so each accepted submission recomposes the
+        // screen with the updated boss counter.
         composeTestRule.setContent {
+            var liveState by androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(initialState)
+            }
             TrainingScreen(
-                state = initialState,
+                state = liveState,
                 onInputChange = { text -> currentInput = text },
                 onSubmit = {
                     submitCount++
@@ -91,8 +103,16 @@ class BossBattleClickUiTest {
                     // Симуляция: правильный ответ → обновляем bossProgress
                     if (currentCardIndex < testCards.size - 1) {
                         currentCardIndex++
-                        bossProgress++  // ← ЭТО ДОЛЖНО ОБНОВЛЯТЬСЯ!
+                        bossProgress++
                     }
+                    liveState = liveState.copy(
+                        cardSession = liveState.cardSession.copy(
+                            inputText = "",
+                            // advance the card so the next typed answer exact-matches
+                            currentCard = testCards[currentCardIndex.coerceIn(testCards.indices)]
+                        ),
+                        boss = (liveState.boss ?: initialState.boss).copy(bossProgress = bossProgress)
+                    )
 
                     SubmitResult(accepted = true, hintShown = false)
                 },
@@ -119,36 +139,37 @@ class BossBattleClickUiTest {
             .onNodeWithText("Review Session")
             .assertIsDisplayed()
 
-        // ASSERT: Verify initial progress shows 0/10
+        // ASSERT: initial progress renders "current+1 / total"
         composeTestRule
-            .onNodeWithText("0% (0/10)")
+            .onNodeWithText("1 / 10")
+            .performScrollTo()
             .assertIsDisplayed()
 
-        // ACT 1: Submit first correct answer
+        // ACT 1: Submit first correct answer (exact match auto-submits on type)
         composeTestRule
-            .onNodeWithText("Your translation")
+            .onNodeWithTag("input_field")
             .performTextInput("english word 1")
-        composeTestRule
-            .onNodeWithText("Check")
-            .performClick()
+        composeTestRule.waitForIdle()
 
-        // ASSERT 1: Progress should update to 1/10
-        // ПРОВАЛ: ЭТО ТЕСТ БУДЕТ ПРОВАЛЯТЬ, ЧТО bossProgress НЕ ОБНОВЛЯЕТСЯ!
+        // ASSERT 1: progress advanced to card 2 of 10
+        if (submitCount != 1) {
+            throw AssertionError("expected 1 submit, got $submitCount (boss=$bossProgress)")
+        }
         composeTestRule
-            .onNodeWithText("10% (1/10)")
+            .onNodeWithText("2 / 10")
+            .performScrollTo()
             .assertIsDisplayed()
 
         // ACT 2: Submit second correct answer
         composeTestRule
-            .onNodeWithText("Your translation")
+            .onNodeWithTag("input_field")
             .performTextInput("english word 2")
-        composeTestRule
-            .onNodeWithText("Check")
-            .performClick()
+        composeTestRule.waitForIdle()
 
-        // ASSERT 2: Progress should update to 2/10
+        // ASSERT 2: progress advanced to card 3 of 10
         composeTestRule
-            .onNodeWithText("20% (2/10)")
+            .onNodeWithText("3 / 10")
+            .performScrollTo()
             .assertIsDisplayed()
     }
 
@@ -173,7 +194,9 @@ class BossBattleClickUiTest {
                 currentIndex = 0,
                 subLessonTotal = 10,
                 sessionState = SessionState.PAUSED,
-                inputMode = InputMode.KEYBOARD
+                inputMode = InputMode.KEYBOARD,
+                // The boss header renders only in BOSS screen modes
+                screenMode = com.alexpo.grammermate.data.TrainingScreenMode.BOSS
             ),
             boss = BossState(
                 bossActive = true,
@@ -216,9 +239,10 @@ class BossBattleClickUiTest {
             .onNodeWithText("Review Session")  // Boss mode title
             .assertIsDisplayed()
 
-        // ASSERT: Verify progress shows boss cards (not sub-lesson)
+        // ASSERT: progress renders "current / total" (boss branch)
         composeTestRule
-            .onNodeWithText("0% (0/10)")  // bossProgress/bossTotal
+            .onNodeWithText("1 / 10")
+            .performScrollTo()
             .assertIsDisplayed()
     }
 }

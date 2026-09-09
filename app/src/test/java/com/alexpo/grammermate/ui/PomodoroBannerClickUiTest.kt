@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.data.*
 import com.alexpo.grammermate.ui.screens.TrainingScreen
@@ -202,7 +203,7 @@ class PomodoroBannerClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — summary component not displayed, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun pomodoroCompleteEarly_summaryShowsStats() {
         // ARRANGE: Pomodoro completed early (e.g., after 15 minutes)
         val pomodoroState = PomodoroState(
@@ -212,7 +213,13 @@ class PomodoroBannerClickUiTest {
             totalSeconds = 1500,
             remainingSeconds = 600, // 10 minutes remaining (completed early)
             baselineCorrect = 12,
-            baselineIncorrect = 3
+            baselineIncorrect = 3,
+            // Summary stats come from this dedicated field now
+            stats = com.alexpo.grammermate.data.PomodoroSessionStats(
+                cardsShown = 20,
+                cardsCorrect = 8,
+                cardsIncorrect = 12
+            )
         )
 
         val initialState = TrainingUiState().copy(
@@ -270,14 +277,15 @@ class PomodoroBannerClickUiTest {
 
         // ASSERT: Stats should be displayed
         // Session correct = 20 - 12 = 8, Total = 20, Success rate = 40%
-        composeTestRule.onNodeWithText("20 cards").assertIsDisplayed()
-        composeTestRule.onNodeWithText("40%").assertIsDisplayed()
+        // Value and label render as SEPARATE Text nodes (StatCard)
+        composeTestRule.onNodeWithText("20").assertIsDisplayed()
+        composeTestRule.onNodeWithText("40%").performScrollTo().assertIsDisplayed()
 
         // ASSERT: Streak info should be shown
-        composeTestRule.onNodeWithText("5 day streak!").assertIsDisplayed()
+        composeTestRule.onNodeWithText("5 day streak!").performScrollTo().assertIsDisplayed()
 
         // ACT: Click Done button
-        composeTestRule.onNodeWithTag("pomodoro_done_button").performClick()
+        composeTestRule.onNodeWithTag("pomodoro_done_button").performScrollTo().performClick()
 
         // ASSERT: Callback invoked
         assertTrue("Done callback should be invoked", onDoneClicked)
@@ -288,7 +296,7 @@ class PomodoroBannerClickUiTest {
     // ========================================
 
     @Test
-    @Ignore("Phase 0 quarantine — summary component not displayed, reopened in Phase 2 (legacy-test-quarantine.md)")
+
     fun pomodoroSummary_persistsUntilOkClicked() {
         // ARRANGE: Completed Pomodoro with summary
         val pomodoroState = PomodoroState(
@@ -345,13 +353,13 @@ class PomodoroBannerClickUiTest {
 
         // ASSERT: Summary should be visible
         composeTestRule.onNodeWithTag("pomodoro_summary").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("pomodoro_done_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("pomodoro_done_button").performScrollTo().assertIsDisplayed()
 
         // ASSERT: Done button NOT clicked yet
         assertFalse("Done should not be clicked yet", onDoneClicked)
 
         // ACT: Click Done button
-        composeTestRule.onNodeWithTag("pomodoro_done_button").performClick()
+        composeTestRule.onNodeWithTag("pomodoro_done_button").performScrollTo().performClick()
 
         // ASSERT: Done callback invoked
         assertTrue("Done callback should be invoked", onDoneClicked)

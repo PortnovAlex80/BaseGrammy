@@ -31,6 +31,16 @@ object SpacedRepetitionConfig {
     const val MASTERY_THRESHOLD = 150
 
     /**
+     * Сколько показов карточек считается за один «день учёбы» на шкале усилий.
+     *
+     * Калибровка по реальному паку: медианный урок IT_EXPRESS — 40–46 карточек,
+     * что при размере блока 10 даёт ~6 блоков ≈ 60 показов (включая подмешанное
+     * повторение). То есть «пройденный урок ≈ один день» — ровно то прочтение,
+     * которое заложено в механику.
+     */
+    const val CARDS_PER_DAY = 60.0
+
+    /**
      * Порог здоровья, ниже которого цветок считается увядшим.
      */
     const val WILTED_THRESHOLD = 0.5f
@@ -110,12 +120,7 @@ object SpacedRepetitionConfig {
         if (daysSinceLastShow >= GONE_THRESHOLD_DAYS) return 0f
 
         // Получаем ожидаемый интервал для текущего шага
-        val expectedInterval = if (intervalStepIndex in INTERVAL_LADDER_DAYS.indices) {
-            INTERVAL_LADDER_DAYS[intervalStepIndex]
-        } else {
-            // После прохождения всей лестницы - интервал ~2 месяца
-            INTERVAL_LADDER_DAYS.last()
-        }
+        val expectedInterval = expectedIntervalDays(intervalStepIndex)
 
         // Если в пределах интервала - здоровье 100%
         if (daysSinceLastShow <= expectedInterval) return 1.0f
@@ -132,6 +137,53 @@ object SpacedRepetitionConfig {
         val health = WILTED_THRESHOLD + (1f - WILTED_THRESHOLD) * decay.toFloat()
 
         return health.coerceIn(WILTED_THRESHOLD, 1f)
+    }
+
+    /**
+     * Ожидаемый интервал (в днях) для текущего шага лестницы.
+     * За пределами лестницы — последний (самый длинный) интервал.
+     */
+    fun expectedIntervalDays(intervalStepIndex: Int): Int =
+        if (intervalStepIndex in INTERVAL_LADDER_DAYS.indices) {
+            INTERVAL_LADDER_DAYS[intervalStepIndex]
+        } else {
+            INTERVAL_LADDER_DAYS.last()
+        }
+
+    /**
+     * Эффективный «возраст» урока по двум шкалам сразу, взятым по максимуму.
+     *
+     * Календарная шкала ловит того, кто пропал на месяц; шкала усилий — того,
+     * кто прошёл пять уроков за вечер (календарь в этом случае показывает 0).
+     * Максимум, а не сумма: нет двойного счёта, и поведение читается однозначно.
+     *
+     * @param nowMs текущее время
+     * @param lastReviewMs время последнего самостоятельного воспроизведения урока
+     * @param totalEffortCards суммарные показы карточек по паку
+     * @param effortAtLastReview снимок [totalEffortCards] на момент последнего повторения
+     */
+    fun effectiveDays(
+        nowMs: Long,
+        lastReviewMs: Long,
+        totalEffortCards: Int,
+        effortAtLastReview: Int
+    ): Double {
+        if (lastReviewMs <= 0L) return 0.0
+        val calendarDays = (nowMs - lastReviewMs).coerceAtLeast(0L) / 86_400_000.0
+        val effortDays = (totalEffortCards - effortAtLastReview).coerceAtLeast(0) / CARDS_PER_DAY
+        return maxOf(calendarDays, effortDays)
+    }
+
+    /**
+     * Степень просроченности: 1.0 — урок ровно созрел, 3.0 — просрочен втрое.
+     *
+     * Используется как **ранг**, а не как булев признак «созрел». Благодаря этому
+     * повторение невозможно потерять: не попавший в текущий блок урок остаётся
+     * просроченным и в следующий раз оказывается выше в очереди.
+     */
+    fun overdueRatio(effectiveDays: Double, intervalStepIndex: Int): Double {
+        val expected = expectedIntervalDays(intervalStepIndex).coerceAtLeast(1)
+        return effectiveDays / expected
     }
 
     /**
@@ -159,13 +211,7 @@ object SpacedRepetitionConfig {
      * @return true если повторение в пределах допустимого интервала
      */
     fun wasRepetitionOnTime(daysSinceLastShow: Int, intervalStepIndex: Int): Boolean {
-        val expectedInterval = if (intervalStepIndex in INTERVAL_LADDER_DAYS.indices) {
-            INTERVAL_LADDER_DAYS[intervalStepIndex]
-        } else {
-            INTERVAL_LADDER_DAYS.last()
-        }
-
         // Повторение считается вовремя, если не просрочен ожидаемый интервал
-        return daysSinceLastShow <= expectedInterval
+        return daysSinceLastShow <= expectedIntervalDays(intervalStepIndex)
     }
 }

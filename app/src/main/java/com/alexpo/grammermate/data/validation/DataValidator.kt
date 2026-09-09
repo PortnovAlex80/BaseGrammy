@@ -107,6 +107,12 @@ object DataValidator {
             ))
         }
 
+        // Forgetting-curve fields. Both are optional and default to 0 — a lesson
+        // with lastReviewMs == 0 has never been self-produced and is excluded
+        // from the review pool by ReviewSelector.
+        val lastReviewMs = ((data["lastReviewMs"] as? Number)?.toLong() ?: 0L).coerceAtLeast(0L)
+        val effortAtLastReview = ((data["effortAtLastReview"] as? Number)?.toInt() ?: 0).coerceAtLeast(0)
+
         // Validate completedAtMs — treat 0 as null (legacy data stored null as 0)
         val completedAtMsRaw = (data["completedAtMs"] as? Number)?.toLong()
         val completedAtMs = if (completedAtMsRaw != null && completedAtMsRaw > 0) completedAtMsRaw else null
@@ -161,7 +167,9 @@ object DataValidator {
                     intervalStepIndex = intervalStepIndex.coerceIn(0, MAX_MASTERY_STEP),
                     completedAtMs = completedAtMs?.coerceIn(0, System.currentTimeMillis() + 86400000L),
                     shownCardIds = shownCardIds,
-                    cardEncounterCounts = cardEncounterCounts
+                    cardEncounterCounts = cardEncounterCounts,
+                    lastReviewMs = lastReviewMs,
+                    effortAtLastReview = effortAtLastReview
                 ),
                 warnings
             )
@@ -176,7 +184,9 @@ object DataValidator {
                     intervalStepIndex = intervalStepIndex,
                     completedAtMs = completedAtMs,
                     shownCardIds = shownCardIds,
-                    cardEncounterCounts = cardEncounterCounts
+                    cardEncounterCounts = cardEncounterCounts,
+                    lastReviewMs = lastReviewMs,
+                    effortAtLastReview = effortAtLastReview
                 )
             )
         }

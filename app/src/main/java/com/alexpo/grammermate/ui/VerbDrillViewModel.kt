@@ -65,6 +65,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * Test-only method to inject cards directly into the ViewModel.
      * Bypasses the normal LessonStore-based card loading for testing.
      */
+    private fun extractLanguageIdForTestStore(): String =
+        progressStore.load().languageId.value.ifBlank { "it" }
+
     fun injectTestCards(cards: List<VerbDrillCard>) {
         allCards = cards
         val tenses = cards.mapNotNull { it.tense }.distinct().sorted()
@@ -262,18 +265,20 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun loadCards(languageId: String? = null) {
-        // For tests: if using test store, skip file I/O
+        // For tests: read straight from the injected fake store — the real
+        // store reads drill CSVs from disk, which tests replace wholesale.
         if (usingTestStore) {
-            if (allCards.isNotEmpty()) {
-                // Cards already injected via injectTestCards()
-                _uiState.update { it.copy(isLoading = false) }
-                progressMap = verbDrillStore.loadProgress()
-                updateProgressDisplay()
-                checkForLastSessionAndShowDialog()
-            } else {
-                // No cards yet, will be loaded via injectTestCards()
-                _uiState.update { it.copy(isLoading = false) }
+            val packId = currentPackId
+            if (allCards.isEmpty() && packId != null) {
+                val cards = verbDrillStore.loadAllCardsForPack(packId, extractLanguageIdForTestStore())
+                if (cards.isNotEmpty()) {
+                    injectTestCards(cards)
+                }
             }
+            _uiState.update { it.copy(isLoading = false) }
+            progressMap = verbDrillStore.loadProgress()
+            updateProgressDisplay()
+            checkForLastSessionAndShowDialog()
             return
         }
 
@@ -358,7 +363,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             verbDrillStore.deleteLastSession()
             return null
         }
-        if (lastSession.sessionCardIds.isNotEmpty()) {
+        if (lastSession.sessionCardIds.isNotEmpty() && allCards.isNotEmpty()) {
+            // Validate only when cards are LOADED — a fresh ViewModel (allCards
+            // empty until reloadForPack completes) must not discard the saved
+            // session just because availability is not known yet.
             val availableIds = allCards.asSequence().map { it.id }.toSet()
             val allSessionCardsAvailable = lastSession.sessionCardIds.all { it in availableIds }
             if (!allSessionCardsAvailable) {

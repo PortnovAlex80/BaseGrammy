@@ -95,12 +95,16 @@ class CardProvider(
         schedules: Map<LessonId, LessonSchedule>,
         activeSubLessonIndex: Int,
         hiddenCardIds: Set<String>,
-        mastery: LessonMasteryState? = null
+        mastery: LessonMasteryState? = null,
+        masteryOf: (String) -> LessonMasteryState? = { null },
+        totalEffortCards: Int = 0,
+        nowMs: Long = System.currentTimeMillis()
     ): CardSetResult {
         if (mode == TrainingMode.LESSON) {
             return buildLessonSessionCards(
                 lessons, selectedLessonId, schedules,
-                activeSubLessonIndex, hiddenCardIds, mastery
+                activeSubLessonIndex, hiddenCardIds, mastery,
+                masteryOf, totalEffortCards, nowMs
             )
         }
 
@@ -206,7 +210,10 @@ class CardProvider(
         schedules: Map<LessonId, LessonSchedule>,
         activeSubLessonIndex: Int,
         hiddenCardIds: Set<String>,
-        mastery: LessonMasteryState?
+        mastery: LessonMasteryState?,
+        masteryOf: (String) -> LessonMasteryState? = { null },
+        totalEffortCards: Int = 0,
+        nowMs: Long = System.currentTimeMillis()
     ): CardSetResult {
         val schedule = schedules[selectedLessonId]
         val subLessons = schedule?.subLessons.orEmpty()
@@ -222,8 +229,27 @@ class CardProvider(
             0, (subCount - 1).coerceAtLeast(0)
         )
         val subLesson = subLessons.getOrNull(activeIdx)
-        val cards = (subLesson?.cards ?: emptyList())
+        val currentCards = (subLesson?.cards ?: emptyList())
             .filter { it.id !in hiddenCardIds }
+
+        // Смешанный блок: слоты повторения заполняются здесь, по актуальному
+        // mastery, а не запекаются в статический план.
+        val reviewCards = if (subLesson != null && subLesson.reviewSlots > 0) {
+            val currentIndex = lessons.indexOfFirst { it.id == selectedLessonId }
+            val candidates = if (currentIndex > 0) lessons.take(currentIndex) else emptyList()
+            ReviewSelector.selectReviewCards(
+                candidates = candidates,
+                masteryOf = masteryOf,
+                totalEffortCards = totalEffortCards,
+                nowMs = nowMs,
+                slots = subLesson.reviewSlots,
+                activeSubLessonIndex = activeIdx,
+                hiddenCardIds = hiddenCardIds
+            )
+        } else {
+            emptyList()
+        }
+        val cards = currentCards + reviewCards
 
         return CardSetResult(
             cards = cards,

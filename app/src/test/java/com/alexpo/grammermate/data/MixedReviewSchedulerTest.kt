@@ -14,8 +14,14 @@ class MixedReviewSchedulerTest {
         assertEquals(listOf(SubLessonType.NEW_ONLY, SubLessonType.NEW_ONLY), types)
     }
 
+    /**
+     * Расписание больше не запекает карточки повторения — оно объявляет число
+     * слотов, которые заполняет ReviewSelector по актуальному mastery.
+     * Здесь пиннится именно форма: сколько смешанных блоков и сколько в них
+     * места под повторение.
+     */
     @Test
-    fun build_appliesIntervalsAcrossMixedBlocks() {
+    fun build_mixedBlocksDeclareReviewSlotsInsteadOfBakingCards() {
         val scheduler = MixedReviewScheduler(subLessonSize = 4)
         val lessons = listOf(
             lesson("L1", 7),
@@ -23,22 +29,23 @@ class MixedReviewSchedulerTest {
             lesson("L3", 13)
         )
         val schedules = scheduler.build(lessons)
+
         val mixedL2 = schedules.getValue(LessonId("L2")).subLessons.filter { it.type == SubLessonType.MIXED }
         assertEquals(3, mixedL2.size)
-        assertTrue(mixedL2[0].cards.any { it.id.startsWith("L1-") })
-        assertTrue(mixedL2[0].cards.any { it.id.startsWith("L2-") })
-        assertTrue(mixedL2[1].cards.any { it.id.startsWith("L1-") })
-        assertTrue(mixedL2[1].cards.any { it.id.startsWith("L2-") })
-        assertTrue(mixedL2[2].cards.all { it.id.startsWith("L2-") })
+        mixedL2.forEach { block ->
+            // Никаких чужих карточек в плане: только текущий урок.
+            assertTrue(block.cards.all { it.id.startsWith("L2-") })
+            // Текущие карточки + слоты повторения = размер блока.
+            assertEquals(4, block.cards.size + block.reviewSlots)
+            assertTrue(block.reviewSlots > 0)
+        }
 
         val mixedL3 = schedules.getValue(LessonId("L3")).subLessons.filter { it.type == SubLessonType.MIXED }
         assertEquals(3, mixedL3.size)
-        assertTrue(mixedL3[0].cards.any { it.id.startsWith("L1-") })
-        assertTrue(mixedL3[0].cards.any { it.id.startsWith("L2-") })
-        assertTrue(mixedL3[0].cards.any { it.id.startsWith("L3-") })
-        assertTrue(mixedL3[1].cards.any { it.id.startsWith("L2-") })
-        assertTrue(mixedL3[1].cards.any { it.id.startsWith("L3-") })
-        assertTrue(mixedL3[2].cards.all { it.id.startsWith("L3-") })
+        mixedL3.forEach { block ->
+            assertTrue(block.cards.all { it.id.startsWith("L3-") })
+            assertEquals(4, block.cards.size + block.reviewSlots)
+        }
     }
 
     @Test
@@ -53,27 +60,17 @@ class MixedReviewSchedulerTest {
             .subLessons
             .filter { it.type == SubLessonType.MIXED }
         assertTrue(mixed.isNotEmpty())
-        val first = mixed.first().cards
-        assertTrue(first.any { it.id.startsWith("L1-") })
-        assertTrue(first.any { it.id.startsWith("L2-") })
+        val first = mixed.first()
+        assertTrue(first.cards.all { it.id.startsWith("L2-") })
+        assertEquals(5, first.cards.size)
+        assertEquals(5, first.reviewSlots)
     }
 
     @Test
-    fun build_mixedHasAtMostThreeThemes() {
+    fun build_firstLessonDeclaresNoReviewSlots() {
         val scheduler = MixedReviewScheduler(subLessonSize = 6)
-        val lessons = listOf(
-            lesson("L1", 12),
-            lesson("L2", 12),
-            lesson("L3", 12),
-            lesson("L4", 12)
-        )
-        val schedules = scheduler.build(lessons)
-        schedules.values.flatMap { it.subLessons }
-            .filter { it.type == SubLessonType.MIXED }
-            .forEach { subLesson ->
-                val themes = subLesson.cards.map { it.id.substringBefore("-") }.toSet()
-                assertTrue(themes.size <= 3)
-            }
+        val schedule = scheduler.build(listOf(lesson("L1", 12))).getValue(LessonId("L1"))
+        assertTrue(schedule.subLessons.all { it.reviewSlots == 0 })
     }
 
     @Test

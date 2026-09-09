@@ -37,7 +37,12 @@ class FakeVerbDrillStore : VerbDrillStore {
 
     override fun loadAllCardsForPack(targetPackId: String, languageId: String): List<VerbDrillCard> {
         val key = "$targetPackId:$languageId"
-        return cardsByPackAndLanguage[key] ?: emptyList()
+        // Fallback by packId alone: the VM resolves the language from the
+        // progress store, whose default may differ from the injected pack's
+        // language in tests.
+        return cardsByPackAndLanguage[key]
+            ?: cardsByPackAndLanguage.entries.firstOrNull { it.key.startsWith("$targetPackId:") }?.value
+            ?: emptyList()
     }
 
     override fun getCardsForTenses(packId: String, languageId: String, tenses: List<String>): List<VerbDrillCard> {
