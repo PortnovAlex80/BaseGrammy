@@ -1,6 +1,18 @@
-﻿<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+      Окно переведено в edge-to-edge в MainActivity.enableEdgeToEdge(), поэтому
+      фон приложения (AppBackground) уходит под системные панели.
+
+      android:statusBarColor / navigationBarColor оставлены для API < 35, где они
+      ещё учитываются; на API 35+ система их игнорирует и красит панели сама.
+
+      windowBackground важен: он виден до первого кадра Compose. Без него тема
+      наследовала бы белый фон от android:Theme.Material.Light даже в тёмном
+      режиме — это и давало белые полосы.
+    -->
     <style name="Theme.GrammarMate" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/window_background</item>
     </style>
 </resources>

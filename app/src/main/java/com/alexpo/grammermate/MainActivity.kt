@@ -8,6 +8,7 @@ import android.widget.Toast
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -56,6 +57,14 @@ class MainActivity : ComponentActivity() {
         // Apply saved UI language before content is set
         val configStore = com.alexpo.grammermate.data.StoreFactory.getInstance(application).getAppConfigStore()
         SettingsActionHandler.applyLocale(configStore.load().uiLanguage)
+
+        // Рисуем под системными панелями: без этого окно инсетится, и в зонах
+        // status/navigation bar видно windowBackground темы (белый, т.к. тема
+        // наследует android:Theme.Material.Light) вместо фона приложения.
+        // На API 35 android:statusBarColor уже игнорируется, поэтому прозрачность
+        // из themes.xml сама по себе не помогает — нужен именно edge-to-edge.
+        // Отступы под панели даёт AppBackground через WindowInsets.safeDrawing.
+        enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
 

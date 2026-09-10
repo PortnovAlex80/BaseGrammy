@@ -1,0 +1,4 @@
+<resources>
+    <!-- Верхняя точка тёмного градиента AppBackground (Glass.kt, drawDarkBackground). -->
+    <color name="window_background">#FF0E1512</color>
+</resources>

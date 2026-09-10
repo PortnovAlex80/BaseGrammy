@@ -4,7 +4,10 @@ import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -37,6 +40,11 @@ import androidx.compose.material3.MaterialTheme
  * App-wide background. Paints a vertical gradient and a soft emerald radial glow
  * near the top so glass cards read as layered over depth rather than flat black.
  * Place once per screen via [GrammarMateTheme] (already wraps all content).
+ *
+ * Градиент рисуется **во всё окно, включая зоны системных панелей** (окно
+ * переведено в edge-to-edge в MainActivity), а сам контент получает отступы по
+ * [WindowInsets.safeDrawing]. Так фон приложения уходит под status/navigation bar,
+ * а вёрстка экранов остаётся в тех же границах, что и раньше.
  */
 @Composable
 fun AppBackground(
@@ -55,7 +63,9 @@ fun AppBackground(
                 }
             }
     ) {
-        content()
+        Box(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+            content()
+        }
     }
 }
 

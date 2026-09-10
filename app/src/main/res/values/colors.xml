@@ -1,3 +1,9 @@
-﻿<resources>
+<resources>
     <color name="ic_launcher_background">#2F3C4A</color>
+    <!--
+      Фон окна до первого кадра Compose. Должен совпадать с верхней точкой
+      градиента AppBackground (Glass.kt), иначе на старте видно белую вспышку.
+      Тёмный вариант — в values-night/colors.xml.
+    -->
+    <color name="window_background">#FFF7F4EF</color>
 </resources>
