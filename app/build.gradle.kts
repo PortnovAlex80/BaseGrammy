@@ -54,6 +54,19 @@ android {
             "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             "-opt-in=androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi",
+            // Sherpa-ONNX вызывает Kotlin-колбэк из нативного кода через JNI и ищет
+            // СПЕЦИАЛИЗИРОВАННЫЙ метод invoke([F)Ljava/lang/Integer; на объекте лямбды
+            // (TtsEngine.speak → OfflineTts.generateWithConfigAndCallback).
+            //
+            // Kotlin 2.0 по умолчанию компилирует лямбды через invokedynamic, и D8
+            // порождает $$ExternalSyntheticLambda только со стёртым invoke(Object)Object.
+            // Специализированного метода нет → NoSuchMethodError → JNI abort (SIGABRT),
+            // который не ловится try/catch и убивает процесс.
+            //
+            // -Xlambdas=class возвращает генерацию лямбд как в Kotlin 1.9 (обычные
+            // классы со специализированным invoke) — ровно ту, на которой озвучка
+            // работала до того, как legacy впервые собрался под Kotlin 2.0 в Phase 0.
+            "-Xlambdas=class",
         )
     }
 
