@@ -16,7 +16,7 @@ C19 - Mappa dei casi russi in italiano
 ВИН.П.: прямое местоимение: вижу их, дома (vedere, li);Li vedo
 ВИН.П.: прямое местоимение: пишу их, письма (scrivere, le);Le scrivo
 ДАТ.П.: иду домой — направление a + дом (andare, a, casa);Vado a casa
-ДАТ.П.: готовлю ужин для семьи (cucinare, cena, a, famiglia);Cucino la cena alla famiglia
+ДАТ.П.: готовлю ужин семье (cucinare, cena, a, famiglia);Cucino la cena alla famiglia
 ДАТ.П.: даю подарок брату (dare, regalo, a, fratello);Do un regalo al fratello
 ДАТ.П.: пишу письмо другу (scrivere, lettera, a, amico);Scrivo una lettera all'amico
 ДАТ.П.: рассказываю историю детям (raccontare, storia, a, bambini);Racconto la storia ai bambini
@@ -39,12 +39,12 @@ C19 - Mappa dei casi russi in italiano
 ТВОР.П.: иду с семьёй (andare, con, famiglia);Vado con la famiglia
 ТВОР.П.: путешествую с коллегой (viaggiare, con, collega);Viaggio con il collega
 РОД.П.: говорю о книге — di + существительное (parlare, di, libro);Parlo del libro
-РОД.П.: думаю о доме (pensare, di, casa);Penso alla casa
+РОД.П.: думаю о доме (pensare, a, casa);Penso alla casa
 РОД.П.: мечтаю о путешествии (sognare, di, viaggio);Sogno un viaggio
 РОД.П.: боюсь проблемы (avere paura, di, problema);Ho paura del problema
 РОД.П.: помню о встрече (ricordare, di, incontro);Ricordo l'incontro
 РОД.П.: ne: говорю о ней, о машине (parlare, ne);Ne parlo
-РОД.П.: ne: думаю о ней, о книге (pensare, ne);Ne penso
+РОД.П.: ci: думаю об этом, о книге (pensare, ci);Ci penso
 РОД.П.: ne: помню о нём, о подарке (ricordare, ne);Ne ricordo
 РОД.П.: ne: не хочу об этом говорить (non volere, parlarne);Non voglio parlarne
 РОД.П.: ne: сколько их? книг (quanti, esserci);Quante ce ne sono?
@@ -57,7 +57,7 @@ C19 - Mappa dei casi russi in italiano
 ВИН.П. + ДАТ.П.: готовлю им ужин, семье (cucinare, cena, famiglia);Loro cucino la cena
 ВИН.П. + ДАТ.П.: рассказываю ему историю, другу (raccontare, storia, amico);Gli racconto la storia
 ВИН.П. + ДАТ.П.: даю ей ключ, сестре (dare, chiave, sorella);Le do la chiave
-РОД.П.: книга, о которой мы думаем — di cui (libro, di cui, pensare);Il libro di cui pensiamo
+РОД.П.: книга, о которой мы думаем — a cui (libro, a cui, pensare);Il libro a cui pensiamo
 РОД.П.: дом, о котором мы говорим (casa, di cui, parlare);La casa di cui parliamo
 РОД.П.: человек, с которым я работаю — con cui (persona, con cui, lavorare);La persona con cui lavoro
 РОД.П.: друг, которому я пишу — a cui (amico, a cui, scrivere);L'amico a cui scrivo
