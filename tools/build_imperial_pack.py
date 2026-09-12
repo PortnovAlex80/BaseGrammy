@@ -27,7 +27,7 @@ LADDER = ROOT / "docs/lesson-methodology/italian/ITALIAN_LADDER_v2.html"
 LESSONS_DIR = Path(r"D:/Development/Italianpacks/ITALIAN_IMPERIAL_COURSE")
 OUT_ZIP = ROOT / "app/src/main/assets/grammarmate/packs/ITALIAN_IMPERIAL_COURSE.zip"
 
-PACK_VERSION = "v1"
+PACK_VERSION = "v2"
 PACK_ID = "ITALIAN_IMPERIAL"
 
 nav_html = LADDER.read_text(encoding="utf-8")
