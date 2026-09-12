@@ -459,7 +459,9 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     /**
      * Invalidate the lessons cache. Call with a specific languageId to evict one entry,
-     * or null to clear the entire cache.
+     * or null to clear the entire cache. Also drops the drill vocab word cache —
+     * pack imports/deletes/reloads can change drill CSVs, so the two caches
+     * must never get out of sync.
      */
     fun invalidateLessonsCache(languageId: String? = null) {
         if (languageId != null) {
@@ -468,6 +470,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             lessonsCache.clear()
         }
         metadataCache.clear()
+        drillFileManager.invalidateVocabWordsCache()
     }
 
     private fun loadLessonsFromDisk(languageId: String): List<Lesson> {

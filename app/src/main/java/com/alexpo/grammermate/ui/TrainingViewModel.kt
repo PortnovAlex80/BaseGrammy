@@ -280,9 +280,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /** profileStats' CEFR scan parses vocab CSVs from disk — refresh only on
-     *  pack/language changes, not on every mastery update. */
+     *  pack/language changes, not on every mastery update. The scan runs on
+     *  Dispatchers.IO (the DrillFileManager cache makes repeat calls cheap);
+     *  only the resulting StateFlow value touches the UI. */
     private fun refreshProfileStats() {
-        _profileStats.value = getProfileStats()
+        viewModelScope.launch(Dispatchers.IO) {
+            _profileStats.value = getProfileStats()
+        }
     }
 
     private fun refreshPomodoroHistory() {

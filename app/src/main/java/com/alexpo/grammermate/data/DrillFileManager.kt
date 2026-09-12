@@ -224,7 +224,28 @@ internal class DrillFileManager(
             ?: emptyList()
     }
 
+    /**
+     * Fully parsed vocab drill word lists keyed by "packId|languageId".
+     * Parsing re-reads every drill CSV (hundreds of KB per pack), so results
+     * are cached; rank filtering happens on top of the cached list. Cleared by
+     * [invalidateVocabWordsCache] from LessonStore's pack-mutation hooks.
+     * Callers must not mutate the returned full-range list.
+     */
+    private val vocabWordsCache = java.util.concurrent.ConcurrentHashMap<String, List<VocabWord>>()
+
+    fun invalidateVocabWordsCache() {
+        vocabWordsCache.clear()
+    }
+
     fun getVocabWordsByRankRange(packId: String, languageId: String, fromRank: Int, toRank: Int): List<VocabWord> {
+        val allWords = vocabWordsCache.getOrPut("$packId|$languageId") {
+            parseAllVocabWords(packId, languageId)
+        }
+        if (fromRank == 0 && toRank == Int.MAX_VALUE) return allWords
+        return allWords.filter { it.rank in fromRank..toRank }
+    }
+
+    private fun parseAllVocabWords(packId: String, languageId: String): List<VocabWord> {
         val files = getVocabDrillFiles(packId, languageId)
         val words = mutableListOf<VocabWord>()
         for (file in files) {
@@ -237,17 +258,15 @@ internal class DrillFileManager(
                 .removePrefix("drill_")
                 .removeSuffix(".csv")
             for (row in rows) {
-                if (row.rank in fromRank..toRank) {
-                    words.add(VocabWord(
-                        id = "${pos}_${row.rank}_${row.word}",
-                        word = row.word,
-                        pos = pos,
-                        rank = row.rank,
-                        meaningRu = row.meaningRu,
-                        collocations = row.collocations,
-                        forms = emptyMap()
-                    ))
-                }
+                words.add(VocabWord(
+                    id = "${pos}_${row.rank}_${row.word}",
+                    word = row.word,
+                    pos = pos,
+                    rank = row.rank,
+                    meaningRu = row.meaningRu,
+                    collocations = row.collocations,
+                    forms = emptyMap()
+                ))
             }
         }
         return words.sortedBy { it.rank }
