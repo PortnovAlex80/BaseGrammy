@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
@@ -377,7 +378,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 hiddenCardIds = hiddenIds
             )
         },
-        onTimerSaveProgress = { saveProgress() },
+        onTimerSaveProgress = { saveProgressFromTimer() },
         sessionTimerMsSink = { ms -> _sessionTimerMs.value = ms }
     )
 
@@ -2318,7 +2319,26 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             else -> PracticeType.TRANSLATION
         }
     }
-    private fun saveProgress() {
+    /**
+     * Single-lane dispatcher for progress disk writes. The timer path launches
+     * onto it (off Main); synchronous paths runBlocking onto it. FIFO order
+     * keeps an in-flight timer save from interleaving with — or overwriting —
+     * a newer synchronous save across the two stores.
+     */
+    private val progressWriteLane = Dispatchers.IO.limitedParallelism(1)
+
+    private fun saveProgress() = dispatchSaveProgress(async = false)
+
+    /**
+     * Timer path (SessionRunner 10s tick). The state snapshot is taken on
+     * Main; the two disk writes land on [progressWriteLane]. A queued save
+     * dropped by viewModelScope cancellation at onCleared is superseded by
+     * the final synchronous save there; an in-flight write always completes
+     * (blocking I/O has no cancellation points).
+     */
+    private fun saveProgressFromTimer() = dispatchSaveProgress(async = true)
+
+    private fun dispatchSaveProgress(async: Boolean) {
         val state = uiState.value
         // Read daily cursor directly from coordinator to avoid combine flow staleness.
         // The combine() flow that produces uiState merges _coreState with coordinator's
@@ -2332,15 +2352,25 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         } else {
             state
         }
-        val shouldBackup = progressTracker.saveProgress(
-            state = stateToSave,
-            forceBackup = forceBackupOnSave,
-            normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(stateToSave.elite.eliteBestSpeeds)
-        )
-        masteryStore.flush()
-        if (shouldBackup) {
-            forceBackupOnSave = false
-            settingsActionHandler.createProgressBackup()
+        val forceBackup = forceBackupOnSave
+        val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(stateToSave.elite.eliteBestSpeeds)
+
+        val write: suspend () -> Unit = {
+            val shouldBackup = progressTracker.saveProgress(
+                state = stateToSave,
+                forceBackup = forceBackup,
+                normalizedEliteSpeeds = normalizedEliteSpeeds
+            )
+            masteryStore.flush()
+            if (shouldBackup) {
+                forceBackupOnSave = false
+                settingsActionHandler.createProgressBackup()
+            }
+        }
+        if (async) {
+            viewModelScope.launch(progressWriteLane) { write() }
+        } else {
+            runBlocking { withContext(progressWriteLane) { write() } }
         }
     }
     private fun buildSessionCards() {

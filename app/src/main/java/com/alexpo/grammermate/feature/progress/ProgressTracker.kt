@@ -43,6 +43,14 @@ class ProgressTracker(
 
     private val logTag = "GrammarMate"
 
+    // Last persisted snapshots: the 10s timer save fires even when nothing
+    // changed, so equal snapshots skip the disk writes entirely. Guarded by
+    // [dedupLock]; reset whenever the underlying files are deleted or
+    // rewritten by the reset paths.
+    private val dedupLock = Any()
+    private var lastSavedLessonProgressKey: Triple<String, String, PackLessonProgressState.LessonProgress>? = null
+    private var lastSavedGlobalProgress: TrainingProgress? = null
+
     // ── Card show tracking ───────────────────────────────────────────
 
     /**
@@ -331,9 +339,6 @@ class ProgressTracker(
         val activePackId = state.navigation.activePackId?.value
         val selectedLessonId = state.navigation.selectedLessonId?.value
         if (activePackId != null && selectedLessonId != null) {
-            val packProgress = packLessonProgressStore.loadPackProgress(activePackId)
-                ?: PackLessonProgressState(packId = activePackId)
-
             val lessonProgress = PackLessonProgressState.LessonProgress(
                 currentIndex = state.cardSession.currentIndex,
                 correctCount = state.cardSession.correctCount,
@@ -343,15 +348,25 @@ class ProgressTracker(
                 state = state.cardSession.sessionState
             )
 
-            val updatedPackProgress = packProgress.copy(
-                lessonProgress = packProgress.lessonProgress + (selectedLessonId to lessonProgress)
-            )
-            packLessonProgressStore.savePackProgress(updatedPackProgress)
+            // Skip the pack write when nothing changed since the last persist.
+            val lessonKey = Triple(activePackId, selectedLessonId, lessonProgress)
+            if (synchronized(dedupLock) { lessonKey != lastSavedLessonProgressKey }) {
+                val packProgress = packLessonProgressStore.loadPackProgress(activePackId)
+                    ?: PackLessonProgressState(packId = activePackId)
+
+                val updatedPackProgress = packProgress.copy(
+                    lessonProgress = packProgress.lessonProgress + (selectedLessonId to lessonProgress)
+                )
+                packLessonProgressStore.savePackProgress(updatedPackProgress)
+                synchronized(dedupLock) { lastSavedLessonProgressKey = lessonKey }
+            }
         }
 
-        // Save other progress fields to global store (NOT lesson progress)
-        progressStore.save(
-            TrainingProgress(
+        // Save other progress fields to global store (NOT lesson progress).
+        // Skipped when the payload equals the last persisted one: during an
+        // idle-but-timed session only activeTimeMs changes, and that lives in
+        // the pack-scoped write above.
+        val globalProgress = TrainingProgress(
                 languageId = state.navigation.selectedLanguageId ?: LanguageId(""),
                 mode = state.navigation.mode,
                 lessonId = state.navigation.selectedLessonId?.value,
@@ -375,7 +390,10 @@ class ProgressTracker(
                 dailyTaskIndex = state.daily.dailySession.blockIndex,
                 dailyCursor = state.daily.dailyCursor
             )
-        )
+        if (synchronized(dedupLock) { globalProgress != lastSavedGlobalProgress }) {
+            progressStore.save(globalProgress)
+            synchronized(dedupLock) { lastSavedGlobalProgress = globalProgress }
+        }
 
         return if (forceBackup) {
             // Signal to ViewModel that backup should be created
@@ -456,6 +474,16 @@ class ProgressTracker(
             packLessonProgressStore.deletePackProgress(packId)
             packDailyCursorStore.deletePackCursor(packId)
         }
+        resetSaveDedup()
+    }
+
+    /** Drop the last-persisted snapshots so skip-if-unchanged can't mask a
+     *  save that must re-create files after a reset. */
+    private fun resetSaveDedup() {
+        synchronized(dedupLock) {
+            lastSavedLessonProgressKey = null
+            lastSavedGlobalProgress = null
+        }
     }
 
     /**
@@ -521,6 +549,7 @@ class ProgressTracker(
                 packLessonProgressStore.deletePackProgress(pid)
                 packDailyCursorStore.deletePackCursor(pid)
             }
+        resetSaveDedup()
     }
 
     /**
