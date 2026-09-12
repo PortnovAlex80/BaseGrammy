@@ -51,26 +51,80 @@ object AtomicFileWriter {
         // Verify temp file was written successfully (allow empty if input is empty)
         verifyWrite(tempFile, "temp file ${tempFile.name}", allowEmpty = text.isEmpty())
 
-        // On Android/Linux renameTo() atomically replaces the destination.
-        // On Windows, we need to delete the target first if it exists.
-        if (file.exists()) {
-            if (!file.delete()) {
+        finalizeMove(tempFile, file)
+
+        // Verify final file exists and is not empty (allow empty if input is empty)
+        verifyWrite(file, file.name, allowEmpty = text.isEmpty())
+    }
+
+    /**
+     * Atomically move [tempFile] onto [target], replacing it (TASK-091 item 5b).
+     *
+     * Layer 1 — [File.renameTo]: on Android/Linux it replaces an existing
+     * destination in one atomic syscall, so the target is never absent.
+     * Layer 2 — [java.nio.file.Files.move] with ATOMIC_MOVE (real JVMs and
+     * Android API 26+): atomic replace on Windows via MoveFileEx, which
+     * also never leaves the target missing.
+     * Layer 3 (last resort) — delete the target first, legacy Windows
+     * semantics with a retry/sleep loop. Only this branch can transiently
+     * leave the target absent, so it is reached only when both
+     * replace-capable APIs have already failed. It also keeps the up-to-100ms
+     * sleep off the caller's hot path on every platform that matters.
+     */
+    private fun finalizeMove(tempFile: File, target: File) {
+        // Layer 1 — File.renameTo: rename(2) semantics, atomically replaces
+        // an existing destination on Android/Linux (the production target).
+        // Returns false on Windows when the target exists.
+        if (tempFile.renameTo(target)) return
+
+        // Layer 2 — Files.move(ATOMIC_MOVE): MoveFileEx(MOVEFILE_REPLACE_EXISTING)
+        // on Windows JVMs, rename(2) on POSIX; needs Android API 26+ (caught
+        // below). Every attempt is an atomic replace — the target is never
+        // absent. Transient AccessDeniedException (e.g. Defender briefly
+        // holding the freshly written temp file) is retried, not escalated
+        // to the destructive fallback.
+        try {
+            var attempts = 0
+            while (true) {
+                try {
+                    java.nio.file.Files.move(
+                        tempFile.toPath(),
+                        target.toPath(),
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                    )
+                    return
+                } catch (ignore: java.nio.file.AtomicMoveNotSupportedException) {
+                    throw ignore
+                } catch (e: java.io.IOException) {
+                    attempts++
+                    if (attempts > 5) throw e
+                    Thread.sleep(10)
+                }
+            }
+        } catch (_: Throwable) {
+            // API < 26 on Android, or a persistent I/O failure — take the
+            // legacy path.
+        }
+
+        // Layer 3 (last resort) — delete the target first, legacy Windows
+        // semantics with a retry/sleep loop. Only this branch can transiently
+        // leave the target absent, so it is reached only when both
+        // replace-capable layers above have failed.
+        if (target.exists()) {
+            if (!target.delete()) {
                 // If delete fails, wait a bit and retry (Windows file locking)
                 var attempts = 0
-                while (file.exists() && attempts < 10) {
+                while (target.exists() && attempts < 10) {
                     Thread.sleep(10)
-                    file.delete()
+                    target.delete()
                     attempts++
                 }
             }
         }
-        if (!tempFile.renameTo(file)) {
+        if (!tempFile.renameTo(target)) {
             tempFile.delete()
-            error("Failed to finalize ${file.absolutePath}")
+            error("Failed to finalize ${target.absolutePath}")
         }
-
-        // Verify final file exists and is not empty (allow empty if input is empty)
-        verifyWrite(file, file.name, allowEmpty = text.isEmpty())
     }
 
     /**
@@ -102,22 +156,7 @@ object AtomicFileWriter {
         // Verify temp file was written successfully (allow empty if source is empty)
         verifyWrite(tempFile, "temp file ${tempFile.name}", allowEmpty = source.length() == 0L)
 
-        // On Windows, we need to delete the target first if it exists.
-        if (target.exists()) {
-            if (!target.delete()) {
-                // If delete fails, wait a bit and retry (Windows file locking)
-                var attempts = 0
-                while (target.exists() && attempts < 10) {
-                    Thread.sleep(10)
-                    target.delete()
-                    attempts++
-                }
-            }
-        }
-        if (!tempFile.renameTo(target)) {
-            tempFile.delete()
-            error("Failed to finalize ${target.absolutePath}")
-        }
+        finalizeMove(tempFile, target)
 
         // Verify final file exists and is not empty (allow empty if source is empty)
         verifyWrite(target, target.name, allowEmpty = source.length() == 0L)

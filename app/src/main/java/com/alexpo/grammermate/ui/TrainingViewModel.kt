@@ -210,12 +210,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val lessons = lessonStore.getLessons(packIdStr, langIdStr)
             val lessonIds = lessons.map { it.id.value }
 
-            // Build mastery map for all lessons in this pack
+            // Build mastery map for all lessons in this pack. One loadAll()
+            // snapshot instead of a per-lesson getForPack — each of those
+            // takes the store's ReentrantLock (63 lessons per pack).
+            val packMastery = masteryStore.loadAll()["pack:$packIdStr"]
             val masteryMap = mutableMapOf<String, LessonMasteryState>()
             var totalCards = 0
             for (lesson in lessons) {
                 val lessonIdStr = lesson.id.value
-                val mastery = masteryStore.getForPack(packIdStr, lessonIdStr)
+                val mastery = packMastery?.get(lessonIdStr)
                 if (mastery != null) {
                     masteryMap[lessonIdStr] = mastery
                     totalCards += mastery.uniqueCardShows

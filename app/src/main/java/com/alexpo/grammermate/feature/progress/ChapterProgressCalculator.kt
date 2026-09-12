@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.feature.progress
 
 import android.util.Log
+import com.alexpo.grammermate.BuildConfig
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.data.LessonMasteryState
@@ -70,9 +71,15 @@ object ChapterProgressCalculator {
             // This is separate from mastery/flower which tracks card repetition.
             val isCompleted = mastery?.completedAtMs != null
             if (isCompleted) {
-                Log.d(TAG, "  lesson=$lessonId COMPLETED: completedAtMs=${mastery?.completedAtMs}, uniqueShows=${mastery?.uniqueCardShows}, stepIndex=${mastery?.intervalStepIndex}")
+                // Per-lesson detail only in debug builds: this loop runs per
+                // lesson on every chapter refresh, and the string is built
+                // before Log.d is called, even in release. The aggregate log
+                // after the loop covers release diagnostics.
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "  lesson=$lessonId COMPLETED: completedAtMs=${mastery?.completedAtMs}, uniqueShows=${mastery?.uniqueCardShows}, stepIndex=${mastery?.intervalStepIndex}")
+                }
                 completedCount++
-            } else {
+            } else if (BuildConfig.DEBUG) {
                 Log.d(TAG, "  lesson=$lessonId NOT completed: mastery=${mastery != null}, completedAtMs=${mastery?.completedAtMs}, uniqueShows=${mastery?.uniqueCardShows}")
             }
 
