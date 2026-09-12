@@ -193,6 +193,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         // LanguageManager.DefaultPack("IT_VERB_GROUPS_ALL", "grammarmate/packs/IT_VERB_GROUPS_ALL.zip"),
         LanguageManager.DefaultPack("ITALIAN_SHORT", "grammarmate/packs/ITALIAN_EXPRESS_SHORT.zip"),
         LanguageManager.DefaultPack("ITALIAN_FULL_COURSE", "grammarmate/packs/ITALIAN_FULL_COURSE.zip"),
+        LanguageManager.DefaultPack("ITALIAN_IMPERIAL", "grammarmate/packs/ITALIAN_IMPERIAL_COURSE.zip"),
         // Reserved: Greek, German, Chinese, Russian packs (backup commit 7ca026a)
         // LanguageManager.DefaultPack("GREEK_EXPRESS", "grammarmate/packs/GREEK_EXPRESS.zip"),
         // LanguageManager.DefaultPack("GREEK_EXPRESS_IT", "grammarmate/packs/GREEK_EXPRESS_IT.zip"),
