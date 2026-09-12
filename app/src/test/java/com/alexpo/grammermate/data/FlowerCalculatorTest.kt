@@ -67,7 +67,7 @@ class FlowerCalculatorTest {
         val mastery = LessonMasteryState(
             lessonId = LessonId("test"),
             languageId = LanguageId("en"),
-            uniqueCardShows = 25, // 25/150 = 16.6%
+            uniqueCardShows = 25, // 25/150 = 16.6% (порог 150: урок > 150 карточек)
             lastShowDateMs = System.currentTimeMillis()
         )
         val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 100)
@@ -84,7 +84,7 @@ class FlowerCalculatorTest {
             uniqueCardShows = 75, // 75/150 = 50%
             lastShowDateMs = System.currentTimeMillis()
         )
-        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 100)
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 200)
         assertEquals(FlowerState.SPROUT, flower.state)
         assertTrue(flower.masteryPercent in 0.33f..0.66f)
     }
@@ -166,7 +166,7 @@ class FlowerCalculatorTest {
             uniqueCardShows = 50,
             lastShowDateMs = System.currentTimeMillis()
         )
-        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 100)
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 200)
         assertEquals(50f / 150f, flower.masteryPercent, EPSILON)
     }
 
@@ -242,8 +242,8 @@ class FlowerCalculatorTest {
             uniqueCardShows = 75, // 50% мастерства
             lastShowDateMs = System.currentTimeMillis()
         )
-        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 100)
-        // health = 100%, mastery = 50%, scale = 0.5 * 1.0 = 0.5
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 200)
+        // health = 100%, mastery = 50% (порог 150), scale = 0.5 * 1.0 = 0.5
         assertEquals(0.5f, flower.scaleMultiplier, EPSILON)
     }
 
@@ -358,5 +358,77 @@ class FlowerCalculatorTest {
                 assertFalse("HealthPercent should never be NaN", flower.healthPercent.isNaN())
             }
         }
+    }
+
+    // ========================================
+    // 2.8 Нормировка на размер урока (арх. аудит §2.4)
+    // ========================================
+
+    @Test
+    fun calculate_shortLesson_allCardsShown_reachesBloom() {
+        // Имперский урок из 12 карточек: 12 показов = 100% = BLOOM,
+        // а не вечные 8% от порога 150
+        val mastery = LessonMasteryState(
+            lessonId = LessonId("test"),
+            languageId = LanguageId("it"),
+            uniqueCardShows = 12,
+            lastShowDateMs = System.currentTimeMillis()
+        )
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 12)
+        assertEquals(1.0f, flower.masteryPercent, EPSILON)
+        assertEquals(FlowerState.BLOOM, flower.state)
+        assertEquals(1.0f, flower.scaleMultiplier, EPSILON)
+    }
+
+    @Test
+    fun calculate_shortLesson_halfCardsShown_isSprout() {
+        val mastery = LessonMasteryState(
+            lessonId = LessonId("test"),
+            languageId = LanguageId("it"),
+            uniqueCardShows = 6,
+            lastShowDateMs = System.currentTimeMillis()
+        )
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 12)
+        assertEquals(0.5f, flower.masteryPercent, EPSILON)
+        assertEquals(FlowerState.SPROUT, flower.state)
+    }
+
+    @Test
+    fun calculate_shortLesson_thirdShown_isSeed() {
+        val mastery = LessonMasteryState(
+            lessonId = LessonId("test"),
+            languageId = LanguageId("it"),
+            uniqueCardShows = 3, // 3/12 = 25% < 33%
+            lastShowDateMs = System.currentTimeMillis()
+        )
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 12)
+        assertEquals(0.25f, flower.masteryPercent, EPSILON)
+        assertEquals(FlowerState.SEED, flower.state)
+    }
+
+    @Test
+    fun calculate_zeroCardsInLesson_fallsBackTo150Threshold() {
+        // Нет данных о размере урока → прежний порог 150
+        val mastery = LessonMasteryState(
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
+            uniqueCardShows = 50,
+            lastShowDateMs = System.currentTimeMillis()
+        )
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 0)
+        assertEquals(50f / 150f, flower.masteryPercent, EPSILON)
+    }
+
+    @Test
+    fun calculate_largeLesson_thresholdCappedAt150() {
+        // Урок из 300 карточек: порог всё ещё 150, 150 показов = 100%
+        val mastery = LessonMasteryState(
+            lessonId = LessonId("test"),
+            languageId = LanguageId("en"),
+            uniqueCardShows = 150,
+            lastShowDateMs = System.currentTimeMillis()
+        )
+        val flower = FlowerCalculator.calculate(mastery, totalCardsInLesson = 300)
+        assertEquals(1.0f, flower.masteryPercent, EPSILON)
     }
 }

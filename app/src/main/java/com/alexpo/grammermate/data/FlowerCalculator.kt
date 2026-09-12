@@ -4,7 +4,10 @@ package com.alexpo.grammermate.data
  * Калькулятор визуального состояния цветка на основе данных освоения урока.
  *
  * Логика:
- * - masteryPercent: процент от 150 уникальных показов (0-100%)
+ * - masteryPercent: процент уникальных показов от порога закрепления, где порог =
+ *   min(totalCardsInLesson, MASTERY_THRESHOLD). Короткий урок (12 карточек)
+ *   достигает 100% за 12 показов; длинный — как раньше, максимум за 150.
+ *   Без информации о размере урока (0) порог = MASTERY_THRESHOLD.
  * - healthPercent: здоровье по кривой забывания (50-100%)
  * - scaleMultiplier: масштаб иконки = masteryPercent * healthPercent (50-100%)
  */
@@ -29,8 +32,15 @@ object FlowerCalculator {
             )
         }
 
-        // Процент закрепления (0-100%, макс 150 показов)
-        val masteryPercent = (mastery.uniqueCardShows.toFloat() / SpacedRepetitionConfig.MASTERY_THRESHOLD)
+        // Процент закрепления (0-100%). Порог нормируется на размер урока:
+        // иначе короткий урок (11-14 карточек) никогда не превышает ~8%
+        // и визуальный прогресс не виден (арх. аудит §2.4).
+        val masteryThreshold = if (totalCardsInLesson > 0) {
+            minOf(totalCardsInLesson, SpacedRepetitionConfig.MASTERY_THRESHOLD)
+        } else {
+            SpacedRepetitionConfig.MASTERY_THRESHOLD
+        }
+        val masteryPercent = (mastery.uniqueCardShows.toFloat() / masteryThreshold)
             .coerceIn(0f, 1f)
 
         // Дней с последнего показа
