@@ -511,7 +511,9 @@ data class CardSessionState(
     val sessionState: SessionState = SessionState.ACTIVE,
     val currentIndex: Int = 0,
     val currentCard: SessionCard? = null,
-    val inputText: String = "",
+    // NOTE (TASK-091 item 4): the typed answer no longer lives here. It has
+    // its own MutableStateFlow in TrainingViewModel/SessionRunner so a
+    // keystroke doesn't recompute the combined uiState.
     val correctCount: Int = 0,
     val incorrectCount: Int = 0,
     val incorrectAttemptsForCard: Int = 0,

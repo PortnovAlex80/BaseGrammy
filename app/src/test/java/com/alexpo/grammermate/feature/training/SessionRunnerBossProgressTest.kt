@@ -73,6 +73,8 @@ class SessionRunnerBossProgressTest {
         )
     }
 
+    private val inputTextFlow = kotlinx.coroutines.flow.MutableStateFlow("")
+
     private fun newRunner(state: TrainingUiState): Pair<SessionRunner, TrainingStateAccess> {
         val stateAccess = FakeTrainingStateAccess(state)
         val runner = SessionRunner(
@@ -87,7 +89,8 @@ class SessionRunnerBossProgressTest {
             getSchedule = { _ -> null },
             getHiddenCardIds = { emptySet() },
             calculateCompletedSubLessons = { _, _, _, _ -> 0 },
-            onTimerSaveProgress = { }
+            onTimerSaveProgress = { },
+            inputTextFlow = inputTextFlow
         )
         runner.setBossCards(bossCards)
         return runner to stateAccess
@@ -97,9 +100,7 @@ class SessionRunnerBossProgressTest {
     fun `correct mid-card boss answer emits AdvanceBossProgress event`() {
         // Arrange: boss session on card 0 of 3, correct answer typed.
         val (runner, stateAccess) = newRunner(threeCardBossState())
-        stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(inputText = "english 1"))
-        }
+        inputTextFlow.value = "english 1"
 
         // Act: submit the correct answer for the first (mid) card.
         val (result, events) = runner.submitAnswer()
@@ -121,9 +122,7 @@ class SessionRunnerBossProgressTest {
         val (runner, stateAccess) = newRunner(threeCardBossState())
 
         // Card 0 -> 1
-        stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(inputText = "english 1"))
-        }
+        inputTextFlow.value = "english 1"
         val (_, events0) = runner.submitAnswer()
         assertEquals(
             SessionEvent.AdvanceBossProgress(nextIndex = 1, totalCards = 3),

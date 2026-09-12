@@ -107,7 +107,6 @@ class BossBattleClickUiTest {
                     }
                     liveState = liveState.copy(
                         cardSession = liveState.cardSession.copy(
-                            inputText = "",
                             // advance the card so the next typed answer exact-matches
                             currentCard = testCards[currentCardIndex.coerceIn(testCards.indices)]
                         ),

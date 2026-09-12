@@ -106,7 +106,6 @@ class BossOrchestrator(
                 cardSession = s.cardSession.copy(
                     currentIndex = 0,
                     currentCard = firstCard,
-                    inputText = "",
                     lastResult = null,
                     answerText = null,
                     incorrectAttemptsForCard = 0,
@@ -126,6 +125,7 @@ class BossOrchestrator(
                 )
             )
         }
+        sessionRunner.clearTypedInput()
         return listOf(BossCommand.PauseTimer)
     }
 
@@ -181,7 +181,6 @@ class BossOrchestrator(
                     voiceWordCount = progress.voiceWordCount,
                     hintCount = progress.hintCount,
                     voicePromptStartMs = null,
-                    inputText = "",
                     lastResult = null,
                     answerText = null,
                     sessionState = SessionState.PAUSED,
@@ -189,6 +188,7 @@ class BossOrchestrator(
                 )
             )
         }
+        sessionRunner.clearTypedInput()
         return listOf(BossCommand.PauseTimer, BossCommand.BuildSessionCards, BossCommand.SaveProgress, BossCommand.RefreshFlowerStates)
     }
 
@@ -221,11 +221,11 @@ class BossOrchestrator(
             s.copy(
                 cardSession = s.cardSession.copy(
                     sessionState = if (clearResult.shouldResumeTimer) SessionState.ACTIVE else s.cardSession.sessionState,
-                    voiceTriggerToken = trigger,
-                    inputText = if (clearResult.shouldResumeTimer) "" else s.cardSession.inputText
+                    voiceTriggerToken = trigger
                 )
             )
         }
+        if (clearResult.shouldResumeTimer) sessionRunner.clearTypedInput()
         return commands
     }
 

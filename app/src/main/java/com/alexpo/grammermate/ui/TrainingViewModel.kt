@@ -170,9 +170,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    // ── High-frequency timer flows (separate from main state for performance) ──
+    // ── High-frequency flows (separate from main state for performance) ──
     private val _sessionTimerMs = MutableStateFlow(0L)
     val sessionTimerMs: StateFlow<Long> = _sessionTimerMs.asStateFlow()
+
+    /**
+     * Typed answer text (TASK-091 item 4). Every keystroke used to flow
+     * through the combined uiState (7-flow combine + two full TrainingUiState
+     * copies), recomposing the whole NavHost. Like [sessionTimerMs], this
+     * high-frequency value lives in its own flow; SessionRunner shares the
+     * same instance.
+     */
+    private val _inputText = MutableStateFlow("")
+    val inputText: StateFlow<String> = _inputText.asStateFlow()
 
     private val _pomodoroRemainingSeconds = MutableStateFlow(0)
     val pomodoroRemainingSeconds: StateFlow<Int> = _pomodoroRemainingSeconds.asStateFlow()
@@ -382,7 +392,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         },
         onTimerSaveProgress = { saveProgressFromTimer() },
-        sessionTimerMsSink = { ms -> _sessionTimerMs.value = ms }
+        sessionTimerMsSink = { ms -> _sessionTimerMs.value = ms },
+        inputTextFlow = _inputText
     )
 
     private val flowerRefresher = FlowerRefresher(
@@ -2551,12 +2562,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         for (result in results) {
             when (result) {
                 is SettingsResult.RefreshLessons -> refreshLessons(result.selectedLessonId)
-                is SettingsResult.ResetStores -> resetStores(result.app)
-                is SettingsResult.ResetStoresForLanguage -> resetStoresForLanguage(result.app, result.languageId)
+                is SettingsResult.ResetStores -> {
+                    // The settings handler's state resets cleared the typed
+                    // answer together with the session; the input flow needs
+                    // the same wipe.
+                    _inputText.value = ""
+                    resetStores(result.app)
+                }
+                is SettingsResult.ResetStoresForLanguage -> {
+                    _inputText.value = ""
+                    resetStoresForLanguage(result.app, result.languageId)
+                }
                 is SettingsResult.ResetDrillFiles -> resetDrillFiles(result.app)
                 is SettingsResult.ResetDrillFilesForPack -> resetDrillFilesForPack(result.app, result.packId)
                 is SettingsResult.ClearWordMastery -> clearWordMastery()
-                is SettingsResult.ResetDailyState -> resetDailyState()
+                is SettingsResult.ResetDailyState -> {
+                    _inputText.value = ""
+                    resetDailyState()
+                }
                 is SettingsResult.SetForceBackup -> { forceBackupOnSave = true }
                 is SettingsResult.SaveProgress -> saveProgress()
                 is SettingsResult.ResetStreak -> resetStreak()

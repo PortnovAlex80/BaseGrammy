@@ -100,6 +100,10 @@ private val ParentheticalRegex = Regex("\\s*\\([^)]+\\)")
 @Composable
 fun TrainingScreen(
     state: TrainingUiState,
+    /** Current typed answer (TASK-091 item 4): comes from the dedicated
+     *  input flow, not from [state], so keystrokes don't recompose everything
+     *  subscribed to the combined uiState. */
+    inputText: String = "",
     onInputChange: (String) -> Unit,
     onSubmit: () -> SubmitResult,
     onPrev: () -> Unit,
@@ -364,6 +368,7 @@ fun TrainingScreen(
             }
             AnswerBox(
                 state,
+                inputText,
                 onInputChange,
                 onSubmit,
                 onSetInputMode,
@@ -494,6 +499,8 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun AnswerBox(
     state: TrainingUiState,
+    /** Typed answer from the dedicated input flow (TASK-091 item 4). */
+    inputText: String = "",
     onInputChange: (String) -> Unit,
     onSubmit: () -> SubmitResult,
     onSetInputMode: (InputMode) -> Unit,
@@ -626,12 +633,12 @@ fun AnswerBox(
     }
 
     // Thin CardSessionContract adapter for TrainingScreen's TrainingUiState
-    val contractAdapter = remember(state.cardSession, onSetInputMode, onInputChange, onSelectWordFromBank, onRemoveLastWord) {
+    val contractAdapter = remember(state.cardSession, inputText, onSetInputMode, onInputChange, onSelectWordFromBank, onRemoveLastWord) {
         object : com.alexpo.grammermate.data.CardSessionContract {
             override val currentCard: com.alexpo.grammermate.data.SessionCard?
                 get() = state.cardSession.currentCard
             override val inputText: String
-                get() = state.cardSession.inputText
+                get() = inputText
             override val lastResult: com.alexpo.grammermate.data.AnswerResult?
                 get() = state.cardSession.lastResult?.let { com.alexpo.grammermate.data.AnswerResult(it, state.cardSession.answerText ?: "", it == null) }
             override val sessionActive: Boolean
@@ -686,7 +693,7 @@ fun AnswerBox(
 
     com.alexpo.grammermate.ui.components.UnifiedInputControlsBar(
         contract = contractAdapter,
-        inputText = state.cardSession.inputText,
+        inputText = inputText,
         onInputChanged = onInputChange,
         onSubmit = { onSubmit() },
         hasCards = hasCards,

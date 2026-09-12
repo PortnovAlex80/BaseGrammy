@@ -160,9 +160,8 @@ class RegularLessonClickUiTest {
         composeTestRule.setContent {
             var typed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
             TrainingScreen(
-                state = initialState.copy(
-                    cardSession = initialState.cardSession.copy(inputText = typed)
-                ),
+                state = initialState,
+                inputText = typed,
                 onInputChange = { text -> currentInput = text; typed = text },
                 onSubmit = {
                     incorrectCount++
@@ -299,9 +298,8 @@ class RegularLessonClickUiTest {
         composeTestRule.setContent {
             var typed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
             TrainingScreen(
-                state = initialState.copy(
-                    cardSession = initialState.cardSession.copy(inputText = typed)
-                ),
+                state = initialState,
+                inputText = typed,
                 onInputChange = { text -> currentInput = text; typed = text },
                 onSubmit = { submitCount++; typed = ""; SubmitResult(accepted = true, hintShown = false) },
                 onPrev = { /* no-op */ },
@@ -385,10 +383,10 @@ class RegularLessonClickUiTest {
             TrainingScreen(
                 state = initialState.copy(
                     cardSession = initialState.cardSession.copy(
-                        selectedWords = selected,
-                        inputText = selected.joinToString(" ")
+                        selectedWords = selected
                     )
                 ),
+                inputText = selected.joinToString(" "),
                 onInputChange = { text -> currentInput = text },
                 onSubmit = { submitCount++; SubmitResult(accepted = true, hintShown = false) },
                 onPrev = { /* no-op */ },

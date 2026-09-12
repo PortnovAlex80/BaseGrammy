@@ -159,7 +159,6 @@ class SettingsActionHandler(
                     correctCount = 0,
                     incorrectCount = 0,
                     sessionState = SessionState.PAUSED,
-                    inputText = "",
                     lastResult = null,
                     answerText = null,
                     incorrectAttemptsForCard = 0
@@ -192,7 +191,6 @@ class SettingsActionHandler(
                     correctCount = 0,
                     incorrectCount = 0,
                     sessionState = SessionState.PAUSED,
-                    inputText = "",
                     lastResult = null,
                     answerText = null,
                     incorrectAttemptsForCard = 0

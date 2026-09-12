@@ -102,6 +102,10 @@ internal fun TrainingScreenContent(
     getTenseInfo: (String) -> TenseInfo? = { null }
 ) {
     val pomodoroRemainingSeconds by vm.pomodoroRemainingSeconds.collectAsStateWithLifecycle()
+    // Typed answer text: collected from the dedicated flow (TASK-091 item 4),
+    // NOT from the combined uiState — a keystroke must not recompute the
+    // 7-flow combine or recompose the whole NavHost.
+    val inputText by vm.inputText.collectAsStateWithLifecycle()
 
     // Get lesson title for header — suppress during daily practice and verb drill modes
     val lessonTitle = if (state.cardSession.returnTo == Routes.DAILY_PRACTICE) {
@@ -121,6 +125,7 @@ internal fun TrainingScreenContent(
 
     TrainingScreen(
         state = state,
+        inputText = inputText,
         onInputChange = vm.training::onInputChanged,
         onSubmit = onSubmit,
         onPrev = onPrev,

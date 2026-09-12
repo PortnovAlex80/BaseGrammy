@@ -161,8 +161,7 @@ class PauseCascadeClickUiTest {
                 currentIndex = 1,
                 subLessonTotal = 3,
                 sessionState = SessionState.PAUSED,  // Start paused
-                inputMode = InputMode.KEYBOARD,
-                inputText = "sec"  // Partial input before pause
+                inputMode = InputMode.KEYBOARD
             ),
             navigation = NavigationState(
                 selectedLanguageId = LanguageId("en"),
@@ -170,12 +169,13 @@ class PauseCascadeClickUiTest {
             )
         )
 
-        currentInput = initialState.cardSession.inputText
+        currentInput = "sec"
 
         // ACT: Render TrainingScreen in paused state
         composeTestRule.setContent {
             TrainingScreen(
                 state = initialState,
+                inputText = "sec",
                 onInputChange = { text -> currentInput = text },
                 onSubmit = { SubmitResult(accepted = true, hintShown = false) },
                 onPrev = { /* no-op */ },
