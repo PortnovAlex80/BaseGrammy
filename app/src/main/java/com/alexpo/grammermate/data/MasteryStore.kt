@@ -6,6 +6,10 @@ import android.util.Log
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import com.alexpo.grammermate.data.validation.DataValidator
@@ -60,20 +64,81 @@ interface MasteryStore {
  * Хранилище состояний освоения уроков (mastery).
  * Сохраняет данные о показах карточек для каждого урока.
  *
- * Locking (Phase 1, plan item 1.6): [mutex] guards the in-memory cache and is
- * never held across the YAML dump + file write; the one exception is the
- * first-load disk read, which runs under [mutex] and is warmed off-main at
- * ViewModel init. Main-thread cache readers are therefore not blocked by a
- * background writer's file I/O. [fileMutex] serializes writers end-to-end
- * (mutate + persist) to keep write ordering deterministic; each persist
- * writes a complete snapshot, so last-write-wins is safe.
+ * Locking/batching (TASK-091, item 1):
+ * [mutex] guards the in-memory cache and is never held across the YAML dump +
+ * file write; the one exception is the first-load disk read, which runs under
+ * [mutex] and is warmed off-main at ViewModel init. Main-thread cache readers
+ * are therefore not blocked by a background writer's file I/O.
+ *
+ * Hot-path mutations ([recordCardShowForPack], [recordCardEncounterForPack],
+ * [recordSelfProducedForPack], [markCardsShownForProgressForPack],
+ * [markLessonCompletedForPack]) only update the cache under [mutex] and mark it
+ * dirty; a single background writer thread ([writer]) dumps a complete snapshot
+ * after a [debounceMs] coalescing window, so the three writes per card collapse
+ * into one. Each persist writes a complete snapshot, so last-write-wins is safe.
+ *
+ * [fileMutex] (shared per file path across instances) serializes writers
+ * end-to-end to keep write ordering deterministic. [saveForPack] — a rare,
+ * non-hot-path call — stays synchronous for durability-on-return.
+ *
+ * [flush] blocks until pending data is durable: it is called from
+ * [com.alexpo.grammermate.ui.TrainingViewModel.onCleared], where the process
+ * may die right after it returns. [clear]/[clearPack] absorb the pending
+ * deferred write (cancel + clean + [writeEpoch] bump), so a stale dump can
+ * never resurrect deleted data, including a retry after a failed write.
+ *
+ * A new instance over the same file drains other instances' pending writes
+ * before its first disk read (see [drainOtherInstances]), so a same-process
+ * reopen cannot observe a stale snapshot. Only never-loaded instances drain,
+ * and a dirty instance is always already loaded — so drain chains can never
+ * form a lock cycle.
  */
-class MasteryStoreImpl(private val context: Context) : MasteryStore {
+class MasteryStoreImpl(
+    private val context: Context,
+    private val debounceMs: Long = DEFAULT_FLUSH_DEBOUNCE_MS,
+) : MasteryStore {
+
+    companion object {
+        private const val TAG = "MasteryStore"
+
+        /** Coalescing window for deferred writes. Keep <= 2000 ms (TASK-091 risk bound). */
+        const val DEFAULT_FLUSH_DEBOUNCE_MS = 1500L
+
+        /** Per-path file locks shared by all instances in this process. */
+        private val fileLocks = ConcurrentHashMap<String, ReentrantLock>()
+
+        /**
+         * Instances with pending (not yet durable) writes, keyed by canonical file path.
+         * Guarded by [registryLock]; never held across I/O.
+         */
+        private val registryLock = ReentrantLock()
+        private val pendingByPath = LinkedHashMap<String, MutableList<MasteryStoreImpl>>()
+
+        private fun lockForPath(canonicalPath: String): ReentrantLock =
+            fileLocks.getOrPut(canonicalPath) { ReentrantLock() }
+    }
+
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
     private val file = File(baseDir, "mastery.yaml")
+    private val canonicalPath by lazy { file.canonicalPath }
     private val mutex = ReentrantLock()
-    private val fileMutex = ReentrantLock()
+    private val fileMutex by lazy { lockForPath(canonicalPath) }
+
+    // Deferred-write state, guarded by [schedLock]. Never held across I/O.
+    private val schedLock = ReentrantLock()
+    private var dirty = false
+    private var registeredPending = false
+    private var pendingTask: java.util.concurrent.ScheduledFuture<*>? = null
+
+    /** Bumped by [clear]/[clearPack]/[saveForPack]; a failed write retries only while its epoch is current. */
+    private var writeEpoch = 0L
+
+    /** The only thread that ever dumps snapshots for the hot path — keeps write order FIFO. */
+    private val writer: ScheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "mastery-store-writer").apply { isDaemon = true }
+        }
 
     // Кеш для быстрого доступа
     private var cache: MutableMap<String, MutableMap<String, LessonMasteryState>> = mutableMapOf()
@@ -89,6 +154,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
     private fun loadAllInternal(): Map<String, Map<String, LessonMasteryState>> {
         if (cacheLoaded) return cache
+        drainOtherInstances()
 
         if (!file.exists()) {
             cacheLoaded = true
@@ -125,7 +191,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                             cache[languageId]!![lessonId] = validationResult.data
                         }
                         is com.alexpo.grammermate.data.validation.ValidationResult.Invalid -> {
-                            Log.w("MasteryStore", "Using safe default for corrupted mastery data: lesson=$lessonId")
+                            Log.w(TAG, "Using safe default for corrupted mastery data: lesson=$lessonId")
                             cache[languageId]!![lessonId] = validationResult.safeDefault
                         }
                         is com.alexpo.grammermate.data.validation.ValidationResult.Warning -> {
@@ -135,7 +201,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
                 }
             }
         } catch (e: Exception) {
-            Log.e("MasteryStore", "Failed to parse ${file.name}", e)
+            Log.e(TAG, "Failed to parse ${file.name}", e)
             cache = previousCache
         }
 
@@ -155,19 +221,30 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
     /**
      * Pack-scoped save. Stores mastery under "pack:{packId}" key.
+     * Synchronous (rare, non-hot-path): durable on return.
      */
-    override fun saveForPack(state: LessonMasteryState, packId: String) = fileMutex.withLock {
+    override fun saveForPack(state: LessonMasteryState, packId: String) {
         mutex.withLock {
             loadAllInternal()
             cache.getOrPut("pack:$packId") { mutableMapOf() }[state.lessonId.value] = state
         }
-        persistToFileLocked()
+        // This full-snapshot write covers any deferred mutations already in the
+        // cache, so the pending write is absorbed; epoch bump suppresses retries.
+        schedLock.withLock {
+            dirty = false
+            cancelPendingTaskLocked()
+            unregisterPendingLocked()
+            writeEpoch++
+        }
+        fileMutex.withLock {
+            persistToFileLocked()
+        }
     }
 
     /**
      * Pack-scoped card show recording. Stores under "pack:{packId}" key.
      */
-    override fun recordCardShowForPack(packId: String, lessonId: String, cardId: String) = fileMutex.withLock {
+    override fun recordCardShowForPack(packId: String, lessonId: String, cardId: String) {
         mutex.withLock {
             loadAllInternal()
 
@@ -197,7 +274,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
             cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        persistToFileLocked()
+        markDirtyAndScheduleDeferredWrite()
     }
 
     /**
@@ -222,7 +299,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
         packId: String,
         lessonId: String,
         totalEffortCards: Int
-    ) = fileMutex.withLock {
+    ) {
         mutex.withLock {
             loadAllInternal()
 
@@ -255,7 +332,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
             cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        persistToFileLocked()
+        markDirtyAndScheduleDeferredWrite()
     }
 
     /**
@@ -270,7 +347,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     /**
      * Pack-scoped card progress marking. Stores under "pack:{packId}" key.
      */
-    override fun markCardsShownForProgressForPack(packId: String, lessonId: String, cardIds: Collection<String>) = fileMutex.withLock {
+    override fun markCardsShownForProgressForPack(packId: String, lessonId: String, cardIds: Collection<String>) {
         mutex.withLock {
             loadAllInternal()
             if (cardIds.isEmpty()) return
@@ -284,13 +361,13 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
             cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        persistToFileLocked()
+        markDirtyAndScheduleDeferredWrite()
     }
 
     /**
      * Pack-scoped lesson completion marking. Stores under "pack:{packId}" key.
      */
-    override fun markLessonCompletedForPack(packId: String, lessonId: String) = fileMutex.withLock {
+    override fun markLessonCompletedForPack(packId: String, lessonId: String) {
         mutex.withLock {
             loadAllInternal()
             val packKey = "pack:$packId"
@@ -302,7 +379,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
             cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
         }
-        persistToFileLocked()
+        markDirtyAndScheduleDeferredWrite()
     }
 
     /**
@@ -319,7 +396,7 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
      * Pack-scoped card encounter tracking. Returns new encounter count.
      * Stores under "pack:{packId}" key.
      */
-    override fun recordCardEncounterForPack(packId: String, lessonId: String, cardId: String): Int = fileMutex.withLock {
+    override fun recordCardEncounterForPack(packId: String, lessonId: String, cardId: String): Int {
         val newCount = mutex.withLock {
             loadAllInternal()
             val packKey = "pack:$packId"
@@ -335,8 +412,8 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
             cache.getOrPut(packKey) { mutableMapOf() }[updated.lessonId.value] = updated
             nextCount
         }
-        persistToFileLocked()
-        newCount
+        markDirtyAndScheduleDeferredWrite()
+        return newCount
     }
 
     /**
@@ -349,36 +426,159 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
     }
 
     /**
-     * Очистить все данные.
+     * Очистить все данные. Поглощает отложенную запись: pending-дамп отменяется,
+     * [writeEpoch] не даёт повтору неудачной записи воскресить удалённые данные.
      */
-    override fun clear() = fileMutex.withLock {
+    override fun clear() {
+        schedLock.withLock {
+            dirty = false
+            cancelPendingTaskLocked()
+            unregisterPendingLocked()
+            writeEpoch++
+        }
         mutex.withLock {
             cache.clear()
             cacheLoaded = true
         }
-        if (file.exists()) {
-            file.delete()
+        fileMutex.withLock {
+            if (file.exists()) {
+                file.delete()
+            }
         }
     }
 
     /**
      * Pack-scoped clear: removes all mastery data for a given pack.
+     * Absorbs the pending deferred write the same way [clear] does.
      */
-    override fun clearPack(packId: String) = fileMutex.withLock {
+    override fun clearPack(packId: String) {
+        schedLock.withLock {
+            dirty = false
+            cancelPendingTaskLocked()
+            unregisterPendingLocked()
+            writeEpoch++
+        }
         mutex.withLock {
             loadAllInternal()
             cache.remove("pack:$packId")
         }
-        persistToFileLocked()
+        fileMutex.withLock {
+            persistToFileLocked()
+        }
     }
 
     /**
-     * Flush any pending dirty data to disk immediately.
-     * No-op: writes are synchronous within each mutation (serialized by
-     * fileMutex). Kept for API compatibility with lifecycle call sites.
+     * Блокирующе сбрасывает отложенные изменения на диск. Вызывается из
+     * onCleared()/onAppBackgrounded()/saveProgress(), где после возврата
+     * процесс может умереть — асинхронный flush здесь недопустим.
      */
     override fun flush() {
-        // No-op: writes are synchronous now
+        val task = schedLock.withLock {
+            cancelPendingTaskLocked()
+            writer.schedule({ writeSnapshotIfDirty() }, 0, TimeUnit.MILLISECONDS)
+        }
+        try {
+            // Single writer thread => FIFO: returns only after every earlier
+            // queued/running write and this one (if any) are durable.
+            task.get()
+        } catch (e: java.util.concurrent.ExecutionException) {
+            Log.e(TAG, "Flush task failed for ${file.name}", e.cause ?: e)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            Log.e(TAG, "Flush interrupted for ${file.name}", e)
+        }
+    }
+
+    // ── Deferred-write machinery ──────────────────────────────────────────
+
+    /** Cache-only mutation bookkeeping: mark dirty and (re)arm the debounce timer. */
+    private fun markDirtyAndScheduleDeferredWrite() {
+        schedLock.withLock {
+            dirty = true
+            registerPendingLocked()
+            if (pendingTask == null) {
+                pendingTask = writer.schedule(
+                    { writeSnapshotIfDirty() },
+                    debounceMs,
+                    TimeUnit.MILLISECONDS
+                )
+            }
+        }
+    }
+
+    /**
+     * Writer-thread body: dump one full snapshot iff the cache is dirty.
+     * On failure the data stays dirty and registered, and is retried by the
+     * next flush/mutation — unless [writeEpoch] moved on (clear/save wrote a
+     * newer state meanwhile), in which case the retry is dropped.
+     */
+    private fun writeSnapshotIfDirty() {
+        val epochAtStart = schedLock.withLock {
+            if (!dirty) {
+                unregisterPendingLocked()
+                return
+            }
+            dirty = false
+            writeEpoch
+        }
+
+        try {
+            fileMutex.withLock {
+                persistToFileLocked()
+            }
+            schedLock.withLock {
+                if (!dirty) unregisterPendingLocked()
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Deferred mastery write failed; will retry on next flush", t)
+            schedLock.withLock {
+                if (!dirty && writeEpoch == epochAtStart) {
+                    dirty = true
+                    registerPendingLocked()
+                }
+            }
+        }
+    }
+
+    /**
+     * Before the first disk read of a newly created instance, make every other
+     * instance with pending writes over this file durable, in registration
+     * order, so the freshest snapshot lands last. Only never-loaded instances
+     * drain; dirty instances are always loaded — so no drain cycle is possible.
+     */
+    private fun drainOtherInstances() {
+        val others: List<MasteryStoreImpl> = registryLock.withLock {
+            pendingByPath[canonicalPath].orEmpty().filter { it !== this }.toList()
+        }
+        for (other in others) {
+            other.flush()
+        }
+    }
+
+    // Callers must hold [schedLock].
+    private fun registerPendingLocked() {
+        if (registeredPending) return
+        registryLock.withLock {
+            pendingByPath.getOrPut(canonicalPath) { mutableListOf() }.add(this)
+        }
+        registeredPending = true
+    }
+
+    // Callers must hold [schedLock].
+    private fun unregisterPendingLocked() {
+        if (!registeredPending) return
+        registryLock.withLock {
+            val list = pendingByPath[canonicalPath] ?: return
+            list.remove(this)
+            if (list.isEmpty()) pendingByPath.remove(canonicalPath)
+        }
+        registeredPending = false
+    }
+
+    // Callers must hold [schedLock].
+    private fun cancelPendingTaskLocked() {
+        pendingTask?.cancel(false)
+        pendingTask = null
     }
 
     /**
@@ -391,12 +591,12 @@ class MasteryStoreImpl(private val context: Context) : MasteryStore {
 
         try {
             AtomicFileWriter.writeText(file, yaml.dump(data))
-            Log.i("MasteryStore", "Successfully persisted mastery data: ${file.name} (${file.length()} bytes)")
+            Log.i(TAG, "Successfully persisted mastery data: ${file.name} (${file.length()} bytes)")
         } catch (e: IOException) {
-            Log.e("MasteryStore", "Failed to persist mastery data: ${file.name}", e)
+            Log.e(TAG, "Failed to persist mastery data: ${file.name}", e)
             throw e
         } catch (e: Exception) {
-            Log.e("MasteryStore", "Unexpected error persisting mastery data: ${file.name}", e)
+            Log.e(TAG, "Unexpected error persisting mastery data: ${file.name}", e)
             throw IOException("Failed to persist mastery data", e)
         }
     }
