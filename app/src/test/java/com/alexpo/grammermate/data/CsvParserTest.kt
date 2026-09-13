@@ -214,4 +214,46 @@ Invalid line
         assertTrue(message.contains("1 error(s)"))
         assertTrue(message.contains("Line 3"))
     }
+        // ── Optional 3rd column: RU;IT;CONTEXT (approved by user 2026-09-13) ──
+        @Test
+        fun parseLesson_threeColumns_contextParsed() {
+            val csv = """
+    Clitics
+    Я её покупаю (comprare, il libro);Lo compro;Речь о книге.
+    Он работает;Lavora
+    """.trimIndent()
+            val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+            assertTrue(result.isSuccess)
+            assertEquals(0, result.errors.size)
+            val (_, cards) = result.data!!
+            assertEquals(2, cards.size)
+            assertEquals("Речь о книге.", cards[0].contextRu)
+            assertEquals("Lo compro", cards[0].acceptedAnswers.first())
+            assertNull(cards[1].contextRu)
+        }
+        @Test
+        fun parseLesson_blankThirdColumn_contextIsNull() {
+            val csv = "T\nОн работает;Lavora;   "
+            val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+            assertTrue(result.isSuccess)
+            val (_, cards) = result.data!!
+            assertEquals(1, cards.size)
+            assertNull(cards[0].contextRu)
+        }
+        @Test
+        fun parseLesson_twoColumns_backwardCompatible() {
+            val csv = "T\nОн работает;Lavora"
+            val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+            assertTrue(result.isSuccess)
+            assertEquals(0, result.errors.size)
+            val (_, cards) = result.data!!
+            assertNull(cards[0].contextRu)
+        }
+        @Test
+        fun parseLesson_fourColumns_rejected() {
+            val csv = "T\nОн работает;Lavora;Контекст;Лишнее"
+            val result = CsvParser.parseLesson(ByteArrayInputStream(csv.toByteArray()))
+            assertTrue(result.data == null || result.data!!.second.isEmpty())
+            assertTrue(result.errors.any { it is ParseError.MalformedLine })
+        }
 }

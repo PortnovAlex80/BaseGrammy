@@ -36,7 +36,7 @@ VOCAB_DRILL_FILES = [
 ]
 OUT_ZIP = ROOT / "app/src/main/assets/grammarmate/packs/ITALIAN_IMPERIAL_COURSE.zip"
 
-PACK_VERSION = "v4"
+PACK_VERSION = "v5"
 PACK_ID = "ITALIAN_IMPERIAL"
 
 nav_html = LADDER.read_text(encoding="utf-8")

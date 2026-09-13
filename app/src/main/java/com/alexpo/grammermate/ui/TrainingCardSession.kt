@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
+import com.alexpo.grammermate.data.SentenceCard
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
@@ -328,6 +330,15 @@ private fun DefaultCardContent(scope: TrainingCardSessionScope) {
                     fontSize = (20f * scope.textScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )
+                (card as? SentenceCard)?.contextRu?.let { ctx ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = ctx,
+                        fontSize = (13f * scope.textScale).sp,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             TtsSpeakerButton(
                 ttsState = scope.contract.ttsState,

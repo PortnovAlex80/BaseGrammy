@@ -41,11 +41,11 @@ object CsvParser {
                 }
 
                 val columns = CsvLineParser.parseLine(line)
-                if (columns.size != 2) {
+                if (columns.size !in 2..3) {
                     errors.add(
                         ParseError.MalformedLine(
                             lineNumber = lineNumber,
-                            expected = "2 columns (RU, answers)",
+                            expected = "2 or 3 columns (RU, answers[, context])",
                             actual = "${columns.size} column(s): $line"
                         )
                     )
@@ -54,6 +54,8 @@ object CsvParser {
 
                 val ru = columns[0].trim().trim('"')
                 val answersRaw = columns[1]
+                // Optional 3rd column: situation context shown with the prompt
+                val contextRu = columns.getOrNull(2)?.trim()?.trim('"')?.takeIf { it.isNotBlank() }
                 if (ru.isBlank() || answersRaw.isBlank()) {
                     errors.add(
                         ParseError.MalformedLine(
@@ -83,7 +85,8 @@ object CsvParser {
                     SentenceCard(
                         id = "card_$lineNumber",
                         promptRu = ru,
-                        acceptedAnswers = answers
+                        acceptedAnswers = answers,
+                        contextRu = contextRu
                     )
                 )
             }

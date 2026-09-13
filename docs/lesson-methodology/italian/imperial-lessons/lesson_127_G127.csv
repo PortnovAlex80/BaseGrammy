@@ -1,8 +1,8 @@
 G127 - Указательное слово вместо именной группы
-Та книга старая (il libro, vecchio);Quello è vecchio
-Та комната маленькая (la stanza, piccolo);Quella è piccola
+Та книга старая (il libro, vecchio);Quello è vecchio;Речь о той книге из названной пары.
+Та комната маленькая (la stanza, piccolo);Quella è piccola;Речь о той комнате из названной пары.
 Я покупаю эту книгу и ту (comprare, libro);Compro questo libro e quello
-Те книги старые (i libri, vecchio);Quelli sono vecchi
+Те книги старые (i libri, vecchio);Quelli sono vecchi;Речь о тех книгах из названной пары.
 Это книга Марко (il libro, Marco);Questo è il libro di Marco
 Та машина — Анны (la macchina, Anna);Quella è la macchina di Anna
 Это мой дом (casa);Questa è la mia casa
@@ -10,3 +10,6 @@ G127 - Указательное слово вместо именной груп�
 Это туфли Павла (le scarpe, Paolo);Queste sono le scarpe di Paolo
 Я беру это и то (prendere);Prendo questo e quello
 Та газета — Луки (il giornale, Luca);Quello è il giornale di Luca
+
+
+

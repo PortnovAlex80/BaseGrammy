@@ -54,7 +54,15 @@ data class SentenceCard(
     override val id: String,
     override val promptRu: String,
     override val acceptedAnswers: List<String>,
-    val tense: String? = null
+    val tense: String? = null,
+    /**
+     * Optional situation note (3rd CSV column: `RU;IT;CONTEXT`). Carries the
+     * discourse context the prompt needs for unambiguous interpretation
+     * (referent of a pronoun, antecedent of ne, discourse status of a
+     * definite article) WITHOUT naming the target grammar. Null for most
+     * cards; shown to the learner next to the prompt.
+     */
+    val contextRu: String? = null
 ) : SessionCard
 
 data class VocabEntry(

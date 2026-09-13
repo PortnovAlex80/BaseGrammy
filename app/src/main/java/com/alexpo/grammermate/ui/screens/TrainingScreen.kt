@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
@@ -478,6 +479,18 @@ fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
                     fontSize = (20f * state.audio.ruTextScale).sp,
                     fontWeight = FontWeight.SemiBold
                 )
+                // Optional situation context (3rd CSV column): always visible —
+                // it disambiguates the prompt (pronoun referent, ne antecedent,
+                // discourse status) and is not part of the graded hint ladder.
+                (state.cardSession.currentCard as? SentenceCard)?.contextRu?.let { ctx ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = ctx,
+                        fontSize = (13f * state.audio.ruTextScale).sp,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             TtsSpeakerButton(
                 ttsState = state.audio.ttsState,
