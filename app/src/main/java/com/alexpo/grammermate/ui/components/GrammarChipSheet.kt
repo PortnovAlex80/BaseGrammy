@@ -1,5 +1,7 @@
 package com.alexpo.grammermate.ui.components
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +50,7 @@ fun GrammarInfoBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -86,9 +89,9 @@ fun GrammarInfoBottomSheet(
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = chip.essence,
-                        style = MaterialTheme.typography.bodyMedium
+                    SimpleMarkdownParser.RenderMarkdown(
+                        markdown = chip.essence,
+                        textScale = 0.9f
                     )
                 }
             }
@@ -110,10 +113,12 @@ fun GrammarInfoBottomSheet(
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = chip.formula,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        // Формула — самое размеченное поле чипа: заголовки ###,
+                        // списки, таблицы и `код`. Моноширинный шрифт на весь блок
+                        // больше не нужен: его несёт сама разметка.
+                        SimpleMarkdownParser.RenderMarkdown(
+                            markdown = chip.formula,
+                            textScale = 0.9f
                         )
                     }
                 }
@@ -136,9 +141,9 @@ fun GrammarInfoBottomSheet(
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = chip.base,
-                            style = MaterialTheme.typography.bodyMedium
+                        SimpleMarkdownParser.RenderMarkdown(
+                            markdown = chip.base,
+                            textScale = 0.9f
                         )
                     }
                 }
@@ -203,10 +208,9 @@ fun GrammarInfoBottomSheet(
                     color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = chip.dontConfuse,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                SimpleMarkdownParser.RenderMarkdown(
+                    markdown = chip.dontConfuse,
+                    textScale = 0.9f
                 )
             }
 
@@ -222,9 +226,9 @@ fun GrammarInfoBottomSheet(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Text(
-                        text = noteContent,
-                        style = MaterialTheme.typography.bodyMedium
+                    SimpleMarkdownParser.RenderMarkdown(
+                        markdown = noteContent,
+                        textScale = 0.9f
                     )
                 }
             }

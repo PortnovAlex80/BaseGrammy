@@ -42,12 +42,44 @@ object HintCalculator {
         return PARENTHETICAL_REGEX.replace(text, "")
     }
 
+    /**
+     * Средний уровень: показать ЧАСТЬ лемм внутри подсказки.
+     *
+     * Раньше здесь пряталась каждая вторая скобка целиком. Это работало бы для
+     * промптов с несколькими подсказками, но в реальном контенте скобка ровно
+     * одна у 99% карточек, а [offset] задаётся один раз на сессию
+     * (TrainingViewModel: hintSessionOffset = Random.nextInt(0, 100)). Поэтому
+     * "половина" вырождалась в чётность offset: вся сессия шла либо как EASY,
+     * либо как HARD, и среднего уровня фактически не существовало.
+     *
+     * Теперь режется содержимое скобки: из списка лемм показывается половина
+     * (с округлением вверх), непоказанное обозначается многоточием. [offset]
+     * сдвигает окно между сессиями, чтобы не заучивалась позиция, но внутри
+     * сессии окно стабильно. Подсказка из одной леммы остаётся целиком —
+     * резать там нечего.
+     */
     private fun stripHalf(text: String, offset: Int): String {
-        var index = 0
         return PARENTHETICAL_REGEX.replace(text) { matchResult ->
-            val show = (index + offset) % 2 == 0
-            index++
-            if (show) matchResult.value else ""
+            val raw = matchResult.value
+            val open = raw.indexOf('(')
+            val lead = raw.substring(0, open)
+            val parts = raw.substring(open + 1, raw.length - 1)
+                .split(",")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+
+            if (parts.size < 2) {
+                raw
+            } else {
+                val keep = (parts.size + 1) / 2
+                // окно всегда непрерывное и в исходном порядке, без заворота
+                val start = ((offset % (parts.size - keep + 1)) + (parts.size - keep + 1)) %
+                    (parts.size - keep + 1)
+                val shown = parts.subList(start, start + keep).joinToString(", ")
+                val prefix = if (start > 0) "…, " else ""
+                val suffix = if (start + keep < parts.size) ", …" else ""
+                "$lead($prefix$shown$suffix)"
+            }
         }
     }
 }
