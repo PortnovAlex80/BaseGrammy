@@ -7,11 +7,7 @@
   },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.2[1m]",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.2[1m]",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.2[1m]",
     "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "800000"
   },
-  "model": "glm-5.2[1m]",
   "autoCompactEnabled": true
 }
