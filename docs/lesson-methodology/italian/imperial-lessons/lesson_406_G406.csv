@@ -1,12 +1,12 @@
 G406 - Согласование при mi/ti/ci/vi — вариативность
 Анна меня увидела (vedere, mi);Anna mi ha visto
-Анна меня увидела (vedere, mi);Anna mi ha vista
+Анна меня увидела (vedere, mi);Anna mi ha vista;Я — девушка.
 Лука, я тебя услышал (sentire, ti);Luca, ti ho sentito
 Анна, я тебя услышал (sentire, ti);Anna, ti ho sentita
 Марко, я тебя понял (capire, ti);Marco, ti ho capito
 Мария, я тебя понял (capire, ti);Maria, ti ho capita
-Мальчики, я вас увидел (vedere, vi);Bambini, vi ho visti
-Девочки, я вас увидел (vedere, vi);Bambine, vi ho viste
+Мальчики, я вас увидел (vedere, vi, bambini);Bambini, vi ho visti
+Девочки, я вас увидел (vedere, vi, bambine);Bambine, vi ho viste
 Друзья, Мария нас увидела (vedere, ci);Amici, Maria ci ha visti
 Подруги, Мария нас увидела (vedere, ci);Amiche, Maria ci ha viste
 Друзья, Анна нас позвала (chiamare, ci);Amici, Anna ci ha chiamati

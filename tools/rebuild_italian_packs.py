@@ -10,6 +10,7 @@ ITALIAN_FULL_COURSE.zip 57 строк были испорчены автозам
 "finishingали", "courage", а в B11 — русский род вместо итальянского), тогда
 как исходники чистые.
 """
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -22,6 +23,17 @@ PACKS = [
     ("ITALIAN_EXPRESS_SHORT.zip", SRC / "short-engine-lessons"),
     ("ITALIAN_FULL_COURSE.zip", SRC / "full-course-63"),
 ]
+
+# LanguageManager.updateDefaultPacksIfNeeded переустанавливает встроенный пак
+# ТОЛЬКО когда packVersion в ассете отличается от уже импортированного. Без
+# подъёма версии телефон продолжит работать со старой копией, и исправленный
+# APK ничего не изменит. Прогресс при переимпорте не страдает: PackImporter
+# переписывает только каталог пака, а id карточки = номер строки, и число
+# строк в уроках сохранено.
+PACK_VERSIONS = {
+    "ITALIAN_EXPRESS_SHORT.zip": "v7",   # было v6
+    "ITALIAN_FULL_COURSE.zip": "v2",     # было v1
+}
 
 
 def lesson_key(name: str) -> str | None:
@@ -49,6 +61,15 @@ def rebuild(zip_name: str, lesson_dir: Path) -> int:
                 # писать байты как есть: файлы уже в UTF-8 с нужными переводами строк
                 zout.writestr(info, srcfile.read_bytes())
                 replaced += 1
+            elif info.filename == "manifest.json" and zip_name in PACK_VERSIONS:
+                want = PACK_VERSIONS[zip_name]
+                text = zin.read(info.filename).decode("utf-8")
+                text, n = re.subn(r'("packVersion"\s*:\s*")[^"]*(")',
+                                  rf"\g<1>{want}\g<2>", text, count=1)
+                if not n:
+                    raise RuntimeError(f"{zip_name}: в манифесте нет packVersion")
+                zout.writestr(info, text.encode("utf-8"))
+                print(f"  {zip_name}: packVersion -> {want}")
             else:
                 zout.writestr(info, zin.read(info.filename))
 
