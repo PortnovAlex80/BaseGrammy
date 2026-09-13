@@ -99,6 +99,22 @@ import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerState
 import com.alexpo.grammermate.feature.progress.PackProgressCalculator
 
+/**
+ * Re-import every bundled pack from assets on each app start, ignoring pack versions.
+ *
+ * Keep this OFF. [LessonStore.updateDefaultPacksIfNeeded] already reinstalls a bundled
+ * pack whenever its `packVersion` in the asset differs from the installed one, which is
+ * the supported way to ship new lesson content.
+ *
+ * Forcing the reload costs a full remove + re-import of all bundled packs on every
+ * launch: measured at 162 s / 1072 full rewrites of `it_index.yaml` with the Italian
+ * packs installed (Express 63 + Full Course 63 + Imperial 439 lessons).
+ *
+ * Flip to `true` only for local content work where bumping `packVersion` on every lesson
+ * edit is impractical — and flip it back before committing.
+ */
+private const val FORCE_RELOAD_DEFAULT_PACKS_ON_START = false
+
 data class PackTileUi(
     val packId: String,
     val displayName: String,
@@ -921,11 +937,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 audioCoordinator.startTtsStateCollection()
             }
 
-            // Force reload default packs on every app start to ensure latest lesson content.
+            // Bundled packs are reinstalled by updateDefaultPacksIfNeeded() above, which is
+            // gated on packVersion. The unconditional force reload that used to run here cost
+            // a full remove + re-import of every bundled pack on each launch; it is now behind
+            // FORCE_RELOAD_DEFAULT_PACKS_ON_START (off by default — see the flag's docs).
             // NOTE: We read _coreState.value INSIDE the update lambda to avoid a TOCTOU race
             // where the user changes language/lesson on the main thread while we captured
             // stale values on the IO thread.
-            val reloaded = lessonStore.forceReloadDefaultPacks()
+            val reloaded = FORCE_RELOAD_DEFAULT_PACKS_ON_START && lessonStore.forceReloadDefaultPacks()
             if (reloaded) {
                 val reloadLanguages = lessonStore.getLanguagesWithPacks()
                 val reloadPacks = lessonStore.getInstalledPacks()

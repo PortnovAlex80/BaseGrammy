@@ -238,16 +238,16 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         languageManager.invalidateManifestCache()
     }
 
-    override fun seedDefaultPacksIfNeeded(): Boolean {
+    override fun seedDefaultPacksIfNeeded(): Boolean = withIndexBatch {
         val seeded = languageManager.seedDefaultPacksIfNeeded { path ->
             packImporter.importPackFromAssets(path)
             true
         }
         if (seeded) invalidatePackCaches()
-        return seeded
+        seeded
     }
 
-    override fun updateDefaultPacksIfNeeded(): Boolean {
+    override fun updateDefaultPacksIfNeeded(): Boolean = withIndexBatch {
         val updated = languageManager.updateDefaultPacksIfNeeded(
             importFromAssets = { path ->
                 packImporter.importPackFromAssets(path)
@@ -256,10 +256,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             readManifestFromAssets = { path -> packImporter.readPackManifestFromAssets(path) }
         )
         if (updated) invalidatePackCaches()
-        return updated
+        updated
     }
 
-    override fun forceReloadDefaultPacks(): Boolean {
+    override fun forceReloadDefaultPacks(): Boolean = withIndexBatch {
         val result = languageManager.forceReloadDefaultPacks(
             removeInstalledPackData = { packId -> removeInstalledPackData(packId) },
             importFromAssets = { path ->
@@ -268,7 +268,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             }
         )
         if (result) invalidatePackCaches()
-        return result
+        result
     }
 
     // ── Language & pack queries ──────────────────────────────────────────
@@ -330,20 +330,20 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // ── Pack import ──────────────────────────────────────────────────────
 
-    override fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack {
+    override fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack = withIndexBatch {
         ensureSeedData()
         val pack = packImporter.importPackFromUri(uri, resolver)
         invalidateLessonsCache()
         languageManager.invalidateManifestCache(pack.packId.value)
-        return pack
+        pack
     }
 
-    override fun importPackFromAssets(assetPath: String): LessonPack {
+    override fun importPackFromAssets(assetPath: String): LessonPack = withIndexBatch {
         ensureSeedData()
         val pack = packImporter.importPackFromAssets(assetPath)
         invalidateLessonsCache()
         languageManager.invalidateManifestCache(pack.packId.value)
-        return pack
+        pack
     }
 
     // ── Pack removal ─────────────────────────────────────────────────────
@@ -815,12 +815,12 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
      * @param externalDirPath Absolute path to external lesson directory
      * @return Number of lessons successfully loaded
      */
-    override fun loadExternalLessons(languageId: String, externalDirPath: String): Int {
+    override fun loadExternalLessons(languageId: String, externalDirPath: String): Int = withIndexBatch {
         ensureSeedData()
         val externalDir = File(externalDirPath)
         if (!externalDir.exists() || !externalDir.isDirectory) {
             android.util.Log.w("LessonStore", "External directory does not exist: $externalDirPath")
-            return 0
+            return@withIndexBatch 0
         }
 
         // Russian pattern: урок_{number}_{code}.csv
@@ -833,7 +833,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
         if (lessonFiles.isEmpty()) {
             android.util.Log.w("LessonStore", "No lessons found matching pattern in: $externalDirPath")
-            return 0
+            return@withIndexBatch 0
         }
 
         var loadedCount = 0
@@ -876,7 +876,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             android.util.Log.i("LessonStore", "Successfully loaded $loadedCount lessons from $externalDirPath")
         }
 
-        return loadedCount
+        loadedCount
     }
 
     // ── Story language detection ─────────────────────────────────────────────
@@ -970,14 +970,61 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         writeIndex(languageId, existing)
     }
 
+    // ── Lesson index batching ────────────────────────────────────────────
+    //
+    // Importing a pack touches the lesson index twice per lesson: replaceById()
+    // drops the stale row, then saveIndex() appends the new one. Each of those
+    // used to rewrite the whole YAML with an fsync, so the cost was quadratic in
+    // lesson count — the Italian packs (63 + 63 + 439 lessons) produced 1072 full
+    // rewrites of a 76 KB file and took 162 s on device.
+    //
+    // While a batch is open the index lives in memory and hits the disk once per
+    // language when the outermost batch closes. Reads inside the batch go to the
+    // buffer, so callers still observe their own writes.
+
+    private var indexBatchDepth = 0
+    private val indexBatchBuffers = mutableMapOf<String, List<Map<String, Any>>>()
+
+    /** Runs [block] with index writes buffered in memory. Re-entrant. */
+    private fun <T> withIndexBatch(block: () -> T): T {
+        indexBatchDepth++
+        try {
+            return block()
+        } finally {
+            indexBatchDepth--
+            // Flush on the way out of the outermost batch, including on failure:
+            // the buffer holds every write that did land before the exception.
+            if (indexBatchDepth == 0 && indexBatchBuffers.isNotEmpty()) {
+                val pending = indexBatchBuffers.toMap()
+                indexBatchBuffers.clear()
+                pending.forEach { (languageId, entries) -> writeIndexToDisk(languageId, entries) }
+            }
+        }
+    }
+
     private fun loadIndex(languageId: String): List<Map<String, Any>> {
+        if (indexBatchDepth > 0) {
+            return indexBatchBuffers.getOrPut(languageId) { readIndexFromDisk(languageId) }
+        }
+        return readIndexFromDisk(languageId)
+    }
+
+    private fun writeIndex(languageId: String, entries: List<Map<String, Any>>) {
+        if (indexBatchDepth > 0) {
+            indexBatchBuffers[languageId] = entries
+            return
+        }
+        writeIndexToDisk(languageId, entries)
+    }
+
+    private fun readIndexFromDisk(languageId: String): List<Map<String, Any>> {
         val indexFile = indexFileFor(languageId)
         if (!indexFile.exists()) return emptyList()
         val store = YamlListStore(yaml, indexFile)
         return store.read()
     }
 
-    private fun writeIndex(languageId: String, entries: List<Map<String, Any>>) {
+    private fun writeIndexToDisk(languageId: String, entries: List<Map<String, Any>>) {
         val indexFile = indexFileFor(languageId)
         val store = YamlListStore(yaml, indexFile)
         store.write(entries)

@@ -23,7 +23,10 @@ object AtomicFileWriter {
             file.delete()
             throw IOException("Write failed: $context is empty")
         }
-        Log.d("AtomicFileWriter", "Write verification passed: $context (${file.length()} bytes)")
+        // No success log here: verifyWrite runs twice per write (temp + final), and pack
+        // import writes thousands of files, so this was the single chattiest logger in the
+        // app. Failures above are still logged at E. Use BuildConfig.DEBUG if you need the
+        // per-file trace back while debugging an import.
     }
 
     fun writeText(file: File, text: String, charset: Charset = Charsets.UTF_8) {
