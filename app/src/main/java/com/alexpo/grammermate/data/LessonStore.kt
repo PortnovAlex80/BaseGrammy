@@ -1089,6 +1089,19 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         return lessons.sortedBy { lesson -> orderIndex[lesson.id.value] ?: knownCount }
     }
 
+    /**
+     * Resolve the CSV filename for [lessonId] in [packId].
+     *
+     * Mirrors the rule in [getManifestLessonFileNames]: an explicit `file` in
+     * manifest.lessons wins, otherwise the filename is "<lessonId>.csv". Works for both
+     * schema v1 (lessons listed at the root) and v2 (lesson IDs listed in chapters).
+     */
+    private fun lessonFileNameFor(packId: String, lessonId: String): String {
+        val manifest = languageManager.readInstalledPackManifest(packId)
+        val explicit = manifest?.lessons?.firstOrNull { it.lessonId == lessonId }?.file
+        return explicit ?: "$lessonId.csv"
+    }
+
     private fun findPack(packId: String, languageId: String): LessonPack? {
         return getInstalledPacks().find {
             it.packId.value == packId && it.languageId.value == languageId
@@ -1105,7 +1118,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
         val result = mutableListOf<LessonMetadata>()
         for (lessonId in lessonIds) {
-            val csvFile = File(packDir, "$lessonId.csv")
+            val csvFile = File(packDir, lessonFileNameFor(packId, lessonId))
             if (!csvFile.exists()) continue
             try {
                 val title = CsvParser.parseLessonTitle(csvFile.inputStream()) ?: lessonId
@@ -1130,7 +1143,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     private fun loadSingleLessonFromDisk(languageId: String, packId: String, lessonId: String): Lesson? {
         val pack = findPack(packId, languageId) ?: return null
         val packDir = File(packsDir, pack.packId.value)
-        val csvFile = File(packDir, "$lessonId.csv")
+        val csvFile = File(packDir, lessonFileNameFor(packId, lessonId))
         if (!csvFile.exists()) {
             Log.w("LessonStore", "Lesson file not found: ${csvFile.absolutePath}")
             return null

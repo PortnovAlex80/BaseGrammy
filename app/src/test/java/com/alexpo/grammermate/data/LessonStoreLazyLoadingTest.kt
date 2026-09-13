@@ -1,7 +1,12 @@
 package com.alexpo.grammermate.data
 
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import java.io.File
 
 class LessonStoreLazyLoadingTest {
 
@@ -159,5 +164,228 @@ class LessonStoreLazyLoadingTest {
         override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? = null
         override fun getVerbDrillFiles(languageId: String): List<java.io.File> = emptyList()
         override fun hasVerbDrillLessons(languageId: String): Boolean = false
+    }
+}
+
+/**
+ * Disk-backed tests for the lazy lesson-loading API against the real
+ * [LessonStoreImpl] (TASK-092). Setup pattern copied from
+ * [LessonStoreLessonOrderTest]: Robolectric filesDir, a seeded store, and a
+ * synthetic pack registered under a default pack id (required —
+ * cleanupStalePacks deletes unknown ids).
+ *
+ * packId must be one of the hardcoded defaultPacks; lesson content is fully
+ * synthetic and does not match the real asset pack.
+ */
+@RunWith(RobolectricTestRunner::class)
+class LessonStoreLazyLoadingDiskTest {
+
+    private val packId = "ITALIAN_SHORT"
+    private val langId = "it"
+
+    private lateinit var context: android.content.Context
+    private lateinit var baseDir: File
+    private lateinit var packsDir: File
+
+    @Before
+    fun setup() {
+        context = RuntimeEnvironment.getApplication()
+        baseDir = File(context.filesDir, "grammarmate")
+        baseDir.deleteRecursively()
+        baseDir.mkdirs()
+        packsDir = File(baseDir, "packs")
+        packsDir.mkdirs()
+
+        // Seed first so the marker is present; otherwise ensureSeedData() (run
+        // inside every getLessons/getLesson call) would clean up our pack.
+        LessonStoreImpl(context).ensureSeedData()
+        File(baseDir, "seed_v1.done").writeText("ok")
+    }
+
+    /** v2 pack: chapters declare the course order; filenames are "<lessonId>.csv". */
+    private fun seedV2Pack(lessonIds: List<String>) {
+        val packDir = File(packsDir, packId).apply { mkdirs() }
+        val manifest = buildString {
+            append("{\n")
+            append("  \"schemaVersion\": 2,\n")
+            append("  \"packId\": \"$packId\",\n")
+            append("  \"packVersion\": \"v1\",\n")
+            append("  \"language\": \"$langId\",\n")
+            append("  \"chapters\": [\n")
+            append("    { \"chapterId\": \"chapter_1\", \"order\": 1, \"title\": \"C1\", \"subtitle\": \"s\", \"lessons\": [")
+            append(lessonIds.joinToString(", ") { "\"$it\"" })
+            append("] }\n")
+            append("  ]\n")
+            append("}")
+        }
+        File(packDir, "manifest.json").writeText(manifest)
+        lessonIds.forEach { writeLessonCsv(packDir, "$it.csv", it) }
+        registerPack()
+    }
+
+    /**
+     * v1 pack with an EXPLICIT file mapping: lessons[] declares lessonId -> file,
+     * and at least one file name differs from "<lessonId>.csv". This is the
+     * TASK-092 bug fixture: before the fix the lazy path guesses the filename
+     * and misses the lesson.
+     */
+    private fun seedV1MappedPack(entries: List<Pair<String, String>>) {
+        val packDir = File(packsDir, packId).apply { mkdirs() }
+        val lessonsJson = entries.mapIndexed { i, (lessonId, file) ->
+            "    { \"lessonId\": \"$lessonId\", \"file\": \"$file\", \"order\": ${i + 1} }"
+        }.joinToString(",\n")
+        val manifest = buildString {
+            append("{\n")
+            append("  \"schemaVersion\": 1,\n")
+            append("  \"packId\": \"$packId\",\n")
+            append("  \"packVersion\": \"v1\",\n")
+            append("  \"language\": \"$langId\",\n")
+            append("  \"lessons\": [\n")
+            append(lessonsJson)
+            append("\n  ]\n")
+            append("}")
+        }
+        File(packDir, "manifest.json").writeText(manifest)
+        entries.forEach { (lessonId, file) -> writeLessonCsv(packDir, file, lessonId) }
+        registerPack()
+    }
+
+    private fun writeLessonCsv(packDir: File, fileName: String, lessonId: String) {
+        File(packDir, fileName).writeText(
+            "$lessonId title\nРус ${lessonId}_1;Ita ${lessonId}_1\nРус ${lessonId}_2;Ita ${lessonId}_2\nРус ${lessonId}_3;Ita ${lessonId}_3\n"
+        )
+    }
+
+    private fun registerPack() {
+        val yaml = org.yaml.snakeyaml.Yaml()
+        YamlListStore(yaml, File(baseDir, "packs.yaml")).write(listOf(
+            mapOf(
+                "packId" to packId,
+                "packVersion" to "v1",
+                "languageId" to langId,
+                "importedAt" to 0L
+            )
+        ))
+    }
+
+    // ── getLessonCount / getLessonIdAtIndex ──────────────────────────────
+
+    @Test
+    fun getLessonCount_returnsManifestLessonCount() {
+        seedV2Pack(listOf("lesson_10_C01", "lesson_01_A01", "lesson_05_B01"))
+        val store = LessonStoreImpl(context)
+        assertEquals(3, store.getLessonCount(packId, langId))
+    }
+
+    @Test
+    fun getLessonCount_returnsZero_forUnknownPack() {
+        LessonStoreImpl(context).also {
+            assertEquals(0, it.getLessonCount("NO_SUCH_PACK", langId))
+        }
+    }
+
+    @Test
+    fun getLessonIdAtIndex_returnsFirstLessonInCourseOrder() {
+        val order = listOf("lesson_10_C01", "lesson_01_A01", "lesson_05_B01")
+        seedV2Pack(order)
+        val store = LessonStoreImpl(context)
+        assertEquals("lesson_10_C01", store.getLessonIdAtIndex(packId, langId, 0))
+    }
+
+    @Test
+    fun getLessonIdAtIndex_returnsNull_pastEnd() {
+        seedV2Pack(listOf("lesson_01_A01", "lesson_05_B01"))
+        assertNull(LessonStoreImpl(context).getLessonIdAtIndex(packId, langId, 2))
+    }
+
+    @Test
+    fun getLessonIdAtIndex_returnsNull_forNegativeIndex() {
+        seedV2Pack(listOf("lesson_01_A01"))
+        assertNull(LessonStoreImpl(context).getLessonIdAtIndex(packId, langId, -1))
+    }
+
+    // ── getLessonMetadata / getLesson / getCardsForLesson ────────────────
+
+    @Test
+    fun getLessonMetadata_oneEntryPerLesson_inCourseOrder() {
+        val order = listOf("lesson_10_C01", "lesson_01_A01", "lesson_05_B01")
+        seedV2Pack(order)
+        val metadata = LessonStoreImpl(context).getLessonMetadata(packId, langId)
+        assertEquals(order, metadata.map { it.id.value })
+        assertEquals("lesson_10_C01 title", metadata.first { it.id.value == "lesson_10_C01" }.title)
+    }
+
+    @Test
+    fun getLesson_returnsLessonWithNonEmptyCards() {
+        seedV2Pack(listOf("lesson_01_A01", "lesson_05_B01"))
+        val lesson = LessonStoreImpl(context).getLesson(packId, langId, "lesson_01_A01")
+        assertNotNull(lesson)
+        assertEquals(3, lesson!!.cards.size)
+    }
+
+    @Test
+    fun getLesson_returnsNull_forUnknownLessonId() {
+        seedV2Pack(listOf("lesson_01_A01"))
+        assertNull(LessonStoreImpl(context).getLesson(packId, langId, "lesson_XX_nonexistent"))
+    }
+
+    @Test
+    fun getCardsForLesson_sameAsGetLessonCards() {
+        seedV2Pack(listOf("lesson_01_A01", "lesson_05_B01"))
+        val store = LessonStoreImpl(context)
+        assertEquals(
+            store.getLesson(packId, langId, "lesson_05_B01")!!.cards,
+            store.getCardsForLesson(packId, langId, "lesson_05_B01")
+        )
+    }
+
+    // ── TASK-092 regression: explicit manifest file mapping ──────────────
+
+    @Test
+    fun mappedFileName_lazyPathFindsRenamedLesson_andMetadataListsIt() {
+        seedV1MappedPack(
+            listOf(
+                "lesson_01_A01" to "renamed_01.csv",
+                "lesson_02_A02" to "lesson_02_A02.csv"
+            )
+        )
+        val store = LessonStoreImpl(context)
+
+        val lesson = store.getLesson(packId, langId, "lesson_01_A01")
+        assertNotNull("lazy path must resolve the manifest-declared file, not <lessonId>.csv", lesson)
+        assertEquals(3, lesson!!.cards.size)
+
+        val metadataIds = store.getLessonMetadata(packId, langId).map { it.id.value }
+        assertTrue("metadata must list the renamed lesson", "lesson_01_A01" in metadataIds)
+        assertEquals(listOf("lesson_01_A01", "lesson_02_A02"), metadataIds)
+    }
+
+    // ── Parity: lazy and full paths must agree on card IDs ───────────────
+
+    @Test
+    fun cardIdParity_lazyVsFull_mappedV1Pack() {
+        seedV1MappedPack(
+            listOf(
+                "lesson_01_A01" to "renamed_01.csv",
+                "lesson_02_A02" to "lesson_02_A02.csv"
+            )
+        )
+        val store = LessonStoreImpl(context)
+        val lazyIds = store.getLesson(packId, langId, "lesson_01_A01")!!.cards.map { it.id }
+        val fullIds = store.getLessons(packId, langId)
+            .first { it.id.value == "lesson_01_A01" }
+            .cards.map { it.id }
+        assertEquals(lazyIds, fullIds)
+    }
+
+    @Test
+    fun cardIdParity_lazyVsFull_defaultFileNamePack() {
+        seedV2Pack(listOf("lesson_10_C01", "lesson_01_A01", "lesson_05_B01"))
+        val store = LessonStoreImpl(context)
+        val lazyIds = store.getLesson(packId, langId, "lesson_10_C01")!!.cards.map { it.id }
+        val fullIds = store.getLessons(packId, langId)
+            .first { it.id.value == "lesson_10_C01" }
+            .cards.map { it.id }
+        assertEquals(lazyIds, fullIds)
     }
 }
