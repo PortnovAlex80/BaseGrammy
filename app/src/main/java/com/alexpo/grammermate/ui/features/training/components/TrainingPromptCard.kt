@@ -180,15 +180,31 @@ fun TrainingPromptCardLongItalianWithContextPreview() {
     }
 }
 
-@Preview(name = "Prompt card — font scale 1.5x", showBackground = true, widthDp = 360, heightDp = 260)
+@Preview(name = "Prompt card — app textScale 1.5x (internal policy)", showBackground = true, widthDp = 360, heightDp = 260)
 @Composable
-fun TrainingPromptCardFontScalePreview() {
+fun TrainingPromptCardAppTextScalePreview() {
     GrammarMateTheme(themeMode = ThemeMode.LIGHT) {
         TrainingPromptCard(
             label = "RU",
             displayPrompt = PreviewLongRuPrompt,
             situationContext = PreviewItContext,
             textScale = 1.5f,
+            audioState = TtsButtonState.Idle,
+            audioEnabled = true,
+            onAudioClick = {}
+        )
+    }
+}
+
+@Preview(name = "Prompt card — system font scale 1.5x", showBackground = true, widthDp = 360, heightDp = 280, fontScale = 1.5f)
+@Composable
+fun TrainingPromptCardSystemFontScalePreview() {
+    GrammarMateTheme(themeMode = ThemeMode.LIGHT) {
+        TrainingPromptCard(
+            label = "RU",
+            displayPrompt = PreviewLongRuPrompt,
+            situationContext = PreviewItContext,
+            textScale = 1.0f,
             audioState = TtsButtonState.Idle,
             audioEnabled = true,
             onAudioClick = {}
