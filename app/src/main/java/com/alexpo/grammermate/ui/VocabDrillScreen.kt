@@ -23,25 +23,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Flip
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,10 +41,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.SrsRating
+import com.alexpo.grammermate.data.SpacedRepetitionConfig
 import com.alexpo.grammermate.feature.training.HintCalculator
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TtsState
@@ -83,6 +71,13 @@ import com.alexpo.grammermate.data.VocabDrillUiState
 import com.alexpo.grammermate.data.VoiceResult
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
+import com.alexpo.grammermate.ui.designsystem.foundation.scaledSp
+import com.alexpo.grammermate.ui.features.vocab.components.PosBadge
+import com.alexpo.grammermate.ui.features.vocab.components.VocabDrillCardFront
+import com.alexpo.grammermate.ui.features.vocab.components.VocabRatingLadder
+import com.alexpo.grammermate.ui.features.vocab.components.VocabRatingOption
+import com.alexpo.grammermate.ui.features.vocab.components.VocabSpeakerState
+import com.alexpo.grammermate.ui.features.vocab.components.VocabVoiceOutcome
 import com.alexpo.grammermate.shared.AuditLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -302,22 +297,13 @@ private fun VocabDrillSelectionScreen(
                 label = { Text(stringResource(R.string.vocab_filter_all)) }
             )
             state.availablePos.forEach { pos ->
-                val label = when (pos) {
-                    "nouns" -> stringResource(R.string.vocab_pos_nouns)
-                    "verbs" -> stringResource(R.string.vocab_pos_verbs)
-                    "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
-                    "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
-                    "numbers" -> stringResource(R.string.vocab_pos_numbers)
-                    "pronouns" -> stringResource(R.string.vocab_pos_pronouns)
-                    else -> pos.replaceFirstChar { it.uppercase() }
-                }
                 FilterChip(
                     selected = state.selectedPos == pos,
                     onClick = {
                         AuditLogger.getInstanceOrNull()?.settingsChange("vocab_pos", pos)
                         onSelectPos(pos)
                     },
-                    label = { Text(label) }
+                    label = { Text(posLabel(pos)) }
                 )
             }
         }
@@ -367,18 +353,7 @@ private fun VocabDrillSelectionScreen(
                         // Per-POS breakdown
                         val posBreakdown = state.masteredByPos.entries
                             .sortedByDescending { it.value }
-                            .map { (pos, count) ->
-                                val label = when (pos) {
-                                    "nouns" -> stringResource(R.string.vocab_pos_nouns)
-                                    "verbs" -> stringResource(R.string.vocab_pos_verbs)
-                                    "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
-                                    "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
-                                    "numbers" -> stringResource(R.string.vocab_pos_numbers)
-                                    "pronouns" -> stringResource(R.string.vocab_pos_pronouns)
-                                    else -> pos.replaceFirstChar { it.uppercase() }
-                                }
-                                "$label: $count"
-                            }
+                            .map { (pos, count) -> "${posLabel(pos)}: $count" }
                         if (posBreakdown.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
@@ -533,16 +508,36 @@ private fun VocabDrillCardScreen(
             )
         } else {
             VocabDrillCardFront(
-                card = card,
-                direction = session.direction,
-                ttsState = ttsState,
+                pos = card.word.pos,
+                rank = card.word.rank,
+                displayText = when (session.direction) {
+                    VocabDrillDirection.IT_TO_RU -> card.word.word
+                    VocabDrillDirection.RU_TO_IT -> HintCalculator.calculateEffectiveHints(
+                        promptRu = card.word.meaningRu ?: "",
+                        encounterCount = 0,
+                        hintLevel = hintLevel,
+                        sessionOffset = 0
+                    )
+                },
+                speakerState = if (session.direction == VocabDrillDirection.IT_TO_RU) {
+                    when (ttsState) {
+                        is TtsState.Speaking -> VocabSpeakerState.Speaking
+                        is TtsState.Initializing -> VocabSpeakerState.Initializing
+                        is TtsState.Error -> VocabSpeakerState.Error(ttsState.reason)
+                        else -> VocabSpeakerState.Idle
+                    }
+                } else null,
+                onSpeak = { onSpeak(card.word.word) },
                 voiceCompleted = session.voiceCompleted,
-                voiceResult = session.voiceResult,
-                voiceRecognizedText = session.voiceRecognizedText,
-                voiceAttempts = session.voiceAttempts,
-                onSpeak = onSpeak,
                 onStartVoice = onStartVoice,
-                hintLevel = hintLevel,
+                voiceOutcome = when (session.voiceResult) {
+                    VoiceResult.CORRECT -> VocabVoiceOutcome.Correct
+                    VoiceResult.WRONG -> VocabVoiceOutcome.Wrong
+                    VoiceResult.SKIPPED -> VocabVoiceOutcome.Skipped
+                    null -> null
+                },
+                voiceAttempts = session.voiceAttempts,
+                voiceRecognizedText = session.voiceRecognizedText,
                 textScale = textScale
             )
         }
@@ -554,74 +549,18 @@ private fun VocabDrillCardScreen(
             // Anki-style 4 rating buttons
             val currentStep = session.cards.getOrElse(session.currentIndex) { null }
                 ?.mastery?.intervalStepIndex ?: 0
-            val ladder = listOf(1, 2, 4, 7, 10, 14, 20, 28, 42, 56)
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Again
-                    OutlinedButton(
-                        onClick = { onAnswer(SrsRating.AGAIN) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(R.string.vocab_rating_again), fontWeight = FontWeight.Bold)
-                            Text(stringResource(R.string.vocab_rating_again_interval), fontSize = 11.sp, color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
-                        }
-                    }
-                    // Hard
-                    OutlinedButton(
-                        onClick = { onAnswer(SrsRating.HARD) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = VocabIntervalOrange
-                        )
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(R.string.vocab_rating_hard), fontWeight = FontWeight.Bold)
-                            Text("${ladder[currentStep]}d", fontSize = 11.sp, color = VocabIntervalOrange.copy(alpha = 0.7f))
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Good
-                    Button(
-                        onClick = { onAnswer(SrsRating.GOOD) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(R.string.vocab_rating_good), fontWeight = FontWeight.Bold)
-                            val goodStep = (currentStep + 1).coerceAtMost(ladder.size - 1)
-                            Text("${ladder[goodStep]}d", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-                        }
-                    }
-                    // Easy
-                    Button(
-                        onClick = { onAnswer(SrsRating.EASY) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MasteryGreen
-                        )
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(R.string.vocab_rating_easy), fontWeight = FontWeight.Bold)
-                            val easyStep = (currentStep + 2).coerceAtMost(ladder.size - 1)
-                            Text("${ladder[easyStep]}d", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-                        }
-                    }
-                }
-            }
+            // Authoritative ladder (byte-identical to the inline literal this
+            // code previously duplicated). Preview math kept verbatim: HARD
+            // shows the current rung (delta 0), GOOD/EASY preview +1/+2
+            // coerced to the last rung — matching the VM's own step deltas.
+            val ladder = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS
+            VocabRatingLadder(
+                againSubtitle = stringResource(R.string.vocab_rating_again_interval),
+                hardSubtitle = "${ladder[currentStep]}d",
+                goodSubtitle = "${ladder[(currentStep + 1).coerceAtMost(ladder.size - 1)]}d",
+                easySubtitle = "${ladder[(currentStep + 2).coerceAtMost(ladder.size - 1)]}d",
+                onAnswer = { onAnswer(it.toSrsRating()) }
+            )
         } else {
             // Flip/Skip row (mic is on the card front)
             Row(
@@ -718,146 +657,6 @@ private fun VocabDrillCardScreen(
     }
 }
 
-// -- Card Front --
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun VocabDrillCardFront(
-    card: VocabDrillCard,
-    direction: VocabDrillDirection,
-    ttsState: TtsState,
-    voiceCompleted: Boolean,
-    voiceResult: VoiceResult?,
-    voiceRecognizedText: String?,
-    voiceAttempts: Int,
-    onSpeak: (String) -> Unit,
-    onStartVoice: () -> Unit,
-    hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
-    textScale: Float = 1.0f
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                voiceCompleted && voiceResult == VoiceResult.CORRECT ->
-                    VocabCorrectBackground.copy(alpha = 0.7f) // light green tint
-                voiceCompleted && voiceResult == VoiceResult.WRONG ->
-                    VocabIncorrectBackground.copy(alpha = 0.7f) // light red tint
-                else ->
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-            }
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // POS badge + rank -- always visible (reference data, not hints)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PosBadge(pos = card.word.pos)
-                RankBadge(rank = card.word.rank)
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Main word display based on direction
-            val displayText = when (direction) {
-                VocabDrillDirection.IT_TO_RU -> card.word.word
-                VocabDrillDirection.RU_TO_IT -> HintCalculator.calculateEffectiveHints(
-                    promptRu = card.word.meaningRu ?: "",
-                    encounterCount = 0,
-                    hintLevel = hintLevel,
-                    sessionOffset = 0
-                )
-            }
-            Text(
-                text = displayText,
-                fontSize = (32f * textScale).sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            // TTS button (only for IT_TO_RU, speak the Italian word)
-            if (direction == VocabDrillDirection.IT_TO_RU) {
-                Spacer(modifier = Modifier.height(8.dp))
-                IconButton(
-                    onClick = { onSpeak(card.word.word) },
-                    enabled = ttsState != TtsState.Initializing
-                ) {
-                    when (ttsState) {
-                        is TtsState.Speaking -> Icon(
-                            Icons.Default.VolumeUp,
-                            contentDescription = stringResource(R.string.vocab_content_desc_speaking),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        is TtsState.Initializing -> CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                        is TtsState.Error -> {
-                            val reason = ttsState.reason
-                            val isOom = reason?.contains("memory", ignoreCase = true) == true
-                            val errorIcon = if (isOom) Icons.Default.Warning else Icons.Default.ReportProblem
-                            if (reason != null) {
-                                TooltipBox(
-                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                                    tooltip = { PlainTooltip { Text(reason) } },
-                                    state = rememberTooltipState()
-                                ) {
-                                    Icon(errorIcon, stringResource(R.string.vocab_content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
-                                }
-                            } else {
-                                Icon(errorIcon, stringResource(R.string.vocab_content_desc_tts_error), tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                        else -> Icon(
-                            Icons.Default.VolumeUp,
-                            contentDescription = stringResource(R.string.vocab_content_desc_listen)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ── Centered microphone button ──
-            if (!voiceCompleted) {
-                // Prompt text
-                Text(
-                    text = stringResource(R.string.vocab_tap_to_speak),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                FilledTonalIconButton(
-                    onClick = onStartVoice,
-                    modifier = Modifier.size(72.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Mic,
-                        contentDescription = stringResource(R.string.vocab_content_desc_voice_input),
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            } else {
-                // Voice completed — show result feedback
-                VoiceResultFeedback(
-                    voiceResult = voiceResult,
-                    voiceAttempts = voiceAttempts,
-                    voiceRecognizedText = voiceRecognizedText,
-                    voiceCompleted = voiceCompleted
-                )
-            }
-        }
-    }
-}
-
 // -- Card Back --
 
 @Composable
@@ -895,7 +694,7 @@ private fun VocabDrillCardBack(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = card.word.word,
-                            fontSize = (20f * textScale).sp,
+                            fontSize = scaledSp(20f, textScale),
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -913,7 +712,7 @@ private fun VocabDrillCardBack(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = meaningRu,
-                        fontSize = (18f * textScale).sp,
+                        fontSize = scaledSp(18f, textScale),
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -929,7 +728,7 @@ private fun VocabDrillCardBack(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = card.word.meaningRu ?: "?",
-                        fontSize = (16f * textScale).sp,
+                        fontSize = scaledSp(16f, textScale),
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -944,7 +743,7 @@ private fun VocabDrillCardBack(
                 ) {
                     Text(
                         text = card.word.word,
-                        fontSize = (24f * textScale).sp,
+                        fontSize = scaledSp(24f, textScale),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -1069,144 +868,35 @@ private fun VocabDrillCardBack(
     }
 }
 
-// -- Voice Result Feedback --
+// -- Helpers --
 
+/**
+ * Localized label for a raw POS key (chip labels on the selection screen and
+ * the per-POS mastery breakdown). One owner for the previously duplicated
+ * `when` mapping.
+ */
 @Composable
-private fun VoiceResultFeedback(
-    voiceResult: VoiceResult?,
-    voiceAttempts: Int,
-    voiceRecognizedText: String?,
-    voiceCompleted: Boolean
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when (voiceResult) {
-                VoiceResult.CORRECT -> VocabCorrectBackground // light green
-                VoiceResult.WRONG -> VocabIncorrectBackground   // light red
-                VoiceResult.SKIPPED -> MaterialTheme.colorScheme.surfaceVariant
-                null -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Recognized text
-            if (!voiceRecognizedText.isNullOrBlank()) {
-                Text(
-                    text = "\"$voiceRecognizedText\"",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-
-            // Result indicator
-            when (voiceResult) {
-                VoiceResult.CORRECT -> {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MasteryGreen,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.vocab_voice_correct),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MasteryGreen
-                        )
-                    }
-                }
-                VoiceResult.WRONG -> {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        if (voiceCompleted) {
-                            Text(
-                                text = stringResource(R.string.vocab_voice_moving_on),
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.vocab_voice_try_again, voiceAttempts),
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-                VoiceResult.SKIPPED -> {
-                    Text(
-                        text = stringResource(R.string.vocab_voice_skipped),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                }
-                null -> { /* no result yet */ }
-            }
-        }
-    }
+private fun posLabel(pos: String): String = when (pos) {
+    "nouns" -> stringResource(R.string.vocab_pos_nouns)
+    "verbs" -> stringResource(R.string.vocab_pos_verbs)
+    "adjectives" -> stringResource(R.string.vocab_pos_adjectives)
+    "adverbs" -> stringResource(R.string.vocab_pos_adverbs)
+    "numbers" -> stringResource(R.string.vocab_pos_numbers)
+    "pronouns" -> stringResource(R.string.vocab_pos_pronouns)
+    else -> pos.replaceFirstChar { it.uppercase() }
 }
 
-// -- Badges & Helpers --
-
-@Composable
-private fun PosBadge(pos: String) {
-    val (label, color) = when (pos) {
-        "nouns" -> stringResource(R.string.vocab_badge_noun) to MaterialTheme.colorScheme.primaryContainer
-        "verbs" -> stringResource(R.string.vocab_badge_verb) to MaterialTheme.colorScheme.secondaryContainer
-        "adjectives" -> stringResource(R.string.vocab_badge_adj) to MaterialTheme.colorScheme.tertiaryContainer
-        "adverbs" -> stringResource(R.string.vocab_badge_adv) to MaterialTheme.colorScheme.errorContainer
-        "numbers" -> stringResource(R.string.vocab_badge_num) to MaterialTheme.colorScheme.surfaceVariant
-        "pronouns" -> stringResource(R.string.vocab_badge_pronoun) to MaterialTheme.colorScheme.surfaceVariant
-        else -> pos to MaterialTheme.colorScheme.surfaceVariant
-    }
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = color)
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
-private fun RankBadge(rank: Int) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Text(
-            text = "#$rank",
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
-    }
+/**
+ * Name- and ordinal-preserving map from the ladder organism's UI-owned
+ * option to the scheduling-layer rating. The `vocabCardRate` audit payload
+ * (`rating.ordinal + 1`, `VocabDrillScreen.onAnswer`) stays byte-identical
+ * because both enums declare AGAIN/HARD/GOOD/EASY in the same order.
+ */
+private fun VocabRatingOption.toSrsRating(): SrsRating = when (this) {
+    VocabRatingOption.AGAIN -> SrsRating.AGAIN
+    VocabRatingOption.HARD -> SrsRating.HARD
+    VocabRatingOption.GOOD -> SrsRating.GOOD
+    VocabRatingOption.EASY -> SrsRating.EASY
 }
 
 @Composable
