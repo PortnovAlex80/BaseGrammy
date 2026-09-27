@@ -5,71 +5,47 @@ import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.feature.training.HintCalculator
+import com.alexpo.grammermate.ui.features.training.components.TrainingAnswerPanel
 
 /**
  * Unified input controls bar for all card session modes (Training, VerbDrill, DailyPractice).
  *
- * Renders a single container with:
- * - Input field (text field with Mic trailing icon)
- * - Voice mode hint text
- * - Word bank FlowRow (below the bar, as CONTENT)
- * - Input mode selector row: Mic / Keyboard / WordBank buttons
- * - Show Answer (eye icon) button
- * - Report (flag) button
- * - Current input mode label
- * - Check/Submit button (full width)
+ * Integration boundary adapter (P3b): the pure display moved to the feature organism
+ * [TrainingAnswerPanel]; this adapter keeps every effectful or contract-reading concern
+ * the display must not own (inventory effect ledger rows 1/2, 5, 12, 13, 25, 26):
+ * - both voice recognizer launchers and their click flows (rows 1–2, integrator
+ *   decision D-A — the AnswerBox 200ms auto-launch on the same screen is a separate
+ *   launcher with different semantics and is NOT unified with this one);
+ * - the pause-resume-first interplay on voice entry (row 26, byte-identical order:
+ *   resume → set VOICE mode → manual launch only when auto-start is off);
+ * - [WordInfoCache] remember + `LaunchedEffect` load + the `getWordsInfo` read
+ *   (row 13, decision D-B — the organism receives the resulting map as plain data);
+ * - auto-submit on exact match + incorrect-feedback clearing, fused into the
+ *   `onInputChanged` handler below (row 12, decision D-D — the dedicated
+ *   `vm.inputText` flow upstream keeps its single collector and per-keystroke cadence);
+ * - Bluetooth setup/cleanup callbacks (row 5, decision D-C — [onBluetoothCleanup]
+ *   stays threaded-but-unused exactly as before; pre-existing defect, separate work item);
+ * - the [InputMode] enum reading (mode-conditional visibility + label resolution).
  *
  * Design Principle DP-01: All card-based drill modes MUST use identical
  * input controls for shared elements.
+ *
+ * Signature note: [reportCard] was already unused before P3b (the report sheet lives
+ * in the AnswerBox adapter) and [onBluetoothCleanup] is the D-C defect — both are kept
+ * so the AnswerBox and dead-file call sites stay untouched.
  *
  * @param contract          The card session contract providing state and actions.
  * @param inputText         Current text in the input field.
@@ -85,7 +61,6 @@ import com.alexpo.grammermate.feature.training.HintCalculator
  * @param clickableWordHints Whether to enable clickable word hints (default: false).
  * @param baseDir           Base directory for drill data loading (required for clickable hints).
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun UnifiedInputControlsBar(
     contract: CardSessionContract,
@@ -110,7 +85,6 @@ fun UnifiedInputControlsBar(
     val scope = rememberCoroutineScope()
 
     // Word info cache for clickable hints (only when feature is enabled)
-    val context = LocalContext.current
     val wordInfoCache = remember(clickableWordHints, baseDir) {
         if (clickableWordHints && baseDir != null) {
             WordInfoCache.getInstance(baseDir)
@@ -123,11 +97,6 @@ fun UnifiedInputControlsBar(
     LaunchedEffect(wordInfoCache) {
         wordInfoCache?.loadDrillData()
     }
-
-    // State for word info popup
-    var showWordPopup by remember { mutableStateOf(false) }
-    var wordForPopup by remember { mutableStateOf<String?>(null) }
-    var hintForPopup by remember { mutableStateOf<WordHint?>(null) }
 
     // Voice recognition launcher
     val latestContract by rememberUpdatedState(contract)
@@ -162,262 +131,106 @@ fun UnifiedInputControlsBar(
         speechLauncher.launch(intent)
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Hint answer text (eye button)
-        if (hintAnswer != null) {
-            if (clickableWordHints && wordInfoCache != null) {
-                val wordsInfo = wordInfoCache.getWordsInfo(hintAnswer)
-                ClickableHintAnswerCard(
-                    answerText = hintAnswer,
-                    wordsInfo = wordsInfo,
-                    onWordClick = { word, hint ->
-                        wordForPopup = word
-                        hintForPopup = hint
-                        showWordPopup = true
-                    }
-                )
-            } else {
-                HintAnswerCard(answerText = hintAnswer)
-            }
-        }
-
-        // Incorrect feedback
-        if (showIncorrectFeedback) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.result_incorrect),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (incorrectMessage != null) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = incorrectMessage,
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
-
-        // Input text field
-        OutlinedTextField(
-            value = inputText,
-            onValueChange = { newText ->
-                if (showIncorrectFeedback) onClearIncorrectFeedback()
-                onInputChanged(newText)
-                // Auto-submit when typed text exactly matches an accepted answer
-                if (contract.currentInputMode != InputMode.WORD_BANK &&
-                    contract.canSubmit &&
-                    hasCards &&
-                    contract.currentCard != null &&
-                    newText.isNotBlank()
-                ) {
-                    if (com.alexpo.grammermate.data.Normalizer.isExactMatch(
-                            newText,
-                            contract.currentCard!!.acceptedAnswers
-                        )
-                    ) {
-                        onSubmit()
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth().testTag("input_field"),
-            label = { Text(text = stringResource(R.string.card_label_your_translation)) },
-            singleLine = true,
-            enabled = hasCards,
-            trailingIcon = {
-                if (contract.supportsVoiceInput) {
-                    IconButton(
-                        onClick = {
-                            if (canLaunchVoice) {
-                                if (!contract.isActive) {
-                                    contract.togglePause()
-                                }
-                                contract.setInputMode(InputMode.VOICE)
-                                if (!contract.voiceAutoStart) {
-                                    launchVoice()
-                                }
-                            }
-                        },
-                        enabled = canLaunchVoice
-                    ) {
-                        Icon(
-                            Icons.Default.Mic,
-                            contentDescription = stringResource(R.string.content_desc_voice_input)
-                        )
-                    }
-                }
-            }
-        )
-
-        if (!hasCards) {
-            Text(
-                text = stringResource(R.string.card_no_cards),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        // Voice mode hint
-        if (contract.currentInputMode == InputMode.VOICE && contract.canSubmit) {
-            Text(
-                text = contract.currentCard?.promptRu?.let {
-                    val cleanPrompt = HintCalculator.calculateEffectiveHints(
-                        promptRu = it,
-                        encounterCount = 0,
-                        hintLevel = hintLevel,
-                        sessionOffset = 0
-                    )
-                    stringResource(R.string.voice_say_translation_hint, cleanPrompt)
-                } ?: "",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        // Word Bank UI -- rendered as CONTENT below the bar, not inside it
-        if (contract.currentInputMode == InputMode.WORD_BANK && contract.supportsWordBank && hintLevel == HintLevel.EASY) {
-            WordBankSection(contract = contract)
-        }
-
-        // Input mode selector row + show answer + report + mode label
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Voice mode button -- sets input mode AND launches speech directly
-                if (contract.supportsVoiceInput) {
-                    FilledTonalIconButton(
-                        onClick = {
-                            if (canLaunchVoice) {
-                                if (!contract.isActive) {
-                                    contract.togglePause()
-                                }
-                                contract.setInputMode(InputMode.VOICE)
-                                if (!contract.voiceAutoStart) {
-                                    launchVoice()
-                                }
-                            }
-                        },
-                        enabled = canLaunchVoice
-                    ) {
-                        Icon(
-                            Icons.Default.Mic,
-                            contentDescription = stringResource(R.string.content_desc_voice_mode)
-                        )
-                    }
-                }
-                // Keyboard mode button
-                FilledTonalIconButton(
-                    onClick = { contract.setInputMode(InputMode.KEYBOARD) },
-                    enabled = canSelectInputMode
-                ) {
-                    Icon(
-                        Icons.Default.Keyboard,
-                        contentDescription = stringResource(R.string.content_desc_keyboard_mode)
-                    )
-                }
-                // Word bank mode button
-                if (contract.supportsWordBank && hintLevel == HintLevel.EASY) {
-                    FilledTonalIconButton(
-                        onClick = { contract.setInputMode(InputMode.WORD_BANK) },
-                        enabled = canSelectInputMode
-                    ) {
-                        Icon(
-                            Icons.Default.LibraryBooks,
-                            contentDescription = stringResource(R.string.content_desc_word_bank_mode)
-                        )
-                    }
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Show answer button
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = {
-                        PlainTooltip {
-                            Text(text = stringResource(R.string.tooltip_show_answer))
-                        }
-                    },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(
-                        modifier = Modifier.testTag("show_answer_button"),
-                        onClick = { if (hasCards) contract.showAnswer() },
-                        enabled = hasCards && hintAnswer == null
-                    ) {
-                        Icon(
-                            Icons.Default.Visibility,
-                            contentDescription = stringResource(R.string.tooltip_show_answer)
-                        )
-                    }
-                }
-                // Flag/Report button
-                if (contract.supportsFlagging) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(text = stringResource(R.string.tooltip_report_sentence))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(
-                            onClick = { if (hasCards) onShowReport() },
-                            enabled = hasCards
-                        ) {
-                            Icon(
-                                Icons.Default.ReportProblem,
-                                contentDescription = stringResource(R.string.tooltip_report_sentence)
-                            )
-                        }
-                    }
-                }
-                // Current mode label
-                Text(
-                    text = when (contract.currentInputMode) {
-                        InputMode.VOICE -> stringResource(R.string.input_mode_voice)
-                        InputMode.KEYBOARD -> stringResource(R.string.input_mode_keyboard)
-                        InputMode.WORD_BANK -> stringResource(R.string.input_mode_word_bank)
-                    },
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
-
-        // Check button
-        Button(
-            onClick = { onSubmit() },
-            modifier = Modifier.fillMaxWidth().testTag("check_button"),
-            enabled = hasCards && inputText.isNotBlank() && contract.canSubmit
-        ) {
-            Text(text = stringResource(R.string.button_check))
-        }
-
-        // Word info popup
-        val word = wordForPopup
-        val hint = hintForPopup
-        if (showWordPopup && word != null && hint != null) {
-            WordInfoPopup(
-                word = word,
-                hint = hint,
-                onDismiss = {
-                    showWordPopup = false
-                    wordForPopup = null
-                    hintForPopup = null
-                }
-            )
-        }
+    // Clickable-hint data: the cache read (which can lazily trigger file I/O) stays at
+    // this boundary (D-B); the organism renders the map it receives. Same call condition
+    // as before extraction: only when a hint is visible AND clickable hints are active.
+    val wordsInfo = if (hintAnswer != null && clickableWordHints && wordInfoCache != null) {
+        wordInfoCache.getWordsInfo(hintAnswer)
+    } else {
+        null
     }
+
+    // Voice-mode hint line: business hint calculation + string resolution stay here;
+    // null hides the line, "" renders the empty line (parity with the pre-extraction bar).
+    val voiceModeHint = if (contract.currentInputMode == InputMode.VOICE && contract.canSubmit) {
+        contract.currentCard?.promptRu?.let {
+            val cleanPrompt = HintCalculator.calculateEffectiveHints(
+                promptRu = it,
+                encounterCount = 0,
+                hintLevel = hintLevel,
+                sessionOffset = 0
+            )
+            stringResource(R.string.voice_say_translation_hint, cleanPrompt)
+        } ?: ""
+    } else {
+        null
+    }
+
+    val wordBankVisible = contract.currentInputMode == InputMode.WORD_BANK &&
+        contract.supportsWordBank && hintLevel == HintLevel.EASY
+    val wordBankModeButtonVisible = contract.supportsWordBank && hintLevel == HintLevel.EASY
+
+    val modeLabel = when (contract.currentInputMode) {
+        InputMode.VOICE -> stringResource(R.string.input_mode_voice)
+        InputMode.KEYBOARD -> stringResource(R.string.input_mode_keyboard)
+        InputMode.WORD_BANK -> stringResource(R.string.input_mode_word_bank)
+    }
+
+    TrainingAnswerPanel(
+        inputText = inputText,
+        onInputChanged = { newText ->
+            if (showIncorrectFeedback) onClearIncorrectFeedback()
+            onInputChanged(newText)
+            // Auto-submit when typed text exactly matches an accepted answer
+            if (contract.currentInputMode != InputMode.WORD_BANK &&
+                contract.canSubmit &&
+                hasCards &&
+                contract.currentCard != null &&
+                newText.isNotBlank()
+            ) {
+                if (com.alexpo.grammermate.data.Normalizer.isExactMatch(
+                        newText,
+                        contract.currentCard!!.acceptedAnswers
+                    )
+                ) {
+                    onSubmit()
+                }
+            }
+        },
+        hasCards = hasCards,
+        canSubmit = contract.canSubmit,
+        canLaunchVoice = canLaunchVoice,
+        canSelectInputMode = canSelectInputMode,
+        supportsVoiceInput = contract.supportsVoiceInput,
+        supportsFlagging = contract.supportsFlagging,
+        showIncorrectFeedback = showIncorrectFeedback,
+        incorrectMessage = incorrectMessage,
+        hintAnswer = hintAnswer,
+        wordsInfo = wordsInfo,
+        voiceModeHint = voiceModeHint,
+        wordBankVisible = wordBankVisible,
+        wordBankWords = contract.getWordBankWords(),
+        selectedWords = contract.getSelectedWords(),
+        onSelectWord = { contract.selectWordFromBank(it) },
+        onRemoveLastWord = { contract.removeLastSelectedWord() },
+        onMicClick = {
+            if (canLaunchVoice) {
+                if (!contract.isActive) {
+                    contract.togglePause()
+                }
+                contract.setInputMode(InputMode.VOICE)
+                if (!contract.voiceAutoStart) {
+                    launchVoice()
+                }
+            }
+        },
+        onVoiceModeClick = {
+            if (canLaunchVoice) {
+                if (!contract.isActive) {
+                    contract.togglePause()
+                }
+                contract.setInputMode(InputMode.VOICE)
+                if (!contract.voiceAutoStart) {
+                    launchVoice()
+                }
+            }
+        },
+        onKeyboardModeClick = { contract.setInputMode(InputMode.KEYBOARD) },
+        wordBankModeButtonVisible = wordBankModeButtonVisible,
+        onWordBankModeClick = { contract.setInputMode(InputMode.WORD_BANK) },
+        onShowAnswerClick = { if (hasCards) contract.showAnswer() },
+        onShowReportClick = { if (hasCards) onShowReport() },
+        modeLabel = modeLabel,
+        onSubmitClick = { onSubmit() }
+    )
 }
