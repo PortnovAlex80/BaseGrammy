@@ -47,7 +47,7 @@ import com.alexpo.grammermate.ui.CorrectGreen
 import com.alexpo.grammermate.ui.IncorrectRed
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.QrShareDialog
-import com.alexpo.grammermate.ui.components.SessionProgressIndicator
+import com.alexpo.grammermate.ui.features.training.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.UnifiedInputControlsBar

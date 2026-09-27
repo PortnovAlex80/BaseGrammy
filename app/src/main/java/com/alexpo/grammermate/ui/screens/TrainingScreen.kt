@@ -80,7 +80,8 @@ import com.alexpo.grammermate.ui.components.AsrStatusIndicator
 import com.alexpo.grammermate.ui.components.HintAnswerCard
 import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
-import com.alexpo.grammermate.ui.components.SessionProgressIndicator
+import com.alexpo.grammermate.ui.features.training.components.SessionProgressIndicator
+import com.alexpo.grammermate.ui.features.training.components.TrainingResultBlock
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.ui.components.PomodoroTimerBanner
 import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
@@ -714,17 +715,19 @@ fun AnswerBox(
     }
 }
 
+/**
+ * Integration boundary adapter for the extracted [TrainingResultBlock] organism
+ * (P3a feedback slice). Keeps at this boundary the only state interpretation the
+ * display needs: reading `TrainingUiState.cardSession.lastResult` (authoritative
+ * owner: SessionRunner — inventory effect ledger rows 11/21; the same state the
+ * onNext advance decision reads at the GrammarMateApp boundary). The organism
+ * renders the correctness label only: the accepted answer is shown by the input
+ * bar's hint card (P3b scope) and answer replay lives in the prompt card's TTS
+ * button (P2 boundary) — both intentionally outside this slice.
+ */
 @Composable
 fun ResultBlock(state: TrainingUiState) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            when (state.cardSession.lastResult) {
-                true -> Text(text = stringResource(R.string.training_correct), color = CorrectGreen, fontWeight = FontWeight.Bold)
-                false -> Text(text = stringResource(R.string.training_incorrect), color = IncorrectRed, fontWeight = FontWeight.Bold)
-                null -> Text(text = "")
-            }
-        }
-    }
+    TrainingResultBlock(isCorrect = state.cardSession.lastResult)
 }
 
 

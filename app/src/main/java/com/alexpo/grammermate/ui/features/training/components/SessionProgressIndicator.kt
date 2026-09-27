@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.components
+package com.alexpo.grammermate.ui.features.training.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import androidx.compose.ui.tooling.preview.Preview
+import com.alexpo.grammermate.data.ThemeMode
 import com.alexpo.grammermate.ui.ProgressGreen
 import com.alexpo.grammermate.ui.ProgressFastGreen
 import com.alexpo.grammermate.ui.ProgressLabelWhite
@@ -31,21 +33,39 @@ import com.alexpo.grammermate.ui.ProgressTrackGreen
 import com.alexpo.grammermate.ui.MasteryGreen
 import com.alexpo.grammermate.ui.SpeedSlowRed
 import com.alexpo.grammermate.ui.SpeedMediumYellow
+import com.alexpo.grammermate.ui.GrammarMateTheme
+
+// =====================================================================
+// Session progress indicator — feature component (training feature owner)
+// =====================================================================
 
 /**
- * Shared progress indicator used across training sessions.
- * Displays a rounded progress bar (70% width) with text overlay
- * and a circular speedometer arc (30% width) showing words-per-minute.
+ * Training session progress display: a rounded progress bar (70% width) with
+ * text overlay and a circular speedometer arc (30% width) showing
+ * words-per-minute.
+ *
+ * Feature-owned under `ui/features/training/components` per the P0/P3a
+ * caller-verified destination decision (plan §3 dependency rule 4): every live
+ * caller is `TrainingScreen.kt` (regular/verb-drill/daily/boss modes all render
+ * through it) — no cross-feature reuse exists, so a shared `designsystem`
+ * placement would be unsupported. Display-only by contract (plan §4): it
+ * receives plain display values and owns no state, effects, or ViewModel —
+ * `current`/`total`/`speedWpm` are computed by the `TrainingScreen` boundary
+ * from `CardSessionState` (see effect ledger §4 rows 15/21–23); the fraction
+ * formula and the 20/40 wpm arc thresholds are display math preserved verbatim
+ * from the pre-move implementation.
  *
  * @param current Current card index (1-based for display).
  * @param total   Total number of cards in the session.
  * @param speedWpm Typing speed in words per minute, shown as the speedometer arc.
+ * @param modifier applied to the root [Row].
  */
 @Composable
 fun SessionProgressIndicator(
     current: Int,
     total: Int,
-    speedWpm: Int
+    speedWpm: Int,
+    modifier: Modifier = Modifier
 ) {
     val progressFraction = if (total > 0) current.toFloat() / total else 0f
     val barColor = ProgressGreen
@@ -57,7 +77,7 @@ fun SessionProgressIndicator(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Progress bar — 70% width, fill grows left to right
@@ -121,5 +141,51 @@ fun SessionProgressIndicator(
                 color = speedColor
             )
         }
+    }
+}
+
+// =====================================================================
+// Preview fixtures — pure data only: no ViewModel, filesystem, installed
+// pack or speech engine (plan §7). Each wraps the real GrammarMateTheme
+// facade with an explicit ThemeMode, matching the P1/P2 preview convention.
+// ======================================================================
+
+@Preview(name = "Progress — start 1/10, low-fraction label, slow arc", showBackground = true, widthDp = 360, heightDp = 72)
+@Composable
+fun SessionProgressIndicatorStartPreview() {
+    GrammarMateTheme(themeMode = ThemeMode.LIGHT) {
+        SessionProgressIndicator(current = 1, total = 10, speedWpm = 0)
+    }
+}
+
+@Preview(name = "Progress — mid 5/10, medium arc", showBackground = true, widthDp = 360, heightDp = 72)
+@Composable
+fun SessionProgressIndicatorMidPreview() {
+    GrammarMateTheme(themeMode = ThemeMode.LIGHT) {
+        SessionProgressIndicator(current = 5, total = 10, speedWpm = 30)
+    }
+}
+
+@Preview(name = "Progress — near complete 9/10, fast arc", showBackground = true, widthDp = 360, heightDp = 72)
+@Composable
+fun SessionProgressIndicatorNearCompletePreview() {
+    GrammarMateTheme(themeMode = ThemeMode.LIGHT) {
+        SessionProgressIndicator(current = 9, total = 10, speedWpm = 65)
+    }
+}
+
+@Preview(name = "Progress — mid (dark)", showBackground = true, widthDp = 360, heightDp = 72)
+@Composable
+fun SessionProgressIndicatorDarkPreview() {
+    GrammarMateTheme(themeMode = ThemeMode.DARK) {
+        SessionProgressIndicator(current = 5, total = 10, speedWpm = 25)
+    }
+}
+
+@Preview(name = "Progress — mid, system font scale 1.5x (12sp label clipping surface)", showBackground = true, widthDp = 360, heightDp = 72, fontScale = 1.5f)
+@Composable
+fun SessionProgressIndicatorLargeFontPreview() {
+    GrammarMateTheme(themeMode = ThemeMode.LIGHT) {
+        SessionProgressIndicator(current = 5, total = 10, speedWpm = 30)
     }
 }
