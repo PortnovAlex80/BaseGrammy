@@ -1,6 +1,5 @@
 package com.alexpo.grammermate.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,8 +18,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -52,6 +49,8 @@ import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VerbDrillLastSessionState
 import com.alexpo.grammermate.data.VerbDrillUiState
 import com.alexpo.grammermate.shared.AuditLogger
+import com.alexpo.grammermate.ui.features.verbdrill.components.VerbDrillSessionCard
+import com.alexpo.grammermate.ui.features.verbdrill.components.VerbDrillSessionContextInfo
 
 /**
  * Verb Drill selection screen.
@@ -294,8 +293,15 @@ private fun VerbDrillSelectionScreen(
 
         // VD-51: Inline session card when last session exists
         if (hasSavedSession) {
-            SessionCard(
-                lastSessionContext = state.lastSessionContext!!,
+            // Boundary owns the saved-session state interpretation: the display
+            // organism (ui/features/verbdrill/components) receives plain display
+            // values — no VerbDrillLastSessionState, no ViewModel reads.
+            val savedContext = state.lastSessionContext!!
+            VerbDrillSessionCard(
+                selectedTense = savedContext.selectedTense,
+                selectedGroup = savedContext.selectedGroup,
+                selectedPerson = savedContext.selectedPerson,
+                shownCount = savedContext.todayShownCardIds.size,
                 onRepeat = onRepeat,
                 onContinue = onContinue,
                 onReset = onReset
@@ -379,7 +385,7 @@ private fun StartFreshResumeDialog(
                 Spacer(modifier = Modifier.height(12.dp))
                 // Session context display - only filters
                 if (lastSessionContext != null) {
-                    SessionContextInfo(
+                    VerbDrillSessionContextInfo(
                         selectedTense = lastSessionContext.selectedTense,
                         selectedGroup = lastSessionContext.selectedGroup,
                         selectedPerson = lastSessionContext.selectedPerson
@@ -411,140 +417,6 @@ private fun StartFreshResumeDialog(
             }
         }
     )
-}
-
-/**
- * Displays session filter context in the Start Fresh / Resume dialog.
- */
-@Composable
-private fun SessionContextInfo(
-    selectedTense: String?,
-    selectedGroup: String?,
-    selectedPerson: String? = null
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        // Tense
-        if (selectedTense != null) {
-            SessionInfoRow(
-                label = stringResource(R.string.verb_resume_dialog_tense),
-                value = selectedTense
-            )
-        }
-        // Group
-        if (selectedGroup != null) {
-            SessionInfoRow(
-                label = stringResource(R.string.verb_resume_dialog_group),
-                value = selectedGroup
-            )
-        }
-        // Person
-        if (selectedPerson != null) {
-            SessionInfoRow(
-                label = stringResource(R.string.verb_resume_dialog_person),
-                value = selectedPerson
-            )
-        }
-    }
-}
-
-/**
- * A single row in the session context info display.
- */
-@Composable
-private fun SessionInfoRow(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-/**
- * VD-51: Inline card showing previous session context.
- * Shown on VerbDrillSelectionScreen instead of blocking dialog.
- * Allows users to Repeat (same cards) or Continue (next cards).
- */
-@Composable
-internal fun SessionCard(
-    lastSessionContext: VerbDrillLastSessionState,
-    onRepeat: () -> Unit,
-    onContinue: () -> Unit,
-    onReset: () -> Unit = {}
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag("session_card"),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(R.string.verb_session_card_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SessionContextInfo(
-                selectedTense = lastSessionContext.selectedTense,
-                selectedGroup = lastSessionContext.selectedGroup,
-                selectedPerson = lastSessionContext.selectedPerson
-            )
-
-            val shownCount = lastSessionContext.todayShownCardIds.size
-            Text(
-                text = stringResource(R.string.verb_session_card_shown, shownCount),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onRepeat,
-                    modifier = Modifier.weight(1f).testTag("repeat_button")
-                ) {
-                    Text(stringResource(R.string.verb_session_card_repeat))
-                }
-                Button(
-                    onClick = onContinue,
-                    modifier = Modifier.weight(1f).testTag("continue_button")
-                ) {
-                    Text(stringResource(R.string.verb_session_card_continue))
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onReset,
-                modifier = Modifier.fillMaxWidth().testTag("reset_button")
-            ) {
-                Text(stringResource(R.string.verb_session_card_reset))
-            }
-        }
-    }
 }
 
 /**
