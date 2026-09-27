@@ -766,3 +766,77 @@ P5 backlog count: **16 screen/sheet surfaces + 4 app-shell files (GrammarMateApp
 - Previews: repo 0 → **74 preview functions** (75 grep hits incl. 1 prose comment, P1 §8 convention); P4 added 30 (+4 P4a, +10 P4b, +16 P4c).
 - Gates: `:app:assembleDebug` + full `:app:testDebugUnitTest --rerun` green with **546/546** after every P4 slice (67 suites — §12.7, §13.7, §14.7).
 - Unverified gates (every slice, unchanged since P0): `:app:connectedDebugAndroidTest` (no emulator/adb — CI enforces), rendered preview/device screenshots unavailable locally, voice-launcher runtime behavior not exercisable under Robolectric.
+
+---
+
+## 16. Emulator walkthrough (user paths + instrumented gate)
+
+- Date: 2026-09-27. Tree: `61fa9e0e0` (branch `feature/atomic-design`, clean). Raw step log + 61 screenshots: `.bg_vocab_scratch/emu-walkthrough/` (WALKTHROUGH_LOG.md, NN_step-name.png). **Append-only section; §1–15 untouched.**
+- Device: `emulator-5580` — AVD `Medium_Phone_API_36.1`, Android 16 (SDK 36), x86_64, en-US locale, emulated (no mic). App left installed and emulator left running; no wipe/reboot/uninstall of other packages. Fresh app data (Gradle uninstalls after connected tests, so first launch was genuinely fresh).
+- APK: `app/build/outputs/apk/debug/grammermate.apk`, 193,775,750 bytes, built this tree `:app:assembleDebug` BUILD SUCCESSFUL in 37s (39 tasks, 1 executed / 38 up-to-date); `com.alexpo.grammermate` versionName 2.1. Install: attempt 3 Success (attempt 1 transient empty failure; attempt 2 `INSTALL_FAILED_DUPLICATE_PACKAGE` — device pending-install state, resolved by retry, no data wiped).
+- x86_64 ABI: NOT a blocker — app installs, launches and runs on x86_64 (bundled arm64 Sherpa-ONNX lib does not prevent install/launch; offline ASR was not exercisable — mic-less emulator).
+
+### 16.1 Instrumented gate (closes the §5/§8/§9/§15 unverified-gate record)
+
+1. First `./gw.sh . :app:connectedDebugAndroidTest --max-workers=1` run: **FAILED — "Starting 0 tests"; XML system-err "Instrumentation run failed due to Process crashed."** Crash buffer contained only `uiautomator DumpCommand` / `UiAutomation.connect` "Timeout while connecting UiAutomation" entries at the same wall-clock — an environment-side UiAutomation contention flake, not an app exception (no app stack trace in crash buffer).
+2. Same test re-run directly on device (`am instrument -w -e class …ClassicAppLaunchSmokeTest …`): **OK (1 test)** in 47s.
+3. Official re-run: **BUILD SUCCESSFUL in 1m 27s**, XML: tests="1" failures="0" errors="0" skipped="0"; `ClassicAppLaunchSmokeTest.productionEntryPointReachesInteractiveContent` passed in 37.4s.
+- **Gate verdict: PASS (green) on re-run; first-run failure recorded as environment flake with evidence.** This closes the `connectedDebugAndroidTest` unverified-gate note carried since §5: the suite passes locally on API 36 x86_64.
+
+### 16.2 Walkthrough coverage table (route/path → status → evidence)
+
+| Route / path | Status | Evidence (screenshot) |
+|---|---|---|
+| First launch → Welcome dialog → name → language choice → Home | PASS (no observable pack-import wait; packs listed within seconds — see 16.5g) | 01–04 |
+| HOME — classic variant (pack tiles, header avatar/streak/EN/Pomodoro/Settings, legend, method CTA) | PASS (with clipping finding, 16.4-B) | 04, 05, 26–28 |
+| HOME — roadmap variant dispatch (chapter pack active) | PASS | 06, 31 |
+| LESSON — LessonRoadmapScreen (cards 1–10 + Review, Start Lesson; "Cards: 1 of 100" persisted after session) | PASS | 08, 23 |
+| CHAPTER_LESSONS — chapter grid (A01–A12+, "In progress") | PASS | 07 |
+| TRAINING — regular lesson: prompt/TTS button/input/mode row/Check/nav row render | PASS | 09 |
+| TRAINING — wrong answer → Incorrect result | PASS | 10, 11 |
+| TRAINING — Show answer hint ("Ответ: …" card) | PASS | 12, 15, 36 |
+| TRAINING — correct answer → exact-match auto-submit + auto-advance | PASS (stale-input observation, 16.4-C) | 13, 14 |
+| TRAINING — Prev/Next navigation + progress text updates | PASS | 13, 16, 17 |
+| TRAINING — Pause/Resume (nav middle button Play↔Pause) | PASS | 19, 20 |
+| TRAINING — exit: two-stage confirm on lesson with attempts; single confirm on drill exit | PASS (UX note 16.4-D) | 21, 22, 37 |
+| VERB_DRILL — selection (Время/Группа/Лицо, По частотности, Прогресс 0/56664 → 0/5 filtered) → Begin → session card | PASS | 32, 33, 35 |
+| VERB_DRILL — exit mid-session → SessionCard resume (Repeat ✓, Continue rendered, Reset from beginning ✓) | PASS | 38, 39, 40 |
+| VOCAB_DRILL — selection (direction/POS/frequency, Due 3221→1) → card front → flip (back face + collocations + "Learning — Step 1/9") → rating ladder (Again <1m/Hard 1d/Good 2d/Easy 4d) → rate Good → completion (1/0, "1 words reviewed") → Exit | PASS | 41–46 |
+| AUX_DRILL — selection (avere/essere/stare by tense, "0 / 35 seen", Begin) → session via shared TRAINING | PASS | 47–50 |
+| DAILY_PRACTICE — entry | **BLOCKED-unreachable by design** — both tiles hard-disabled (classic `HomeScreen.kt:372` `enabled=false`; roadmap alpha-0.5 button + toast "Временно не доступно"); TRANSLATE/VOCAB blocks therefore not exercised live | — |
+| STORY (StoryQuizScreen) | **UNREACHABLE from visible UI** — quiz is state-driven (`state.story.activeStory` phase); story reader end has no quiz CTA (checked Intro + Ch1) | 51–54 |
+| STORY_READER — reader renders long RU/IT story, scrolls, Copy/Play-story header actions; story TTS playback actually speaks (button toggles to "Pause story") | PASS | 51, 53, 54, 55 |
+| LADDER — via Settings → "Show ladder"; interval table A01… all "-" (fresh SRS) | PASS | 58 |
+| BACKGROUND_VOCAB — via "Фоновое слушание" (roadmap or home); 12000-word deck, RU-facing, TTS, green/red marks, пакет paging, "Сложные слова (0)" | PASS | 60 |
+| ELITE / VOCAB redirect routes | **UNREACHABLE — no legacy UI entry**: grep confirms 0 production `navigate(Routes.ELITE/VOCAB)` callers; only the `routeToScreen` mapping (NavCommon.kt:91–92) and the HOME redirects (GrammarMateApp.kt:600–607) exist | — |
+| Boss battle | **NOT ENCOUNTERED** — in-session mode (§15.1), no entry in normal flow; not exercised via Test Mode | — |
+| Back-navigation (lesson roadmap → chapter → roadmap → home; reader arrow; bg-vocab/ladder system BACK) | PASS (HOME-variant nuance 16.4-F) | 24, 26, 61 |
+| Settings sheet (interface language, Test Mode toggle on/off, Show ladder, Appearance) | PASS | 56, 59 |
+| Dark theme | PASS — instant full re-render, verified on settings/roadmap/ladder/bg-vocab/home | 57, 58, 60, 61 |
+| Voice input (ASR) | render-only — per-card voice auto-launch fires (RU/IT/EN tags per context); Google recognizer "Didn't catch that" dialogs render and dismiss cleanly (mic-less emulator, per known caveat) | 18, 19, 34, 39, 42, 49 |
+
+Coverage: of the 14 routes in §1, 10 exercised end-to-end (HOME both variants, LESSON, DAILY_PRACTICE blocked-by-design, TRAINING, LADDER, VERB_DRILL, VOCAB_DRILL, AUX_DRILL, STORY_READER, CHAPTER_LESSONS, BACKGROUND_VOCAB), 2 redirects verified unreachable (ELITE, VOCAB), STORY + boss-flow not reachable without deeper state setup. Crashes during the entire walkthrough: **0** (`logcat -b crash` clean).
+
+### 16.3 Paths needing integrator decision / new findings for the ledger
+
+- **A. HomeScreen cannot scroll (new defect, P5-relevant).** `verticalScroll`/`rememberScrollState` are imported (HomeScreen.kt:23–24) but never applied, and the lesson `LazyVerticalGrid` has `userScrollEnabled = false`. With a pack active, everything below the lesson grid is clipped on a 2400 px screen: the verb/aux/vocab drill entry tiles (when the pack has drills), the Daily Practice tile (half-visible at ~y2209), the "Фоновое слушание" button, legend, and method button are unreachable on classic Home. Screen-level swipe (incl. left margin, outside the grid) does not scroll. Drill entries remain reachable only via the roadmap variant (IT pack).
+- **B. Mixed-language UI on en-US (extends §15.3.6.5, live-confirmed).** Default-locale resources contain Russian: `home_choose_pack` = "Выберите пакет" (values/strings-screens.xml:7 — the primary CTA renders Russian under en-US); hardcoded `Text("Фоновое слушание")` ×4 (BackgroundVocabScreen.kt:175, SettingsScreen.kt:484, GrammarStoryRoadmapScreen.kt:225, HomeScreen.kt:384); toast "Временно не доступно" (roadmap Daily Practice); `HintAnswerCard`/`ClickableHintAnswerCard` "Ответ: " prefix confirmed live in sessions; VerbDrillScreen/Sheets and BackgroundVocabScreen are entirely RU-facing by design. Note the app has `values` (mixed) + `values-ru` but no `values-en`.
+- **C. Input text persists across card transitions (minor UX).** After exact-match auto-submit advanced 2→3, the input field retained the previous answer ("She got a present for her birthday"); stale tail also survived Show answer/Prev/Next until manually cleared.
+- **D. Exit confirmations are two-stage on lessons with attempts:** "End session? / Your progress will be saved. / Cancel / End" then immediately "End session? / Current session will be completed. / Cancel / Exit". Drill exits (verb/aux) show a single dialog. Consistent with §4 rows 16/18 but worth a UX look.
+- **E. Debug button ("Debug", VerbDrillScreen bottom-right) visible in debug builds** — acceptable for debug APK; confirm it is debug-only/gated for release.
+- **F. HOME-variant nuance:** system BACK from GrammarStoryRoadmap lands on the *classic* HomeScreen even though the active pack has chapters; fresh navigation to HOME dispatches the roadmap variant. Cosmetic dispatch-order question for P5.
+- **G. First-launch pack import:** no multi-minute import state was observed — packs appeared immediately after language selection (bundle may be pre-indexed at first pack-list load). The "import wait" state from the task brief was not reproducible on this build.
+- **H. Instrumentation environment flake (16.1.1)** — UiAutomation connect timeout crashed the first gate run before any test started; recommend a device-settle/retry before flagging future red gates as real.
+
+### 16.4 Validation summary
+
+- Gates this section: `:app:assembleDebug` green; `:app:connectedDebugAndroidTest` green on re-run (1/1, exact numbers in 16.1). No production code changed by this walkthrough (docs + scratch evidence only); emulator left running; tree left clean by THIS walkthrough's own contribution (git-ignored scratch artifacts + this appended section) — sibling workers' concurrent changes (TrainingPromptCard preview rename, VocabDrillClickUiTest) are separate artifacts reviewed independently.
+
+### 16.5 Post-review addendum (independent review of this section)
+
+- **Evidence honesty note (16.1.1):** the failed first gate run left no persisted artifact (results dir overwritten by the green re-run, console output not saved). The flake claim rests on the walker's report; everything checkable around it verifies (device id in UTP profiling, uninstall_after_test narrative, green XML matches §16.1.3 to the millisecond). Future gate runs: tee console output / copy failed XML into the scratch evidence dir.
+- **Defect A (Home scroll) code-verified by review:** HomeScreen.kt:23-24 imports `verticalScroll`/`rememberScrollState` with zero application sites; root Column `:195-197` unscrollable; grid `userScrollEnabled = false` `:305` (+ second grid `:506/:511`); screenshot 28 corroborates. **Filed to the §15.3.6 ledger as P5 dispatch item #0.** Fix caveat: the lesson grid is a `LazyVerticalGrid` — naive `.verticalScroll(...)` on the root Column hits the lazy-in-scrollable unbounded-height hazard; the fix must constrain/convert the grid (real slice, not a two-line edit).
+- **Defect (vocab "Try again" dead branch) code-verified by review:** `VoiceResultFeedback` composed only when `voiceCompleted == true` (VocabDrillCardFront.kt:253-267) but the VM sets completed on WRONG only at attempts ≥ 3 (VocabDrillViewModel.kt:441-465) → `vocab_voice_try_again` ("Try again (%1$d/3)") can never render at runtime (only in a preview fixture); attempts 1-2 leave the mic prompt with zero feedback. **Filed to the ledger** (fix = compose feedback on `voiceResult != null` with mic below, or render attempts in the mic section; retire the always-true param).
+- **Input persistence (16.3-C) code-verified:** `_inputText` written only at init + 3 settings-reset handlers (TrainingViewModel.kt:200/:2588/:2592/:2599); `submitAnswer`/`navigateNext` never clear it — the stale tail is structural. Fix is a product decision (clear-on-advance), queued for owner.
+- **i18n typo bonus:** values-ru/strings-screens.xml:184 "Выберите пак" (truncated). One-line fix, queued with B.
+
