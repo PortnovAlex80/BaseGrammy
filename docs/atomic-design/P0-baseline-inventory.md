@@ -494,3 +494,96 @@ Rendered-preview verification remains unavailable locally (no device/emulator �
 - Compat wrappers added: **none**. Dead-file touch: **none**. The deleted `internal SessionCard` had exactly one production caller and zero test-symbol references (all coverage drives it through `session_card`-family tags via `VerbDrillScreen`).
 - Rollback = revert `ui/VerbDrillScreen.kt` + delete `ui/features/verbdrill/components/VerbDrillSessionCard.kt`. Self-contained on top of `33358e8eb`; no data/build/dependency surface.
 - Recommended next: **P4 slice 2 — daily practice** (`ui/screens/DailyPracticeScreenContent.kt` → `ui/DailyPracticeScreen.kt`, incl. SRS rating row + daily word bank display, ledger row 17), then **slice 3 — vocabulary** (`ui/VocabDrillScreen.kt`: voice auto-launch inline variant (ledger row 3) + 2×2 SRS ladder + deck progress), then slice 4 = P4 wrap-up (route coverage for regular lesson + template repetition check). Reuse decisions to re-check there: `TrainingPromptCard`/`TrainingAnswerPanel` second-consumer evidence (daily/vocab prompts vs hint ladder), `WordBankSection` re-home (its raw overload now consumed by `TrainingAnswerPanel`; daily uses `DailyPracticeComponents` twin).
+
+---
+
+## 13. P4b status update (daily practice)
+
+- Date: 2026-09-27. Slice baseline revision: `bf77ae0be` (branch `feature/atomic-design`, tree clean at start; P4a state per §12). Sections 1–12 are prior-slice evidence; file:line references below are for the post-P4b tree unless marked with `@ bf77ae0be` (pre-slice anchors — the P0 §3 line anchors for `ui/DailyPracticeScreen.kt` were re-verified as still exact on `bf77ae0be` before acting).
+- Plan §5 P4 row, slice 2 of 4 (daily practice mode). Production code changed: **1 file modified, 2 files added**. `DailyPracticeScreenContent.kt` (block entry/exit wiring, ledger row 17), `GrammarMateApp.kt`, `VocabDrillScreen.kt`, training feature files, dead files, build files: **untouched**. No visual value, string, tag, timing, or behavior change.
+
+### 13.1 Surface map — daily surfaces vs available assets (rule-4 evidence)
+
+| Surface (pre-slice anchor @ `bf77ae0be`) | Candidate asset | Verdict + evidence |
+|---|---|---|
+| SRS one-shot rating row (`DailyPracticeScreen.kt:341–362`) | `ui/patterns` promotion with VocabDrill's row | **REFUTED — see §13.2 (headline deliverable).** Extracted feature-local instead (§13.3). |
+| Flashcard display card (prompt/speaker/report/answer line, `:296–312`) | `TrainingPromptCard` (cross-feature, off-limits) / feature organism | **EXTRACT — `DailyVocabCard` (§13.3).** Not a `TrainingPromptCard` reuse: no label, no hint-ladder text, no `card_prompt_text` tag, no `TtsSpeakerButton` state machine, different scale values (28f/18f vs 20f/13f). |
+| Speaker control (`:301`, VolumeUp IconButton) | `TtsSpeakerButton` atom (generic, cross-feature-usable) | **LEAVE — incompatible semantics** (§12.1 row-2 precedent): daily control is a stateless *replay* affordance (always VolumeUp, `content_desc_listen`, click → `onSpeak` + audit) vs the atom's 4-state stop/initializing/error rendering driven by `TtsButtonState`. No TTS state even reaches the block — the screen's `ttsState` param (`:84`) is declared but never read anywhere in the file (pre-existing unused param, recorded §13.5, not fixed). Adopting would invent state and change icon/a11y — a visual/behavior change. |
+| Mic button + "You said" line (`:316–337`) | — | **LEAVE — effect-dense**: `speechLauncher` + BT setup `scope.launch` + audit `voiceStart` + language-tag branch (ledger rows 17/20 territory). Rendering is one `FilledTonalIconButton`; extraction would split an effectful body for no display gain. |
+| Flip button (`:357–366`) | — | **LEAVE** — writes the block's `showAnswer` state (also written by the voice auto-rate path `:288–291`); single button; state belongs to the block. |
+| Loading states (`:117–129` spinner + label; `:176–178` spinner-only during block navigation) | shared `FullScreenLoader` molecule | **LEAVE — P5 confirmation.** Plan §5 P5 row owns root/loading/error views; §3.7 items 6/7 stand. Assignment's "UNLESS the daily refactoring makes it natural" clause: it does not — the daily extractions touch neither loader. |
+| Back-arrow header `DailyPracticeHeader` (`:202–228`, back arrow `:220`) | shared `ScreenHeader` molecule | **LEAVE — P5 confirmation.** Same clause as above; the header also hosts the exit-confirm dialog with audit ordering (boundary behavior, ledger row 17 exit path) and is one of §3.8's 11 inline back arrows — a P5/P6 consolidation, not a daily-slice item. |
+| `BlockProgressBar` (`:231–239`) | `SessionProgressIndicator` (training, off-limits) / feature organism | **LEAVE — different state meaning**: global daily task fraction (`globalPosition/totalTasks` + labelSmall "x/y") vs per-session position + speed arc; rule-4 anti-pattern to merge. Single caller, 9 lines — trivial, stays inline (assignment's stay-inline clause). |
+| `BlockSparkleOverlay` (`:414–434`) | — | **LEAVE** — owns a `LaunchedEffect(Unit)` 800 ms auto-dismiss effect; single caller; overlay extraction would move or split an effect (plan §4 prohibition without a behavior win). |
+| `DailyPracticeCompletionScreen` (`:437–445`) | — | **LEAVE** — single-caller simple display (§12.1 `AuxPairCard` precedent: structure without ownership gain). |
+| Daily TRANSLATE/VERBS blocks (`:157–179`) | training organisms | **N/A — already served**: these blocks navigate to the shared TRAINING session (row 17), where the P2/P3a/P3b organisms already render. No daily-side display exists to adopt. |
+| "Block tile/card displays from `DailyPracticeComponents`" (assignment candidate) | — | **DOES NOT EXIST — verified.** `ui/components/DailyPracticeComponents.kt` contains only `WordBankSection` (+ the caller-less `DailyWordBankSection` alias); `DailyPracticeScreen` references no word bank at all (grep-verified — its VOCAB block has no word bank). The daily *entry* tile is `DailyPracticeEntryTile` (`HomeScreen.kt:794`): home surface, hard-disabled, P5 scope — out of this slice. |
+
+### 13.2 SRS promotion verdict — REFUTED (both rows stay feature-local)
+
+P0 §3.9 said the daily and vocab rating rows have different semantics; **confirmed with code evidence — `ui/patterns` promotion is refuted.** Rule-4 axes (daily row @ `bf77ae0be` `DailyPracticeScreen.kt:341–362` vs vocab `VocabDrillScreen.kt:559–624`):
+
+| Axis | Daily (one-shot) | Vocab (ladder-preview) |
+|---|---|---|
+| Layout | one Row × 4 `OutlinedButton` (`weight(1f)`, `spacedBy(8.dp)`) | Column of 2 Rows (2×2): Again+Hard outlined, Good+Easy **filled** Buttons |
+| Colors | dedicated `SrsAgain/Hard/Good/Easy Background/Text` token pairs — the 8 getters' only consumers (grep-verified at `bf77ae0be`: `DailyPracticeScreen.kt:344–347` and nowhere else) | `colorScheme.error` (`:569,:574`), `VocabIntervalOrange` (`:582,:587`), filled `primary` (`:600`), filled `MasteryGreen` (`:614`), White text |
+| Strings | `srs_again/_hard/_good/_easy` | `vocab_rating_again/_hard/_good/_easy` — different resources |
+| Labels | flat single label, 12.sp | Bold label + interval-ladder subtitle: Again = localized `<1m` string (`:574`); Hard/Good/Easy = `"${ladder[step]}d"` with next-step **preview math** (`currentStep+1`/`+2`, `coerceAtMost`, `:605,:619`) |
+| State meaning | **one-shot latch**: `isRated` `remember(task.id)`; any rating disables the whole row (`enabled = !isRated` + in-click guard); latch also set by the voice auto-rate GOOD path (`:287–291`) | **per-card re-rating**: no disabled semantics; visibility gated by `session.isFlipped`; resets each card |
+| Evolution | Anki-style rate-once-and-advance | ladder-preview choice aid (display couples to scheduling math) |
+
+Two similar-looking "Anki buttons" do not share behavior, state meaning, accessibility, or evolution — plan §3 rule 4 forbids the promotion. The daily row's one-shot semantics now live in `SrsRatingRow`'s doc comment; the vocab row is judged in its own slice (P4 slice 3).
+
+### 13.3 What was extracted / changed
+
+| Change | Location (post-P4b) | Detail |
+|---|---|---|
+| **NEW** `SrsRatingRow` organism + `SrsRatingOption` + 5 previews | `ui/features/daily/components/SrsRatingRow.kt` (enum `:36`, organism `:78`) | First file in the daily feature package. Display-only: `rated: Boolean, onRate: (SrsRatingOption) -> Unit, modifier: Modifier = Modifier`. `SrsRatingOption` is UI-owned (boundary maps to/from `data.SrsRating`, `data/Models.kt:144` — P2 `TtsButtonState` precedent); zero data-layer imports beyond preview-only `ThemeMode`/`GrammarMateTheme` (P1/P2 convention). Renders the row verbatim: fixed AGAIN/HARD/GOOD/EASY order, `srs_*` strings, 12.sp labels, the 8 `Srs*` token getters (now consumed here), `enabled = !rated`. The doc comment carries the §13.2 verdict. |
+| **NEW** `DailyVocabCard` organism + 5 previews | `ui/features/daily/components/DailyVocabCard.kt` (organism `:80`) | Display-only: `promptText: String, answerText: String? (null = hidden), textScale: Float, isFlagged: Boolean, onSpeakClick, onReportClick, modifier`. surfaceVariant card, 24.dp centered Column, `scaledSp(28f/18f, textScale)` — **first `scaledSp` adoption on the daily surface**, identical math to the old `(28f/18f * textScale).sp` (§9.3 forecast honored); `content_desc_listen`/`content_desc_report_word` icons; report tint `error`/`onSurfaceVariant` from the passed `isFlagged`. |
+| `VocabFlashcardBlock` boundary edits | `ui/DailyPracticeScreen.kt:271–355` | Card block (`:296–312` @ bf77ae0be) → `DailyVocabCard(...)` with boundary lambdas keeping audit-before-callback order (`ttsSpeak` audit + `onSpeak`; `report_sheet` audit + `showReportSheet = true`); rating row (`:340–362` @ bf77ae0be) → `SrsRatingRow` whose boundary `onRate` lambda keeps, in order: the `if (!isRated)` guard, `daily_rate` audit (arg = mapped `SrsRating.toString()` — identical enum-name payload), the latch write, the VM `onRate` call. `val isFlagged = isDailyBadSentence(task.word.id)` hoisted once (`:279`) and used by both the card tint and `SharedReportSheet.isFlagged` (`:375`; was two identical composition-time calls — plain VM function call, not a snapshot-state read, so no recomposition-semantics change). Imports: `VolumeUp`/`ReportProblem`/`OutlinedButton` removed; 3 daily-component imports added; `ButtonDefaults` was fully-qualified pre-slice and moves into the organism. |
+| Boundaries kept untouched | `DailyPracticeScreen.kt` | Speech launcher + Normalizer compare + auto-rate GOOD (`:281–295`), block flip/exit wiring (row 17, `DailyPracticeScreenContent.kt`), mic click body, flip button + `daily_flip` audit, report/QR/export dialogs, all defaults of `DailyPracticeScreen`'s public signature. |
+
+### 13.4 Parity evidence
+
+| Invariant | Old (`bf77ae0be`) | New | Backing evidence |
+|---|---|---|---|
+| Rating labels/order | `srs_again/_hard/_good/_easy` in AGAIN→EASY order | Identical resources, same order, resolved in the organism | `DailyPracticeClickUiTest.test 2` drives the real UI: click "Show answer" → `onNodeWithText("Easy").assertIsDisplayed()` → click → `ratedRating == SrsRating.EASY` through the extracted row — **12/12 green** |
+| One-shot latch | `enabled = !isRated` + `if (!isRated)` in onClick | `enabled = !rated` in organism + `if (!isRated)` in boundary lambda — same double guard, same state | Code-identical guards; voice auto-rate sets the same latch (`:288–291` untouched) |
+| Audit payload/order | `dialogAction("daily_rate", rating.toString())` then latch then `onRate` | Identical: `SrsRatingOption → SrsRating` mapping preserves enum names, so the audit string is byte-identical; order preserved | Code-identical; compile |
+| Rating colors | 8 `Srs*` getters, `ButtonDefaults.outlinedButtonColors` | Same getters resolved in the organism (their only consumers, now here), same call | grep + compile; no retune |
+| Card layout/typography | surfaceVariant card, 24.dp Column, `(28f/18f * textScale).sp` Bold/Medium centered, primary answer, 4/8.dp spacers | Verbatim via `scaledSp` (same math), same weights/colors/alignment | compile + previews render the real component |
+| A11y labels | `content_desc_listen`, `content_desc_report_word` | Same resources, same icons (incl. the pre-existing deprecated `VolumeUp` warning — moved WITH the icon, preserved deliberately per §11.4) | compile warnings reviewed (see §13.5) |
+| Flag state read | `isDailyBadSentence(task.word.id)` ×2 per composition (tint + sheet) | Same expression once, value passed to both consumers | Plain function call, no snapshot state — no recomposition-semantics change |
+| Strings/tags | none on these surfaces (no test tags existed) | none added | read-verified pre-move |
+
+### 13.5 Deliberately NOT done + defects recorded (honesty record)
+
+- **No `ui/patterns` promotion** (§13.2); **no layout template** (no proven repetition); **no loader/header extraction** (P5 confirmations, §13.1); **no VocabDrillScreen changes** (next slice).
+- Pre-existing defects recorded, **not fixed**: deprecated `Icons.Default.ArrowBack` (`DailyPracticeScreen.kt:220`, §3.8); deprecated `Icons.Filled.VolumeUp` (warning moved with the icon to `DailyVocabCard.kt:94`); always-true condition warning `:143` (pre-existing, untouched line); **unused params**: `DailyPracticeScreen.ttsState` (`:84`, never read in the file — so no TTS state exists on this surface) and `VocabFlashcardBlock.hintLevel` (`:253`, never read); reviewer nano-note: `DailyPracticeScreen.onStopTts` (`:83`) is likewise never read — same pre-existing unused-param class; **no-op plumbing**: `onFlip = { /* no-op */ }` at the only call site (`:183`) yet invoked by the flip button (`:361`); **unlocalized strings**: `"You said: \"$voiceRecognizedText\""` (`:316`), `"Exported to $path"` / `"No bad sentences to export"` (`:387`) — same class as §11.4's `"Ответ: "` finding.
+
+### 13.6 Previews
+
+`@Preview` count 48 → **58** functions (grep hits 49 → 59; +10, all pure fixtures — no ViewModel/filesystem/pack/engine; P1/P2/P3a conventions):
+- `SrsRatingRow.kt` (5): unrated light, rated-inert light, unrated dark, rated-inert dark, unrated at system font scale 1.5x (the 12.sp four-across label row is the wrap-risk surface).
+- `DailyVocabCard.kt` (5): front light, revealed light, revealed+flagged light (report tint branch), long IT word + long RU meaning dark, revealed at textScale 1.5 + system fontScale 1.5x.
+
+Surfaces NOT previewed (why): the flashcard block remainder (mic/flip are effectful; screen-level previews would need harness refactors — §12.6 precedent), header/progress/sparkle/completion (no extraction — previews require extracted/isolated components).
+
+### 13.7 Validation (exact)
+
+1. Focused (after code complete): `./gw.sh . :app:testDebugUnitTest --no-parallel --max-workers=1 --rerun --tests "com.alexpo.grammermate.ui.DailyPracticeClickUiTest" --tests "com.alexpo.grammermate.ui.PackSwitchClickUiTest"` → BUILD SUCCESSFUL in 22s; XML: DailyPracticeClickUiTest **12/12**, PackSwitchClickUiTest **4/4**, 0 failures. **Suite-honesty labels (assignment §7 requirement):** DailyPracticeClickUiTest — only 2 of 12 tests compose production UI (test 1 → `TrainingScreen` TRANSLATE path; **test 2 → real `DailyPracticeScreen` VOCAB block with UI clicks on "Show answer" and "Easy"** — the load-bearing coverage for this slice); tests 3–12 are placeholder local-flag/data assertions composing no UI (P6 test debt, same class as §12.4's `VerbPracticeClickUiTest` finding). PackSwitchClickUiTest — 4/4 real UI tests, but on the `TrainingScreen` path (which daily TRANSLATE/VERBS blocks reuse via row 17); it composes no daily-specific surface — recorded so the citation stays honest. Coverage grep over `app/src/test` for daily SRS surfaces (`"Easy"`, `"Show answer"`, `srs_`, `daily_rate`, `SrsRating`): only `DailyPracticeClickUiTest` hits (`RegularLessonClickUiTest:478` mentions the training show-answer content description in a comment only). No other suite needed focusing; the full gate covers the rest.
+2. Phase gate (after last code change): `:app:assembleDebug` → BUILD SUCCESSFUL in 19s; full `:app:testDebugUnitTest --rerun` → BUILD SUCCESSFUL in 2m 13s; parsed 67 fresh `TEST-*.xml` (timestamped 2026-09-27 13:44): **546 run / 546 passed / 0 failed / 0 skipped** (= P0–P4a baseline). Robolectric temp dirs cleaned after test JVMs exited (remaining java processes verified as the Gradle + Kotlin compiler daemons, not test workers).
+3. Unverified gates: `connectedDebugAndroidTest` (no emulator/adb — unchanged since P0); rendered previews/screenshots unavailable locally. Voice-launcher runtime behavior (speech recognizer intent, auto-rate GOOD via voice) not exercisable under Robolectric — unchanged coverage vs baseline; the launcher block moved zero lines.
+
+### 13.8 Inventory status updates + honest ownership evaluation
+
+- Status updates (§2 remains the dated P0 snapshot): daily SRS one-shot rating row → `extracted`+`adopted` as `SrsRatingRow` (new inventory row; single production caller `VocabFlashcardBlock`); daily vocab flashcard display → `extracted`+`adopted` as `DailyVocabCard` (single caller); §3.9's daily variant → resolved as feature-local organism, promotion refuted; the 8 `Srs*` facade getters' consumption moved from the screen to `SrsRatingRow` (still the only consumers).
+- **Real gain:** the plan-§6 invariant surface ("vocabulary rating/flip flow … preserve distinct semantics") now has a named, documented, previewable owner whose doc comment IS the recorded rule-4 verdict — the next integrator reads the refutation in code, not in prose. The daily feature gets its first previews (10) and its first display components decoupled from the effect-dense block. All effects stayed put.
+- **Costs to track:** `ui/features/daily/components/` is created for two single-caller organisms — acceptable because each owns real display policy (not forwarding), but if the P4 vocab slice produces a genuinely shared card/rating contract (unlikely per §13.2), the pattern decision belongs to the integrator. `DailyVocabCard`'s `answerText: String?` null-hidden mapping is the one new (trivial) boundary expression.
+- Wrapper ledger: **none added** this slice; the P2 legacy `TtsState` overload in `SharedComponents.kt` remains the only live compat wrapper (removal = P6, unchanged).
+
+### 13.9 Compat/wrappers, rollback boundary, next slice
+
+- Compat wrappers added: **none**. Dead-file touch: **none**.
+- Rollback = revert `ui/DailyPracticeScreen.kt` + delete `ui/features/daily/components/{SrsRatingRow,DailyVocabCard}.kt`. Self-contained on top of `bf77ae0be`; no data/build/dependency surface; every production call site outside the daily screen untouched.
+- Recommended next: **P4 slice 3 — vocabulary** (`ui/VocabDrillScreen.kt`: inline 500ms voice auto-launch (ledger row 3), 2×2 SRS ladder row (stays feature-local per §13.2), deck progress vs `SessionProgressIndicator` rule-4 check, flip/skip row), then **slice 4 = P4 wrap-up** (regular-lesson route coverage + template repetition check + the P2/P4 fold-back decisions for the integrator).

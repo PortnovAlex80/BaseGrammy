@@ -22,8 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,6 +66,9 @@ import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.feature.daily.BlockProgress
 import com.alexpo.grammermate.shared.AuditLogger
+import com.alexpo.grammermate.ui.features.daily.components.DailyVocabCard
+import com.alexpo.grammermate.ui.features.daily.components.SrsRatingOption
+import com.alexpo.grammermate.ui.features.daily.components.SrsRatingRow
 
 @Composable
 fun DailyPracticeScreen(
@@ -276,6 +276,7 @@ private fun ColumnScope.VocabFlashcardBlock(
         VocabDrillDirection.IT_TO_RU -> task.word.meaningRu ?: task.word.word
         VocabDrillDirection.RU_TO_IT -> task.word.word
     }
+    val isFlagged = isDailyBadSentence(task.word.id)
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         isVoiceActive = false
@@ -293,23 +294,20 @@ private fun ColumnScope.VocabFlashcardBlock(
         }
     }
 
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(promptText, fontSize = (28f * textScale).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { AuditLogger.getInstanceOrNull()?.ttsSpeak(task.word.id, promptText, "daily"); onSpeak(promptText) }) { Icon(Icons.Default.VolumeUp, stringResource(R.string.content_desc_listen)) }
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = { AuditLogger.getInstanceOrNull()?.dialogOpen("report_sheet", "daily"); showReportSheet = true }) {
-                    Icon(Icons.Default.ReportProblem, stringResource(R.string.content_desc_report_word), tint = if (isDailyBadSentence(task.word.id)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            if (showAnswer) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(answerText, fontSize = (18f * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
-            }
+    DailyVocabCard(
+        promptText = promptText,
+        answerText = if (showAnswer) answerText else null,
+        textScale = textScale,
+        isFlagged = isFlagged,
+        onSpeakClick = {
+            AuditLogger.getInstanceOrNull()?.ttsSpeak(task.word.id, promptText, "daily")
+            onSpeak(promptText)
+        },
+        onReportClick = {
+            AuditLogger.getInstanceOrNull()?.dialogOpen("report_sheet", "daily")
+            showReportSheet = true
         }
-    }
+    )
 
     Spacer(modifier = Modifier.weight(1f))
 
@@ -338,28 +336,23 @@ private fun ColumnScope.VocabFlashcardBlock(
 
     Spacer(modifier = Modifier.height(12.dp))
     if (showAnswer) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(stringResource(R.string.srs_again) to SrsRating.AGAIN, stringResource(R.string.srs_hard) to SrsRating.HARD, stringResource(R.string.srs_good) to SrsRating.GOOD, stringResource(R.string.srs_easy) to SrsRating.EASY).forEach { (label, rating) ->
-                val colors = when (rating) {
-                    SrsRating.AGAIN -> Pair(SrsAgainBackground, SrsAgainText)
-                    SrsRating.HARD -> Pair(SrsHardBackground, SrsHardText)
-                    SrsRating.GOOD -> Pair(SrsGoodBackground, SrsGoodText)
-                    SrsRating.EASY -> Pair(SrsEasyBackground, SrsEasyText)
+        SrsRatingRow(
+            rated = isRated,
+            onRate = { option ->
+                if (!isRated) {
+                    val rating = when (option) {
+                        SrsRatingOption.AGAIN -> SrsRating.AGAIN
+                        SrsRatingOption.HARD -> SrsRating.HARD
+                        SrsRatingOption.GOOD -> SrsRating.GOOD
+                        SrsRatingOption.EASY -> SrsRating.EASY
+                    }
+                    AuditLogger.getInstanceOrNull()?.dialogAction("daily_rate", rating.toString())
+                    isRated = true
+                    onRate(rating)
                 }
-                OutlinedButton(
-                    onClick = {
-                        if (!isRated) {
-                            AuditLogger.getInstanceOrNull()?.dialogAction("daily_rate", rating.toString())
-                            isRated = true
-                            onRate(rating)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isRated,
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = colors.first, contentColor = colors.second)
-                ) { Text(label, fontSize = 12.sp) }
-            }
-        }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
     } else {
         Button(
             onClick = {
@@ -379,7 +372,7 @@ private fun ColumnScope.VocabFlashcardBlock(
             onDismiss = { showReportSheet = false },
             cardPromptText = "${word.word} — ${word.meaningRu ?: ""}",
             cardId = word.id,
-            isFlagged = isDailyBadSentence(word.id),
+            isFlagged = isFlagged,
             onFlag = { onFlagDailyBadSentence(word.id, languageId, word.meaningRu ?: word.word, word.word, "daily_vocab") },
             onUnflag = { onUnflagDailyBadSentence(word.id) },
             onHideCard = { /* no-op for vocab flashcards */ },
