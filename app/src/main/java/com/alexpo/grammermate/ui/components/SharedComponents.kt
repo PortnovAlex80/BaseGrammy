@@ -19,22 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.StopCircle
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +40,8 @@ import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.InitPhase
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
+import com.alexpo.grammermate.ui.designsystem.atoms.TtsButtonState
+import com.alexpo.grammermate.ui.designsystem.atoms.TtsSpeakerButton as TtsSpeakerButtonAtom
 
 /**
  * Navigation icon button with surfaceVariant background and primary accent bottom bar.
@@ -88,62 +80,28 @@ fun NavIconButton(
 }
 
 /**
- * TTS speaker button with 4 states: speaking (stop icon, red), initializing (spinner),
- * error (warning, red), idle (VolumeUp icon).
- * Used by GrammarMateApp and TrainingCardSession.
+ * Legacy `data.TtsState`-typed TTS speaker button, kept only so the dead
+ * `ui/TrainingCardSession.kt` call sites keep compiling (P0 inventory §2.1).
+ * Delegates to the designsystem atom [TtsSpeakerButtonAtom], where the rendering
+ * implementation moved in the P2 prompt pilot (re-typed to the UI-owned
+ * [TtsButtonState]). Removed together with TrainingCardSession's retirement (P6).
  */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun TtsSpeakerButton(
     ttsState: TtsState,
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled
-    ) {
-        when (ttsState) {
-            is TtsState.Speaking -> Icon(
-                Icons.Default.StopCircle,
-                contentDescription = stringResource(R.string.content_desc_stop),
-                tint = MaterialTheme.colorScheme.error
-            )
-            is TtsState.Initializing -> CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp
-            )
-            is TtsState.Error -> {
-                val reason = ttsState.reason
-                val isOom = reason?.contains("memory", ignoreCase = true) == true
-                val errorIcon = if (isOom) Icons.Default.Warning else Icons.Default.ReportProblem
-                if (reason != null) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                        tooltip = { PlainTooltip { Text(reason) } },
-                        state = rememberTooltipState()
-                    ) {
-                        Icon(
-                            errorIcon,
-                            contentDescription = stringResource(R.string.content_desc_tts_error),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                } else {
-                    Icon(
-                        errorIcon,
-                        contentDescription = stringResource(R.string.content_desc_tts_error),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            else -> Icon(
-                Icons.Default.VolumeUp,
-                contentDescription = stringResource(R.string.content_desc_listen),
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
+    TtsSpeakerButtonAtom(
+        state = when (ttsState) {
+            is TtsState.Speaking -> TtsButtonState.Speaking
+            is TtsState.Initializing -> TtsButtonState.Initializing
+            is TtsState.Error -> TtsButtonState.Error(ttsState.reason)
+            else -> TtsButtonState.Idle
+        },
+        enabled = enabled,
+        onClick = onClick
+    )
 }
 
 /**

@@ -196,3 +196,59 @@ Scope per plan §5 P1 row: `Theme.kt`, `Glass.kt`, values required by the P2 pil
 - §3.6 corner radii: `12.dp`/`8.dp` now have tokens (`GrammarMateRadii.small`/`.extraSmall`) consumed by `GrammarMateShapes`; the 27 inline occurrences are unchanged (adoption in later slices). Medium/large/extraLarge radii intentionally left inline in `Shapes.kt` until a token has a second consumer.
 - §3.4 preview count: 0 → **6** in `ui/designsystem/preview/FoundationPreviews.kt` (palette light+dark with name+hex swatches, typography scale, shapes, prompt text-scale at 1.0x/1.5x; the 7th `@Preview` grep hit is a prose comment, not a function). All pure fixtures; `ui-tooling-preview` was already an `implementation` dep (app/build.gradle.kts:130), `ui-tooling` debug-only (`:153`) — no dependency changes.
 - Validation on this tree: `:app:assembleDebug` BUILD SUCCESSFUL (39s); `:app:testDebugUnitTest --rerun` BUILD SUCCESSFUL (2m 12s), parsed 67 fresh `TEST-*.xml`: **546 run / 546 passed / 0 failed / 0 skipped** (equal to the P0 baseline). `connectedDebugAndroidTest` remains an unverified gate (no emulator/adb); rendered-preview/device screenshots remain unavailable locally (previews compile but were not rendered here).
+
+---
+
+## 9. P2 status update (prompt pilot)
+
+- Date: 2026-09-27. Slice baseline revision: `bb3773ab8` (branch `feature/atomic-design`, tree clean; §8's P1 foundation state). Sections 1–8 above are prior-slice evidence; line references below are for the post-P2 tree.
+- Production code changed: 2 files modified, 2 files added. Screens/drills/bar/navigation/dead files/build files untouched; no dependency changes; no visual value changes.
+
+### 9.1 What was extracted
+
+| Change | Location (post-P2) | Detail |
+|---|---|---|
+| **NEW** `TrainingPromptCard` organism + 9 previews | `ui/features/training/components/TrainingPromptCard.kt` (component `:63`) | Display-only feature organism: `label, displayPrompt, situationContext: String?, textScale: Float, audioState: TtsButtonState, audioEnabled: Boolean, onAudioClick, modifier`. Renders `card_prompt_text` tag (`:83`), context line, TTS atom. Zero `com.alexpo.*` imports except `ui.designsystem.*` and preview-only uses of `ui.GrammarMateTheme` + `data.ThemeMode` (P1 preview convention). No ViewModel/session-contract/data-layer imports in the component itself. |
+| **NEW** `TtsSpeakerButton` atom + `TtsButtonState` | `ui/designsystem/atoms/TtsSpeakerButton.kt` (state `:34`, atom `:62`) | Rendering moved verbatim from `SharedComponents.kt:97`, re-typed from `data.TtsState` to UI-owned sealed `TtsButtonState { Idle, Initializing, Speaking, Error(reason) }` (added `modifier` param per plan §4 API rule). §2 `TtsSpeakerButton` row: destination reached as proposed (`designsystem/atoms`); status → `extracted`+`adopted`. |
+| Legacy `TtsState`-typed overload (compat wrapper) | `ui/components/SharedComponents.kt:90` | Kept ONLY so the dead `ui/TrainingCardSession.kt:343,442` call sites compile (untouchable per slice constraints). Delegates to the single atom implementation; 12 lines. **Removal condition: dies with TrainingCardSession retirement (P6).** Owner: integrating integrator. |
+| `CardPrompt` → boundary adapter | `ui/screens/TrainingScreen.kt:466` | Same public signature `(state, onSpeak)`; production call site `:368` unchanged (`if (!isDrillStyle)` guard untouched → no duplicate prompt in VERB_DRILL/DAILY_VERBS, which render the drill line at `:331`). Adapter owns: `HintCalculator.calculateEffectiveHints` + no-cards fallback, `SentenceCard.contextRu` cast, `TtsState → TtsButtonState` mapping (`else → Idle` covers Idle/Ready/Paused exactly as the old button's `else` branch did), `audioEnabled = currentCard != null`, and the TTS audit log inside `onAudioClick` (click-time reads of `currentCard.id`/`promptRu` preserved verbatim). No `LaunchedEffect`/`remember` moved; no effect keys/callback order changed. |
+
+### 9.2 Parity evidence (old inline CardPrompt → TrainingPromptCard)
+
+| Invariant | Old (TrainingScreen.kt @ bb3773ab8) | New | Backing evidence |
+|---|---|---|---|
+| `card_prompt_text` tag | `Modifier.testTag("card_prompt_text")` on prompt Text | Identical, same node position/modifier order | `RegularLessonClickUiTest` 10/10 + `PackSwitchClickUiTest` 4/4 pass — both assert `assertIsDisplayed()` + `assertTextContains` hint-calculated content through the extracted path |
+| contextRu visibility | rendered whenever non-null, independent of hint ladder | `situationContext: String?` rendered whenever non-null (blank-safe, same semantics) | Code-identical rendering; not exercised by a dedicated test (pre-existing gap, unchanged) |
+| Prompt scale | `(20f * ruTextScale).sp` | `scaledSp(PromptTextScale.prompt /*20f*/, textScale)` — same math | Compile + full gate; token unit `TextScale.kt:38` is `(baseSp * textScale).sp` |
+| Context scale | `(13f * ruTextScale).sp` | `scaledSp(PromptTextScale.context /*13f*/, textScale)` | same |
+| Drill prompt scale | `(18f * ruTextScale).sp` at `:331` | `scaledSp(PromptTextScale.drillPrompt /*18f*/, ...)` — same math (token adoption, this slice) | VerbDrill-related suites in full gate green |
+| TTS button states/enabled | `TtsSpeakerButton(ttsState, enabled = currentCard != null, onClick)`; else-branch = idle visual for Idle/Ready/Paused; Error tooltip + OOM heuristic (`reason.contains("memory", true)`) | Atom renders byte-identical `when`; boundary maps `Speaking/Initializing/Error(reason)` and `else → Idle` | `:app:assembleDebug` + full unit gate; rendering ported verbatim (only type renamed) |
+| A11y labels | `content_desc_stop` / `content_desc_tts_error` / `content_desc_listen` | Same string resources, same icons/tints | strings-components.xml:4–6 unchanged |
+| Localized labels | `training_ru`, `training_no_cards` resolved in screen | Resolved in boundary adapter, passed as `String` | strings-screens.xml:156–157 unchanged |
+| Drill suppression | `if (!isDrillStyle) CardPrompt(...)` guard at call site | Guard untouched; adapter only delegates rendering | full gate incl. VerbDrillSessionCardRegressionTest, VerbPracticeClickUiTest, BossBattleClickUiTest green (546/546) |
+
+### 9.3 Token adoption (first production adopters, per P1 §8 forecast)
+
+`PromptTextScale.prompt`/`.context`/`.drillPrompt` + `scaledSp` now own all three prompt-surface anchors (organism `:85,:95`; drill line `TrainingScreen.kt:331`). §3.5's remaining live inline scaled sites (VocabDrillScreen, DailyPracticeScreen, SimpleMarkdownParser, etc.) adopt in their own slices, unchanged here.
+
+### 9.4 Previews
+
+`@Preview` count: 6 → **15** (+9 in `TrainingPromptCard.kt`, beside the component): Light, Dark, long-RU-prompt, long-IT-prompt+contextRu, font-scale 1.5x, audio idle/initializing/speaking/error(reason tooltip). All pure fixtures (no ViewModel/filesystem/pack); rendered previews remain unverified locally (no device — see §8).
+
+### 9.5 Validation (exact)
+
+1. Focused (after code complete): `./gw.sh . :app:testDebugUnitTest --no-parallel --max-workers=1 --rerun --tests "com.alexpo.grammermate.ui.RegularLessonClickUiTest" --tests "com.alexpo.grammermate.ui.PackSwitchClickUiTest"` → BUILD SUCCESSFUL in 30s; XML: RegularLessonClickUiTest **10/10**, PackSwitchClickUiTest **4/4**, 0 failures.
+2. Phase gate: `:app:assembleDebug` → BUILD SUCCESSFUL in 17s; full `:app:testDebugUnitTest --rerun` → BUILD SUCCESSFUL in 2m 11s, parsed 67 fresh `TEST-*.xml`: **546 run / 546 passed / 0 failed / 0 skipped** (= P0/P1 baseline).
+3. Unverified gates: `connectedDebugAndroidTest` (no emulator/adb — unchanged since P0); rendered preview/device screenshots unavailable locally. Robolectric temp dirs cleaned post-run.
+
+### 9.6 Ownership evaluation (honest; plan demands this)
+
+- **Real ownership gain, not only forwarding:** the boundary adapter `CardPrompt` is not a pass-through — it holds the hint calculation, `SentenceCard` interpretation, TTS-state mapping, enablement and audit logging that plan §4 assigns to the integration layer; the organism holds layout/tag/typography policy and is now previewable in isolation (all 4 audio states, dark, 1.5x scale) for the first time. The audio rendering also gained a single implementation without a data-layer dependency (`data.TtsState` no longer enters UI display components).
+- **But reuse is still potential, not proven:** one production caller. If P4 does not produce a second consumer with compatible semantics (e.g. a completion/report card or an answer panel following this contract), the honest simplification per plan §5 is to fold the organism back beside TrainingScreen and keep only the boundary function — the wrapper cost today is real but small (1 adapter + 1 legacy overload).
+- **Costs to track:** legacy `TtsState` overload in SharedComponents.kt must not outlive the dead file (P6); drill prompt line stays screen-local intentionally (single site, distinct semantics — not merged into the organism).
+- §2 status updates: `CardPrompt` → `extracted`+`adopted`; `TtsSpeakerButton` → `extracted`+`adopted` (atom), legacy overload = compat wrapper with removal condition.
+
+### 9.7 Rollback boundary and next slice
+
+- Rollback = revert the 2 modified files + delete `ui/designsystem/atoms/TtsSpeakerButton.kt` + `ui/features/training/components/TrainingPromptCard.kt` (self-contained on top of `bb3773ab8`; no data/build/dependency surface).
+- Recommended next: **P3a** per plan §5 — training result display (`ResultBlock`) and `SessionProgressIndicator` display extraction; effect ledger §4 rows 11/15 stay at the boundary. Reuse decision for `TrainingPromptCard` (second consumer vs fold-back) is due at P4.

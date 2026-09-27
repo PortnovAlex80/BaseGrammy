@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -57,12 +56,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexpo.grammermate.R
@@ -85,13 +82,16 @@ import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.UnifiedNavigationRow
 import com.alexpo.grammermate.ui.components.SessionProgressIndicator
 import com.alexpo.grammermate.ui.components.SharedReportSheet
-import com.alexpo.grammermate.ui.components.TtsSpeakerButton
 import com.alexpo.grammermate.ui.components.PomodoroTimerBanner
 import com.alexpo.grammermate.ui.components.PomodoroSummaryScreen
 import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.GrammarInfoBottomSheet
 import com.alexpo.grammermate.shared.AuditLogger
+import com.alexpo.grammermate.ui.designsystem.atoms.TtsButtonState
+import com.alexpo.grammermate.ui.designsystem.foundation.PromptTextScale
+import com.alexpo.grammermate.ui.designsystem.foundation.scaledSp
+import com.alexpo.grammermate.ui.features.training.components.TrainingPromptCard
 
 /** Pre-compiled regex to strip parenthetical hints from card prompts. */
 private val ParentheticalRegex = Regex("\\s*\\([^)]+\\)")
@@ -328,7 +328,7 @@ fun TrainingScreen(
                 if (cleanPrompt.isNotBlank()) {
                     Text(
                         text = cleanPrompt,
-                        fontSize = (18f * state.audio.ruTextScale).sp,
+                        fontSize = scaledSp(PromptTextScale.drillPrompt, state.audio.ruTextScale),
                         fontWeight = FontWeight.Medium,
                         color = CorrectGreen,
                         modifier = Modifier.fillMaxWidth()
@@ -453,59 +453,47 @@ fun TrainingScreen(
     }
 }
 
+/**
+ * Integration boundary adapter for the extracted [TrainingPromptCard] organism
+ * (P2 prompt pilot). Keeps at this boundary everything the display component
+ * must not own: hint calculation ([HintCalculator]), SentenceCard.contextRu
+ * extraction, TTS state mapping (`data.TtsState` -> UI [TtsButtonState]),
+ * card identity and the TTS audit log. Drill modes never reach this call site —
+ * TrainingScreen guards it with `!isDrillStyle` and renders its own drill
+ * prompt line, so no duplicate prompt appears on drill cards.
+ */
 @Composable
 fun CardPrompt(state: TrainingUiState, onSpeak: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = stringResource(R.string.training_ru), style = MaterialTheme.typography.labelMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    modifier = Modifier.testTag("card_prompt_text"),
-                    text = state.cardSession.currentCard?.promptRu?.let {
-                        HintCalculator.calculateEffectiveHints(
-                            promptRu = it,
-                            encounterCount = state.cardSession.encounterCount,
-                            hintLevel = state.cardSession.hintLevel,
-                            sessionOffset = state.cardSession.hintSessionOffset,
-                            isBossBattle = state.boss?.bossActive == true,
-                            isReviewMode = state.cardSession.isReviewMode
-                        )
-                    } ?: stringResource(R.string.training_no_cards),
-                    fontSize = (20f * state.audio.ruTextScale).sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                // Optional situation context (3rd CSV column): always visible —
-                // it disambiguates the prompt (pronoun referent, ne antecedent,
-                // discourse status) and is not part of the graded hint ladder.
-                (state.cardSession.currentCard as? SentenceCard)?.contextRu?.let { ctx ->
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = ctx,
-                        fontSize = (13f * state.audio.ruTextScale).sp,
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            TtsSpeakerButton(
-                ttsState = state.audio.ttsState,
-                enabled = state.cardSession.currentCard != null,
-                onClick = {
-                    AuditLogger.getInstanceOrNull()?.ttsSpeak(
-                        state.cardSession.currentCard?.id ?: "",
-                        state.cardSession.currentCard?.promptRu ?: "",
-                        "training"
-                    )
-                    onSpeak()
-                }
+    TrainingPromptCard(
+        label = stringResource(R.string.training_ru),
+        displayPrompt = state.cardSession.currentCard?.promptRu?.let {
+            HintCalculator.calculateEffectiveHints(
+                promptRu = it,
+                encounterCount = state.cardSession.encounterCount,
+                hintLevel = state.cardSession.hintLevel,
+                sessionOffset = state.cardSession.hintSessionOffset,
+                isBossBattle = state.boss?.bossActive == true,
+                isReviewMode = state.cardSession.isReviewMode
             )
+        } ?: stringResource(R.string.training_no_cards),
+        situationContext = (state.cardSession.currentCard as? SentenceCard)?.contextRu,
+        textScale = state.audio.ruTextScale,
+        audioState = when (val ttsState = state.audio.ttsState) {
+            is TtsState.Speaking -> TtsButtonState.Speaking
+            is TtsState.Initializing -> TtsButtonState.Initializing
+            is TtsState.Error -> TtsButtonState.Error(ttsState.reason)
+            else -> TtsButtonState.Idle
+        },
+        audioEnabled = state.cardSession.currentCard != null,
+        onAudioClick = {
+            AuditLogger.getInstanceOrNull()?.ttsSpeak(
+                state.cardSession.currentCard?.id ?: "",
+                state.cardSession.currentCard?.promptRu ?: "",
+                "training"
+            )
+            onSpeak()
         }
-    }
+    )
 }
 
 @Composable
