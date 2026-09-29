@@ -117,4 +117,24 @@ class SessionRunnerAnswerModesTest {
         assertEquals(120.0, access.uiState.value.elite.eliteBestSpeeds.first(), 0.001)
         assertEquals(SessionState.PAUSED, access.uiState.value.cardSession.sessionState)
     }
+
+    @Test
+    fun thirdWrongAnswerPausesWithHintAndKeepsErrorEventOrder() {
+        val (runner, access) = runnerFor(TrainingUiState(cardSession = CardSessionState(
+            currentCard = card,
+            sessionState = SessionState.ACTIVE,
+            inputMode = InputMode.KEYBOARD
+        )))
+
+        repeat(3) { attempt ->
+            runner.onInputChanged("wrong-$attempt")
+            val (result, events) = runner.submitAnswer()
+            assertEquals(listOf(SessionEvent.PlayError, SessionEvent.SaveProgress), events)
+            assertEquals(attempt == 2, result.hintShown)
+        }
+        assertEquals(3, access.uiState.value.cardSession.incorrectCount)
+        assertEquals(0, access.uiState.value.cardSession.incorrectAttemptsForCard)
+        assertEquals("correct", access.uiState.value.cardSession.answerText)
+        assertEquals(SessionState.HINT_SHOWN, access.uiState.value.cardSession.sessionState)
+    }
 }

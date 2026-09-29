@@ -6,6 +6,34 @@ import com.alexpo.grammermate.data.TrainingUiState
 
 /** Pure correct-answer rules for normal, boss and elite sessions. The runner owns all writes and effects. */
 internal object SessionAnswerTransitions {
+    /** The retry machine decides when to show a hint; this rule projects its result to persisted UI state. */
+    fun incorrect(
+        current: CardSessionState,
+        result: CardSessionStateMachine.OnSubmitResult,
+        attempts: Int,
+        voiceTriggerToken: Int
+    ): CardSessionState = when (result) {
+        is CardSessionStateMachine.OnSubmitResult.HintShown -> current.copy(
+            incorrectCount = current.incorrectCount + 1,
+            incorrectAttemptsForCard = 0,
+            lastResult = false,
+            answerText = result.answer,
+            sessionState = SessionState.HINT_SHOWN,
+            voicePromptStartMs = null
+        )
+        is CardSessionStateMachine.OnSubmitResult.Wrong -> current.copy(
+            incorrectCount = current.incorrectCount + 1,
+            incorrectAttemptsForCard = attempts,
+            lastResult = false,
+            voiceTriggerToken = voiceTriggerToken,
+            voicePromptStartMs = null
+        )
+        is CardSessionStateMachine.OnSubmitResult.Correct -> current.copy(
+            incorrectCount = current.incorrectCount + 1,
+            lastResult = false
+        )
+    }
+
     data class VoiceContribution(val activeMs: Long, val words: Int) {
         companion object {
             fun from(shouldRecord: Boolean, durationMs: Long?, words: Int): VoiceContribution =

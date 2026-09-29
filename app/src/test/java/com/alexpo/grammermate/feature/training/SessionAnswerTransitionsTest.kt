@@ -12,6 +12,36 @@ class SessionAnswerTransitionsTest {
     private val voice = SessionAnswerTransitions.VoiceContribution(activeMs = 1_000L, words = 3)
 
     @Test
+    fun wrongAnswerIncrementsCountAndCarriesVoiceRetryToken() {
+        val current = CardSessionState(incorrectCount = 2, voicePromptStartMs = 99L)
+        val updated = SessionAnswerTransitions.incorrect(
+            current, CardSessionStateMachine.OnSubmitResult.Wrong(2, 1), attempts = 2,
+            voiceTriggerToken = 7
+        )
+
+        assertEquals(3, updated.incorrectCount)
+        assertEquals(2, updated.incorrectAttemptsForCard)
+        assertEquals(false, updated.lastResult)
+        assertEquals(7, updated.voiceTriggerToken)
+        assertEquals(null, updated.voicePromptStartMs)
+    }
+
+    @Test
+    fun thirdWrongAnswerShowsHintAndResetsAttempts() {
+        val current = CardSessionState(incorrectCount = 2, incorrectAttemptsForCard = 2, voicePromptStartMs = 99L)
+        val updated = SessionAnswerTransitions.incorrect(
+            current, CardSessionStateMachine.OnSubmitResult.HintShown("answer"), attempts = 3,
+            voiceTriggerToken = 7
+        )
+
+        assertEquals(3, updated.incorrectCount)
+        assertEquals(0, updated.incorrectAttemptsForCard)
+        assertEquals("answer", updated.answerText)
+        assertEquals(SessionState.HINT_SHOWN, updated.sessionState)
+        assertEquals(null, updated.voicePromptStartMs)
+    }
+
+    @Test
     fun bossMidAndLastRecordVoiceButLeaveProgressToRunner() {
         val card = CardSessionState(
             correctCount = 2,

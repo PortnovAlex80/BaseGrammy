@@ -471,47 +471,19 @@ class SessionRunner(
                 card = card,
                 inputMode = state.cardSession.inputMode
             )
-            when (smResult) {
-                is CardSessionStateMachine.OnSubmitResult.HintShown -> {
-                    hintShown = true
-                    // Audit: auto-hint after max failures
-                    audit?.hintAuto(
-                        card.id, card.promptRu, card.acceptedAnswers.firstOrNull() ?: "",
-                        stateMachine.incorrectAttempts, state.cardSession.hintCount + 1
-                    )
-                    stateAccess.updateState {
-                        it.copy(cardSession = it.cardSession.copy(
-                            incorrectCount = it.cardSession.incorrectCount + 1,
-                            incorrectAttemptsForCard = 0,
-                            lastResult = false,
-                            answerText = smResult.answer,
-                            sessionState = SessionState.HINT_SHOWN,
-                            voicePromptStartMs = null
-                        ))
-                    }
-                    pauseTimer()
-                }
-                is CardSessionStateMachine.OnSubmitResult.Wrong -> {
-                    stateAccess.updateState {
-                        it.copy(cardSession = it.cardSession.copy(
-                            incorrectCount = it.cardSession.incorrectCount + 1,
-                            incorrectAttemptsForCard = stateMachine.incorrectAttempts,
-                            lastResult = false,
-                            voiceTriggerToken = stateMachine.voiceTriggerToken,
-                            voicePromptStartMs = null
-                        ))
-                    }
-                }
-                is CardSessionStateMachine.OnSubmitResult.Correct -> {
-                    // Should not happen when accepted=false, but handle defensively
-                    stateAccess.updateState {
-                        it.copy(cardSession = it.cardSession.copy(
-                            incorrectCount = it.cardSession.incorrectCount + 1,
-                            lastResult = false
-                        ))
-                    }
-                }
+            if (smResult is CardSessionStateMachine.OnSubmitResult.HintShown) {
+                hintShown = true
+                audit?.hintAuto(
+                    card.id, card.promptRu, card.acceptedAnswers.firstOrNull() ?: "",
+                    stateMachine.incorrectAttempts, state.cardSession.hintCount + 1
+                )
             }
+            stateAccess.updateState {
+                it.copy(cardSession = SessionAnswerTransitions.incorrect(
+                    it.cardSession, smResult, stateMachine.incorrectAttempts, stateMachine.voiceTriggerToken
+                ))
+            }
+            if (hintShown) pauseTimer()
             Log.d(logTag, "Answer submitted: accepted=false")
             return SubmitResult(accepted = false, hintShown = hintShown, needsFlowerRefresh = false) to events
         }
@@ -1105,48 +1077,11 @@ class SessionRunner(
             stateAccess.uiState.value.navigation.selectedLessonId?.value ?: "",
             hintLevel.name
         )
-        val defaultInputMode = when (hintLevel) {
-            HintLevel.EASY -> InputMode.KEYBOARD
-            HintLevel.MEDIUM -> InputMode.KEYBOARD
-            HintLevel.HARD -> InputMode.VOICE
-        }
+        val defaultInputMode = ReviewSessionTransitions.defaultInputMode(hintLevel)
         if (defaultInputMode == InputMode.VOICE) {
             stateMachine.triggerVoice()
         }
-        updateStateAndClearInput {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
-                    currentCard = firstCard,
-                    currentIndex = 0,
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = cards.size,
-                    subLessonCount = 1,
-                    activeSubLessonIndex = 0,
-                    completedSubLessonCount = 0,
-                    subLessonFinishedToken = 0,
-                    wordBankWords = emptyList(),
-                    selectedWords = emptyList(),
-                    screenMode = TrainingScreenMode.NORMAL,
-                    isReviewMode = true,
-                    hintLevel = hintLevel,
-                    inputMode = defaultInputMode,
-                    voiceTriggerToken = stateMachine.voiceTriggerToken,
-                    returnTo = ""
-                ),
-                boss = it.boss.copy(bossActive = false),
-                elite = it.elite.copy(eliteActive = false)
-            )
-        }
+        updateStateAndClearInput { ReviewSessionTransitions.start(it, cards, hintLevel, stateMachine.voiceTriggerToken) }
         if (firstCard != null) {
             resumeTimer()
             updateWordBank()
